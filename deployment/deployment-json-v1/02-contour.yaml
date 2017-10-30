@@ -1,0 +1,60 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: contour
+  name: contour
+  namespace: heptio-contour
+spec:
+  selector:
+    matchLabels:
+      app: contour
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: contour
+    spec:
+      containers:
+      - image: docker.io/lyft/envoy-alpine:latest
+        name: envoy
+        ports:
+        - containerPort: 8080
+          name: http
+        command: ["envoy"]
+        args: ["-c", "/config/contour.json", "--service-cluster", "cluster0", "--service-node", "node0"]
+        volumeMounts:
+        - name: contour-config
+          mountPath: /config
+      - image: gcr.io/heptio-images/contour:master
+        imagePullPolicy: Always
+        name: contour
+        command: ["contour"]
+        args: ["serve", "--incluster"]
+      initContainers:
+      - image: gcr.io/heptio-images/contour:master
+        imagePullPolicy: Always
+        name: envoy-initconfig
+        command: ["contour"]
+        args: ["bootstrap", "/config/contour.json"]
+        volumeMounts:
+        - name: contour-config
+          mountPath: /config
+      volumes:
+      - name: contour-config
+        emptyDir: {}
+      dnsPolicy: ClusterFirst
+      serviceAccountName: contour
+      terminationGracePeriodSeconds: 30
+      # The affinity stanza below tells Kubernetes to try hard not to place 2 of
+      # these pods on the same node.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: contour
+              topologyKey: kubernetes.io/hostname
+---

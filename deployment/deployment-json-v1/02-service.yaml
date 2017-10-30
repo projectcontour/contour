@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+ name: contour
+ namespace: heptio-contour
+ annotations:
+   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+spec:
+ ports:
+ - port: 80
+   protocol: TCP
+   targetPort: 8080
+ selector:
+   app: contour
+ type: LoadBalancer
+---
