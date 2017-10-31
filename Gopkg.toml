@@ -1,6 +1,6 @@
 [[constraint]]
   name = "github.com/gorilla/mux"
-  version = "1.5.0"
+  version = "~1.5"
 
 [[constraint]]
   name = "github.com/gorilla/handlers"
@@ -8,11 +8,15 @@
 
 [[constraint]]
   name="k8s.io/client-go"
-  branch="release-4.0"
+  version="~5.0"
+
+[[constraint]]
+  name="k8s.io/api"
+  branch="release-1.8"
 
 [[override]]
   name="k8s.io/apimachinery"
-  revision="917740426ad66ff818da4809990480bcc0786a77"
+  branch="release-1.8"
 
 [[override]]
   name="github.com/ugorji/go"
