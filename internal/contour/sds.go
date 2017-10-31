@@ -16,7 +16,7 @@ package contour
 import (
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/pkg/errors"
-	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/api/core/v1"
 )
 
 // EndpointsToSDSHosts translates a *v1.Endpoints document to []*envoy.SDSHost.

@@ -18,7 +18,7 @@ import (
 
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/pkg/errors"
-	"k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"k8s.io/api/extensions/v1beta1"
 )
 
 // IngressToVirtualHosts translates an Ingress to a slice of *envoy.VirtualHost.
