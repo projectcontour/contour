@@ -22,7 +22,7 @@ What you do need:
 - A Kubernetes cluster that supports Service objects of `type: LoadBalancer` ([AWS Quickstart cluster][9] or Minikube, for example)
 - `kubectl` configured with admin access to your cluster
 
-See the [deployment documentation][10] for more deployment options.
+See the [deployment documentation][10] for more deployment options if you don't meet these requirements.
 
 ### Add Contour to your cluster
 
@@ -82,7 +82,7 @@ How you configure DNS depends on your platform:
 
 ### More information and documentation
 
-For more deployment options, see the [deployment documentation][10].
+For more deployment options, including uninstalling Contour, see the [deployment documentation][10].
 
 See also the Kubernetes documentation for [Services][11] and [Ingress][12].
 

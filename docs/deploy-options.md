@@ -1,13 +1,13 @@
 # Deployment options
 
-The [README][0] shows you a simple way to get started with Contour on your cluster. This topic explains the details and shows you additional options.
+The [README][0] shows you a simple way to get started with Contour on your cluster. This topic explains the details and shows you additional options.  Most of this covers running Contour using a Kubernetes Service of `Type: LoadBalancer`. If you don't have a cluster with that capability or if you don't want to use it see the [Running without a Kubernetes LoadBalancer](#running-without-a-kubernetes-loadbalancer) section below.
 
 ## Deployment or DaemonSet?
 
-We provide example deployment manifests for setting up Contour by creating either a DaemonSet or a Deployment. 
+We provide example deployment manifests for setting up Contour by creating either a DaemonSet or a Deployment.
 
 - The DaemonSet creates a instance of Contour runs on each node in your cluster.
-- The Deployment creates two instances of Contour run on the cluster, on two arbitrary nodes. 
+- The Deployment creates two instances of Contour run on the cluster, on two arbitrary nodes.
 
 In either case, a Service of `type: LoadBalancer` is set up to forward to the Contour instances.
 
@@ -95,9 +95,22 @@ In your browser, navigate your browser to the IP or DNS address of the Contour S
 
 ## Running without a Kubernetes LoadBalancer
 
-If your cluster doesn't have the capability to configure a Kubernetes LoadBalancer, or if you want to configure the load balancer outside Kubernetes, you can change the `02-service.yaml` file to set `type` to `NodePort`.  This will have every node in your cluster listen on the resultant port and forward traffic to Contour.  That port can be discovered by taking the second number listed in the `PORT` column when listing the service, for example `30274` in `80:30274/TCP`.  
+If you can't or don't want to use a Service of `type: LoadBalancer` there are two alternate ways to run Contour.
+
+### NodePort Service
+
+If your cluster doesn't have the capability to configure a Kubernetes LoadBalancer, or if you want to configure the load balancer outside Kubernetes, you can change the `02-service.yaml` file to set `type` to `NodePort`.  This will have every node in your cluster listen on the resultant port and forward traffic to Contour.  That port can be discovered by taking the second number listed in the `PORT` column when listing the service, for example `30274` in `80:30274/TCP`.
 
 Now you can point your browser at the specified port on any node in your cluster to communicate with Contour.
+
+### Host Networking
+
+You can run Contour without a Kubernetes Service at all.
+This is done by having the Contour pod run with host networking.
+Do this with with `hostNetwork: true` on your pod definition.
+Envoy will listen directly on port 8080 on each host that it is running.
+This is best paired with a DaemonSet (perhaps paired with Node affinity) to ensure that a single instance of Contour runs on each Node.
+See the [AWS NLB tutorial][3] as an example.
 
 ## Running Contour in tandem with another ingress controller
 
@@ -116,3 +129,4 @@ To remove Contour from your cluster, delete the namespace:
 [0]: ../README.md#get-started
 [1]: /architecture.md
 [2]: https://github.com/kubernetes-up-and-running/kuard
+[3]: deploy-aws-nlb.md

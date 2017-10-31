@@ -41,7 +41,6 @@ metadata:
   labels:
     app: kuard
 spec:
-spec:
   backend:
     serviceName: kuard
     servicePort: 80
