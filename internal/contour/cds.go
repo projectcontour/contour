@@ -18,7 +18,7 @@ import (
 
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/pkg/errors"
-	"k8s.io/client-go/pkg/api/v1"
+	"k8s.io/api/core/v1"
 )
 
 // ServiceToClusters translates a *v1.Service document to a []envoy.Cluster.
