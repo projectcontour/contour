@@ -19,10 +19,6 @@
   branch="release-1.8"
 
 [[override]]
-  name="github.com/ugorji/go"
-  revision="ded73eae5db7e7a0ef6f55aace87a2873c5d2b74"
-
-[[override]]
   name="github.com/gogo/protobuf"
   revision="c0656edd0d9eab7c66d1eb0c568f9039345796f7"
 
