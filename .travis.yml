@@ -11,4 +11,5 @@ install:
 
 script:
   - go install -v ./...
-    && go test ./...
+    && go test ./... &&
+    cd deployment && bash render.sh && git diff --exit-code .
