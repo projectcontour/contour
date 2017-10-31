@@ -120,7 +120,10 @@ metadata:
  name: contour
  namespace: heptio-contour
  annotations:
-   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+  # This annotation puts the AWS ELB into "HTTP" mode so that it adds the
+  # `X-Forwarded-For` header on the request. If you aren't running on AWS this
+  # should be a no-op.
+  service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
 spec:
  ports:
  - port: 80
