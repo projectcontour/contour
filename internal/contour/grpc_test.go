@@ -39,19 +39,8 @@ func TestGRPCAPIFetchClusters(t *testing.T) {
 	l := stdlog.New(w, w, 0)
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			var ds DataSource
-			for _, s := range tc.services {
-				ds.AddService(s)
-			}
-			for _, e := range tc.endpoints {
-				ds.AddEndpoints(e)
-			}
-			for _, i := range tc.ingresses {
-				ds.AddIngress(i)
-			}
 			api := &grpcAPI{
-				Logger:     l,
-				DataSource: &ds,
+				Logger: l,
 			}
 			got, err := api.FetchClusters(context.TODO(), &tc.req)
 			checkErr(t, err)

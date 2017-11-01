@@ -24,10 +24,9 @@ import (
 )
 
 // NewGPRCAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
-func NewGRPCAPI(l log.Logger, ds *DataSource) *grpc.Server {
+func NewGRPCAPI(l log.Logger) *grpc.Server {
 	a := &grpcAPI{
-		Logger:     l,
-		DataSource: ds,
+		Logger: l,
 	}
 	s := grpc.NewServer()
 	v2.RegisterClusterDiscoveryServiceServer(s, a)
@@ -39,7 +38,6 @@ func NewGRPCAPI(l log.Logger, ds *DataSource) *grpc.Server {
 
 type grpcAPI struct {
 	log.Logger
-	*DataSource
 }
 
 func (g *grpcAPI) FetchClusters(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {

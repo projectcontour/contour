@@ -96,7 +96,7 @@ func main() {
 				logger.Errorf("could not listen on %s: %v", V2_API_ADDRESS, err)
 				return // TODO(dfc) should return the error not log it
 			}
-			s := contour.NewGRPCAPI(logger, &ds)
+			s := contour.NewGRPCAPI(logger)
 			s.Serve(l)
 		})
 
