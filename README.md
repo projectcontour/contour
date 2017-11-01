@@ -29,13 +29,13 @@ See the [deployment documentation][10] for more deployment options if you don't 
 Run:
 
 ```
-$ kubectl apply -f http://j.hept.io/contour-deployment-rbac
+$ kubectl apply -f https://raw.githubusercontent.com/heptio/contour/master/deployment/render/deployment-rbac.yaml
 ```
 
 If RBAC isn't enabled on your cluster (for example, if you're on GKE with legacy authorization), run:
 
 ```
-$ kubectl apply -f http://j.hept.io/contour-deployment-norbac
+$ kubectl apply -f https://raw.githubusercontent.com/heptio/contour/master/deployment/render/deployment-norbac.yaml
 ```
 
 This command creates:
@@ -51,7 +51,7 @@ If you don't have an application ready to run with Contour, you can explore with
 Run:
 
 ```
-$ kubectl apply -f http://j.hept.io/contour-kuard-example
+$ kubectl apply -f https://raw.githubusercontent.com/heptio/contour/master/deployment/example-workload/kuard.yaml
 ```
 
 This example specifies a default backend for all hosts, so that you can test your Contour install. It's recommended for exploration and testing only, however, because it responds to all requests regardless of the incoming DNS that is mapped. You probably want to run with specific Ingress rules for specific hostnames.
