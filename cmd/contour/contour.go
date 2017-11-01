@@ -59,8 +59,7 @@ func main() {
 		app.Usage(args)
 		os.Exit(2)
 	case bootstrap.FullCommand():
-		// TODO(dfc) rename to writeBootstrapConfig
-		writeInitConfig(*config)
+		writeBootstrapConfig(*config)
 	case serve.FullCommand():
 		var (
 			logger = stdlog.New(os.Stdout, os.Stderr, 0)
@@ -105,10 +104,10 @@ func main() {
 	}
 }
 
-// writeInitConfig writes a bootstrap configuration to the supplied path.
+// writeBootstrapConfig writes a bootstrap configuration to the supplied path.
 // If the path ends in .json, the configuration file will be in v1 JSON format.
 // If the path ends in .yaml, the configuration file will be in v2 YAML format.
-func writeInitConfig(path string) {
+func writeBootstrapConfig(path string) {
 	config := envoy.ConfigWriter{}
 	f, err := os.Create(path)
 	check(err)
