@@ -80,7 +80,7 @@ How you configure DNS depends on your platform:
 
 - On AWS, create a CNAME record that maps the host in your Ingress object to the ELB address.
 - If you have an IP address instead (on GCE, for example), create an A record.
-- On Minikube, you can fake DNS by editing `/etc/hosts` or you can use the provcided example to not have to modify dns on your local machine.
+- On Minikube, you can fake DNS by editing `/etc/hosts` or you can use the provided example and not have to modify dns on your local machine.
 
 Run:
 
