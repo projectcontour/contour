@@ -14,7 +14,7 @@
 package contour
 
 import (
-	"fmt"
+	"strconv"
 
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/pkg/errors"
@@ -48,21 +48,19 @@ func ServiceToClusters(s *v1.Service) ([]envoy.Cluster, error) {
 				// service port is named, so we must generate both a cluster for the port name
 				// and a cluster for the port number.
 				clusters = append(clusters, envoy.Cluster{
-					Name:             fmt.Sprintf("%s/%s/%s", s.ObjectMeta.Namespace, s.ObjectMeta.Name, p.Name),
+					Name:             hashname(60, s.ObjectMeta.Namespace, s.ObjectMeta.Name, p.Name),
 					Type:             "sds", // hard coded to specify SDS Endpoint discovery
 					ConnectTimeoutMs: defaultConnectTimeoutMs,
 					LBType:           defaultLBType,
-					// TODO(dfc) need check if targetport is missing.
-					ServiceName: fmt.Sprintf("%s/%s/%s", s.ObjectMeta.Namespace, s.ObjectMeta.Name, p.TargetPort.String()),
+					ServiceName:      s.ObjectMeta.Namespace + "/" + s.ObjectMeta.Name + "/" + p.TargetPort.String(), // not subject to the 60 char limit
 				})
 			}
 			clusters = append(clusters, envoy.Cluster{
-				Name:             fmt.Sprintf("%s/%s/%d", s.ObjectMeta.Namespace, s.ObjectMeta.Name, p.Port),
+				Name:             hashname(60, s.ObjectMeta.Namespace, s.ObjectMeta.Name, strconv.Itoa(int(p.Port))),
 				Type:             "sds", // hard coded to specify SDS Endpoint discovery
 				ConnectTimeoutMs: defaultConnectTimeoutMs,
 				LBType:           defaultLBType,
-				// TODO(dfc) need check if targetport is missing.
-				ServiceName: fmt.Sprintf("%s/%s/%s", s.ObjectMeta.Namespace, s.ObjectMeta.Name, p.TargetPort.String()),
+				ServiceName:      s.ObjectMeta.Namespace + "/" + s.ObjectMeta.Name + "/" + p.TargetPort.String(), // not subject to the 60 char limit
 			})
 		default:
 			// ignore UDP and other port types.

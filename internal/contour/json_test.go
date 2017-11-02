@@ -207,6 +207,31 @@ func TestAPIServer(t *testing.T) {
 		path: "/v1/routes/ingress_http/cluster0/node0",
 		want: `{"virtual_hosts":[{"name":"default/httbin-org","domains":["*"],"routes":[{"prefix":"/","cluster":"default/backend/80"}]}]}` + "\n",
 	}, {
+		name: "rds/long vhost name",
+		ingresses: []*v1beta1.Ingress{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-service-name",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					Host: "my-very-very-long-service-host-name.my.domainname",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "my-service-name",
+									ServicePort: intstr.FromInt(8080),
+								},
+							}},
+						},
+					},
+				}},
+			},
+		}},
+		path: "/v1/routes/ingress_http/cluster0/node0",
+		want: `{"virtual_hosts":[{"name":"default/my-service-name/my-very-very--c4d2d4","domains":["my-very-very-long-service-host-name.my.domainname"],"routes":[{"prefix":"/","cluster":"default/my-service-name/8080"}]}]}` + "\n",
+	}, {
 		name: "rds/ingress class",
 		ingresses: []*v1beta1.Ingress{{
 			ObjectMeta: metav1.ObjectMeta{
@@ -353,6 +378,60 @@ func TestAPIServer(t *testing.T) {
 			got := request(t, tc.path, api)
 			if tc.want != got {
 				t.Fatalf("%q: expected: %q, got %q", tc.path, tc.want, got)
+			}
+		})
+	}
+}
+
+func TestHashname(t *testing.T) {
+	tests := []struct {
+		name string
+		l    int
+		s    []string
+		want string
+	}{
+		{name: "empty s", l: 99, s: nil, want: ""},
+		{name: "single element", l: 99, s: []string{"alpha"}, want: "alpha"},
+		{name: "long single element, hashed", l: 12, s: []string{"gammagammagamma"}, want: "0d350ea5c204"},
+		{name: "single element, truncated", l: 4, s: []string{"alpha"}, want: "8ed3"},
+		{name: "two elements, truncated", l: 19, s: []string{"gammagamma", "betabeta"}, want: "ga-edf159/betabeta"},
+		{name: "three elements", l: 99, s: []string{"alpha", "beta", "gamma"}, want: "alpha/beta/gamma"},
+		{name: "issue/25", l: 60, s: []string{"default", "my-sevice-name", "my-very-very-long-service-host-name.my.domainname"}, want: "default/my-sevice-name/my-very-very--665863"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := hashname(tc.l, append([]string{}, tc.s...)...)
+			if got != tc.want {
+				t.Fatalf("hashname(%d, %q): got %q, want %q", tc.l, tc.s, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestTruncate(t *testing.T) {
+	tests := []struct {
+		name   string
+		l      int
+		s      string
+		suffix string
+		want   string
+	}{
+		{name: "no truncate", l: 10, s: "quijibo", suffix: "a8c5e6", want: "quijibo"},
+		{name: "limit", l: len("quijibo"), s: "quijibo", suffix: "a8c5e6", want: "quijibo"},
+		{name: "truncate some", l: 6, s: "quijibo", suffix: "a8c5", want: "q-a8c5"},
+		{name: "truncate suffix", l: 4, s: "quijibo", suffix: "a8c5", want: "a8c5"},
+		{name: "truncate more", l: 3, s: "quijibo", suffix: "a8c5", want: "a8c"},
+		{name: "long single element, truncated", l: 9, s: "gammagamma", suffix: "0d350e", want: "ga-0d350e"},
+		{name: "long single element, truncated", l: 12, s: "gammagammagamma", suffix: "0d350e", want: "gamma-0d350e"},
+		{name: "issue/25", l: 60 / 3, s: "my-very-very-long-service-host-name.my.domainname", suffix: "a8c5e6", want: "my-very-very--a8c5e6"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := truncate(tc.l, tc.s, tc.suffix)
+			if got != tc.want {
+				t.Fatalf("hashname(%d, %q, %q): got %q, want %q", tc.l, tc.s, tc.suffix, got, tc.want)
 			}
 		})
 	}

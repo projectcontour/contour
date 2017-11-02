@@ -57,6 +57,31 @@ func TestServiceToClusters(t *testing.T) {
 			ServiceName:      "default/simple/6502",
 		}},
 	}, {
+		name: "long namespace and service name",
+		s: &v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "tiny-cog-department-test-instance",
+				Namespace: "beurocratic-company-test-domain-1",
+			},
+			Spec: v1.ServiceSpec{
+				Selector: map[string]string{
+					"app": "simple",
+				},
+				Ports: []v1.ServicePort{{
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(6502),
+				}},
+			},
+		},
+		want: []envoy.Cluster{{
+			Name:             "beurocratic-company-test-domain-1/tiny-cog-depa-52e801/80",
+			Type:             "sds",
+			ConnectTimeoutMs: 250,
+			LBType:           "round_robin",
+			ServiceName:      "beurocratic-company-test-domain-1/tiny-cog-department-test-instance/6502", // ServiceName is not subject to the 60 char limit
+		}},
+	}, {
 		name: "single named service port",
 		s: &v1.Service{
 			ObjectMeta: metav1.ObjectMeta{

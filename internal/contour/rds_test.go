@@ -280,6 +280,37 @@ func TestIngressToVirtualHost(t *testing.T) {
 				Cluster: "default/paul/paul",
 			}),
 		}},
+	}, {
+		name: "vhost name exceeds 60 chars", // heptio/contour#25
+		i: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-service-name",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					Host: "my-very-very-long-service-host-name.my.domainname",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "my-service-name",
+									ServicePort: intstr.FromInt(80),
+								},
+							}},
+						},
+					},
+				}},
+			},
+		},
+		want: []*envoy.VirtualHost{{
+			Name:    "default/my-service-name/my-very-very--c4d2d4",
+			Domains: domains("my-very-very-long-service-host-name.my.domainname"),
+			Routes: routes(envoy.Route{
+				Prefix:  "/",
+				Cluster: "default/my-service-name/80",
+			}),
+		}},
 	}}
 
 	for _, tc := range tests {
@@ -289,7 +320,7 @@ func TestIngressToVirtualHost(t *testing.T) {
 				t.Fatal(err)
 			}
 			if !reflect.DeepEqual(got, tc.want) {
-				t.Fatalf("got: %#v, want: %#v", got, tc.want)
+				t.Fatalf("got: %v, want: %v", got, tc.want)
 			}
 		})
 	}
@@ -355,11 +386,11 @@ func TestIngressBackendToVirtualHostName(t *testing.T) {
 func TestValidateIngress(t *testing.T) {
 	tests := []struct {
 		name string
-		i    *v1beta1.Ingress
+		i    v1beta1.Ingress
 		want error
 	}{{
 		name: "missing Ingress.Meta.Name",
-		i: &v1beta1.Ingress{
+		i: v1beta1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "",
 			},
@@ -367,7 +398,7 @@ func TestValidateIngress(t *testing.T) {
 		want: errors.New("Ingress.Meta.Name is blank"),
 	}, {
 		name: "missing Ingress.Meta.Namespace",
-		i: &v1beta1.Ingress{
+		i: v1beta1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "simple",
 			},
@@ -375,7 +406,7 @@ func TestValidateIngress(t *testing.T) {
 		want: errors.New("Ingress.Meta.Namespace is blank"),
 	}, {
 		name: "missing Ingress.Spec.Backend and Ingress.Spec.Rules",
-		i: &v1beta1.Ingress{
+		i: v1beta1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "simple",
 				Namespace: "default",
@@ -386,7 +417,7 @@ func TestValidateIngress(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got := validateIngress(tc.i)
+			got := validateIngress(&tc.i)
 			if tc.want != nil && got == nil || got.Error() != tc.want.Error() {
 				t.Errorf("got: %v, expected: %v", tc.want, got)
 			}

@@ -41,7 +41,7 @@ func IngressToVirtualHosts(i *v1beta1.Ingress) ([]*envoy.VirtualHost, error) {
 	// validateIngress ensures this.
 	if i.Spec.Backend != nil {
 		v := envoy.VirtualHost{
-			Name: i.Namespace + "/" + i.Name,
+			Name: hashname(60, i.Namespace, i.Name),
 		}
 		v.AddDomain("*")
 		v.AddRoute(envoy.Route{
@@ -53,7 +53,7 @@ func IngressToVirtualHosts(i *v1beta1.Ingress) ([]*envoy.VirtualHost, error) {
 	var vhosts []*envoy.VirtualHost
 	for _, rule := range i.Spec.Rules {
 		v := envoy.VirtualHost{
-			Name: i.Namespace + "/" + i.Name + "/" + rule.Host,
+			Name: hashname(60, i.Namespace, i.Name, rule.Host),
 		}
 		v.AddDomain(rule.Host)
 		if rule.IngressRuleValue.HTTP == nil {
@@ -95,7 +95,7 @@ func validateIngress(i *v1beta1.Ingress) error {
 
 // ingressBackendToClusterName renders a cluster name from an Ingress and an IngressBackend.
 func ingressBackendToClusterName(i *v1beta1.Ingress, b *v1beta1.IngressBackend) string {
-	return i.ObjectMeta.Namespace + "/" + b.ServiceName + "/" + b.ServicePort.String()
+	return hashname(60, i.ObjectMeta.Namespace, b.ServiceName, b.ServicePort.String())
 }
 
 // pathToRoute converts a HTTPIngressPath to a partial envoy.Route.
