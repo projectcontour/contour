@@ -9,6 +9,8 @@ Contour is an Ingress controller for Kubernetes that works by deploying the [Env
 
 This is an early release so that we can start sharing with the community. Check out [the roadmap][15] to see where we plan to go with the project.
 
+And see [the launch blog post][17] for our vision of how Contour fits into the larger Kubernetes ecosystem.
+
 ## Prerequisites
 
 Contour is tested with Kubernetes clusters running version 1.7 and later, but should work with earlier versions.
@@ -88,6 +90,8 @@ See also the Kubernetes documentation for [Services][11] and [Ingress][12].
 
 The [detailed documentation][3] provides additional information, including an introduction to Envoy and an explanation of how Contour maps key Envoy concepts to Kubernetes.
 
+We've also got [an FAQ][18] for short-answer questions and conceptual stuff that doesn't quite belong in the docs.
+
 ## Known limitations
 
 * Contour does not yet support customizations with annotations.
@@ -126,3 +130,5 @@ See [the list of releases][6] to find out about feature changes.
 [14]: https://github.com/kubernetes-up-and-running/kuard
 [15]: /design/roadmap.md
 [16]: https://github.com/envoyproxy/envoy/issues/95
+[17]: https://blog.heptio.com/making-it-easy-to-use-envoy-as-a-kubernetes-load-balancer-dde82959f171
+[18]: /FAQ.md
