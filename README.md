@@ -9,6 +9,8 @@ Contour is an Ingress controller for Kubernetes that works by deploying the [Env
 
 This is an early release so that we can start sharing with the community. Check out [the roadmap][15] to see where we plan to go with the project.
 
+And see [the launch blog post][17] for our vision of how Contour fits into the larger Kubernetes ecosystem.
+
 ## Prerequisites
 
 Contour is tested with Kubernetes clusters running version 1.7 and later, but should work with earlier versions.
@@ -78,7 +80,15 @@ How you configure DNS depends on your platform:
 
 - On AWS, create a CNAME record that maps the host in your Ingress object to the ELB address.
 - If you have an IP address instead (on GCE, for example), create an A record.
-- On Minikube, you can fake DNS by editing `/etc/hosts`.
+- On Minikube, you can fake DNS by editing `/etc/hosts` or you can use the provcided example to not have to modify dns on your local machine.
+
+Run:
+
+```
+$ kubectl apply -f http://j.hept.io/contour-kuard-minikube-example
+```
+
+This example yaml specifies `kuard.192.168.99.100.nip.io` as a specific ingress backend for kuard. It uses nip.io and the minikube ip address to have kuard only respond to http://kuard.192.168.99.100.nip.io. Once that is applied you can visit http://kuard.192.168.99.100.nip.io and see the kuard example application.
 
 ### More information and documentation
 
@@ -87,6 +97,8 @@ For more deployment options, including uninstalling Contour, see the [deployment
 See also the Kubernetes documentation for [Services][11] and [Ingress][12].
 
 The [detailed documentation][3] provides additional information, including an introduction to Envoy and an explanation of how Contour maps key Envoy concepts to Kubernetes.
+
+We've also got [an FAQ][18] for short-answer questions and conceptual stuff that doesn't quite belong in the docs.
 
 ## Known limitations
 
@@ -126,3 +138,5 @@ See [the list of releases][6] to find out about feature changes.
 [14]: https://github.com/kubernetes-up-and-running/kuard
 [15]: /design/roadmap.md
 [16]: https://github.com/envoyproxy/envoy/issues/95
+[17]: https://blog.heptio.com/making-it-easy-to-use-envoy-as-a-kubernetes-load-balancer-dde82959f171
+[18]: /FAQ.md
