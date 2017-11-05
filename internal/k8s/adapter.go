@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/heptio/contour/internal/log"
+	"github.com/heptio/contour/internal/workgroup"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -38,15 +39,20 @@ type ServiceCache interface {
 	RemoveService(*v1.Service)
 }
 
-// WatchServices creates a SharedInformer configured to populate sc with Services.
-func WatchServices(client *kubernetes.Clientset, sc ServiceCache, l log.Logger) cache.SharedInformer {
+// WatchServices registers a SharedInformer configured to populate sc with Services with the workgroup g.
+func WatchServices(g *workgroup.Group, client *kubernetes.Clientset, sc ServiceCache, l log.Logger) {
 	lw := cache.NewListWatchFromClient(client.CoreV1().RESTClient(), "services", v1.NamespaceAll, fields.Everything())
 	sw := cache.NewSharedInformer(lw, new(v1.Service), 30*time.Minute)
-	sw.AddEventHandler(&ServiceWatchAdapter{
+	swa := ServiceWatchAdapter{
 		ServiceCache: sc,
 		Logger:       l.WithPrefix("ServiceWatcherAapter"),
+	}
+	sw.AddEventHandler(&swa)
+	g.Add(func(stop <-chan struct{}) {
+		swa.Logger.Infof("started")
+		defer swa.Logger.Infof("stopped")
+		sw.Run(stop)
 	})
-	return sw
 }
 
 // A ServiceWatchAdapter implements cache.ResourceEventHandler to
@@ -93,15 +99,20 @@ type EndpointsCache interface {
 	RemoveEndpoints(*v1.Endpoints)
 }
 
-// WatchEndpoints creates a SharedInformer configured to populate ec with Endpoints.
-func WatchEndpoints(client *kubernetes.Clientset, ec EndpointsCache, l log.Logger) cache.SharedInformer {
+// WatchEndpoints creates a SharedInformer configured to populate ec with Endpoints with the workgroup g.
+func WatchEndpoints(g *workgroup.Group, client *kubernetes.Clientset, ec EndpointsCache, l log.Logger) {
 	lw := cache.NewListWatchFromClient(client.CoreV1().RESTClient(), "endpoints", v1.NamespaceAll, fields.Everything())
 	ew := cache.NewSharedInformer(lw, new(v1.Endpoints), 30*time.Minute)
-	ew.AddEventHandler(&EndpointsWatchAdapter{
+	ewa := EndpointsWatchAdapter{
 		EndpointsCache: ec,
 		Logger:         l.WithPrefix("EndpointsWatcherAdapter"),
+	}
+	ew.AddEventHandler(&ewa)
+	g.Add(func(stop <-chan struct{}) {
+		ewa.Logger.Infof("started")
+		defer ewa.Logger.Infof("stopped")
+		ew.Run(stop)
 	})
-	return ew
 }
 
 // An EndpointsWatchAdapter implements cache.ResourceEventHandler to
@@ -148,15 +159,20 @@ type IngressCache interface {
 	RemoveIngress(*v1beta1.Ingress)
 }
 
-// WatchIngress creates a SharedInformer configured to populate ic with Ingresses.
-func WatchIngress(client *kubernetes.Clientset, ic IngressCache, l log.Logger) cache.SharedInformer {
+// WatchIngress creates a SharedInformer configured to populate ic with Ingresses with the workgroup g.
+func WatchIngress(g *workgroup.Group, client *kubernetes.Clientset, ic IngressCache, l log.Logger) {
 	lw := cache.NewListWatchFromClient(client.ExtensionsV1beta1().RESTClient(), "ingresses", v1.NamespaceAll, fields.Everything())
 	iw := cache.NewSharedInformer(lw, new(v1beta1.Ingress), 30*time.Minute)
-	iw.AddEventHandler(&IngressWatchAdapter{
+	iwa := IngressWatchAdapter{
 		IngressCache: ic,
 		Logger:       l.WithPrefix("IngressWatchAdapter"),
+	}
+	iw.AddEventHandler(&iwa)
+	g.Add(func(stop <-chan struct{}) {
+		iwa.Logger.Infof("started")
+		defer iwa.Logger.Infof("stopped")
+		iw.Run(stop)
 	})
-	return iw
 }
 
 // An IngressWatchAdapter implements cache.ResourceEventHandler to
