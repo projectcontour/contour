@@ -10,6 +10,4 @@ install:
     && dep ensure -vendor-only -v
 
 script:
-  - go install -v ./...
-    && go test ./... &&
-    cd deployment && bash render.sh && git diff --exit-code .
+  - make check
