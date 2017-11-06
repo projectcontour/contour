@@ -31,7 +31,7 @@ This might change in the future, but for now use the following command to fetch 
 
 ```
 go get -d github.com/heptio/contour
-cd $GOPATH/src/heptio/contour
+cd $GOPATH/src/github.com/heptio/contour
 dep ensure -vendor-only
 ```
 
