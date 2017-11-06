@@ -72,11 +72,25 @@ func (l *infoLogger) V(v int) log.InfoLogger {
 }
 
 func (l *infoLogger) WithPrefix(prefix string) log.Logger {
-	ll := *l.Logger // TODO(dfc) gross!!!
-	ll.SetPrefix(prefix)
-	return &infoLogger{
-		errorLogger: l.errorLogger,
-		Logger:      &ll,
-		v:           l.v,
+	return &prefixLogger{
+		infoLogger: l,
+		prefix:     prefix,
 	}
+}
+
+type prefixLogger struct {
+	*infoLogger
+	prefix string
+}
+
+func (l *prefixLogger) Infof(format string, args ...interface{}) {
+	l.Output(2, fmt.Sprintf(l.prefix+": "+format, args...))
+}
+
+func (l *prefixLogger) Error(args ...interface{}) {
+	l.errorLogger.Output(2, fmt.Sprintln(append([]interface{}{l.prefix + ":"}, args...)...))
+}
+
+func (l *prefixLogger) Errorf(format string, args ...interface{}) {
+	l.errorLogger.Output(2, fmt.Sprintf(l.prefix+": "+format, args...))
 }
