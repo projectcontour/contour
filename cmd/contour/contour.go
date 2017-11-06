@@ -68,11 +68,12 @@ func main() {
 			g      workgroup.Group
 		)
 
-		g.Add(k8s.WatchServices(client, &ds, logger).Run)
-		g.Add(k8s.WatchEndpoints(client, &ds, logger).Run)
-		g.Add(k8s.WatchIngress(client, &ds, logger).Run)
+		k8s.WatchServices(&g, client, &ds, logger)
+		k8s.WatchEndpoints(&g, client, &ds, logger)
+		k8s.WatchIngress(&g, client, &ds, logger)
 
 		g.Add(func(stop <-chan struct{}) {
+			logger := logger.WithPrefix("JSONAPI")
 			api := contour.NewJSONAPI(logger, &ds)
 			if *debug {
 				// enable request logging if --debug enabled
@@ -85,18 +86,22 @@ func main() {
 				ReadTimeout:  15 * time.Second,
 			}
 			go srv.ListenAndServe() // run server in another goroutine
-			logger.Infof("%s started, listening on %v", os.Args[0], srv.Addr)
+			logger.Infof("started, listening on %v", srv.Addr)
+			defer logger.Infof("stopped")
 			<-stop                             // wait for stop signal
 			srv.Shutdown(context.Background()) // shutdown and wait for server to exit
 		})
 
 		g.Add(func(stop <-chan struct{}) {
+			logger := logger.WithPrefix("gRPCAPI")
 			l, err := net.Listen("tcp", V2_API_ADDRESS)
 			if err != nil {
 				logger.Errorf("could not listen on %s: %v", V2_API_ADDRESS, err)
 				return // TODO(dfc) should return the error not log it
 			}
 			s := contour.NewGRPCAPI(logger)
+			logger.Infof("started")
+			defer logger.Infof("stopped")
 			s.Serve(l)
 		})
 
