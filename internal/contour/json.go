@@ -25,6 +25,8 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/net/trace"
+
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 
@@ -54,6 +56,10 @@ func NewJSONAPI(l log.Logger, ds *DataSource) http.Handler {
 	r.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	r.HandleFunc("/debug/pprof/", pprof.Index)
 	r.HandleFunc("/debug/pprof/{profile}", pprof.Index)
+
+	// register grpc trace hooks
+	r.HandleFunc("/debug/requests", trace.Traces)
+	r.HandleFunc("/debug/events", trace.Events)
 	return a
 }
 
