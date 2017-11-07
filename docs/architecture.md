@@ -2,7 +2,7 @@
 
 The Contour Ingress controller is a collaboration between:
 
-* Envoy, which provides the high performance reserve proxy.
+* Envoy, which provides the high performance reverse proxy.
 * Contour, which acts as a management server for Envoy and provides it with configuration.
 
 These containers are deployed as sidecars in a pod, although other configurations are possible.
