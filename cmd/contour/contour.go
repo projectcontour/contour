@@ -68,9 +68,23 @@ func main() {
 			g      workgroup.Group
 		)
 
-		k8s.WatchServices(&g, client, &ds, logger)
-		k8s.WatchEndpoints(&g, client, &ds, logger)
-		k8s.WatchIngress(&g, client, &ds, logger)
+		swa := k8s.ServiceWatchAdapter{
+			ServiceCache: &ds,
+			Logger:       logger.WithPrefix("ServiceWatcherAapter"),
+		}
+		k8s.WatchServices(&g, client, logger, &swa)
+
+		ewa := k8s.EndpointsWatchAdapter{
+			EndpointsCache: &ds,
+			Logger:         logger.WithPrefix("EndpointsWatcherAdapter"),
+		}
+		k8s.WatchEndpoints(&g, client, logger, &ewa)
+
+		iwa := k8s.IngressWatchAdapter{
+			IngressCache: &ds,
+			Logger:       logger.WithPrefix("IngressWatchAdapter"),
+		}
+		k8s.WatchIngress(&g, client, logger, &iwa)
 
 		g.Add(func(stop <-chan struct{}) {
 			logger := logger.WithPrefix("JSONAPI")
