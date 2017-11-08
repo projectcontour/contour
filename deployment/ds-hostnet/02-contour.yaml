@@ -18,7 +18,7 @@ spec:
     spec:
       hostNetwork: true
       containers:
-      - image: docker.io/lyft/envoy-alpine:latest
+      - image: docker.io/envoyproxy/envoy-alpine:latest
         name: envoy
         ports:
         - containerPort: 8080
