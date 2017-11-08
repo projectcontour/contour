@@ -23,6 +23,7 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 )
@@ -39,20 +40,9 @@ type ServiceCache interface {
 	RemoveService(*v1.Service)
 }
 
-// WatchServices registers a SharedInformer configured to populate sc with Services with the workgroup g.
-func WatchServices(g *workgroup.Group, client *kubernetes.Clientset, sc ServiceCache, l log.Logger) {
-	lw := cache.NewListWatchFromClient(client.CoreV1().RESTClient(), "services", v1.NamespaceAll, fields.Everything())
-	sw := cache.NewSharedInformer(lw, new(v1.Service), 30*time.Minute)
-	swa := ServiceWatchAdapter{
-		ServiceCache: sc,
-		Logger:       l.WithPrefix("ServiceWatcherAapter"),
-	}
-	sw.AddEventHandler(&swa)
-	g.Add(func(stop <-chan struct{}) {
-		swa.Logger.Infof("started")
-		defer swa.Logger.Infof("stopped")
-		sw.Run(stop)
-	})
+// WatchServices creates a SharedInformer for v1.Services and registers it with g.
+func WatchServices(g *workgroup.Group, client *kubernetes.Clientset, l log.Logger, rs ...cache.ResourceEventHandler) {
+	watch(g, client.CoreV1().RESTClient(), l, "services", new(v1.Service), rs...)
 }
 
 // A ServiceWatchAdapter implements cache.ResourceEventHandler to
@@ -99,20 +89,9 @@ type EndpointsCache interface {
 	RemoveEndpoints(*v1.Endpoints)
 }
 
-// WatchEndpoints creates a SharedInformer configured to populate ec with Endpoints with the workgroup g.
-func WatchEndpoints(g *workgroup.Group, client *kubernetes.Clientset, ec EndpointsCache, l log.Logger) {
-	lw := cache.NewListWatchFromClient(client.CoreV1().RESTClient(), "endpoints", v1.NamespaceAll, fields.Everything())
-	ew := cache.NewSharedInformer(lw, new(v1.Endpoints), 30*time.Minute)
-	ewa := EndpointsWatchAdapter{
-		EndpointsCache: ec,
-		Logger:         l.WithPrefix("EndpointsWatcherAdapter"),
-	}
-	ew.AddEventHandler(&ewa)
-	g.Add(func(stop <-chan struct{}) {
-		ewa.Logger.Infof("started")
-		defer ewa.Logger.Infof("stopped")
-		ew.Run(stop)
-	})
+// WatchEndpoints creates a SharedInformer for v1.Endpoints and registers it with g.
+func WatchEndpoints(g *workgroup.Group, client *kubernetes.Clientset, l log.Logger, rs ...cache.ResourceEventHandler) {
+	watch(g, client.CoreV1().RESTClient(), l, "endpoints", new(v1.Endpoints), rs...)
 }
 
 // An EndpointsWatchAdapter implements cache.ResourceEventHandler to
@@ -159,20 +138,9 @@ type IngressCache interface {
 	RemoveIngress(*v1beta1.Ingress)
 }
 
-// WatchIngress creates a SharedInformer configured to populate ic with Ingresses with the workgroup g.
-func WatchIngress(g *workgroup.Group, client *kubernetes.Clientset, ic IngressCache, l log.Logger) {
-	lw := cache.NewListWatchFromClient(client.ExtensionsV1beta1().RESTClient(), "ingresses", v1.NamespaceAll, fields.Everything())
-	iw := cache.NewSharedInformer(lw, new(v1beta1.Ingress), 30*time.Minute)
-	iwa := IngressWatchAdapter{
-		IngressCache: ic,
-		Logger:       l.WithPrefix("IngressWatchAdapter"),
-	}
-	iw.AddEventHandler(&iwa)
-	g.Add(func(stop <-chan struct{}) {
-		iwa.Logger.Infof("started")
-		defer iwa.Logger.Infof("stopped")
-		iw.Run(stop)
-	})
+// WatchIngress creates a SharedInformer for v1beta1.Ingress and registers it with g.
+func WatchIngress(g *workgroup.Group, client *kubernetes.Clientset, l log.Logger, rs ...cache.ResourceEventHandler) {
+	watch(g, client.ExtensionsV1beta1().RESTClient(), l, "ingresses", new(v1beta1.Ingress), rs...)
 }
 
 // An IngressWatchAdapter implements cache.ResourceEventHandler to
@@ -207,4 +175,18 @@ func (iwa *IngressWatchAdapter) OnDelete(obj interface{}) {
 		return
 	}
 	iwa.RemoveIngress(i)
+}
+
+func watch(g *workgroup.Group, c cache.Getter, l log.Logger, resource string, objType runtime.Object, rs ...cache.ResourceEventHandler) {
+	lw := cache.NewListWatchFromClient(c, resource, v1.NamespaceAll, fields.Everything())
+	sw := cache.NewSharedInformer(lw, objType, 30*time.Minute)
+	for _, r := range rs {
+		sw.AddEventHandler(r)
+	}
+	g.Add(func(stop <-chan struct{}) {
+		l := l.WithPrefix("watch(" + resource + ")")
+		l.Infof("started")
+		defer l.Infof("stopped")
+		sw.Run(stop)
+	})
 }
