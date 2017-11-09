@@ -64,27 +64,15 @@ func main() {
 		var (
 			logger = stdlog.New(os.Stdout, os.Stderr, 0)
 			client = newClient(*kubeconfig, *inCluster)
-			ds     contour.DataSource
-			g      workgroup.Group
+			ds     = contour.DataSource{
+				Logger: logger.WithPrefix("DataSource"),
+			}
+			g workgroup.Group
 		)
 
-		swa := k8s.ServiceWatchAdapter{
-			ServiceCache: &ds,
-			Logger:       logger.WithPrefix("ServiceWatcherAapter"),
-		}
-		k8s.WatchServices(&g, client, logger, &swa)
-
-		ewa := k8s.EndpointsWatchAdapter{
-			EndpointsCache: &ds,
-			Logger:         logger.WithPrefix("EndpointsWatcherAdapter"),
-		}
-		k8s.WatchEndpoints(&g, client, logger, &ewa)
-
-		iwa := k8s.IngressWatchAdapter{
-			IngressCache: &ds,
-			Logger:       logger.WithPrefix("IngressWatchAdapter"),
-		}
-		k8s.WatchIngress(&g, client, logger, &iwa)
+		k8s.WatchServices(&g, client, logger, &ds)
+		k8s.WatchEndpoints(&g, client, logger, &ds)
+		k8s.WatchIngress(&g, client, logger, &ds)
 
 		g.Add(func(stop <-chan struct{}) {
 			logger := logger.WithPrefix("JSONAPI")
