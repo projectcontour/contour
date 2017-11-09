@@ -63,13 +63,6 @@ func NewJSONAPI(l log.Logger, ds *DataSource) http.Handler {
 	return a
 }
 
-// DataSource provides Service, Ingress, and Endpoints caches.
-type DataSource struct {
-	ServiceCache
-	EndpointsCache
-	IngressCache
-}
-
 type jsonAPI struct {
 	*DataSource
 	http.Handler

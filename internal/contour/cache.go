@@ -20,7 +20,50 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/cache"
+
+	"github.com/heptio/contour/internal/log"
 )
+
+// DataSource provides Service, Ingress, and Endpoints caches.
+type DataSource struct {
+	log.Logger
+	ServiceCache
+	EndpointsCache
+	IngressCache
+}
+
+func (ds *DataSource) OnAdd(obj interface{}) {
+	switch obj := obj.(type) {
+	case *v1.Service:
+		ds.AddService(obj)
+	case *v1.Endpoints:
+		ds.AddEndpoints(obj)
+	case *v1beta1.Ingress:
+		ds.AddIngress(obj)
+	default:
+		ds.Errorf("OnAdd unexpected type %T: %#v", obj, obj)
+	}
+}
+
+func (ds *DataSource) OnUpdate(_, newObj interface{}) {
+	ds.OnAdd(newObj)
+}
+
+func (ds *DataSource) OnDelete(obj interface{}) {
+	switch obj := obj.(type) {
+	case *v1.Service:
+		ds.RemoveService(obj)
+	case *v1.Endpoints:
+		ds.RemoveEndpoints(obj)
+	case *v1beta1.Ingress:
+		ds.RemoveIngress(obj)
+	case cache.DeletedFinalStateUnknown:
+		ds.OnDelete(obj.Obj) // recurse into ourselves with the tombstoned value
+	default:
+		ds.Errorf("OnDelete unexpected type %T: %#v", obj, obj)
+	}
+}
 
 // ServiceCache is a goroutine safe cache of v1.Service objects.
 type ServiceCache struct {
