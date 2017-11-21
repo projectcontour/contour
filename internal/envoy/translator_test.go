@@ -37,6 +37,14 @@ func (cc testClusterCache) Remove(name string) {
 	delete(cc, name)
 }
 
+func (cc testClusterCache) Values() []*v2.Cluster {
+	var r []*v2.Cluster
+	for _, v := range cc {
+		r = append(r, v)
+	}
+	return r
+}
+
 func TestTranslateService(t *testing.T) {
 	tests := []struct {
 		name string
@@ -107,6 +115,14 @@ func (cc testClusterLoadAssignmentCache) Add(c *v2.ClusterLoadAssignment) {
 
 func (cc testClusterLoadAssignmentCache) Remove(name string) {
 	delete(cc, name)
+}
+
+func (cc testClusterLoadAssignmentCache) Values() []*v2.ClusterLoadAssignment {
+	var r []*v2.ClusterLoadAssignment
+	for _, v := range cc {
+		r = append(r, v)
+	}
+	return r
 }
 
 func TestTranslateEndpoints(t *testing.T) {
@@ -186,6 +202,14 @@ func (cc testVirtualHostCache) Add(c *v2.VirtualHost) {
 
 func (cc testVirtualHostCache) Remove(name string) {
 	delete(cc, name)
+}
+
+func (cc testVirtualHostCache) Values() []*v2.VirtualHost {
+	var r []*v2.VirtualHost
+	for _, v := range cc {
+		r = append(r, v)
+	}
+	return r
 }
 
 func TestTranslateIngress(t *testing.T) {

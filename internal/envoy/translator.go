@@ -32,18 +32,9 @@ import (
 // objects into additions and removals entries of Envoy gRPC objects from a cache.
 type Translator struct {
 	log.Logger
-	ClusterCache interface {
-		Add(*v2.Cluster)
-		Remove(string)
-	}
-	ClusterLoadAssignmentCache interface {
-		Add(*v2.ClusterLoadAssignment)
-		Remove(string)
-	}
-	VirtualHostCache interface {
-		Add(*v2.VirtualHost)
-		Remove(string)
-	}
+	ClusterCache
+	ClusterLoadAssignmentCache
+	VirtualHostCache
 }
 
 func (t *Translator) OnAdd(obj interface{}) {
