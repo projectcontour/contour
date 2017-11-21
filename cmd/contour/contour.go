@@ -46,7 +46,8 @@ const (
 func main() {
 	app := kingpin.New("contour", "Heptio Contour Kubernetes ingress controller.")
 	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")
-	config := bootstrap.Arg("path", "Configuration file.").Required().String()
+
+	path := bootstrap.Arg("path", "Configuration file.").Required().String()
 
 	serve := app.Command("serve", "Serve xDS API traffic")
 	inCluster := serve.Flag("incluster", "use in cluster configuration.").Bool()
@@ -59,20 +60,29 @@ func main() {
 		app.Usage(args)
 		os.Exit(2)
 	case bootstrap.FullCommand():
-		writeBootstrapConfig(*config)
+		writeBootstrapConfig(*path)
 	case serve.FullCommand():
-		var (
-			logger = stdlog.New(os.Stdout, os.Stderr, 0)
-			client = newClient(*kubeconfig, *inCluster)
-			ds     = contour.DataSource{
-				Logger: logger.WithPrefix("DataSource"),
-			}
-			g workgroup.Group
-		)
+		logger := stdlog.New(os.Stdout, os.Stderr, 0)
+		client := newClient(*kubeconfig, *inCluster)
 
-		k8s.WatchServices(&g, client, logger, &ds)
-		k8s.WatchEndpoints(&g, client, logger, &ds)
-		k8s.WatchIngress(&g, client, logger, &ds)
+		// REST v1 support
+		ds := contour.DataSource{
+			Logger: logger.WithPrefix("DataSource"),
+		}
+
+		// gRPC v2 support
+		t := envoy.Translator{
+			Logger:                     logger.WithPrefix("Translator"),
+			ClusterCache:               envoy.NewClusterCache(),
+			ClusterLoadAssignmentCache: envoy.NewClusterLoadAssignmentCache(),
+			VirtualHostCache:           envoy.NewVirtualHostCache(),
+		}
+
+		// workgroup registration
+		var g workgroup.Group
+		k8s.WatchServices(&g, client, logger, &ds, &t)
+		k8s.WatchEndpoints(&g, client, logger, &ds, &t)
+		k8s.WatchIngress(&g, client, logger, &ds, &t)
 
 		g.Add(func(stop <-chan struct{}) {
 			logger := logger.WithPrefix("JSONAPI")
@@ -101,7 +111,7 @@ func main() {
 				logger.Errorf("could not listen on %s: %v", V2_API_ADDRESS, err)
 				return // TODO(dfc) should return the error not log it
 			}
-			s := contour.NewGRPCAPI(logger)
+			s := contour.NewGRPCAPI(logger, t.ClusterCache, t.ClusterLoadAssignmentCache, t.VirtualHostCache)
 			logger.Infof("started")
 			defer logger.Infof("stopped")
 			s.Serve(l)

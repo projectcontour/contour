@@ -14,46 +14,68 @@
 package contour
 
 import (
-	"context"
-	"reflect"
 	"testing"
 
-	"k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
-
 	v2 "github.com/envoyproxy/go-control-plane/api"
-	"github.com/heptio/contour/internal/log/stdlog"
 )
-
-func TestGRPCAPIFetchClusters(t *testing.T) {
-	tests := []struct {
-		name      string
-		services  []*v1.Service
-		endpoints []*v1.Endpoints
-		ingresses []*v1beta1.Ingress
-		req       v2.DiscoveryRequest
-		want      v2.DiscoveryResponse
-	}{}
-
-	var w discardWriter
-	l := stdlog.New(w, w, 0)
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			api := &grpcAPI{
-				Logger: l,
-			}
-			got, err := api.FetchClusters(context.TODO(), &tc.req)
-			checkErr(t, err)
-			if !reflect.DeepEqual(&tc.want, got) {
-				t.Fatalf("expected: %q, got %q", tc.want, got)
-			}
-		})
-	}
-}
 
 func checkErr(t *testing.T, err error) {
 	t.Helper()
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+type testClusterCache map[string]*v2.Cluster
+
+func (cc testClusterCache) Add(c *v2.Cluster) {
+	cc[c.Name] = c
+}
+
+func (cc testClusterCache) Remove(name string) {
+	delete(cc, name)
+}
+
+func (cc testClusterCache) Values() []*v2.Cluster {
+	var r []*v2.Cluster
+	for _, v := range cc {
+		r = append(r, v)
+	}
+	return r
+}
+
+type testClusterLoadAssignmentCache map[string]*v2.ClusterLoadAssignment
+
+func (cc testClusterLoadAssignmentCache) Add(c *v2.ClusterLoadAssignment) {
+	cc[c.ClusterName] = c
+}
+
+func (cc testClusterLoadAssignmentCache) Remove(name string) {
+	delete(cc, name)
+}
+
+func (cc testClusterLoadAssignmentCache) Values() []*v2.ClusterLoadAssignment {
+	var r []*v2.ClusterLoadAssignment
+	for _, v := range cc {
+		r = append(r, v)
+	}
+	return r
+}
+
+type testVirtualHostCache map[string]*v2.VirtualHost
+
+func (cc testVirtualHostCache) Add(c *v2.VirtualHost) {
+	cc[c.Name] = c
+}
+
+func (cc testVirtualHostCache) Remove(name string) {
+	delete(cc, name)
+}
+
+func (cc testVirtualHostCache) Values() []*v2.VirtualHost {
+	var r []*v2.VirtualHost
+	for _, v := range cc {
+		r = append(r, v)
+	}
+	return r
 }
