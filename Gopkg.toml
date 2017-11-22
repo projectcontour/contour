@@ -14,6 +14,10 @@
   name="k8s.io/api"
   branch="release-1.8"
 
+[[constraint]]
+  name="google.golang.org/grpc"
+  version="~1.7"
+
 [[override]]
   name="k8s.io/apimachinery"
   branch="release-1.8"
