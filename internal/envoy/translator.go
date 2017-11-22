@@ -205,6 +205,16 @@ type IngressResourceHandler struct {
 }
 
 func (t *Translator) translateIngress(i *v1beta1.Ingress) {
+	class, ok := i.Annotations["kubernetes.io/ingress.class"]
+	if ok && class != "contour" {
+		// if there is an ingress class set, but it is not set to "contour"
+		// ignore this ingress.
+		// TODO(dfc) we should also skip creating any cluster backends,
+		// but this is hard to do at the moment because cds and rds are
+		// independent.
+		return
+	}
+
 	if i.Spec.Backend != nil {
 		v := v2.VirtualHost{
 			Name:    hashname(60, i.Namespace, i.Name),
@@ -225,6 +235,71 @@ func (t *Translator) translateIngress(i *v1beta1.Ingress) {
 			}},
 		}
 		t.VirtualHostCache.Add(&v)
+		return
+	}
+
+	for _, rule := range i.Spec.Rules {
+		v := v2.VirtualHost{
+			Name:    hashname(60, i.Namespace, i.Name, rule.Host),
+			Domains: []string{rule.Host},
+		}
+		if rule.IngressRuleValue.HTTP == nil {
+			t.Errorf("ingress %s/%s: Ingress.Spec.Rules[0].IngressRuleValue.HTTP is nil", i.ObjectMeta.Namespace, i.ObjectMeta.Name)
+			return
+		}
+		for _, p := range rule.IngressRuleValue.HTTP.Paths {
+			m := pathToRouteMatch(p)
+			a := backendToAction(i, &p)
+			v.Routes = append(v.Routes, &v2.Route{Match: m, Action: a})
+		}
+		t.VirtualHostCache.Add(&v)
+	}
+}
+
+// pathToRoute converts a HTTPIngressPath to a partial v2.RouteMatch.
+func pathToRouteMatch(p v1beta1.HTTPIngressPath) *v2.RouteMatch {
+	if p.Path == "" {
+		// If the Path is empty, the k8s spec says
+		// "If unspecified, the path defaults to a catch all sending
+		// traffic to the backend."
+		// We map this it a catch all prefix route.
+		return &v2.RouteMatch{
+			PathSpecifier: &v2.RouteMatch_Prefix{
+				Prefix: "/", // match all
+			},
+		}
+	}
+	// TODO(dfc) handle the case where p.Path does not start with "/"
+	if strings.IndexAny(p.Path, `[(*\`) == -1 {
+		// Envoy requires that regex matches match completely, wheres the
+		// HTTPIngressPath.Path regex only requires a partial match. eg,
+		// "/foo" matches "/" according to k8s rules, but does not match
+		// according to Envoy.
+		// To deal with this we handle the simple case, a Path without regex
+		// characters as a Envoy prefix route.
+		return &v2.RouteMatch{
+			PathSpecifier: &v2.RouteMatch_Prefix{
+				Prefix: p.Path,
+			},
+		}
+	}
+	// At this point the path is a regex, which we hope is the same between k8s
+	// IEEE 1003.1 POSIX regex, and Envoys Javascript regex.
+	return &v2.RouteMatch{
+		PathSpecifier: &v2.RouteMatch_Regex{
+			Regex: p.Path,
+		},
+	}
+}
+
+// backendToAction converts an Ingress and Ingress Rule Path to a v2.Route_Route.
+func backendToAction(i *v1beta1.Ingress, p *v1beta1.HTTPIngressPath) *v2.Route_Route {
+	return &v2.Route_Route{
+		Route: &v2.RouteAction{
+			ClusterSpecifier: &v2.RouteAction_Cluster{
+				Cluster: ingressBackendToClusterName(i, &p.Backend),
+			},
+		},
 	}
 }
 

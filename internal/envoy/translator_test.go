@@ -251,6 +251,104 @@ func TestTranslateIngress(t *testing.T) {
 				}},
 			},
 		},
+	}, {
+		name: "incorrect ingress class",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "incorrect",
+				Namespace: "default",
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.class": "nginx",
+				},
+			},
+			Spec: v1beta1.IngressSpec{
+				Backend: &v1beta1.IngressBackend{
+					ServiceName: "backend",
+					ServicePort: intstr.FromInt(80),
+				},
+			},
+		},
+		want: make(testVirtualHostCache), // expected to be empty, the ingress class is ingnored
+	}, {
+		name: "explicit ingress class",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "correct",
+				Namespace: "default",
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.class": "contour",
+				},
+			},
+			Spec: v1beta1.IngressSpec{
+				Backend: &v1beta1.IngressBackend{
+					ServiceName: "backend",
+					ServicePort: intstr.FromInt(80),
+				},
+			},
+		},
+		want: testVirtualHostCache{
+			"default/correct": &v2.VirtualHost{
+				Name:    "default/correct",
+				Domains: []string{"*"},
+				Routes: []*v2.Route{{
+					Match: &v2.RouteMatch{
+						PathSpecifier: &v2.RouteMatch_Prefix{
+							Prefix: "/", // match all
+						},
+					},
+					Action: &v2.Route_Route{
+						Route: &v2.RouteAction{
+							ClusterSpecifier: &v2.RouteAction_Cluster{
+								Cluster: "default/backend/80",
+							},
+						},
+					},
+				}},
+			},
+		},
+	}, {
+		name: "name based vhost",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "httpbin",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					Host: "httpbin.org",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "httpbin-org",
+									ServicePort: intstr.FromInt(80),
+								},
+							}},
+						},
+					},
+				}},
+			},
+		},
+		want: testVirtualHostCache{
+			"default/httpbin/httpbin.org": &v2.VirtualHost{
+				Name:    "default/httpbin/httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []*v2.Route{{
+					Match: &v2.RouteMatch{
+						PathSpecifier: &v2.RouteMatch_Prefix{
+							Prefix: "/", // match all
+						},
+					},
+					Action: &v2.Route_Route{
+						Route: &v2.RouteAction{
+							ClusterSpecifier: &v2.RouteAction_Cluster{
+								Cluster: "default/httpbin-org/80",
+							},
+						},
+					},
+				}},
+			},
+		},
 	}}
 
 	for _, tc := range tests {
