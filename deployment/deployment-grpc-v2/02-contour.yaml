@@ -9,7 +9,7 @@ spec:
   selector:
     matchLabels:
       app: contour
-  replicas: 1
+  replicas: 2
   template:
     metadata:
       labels:
