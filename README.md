@@ -116,7 +116,7 @@ See [the list of releases][6] to find out about feature changes.
 
 [0]: https://github.com/heptio
 [1]: https://travis-ci.org/heptio/contour.svg?branch=master
-[2]: https://jenkins.i.heptio.com/job/contour-master
+[2]: https://travis-ci.org/heptio/contour
 [3]: /docs
 [4]: https://github.com/heptio/contour/issues
 [5]: /CONTRIBUTING.md
