@@ -80,7 +80,15 @@ How you configure DNS depends on your platform:
 
 - On AWS, create a CNAME record that maps the host in your Ingress object to the ELB address.
 - If you have an IP address instead (on GCE, for example), create an A record.
-- On Minikube, you can fake DNS by editing `/etc/hosts`.
+- On Minikube, you can fake DNS by editing `/etc/hosts` or you can use the provided example and not have to modify dns on your local machine.
+
+Run:
+
+```
+$ kubectl apply -f http://j.hept.io/contour-kuard-minikube-example
+```
+
+This example yaml specifies `kuard.192.168.99.100.nip.io` as a specific ingress backend for kuard. It uses nip.io and the minikube ip address to have kuard only respond to http://kuard.192.168.99.100.nip.io. Once that is applied you can visit http://kuard.192.168.99.100.nip.io and see the kuard example application.
 
 ### More information and documentation
 
