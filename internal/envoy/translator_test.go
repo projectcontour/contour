@@ -57,9 +57,9 @@ func TestTranslateService(t *testing.T) {
 			Port:       80,
 			TargetPort: intstr.FromInt(6502),
 		}),
-		want: testClusterCache{
-			"default/simple/80": cluster("default/simple/80", "default/simple/6502"),
-		},
+		want: clustercache(
+			cluster("default/simple/80", "default/simple/6502"),
+		),
 	}, {
 		name: "long namespace and service name",
 		svc: service(
@@ -71,12 +71,12 @@ func TestTranslateService(t *testing.T) {
 				TargetPort: intstr.FromInt(6502),
 			},
 		),
-		want: testClusterCache{
-			"beurocratic-company-test-domain-1/tiny-cog-depa-52e801/80": cluster(
+		want: clustercache(
+			cluster(
 				"beurocratic-company-test-domain-1/tiny-cog-depa-52e801/80",
 				"beurocratic-company-test-domain-1/tiny-cog-department-test-instance/6502", // ServiceName is not subject to the 60 char limit
 			),
-		},
+		),
 	}, {
 		name: "single named service port",
 		svc: service("default", "simple", v1.ServicePort{
@@ -85,10 +85,10 @@ func TestTranslateService(t *testing.T) {
 			Port:       80,
 			TargetPort: intstr.FromInt(6502),
 		}),
-		want: testClusterCache{
-			"default/simple/http": cluster("default/simple/http", "default/simple/6502"),
-			"default/simple/80":   cluster("default/simple/80", "default/simple/6502"),
-		},
+		want: clustercache(
+			cluster("default/simple/http", "default/simple/6502"),
+			cluster("default/simple/80", "default/simple/6502"),
+		),
 	}, {
 		name: "two service ports",
 		svc: service("default", "simple", v1.ServicePort{
@@ -102,12 +102,12 @@ func TestTranslateService(t *testing.T) {
 			Port:       8080,
 			TargetPort: intstr.FromString("9001"),
 		}),
-		want: testClusterCache{
-			"default/simple/http": cluster("default/simple/http", "default/simple/6502"),
-			"default/simple/80":   cluster("default/simple/80", "default/simple/6502"),
-			"default/simple/alt":  cluster("default/simple/alt", "default/simple/9001"),
-			"default/simple/8080": cluster("default/simple/8080", "default/simple/9001"),
-		},
+		want: clustercache(
+			cluster("default/simple/http", "default/simple/6502"),
+			cluster("default/simple/80", "default/simple/6502"),
+			cluster("default/simple/alt", "default/simple/9001"),
+			cluster("default/simple/8080", "default/simple/9001"),
+		),
 	}, {
 		name: "one tcp service, one udp service",
 		svc: service("default", "simple", v1.ServicePort{
@@ -119,9 +119,9 @@ func TestTranslateService(t *testing.T) {
 			Port:       8080,
 			TargetPort: intstr.FromString("9001"),
 		}),
-		want: testClusterCache{
-			"default/simple/8080": cluster("default/simple/8080", "default/simple/9001"),
-		},
+		want: clustercache(
+			cluster("default/simple/8080", "default/simple/9001"),
+		),
 	}, {
 		name: "one udp service",
 		svc: service("default", "simple", v1.ServicePort{
@@ -129,7 +129,7 @@ func TestTranslateService(t *testing.T) {
 			Port:       80,
 			TargetPort: intstr.FromInt(6502),
 		}),
-		want: testClusterCache{},
+		want: clustercache(),
 	}}
 
 	for _, tc := range tests {
@@ -494,4 +494,12 @@ func cluster(name, servicename string) *v2.Cluster {
 		},
 		LbPolicy: v2.Cluster_ROUND_ROBIN,
 	}
+}
+
+func clustercache(clusters ...*v2.Cluster) testClusterCache {
+	cc := make(testClusterCache)
+	for _, c := range clusters {
+		cc[c.Name] = c
+	}
+	return cc
 }
