@@ -45,7 +45,7 @@ func (cc testClusterCache) Values() []*v2.Cluster {
 	return r
 }
 
-func TestTranslateService(t *testing.T) {
+func TestTranslatorAddService(t *testing.T) {
 	tests := []struct {
 		name string
 		svc  *v1.Service
@@ -140,9 +140,81 @@ func TestTranslateService(t *testing.T) {
 				Logger:       stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
 				ClusterCache: cc,
 			}
-			tr.translateService(tc.svc)
+			tr.addService(tc.svc)
 			if !reflect.DeepEqual(tc.want, tr.ClusterCache) {
 				t.Fatalf("translateService(%v): got: %v, want: %v", tc.svc, tr.ClusterCache, tc.want)
+			}
+		})
+	}
+}
+
+func TestTranslatoraddService(t *testing.T) {
+	tests := []struct {
+		name string
+		svc  *v1.Service
+		want []*v2.Cluster
+	}{{
+		name: "single service port",
+		svc: service("default", "simple", v1.ServicePort{
+			Protocol:   "TCP",
+			Port:       80,
+			TargetPort: intstr.FromInt(6502),
+		}),
+		want: []*v2.Cluster{
+			cluster("default/simple/80", "default/simple/6502"),
+		},
+	}}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			const NOFLAGS = 1 << 16
+			tr := &Translator{
+				Logger:       stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+				ClusterCache: NewClusterCache(),
+			}
+			tr.addService(tc.svc)
+			got := tr.ClusterCache.Values()
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("addService(%v): got: %v, want: %v", tc.svc, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestTranslatorremoveService(t *testing.T) {
+	tests := map[string]struct {
+		setup func(*Translator)
+		svc   *v1.Service
+		want  []*v2.Cluster
+	}{
+		"remove existing": {
+			setup: func(tr *Translator) {
+				tr.addService(service("default", "simple", v1.ServicePort{
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(6502),
+				}))
+			},
+			svc: service("default", "simple", v1.ServicePort{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(6502),
+			}),
+			want: []*v2.Cluster{},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			const NOFLAGS = 1 << 16
+			tr := &Translator{
+				Logger:       stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+				ClusterCache: NewClusterCache(),
+			}
+			tc.setup(tr)
+			tr.removeService(tc.svc)
+			got := tr.ClusterCache.Values()
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("removeService(%v): got: %v, want: %v", tc.svc, got, tc.want)
 			}
 		})
 	}
@@ -166,7 +238,7 @@ func (cc testClusterLoadAssignmentCache) Values() []*v2.ClusterLoadAssignment {
 	return r
 }
 
-func TestTranslateEndpoints(t *testing.T) {
+func TestTranslatorAddEndpoints(t *testing.T) {
 	tests := []struct {
 		name string
 		ep   *v1.Endpoints
@@ -209,7 +281,7 @@ func TestTranslateEndpoints(t *testing.T) {
 				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
 				ClusterLoadAssignmentCache: cc,
 			}
-			tr.translateEndpoints(tc.ep)
+			tr.addEndpoints(tc.ep)
 			if !reflect.DeepEqual(tc.want, tr.ClusterLoadAssignmentCache) {
 				t.Fatalf("translateEndpoints(%v): got: %v, want: %v", tc.ep, tr.ClusterLoadAssignmentCache, tc.want)
 			}
@@ -235,7 +307,7 @@ func (cc testVirtualHostCache) Values() []*v2.VirtualHost {
 	return r
 }
 
-func TestTranslateIngress(t *testing.T) {
+func TestTranslatorAddIngress(t *testing.T) {
 	tests := []struct {
 		name string
 		ing  *v1beta1.Ingress
@@ -306,7 +378,7 @@ func TestTranslateIngress(t *testing.T) {
 				Domains: []string{"*"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"), // match all
-					Action: action("default/backend/80"),
+					Action: clusteraction("default/backend/80"),
 				}},
 			},
 		),
@@ -319,10 +391,35 @@ func TestTranslateIngress(t *testing.T) {
 			},
 			Spec: v1beta1.IngressSpec{
 				Rules: []v1beta1.IngressRule{{
+					Host:             "httpbin.org",
+					IngressRuleValue: ingressrulevalue(backend("httpbin-org", intstr.FromInt(80))),
+				}},
+			},
+		},
+		want: virtualhostcache(
+			&v2.VirtualHost{
+				Name:    "default/httpbin/httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []*v2.Route{{
+					Match:  prefixmatch("/"), // match all
+					Action: clusteraction("default/httpbin-org/80"),
+				}},
+			},
+		),
+	}, {
+		name: "regex vhost without match characters",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "httpbin",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
 					Host: "httpbin.org",
 					IngressRuleValue: v1beta1.IngressRuleValue{
 						HTTP: &v1beta1.HTTPIngressRuleValue{
 							Paths: []v1beta1.HTTPIngressPath{{
+								Path:    "/ip", // this field _is_ a regex
 								Backend: *backend("httpbin-org", intstr.FromInt(80)),
 							}},
 						},
@@ -335,13 +432,13 @@ func TestTranslateIngress(t *testing.T) {
 				Name:    "default/httpbin/httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
-					Match:  prefixmatch("/"), // match all
-					Action: action("default/httpbin-org/80"),
+					Match:  prefixmatch("/ip"), // if the field does not contact any regex characters, we treat it as a prefix
+					Action: clusteraction("default/httpbin-org/80"),
 				}},
 			},
 		),
 	}, {
-		name: "regex vhost",
+		name: "regex vhost with match characters",
 		ing: &v1beta1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "httpbin",
@@ -353,11 +450,8 @@ func TestTranslateIngress(t *testing.T) {
 					IngressRuleValue: v1beta1.IngressRuleValue{
 						HTTP: &v1beta1.HTTPIngressRuleValue{
 							Paths: []v1beta1.HTTPIngressPath{{
-								Path: "/ip", // this field _is_ a regex
-								Backend: v1beta1.IngressBackend{
-									ServiceName: "httpbin-org",
-									ServicePort: intstr.FromInt(80),
-								},
+								Path:    "/get.*", // this field _is_ a regex
+								Backend: *backend("httpbin-org", intstr.FromInt(80)),
 							}},
 						},
 					},
@@ -369,8 +463,8 @@ func TestTranslateIngress(t *testing.T) {
 				Name:    "default/httpbin/httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
-					Match:  prefixmatch("/ip"),
-					Action: action("default/httpbin-org/80"),
+					Match:  regexmatch("/get.*"),
+					Action: clusteraction("default/httpbin-org/80"),
 				}},
 			},
 		),
@@ -383,17 +477,8 @@ func TestTranslateIngress(t *testing.T) {
 			},
 			Spec: v1beta1.IngressSpec{
 				Rules: []v1beta1.IngressRule{{
-					Host: "httpbin.org",
-					IngressRuleValue: v1beta1.IngressRuleValue{
-						HTTP: &v1beta1.HTTPIngressRuleValue{
-							Paths: []v1beta1.HTTPIngressPath{{
-								Backend: v1beta1.IngressBackend{
-									ServiceName: "httpbin-org",
-									ServicePort: intstr.FromString("http"),
-								},
-							}},
-						},
-					},
+					Host:             "httpbin.org",
+					IngressRuleValue: ingressrulevalue(backend("httpbin-org", intstr.FromString("http"))),
 				}},
 			},
 		},
@@ -403,7 +488,7 @@ func TestTranslateIngress(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"),
-					Action: action("default/httpbin-org/http"),
+					Action: clusteraction("default/httpbin-org/http"),
 				}},
 			},
 		),
@@ -420,17 +505,11 @@ func TestTranslateIngress(t *testing.T) {
 					IngressRuleValue: v1beta1.IngressRuleValue{
 						HTTP: &v1beta1.HTTPIngressRuleValue{
 							Paths: []v1beta1.HTTPIngressPath{{
-								Path: "/peter",
-								Backend: v1beta1.IngressBackend{
-									ServiceName: "peter",
-									ServicePort: intstr.FromInt(80),
-								},
+								Path:    "/peter",
+								Backend: *backend("peter", intstr.FromInt(80)),
 							}, {
-								Path: "/paul",
-								Backend: v1beta1.IngressBackend{
-									ServiceName: "paul",
-									ServicePort: intstr.FromString("paul"),
-								},
+								Path:    "/paul",
+								Backend: *backend("paul", intstr.FromString("paul")),
 							}},
 						},
 					},
@@ -443,10 +522,10 @@ func TestTranslateIngress(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/peter"),
-					Action: action("default/peter/80"),
+					Action: clusteraction("default/peter/80"),
 				}, {
 					Match:  prefixmatch("/paul"),
-					Action: action("default/paul/paul"),
+					Action: clusteraction("default/paul/paul"),
 				}},
 			},
 		),
@@ -459,29 +538,11 @@ func TestTranslateIngress(t *testing.T) {
 			},
 			Spec: v1beta1.IngressSpec{
 				Rules: []v1beta1.IngressRule{{
-					Host: "httpbin.org",
-					IngressRuleValue: v1beta1.IngressRuleValue{
-						HTTP: &v1beta1.HTTPIngressRuleValue{
-							Paths: []v1beta1.HTTPIngressPath{{
-								Backend: v1beta1.IngressBackend{
-									ServiceName: "peter",
-									ServicePort: intstr.FromInt(80),
-								},
-							}},
-						},
-					},
+					Host:             "httpbin.org",
+					IngressRuleValue: ingressrulevalue(backend("peter", intstr.FromInt(80))),
 				}, {
-					Host: "admin.httpbin.org",
-					IngressRuleValue: v1beta1.IngressRuleValue{
-						HTTP: &v1beta1.HTTPIngressRuleValue{
-							Paths: []v1beta1.HTTPIngressPath{{
-								Backend: v1beta1.IngressBackend{
-									ServiceName: "paul",
-									ServicePort: intstr.FromString("paul"),
-								},
-							}},
-						},
-					},
+					Host:             "admin.httpbin.org",
+					IngressRuleValue: ingressrulevalue(backend("paul", intstr.FromString("paul"))),
 				}},
 			},
 		},
@@ -490,14 +551,14 @@ func TestTranslateIngress(t *testing.T) {
 			Domains: []string{"httpbin.org"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/"),
-				Action: action("default/peter/80"),
+				Action: clusteraction("default/peter/80"),
 			}},
 		}, {
 			Name:    "default/httpbin/admin.httpbin.org",
 			Domains: []string{"admin.httpbin.org"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/"),
-				Action: action("default/paul/paul"),
+				Action: clusteraction("default/paul/paul"),
 			}},
 		}}...),
 	}, {
@@ -509,17 +570,8 @@ func TestTranslateIngress(t *testing.T) {
 			},
 			Spec: v1beta1.IngressSpec{
 				Rules: []v1beta1.IngressRule{{
-					Host: "my-very-very-long-service-host-name.my.domainname",
-					IngressRuleValue: v1beta1.IngressRuleValue{
-						HTTP: &v1beta1.HTTPIngressRuleValue{
-							Paths: []v1beta1.HTTPIngressPath{{
-								Backend: v1beta1.IngressBackend{
-									ServiceName: "my-service-name",
-									ServicePort: intstr.FromInt(80),
-								},
-							}},
-						},
-					},
+					Host:             "my-very-very-long-service-host-name.my.domainname",
+					IngressRuleValue: ingressrulevalue(backend("my-service-name", intstr.FromInt(80))),
 				}},
 			},
 		},
@@ -529,7 +581,7 @@ func TestTranslateIngress(t *testing.T) {
 				Domains: []string{"my-very-very-long-service-host-name.my.domainname"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"),
-					Action: action("default/my-service-name/80"),
+					Action: clusteraction("default/my-service-name/80"),
 				}},
 			},
 		),
@@ -543,7 +595,7 @@ func TestTranslateIngress(t *testing.T) {
 				Logger:           stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
 				VirtualHostCache: cc,
 			}
-			tr.translateIngress(tc.ing)
+			tr.addIngress(tc.ing)
 			if !reflect.DeepEqual(tc.want, tr.VirtualHostCache) {
 				t.Fatalf("translateIngress(%v): got: %v, want: %v", tc.ing, tr.VirtualHostCache, tc.want)
 			}
@@ -739,20 +791,12 @@ func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
 	}
 }
 
-func prefixmatch(prefix string) *v2.RouteMatch {
-	return &v2.RouteMatch{
-		PathSpecifier: &v2.RouteMatch_Prefix{
-			Prefix: prefix,
-		},
-	}
-}
-
-func action(cluster string) *v2.Route_Route {
-	return &v2.Route_Route{
-		Route: &v2.RouteAction{
-			ClusterSpecifier: &v2.RouteAction_Cluster{
-				Cluster: cluster,
-			},
+func ingressrulevalue(backend *v1beta1.IngressBackend) v1beta1.IngressRuleValue {
+	return v1beta1.IngressRuleValue{
+		HTTP: &v1beta1.HTTPIngressRuleValue{
+			Paths: []v1beta1.HTTPIngressPath{{
+				Backend: *backend,
+			}},
 		},
 	}
 }

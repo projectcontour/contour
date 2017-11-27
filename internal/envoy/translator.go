@@ -50,8 +50,18 @@ func (t *Translator) OnAdd(obj interface{}) {
 	}
 }
 
-func (t *Translator) OnUpdate(_, newObj interface{}) {
-	t.OnAdd(newObj)
+func (t *Translator) OnUpdate(oldObj, newObj interface{}) {
+	// TODO(dfc) need to inspect oldObj and remove unused parts of the config from the cache.
+	switch newObj := newObj.(type) {
+	case *v1.Service:
+		t.addService(newObj)
+	case *v1.Endpoints:
+		t.addEndpoints(newObj)
+	case *v1beta1.Ingress:
+		t.addIngress(newObj)
+	default:
+		t.Errorf("OnUpdate unexpected type %T: %#v", newObj, newObj)
+	}
 }
 
 func (t *Translator) OnDelete(obj interface{}) {
@@ -69,25 +79,13 @@ func (t *Translator) OnDelete(obj interface{}) {
 	}
 }
 
-func (t *Translator) addService(svc *v1.Service) {
-	t.translateService(svc)
-}
-
-func (t *Translator) addEndpoints(ep *v1.Endpoints) {
-	t.translateEndpoints(ep)
-}
-
-func (t *Translator) addIngress(i *v1beta1.Ingress) {
-	t.translateIngress(i)
-}
-
 const (
 	nanosecond  = 1
 	microsecond = 1000 * nanosecond
 	millisecond = 1000 * microsecond
 )
 
-func (t *Translator) translateService(svc *v1.Service) {
+func (t *Translator) addService(svc *v1.Service) {
 	for _, p := range svc.Spec.Ports {
 		switch p.Protocol {
 		case "TCP":
@@ -133,9 +131,21 @@ func (t *Translator) translateService(svc *v1.Service) {
 	}
 }
 
-func (t *Translator) removeService(s *v1.Service) {
-	name := hashname(60, s.Namespace, s.Name)
-	t.ClusterCache.Remove(name)
+func (t *Translator) removeService(svc *v1.Service) {
+	for _, p := range svc.Spec.Ports {
+		switch p.Protocol {
+		case "TCP":
+			if p.Name != "" {
+				// service port is named, so we must generate both a cluster for the port name
+				// and a cluster for the port number.
+				t.ClusterCache.Remove(hashname(60, svc.ObjectMeta.Namespace, svc.ObjectMeta.Name, p.Name))
+			}
+			t.ClusterCache.Remove(hashname(60, svc.ObjectMeta.Namespace, svc.ObjectMeta.Name, strconv.Itoa(int(p.Port))))
+		default:
+			// ignore UDP and other port types.
+		}
+
+	}
 }
 
 type ClusterLoadAssignmentHandler struct {
@@ -143,7 +153,7 @@ type ClusterLoadAssignmentHandler struct {
 	log.Logger
 }
 
-func (t *Translator) translateEndpoints(e *v1.Endpoints) {
+func (t *Translator) addEndpoints(e *v1.Endpoints) {
 	for _, s := range e.Subsets {
 		// skip any subsets that don't ahve ready addresses or ports
 		if len(s.Addresses) == 0 || len(s.Ports) == 0 {
@@ -204,7 +214,7 @@ type IngressResourceHandler struct {
 	log.Logger
 }
 
-func (t *Translator) translateIngress(i *v1beta1.Ingress) {
+func (t *Translator) addIngress(i *v1beta1.Ingress) {
 	class, ok := i.Annotations["kubernetes.io/ingress.class"]
 	if ok && class != "contour" {
 		// if there is an ingress class set, but it is not set to "contour"
@@ -220,18 +230,8 @@ func (t *Translator) translateIngress(i *v1beta1.Ingress) {
 			Name:    hashname(60, i.Namespace, i.Name),
 			Domains: []string{"*"},
 			Routes: []*v2.Route{{
-				Match: &v2.RouteMatch{
-					PathSpecifier: &v2.RouteMatch_Prefix{
-						Prefix: "/", // match all
-					},
-				},
-				Action: &v2.Route_Route{
-					Route: &v2.RouteAction{
-						ClusterSpecifier: &v2.RouteAction_Cluster{
-							Cluster: ingressBackendToClusterName(i, i.Spec.Backend),
-						},
-					},
-				},
+				Match:  prefixmatch("/"), // match all
+				Action: clusteraction(ingressBackendToClusterName(i, i.Spec.Backend)),
 			}},
 		}
 		t.VirtualHostCache.Add(&v)
@@ -249,7 +249,7 @@ func (t *Translator) translateIngress(i *v1beta1.Ingress) {
 		}
 		for _, p := range rule.IngressRuleValue.HTTP.Paths {
 			m := pathToRouteMatch(p)
-			a := backendToAction(i, &p)
+			a := clusteraction(ingressBackendToClusterName(i, &p.Backend))
 			v.Routes = append(v.Routes, &v2.Route{Match: m, Action: a})
 		}
 		t.VirtualHostCache.Add(&v)
@@ -263,11 +263,7 @@ func pathToRouteMatch(p v1beta1.HTTPIngressPath) *v2.RouteMatch {
 		// "If unspecified, the path defaults to a catch all sending
 		// traffic to the backend."
 		// We map this it a catch all prefix route.
-		return &v2.RouteMatch{
-			PathSpecifier: &v2.RouteMatch_Prefix{
-				Prefix: "/", // match all
-			},
-		}
+		return prefixmatch("/") // match all
 	}
 	// TODO(dfc) handle the case where p.Path does not start with "/"
 	if strings.IndexAny(p.Path, `[(*\`) == -1 {
@@ -277,30 +273,11 @@ func pathToRouteMatch(p v1beta1.HTTPIngressPath) *v2.RouteMatch {
 		// according to Envoy.
 		// To deal with this we handle the simple case, a Path without regex
 		// characters as a Envoy prefix route.
-		return &v2.RouteMatch{
-			PathSpecifier: &v2.RouteMatch_Prefix{
-				Prefix: p.Path,
-			},
-		}
+		return prefixmatch(p.Path)
 	}
 	// At this point the path is a regex, which we hope is the same between k8s
 	// IEEE 1003.1 POSIX regex, and Envoys Javascript regex.
-	return &v2.RouteMatch{
-		PathSpecifier: &v2.RouteMatch_Regex{
-			Regex: p.Path,
-		},
-	}
-}
-
-// backendToAction converts an Ingress and Ingress Rule Path to a v2.Route_Route.
-func backendToAction(i *v1beta1.Ingress, p *v1beta1.HTTPIngressPath) *v2.Route_Route {
-	return &v2.Route_Route{
-		Route: &v2.RouteAction{
-			ClusterSpecifier: &v2.RouteAction_Cluster{
-				Cluster: ingressBackendToClusterName(i, &p.Backend),
-			},
-		},
-	}
+	return regexmatch(p.Path)
 }
 
 func (t *Translator) removeIngress(i *v1beta1.Ingress) {
@@ -359,4 +336,33 @@ func min(a, b int) int {
 // ingressBackendToClusterName renders a cluster name from an Ingress and an IngressBackend.
 func ingressBackendToClusterName(i *v1beta1.Ingress, b *v1beta1.IngressBackend) string {
 	return hashname(60, i.ObjectMeta.Namespace, b.ServiceName, b.ServicePort.String())
+}
+
+// prefixmatch returns a RouteMatch for the supplied prefix.
+func prefixmatch(prefix string) *v2.RouteMatch {
+	return &v2.RouteMatch{
+		PathSpecifier: &v2.RouteMatch_Prefix{
+			Prefix: prefix,
+		},
+	}
+}
+
+// regexmatch returns a RouteMatch for the supplied regex.
+func regexmatch(regex string) *v2.RouteMatch {
+	return &v2.RouteMatch{
+		PathSpecifier: &v2.RouteMatch_Regex{
+			Regex: regex,
+		},
+	}
+}
+
+// clusteraction returns a Route_Route action for the supplied cluster.
+func clusteraction(cluster string) *v2.Route_Route {
+	return &v2.Route_Route{
+		Route: &v2.RouteAction{
+			ClusterSpecifier: &v2.RouteAction_Cluster{
+				Cluster: cluster,
+			},
+		},
+	}
 }
