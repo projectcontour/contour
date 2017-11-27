@@ -52,43 +52,84 @@ func TestTranslateService(t *testing.T) {
 		want testClusterCache
 	}{{
 		name: "single service port",
-		svc: &v1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "simple",
-				Namespace: "default",
+		svc: service("default", "simple", v1.ServicePort{
+			Protocol:   "TCP",
+			Port:       80,
+			TargetPort: intstr.FromInt(6502),
+		}),
+		want: clustercache(
+			cluster("default/simple/80", "default/simple/6502"),
+		),
+	}, {
+		name: "long namespace and service name",
+		svc: service(
+			"beurocratic-company-test-domain-1",
+			"tiny-cog-department-test-instance",
+			v1.ServicePort{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(6502),
 			},
-			Spec: v1.ServiceSpec{
-				Selector: map[string]string{
-					"app": "simple",
-				},
-				Ports: []v1.ServicePort{{
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(6502),
-				}},
-			},
-		},
-		want: testClusterCache{
-			"default/simple/80": &v2.Cluster{
-				Name: "default/simple/80",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig: &v2.ConfigSource{
-						ConfigSourceSpecifier: &v2.ConfigSource_ApiConfigSource{
-							ApiConfigSource: &v2.ApiConfigSource{
-								ApiType:     v2.ApiConfigSource_GRPC,
-								ClusterName: []string{"xds_cluster"},
-							},
-						},
-					},
-					ServiceName: "default/simple/6502",
-				},
-				ConnectTimeout: &duration.Duration{
-					Nanos: 250 * millisecond,
-				},
-				LbPolicy: v2.Cluster_ROUND_ROBIN,
-			},
-		},
+		),
+		want: clustercache(
+			cluster(
+				"beurocratic-company-test-domain-1/tiny-cog-depa-52e801/80",
+				"beurocratic-company-test-domain-1/tiny-cog-department-test-instance/6502", // ServiceName is not subject to the 60 char limit
+			),
+		),
+	}, {
+		name: "single named service port",
+		svc: service("default", "simple", v1.ServicePort{
+			Name:       "http",
+			Protocol:   "TCP",
+			Port:       80,
+			TargetPort: intstr.FromInt(6502),
+		}),
+		want: clustercache(
+			cluster("default/simple/http", "default/simple/6502"),
+			cluster("default/simple/80", "default/simple/6502"),
+		),
+	}, {
+		name: "two service ports",
+		svc: service("default", "simple", v1.ServicePort{
+			Name:       "http",
+			Protocol:   "TCP",
+			Port:       80,
+			TargetPort: intstr.FromInt(6502),
+		}, v1.ServicePort{
+			Name:       "alt",
+			Protocol:   "TCP",
+			Port:       8080,
+			TargetPort: intstr.FromString("9001"),
+		}),
+		want: clustercache(
+			cluster("default/simple/http", "default/simple/6502"),
+			cluster("default/simple/80", "default/simple/6502"),
+			cluster("default/simple/alt", "default/simple/9001"),
+			cluster("default/simple/8080", "default/simple/9001"),
+		),
+	}, {
+		name: "one tcp service, one udp service",
+		svc: service("default", "simple", v1.ServicePort{
+			Protocol:   "UDP",
+			Port:       80,
+			TargetPort: intstr.FromInt(6502),
+		}, v1.ServicePort{
+			Protocol:   "TCP",
+			Port:       8080,
+			TargetPort: intstr.FromString("9001"),
+		}),
+		want: clustercache(
+			cluster("default/simple/8080", "default/simple/9001"),
+		),
+	}, {
+		name: "one udp service",
+		svc: service("default", "simple", v1.ServicePort{
+			Protocol:   "UDP",
+			Port:       80,
+			TargetPort: intstr.FromInt(6502),
+		}),
+		want: clustercache(),
 	}}
 
 	for _, tc := range tests {
@@ -132,50 +173,32 @@ func TestTranslateEndpoints(t *testing.T) {
 		want testClusterLoadAssignmentCache
 	}{{
 		name: "simple",
-		ep: &v1.Endpoints{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "simple",
-				Namespace: "default",
-			},
-			Subsets: []v1.EndpointSubset{{
-				Addresses: []v1.EndpointAddress{{
-					IP: "192.168.183.24",
-				}},
-				Ports: []v1.EndpointPort{{
-					Port: 8080,
-				}},
-			}},
-		},
-		want: testClusterLoadAssignmentCache{
-			"default/simple/8080": &v2.ClusterLoadAssignment{
-				ClusterName: "default/simple/8080",
-				Endpoints: []*v2.LocalityLbEndpoints{{
-					Locality: &v2.Locality{
-						Region:  "ap-southeast-2", // totally a guess
-						Zone:    "2b",
-						SubZone: "banana", // yeah, need to think of better values here
-					},
-					LbEndpoints: []*v2.LbEndpoint{{
-						Endpoint: &v2.Endpoint{
-							Address: &v2.Address{
-								Address: &v2.Address_SocketAddress{
-									SocketAddress: &v2.SocketAddress{
-										Protocol: v2.SocketAddress_TCP,
-										Address:  "192.168.183.24",
-										PortSpecifier: &v2.SocketAddress_PortValue{
-											PortValue: 8080,
-										},
-									},
-								},
-							},
-						},
-					}},
-				}},
-				Policy: &v2.ClusterLoadAssignment_Policy{
-					DropOverload: 0.0,
-				},
-			},
-		},
+		ep: endpoints("default", "simple", v1.EndpointSubset{
+			Addresses: addresses("192.168.183.24"),
+			Ports:     ports(8080),
+		}),
+		want: clusterloadassignmentcache(
+			clusterloadassignment("default/simple/8080", lbendpoints(endpoint("192.168.183.24", 8080))),
+		),
+	}, {
+		name: "multiple addresses",
+		ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+			Addresses: addresses(
+				"23.23.247.89",
+				"50.17.192.147",
+				"50.17.206.192",
+				"50.19.99.160",
+			),
+			Ports: ports(80),
+		}),
+		want: clusterloadassignmentcache(
+			clusterloadassignment("default/httpbin-org/80", lbendpoints(
+				endpoint("23.23.247.89", 80),
+				endpoint("50.17.192.147", 80),
+				endpoint("50.17.206.192", 80),
+				endpoint("50.19.99.160", 80)),
+			),
+		),
 	}}
 
 	for _, tc := range tests {
@@ -225,14 +248,11 @@ func TestTranslateIngress(t *testing.T) {
 				Namespace: "default",
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: &v1beta1.IngressBackend{
-					ServiceName: "backend",
-					ServicePort: intstr.FromInt(80),
-				},
+				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		want: testVirtualHostCache{
-			"default/simple": &v2.VirtualHost{
+		want: virtualhostcache(
+			&v2.VirtualHost{
 				Name:    "default/simple",
 				Domains: []string{"*"},
 				Routes: []*v2.Route{{
@@ -250,7 +270,7 @@ func TestTranslateIngress(t *testing.T) {
 					},
 				}},
 			},
-		},
+		),
 	}, {
 		name: "incorrect ingress class",
 		ing: &v1beta1.Ingress{
@@ -262,13 +282,10 @@ func TestTranslateIngress(t *testing.T) {
 				},
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: &v1beta1.IngressBackend{
-					ServiceName: "backend",
-					ServicePort: intstr.FromInt(80),
-				},
+				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		want: make(testVirtualHostCache), // expected to be empty, the ingress class is ingnored
+		want: virtualhostcache(), // expected to be empty, the ingress class is ingnored
 	}, {
 		name: "explicit ingress class",
 		ing: &v1beta1.Ingress{
@@ -280,32 +297,19 @@ func TestTranslateIngress(t *testing.T) {
 				},
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: &v1beta1.IngressBackend{
-					ServiceName: "backend",
-					ServicePort: intstr.FromInt(80),
-				},
+				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		want: testVirtualHostCache{
-			"default/correct": &v2.VirtualHost{
+		want: virtualhostcache(
+			&v2.VirtualHost{
 				Name:    "default/correct",
 				Domains: []string{"*"},
 				Routes: []*v2.Route{{
-					Match: &v2.RouteMatch{
-						PathSpecifier: &v2.RouteMatch_Prefix{
-							Prefix: "/", // match all
-						},
-					},
-					Action: &v2.Route_Route{
-						Route: &v2.RouteAction{
-							ClusterSpecifier: &v2.RouteAction_Cluster{
-								Cluster: "default/backend/80",
-							},
-						},
-					},
+					Match:  prefixmatch("/"), // match all
+					Action: action("default/backend/80"),
 				}},
 			},
-		},
+		),
 	}, {
 		name: "name based vhost",
 		ing: &v1beta1.Ingress{
@@ -319,6 +323,37 @@ func TestTranslateIngress(t *testing.T) {
 					IngressRuleValue: v1beta1.IngressRuleValue{
 						HTTP: &v1beta1.HTTPIngressRuleValue{
 							Paths: []v1beta1.HTTPIngressPath{{
+								Backend: *backend("httpbin-org", intstr.FromInt(80)),
+							}},
+						},
+					},
+				}},
+			},
+		},
+		want: virtualhostcache(
+			&v2.VirtualHost{
+				Name:    "default/httpbin/httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []*v2.Route{{
+					Match:  prefixmatch("/"), // match all
+					Action: action("default/httpbin-org/80"),
+				}},
+			},
+		),
+	}, {
+		name: "regex vhost",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "httpbin",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					Host: "httpbin.org",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Path: "/ip", // this field _is_ a regex
 								Backend: v1beta1.IngressBackend{
 									ServiceName: "httpbin-org",
 									ServicePort: intstr.FromInt(80),
@@ -329,26 +364,175 @@ func TestTranslateIngress(t *testing.T) {
 				}},
 			},
 		},
-		want: testVirtualHostCache{
-			"default/httpbin/httpbin.org": &v2.VirtualHost{
+		want: virtualhostcache(
+			&v2.VirtualHost{
 				Name:    "default/httpbin/httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
-					Match: &v2.RouteMatch{
-						PathSpecifier: &v2.RouteMatch_Prefix{
-							Prefix: "/", // match all
-						},
-					},
-					Action: &v2.Route_Route{
-						Route: &v2.RouteAction{
-							ClusterSpecifier: &v2.RouteAction_Cluster{
-								Cluster: "default/httpbin-org/80",
-							},
+					Match:  prefixmatch("/ip"),
+					Action: action("default/httpbin-org/80"),
+				}},
+			},
+		),
+	}, {
+		name: "named service port",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "httpbin",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					Host: "httpbin.org",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "httpbin-org",
+									ServicePort: intstr.FromString("http"),
+								},
+							}},
 						},
 					},
 				}},
 			},
 		},
+		want: virtualhostcache(
+			&v2.VirtualHost{
+				Name:    "default/httpbin/httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []*v2.Route{{
+					Match:  prefixmatch("/"),
+					Action: action("default/httpbin-org/http"),
+				}},
+			},
+		),
+	}, {
+		name: "multiple routes",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "httpbin",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					Host: "httpbin.org",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Path: "/peter",
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "peter",
+									ServicePort: intstr.FromInt(80),
+								},
+							}, {
+								Path: "/paul",
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "paul",
+									ServicePort: intstr.FromString("paul"),
+								},
+							}},
+						},
+					},
+				}},
+			},
+		},
+		want: virtualhostcache(
+			&v2.VirtualHost{
+				Name:    "default/httpbin/httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []*v2.Route{{
+					Match:  prefixmatch("/peter"),
+					Action: action("default/peter/80"),
+				}, {
+					Match:  prefixmatch("/paul"),
+					Action: action("default/paul/paul"),
+				}},
+			},
+		),
+	}, {
+		name: "multiple rules",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "httpbin",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					Host: "httpbin.org",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "peter",
+									ServicePort: intstr.FromInt(80),
+								},
+							}},
+						},
+					},
+				}, {
+					Host: "admin.httpbin.org",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "paul",
+									ServicePort: intstr.FromString("paul"),
+								},
+							}},
+						},
+					},
+				}},
+			},
+		},
+		want: virtualhostcache([]*v2.VirtualHost{{
+			Name:    "default/httpbin/httpbin.org",
+			Domains: []string{"httpbin.org"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/"),
+				Action: action("default/peter/80"),
+			}},
+		}, {
+			Name:    "default/httpbin/admin.httpbin.org",
+			Domains: []string{"admin.httpbin.org"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/"),
+				Action: action("default/paul/paul"),
+			}},
+		}}...),
+	}, {
+		name: "vhost name exceeds 60 chars", // heptio/contour#25
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-service-name",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					Host: "my-very-very-long-service-host-name.my.domainname",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "my-service-name",
+									ServicePort: intstr.FromInt(80),
+								},
+							}},
+						},
+					},
+				}},
+			},
+		},
+		want: virtualhostcache(
+			&v2.VirtualHost{
+				Name:    "default/my-service-name/my-very-very--c4d2d4",
+				Domains: []string{"my-very-very-long-service-host-name.my.domainname"},
+				Routes: []*v2.Route{{
+					Match:  prefixmatch("/"),
+					Action: action("default/my-service-name/80"),
+				}},
+			},
+		),
 	}}
 
 	for _, tc := range tests {
@@ -418,5 +602,157 @@ func TestTruncate(t *testing.T) {
 				t.Fatalf("hashname(%d, %q, %q): got %q, want %q", tc.l, tc.s, tc.suffix, got, tc.want)
 			}
 		})
+	}
+}
+
+func service(ns, name string, ports ...v1.ServicePort) *v1.Service {
+	return &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: ports,
+		},
+	}
+}
+
+func cluster(name, servicename string) *v2.Cluster {
+	return &v2.Cluster{
+		Name: name,
+		Type: v2.Cluster_EDS,
+		EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+			EdsConfig: &v2.ConfigSource{
+				ConfigSourceSpecifier: &v2.ConfigSource_ApiConfigSource{
+					ApiConfigSource: &v2.ApiConfigSource{
+						ApiType:     v2.ApiConfigSource_GRPC,
+						ClusterName: []string{"xds_cluster"},
+					},
+				},
+			},
+			ServiceName: servicename,
+		},
+		ConnectTimeout: &duration.Duration{
+			Nanos: 250 * millisecond,
+		},
+		LbPolicy: v2.Cluster_ROUND_ROBIN,
+	}
+}
+
+func clustercache(clusters ...*v2.Cluster) testClusterCache {
+	cc := make(testClusterCache)
+	for _, c := range clusters {
+		cc[c.Name] = c
+	}
+	return cc
+}
+
+func endpoints(ns, name string, subsets ...v1.EndpointSubset) *v1.Endpoints {
+	return &v1.Endpoints{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Subsets: subsets,
+	}
+}
+
+func addresses(ips ...string) []v1.EndpointAddress {
+	var addrs []v1.EndpointAddress
+	for _, ip := range ips {
+		addrs = append(addrs, v1.EndpointAddress{IP: ip})
+	}
+	return addrs
+}
+
+func ports(ps ...int32) []v1.EndpointPort {
+	var ports []v1.EndpointPort
+	for _, p := range ps {
+		ports = append(ports, v1.EndpointPort{Port: p})
+	}
+	return ports
+}
+
+func clusterloadassignmentcache(clas ...*v2.ClusterLoadAssignment) testClusterLoadAssignmentCache {
+	cc := make(testClusterLoadAssignmentCache)
+	for _, cla := range clas {
+		cc[cla.ClusterName] = cla
+	}
+	return cc
+}
+
+func clusterloadassignment(name string, lbendpoints []*v2.LbEndpoint) *v2.ClusterLoadAssignment {
+	return &v2.ClusterLoadAssignment{
+		ClusterName: name,
+		Endpoints: []*v2.LocalityLbEndpoints{{
+			Locality: &v2.Locality{
+				Region:  "ap-southeast-2", // totally a guess
+				Zone:    "2b",
+				SubZone: "banana", // yeah, need to think of better values here
+			},
+			LbEndpoints: lbendpoints,
+		}},
+		Policy: &v2.ClusterLoadAssignment_Policy{
+			DropOverload: 0.0,
+		},
+	}
+}
+
+func endpoint(addr string, port uint32) *v2.Endpoint {
+	return &v2.Endpoint{
+		Address: &v2.Address{
+			Address: &v2.Address_SocketAddress{
+				SocketAddress: &v2.SocketAddress{
+					Protocol: v2.SocketAddress_TCP,
+					Address:  addr,
+					PortSpecifier: &v2.SocketAddress_PortValue{
+						PortValue: port,
+					},
+				},
+			},
+		},
+	}
+}
+
+func lbendpoints(eps ...*v2.Endpoint) []*v2.LbEndpoint {
+	var lbep []*v2.LbEndpoint
+	for _, ep := range eps {
+		lbep = append(lbep, &v2.LbEndpoint{
+			Endpoint: ep,
+		})
+	}
+	return lbep
+}
+
+func virtualhostcache(vhs ...*v2.VirtualHost) testVirtualHostCache {
+	vhc := make(testVirtualHostCache)
+	for _, vh := range vhs {
+		vhc[vh.Name] = vh
+	}
+	return vhc
+}
+
+func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
+	return &v1beta1.IngressBackend{
+		ServiceName: name,
+		ServicePort: port,
+	}
+}
+
+func prefixmatch(prefix string) *v2.RouteMatch {
+	return &v2.RouteMatch{
+		PathSpecifier: &v2.RouteMatch_Prefix{
+			Prefix: prefix,
+		},
+	}
+}
+
+func action(cluster string) *v2.Route_Route {
+	return &v2.Route_Route{
+		Route: &v2.RouteAction{
+			ClusterSpecifier: &v2.RouteAction_Cluster{
+				Cluster: cluster,
+			},
+		},
 	}
 }
