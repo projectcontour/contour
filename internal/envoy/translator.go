@@ -50,8 +50,18 @@ func (t *Translator) OnAdd(obj interface{}) {
 	}
 }
 
-func (t *Translator) OnUpdate(_, newObj interface{}) {
-	t.OnAdd(newObj)
+func (t *Translator) OnUpdate(oldObj, newObj interface{}) {
+	// TODO(dfc) need to inspect oldObj and remove unused parts of the config from the cache.
+	switch newObj := newObj.(type) {
+	case *v1.Service:
+		t.addService(newObj)
+	case *v1.Endpoints:
+		t.addEndpoints(newObj)
+	case *v1beta1.Ingress:
+		t.addIngress(newObj)
+	default:
+		t.Errorf("OnUpdate unexpected type %T: %#v", newObj, newObj)
+	}
 }
 
 func (t *Translator) OnDelete(obj interface{}) {
@@ -121,9 +131,21 @@ func (t *Translator) addService(svc *v1.Service) {
 	}
 }
 
-func (t *Translator) removeService(s *v1.Service) {
-	name := hashname(60, s.Namespace, s.Name)
-	t.ClusterCache.Remove(name)
+func (t *Translator) removeService(svc *v1.Service) {
+	for _, p := range svc.Spec.Ports {
+		switch p.Protocol {
+		case "TCP":
+			if p.Name != "" {
+				// service port is named, so we must generate both a cluster for the port name
+				// and a cluster for the port number.
+				t.ClusterCache.Remove(hashname(60, svc.ObjectMeta.Namespace, svc.ObjectMeta.Name, p.Name))
+			}
+			t.ClusterCache.Remove(hashname(60, svc.ObjectMeta.Namespace, svc.ObjectMeta.Name, strconv.Itoa(int(p.Port))))
+		default:
+			// ignore UDP and other port types.
+		}
+
+	}
 }
 
 type ClusterLoadAssignmentHandler struct {

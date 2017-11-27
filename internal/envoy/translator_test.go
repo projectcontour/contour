@@ -148,6 +148,78 @@ func TestTranslatorAddService(t *testing.T) {
 	}
 }
 
+func TestTranslatoraddService(t *testing.T) {
+	tests := []struct {
+		name string
+		svc  *v1.Service
+		want []*v2.Cluster
+	}{{
+		name: "single service port",
+		svc: service("default", "simple", v1.ServicePort{
+			Protocol:   "TCP",
+			Port:       80,
+			TargetPort: intstr.FromInt(6502),
+		}),
+		want: []*v2.Cluster{
+			cluster("default/simple/80", "default/simple/6502"),
+		},
+	}}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			const NOFLAGS = 1 << 16
+			tr := &Translator{
+				Logger:       stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+				ClusterCache: NewClusterCache(),
+			}
+			tr.addService(tc.svc)
+			got := tr.ClusterCache.Values()
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("addService(%v): got: %v, want: %v", tc.svc, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestTranslatorremoveService(t *testing.T) {
+	tests := map[string]struct {
+		setup func(*Translator)
+		svc   *v1.Service
+		want  []*v2.Cluster
+	}{
+		"remove existing": {
+			setup: func(tr *Translator) {
+				tr.addService(service("default", "simple", v1.ServicePort{
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(6502),
+				}))
+			},
+			svc: service("default", "simple", v1.ServicePort{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(6502),
+			}),
+			want: []*v2.Cluster{},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			const NOFLAGS = 1 << 16
+			tr := &Translator{
+				Logger:       stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+				ClusterCache: NewClusterCache(),
+			}
+			tc.setup(tr)
+			tr.removeService(tc.svc)
+			got := tr.ClusterCache.Values()
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("removeService(%v): got: %v, want: %v", tc.svc, got, tc.want)
+			}
+		})
+	}
+}
+
 type testClusterLoadAssignmentCache map[string]*v2.ClusterLoadAssignment
 
 func (cc testClusterLoadAssignmentCache) Add(c *v2.ClusterLoadAssignment) {
@@ -319,14 +391,8 @@ func TestTranslatorAddIngress(t *testing.T) {
 			},
 			Spec: v1beta1.IngressSpec{
 				Rules: []v1beta1.IngressRule{{
-					Host: "httpbin.org",
-					IngressRuleValue: v1beta1.IngressRuleValue{
-						HTTP: &v1beta1.HTTPIngressRuleValue{
-							Paths: []v1beta1.HTTPIngressPath{{
-								Backend: *backend("httpbin-org", intstr.FromInt(80)),
-							}},
-						},
-					},
+					Host:             "httpbin.org",
+					IngressRuleValue: ingressrulevalue(backend("httpbin-org", intstr.FromInt(80))),
 				}},
 			},
 		},
@@ -353,11 +419,8 @@ func TestTranslatorAddIngress(t *testing.T) {
 					IngressRuleValue: v1beta1.IngressRuleValue{
 						HTTP: &v1beta1.HTTPIngressRuleValue{
 							Paths: []v1beta1.HTTPIngressPath{{
-								Path: "/ip", // this field _is_ a regex
-								Backend: v1beta1.IngressBackend{
-									ServiceName: "httpbin-org",
-									ServicePort: intstr.FromInt(80),
-								},
+								Path:    "/ip", // this field _is_ a regex
+								Backend: *backend("httpbin-org", intstr.FromInt(80)),
 							}},
 						},
 					},
@@ -387,11 +450,8 @@ func TestTranslatorAddIngress(t *testing.T) {
 					IngressRuleValue: v1beta1.IngressRuleValue{
 						HTTP: &v1beta1.HTTPIngressRuleValue{
 							Paths: []v1beta1.HTTPIngressPath{{
-								Path: "/get.*", // this field _is_ a regex
-								Backend: v1beta1.IngressBackend{
-									ServiceName: "httpbin-org",
-									ServicePort: intstr.FromInt(80),
-								},
+								Path:    "/get.*", // this field _is_ a regex
+								Backend: *backend("httpbin-org", intstr.FromInt(80)),
 							}},
 						},
 					},
@@ -417,17 +477,8 @@ func TestTranslatorAddIngress(t *testing.T) {
 			},
 			Spec: v1beta1.IngressSpec{
 				Rules: []v1beta1.IngressRule{{
-					Host: "httpbin.org",
-					IngressRuleValue: v1beta1.IngressRuleValue{
-						HTTP: &v1beta1.HTTPIngressRuleValue{
-							Paths: []v1beta1.HTTPIngressPath{{
-								Backend: v1beta1.IngressBackend{
-									ServiceName: "httpbin-org",
-									ServicePort: intstr.FromString("http"),
-								},
-							}},
-						},
-					},
+					Host:             "httpbin.org",
+					IngressRuleValue: ingressrulevalue(backend("httpbin-org", intstr.FromString("http"))),
 				}},
 			},
 		},
@@ -454,17 +505,11 @@ func TestTranslatorAddIngress(t *testing.T) {
 					IngressRuleValue: v1beta1.IngressRuleValue{
 						HTTP: &v1beta1.HTTPIngressRuleValue{
 							Paths: []v1beta1.HTTPIngressPath{{
-								Path: "/peter",
-								Backend: v1beta1.IngressBackend{
-									ServiceName: "peter",
-									ServicePort: intstr.FromInt(80),
-								},
+								Path:    "/peter",
+								Backend: *backend("peter", intstr.FromInt(80)),
 							}, {
-								Path: "/paul",
-								Backend: v1beta1.IngressBackend{
-									ServiceName: "paul",
-									ServicePort: intstr.FromString("paul"),
-								},
+								Path:    "/paul",
+								Backend: *backend("paul", intstr.FromString("paul")),
 							}},
 						},
 					},
@@ -493,29 +538,11 @@ func TestTranslatorAddIngress(t *testing.T) {
 			},
 			Spec: v1beta1.IngressSpec{
 				Rules: []v1beta1.IngressRule{{
-					Host: "httpbin.org",
-					IngressRuleValue: v1beta1.IngressRuleValue{
-						HTTP: &v1beta1.HTTPIngressRuleValue{
-							Paths: []v1beta1.HTTPIngressPath{{
-								Backend: v1beta1.IngressBackend{
-									ServiceName: "peter",
-									ServicePort: intstr.FromInt(80),
-								},
-							}},
-						},
-					},
+					Host:             "httpbin.org",
+					IngressRuleValue: ingressrulevalue(backend("peter", intstr.FromInt(80))),
 				}, {
-					Host: "admin.httpbin.org",
-					IngressRuleValue: v1beta1.IngressRuleValue{
-						HTTP: &v1beta1.HTTPIngressRuleValue{
-							Paths: []v1beta1.HTTPIngressPath{{
-								Backend: v1beta1.IngressBackend{
-									ServiceName: "paul",
-									ServicePort: intstr.FromString("paul"),
-								},
-							}},
-						},
-					},
+					Host:             "admin.httpbin.org",
+					IngressRuleValue: ingressrulevalue(backend("paul", intstr.FromString("paul"))),
 				}},
 			},
 		},
@@ -543,17 +570,8 @@ func TestTranslatorAddIngress(t *testing.T) {
 			},
 			Spec: v1beta1.IngressSpec{
 				Rules: []v1beta1.IngressRule{{
-					Host: "my-very-very-long-service-host-name.my.domainname",
-					IngressRuleValue: v1beta1.IngressRuleValue{
-						HTTP: &v1beta1.HTTPIngressRuleValue{
-							Paths: []v1beta1.HTTPIngressPath{{
-								Backend: v1beta1.IngressBackend{
-									ServiceName: "my-service-name",
-									ServicePort: intstr.FromInt(80),
-								},
-							}},
-						},
-					},
+					Host:             "my-very-very-long-service-host-name.my.domainname",
+					IngressRuleValue: ingressrulevalue(backend("my-service-name", intstr.FromInt(80))),
 				}},
 			},
 		},
@@ -770,5 +788,15 @@ func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
 	return &v1beta1.IngressBackend{
 		ServiceName: name,
 		ServicePort: port,
+	}
+}
+
+func ingressrulevalue(backend *v1beta1.IngressBackend) v1beta1.IngressRuleValue {
+	return v1beta1.IngressRuleValue{
+		HTTP: &v1beta1.HTTPIngressRuleValue{
+			Paths: []v1beta1.HTTPIngressPath{{
+				Backend: *backend,
+			}},
+		},
 	}
 }
