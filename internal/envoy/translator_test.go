@@ -248,14 +248,11 @@ func TestTranslateIngress(t *testing.T) {
 				Namespace: "default",
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: &v1beta1.IngressBackend{
-					ServiceName: "backend",
-					ServicePort: intstr.FromInt(80),
-				},
+				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		want: testVirtualHostCache{
-			"default/simple": &v2.VirtualHost{
+		want: virtualhostcache(
+			&v2.VirtualHost{
 				Name:    "default/simple",
 				Domains: []string{"*"},
 				Routes: []*v2.Route{{
@@ -273,7 +270,7 @@ func TestTranslateIngress(t *testing.T) {
 					},
 				}},
 			},
-		},
+		),
 	}, {
 		name: "incorrect ingress class",
 		ing: &v1beta1.Ingress{
@@ -285,13 +282,10 @@ func TestTranslateIngress(t *testing.T) {
 				},
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: &v1beta1.IngressBackend{
-					ServiceName: "backend",
-					ServicePort: intstr.FromInt(80),
-				},
+				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		want: make(testVirtualHostCache), // expected to be empty, the ingress class is ingnored
+		want: virtualhostcache(), // expected to be empty, the ingress class is ingnored
 	}, {
 		name: "explicit ingress class",
 		ing: &v1beta1.Ingress{
@@ -303,32 +297,19 @@ func TestTranslateIngress(t *testing.T) {
 				},
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: &v1beta1.IngressBackend{
-					ServiceName: "backend",
-					ServicePort: intstr.FromInt(80),
-				},
+				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		want: testVirtualHostCache{
-			"default/correct": &v2.VirtualHost{
+		want: virtualhostcache(
+			&v2.VirtualHost{
 				Name:    "default/correct",
 				Domains: []string{"*"},
 				Routes: []*v2.Route{{
-					Match: &v2.RouteMatch{
-						PathSpecifier: &v2.RouteMatch_Prefix{
-							Prefix: "/", // match all
-						},
-					},
-					Action: &v2.Route_Route{
-						Route: &v2.RouteAction{
-							ClusterSpecifier: &v2.RouteAction_Cluster{
-								Cluster: "default/backend/80",
-							},
-						},
-					},
+					Match:  prefixmatch("/"), // match all
+					Action: action("default/backend/80"),
 				}},
 			},
-		},
+		),
 	}, {
 		name: "name based vhost",
 		ing: &v1beta1.Ingress{
@@ -342,6 +323,37 @@ func TestTranslateIngress(t *testing.T) {
 					IngressRuleValue: v1beta1.IngressRuleValue{
 						HTTP: &v1beta1.HTTPIngressRuleValue{
 							Paths: []v1beta1.HTTPIngressPath{{
+								Backend: *backend("httpbin-org", intstr.FromInt(80)),
+							}},
+						},
+					},
+				}},
+			},
+		},
+		want: virtualhostcache(
+			&v2.VirtualHost{
+				Name:    "default/httpbin/httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []*v2.Route{{
+					Match:  prefixmatch("/"), // match all
+					Action: action("default/httpbin-org/80"),
+				}},
+			},
+		),
+	}, {
+		name: "regex vhost",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "httpbin",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					Host: "httpbin.org",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Path: "/ip", // this field _is_ a regex
 								Backend: v1beta1.IngressBackend{
 									ServiceName: "httpbin-org",
 									ServicePort: intstr.FromInt(80),
@@ -352,26 +364,175 @@ func TestTranslateIngress(t *testing.T) {
 				}},
 			},
 		},
-		want: testVirtualHostCache{
-			"default/httpbin/httpbin.org": &v2.VirtualHost{
+		want: virtualhostcache(
+			&v2.VirtualHost{
 				Name:    "default/httpbin/httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
-					Match: &v2.RouteMatch{
-						PathSpecifier: &v2.RouteMatch_Prefix{
-							Prefix: "/", // match all
-						},
-					},
-					Action: &v2.Route_Route{
-						Route: &v2.RouteAction{
-							ClusterSpecifier: &v2.RouteAction_Cluster{
-								Cluster: "default/httpbin-org/80",
-							},
+					Match:  prefixmatch("/ip"),
+					Action: action("default/httpbin-org/80"),
+				}},
+			},
+		),
+	}, {
+		name: "named service port",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "httpbin",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					Host: "httpbin.org",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "httpbin-org",
+									ServicePort: intstr.FromString("http"),
+								},
+							}},
 						},
 					},
 				}},
 			},
 		},
+		want: virtualhostcache(
+			&v2.VirtualHost{
+				Name:    "default/httpbin/httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []*v2.Route{{
+					Match:  prefixmatch("/"),
+					Action: action("default/httpbin-org/http"),
+				}},
+			},
+		),
+	}, {
+		name: "multiple routes",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "httpbin",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					Host: "httpbin.org",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Path: "/peter",
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "peter",
+									ServicePort: intstr.FromInt(80),
+								},
+							}, {
+								Path: "/paul",
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "paul",
+									ServicePort: intstr.FromString("paul"),
+								},
+							}},
+						},
+					},
+				}},
+			},
+		},
+		want: virtualhostcache(
+			&v2.VirtualHost{
+				Name:    "default/httpbin/httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []*v2.Route{{
+					Match:  prefixmatch("/peter"),
+					Action: action("default/peter/80"),
+				}, {
+					Match:  prefixmatch("/paul"),
+					Action: action("default/paul/paul"),
+				}},
+			},
+		),
+	}, {
+		name: "multiple rules",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "httpbin",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					Host: "httpbin.org",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "peter",
+									ServicePort: intstr.FromInt(80),
+								},
+							}},
+						},
+					},
+				}, {
+					Host: "admin.httpbin.org",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "paul",
+									ServicePort: intstr.FromString("paul"),
+								},
+							}},
+						},
+					},
+				}},
+			},
+		},
+		want: virtualhostcache([]*v2.VirtualHost{{
+			Name:    "default/httpbin/httpbin.org",
+			Domains: []string{"httpbin.org"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/"),
+				Action: action("default/peter/80"),
+			}},
+		}, {
+			Name:    "default/httpbin/admin.httpbin.org",
+			Domains: []string{"admin.httpbin.org"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/"),
+				Action: action("default/paul/paul"),
+			}},
+		}}...),
+	}, {
+		name: "vhost name exceeds 60 chars", // heptio/contour#25
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-service-name",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					Host: "my-very-very-long-service-host-name.my.domainname",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "my-service-name",
+									ServicePort: intstr.FromInt(80),
+								},
+							}},
+						},
+					},
+				}},
+			},
+		},
+		want: virtualhostcache(
+			&v2.VirtualHost{
+				Name:    "default/my-service-name/my-very-very--c4d2d4",
+				Domains: []string{"my-very-very-long-service-host-name.my.domainname"},
+				Routes: []*v2.Route{{
+					Match:  prefixmatch("/"),
+					Action: action("default/my-service-name/80"),
+				}},
+			},
+		),
 	}}
 
 	for _, tc := range tests {
@@ -561,4 +722,37 @@ func lbendpoints(eps ...*v2.Endpoint) []*v2.LbEndpoint {
 		})
 	}
 	return lbep
+}
+
+func virtualhostcache(vhs ...*v2.VirtualHost) testVirtualHostCache {
+	vhc := make(testVirtualHostCache)
+	for _, vh := range vhs {
+		vhc[vh.Name] = vh
+	}
+	return vhc
+}
+
+func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
+	return &v1beta1.IngressBackend{
+		ServiceName: name,
+		ServicePort: port,
+	}
+}
+
+func prefixmatch(prefix string) *v2.RouteMatch {
+	return &v2.RouteMatch{
+		PathSpecifier: &v2.RouteMatch_Prefix{
+			Prefix: prefix,
+		},
+	}
+}
+
+func action(cluster string) *v2.Route_Route {
+	return &v2.Route_Route{
+		Route: &v2.RouteAction{
+			ClusterSpecifier: &v2.RouteAction_Cluster{
+				Cluster: cluster,
+			},
+		},
+	}
 }
