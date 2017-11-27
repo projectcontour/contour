@@ -281,8 +281,14 @@ func pathToRouteMatch(p v1beta1.HTTPIngressPath) *v2.RouteMatch {
 }
 
 func (t *Translator) removeIngress(i *v1beta1.Ingress) {
-	name := hashname(60, i.Namespace, i.Name)
-	t.VirtualHostCache.Remove(name)
+	if i.Spec.Backend != nil {
+		t.VirtualHostCache.Remove(hashname(60, i.Namespace, i.Name))
+		return
+	}
+
+	for _, rule := range i.Spec.Rules {
+		t.VirtualHostCache.Remove(hashname(60, i.Namespace, i.Name, rule.Host))
+	}
 }
 
 // hashname takes a lenth l and a varargs of strings s and returns a string whose length

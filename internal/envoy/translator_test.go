@@ -142,45 +142,13 @@ func TestTranslatorAddService(t *testing.T) {
 			}
 			tr.addService(tc.svc)
 			if !reflect.DeepEqual(tc.want, tr.ClusterCache) {
-				t.Fatalf("translateService(%v): got: %v, want: %v", tc.svc, tr.ClusterCache, tc.want)
+				t.Fatalf("addService(%v): got: %v, want: %v", tc.svc, tr.ClusterCache, tc.want)
 			}
 		})
 	}
 }
 
-func TestTranslatoraddService(t *testing.T) {
-	tests := []struct {
-		name string
-		svc  *v1.Service
-		want []*v2.Cluster
-	}{{
-		name: "single service port",
-		svc: service("default", "simple", v1.ServicePort{
-			Protocol:   "TCP",
-			Port:       80,
-			TargetPort: intstr.FromInt(6502),
-		}),
-		want: []*v2.Cluster{
-			cluster("default/simple/80", "default/simple/6502"),
-		},
-	}}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
-			tr := &Translator{
-				Logger:       stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
-				ClusterCache: NewClusterCache(),
-			}
-			tr.addService(tc.svc)
-			got := tr.ClusterCache.Values()
-			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("addService(%v): got: %v, want: %v", tc.svc, got, tc.want)
-			}
-		})
-	}
-}
-
-func TestTranslatorremoveService(t *testing.T) {
+func TestTranslatorRemoveService(t *testing.T) {
 	tests := map[string]struct {
 		setup func(*Translator)
 		svc   *v1.Service
@@ -194,6 +162,49 @@ func TestTranslatorremoveService(t *testing.T) {
 					TargetPort: intstr.FromInt(6502),
 				}))
 			},
+			svc: service("default", "simple", v1.ServicePort{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(6502),
+			}),
+			want: []*v2.Cluster{},
+		},
+		"remove named": {
+			setup: func(tr *Translator) {
+				tr.addService(service("default", "simple", v1.ServicePort{
+					Name:       "kevin",
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(6502),
+				}))
+			},
+			svc: service("default", "simple", v1.ServicePort{
+				Name:       "kevin",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(6502),
+			}),
+			want: []*v2.Cluster{},
+		},
+		"remove different": {
+			setup: func(tr *Translator) {
+				tr.addService(service("default", "simple", v1.ServicePort{
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(6502),
+				}))
+			},
+			svc: service("default", "different", v1.ServicePort{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(6502),
+			}),
+			want: []*v2.Cluster{
+				cluster("default/simple/80", "default/simple/6502"),
+			},
+		},
+		"remove non existant": {
+			setup: func(*Translator) {},
 			svc: service("default", "simple", v1.ServicePort{
 				Protocol:   "TCP",
 				Port:       80,
@@ -283,7 +294,68 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 			}
 			tr.addEndpoints(tc.ep)
 			if !reflect.DeepEqual(tc.want, tr.ClusterLoadAssignmentCache) {
-				t.Fatalf("translateEndpoints(%v): got: %v, want: %v", tc.ep, tr.ClusterLoadAssignmentCache, tc.want)
+				t.Fatalf("addEndpoints(%v): got: %v, want: %v", tc.ep, tr.ClusterLoadAssignmentCache, tc.want)
+			}
+		})
+	}
+}
+
+func TestTranslatorRemoveEndpoints(t *testing.T) {
+	tests := map[string]struct {
+		setup func(*Translator)
+		ep    *v1.Endpoints
+		want  []*v2.ClusterLoadAssignment
+	}{
+		"remove existing": {
+			setup: func(tr *Translator) {
+				tr.addEndpoints(endpoints("default", "simple", v1.EndpointSubset{
+					Addresses: addresses("192.168.183.24"),
+					Ports:     ports(8080),
+				}))
+			},
+			ep: endpoints("default", "simple", v1.EndpointSubset{
+				Addresses: addresses("192.168.183.24"),
+				Ports:     ports(8080),
+			}),
+			want: []*v2.ClusterLoadAssignment{},
+		},
+		"remove different": {
+			setup: func(tr *Translator) {
+				tr.addEndpoints(endpoints("default", "simple", v1.EndpointSubset{
+					Addresses: addresses("192.168.183.24"),
+					Ports:     ports(8080),
+				}))
+			},
+			ep: endpoints("default", "different", v1.EndpointSubset{
+				Addresses: addresses("192.168.183.24"),
+				Ports:     ports(8080),
+			}),
+			want: []*v2.ClusterLoadAssignment{
+				clusterloadassignment("default/simple/8080", lbendpoints(endpoint("192.168.183.24", 8080))),
+			},
+		},
+		"remove non existant": {
+			setup: func(*Translator) {},
+			ep: endpoints("default", "simple", v1.EndpointSubset{
+				Addresses: addresses("192.168.183.24"),
+				Ports:     ports(8080),
+			}),
+			want: []*v2.ClusterLoadAssignment{},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			const NOFLAGS = 1 << 16
+			tr := &Translator{
+				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+				ClusterLoadAssignmentCache: NewClusterLoadAssignmentCache(),
+			}
+			tc.setup(tr)
+			tr.removeEndpoints(tc.ep)
+			got := tr.ClusterLoadAssignmentCache.Values()
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("removeEndpoints(%v): got: %v, want: %v", tc.ep, got, tc.want)
 			}
 		})
 	}
@@ -328,18 +400,8 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Name:    "default/simple",
 				Domains: []string{"*"},
 				Routes: []*v2.Route{{
-					Match: &v2.RouteMatch{
-						PathSpecifier: &v2.RouteMatch_Prefix{
-							Prefix: "/", // match all
-						},
-					},
-					Action: &v2.Route_Route{
-						Route: &v2.RouteAction{
-							ClusterSpecifier: &v2.RouteAction_Cluster{
-								Cluster: "default/backend/80",
-							},
-						},
-					},
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/backend/80"),
 				}},
 			},
 		),
@@ -597,7 +659,99 @@ func TestTranslatorAddIngress(t *testing.T) {
 			}
 			tr.addIngress(tc.ing)
 			if !reflect.DeepEqual(tc.want, tr.VirtualHostCache) {
-				t.Fatalf("translateIngress(%v): got: %v, want: %v", tc.ing, tr.VirtualHostCache, tc.want)
+				t.Fatalf("eddIngress(%v): got: %v, want: %v", tc.ing, tr.VirtualHostCache, tc.want)
+			}
+		})
+	}
+}
+
+func TestTranslatorRemoveIngress(t *testing.T) {
+	tests := map[string]struct {
+		setup func(*Translator)
+		ing   *v1beta1.Ingress
+		want  []*v2.VirtualHost
+	}{
+		"remove existing": {
+			setup: func(tr *Translator) {
+				tr.addIngress(&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: backend("backend", intstr.FromInt(80)),
+					},
+				})
+			},
+			ing: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Backend: backend("backend", intstr.FromInt(80)),
+				},
+			},
+			want: []*v2.VirtualHost{},
+		},
+		"remove different": {
+			setup: func(tr *Translator) {
+				tr.addIngress(&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: backend("backend", intstr.FromInt(80)),
+					},
+				})
+			},
+			ing: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "different",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Backend: backend("rofl", intstr.FromInt(80)),
+				},
+			},
+			want: []*v2.VirtualHost{
+				&v2.VirtualHost{
+					Name:    "default/simple",
+					Domains: []string{"*"},
+					Routes: []*v2.Route{{
+						Match:  prefixmatch("/"),
+						Action: clusteraction("default/backend/80"),
+					}},
+				},
+			},
+		},
+		"remove non existant": {
+			setup: func(*Translator) {},
+			ing: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Backend: backend("backend", intstr.FromInt(80)),
+				},
+			},
+			want: []*v2.VirtualHost{},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			const NOFLAGS = 1 << 16
+			tr := &Translator{
+				Logger:           stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+				VirtualHostCache: NewVirtualHostCache(),
+			}
+			tc.setup(tr)
+			tr.removeIngress(tc.ing)
+			got := tr.VirtualHostCache.Values()
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("removeIngress(%v): got: %v, want: %v", tc.ing, got, tc.want)
 			}
 		})
 	}
