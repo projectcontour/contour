@@ -220,18 +220,8 @@ func (t *Translator) translateIngress(i *v1beta1.Ingress) {
 			Name:    hashname(60, i.Namespace, i.Name),
 			Domains: []string{"*"},
 			Routes: []*v2.Route{{
-				Match: &v2.RouteMatch{
-					PathSpecifier: &v2.RouteMatch_Prefix{
-						Prefix: "/", // match all
-					},
-				},
-				Action: &v2.Route_Route{
-					Route: &v2.RouteAction{
-						ClusterSpecifier: &v2.RouteAction_Cluster{
-							Cluster: ingressBackendToClusterName(i, i.Spec.Backend),
-						},
-					},
-				},
+				Match:  prefixmatch("/"), // match all
+				Action: clusteraction(ingressBackendToClusterName(i, i.Spec.Backend)),
 			}},
 		}
 		t.VirtualHostCache.Add(&v)
@@ -249,7 +239,7 @@ func (t *Translator) translateIngress(i *v1beta1.Ingress) {
 		}
 		for _, p := range rule.IngressRuleValue.HTTP.Paths {
 			m := pathToRouteMatch(p)
-			a := backendToAction(i, &p)
+			a := clusteraction(ingressBackendToClusterName(i, &p.Backend))
 			v.Routes = append(v.Routes, &v2.Route{Match: m, Action: a})
 		}
 		t.VirtualHostCache.Add(&v)
@@ -263,11 +253,7 @@ func pathToRouteMatch(p v1beta1.HTTPIngressPath) *v2.RouteMatch {
 		// "If unspecified, the path defaults to a catch all sending
 		// traffic to the backend."
 		// We map this it a catch all prefix route.
-		return &v2.RouteMatch{
-			PathSpecifier: &v2.RouteMatch_Prefix{
-				Prefix: "/", // match all
-			},
-		}
+		return prefixmatch("/") // match all
 	}
 	// TODO(dfc) handle the case where p.Path does not start with "/"
 	if strings.IndexAny(p.Path, `[(*\`) == -1 {
@@ -277,30 +263,11 @@ func pathToRouteMatch(p v1beta1.HTTPIngressPath) *v2.RouteMatch {
 		// according to Envoy.
 		// To deal with this we handle the simple case, a Path without regex
 		// characters as a Envoy prefix route.
-		return &v2.RouteMatch{
-			PathSpecifier: &v2.RouteMatch_Prefix{
-				Prefix: p.Path,
-			},
-		}
+		return prefixmatch(p.Path)
 	}
 	// At this point the path is a regex, which we hope is the same between k8s
 	// IEEE 1003.1 POSIX regex, and Envoys Javascript regex.
-	return &v2.RouteMatch{
-		PathSpecifier: &v2.RouteMatch_Regex{
-			Regex: p.Path,
-		},
-	}
-}
-
-// backendToAction converts an Ingress and Ingress Rule Path to a v2.Route_Route.
-func backendToAction(i *v1beta1.Ingress, p *v1beta1.HTTPIngressPath) *v2.Route_Route {
-	return &v2.Route_Route{
-		Route: &v2.RouteAction{
-			ClusterSpecifier: &v2.RouteAction_Cluster{
-				Cluster: ingressBackendToClusterName(i, &p.Backend),
-			},
-		},
-	}
+	return regexmatch(p.Path)
 }
 
 func (t *Translator) removeIngress(i *v1beta1.Ingress) {
@@ -359,4 +326,33 @@ func min(a, b int) int {
 // ingressBackendToClusterName renders a cluster name from an Ingress and an IngressBackend.
 func ingressBackendToClusterName(i *v1beta1.Ingress, b *v1beta1.IngressBackend) string {
 	return hashname(60, i.ObjectMeta.Namespace, b.ServiceName, b.ServicePort.String())
+}
+
+// prefixmatch returns a RouteMatch for the supplied prefix.
+func prefixmatch(prefix string) *v2.RouteMatch {
+	return &v2.RouteMatch{
+		PathSpecifier: &v2.RouteMatch_Prefix{
+			Prefix: prefix,
+		},
+	}
+}
+
+// regexmatch returns a RouteMatch for the supplied regex.
+func regexmatch(regex string) *v2.RouteMatch {
+	return &v2.RouteMatch{
+		PathSpecifier: &v2.RouteMatch_Regex{
+			Regex: regex,
+		},
+	}
+}
+
+// clusteraction returns a Route_Route action for the supplied cluster.
+func clusteraction(cluster string) *v2.Route_Route {
+	return &v2.Route_Route{
+		Route: &v2.RouteAction{
+			ClusterSpecifier: &v2.RouteAction_Cluster{
+				Cluster: cluster,
+			},
+		},
+	}
 }

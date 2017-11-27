@@ -306,7 +306,7 @@ func TestTranslateIngress(t *testing.T) {
 				Domains: []string{"*"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"), // match all
-					Action: action("default/backend/80"),
+					Action: clusteraction("default/backend/80"),
 				}},
 			},
 		),
@@ -336,12 +336,12 @@ func TestTranslateIngress(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"), // match all
-					Action: action("default/httpbin-org/80"),
+					Action: clusteraction("default/httpbin-org/80"),
 				}},
 			},
 		),
 	}, {
-		name: "regex vhost",
+		name: "regex vhost without match characters",
 		ing: &v1beta1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "httpbin",
@@ -369,8 +369,42 @@ func TestTranslateIngress(t *testing.T) {
 				Name:    "default/httpbin/httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
-					Match:  prefixmatch("/ip"),
-					Action: action("default/httpbin-org/80"),
+					Match:  prefixmatch("/ip"), // if the field does not contact any regex characters, we treat it as a prefix
+					Action: clusteraction("default/httpbin-org/80"),
+				}},
+			},
+		),
+	}, {
+		name: "regex vhost with match characters",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "httpbin",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					Host: "httpbin.org",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Path: "/get.*", // this field _is_ a regex
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "httpbin-org",
+									ServicePort: intstr.FromInt(80),
+								},
+							}},
+						},
+					},
+				}},
+			},
+		},
+		want: virtualhostcache(
+			&v2.VirtualHost{
+				Name:    "default/httpbin/httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []*v2.Route{{
+					Match:  regexmatch("/get.*"),
+					Action: clusteraction("default/httpbin-org/80"),
 				}},
 			},
 		),
@@ -403,7 +437,7 @@ func TestTranslateIngress(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"),
-					Action: action("default/httpbin-org/http"),
+					Action: clusteraction("default/httpbin-org/http"),
 				}},
 			},
 		),
@@ -443,10 +477,10 @@ func TestTranslateIngress(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/peter"),
-					Action: action("default/peter/80"),
+					Action: clusteraction("default/peter/80"),
 				}, {
 					Match:  prefixmatch("/paul"),
-					Action: action("default/paul/paul"),
+					Action: clusteraction("default/paul/paul"),
 				}},
 			},
 		),
@@ -490,14 +524,14 @@ func TestTranslateIngress(t *testing.T) {
 			Domains: []string{"httpbin.org"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/"),
-				Action: action("default/peter/80"),
+				Action: clusteraction("default/peter/80"),
 			}},
 		}, {
 			Name:    "default/httpbin/admin.httpbin.org",
 			Domains: []string{"admin.httpbin.org"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/"),
-				Action: action("default/paul/paul"),
+				Action: clusteraction("default/paul/paul"),
 			}},
 		}}...),
 	}, {
@@ -529,7 +563,7 @@ func TestTranslateIngress(t *testing.T) {
 				Domains: []string{"my-very-very-long-service-host-name.my.domainname"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"),
-					Action: action("default/my-service-name/80"),
+					Action: clusteraction("default/my-service-name/80"),
 				}},
 			},
 		),
@@ -736,23 +770,5 @@ func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
 	return &v1beta1.IngressBackend{
 		ServiceName: name,
 		ServicePort: port,
-	}
-}
-
-func prefixmatch(prefix string) *v2.RouteMatch {
-	return &v2.RouteMatch{
-		PathSpecifier: &v2.RouteMatch_Prefix{
-			Prefix: prefix,
-		},
-	}
-}
-
-func action(cluster string) *v2.Route_Route {
-	return &v2.Route_Route{
-		Route: &v2.RouteAction{
-			ClusterSpecifier: &v2.RouteAction_Cluster{
-				Cluster: cluster,
-			},
-		},
 	}
 }
