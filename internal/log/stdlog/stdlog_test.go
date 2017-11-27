@@ -50,7 +50,7 @@ func TestError(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	const NOFLAGS = 1 << 16
 	var root log.Logger = New(&stdout, &stderr, NOFLAGS)
-	root.Error("stderr %q", "%")
+	root.Error("stderr \u0025q", "%")
 
 	if stdout.String() != "" {
 		t.Fatalf("expected %q, got %q", "", stdout.String())
@@ -100,7 +100,7 @@ func TestPrefixError(t *testing.T) {
 	const NOFLAGS = 1 << 16
 	var root log.Logger = New(&stdout, &stderr, NOFLAGS)
 	var log = root.WithPrefix("prefix")
-	log.Error("stderr %q", "%")
+	log.Error("stderr \u0025q", "%")
 
 	if stdout.String() != "" {
 		t.Fatalf("expected %q, got %q", "", stdout.String())
