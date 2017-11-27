@@ -52,82 +52,84 @@ func TestTranslateService(t *testing.T) {
 		want testClusterCache
 	}{{
 		name: "single service port",
-		svc: &v1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "simple",
-				Namespace: "default",
-			},
-			Spec: v1.ServiceSpec{
-				Selector: map[string]string{
-					"app": "simple",
-				},
-				Ports: []v1.ServicePort{{
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(6502),
-				}},
-			},
-		},
+		svc: service("default", "simple", v1.ServicePort{
+			Protocol:   "TCP",
+			Port:       80,
+			TargetPort: intstr.FromInt(6502),
+		}),
 		want: testClusterCache{
-			"default/simple/80": &v2.Cluster{
-				Name: "default/simple/80",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig: &v2.ConfigSource{
-						ConfigSourceSpecifier: &v2.ConfigSource_ApiConfigSource{
-							ApiConfigSource: &v2.ApiConfigSource{
-								ApiType:     v2.ApiConfigSource_GRPC,
-								ClusterName: []string{"xds_cluster"},
-							},
-						},
-					},
-					ServiceName: "default/simple/6502",
-				},
-				ConnectTimeout: &duration.Duration{
-					Nanos: 250 * millisecond,
-				},
-				LbPolicy: v2.Cluster_ROUND_ROBIN,
-			},
+			"default/simple/80": cluster("default/simple/80", "default/simple/6502"),
 		},
 	}, {
 		name: "long namespace and service name",
-		svc: &v1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "tiny-cog-department-test-instance",
-				Namespace: "beurocratic-company-test-domain-1",
+		svc: service(
+			"beurocratic-company-test-domain-1",
+			"tiny-cog-department-test-instance",
+			v1.ServicePort{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(6502),
 			},
-			Spec: v1.ServiceSpec{
-				Selector: map[string]string{
-					"app": "simple",
-				},
-				Ports: []v1.ServicePort{{
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(6502),
-				}},
-			},
-		},
+		),
 		want: testClusterCache{
-			"beurocratic-company-test-domain-1/tiny-cog-depa-52e801/80": &v2.Cluster{
-				Name: "beurocratic-company-test-domain-1/tiny-cog-depa-52e801/80",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig: &v2.ConfigSource{
-						ConfigSourceSpecifier: &v2.ConfigSource_ApiConfigSource{
-							ApiConfigSource: &v2.ApiConfigSource{
-								ApiType:     v2.ApiConfigSource_GRPC,
-								ClusterName: []string{"xds_cluster"},
-							},
-						},
-					},
-					ServiceName: "beurocratic-company-test-domain-1/tiny-cog-department-test-instance/6502", // ServiceName is not subject to the 60 char limit
-				},
-				ConnectTimeout: &duration.Duration{
-					Nanos: 250 * millisecond,
-				},
-				LbPolicy: v2.Cluster_ROUND_ROBIN,
-			},
+			"beurocratic-company-test-domain-1/tiny-cog-depa-52e801/80": cluster(
+				"beurocratic-company-test-domain-1/tiny-cog-depa-52e801/80",
+				"beurocratic-company-test-domain-1/tiny-cog-department-test-instance/6502", // ServiceName is not subject to the 60 char limit
+			),
 		},
+	}, {
+		name: "single named service port",
+		svc: service("default", "simple", v1.ServicePort{
+			Name:       "http",
+			Protocol:   "TCP",
+			Port:       80,
+			TargetPort: intstr.FromInt(6502),
+		}),
+		want: testClusterCache{
+			"default/simple/http": cluster("default/simple/http", "default/simple/6502"),
+			"default/simple/80":   cluster("default/simple/80", "default/simple/6502"),
+		},
+	}, {
+		name: "two service ports",
+		svc: service("default", "simple", v1.ServicePort{
+			Name:       "http",
+			Protocol:   "TCP",
+			Port:       80,
+			TargetPort: intstr.FromInt(6502),
+		}, v1.ServicePort{
+			Name:       "alt",
+			Protocol:   "TCP",
+			Port:       8080,
+			TargetPort: intstr.FromString("9001"),
+		}),
+		want: testClusterCache{
+			"default/simple/http": cluster("default/simple/http", "default/simple/6502"),
+			"default/simple/80":   cluster("default/simple/80", "default/simple/6502"),
+			"default/simple/alt":  cluster("default/simple/alt", "default/simple/9001"),
+			"default/simple/8080": cluster("default/simple/8080", "default/simple/9001"),
+		},
+	}, {
+		name: "one tcp service, one udp service",
+		svc: service("default", "simple", v1.ServicePort{
+			Protocol:   "UDP",
+			Port:       80,
+			TargetPort: intstr.FromInt(6502),
+		}, v1.ServicePort{
+			Protocol:   "TCP",
+			Port:       8080,
+			TargetPort: intstr.FromString("9001"),
+		}),
+		want: testClusterCache{
+			"default/simple/8080": cluster("default/simple/8080", "default/simple/9001"),
+		},
+	}, {
+		name: "one udp service",
+		svc: service("default", "simple", v1.ServicePort{
+			Protocol:   "UDP",
+			Port:       80,
+			TargetPort: intstr.FromInt(6502),
+		}),
+		want: testClusterCache{},
 	}}
 
 	for _, tc := range tests {
@@ -457,5 +459,39 @@ func TestTruncate(t *testing.T) {
 				t.Fatalf("hashname(%d, %q, %q): got %q, want %q", tc.l, tc.s, tc.suffix, got, tc.want)
 			}
 		})
+	}
+}
+
+func service(ns, name string, ports ...v1.ServicePort) *v1.Service {
+	return &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: ports,
+		},
+	}
+}
+
+func cluster(name, servicename string) *v2.Cluster {
+	return &v2.Cluster{
+		Name: name,
+		Type: v2.Cluster_EDS,
+		EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+			EdsConfig: &v2.ConfigSource{
+				ConfigSourceSpecifier: &v2.ConfigSource_ApiConfigSource{
+					ApiConfigSource: &v2.ApiConfigSource{
+						ApiType:     v2.ApiConfigSource_GRPC,
+						ClusterName: []string{"xds_cluster"},
+					},
+				},
+			},
+			ServiceName: servicename,
+		},
+		ConnectTimeout: &duration.Duration{
+			Nanos: 250 * millisecond,
+		},
+		LbPolicy: v2.Cluster_ROUND_ROBIN,
 	}
 }
