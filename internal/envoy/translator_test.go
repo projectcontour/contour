@@ -89,6 +89,45 @@ func TestTranslateService(t *testing.T) {
 				LbPolicy: v2.Cluster_ROUND_ROBIN,
 			},
 		},
+	}, {
+		name: "long namespace and service name",
+		svc: &v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "tiny-cog-department-test-instance",
+				Namespace: "beurocratic-company-test-domain-1",
+			},
+			Spec: v1.ServiceSpec{
+				Selector: map[string]string{
+					"app": "simple",
+				},
+				Ports: []v1.ServicePort{{
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(6502),
+				}},
+			},
+		},
+		want: testClusterCache{
+			"beurocratic-company-test-domain-1/tiny-cog-depa-52e801/80": &v2.Cluster{
+				Name: "beurocratic-company-test-domain-1/tiny-cog-depa-52e801/80",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig: &v2.ConfigSource{
+						ConfigSourceSpecifier: &v2.ConfigSource_ApiConfigSource{
+							ApiConfigSource: &v2.ApiConfigSource{
+								ApiType:     v2.ApiConfigSource_GRPC,
+								ClusterName: []string{"xds_cluster"},
+							},
+						},
+					},
+					ServiceName: "beurocratic-company-test-domain-1/tiny-cog-department-test-instance/6502", // ServiceName is not subject to the 60 char limit
+				},
+				ConnectTimeout: &duration.Duration{
+					Nanos: 250 * millisecond,
+				},
+				LbPolicy: v2.Cluster_ROUND_ROBIN,
+			},
+		},
 	}}
 
 	for _, tc := range tests {
