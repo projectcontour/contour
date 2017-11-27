@@ -45,7 +45,7 @@ func (cc testClusterCache) Values() []*v2.Cluster {
 	return r
 }
 
-func TestTranslateService(t *testing.T) {
+func TestTranslatorAddService(t *testing.T) {
 	tests := []struct {
 		name string
 		svc  *v1.Service
@@ -140,7 +140,7 @@ func TestTranslateService(t *testing.T) {
 				Logger:       stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
 				ClusterCache: cc,
 			}
-			tr.translateService(tc.svc)
+			tr.addService(tc.svc)
 			if !reflect.DeepEqual(tc.want, tr.ClusterCache) {
 				t.Fatalf("translateService(%v): got: %v, want: %v", tc.svc, tr.ClusterCache, tc.want)
 			}
@@ -166,7 +166,7 @@ func (cc testClusterLoadAssignmentCache) Values() []*v2.ClusterLoadAssignment {
 	return r
 }
 
-func TestTranslateEndpoints(t *testing.T) {
+func TestTranslatorAddEndpoints(t *testing.T) {
 	tests := []struct {
 		name string
 		ep   *v1.Endpoints
@@ -209,7 +209,7 @@ func TestTranslateEndpoints(t *testing.T) {
 				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
 				ClusterLoadAssignmentCache: cc,
 			}
-			tr.translateEndpoints(tc.ep)
+			tr.addEndpoints(tc.ep)
 			if !reflect.DeepEqual(tc.want, tr.ClusterLoadAssignmentCache) {
 				t.Fatalf("translateEndpoints(%v): got: %v, want: %v", tc.ep, tr.ClusterLoadAssignmentCache, tc.want)
 			}
@@ -235,7 +235,7 @@ func (cc testVirtualHostCache) Values() []*v2.VirtualHost {
 	return r
 }
 
-func TestTranslateIngress(t *testing.T) {
+func TestTranslatorAddIngress(t *testing.T) {
 	tests := []struct {
 		name string
 		ing  *v1beta1.Ingress
@@ -577,7 +577,7 @@ func TestTranslateIngress(t *testing.T) {
 				Logger:           stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
 				VirtualHostCache: cc,
 			}
-			tr.translateIngress(tc.ing)
+			tr.addIngress(tc.ing)
 			if !reflect.DeepEqual(tc.want, tr.VirtualHostCache) {
 				t.Fatalf("translateIngress(%v): got: %v, want: %v", tc.ing, tr.VirtualHostCache, tc.want)
 			}

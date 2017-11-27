@@ -69,25 +69,13 @@ func (t *Translator) OnDelete(obj interface{}) {
 	}
 }
 
-func (t *Translator) addService(svc *v1.Service) {
-	t.translateService(svc)
-}
-
-func (t *Translator) addEndpoints(ep *v1.Endpoints) {
-	t.translateEndpoints(ep)
-}
-
-func (t *Translator) addIngress(i *v1beta1.Ingress) {
-	t.translateIngress(i)
-}
-
 const (
 	nanosecond  = 1
 	microsecond = 1000 * nanosecond
 	millisecond = 1000 * microsecond
 )
 
-func (t *Translator) translateService(svc *v1.Service) {
+func (t *Translator) addService(svc *v1.Service) {
 	for _, p := range svc.Spec.Ports {
 		switch p.Protocol {
 		case "TCP":
@@ -143,7 +131,7 @@ type ClusterLoadAssignmentHandler struct {
 	log.Logger
 }
 
-func (t *Translator) translateEndpoints(e *v1.Endpoints) {
+func (t *Translator) addEndpoints(e *v1.Endpoints) {
 	for _, s := range e.Subsets {
 		// skip any subsets that don't ahve ready addresses or ports
 		if len(s.Addresses) == 0 || len(s.Ports) == 0 {
@@ -204,7 +192,7 @@ type IngressResourceHandler struct {
 	log.Logger
 }
 
-func (t *Translator) translateIngress(i *v1beta1.Ingress) {
+func (t *Translator) addIngress(i *v1beta1.Ingress) {
 	class, ok := i.Annotations["kubernetes.io/ingress.class"]
 	if ok && class != "contour" {
 		// if there is an ingress class set, but it is not set to "contour"
