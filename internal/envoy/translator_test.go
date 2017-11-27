@@ -180,6 +180,25 @@ func TestTranslateEndpoints(t *testing.T) {
 		want: clusterloadassignmentcache(
 			clusterloadassignment("default/simple/8080", lbendpoints(endpoint("192.168.183.24", 8080))),
 		),
+	}, {
+		name: "multiple addresses",
+		ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+			Addresses: addresses(
+				"23.23.247.89",
+				"50.17.192.147",
+				"50.17.206.192",
+				"50.19.99.160",
+			),
+			Ports: ports(80),
+		}),
+		want: clusterloadassignmentcache(
+			clusterloadassignment("default/httpbin-org/80", lbendpoints(
+				endpoint("23.23.247.89", 80),
+				endpoint("50.17.192.147", 80),
+				endpoint("50.17.206.192", 80),
+				endpoint("50.19.99.160", 80)),
+			),
+		),
 	}}
 
 	for _, tc := range tests {
@@ -470,8 +489,8 @@ func clustercache(clusters ...*v2.Cluster) testClusterCache {
 func endpoints(ns, name string, subsets ...v1.EndpointSubset) *v1.Endpoints {
 	return &v1.Endpoints{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
+			Name:      name,
+			Namespace: ns,
 		},
 		Subsets: subsets,
 	}
