@@ -173,50 +173,13 @@ func TestTranslateEndpoints(t *testing.T) {
 		want testClusterLoadAssignmentCache
 	}{{
 		name: "simple",
-		ep: &v1.Endpoints{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "simple",
-				Namespace: "default",
-			},
-			Subsets: []v1.EndpointSubset{{
-				Addresses: []v1.EndpointAddress{{
-					IP: "192.168.183.24",
-				}},
-				Ports: []v1.EndpointPort{{
-					Port: 8080,
-				}},
-			}},
-		},
-		want: testClusterLoadAssignmentCache{
-			"default/simple/8080": &v2.ClusterLoadAssignment{
-				ClusterName: "default/simple/8080",
-				Endpoints: []*v2.LocalityLbEndpoints{{
-					Locality: &v2.Locality{
-						Region:  "ap-southeast-2", // totally a guess
-						Zone:    "2b",
-						SubZone: "banana", // yeah, need to think of better values here
-					},
-					LbEndpoints: []*v2.LbEndpoint{{
-						Endpoint: &v2.Endpoint{
-							Address: &v2.Address{
-								Address: &v2.Address_SocketAddress{
-									SocketAddress: &v2.SocketAddress{
-										Protocol: v2.SocketAddress_TCP,
-										Address:  "192.168.183.24",
-										PortSpecifier: &v2.SocketAddress_PortValue{
-											PortValue: 8080,
-										},
-									},
-								},
-							},
-						},
-					}},
-				}},
-				Policy: &v2.ClusterLoadAssignment_Policy{
-					DropOverload: 0.0,
-				},
-			},
-		},
+		ep: endpoints("default", "simple", v1.EndpointSubset{
+			Addresses: addresses("192.168.183.24"),
+			Ports:     ports(8080),
+		}),
+		want: clusterloadassignmentcache(
+			clusterloadassignment("default/simple/8080", lbendpoints(endpoint("192.168.183.24", 8080))),
+		),
 	}}
 
 	for _, tc := range tests {
@@ -502,4 +465,81 @@ func clustercache(clusters ...*v2.Cluster) testClusterCache {
 		cc[c.Name] = c
 	}
 	return cc
+}
+
+func endpoints(ns, name string, subsets ...v1.EndpointSubset) *v1.Endpoints {
+	return &v1.Endpoints{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Subsets: subsets,
+	}
+}
+
+func addresses(ips ...string) []v1.EndpointAddress {
+	var addrs []v1.EndpointAddress
+	for _, ip := range ips {
+		addrs = append(addrs, v1.EndpointAddress{IP: ip})
+	}
+	return addrs
+}
+
+func ports(ps ...int32) []v1.EndpointPort {
+	var ports []v1.EndpointPort
+	for _, p := range ps {
+		ports = append(ports, v1.EndpointPort{Port: p})
+	}
+	return ports
+}
+
+func clusterloadassignmentcache(clas ...*v2.ClusterLoadAssignment) testClusterLoadAssignmentCache {
+	cc := make(testClusterLoadAssignmentCache)
+	for _, cla := range clas {
+		cc[cla.ClusterName] = cla
+	}
+	return cc
+}
+
+func clusterloadassignment(name string, lbendpoints []*v2.LbEndpoint) *v2.ClusterLoadAssignment {
+	return &v2.ClusterLoadAssignment{
+		ClusterName: name,
+		Endpoints: []*v2.LocalityLbEndpoints{{
+			Locality: &v2.Locality{
+				Region:  "ap-southeast-2", // totally a guess
+				Zone:    "2b",
+				SubZone: "banana", // yeah, need to think of better values here
+			},
+			LbEndpoints: lbendpoints,
+		}},
+		Policy: &v2.ClusterLoadAssignment_Policy{
+			DropOverload: 0.0,
+		},
+	}
+}
+
+func endpoint(addr string, port uint32) *v2.Endpoint {
+	return &v2.Endpoint{
+		Address: &v2.Address{
+			Address: &v2.Address_SocketAddress{
+				SocketAddress: &v2.SocketAddress{
+					Protocol: v2.SocketAddress_TCP,
+					Address:  addr,
+					PortSpecifier: &v2.SocketAddress_PortValue{
+						PortValue: port,
+					},
+				},
+			},
+		},
+	}
+}
+
+func lbendpoints(eps ...*v2.Endpoint) []*v2.LbEndpoint {
+	var lbep []*v2.LbEndpoint
+	for _, ep := range eps {
+		lbep = append(lbep, &v2.LbEndpoint{
+			Endpoint: ep,
+		})
+	}
+	return lbep
 }
