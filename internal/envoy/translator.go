@@ -148,11 +148,6 @@ func (t *Translator) removeService(svc *v1.Service) {
 	}
 }
 
-type ClusterLoadAssignmentHandler struct {
-	ClusterLoadAssignmentCache
-	log.Logger
-}
-
 func (t *Translator) addEndpoints(e *v1.Endpoints) {
 	for _, s := range e.Subsets {
 		// skip any subsets that don't ahve ready addresses or ports
@@ -207,11 +202,6 @@ func (t *Translator) removeEndpoints(e *v1.Endpoints) {
 			t.ClusterLoadAssignmentCache.Remove(hashname(60, e.ObjectMeta.Namespace, e.ObjectMeta.Name, strconv.Itoa(int(p.Port))))
 		}
 	}
-}
-
-type IngressResourceHandler struct {
-	VirtualHostCache
-	log.Logger
 }
 
 func (t *Translator) addIngress(i *v1beta1.Ingress) {

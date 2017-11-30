@@ -67,16 +67,16 @@ type VirtualHostCache interface {
 }
 
 // NewGPRCAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
-func NewGRPCAPI(l log.Logger, cc ClusterCache, ec ClusterLoadAssignmentCache, rc VirtualHostCache) *grpc.Server {
+func NewGRPCAPI(l log.Logger, t *envoy.Translator) *grpc.Server {
 	s := grpc.NewServer()
 	lc := make(envoy.ListenerCache, 1)
 	lc <- defaultListener()
 	v2.RegisterClusterDiscoveryServiceServer(s, &CDS{
-		ClusterCache: cc,
+		ClusterCache: t.ClusterCache,
 		Logger:       l.WithPrefix("CDS"),
 	})
 	v2.RegisterEndpointDiscoveryServiceServer(s, &EDS{
-		ClusterLoadAssignmentCache: ec,
+		ClusterLoadAssignmentCache: t.ClusterLoadAssignmentCache,
 		Logger: l.WithPrefix("EDS"),
 	})
 	v2.RegisterListenerDiscoveryServiceServer(s, &LDS{
@@ -84,7 +84,7 @@ func NewGRPCAPI(l log.Logger, cc ClusterCache, ec ClusterLoadAssignmentCache, rc
 		Logger:        l.WithPrefix("LDS"),
 	})
 	v2.RegisterRouteDiscoveryServiceServer(s, &RDS{
-		VirtualHostCache: rc, // TODO(dfc) rename VirtualHostCache
+		VirtualHostCache: t.VirtualHostCache,
 		Logger:           l.WithPrefix("RDS"),
 	})
 	return s
