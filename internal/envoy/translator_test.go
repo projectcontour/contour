@@ -137,11 +137,16 @@ func TestTranslatorAddService(t *testing.T) {
 			const NOFLAGS = 1 << 16
 			cc := make(testClusterCache)
 			tr := &Translator{
-				Logger:       stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
-				ClusterCache: cc,
+				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+				ClusterCache: struct {
+					ClusterCache
+					Cond
+				}{
+					ClusterCache: cc,
+				},
 			}
 			tr.addService(tc.svc)
-			if !reflect.DeepEqual(tc.want, tr.ClusterCache) {
+			if !reflect.DeepEqual(tc.want, tr.ClusterCache.ClusterCache) {
 				t.Fatalf("addService(%v): got: %v, want: %v", tc.svc, tr.ClusterCache, tc.want)
 			}
 		})
@@ -217,10 +222,7 @@ func TestTranslatorRemoveService(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			const NOFLAGS = 1 << 16
-			tr := &Translator{
-				Logger:       stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
-				ClusterCache: NewClusterCache(),
-			}
+			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
 			tc.setup(tr)
 			tr.removeService(tc.svc)
 			got := tr.ClusterCache.Values()
@@ -290,10 +292,15 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 			cc := make(testClusterLoadAssignmentCache)
 			tr := &Translator{
 				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
-				ClusterLoadAssignmentCache: cc,
+				ClusterLoadAssignmentCache: struct {
+					ClusterLoadAssignmentCache
+					Cond
+				}{
+					ClusterLoadAssignmentCache: cc,
+				},
 			}
 			tr.addEndpoints(tc.ep)
-			if !reflect.DeepEqual(tc.want, tr.ClusterLoadAssignmentCache) {
+			if !reflect.DeepEqual(tc.want, tr.ClusterLoadAssignmentCache.ClusterLoadAssignmentCache) {
 				t.Fatalf("addEndpoints(%v): got: %v, want: %v", tc.ep, tr.ClusterLoadAssignmentCache, tc.want)
 			}
 		})
@@ -347,10 +354,7 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			const NOFLAGS = 1 << 16
-			tr := &Translator{
-				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
-				ClusterLoadAssignmentCache: NewClusterLoadAssignmentCache(),
-			}
+			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
 			tc.setup(tr)
 			tr.removeEndpoints(tc.ep)
 			got := tr.ClusterLoadAssignmentCache.Values()
@@ -654,11 +658,16 @@ func TestTranslatorAddIngress(t *testing.T) {
 			const NOFLAGS = 1 << 16
 			cc := make(testVirtualHostCache)
 			tr := &Translator{
-				Logger:           stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
-				VirtualHostCache: cc,
+				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+				VirtualHostCache: struct {
+					VirtualHostCache
+					Cond
+				}{
+					VirtualHostCache: cc,
+				},
 			}
 			tr.addIngress(tc.ing)
-			if !reflect.DeepEqual(tc.want, tr.VirtualHostCache) {
+			if !reflect.DeepEqual(tc.want, tr.VirtualHostCache.VirtualHostCache) {
 				t.Fatalf("eddIngress(%v): got: %v, want: %v", tc.ing, tr.VirtualHostCache, tc.want)
 			}
 		})
@@ -743,10 +752,7 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			const NOFLAGS = 1 << 16
-			tr := &Translator{
-				Logger:           stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
-				VirtualHostCache: NewVirtualHostCache(),
-			}
+			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
 			tc.setup(tr)
 			tr.removeIngress(tc.ing)
 			got := tr.VirtualHostCache.Values()

@@ -71,18 +71,13 @@ func main() {
 		}
 
 		// gRPC v2 support
-		t := envoy.Translator{
-			Logger:                     logger.WithPrefix("Translator"),
-			ClusterCache:               envoy.NewClusterCache(),
-			ClusterLoadAssignmentCache: envoy.NewClusterLoadAssignmentCache(),
-			VirtualHostCache:           envoy.NewVirtualHostCache(),
-		}
+		t := envoy.NewTranslator(logger.WithPrefix("translator"))
 
 		// workgroup registration
 		var g workgroup.Group
-		k8s.WatchServices(&g, client, logger, &ds, &t)
-		k8s.WatchEndpoints(&g, client, logger, &ds, &t)
-		k8s.WatchIngress(&g, client, logger, &ds, &t)
+		k8s.WatchServices(&g, client, logger, &ds, t)
+		k8s.WatchEndpoints(&g, client, logger, &ds, t)
+		k8s.WatchIngress(&g, client, logger, &ds, t)
 
 		g.Add(func(stop <-chan struct{}) {
 			logger := logger.WithPrefix("JSONAPI")
@@ -111,7 +106,7 @@ func main() {
 				logger.Errorf("could not listen on %s: %v", V2_API_ADDRESS, err)
 				return // TODO(dfc) should return the error not log it
 			}
-			s := contour.NewGRPCAPI(logger, &t)
+			s := contour.NewGRPCAPI(logger, t)
 			logger.Infof("started")
 			defer logger.Infof("stopped")
 			s.Serve(l)
