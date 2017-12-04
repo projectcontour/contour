@@ -25,7 +25,6 @@ import (
 // A ConfigWriter knows how to write a bootstap Envoy configuration in both JSON
 // and YAML formats.
 type ConfigWriter struct {
-
 	// AdminAccessLogPath is the path to write the access log for the administration server.
 	// Defaults to /dev/null.
 	AdminAccessLogPath string
