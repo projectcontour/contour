@@ -28,13 +28,33 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+// NewTranslator returns a new Translator.
+func NewTranslator(log log.Logger) *Translator {
+	t := &Translator{
+		Logger: log,
+	}
+	t.ClusterCache.ClusterCache = NewClusterCache()
+	t.ClusterLoadAssignmentCache.ClusterLoadAssignmentCache = NewClusterLoadAssignmentCache()
+	t.VirtualHostCache.VirtualHostCache = NewVirtualHostCache()
+	return t
+}
+
 // Translator receives notifications from the Kubernetes API and translates those
 // objects into additions and removals entries of Envoy gRPC objects from a cache.
 type Translator struct {
 	log.Logger
-	ClusterCache
-	ClusterLoadAssignmentCache
-	VirtualHostCache
+	ClusterCache struct {
+		ClusterCache
+		Cond
+	}
+	ClusterLoadAssignmentCache struct {
+		ClusterLoadAssignmentCache
+		Cond
+	}
+	VirtualHostCache struct {
+		VirtualHostCache
+		Cond
+	}
 }
 
 func (t *Translator) OnAdd(obj interface{}) {
