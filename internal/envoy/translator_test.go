@@ -27,29 +27,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-type testClusterCache map[string]*v2.Cluster
-
-func (cc testClusterCache) Add(c *v2.Cluster) {
-	cc[c.Name] = c
-}
-
-func (cc testClusterCache) Remove(name string) {
-	delete(cc, name)
-}
-
-func (cc testClusterCache) Values() []*v2.Cluster {
-	var r []*v2.Cluster
-	for _, v := range cc {
-		r = append(r, v)
-	}
-	return r
-}
-
 func TestTranslatorAddService(t *testing.T) {
 	tests := []struct {
 		name string
 		svc  *v1.Service
-		want testClusterCache
+		want []*v2.Cluster
 	}{{
 		name: "single service port",
 		svc: service("default", "simple", v1.ServicePort{
@@ -57,9 +39,9 @@ func TestTranslatorAddService(t *testing.T) {
 			Port:       80,
 			TargetPort: intstr.FromInt(6502),
 		}),
-		want: clustercache(
+		want: []*v2.Cluster{
 			cluster("default/simple/80", "default/simple/6502"),
-		),
+		},
 	}, {
 		name: "long namespace and service name",
 		svc: service(
@@ -71,12 +53,12 @@ func TestTranslatorAddService(t *testing.T) {
 				TargetPort: intstr.FromInt(6502),
 			},
 		),
-		want: clustercache(
+		want: []*v2.Cluster{
 			cluster(
 				"beurocratic-company-test-domain-1/tiny-cog-depa-52e801/80",
 				"beurocratic-company-test-domain-1/tiny-cog-department-test-instance/6502", // ServiceName is not subject to the 60 char limit
 			),
-		),
+		},
 	}, {
 		name: "single named service port",
 		svc: service("default", "simple", v1.ServicePort{
@@ -85,10 +67,10 @@ func TestTranslatorAddService(t *testing.T) {
 			Port:       80,
 			TargetPort: intstr.FromInt(6502),
 		}),
-		want: clustercache(
-			cluster("default/simple/http", "default/simple/6502"),
+		want: []*v2.Cluster{
 			cluster("default/simple/80", "default/simple/6502"),
-		),
+			cluster("default/simple/http", "default/simple/6502"),
+		},
 	}, {
 		name: "two service ports",
 		svc: service("default", "simple", v1.ServicePort{
@@ -102,12 +84,12 @@ func TestTranslatorAddService(t *testing.T) {
 			Port:       8080,
 			TargetPort: intstr.FromString("9001"),
 		}),
-		want: clustercache(
-			cluster("default/simple/http", "default/simple/6502"),
+		want: []*v2.Cluster{
 			cluster("default/simple/80", "default/simple/6502"),
-			cluster("default/simple/alt", "default/simple/9001"),
 			cluster("default/simple/8080", "default/simple/9001"),
-		),
+			cluster("default/simple/alt", "default/simple/9001"),
+			cluster("default/simple/http", "default/simple/6502"),
+		},
 	}, {
 		name: "one tcp service, one udp service",
 		svc: service("default", "simple", v1.ServicePort{
@@ -119,9 +101,9 @@ func TestTranslatorAddService(t *testing.T) {
 			Port:       8080,
 			TargetPort: intstr.FromString("9001"),
 		}),
-		want: clustercache(
+		want: []*v2.Cluster{
 			cluster("default/simple/8080", "default/simple/9001"),
-		),
+		},
 	}, {
 		name: "one udp service",
 		svc: service("default", "simple", v1.ServicePort{
@@ -129,25 +111,17 @@ func TestTranslatorAddService(t *testing.T) {
 			Port:       80,
 			TargetPort: intstr.FromInt(6502),
 		}),
-		want: clustercache(),
+		want: []*v2.Cluster{},
 	}}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			const NOFLAGS = 1 << 16
-			cc := make(testClusterCache)
-			tr := &Translator{
-				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
-				ClusterCache: struct {
-					ClusterCache
-					Cond
-				}{
-					ClusterCache: cc,
-				},
-			}
+			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
 			tr.addService(tc.svc)
-			if !reflect.DeepEqual(tc.want, tr.ClusterCache.ClusterCache) {
-				t.Fatalf("addService(%v): got: %v, want: %v", tc.svc, tr.ClusterCache, tc.want)
+			got := tr.ClusterCache.Values()
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("addService(%v): got: %v, want: %v", tc.svc, got, tc.want)
 			}
 		})
 	}
@@ -233,38 +207,20 @@ func TestTranslatorRemoveService(t *testing.T) {
 	}
 }
 
-type testClusterLoadAssignmentCache map[string]*v2.ClusterLoadAssignment
-
-func (cc testClusterLoadAssignmentCache) Add(c *v2.ClusterLoadAssignment) {
-	cc[c.ClusterName] = c
-}
-
-func (cc testClusterLoadAssignmentCache) Remove(name string) {
-	delete(cc, name)
-}
-
-func (cc testClusterLoadAssignmentCache) Values() []*v2.ClusterLoadAssignment {
-	var r []*v2.ClusterLoadAssignment
-	for _, v := range cc {
-		r = append(r, v)
-	}
-	return r
-}
-
 func TestTranslatorAddEndpoints(t *testing.T) {
 	tests := []struct {
 		name string
 		ep   *v1.Endpoints
-		want testClusterLoadAssignmentCache
+		want []*v2.ClusterLoadAssignment
 	}{{
 		name: "simple",
 		ep: endpoints("default", "simple", v1.EndpointSubset{
 			Addresses: addresses("192.168.183.24"),
 			Ports:     ports(8080),
 		}),
-		want: clusterloadassignmentcache(
+		want: []*v2.ClusterLoadAssignment{
 			clusterloadassignment("default/simple/8080", lbendpoints(endpoint("192.168.183.24", 8080))),
-		),
+		},
 	}, {
 		name: "multiple addresses",
 		ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
@@ -276,32 +232,24 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 			),
 			Ports: ports(80),
 		}),
-		want: clusterloadassignmentcache(
+		want: []*v2.ClusterLoadAssignment{
 			clusterloadassignment("default/httpbin-org/80", lbendpoints(
 				endpoint("23.23.247.89", 80),
 				endpoint("50.17.192.147", 80),
 				endpoint("50.17.206.192", 80),
 				endpoint("50.19.99.160", 80)),
 			),
-		),
+		},
 	}}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			const NOFLAGS = 1 << 16
-			cc := make(testClusterLoadAssignmentCache)
-			tr := &Translator{
-				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
-				ClusterLoadAssignmentCache: struct {
-					ClusterLoadAssignmentCache
-					Cond
-				}{
-					ClusterLoadAssignmentCache: cc,
-				},
-			}
+			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
 			tr.addEndpoints(tc.ep)
-			if !reflect.DeepEqual(tc.want, tr.ClusterLoadAssignmentCache.ClusterLoadAssignmentCache) {
-				t.Fatalf("addEndpoints(%v): got: %v, want: %v", tc.ep, tr.ClusterLoadAssignmentCache, tc.want)
+			got := tr.ClusterLoadAssignmentCache.Values()
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("addEndpoints(%v): got: %v, want: %v", tc.ep, got, tc.want)
 			}
 		})
 	}
@@ -365,29 +313,11 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 	}
 }
 
-type testVirtualHostCache map[string]*v2.VirtualHost
-
-func (cc testVirtualHostCache) Add(c *v2.VirtualHost) {
-	cc[c.Name] = c
-}
-
-func (cc testVirtualHostCache) Remove(name string) {
-	delete(cc, name)
-}
-
-func (cc testVirtualHostCache) Values() []*v2.VirtualHost {
-	var r []*v2.VirtualHost
-	for _, v := range cc {
-		r = append(r, v)
-	}
-	return r
-}
-
 func TestTranslatorAddIngress(t *testing.T) {
 	tests := []struct {
 		name string
 		ing  *v1beta1.Ingress
-		want testVirtualHostCache
+		want []*v2.VirtualHost
 	}{{
 		name: "default backend",
 		ing: &v1beta1.Ingress{
@@ -399,16 +329,14 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		want: virtualhostcache(
-			&v2.VirtualHost{
-				Name:    "default/simple",
-				Domains: []string{"*"},
-				Routes: []*v2.Route{{
-					Match:  prefixmatch("/"),
-					Action: clusteraction("default/backend/80"),
-				}},
-			},
-		),
+		want: []*v2.VirtualHost{{
+			Name:    "default/simple",
+			Domains: []string{"*"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/"),
+				Action: clusteraction("default/backend/80"),
+			}},
+		}},
 	}, {
 		name: "incorrect ingress class",
 		ing: &v1beta1.Ingress{
@@ -423,7 +351,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		want: virtualhostcache(), // expected to be empty, the ingress class is ingnored
+		want: []*v2.VirtualHost{}, // expected to be empty, the ingress class is ingnored
 	}, {
 		name: "explicit ingress class",
 		ing: &v1beta1.Ingress{
@@ -438,16 +366,14 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		want: virtualhostcache(
-			&v2.VirtualHost{
-				Name:    "default/correct",
-				Domains: []string{"*"},
-				Routes: []*v2.Route{{
-					Match:  prefixmatch("/"), // match all
-					Action: clusteraction("default/backend/80"),
-				}},
-			},
-		),
+		want: []*v2.VirtualHost{{
+			Name:    "default/correct",
+			Domains: []string{"*"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/"), // match all
+				Action: clusteraction("default/backend/80"),
+			}},
+		}},
 	}, {
 		name: "name based vhost",
 		ing: &v1beta1.Ingress{
@@ -462,16 +388,14 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		want: virtualhostcache(
-			&v2.VirtualHost{
-				Name:    "default/httpbin/httpbin.org",
-				Domains: []string{"httpbin.org"},
-				Routes: []*v2.Route{{
-					Match:  prefixmatch("/"), // match all
-					Action: clusteraction("default/httpbin-org/80"),
-				}},
-			},
-		),
+		want: []*v2.VirtualHost{{
+			Name:    "default/httpbin/httpbin.org",
+			Domains: []string{"httpbin.org"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/"), // match all
+				Action: clusteraction("default/httpbin-org/80"),
+			}},
+		}},
 	}, {
 		name: "regex vhost without match characters",
 		ing: &v1beta1.Ingress{
@@ -493,16 +417,14 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		want: virtualhostcache(
-			&v2.VirtualHost{
-				Name:    "default/httpbin/httpbin.org",
-				Domains: []string{"httpbin.org"},
-				Routes: []*v2.Route{{
-					Match:  prefixmatch("/ip"), // if the field does not contact any regex characters, we treat it as a prefix
-					Action: clusteraction("default/httpbin-org/80"),
-				}},
-			},
-		),
+		want: []*v2.VirtualHost{{
+			Name:    "default/httpbin/httpbin.org",
+			Domains: []string{"httpbin.org"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/ip"), // if the field does not contact any regex characters, we treat it as a prefix
+				Action: clusteraction("default/httpbin-org/80"),
+			}},
+		}},
 	}, {
 		name: "regex vhost with match characters",
 		ing: &v1beta1.Ingress{
@@ -524,16 +446,14 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		want: virtualhostcache(
-			&v2.VirtualHost{
-				Name:    "default/httpbin/httpbin.org",
-				Domains: []string{"httpbin.org"},
-				Routes: []*v2.Route{{
-					Match:  regexmatch("/get.*"),
-					Action: clusteraction("default/httpbin-org/80"),
-				}},
-			},
-		),
+		want: []*v2.VirtualHost{{
+			Name:    "default/httpbin/httpbin.org",
+			Domains: []string{"httpbin.org"},
+			Routes: []*v2.Route{{
+				Match:  regexmatch("/get.*"),
+				Action: clusteraction("default/httpbin-org/80"),
+			}},
+		}},
 	}, {
 		name: "named service port",
 		ing: &v1beta1.Ingress{
@@ -548,16 +468,14 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		want: virtualhostcache(
-			&v2.VirtualHost{
-				Name:    "default/httpbin/httpbin.org",
-				Domains: []string{"httpbin.org"},
-				Routes: []*v2.Route{{
-					Match:  prefixmatch("/"),
-					Action: clusteraction("default/httpbin-org/http"),
-				}},
-			},
-		),
+		want: []*v2.VirtualHost{{
+			Name:    "default/httpbin/httpbin.org",
+			Domains: []string{"httpbin.org"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/"),
+				Action: clusteraction("default/httpbin-org/http"),
+			}},
+		}},
 	}, {
 		name: "multiple routes",
 		ing: &v1beta1.Ingress{
@@ -582,19 +500,17 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		want: virtualhostcache(
-			&v2.VirtualHost{
-				Name:    "default/httpbin/httpbin.org",
-				Domains: []string{"httpbin.org"},
-				Routes: []*v2.Route{{
-					Match:  prefixmatch("/peter"),
-					Action: clusteraction("default/peter/80"),
-				}, {
-					Match:  prefixmatch("/paul"),
-					Action: clusteraction("default/paul/paul"),
-				}},
-			},
-		),
+		want: []*v2.VirtualHost{{
+			Name:    "default/httpbin/httpbin.org",
+			Domains: []string{"httpbin.org"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/peter"),
+				Action: clusteraction("default/peter/80"),
+			}, {
+				Match:  prefixmatch("/paul"),
+				Action: clusteraction("default/paul/paul"),
+			}},
+		}},
 	}, {
 		name: "multiple rules",
 		ing: &v1beta1.Ingress{
@@ -612,21 +528,21 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		want: virtualhostcache([]*v2.VirtualHost{{
-			Name:    "default/httpbin/httpbin.org",
-			Domains: []string{"httpbin.org"},
-			Routes: []*v2.Route{{
-				Match:  prefixmatch("/"),
-				Action: clusteraction("default/peter/80"),
-			}},
-		}, {
+		want: []*v2.VirtualHost{{
 			Name:    "default/httpbin/admin.httpbin.org",
 			Domains: []string{"admin.httpbin.org"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/"),
 				Action: clusteraction("default/paul/paul"),
 			}},
-		}}...),
+		}, {
+			Name:    "default/httpbin/httpbin.org",
+			Domains: []string{"httpbin.org"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/"),
+				Action: clusteraction("default/peter/80"),
+			}},
+		}},
 	}, {
 		name: "vhost name exceeds 60 chars", // heptio/contour#25
 		ing: &v1beta1.Ingress{
@@ -641,34 +557,24 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		want: virtualhostcache(
-			&v2.VirtualHost{
-				Name:    "default/my-service-name/my-very-very--c4d2d4",
-				Domains: []string{"my-very-very-long-service-host-name.my.domainname"},
-				Routes: []*v2.Route{{
-					Match:  prefixmatch("/"),
-					Action: clusteraction("default/my-service-name/80"),
-				}},
-			},
-		),
+		want: []*v2.VirtualHost{{
+			Name:    "default/my-service-name/my-very-very--c4d2d4",
+			Domains: []string{"my-very-very-long-service-host-name.my.domainname"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/"),
+				Action: clusteraction("default/my-service-name/80"),
+			}},
+		}},
 	}}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			const NOFLAGS = 1 << 16
-			cc := make(testVirtualHostCache)
-			tr := &Translator{
-				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
-				VirtualHostCache: struct {
-					VirtualHostCache
-					Cond
-				}{
-					VirtualHostCache: cc,
-				},
-			}
+			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
 			tr.addIngress(tc.ing)
-			if !reflect.DeepEqual(tc.want, tr.VirtualHostCache.VirtualHostCache) {
-				t.Fatalf("eddIngress(%v): got: %v, want: %v", tc.ing, tr.VirtualHostCache, tc.want)
+			got := tr.VirtualHostCache.Values()
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("eddIngress(%v): got: %v, want: %v", tc.ing, got, tc.want)
 			}
 		})
 	}
@@ -851,14 +757,6 @@ func cluster(name, servicename string) *v2.Cluster {
 	}
 }
 
-func clustercache(clusters ...*v2.Cluster) testClusterCache {
-	cc := make(testClusterCache)
-	for _, c := range clusters {
-		cc[c.Name] = c
-	}
-	return cc
-}
-
 func endpoints(ns, name string, subsets ...v1.EndpointSubset) *v1.Endpoints {
 	return &v1.Endpoints{
 		ObjectMeta: metav1.ObjectMeta{
@@ -883,14 +781,6 @@ func ports(ps ...int32) []v1.EndpointPort {
 		ports = append(ports, v1.EndpointPort{Port: p})
 	}
 	return ports
-}
-
-func clusterloadassignmentcache(clas ...*v2.ClusterLoadAssignment) testClusterLoadAssignmentCache {
-	cc := make(testClusterLoadAssignmentCache)
-	for _, cla := range clas {
-		cc[cla.ClusterName] = cla
-	}
-	return cc
 }
 
 func clusterloadassignment(name string, lbendpoints []*v2.LbEndpoint) *v2.ClusterLoadAssignment {
@@ -934,14 +824,6 @@ func lbendpoints(eps ...*v2.Endpoint) []*v2.LbEndpoint {
 		})
 	}
 	return lbep
-}
-
-func virtualhostcache(vhs ...*v2.VirtualHost) testVirtualHostCache {
-	vhc := make(testVirtualHostCache)
-	for _, vh := range vhs {
-		vhc[vh.Name] = vh
-	}
-	return vhc
 }
 
 func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
