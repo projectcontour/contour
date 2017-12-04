@@ -73,11 +73,13 @@ func main() {
 		// gRPC v2 support
 		t := envoy.NewTranslator(logger.WithPrefix("translator"))
 
-		// workgroup registration
 		var g workgroup.Group
-		k8s.WatchServices(&g, client, logger, &ds, t)
-		k8s.WatchEndpoints(&g, client, logger, &ds, t)
-		k8s.WatchIngress(&g, client, logger, &ds, t)
+
+		// buffer notifications to t to ensure they are handled sequentially.
+		buf := k8s.NewBuffer(&g, t, logger, 128)
+		k8s.WatchServices(&g, client, logger, &ds, buf)
+		k8s.WatchEndpoints(&g, client, logger, &ds, buf)
+		k8s.WatchIngress(&g, client, logger, &ds, buf)
 
 		g.Add(func(stop <-chan struct{}) {
 			logger := logger.WithPrefix("JSONAPI")
