@@ -21,7 +21,8 @@ import (
 )
 
 func TestNewClusterCacheReturnsAnEmptySlice(t *testing.T) {
-	cc := NewClusterCache()
+	var cc clusterCache
+	cc.init()
 	got := cc.Values()
 	want := make([]*v2.Cluster, 0)
 	if !reflect.DeepEqual(got, want) {
@@ -31,7 +32,8 @@ func TestNewClusterCacheReturnsAnEmptySlice(t *testing.T) {
 }
 
 func TestClusterCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
-	cc := NewClusterCache()
+	var cc clusterCache
+	cc.init()
 	c := &v2.Cluster{
 		Name: "alpha",
 	}
@@ -48,7 +50,8 @@ func TestClusterCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 }
 
 func TestClusterCacheValuesReturnsTheSameContents(t *testing.T) {
-	cc := NewClusterCache()
+	var cc clusterCache
+	cc.init()
 	c := &v2.Cluster{
 		Name: "alpha",
 	}
@@ -64,7 +67,8 @@ func TestClusterCacheValuesReturnsTheSameContents(t *testing.T) {
 }
 
 func TestClusterCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
-	cc := NewClusterCache()
+	var cc clusterCache
+	cc.init()
 	c1 := &v2.Cluster{
 		Name: "beta",
 	}
@@ -85,7 +89,8 @@ func TestClusterCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 }
 
 func TestClusterCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
-	cc := NewClusterCache()
+	var cc clusterCache
+	cc.init()
 	c1 := &v2.Cluster{
 		Name: "alpha",
 		Type: 1,
@@ -106,7 +111,8 @@ func TestClusterCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 }
 
 func TestClusterCacheAddIsCopyOnWrite(t *testing.T) {
-	cc := NewClusterCache()
+	var cc clusterCache
+	cc.init()
 	c1 := &v2.Cluster{
 		Name: "alpha",
 	}
@@ -125,7 +131,8 @@ func TestClusterCacheAddIsCopyOnWrite(t *testing.T) {
 }
 
 func TestClusterCacheRemove(t *testing.T) {
-	cc := NewClusterCache()
+	var cc clusterCache
+	cc.init()
 	c1 := &v2.Cluster{
 		Name: "alpha",
 	}
@@ -139,7 +146,8 @@ func TestClusterCacheRemove(t *testing.T) {
 }
 
 func TestNewClusterLoadAssignmentCacheReturnsAnEmptySlice(t *testing.T) {
-	cc := NewClusterLoadAssignmentCache()
+	var cc clusterLoadAssignmentCache
+	cc.init()
 	got := cc.Values()
 	want := make([]*v2.ClusterLoadAssignment, 0)
 	if !reflect.DeepEqual(got, want) {
@@ -149,7 +157,8 @@ func TestNewClusterLoadAssignmentCacheReturnsAnEmptySlice(t *testing.T) {
 }
 
 func TestClusterLoadAssignmentCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
-	cc := NewClusterLoadAssignmentCache()
+	var cc clusterLoadAssignmentCache
+	cc.init()
 	c := &v2.ClusterLoadAssignment{
 		ClusterName: "alpha",
 	}
@@ -166,7 +175,8 @@ func TestClusterLoadAssignmentCacheValuesReturnsACopyOfItsInternalSlice(t *testi
 }
 
 func TestClusterLoadAssignmentCacheValuesReturnsTheSameContents(t *testing.T) {
-	cc := NewClusterLoadAssignmentCache()
+	var cc clusterLoadAssignmentCache
+	cc.init()
 	c := &v2.ClusterLoadAssignment{
 		ClusterName: "alpha",
 	}
@@ -182,7 +192,8 @@ func TestClusterLoadAssignmentCacheValuesReturnsTheSameContents(t *testing.T) {
 }
 
 func TestClusterLoadAssignmentCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
-	cc := NewClusterLoadAssignmentCache()
+	var cc clusterLoadAssignmentCache
+	cc.init()
 	c1 := &v2.ClusterLoadAssignment{
 		ClusterName: "beta",
 	}
@@ -203,7 +214,8 @@ func TestClusterLoadAssignmentCacheAddInsertsTwoElementsInSortOrder(t *testing.T
 }
 
 func TestClusterLoadAssignmentCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
-	cc := NewClusterLoadAssignmentCache()
+	var cc clusterLoadAssignmentCache
+	cc.init()
 	c1 := &v2.ClusterLoadAssignment{
 		ClusterName: "alpha",
 		Policy: &v2.ClusterLoadAssignment_Policy{
@@ -228,7 +240,8 @@ func TestClusterLoadAssignmentCacheAddOverwritesElementsWithTheSameName(t *testi
 }
 
 func TestClusterLoadAssignmentCacheAddIsCopyOnWrite(t *testing.T) {
-	cc := NewClusterLoadAssignmentCache()
+	var cc clusterLoadAssignmentCache
+	cc.init()
 	c1 := &v2.ClusterLoadAssignment{
 		ClusterName: "alpha",
 	}
@@ -247,7 +260,8 @@ func TestClusterLoadAssignmentCacheAddIsCopyOnWrite(t *testing.T) {
 }
 
 func TestClusterLoadAssignmentCacheRemove(t *testing.T) {
-	cc := NewClusterLoadAssignmentCache()
+	var cc clusterLoadAssignmentCache
+	cc.init()
 	c1 := &v2.ClusterLoadAssignment{
 		ClusterName: "alpha",
 	}
@@ -261,7 +275,8 @@ func TestClusterLoadAssignmentCacheRemove(t *testing.T) {
 }
 
 func TestNewVirtualHostCacheReturnsAnEmptySlice(t *testing.T) {
-	cc := NewVirtualHostCache()
+	var cc virtualHostCache
+	cc.init()
 	got := cc.Values()
 	want := make([]*v2.VirtualHost, 0)
 	if !reflect.DeepEqual(got, want) {
@@ -271,7 +286,8 @@ func TestNewVirtualHostCacheReturnsAnEmptySlice(t *testing.T) {
 }
 
 func TestVirtualHostCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
-	cc := NewVirtualHostCache()
+	var cc virtualHostCache
+	cc.init()
 	c := &v2.VirtualHost{
 		Name: "alpha",
 	}
@@ -288,7 +304,8 @@ func TestVirtualHostCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 }
 
 func TestVirtualHostCacheValuesReturnsTheSameContents(t *testing.T) {
-	cc := NewVirtualHostCache()
+	var cc virtualHostCache
+	cc.init()
 	c := &v2.VirtualHost{
 		Name: "alpha",
 	}
@@ -304,7 +321,8 @@ func TestVirtualHostCacheValuesReturnsTheSameContents(t *testing.T) {
 }
 
 func TestVirtualHostCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
-	cc := NewVirtualHostCache()
+	var cc virtualHostCache
+	cc.init()
 	c1 := &v2.VirtualHost{
 		Name: "beta",
 	}
@@ -325,7 +343,8 @@ func TestVirtualHostCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 }
 
 func TestVirtualHostCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
-	cc := NewVirtualHostCache()
+	var cc virtualHostCache
+	cc.init()
 	c1 := &v2.VirtualHost{
 		Name: "alpha",
 		Domains: []string{
@@ -350,7 +369,8 @@ func TestVirtualHostCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 }
 
 func TestVirtualHostCacheAddIsCopyOnWrite(t *testing.T) {
-	cc := NewVirtualHostCache()
+	var cc virtualHostCache
+	cc.init()
 	c1 := &v2.VirtualHost{
 		Name: "alpha",
 	}
@@ -369,7 +389,8 @@ func TestVirtualHostCacheAddIsCopyOnWrite(t *testing.T) {
 }
 
 func TestVirtualHostCacheRemove(t *testing.T) {
-	cc := NewVirtualHostCache()
+	var cc virtualHostCache
+	cc.init()
 	c1 := &v2.VirtualHost{
 		Name: "alpha",
 	}

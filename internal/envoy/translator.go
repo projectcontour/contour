@@ -33,9 +33,9 @@ func NewTranslator(log log.Logger) *Translator {
 	t := &Translator{
 		Logger: log,
 	}
-	t.ClusterCache.ClusterCache = NewClusterCache()
-	t.ClusterLoadAssignmentCache.ClusterLoadAssignmentCache = NewClusterLoadAssignmentCache()
-	t.VirtualHostCache.VirtualHostCache = NewVirtualHostCache()
+	t.ClusterCache.init()
+	t.ClusterLoadAssignmentCache.init()
+	t.VirtualHostCache.init()
 	return t
 }
 
@@ -44,15 +44,15 @@ func NewTranslator(log log.Logger) *Translator {
 type Translator struct {
 	log.Logger
 	ClusterCache struct {
-		ClusterCache
+		clusterCache
 		Cond
 	}
 	ClusterLoadAssignmentCache struct {
-		ClusterLoadAssignmentCache
+		clusterLoadAssignmentCache
 		Cond
 	}
 	VirtualHostCache struct {
-		VirtualHostCache
+		virtualHostCache
 		Cond
 	}
 }

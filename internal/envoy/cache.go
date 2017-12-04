@@ -19,30 +19,16 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/api"
 )
 
-// ClusterCache represents a cache of computed *v2.Cluster objects.
-type ClusterCache interface {
-	// Values returns a copy of the contents of the cache.
-	Values() []*v2.Cluster
-
-	// Add adds an entry to the cache. If a Cluster with the same
-	// name exists, it is replaced.
-	Add(*v2.Cluster)
-
-	// Remove removes the named entry from the cache. If the entry
-	// is not present in the cache, the operation is a no-op.
-	Remove(string)
-}
-
-// NewClusterCache returns a new ClusterCache.
-func NewClusterCache() ClusterCache {
-	cc := make(clusterCache, 1)
-	cc <- nil // prime cache
-	return cc
-}
-
 // clusterCache is a thread safe, atomic, copy on write cache of *v2.Cluster objects.
 type clusterCache chan []*v2.Cluster
 
+// init must be called before clusterCache is used for the first time.
+func (cc *clusterCache) init() {
+	*cc = make(clusterCache, 1)
+	*cc <- nil // prime cache
+}
+
+// Values returns a copy of the contents of the cache.
 func (cc clusterCache) Values() []*v2.Cluster {
 	v := <-cc
 	r := make([]*v2.Cluster, len(v))
@@ -62,6 +48,8 @@ func (cc clusterCache) with(f func([]*v2.Cluster) []*v2.Cluster) {
 	cc <- v
 }
 
+// Add adds an entry to the cache. If a Cluster with the same
+// name exists, it is replaced.
 // TODO(dfc) make Add variadic to support atomic addition of several clusters
 // also niladic Add can be used as a no-op notify for watchers.
 func (cc clusterCache) Add(c *v2.Cluster) {
@@ -80,6 +68,8 @@ func (cc clusterCache) Add(c *v2.Cluster) {
 	})
 }
 
+// Remove removes the named entry from the cache. If the entry
+// is not present in the cache, the operation is a no-op.
 func (cc clusterCache) Remove(name string) {
 	cc.with(func(in []*v2.Cluster) []*v2.Cluster {
 		sort.Sort(clusterByName(in))
@@ -94,42 +84,20 @@ func (cc clusterCache) Remove(name string) {
 
 type clusterByName []*v2.Cluster
 
-func (c clusterByName) Len() int {
-	return len(c)
-}
-
-func (c clusterByName) Swap(i, j int) {
-	c[i], c[j] = c[j], c[i]
-}
-
-func (c clusterByName) Less(i, j int) bool {
-	return c[i].Name < c[j].Name
-}
-
-// ClusterLoadAssignemntCache represents a cache of computed *v2.ClusterLoadAssignment objects.
-type ClusterLoadAssignmentCache interface {
-	// Values returns a copy of the contents of the cache.
-	Values() []*v2.ClusterLoadAssignment
-
-	// Add adds an entry to the cache. If a ClusterLoadAssignment with the same
-	// name exists, it is replaced.
-	Add(*v2.ClusterLoadAssignment)
-
-	// Remove removes the named entry from the cache. If the entry
-	// is not present in the cache, the operation is a no-op.
-	Remove(string)
-}
-
-// NewClusterLoadAssignmentCache returns a new ClusterLoadAssignmentCache.
-func NewClusterLoadAssignmentCache() ClusterLoadAssignmentCache {
-	c := make(clusterLoadAssignmentCache, 1)
-	c <- nil // prime cache
-	return c
-}
+func (c clusterByName) Len() int           { return len(c) }
+func (c clusterByName) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
+func (c clusterByName) Less(i, j int) bool { return c[i].Name < c[j].Name }
 
 // clusterLoadAssignmentCache is a thread safe, atomic, copy on write cache of v2.ClusterLoadAssignment objects.
 type clusterLoadAssignmentCache chan []*v2.ClusterLoadAssignment
 
+// init must be called before clusterCache is used for the first time.
+func (c *clusterLoadAssignmentCache) init() {
+	*c = make(clusterLoadAssignmentCache, 1)
+	*c <- nil // prime cache
+}
+
+// Values returns a copy of the contents of the cache.
 func (c clusterLoadAssignmentCache) Values() []*v2.ClusterLoadAssignment {
 	v := <-c
 	r := make([]*v2.ClusterLoadAssignment, len(v))
@@ -149,6 +117,8 @@ func (c clusterLoadAssignmentCache) with(f func([]*v2.ClusterLoadAssignment) []*
 	c <- v
 }
 
+// Add adds an entry to the cache. If a ClusterLoadAssignment with the same
+// name exists, it is replaced.
 // TODO(dfc) make Add variadic to support atomic addition of several clusters
 // also niladic Add can be used as a no-op notify for watchers.
 func (c clusterLoadAssignmentCache) Add(e *v2.ClusterLoadAssignment) {
@@ -165,6 +135,8 @@ func (c clusterLoadAssignmentCache) Add(e *v2.ClusterLoadAssignment) {
 	})
 }
 
+// Remove removes the named entry from the cache. If the entry
+// is not present in the cache, the operation is a no-op.
 func (c clusterLoadAssignmentCache) Remove(name string) {
 	c.with(func(in []*v2.ClusterLoadAssignment) []*v2.ClusterLoadAssignment {
 		sort.Sort(clusterLoadAssignmentsByName(in))
@@ -194,30 +166,16 @@ func (lc ListenerCache) Values() []*v2.Listener {
 	return r
 }
 
-// VirtualHostCache represents a cache of computed *v2.VirtualHost objects.
-type VirtualHostCache interface {
-	// Values returns a copy of the contents of the cache.
-	Values() []*v2.VirtualHost
-
-	// Add adds an entry to the cache. If a VirtualHost with the same
-	// name exists, it is replaced.
-	Add(*v2.VirtualHost)
-
-	// Remove removes the named entry from the cache. If the entry
-	// is not present in the cache, the operation is a no-op.
-	Remove(string)
-}
-
-// NewVirtualHostCache returns a new VirtualHostCache.
-func NewVirtualHostCache() VirtualHostCache {
-	v := make(virtualHostCache, 1)
-	v <- nil // prime cache
-	return v
-}
-
 // VirtualHostCache is a thread safe, atomic, copy on write cache of v2.VirtualHost objects.
 type virtualHostCache chan []*v2.VirtualHost
 
+// init must be called before clusterCache is used for the first time.
+func (vc *virtualHostCache) init() {
+	*vc = make(virtualHostCache, 1)
+	*vc <- nil // prime cache
+}
+
+// Values returns a copy of the contents of the cache.
 func (vc virtualHostCache) Values() []*v2.VirtualHost {
 	v := <-vc
 	r := make([]*v2.VirtualHost, len(v))
@@ -237,6 +195,8 @@ func (vc virtualHostCache) with(f func([]*v2.VirtualHost) []*v2.VirtualHost) {
 	vc <- v
 }
 
+// Add adds an entry to the cache. If a VirtualHost with the same
+// name exists, it is replaced.
 // TODO(dfc) make Add variadic to support atomic addition of several clusters
 // also niladic Add can be used as a no-op notify for watchers.
 func (vc virtualHostCache) Add(r *v2.VirtualHost) {
@@ -255,6 +215,8 @@ func (vc virtualHostCache) Add(r *v2.VirtualHost) {
 	})
 }
 
+// Remove removes the named entry from the cache. If the entry
+// is not present in the cache, the operation is a no-op.
 func (vc virtualHostCache) Remove(name string) {
 	vc.with(func(in []*v2.VirtualHost) []*v2.VirtualHost {
 		sort.Sort(virtualHostsByName(in))
