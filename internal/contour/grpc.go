@@ -25,7 +25,6 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/api"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
-	"github.com/golang/protobuf/ptypes/struct" // package name is structpb
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/log"
 )
@@ -64,6 +63,9 @@ type ListenerCache interface {
 	// Values returns a copy of the contents of the cache.
 	// The slice and its contents should be treated as read-only.
 	Values() []*v2.Listener
+
+	// Register registers ch to receive a value when Notify is called.
+	Register(chan int, int)
 }
 
 // VirtualHostCache holds a set of computed v2.VirtualHost resources.
@@ -79,8 +81,6 @@ type VirtualHostCache interface {
 // NewGPRCAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
 func NewGRPCAPI(l log.Logger, t *envoy.Translator) *grpc.Server {
 	s := grpc.NewServer()
-	lc := make(envoy.ListenerCache, 1)
-	lc <- defaultListener()
 	v2.RegisterClusterDiscoveryServiceServer(s, &CDS{
 		ClusterCache: &t.ClusterCache,
 		Logger:       l.WithPrefix("CDS"),
@@ -90,7 +90,7 @@ func NewGRPCAPI(l log.Logger, t *envoy.Translator) *grpc.Server {
 		Logger: l.WithPrefix("EDS"),
 	})
 	v2.RegisterListenerDiscoveryServiceServer(s, &LDS{
-		ListenerCache: lc,
+		ListenerCache: &t.ListenerCache,
 		Logger:        l.WithPrefix("LDS"),
 	})
 	v2.RegisterRouteDiscoveryServiceServer(s, &RDS{
@@ -98,76 +98,6 @@ func NewGRPCAPI(l log.Logger, t *envoy.Translator) *grpc.Server {
 		Logger:           l.WithPrefix("RDS"),
 	})
 	return s
-}
-
-func defaultListener() []*v2.Listener {
-	const (
-		router     = "envoy.router"
-		httpFilter = "envoy.http_connection_manager"
-		accessLog  = "envoy.file_access_log"
-	)
-
-	sv := func(s string) *structpb.Value {
-		return &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: s}}
-	}
-	bv := func(b bool) *structpb.Value {
-		return &structpb.Value{Kind: &structpb.Value_BoolValue{BoolValue: b}}
-	}
-	st := func(m map[string]*structpb.Value) *structpb.Value {
-		return &structpb.Value{Kind: &structpb.Value_StructValue{StructValue: &structpb.Struct{Fields: m}}}
-	}
-	lv := func(v ...*structpb.Value) *structpb.Value {
-		return &structpb.Value{Kind: &structpb.Value_ListValue{ListValue: &structpb.ListValue{Values: v}}}
-	}
-	l := []*v2.Listener{{
-		Name: "ingress_http", // TODO(dfc) should come from the name of the service port
-		Address: &v2.Address{
-			Address: &v2.Address_SocketAddress{
-				SocketAddress: &v2.SocketAddress{
-					Protocol: v2.SocketAddress_TCP,
-					Address:  "0.0.0.0",
-					PortSpecifier: &v2.SocketAddress_PortValue{
-						PortValue: 8080,
-					},
-				},
-			},
-		},
-		FilterChains: []*v2.FilterChain{{
-			Filters: []*v2.Filter{{
-				Name: httpFilter,
-				Config: &structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"codec_type":  sv("http1"),        // let's not go crazy now
-						"stat_prefix": sv("ingress_http"), // TODO(dfc) should this come from pod.Name?
-						"rds": st(map[string]*structpb.Value{
-							"route_config_name": sv("ingress_http"), // TODO(dfc) needed for grpc?
-							"config_source": st(map[string]*structpb.Value{
-								"api_config_source": st(map[string]*structpb.Value{
-									"api_type": sv("grpc"),
-									"cluster_name": lv(
-										sv("xds_cluster"),
-									),
-								}),
-							}),
-						}),
-						"http_filters": lv(
-							st(map[string]*structpb.Value{
-								"name": sv(router),
-							}),
-						),
-						"access_log": st(map[string]*structpb.Value{
-							"name": sv(accessLog),
-							"config": st(map[string]*structpb.Value{
-								"path": sv("/dev/stdout"),
-							}),
-						}),
-						"use_remote_address": bv(true), // TODO(jbeda) should this ever be false?
-					},
-				},
-			}},
-		}},
-	}}
-	return l
 }
 
 // CDS implements the CDS v2 gRPC API.
@@ -294,35 +224,44 @@ func (l *LDS) FetchListeners(context.Context, *v2.DiscoveryRequest) (*v2.Discove
 func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) (err1 error) {
 	log := l.Logger.WithPrefix(fmt.Sprintf("LDS(%06x)", atomic.AddUint64(&l.count, 1)))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
-	// The listener cache is static, so stream one time then sleep until the client disconnects.
-	var nonce int64
-	var version int64
-	v := l.Values()
-	var resources []*any.Any
-	nonce++
-	for i := range v {
-		data, err := proto.Marshal(v[i])
-		if err != nil {
-			return err
-		}
-		resources = append(resources, &any.Any{
-			TypeUrl: ListenerType,
-			Value:   data,
-		})
-	}
-	out := v2.DiscoveryResponse{
-		VersionInfo: strconv.FormatInt(version, 10),
-		Resources:   resources,
-		TypeUrl:     ListenerType,
-		Nonce:       strconv.FormatInt(nonce, 10),
-	}
-	version++
-	if err := srv.Send(&out); err != nil {
-		return err
-	}
+	ch := make(chan int, 1)
+	last := 0
+
 	ctx := srv.Context()
-	<-ctx.Done()
-	return ctx.Err()
+	nonce := 0
+	for {
+		log.Infof("waiting for notification, version: %d", last)
+		l.Register(ch, last)
+
+		select {
+		case last = <-ch:
+			log.Infof("notification received version: %d", last)
+			v := l.Values()
+			var resources []*any.Any
+			for i := range v {
+				data, err := proto.Marshal(v[i])
+				if err != nil {
+					return err
+				}
+				resources = append(resources, &any.Any{
+					TypeUrl: ListenerType,
+					Value:   data,
+				})
+			}
+			nonce++
+			out := v2.DiscoveryResponse{
+				VersionInfo: strconv.FormatInt(int64(last), 10),
+				Resources:   resources,
+				TypeUrl:     ListenerType,
+				Nonce:       strconv.FormatInt(int64(nonce), 10),
+			}
+			if err := srv.Send(&out); err != nil {
+				return err
+			}
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
 }
 
 // RDS implements the RDS v2 gRPC API.
