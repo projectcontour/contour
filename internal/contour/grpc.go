@@ -15,7 +15,9 @@ package contour
 
 import (
 	"context"
+	"fmt"
 	"strconv"
+	"sync/atomic"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -172,25 +174,26 @@ func defaultListener() []*v2.Listener {
 type CDS struct {
 	log.Logger
 	ClusterCache
+	count uint64
 }
 
 func (c *CDS) FetchClusters(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
 	return nil, grpc.Errorf(codes.Unimplemented, "FetchClusters Unimplemented")
 }
 
-func (c *CDS) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) error {
-	c.Infof("StreamClusters: new stream")
+func (c *CDS) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) (err1 error) {
+	log := c.Logger.WithPrefix(fmt.Sprintf("CDS(%06x)", atomic.AddUint64(&c.count, 1)))
+	defer func() { log.Infof("stream terminated with error: %v", err1) }()
 	ch := make(chan int, 1)
 	last := 0
-
 	ctx := srv.Context()
 	nonce := 0
 	for {
-		c.Infof("StreamClusters: waiting for notification, version: %d", last)
+		log.Infof("waiting for notification, version: %d", last)
 		c.Register(ch, last)
 		select {
 		case last = <-ch:
-			c.Infof("StreamClusters: notitication received version: %d", last)
+			log.Infof("notification received version: %d", last)
 			v := c.Values()
 			var resources []*any.Any
 			for i := range v {
@@ -223,6 +226,7 @@ func (c *CDS) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer
 type EDS struct {
 	log.Logger
 	ClusterLoadAssignmentCache
+	count uint64
 }
 
 func (e *EDS) FetchEndpoints(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
@@ -230,20 +234,20 @@ func (e *EDS) FetchEndpoints(_ context.Context, req *v2.DiscoveryRequest) (*v2.D
 }
 
 func (e *EDS) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsServer) (err1 error) {
-	e.Infof("StreamEndpoints: new stream")
-	defer e.Infof("StreamEndpoints: stream terminated: %v", err1)
+	log := e.Logger.WithPrefix(fmt.Sprintf("EDS(%06x)", atomic.AddUint64(&e.count, 1)))
+	defer func() { log.Infof("stream terminated with error: %v", err1) }()
 	ch := make(chan int, 1)
 	last := 0
 
 	ctx := srv.Context()
 	nonce := 0
 	for {
-		e.Infof("StreamEndpoints: waiting for notification, version: %d", last)
+		log.Infof("waiting for notification, version: %d", last)
 		e.Register(ch, last)
 
 		select {
 		case last = <-ch:
-			e.Infof("StreamEndpoints: notitication received version: %d", last)
+			log.Infof("notification received version: %d", last)
 			v := e.Values()
 			var resources []*any.Any
 			for i := range v {
@@ -280,13 +284,16 @@ func (e *EDS) StreamLoadStats(srv v2.EndpointDiscoveryService_StreamLoadStatsSer
 type LDS struct {
 	log.Logger
 	ListenerCache
+	count uint64
 }
 
 func (l *LDS) FetchListeners(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
 	return nil, grpc.Errorf(codes.Unimplemented, "FetchListeners Unimplemented")
 }
 
-func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) error {
+func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) (err1 error) {
+	log := l.Logger.WithPrefix(fmt.Sprintf("LDS(%06x)", atomic.AddUint64(&l.count, 1)))
+	defer func() { log.Infof("stream terminated with error: %v", err1) }()
 	// The listener cache is static, so stream one time then sleep until the client disconnects.
 	var nonce int64
 	var version int64
@@ -322,6 +329,7 @@ func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersSer
 type RDS struct {
 	log.Logger
 	VirtualHostCache
+	count uint64
 }
 
 func (r *RDS) FetchRoutes(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
@@ -329,20 +337,20 @@ func (r *RDS) FetchRoutes(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryR
 }
 
 func (r *RDS) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) (err1 error) {
-	r.Infof("StreamRoutes: new stream")
-	defer r.Infof("StreamRoutes: stream terminated: %v", err1)
+	log := r.Logger.WithPrefix(fmt.Sprintf("RDS(%06x)", atomic.AddUint64(&r.count, 1)))
+	defer func() { log.Infof("stream terminated with error: %v", err1) }()
 	ch := make(chan int, 1)
 	last := 0
 
 	ctx := srv.Context()
 	nonce := 0
 	for {
-		r.Infof("StreamRoutes: waiting for notification, version: %d", last)
+		log.Infof("waiting for notification, version: %d", last)
 		r.Register(ch, last)
 
 		select {
 		case last = <-ch:
-			r.Infof("StreamRoutes: notitication received version: %d", last)
+			log.Infof("notification received version: %d", last)
 			var resources []*any.Any
 			rc := v2.RouteConfiguration{
 				Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
