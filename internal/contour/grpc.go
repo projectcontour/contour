@@ -16,7 +16,6 @@ package contour
 import (
 	"context"
 	"strconv"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -43,6 +42,9 @@ type ClusterCache interface {
 	// Values returns a copy of the contents of the cache.
 	// The slice and its contents should be treated as read-only.
 	Values() []*v2.Cluster
+
+	// Register registers ch to receive a value when Notify is called.
+	Register(chan int, int)
 }
 
 // ClusterLoadAssignmentCache holds a set of computed v2.ClusterLoadAssignment resources.
@@ -50,6 +52,9 @@ type ClusterLoadAssignmentCache interface {
 	// Values returns a copy of the contents of the cache.
 	// The slice and its contents should be treated as read-only.
 	Values() []*v2.ClusterLoadAssignment
+
+	// Register registers ch to receive a value when Notify is called.
+	Register(chan int, int)
 }
 
 // ListenerCache holds a set of computed v2.Listener resources.
@@ -64,6 +69,9 @@ type VirtualHostCache interface {
 	// Values returns a copy of the contents of the cache.
 	// The slice and its contents should be treated as read-only.
 	Values() []*v2.VirtualHost
+
+	// Register registers ch to receive a value when Notify is called.
+	Register(chan int, int)
 }
 
 // NewGPRCAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
@@ -72,11 +80,11 @@ func NewGRPCAPI(l log.Logger, t *envoy.Translator) *grpc.Server {
 	lc := make(envoy.ListenerCache, 1)
 	lc <- defaultListener()
 	v2.RegisterClusterDiscoveryServiceServer(s, &CDS{
-		ClusterCache: t.ClusterCache,
+		ClusterCache: &t.ClusterCache,
 		Logger:       l.WithPrefix("CDS"),
 	})
 	v2.RegisterEndpointDiscoveryServiceServer(s, &EDS{
-		ClusterLoadAssignmentCache: t.ClusterLoadAssignmentCache,
+		ClusterLoadAssignmentCache: &t.ClusterLoadAssignmentCache,
 		Logger: l.WithPrefix("EDS"),
 	})
 	v2.RegisterListenerDiscoveryServiceServer(s, &LDS{
@@ -84,7 +92,7 @@ func NewGRPCAPI(l log.Logger, t *envoy.Translator) *grpc.Server {
 		Logger:        l.WithPrefix("LDS"),
 	})
 	v2.RegisterRouteDiscoveryServiceServer(s, &RDS{
-		VirtualHostCache: t.VirtualHostCache,
+		VirtualHostCache: &t.VirtualHostCache,
 		Logger:           l.WithPrefix("RDS"),
 	})
 	return s
@@ -171,32 +179,44 @@ func (c *CDS) FetchClusters(_ context.Context, req *v2.DiscoveryRequest) (*v2.Di
 }
 
 func (c *CDS) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) error {
-	var nonce int64
-	var version int64
-	return timedResponse(srv.Context(), 1*time.Second, func() error {
-		v := c.Values()
-		var resources []*any.Any
-		nonce++
-		for i := range v {
-			c.Infof("marshal: %v", v[i])
-			data, err := proto.Marshal(v[i])
-			if err != nil {
+	c.Infof("StreamClusters: new stream")
+	ch := make(chan int, 1)
+	last := 0
+
+	ctx := srv.Context()
+	nonce := 0
+	for {
+		c.Infof("StreamClusters: waiting for notification, version: %d", last)
+		c.Register(ch, last)
+		select {
+		case last = <-ch:
+			c.Infof("StreamClusters: notitication received version: %d", last)
+			v := c.Values()
+			var resources []*any.Any
+			for i := range v {
+				data, err := proto.Marshal(v[i])
+				if err != nil {
+					return err
+				}
+				resources = append(resources, &any.Any{
+					TypeUrl: ClusterType,
+					Value:   data,
+				})
+			}
+			nonce++
+			out := v2.DiscoveryResponse{
+				VersionInfo: strconv.FormatInt(int64(last), 10),
+				Resources:   resources,
+				TypeUrl:     ClusterType,
+				Nonce:       strconv.FormatInt(int64(nonce), 10),
+			}
+			if err := srv.Send(&out); err != nil {
 				return err
 			}
-			resources = append(resources, &any.Any{
-				TypeUrl: ClusterType,
-				Value:   data,
-			})
+		case <-ctx.Done():
+			return ctx.Err()
 		}
-		out := v2.DiscoveryResponse{
-			VersionInfo: strconv.FormatInt(version, 10),
-			Resources:   resources,
-			TypeUrl:     ClusterType,
-			Nonce:       strconv.FormatInt(nonce, 10),
-		}
-		version++
-		return srv.Send(&out)
-	})
+	}
 }
 
 // EDS implements the EDS v2 gRPC API.
@@ -209,38 +229,51 @@ func (e *EDS) FetchEndpoints(_ context.Context, req *v2.DiscoveryRequest) (*v2.D
 	return nil, grpc.Errorf(codes.Unimplemented, "FetchEndpoints Unimplemented")
 }
 
-func (e *EDS) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsServer) error {
-	var nonce int64
-	var version int64
-	return timedResponse(srv.Context(), 1*time.Second, func() error {
-		v := e.Values()
-		var resources []*any.Any
-		nonce++
-		for i := range v {
-			e.Infof("marshal: %v", v[i])
-			data, err := proto.Marshal(v[i])
-			if err != nil {
+func (e *EDS) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsServer) (err1 error) {
+	e.Infof("StreamEndpoints: new stream")
+	defer e.Infof("StreamEndpoints: stream terminated: %v", err1)
+	ch := make(chan int, 1)
+	last := 0
+
+	ctx := srv.Context()
+	nonce := 0
+	for {
+		e.Infof("StreamEndpoints: waiting for notification, version: %d", last)
+		e.Register(ch, last)
+
+		select {
+		case last = <-ch:
+			e.Infof("StreamEndpoints: notitication received version: %d", last)
+			v := e.Values()
+			var resources []*any.Any
+			for i := range v {
+				data, err := proto.Marshal(v[i])
+				if err != nil {
+					return err
+				}
+				resources = append(resources, &any.Any{
+					TypeUrl: EndpointType,
+					Value:   data,
+				})
+			}
+			nonce++
+			out := v2.DiscoveryResponse{
+				VersionInfo: strconv.FormatInt(int64(last), 10),
+				Resources:   resources,
+				TypeUrl:     EndpointType,
+				Nonce:       strconv.FormatInt(int64(nonce), 10),
+			}
+			if err := srv.Send(&out); err != nil {
 				return err
 			}
-			resources = append(resources, &any.Any{
-				TypeUrl: EndpointType,
-				Value:   data,
-			})
+		case <-ctx.Done():
+			return ctx.Err()
 		}
-		out := v2.DiscoveryResponse{
-			VersionInfo: strconv.FormatInt(version, 10),
-			Resources:   resources,
-			TypeUrl:     EndpointType,
-			Nonce:       strconv.FormatInt(nonce, 10),
-		}
-		e.Infof("send %v", out.String())
-		version++
-		return srv.Send(&out)
-	})
+	}
 }
 
 func (e *EDS) StreamLoadStats(srv v2.EndpointDiscoveryService_StreamLoadStatsServer) error {
-	return timedResponse(srv.Context(), 1*time.Second, func() error { return nil })
+	return grpc.Errorf(codes.Unimplemented, "FetchListeners Unimplemented")
 }
 
 // LDS implements the LDS v2 gRPC API.
@@ -254,32 +287,35 @@ func (l *LDS) FetchListeners(context.Context, *v2.DiscoveryRequest) (*v2.Discove
 }
 
 func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) error {
+	// The listener cache is static, so stream one time then sleep until the client disconnects.
 	var nonce int64
 	var version int64
-	return timedResponse(srv.Context(), 2*time.Second, func() error {
-		v := l.Values()
-		var resources []*any.Any
-		nonce++
-		for i := range v {
-			l.Infof("marshal: %v", v[i])
-			data, err := proto.Marshal(v[i])
-			if err != nil {
-				return err
-			}
-			resources = append(resources, &any.Any{
-				TypeUrl: ListenerType,
-				Value:   data,
-			})
+	v := l.Values()
+	var resources []*any.Any
+	nonce++
+	for i := range v {
+		data, err := proto.Marshal(v[i])
+		if err != nil {
+			return err
 		}
-		out := v2.DiscoveryResponse{
-			VersionInfo: strconv.FormatInt(version, 10),
-			Resources:   resources,
-			TypeUrl:     ListenerType,
-			Nonce:       strconv.FormatInt(nonce, 10),
-		}
-		version++
-		return srv.Send(&out)
-	})
+		resources = append(resources, &any.Any{
+			TypeUrl: ListenerType,
+			Value:   data,
+		})
+	}
+	out := v2.DiscoveryResponse{
+		VersionInfo: strconv.FormatInt(version, 10),
+		Resources:   resources,
+		TypeUrl:     ListenerType,
+		Nonce:       strconv.FormatInt(nonce, 10),
+	}
+	version++
+	if err := srv.Send(&out); err != nil {
+		return err
+	}
+	ctx := srv.Context()
+	<-ctx.Done()
+	return ctx.Err()
 }
 
 // RDS implements the RDS v2 gRPC API.
@@ -292,47 +328,46 @@ func (r *RDS) FetchRoutes(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryR
 	return nil, grpc.Errorf(codes.Unimplemented, "FetchRoutes Unimplemented")
 }
 
-func (r *RDS) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) error {
-	var nonce int64
-	var version int64
-	return timedResponse(srv.Context(), 1*time.Second, func() error {
-		nonce++
-		var resources []*any.Any
-		rc := v2.RouteConfiguration{
-			Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
-			VirtualHosts: r.Values(),
-		}
-		data, err := proto.Marshal(&rc)
-		if err != nil {
-			return err
-		}
-		resources = append(resources, &any.Any{
-			TypeUrl: RouteType,
-			Value:   data,
-		})
-		out := v2.DiscoveryResponse{
-			VersionInfo: strconv.FormatInt(version, 10),
-			Resources:   resources,
-			TypeUrl:     RouteType,
-			Nonce:       strconv.FormatInt(nonce, 10),
-		}
-		version++
-		return srv.Send(&out)
-	})
-}
+func (r *RDS) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) (err1 error) {
+	r.Infof("StreamRoutes: new stream")
+	defer r.Infof("StreamRoutes: stream terminated: %v", err1)
+	ch := make(chan int, 1)
+	last := 0
 
-// timed response invokes fn ever d duration until ctx is canceled.
-func timedResponse(ctx context.Context, d time.Duration, fn func() error) error {
-	t := time.NewTicker(d)
-	defer t.Stop()
+	ctx := srv.Context()
+	nonce := 0
 	for {
+		r.Infof("StreamRoutes: waiting for notification, version: %d", last)
+		r.Register(ch, last)
+
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-t.C:
-			if err := fn(); err != nil {
+		case last = <-ch:
+			r.Infof("StreamRoutes: notitication received version: %d", last)
+			var resources []*any.Any
+			rc := v2.RouteConfiguration{
+				Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
+				VirtualHosts: r.Values(),
+			}
+			data, err := proto.Marshal(&rc)
+			if err != nil {
 				return err
 			}
+			resources = append(resources, &any.Any{
+				TypeUrl: RouteType,
+				Value:   data,
+			})
+			nonce++
+			out := v2.DiscoveryResponse{
+				VersionInfo: strconv.FormatInt(int64(last), 10),
+				Resources:   resources,
+				TypeUrl:     RouteType,
+				Nonce:       strconv.FormatInt(int64(nonce), 10),
+			}
+			if err := srv.Send(&out); err != nil {
+				return err
+			}
+		case <-ctx.Done():
+			return ctx.Err()
 		}
 	}
 }

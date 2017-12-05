@@ -106,6 +106,7 @@ const (
 )
 
 func (t *Translator) addService(svc *v1.Service) {
+	defer t.ClusterCache.Notify()
 	for _, p := range svc.Spec.Ports {
 		switch p.Protocol {
 		case "TCP":
@@ -152,6 +153,7 @@ func (t *Translator) addService(svc *v1.Service) {
 }
 
 func (t *Translator) removeService(svc *v1.Service) {
+	defer t.ClusterCache.Notify()
 	for _, p := range svc.Spec.Ports {
 		switch p.Protocol {
 		case "TCP":
@@ -169,6 +171,12 @@ func (t *Translator) removeService(svc *v1.Service) {
 }
 
 func (t *Translator) addEndpoints(e *v1.Endpoints) {
+	if len(e.Subsets) < 1 {
+		// if there are no endpoints in this object, ignore it
+		// to avoid sending a noop notification to watchers.
+		return
+	}
+	defer t.ClusterLoadAssignmentCache.Notify()
 	for _, s := range e.Subsets {
 		// skip any subsets that don't ahve ready addresses or ports
 		if len(s.Addresses) == 0 || len(s.Ports) == 0 {
@@ -213,6 +221,7 @@ func (t *Translator) addEndpoints(e *v1.Endpoints) {
 }
 
 func (t *Translator) removeEndpoints(e *v1.Endpoints) {
+	defer t.ClusterLoadAssignmentCache.Notify()
 	for _, s := range e.Subsets {
 		for _, p := range s.Ports {
 			if p.Name != "" {
@@ -235,6 +244,7 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 		return
 	}
 
+	defer t.VirtualHostCache.Notify()
 	if i.Spec.Backend != nil {
 		v := v2.VirtualHost{
 			Name:    hashname(60, i.Namespace, i.Name),
@@ -291,6 +301,7 @@ func pathToRouteMatch(p v1beta1.HTTPIngressPath) *v2.RouteMatch {
 }
 
 func (t *Translator) removeIngress(i *v1beta1.Ingress) {
+	defer t.VirtualHostCache.Notify()
 	if i.Spec.Backend != nil {
 		t.VirtualHostCache.Remove(hashname(60, i.Namespace, i.Name))
 		return
