@@ -91,7 +91,7 @@ func (c clusterByName) Less(i, j int) bool { return c[i].Name < c[j].Name }
 // clusterLoadAssignmentCache is a thread safe, atomic, copy on write cache of v2.ClusterLoadAssignment objects.
 type clusterLoadAssignmentCache chan []*v2.ClusterLoadAssignment
 
-// init must be called before clusterCache is used for the first time.
+// init must be called before clusterLoadAssignmentCache is used for the first time.
 func (c *clusterLoadAssignmentCache) init() {
 	*c = make(clusterLoadAssignmentCache, 1)
 	*c <- nil // prime cache
@@ -119,7 +119,7 @@ func (c clusterLoadAssignmentCache) with(f func([]*v2.ClusterLoadAssignment) []*
 
 // Add adds an entry to the cache. If a ClusterLoadAssignment with the same
 // name exists, it is replaced.
-// TODO(dfc) make Add variadic to support atomic addition of several clusters
+// TODO(dfc) make Add variadic to support atomic addition of several clusterLoadAssignments
 // also niladic Add can be used as a no-op notify for watchers.
 func (c clusterLoadAssignmentCache) Add(e *v2.ClusterLoadAssignment) {
 	c.with(func(in []*v2.ClusterLoadAssignment) []*v2.ClusterLoadAssignment {
@@ -156,9 +156,16 @@ func (c clusterLoadAssignmentsByName) Swap(i, j int)      { c[i], c[j] = c[j], c
 func (c clusterLoadAssignmentsByName) Less(i, j int) bool { return c[i].ClusterName < c[j].ClusterName }
 
 // ListenerCache is a thread safe, atomic, copy on write cache of v2.Listener objects.
-type ListenerCache chan []*v2.Listener
+type listenerCache chan []*v2.Listener
 
-func (lc ListenerCache) Values() []*v2.Listener {
+// init must be called before listenerCache is used for the first time.
+func (lc *listenerCache) init() {
+	*lc = make(listenerCache, 1)
+	*lc <- nil // prime cache
+}
+
+// Values returns a copy of the contents of the cache.
+func (lc listenerCache) Values() []*v2.Listener {
 	v := <-lc
 	r := make([]*v2.Listener, len(v))
 	copy(r, v)
@@ -166,10 +173,63 @@ func (lc ListenerCache) Values() []*v2.Listener {
 	return r
 }
 
+// with executes f with the value of the stored in the cache.
+// the value returned from f replaces the contents in the cache.
+func (lc listenerCache) with(f func([]*v2.Listener) []*v2.Listener) {
+	l := <-lc
+	l = f(l)
+	// TODO(dfc) Add and Remove do not (currently) affect the sort order
+	// so it might be possible to avoid always sorting.
+	sort.Sort(listenersByName(l))
+	lc <- l
+}
+
+// Add adds an entry to the cache. If a Listener with the same
+// name exists, it is replaced.
+// TODO(dfc) make Add variadic to support atomic addition of several listeners
+// also niladic Add can be used as a no-op notify for watchers.
+func (lc listenerCache) Add(r *v2.Listener) {
+	lc.with(func(in []*v2.Listener) []*v2.Listener {
+		sort.Sort(listenersByName(in))
+		i := sort.Search(len(in), func(i int) bool { return in[i].Name >= r.Name })
+		if i < len(in) && in[i].Name == r.Name {
+			// c is already present, replace
+			in[i] = r
+			return in
+		}
+		// c is not present, append and sort
+		in = append(in, r)
+		sort.Sort(listenersByName(in))
+		return in
+	})
+}
+
+// Remove removes the named entry from the cache. If the entry
+// is not present in the cache, the operation is a no-op.
+func (lc listenerCache) Remove(name string) {
+	lc.with(func(in []*v2.Listener) []*v2.Listener {
+		sort.Sort(listenersByName(in))
+		i := sort.Search(len(in), func(i int) bool { return in[i].Name >= name })
+		if i < len(in) && in[i].Name == name {
+			// c is present, remove
+			in = append(in[:i], in[i+1:]...)
+		}
+		return in
+	})
+}
+
+type listenersByName []*v2.Listener
+
+func (l listenersByName) Len() int           { return len(l) }
+func (l listenersByName) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
+func (l listenersByName) Less(i, j int) bool { return l[i].Name < l[j].Name }
+
+// clusterLoadAssignmentCache is a thread safe, atomic, copy on write cache of v2.ClusterLoadAssignment objects.
+
 // VirtualHostCache is a thread safe, atomic, copy on write cache of v2.VirtualHost objects.
 type virtualHostCache chan []*v2.VirtualHost
 
-// init must be called before clusterCache is used for the first time.
+// init must be called before virtualHostCache is used for the first time.
 func (vc *virtualHostCache) init() {
 	*vc = make(virtualHostCache, 1)
 	*vc <- nil // prime cache

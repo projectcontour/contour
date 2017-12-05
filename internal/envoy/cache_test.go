@@ -20,17 +20,6 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/api"
 )
 
-func TestNewClusterCacheReturnsAnEmptySlice(t *testing.T) {
-	var cc clusterCache
-	cc.init()
-	got := cc.Values()
-	want := make([]*v2.Cluster, 0)
-	if !reflect.DeepEqual(got, want) {
-		// Values should return a []*v2.Cluster{} not nil
-		t.Fatal("NewClusterCache().Values(): got: %#v, want: %#v", got, want)
-	}
-}
-
 func TestClusterCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 	var cc clusterCache
 	cc.init()
@@ -142,17 +131,6 @@ func TestClusterCacheRemove(t *testing.T) {
 	want := []*v2.Cluster{}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("ClusterCache.Remove: got: %v, want: %v", got, want)
-	}
-}
-
-func TestNewClusterLoadAssignmentCacheReturnsAnEmptySlice(t *testing.T) {
-	var cc clusterLoadAssignmentCache
-	cc.init()
-	got := cc.Values()
-	want := make([]*v2.ClusterLoadAssignment, 0)
-	if !reflect.DeepEqual(got, want) {
-		// Values should return a []*v2.ClusterLoadAssignment{} not nil
-		t.Fatal("NewClusterLoadAssignmentCache().Values(): got: %#v, want: %#v", got, want)
 	}
 }
 
@@ -274,14 +252,117 @@ func TestClusterLoadAssignmentCacheRemove(t *testing.T) {
 	}
 }
 
-func TestNewVirtualHostCacheReturnsAnEmptySlice(t *testing.T) {
-	var cc virtualHostCache
+func TestListenerCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
+	var cc listenerCache
 	cc.init()
+	l := &v2.Listener{
+		Name: "alpha",
+	}
+	cc.Add(l)
+
+	v1 := cc.Values()
+	v2 := cc.Values()
+
+	if &v1[0] == &v2[0] {
+		// the address of the 0th element of the values slice should not be the same
+		// if it is, then we don't have a copy.
+		t.Fatalf("ListenerCache, consecutive calls to Values return the same backing slice: got: %p, want: %p", &v1[0], &v2[0])
+	}
+}
+
+func TestListenerCacheValuesReturnsTheSameContents(t *testing.T) {
+	var cc listenerCache
+	cc.init()
+	l := &v2.Listener{
+		Name: "alpha",
+	}
+	cc.Add(l)
+
+	v1 := cc.Values()
+	v2 := cc.Values()
+
+	if v1[0] != v2[0] {
+		// the value of the 0th element, a pointer to a v2.Listener should be the same
+		t.Fatalf("ListenerCache, consecutive calls to Values returned different slice contents: got: %p, want: %p", v1[0], v2[0])
+	}
+}
+
+func TestListenerCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
+	var cc listenerCache
+	cc.init()
+	l1 := &v2.Listener{
+		Name: "beta",
+	}
+	cc.Add(l1)
+	l2 := &v2.Listener{
+		Name: "alpha",
+	}
+	cc.Add(l2)
 	got := cc.Values()
-	want := make([]*v2.VirtualHost, 0)
+	want := []*v2.Listener{{
+		Name: "alpha",
+	}, {
+		Name: "beta",
+	}}
 	if !reflect.DeepEqual(got, want) {
-		// Values should return a []*v2.VirtualHost{} not nil
-		t.Fatal("NewVirtualHostCache().Values(): got: %#v, want: %#v", got, want)
+		t.Fatalf("ListenerCache.Add/Values returned elements missing or out of order, got: %v, want: %v", got, want)
+	}
+}
+
+func TestListenerCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
+	var cc listenerCache
+	cc.init()
+	l1 := &v2.Listener{
+		Name:      "alpha",
+		DrainType: 7,
+	}
+	cc.Add(l1)
+	l2 := &v2.Listener{
+		Name:      "alpha",
+		DrainType: 99,
+	}
+	cc.Add(l2)
+	got := cc.Values()
+	want := []*v2.Listener{
+		l2,
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("ListenerCache.Add/Values returned a stale element, got: %v, want: %v", got, want)
+	}
+}
+
+func TestListenerCacheAddIsCopyOnWrite(t *testing.T) {
+	var cc listenerCache
+	cc.init()
+	l1 := &v2.Listener{
+		Name: "alpha",
+	}
+	cc.Add(l1)
+	v1 := cc.Values()
+
+	l2 := &v2.Listener{
+		Name: "beta",
+	}
+	cc.Add(l2)
+	v2 := cc.Values()
+
+	if reflect.DeepEqual(v1, v2) {
+		t.Fatalf("ListenerCache.Add affected the contents of a previous call to Values")
+	}
+}
+
+func TestListenerCacheRemove(t *testing.T) {
+	var cc listenerCache
+	cc.init()
+	l1 := &v2.Listener{
+		Name: "alpha",
+	}
+	cc.Add(l1)
+	cc.Remove("alpha")
+	got := cc.Values()
+	want := []*v2.Listener{}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("ListenerCache.Remove: got: %v, want: %v", got, want)
 	}
 }
 
