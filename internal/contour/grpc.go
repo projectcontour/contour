@@ -149,38 +149,13 @@ func (c *CDS) Resources() ([]*any.Any, error) {
 }
 
 func (c *CDS) FetchClusters(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return c.fetchClusters(0, 0)
-}
-
-func (c *CDS) fetchClusters(version, nonce int) (*v2.DiscoveryResponse, error) {
-	return fetch(c, ClusterType, version, nonce)
+	return fetch(c, ClusterType, 0, 0)
 }
 
 func (c *CDS) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) (err1 error) {
 	log := c.Logger.WithPrefix(fmt.Sprintf("CDS(%06x)", atomic.AddUint64(&c.count, 1)))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
-	ch := make(chan int, 1)
-	last := 0
-	ctx := srv.Context()
-	nonce := 0
-	for {
-		log.Infof("waiting for notification, version: %d", last)
-		c.Register(ch, last)
-		select {
-		case last = <-ch:
-			log.Infof("notification received version: %d", last)
-			out, err := c.fetchClusters(last, nonce)
-			if err != nil {
-				return err
-			}
-			if err := srv.Send(out); err != nil {
-				return err
-			}
-			nonce++
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
+	return stream(srv, c, ClusterType, log)
 }
 
 // EDS implements the EDS v2 gRPC API.
@@ -210,40 +185,13 @@ func (e *EDS) Resources() ([]*any.Any, error) {
 }
 
 func (e *EDS) FetchEndpoints(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return e.fetchEndpoints(0, 0)
-}
-
-func (e *EDS) fetchEndpoints(version, nonce int) (*v2.DiscoveryResponse, error) {
-	return fetch(e, EndpointType, version, nonce)
+	return fetch(e, EndpointType, 0, 0)
 }
 
 func (e *EDS) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsServer) (err1 error) {
 	log := e.Logger.WithPrefix(fmt.Sprintf("EDS(%06x)", atomic.AddUint64(&e.count, 1)))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
-	ch := make(chan int, 1)
-	last := 0
-
-	ctx := srv.Context()
-	nonce := 0
-	for {
-		log.Infof("waiting for notification, version: %d", last)
-		e.Register(ch, last)
-
-		select {
-		case last = <-ch:
-			log.Infof("notification received version: %d", last)
-			out, err := e.fetchEndpoints(last, nonce)
-			if err != nil {
-				return nil
-			}
-			if err := srv.Send(out); err != nil {
-				return err
-			}
-			nonce++
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
+	return stream(srv, e, EndpointType, log)
 }
 
 func (e *EDS) StreamLoadStats(srv v2.EndpointDiscoveryService_StreamLoadStatsServer) error {
@@ -277,40 +225,13 @@ func (l *LDS) Resources() ([]*any.Any, error) {
 }
 
 func (l *LDS) FetchListeners(ctx context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return l.fetchListeners(0, 0)
-}
-
-func (l *LDS) fetchListeners(version, nonce int) (*v2.DiscoveryResponse, error) {
-	return fetch(l, ListenerType, version, nonce)
+	return fetch(l, ListenerType, 0, 0)
 }
 
 func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) (err1 error) {
 	log := l.Logger.WithPrefix(fmt.Sprintf("LDS(%06x)", atomic.AddUint64(&l.count, 1)))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
-	ch := make(chan int, 1)
-	last := 0
-
-	ctx := srv.Context()
-	nonce := 0
-	for {
-		log.Infof("waiting for notification, version: %d", last)
-		l.Register(ch, last)
-
-		select {
-		case last = <-ch:
-			log.Infof("notification received version: %d", last)
-			out, err := l.fetchListeners(last, nonce)
-			if err != nil {
-				return err
-			}
-			if err := srv.Send(out); err != nil {
-				return err
-			}
-			nonce++
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
+	return stream(srv, l, ListenerType, log)
 }
 
 // RDS implements the RDS v2 gRPC API.
@@ -339,39 +260,13 @@ func (r *RDS) Resources() ([]*any.Any, error) {
 }
 
 func (r *RDS) FetchRoutes(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return r.fetchRoutes(0, 0)
-}
-
-func (r *RDS) fetchRoutes(version, nonce int) (*v2.DiscoveryResponse, error) {
-	return fetch(r, RouteType, version, nonce)
+	return fetch(r, RouteType, 0, 0)
 }
 
 func (r *RDS) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) (err1 error) {
 	log := r.Logger.WithPrefix(fmt.Sprintf("RDS(%06x)", atomic.AddUint64(&r.count, 1)))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
-	ch := make(chan int, 1)
-	last := 0
-
-	ctx := srv.Context()
-	nonce := 0
-	for {
-		log.Infof("waiting for notification, version: %d", last)
-		r.Register(ch, last)
-		select {
-		case last = <-ch:
-			log.Infof("notification received version: %d", last)
-			out, err := r.fetchRoutes(last, nonce)
-			if err != nil {
-				return err
-			}
-			if err := srv.Send(out); err != nil {
-				return err
-			}
-			nonce++
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
+	return stream(srv, r, RouteType, log)
 }
 
 // fetch returns a *v2.DiscoveryResponse for the current resourcer, typeurl, version and nonce.
@@ -383,4 +278,40 @@ func fetch(r resourcer, typeurl string, version, nonce int) (*v2.DiscoveryRespon
 		TypeUrl:     typeurl,
 		Nonce:       strconv.FormatInt(int64(nonce), 10),
 	}, err
+}
+
+type sender interface {
+	Context() context.Context
+	Send(*v2.DiscoveryResponse) error
+}
+
+type notifier interface {
+	resourcer
+	Register(chan int, int)
+}
+
+// stream streams a *v2.DiscoveryResponses to the receiver.
+func stream(srv sender, n notifier, typeurl string, log log.Logger) error {
+	ch := make(chan int, 1)
+	last := 0
+	nonce := 0
+	ctx := srv.Context()
+	for {
+		log.Infof("waiting for notification, version: %d", last)
+		n.Register(ch, last)
+		select {
+		case last = <-ch:
+			log.Infof("notification received version: %d", last)
+			out, err := fetch(n, typeurl, last, nonce)
+			if err != nil {
+				return err
+			}
+			if err := srv.Send(out); err != nil {
+				return err
+			}
+			nonce++
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
 }
