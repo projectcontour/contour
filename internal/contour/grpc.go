@@ -117,6 +117,11 @@ func newgrpcServer(l log.Logger, t *envoy.Translator) *grpcServer {
 	}
 }
 
+// A resourcer provides resources formatted as []*any.Any.
+type resourcer interface {
+	Resources() ([]*any.Any, error)
+}
+
 // CDS implements the CDS v2 gRPC API.
 type CDS struct {
 	log.Logger
@@ -124,56 +129,33 @@ type CDS struct {
 	count uint64
 }
 
-func (c *CDS) FetchClusters(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return c.fetchClusters(0, 0)
-}
-
-func (c *CDS) fetchClusters(version, nonce int) (*v2.DiscoveryResponse, error) {
+// Resources returns the contents of CDS"s cache as a []*any.Any.
+// TODO(dfc) cache the results of Resources in the ClusterCache so
+// we can avoid the error handling.
+func (c *CDS) Resources() ([]*any.Any, error) {
 	v := c.Values()
-	var resources []*any.Any
+	resources := make([]*any.Any, len(v))
 	for i := range v {
 		data, err := proto.Marshal(v[i])
 		if err != nil {
 			return nil, err
 		}
-		resources = append(resources, &any.Any{
+		resources[i] = &any.Any{
 			TypeUrl: ClusterType,
 			Value:   data,
-		})
+		}
 	}
-	return &v2.DiscoveryResponse{
-		VersionInfo: strconv.FormatInt(int64(version), 10),
-		Resources:   resources,
-		TypeUrl:     ClusterType,
-		Nonce:       strconv.FormatInt(int64(nonce), 10),
-	}, nil
+	return resources, nil
+}
+
+func (c *CDS) FetchClusters(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	return fetch(c, ClusterType, 0, 0)
 }
 
 func (c *CDS) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) (err1 error) {
 	log := c.Logger.WithPrefix(fmt.Sprintf("CDS(%06x)", atomic.AddUint64(&c.count, 1)))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
-	ch := make(chan int, 1)
-	last := 0
-	ctx := srv.Context()
-	nonce := 0
-	for {
-		log.Infof("waiting for notification, version: %d", last)
-		c.Register(ch, last)
-		select {
-		case last = <-ch:
-			log.Infof("notification received version: %d", last)
-			out, err := c.fetchClusters(last, nonce)
-			if err != nil {
-				return err
-			}
-			if err := srv.Send(out); err != nil {
-				return err
-			}
-			nonce++
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
+	return stream(srv, c, ClusterType, log)
 }
 
 // EDS implements the EDS v2 gRPC API.
@@ -183,58 +165,33 @@ type EDS struct {
 	count uint64
 }
 
-func (e *EDS) FetchEndpoints(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return e.fetchEndpoints(0, 0)
-}
-
-func (e *EDS) fetchEndpoints(version, nonce int) (*v2.DiscoveryResponse, error) {
+// Resources returns the contents of EDS"s cache as a []*any.Any.
+// TODO(dfc) cache the results of Resources in the ClusterLoadAssignmentCache so
+// we can avoid the error handling.
+func (e *EDS) Resources() ([]*any.Any, error) {
 	v := e.Values()
-	var resources []*any.Any
+	resources := make([]*any.Any, len(v))
 	for i := range v {
 		data, err := proto.Marshal(v[i])
 		if err != nil {
 			return nil, err
 		}
-		resources = append(resources, &any.Any{
+		resources[i] = &any.Any{
 			TypeUrl: EndpointType,
 			Value:   data,
-		})
+		}
 	}
-	return &v2.DiscoveryResponse{
-		VersionInfo: strconv.FormatInt(int64(version), 10),
-		Resources:   resources,
-		TypeUrl:     EndpointType,
-		Nonce:       strconv.FormatInt(int64(nonce), 10),
-	}, nil
+	return resources, nil
+}
+
+func (e *EDS) FetchEndpoints(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	return fetch(e, EndpointType, 0, 0)
 }
 
 func (e *EDS) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsServer) (err1 error) {
 	log := e.Logger.WithPrefix(fmt.Sprintf("EDS(%06x)", atomic.AddUint64(&e.count, 1)))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
-	ch := make(chan int, 1)
-	last := 0
-
-	ctx := srv.Context()
-	nonce := 0
-	for {
-		log.Infof("waiting for notification, version: %d", last)
-		e.Register(ch, last)
-
-		select {
-		case last = <-ch:
-			log.Infof("notification received version: %d", last)
-			out, err := e.fetchEndpoints(last, nonce)
-			if err != nil {
-				return nil
-			}
-			if err := srv.Send(out); err != nil {
-				return err
-			}
-			nonce++
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
+	return stream(srv, e, EndpointType, log)
 }
 
 func (e *EDS) StreamLoadStats(srv v2.EndpointDiscoveryService_StreamLoadStatsServer) error {
@@ -248,59 +205,33 @@ type LDS struct {
 	count uint64
 }
 
-func (l *LDS) FetchListeners(ctx context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return l.fetchListeners(0, 0)
-	return nil, grpc.Errorf(codes.Unimplemented, "FetchListeners Unimplemented")
-}
-
-func (l *LDS) fetchListeners(version, nonce int) (*v2.DiscoveryResponse, error) {
+// Resources returns the contents of LDS"s cache as a []*any.Any.
+// TODO(dfc) cache the results of Resources in the ListenerCache so
+// we can avoid the error handling.
+func (l *LDS) Resources() ([]*any.Any, error) {
 	v := l.Values()
-	var resources []*any.Any
+	resources := make([]*any.Any, len(v))
 	for i := range v {
 		data, err := proto.Marshal(v[i])
 		if err != nil {
 			return nil, err
 		}
-		resources = append(resources, &any.Any{
+		resources[i] = &any.Any{
 			TypeUrl: ListenerType,
 			Value:   data,
-		})
+		}
 	}
-	return &v2.DiscoveryResponse{
-		VersionInfo: strconv.FormatInt(int64(version), 10),
-		Resources:   resources,
-		TypeUrl:     ListenerType,
-		Nonce:       strconv.FormatInt(int64(nonce), 10),
-	}, nil
+	return resources, nil
+}
+
+func (l *LDS) FetchListeners(ctx context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	return fetch(l, ListenerType, 0, 0)
 }
 
 func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) (err1 error) {
 	log := l.Logger.WithPrefix(fmt.Sprintf("LDS(%06x)", atomic.AddUint64(&l.count, 1)))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
-	ch := make(chan int, 1)
-	last := 0
-
-	ctx := srv.Context()
-	nonce := 0
-	for {
-		log.Infof("waiting for notification, version: %d", last)
-		l.Register(ch, last)
-
-		select {
-		case last = <-ch:
-			log.Infof("notification received version: %d", last)
-			out, err := l.fetchListeners(last, nonce)
-			if err != nil {
-				return err
-			}
-			if err := srv.Send(out); err != nil {
-				return err
-			}
-			nonce++
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
+	return stream(srv, l, ListenerType, log)
 }
 
 // RDS implements the RDS v2 gRPC API.
@@ -310,12 +241,10 @@ type RDS struct {
 	count uint64
 }
 
-func (r *RDS) FetchRoutes(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return r.fetchRoutes(0, 0)
-}
-
-func (r *RDS) fetchRoutes(version, nonce int) (*v2.DiscoveryResponse, error) {
-	var resources []*any.Any
+// Resources returns the contents of RDS"s cache as a []*any.Any.
+// TODO(dfc) cache the results of Resources in the VirtualHostCache so
+// we can avoid the error handling.
+func (r *RDS) Resources() ([]*any.Any, error) {
 	rc := v2.RouteConfiguration{
 		Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
 		VirtualHosts: r.Values(),
@@ -324,33 +253,56 @@ func (r *RDS) fetchRoutes(version, nonce int) (*v2.DiscoveryResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	resources = append(resources, &any.Any{
+	return []*any.Any{{
 		TypeUrl: RouteType,
 		Value:   data,
-	})
-	return &v2.DiscoveryResponse{
-		VersionInfo: strconv.FormatInt(int64(version), 10),
-		Resources:   resources,
-		TypeUrl:     RouteType,
-		Nonce:       strconv.FormatInt(int64(nonce), 10),
-	}, nil
+	}}, nil
+}
+
+func (r *RDS) FetchRoutes(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	return fetch(r, RouteType, 0, 0)
 }
 
 func (r *RDS) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) (err1 error) {
 	log := r.Logger.WithPrefix(fmt.Sprintf("RDS(%06x)", atomic.AddUint64(&r.count, 1)))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
+	return stream(srv, r, RouteType, log)
+}
+
+// fetch returns a *v2.DiscoveryResponse for the current resourcer, typeurl, version and nonce.
+func fetch(r resourcer, typeurl string, version, nonce int) (*v2.DiscoveryResponse, error) {
+	resources, err := r.Resources()
+	return &v2.DiscoveryResponse{
+		VersionInfo: strconv.FormatInt(int64(version), 10),
+		Resources:   resources,
+		TypeUrl:     typeurl,
+		Nonce:       strconv.FormatInt(int64(nonce), 10),
+	}, err
+}
+
+type sender interface {
+	Context() context.Context
+	Send(*v2.DiscoveryResponse) error
+}
+
+type notifier interface {
+	resourcer
+	Register(chan int, int)
+}
+
+// stream streams a *v2.DiscoveryResponses to the receiver.
+func stream(srv sender, n notifier, typeurl string, log log.Logger) error {
 	ch := make(chan int, 1)
 	last := 0
-
-	ctx := srv.Context()
 	nonce := 0
+	ctx := srv.Context()
 	for {
 		log.Infof("waiting for notification, version: %d", last)
-		r.Register(ch, last)
+		n.Register(ch, last)
 		select {
 		case last = <-ch:
 			log.Infof("notification received version: %d", last)
-			out, err := r.fetchRoutes(last, nonce)
+			out, err := fetch(n, typeurl, last, nonce)
 			if err != nil {
 				return err
 			}
