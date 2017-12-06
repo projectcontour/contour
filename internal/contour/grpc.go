@@ -124,8 +124,29 @@ type CDS struct {
 	count uint64
 }
 
-func (c *CDS) FetchClusters(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return nil, grpc.Errorf(codes.Unimplemented, "FetchClusters Unimplemented")
+func (c *CDS) FetchClusters(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	return c.fetchClusters(0, 0)
+}
+
+func (c *CDS) fetchClusters(version, nonce int) (*v2.DiscoveryResponse, error) {
+	v := c.Values()
+	var resources []*any.Any
+	for i := range v {
+		data, err := proto.Marshal(v[i])
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, &any.Any{
+			TypeUrl: ClusterType,
+			Value:   data,
+		})
+	}
+	return &v2.DiscoveryResponse{
+		VersionInfo: strconv.FormatInt(int64(version), 10),
+		Resources:   resources,
+		TypeUrl:     ClusterType,
+		Nonce:       strconv.FormatInt(int64(nonce), 10),
+	}, nil
 }
 
 func (c *CDS) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) (err1 error) {
@@ -141,28 +162,14 @@ func (c *CDS) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer
 		select {
 		case last = <-ch:
 			log.Infof("notification received version: %d", last)
-			v := c.Values()
-			var resources []*any.Any
-			for i := range v {
-				data, err := proto.Marshal(v[i])
-				if err != nil {
-					return err
-				}
-				resources = append(resources, &any.Any{
-					TypeUrl: ClusterType,
-					Value:   data,
-				})
-			}
-			nonce++
-			out := v2.DiscoveryResponse{
-				VersionInfo: strconv.FormatInt(int64(last), 10),
-				Resources:   resources,
-				TypeUrl:     ClusterType,
-				Nonce:       strconv.FormatInt(int64(nonce), 10),
-			}
-			if err := srv.Send(&out); err != nil {
+			out, err := c.fetchClusters(last, nonce)
+			if err != nil {
 				return err
 			}
+			if err := srv.Send(out); err != nil {
+				return err
+			}
+			nonce++
 		case <-ctx.Done():
 			return ctx.Err()
 		}
@@ -176,8 +183,29 @@ type EDS struct {
 	count uint64
 }
 
-func (e *EDS) FetchEndpoints(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return nil, grpc.Errorf(codes.Unimplemented, "FetchEndpoints Unimplemented")
+func (e *EDS) FetchEndpoints(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	return e.fetchEndpoints(0, 0)
+}
+
+func (e *EDS) fetchEndpoints(version, nonce int) (*v2.DiscoveryResponse, error) {
+	v := e.Values()
+	var resources []*any.Any
+	for i := range v {
+		data, err := proto.Marshal(v[i])
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, &any.Any{
+			TypeUrl: EndpointType,
+			Value:   data,
+		})
+	}
+	return &v2.DiscoveryResponse{
+		VersionInfo: strconv.FormatInt(int64(version), 10),
+		Resources:   resources,
+		TypeUrl:     EndpointType,
+		Nonce:       strconv.FormatInt(int64(nonce), 10),
+	}, nil
 }
 
 func (e *EDS) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsServer) (err1 error) {
@@ -195,28 +223,14 @@ func (e *EDS) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsSer
 		select {
 		case last = <-ch:
 			log.Infof("notification received version: %d", last)
-			v := e.Values()
-			var resources []*any.Any
-			for i := range v {
-				data, err := proto.Marshal(v[i])
-				if err != nil {
-					return err
-				}
-				resources = append(resources, &any.Any{
-					TypeUrl: EndpointType,
-					Value:   data,
-				})
+			out, err := e.fetchEndpoints(last, nonce)
+			if err != nil {
+				return nil
 			}
-			nonce++
-			out := v2.DiscoveryResponse{
-				VersionInfo: strconv.FormatInt(int64(last), 10),
-				Resources:   resources,
-				TypeUrl:     EndpointType,
-				Nonce:       strconv.FormatInt(int64(nonce), 10),
-			}
-			if err := srv.Send(&out); err != nil {
+			if err := srv.Send(out); err != nil {
 				return err
 			}
+			nonce++
 		case <-ctx.Done():
 			return ctx.Err()
 		}
@@ -234,8 +248,30 @@ type LDS struct {
 	count uint64
 }
 
-func (l *LDS) FetchListeners(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+func (l *LDS) FetchListeners(ctx context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	return l.fetchListeners(0, 0)
 	return nil, grpc.Errorf(codes.Unimplemented, "FetchListeners Unimplemented")
+}
+
+func (l *LDS) fetchListeners(version, nonce int) (*v2.DiscoveryResponse, error) {
+	v := l.Values()
+	var resources []*any.Any
+	for i := range v {
+		data, err := proto.Marshal(v[i])
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, &any.Any{
+			TypeUrl: ListenerType,
+			Value:   data,
+		})
+	}
+	return &v2.DiscoveryResponse{
+		VersionInfo: strconv.FormatInt(int64(version), 10),
+		Resources:   resources,
+		TypeUrl:     ListenerType,
+		Nonce:       strconv.FormatInt(int64(nonce), 10),
+	}, nil
 }
 
 func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) (err1 error) {
@@ -253,28 +289,14 @@ func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersSer
 		select {
 		case last = <-ch:
 			log.Infof("notification received version: %d", last)
-			v := l.Values()
-			var resources []*any.Any
-			for i := range v {
-				data, err := proto.Marshal(v[i])
-				if err != nil {
-					return err
-				}
-				resources = append(resources, &any.Any{
-					TypeUrl: ListenerType,
-					Value:   data,
-				})
-			}
-			nonce++
-			out := v2.DiscoveryResponse{
-				VersionInfo: strconv.FormatInt(int64(last), 10),
-				Resources:   resources,
-				TypeUrl:     ListenerType,
-				Nonce:       strconv.FormatInt(int64(nonce), 10),
-			}
-			if err := srv.Send(&out); err != nil {
+			out, err := l.fetchListeners(last, nonce)
+			if err != nil {
 				return err
 			}
+			if err := srv.Send(out); err != nil {
+				return err
+			}
+			nonce++
 		case <-ctx.Done():
 			return ctx.Err()
 		}
@@ -289,7 +311,29 @@ type RDS struct {
 }
 
 func (r *RDS) FetchRoutes(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return nil, grpc.Errorf(codes.Unimplemented, "FetchRoutes Unimplemented")
+	return r.fetchRoutes(0, 0)
+}
+
+func (r *RDS) fetchRoutes(version, nonce int) (*v2.DiscoveryResponse, error) {
+	var resources []*any.Any
+	rc := v2.RouteConfiguration{
+		Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
+		VirtualHosts: r.Values(),
+	}
+	data, err := proto.Marshal(&rc)
+	if err != nil {
+		return nil, err
+	}
+	resources = append(resources, &any.Any{
+		TypeUrl: RouteType,
+		Value:   data,
+	})
+	return &v2.DiscoveryResponse{
+		VersionInfo: strconv.FormatInt(int64(version), 10),
+		Resources:   resources,
+		TypeUrl:     RouteType,
+		Nonce:       strconv.FormatInt(int64(nonce), 10),
+	}, nil
 }
 
 func (r *RDS) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) (err1 error) {
@@ -303,33 +347,17 @@ func (r *RDS) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) (err
 	for {
 		log.Infof("waiting for notification, version: %d", last)
 		r.Register(ch, last)
-
 		select {
 		case last = <-ch:
 			log.Infof("notification received version: %d", last)
-			var resources []*any.Any
-			rc := v2.RouteConfiguration{
-				Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
-				VirtualHosts: r.Values(),
-			}
-			data, err := proto.Marshal(&rc)
+			out, err := r.fetchRoutes(last, nonce)
 			if err != nil {
 				return err
 			}
-			resources = append(resources, &any.Any{
-				TypeUrl: RouteType,
-				Value:   data,
-			})
-			nonce++
-			out := v2.DiscoveryResponse{
-				VersionInfo: strconv.FormatInt(int64(last), 10),
-				Resources:   resources,
-				TypeUrl:     RouteType,
-				Nonce:       strconv.FormatInt(int64(nonce), 10),
-			}
-			if err := srv.Send(&out); err != nil {
+			if err := srv.Send(out); err != nil {
 				return err
 			}
+			nonce++
 		case <-ctx.Done():
 			return ctx.Err()
 		}
