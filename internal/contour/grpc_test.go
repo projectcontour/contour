@@ -34,8 +34,6 @@ import (
 )
 
 func TestGRPCStreaming(t *testing.T) {
-	type step func(*testing.T)
-
 	const NOFLAGS = 1 << 16
 	log := stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS)
 
@@ -158,6 +156,84 @@ func TestGRPCStreaming(t *testing.T) {
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr = envoy.NewTranslator(log)
+			srv := NewGRPCAPI(log, tr)
+			var err error
+			l, err = net.Listen("tcp", "127.0.0.1:0")
+			check(t, err)
+			var wg sync.WaitGroup
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				srv.Serve(l)
+			}()
+			defer func() {
+				srv.Stop()
+				wg.Wait()
+				l.Close()
+			}()
+			fn(t)
+		})
+	}
+}
+
+func TestGRPCFetching(t *testing.T) {
+	const NOFLAGS = 1 << 16
+	log := stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS)
+
+	var l net.Listener
+
+	newClient := func(t *testing.T) *grpc.ClientConn {
+		cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
+		check(t, err)
+		return cc
+	}
+
+	tests := map[string]func(*testing.T){
+		"FetchClusters": func(t *testing.T) {
+			cc := newClient(t)
+			defer cc.Close()
+			sds := v2.NewClusterDiscoveryServiceClient(cc)
+			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+			defer cancel()
+			req := &v2.DiscoveryRequest{}
+			_, err := sds.FetchClusters(ctx, req)
+			check(t, err)
+		},
+		"FetchEndpoints": func(t *testing.T) {
+			cc := newClient(t)
+			defer cc.Close()
+			eds := v2.NewEndpointDiscoveryServiceClient(cc)
+			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+			defer cancel()
+			req := &v2.DiscoveryRequest{}
+			_, err := eds.FetchEndpoints(ctx, req)
+			check(t, err)
+		},
+		"FetchListeners": func(t *testing.T) {
+			cc := newClient(t)
+			defer cc.Close()
+			lds := v2.NewListenerDiscoveryServiceClient(cc)
+			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+			defer cancel()
+			req := &v2.DiscoveryRequest{}
+			_, err := lds.FetchListeners(ctx, req)
+			check(t, err)
+		},
+		"FetchRoutes": func(t *testing.T) {
+			cc := newClient(t)
+			defer cc.Close()
+			rds := v2.NewRouteDiscoveryServiceClient(cc)
+			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+			defer cancel()
+			req := &v2.DiscoveryRequest{}
+			_, err := rds.FetchRoutes(ctx, req)
+			check(t, err)
+		},
+	}
+
+	for name, fn := range tests {
+		t.Run(name, func(t *testing.T) {
+			tr := envoy.NewTranslator(log)
 			srv := NewGRPCAPI(log, tr)
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
