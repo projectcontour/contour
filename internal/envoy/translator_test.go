@@ -315,9 +315,10 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 
 func TestTranslatorAddIngress(t *testing.T) {
 	tests := []struct {
-		name string
-		ing  *v1beta1.Ingress
-		want []*v2.VirtualHost
+		name  string
+		setup func(*Translator)
+		ing   *v1beta1.Ingress
+		want  []*v2.VirtualHost
 	}{{
 		name: "default backend",
 		ing: &v1beta1.Ingress{
@@ -565,12 +566,68 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Action: clusteraction("default/my-service-name/80"),
 			}},
 		}},
+	}, {
+		name: "second ingress object extends an existing vhost",
+		setup: func(tr *Translator) {
+			tr.OnAdd(&v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						Host: "httpbin.org",
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Path:    "/",
+									Backend: *backend("default", intstr.FromInt(80)),
+								}},
+							},
+						},
+					}},
+				},
+			})
+		},
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "httpbin-admin",
+				Namespace: "kube-system",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					Host: "httpbin.org",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Path:    "/admin",
+								Backend: *backend("admin", intstr.FromString("admin")),
+							}},
+						},
+					},
+				}},
+			},
+		},
+		want: []*v2.VirtualHost{{
+			Name:    "httpbin.org",
+			Domains: []string{"httpbin.org"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/admin"),
+				Action: clusteraction("kube-system/admin/admin"),
+			}, {
+				Match:  prefixmatch("/"),
+				Action: clusteraction("default/default/80"),
+			}},
+		}},
 	}}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			const NOFLAGS = 1 << 16
 			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
+			if tc.setup != nil {
+				tc.setup(tr)
+			}
 			tr.addIngress(tc.ing)
 			got := tr.VirtualHostCache.Values()
 			if !reflect.DeepEqual(tc.want, got) {

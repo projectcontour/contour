@@ -16,6 +16,7 @@ package envoy
 import (
 	"crypto/sha256"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -39,6 +40,8 @@ func NewTranslator(log log.Logger) *Translator {
 	t.ListenerCache.Add(defaultListener()) // insert default listener
 	t.ListenerCache.Notify()               // bump version to notify streamers
 	t.VirtualHostCache.init()
+
+	t.vhosts = make(map[string][]*v1beta1.Ingress)
 	return t
 }
 
@@ -50,6 +53,10 @@ type Translator struct {
 	ClusterLoadAssignmentCache
 	ListenerCache
 	VirtualHostCache
+
+	// vhosts stores a slice of vhosts with the ingress objects that
+	// went into creating them.
+	vhosts map[string][]*v1beta1.Ingress
 }
 
 func (t *Translator) OnAdd(obj interface{}) {
@@ -239,8 +246,19 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 		return
 	}
 
+	// notify watchers that the vhost cache has probably changed.
 	defer t.VirtualHostCache.Notify()
+
+	// handle the special case of the default ingress first.
 	if i.Spec.Backend != nil {
+		// update t.vhosts cache
+		vhosts := append(t.vhosts["*"], i)
+		if len(vhosts) > 1 {
+			t.Errorf("ingress %s/%s: default ingress already registered to %s/%s", i.Namespace, i.Name, vhosts[0].Namespace, vhosts[0].Name)
+			return
+		}
+		t.vhosts["*"] = vhosts
+
 		v := v2.VirtualHost{
 			Name:    "*",
 			Domains: []string{"*"},
@@ -253,22 +271,60 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 		return
 	}
 
+	// collect the names of the vhosts mentioned in this spec
+	// and record this ingress in their respective t.vhosts cache.
+	var vhosts []string
 	for _, rule := range i.Spec.Rules {
+		vhosts = append(vhosts, rule.Host)
+		vh := append(t.vhosts[rule.Host], i)
+		t.vhosts[rule.Host] = vh
+	}
+
+	// for each vhost that was mentioned, we need to regenerate the virtualhost cache entry.
+	for _, vhost := range vhosts {
 		v := v2.VirtualHost{
-			Name:    hashname(60, rule.Host),
-			Domains: []string{rule.Host},
+			Name:    hashname(60, vhost),
+			Domains: []string{vhost},
 		}
-		if rule.IngressRuleValue.HTTP == nil {
-			t.Errorf("ingress %s/%s: Ingress.Spec.Rules[0].IngressRuleValue.HTTP is nil", i.ObjectMeta.Namespace, i.ObjectMeta.Name)
-			return
+		for _, ing := range t.vhosts[vhost] {
+			for _, rule := range ing.Spec.Rules {
+				if rule.Host != vhost {
+					continue
+				}
+				if rule.IngressRuleValue.HTTP == nil {
+					t.Errorf("ingress %s/%s: IngressRuleValue.HTTP is nil", ing.ObjectMeta.Namespace, ing.ObjectMeta.Name)
+					continue
+				}
+				for _, p := range rule.IngressRuleValue.HTTP.Paths {
+					m := pathToRouteMatch(p)
+					a := clusteraction(ingressBackendToClusterName(ing, &p.Backend))
+					v.Routes = append(v.Routes, &v2.Route{Match: m, Action: a})
+				}
+			}
 		}
-		for _, p := range rule.IngressRuleValue.HTTP.Paths {
-			m := pathToRouteMatch(p)
-			a := clusteraction(ingressBackendToClusterName(i, &p.Backend))
-			v.Routes = append(v.Routes, &v2.Route{Match: m, Action: a})
-		}
+		sort.Stable(sort.Reverse(longestRouteFirst(v.Routes)))
 		t.VirtualHostCache.Add(&v)
 	}
+}
+
+type longestRouteFirst []*v2.Route
+
+func (l longestRouteFirst) Len() int      { return len(l) }
+func (l longestRouteFirst) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
+func (l longestRouteFirst) Less(i, j int) bool {
+	a, ok := l[i].Match.PathSpecifier.(*v2.RouteMatch_Prefix)
+	if !ok {
+		// ignore non prefix matches
+		return false
+	}
+
+	b, ok := l[j].Match.PathSpecifier.(*v2.RouteMatch_Prefix)
+	if !ok {
+		// ignore non prefix matches
+		return false
+	}
+
+	return a.Prefix < b.Prefix
 }
 
 func (t *Translator) removeIngress(i *v1beta1.Ingress) {
