@@ -242,7 +242,7 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 	defer t.VirtualHostCache.Notify()
 	if i.Spec.Backend != nil {
 		v := v2.VirtualHost{
-			Name:    hashname(60, i.Namespace, i.Name),
+			Name:    "*",
 			Domains: []string{"*"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/"), // match all
@@ -255,7 +255,7 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 
 	for _, rule := range i.Spec.Rules {
 		v := v2.VirtualHost{
-			Name:    hashname(60, i.Namespace, i.Name, rule.Host),
+			Name:    hashname(60, rule.Host),
 			Domains: []string{rule.Host},
 		}
 		if rule.IngressRuleValue.HTTP == nil {
@@ -274,12 +274,12 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 	defer t.VirtualHostCache.Notify()
 	if i.Spec.Backend != nil {
-		t.VirtualHostCache.Remove(hashname(60, i.Namespace, i.Name))
+		t.VirtualHostCache.Remove("*")
 		return
 	}
 
 	for _, rule := range i.Spec.Rules {
-		t.VirtualHostCache.Remove(hashname(60, i.Namespace, i.Name, rule.Host))
+		t.VirtualHostCache.Remove(hashname(60, rule.Host))
 	}
 }
 
