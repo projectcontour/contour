@@ -54,19 +54,16 @@ func (b *buffer) loop(stop <-chan struct{}) {
 	log.Infof("started")
 	defer log.Infof("stopped")
 
-	for {
-		select {
-		case ev := <-b.ev:
-			switch ev := ev.(type) {
-			case *addEvent:
-				b.rh.OnAdd(ev.obj)
-			case *updateEvent:
-				b.rh.OnUpdate(ev.oldObj, ev.newObj)
-			case *deleteEvent:
-				b.rh.OnDelete(ev.obj)
-			default:
-				log.Errorf("unhandled event type: %T: %v", ev, ev)
-			}
+	for ev := range b.ev {
+		switch ev := ev.(type) {
+		case *addEvent:
+			b.rh.OnAdd(ev.obj)
+		case *updateEvent:
+			b.rh.OnUpdate(ev.oldObj, ev.newObj)
+		case *deleteEvent:
+			b.rh.OnDelete(ev.obj)
+		default:
+			log.Errorf("unhandled event type: %T: %v", ev, ev)
 		}
 	}
 }
