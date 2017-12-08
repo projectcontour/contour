@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// k8s containers adapters to watch k8s api servers.
+// Package k8s containers adapters to watch k8s api servers.
 package k8s
 
 import (
