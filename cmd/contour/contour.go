@@ -31,6 +31,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/envoy"
+	"github.com/heptio/contour/internal/grpc"
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/log/stdlog"
 	"github.com/heptio/contour/internal/workgroup"
@@ -108,7 +109,7 @@ func main() {
 				logger.Errorf("could not listen on %s: %v", V2_API_ADDRESS, err)
 				return // TODO(dfc) should return the error not log it
 			}
-			s := contour.NewGRPCAPI(logger, t)
+			s := grpc.NewAPI(logger, t)
 			logger.Infof("started")
 			defer logger.Infof("stopped")
 			s.Serve(l)
@@ -122,7 +123,9 @@ func main() {
 // If the path ends in .json, the configuration file will be in v1 JSON format.
 // If the path ends in .yaml, the configuration file will be in v2 YAML format.
 func writeBootstrapConfig(path string) {
-	config := envoy.ConfigWriter{}
+	config := envoy.ConfigWriter{
+		AdminAddress: "0.0.0.0",
+	}
 	f, err := os.Create(path)
 	check(err)
 	switch filepath.Ext(path) {

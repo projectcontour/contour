@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contour
+package grpc
 
 import (
 	"context"
@@ -156,7 +156,7 @@ func TestGRPCStreaming(t *testing.T) {
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr = envoy.NewTranslator(log)
-			srv := NewGRPCAPI(log, tr)
+			srv := NewAPI(log, tr)
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)
@@ -234,7 +234,7 @@ func TestGRPCFetching(t *testing.T) {
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr := envoy.NewTranslator(log)
-			srv := NewGRPCAPI(log, tr)
+			srv := NewAPI(log, tr)
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)

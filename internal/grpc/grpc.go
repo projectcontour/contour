@@ -11,7 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contour
+// Package grpc provides a gRPC implementation of the Envoy v2 xDS API.
+package grpc
 
 import (
 	"context"
@@ -78,8 +79,8 @@ type VirtualHostCache interface {
 	Register(chan int, int)
 }
 
-// NewGPRCAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
-func NewGRPCAPI(l log.Logger, t *envoy.Translator) *grpc.Server {
+// NewAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
+func NewAPI(l log.Logger, t *envoy.Translator) *grpc.Server {
 	g := grpc.NewServer()
 	s := newgrpcServer(l, t)
 	v2.RegisterClusterDiscoveryServiceServer(g, s)
