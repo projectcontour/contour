@@ -95,8 +95,7 @@ We've also got [an FAQ][18] for short-answer questions and conceptual stuff that
 ## Known limitations
 
 * Contour does not yet support customizations with annotations.
-* Contour and Envoy do not yet support SSL/TLS.
-  [Work is underway][16] in the Envoy project to support SNI. This work will let Contour support TLS for multiple hostnames.
+* Contour does not yet support SSL/TLS.
 
 ## Troubleshooting
 
