@@ -120,6 +120,7 @@ func newgrpcServer(l log.Logger, t *envoy.Translator) *grpcServer {
 // A resourcer provides resources formatted as []*any.Any.
 type resourcer interface {
 	Resources() ([]*any.Any, error)
+	TypeURL() string
 }
 
 // CDS implements the CDS v2 gRPC API.
@@ -148,14 +149,16 @@ func (c *CDS) Resources() ([]*any.Any, error) {
 	return resources, nil
 }
 
+func (c *CDS) TypeURL() string { return ClusterType }
+
 func (c *CDS) FetchClusters(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return fetch(c, ClusterType, 0, 0)
+	return fetch(c, 0, 0)
 }
 
 func (c *CDS) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) (err1 error) {
 	log := c.Logger.WithPrefix(fmt.Sprintf("CDS(%06x)", atomic.AddUint64(&c.count, 1)))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
-	return stream(srv, c, ClusterType, log)
+	return stream(srv, c, log)
 }
 
 // EDS implements the EDS v2 gRPC API.
@@ -184,14 +187,16 @@ func (e *EDS) Resources() ([]*any.Any, error) {
 	return resources, nil
 }
 
+func (e *EDS) TypeURL() string { return EndpointType }
+
 func (e *EDS) FetchEndpoints(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return fetch(e, EndpointType, 0, 0)
+	return fetch(e, 0, 0)
 }
 
 func (e *EDS) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsServer) (err1 error) {
 	log := e.Logger.WithPrefix(fmt.Sprintf("EDS(%06x)", atomic.AddUint64(&e.count, 1)))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
-	return stream(srv, e, EndpointType, log)
+	return stream(srv, e, log)
 }
 
 func (e *EDS) StreamLoadStats(srv v2.EndpointDiscoveryService_StreamLoadStatsServer) error {
@@ -224,14 +229,16 @@ func (l *LDS) Resources() ([]*any.Any, error) {
 	return resources, nil
 }
 
+func (l *LDS) TypeURL() string { return ListenerType }
+
 func (l *LDS) FetchListeners(ctx context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return fetch(l, ListenerType, 0, 0)
+	return fetch(l, 0, 0)
 }
 
 func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) (err1 error) {
 	log := l.Logger.WithPrefix(fmt.Sprintf("LDS(%06x)", atomic.AddUint64(&l.count, 1)))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
-	return stream(srv, l, ListenerType, log)
+	return stream(srv, l, log)
 }
 
 // RDS implements the RDS v2 gRPC API.
@@ -259,30 +266,33 @@ func (r *RDS) Resources() ([]*any.Any, error) {
 	}}, nil
 }
 
+func (r *RDS) TypeURL() string { return RouteType }
+
 func (r *RDS) FetchRoutes(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return fetch(r, RouteType, 0, 0)
+	return fetch(r, 0, 0)
 }
 
 func (r *RDS) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) (err1 error) {
 	log := r.Logger.WithPrefix(fmt.Sprintf("RDS(%06x)", atomic.AddUint64(&r.count, 1)))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
-	return stream(srv, r, RouteType, log)
+	return stream(srv, r, log)
 }
 
 // fetch returns a *v2.DiscoveryResponse for the current resourcer, typeurl, version and nonce.
-func fetch(r resourcer, typeurl string, version, nonce int) (*v2.DiscoveryResponse, error) {
+func fetch(r resourcer, version, nonce int) (*v2.DiscoveryResponse, error) {
 	resources, err := r.Resources()
 	return &v2.DiscoveryResponse{
 		VersionInfo: strconv.FormatInt(int64(version), 10),
 		Resources:   resources,
-		TypeUrl:     typeurl,
+		TypeUrl:     r.TypeURL(),
 		Nonce:       strconv.FormatInt(int64(nonce), 10),
 	}, err
 }
 
-type sender interface {
+type grpcStream interface {
 	Context() context.Context
 	Send(*v2.DiscoveryResponse) error
+	Recv() (*v2.DiscoveryRequest, error)
 }
 
 type notifier interface {
@@ -291,22 +301,22 @@ type notifier interface {
 }
 
 // stream streams a *v2.DiscoveryResponses to the receiver.
-func stream(srv sender, n notifier, typeurl string, log log.Logger) error {
+func stream(st grpcStream, n notifier, log log.Logger) error {
 	ch := make(chan int, 1)
 	last := 0
 	nonce := 0
-	ctx := srv.Context()
+	ctx := st.Context()
 	for {
 		log.Infof("waiting for notification, version: %d", last)
 		n.Register(ch, last)
 		select {
 		case last = <-ch:
 			log.Infof("notification received version: %d", last)
-			out, err := fetch(n, typeurl, last, nonce)
+			out, err := fetch(n, last, nonce)
 			if err != nil {
 				return err
 			}
-			if err := srv.Send(out); err != nil {
+			if err := st.Send(out); err != nil {
 				return err
 			}
 			nonce++
