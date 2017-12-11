@@ -16,7 +16,6 @@ package envoy
 import (
 	"crypto/sha256"
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -40,7 +39,6 @@ func NewTranslator(log log.Logger) *Translator {
 	t.ListenerCache.Add(defaultListener()) // insert default listener
 	t.ListenerCache.Notify()               // bump version to notify streamers
 	t.VirtualHostCache.init()
-
 	t.vhosts = make(map[string][]*v1beta1.Ingress)
 	return t
 }
@@ -271,60 +269,10 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 		return
 	}
 
-	// collect the names of the vhosts mentioned in this spec
-	// and record this ingress in their respective t.vhosts cache.
-	var vhosts []string
 	for _, rule := range i.Spec.Rules {
-		vhosts = append(vhosts, rule.Host)
-		vh := append(t.vhosts[rule.Host], i)
-		t.vhosts[rule.Host] = vh
+		t.vhosts[rule.Host] = appendIfMissing(t.vhosts[rule.Host], i)
+		t.recomputevhost(rule.Host, t.vhosts[rule.Host])
 	}
-
-	// for each vhost that was mentioned, we need to regenerate the virtualhost cache entry.
-	for _, vhost := range vhosts {
-		v := v2.VirtualHost{
-			Name:    hashname(60, vhost),
-			Domains: []string{vhost},
-		}
-		for _, ing := range t.vhosts[vhost] {
-			for _, rule := range ing.Spec.Rules {
-				if rule.Host != vhost {
-					continue
-				}
-				if rule.IngressRuleValue.HTTP == nil {
-					t.Errorf("ingress %s/%s: IngressRuleValue.HTTP is nil", ing.ObjectMeta.Namespace, ing.ObjectMeta.Name)
-					continue
-				}
-				for _, p := range rule.IngressRuleValue.HTTP.Paths {
-					m := pathToRouteMatch(p)
-					a := clusteraction(ingressBackendToClusterName(ing, &p.Backend))
-					v.Routes = append(v.Routes, &v2.Route{Match: m, Action: a})
-				}
-			}
-		}
-		sort.Stable(sort.Reverse(longestRouteFirst(v.Routes)))
-		t.VirtualHostCache.Add(&v)
-	}
-}
-
-type longestRouteFirst []*v2.Route
-
-func (l longestRouteFirst) Len() int      { return len(l) }
-func (l longestRouteFirst) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
-func (l longestRouteFirst) Less(i, j int) bool {
-	a, ok := l[i].Match.PathSpecifier.(*v2.RouteMatch_Prefix)
-	if !ok {
-		// ignore non prefix matches
-		return false
-	}
-
-	b, ok := l[j].Match.PathSpecifier.(*v2.RouteMatch_Prefix)
-	if !ok {
-		// ignore non prefix matches
-		return false
-	}
-
-	return a.Prefix < b.Prefix
 }
 
 func (t *Translator) removeIngress(i *v1beta1.Ingress) {
@@ -335,8 +283,27 @@ func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 	}
 
 	for _, rule := range i.Spec.Rules {
-		t.VirtualHostCache.Remove(hashname(60, rule.Host))
+		t.vhosts[rule.Host] = removeIfPresent(t.vhosts[rule.Host], i)
+		t.recomputevhost(rule.Host, t.vhosts[rule.Host])
 	}
+}
+
+func appendIfMissing(haystack []*v1beta1.Ingress, needle *v1beta1.Ingress) []*v1beta1.Ingress {
+	for i := range haystack {
+		if haystack[i].Name == needle.Name && haystack[i].Namespace == needle.Namespace {
+			return haystack
+		}
+	}
+	return append(haystack, needle)
+}
+
+func removeIfPresent(haystack []*v1beta1.Ingress, needle *v1beta1.Ingress) []*v1beta1.Ingress {
+	for i := range haystack {
+		if haystack[i].Name == needle.Name && haystack[i].Namespace == needle.Namespace {
+			return append(haystack[:i], haystack[i+1:]...)
+		}
+	}
+	return haystack
 }
 
 // hashname takes a lenth l and a varargs of strings s and returns a string whose length

@@ -14,6 +14,7 @@
 package envoy
 
 import (
+	"sort"
 	"strings"
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
@@ -26,9 +27,62 @@ type VirtualHostCache struct {
 	Cond
 }
 
-// ingressBackendToClusterName renders a cluster name from an Ingress and an IngressBackend.
-func ingressBackendToClusterName(i *v1beta1.Ingress, b *v1beta1.IngressBackend) string {
-	return hashname(60, i.ObjectMeta.Namespace, b.ServiceName, b.ServicePort.String())
+// recomputevhost recomputes the *v2.VirutalHost record from the list of ingresses
+// supplied and the cache updated. If ingresses is empty then the *v2.VirtualHost
+// record will be removed from the cache.
+func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ingress) {
+	switch len(ingresses) {
+	case 0:
+		// there are no ingresses registered with this vhost any more
+		// remove the VirtualHost from the grpc cache.
+		v.Remove(hashname(60, vhost))
+	default:
+		// otherwise there is at least one ingress object associated with
+		// this vhost, so regernate the cache record and add/overwrite the
+		// grpc cache.
+		vv := v2.VirtualHost{
+			Name:    hashname(60, vhost),
+			Domains: []string{vhost},
+		}
+		for _, ing := range ingresses {
+			for _, rule := range ing.Spec.Rules {
+				if rule.Host != vhost {
+					continue
+				}
+				if rule.IngressRuleValue.HTTP == nil {
+					// TODO(dfc) plumb a logger in here so we can log this error.
+					continue
+				}
+				for _, p := range rule.IngressRuleValue.HTTP.Paths {
+					m := pathToRouteMatch(p)
+					a := clusteraction(ingressBackendToClusterName(ing, &p.Backend))
+					vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
+				}
+			}
+		}
+		sort.Stable(sort.Reverse(longestRouteFirst(vv.Routes)))
+		v.Add(&vv)
+	}
+}
+
+type longestRouteFirst []*v2.Route
+
+func (l longestRouteFirst) Len() int      { return len(l) }
+func (l longestRouteFirst) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
+func (l longestRouteFirst) Less(i, j int) bool {
+	a, ok := l[i].Match.PathSpecifier.(*v2.RouteMatch_Prefix)
+	if !ok {
+		// ignore non prefix matches
+		return false
+	}
+
+	b, ok := l[j].Match.PathSpecifier.(*v2.RouteMatch_Prefix)
+	if !ok {
+		// ignore non prefix matches
+		return false
+	}
+
+	return a.Prefix < b.Prefix
 }
 
 // pathToRoute converts a HTTPIngressPath to a partial v2.RouteMatch.
@@ -53,6 +107,11 @@ func pathToRouteMatch(p v1beta1.HTTPIngressPath) *v2.RouteMatch {
 	// At this point the path is a regex, which we hope is the same between k8s
 	// IEEE 1003.1 POSIX regex, and Envoys Javascript regex.
 	return regexmatch(p.Path)
+}
+
+// ingressBackendToClusterName renders a cluster name from an Ingress and an IngressBackend.
+func ingressBackendToClusterName(i *v1beta1.Ingress, b *v1beta1.IngressBackend) string {
+	return hashname(60, i.ObjectMeta.Namespace, b.ServiceName, b.ServicePort.String())
 }
 
 // prefixmatch returns a RouteMatch for the supplied prefix.

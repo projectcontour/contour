@@ -619,6 +619,100 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Action: clusteraction("default/default/80"),
 			}},
 		}},
+	}, {
+		// kube-lego uses a single vhost in its own namespace to insert its
+		// callback route for let's encrypt support.
+		name: "kube-lego styleextend vhost definitions",
+		setup: func(tr *Translator) {
+			tr.OnAdd(&v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						Host: "httpbin.davecheney.com",
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Path:    "/",
+									Backend: *backend("httpbin", intstr.FromInt(80)),
+								}},
+							},
+						},
+					}},
+				},
+			})
+			tr.OnAdd(&v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin2",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						Host: "httpbin2.davecheney.com",
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Path:    "/",
+									Backend: *backend("httpbin", intstr.FromInt(80)),
+								}},
+							},
+						},
+					}},
+				},
+			})
+		},
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kube-lego-nginx",
+				Namespace: "kube-lego",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					Host: "httpbin.davecheney.com",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Path:    "/.well-known/acme-challenge",
+								Backend: *backend("kube-lego-nginx", intstr.FromInt(8080)),
+							}},
+						},
+					},
+				}, {
+					Host: "httpbin2.davecheney.com",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Path:    "/.well-known/acme-challenge",
+								Backend: *backend("kube-lego-nginx", intstr.FromInt(8080)),
+							}},
+						},
+					},
+				}},
+			},
+		},
+		want: []*v2.VirtualHost{{
+			Name:    "httpbin.davecheney.com",
+			Domains: []string{"httpbin.davecheney.com"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/.well-known/acme-challenge"),
+				Action: clusteraction("kube-lego/kube-lego-nginx/8080"),
+			}, {
+				Match:  prefixmatch("/"),
+				Action: clusteraction("default/httpbin/80"),
+			}},
+		}, {
+			Name:    "httpbin2.davecheney.com",
+			Domains: []string{"httpbin2.davecheney.com"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/.well-known/acme-challenge"),
+				Action: clusteraction("kube-lego/kube-lego-nginx/8080"),
+			}, {
+				Match:  prefixmatch("/"),
+				Action: clusteraction("default/httpbin/80"),
+			}},
+		}},
 	}}
 
 	for _, tc := range tests {
@@ -631,7 +725,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 			tr.addIngress(tc.ing)
 			got := tr.VirtualHostCache.Values()
 			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("eddIngress(%v): got: %v, want: %v", tc.ing, got, tc.want)
+				t.Fatalf("eddIngress(%v):\n got: %v\nwant: %v", tc.ing, got, tc.want)
 			}
 		})
 	}
