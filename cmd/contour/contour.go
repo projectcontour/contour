@@ -29,9 +29,9 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/gorilla/handlers"
-	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/grpc"
+	"github.com/heptio/contour/internal/json"
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/log/stdlog"
 	"github.com/heptio/contour/internal/workgroup"
@@ -67,7 +67,7 @@ func main() {
 		client := newClient(*kubeconfig, *inCluster)
 
 		// REST v1 support
-		ds := contour.DataSource{
+		ds := json.DataSource{
 			Logger: logger.WithPrefix("DataSource"),
 		}
 
@@ -84,7 +84,7 @@ func main() {
 
 		g.Add(func(stop <-chan struct{}) {
 			logger := logger.WithPrefix("JSONAPI")
-			api := contour.NewJSONAPI(logger, &ds)
+			api := json.NewAPI(logger, &ds)
 			if *debug {
 				// enable request logging if --debug enabled
 				api = handlers.LoggingHandler(os.Stdout, api)
@@ -123,9 +123,7 @@ func main() {
 // If the path ends in .json, the configuration file will be in v1 JSON format.
 // If the path ends in .yaml, the configuration file will be in v2 YAML format.
 func writeBootstrapConfig(path string) {
-	config := envoy.ConfigWriter{
-		AdminAddress: "0.0.0.0",
-	}
+	config := envoy.ConfigWriter{}
 	f, err := os.Create(path)
 	check(err)
 	switch filepath.Ext(path) {

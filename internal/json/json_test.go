@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contour
+package json
 
 import (
 	"net/http"
@@ -374,7 +374,7 @@ func TestAPIServer(t *testing.T) {
 				ds.AddIngress(i)
 			}
 			var w discardWriter
-			api := NewJSONAPI(stdlog.New(w, w, 0), &ds)
+			api := NewAPI(stdlog.New(w, w, 0), &ds)
 			got := request(t, tc.path, api)
 			if tc.want != got {
 				t.Fatalf("%q: expected: %q, got %q", tc.path, tc.want, got)
