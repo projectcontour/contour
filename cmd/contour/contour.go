@@ -82,6 +82,7 @@ func main() {
 		k8s.WatchServices(&g, client, logger, &ds, buf)
 		k8s.WatchEndpoints(&g, client, logger, &ds, buf)
 		k8s.WatchIngress(&g, client, logger, &ds, buf)
+		k8s.WatchSecrets(&g, client, logger, buf) // don't deliver to &ds, the rest api doesn't know how to process secrets
 
 		g.Add(func(stop <-chan struct{}) {
 			logger := logger.WithPrefix("JSONAPI")

@@ -68,6 +68,8 @@ func (t *Translator) OnAdd(obj interface{}) {
 		t.addEndpoints(obj)
 	case *v1beta1.Ingress:
 		t.addIngress(obj)
+	case *v1.Secret:
+		t.addSecret(obj)
 	default:
 		t.Errorf("OnAdd unexpected type %T: %#v", obj, obj)
 	}
@@ -82,6 +84,8 @@ func (t *Translator) OnUpdate(oldObj, newObj interface{}) {
 		t.addEndpoints(newObj)
 	case *v1beta1.Ingress:
 		t.addIngress(newObj)
+	case *v1.Secret:
+		t.addSecret(newObj)
 	default:
 		t.Errorf("OnUpdate unexpected type %T: %#v", newObj, newObj)
 	}
@@ -95,6 +99,8 @@ func (t *Translator) OnDelete(obj interface{}) {
 		t.removeEndpoints(obj)
 	case *v1beta1.Ingress:
 		t.removeIngress(obj)
+	case *v1.Secret:
+		t.removeSecret(obj)
 	case cache.DeletedFinalStateUnknown:
 		t.OnDelete(obj.Obj) // recurse into ourselves with the tombstoned value
 	default:
@@ -289,6 +295,14 @@ func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 		t.vhosts[rule.Host] = removeIfPresent(t.vhosts[rule.Host], i)
 		t.recomputevhost(rule.Host, t.vhosts[rule.Host])
 	}
+}
+
+func (t *Translator) addSecret(s *v1.Secret) {
+
+}
+
+func (t *Translator) removeSecret(s *v1.Secret) {
+
 }
 
 func appendIfMissing(haystack []*v1beta1.Ingress, needle *v1beta1.Ingress) []*v1beta1.Ingress {
