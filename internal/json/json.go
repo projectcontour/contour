@@ -11,9 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package contour implements a REST API server for Envoy's RDS/SDS/CDS v1 JSON API
-// and a gRPC API server for the xDS vs gRPC API.
-package contour
+// Package json implements a REST API server for Envoy's RDS/SDS/CDS v1 JSON API.
+package json
 
 import (
 	"crypto/sha256"
@@ -35,9 +34,9 @@ import (
 	"github.com/heptio/contour/internal/log"
 )
 
-// NewJSONAPI returns a http.Handler which responds to the Envoy CDS,
+// NewAPI returns a http.Handler which responds to the Envoy CDS,
 // RDS, and SDS v1 REST API calls.
-func NewJSONAPI(l log.Logger, ds *DataSource) http.Handler {
+func NewAPI(l log.Logger, ds *DataSource) http.Handler {
 	r := mux.NewRouter()
 	a := &jsonAPI{
 		Handler:    r,
