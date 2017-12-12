@@ -11,10 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package envoy
+package contour
 
-// ClusterLoadAssignmentCache manage the contents of the gRPC EDS cache.
-type ClusterLoadAssignmentCache struct {
-	clusterLoadAssignmentCache
+// ClusterCache manage the contents of the gRPC SDS cache.
+type ClusterCache struct {
+	clusterCache
 	Cond
 }

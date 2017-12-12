@@ -11,7 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package envoy
+// Package contour contains the translation business logic that listens
+// to Kubernetes ResourceEventHandler events and translates those into
+// additions/deletions in caches connected to the Envoy xDS gRPC API server.
+package contour
 
 import (
 	"crypto/sha256"

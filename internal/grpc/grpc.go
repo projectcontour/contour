@@ -26,7 +26,7 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/api"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
-	"github.com/heptio/contour/internal/envoy"
+	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/log"
 )
 
@@ -80,7 +80,7 @@ type VirtualHostCache interface {
 }
 
 // NewAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
-func NewAPI(l log.Logger, t *envoy.Translator) *grpc.Server {
+func NewAPI(l log.Logger, t *contour.Translator) *grpc.Server {
 	g := grpc.NewServer()
 	s := newgrpcServer(l, t)
 	v2.RegisterClusterDiscoveryServiceServer(g, s)
@@ -97,7 +97,7 @@ type grpcServer struct {
 	RDS
 }
 
-func newgrpcServer(l log.Logger, t *envoy.Translator) *grpcServer {
+func newgrpcServer(l log.Logger, t *contour.Translator) *grpcServer {
 	return &grpcServer{
 		CDS: CDS{
 			ClusterCache: &t.ClusterCache,

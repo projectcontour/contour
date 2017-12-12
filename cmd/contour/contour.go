@@ -29,6 +29,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/gorilla/handlers"
+	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/grpc"
 	"github.com/heptio/contour/internal/json"
@@ -72,7 +73,7 @@ func main() {
 		}
 
 		// gRPC v2 support
-		t := envoy.NewTranslator(logger.WithPrefix("translator"))
+		t := contour.NewTranslator(logger.WithPrefix("translator"))
 
 		var g workgroup.Group
 
