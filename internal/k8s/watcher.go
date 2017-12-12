@@ -43,6 +43,11 @@ func WatchIngress(g *workgroup.Group, client *kubernetes.Clientset, l log.Logger
 	watch(g, client.ExtensionsV1beta1().RESTClient(), l, "ingresses", new(v1beta1.Ingress), rs...)
 }
 
+// WatchSecrets creates a SharedInformer for v1.Secrets and registers it with g.
+func WatchSecrets(g *workgroup.Group, client *kubernetes.Clientset, l log.Logger, rs ...cache.ResourceEventHandler) {
+	watch(g, client.CoreV1().RESTClient(), l, "secrets", new(v1.Secret), rs...)
+}
+
 func watch(g *workgroup.Group, c cache.Getter, l log.Logger, resource string, objType runtime.Object, rs ...cache.ResourceEventHandler) {
 	lw := cache.NewListWatchFromClient(c, resource, v1.NamespaceAll, fields.Everything())
 	sw := cache.NewSharedInformer(lw, objType, 30*time.Minute)
