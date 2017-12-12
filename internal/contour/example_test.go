@@ -11,21 +11,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package envoy_test
+package contour_test
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/heptio/contour/internal/envoy"
+	"github.com/heptio/contour/internal/contour"
 )
 
 func ExampleCond() {
 	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
 	ch := make(chan int, 1)
 	last := 0
-	var c envoy.Cond
+	var c contour.Cond
 	go func() {
 		for {
 			time.Sleep(100 * time.Millisecond)

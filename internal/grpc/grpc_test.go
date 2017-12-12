@@ -22,7 +22,7 @@ import (
 	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
-	"github.com/heptio/contour/internal/envoy"
+	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/log/stdlog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -40,7 +40,7 @@ func TestGRPCStreaming(t *testing.T) {
 	var l net.Listener
 
 	// tr is recreated before the start of each test.
-	var tr *envoy.Translator
+	var tr *contour.Translator
 
 	newClient := func(t *testing.T) *grpc.ClientConn {
 		cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
@@ -155,7 +155,7 @@ func TestGRPCStreaming(t *testing.T) {
 
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
-			tr = envoy.NewTranslator(log)
+			tr = contour.NewTranslator(log)
 			srv := NewAPI(log, tr)
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
@@ -233,7 +233,7 @@ func TestGRPCFetching(t *testing.T) {
 
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
-			tr := envoy.NewTranslator(log)
+			tr := contour.NewTranslator(log)
 			srv := NewAPI(log, tr)
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
