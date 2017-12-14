@@ -713,6 +713,37 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Action: clusteraction("default/httpbin/80"),
 			}},
 		}},
+	}, {
+		name: "IngressRuleValue without host should become the default vhost", // heptio/contour#101
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hello",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Path: "/hello",
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "hello",
+									ServicePort: intstr.FromInt(80),
+								},
+							}},
+						},
+					},
+				}},
+			},
+		},
+		want: []*v2.VirtualHost{{
+			Name:    "*",
+			Domains: []string{"*"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/hello"),
+				Action: clusteraction("default/hello/80"),
+			}},
+		}},
 	}}
 
 	for _, tc := range tests {
@@ -725,7 +756,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 			tr.addIngress(tc.ing)
 			got := tr.VirtualHostCache.Values()
 			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("eddIngress(%v):\n got: %v\nwant: %v", tc.ing, got, tc.want)
+				t.Fatalf("addIngress(%v):\n got: %v\nwant: %v", tc.ing, got, tc.want)
 			}
 		})
 	}

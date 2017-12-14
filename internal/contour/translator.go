@@ -279,8 +279,13 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 	}
 
 	for _, rule := range i.Spec.Rules {
-		t.vhosts[rule.Host] = appendIfMissing(t.vhosts[rule.Host], i)
-		t.recomputevhost(rule.Host, t.vhosts[rule.Host])
+		host := rule.Host
+		if host == "" {
+			// If the host is unspecified, the Ingress routes all traffic based on the specified IngressRuleValue.
+			host = "*"
+		}
+		t.vhosts[host] = appendIfMissing(t.vhosts[host], i)
+		t.recomputevhost(host, t.vhosts[host])
 	}
 }
 

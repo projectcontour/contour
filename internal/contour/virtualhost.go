@@ -46,7 +46,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ing
 		}
 		for _, ing := range ingresses {
 			for _, rule := range ing.Spec.Rules {
-				if rule.Host != vhost {
+				if rule.Host != "" && rule.Host != vhost {
 					continue
 				}
 				if rule.IngressRuleValue.HTTP == nil {
