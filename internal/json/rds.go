@@ -52,10 +52,17 @@ func IngressToVirtualHosts(i *v1beta1.Ingress) ([]*envoy.VirtualHost, error) {
 	}
 	var vhosts []*envoy.VirtualHost
 	for _, rule := range i.Spec.Rules {
-		v := envoy.VirtualHost{
-			Name: hashname(60, i.Namespace, i.Name, rule.Host),
+		var v envoy.VirtualHost
+		switch rule.Host {
+		case "":
+			// quothe the spec,
+			// If the host is unspecified, the Ingress routes all traffic based on the specified IngressRuleValue.
+			v.Name = hashname(60, i.Namespace, i.Name)
+			v.AddDomain("*")
+		default:
+			v.Name = hashname(60, i.Namespace, i.Name, rule.Host)
+			v.AddDomain(rule.Host)
 		}
-		v.AddDomain(rule.Host)
 		if rule.IngressRuleValue.HTTP == nil {
 			return nil, errors.Errorf("ingress %s/%s: Ingress.Spec.Rules[0].IngressRuleValue.HTTP is nil", i.ObjectMeta.Namespace, i.ObjectMeta.Name)
 		}

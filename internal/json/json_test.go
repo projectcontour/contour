@@ -356,6 +356,31 @@ func TestAPIServer(t *testing.T) {
 		path: "/v1/routes/ingress_http/cluster0/node0",
 		want: `{"virtual_hosts":[{"name":"default/httpbin/httpbin.org","domains":["httpbin.org"],"routes":[{"prefix":"/","cluster":"default/peter/80"}]},{"name":"default/httpbin/admin.httpbin.org","domains":["admin.httpbin.org"],"routes":[{"prefix":"/","cluster":"default/paul/paul"}]}]}` + "\n",
 	}, {
+		name: "IngressRuleValue without host should become the default vhost", // heptio/contour#101
+		ingresses: []*v1beta1.Ingress{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hello",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Path: "/hello",
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "hello",
+									ServicePort: intstr.FromInt(80),
+								},
+							}},
+						},
+					},
+				}},
+			},
+		}},
+		path: "/v1/routes/ingress_http/cluster0/node0",
+		want: `{"virtual_hosts":[{"name":"default/hello","domains":["*"],"routes":[{"prefix":"/hello","cluster":"default/hello/80"}]}]}` + "\n",
+	}, {
 		name: "lds/0.0.0.0:8080",
 		path: "/v1/listeners/cluster0/node0",
 		want: `{"listeners":[{"name":"ingress_http","address":"tcp://0.0.0.0:8080","filters":[{"type":"read","name":"http_connection_manager","config":{"codec_type":"http1","stat_prefix":"ingress_http","rds":{"cluster":"rds","route_config_name":"ingress_http","refresh_delay_ms":1000},"filters":[{"type":"decoder","name":"router","config":{}}],"access_log":[{"path":"/dev/stdout"}],"use_remote_address":true}}]}]}` + "\n",
