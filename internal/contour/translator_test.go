@@ -114,10 +114,11 @@ func TestTranslatorAddService(t *testing.T) {
 		want: []*v2.Cluster{},
 	}}
 
+	const NOFLAGS = 1 << 16
+	config := Config{Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS)}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
-			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
+			tr := NewTranslator(&config)
 			tr.addService(tc.svc)
 			got := tr.ClusterCache.Values()
 			if !reflect.DeepEqual(tc.want, got) {
@@ -193,10 +194,11 @@ func TestTranslatorRemoveService(t *testing.T) {
 		},
 	}
 
+	const NOFLAGS = 1 << 16
+	config := Config{Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS)}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
-			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
+			tr := NewTranslator(&config)
 			tc.setup(tr)
 			tr.removeService(tc.svc)
 			got := tr.ClusterCache.Values()
@@ -242,10 +244,11 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 		},
 	}}
 
+	const NOFLAGS = 1 << 16
+	config := Config{Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS)}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
-			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
+			tr := NewTranslator(&config)
 			tr.addEndpoints(tc.ep)
 			got := tr.ClusterLoadAssignmentCache.Values()
 			if !reflect.DeepEqual(tc.want, got) {
@@ -299,10 +302,11 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 		},
 	}
 
+	const NOFLAGS = 1 << 16
+	config := Config{Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS)}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
-			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
+			tr := NewTranslator(&config)
 			tc.setup(tr)
 			tr.removeEndpoints(tc.ep)
 			got := tr.ClusterLoadAssignmentCache.Values()
@@ -746,10 +750,11 @@ func TestTranslatorAddIngress(t *testing.T) {
 		}},
 	}}
 
+	const NOFLAGS = 1 << 16
+	config := Config{Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS)}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
-			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
+			tr := NewTranslator(&config)
 			if tc.setup != nil {
 				tc.setup(tr)
 			}
@@ -849,10 +854,11 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 			want: []*v2.VirtualHost{},
 		},
 	}
+	const NOFLAGS = 1 << 16
+	config := Config{Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS)}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
-			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
+			tr := NewTranslator(&config)
 			tc.setup(tr)
 			tr.removeIngress(tc.ing)
 			got := tr.VirtualHostCache.Values()

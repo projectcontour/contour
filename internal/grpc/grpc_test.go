@@ -34,9 +34,6 @@ import (
 )
 
 func TestGRPCStreaming(t *testing.T) {
-	const NOFLAGS = 1 << 16
-	log := stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS)
-
 	var l net.Listener
 
 	// tr is recreated before the start of each test.
@@ -153,10 +150,12 @@ func TestGRPCStreaming(t *testing.T) {
 		},
 	}
 
+	const NOFLAGS = 1 << 16
+	config := contour.Config{Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS)}
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
-			tr = contour.NewTranslator(log)
-			srv := NewAPI(log, tr)
+			tr = contour.NewTranslator(&config)
+			srv := NewAPI(config.Logger, tr)
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)
@@ -177,9 +176,6 @@ func TestGRPCStreaming(t *testing.T) {
 }
 
 func TestGRPCFetching(t *testing.T) {
-	const NOFLAGS = 1 << 16
-	log := stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS)
-
 	var l net.Listener
 
 	newClient := func(t *testing.T) *grpc.ClientConn {
@@ -231,10 +227,12 @@ func TestGRPCFetching(t *testing.T) {
 		},
 	}
 
+	const NOFLAGS = 1 << 16
+	config := contour.Config{Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS)}
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
-			tr := contour.NewTranslator(log)
-			srv := NewAPI(log, tr)
+			tr := contour.NewTranslator(&config)
+			srv := NewAPI(config.Logger, tr)
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)
