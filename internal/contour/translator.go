@@ -19,6 +19,7 @@ package contour
 import (
 	"crypto/sha256"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -26,15 +27,30 @@ import (
 	"github.com/golang/protobuf/ptypes/duration"
 
 	"github.com/heptio/contour/internal/log"
+	"github.com/heptio/contour/internal/log/stdlog"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/client-go/tools/cache"
 )
 
-// NewTranslator returns a new Translator.
-func NewTranslator(log log.Logger) *Translator {
+// Config holds Translator configuration information.
+type Config struct {
+	// Logger holds the log.Logger instance for this Translator.
+	// If not provided, an unspecified logger will be supplied.
+	log.Logger
+}
+
+func (c *Config) logger() log.Logger {
+	if c.Logger == nil {
+		return stdlog.New(os.Stdout, os.Stderr, 0)
+	}
+	return c.Logger
+}
+
+// NewTranslator returns a new Translator using the specified Config.
+func NewTranslator(config *Config) *Translator {
 	t := &Translator{
-		Logger: log,
+		Logger: config.logger(),
 	}
 	t.ClusterCache.init()
 	t.ClusterLoadAssignmentCache.init()

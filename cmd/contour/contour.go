@@ -52,6 +52,7 @@ func main() {
 	path := bootstrap.Arg("path", "Configuration file.").Required().String()
 
 	serve := app.Command("serve", "Serve xDS API traffic")
+	var config contour.Config
 	inCluster := serve.Flag("incluster", "use in cluster configuration.").Bool()
 	kubeconfig := serve.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).String()
 	debug := serve.Flag("debug", "enable v1 REST API request logging.").Bool()
@@ -65,6 +66,7 @@ func main() {
 		writeBootstrapConfig(*path)
 	case serve.FullCommand():
 		logger := stdlog.New(os.Stdout, os.Stderr, 0)
+		config.Logger = logger.WithPrefix("translator")
 		client := newClient(*kubeconfig, *inCluster)
 
 		// REST v1 support
@@ -73,7 +75,7 @@ func main() {
 		}
 
 		// gRPC v2 support
-		t := contour.NewTranslator(logger.WithPrefix("translator"))
+		t := contour.NewTranslator(&config)
 
 		var g workgroup.Group
 
