@@ -253,17 +253,16 @@ type RDS struct {
 // TODO(dfc) cache the results of Resources in the VirtualHostCache so
 // we can avoid the error handling.
 func (r *RDS) Resources() ([]*any.Any, error) {
-	rc := v2.RouteConfiguration{
+	ingress_http, err := proto.Marshal(&v2.RouteConfiguration{
 		Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
 		VirtualHosts: r.Values(),
-	}
-	data, err := proto.Marshal(&rc)
+	})
 	if err != nil {
 		return nil, err
 	}
 	return []*any.Any{{
 		TypeUrl: RouteType,
-		Value:   data,
+		Value:   ingress_http,
 	}}, nil
 }
 
