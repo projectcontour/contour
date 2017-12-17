@@ -16,16 +16,8 @@
 
 [[constraint]]
   name="google.golang.org/grpc"
-  version="~1.7"
+  version="~1.8"
 
-[[override]]
+[[constraint]]
   name="k8s.io/apimachinery"
   branch="release-1.8"
-
-[[override]]
-  name="github.com/gogo/protobuf"
-  revision="c0656edd0d9eab7c66d1eb0c568f9039345796f7"
-
-[[override]]
-  name="github.com/golang/protobuf"
-  revision="130e6b02ab059e7b717a096f397c5b60111cae74"

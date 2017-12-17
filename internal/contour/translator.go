@@ -24,9 +24,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
-	"github.com/golang/protobuf/ptypes/duration"
 
 	"github.com/heptio/contour/internal/log"
 	"k8s.io/api/core/v1"
@@ -122,12 +122,6 @@ func (t *Translator) OnDelete(obj interface{}) {
 	}
 }
 
-const (
-	nanosecond  = 1
-	microsecond = 1000 * nanosecond
-	millisecond = 1000 * microsecond
-)
-
 func (t *Translator) addService(svc *v1.Service) {
 	defer t.ClusterCache.Notify()
 	for _, p := range svc.Spec.Ports {
@@ -151,10 +145,8 @@ func (t *Translator) addService(svc *v1.Service) {
 					Name:             hashname(60, svc.ObjectMeta.Namespace, svc.ObjectMeta.Name, p.Name),
 					Type:             v2.Cluster_EDS,
 					EdsClusterConfig: config,
-					ConnectTimeout: &duration.Duration{
-						Nanos: 250 * millisecond,
-					},
-					LbPolicy: v2.Cluster_ROUND_ROBIN,
+					ConnectTimeout:   250 * time.Millisecond,
+					LbPolicy:         v2.Cluster_ROUND_ROBIN,
 				}
 				t.ClusterCache.Add(&c)
 			}
@@ -162,10 +154,8 @@ func (t *Translator) addService(svc *v1.Service) {
 				Name:             hashname(60, svc.ObjectMeta.Namespace, svc.ObjectMeta.Name, strconv.Itoa(int(p.Port))),
 				Type:             v2.Cluster_EDS,
 				EdsClusterConfig: config,
-				ConnectTimeout: &duration.Duration{
-					Nanos: 250 * millisecond,
-				},
-				LbPolicy: v2.Cluster_ROUND_ROBIN,
+				ConnectTimeout:   250 * time.Millisecond,
+				LbPolicy:         v2.Cluster_ROUND_ROBIN,
 			}
 			t.ClusterCache.Add(&c)
 		default:
