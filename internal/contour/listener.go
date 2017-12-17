@@ -18,7 +18,7 @@ import (
 	"path/filepath"
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
-	"github.com/golang/protobuf/ptypes/struct"
+	"github.com/gogo/protobuf/types"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 )
@@ -86,14 +86,14 @@ func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.In
 				},
 				Filters: []*v2.Filter{{
 					Name: httpFilter,
-					Config: &structpb.Struct{
-						Fields: map[string]*structpb.Value{
+					Config: &types.Struct{
+						Fields: map[string]*types.Value{
 							"codec_type":  sv("auto"),
 							"stat_prefix": sv("ingress_https"),
-							"rds": st(map[string]*structpb.Value{
+							"rds": st(map[string]*types.Value{
 								"route_config_name": sv("ingress_http"), // TODO(dfc) issue 103
-								"config_source": st(map[string]*structpb.Value{
-									"api_config_source": st(map[string]*structpb.Value{
+								"config_source": st(map[string]*types.Value{
+									"api_config_source": st(map[string]*types.Value{
 										"api_type": sv("grpc"),
 										"cluster_name": lv(
 											sv("xds_cluster"),
@@ -102,13 +102,13 @@ func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.In
 								}),
 							}),
 							"http_filters": lv(
-								st(map[string]*structpb.Value{
+								st(map[string]*types.Value{
 									"name": sv(router),
 								}),
 							),
-							"access_log": st(map[string]*structpb.Value{
+							"access_log": st(map[string]*types.Value{
 								"name": sv(accessLog),
-								"config": st(map[string]*structpb.Value{
+								"config": st(map[string]*types.Value{
 									"path": sv("/dev/stdout"),
 								}),
 							}),
@@ -157,14 +157,14 @@ func defaultListener() *v2.Listener {
 		FilterChains: []*v2.FilterChain{{
 			Filters: []*v2.Filter{{
 				Name: httpFilter,
-				Config: &structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"codec_type":  sv("auto"),
-						"stat_prefix": sv("ingress_http"),
-						"rds": st(map[string]*structpb.Value{
-							"route_config_name": sv("ingress_http"), // TODO(dfc) issue 103
-							"config_source": st(map[string]*structpb.Value{
-								"api_config_source": st(map[string]*structpb.Value{
+				Config: &types.Struct{
+					Fields: map[string]*types.Value{
+						"codec_type":  sv("http1"),        // let's not go crazy now
+						"stat_prefix": sv("ingress_http"), // TODO(dfc) should this come from pod.Name?
+						"rds": st(map[string]*types.Value{
+							"route_config_name": sv("ingress_http"), // TODO(dfc) needed for grpc?
+							"config_source": st(map[string]*types.Value{
+								"api_config_source": st(map[string]*types.Value{
 									"api_type": sv("grpc"),
 									"cluster_name": lv(
 										sv("xds_cluster"),
@@ -173,13 +173,13 @@ func defaultListener() *v2.Listener {
 							}),
 						}),
 						"http_filters": lv(
-							st(map[string]*structpb.Value{
+							st(map[string]*types.Value{
 								"name": sv(router),
 							}),
 						),
-						"access_log": st(map[string]*structpb.Value{
+						"access_log": st(map[string]*types.Value{
 							"name": sv(accessLog),
-							"config": st(map[string]*structpb.Value{
+							"config": st(map[string]*types.Value{
 								"path": sv("/dev/stdout"),
 							}),
 						}),
@@ -191,17 +191,17 @@ func defaultListener() *v2.Listener {
 	}
 }
 
-func sv(s string) *structpb.Value {
-	return &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: s}}
+func sv(s string) *types.Value {
+	return &types.Value{Kind: &types.Value_StringValue{StringValue: s}}
 }
 
-func bv(b bool) *structpb.Value {
-	return &structpb.Value{Kind: &structpb.Value_BoolValue{BoolValue: b}}
+func bv(b bool) *types.Value {
+	return &types.Value{Kind: &types.Value_BoolValue{BoolValue: b}}
 }
 
-func st(m map[string]*structpb.Value) *structpb.Value {
-	return &structpb.Value{Kind: &structpb.Value_StructValue{StructValue: &structpb.Struct{Fields: m}}}
+func st(m map[string]*types.Value) *types.Value {
+	return &types.Value{Kind: &types.Value_StructValue{StructValue: &types.Struct{Fields: m}}}
 }
-func lv(v ...*structpb.Value) *structpb.Value {
-	return &structpb.Value{Kind: &structpb.Value_ListValue{ListValue: &structpb.ListValue{Values: v}}}
+func lv(v ...*types.Value) *types.Value {
+	return &types.Value{Kind: &types.Value_ListValue{ListValue: &types.ListValue{Values: v}}}
 }

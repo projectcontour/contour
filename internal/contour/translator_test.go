@@ -17,9 +17,9 @@ import (
 	"io/ioutil"
 	"reflect"
 	"testing"
+	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
-	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/heptio/contour/internal/log/stdlog"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -944,10 +944,8 @@ func cluster(name, servicename string) *v2.Cluster {
 			},
 			ServiceName: servicename,
 		},
-		ConnectTimeout: &duration.Duration{
-			Nanos: 250 * millisecond,
-		},
-		LbPolicy: v2.Cluster_ROUND_ROBIN,
+		ConnectTimeout: 250 * time.Millisecond,
+		LbPolicy:       v2.Cluster_ROUND_ROBIN,
 	}
 }
 
