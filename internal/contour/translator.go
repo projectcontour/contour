@@ -39,12 +39,8 @@ func NewTranslator(log log.Logger) *Translator {
 	t := &Translator{
 		Logger: log,
 	}
-	t.ClusterCache.init()
-	t.ClusterLoadAssignmentCache.init()
-	t.ListenerCache.init()
 	t.ListenerCache.Add(defaultListener()) // insert default listener
 	t.ListenerCache.Notify()               // bump version to notify streamers
-	t.VirtualHostCache.init()
 	t.vhosts = make(map[string][]*v1beta1.Ingress)
 	t.ingresses = make(map[metadata]*v1beta1.Ingress)
 	t.secrets = make(map[metadata]*v1.Secret)
