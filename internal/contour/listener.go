@@ -44,54 +44,13 @@ const (
 // TODO(dfc) some annotations may require the Ingress to no appear on
 // port 80, therefore may result in an empty effective set of ingresses.
 func (lc *ListenerCache) recomputeListener(ingresses map[metadata]*v1beta1.Ingress) {
-	l := &v2.Listener{
-		Name: ENVOY_HTTP_LISTENER, // TODO(dfc) should come from the name of the service port
-		Address: &v2.Address{
-			Address: &v2.Address_SocketAddress{
-				SocketAddress: &v2.SocketAddress{
-					Protocol: v2.SocketAddress_TCP,
-					Address:  "0.0.0.0",
-					PortSpecifier: &v2.SocketAddress_PortValue{
-						PortValue: 8080,
-					},
-				},
-			},
-		},
-	}
+	l := listener(ENVOY_HTTP_LISTENER, "0.0.0.0", 8080)
+
 	if len(ingresses) > 0 {
 		l.FilterChains = []*v2.FilterChain{{
-			Filters: []*v2.Filter{{
-				Name: httpFilter,
-				Config: &types.Struct{
-					Fields: map[string]*types.Value{
-						"codec_type":  sv("auto"),
-						"stat_prefix": sv(l.Name), // TODO(dfc) should this come from pod.Name?
-						"rds": st(map[string]*types.Value{
-							"route_config_name": sv("ingress_http"), // TODO(dfc) needed for grpc?
-							"config_source": st(map[string]*types.Value{
-								"api_config_source": st(map[string]*types.Value{
-									"api_type": sv("grpc"),
-									"cluster_name": lv(
-										sv("xds_cluster"),
-									),
-								}),
-							}),
-						}),
-						"http_filters": lv(
-							st(map[string]*types.Value{
-								"name": sv(router),
-							}),
-						),
-						"access_log": st(map[string]*types.Value{
-							"name": sv(accessLog),
-							"config": st(map[string]*types.Value{
-								"path": sv("/dev/stdout"),
-							}),
-						}),
-						"use_remote_address": bv(true), // TODO(jbeda) should this ever be false?
-					},
-				},
-			}},
+			Filters: []*v2.Filter{
+				httpfilter(ENVOY_HTTP_LISTENER, ENVOY_HTTP_LISTENER),
+			},
 		}}
 	}
 	defer lc.Notify()
@@ -109,20 +68,7 @@ func (lc *ListenerCache) recomputeListener(ingresses map[metadata]*v1beta1.Ingre
 // using the list of ingresses and secrets provided. If the list of
 // TLS enabled listeners is zero, the listener is removed.
 func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.Ingress, secrets map[metadata]*v1.Secret) {
-	l := &v2.Listener{
-		Name: ENVOY_HTTPS_LISTENER, // TODO(dfc) should come from the name of the service port
-		Address: &v2.Address{
-			Address: &v2.Address_SocketAddress{
-				SocketAddress: &v2.SocketAddress{
-					Protocol: v2.SocketAddress_TCP,
-					Address:  "0.0.0.0",
-					PortSpecifier: &v2.SocketAddress_PortValue{
-						PortValue: 8443,
-					},
-				},
-			},
-		},
-	}
+	l := listener(ENVOY_HTTPS_LISTENER, "0.0.0.0", 8443)
 
 	for _, i := range ingresses {
 		if len(i.Spec.TLS) == 0 {
@@ -138,59 +84,14 @@ func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.In
 			}
 			fmt.Printf("ingress %s/%s: secret %s/%s found in cache\n", i.Namespace, i.Name, i.Namespace, tls.SecretName)
 
-			const base = "/config/ssl"
-
 			fc := &v2.FilterChain{
 				FilterChainMatch: &v2.FilterChainMatch{
 					SniDomains: tls.Hosts,
 				},
-				TlsContext: &v2.DownstreamTlsContext{
-					CommonTlsContext: &v2.CommonTlsContext{
-						TlsCertificates: []*v2.TlsCertificate{{
-							CertificateChain: &v2.DataSource{
-								&v2.DataSource_Filename{
-									Filename: filepath.Join(base, i.Namespace, tls.SecretName, v1.TLSCertKey),
-								},
-							},
-							PrivateKey: &v2.DataSource{
-								&v2.DataSource_Filename{
-									Filename: filepath.Join(base, i.Namespace, tls.SecretName, v1.TLSPrivateKeyKey),
-								},
-							},
-						}},
-					},
+				TlsContext: tlscontext(i.Namespace, tls.SecretName),
+				Filters: []*v2.Filter{
+					httpfilter(ENVOY_HTTPS_LISTENER, ENVOY_HTTP_LISTENER), // stat_prefix, route_name
 				},
-				Filters: []*v2.Filter{{
-					Name: httpFilter,
-					Config: &types.Struct{
-						Fields: map[string]*types.Value{
-							"codec_type":  sv("auto"),
-							"stat_prefix": sv(l.Name), // TODO(dfc) should this come from pod.Name?
-							"rds": st(map[string]*types.Value{
-								"route_config_name": sv("ingress_http"), // TODO(dfc) issue 103
-								"config_source": st(map[string]*types.Value{
-									"api_config_source": st(map[string]*types.Value{
-										"api_type": sv("grpc"),
-										"cluster_name": lv(
-											sv("xds_cluster"),
-										),
-									}),
-								}),
-							}),
-							"http_filters": lv(
-								st(map[string]*types.Value{
-									"name": sv(router),
-								}),
-							),
-							"access_log": st(map[string]*types.Value{
-								"name": sv(accessLog),
-								"config": st(map[string]*types.Value{
-									"path": sv("/dev/stdout"),
-								}),
-							}),
-						},
-					},
-				}},
 			}
 			l.FilterChains = append(l.FilterChains, fc)
 		}
@@ -204,6 +105,78 @@ func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.In
 	default:
 		// at least one tls ingress registered, refresh listener
 		lc.Add(l)
+	}
+}
+
+func listener(name, address string, port uint32) *v2.Listener {
+	return &v2.Listener{
+		Name: name, // TODO(dfc) should come from the name of the service port
+		Address: &v2.Address{
+			Address: &v2.Address_SocketAddress{
+				SocketAddress: &v2.SocketAddress{
+					Protocol: v2.SocketAddress_TCP,
+					Address:  address,
+					PortSpecifier: &v2.SocketAddress_PortValue{
+						PortValue: port,
+					},
+				},
+			},
+		},
+	}
+}
+
+func tlscontext(namespace, name string) *v2.DownstreamTlsContext {
+	const base = "/config/ssl"
+	return &v2.DownstreamTlsContext{
+		CommonTlsContext: &v2.CommonTlsContext{
+			TlsCertificates: []*v2.TlsCertificate{{
+				CertificateChain: &v2.DataSource{
+					&v2.DataSource_Filename{
+						Filename: filepath.Join(base, namespace, name, v1.TLSCertKey),
+					},
+				},
+				PrivateKey: &v2.DataSource{
+					&v2.DataSource_Filename{
+						Filename: filepath.Join(base, namespace, name, v1.TLSPrivateKeyKey),
+					},
+				},
+			}},
+		},
+	}
+}
+
+func httpfilter(statprefix, routename string) *v2.Filter {
+	return &v2.Filter{
+		Name: httpFilter,
+		Config: &types.Struct{
+			Fields: map[string]*types.Value{
+				"codec_type":  sv("auto"),
+				"stat_prefix": sv(statprefix), // TODO(dfc) should this come from pod.Name?
+				"rds": st(map[string]*types.Value{
+					"route_config_name": sv(routename),
+					"config_source": st(map[string]*types.Value{
+						"api_config_source": st(map[string]*types.Value{
+							"api_type": sv("grpc"),
+							"cluster_name": lv(
+								sv("xds_cluster"),
+							),
+						}),
+					}),
+				}),
+				"http_filters": lv(
+					st(map[string]*types.Value{
+						"name": sv(router),
+					}),
+				),
+				"access_log": st(map[string]*types.Value{
+					"name": sv(accessLog),
+					"config": st(map[string]*types.Value{
+						"path": sv("/dev/stdout"),
+					}),
+				}),
+				"use_remote_address": bv(true), // TODO(jbeda) should this ever be false?
+			},
+		},
 	}
 }
 
