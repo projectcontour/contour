@@ -29,7 +29,83 @@ type ListenerCache struct {
 	Cond
 }
 
-// recomputeTLSListerner recomputes the SSL listener for port 8443
+const (
+	ENVOY_HTTP_LISTENER  = "ingress_http"
+	ENVOY_HTTPS_LISTENER = "ingress_https"
+
+	router     = "envoy.router"
+	httpFilter = "envoy.http_connection_manager"
+	accessLog  = "envoy.file_access_log"
+)
+
+// recomputeListener recomputes the non SSL listener for port 8080
+// using the list of ingresses provided. If the list of ingresses,
+// is empty, then the listener is removed.
+// TODO(dfc) some annotations may require the Ingress to no appear on
+// port 80, therefore may result in an empty effective set of ingresses.
+func (lc *ListenerCache) recomputeListener(ingresses map[metadata]*v1beta1.Ingress) {
+	l := &v2.Listener{
+		Name: ENVOY_HTTP_LISTENER, // TODO(dfc) should come from the name of the service port
+		Address: &v2.Address{
+			Address: &v2.Address_SocketAddress{
+				SocketAddress: &v2.SocketAddress{
+					Protocol: v2.SocketAddress_TCP,
+					Address:  "0.0.0.0",
+					PortSpecifier: &v2.SocketAddress_PortValue{
+						PortValue: 8080,
+					},
+				},
+			},
+		},
+	}
+	if len(ingresses) > 0 {
+		l.FilterChains = []*v2.FilterChain{{
+			Filters: []*v2.Filter{{
+				Name: httpFilter,
+				Config: &types.Struct{
+					Fields: map[string]*types.Value{
+						"codec_type":  sv("auto"),
+						"stat_prefix": sv(l.Name), // TODO(dfc) should this come from pod.Name?
+						"rds": st(map[string]*types.Value{
+							"route_config_name": sv("ingress_http"), // TODO(dfc) needed for grpc?
+							"config_source": st(map[string]*types.Value{
+								"api_config_source": st(map[string]*types.Value{
+									"api_type": sv("grpc"),
+									"cluster_name": lv(
+										sv("xds_cluster"),
+									),
+								}),
+							}),
+						}),
+						"http_filters": lv(
+							st(map[string]*types.Value{
+								"name": sv(router),
+							}),
+						),
+						"access_log": st(map[string]*types.Value{
+							"name": sv(accessLog),
+							"config": st(map[string]*types.Value{
+								"path": sv("/dev/stdout"),
+							}),
+						}),
+						"use_remote_address": bv(true), // TODO(jbeda) should this ever be false?
+					},
+				},
+			}},
+		}}
+	}
+	defer lc.Notify()
+	switch len(l.FilterChains) {
+	case 0:
+		// no ingresses registered, remove the listener
+		lc.Remove(l.Name)
+	default:
+		// at least one ingress registered, refresh listener
+		lc.Add(l)
+	}
+}
+
+// recomputeTLSListener recomputes the SSL listener for port 8443
 // using the list of ingresses and secrets provided. If the list of
 // TLS enabled listeners is zero, the listener is removed.
 func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.Ingress, secrets map[metadata]*v1.Secret) {
@@ -89,7 +165,7 @@ func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.In
 					Config: &types.Struct{
 						Fields: map[string]*types.Value{
 							"codec_type":  sv("auto"),
-							"stat_prefix": sv("ingress_https"),
+							"stat_prefix": sv(l.Name), // TODO(dfc) should this come from pod.Name?
 							"rds": st(map[string]*types.Value{
 								"route_config_name": sv("ingress_http"), // TODO(dfc) issue 103
 								"config_source": st(map[string]*types.Value{
@@ -124,70 +200,10 @@ func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.In
 	switch len(l.FilterChains) {
 	case 0:
 		// no tls ingresses registered, remove the listener
-		lc.Remove(ENVOY_HTTPS_LISTENER)
+		lc.Remove(l.Name)
 	default:
 		// at least one tls ingress registered, refresh listener
 		lc.Add(l)
-	}
-}
-
-const (
-	ENVOY_HTTP_LISTENER  = "ingress_http"
-	ENVOY_HTTPS_LISTENER = "ingress_https"
-
-	router     = "envoy.router"
-	httpFilter = "envoy.http_connection_manager"
-	accessLog  = "envoy.file_access_log"
-)
-
-func defaultListener() *v2.Listener {
-	return &v2.Listener{
-		Name: ENVOY_HTTP_LISTENER, // TODO(dfc) should come from the name of the service port
-		Address: &v2.Address{
-			Address: &v2.Address_SocketAddress{
-				SocketAddress: &v2.SocketAddress{
-					Protocol: v2.SocketAddress_TCP,
-					Address:  "0.0.0.0",
-					PortSpecifier: &v2.SocketAddress_PortValue{
-						PortValue: 8080,
-					},
-				},
-			},
-		},
-		FilterChains: []*v2.FilterChain{{
-			Filters: []*v2.Filter{{
-				Name: httpFilter,
-				Config: &types.Struct{
-					Fields: map[string]*types.Value{
-						"codec_type":  sv("http1"),        // let's not go crazy now
-						"stat_prefix": sv("ingress_http"), // TODO(dfc) should this come from pod.Name?
-						"rds": st(map[string]*types.Value{
-							"route_config_name": sv("ingress_http"), // TODO(dfc) needed for grpc?
-							"config_source": st(map[string]*types.Value{
-								"api_config_source": st(map[string]*types.Value{
-									"api_type": sv("grpc"),
-									"cluster_name": lv(
-										sv("xds_cluster"),
-									),
-								}),
-							}),
-						}),
-						"http_filters": lv(
-							st(map[string]*types.Value{
-								"name": sv(router),
-							}),
-						),
-						"access_log": st(map[string]*types.Value{
-							"name": sv(accessLog),
-							"config": st(map[string]*types.Value{
-								"path": sv("/dev/stdout"),
-							}),
-						}),
-						"use_remote_address": bv(true), // TODO(jbeda) should this ever be false?
-					},
-				},
-			}},
-		}},
 	}
 }
 
