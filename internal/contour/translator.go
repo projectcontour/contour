@@ -39,8 +39,6 @@ func NewTranslator(log log.Logger) *Translator {
 	t := &Translator{
 		Logger: log,
 	}
-	t.ListenerCache.Add(defaultListener()) // insert default listener
-	t.ListenerCache.Notify()               // bump version to notify streamers
 	t.vhosts = make(map[string][]*v1beta1.Ingress)
 	t.ingresses = make(map[metadata]*v1beta1.Ingress)
 	t.secrets = make(map[metadata]*v1.Secret)
@@ -255,6 +253,7 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 
 	t.ingresses[metadata{name: i.Name, namespace: i.Namespace}] = i
 
+	t.recomputeListener(t.ingresses)
 	if len(i.Spec.TLS) > 0 {
 		t.recomputeTLSListener(t.ingresses, t.secrets)
 	}
@@ -300,6 +299,7 @@ func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 
 	delete(t.ingresses, metadata{name: i.Name, namespace: i.Namespace})
 
+	t.recomputeListener(t.ingresses)
 	if len(i.Spec.TLS) > 0 {
 		t.recomputeTLSListener(t.ingresses, t.secrets)
 	}
