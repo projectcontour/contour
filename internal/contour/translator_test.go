@@ -754,9 +754,14 @@ func TestTranslatorAddIngress(t *testing.T) {
 				tc.setup(tr)
 			}
 			tr.addIngress(tc.ing)
-			got := tr.VirtualHostCache.Values()
+			got := tr.VirtualHostCache.HTTP.Values()
 			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("addIngress(%v):\n got: %v\nwant: %v", tc.ing, got, tc.want)
+				t.Fatalf("addIngress(%v):\n (ingress_http) got: %v\nwant: %v", tc.ing, got, tc.want)
+			}
+
+			got = tr.VirtualHostCache.HTTPS.Values()
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("addIngress(%v):\n (ingress_https) got: %v\nwant: %v", tc.ing, got, tc.want)
 			}
 		})
 	}
@@ -855,9 +860,14 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
 			tc.setup(tr)
 			tr.removeIngress(tc.ing)
-			got := tr.VirtualHostCache.Values()
+			got := tr.VirtualHostCache.HTTPS.Values()
 			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("removeIngress(%v): got: %v, want: %v", tc.ing, got, tc.want)
+				t.Fatalf("removeIngress(%v) (ingress_http): got: %v, want: %v", tc.ing, got, tc.want)
+			}
+
+			got = tr.VirtualHostCache.HTTPS.Values()
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("removeIngress(%v) (ingress_https): got: %v, want: %v", tc.ing, got, tc.want)
 			}
 		})
 	}
