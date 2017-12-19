@@ -49,7 +49,7 @@ func (lc *ListenerCache) recomputeListener(ingresses map[metadata]*v1beta1.Ingre
 	if len(ingresses) > 0 {
 		l.FilterChains = []*v2.FilterChain{{
 			Filters: []*v2.Filter{
-				httpfilter(ENVOY_HTTP_LISTENER, ENVOY_HTTP_LISTENER),
+				httpfilter(ENVOY_HTTP_LISTENER),
 			},
 		}}
 	}
@@ -90,7 +90,7 @@ func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.In
 				},
 				TlsContext: tlscontext(i.Namespace, tls.SecretName),
 				Filters: []*v2.Filter{
-					httpfilter(ENVOY_HTTPS_LISTENER, ENVOY_HTTP_LISTENER), // stat_prefix, route_name
+					httpfilter(ENVOY_HTTPS_LISTENER),
 				},
 			}
 			l.FilterChains = append(l.FilterChains, fc)
@@ -145,13 +145,13 @@ func tlscontext(namespace, name string) *v2.DownstreamTlsContext {
 	}
 }
 
-func httpfilter(statprefix, routename string) *v2.Filter {
+func httpfilter(routename string) *v2.Filter {
 	return &v2.Filter{
 		Name: httpFilter,
 		Config: &types.Struct{
 			Fields: map[string]*types.Value{
 				"codec_type":  sv("auto"),
-				"stat_prefix": sv(statprefix), // TODO(dfc) should this come from pod.Name?
+				"stat_prefix": sv(routename),
 				"rds": st(map[string]*types.Value{
 					"route_config_name": sv(routename),
 					"config_source": st(map[string]*types.Value{

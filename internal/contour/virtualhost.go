@@ -37,6 +37,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ing
 		// there are no ingresses registered with this vhost any more
 		// remove the VirtualHost from the grpc cache.
 		v.HTTP.Remove(hashname(60, vhost))
+		v.HTTPS.Remove(hashname(60, vhost))
 	default:
 		// otherwise there is at least one ingress object associated with
 		// this vhost, so regernate the cache record and add/overwrite the
@@ -63,6 +64,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ing
 		}
 		sort.Stable(sort.Reverse(longestRouteFirst(vv.Routes)))
 		v.HTTP.Add(&vv)
+		v.HTTPS.Add(&vv)
 	}
 }
 

@@ -280,6 +280,7 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 			}},
 		}
 		t.VirtualHostCache.HTTP.Add(&v)
+		t.VirtualHostCache.HTTPS.Add(&v)
 		return
 	}
 
@@ -306,6 +307,7 @@ func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 
 	if i.Spec.Backend != nil {
 		t.VirtualHostCache.HTTP.Remove("*")
+		t.VirtualHostCache.HTTPS.Remove("*")
 		return
 	}
 
