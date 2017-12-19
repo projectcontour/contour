@@ -23,7 +23,8 @@ import (
 
 // VirtualHostCache manage the contents of the gRPC RDS cache.
 type VirtualHostCache struct {
-	virtualHostCache
+	HTTP  virtualHostCache
+	HTTPS virtualHostCache
 	Cond
 }
 
@@ -35,7 +36,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ing
 	case 0:
 		// there are no ingresses registered with this vhost any more
 		// remove the VirtualHost from the grpc cache.
-		v.Remove(hashname(60, vhost))
+		v.HTTP.Remove(hashname(60, vhost))
 	default:
 		// otherwise there is at least one ingress object associated with
 		// this vhost, so regernate the cache record and add/overwrite the
@@ -61,7 +62,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ing
 			}
 		}
 		sort.Stable(sort.Reverse(longestRouteFirst(vv.Routes)))
-		v.Add(&vv)
+		v.HTTP.Add(&vv)
 	}
 }
 

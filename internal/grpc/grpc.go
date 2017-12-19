@@ -69,16 +69,6 @@ type ListenerCache interface {
 	Register(chan int, int)
 }
 
-// VirtualHostCache holds a set of computed v2.VirtualHost resources.
-type VirtualHostCache interface {
-	// Values returns a copy of the contents of the cache.
-	// The slice and its contents should be treated as read-only.
-	Values() []*v2.VirtualHost
-
-	// Register registers ch to receive a value when Notify is called.
-	Register(chan int, int)
-}
-
 // NewAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
 func NewAPI(l log.Logger, t *contour.Translator) *grpc.Server {
 	g := grpc.NewServer()
@@ -112,8 +102,10 @@ func newgrpcServer(l log.Logger, t *contour.Translator) *grpcServer {
 			Logger:        l.WithPrefix("LDS"),
 		},
 		RDS: RDS{
-			VirtualHostCache: &t.VirtualHostCache,
-			Logger:           l.WithPrefix("RDS"),
+			HTTP:   &t.VirtualHostCache.HTTP,
+			HTTPS:  &t.VirtualHostCache.HTTPS,
+			Cond:   &t.VirtualHostCache.Cond,
+			Logger: l.WithPrefix("RDS"),
 		},
 	}
 }
@@ -242,10 +234,17 @@ func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersSer
 	return stream(srv, l, log)
 }
 
+type values interface {
+	// Values returns a copy of the contents of the cache.
+	// The slice and its contents should be treated as read-only.
+	Values() []*v2.VirtualHost
+}
+
 // RDS implements the RDS v2 gRPC API.
 type RDS struct {
 	log.Logger
-	VirtualHostCache
+	HTTP, HTTPS values
+	*contour.Cond
 	count uint64
 }
 
@@ -255,7 +254,11 @@ type RDS struct {
 func (r *RDS) Resources() ([]*types.Any, error) {
 	ingress_http, err := proto.Marshal(&v2.RouteConfiguration{
 		Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
-		VirtualHosts: r.Values(),
+		VirtualHosts: r.HTTP.Values(),
+	})
+	ingress_https, err := proto.Marshal(&v2.RouteConfiguration{
+		Name:         "ingress_https", // TODO(dfc) matches LDS configuration?
+		VirtualHosts: r.HTTPS.Values(),
 	})
 	if err != nil {
 		return nil, err
@@ -263,6 +266,9 @@ func (r *RDS) Resources() ([]*types.Any, error) {
 	return []*types.Any{{
 		TypeUrl: RouteType,
 		Value:   ingress_http,
+	}, {
+		TypeUrl: RouteType,
+		Value:   ingress_https,
 	}}, nil
 }
 
