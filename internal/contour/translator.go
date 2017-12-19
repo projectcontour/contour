@@ -19,11 +19,14 @@ package contour
 import (
 	"crypto/sha256"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
-	"github.com/golang/protobuf/ptypes/duration"
 
 	"github.com/heptio/contour/internal/log"
 	"k8s.io/api/core/v1"
@@ -36,14 +39,14 @@ func NewTranslator(log log.Logger) *Translator {
 	t := &Translator{
 		Logger: log,
 	}
-	t.ClusterCache.init()
-	t.ClusterLoadAssignmentCache.init()
-	t.ListenerCache.init()
-	t.ListenerCache.Add(defaultListener()) // insert default listener
-	t.ListenerCache.Notify()               // bump version to notify streamers
-	t.VirtualHostCache.init()
 	t.vhosts = make(map[string][]*v1beta1.Ingress)
+	t.ingresses = make(map[metadata]*v1beta1.Ingress)
+	t.secrets = make(map[metadata]*v1.Secret)
 	return t
+}
+
+type metadata struct {
+	name, namespace string
 }
 
 // Translator receives notifications from the Kubernetes API and translates those
@@ -58,6 +61,11 @@ type Translator struct {
 	// vhosts stores a slice of vhosts with the ingress objects that
 	// went into creating them.
 	vhosts map[string][]*v1beta1.Ingress
+
+	ingresses map[metadata]*v1beta1.Ingress
+
+	// secrets stores tls secrets
+	secrets map[metadata]*v1.Secret
 }
 
 func (t *Translator) OnAdd(obj interface{}) {
@@ -108,12 +116,6 @@ func (t *Translator) OnDelete(obj interface{}) {
 	}
 }
 
-const (
-	nanosecond  = 1
-	microsecond = 1000 * nanosecond
-	millisecond = 1000 * microsecond
-)
-
 func (t *Translator) addService(svc *v1.Service) {
 	defer t.ClusterCache.Notify()
 	for _, p := range svc.Spec.Ports {
@@ -137,10 +139,8 @@ func (t *Translator) addService(svc *v1.Service) {
 					Name:             hashname(60, svc.ObjectMeta.Namespace, svc.ObjectMeta.Name, p.Name),
 					Type:             v2.Cluster_EDS,
 					EdsClusterConfig: config,
-					ConnectTimeout: &duration.Duration{
-						Nanos: 250 * millisecond,
-					},
-					LbPolicy: v2.Cluster_ROUND_ROBIN,
+					ConnectTimeout:   250 * time.Millisecond,
+					LbPolicy:         v2.Cluster_ROUND_ROBIN,
 				}
 				t.ClusterCache.Add(&c)
 			}
@@ -148,10 +148,8 @@ func (t *Translator) addService(svc *v1.Service) {
 				Name:             hashname(60, svc.ObjectMeta.Namespace, svc.ObjectMeta.Name, strconv.Itoa(int(p.Port))),
 				Type:             v2.Cluster_EDS,
 				EdsClusterConfig: config,
-				ConnectTimeout: &duration.Duration{
-					Nanos: 250 * millisecond,
-				},
-				LbPolicy: v2.Cluster_ROUND_ROBIN,
+				ConnectTimeout:   250 * time.Millisecond,
+				LbPolicy:         v2.Cluster_ROUND_ROBIN,
 			}
 			t.ClusterCache.Add(&c)
 		default:
@@ -253,6 +251,13 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 		return
 	}
 
+	t.ingresses[metadata{name: i.Name, namespace: i.Namespace}] = i
+
+	t.recomputeListener(t.ingresses)
+	if len(i.Spec.TLS) > 0 {
+		t.recomputeTLSListener(t.ingresses, t.secrets)
+	}
+
 	// notify watchers that the vhost cache has probably changed.
 	defer t.VirtualHostCache.Notify()
 
@@ -279,13 +284,26 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 	}
 
 	for _, rule := range i.Spec.Rules {
-		t.vhosts[rule.Host] = appendIfMissing(t.vhosts[rule.Host], i)
-		t.recomputevhost(rule.Host, t.vhosts[rule.Host])
+		host := rule.Host
+		if host == "" {
+			// If the host is unspecified, the Ingress routes all traffic based on the specified IngressRuleValue.
+			host = "*"
+		}
+		t.vhosts[host] = appendIfMissing(t.vhosts[host], i)
+		t.recomputevhost(host, t.vhosts[host])
 	}
 }
 
 func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 	defer t.VirtualHostCache.Notify()
+
+	delete(t.ingresses, metadata{name: i.Name, namespace: i.Namespace})
+
+	t.recomputeListener(t.ingresses)
+	if len(i.Spec.TLS) > 0 {
+		t.recomputeTLSListener(t.ingresses, t.secrets)
+	}
+
 	if i.Spec.Backend != nil {
 		t.VirtualHostCache.Remove("*")
 		return
@@ -298,11 +316,42 @@ func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 }
 
 func (t *Translator) addSecret(s *v1.Secret) {
+	_, cert := s.Data[v1.TLSCertKey]
+	_, key := s.Data[v1.TLSPrivateKeyKey]
+	if !cert || !key {
+		t.Logger.Infof("ignoring secret %s/%s", s.Namespace, s.Name)
+		return
+	}
+	t.Logger.Infof("caching secret %s/%s", s.Namespace, s.Name)
+	t.writeCerts(s)
+	t.secrets[metadata{name: s.Name, namespace: s.Namespace}] = s
 
+	t.recomputeTLSListener(t.ingresses, t.secrets)
 }
 
 func (t *Translator) removeSecret(s *v1.Secret) {
+	delete(t.secrets, metadata{name: s.Name, namespace: s.Namespace})
+	t.recomputeTLSListener(t.ingresses, t.secrets)
+}
 
+// writeSecret writes the contents of the secret to a fixed location on
+// disk so that envoy can pick them up.
+// TODO(dfc) this is due to https://github.com/envoyproxy/envoy/issues/1357
+func (t *Translator) writeCerts(s *v1.Secret) {
+	const base = "/config/ssl"
+	path := filepath.Join(base, s.Namespace, s.Name)
+	if err := os.MkdirAll(path, 0644); err != nil {
+		t.Errorf("could not write cert %s/%s: %v", s.Namespace, s.Name, err)
+		return
+	}
+	if err := ioutil.WriteFile(filepath.Join(path, v1.TLSCertKey), s.Data[v1.TLSCertKey], 0755); err != nil {
+		t.Errorf("could not write cert %s/%s: %v", s.Namespace, s.Name, err)
+		return
+	}
+	if err := ioutil.WriteFile(filepath.Join(path, v1.TLSPrivateKeyKey), s.Data[v1.TLSPrivateKeyKey], 0755); err != nil {
+		t.Errorf("could not write cert %s/%s: %v", s.Namespace, s.Name, err)
+		return
+	}
 }
 
 func appendIfMissing(haystack []*v1beta1.Ingress, needle *v1beta1.Ingress) []*v1beta1.Ingress {

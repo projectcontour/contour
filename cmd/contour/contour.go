@@ -15,6 +15,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net"
 	"net/http"
@@ -44,6 +45,13 @@ const (
 	V1_API_ADDRESS = "127.0.0.1:8000" // v1 JSON RPC
 	V2_API_ADDRESS = "127.0.0.1:8001" // v2 gRPC
 )
+
+// this is necessary due to #113 wherein glog neccessitates a call to flag.Parse
+// before any logging statements can be invoked. (See also https://github.com/golang/glog/blob/master/glog.go#L679)
+// unsure why this seemingly unnecessary prerequisite is in place but there must be some sane reason.
+func init() {
+	flag.Parse()
+}
 
 func main() {
 	app := kingpin.New("contour", "Heptio Contour Kubernetes ingress controller.")

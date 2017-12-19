@@ -22,7 +22,6 @@ import (
 
 func TestClusterCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 	var cc clusterCache
-	cc.init()
 	c := &v2.Cluster{
 		Name: "alpha",
 	}
@@ -40,7 +39,6 @@ func TestClusterCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 
 func TestClusterCacheValuesReturnsTheSameContents(t *testing.T) {
 	var cc clusterCache
-	cc.init()
 	c := &v2.Cluster{
 		Name: "alpha",
 	}
@@ -57,7 +55,6 @@ func TestClusterCacheValuesReturnsTheSameContents(t *testing.T) {
 
 func TestClusterCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 	var cc clusterCache
-	cc.init()
 	c1 := &v2.Cluster{
 		Name: "beta",
 	}
@@ -79,7 +76,6 @@ func TestClusterCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 
 func TestClusterCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 	var cc clusterCache
-	cc.init()
 	c1 := &v2.Cluster{
 		Name: "alpha",
 		Type: 1,
@@ -101,7 +97,6 @@ func TestClusterCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 
 func TestClusterCacheAddIsCopyOnWrite(t *testing.T) {
 	var cc clusterCache
-	cc.init()
 	c1 := &v2.Cluster{
 		Name: "alpha",
 	}
@@ -121,7 +116,6 @@ func TestClusterCacheAddIsCopyOnWrite(t *testing.T) {
 
 func TestClusterCacheRemove(t *testing.T) {
 	var cc clusterCache
-	cc.init()
 	c1 := &v2.Cluster{
 		Name: "alpha",
 	}
@@ -136,7 +130,6 @@ func TestClusterCacheRemove(t *testing.T) {
 
 func TestClusterLoadAssignmentCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 	var cc clusterLoadAssignmentCache
-	cc.init()
 	c := &v2.ClusterLoadAssignment{
 		ClusterName: "alpha",
 	}
@@ -154,7 +147,6 @@ func TestClusterLoadAssignmentCacheValuesReturnsACopyOfItsInternalSlice(t *testi
 
 func TestClusterLoadAssignmentCacheValuesReturnsTheSameContents(t *testing.T) {
 	var cc clusterLoadAssignmentCache
-	cc.init()
 	c := &v2.ClusterLoadAssignment{
 		ClusterName: "alpha",
 	}
@@ -171,7 +163,6 @@ func TestClusterLoadAssignmentCacheValuesReturnsTheSameContents(t *testing.T) {
 
 func TestClusterLoadAssignmentCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 	var cc clusterLoadAssignmentCache
-	cc.init()
 	c1 := &v2.ClusterLoadAssignment{
 		ClusterName: "beta",
 	}
@@ -193,7 +184,6 @@ func TestClusterLoadAssignmentCacheAddInsertsTwoElementsInSortOrder(t *testing.T
 
 func TestClusterLoadAssignmentCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 	var cc clusterLoadAssignmentCache
-	cc.init()
 	c1 := &v2.ClusterLoadAssignment{
 		ClusterName: "alpha",
 		Policy: &v2.ClusterLoadAssignment_Policy{
@@ -219,7 +209,6 @@ func TestClusterLoadAssignmentCacheAddOverwritesElementsWithTheSameName(t *testi
 
 func TestClusterLoadAssignmentCacheAddIsCopyOnWrite(t *testing.T) {
 	var cc clusterLoadAssignmentCache
-	cc.init()
 	c1 := &v2.ClusterLoadAssignment{
 		ClusterName: "alpha",
 	}
@@ -239,7 +228,6 @@ func TestClusterLoadAssignmentCacheAddIsCopyOnWrite(t *testing.T) {
 
 func TestClusterLoadAssignmentCacheRemove(t *testing.T) {
 	var cc clusterLoadAssignmentCache
-	cc.init()
 	c1 := &v2.ClusterLoadAssignment{
 		ClusterName: "alpha",
 	}
@@ -254,7 +242,6 @@ func TestClusterLoadAssignmentCacheRemove(t *testing.T) {
 
 func TestListenerCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 	var cc listenerCache
-	cc.init()
 	l := &v2.Listener{
 		Name: "alpha",
 	}
@@ -272,7 +259,6 @@ func TestListenerCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 
 func TestListenerCacheValuesReturnsTheSameContents(t *testing.T) {
 	var cc listenerCache
-	cc.init()
 	l := &v2.Listener{
 		Name: "alpha",
 	}
@@ -289,7 +275,6 @@ func TestListenerCacheValuesReturnsTheSameContents(t *testing.T) {
 
 func TestListenerCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 	var cc listenerCache
-	cc.init()
 	l1 := &v2.Listener{
 		Name: "beta",
 	}
@@ -311,7 +296,6 @@ func TestListenerCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 
 func TestListenerCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 	var cc listenerCache
-	cc.init()
 	l1 := &v2.Listener{
 		Name:      "alpha",
 		DrainType: 7,
@@ -333,7 +317,6 @@ func TestListenerCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 
 func TestListenerCacheAddIsCopyOnWrite(t *testing.T) {
 	var cc listenerCache
-	cc.init()
 	l1 := &v2.Listener{
 		Name: "alpha",
 	}
@@ -353,7 +336,6 @@ func TestListenerCacheAddIsCopyOnWrite(t *testing.T) {
 
 func TestListenerCacheRemove(t *testing.T) {
 	var cc listenerCache
-	cc.init()
 	l1 := &v2.Listener{
 		Name: "alpha",
 	}
@@ -368,7 +350,6 @@ func TestListenerCacheRemove(t *testing.T) {
 
 func TestVirtualHostCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 	var cc virtualHostCache
-	cc.init()
 	c := &v2.VirtualHost{
 		Name: "alpha",
 	}
@@ -386,7 +367,6 @@ func TestVirtualHostCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 
 func TestVirtualHostCacheValuesReturnsTheSameContents(t *testing.T) {
 	var cc virtualHostCache
-	cc.init()
 	c := &v2.VirtualHost{
 		Name: "alpha",
 	}
@@ -403,7 +383,6 @@ func TestVirtualHostCacheValuesReturnsTheSameContents(t *testing.T) {
 
 func TestVirtualHostCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 	var cc virtualHostCache
-	cc.init()
 	c1 := &v2.VirtualHost{
 		Name: "beta",
 	}
@@ -425,7 +404,6 @@ func TestVirtualHostCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 
 func TestVirtualHostCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 	var cc virtualHostCache
-	cc.init()
 	c1 := &v2.VirtualHost{
 		Name: "alpha",
 		Domains: []string{
@@ -451,7 +429,6 @@ func TestVirtualHostCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 
 func TestVirtualHostCacheAddIsCopyOnWrite(t *testing.T) {
 	var cc virtualHostCache
-	cc.init()
 	c1 := &v2.VirtualHost{
 		Name: "alpha",
 	}
@@ -471,7 +448,6 @@ func TestVirtualHostCacheAddIsCopyOnWrite(t *testing.T) {
 
 func TestVirtualHostCacheRemove(t *testing.T) {
 	var cc virtualHostCache
-	cc.init()
 	c1 := &v2.VirtualHost{
 		Name: "alpha",
 	}

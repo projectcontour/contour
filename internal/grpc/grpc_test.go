@@ -106,17 +106,40 @@ func TestGRPCStreaming(t *testing.T) {
 			checktimeout(t, stream) // check that the second receive times out
 		},
 		"StreamListeners": func(t *testing.T) {
-			// default listener is prepopulated in each Translator.
-
 			cc := newClient(t)
 			defer cc.Close()
 			lds := v2.NewListenerDiscoveryServiceClient(cc)
-			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-			defer cancel()
+			ctx, _ := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			stream, err := lds.StreamListeners(ctx)
 			check(t, err)
-			checkrecv(t, stream)    // check we receive one notification
-			checktimeout(t, stream) // check that the second receive times out
+			checktimeout(t, stream) // check that the first receive times out, there is no default listener
+
+			// add an ingress, which will create a non tls listener
+			tr.OnAdd(&v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin-org",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						Host: "httpbin.org",
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Backend: v1beta1.IngressBackend{
+										ServiceName: "httpbin-org",
+										ServicePort: intstr.FromInt(80),
+									},
+								}},
+							},
+						},
+					}},
+				},
+			})
+			ctx, _ = context.WithTimeout(context.Background(), 100*time.Millisecond)
+			stream, err = lds.StreamListeners(ctx)
+			check(t, err)
+			checkrecv(t, stream) // check we receive one notification
 		},
 		"StreamRoutes": func(t *testing.T) {
 			tr.OnAdd(&v1beta1.Ingress{

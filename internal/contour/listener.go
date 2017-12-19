@@ -14,8 +14,13 @@
 package contour
 
 import (
+	"fmt"
+	"path/filepath"
+
 	v2 "github.com/envoyproxy/go-control-plane/api"
-	"github.com/golang/protobuf/ptypes/struct" // package name is structpb
+	"github.com/gogo/protobuf/types"
+	"k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
 )
 
 // ListenerCache manages the contents of the gRPC LDS cache.
@@ -24,72 +29,168 @@ type ListenerCache struct {
 	Cond
 }
 
-func defaultListener() *v2.Listener {
-	const (
-		router     = "envoy.router"
-		httpFilter = "envoy.http_connection_manager"
-		accessLog  = "envoy.file_access_log"
-	)
+const (
+	ENVOY_HTTP_LISTENER  = "ingress_http"
+	ENVOY_HTTPS_LISTENER = "ingress_https"
 
-	sv := func(s string) *structpb.Value {
-		return &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: s}}
+	router     = "envoy.router"
+	httpFilter = "envoy.http_connection_manager"
+	accessLog  = "envoy.file_access_log"
+)
+
+// recomputeListener recomputes the non SSL listener for port 8080
+// using the list of ingresses provided. If the list of ingresses,
+// is empty, then the listener is removed.
+// TODO(dfc) some annotations may require the Ingress to no appear on
+// port 80, therefore may result in an empty effective set of ingresses.
+func (lc *ListenerCache) recomputeListener(ingresses map[metadata]*v1beta1.Ingress) {
+	l := listener(ENVOY_HTTP_LISTENER, "0.0.0.0", 8080)
+
+	if len(ingresses) > 0 {
+		l.FilterChains = []*v2.FilterChain{{
+			Filters: []*v2.Filter{
+				httpfilter(ENVOY_HTTP_LISTENER, ENVOY_HTTP_LISTENER),
+			},
+		}}
 	}
-	bv := func(b bool) *structpb.Value {
-		return &structpb.Value{Kind: &structpb.Value_BoolValue{BoolValue: b}}
+	defer lc.Notify()
+	switch len(l.FilterChains) {
+	case 0:
+		// no ingresses registered, remove the listener
+		lc.Remove(l.Name)
+	default:
+		// at least one ingress registered, refresh listener
+		lc.Add(l)
 	}
-	st := func(m map[string]*structpb.Value) *structpb.Value {
-		return &structpb.Value{Kind: &structpb.Value_StructValue{StructValue: &structpb.Struct{Fields: m}}}
+}
+
+// recomputeTLSListener recomputes the SSL listener for port 8443
+// using the list of ingresses and secrets provided. If the list of
+// TLS enabled listeners is zero, the listener is removed.
+func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.Ingress, secrets map[metadata]*v1.Secret) {
+	l := listener(ENVOY_HTTPS_LISTENER, "0.0.0.0", 8443)
+
+	for _, i := range ingresses {
+		if len(i.Spec.TLS) == 0 {
+			// this ingress does not use TLS, skip it
+			fmt.Printf("ingress %s/%s does not use tls\n", i.Namespace, i.Name)
+			continue
+		}
+		for _, tls := range i.Spec.TLS {
+			_, ok := secrets[metadata{name: tls.SecretName, namespace: i.Namespace}]
+			if !ok {
+				fmt.Printf("ingress %s/%s: secret %s/%s not found in cache\n", i.Namespace, i.Name, i.Namespace, tls.SecretName)
+				continue
+			}
+			fmt.Printf("ingress %s/%s: secret %s/%s found in cache\n", i.Namespace, i.Name, i.Namespace, tls.SecretName)
+
+			fc := &v2.FilterChain{
+				FilterChainMatch: &v2.FilterChainMatch{
+					SniDomains: tls.Hosts,
+				},
+				TlsContext: tlscontext(i.Namespace, tls.SecretName),
+				Filters: []*v2.Filter{
+					httpfilter(ENVOY_HTTPS_LISTENER, ENVOY_HTTP_LISTENER), // stat_prefix, route_name
+				},
+			}
+			l.FilterChains = append(l.FilterChains, fc)
+		}
 	}
-	lv := func(v ...*structpb.Value) *structpb.Value {
-		return &structpb.Value{Kind: &structpb.Value_ListValue{ListValue: &structpb.ListValue{Values: v}}}
+
+	defer lc.Notify()
+	switch len(l.FilterChains) {
+	case 0:
+		// no tls ingresses registered, remove the listener
+		lc.Remove(l.Name)
+	default:
+		// at least one tls ingress registered, refresh listener
+		lc.Add(l)
 	}
-	l := &v2.Listener{
-		Name: "ingress_http", // TODO(dfc) should come from the name of the service port
+}
+
+func listener(name, address string, port uint32) *v2.Listener {
+	return &v2.Listener{
+		Name: name, // TODO(dfc) should come from the name of the service port
 		Address: &v2.Address{
 			Address: &v2.Address_SocketAddress{
 				SocketAddress: &v2.SocketAddress{
 					Protocol: v2.SocketAddress_TCP,
-					Address:  "0.0.0.0",
+					Address:  address,
 					PortSpecifier: &v2.SocketAddress_PortValue{
-						PortValue: 8080,
+						PortValue: port,
 					},
 				},
 			},
 		},
-		FilterChains: []*v2.FilterChain{{
-			Filters: []*v2.Filter{{
-				Name: httpFilter,
-				Config: &structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"codec_type":  sv("http1"),        // let's not go crazy now
-						"stat_prefix": sv("ingress_http"), // TODO(dfc) should this come from pod.Name?
-						"rds": st(map[string]*structpb.Value{
-							"route_config_name": sv("ingress_http"), // TODO(dfc) needed for grpc?
-							"config_source": st(map[string]*structpb.Value{
-								"api_config_source": st(map[string]*structpb.Value{
-									"api_type": sv("grpc"),
-									"cluster_name": lv(
-										sv("xds_cluster"),
-									),
-								}),
-							}),
-						}),
-						"http_filters": lv(
-							st(map[string]*structpb.Value{
-								"name": sv(router),
-							}),
-						),
-						"access_log": st(map[string]*structpb.Value{
-							"name": sv(accessLog),
-							"config": st(map[string]*structpb.Value{
-								"path": sv("/dev/stdout"),
-							}),
-						}),
-						"use_remote_address": bv(true), // TODO(jbeda) should this ever be false?
+	}
+}
+
+func tlscontext(namespace, name string) *v2.DownstreamTlsContext {
+	const base = "/config/ssl"
+	return &v2.DownstreamTlsContext{
+		CommonTlsContext: &v2.CommonTlsContext{
+			TlsCertificates: []*v2.TlsCertificate{{
+				CertificateChain: &v2.DataSource{
+					&v2.DataSource_Filename{
+						Filename: filepath.Join(base, namespace, name, v1.TLSCertKey),
+					},
+				},
+				PrivateKey: &v2.DataSource{
+					&v2.DataSource_Filename{
+						Filename: filepath.Join(base, namespace, name, v1.TLSPrivateKeyKey),
 					},
 				},
 			}},
-		}},
+		},
 	}
-	return l
+}
+
+func httpfilter(statprefix, routename string) *v2.Filter {
+	return &v2.Filter{
+		Name: httpFilter,
+		Config: &types.Struct{
+			Fields: map[string]*types.Value{
+				"codec_type":  sv("auto"),
+				"stat_prefix": sv(statprefix), // TODO(dfc) should this come from pod.Name?
+				"rds": st(map[string]*types.Value{
+					"route_config_name": sv(routename),
+					"config_source": st(map[string]*types.Value{
+						"api_config_source": st(map[string]*types.Value{
+							"api_type": sv("grpc"),
+							"cluster_name": lv(
+								sv("xds_cluster"),
+							),
+						}),
+					}),
+				}),
+				"http_filters": lv(
+					st(map[string]*types.Value{
+						"name": sv(router),
+					}),
+				),
+				"access_log": st(map[string]*types.Value{
+					"name": sv(accessLog),
+					"config": st(map[string]*types.Value{
+						"path": sv("/dev/stdout"),
+					}),
+				}),
+				"use_remote_address": bv(true), // TODO(jbeda) should this ever be false?
+			},
+		},
+	}
+}
+
+func sv(s string) *types.Value {
+	return &types.Value{Kind: &types.Value_StringValue{StringValue: s}}
+}
+
+func bv(b bool) *types.Value {
+	return &types.Value{Kind: &types.Value_BoolValue{BoolValue: b}}
+}
+
+func st(m map[string]*types.Value) *types.Value {
+	return &types.Value{Kind: &types.Value_StructValue{StructValue: &types.Struct{Fields: m}}}
+}
+func lv(v ...*types.Value) *types.Value {
+	return &types.Value{Kind: &types.Value_ListValue{ListValue: &types.ListValue{Values: v}}}
 }

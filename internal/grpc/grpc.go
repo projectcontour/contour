@@ -24,8 +24,8 @@ import (
 	"google.golang.org/grpc/codes"
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
+	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/log"
 )
@@ -118,9 +118,9 @@ func newgrpcServer(l log.Logger, t *contour.Translator) *grpcServer {
 	}
 }
 
-// A resourcer provides resources formatted as []*any.Any.
+// A resourcer provides resources formatted as []*types.Any.
 type resourcer interface {
-	Resources() ([]*any.Any, error)
+	Resources() ([]*types.Any, error)
 	TypeURL() string
 }
 
@@ -131,18 +131,18 @@ type CDS struct {
 	count uint64
 }
 
-// Resources returns the contents of CDS"s cache as a []*any.Any.
+// Resources returns the contents of CDS"s cache as a []*types.Any.
 // TODO(dfc) cache the results of Resources in the ClusterCache so
 // we can avoid the error handling.
-func (c *CDS) Resources() ([]*any.Any, error) {
+func (c *CDS) Resources() ([]*types.Any, error) {
 	v := c.Values()
-	resources := make([]*any.Any, len(v))
+	resources := make([]*types.Any, len(v))
 	for i := range v {
 		data, err := proto.Marshal(v[i])
 		if err != nil {
 			return nil, err
 		}
-		resources[i] = &any.Any{
+		resources[i] = &types.Any{
 			TypeUrl: ClusterType,
 			Value:   data,
 		}
@@ -169,18 +169,18 @@ type EDS struct {
 	count uint64
 }
 
-// Resources returns the contents of EDS"s cache as a []*any.Any.
+// Resources returns the contents of EDS"s cache as a []*types.Any.
 // TODO(dfc) cache the results of Resources in the ClusterLoadAssignmentCache so
 // we can avoid the error handling.
-func (e *EDS) Resources() ([]*any.Any, error) {
+func (e *EDS) Resources() ([]*types.Any, error) {
 	v := e.Values()
-	resources := make([]*any.Any, len(v))
+	resources := make([]*types.Any, len(v))
 	for i := range v {
 		data, err := proto.Marshal(v[i])
 		if err != nil {
 			return nil, err
 		}
-		resources[i] = &any.Any{
+		resources[i] = &types.Any{
 			TypeUrl: EndpointType,
 			Value:   data,
 		}
@@ -211,18 +211,18 @@ type LDS struct {
 	count uint64
 }
 
-// Resources returns the contents of LDS"s cache as a []*any.Any.
+// Resources returns the contents of LDS"s cache as a []*types.Any.
 // TODO(dfc) cache the results of Resources in the ListenerCache so
 // we can avoid the error handling.
-func (l *LDS) Resources() ([]*any.Any, error) {
+func (l *LDS) Resources() ([]*types.Any, error) {
 	v := l.Values()
-	resources := make([]*any.Any, len(v))
+	resources := make([]*types.Any, len(v))
 	for i := range v {
 		data, err := proto.Marshal(v[i])
 		if err != nil {
 			return nil, err
 		}
-		resources[i] = &any.Any{
+		resources[i] = &types.Any{
 			TypeUrl: ListenerType,
 			Value:   data,
 		}
@@ -249,21 +249,20 @@ type RDS struct {
 	count uint64
 }
 
-// Resources returns the contents of RDS"s cache as a []*any.Any.
+// Resources returns the contents of RDS"s cache as a []*types.Any.
 // TODO(dfc) cache the results of Resources in the VirtualHostCache so
 // we can avoid the error handling.
-func (r *RDS) Resources() ([]*any.Any, error) {
-	rc := v2.RouteConfiguration{
+func (r *RDS) Resources() ([]*types.Any, error) {
+	ingress_http, err := proto.Marshal(&v2.RouteConfiguration{
 		Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
 		VirtualHosts: r.Values(),
-	}
-	data, err := proto.Marshal(&rc)
+	})
 	if err != nil {
 		return nil, err
 	}
-	return []*any.Any{{
+	return []*types.Any{{
 		TypeUrl: RouteType,
-		Value:   data,
+		Value:   ingress_http,
 	}}, nil
 }
 
