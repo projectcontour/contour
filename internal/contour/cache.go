@@ -34,49 +34,57 @@ func (cc *clusterCache) Values() []*v2.Cluster {
 	return r
 }
 
-// with executes f with the value of the stored in the cache.
-// the value returned from f replaces the contents in the cache.
-func (cc *clusterCache) with(f func([]*v2.Cluster) []*v2.Cluster) {
+// Add adds an entry to the cache. If a Cluster with the same
+// name exists, it is replaced.
+func (cc *clusterCache) Add(clusters ...*v2.Cluster) {
+	if len(clusters) == 0 {
+		return
+	}
 	cc.Lock()
-	cc.values = f(cc.values)
-	// TODO(dfc) Add and Remove do not (currently) affect the sort order
-	// so it might be possible to avoid always sorting.
 	sort.Sort(clusterByName(cc.values))
+	for _, c := range clusters {
+		cc.add(c)
+	}
 	cc.Unlock()
 }
 
-// Add adds an entry to the cache. If a Cluster with the same
-// name exists, it is replaced.
-// TODO(dfc) make Add variadic to support atomic addition of several clusters
-// also niladic Add can be used as a no-op notify for watchers.
-func (cc *clusterCache) Add(c *v2.Cluster) {
-	cc.with(func(in []*v2.Cluster) []*v2.Cluster {
-		sort.Sort(clusterByName(in))
-		i := sort.Search(len(in), func(i int) bool { return in[i].Name >= c.Name })
-		if i < len(in) && in[i].Name == c.Name {
-			// c is already present, replace
-			in[i] = c
-			return in
-		}
-		// c is not present, append and sort
-		in = append(in, c)
-		sort.Sort(clusterByName(in))
-		return in
-	})
+// add adds c to the cache. If c is already present, the cached value of c is overwritten.
+// invariant: cc.values should be sorted on entry.
+func (cc *clusterCache) add(c *v2.Cluster) {
+	i := sort.Search(len(cc.values), func(i int) bool { return cc.values[i].Name >= c.Name })
+	if i < len(cc.values) && cc.values[i].Name == c.Name {
+		// c is already present, replace
+		cc.values[i] = c
+	} else {
+		// c is not present, append
+		cc.values = append(cc.values, c)
+		// restort to convert append into insert
+		sort.Sort(clusterByName(cc.values))
+	}
 }
 
 // Remove removes the named entry from the cache. If the entry
 // is not present in the cache, the operation is a no-op.
-func (cc *clusterCache) Remove(name string) {
-	cc.with(func(in []*v2.Cluster) []*v2.Cluster {
-		sort.Sort(clusterByName(in))
-		i := sort.Search(len(in), func(i int) bool { return in[i].Name >= name })
-		if i < len(in) && in[i].Name == name {
-			// c is present, remove
-			in = append(in[:i], in[i+1:]...)
-		}
-		return in
-	})
+func (cc *clusterCache) Remove(names ...string) {
+	if len(names) == 0 {
+		return
+	}
+	cc.Lock()
+	sort.Sort(clusterByName(cc.values))
+	for _, n := range names {
+		cc.remove(n)
+	}
+	cc.Unlock()
+}
+
+// remove removes the named entry from the cache.
+// invariant: cc.values should be sorted on entry.
+func (cc *clusterCache) remove(name string) {
+	i := sort.Search(len(cc.values), func(i int) bool { return cc.values[i].Name >= name })
+	if i < len(cc.values) && cc.values[i].Name == name {
+		// c is present, remove
+		cc.values = append(cc.values[:i], cc.values[i+1:]...)
+	}
 }
 
 type clusterByName []*v2.Cluster
@@ -99,47 +107,54 @@ func (c *clusterLoadAssignmentCache) Values() []*v2.ClusterLoadAssignment {
 	return r
 }
 
-// with executes f with the value of the stored in the cache.
-// the value returned from f replaces the contents in the cache.
-func (c *clusterLoadAssignmentCache) with(f func([]*v2.ClusterLoadAssignment) []*v2.ClusterLoadAssignment) {
+// Add adds an entry to the cache. If a ClusterLoadAssignment with the same
+// name exists, it is replaced.
+func (c *clusterLoadAssignmentCache) Add(assignments ...*v2.ClusterLoadAssignment) {
+	if len(assignments) == 0 {
+		return
+	}
 	c.Lock()
-	c.values = f(c.values)
-	// TODO(dfc) Add and Remove do not (currently) affect the sort order
-	// so it might be possible to avoid always sorting.
 	sort.Sort(clusterLoadAssignmentsByName(c.values))
+	for _, a := range assignments {
+		c.add(a)
+	}
 	c.Unlock()
 }
 
-// Add adds an entry to the cache. If a ClusterLoadAssignment with the same
-// name exists, it is replaced.
-// TODO(dfc) make Add variadic to support atomic addition of several clusterLoadAssignments
-// also niladic Add can be used as a no-op notify for watchers.
-func (c *clusterLoadAssignmentCache) Add(e *v2.ClusterLoadAssignment) {
-	c.with(func(in []*v2.ClusterLoadAssignment) []*v2.ClusterLoadAssignment {
-		sort.Sort(clusterLoadAssignmentsByName(in))
-		i := sort.Search(len(in), func(i int) bool { return in[i].ClusterName >= e.ClusterName })
-		if i < len(in) && in[i].ClusterName == e.ClusterName {
-			in[i] = e
-			return in
-		}
-		in = append(in, e)
-		sort.Sort(clusterLoadAssignmentsByName(in))
-		return in
-	})
+// add adds a to the cache. If a is already present, the cached value of a is overwritten.
+// invariant: c.values should be sorted on entry.
+func (c *clusterLoadAssignmentCache) add(a *v2.ClusterLoadAssignment) {
+	i := sort.Search(len(c.values), func(i int) bool { return c.values[i].ClusterName >= a.ClusterName })
+	if i < len(c.values) && c.values[i].ClusterName == a.ClusterName {
+		c.values[i] = a
+	} else {
+		c.values = append(c.values, a)
+		sort.Sort(clusterLoadAssignmentsByName(c.values))
+	}
 }
 
 // Remove removes the named entry from the cache. If the entry
 // is not present in the cache, the operation is a no-op.
-func (c *clusterLoadAssignmentCache) Remove(name string) {
-	c.with(func(in []*v2.ClusterLoadAssignment) []*v2.ClusterLoadAssignment {
-		sort.Sort(clusterLoadAssignmentsByName(in))
-		i := sort.Search(len(in), func(i int) bool { return in[i].ClusterName >= name })
-		if i < len(in) && in[i].ClusterName == name {
-			// c is present, remove
-			in = append(in[:i], in[i+1:]...)
-		}
-		return in
-	})
+func (c *clusterLoadAssignmentCache) Remove(names ...string) {
+	if len(names) == 0 {
+		return
+	}
+	c.Lock()
+	sort.Sort(clusterLoadAssignmentsByName(c.values))
+	for _, n := range names {
+		c.remove(n)
+	}
+	c.Unlock()
+}
+
+// remove removes the named entry from the cache.
+// invariant: c.values should be sorted on entry.
+func (c *clusterLoadAssignmentCache) remove(name string) {
+	i := sort.Search(len(c.values), func(i int) bool { return c.values[i].ClusterName >= name })
+	if i < len(c.values) && c.values[i].ClusterName == name {
+		// c is present, remove
+		c.values = append(c.values[:i], c.values[i+1:]...)
+	}
 }
 
 type clusterLoadAssignmentsByName []*v2.ClusterLoadAssignment
@@ -162,49 +177,56 @@ func (lc *listenerCache) Values() []*v2.Listener {
 	return r
 }
 
-// with executes f with the value of the stored in the cache.
-// the value returned from f replaces the contents in the cache.
-func (lc *listenerCache) with(f func([]*v2.Listener) []*v2.Listener) {
+// Add adds an entry to the cache. If a Listener with the same
+// name exists, it is replaced.
+func (lc *listenerCache) Add(listeners ...*v2.Listener) {
+	if len(listeners) == 0 {
+		return
+	}
 	lc.Lock()
-	lc.values = f(lc.values)
-	// TODO(dfc) Add and Remove do not (currently) affect the sort order
-	// so it might be possible to avoid always sorting.
 	sort.Sort(listenersByName(lc.values))
+	for _, l := range listeners {
+		lc.add(l)
+	}
 	lc.Unlock()
 }
 
-// Add adds an entry to the cache. If a Listener with the same
-// name exists, it is replaced.
-// TODO(dfc) make Add variadic to support atomic addition of several listeners
-// also niladic Add can be used as a no-op notify for watchers.
-func (lc *listenerCache) Add(r *v2.Listener) {
-	lc.with(func(in []*v2.Listener) []*v2.Listener {
-		sort.Sort(listenersByName(in))
-		i := sort.Search(len(in), func(i int) bool { return in[i].Name >= r.Name })
-		if i < len(in) && in[i].Name == r.Name {
-			// c is already present, replace
-			in[i] = r
-			return in
-		}
+// add adds l to the cache. If l is already present, the cached value of l is overwritten.
+// invariant: lc.values should be sorted on entry.
+func (lc *listenerCache) add(l *v2.Listener) {
+	i := sort.Search(len(lc.values), func(i int) bool { return lc.values[i].Name >= l.Name })
+	if i < len(lc.values) && lc.values[i].Name == l.Name {
+		// c is already present, replace
+		lc.values[i] = l
+	} else {
 		// c is not present, append and sort
-		in = append(in, r)
-		sort.Sort(listenersByName(in))
-		return in
-	})
+		lc.values = append(lc.values, l)
+		sort.Sort(listenersByName(lc.values))
+	}
 }
 
 // Remove removes the named entry from the cache. If the entry
 // is not present in the cache, the operation is a no-op.
-func (lc *listenerCache) Remove(name string) {
-	lc.with(func(in []*v2.Listener) []*v2.Listener {
-		sort.Sort(listenersByName(in))
-		i := sort.Search(len(in), func(i int) bool { return in[i].Name >= name })
-		if i < len(in) && in[i].Name == name {
-			// c is present, remove
-			in = append(in[:i], in[i+1:]...)
-		}
-		return in
-	})
+func (lc *listenerCache) Remove(names ...string) {
+	if len(names) == 0 {
+		return
+	}
+	lc.Lock()
+	sort.Sort(listenersByName(lc.values))
+	for _, n := range names {
+		lc.remove(n)
+	}
+	lc.Unlock()
+}
+
+// remove removes the named entry from the cache.
+// invariant: lc.values should be sorted on entry.
+func (lc *listenerCache) remove(name string) {
+	i := sort.Search(len(lc.values), func(i int) bool { return lc.values[i].Name >= name })
+	if i < len(lc.values) && lc.values[i].Name == name {
+		// c is present, remove
+		lc.values = append(lc.values[:i], lc.values[i+1:]...)
+	}
 }
 
 type listenersByName []*v2.Listener
@@ -212,8 +234,6 @@ type listenersByName []*v2.Listener
 func (l listenersByName) Len() int           { return len(l) }
 func (l listenersByName) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
 func (l listenersByName) Less(i, j int) bool { return l[i].Name < l[j].Name }
-
-// clusterLoadAssignmentCache is a thread safe, atomic, copy on write cache of v2.ClusterLoadAssignment objects.
 
 // VirtualHostCache is a thread safe, atomic, copy on write cache of v2.VirtualHost objects.
 type virtualHostCache struct {
@@ -229,49 +249,56 @@ func (vc *virtualHostCache) Values() []*v2.VirtualHost {
 	return r
 }
 
-// with executes f with the value of the stored in the cache.
-// the value returned from f replaces the contents in the cache.
-func (vc *virtualHostCache) with(f func([]*v2.VirtualHost) []*v2.VirtualHost) {
+// Add adds an entry to the cache. If a VirtualHost with the same
+// name exists, it is replaced.
+func (vc *virtualHostCache) Add(virtualhosts ...*v2.VirtualHost) {
+	if len(virtualhosts) == 0 {
+		return
+	}
 	vc.Lock()
-	vc.values = f(vc.values)
-	// TODO(dfc) Add and Remove do not (currently) affect the sort order
-	// so it might be possible to avoid always sorting.
 	sort.Sort(virtualHostsByName(vc.values))
+	for _, v := range virtualhosts {
+		vc.add(v)
+	}
 	vc.Unlock()
 }
 
-// Add adds an entry to the cache. If a VirtualHost with the same
-// name exists, it is replaced.
-// TODO(dfc) make Add variadic to support atomic addition of several clusters
-// also niladic Add can be used as a no-op notify for watchers.
-func (vc *virtualHostCache) Add(r *v2.VirtualHost) {
-	vc.with(func(in []*v2.VirtualHost) []*v2.VirtualHost {
-		sort.Sort(virtualHostsByName(in))
-		i := sort.Search(len(in), func(i int) bool { return in[i].Name >= r.Name })
-		if i < len(in) && in[i].Name == r.Name {
-			// c is already present, replace
-			in[i] = r
-			return in
-		}
+// add adds v to the cache. If v is already present, the cached value of v is overwritten.
+// invariant: vc.values should be sorted on entry.
+func (vc *virtualHostCache) add(v *v2.VirtualHost) {
+	i := sort.Search(len(vc.values), func(i int) bool { return vc.values[i].Name >= v.Name })
+	if i < len(vc.values) && vc.values[i].Name == v.Name {
+		// c is already present, replace
+		vc.values[i] = v
+	} else {
 		// c is not present, append and sort
-		in = append(in, r)
-		sort.Sort(virtualHostsByName(in))
-		return in
-	})
+		vc.values = append(vc.values, v)
+		sort.Sort(virtualHostsByName(vc.values))
+	}
 }
 
 // Remove removes the named entry from the cache. If the entry
 // is not present in the cache, the operation is a no-op.
-func (vc *virtualHostCache) Remove(name string) {
-	vc.with(func(in []*v2.VirtualHost) []*v2.VirtualHost {
-		sort.Sort(virtualHostsByName(in))
-		i := sort.Search(len(in), func(i int) bool { return in[i].Name >= name })
-		if i < len(in) && in[i].Name == name {
-			// c is present, remove
-			in = append(in[:i], in[i+1:]...)
-		}
-		return in
-	})
+func (vc *virtualHostCache) Remove(names ...string) {
+	if len(names) == 0 {
+		return
+	}
+	vc.Lock()
+	sort.Sort(virtualHostsByName(vc.values))
+	for _, n := range names {
+		vc.remove(n)
+	}
+	vc.Unlock()
+}
+
+// remove removes the named entry from the cache.
+// invariant: vc.values should be sorted on entry.
+func (vc *virtualHostCache) remove(name string) {
+	i := sort.Search(len(vc.values), func(i int) bool { return vc.values[i].Name >= name })
+	if i < len(vc.values) && vc.values[i].Name == name {
+		// c is present, remove
+		vc.values = append(vc.values[:i], vc.values[i+1:]...)
+	}
 }
 
 type virtualHostsByName []*v2.VirtualHost
