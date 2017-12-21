@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contour
+package json
 
 import (
 	"reflect"
@@ -311,6 +311,37 @@ func TestIngressToVirtualHost(t *testing.T) {
 				Cluster: "default/my-service-name/80",
 			}),
 		}},
+	}, {
+		name: "IngressRuleValue without host should become the default vhost", // heptio/contour#101
+		i: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hello",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{{
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Path: "/hello",
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "hello",
+									ServicePort: intstr.FromInt(80),
+								},
+							}},
+						},
+					},
+				}},
+			},
+		},
+		want: []*envoy.VirtualHost{{
+			Name:    "default/hello",
+			Domains: domains("*"),
+			Routes: routes(envoy.Route{
+				Prefix:  "/hello",
+				Cluster: "default/hello/80",
+			}),
+		}},
 	}}
 
 	for _, tc := range tests {
@@ -320,7 +351,7 @@ func TestIngressToVirtualHost(t *testing.T) {
 				t.Fatal(err)
 			}
 			if !reflect.DeepEqual(got, tc.want) {
-				t.Fatalf("got: %v, want: %v", got, tc.want)
+				t.Fatalf("got: %#v, want: %#v", got, tc.want)
 			}
 		})
 	}
