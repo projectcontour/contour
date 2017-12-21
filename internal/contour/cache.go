@@ -36,12 +36,15 @@ func (cc *clusterCache) Values() []*v2.Cluster {
 
 // Add adds an entry to the cache. If a Cluster with the same
 // name exists, it is replaced.
-// TODO(dfc) make Add variadic to support atomic addition of several clusters
-// also niladic Add can be used as a no-op notify for watchers.
-func (cc *clusterCache) Add(c *v2.Cluster) {
+func (cc *clusterCache) Add(clusters ...*v2.Cluster) {
+	if len(clusters) == 0 {
+		return
+	}
 	cc.Lock()
 	sort.Sort(clusterByName(cc.values))
-	cc.add(c)
+	for _, c := range clusters {
+		cc.add(c)
+	}
 	cc.Unlock()
 }
 
@@ -62,10 +65,15 @@ func (cc *clusterCache) add(c *v2.Cluster) {
 
 // Remove removes the named entry from the cache. If the entry
 // is not present in the cache, the operation is a no-op.
-func (cc *clusterCache) Remove(name string) {
+func (cc *clusterCache) Remove(names ...string) {
+	if len(names) == 0 {
+		return
+	}
 	cc.Lock()
 	sort.Sort(clusterByName(cc.values))
-	cc.remove(name)
+	for _, n := range names {
+		cc.remove(n)
+	}
 	cc.Unlock()
 }
 
@@ -101,33 +109,41 @@ func (c *clusterLoadAssignmentCache) Values() []*v2.ClusterLoadAssignment {
 
 // Add adds an entry to the cache. If a ClusterLoadAssignment with the same
 // name exists, it is replaced.
-// TODO(dfc) make Add variadic to support atomic addition of several clusterLoadAssignments
-// also niladic Add can be used as a no-op notify for watchers.
-func (c *clusterLoadAssignmentCache) Add(e *v2.ClusterLoadAssignment) {
+func (c *clusterLoadAssignmentCache) Add(assignments ...*v2.ClusterLoadAssignment) {
+	if len(assignments) == 0 {
+		return
+	}
 	c.Lock()
 	sort.Sort(clusterLoadAssignmentsByName(c.values))
-	c.add(e)
+	for _, a := range assignments {
+		c.add(a)
+	}
 	c.Unlock()
 }
 
-// add adds e to the cache. If e is already present, the cached value of e is overwritten.
+// add adds a to the cache. If a is already present, the cached value of a is overwritten.
 // invariant: c.values should be sorted on entry.
-func (c *clusterLoadAssignmentCache) add(e *v2.ClusterLoadAssignment) {
-	i := sort.Search(len(c.values), func(i int) bool { return c.values[i].ClusterName >= e.ClusterName })
-	if i < len(c.values) && c.values[i].ClusterName == e.ClusterName {
-		c.values[i] = e
+func (c *clusterLoadAssignmentCache) add(a *v2.ClusterLoadAssignment) {
+	i := sort.Search(len(c.values), func(i int) bool { return c.values[i].ClusterName >= a.ClusterName })
+	if i < len(c.values) && c.values[i].ClusterName == a.ClusterName {
+		c.values[i] = a
 	} else {
-		c.values = append(c.values, e)
+		c.values = append(c.values, a)
 		sort.Sort(clusterLoadAssignmentsByName(c.values))
 	}
 }
 
 // Remove removes the named entry from the cache. If the entry
 // is not present in the cache, the operation is a no-op.
-func (c *clusterLoadAssignmentCache) Remove(name string) {
+func (c *clusterLoadAssignmentCache) Remove(names ...string) {
+	if len(names) == 0 {
+		return
+	}
 	c.Lock()
 	sort.Sort(clusterLoadAssignmentsByName(c.values))
-	c.remove(name)
+	for _, n := range names {
+		c.remove(n)
+	}
 	c.Unlock()
 }
 
@@ -163,12 +179,15 @@ func (lc *listenerCache) Values() []*v2.Listener {
 
 // Add adds an entry to the cache. If a Listener with the same
 // name exists, it is replaced.
-// TODO(dfc) make Add variadic to support atomic addition of several listeners
-// also niladic Add can be used as a no-op notify for watchers.
-func (lc *listenerCache) Add(l *v2.Listener) {
+func (lc *listenerCache) Add(listeners ...*v2.Listener) {
+	if len(listeners) == 0 {
+		return
+	}
 	lc.Lock()
 	sort.Sort(listenersByName(lc.values))
-	lc.add(l)
+	for _, l := range listeners {
+		lc.add(l)
+	}
 	lc.Unlock()
 }
 
@@ -188,10 +207,15 @@ func (lc *listenerCache) add(l *v2.Listener) {
 
 // Remove removes the named entry from the cache. If the entry
 // is not present in the cache, the operation is a no-op.
-func (lc *listenerCache) Remove(name string) {
+func (lc *listenerCache) Remove(names ...string) {
+	if len(names) == 0 {
+		return
+	}
 	lc.Lock()
 	sort.Sort(listenersByName(lc.values))
-	lc.remove(name)
+	for _, n := range names {
+		lc.remove(n)
+	}
 	lc.Unlock()
 }
 
@@ -227,12 +251,15 @@ func (vc *virtualHostCache) Values() []*v2.VirtualHost {
 
 // Add adds an entry to the cache. If a VirtualHost with the same
 // name exists, it is replaced.
-// TODO(dfc) make Add variadic to support atomic addition of several clusters
-// also niladic Add can be used as a no-op notify for watchers.
-func (vc *virtualHostCache) Add(v *v2.VirtualHost) {
+func (vc *virtualHostCache) Add(virtualhosts ...*v2.VirtualHost) {
+	if len(virtualhosts) == 0 {
+		return
+	}
 	vc.Lock()
 	sort.Sort(virtualHostsByName(vc.values))
-	vc.add(v)
+	for _, v := range virtualhosts {
+		vc.add(v)
+	}
 	vc.Unlock()
 }
 
@@ -252,10 +279,15 @@ func (vc *virtualHostCache) add(v *v2.VirtualHost) {
 
 // Remove removes the named entry from the cache. If the entry
 // is not present in the cache, the operation is a no-op.
-func (vc *virtualHostCache) Remove(name string) {
+func (vc *virtualHostCache) Remove(names ...string) {
+	if len(names) == 0 {
+		return
+	}
 	vc.Lock()
 	sort.Sort(virtualHostsByName(vc.values))
-	vc.remove(name)
+	for _, n := range names {
+		vc.remove(n)
+	}
 	vc.Unlock()
 }
 
