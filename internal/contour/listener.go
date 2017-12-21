@@ -14,7 +14,6 @@
 package contour
 
 import (
-	"fmt"
 	"path/filepath"
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
@@ -38,12 +37,37 @@ const (
 	accessLog  = "envoy.file_access_log"
 )
 
-// recomputeListener recomputes the non SSL listener for port 8080
-// using the list of ingresses provided. If the list of ingresses,
-// is empty, then the listener is removed.
-// TODO(dfc) some annotations may require the Ingress to no appear on
-// port 80, therefore may result in an empty effective set of ingresses.
-func (lc *ListenerCache) recomputeListener(ingresses map[metadata]*v1beta1.Ingress) {
+// recomputeListeners recomputes the ingress_http and ingress_https listeners
+// and notifies the watchers any change.
+func (lc *ListenerCache) recomputeListeners(ingresses map[metadata]*v1beta1.Ingress, secrets map[metadata]*v1.Secret) {
+	add, remove := recomputeListener(ingresses)                   // recompute ingress_http
+	ssladd, sslremove := recomputeTLSListener(ingresses, secrets) // recompute ingress_https
+
+	add = append(add, ssladd...)
+	remove = append(remove, sslremove...)
+	lc.Add(add...)
+	lc.Remove(remove...)
+
+	if len(add) > 0 || len(remove) > 0 {
+		lc.Notify()
+	}
+}
+
+// recomputeTLSListener recomputes the ingress_https listener and notifies the watchers
+// of any change.
+func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.Ingress, secrets map[metadata]*v1.Secret) {
+	ssladd, sslremove := recomputeTLSListener(ingresses, secrets) // recompute ingress_https
+	lc.Add(ssladd...)
+	lc.Remove(sslremove...)
+	if len(ssladd) > 0 || len(sslremove) > 0 {
+		lc.Notify()
+	}
+}
+
+// recomputeListener recomputes the non SSL listener for port 8080 using the list of ingresses provided.
+// recomputeListener returns a slice of listeners to be added to the cache, and a slice of names of listeners
+// to be removed.
+func recomputeListener(ingresses map[metadata]*v1beta1.Ingress) ([]*v2.Listener, []string) {
 	l := listener(ENVOY_HTTP_LISTENER, "0.0.0.0", 8080)
 
 	if len(ingresses) > 0 {
@@ -53,72 +77,75 @@ func (lc *ListenerCache) recomputeListener(ingresses map[metadata]*v1beta1.Ingre
 			},
 		}}
 	}
-	defer lc.Notify()
+	// TODO(dfc) some annotations may require the Ingress to no appear on
+	// port 80, therefore may result in an empty effective set of ingresses.
 	switch len(l.FilterChains) {
 	case 0:
-		// no ingresses registered, remove the listener
-		lc.Remove(l.Name)
+		// no ingresses registered, remove this listener.
+		return nil, []string{l.Name}
 	default:
 		// at least one ingress registered, refresh listener
-		lc.Add(l)
+		return []*v2.Listener{l}, nil
 	}
 }
 
 // recomputeTLSListener recomputes the SSL listener for port 8443
-// using the list of ingresses and secrets provided. If the list of
+// using the list of ingresses and secrets provided.
+// recomputeListener returns a slice of listeners to be added to the cache,
+// and a slice of names of listeners to be removed. If the list of
 // TLS enabled listeners is zero, the listener is removed.
-func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.Ingress, secrets map[metadata]*v1.Secret) {
+func recomputeTLSListener(ingresses map[metadata]*v1beta1.Ingress, secrets map[metadata]*v1.Secret) ([]*v2.Listener, []string) {
 	l := listener(ENVOY_HTTPS_LISTENER, "0.0.0.0", 8443)
-
+	filters := []*v2.Filter{
+		httpfilter(ENVOY_HTTPS_LISTENER),
+	}
 	for _, i := range ingresses {
 		if len(i.Spec.TLS) == 0 {
 			// this ingress does not use TLS, skip it
-			fmt.Printf("ingress %s/%s does not use tls\n", i.Namespace, i.Name)
 			continue
 		}
 		for _, tls := range i.Spec.TLS {
 			_, ok := secrets[metadata{name: tls.SecretName, namespace: i.Namespace}]
 			if !ok {
-				fmt.Printf("ingress %s/%s: secret %s/%s not found in cache\n", i.Namespace, i.Name, i.Namespace, tls.SecretName)
+				// no secret for this ingress yet, skip it
 				continue
 			}
-			fmt.Printf("ingress %s/%s: secret %s/%s found in cache\n", i.Namespace, i.Name, i.Namespace, tls.SecretName)
-
 			fc := &v2.FilterChain{
 				FilterChainMatch: &v2.FilterChainMatch{
 					SniDomains: tls.Hosts,
 				},
 				TlsContext: tlscontext(i.Namespace, tls.SecretName),
-				Filters: []*v2.Filter{
-					httpfilter(ENVOY_HTTPS_LISTENER),
-				},
+				Filters:    filters,
 			}
 			l.FilterChains = append(l.FilterChains, fc)
 		}
 	}
 
-	defer lc.Notify()
 	switch len(l.FilterChains) {
 	case 0:
 		// no tls ingresses registered, remove the listener
-		lc.Remove(l.Name)
+		return nil, []string{l.Name}
 	default:
 		// at least one tls ingress registered, refresh listener
-		lc.Add(l)
+		return []*v2.Listener{l}, nil
 	}
 }
 
 func listener(name, address string, port uint32) *v2.Listener {
 	return &v2.Listener{
-		Name: name, // TODO(dfc) should come from the name of the service port
-		Address: &v2.Address{
-			Address: &v2.Address_SocketAddress{
-				SocketAddress: &v2.SocketAddress{
-					Protocol: v2.SocketAddress_TCP,
-					Address:  address,
-					PortSpecifier: &v2.SocketAddress_PortValue{
-						PortValue: port,
-					},
+		Name:    name, // TODO(dfc) should come from the name of the service port
+		Address: socketaddress(address, port),
+	}
+}
+
+func socketaddress(address string, port uint32) *v2.Address {
+	return &v2.Address{
+		Address: &v2.Address_SocketAddress{
+			SocketAddress: &v2.SocketAddress{
+				Protocol: v2.SocketAddress_TCP,
+				Address:  address,
+				PortSpecifier: &v2.SocketAddress_PortValue{
+					PortValue: port,
 				},
 			},
 		},
