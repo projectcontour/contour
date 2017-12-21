@@ -60,6 +60,26 @@ func TestRecomputeListener(t *testing.T) {
 			},
 			remove: nil,
 		},
+		// setting kubernetes.io/ingress.allow-http: "false" should remove this
+		// ingress from consideration, leading to listener removal.
+		"issue#88": {
+			ingresses: map[metadata]*v1beta1.Ingress{
+				metadata{namespace: "default", name: "simple"}: {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"kubernetes.io/ingress.allow-http": "false",
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: backend("backend", intstr.FromInt(80)),
+					},
+				},
+			},
+			add:    nil,
+			remove: []string{ENVOY_HTTP_LISTENER},
+		},
 	}
 
 	for name, tc := range tests {
@@ -252,6 +272,59 @@ func TestListenerCacheRecomputeTLSListener(t *testing.T) {
 	}
 	lc.recomputeTLSListener(i, s)
 	assertCacheNotEmpty(t, lc) // we've got the secret and the ingress, we should have at least one listener
+}
+
+func TestValidIngress(t *testing.T) {
+	tests := map[string]struct {
+		i     *v1beta1.Ingress
+		valid bool
+	}{
+		"basic ingress": {
+			i: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					TLS: []v1beta1.IngressTLS{{
+						Hosts:      []string{"whatever.example.com"},
+						SecretName: "secret",
+					}},
+					Backend: backend("backend", intstr.FromInt(80)),
+				},
+			},
+			valid: true,
+		},
+		"kubernetes.io/ingress.allow-http: \"false\"": {
+			i: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"kubernetes.io/ingress.allow-http": "false",
+					},
+				},
+				Spec: v1beta1.IngressSpec{
+					TLS: []v1beta1.IngressTLS{{
+						Hosts:      []string{"whatever.example.com"},
+						SecretName: "secret",
+					}},
+					Backend: backend("backend", intstr.FromInt(80)),
+				},
+			},
+			valid: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := validIngress(tc.i)
+			want := tc.valid
+			if got != want {
+				t.Fatalf("validIngress: got: %v, want: %v", got, want)
+			}
+		})
+	}
 }
 
 func assertCacheEmpty(t *testing.T, lc *ListenerCache) {
