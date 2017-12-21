@@ -15,6 +15,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net"
 	"net/http"
@@ -31,6 +32,8 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/envoy"
+	"github.com/heptio/contour/internal/grpc"
+	"github.com/heptio/contour/internal/json"
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/log/stdlog"
 	"github.com/heptio/contour/internal/workgroup"
@@ -43,10 +46,18 @@ const (
 	V2_API_ADDRESS = "127.0.0.1:8001" // v2 gRPC
 )
 
+// this is necessary due to #113 wherein glog neccessitates a call to flag.Parse
+// before any logging statements can be invoked. (See also https://github.com/golang/glog/blob/master/glog.go#L679)
+// unsure why this seemingly unnecessary prerequisite is in place but there must be some sane reason.
+func init() {
+	flag.Parse()
+}
+
 func main() {
 	app := kingpin.New("contour", "Heptio Contour Kubernetes ingress controller.")
 	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")
-	config := bootstrap.Arg("path", "Configuration file.").Required().String()
+
+	path := bootstrap.Arg("path", "Configuration file.").Required().String()
 
 	serve := app.Command("serve", "Serve xDS API traffic")
 	inCluster := serve.Flag("incluster", "use in cluster configuration.").Bool()
@@ -59,21 +70,31 @@ func main() {
 		app.Usage(args)
 		os.Exit(2)
 	case bootstrap.FullCommand():
-		writeBootstrapConfig(*config)
+		writeBootstrapConfig(*path)
 	case serve.FullCommand():
-		var (
-			logger = stdlog.New(os.Stdout, os.Stderr, 0)
-			client = newClient(*kubeconfig, *inCluster)
-			ds     contour.DataSource
-			g      workgroup.Group
-		)
+		logger := stdlog.New(os.Stdout, os.Stderr, 0)
+		client := newClient(*kubeconfig, *inCluster)
 
-		g.Add(k8s.WatchServices(client, &ds, logger).Run)
-		g.Add(k8s.WatchEndpoints(client, &ds, logger).Run)
-		g.Add(k8s.WatchIngress(client, &ds, logger).Run)
+		// REST v1 support
+		ds := json.DataSource{
+			Logger: logger.WithPrefix("DataSource"),
+		}
+
+		// gRPC v2 support
+		t := contour.NewTranslator(logger.WithPrefix("translator"))
+
+		var g workgroup.Group
+
+		// buffer notifications to t to ensure they are handled sequentially.
+		buf := k8s.NewBuffer(&g, t, logger, 128)
+		k8s.WatchServices(&g, client, logger, &ds, buf)
+		k8s.WatchEndpoints(&g, client, logger, &ds, buf)
+		k8s.WatchIngress(&g, client, logger, &ds, buf)
+		k8s.WatchSecrets(&g, client, logger, buf) // don't deliver to &ds, the rest api doesn't know how to process secrets
 
 		g.Add(func(stop <-chan struct{}) {
-			api := contour.NewJSONAPI(logger, &ds)
+			logger := logger.WithPrefix("JSONAPI")
+			api := json.NewAPI(logger, &ds)
 			if *debug {
 				// enable request logging if --debug enabled
 				api = handlers.LoggingHandler(os.Stdout, api)
@@ -85,18 +106,22 @@ func main() {
 				ReadTimeout:  15 * time.Second,
 			}
 			go srv.ListenAndServe() // run server in another goroutine
-			logger.Infof("%s started, listening on %v", os.Args[0], srv.Addr)
+			logger.Infof("started, listening on %v", srv.Addr)
+			defer logger.Infof("stopped")
 			<-stop                             // wait for stop signal
 			srv.Shutdown(context.Background()) // shutdown and wait for server to exit
 		})
 
 		g.Add(func(stop <-chan struct{}) {
+			logger := logger.WithPrefix("gRPCAPI")
 			l, err := net.Listen("tcp", V2_API_ADDRESS)
 			if err != nil {
 				logger.Errorf("could not listen on %s: %v", V2_API_ADDRESS, err)
 				return // TODO(dfc) should return the error not log it
 			}
-			s := contour.NewGRPCAPI(logger, &ds)
+			s := grpc.NewAPI(logger, t)
+			logger.Infof("started")
+			defer logger.Infof("stopped")
 			s.Serve(l)
 		})
 

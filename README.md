@@ -31,13 +31,13 @@ See the [deployment documentation][10] for more deployment options if you don't 
 Run:
 
 ```
-$ kubectl apply -f http://j.hept.io/contour-deployment-rbac
+$ kubectl apply -f https://j.hept.io/contour-deployment-rbac
 ```
 
 If RBAC isn't enabled on your cluster (for example, if you're on GKE with legacy authorization), run:
 
 ```
-$ kubectl apply -f http://j.hept.io/contour-deployment-norbac
+$ kubectl apply -f https://j.hept.io/contour-deployment-norbac
 ```
 
 This command creates:
@@ -53,7 +53,7 @@ If you don't have an application ready to run with Contour, you can explore with
 Run:
 
 ```
-$ kubectl apply -f http://j.hept.io/contour-kuard-example
+$ kubectl apply -f https://j.hept.io/contour-kuard-example
 ```
 
 This example specifies a default backend for all hosts, so that you can test your Contour install. It's recommended for exploration and testing only, however, because it responds to all requests regardless of the incoming DNS that is mapped. You probably want to run with specific Ingress rules for specific hostnames.
@@ -103,8 +103,7 @@ We've also got [an FAQ][18] for short-answer questions and conceptual stuff that
 ## Known limitations
 
 * Contour does not yet support customizations with annotations.
-* Contour and Envoy do not yet support SSL/TLS.
-  [Work is underway][16] in the Envoy project to support SNI. This work will let Contour support TLS for multiple hostnames.
+* Contour does not yet support SSL/TLS.
 
 ## Troubleshooting
 
@@ -124,7 +123,7 @@ See [the list of releases][6] to find out about feature changes.
 
 [0]: https://github.com/heptio
 [1]: https://travis-ci.org/heptio/contour.svg?branch=master
-[2]: https://jenkins.i.heptio.com/job/contour-master
+[2]: https://travis-ci.org/heptio/contour
 [3]: /docs
 [4]: https://github.com/heptio/contour/issues
 [5]: /CONTRIBUTING.md
