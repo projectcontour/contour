@@ -70,7 +70,13 @@ func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.In
 func recomputeListener(ingresses map[metadata]*v1beta1.Ingress) ([]*v2.Listener, []string) {
 	l := listener(ENVOY_HTTP_LISTENER, "0.0.0.0", 8080)
 
-	if len(ingresses) > 0 {
+	var valid int
+	for _, i := range ingresses {
+		if validIngress(i) {
+			valid++
+		}
+	}
+	if valid > 0 {
 		l.FilterChains = []*v2.FilterChain{{
 			Filters: []*v2.Filter{
 				httpfilter(ENVOY_HTTP_LISTENER),
@@ -87,6 +93,16 @@ func recomputeListener(ingresses map[metadata]*v1beta1.Ingress) ([]*v2.Listener,
 		// at least one ingress registered, refresh listener
 		return []*v2.Listener{l}, nil
 	}
+}
+
+// validIngress returns true if this is a valid non ssl ingress object.
+// ingresses are invalid if they contain annotations which exclude them from
+// the ingress_http listener.
+func validIngress(i *v1beta1.Ingress) bool {
+	if i.Annotations["kubernetes.io/ingress.allow-http"] == "false" {
+		return false
+	}
+	return true
 }
 
 // recomputeTLSListener recomputes the SSL listener for port 8443
