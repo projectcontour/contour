@@ -85,7 +85,7 @@ How you configure DNS depends on your platform:
 Run:
 
 ```
-$ kubectl apply -f http://j.hept.io/contour-kuard-minikube-example
+$ kubectl apply -f https://j.hept.io/contour-kuard-minikube-example
 ```
 
 This example yaml specifies `kuard.192.168.99.100.nip.io` as a specific ingress backend for kuard. It uses nip.io and the minikube ip address to have kuard only respond to http://kuard.192.168.99.100.nip.io. Once that is applied you can visit http://kuard.192.168.99.100.nip.io and see the kuard example application.
