@@ -327,6 +327,71 @@ func TestValidIngress(t *testing.T) {
 	}
 }
 
+func TestValidTLSIngress(t *testing.T) {
+	tests := map[string]struct {
+		i     *v1beta1.Ingress
+		valid bool
+	}{
+		"non tls ingress": {
+			i: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Backend: backend("backend", intstr.FromInt(80)),
+				},
+			},
+			valid: false,
+		},
+		"tls ingress": {
+			i: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					TLS: []v1beta1.IngressTLS{{
+						Hosts:      []string{"whatever.example.com"},
+						SecretName: "secret",
+					}},
+					Backend: backend("backend", intstr.FromInt(80)),
+				},
+			},
+			valid: true,
+		},
+		"kubernetes.io/ingress.allow-http: \"false\"": {
+			i: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"kubernetes.io/ingress.allow-http": "false",
+					},
+				},
+				Spec: v1beta1.IngressSpec{
+					TLS: []v1beta1.IngressTLS{{
+						Hosts:      []string{"whatever.example.com"},
+						SecretName: "secret",
+					}},
+					Backend: backend("backend", intstr.FromInt(80)),
+				},
+			},
+			valid: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := validTLSIngress(tc.i)
+			want := tc.valid
+			if got != want {
+				t.Fatalf("validTLSIngress: got: %v, want: %v", got, want)
+			}
+		})
+	}
+}
+
 func assertCacheEmpty(t *testing.T, lc *ListenerCache) {
 	t.Helper()
 	if len(lc.values) > 0 {

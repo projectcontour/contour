@@ -116,8 +116,7 @@ func recomputeTLSListener(ingresses map[metadata]*v1beta1.Ingress, secrets map[m
 		httpfilter(ENVOY_HTTPS_LISTENER),
 	}
 	for _, i := range ingresses {
-		if len(i.Spec.TLS) == 0 {
-			// this ingress does not use TLS, skip it
+		if !validTLSIngress(i) {
 			continue
 		}
 		for _, tls := range i.Spec.TLS {
@@ -145,6 +144,17 @@ func recomputeTLSListener(ingresses map[metadata]*v1beta1.Ingress, secrets map[m
 		// at least one tls ingress registered, refresh listener
 		return []*v2.Listener{l}, nil
 	}
+}
+
+// validTLSIngress returns true if this is a valid ssl ingress object.
+// ingresses are invalid if they contain annotations, or are missing information
+// which excludes them from the ingress_https listener.
+func validTLSIngress(i *v1beta1.Ingress) bool {
+	if len(i.Spec.TLS) == 0 {
+		// this ingress does not use TLS, skip it
+		return false
+	}
+	return true
 }
 
 func listener(name, address string, port uint32) *v2.Listener {
