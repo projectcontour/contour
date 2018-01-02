@@ -178,7 +178,9 @@ func TestGRPCStreaming(t *testing.T) {
 
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
-			tr = contour.NewTranslator(log)
+			tr = &contour.Translator{
+				Logger: log,
+			}
 			srv := NewAPI(log, tr)
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
@@ -256,7 +258,9 @@ func TestGRPCFetching(t *testing.T) {
 
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
-			tr := contour.NewTranslator(log)
+			tr := &contour.Translator{
+				Logger: log,
+			}
 			srv := NewAPI(log, tr)
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")

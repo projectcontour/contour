@@ -117,7 +117,9 @@ func TestTranslatorAddService(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			const NOFLAGS = 1 << 16
-			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
+			tr := &Translator{
+				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+			}
 			tr.addService(tc.svc)
 			got := tr.ClusterCache.Values()
 			if !reflect.DeepEqual(tc.want, got) {
@@ -196,7 +198,9 @@ func TestTranslatorRemoveService(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			const NOFLAGS = 1 << 16
-			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
+			tr := &Translator{
+				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+			}
 			tc.setup(tr)
 			tr.removeService(tc.svc)
 			got := tr.ClusterCache.Values()
@@ -245,7 +249,9 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			const NOFLAGS = 1 << 16
-			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
+			tr := &Translator{
+				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+			}
 			tr.addEndpoints(tc.ep)
 			got := tr.ClusterLoadAssignmentCache.Values()
 			if !reflect.DeepEqual(tc.want, got) {
@@ -302,7 +308,9 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			const NOFLAGS = 1 << 16
-			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
+			tr := &Translator{
+				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+			}
 			tc.setup(tr)
 			tr.removeEndpoints(tc.ep)
 			got := tr.ClusterLoadAssignmentCache.Values()
@@ -749,7 +757,9 @@ func TestTranslatorAddIngress(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			const NOFLAGS = 1 << 16
-			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
+			tr := &Translator{
+				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+			}
 			if tc.setup != nil {
 				tc.setup(tr)
 			}
@@ -857,7 +867,9 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			const NOFLAGS = 1 << 16
-			tr := NewTranslator(stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS))
+			tr := &Translator{
+				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+			}
 			tc.setup(tr)
 			tr.removeIngress(tc.ing)
 			got := tr.VirtualHostCache.HTTPS.Values()

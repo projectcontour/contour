@@ -81,7 +81,9 @@ func main() {
 		}
 
 		// gRPC v2 support
-		t := contour.NewTranslator(logger.WithPrefix("translator"))
+		t := &contour.Translator{
+			Logger: logger.WithPrefix("translator"),
+		}
 
 		var g workgroup.Group
 
