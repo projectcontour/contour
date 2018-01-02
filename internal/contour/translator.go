@@ -34,17 +34,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-// NewTranslator returns a new Translator.
-func NewTranslator(log log.Logger) *Translator {
-	t := &Translator{
-		Logger: log,
-	}
-	t.vhosts = make(map[string][]*v1beta1.Ingress)
-	t.ingresses = make(map[metadata]*v1beta1.Ingress)
-	t.secrets = make(map[metadata]*v1.Secret)
-	return t
-}
-
 type metadata struct {
 	name, namespace string
 }
@@ -251,6 +240,9 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 		return
 	}
 
+	if t.ingresses == nil {
+		t.ingresses = make(map[metadata]*v1beta1.Ingress)
+	}
 	t.ingresses[metadata{name: i.Name, namespace: i.Namespace}] = i
 
 	t.recomputeListeners()
@@ -258,6 +250,9 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 	// notify watchers that the vhost cache has probably changed.
 	defer t.VirtualHostCache.Notify()
 
+	if t.vhosts == nil {
+		t.vhosts = make(map[string][]*v1beta1.Ingress)
+	}
 	// handle the special case of the default ingress first.
 	if i.Spec.Backend != nil {
 		// update t.vhosts cache
@@ -305,6 +300,9 @@ func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 		return
 	}
 
+	if t.vhosts == nil {
+		t.vhosts = make(map[string][]*v1beta1.Ingress)
+	}
 	for _, rule := range i.Spec.Rules {
 		t.vhosts[rule.Host] = removeIfPresent(t.vhosts[rule.Host], i)
 		t.recomputevhost(rule.Host, t.vhosts[rule.Host])
@@ -324,6 +322,10 @@ func (t *Translator) addSecret(s *v1.Secret) {
 	}
 	t.Logger.Infof("caching secret %s/%s", s.Namespace, s.Name)
 	t.writeCerts(s)
+
+	if t.secrets == nil {
+		t.secrets = make(map[metadata]*v1.Secret)
+	}
 	t.secrets[metadata{name: s.Name, namespace: s.Namespace}] = s
 
 	t.recomputeTLSListener(t.ingresses, t.secrets)
