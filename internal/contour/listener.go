@@ -23,9 +23,10 @@ import (
 )
 
 const (
-	ENVOY_HTTP_LISTENER        = "ingress_http"
-	ENVOY_HTTPS_LISTENER       = "ingress_https"
-	DEFAULT_HTTP_LISTENER_PORT = 8080
+	ENVOY_HTTP_LISTENER         = "ingress_http"
+	ENVOY_HTTPS_LISTENER        = "ingress_https"
+	DEFAULT_HTTP_LISTENER_PORT  = 8080
+	DEFAULT_HTTPS_LISTENER_PORT = 8443
 
 	router     = "envoy.router"
 	httpFilter = "envoy.http_connection_manager"
@@ -37,6 +38,10 @@ type ListenerCache struct {
 	// Envoy's HTTP (non TLS) listener port.
 	// If not set, defaults to DEFAULT_HTTP_LISTENER_PORT.
 	HTTPListenerPort int
+
+	// Envoy's HTTPS (TLS) listener port.
+	// If not set, defaults to DEFAULT_HTTPS_LISTENER_PORT.
+	HTTPSListenerPort int
 
 	listenerCache
 	Cond
@@ -125,7 +130,7 @@ func validIngress(i *v1beta1.Ingress) bool {
 // and a slice of names of listeners to be removed. If the list of
 // TLS enabled listeners is zero, the listener is removed.
 func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.Ingress, secrets map[metadata]*v1.Secret) ([]*v2.Listener, []string) {
-	l := listener(ENVOY_HTTPS_LISTENER, "0.0.0.0", 8443)
+	l := listener(ENVOY_HTTPS_LISTENER, "0.0.0.0", lc.httpsListenerPort())
 	filters := []*v2.Filter{
 		httpfilter(ENVOY_HTTPS_LISTENER),
 	}
@@ -158,6 +163,15 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 		// at least one tls ingress registered, refresh listener
 		return []*v2.Listener{l}, nil
 	}
+}
+
+// httpsListenerPort returns the port for the HTTPS (TLS)
+// listener or DEFAULT_HTTPS_LISTENER_PORT if not configured.
+func (lc *ListenerCache) httpsListenerPort() uint32 {
+	if lc.HTTPSListenerPort != 0 {
+		return uint32(lc.HTTPSListenerPort)
+	}
+	return DEFAULT_HTTPS_LISTENER_PORT
 }
 
 // validTLSIngress returns true if this is a valid ssl ingress object.
