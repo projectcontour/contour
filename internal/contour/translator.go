@@ -41,7 +41,11 @@ type metadata struct {
 // Translator receives notifications from the Kubernetes API and translates those
 // objects into additions and removals entries of Envoy gRPC objects from a cache.
 type Translator struct {
+
+	// The logger for this Translator. There is no valid default, this value
+	// must be supplied by the caller.
 	log.Logger
+
 	ClusterCache
 	ClusterLoadAssignmentCache
 	ListenerCache

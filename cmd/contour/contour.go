@@ -54,6 +54,11 @@ func init() {
 }
 
 func main() {
+	logger := stdlog.New(os.Stdout, os.Stderr, 0)
+	t := &contour.Translator{
+		Logger: logger.WithPrefix("translator"),
+	}
+
 	app := kingpin.New("contour", "Heptio Contour Kubernetes ingress controller.")
 	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")
 
@@ -63,6 +68,7 @@ func main() {
 	inCluster := serve.Flag("incluster", "use in cluster configuration.").Bool()
 	kubeconfig := serve.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).String()
 	debug := serve.Flag("debug", "enable v1 REST API request logging.").Bool()
+	serve.Flag("envoy-http-port", "Envoy HTTP listener port").IntVar(&t.HTTPListenerPort)
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
@@ -72,23 +78,18 @@ func main() {
 	case bootstrap.FullCommand():
 		writeBootstrapConfig(*path)
 	case serve.FullCommand():
-		logger := stdlog.New(os.Stdout, os.Stderr, 0)
-		client := newClient(*kubeconfig, *inCluster)
+		var g workgroup.Group
+
+		// buffer notifications to t to ensure they are handled sequentially.
+		buf := k8s.NewBuffer(&g, t, logger, 128)
 
 		// REST v1 support
 		ds := json.DataSource{
 			Logger: logger.WithPrefix("DataSource"),
 		}
 
-		// gRPC v2 support
-		t := &contour.Translator{
-			Logger: logger.WithPrefix("translator"),
-		}
+		client := newClient(*kubeconfig, *inCluster)
 
-		var g workgroup.Group
-
-		// buffer notifications to t to ensure they are handled sequentially.
-		buf := k8s.NewBuffer(&g, t, logger, 128)
 		k8s.WatchServices(&g, client, logger, &ds, buf)
 		k8s.WatchEndpoints(&g, client, logger, &ds, buf)
 		k8s.WatchIngress(&g, client, logger, &ds, buf)
