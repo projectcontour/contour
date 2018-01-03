@@ -22,26 +22,31 @@ import (
 	"k8s.io/api/extensions/v1beta1"
 )
 
-// ListenerCache manages the contents of the gRPC LDS cache.
-type ListenerCache struct {
-	listenerCache
-	Cond
-}
-
 const (
-	ENVOY_HTTP_LISTENER  = "ingress_http"
-	ENVOY_HTTPS_LISTENER = "ingress_https"
+	ENVOY_HTTP_LISTENER        = "ingress_http"
+	ENVOY_HTTPS_LISTENER       = "ingress_https"
+	DEFAULT_HTTP_LISTENER_PORT = 8080
 
 	router     = "envoy.router"
 	httpFilter = "envoy.http_connection_manager"
 	accessLog  = "envoy.file_access_log"
 )
 
+// ListenerCache manages the contents of the gRPC LDS cache.
+type ListenerCache struct {
+	// Envoy's HTTP (non TLS) listener port.
+	// If not set, defaults to DEFAULT_HTTP_LISTENER_PORT.
+	HTTPListenerPort int
+
+	listenerCache
+	Cond
+}
+
 // recomputeListeners recomputes the ingress_http and ingress_https listeners
 // and notifies the watchers any change.
 func (lc *ListenerCache) recomputeListeners(ingresses map[metadata]*v1beta1.Ingress, secrets map[metadata]*v1.Secret) {
-	add, remove := recomputeListener(ingresses)                   // recompute ingress_http
-	ssladd, sslremove := recomputeTLSListener(ingresses, secrets) // recompute ingress_https
+	add, remove := lc.recomputeListener0(ingresses)                   // recompute ingress_http
+	ssladd, sslremove := lc.recomputeTLSListener0(ingresses, secrets) // recompute ingress_https
 
 	add = append(add, ssladd...)
 	remove = append(remove, sslremove...)
@@ -56,7 +61,7 @@ func (lc *ListenerCache) recomputeListeners(ingresses map[metadata]*v1beta1.Ingr
 // recomputeTLSListener recomputes the ingress_https listener and notifies the watchers
 // of any change.
 func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.Ingress, secrets map[metadata]*v1.Secret) {
-	ssladd, sslremove := recomputeTLSListener(ingresses, secrets) // recompute ingress_https
+	ssladd, sslremove := lc.recomputeTLSListener0(ingresses, secrets) // recompute ingress_https
 	lc.Add(ssladd...)
 	lc.Remove(sslremove...)
 	if len(ssladd) > 0 || len(sslremove) > 0 {
@@ -67,8 +72,8 @@ func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.In
 // recomputeListener recomputes the non SSL listener for port 8080 using the list of ingresses provided.
 // recomputeListener returns a slice of listeners to be added to the cache, and a slice of names of listeners
 // to be removed.
-func recomputeListener(ingresses map[metadata]*v1beta1.Ingress) ([]*v2.Listener, []string) {
-	l := listener(ENVOY_HTTP_LISTENER, "0.0.0.0", 8080)
+func (lc *ListenerCache) recomputeListener0(ingresses map[metadata]*v1beta1.Ingress) ([]*v2.Listener, []string) {
+	l := listener(ENVOY_HTTP_LISTENER, "0.0.0.0", lc.httpListenerPort())
 
 	var valid int
 	for _, i := range ingresses {
@@ -95,6 +100,15 @@ func recomputeListener(ingresses map[metadata]*v1beta1.Ingress) ([]*v2.Listener,
 	}
 }
 
+// httpListenerPort returns the port for the HTTP (non TLS)
+// listener or DEFAULT_HTTP_LISTENER_PORT if not configured.
+func (lc *ListenerCache) httpListenerPort() uint32 {
+	if lc.HTTPListenerPort != 0 {
+		return uint32(lc.HTTPListenerPort)
+	}
+	return DEFAULT_HTTP_LISTENER_PORT
+}
+
 // validIngress returns true if this is a valid non ssl ingress object.
 // ingresses are invalid if they contain annotations which exclude them from
 // the ingress_http listener.
@@ -105,12 +119,12 @@ func validIngress(i *v1beta1.Ingress) bool {
 	return true
 }
 
-// recomputeTLSListener recomputes the SSL listener for port 8443
+// recomputeTLSListener0 recomputes the SSL listener for port 8443
 // using the list of ingresses and secrets provided.
 // recomputeListener returns a slice of listeners to be added to the cache,
 // and a slice of names of listeners to be removed. If the list of
 // TLS enabled listeners is zero, the listener is removed.
-func recomputeTLSListener(ingresses map[metadata]*v1beta1.Ingress, secrets map[metadata]*v1.Secret) ([]*v2.Listener, []string) {
+func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.Ingress, secrets map[metadata]*v1.Secret) ([]*v2.Listener, []string) {
 	l := listener(ENVOY_HTTPS_LISTENER, "0.0.0.0", 8443)
 	filters := []*v2.Filter{
 		httpfilter(ENVOY_HTTPS_LISTENER),

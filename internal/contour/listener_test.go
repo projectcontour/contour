@@ -32,11 +32,18 @@ func TestRecomputeListener(t *testing.T) {
 			httpfilter(ENVOY_HTTP_LISTENER),
 		},
 	}}
+	ingress_http2 := listener(ENVOY_HTTP_LISTENER, "0.0.0.0", 9000) // issue 72
+	ingress_http2.FilterChains = []*v2.FilterChain{{
+		Filters: []*v2.Filter{
+			httpfilter(ENVOY_HTTP_LISTENER),
+		},
+	}}
 
 	tests := map[string]struct {
 		ingresses map[metadata]*v1beta1.Ingress
 		add       []*v2.Listener
 		remove    []string
+		ListenerCache
 	}{
 		"empty ingress map": {
 			ingresses: nil,
@@ -80,11 +87,32 @@ func TestRecomputeListener(t *testing.T) {
 			add:    nil,
 			remove: []string{ENVOY_HTTP_LISTENER},
 		},
+		// http listener on non default port.
+		"issue#72": {
+			ListenerCache: ListenerCache{
+				HTTPListenerPort: 9000,
+			},
+			ingresses: map[metadata]*v1beta1.Ingress{
+				metadata{namespace: "default", name: "simple"}: {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: backend("backend", intstr.FromInt(80)),
+					},
+				},
+			},
+			add: []*v2.Listener{
+				ingress_http2,
+			},
+			remove: nil,
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			add, remove := recomputeListener(tc.ingresses)
+			add, remove := tc.recomputeListener0(tc.ingresses)
 			if !reflect.DeepEqual(add, tc.add) {
 				t.Errorf("add:\n\texpected: %v\n\tgot: %v", tc.add, add)
 			}
@@ -108,6 +136,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 		secrets   map[metadata]*v1.Secret
 		add       []*v2.Listener
 		remove    []string
+		ListenerCache
 	}{
 		"empty ingress map": {
 			ingresses: nil,
@@ -199,7 +228,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			add, remove := recomputeTLSListener(tc.ingresses, tc.secrets)
+			add, remove := tc.recomputeTLSListener0(tc.ingresses, tc.secrets)
 			if !reflect.DeepEqual(add, tc.add) {
 				t.Errorf("add:\n\texpected: %v\n\tgot: %v", tc.add, add)
 			}
