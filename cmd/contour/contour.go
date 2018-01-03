@@ -68,7 +68,10 @@ func main() {
 	inCluster := serve.Flag("incluster", "use in cluster configuration.").Bool()
 	kubeconfig := serve.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).String()
 	debug := serve.Flag("debug", "enable v1 REST API request logging.").Bool()
+
+	// translator configuration
 	serve.Flag("envoy-http-port", "Envoy HTTP listener port").IntVar(&t.HTTPListenerPort)
+	serve.Flag("envoy-https-port", "Envoy HTTPS listener port").IntVar(&t.HTTPSListenerPort)
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
