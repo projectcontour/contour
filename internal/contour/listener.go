@@ -23,10 +23,12 @@ import (
 )
 
 const (
-	ENVOY_HTTP_LISTENER         = "ingress_http"
-	ENVOY_HTTPS_LISTENER        = "ingress_https"
-	DEFAULT_HTTP_LISTENER_PORT  = 8080
-	DEFAULT_HTTPS_LISTENER_PORT = 8443
+	ENVOY_HTTP_LISTENER            = "ingress_http"
+	ENVOY_HTTPS_LISTENER           = "ingress_https"
+	DEFAULT_HTTP_LISTENER_ADDRESS  = "0.0.0.0"
+	DEFAULT_HTTP_LISTENER_PORT     = 8080
+	DEFAULT_HTTPS_LISTENER_ADDRESS = DEFAULT_HTTP_LISTENER_ADDRESS
+	DEFAULT_HTTPS_LISTENER_PORT    = 8443
 
 	router     = "envoy.router"
 	httpFilter = "envoy.http_connection_manager"
@@ -35,13 +37,22 @@ const (
 
 // ListenerCache manages the contents of the gRPC LDS cache.
 type ListenerCache struct {
+
+	// Envoy's HTTP (non TLS) listener address.
+	// If not set, defaults to DEFAULT_HTTP_LISTENER_ADDRESS.
+	HTTPAddress string
+
 	// Envoy's HTTP (non TLS) listener port.
 	// If not set, defaults to DEFAULT_HTTP_LISTENER_PORT.
-	HTTPListenerPort int
+	HTTPPort int
+
+	// Envoy's HTTPS (TLS) listener address.
+	// If not set, defaults to DEFAULT_HTTPS_LISTENER_ADDRESS.
+	HTTPSAddress string
 
 	// Envoy's HTTPS (TLS) listener port.
 	// If not set, defaults to DEFAULT_HTTPS_LISTENER_PORT.
-	HTTPSListenerPort int
+	HTTPSPort int
 
 	listenerCache
 	Cond
@@ -78,7 +89,7 @@ func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.In
 // recomputeListener returns a slice of listeners to be added to the cache, and a slice of names of listeners
 // to be removed.
 func (lc *ListenerCache) recomputeListener0(ingresses map[metadata]*v1beta1.Ingress) ([]*v2.Listener, []string) {
-	l := listener(ENVOY_HTTP_LISTENER, "0.0.0.0", lc.httpListenerPort())
+	l := listener(ENVOY_HTTP_LISTENER, lc.httpAddress(), lc.httpPort())
 
 	var valid int
 	for _, i := range ingresses {
@@ -105,11 +116,20 @@ func (lc *ListenerCache) recomputeListener0(ingresses map[metadata]*v1beta1.Ingr
 	}
 }
 
-// httpListenerPort returns the port for the HTTP (non TLS)
+// httpAddress returns the port for the HTTP (non TLS)
+// listener or DEFAULT_HTTP_LISTENER_ADDRESS if not configured.
+func (lc *ListenerCache) httpAddress() string {
+	if lc.HTTPAddress != "" {
+		return lc.HTTPAddress
+	}
+	return DEFAULT_HTTP_LISTENER_ADDRESS
+}
+
+// httpPort returns the port for the HTTP (non TLS)
 // listener or DEFAULT_HTTP_LISTENER_PORT if not configured.
-func (lc *ListenerCache) httpListenerPort() uint32 {
-	if lc.HTTPListenerPort != 0 {
-		return uint32(lc.HTTPListenerPort)
+func (lc *ListenerCache) httpPort() uint32 {
+	if lc.HTTPPort != 0 {
+		return uint32(lc.HTTPPort)
 	}
 	return DEFAULT_HTTP_LISTENER_PORT
 }
@@ -130,7 +150,7 @@ func validIngress(i *v1beta1.Ingress) bool {
 // and a slice of names of listeners to be removed. If the list of
 // TLS enabled listeners is zero, the listener is removed.
 func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.Ingress, secrets map[metadata]*v1.Secret) ([]*v2.Listener, []string) {
-	l := listener(ENVOY_HTTPS_LISTENER, "0.0.0.0", lc.httpsListenerPort())
+	l := listener(ENVOY_HTTPS_LISTENER, lc.httpsAddress(), lc.httpsPort())
 	filters := []*v2.Filter{
 		httpfilter(ENVOY_HTTPS_LISTENER),
 	}
@@ -165,11 +185,20 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 	}
 }
 
-// httpsListenerPort returns the port for the HTTPS (TLS)
-// listener or DEFAULT_HTTPS_LISTENER_PORT if not configured.
-func (lc *ListenerCache) httpsListenerPort() uint32 {
-	if lc.HTTPSListenerPort != 0 {
-		return uint32(lc.HTTPSListenerPort)
+// httpsAddress returns the port for the HTTPS (TLS)
+// listener or DEFAULT_HTTPS_LISTENER_ADDRESS if not configured.
+func (lc *ListenerCache) httpsAddress() string {
+	if lc.HTTPSAddress != "" {
+		return lc.HTTPSAddress
+	}
+	return DEFAULT_HTTPS_LISTENER_ADDRESS
+}
+
+// httpsPort returns the port for the HTTPS (TLS) listener
+// or DEFAULT_HTTPS_LISTENER_PORT if not configured.
+func (lc *ListenerCache) httpsPort() uint32 {
+	if lc.HTTPSPort != 0 {
+		return uint32(lc.HTTPSPort)
 	}
 	return DEFAULT_HTTPS_LISTENER_PORT
 }

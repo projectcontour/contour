@@ -32,7 +32,7 @@ func TestRecomputeListener(t *testing.T) {
 			httpfilter(ENVOY_HTTP_LISTENER),
 		},
 	}}
-	ingress_http2 := listener(ENVOY_HTTP_LISTENER, "0.0.0.0", 9000) // issue 72
+	ingress_http2 := listener(ENVOY_HTTP_LISTENER, "127.0.0.1", 9000) // issue 72
 	ingress_http2.FilterChains = []*v2.FilterChain{{
 		Filters: []*v2.Filter{
 			httpfilter(ENVOY_HTTP_LISTENER),
@@ -90,7 +90,8 @@ func TestRecomputeListener(t *testing.T) {
 		// http listener on non default port.
 		"issue#72": {
 			ListenerCache: ListenerCache{
-				HTTPListenerPort: 9000,
+				HTTPAddress: "127.0.0.1",
+				HTTPPort:    9000,
 			},
 			ingresses: map[metadata]*v1beta1.Ingress{
 				metadata{namespace: "default", name: "simple"}: {
@@ -130,7 +131,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 			httpfilter(ENVOY_HTTPS_LISTENER),
 		},
 	}}
-	ingress_http2 := listener(ENVOY_HTTPS_LISTENER, "0.0.0.0", 9000) // issue 72
+	ingress_http2 := listener(ENVOY_HTTPS_LISTENER, "::", 9000) // issue 72
 	ingress_http2.FilterChains = []*v2.FilterChain{{
 		Filters: []*v2.Filter{
 			httpfilter(ENVOY_HTTPS_LISTENER),
@@ -232,7 +233,8 @@ func TestRecomputeTLSListener(t *testing.T) {
 		},
 		"simple vhost, with non default listener port": {
 			ListenerCache: ListenerCache{
-				HTTPSListenerPort: 9000,
+				HTTPSAddress: "::", // ipv6 voodoo
+				HTTPSPort:    9000,
 			},
 			ingresses: map[metadata]*v1beta1.Ingress{
 				metadata{namespace: "default", name: "simple"}: {
@@ -263,7 +265,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 			},
 			add: []*v2.Listener{{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: socketaddress("0.0.0.0", 9000),
+				Address: socketaddress("::", 9000),
 				FilterChains: []*v2.FilterChain{{
 					FilterChainMatch: &v2.FilterChainMatch{
 						SniDomains: []string{"whatever.example.com"},
