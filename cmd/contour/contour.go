@@ -147,6 +147,7 @@ func writeBootstrapConfig(path string) {
 	check(err)
 	switch filepath.Ext(path) {
 	case ".json":
+		fmt.Fprintf(os.Stderr, "WARNING: JSON support is deprecated in Contour 0.3 and will be removed in Contour 0.4")
 		err = config.WriteJSON(f)
 		check(err)
 	case ".yaml":
