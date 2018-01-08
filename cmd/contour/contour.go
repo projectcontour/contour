@@ -33,6 +33,7 @@ import (
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/grpc"
+	"github.com/heptio/contour/internal/healthz"
 	"github.com/heptio/contour/internal/json"
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/log/stdlog"
@@ -68,6 +69,7 @@ func main() {
 	inCluster := serve.Flag("incluster", "use in cluster configuration.").Bool()
 	kubeconfig := serve.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).String()
 	debug := serve.Flag("debug", "enable v1 REST API request logging.").Bool()
+	ns := serve.Flag("namespace", "namespace of the pod").Envar("POD_NAMESPACE").String()
 
 	// translator configuration
 	serve.Flag("envoy-http-address", "Envoy HTTP listener address").StringVar(&t.HTTPAddress)
@@ -96,6 +98,8 @@ func main() {
 
 		client := newClient(*kubeconfig, *inCluster)
 
+		check(healthz.Register(t, &ds, *ns, V1_API_ADDRESS))
+
 		k8s.WatchServices(&g, client, logger, &ds, buf)
 		k8s.WatchEndpoints(&g, client, logger, &ds, buf)
 		k8s.WatchIngress(&g, client, logger, &ds, buf)
@@ -108,8 +112,11 @@ func main() {
 				// enable request logging if --debug enabled
 				api = handlers.LoggingHandler(os.Stdout, api)
 			}
+			mux := http.NewServeMux()
+			mux.Handle("/", api)
+			mux.HandleFunc("/healthz", healthz.Healthz)
 			srv := &http.Server{
-				Handler:      api,
+				Handler:      mux,
 				Addr:         V1_API_ADDRESS,
 				WriteTimeout: 15 * time.Second,
 				ReadTimeout:  15 * time.Second,
