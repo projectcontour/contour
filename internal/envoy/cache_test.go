@@ -26,7 +26,7 @@ func TestNewClusterCacheReturnsAnEmptySlice(t *testing.T) {
 	want := make([]*v2.Cluster, 0)
 	if !reflect.DeepEqual(got, want) {
 		// Values should return a []*v2.Cluster{} not nil
-		t.Fatal("NewClusterCache().Values(): got: %#v, want: %#v", got, want)
+		t.Fatalf("NewClusterCache().Values(): got: %#v, want: %#v", got, want)
 	}
 }
 
@@ -144,7 +144,7 @@ func TestNewClusterLoadAssignmentCacheReturnsAnEmptySlice(t *testing.T) {
 	want := make([]*v2.ClusterLoadAssignment, 0)
 	if !reflect.DeepEqual(got, want) {
 		// Values should return a []*v2.ClusterLoadAssignment{} not nil
-		t.Fatal("NewClusterLoadAssignmentCache().Values(): got: %#v, want: %#v", got, want)
+		t.Fatalf("NewClusterLoadAssignmentCache().Values(): got: %#v, want: %#v", got, want)
 	}
 }
 
@@ -266,7 +266,7 @@ func TestNewVirtualHostCacheReturnsAnEmptySlice(t *testing.T) {
 	want := make([]*v2.VirtualHost, 0)
 	if !reflect.DeepEqual(got, want) {
 		// Values should return a []*v2.VirtualHost{} not nil
-		t.Fatal("NewVirtualHostCache().Values(): got: %#v, want: %#v", got, want)
+		t.Fatalf("NewVirtualHostCache().Values(): got: %#v, want: %#v", got, want)
 	}
 }
 
