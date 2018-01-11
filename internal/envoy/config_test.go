@@ -111,11 +111,17 @@ func TestConfigWriter_WriteYAML(t *testing.T) {
   lds_config:
     api_config_source:
       api_type: GRPC
-      cluster_name: [xds_cluster]
+      cluster_names: [xds_cluster]
+      grpc_services:
+      - envoy_grpc:
+          cluster_name: xds_cluster
   cds_config:
     api_config_source:
       api_type: GRPC
-      cluster_name: [xds_cluster]
+      cluster_names: [xds_cluster]
+      grpc_services:
+      - envoy_grpc:
+          cluster_name: xds_cluster
 static_resources:
   clusters:
   - name: xds_cluster
