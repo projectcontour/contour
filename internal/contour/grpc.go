@@ -134,8 +134,15 @@ func defaultListener() []*v2.Listener {
 							"config_source": st(map[string]*structpb.Value{
 								"api_config_source": st(map[string]*structpb.Value{
 									"api_type": sv("grpc"),
-									"cluster_name": lv(
+									"cluster_names": lv(
 										sv("xds_cluster"),
+									),
+									"grpc_services": lv(
+										st(map[string]*structpb.Value{
+											"envoy_grpc": st(map[string]*structpb.Value{
+												"cluster_name": sv("xds_cluster"),
+											}),
+										}),
 									),
 								}),
 							}),
