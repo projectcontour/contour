@@ -41,7 +41,7 @@
   branch = "master"
   name = "github.com/envoyproxy/go-control-plane"
   packages = ["api"]
-  revision = "5a2ca70225c7bd327548dae8962637d3dc45f15e"
+  revision = "7d4123ea69ef3bbe9053a4d7af7970db836753ac"
 
 [[projects]]
   name = "github.com/ghodss/yaml"
@@ -203,13 +203,13 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "0fcca4842a8d74bfddc2c96a073bd2a4d2a7a2e8"
+  revision = "b3c9a1d25cfbbbab0ff4780b71c4f54e6e92a0de"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context","context/ctxhttp","http2","http2/hpack","idna","internal/timeseries","lex/httplex","trace"]
-  revision = "42fe2e1c20de1054d3d30f82cc9fb5b41e2e3767"
+  revision = "ab555f366c4508dbe0802550b1b20c46c5c18aa0"
 
 [[projects]]
   branch = "master"
@@ -221,7 +221,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
-  revision = "1792d66dc88e503d3cb2400578221cdf1f7fe26f"
+  revision = "810d7000345868fc619eb81f46307107118f4ae1"
 
 [[projects]]
   branch = "master"
@@ -263,7 +263,7 @@
   branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "c4a9fb418357aceb801272d73efd518f183700fa"
+  revision = "d670f9405373e636a5a2765eea47fac0c9bc91a4"
 
 [[projects]]
   branch = "release-1.9"
@@ -287,7 +287,7 @@
   branch = "master"
   name = "k8s.io/kube-openapi"
   packages = ["pkg/common"]
-  revision = "b16ebc07f5cad97831f961e4b5a9cc1caed33b7e"
+  revision = "a07b7bbb58e7fdc5144f8d7046331d29fc9ad3b3"
 
 [solve-meta]
   analyzer-name = "dep"
