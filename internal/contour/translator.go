@@ -287,7 +287,7 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 			host = "*"
 		}
 		t.vhosts[host] = appendIfMissing(t.vhosts[host], i)
-		t.recomputevhost(host, t.vhosts[host])
+		t.recomputevhost(host, t.listenerCache.HostHasTls(host), t.vhosts[host])
 	}
 }
 
@@ -309,7 +309,7 @@ func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 	}
 	for _, rule := range i.Spec.Rules {
 		t.vhosts[rule.Host] = removeIfPresent(t.vhosts[rule.Host], i)
-		t.recomputevhost(rule.Host, t.vhosts[rule.Host])
+		t.recomputevhost(rule.Host, t.listenerCache.HostHasTls(rule.Host), t.vhosts[rule.Host])
 	}
 }
 
@@ -318,6 +318,8 @@ func (t *Translator) recomputeListeners() {
 }
 
 func (t *Translator) addSecret(s *v1.Secret) {
+	defer t.VirtualHostCache.Notify()
+
 	_, cert := s.Data[v1.TLSCertKey]
 	_, key := s.Data[v1.TLSPrivateKeyKey]
 	if !cert || !key {
@@ -333,11 +335,39 @@ func (t *Translator) addSecret(s *v1.Secret) {
 	t.secrets[metadata{name: s.Name, namespace: s.Namespace}] = s
 
 	t.recomputeTLSListener(t.ingresses, t.secrets)
+
+	if t.ingresses[metadata{name: s.Name, namespace: s.Namespace}] != nil {
+		i := t.ingresses[metadata{name: s.Name, namespace: s.Namespace}]
+		for _, rule := range i.Spec.Rules {
+			host := rule.Host
+			if host == "" {
+				// If the host is unspecified, the Ingress routes all traffic based on the specified IngressRuleValue.
+				host = "*"
+			}
+			t.vhosts[host] = appendIfMissing(t.vhosts[host], i)
+			t.recomputevhost(host, t.listenerCache.HostHasTls(host), t.vhosts[host])
+		}
+	}
 }
 
 func (t *Translator) removeSecret(s *v1.Secret) {
+	defer t.VirtualHostCache.Notify()
+
 	delete(t.secrets, metadata{name: s.Name, namespace: s.Namespace})
 	t.recomputeTLSListener(t.ingresses, t.secrets)
+	if t.ingresses[metadata{name: s.Name, namespace: s.Namespace}] != nil {
+		i := t.ingresses[metadata{name: s.Name, namespace: s.Namespace}]
+		for _, rule := range i.Spec.Rules {
+			host := rule.Host
+			if host == "" {
+				// If the host is unspecified, the Ingress routes all traffic based on the specified IngressRuleValue.
+				host = "*"
+			}
+			t.vhosts[host] = appendIfMissing(t.vhosts[host], i)
+			t.Infof("%s is %t", host, t.listenerCache.HostHasTls(host))
+			t.recomputevhost(host, t.listenerCache.HostHasTls(host), t.vhosts[host])
+		}
+	}
 }
 
 // writeSecret writes the contents of the secret to a fixed location on

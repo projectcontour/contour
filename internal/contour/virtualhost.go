@@ -31,7 +31,7 @@ type VirtualHostCache struct {
 // recomputevhost recomputes the *v2.VirutalHost record from the list of ingresses
 // supplied and the cache updated. If ingresses is empty then the *v2.VirtualHost
 // record will be removed from the cache.
-func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ingress) {
+func (v *VirtualHostCache) recomputevhost(vhost string, tls bool, ingresses []*v1beta1.Ingress) {
 	switch len(ingresses) {
 	case 0:
 		// there are no ingresses registered with this vhost any more
@@ -54,6 +54,11 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ing
 				if rule.IngressRuleValue.HTTP == nil {
 					// TODO(dfc) plumb a logger in here so we can log this error.
 					continue
+				}
+				if tls {
+					if sslRedirect(ing) {
+						vv.RequireTls = v2.VirtualHost_ALL
+					}
 				}
 				for _, p := range rule.IngressRuleValue.HTTP.Paths {
 					m := pathToRouteMatch(p)
@@ -144,4 +149,8 @@ func clusteraction(cluster string) *v2.Route_Route {
 			},
 		},
 	}
+}
+
+func sslRedirect(i *v1beta1.Ingress) bool {
+	return i.Annotations["kubenetes.io/ingress.ssl-redirect"] == "true"
 }

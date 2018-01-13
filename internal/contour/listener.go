@@ -194,6 +194,19 @@ func (lc *ListenerCache) httpsAddress() string {
 	return DEFAULT_HTTPS_LISTENER_ADDRESS
 }
 
+func (lc *listenerCache) HostHasTls(host string) bool {
+	for _, listener := range lc.values {
+		for _, filterChain := range listener.FilterChains {
+			for _, sniDomain := range filterChain.GetFilterChainMatch().GetSniDomains() {
+				if sniDomain == host {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 // httpsPort returns the port for the HTTPS (TLS) listener
 // or DEFAULT_HTTPS_LISTENER_PORT if not configured.
 func (lc *ListenerCache) httpsPort() uint32 {
