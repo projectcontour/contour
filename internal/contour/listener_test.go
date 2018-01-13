@@ -475,6 +475,56 @@ func TestValidTLSIngress(t *testing.T) {
 	}
 }
 
+func TestHostHasTls(t *testing.T) {
+	lc := new(ListenerCache)
+	s := make(map[metadata]*v1.Secret)
+	i := map[metadata]*v1beta1.Ingress{
+		metadata{name: "example", namespace: "default"}: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "simple",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				TLS: []v1beta1.IngressTLS{{
+					Hosts:      []string{"whatever.example.com"},
+					SecretName: "secret",
+				}},
+				Backend: backend("backend", intstr.FromInt(80)),
+			},
+		},
+	}
+	s[metadata{name: "secret", namespace: "default"}] = &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+	}
+	lc.recomputeTLSListener(i, s)
+	tests := map[string]struct {
+		sniName string
+		valid   bool
+	}{
+		"valid sni": {
+			sniName: "whatever.example.com",
+			valid:   true,
+		},
+		"invalid sni": {
+			sniName: "demo.example.com",
+			valid:   false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := lc.HostHasTls(tc.sniName)
+			want := tc.valid
+			if got != want {
+				t.Fatalf("hostHasTls: got: %v, want: %v", got, want)
+			}
+		})
+	}
+}
+
 func assertCacheEmpty(t *testing.T, lc *ListenerCache) {
 	t.Helper()
 	if len(lc.values) > 0 {
