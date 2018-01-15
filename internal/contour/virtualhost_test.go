@@ -507,3 +507,63 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		})
 	}
 }
+
+func TestValidTLSSpecforVhost(t *testing.T) {
+	tests := map[string]struct {
+		vhost string
+		ing   v1beta1.Ingress
+		want  bool
+	}{
+		"default vhost": {
+			vhost: "*",
+			ing: v1beta1.Ingress{
+				Spec: v1beta1.IngressSpec{},
+			},
+			want: false,
+		},
+		"tls enabled": {
+			vhost: "httpbin.davecheney.com",
+			ing: v1beta1.Ingress{
+				Spec: v1beta1.IngressSpec{
+					TLS: []v1beta1.IngressTLS{{
+						Hosts:      []string{"httpbin.davecheney.com"},
+						SecretName: "httpbin",
+					}},
+				},
+			},
+			want: true,
+		},
+		"wrong hostname": {
+			vhost: "httpbin.davecheney.com",
+			ing: v1beta1.Ingress{
+				Spec: v1beta1.IngressSpec{
+					TLS: []v1beta1.IngressTLS{{
+						Hosts:      []string{"www.davecheney.com"},
+						SecretName: "dubdubdub",
+					}},
+				},
+			},
+			want: false,
+		},
+		"missing secret spec": {
+			vhost: "httpbin.davecheney.com",
+			ing: v1beta1.Ingress{
+				Spec: v1beta1.IngressSpec{
+					TLS: []v1beta1.IngressTLS{{
+						Hosts: []string{"httpbin.davecheney.com"},
+					}},
+				},
+			},
+			want: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := validTLSSpecforVhost(tc.vhost, &tc.ing)
+			if got != tc.want {
+				t.Fatal("got", got, "want", tc.want)
+			}
+		})
+	}
+}

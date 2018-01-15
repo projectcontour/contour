@@ -32,12 +32,13 @@ type VirtualHostCache struct {
 // supplied and the cache updated.
 func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ingress) {
 
+	// handle ingress_https (TLS) vhost routes first.
 	vv := v2.VirtualHost{
 		Name:    hashname(60, vhost),
 		Domains: []string{vhost},
 	}
 	for _, ing := range ingresses {
-		if len(ing.Spec.TLS) == 0 {
+		if !validTLSSpecforVhost(vhost, ing) {
 			continue
 		}
 		for _, rule := range ing.Spec.Rules {
@@ -62,6 +63,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ing
 		v.HTTPS.Remove(hashname(60, vhost))
 	}
 
+	// now handle ingress_http (non tls) routes.
 	vv = v2.VirtualHost{
 		Name:    hashname(60, vhost),
 		Domains: []string{vhost},
@@ -88,6 +90,24 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ing
 	} else {
 		v.HTTP.Remove(hashname(60, vhost))
 	}
+}
+
+// validTLSSpecForVhost returns if this ingress object
+// contains a TLS spec that matches the vhost supplied,
+func validTLSSpecforVhost(vhost string, i *v1beta1.Ingress) bool {
+	for _, tls := range i.Spec.TLS {
+		if tls.SecretName == "" {
+			// not a valid TLS spec without a secret for the cert.
+			continue
+		}
+
+		for _, h := range tls.Hosts {
+			if h == vhost {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 type longestRouteFirst []*v2.Route
