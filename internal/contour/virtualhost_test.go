@@ -32,79 +32,27 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		ingress_http  []*v2.VirtualHost
 		ingress_https []*v2.VirtualHost
 	}{
-		/*		"default backend": {
-					ingresses: []*v1beta1.Ingress{{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "simple",
-							Namespace: "default",
-						},
-						Spec: v1beta1.IngressSpec{
-							Backend: backend("backend", intstr.FromInt(80)),
-						},
-					}},
-					ingress_http: []*v2.VirtualHost{{
-						Name:    "*",
-						Domains: []string{"*"},
-						Routes: []*v2.Route{{
-							Match:  prefixmatch("/"),
-							Action: clusteraction("default/backend/80"),
-						}},
-					}},
-					ingress_https: []*v2.VirtualHost{{
-						Name:    "*",
-						Domains: []string{"*"},
-						Routes: []*v2.Route{{
-							Match:  prefixmatch("/"),
-							Action: clusteraction("default/backend/80"),
-						}},
-					}},
+		"default backend": {
+			vhost: "*",
+			ingresses: []*v1beta1.Ingress{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
 				},
-				"incorrect ingress class": {
-					ingresses: []*v1beta1.Ingress{{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "incorrect",
-							Namespace: "default",
-							Annotations: map[string]string{
-								"kubernetes.io/ingress.class": "nginx",
-							},
-						},
-						Spec: v1beta1.IngressSpec{
-							Backend: backend("backend", intstr.FromInt(80)),
-						},
-					}},
-					ingress_http:  []*v2.VirtualHost{}, // expected to be empty, the ingress class is ingnored
-					ingress_https: []*v2.VirtualHost{}, // expected to be empty, the ingress class is ingnored
+				Spec: v1beta1.IngressSpec{
+					Backend: backend("backend", intstr.FromInt(80)),
 				},
-				"explicit ingress class": {
-					ingresses: []*v1beta1.Ingress{{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "correct",
-							Namespace: "default",
-							Annotations: map[string]string{
-								"kubernetes.io/ingress.class": "contour",
-							},
-						},
-						Spec: v1beta1.IngressSpec{
-							Backend: backend("backend", intstr.FromInt(80)),
-						},
-					}},
-					ingress_http: []*v2.VirtualHost{{
-						Name:    "*",
-						Domains: []string{"*"},
-						Routes: []*v2.Route{{
-							Match:  prefixmatch("/"), // match all
-							Action: clusteraction("default/backend/80"),
-						}},
-					}},
-					ingress_https: []*v2.VirtualHost{{
-						Name:    "*",
-						Domains: []string{"*"},
-						Routes: []*v2.Route{{
-							Match:  prefixmatch("/"), // match all
-							Action: clusteraction("default/backend/80"),
-						}},
-					}},
-				}, */
+			}},
+			ingress_http: []*v2.VirtualHost{{
+				Name:    "*",
+				Domains: []string{"*"},
+				Routes: []*v2.Route{{
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/backend/80"),
+				}},
+			}},
+			ingress_https: []*v2.VirtualHost{},
+		},
 		"name based vhost": {
 			vhost: "httpbin.org",
 			ingresses: []*v1beta1.Ingress{{
@@ -128,6 +76,41 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				}},
 			}},
 			ingress_https: []*v2.VirtualHost{},
+		},
+		"tls": {
+			vhost: "httpbin.org",
+			ingresses: []*v1beta1.Ingress{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					TLS: []v1beta1.IngressTLS{{
+						Hosts:      []string{"httpbin.org"},
+						SecretName: "secret",
+					}},
+					Rules: []v1beta1.IngressRule{{
+						Host:             "httpbin.org",
+						IngressRuleValue: ingressrulevalue(backend("httpbin-org", intstr.FromInt(80))),
+					}},
+				},
+			}},
+			ingress_http: []*v2.VirtualHost{{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []*v2.Route{{
+					Match:  prefixmatch("/"), // match all
+					Action: clusteraction("default/httpbin-org/80"),
+				}},
+			}},
+			ingress_https: []*v2.VirtualHost{{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []*v2.Route{{
+					Match:  prefixmatch("/"), // match all
+					Action: clusteraction("default/httpbin-org/80"),
+				}},
+			}},
 		},
 		"regex vhost without match characters": {
 			vhost: "httpbin.org",
@@ -446,46 +429,39 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			}},
 			ingress_https: []*v2.VirtualHost{},
 		},
-		/*
-			"IngressRuleValue without host should become the default vhost": { // heptio/contour#101
-				ingresses: []*v1beta1.Ingress{{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "hello",
-						Namespace: "default",
-					},
-					Spec: v1beta1.IngressSpec{
-						Rules: []v1beta1.IngressRule{{
-							IngressRuleValue: v1beta1.IngressRuleValue{
-								HTTP: &v1beta1.HTTPIngressRuleValue{
-									Paths: []v1beta1.HTTPIngressPath{{
-										Path: "/hello",
-										Backend: v1beta1.IngressBackend{
-											ServiceName: "hello",
-											ServicePort: intstr.FromInt(80),
-										},
-									}},
-								},
+		"IngressRuleValue without host should become the default vhost": { // heptio/contour#101
+			vhost: "*",
+			ingresses: []*v1beta1.Ingress{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hello",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Path: "/hello",
+									Backend: v1beta1.IngressBackend{
+										ServiceName: "hello",
+										ServicePort: intstr.FromInt(80),
+									},
+								}},
 							},
-						}},
-					},
-				}},
-				ingress_http: []*v2.VirtualHost{{
-					Name:    "*",
-					Domains: []string{"*"},
-					Routes: []*v2.Route{{
-						Match:  prefixmatch("/hello"),
-						Action: clusteraction("default/hello/80"),
+						},
 					}},
+				},
+			}},
+			ingress_http: []*v2.VirtualHost{{
+				Name:    "*",
+				Domains: []string{"*"},
+				Routes: []*v2.Route{{
+					Match:  prefixmatch("/hello"),
+					Action: clusteraction("default/hello/80"),
 				}},
-				ingress_https: []*v2.VirtualHost{{
-					Name:    "*",
-					Domains: []string{"*"},
-					Routes: []*v2.Route{{
-						Match:  prefixmatch("/hello"),
-						Action: clusteraction("default/hello/80"),
-					}},
-				}},
-			},*/
+			}},
+			ingress_https: []*v2.VirtualHost{},
+		},
 	}
 
 	for name, tc := range tests {
@@ -497,12 +473,12 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			tr.recomputevhost(tc.vhost, tc.ingresses)
 			got := tr.VirtualHostCache.HTTP.Values()
 			if !reflect.DeepEqual(tc.ingress_http, got) {
-				t.Fatalf("addIngress(%v):\n (ingress_http) got: %v\nwant: %v", tc.vhost, got, tc.ingress_http)
+				t.Fatalf("recomputevhost(%v):\n (ingress_http) got: %v\nwant: %v", tc.vhost, got, tc.ingress_http)
 			}
 
 			got = tr.VirtualHostCache.HTTPS.Values()
 			if !reflect.DeepEqual(tc.ingress_https, got) {
-				t.Fatalf("addIngress(%v):\n (ingress_https) got: %v\nwant: %v", tc.vhost, got, tc.ingress_https)
+				t.Fatalf("recomputevhost(%v):\n (ingress_https) got: %v\nwant: %v", tc.vhost, got, tc.ingress_https)
 			}
 		})
 	}

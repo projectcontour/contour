@@ -347,14 +347,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Action: clusteraction("default/backend/80"),
 			}},
 		}},
-		ingress_https: []*v2.VirtualHost{{
-			Name:    "*",
-			Domains: []string{"*"},
-			Routes: []*v2.Route{{
-				Match:  prefixmatch("/"),
-				Action: clusteraction("default/backend/80"),
-			}},
-		}},
+		ingress_https: []*v2.VirtualHost{},
 	}, {
 		name: "incorrect ingress class",
 		ing: &v1beta1.Ingress{
@@ -393,14 +386,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Action: clusteraction("default/backend/80"),
 			}},
 		}},
-		ingress_https: []*v2.VirtualHost{{
-			Name:    "*",
-			Domains: []string{"*"},
-			Routes: []*v2.Route{{
-				Match:  prefixmatch("/"), // match all
-				Action: clusteraction("default/backend/80"),
-			}},
-		}},
+		ingress_https: []*v2.VirtualHost{},
 	}, {
 		name: "name based vhost",
 		ing: &v1beta1.Ingress{
@@ -544,13 +530,17 @@ func TestTranslatorAddIngress(t *testing.T) {
 		}},
 		ingress_https: []*v2.VirtualHost{},
 	}, {
-		name: "multiple rules",
+		name: "multiple rules, tls admin",
 		ing: &v1beta1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "httpbin",
 				Namespace: "default",
 			},
 			Spec: v1beta1.IngressSpec{
+				TLS: []v1beta1.IngressTLS{{
+					Hosts:      []string{"admin.httpbin.org"},
+					SecretName: "adminsecret",
+				}},
 				Rules: []v1beta1.IngressRule{{
 					Host:             "httpbin.org",
 					IngressRuleValue: ingressrulevalue(backend("peter", intstr.FromInt(80))),
@@ -575,7 +565,14 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Action: clusteraction("default/peter/80"),
 			}},
 		}},
-		ingress_https: []*v2.VirtualHost{},
+		ingress_https: []*v2.VirtualHost{{
+			Name:    "admin.httpbin.org",
+			Domains: []string{"admin.httpbin.org"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/"),
+				Action: clusteraction("default/paul/paul"),
+			}},
+		}},
 	}, {
 		name: "vhost name exceeds 60 chars", // heptio/contour#25
 		ing: &v1beta1.Ingress{

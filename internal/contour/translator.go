@@ -266,17 +266,7 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 			return
 		}
 		t.vhosts["*"] = vhosts
-
-		v := v2.VirtualHost{
-			Name:    "*",
-			Domains: []string{"*"},
-			Routes: []*v2.Route{{
-				Match:  prefixmatch("/"), // match all
-				Action: clusteraction(ingressBackendToClusterName(i, i.Spec.Backend)),
-			}},
-		}
-		t.VirtualHostCache.HTTP.Add(&v)
-		t.VirtualHostCache.HTTPS.Add(&v)
+		t.recomputevhost("*", vhosts)
 		return
 	}
 
@@ -299,14 +289,15 @@ func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 	t.recomputeListeners(t.ingresses, t.secrets)
 
 	if i.Spec.Backend != nil {
-		t.VirtualHostCache.HTTP.Remove("*")
-		t.VirtualHostCache.HTTPS.Remove("*")
+		delete(t.vhosts, "*")
+		t.recomputevhost("*", nil)
 		return
 	}
 
 	if t.vhosts == nil {
 		t.vhosts = make(map[string][]*v1beta1.Ingress)
 	}
+
 	for _, rule := range i.Spec.Rules {
 		t.vhosts[rule.Host] = removeIfPresent(t.vhosts[rule.Host], i)
 		t.recomputevhost(rule.Host, t.vhosts[rule.Host])

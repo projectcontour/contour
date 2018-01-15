@@ -28,8 +28,8 @@ type VirtualHostCache struct {
 	Cond
 }
 
-// recomputevhost recomputes the *v2.VirutalHost record from the list of ingresses
-// supplied and the cache updated.
+// recomputevhost recomputes the ingress_http (HTTP) and ingress_https (HTTPS) record
+// from the vhost from list of ingresses supplied.
 func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ingress) {
 
 	// handle ingress_https (TLS) vhost routes first.
@@ -68,8 +68,15 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ing
 		Name:    hashname(60, vhost),
 		Domains: []string{vhost},
 	}
-	for _, ing := range ingresses {
-		for _, rule := range ing.Spec.Rules {
+	for _, i := range ingresses {
+		if i.Spec.Backend != nil && len(ingresses) == 1 {
+			vv.Routes = []*v2.Route{{
+				Match:  prefixmatch("/"), // match all
+				Action: clusteraction(ingressBackendToClusterName(i, i.Spec.Backend)),
+			}}
+			continue
+		}
+		for _, rule := range i.Spec.Rules {
 			if rule.Host != "" && rule.Host != vhost {
 				continue
 			}
@@ -79,7 +86,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ing
 			}
 			for _, p := range rule.IngressRuleValue.HTTP.Paths {
 				m := pathToRouteMatch(p)
-				a := clusteraction(ingressBackendToClusterName(ing, &p.Backend))
+				a := clusteraction(ingressBackendToClusterName(i, &p.Backend))
 				vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
 			}
 		}
