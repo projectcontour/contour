@@ -143,6 +143,45 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				}},
 			}},
 		},
+		"tls, force https": {
+			vhost: "httpbin.org",
+			ingresses: []*v1beta1.Ingress{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"ingress.kubernetes.io/force-ssl-redirect": "true",
+					},
+				},
+				Spec: v1beta1.IngressSpec{
+					TLS: []v1beta1.IngressTLS{{
+						Hosts:      []string{"httpbin.org"},
+						SecretName: "secret",
+					}},
+					Rules: []v1beta1.IngressRule{{
+						Host:             "httpbin.org",
+						IngressRuleValue: ingressrulevalue(backend("httpbin-org", intstr.FromInt(80))),
+					}},
+				},
+			}},
+			ingress_http: []*v2.VirtualHost{{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []*v2.Route{{
+					Match:  prefixmatch("/"), // match all
+					Action: clusteraction("dummy"),
+				}},
+				RequireTls: v2.VirtualHost_ALL,
+			}},
+			ingress_https: []*v2.VirtualHost{{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []*v2.Route{{
+					Match:  prefixmatch("/"), // match all
+					Action: clusteraction("default/httpbin-org/80"),
+				}},
+			}},
+		},
 		"regex vhost without match characters": {
 			vhost: "httpbin.org",
 			ingresses: []*v1beta1.Ingress{{
