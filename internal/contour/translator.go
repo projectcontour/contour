@@ -249,7 +249,7 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 	}
 	t.ingresses[metadata{name: i.Name, namespace: i.Namespace}] = i
 
-	t.recomputeListeners()
+	t.recomputeListeners(t.ingresses, t.secrets)
 
 	// notify watchers that the vhost cache has probably changed.
 	defer t.VirtualHostCache.Notify()
@@ -296,7 +296,7 @@ func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 
 	delete(t.ingresses, metadata{name: i.Name, namespace: i.Namespace})
 
-	t.recomputeListeners()
+	t.recomputeListeners(t.ingresses, t.secrets)
 
 	if i.Spec.Backend != nil {
 		t.VirtualHostCache.HTTP.Remove("*")
@@ -311,10 +311,6 @@ func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 		t.vhosts[rule.Host] = removeIfPresent(t.vhosts[rule.Host], i)
 		t.recomputevhost(rule.Host, t.vhosts[rule.Host])
 	}
-}
-
-func (t *Translator) recomputeListeners() {
-	t.ListenerCache.recomputeListeners(t.ingresses, t.secrets)
 }
 
 func (t *Translator) addSecret(s *v1.Secret) {

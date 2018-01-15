@@ -29,43 +29,63 @@ type VirtualHostCache struct {
 }
 
 // recomputevhost recomputes the *v2.VirutalHost record from the list of ingresses
-// supplied and the cache updated. If ingresses is empty then the *v2.VirtualHost
-// record will be removed from the cache.
+// supplied and the cache updated.
 func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ingress) {
-	switch len(ingresses) {
-	case 0:
+	if len(ingresses) == 0 {
 		// there are no ingresses registered with this vhost any more
 		// remove the VirtualHost from the grpc cache.
 		v.HTTP.Remove(hashname(60, vhost))
 		v.HTTPS.Remove(hashname(60, vhost))
-	default:
-		// otherwise there is at least one ingress object associated with
-		// this vhost, so regernate the cache record and add/overwrite the
-		// grpc cache.
-		vv := v2.VirtualHost{
-			Name:    hashname(60, vhost),
-			Domains: []string{vhost},
-		}
-		for _, ing := range ingresses {
-			for _, rule := range ing.Spec.Rules {
-				if rule.Host != "" && rule.Host != vhost {
-					continue
-				}
-				if rule.IngressRuleValue.HTTP == nil {
-					// TODO(dfc) plumb a logger in here so we can log this error.
-					continue
-				}
-				for _, p := range rule.IngressRuleValue.HTTP.Paths {
-					m := pathToRouteMatch(p)
-					a := clusteraction(ingressBackendToClusterName(ing, &p.Backend))
-					vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
-				}
+		return
+	}
+	// otherwise there is at least one ingress object associated with
+	// this vhost, so regernate the cache record and add/overwrite the
+	// grpc cache.
+	vv := v2.VirtualHost{
+		Name:    hashname(60, vhost),
+		Domains: []string{vhost},
+	}
+	for _, ing := range ingresses {
+		for _, rule := range ing.Spec.Rules {
+			if rule.Host != "" && rule.Host != vhost {
+				continue
+			}
+			if rule.IngressRuleValue.HTTP == nil {
+				// TODO(dfc) plumb a logger in here so we can log this error.
+				continue
+			}
+			for _, p := range rule.IngressRuleValue.HTTP.Paths {
+				m := pathToRouteMatch(p)
+				a := clusteraction(ingressBackendToClusterName(ing, &p.Backend))
+				vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
 			}
 		}
-		sort.Stable(sort.Reverse(longestRouteFirst(vv.Routes)))
-		v.HTTP.Add(&vv)
-		v.HTTPS.Add(&vv)
 	}
+	sort.Stable(sort.Reverse(longestRouteFirst(vv.Routes)))
+	v.HTTP.Add(&vv)
+
+	vv = v2.VirtualHost{
+		Name:    hashname(60, vhost),
+		Domains: []string{vhost},
+	}
+	for _, ing := range ingresses {
+		for _, rule := range ing.Spec.Rules {
+			if rule.Host != "" && rule.Host != vhost {
+				continue
+			}
+			if rule.IngressRuleValue.HTTP == nil {
+				// TODO(dfc) plumb a logger in here so we can log this error.
+				continue
+			}
+			for _, p := range rule.IngressRuleValue.HTTP.Paths {
+				m := pathToRouteMatch(p)
+				a := clusteraction(ingressBackendToClusterName(ing, &p.Backend))
+				vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
+			}
+		}
+	}
+	sort.Stable(sort.Reverse(longestRouteFirst(vv.Routes)))
+	v.HTTPS.Add(&vv)
 }
 
 type longestRouteFirst []*v2.Route
