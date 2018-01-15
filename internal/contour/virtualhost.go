@@ -74,6 +74,15 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ing
 			}}
 			continue
 		}
+		if i.Annotations["ingress.kubernetes.io/force-ssl-redirect"] == "true" {
+			// set blanket 301 redirect
+			vv.RequireTls = v2.VirtualHost_ALL
+			vv.Routes = []*v2.Route{{
+				Match:  prefixmatch("/"), // match all
+				Action: clusteraction("dummy"),
+			}}
+			continue
+		}
 		for _, rule := range i.Spec.Rules {
 			if rule.Host != "" && rule.Host != vhost {
 				continue
