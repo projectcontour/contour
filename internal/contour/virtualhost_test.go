@@ -169,7 +169,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"), // match all
-					Action: clusteraction("dummy"),
+					Action: clusteraction("default/httpbin-org/80"),
 				}},
 				RequireTls: v2.VirtualHost_ALL,
 			}},

@@ -282,6 +282,16 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 }
 
 func (t *Translator) removeIngress(i *v1beta1.Ingress) {
+	class, ok := i.Annotations["kubernetes.io/ingress.class"]
+	if ok && class != "contour" {
+		// if there is an ingress class set, but it is not set to "contour"
+		// ignore this ingress.
+		// TODO(dfc) we should also skip creating any cluster backends,
+		// but this is hard to do at the moment because cds and rds are
+		// independent.
+		return
+	}
+
 	defer t.VirtualHostCache.Notify()
 
 	delete(t.ingresses, metadata{name: i.Name, namespace: i.Namespace})
@@ -347,9 +357,12 @@ func (t *Translator) writeCerts(s *v1.Secret) {
 	}
 }
 
+// TODO(dfc) need tests
 func appendIfMissing(haystack []*v1beta1.Ingress, needle *v1beta1.Ingress) []*v1beta1.Ingress {
 	for i := range haystack {
 		if haystack[i].Name == needle.Name && haystack[i].Namespace == needle.Namespace {
+			// replace element at i with needle, which may have been edited
+			haystack[i] = needle
 			return haystack
 		}
 	}
