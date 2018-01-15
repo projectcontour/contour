@@ -31,21 +31,15 @@ type VirtualHostCache struct {
 // recomputevhost recomputes the *v2.VirutalHost record from the list of ingresses
 // supplied and the cache updated.
 func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ingress) {
-	if len(ingresses) == 0 {
-		// there are no ingresses registered with this vhost any more
-		// remove the VirtualHost from the grpc cache.
-		v.HTTP.Remove(hashname(60, vhost))
-		v.HTTPS.Remove(hashname(60, vhost))
-		return
-	}
-	// otherwise there is at least one ingress object associated with
-	// this vhost, so regernate the cache record and add/overwrite the
-	// grpc cache.
+
 	vv := v2.VirtualHost{
 		Name:    hashname(60, vhost),
 		Domains: []string{vhost},
 	}
 	for _, ing := range ingresses {
+		if len(ing.Spec.TLS) == 0 {
+			continue
+		}
 		for _, rule := range ing.Spec.Rules {
 			if rule.Host != "" && rule.Host != vhost {
 				continue
@@ -61,8 +55,12 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ing
 			}
 		}
 	}
-	sort.Stable(sort.Reverse(longestRouteFirst(vv.Routes)))
-	v.HTTP.Add(&vv)
+	if len(vv.Routes) > 0 {
+		sort.Stable(sort.Reverse(longestRouteFirst(vv.Routes)))
+		v.HTTPS.Add(&vv)
+	} else {
+		v.HTTPS.Remove(hashname(60, vhost))
+	}
 
 	vv = v2.VirtualHost{
 		Name:    hashname(60, vhost),
@@ -84,8 +82,12 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ing
 			}
 		}
 	}
-	sort.Stable(sort.Reverse(longestRouteFirst(vv.Routes)))
-	v.HTTPS.Add(&vv)
+	if len(vv.Routes) > 0 {
+		sort.Stable(sort.Reverse(longestRouteFirst(vv.Routes)))
+		v.HTTP.Add(&vv)
+	} else {
+		v.HTTP.Remove(hashname(60, vhost))
+	}
 }
 
 type longestRouteFirst []*v2.Route
