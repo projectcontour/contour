@@ -1016,14 +1016,7 @@ func cluster(name, servicename string) *v2.Cluster {
 		Name: name,
 		Type: v2.Cluster_EDS,
 		EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-			EdsConfig: &v2.ConfigSource{
-				ConfigSourceSpecifier: &v2.ConfigSource_ApiConfigSource{
-					ApiConfigSource: &v2.ApiConfigSource{
-						ApiType:     v2.ApiConfigSource_GRPC,
-						ClusterName: []string{"xds_cluster"},
-					},
-				},
-			},
+			EdsConfig:   apiconfigsource("xds_cluster"),
 			ServiceName: servicename,
 		},
 		ConnectTimeout: 250 * time.Millisecond,
