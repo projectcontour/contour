@@ -17,6 +17,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -62,7 +63,10 @@ func main() {
 	app := kingpin.New("contour", "Heptio Contour Kubernetes ingress controller.")
 	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")
 
+	var config envoy.ConfigWriter
 	path := bootstrap.Arg("path", "Configuration file.").Required().String()
+	bootstrap.Flag("admin-address", "Envoy admin interface address").StringVar(&config.AdminAddress)
+	bootstrap.Flag("admin-port", "Envoy admin interface port").IntVar(&config.AdminPort)
 
 	serve := app.Command("serve", "Serve xDS API traffic")
 	inCluster := serve.Flag("incluster", "use in cluster configuration.").Bool()
@@ -81,7 +85,7 @@ func main() {
 		app.Usage(args)
 		os.Exit(2)
 	case bootstrap.FullCommand():
-		writeBootstrapConfig(*path)
+		writeBootstrapConfig(&config, *path)
 	case serve.FullCommand():
 		logger.Infof("args: %v", args)
 		var g workgroup.Group
@@ -138,11 +142,15 @@ func main() {
 	}
 }
 
+type configWriter interface {
+	WriteJSON(io.Writer) error
+	WriteYAML(io.Writer) error
+}
+
 // writeBootstrapConfig writes a bootstrap configuration to the supplied path.
 // If the path ends in .json, the configuration file will be in v1 JSON format.
 // If the path ends in .yaml, the configuration file will be in v2 YAML format.
-func writeBootstrapConfig(path string) {
-	config := envoy.ConfigWriter{}
+func writeBootstrapConfig(config configWriter, path string) {
 	f, err := os.Create(path)
 	check(err)
 	switch filepath.Ext(path) {
