@@ -574,6 +574,39 @@ func TestTranslatorAddIngress(t *testing.T) {
 			}},
 		}},
 	}, {
+		name: "multiple rules, tls admin, no http",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "httpbin",
+				Namespace: "default",
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.allow-http": "false",
+				},
+			},
+			Spec: v1beta1.IngressSpec{
+				TLS: []v1beta1.IngressTLS{{
+					Hosts:      []string{"admin.httpbin.org"},
+					SecretName: "adminsecret",
+				}},
+				Rules: []v1beta1.IngressRule{{
+					Host:             "httpbin.org",
+					IngressRuleValue: ingressrulevalue(backend("peter", intstr.FromInt(80))),
+				}, {
+					Host:             "admin.httpbin.org",
+					IngressRuleValue: ingressrulevalue(backend("paul", intstr.FromString("paul"))),
+				}},
+			},
+		},
+		ingress_http: []*v2.VirtualHost{}, //  allow-http: false disables the http route entirely.
+		ingress_https: []*v2.VirtualHost{{
+			Name:    "admin.httpbin.org",
+			Domains: []string{"admin.httpbin.org"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/"),
+				Action: clusteraction("default/paul/paul"),
+			}},
+		}},
+	}, {
 		name: "vhost name exceeds 60 chars", // heptio/contour#25
 		ing: &v1beta1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{

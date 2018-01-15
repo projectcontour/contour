@@ -33,10 +33,7 @@ type VirtualHostCache struct {
 func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ingress) {
 
 	// handle ingress_https (TLS) vhost routes first.
-	vv := v2.VirtualHost{
-		Name:    hashname(60, vhost),
-		Domains: []string{vhost},
-	}
+	vv := virtualhost(vhost)
 	for _, ing := range ingresses {
 		if !validTLSSpecforVhost(vhost, ing) {
 			continue
@@ -58,17 +55,18 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ing
 	}
 	if len(vv.Routes) > 0 {
 		sort.Stable(sort.Reverse(longestRouteFirst(vv.Routes)))
-		v.HTTPS.Add(&vv)
+		v.HTTPS.Add(vv)
 	} else {
-		v.HTTPS.Remove(hashname(60, vhost))
+		v.HTTPS.Remove(vv.Name)
 	}
 
 	// now handle ingress_http (non tls) routes.
-	vv = v2.VirtualHost{
-		Name:    hashname(60, vhost),
-		Domains: []string{vhost},
-	}
+	vv = virtualhost(vhost)
 	for _, i := range ingresses {
+		if i.Annotations["kubernetes.io/ingress.allow-http"] == "false" {
+			// skip this vhosts ingress_http route.
+			continue
+		}
 		if i.Spec.Backend != nil && len(ingresses) == 1 {
 			vv.Routes = []*v2.Route{{
 				Match:  prefixmatch("/"), // match all
@@ -93,9 +91,9 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ing
 	}
 	if len(vv.Routes) > 0 {
 		sort.Stable(sort.Reverse(longestRouteFirst(vv.Routes)))
-		v.HTTP.Add(&vv)
+		v.HTTP.Add(vv)
 	} else {
-		v.HTTP.Remove(hashname(60, vhost))
+		v.HTTP.Remove(vv.Name)
 	}
 }
 
@@ -192,5 +190,12 @@ func clusteraction(cluster string) *v2.Route_Route {
 				Cluster: cluster,
 			},
 		},
+	}
+}
+
+func virtualhost(hostname string) *v2.VirtualHost {
+	return &v2.VirtualHost{
+		Name:    hashname(60, hostname),
+		Domains: []string{hostname},
 	}
 }

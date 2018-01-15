@@ -112,6 +112,37 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				}},
 			}},
 		},
+		"tls, no http": {
+			vhost: "httpbin.org",
+			ingresses: []*v1beta1.Ingress{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"kubernetes.io/ingress.allow-http": "false",
+					},
+				},
+				Spec: v1beta1.IngressSpec{
+					TLS: []v1beta1.IngressTLS{{
+						Hosts:      []string{"httpbin.org"},
+						SecretName: "secret",
+					}},
+					Rules: []v1beta1.IngressRule{{
+						Host:             "httpbin.org",
+						IngressRuleValue: ingressrulevalue(backend("httpbin-org", intstr.FromInt(80))),
+					}},
+				},
+			}},
+			ingress_http: []*v2.VirtualHost{}, // kubernetes.io/ingress.allow-http: "false" prevents ingress_http
+			ingress_https: []*v2.VirtualHost{{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []*v2.Route{{
+					Match:  prefixmatch("/"), // match all
+					Action: clusteraction("default/httpbin-org/80"),
+				}},
+			}},
+		},
 		"regex vhost without match characters": {
 			vhost: "httpbin.org",
 			ingresses: []*v1beta1.Ingress{{
@@ -473,15 +504,22 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			tr.recomputevhost(tc.vhost, tc.ingresses)
 			got := tr.VirtualHostCache.HTTP.Values()
 			if !reflect.DeepEqual(tc.ingress_http, got) {
-				t.Fatalf("recomputevhost(%v):\n (ingress_http) got: %v\nwant: %v", tc.vhost, got, tc.ingress_http)
+				t.Fatalf("recomputevhost(%v):\n (ingress_http) got: %+v\nwant: %+v", tc.vhost, got, tc.ingress_http)
 			}
 
 			got = tr.VirtualHostCache.HTTPS.Values()
 			if !reflect.DeepEqual(tc.ingress_https, got) {
-				t.Fatalf("recomputevhost(%v):\n (ingress_https) got: %v\nwant: %v", tc.vhost, got, tc.ingress_https)
+				t.Fatalf("recomputevhost(%v):\n (ingress_https) got: %#v\nwant: %#v", tc.vhost, strip(got), strip(tc.ingress_https))
 			}
 		})
 	}
+}
+
+func strip(v []*v2.VirtualHost) (r []v2.VirtualHost) {
+	for _, v := range v {
+		r = append(r, *v)
+	}
+	return
 }
 
 func TestValidTLSSpecforVhost(t *testing.T) {
