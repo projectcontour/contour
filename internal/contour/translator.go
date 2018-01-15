@@ -115,14 +115,7 @@ func (t *Translator) addService(svc *v1.Service) {
 		switch p.Protocol {
 		case "TCP":
 			config := &v2.Cluster_EdsClusterConfig{
-				EdsConfig: &v2.ConfigSource{
-					ConfigSourceSpecifier: &v2.ConfigSource_ApiConfigSource{
-						ApiConfigSource: &v2.ApiConfigSource{
-							ApiType:     v2.ApiConfigSource_GRPC,
-							ClusterName: []string{"xds_cluster"}, // hard coded by initconfig
-						},
-					},
-				},
+				EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
 				ServiceName: svc.ObjectMeta.Namespace + "/" + svc.ObjectMeta.Name + "/" + p.TargetPort.String(),
 			}
 			if p.Name != "" {
@@ -424,4 +417,15 @@ func min(a, b int) int {
 		return b
 	}
 	return a
+}
+
+func apiconfigsource(clusters ...string) *v2.ConfigSource {
+	return &v2.ConfigSource{
+		ConfigSourceSpecifier: &v2.ConfigSource_ApiConfigSource{
+			ApiConfigSource: &v2.ApiConfigSource{
+				ApiType:     v2.ApiConfigSource_GRPC,
+				ClusterName: clusters,
+			},
+		},
+	}
 }
