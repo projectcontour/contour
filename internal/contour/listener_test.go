@@ -23,22 +23,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
+	"github.com/gogo/protobuf/types"
 )
 
 func TestRecomputeListener(t *testing.T) {
-	ingress_http := listener(ENVOY_HTTP_LISTENER, "0.0.0.0", 8080)
-	ingress_http.FilterChains = []*v2.FilterChain{{
-		Filters: []*v2.Filter{
-			httpfilter(ENVOY_HTTP_LISTENER),
-		},
-	}}
-	ingress_http2 := listener(ENVOY_HTTP_LISTENER, "127.0.0.1", 9000) // issue 72
-	ingress_http2.FilterChains = []*v2.FilterChain{{
-		Filters: []*v2.Filter{
-			httpfilter(ENVOY_HTTP_LISTENER),
-		},
-	}}
-
+	ingress_http := listener(ENVOY_HTTP_LISTENER, "0.0.0.0", 8080, filterchain(false, httpfilter(ENVOY_HTTP_LISTENER)))
 	tests := map[string]struct {
 		ingresses map[metadata]*v1beta1.Ingress
 		add       []*v2.Listener
@@ -105,7 +94,27 @@ func TestRecomputeListener(t *testing.T) {
 				},
 			},
 			add: []*v2.Listener{
-				ingress_http2,
+				listener(ENVOY_HTTP_LISTENER, "127.0.0.1", 9000, filterchain(false, httpfilter(ENVOY_HTTP_LISTENER))),
+			},
+			remove: nil,
+		},
+		"use proxy protocol": {
+			ListenerCache: ListenerCache{
+				UseProxyProto: true,
+			},
+			ingresses: map[metadata]*v1beta1.Ingress{
+				metadata{namespace: "default", name: "simple"}: {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: backend("backend", intstr.FromInt(80)),
+					},
+				},
+			},
+			add: []*v2.Listener{
+				listener(ENVOY_HTTP_LISTENER, "0.0.0.0", 8080, filterchain(true, httpfilter(ENVOY_HTTP_LISTENER))),
 			},
 			remove: nil,
 		},
@@ -277,6 +286,52 @@ func TestRecomputeTLSListener(t *testing.T) {
 				}},
 			}},
 			remove: nil,
+		},
+		"use proxy protocol": {
+			ListenerCache: ListenerCache{
+				UseProxyProto: true,
+			},
+			ingresses: map[metadata]*v1beta1.Ingress{
+				metadata{namespace: "default", name: "simple"}: {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							Hosts:      []string{"whatever.example.com"},
+							SecretName: "secret",
+						}},
+						Backend: backend("backend", intstr.FromInt(80)),
+					},
+				},
+			},
+			secrets: map[metadata]*v1.Secret{
+				metadata{namespace: "default", name: "secret"}: {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						v1.TLSCertKey:       []byte("certificate"),
+						v1.TLSPrivateKeyKey: []byte("key"),
+					},
+				},
+			},
+			add: []*v2.Listener{{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: socketaddress("0.0.0.0", 8443),
+				FilterChains: []*v2.FilterChain{{
+					FilterChainMatch: &v2.FilterChainMatch{
+						SniDomains: []string{"whatever.example.com"},
+					},
+					TlsContext: tlscontext("default", "secret"),
+					Filters: []*v2.Filter{
+						httpfilter(ENVOY_HTTPS_LISTENER),
+					},
+					UseProxyProto: &types.BoolValue{Value: true},
+				}},
+			}},
 		},
 	}
 

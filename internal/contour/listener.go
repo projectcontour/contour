@@ -54,6 +54,11 @@ type ListenerCache struct {
 	// If not set, defaults to DEFAULT_HTTPS_LISTENER_PORT.
 	HTTPSPort int
 
+	// UseProxyProto configurs all listeners to expect a PROXY protocol
+	// V1 header on new connections.
+	// If not set, defaults to false.
+	UseProxyProto bool
+
 	listenerCache
 	Cond
 }
@@ -98,11 +103,9 @@ func (lc *ListenerCache) recomputeListener0(ingresses map[metadata]*v1beta1.Ingr
 		}
 	}
 	if valid > 0 {
-		l.FilterChains = []*v2.FilterChain{{
-			Filters: []*v2.Filter{
-				httpfilter(ENVOY_HTTP_LISTENER),
-			},
-		}}
+		l.FilterChains = []*v2.FilterChain{
+			filterchain(lc.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER)),
+		}
 	}
 	// TODO(dfc) some annotations may require the Ingress to no appear on
 	// port 80, therefore may result in an empty effective set of ingresses.
@@ -171,6 +174,9 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 				TlsContext: tlscontext(i.Namespace, tls.SecretName),
 				Filters:    filters,
 			}
+			if lc.UseProxyProto {
+				fc.UseProxyProto = &types.BoolValue{Value: true}
+			}
 			l.FilterChains = append(l.FilterChains, fc)
 		}
 	}
@@ -214,10 +220,11 @@ func validTLSIngress(i *v1beta1.Ingress) bool {
 	return true
 }
 
-func listener(name, address string, port uint32) *v2.Listener {
+func listener(name, address string, port uint32, filterchains ...*v2.FilterChain) *v2.Listener {
 	return &v2.Listener{
-		Name:    name, // TODO(dfc) should come from the name of the service port
-		Address: socketaddress(address, port),
+		Name:         name, // TODO(dfc) should come from the name of the service port
+		Address:      socketaddress(address, port),
+		FilterChains: filterchains,
 	}
 }
 
@@ -295,6 +302,16 @@ func httpfilter(routename string) *v2.Filter {
 			},
 		},
 	}
+}
+
+func filterchain(useproxy bool, filters ...*v2.Filter) *v2.FilterChain {
+	fc := v2.FilterChain{
+		Filters: filters,
+	}
+	if useproxy {
+		fc.UseProxyProto = &types.BoolValue{Value: true}
+	}
+	return &fc
 }
 
 func sv(s string) *types.Value {
