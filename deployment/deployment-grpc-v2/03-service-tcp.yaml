@@ -4,8 +4,8 @@ metadata:
  name: contour
  namespace: heptio-contour
  annotations:
-  # This annotation puts the AWS ELB into "TCP" mode so that it does not 
-  # to http negotiation at the ELB edge. This means the remote address of 
+  # This annotation puts the AWS ELB into "TCP" mode so that it does not
+  # to http negotiation at the ELB edge. This means the remote address of
   # all connectinos will appear to be the internal address of the ELB.
   # See https://github.com/heptio/contour/issues/103
   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp

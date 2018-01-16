@@ -37,7 +37,7 @@ spec:
         - containerPort: 8080
           name: http
         command: ["envoy"]
-        args: ["-c", "/config/contour.json", "--service-cluster", "cluster0", "--service-node", "node0"]
+        args: ["-c", "/config/contour.yaml", "--service-cluster", "cluster0", "--service-node", "node0"]
         volumeMounts:
         - name: contour-config
           mountPath: /config
@@ -51,7 +51,7 @@ spec:
         imagePullPolicy: Always
         name: envoy-initconfig
         command: ["contour"]
-        args: ["bootstrap", "/config/contour.json"]
+        args: ["bootstrap", "/config/contour.yaml"]
         volumeMounts:
         - name: contour-config
           mountPath: /config
