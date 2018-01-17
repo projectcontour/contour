@@ -29,7 +29,7 @@ Support for the REST API is deprecated and will be removed in Contour 0.4.
 
 - Contour no longer sends updates to Envoy periodically. Changes in the Kubernetes API are streamed to Envoy as they occur. In a steady state, no traffic flows from Contour to Envoy.
 - The address and port for Envoy's HTTP and HTTPS listeners are now configurable. This will be useful for anyone using a Daemonset with host networking. This can also be used to force Envoy to bind to IPv6.
-- Contour now supports the PROXY protocol to recover the remote IP of connections via an ELB in TCP mode. To enable this, add the `--use-proxy-protocol` flag to the flags for your contour Deployment or Daemonset.
+- Contour now supports the PROXY protocol to recover the remote IP of connections via an ELB in TCP mode. To enable this, add the `--use-proxy-protocol` flag to the flags for your `contour` Deployment or Daemonset.
 - Update to client-go release 6.
 
 ## Bug fixes (compared to Contour 0.2.1)
