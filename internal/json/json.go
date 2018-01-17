@@ -43,6 +43,7 @@ func NewAPI(l log.Logger, ds *DataSource) http.Handler {
 		Logger:     l,
 		DataSource: ds,
 	}
+
 	r.HandleFunc("/v1/clusters/{service_cluster}/{service_node}", a.CDS)
 	r.HandleFunc("/v1/registration/{namespace}/{name}/{port}", a.SDS)
 	r.HandleFunc("/v1/routes/{route_config_name}/{service_cluster}/{service_node}", a.RDS)

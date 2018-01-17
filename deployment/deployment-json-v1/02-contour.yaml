@@ -26,11 +26,25 @@ spec:
         volumeMounts:
         - name: contour-config
           mountPath: /config
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+            httpHeaders:
+            - name: Host
+              value: localhost
+          initialDelaySeconds: 5
+          timeoutSeconds: 1
       - image: gcr.io/heptio-images/contour:master
         imagePullPolicy: Always
         name: contour
         command: ["contour"]
         args: ["serve", "--incluster"]
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
       initContainers:
       - image: gcr.io/heptio-images/contour:master
         imagePullPolicy: Always
