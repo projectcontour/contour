@@ -14,8 +14,8 @@ In either case, a Service of `type: LoadBalancer` is set up to forward to the Co
 ## Install
 
 - Clone or fork the repository.
-- To install the DaemonSet, navigate to the `deployment/ds-json-v1` directory. OR
-- To install the Deployment, navigate to the `deployment/deployment-json-v1`.
+- To install the DaemonSet, navigate to the `deployment/ds-grpc-v2` directory. OR
+- To install the Deployment, navigate to the `deployment/deployment-grpc-v2`.
 
 Then run:
 

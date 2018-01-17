@@ -35,8 +35,10 @@ spec:
         ports:
         - containerPort: 8080
           name: http
+        - containerPort: 8443
+          name: https
         command: ["envoy"]
-        args: ["-c", "/config/contour.json", "--service-cluster", "cluster0", "--service-node", "node0"]
+        args: ["-c", "/config/contour.yaml", "--service-cluster", "cluster0", "--service-node", "node0", "-l", "info"]
         volumeMounts:
         - name: contour-config
           mountPath: /config
@@ -45,12 +47,15 @@ spec:
         name: contour
         command: ["contour"]
         args: ["serve", "--incluster"]
+        volumeMounts:
+        - name: contour-config
+          mountPath: /config
       initContainers:
       - image: gcr.io/heptio-images/contour:master
         imagePullPolicy: Always
         name: envoy-initconfig
         command: ["contour"]
-        args: ["bootstrap", "/config/contour.json"]
+        args: ["bootstrap", "/config/contour.yaml"]
         volumeMounts:
         - name: contour-config
           mountPath: /config
@@ -130,15 +135,23 @@ metadata:
  name: contour
  namespace: heptio-contour
  annotations:
-  # This annotation puts the AWS ELB into "HTTP" mode so that it adds the
-  # `X-Forwarded-For` header on the request. If you aren't running on AWS this
-  # should be a no-op.
-  service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+  # This annotation puts the AWS ELB into "TCP" mode so that it does not
+  # do HTTP negotiation for HTTPS connections at the ELB edge.
+  # The downside of this is the remote IP address of all connections will
+  # appear to be the internal address of the ELB. See docs/proxy-proto.md
+  # for information about enabling the PROXY protocol on the ELB to recover
+  # the original remote IP address.
+  service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
 spec:
  ports:
  - port: 80
+   name: http
    protocol: TCP
    targetPort: 8080
+ - port: 443
+   name: https
+   protocol: TCP
+   targetPort: 8443
  selector:
    app: contour
  type: LoadBalancer
