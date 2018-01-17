@@ -127,7 +127,7 @@ See [the list of releases][6] to find out about feature changes.
 [3]: /docs
 [4]: https://github.com/heptio/contour/issues
 [5]: /CONTRIBUTING.md
-[6]: /CHANGELOG.md
+[6]: https://github.com/heptio/contour/releases
 [8]: /CODE_OF_CONDUCT.md
 [9]: https://aws.amazon.com/quickstart/architecture/heptio-kubernetes/
 [10]: /docs/deploy-options.md
