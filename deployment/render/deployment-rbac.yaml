@@ -136,13 +136,12 @@ metadata:
  namespace: heptio-contour
  annotations:
   # This annotation puts the AWS ELB into "TCP" mode so that it does not
-  # to http negotiation at the ELB edge. This means the remote address of
-  # all connectinos will appear to be the internal address of the ELB.
+  # do HTTP negotiation for HTTPS connections at the ELB edge.
+  # The downside of this is the remote IP address of all connections will
+  # appear to be the internal address of the ELB. See docs/proxy-proto.md
+  # for information about enabling the PROXY protocol on the ELB to recover
+  # the original remote IP address.
   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
-  # To recover the remote ip 
-  # 1. Add the --use-proxy-protocol flag to your deployment or daemonset's contour serve command.
-  # 2. uncomment this line to enable PROXY protocol # on the ELB
-  # service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: "*"
 spec:
  ports:
  - port: 80
