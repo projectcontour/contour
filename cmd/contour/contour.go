@@ -142,7 +142,6 @@ func main() {
 }
 
 type configWriter interface {
-	WriteJSON(io.Writer) error
 	WriteYAML(io.Writer) error
 }
 
@@ -154,15 +153,13 @@ func writeBootstrapConfig(config configWriter, path string) {
 	check(err)
 	switch filepath.Ext(path) {
 	case ".json":
-		fmt.Fprintf(os.Stderr, "WARNING: JSON support is deprecated in Contour 0.3 and will be removed in Contour 0.4")
-		err = config.WriteJSON(f)
-		check(err)
+		check(fmt.Errorf("JSON bootstrap configuration has been removed.\nPlease see https://github.com/heptio/contour/blob/master/docs/upgrade.md"))
 	case ".yaml":
 		err = config.WriteYAML(f)
 		check(err)
 	default:
 		f.Close()
-		check(fmt.Errorf("path %s must end in one of .json or .yaml", path))
+		check(fmt.Errorf("path %s must end in .yaml", path))
 	}
 	check(f.Close())
 }
