@@ -23,7 +23,7 @@ spec:
         - containerPort: 8080
           name: http
         command: ["envoy"]
-        args: ["-c", "/config/contour.yaml", "--service-cluster", "cluster0", "--service-node", "node0"]
+        args: ["-c", "/config/contour.yaml", "--service-cluster", "cluster0", "--service-node", "node0", "-l", "info", "--v2-config-only"]
         volumeMounts:
         - name: contour-config
           mountPath: /config
