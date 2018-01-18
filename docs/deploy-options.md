@@ -1,6 +1,6 @@
 # Deployment options
 
-The [README][0] shows you a simple way to get started with Contour on your cluster. This topic explains the details and shows you additional options.  Most of this covers running Contour using a Kubernetes Service of `Type: LoadBalancer`. If you don't have a cluster with that capability or if you don't want to use it see the [Running without a Kubernetes LoadBalancer](#running-without-a-kubernetes-loadbalancer) section below.
+The [README][0] shows you a simple way to get started with Contour on your cluster. This topic explains the details and shows you additional options.  Most of this covers running Contour using a Kubernetes Service of `Type: LoadBalancer`. If you don't have a cluster with that capability or if you don't want to use it see the [Running without a Kubernetes LoadBalancer](#running-without-a-kubernetes-loadbalancer) section.
 
 ## Deployment or DaemonSet?
 
@@ -50,6 +50,8 @@ contour   10.106.53.14   a47761ccbb9ce11e7b27f023b7e83d33-2036788482.ap-southeas
 ```
 
 Depending on your cloud provider, the `EXTERNAL-IP` value is an IP address, or, in the case of Amazon AWS, the DNS name of the ELB created for Contour. Keep a record of this value.
+
+Note that if you are running an Elastic Load Balancer (ELB) on AWS, you must add more details to your configuration to get the remote address of your incoming connections. See [Recovering the remote IP address with an ELB](tls.md/#recovering-the-remote-IP-address-with-an-ELB).
 
 On Minikube, to get the IP address of the Contour service run:
 
