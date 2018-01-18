@@ -11,16 +11,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package envoy contains a configuration writer for v2 YAML config.
+// To avoid a dependncy on a YAML library, we generate the YAML using
+// the text/template package.
 package envoy
 
 import (
 	"io"
 	"text/template"
 )
-
-// Configuration writers for v2 YAML config.
-// To avoid a dependncy on a YAML library, we generate the YAML using
-// the text/template package.
 
 // A ConfigWriter knows how to write a bootstap Envoy configuration in YAML format.
 type ConfigWriter struct {
