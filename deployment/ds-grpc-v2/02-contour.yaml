@@ -9,12 +9,12 @@ spec:
   selector:
     matchLabels:
       app: contour
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
         app: contour
-    updateStrategy:
-      type: RollingUpdate
     spec:
       containers:
       - image: docker.io/envoyproxy/envoy-alpine:latest
