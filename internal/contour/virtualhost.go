@@ -16,6 +16,7 @@ package contour
 import (
 	"sort"
 	"strings"
+	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
 	"k8s.io/api/extensions/v1beta1"
@@ -26,6 +27,35 @@ type VirtualHostCache struct {
 	HTTP  virtualHostCache
 	HTTPS virtualHostCache
 	Cond
+}
+
+func getRequestTimeout(annotations map[string]string) *time.Duration {
+	timeoutStr, ok := annotations["contour.heptio.com/request-timeout"]
+	// Error or unspecified is interpreted as no timeout specified, use envoy defaults
+	if !ok {
+		return nil
+	}
+
+	if timeoutStr == "" {
+		return nil
+	}
+
+	// Interpret "infinity" explicitly as an infinite timeout, which envoy config
+	// expects as a timeout of 0. This could be specified with the duration string
+	// "0s" but want to give an explicit out for operators.
+	infiniteTimeout := time.Duration(0)
+	if timeoutStr == "infinity" {
+		return &infiniteTimeout
+	}
+
+	timeoutParsed, err := time.ParseDuration(timeoutStr)
+	if err != nil {
+		// TODO(cmalonty) plumb a logger in here so we can log this error.
+		// Assuming infinite duration is going to surprise people less for
+		// a not-parseable duration than a implicit 15 second one.
+		return &infiniteTimeout
+	}
+	return &timeoutParsed
 }
 
 // recomputevhost recomputes the ingress_http (HTTP) and ingress_https (HTTPS) record
@@ -46,9 +76,12 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 				// TODO(dfc) plumb a logger in here so we can log this error.
 				continue
 			}
+
+			timeout := getRequestTimeout(ing.Annotations)
+
 			for _, p := range rule.IngressRuleValue.HTTP.Paths {
 				m := pathToRouteMatch(p)
-				a := clusteraction(ingressBackendToClusterName(ing, &p.Backend))
+				a := clusteractiontimeout(ingressBackendToClusterName(ing, &p.Backend), timeout)
 				vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
 			}
 		}
@@ -71,10 +104,12 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 			// set blanket 301 redirect
 			vv.RequireTls = v2.VirtualHost_ALL
 		}
+		timeout := getRequestTimeout(i.Annotations)
+
 		if i.Spec.Backend != nil && len(ingresses) == 1 {
 			vv.Routes = []*v2.Route{{
 				Match:  prefixmatch("/"), // match all
-				Action: clusteraction(ingressBackendToClusterName(i, i.Spec.Backend)),
+				Action: clusteractiontimeout(ingressBackendToClusterName(i, i.Spec.Backend), timeout),
 			}}
 			continue
 		}
@@ -88,7 +123,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 			}
 			for _, p := range rule.IngressRuleValue.HTTP.Paths {
 				m := pathToRouteMatch(p)
-				a := clusteraction(ingressBackendToClusterName(i, &p.Backend))
+				a := clusteractiontimeout(ingressBackendToClusterName(i, &p.Backend), timeout)
 				vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
 			}
 		}
@@ -195,6 +230,16 @@ func clusteraction(cluster string) *v2.Route_Route {
 			},
 		},
 	}
+}
+
+// clusteractiontimeout returns a Route_Route action for the supplied cluster.
+func clusteractiontimeout(cluster string, timeout *time.Duration) *v2.Route_Route {
+	// TODO(cmaloney): Pull timeout off of the backend cluster annotation
+	// and use it over the value retrieved from the ingress annotation if
+	// specified.
+	c := clusteraction(cluster)
+	c.Route.Timeout = timeout
+	return c
 }
 
 func virtualhost(hostname string) *v2.VirtualHost {

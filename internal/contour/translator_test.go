@@ -455,6 +455,9 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 }
 
 func TestTranslatorAddIngress(t *testing.T) {
+	duration20seconds := time.Duration(20 * time.Second)
+	duration0seconds := time.Duration(0)
+
 	tests := []struct {
 		name          string
 		setup         func(*Translator)
@@ -940,6 +943,75 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/hello"),
 				Action: clusteraction("default/hello/80"),
+			}},
+		}},
+		ingress_https: []*v2.VirtualHost{},
+	}, {
+		name: "explicitly set upstream timeout to seconds",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "correct",
+				Namespace: "default",
+				Annotations: map[string]string{
+					"contour.heptio.com/request-timeout": "20s",
+				},
+			},
+			Spec: v1beta1.IngressSpec{
+				Backend: backend("backend", intstr.FromInt(80)),
+			},
+		},
+		ingress_http: []*v2.VirtualHost{{
+			Name:    "*",
+			Domains: []string{"*"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/"), // match all
+				Action: clusteractiontimeout("default/backend/80", &duration20seconds),
+			}},
+		}},
+		ingress_https: []*v2.VirtualHost{},
+	}, {
+		name: "explicitly set upstream timeout to infinite",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "correct",
+				Namespace: "default",
+				Annotations: map[string]string{
+					"contour.heptio.com/request-timeout": "infinity",
+				},
+			},
+			Spec: v1beta1.IngressSpec{
+				Backend: backend("backend", intstr.FromInt(80)),
+			},
+		},
+		ingress_http: []*v2.VirtualHost{{
+			Name:    "*",
+			Domains: []string{"*"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/"), // match all
+				Action: clusteractiontimeout("default/backend/80", &duration0seconds),
+			}},
+		}},
+		ingress_https: []*v2.VirtualHost{},
+	}, {
+		name: "explicitly set upstream timeout to an invalid duration",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "correct",
+				Namespace: "default",
+				Annotations: map[string]string{
+					"contour.heptio.com/request-timeout": "300jiosadf",
+				},
+			},
+			Spec: v1beta1.IngressSpec{
+				Backend: backend("backend", intstr.FromInt(80)),
+			},
+		},
+		ingress_http: []*v2.VirtualHost{{
+			Name:    "*",
+			Domains: []string{"*"},
+			Routes: []*v2.Route{{
+				Match:  prefixmatch("/"), // match all
+				Action: clusteractiontimeout("default/backend/80", &duration0seconds),
 			}},
 		}},
 		ingress_https: []*v2.VirtualHost{},
