@@ -23,12 +23,12 @@ spec:
   selector:
     matchLabels:
       app: contour
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
         app: contour
-    updateStrategy:
-      type: RollingUpdate
     spec:
       containers:
       - image: docker.io/envoyproxy/envoy-alpine:latest
@@ -37,7 +37,7 @@ spec:
         - containerPort: 8080
           name: http
         command: ["envoy"]
-        args: ["-c", "/config/contour.yaml", "--service-cluster", "cluster0", "--service-node", "node0"]
+        args: ["-c", "/config/contour.yaml", "--service-cluster", "cluster0", "--service-node", "node0", "-l", "info", "--v2-config-only"]
         volumeMounts:
         - name: contour-config
           mountPath: /config
@@ -46,6 +46,9 @@ spec:
         name: contour
         command: ["contour"]
         args: ["serve", "--incluster"]
+        volumeMounts:
+        - name: contour-config
+          mountPath: /config
       initContainers:
       - image: gcr.io/heptio-images/contour:master
         imagePullPolicy: Always
