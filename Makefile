@@ -8,5 +8,5 @@ check: test
 	@(cd deployment && bash render.sh && git diff --exit-code . || echo "rendered files are out of date" || exit 1)
 
 install:
-	go install -v ./...
+	go install -v -tags "oidc gcp" ./...
 
