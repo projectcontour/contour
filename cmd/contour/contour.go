@@ -14,15 +14,12 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"io"
 	"net"
-	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
@@ -30,18 +27,15 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/gorilla/handlers"
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/grpc"
-	"github.com/heptio/contour/internal/json"
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/log/stdlog"
 	"github.com/heptio/contour/internal/workgroup"
 )
 
 const (
-	V1_API_ADDRESS = "127.0.0.1:8000" // v1 JSON RPC
 	V2_API_ADDRESS = "127.0.0.1:8001" // v2 gRPC
 )
 
@@ -69,7 +63,6 @@ func main() {
 	serve := app.Command("serve", "Serve xDS API traffic")
 	inCluster := serve.Flag("incluster", "use in cluster configuration.").Bool()
 	kubeconfig := serve.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).String()
-	debug := serve.Flag("debug", "enable v1 REST API request logging.").Bool()
 
 	// translator configuration
 	serve.Flag("envoy-http-address", "Envoy HTTP listener address").StringVar(&t.HTTPAddress)
@@ -92,37 +85,12 @@ func main() {
 		// buffer notifications to t to ensure they are handled sequentially.
 		buf := k8s.NewBuffer(&g, t, logger, 128)
 
-		// REST v1 support
-		ds := json.DataSource{
-			Logger: logger.WithPrefix("DataSource"),
-		}
-
 		client := newClient(*kubeconfig, *inCluster)
 
-		k8s.WatchServices(&g, client, logger, &ds, buf)
-		k8s.WatchEndpoints(&g, client, logger, &ds, buf)
-		k8s.WatchIngress(&g, client, logger, &ds, buf)
-		k8s.WatchSecrets(&g, client, logger, buf) // don't deliver to &ds, the rest api doesn't know how to process secrets
-
-		g.Add(func(stop <-chan struct{}) {
-			logger := logger.WithPrefix("JSONAPI")
-			api := json.NewAPI(logger, &ds)
-			if *debug {
-				// enable request logging if --debug enabled
-				api = handlers.LoggingHandler(os.Stdout, api)
-			}
-			srv := &http.Server{
-				Handler:      api,
-				Addr:         V1_API_ADDRESS,
-				WriteTimeout: 15 * time.Second,
-				ReadTimeout:  15 * time.Second,
-			}
-			go srv.ListenAndServe() // run server in another goroutine
-			logger.Infof("started, listening on %v", srv.Addr)
-			defer logger.Infof("stopped")
-			<-stop                             // wait for stop signal
-			srv.Shutdown(context.Background()) // shutdown and wait for server to exit
-		})
+		k8s.WatchServices(&g, client, logger, buf)
+		k8s.WatchEndpoints(&g, client, logger, buf)
+		k8s.WatchIngress(&g, client, logger, buf)
+		k8s.WatchSecrets(&g, client, logger, buf)
 
 		g.Add(func(stop <-chan struct{}) {
 			logger := logger.WithPrefix("gRPCAPI")
@@ -142,27 +110,23 @@ func main() {
 }
 
 type configWriter interface {
-	WriteJSON(io.Writer) error
 	WriteYAML(io.Writer) error
 }
 
 // writeBootstrapConfig writes a bootstrap configuration to the supplied path.
-// If the path ends in .json, the configuration file will be in v1 JSON format.
 // If the path ends in .yaml, the configuration file will be in v2 YAML format.
 func writeBootstrapConfig(config configWriter, path string) {
 	f, err := os.Create(path)
 	check(err)
 	switch filepath.Ext(path) {
 	case ".json":
-		fmt.Fprintf(os.Stderr, "WARNING: JSON support is deprecated in Contour 0.3 and will be removed in Contour 0.4")
-		err = config.WriteJSON(f)
-		check(err)
+		check(fmt.Errorf("JSON bootstrap configuration has been removed.\nPlease see https://github.com/heptio/contour/blob/master/docs/upgrade.md"))
 	case ".yaml":
 		err = config.WriteYAML(f)
 		check(err)
 	default:
 		f.Close()
-		check(fmt.Errorf("path %s must end in one of .json or .yaml", path))
+		check(fmt.Errorf("path %s must end in .yaml", path))
 	}
 	check(f.Close())
 }
