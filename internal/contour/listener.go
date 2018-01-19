@@ -258,6 +258,7 @@ func tlscontext(namespace, name string) *v2.DownstreamTlsContext {
 					},
 				},
 			}},
+			AlpnProtocols: []string{"h2", "http/1.1"},
 		},
 	}
 }
