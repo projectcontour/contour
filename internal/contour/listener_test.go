@@ -232,7 +232,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 					FilterChainMatch: &v2.FilterChainMatch{
 						SniDomains: []string{"whatever.example.com"},
 					},
-					TlsContext: tlscontext("default", "secret"),
+					TlsContext: tlscontext("default", "secret", "h2", "http/1.1"),
 					Filters: []*v2.Filter{
 						httpfilter(ENVOY_HTTPS_LISTENER),
 					},
@@ -279,7 +279,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 					FilterChainMatch: &v2.FilterChainMatch{
 						SniDomains: []string{"whatever.example.com"},
 					},
-					TlsContext: tlscontext("default", "secret"),
+					TlsContext: tlscontext("default", "secret", "h2", "http/1.1"),
 					Filters: []*v2.Filter{
 						httpfilter(ENVOY_HTTPS_LISTENER),
 					},
@@ -325,7 +325,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 					FilterChainMatch: &v2.FilterChainMatch{
 						SniDomains: []string{"whatever.example.com"},
 					},
-					TlsContext: tlscontext("default", "secret"),
+					TlsContext: tlscontext("default", "secret", "h2", "http/1.1"),
 					Filters: []*v2.Filter{
 						httpfilter(ENVOY_HTTPS_LISTENER),
 					},
