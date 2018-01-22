@@ -38,8 +38,6 @@ import (
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/log/stdlog"
 	"github.com/heptio/contour/internal/workgroup"
-
-	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
 const (
