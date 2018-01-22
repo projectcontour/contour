@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
@@ -253,8 +252,12 @@ func any(t *testing.T, pb proto.Message) *types.Any {
 
 func assertEqual(t *testing.T, want, got *v2.DiscoveryResponse) {
 	t.Helper()
-	if !reflect.DeepEqual(want, got) {
-		t.Fatalf("expected:\n%v\n%vgot:\n%v\n%v", want, dumpany(want.Resources), got, dumpany(got.Resources))
+	if !proto.Equal(want, got) {
+		m := proto.TextMarshaler{
+			Compact:   false,
+			ExpandAny: true,
+		}
+		t.Fatalf("expected:\n%v\ngot:\n%v\n", m.Text(want), m.Text(got))
 	}
 }
 
