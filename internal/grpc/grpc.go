@@ -24,7 +24,6 @@ import (
 	"google.golang.org/grpc/codes"
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
-	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/log"
@@ -130,14 +129,11 @@ func (c *CDS) Resources() ([]*types.Any, error) {
 	v := c.Values()
 	resources := make([]*types.Any, len(v))
 	for i := range v {
-		data, err := proto.Marshal(v[i])
+		any, err := types.MarshalAny(v[i])
 		if err != nil {
 			return nil, err
 		}
-		resources[i] = &types.Any{
-			TypeUrl: ClusterType,
-			Value:   data,
-		}
+		resources[i] = any
 	}
 	return resources, nil
 }
@@ -168,14 +164,11 @@ func (e *EDS) Resources() ([]*types.Any, error) {
 	v := e.Values()
 	resources := make([]*types.Any, len(v))
 	for i := range v {
-		data, err := proto.Marshal(v[i])
+		any, err := types.MarshalAny(v[i])
 		if err != nil {
 			return nil, err
 		}
-		resources[i] = &types.Any{
-			TypeUrl: EndpointType,
-			Value:   data,
-		}
+		resources[i] = any
 	}
 	return resources, nil
 }
@@ -210,14 +203,11 @@ func (l *LDS) Resources() ([]*types.Any, error) {
 	v := l.Values()
 	resources := make([]*types.Any, len(v))
 	for i := range v {
-		data, err := proto.Marshal(v[i])
+		any, err := types.MarshalAny(v[i])
 		if err != nil {
 			return nil, err
 		}
-		resources[i] = &types.Any{
-			TypeUrl: ListenerType,
-			Value:   data,
-		}
+		resources[i] = any
 	}
 	return resources, nil
 }
@@ -252,24 +242,24 @@ type RDS struct {
 // TODO(dfc) cache the results of Resources in the VirtualHostCache so
 // we can avoid the error handling.
 func (r *RDS) Resources() ([]*types.Any, error) {
-	ingress_http, err := proto.Marshal(&v2.RouteConfiguration{
+	ingress_http, err := types.MarshalAny(&v2.RouteConfiguration{
 		Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
 		VirtualHosts: r.HTTP.Values(),
 	})
-	ingress_https, err := proto.Marshal(&v2.RouteConfiguration{
+	if err != nil {
+		return nil, err
+	}
+	ingress_https, err := types.MarshalAny(&v2.RouteConfiguration{
 		Name:         "ingress_https", // TODO(dfc) matches LDS configuration?
 		VirtualHosts: r.HTTPS.Values(),
 	})
 	if err != nil {
 		return nil, err
 	}
-	return []*types.Any{{
-		TypeUrl: RouteType,
-		Value:   ingress_http,
-	}, {
-		TypeUrl: RouteType,
-		Value:   ingress_https,
-	}}, nil
+	return []*types.Any{
+		ingress_http,
+		ingress_https,
+	}, nil
 }
 
 func (r *RDS) TypeURL() string { return RouteType }
