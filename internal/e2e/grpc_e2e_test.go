@@ -142,6 +142,68 @@ func TestEditIngress(t *testing.T) {
 	}, fetchRDS(t, cc))
 }
 
+// heptio/contour#101
+// The path /hello should point to default/hello/80 on "*"
+//
+// apiVersion: extensions/v1beta1
+// kind: Ingress
+// metadata:
+//   name: hello
+// spec:
+//   rules:
+//   - http:
+// 	 paths:
+//       - path: /hello
+//         backend:
+//           serviceName: hello
+//           servicePort: 80
+func TestIngressPathRouteWithoutHost(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	// add default/hello to translator.
+	rh.OnAdd(&v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{Name: "hello", Namespace: "default"},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/hello",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "hello",
+								ServicePort: intstr.FromInt(80),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	})
+
+	// check that it's been translated correctly.
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []*types.Any{
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_http",
+				VirtualHosts: []*v2.VirtualHost{{
+					Name:    "*",
+					Domains: []string{"*"},
+					Routes: []*v2.Route{
+						route(prefixmatch("/hello"), cluster("default/hello/80")),
+					},
+				}},
+			}),
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_https",
+			}),
+		},
+		TypeUrl: cgrpc.RouteType,
+		Nonce:   "0",
+	}, fetchRDS(t, cc))
+}
+
 func fetchRDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
 	t.Helper()
 	rds := v2.NewRouteDiscoveryServiceClient(cc)
@@ -192,7 +254,7 @@ func any(t *testing.T, pb proto.Message) *types.Any {
 func assertEqual(t *testing.T, want, got *v2.DiscoveryResponse) {
 	t.Helper()
 	if !reflect.DeepEqual(want, got) {
-		t.Fatalf("expected:\n%v\n%v\ngot:\n%v\n%v", want, dumpany(want.Resources), got, dumpany(got.Resources))
+		t.Fatalf("expected:\n%v\n%vgot:\n%v\n%v", want, dumpany(want.Resources), got, dumpany(got.Resources))
 	}
 }
 
