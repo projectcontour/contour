@@ -15,11 +15,10 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"gopkg.in/alecthomas/kingpin.v2"
 
 	"google.golang.org/grpc"
 
@@ -67,28 +66,14 @@ type stream interface {
 }
 
 func watchstream(st stream) {
+	m := proto.TextMarshaler{
+		Compact:   false,
+		ExpandAny: true,
+	}
 	for {
 		resp, err := st.Recv()
 		check(err)
-		fmt.Println("version_info:", resp.VersionInfo, "canary:", resp.Canary, "type_url:", resp.TypeUrl, "nonce:", resp.Nonce)
-		for _, r := range resp.Resources {
-			var pb proto.Message
-			switch r.TypeUrl {
-			case "type.googleapis.com/envoy.api.v2.Cluster":
-				pb = new(v2.Cluster)
-			case "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment":
-				pb = new(v2.ClusterLoadAssignment)
-			case "type.googleapis.com/envoy.api.v2.RouteConfiguration":
-				pb = new(v2.RouteConfiguration)
-			case "type.googleapis.com/envoy.api.v2.Listener":
-				pb = new(v2.Listener)
-			default:
-				continue
-			}
-			err := proto.Unmarshal(r.Value, pb)
-			check(err)
-			proto.MarshalText(os.Stdout, pb)
-		}
+		m.Marshal(os.Stdout, resp)
 	}
 }
 
