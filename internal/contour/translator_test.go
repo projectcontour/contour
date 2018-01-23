@@ -995,6 +995,622 @@ func TestClusterEDSConfigServiceNameMatchesLoadAssignmentClusterName(t *testing.
 	}
 }
 
+func TestTranslatorCacheOnAddIngress(t *testing.T) {
+	tests := map[string]struct {
+		i             v1beta1.Ingress
+		wantIngresses map[metadata]*v1beta1.Ingress
+		wantVhosts    map[string]map[metadata]*v1beta1.Ingress
+	}{
+		"add default ingress": {
+			i: v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Backend: backend("simple", intstr.FromInt(80)),
+				},
+			},
+			wantIngresses: map[metadata]*v1beta1.Ingress{
+				metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: backend("simple", intstr.FromInt(80)),
+					},
+				},
+			},
+			wantVhosts: map[string]map[metadata]*v1beta1.Ingress{
+				"*": map[metadata]*v1beta1.Ingress{
+					metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Backend: backend("simple", intstr.FromInt(80)),
+						},
+					},
+				},
+			},
+		},
+		"add default rule ingress": {
+			i: v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+					}},
+				},
+			},
+			wantIngresses: map[metadata]*v1beta1.Ingress{
+				metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Rules: []v1beta1.IngressRule{{
+							IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+						}},
+					},
+				},
+			},
+			wantVhosts: map[string]map[metadata]*v1beta1.Ingress{
+				"*": map[metadata]*v1beta1.Ingress{
+					metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Rules: []v1beta1.IngressRule{{
+								IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+							}},
+						},
+					},
+				},
+			},
+		},
+		"add default and path default ingress": {
+			i: v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Backend: backend("simple", intstr.FromInt(80)),
+					Rules: []v1beta1.IngressRule{{
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Path: "/hello",
+									Backend: v1beta1.IngressBackend{
+										ServiceName: "hello",
+										ServicePort: intstr.FromInt(80),
+									},
+								}},
+							},
+						},
+					}},
+				},
+			},
+			wantIngresses: map[metadata]*v1beta1.Ingress{
+				metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: backend("simple", intstr.FromInt(80)),
+						Rules: []v1beta1.IngressRule{{
+							IngressRuleValue: v1beta1.IngressRuleValue{
+								HTTP: &v1beta1.HTTPIngressRuleValue{
+									Paths: []v1beta1.HTTPIngressPath{{
+										Path: "/hello",
+										Backend: v1beta1.IngressBackend{
+											ServiceName: "hello", ServicePort: intstr.FromInt(80)},
+									}},
+								},
+							},
+						}},
+					},
+				},
+			},
+			wantVhosts: map[string]map[metadata]*v1beta1.Ingress{
+				"*": map[metadata]*v1beta1.Ingress{
+					metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{Backend: backend("simple", intstr.FromInt(80)), Rules: []v1beta1.IngressRule{{IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{Paths: []v1beta1.HTTPIngressPath{{
+								Path: "/hello", Backend: v1beta1.IngressBackend{
+									ServiceName: "hello", ServicePort: intstr.FromInt(80)},
+							}},
+							},
+						}}},
+						},
+					},
+				},
+			},
+		},
+		"add default and host ingress": {
+			i: v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Backend: backend("simple", intstr.FromInt(80)),
+					Rules: []v1beta1.IngressRule{{
+						Host: "hello.example.com",
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Backend: v1beta1.IngressBackend{
+										ServiceName: "hello",
+										ServicePort: intstr.FromInt(80),
+									},
+								}},
+							},
+						},
+					}},
+				},
+			},
+			wantIngresses: map[metadata]*v1beta1.Ingress{
+				metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: backend("simple", intstr.FromInt(80)),
+						Rules: []v1beta1.IngressRule{{
+							Host: "hello.example.com",
+							IngressRuleValue: v1beta1.IngressRuleValue{
+								HTTP: &v1beta1.HTTPIngressRuleValue{
+									Paths: []v1beta1.HTTPIngressPath{{
+										Backend: v1beta1.IngressBackend{
+											ServiceName: "hello",
+											ServicePort: intstr.FromInt(80),
+										},
+									}},
+								},
+							},
+						}},
+					},
+				},
+			},
+			wantVhosts: map[string]map[metadata]*v1beta1.Ingress{
+				"*": map[metadata]*v1beta1.Ingress{
+					metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Backend: backend("simple", intstr.FromInt(80)),
+							Rules: []v1beta1.IngressRule{{
+								Host: "hello.example.com",
+								IngressRuleValue: v1beta1.IngressRuleValue{
+									HTTP: &v1beta1.HTTPIngressRuleValue{
+										Paths: []v1beta1.HTTPIngressPath{{
+											Backend: v1beta1.IngressBackend{
+												ServiceName: "hello",
+												ServicePort: intstr.FromInt(80),
+											},
+										}},
+									},
+								},
+							}},
+						},
+					},
+				},
+				"hello.example.com": map[metadata]*v1beta1.Ingress{
+					metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Backend: backend("simple", intstr.FromInt(80)),
+							Rules: []v1beta1.IngressRule{{
+								Host: "hello.example.com",
+								IngressRuleValue: v1beta1.IngressRuleValue{
+									HTTP: &v1beta1.HTTPIngressRuleValue{
+										Paths: []v1beta1.HTTPIngressPath{{
+											Backend: v1beta1.IngressBackend{
+												ServiceName: "hello",
+												ServicePort: intstr.FromInt(80),
+											},
+										}},
+									},
+								},
+							}},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var c translatorCache
+			c.OnAdd(&tc.i)
+			if !reflect.DeepEqual(tc.wantIngresses, c.ingresses) {
+				t.Errorf("want:\n%v\n got:\n%v", tc.wantIngresses, c.ingresses)
+			}
+			if !reflect.DeepEqual(tc.wantVhosts, c.vhosts) {
+				t.Fatalf("want:\n%v\n got:\n%v", tc.wantVhosts, c.vhosts)
+			}
+		})
+	}
+}
+
+func TestTranslatorCacheOnUpdateIngress(t *testing.T) {
+	tests := map[string]struct {
+		c              translatorCache
+		oldObj, newObj v1beta1.Ingress
+		wantIngresses  map[metadata]*v1beta1.Ingress
+		wantVhosts     map[string]map[metadata]*v1beta1.Ingress
+	}{
+		"update default ingress": {
+			c: translatorCache{
+				ingresses: map[metadata]*v1beta1.Ingress{
+					metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Backend: backend("simple", intstr.FromInt(80)),
+						},
+					},
+				},
+				vhosts: map[string]map[metadata]*v1beta1.Ingress{
+					"*": map[metadata]*v1beta1.Ingress{
+						metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "simple",
+								Namespace: "default",
+							},
+							Spec: v1beta1.IngressSpec{
+								Backend: backend("simple", intstr.FromInt(80)),
+							},
+						},
+					},
+				},
+			},
+			oldObj: v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Backend: backend("simple", intstr.FromInt(80)),
+				},
+			},
+			newObj: v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+					}},
+				},
+			},
+			wantIngresses: map[metadata]*v1beta1.Ingress{
+				metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Rules: []v1beta1.IngressRule{{
+							IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+						}},
+					},
+				},
+			},
+			wantVhosts: map[string]map[metadata]*v1beta1.Ingress{
+				"*": map[metadata]*v1beta1.Ingress{
+					metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Rules: []v1beta1.IngressRule{{
+								IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+							}},
+						},
+					},
+				},
+			},
+		},
+		"update default with host ingress": {
+			c: translatorCache{
+				ingresses: map[metadata]*v1beta1.Ingress{
+					metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Rules: []v1beta1.IngressRule{{
+								IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+							}},
+						},
+					},
+				},
+				vhosts: map[string]map[metadata]*v1beta1.Ingress{
+					"*": map[metadata]*v1beta1.Ingress{
+						metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "simple",
+								Namespace: "default",
+							},
+							Spec: v1beta1.IngressSpec{
+								Rules: []v1beta1.IngressRule{{
+									IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+								}},
+							},
+						},
+					},
+				},
+			},
+			oldObj: v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+					}},
+				},
+			},
+			newObj: v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						Host:             "hello.example.com",
+						IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+					}},
+				},
+			},
+			wantIngresses: map[metadata]*v1beta1.Ingress{
+				metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Rules: []v1beta1.IngressRule{{
+							Host:             "hello.example.com",
+							IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+						}},
+					},
+				},
+			},
+			wantVhosts: map[string]map[metadata]*v1beta1.Ingress{
+				"hello.example.com": map[metadata]*v1beta1.Ingress{
+					metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Rules: []v1beta1.IngressRule{{
+								Host:             "hello.example.com",
+								IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+							}},
+						},
+					},
+				},
+			},
+		},
+		"update host ingress to default": {
+			c: translatorCache{
+				ingresses: map[metadata]*v1beta1.Ingress{
+					metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Rules: []v1beta1.IngressRule{{
+								Host:             "hello.example.com",
+								IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+							}},
+						},
+					},
+				},
+				vhosts: map[string]map[metadata]*v1beta1.Ingress{
+					"hello.example.com": map[metadata]*v1beta1.Ingress{
+						metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "simple",
+								Namespace: "default",
+							},
+							Spec: v1beta1.IngressSpec{
+								Rules: []v1beta1.IngressRule{{
+									Host:             "hello.example.com",
+									IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+								}},
+							},
+						},
+					},
+				},
+			},
+			oldObj: v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						Host:             "hello.example.com",
+						IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+					}},
+				},
+			},
+			newObj: v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+					}},
+				},
+			},
+			wantIngresses: map[metadata]*v1beta1.Ingress{
+				metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Rules: []v1beta1.IngressRule{{
+							IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+						}},
+					},
+				},
+			},
+			wantVhosts: map[string]map[metadata]*v1beta1.Ingress{
+				"*": map[metadata]*v1beta1.Ingress{
+					metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Rules: []v1beta1.IngressRule{{
+								IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+							}},
+						},
+					},
+				},
+			},
+		},
+		"update rename host ingress": {
+			c: translatorCache{
+				ingresses: map[metadata]*v1beta1.Ingress{
+					metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Rules: []v1beta1.IngressRule{{
+								Host:             "hello.example.com",
+								IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+							}},
+						},
+					},
+				},
+				vhosts: map[string]map[metadata]*v1beta1.Ingress{
+					"hello.example.com": map[metadata]*v1beta1.Ingress{
+						metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "simple",
+								Namespace: "default",
+							},
+							Spec: v1beta1.IngressSpec{
+								Rules: []v1beta1.IngressRule{{
+									Host:             "hello.example.com",
+									IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+								}},
+							},
+						},
+					},
+				},
+			},
+			oldObj: v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						Host:             "hello.example.com",
+						IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+					}},
+				},
+			},
+			newObj: v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						Host:             "goodbye.example.com",
+						IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+					}},
+				},
+			},
+			wantIngresses: map[metadata]*v1beta1.Ingress{
+				metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Rules: []v1beta1.IngressRule{{
+							Host:             "goodbye.example.com",
+							IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+						}},
+					},
+				},
+			},
+			wantVhosts: map[string]map[metadata]*v1beta1.Ingress{
+				"goodbye.example.com": map[metadata]*v1beta1.Ingress{
+					metadata{name: "simple", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Rules: []v1beta1.IngressRule{{
+								Host:             "goodbye.example.com",
+								IngressRuleValue: ingressrulevalue(backend("simple", intstr.FromInt(80))),
+							}},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			tc.c.OnUpdate(&tc.oldObj, &tc.newObj)
+			if !reflect.DeepEqual(tc.wantIngresses, tc.c.ingresses) {
+				t.Errorf("ingresses want:\n%v\n got:\n%v", tc.wantIngresses, tc.c.ingresses)
+			}
+			if !reflect.DeepEqual(tc.wantVhosts, tc.c.vhosts) {
+				t.Fatalf("vhosts want:\n%+v\n got:\n%+v", tc.wantVhosts, tc.c.vhosts)
+			}
+		})
+	}
+}
+
 func TestHashname(t *testing.T) {
 	tests := []struct {
 		name string

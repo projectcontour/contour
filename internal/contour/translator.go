@@ -342,25 +342,26 @@ func (t *translatorCache) OnAdd(obj interface{}) {
 		if t.ingresses == nil {
 			t.ingresses = make(map[metadata]*v1beta1.Ingress)
 		}
-		t.ingresses[metadata{name: obj.Name, namespace: obj.Namespace}] = obj
+		md := metadata{name: obj.Name, namespace: obj.Namespace}
+		t.ingresses[md] = obj
 		if t.vhosts == nil {
 			t.vhosts = make(map[string]map[metadata]*v1beta1.Ingress)
 		}
-		if vhost := t.vhosts["*"]; vhost == nil {
-			t.vhosts["*"] = make(map[metadata]*v1beta1.Ingress)
-		}
 		if obj.Spec.Backend != nil {
-			t.vhosts["*"][metadata{name: obj.Name, namespace: obj.Namespace}] = obj
+			if _, ok := t.vhosts["*"]; !ok {
+				t.vhosts["*"] = make(map[metadata]*v1beta1.Ingress)
+			}
+			t.vhosts["*"][md] = obj
 		}
 		for _, rule := range obj.Spec.Rules {
 			host := rule.Host
 			if host == "" {
 				host = "*"
 			}
-			if vhost := t.vhosts[host]; vhost == nil {
+			if _, ok := t.vhosts[host]; !ok {
 				t.vhosts[host] = make(map[metadata]*v1beta1.Ingress)
 			}
-			t.vhosts[host][metadata{name: obj.Name, namespace: obj.Namespace}] = obj
+			t.vhosts[host][md] = obj
 		}
 	case *v1.Secret:
 		if t.secrets == nil {
@@ -373,9 +374,12 @@ func (t *translatorCache) OnAdd(obj interface{}) {
 }
 
 func (t *translatorCache) OnUpdate(oldObj, newObj interface{}) {
-	switch obj := oldObj.(type) {
+	switch oldObj := oldObj.(type) {
 	case *v1beta1.Ingress:
-		t.OnDelete(obj)
+		// ingress objects are special because their contents can change
+		// which affects the t.vhost cache. The simplest way is to model
+		// update as delete, then add.
+		t.OnDelete(oldObj)
 	}
 	t.OnAdd(newObj)
 }
@@ -387,12 +391,21 @@ func (t *translatorCache) OnDelete(obj interface{}) {
 	case *v1.Endpoints:
 		// nada
 	case *v1beta1.Ingress:
-		delete(t.ingresses, metadata{name: obj.Name, namespace: obj.Namespace})
-		delete(t.vhosts["*"], metadata{name: obj.Name, namespace: obj.Namespace})
+		md := metadata{name: obj.Name, namespace: obj.Namespace}
+		delete(t.ingresses, md)
+		delete(t.vhosts["*"], md)
 		for _, rule := range obj.Spec.Rules {
-			if rule.Host != "" {
-				delete(t.vhosts[rule.Host], metadata{name: obj.Name, namespace: obj.Namespace})
+			host := rule.Host
+			if host == "" {
+				host = "*"
 			}
+			delete(t.vhosts[host], md)
+			if len(t.vhosts[host]) == 0 {
+				delete(t.vhosts, host)
+			}
+		}
+		if len(t.vhosts["*"]) == 0 {
+			delete(t.vhosts, "*")
 		}
 	case *v1.Secret:
 		delete(t.secrets, metadata{name: obj.Name, namespace: obj.Namespace})
