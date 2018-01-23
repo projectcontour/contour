@@ -120,10 +120,10 @@ func TestTranslatorAddService(t *testing.T) {
 			tr := &Translator{
 				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
 			}
-			tr.addService(tc.svc)
+			tr.OnAdd(tc.svc)
 			got := tr.ClusterCache.Values()
 			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("addService(%v): got: %v, want: %v", tc.svc, got, tc.want)
+				t.Fatalf("got: %v, want: %v", got, tc.want)
 			}
 		})
 	}
@@ -137,7 +137,7 @@ func TestTranslatorRemoveService(t *testing.T) {
 	}{
 		"remove existing": {
 			setup: func(tr *Translator) {
-				tr.addService(service("default", "simple", v1.ServicePort{
+				tr.OnAdd(service("default", "simple", v1.ServicePort{
 					Protocol:   "TCP",
 					Port:       80,
 					TargetPort: intstr.FromInt(6502),
@@ -152,7 +152,7 @@ func TestTranslatorRemoveService(t *testing.T) {
 		},
 		"remove named": {
 			setup: func(tr *Translator) {
-				tr.addService(service("default", "simple", v1.ServicePort{
+				tr.OnAdd(service("default", "simple", v1.ServicePort{
 					Name:       "kevin",
 					Protocol:   "TCP",
 					Port:       80,
@@ -169,7 +169,7 @@ func TestTranslatorRemoveService(t *testing.T) {
 		},
 		"remove different": {
 			setup: func(tr *Translator) {
-				tr.addService(service("default", "simple", v1.ServicePort{
+				tr.OnAdd(service("default", "simple", v1.ServicePort{
 					Protocol:   "TCP",
 					Port:       80,
 					TargetPort: intstr.FromInt(6502),
@@ -202,10 +202,10 @@ func TestTranslatorRemoveService(t *testing.T) {
 				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
 			}
 			tc.setup(tr)
-			tr.removeService(tc.svc)
+			tr.OnDelete(tc.svc)
 			got := tr.ClusterCache.Values()
 			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("removeService(%v): got: %v, want: %v", tc.svc, got, tc.want)
+				t.Fatalf("got: %v, want: %v", got, tc.want)
 			}
 		})
 	}
@@ -252,10 +252,10 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 			tr := &Translator{
 				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
 			}
-			tr.addEndpoints(tc.ep)
+			tr.OnAdd(tc.ep)
 			got := tr.ClusterLoadAssignmentCache.Values()
 			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("addEndpoints(%v): got: %v, want: %v", tc.ep, got, tc.want)
+				t.Fatalf("got: %v, want: %v", got, tc.want)
 			}
 		})
 	}
@@ -269,7 +269,7 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 	}{
 		"remove existing": {
 			setup: func(tr *Translator) {
-				tr.addEndpoints(endpoints("default", "simple", v1.EndpointSubset{
+				tr.OnAdd(endpoints("default", "simple", v1.EndpointSubset{
 					Addresses: addresses("192.168.183.24"),
 					Ports:     ports(8080),
 				}))
@@ -282,7 +282,7 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 		},
 		"remove different": {
 			setup: func(tr *Translator) {
-				tr.addEndpoints(endpoints("default", "simple", v1.EndpointSubset{
+				tr.OnAdd(endpoints("default", "simple", v1.EndpointSubset{
 					Addresses: addresses("192.168.183.24"),
 					Ports:     ports(8080),
 				}))
@@ -312,10 +312,10 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
 			}
 			tc.setup(tr)
-			tr.removeEndpoints(tc.ep)
+			tr.OnDelete(tc.ep)
 			got := tr.ClusterLoadAssignmentCache.Values()
 			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("removeEndpoints(%v): got: %v, want: %v", tc.ep, got, tc.want)
+				t.Fatalf("got: %v, want: %v", got, tc.want)
 			}
 		})
 	}
@@ -824,12 +824,12 @@ func TestTranslatorAddIngress(t *testing.T) {
 			tr.addIngress(tc.ing)
 			got := tr.VirtualHostCache.HTTP.Values()
 			if !reflect.DeepEqual(tc.ingress_http, got) {
-				t.Fatalf("addIngress(%v):\n (ingress_http) got: %v\nwant: %v", tc.ing, got, tc.ingress_http)
+				t.Fatalf("(ingress_http) want:\n%v\n got:\n%v", tc.ingress_http, got)
 			}
 
 			got = tr.VirtualHostCache.HTTPS.Values()
 			if !reflect.DeepEqual(tc.ingress_https, got) {
-				t.Fatalf("addIngress(%v):\n (ingress_https) got: %v\nwant: %v", tc.ing, got, tc.ingress_https)
+				t.Fatalf("(ingress_https) want:\n%v\n got:\n%v", tc.ingress_https, got)
 			}
 		})
 	}
@@ -844,7 +844,7 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 	}{
 		"remove existing": {
 			setup: func(tr *Translator) {
-				tr.addIngress(&v1beta1.Ingress{
+				tr.OnAdd(&v1beta1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
@@ -931,15 +931,15 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
 			}
 			tc.setup(tr)
-			tr.removeIngress(tc.ing)
+			tr.OnDelete(tc.ing)
 			got := tr.VirtualHostCache.HTTP.Values()
 			if !reflect.DeepEqual(tc.ingress_http, got) {
-				t.Fatalf("removeIngress(%v) (ingress_http): got: %v, want: %v", tc.ing, got, tc.ingress_http)
+				t.Fatalf("(ingress_http): got: %v, want: %v", got, tc.ingress_http)
 			}
 
 			got = tr.VirtualHostCache.HTTPS.Values()
 			if !reflect.DeepEqual(tc.ingress_https, got) {
-				t.Fatalf("removeIngress(%v) (ingress_https): got: %v, want: %v", tc.ing, got, tc.ingress_https)
+				t.Fatalf("(ingress_https): got: %v, want: %v", got, tc.ingress_https)
 			}
 		})
 	}
