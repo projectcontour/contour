@@ -821,7 +821,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 			if tc.setup != nil {
 				tc.setup(tr)
 			}
-			tr.addIngress(tc.ing)
+			tr.OnAdd(tc.ing)
 			got := tr.VirtualHostCache.HTTP.Values()
 			if !reflect.DeepEqual(tc.ingress_http, got) {
 				t.Fatalf("(ingress_http) want:\n%v\n got:\n%v", tc.ingress_http, got)
@@ -874,7 +874,7 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 		},
 		"remove different": {
 			setup: func(tr *Translator) {
-				tr.addIngress(&v1beta1.Ingress{
+				tr.OnAdd(&v1beta1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",

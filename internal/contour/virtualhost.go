@@ -30,7 +30,7 @@ type VirtualHostCache struct {
 
 // recomputevhost recomputes the ingress_http (HTTP) and ingress_https (HTTPS) record
 // from the vhost from list of ingresses supplied.
-func (v *VirtualHostCache) recomputevhost(vhost string, ingresses []*v1beta1.Ingress) {
+func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*v1beta1.Ingress) {
 
 	// handle ingress_https (TLS) vhost routes first.
 	vv := virtualhost(vhost)
