@@ -55,13 +55,11 @@ type Translator struct {
 	// went into creating them.
 	vhosts map[string][]*v1beta1.Ingress
 
-	ingresses map[metadata]*v1beta1.Ingress
-
-	// secrets stores tls secrets
-	secrets map[metadata]*v1.Secret
+	cache translatorCache
 }
 
 func (t *Translator) OnAdd(obj interface{}) {
+	t.cache.OnAdd(obj)
 	switch obj := obj.(type) {
 	case *v1.Service:
 		t.addService(obj)
@@ -77,6 +75,7 @@ func (t *Translator) OnAdd(obj interface{}) {
 }
 
 func (t *Translator) OnUpdate(oldObj, newObj interface{}) {
+	t.cache.OnUpdate(oldObj, newObj)
 	// TODO(dfc) need to inspect oldObj and remove unused parts of the config from the cache.
 	switch newObj := newObj.(type) {
 	case *v1.Service:
@@ -93,6 +92,7 @@ func (t *Translator) OnUpdate(oldObj, newObj interface{}) {
 }
 
 func (t *Translator) OnDelete(obj interface{}) {
+	t.cache.OnDelete(obj)
 	switch obj := obj.(type) {
 	case *v1.Service:
 		t.removeService(obj)
@@ -238,12 +238,7 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 		return
 	}
 
-	if t.ingresses == nil {
-		t.ingresses = make(map[metadata]*v1beta1.Ingress)
-	}
-	t.ingresses[metadata{name: i.Name, namespace: i.Namespace}] = i
-
-	t.recomputeListeners(t.ingresses, t.secrets)
+	t.recomputeListeners(t.cache.ingresses, t.cache.secrets)
 
 	// notify watchers that the vhost cache has probably changed.
 	defer t.VirtualHostCache.Notify()
@@ -288,9 +283,7 @@ func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 
 	defer t.VirtualHostCache.Notify()
 
-	delete(t.ingresses, metadata{name: i.Name, namespace: i.Namespace})
-
-	t.recomputeListeners(t.ingresses, t.secrets)
+	t.recomputeListeners(t.cache.ingresses, t.cache.secrets)
 
 	if i.Spec.Backend != nil {
 		delete(t.vhosts, "*")
@@ -318,17 +311,11 @@ func (t *Translator) addSecret(s *v1.Secret) {
 	t.Logger.Infof("caching secret %s/%s", s.Namespace, s.Name)
 	t.writeCerts(s)
 
-	if t.secrets == nil {
-		t.secrets = make(map[metadata]*v1.Secret)
-	}
-	t.secrets[metadata{name: s.Name, namespace: s.Namespace}] = s
-
-	t.recomputeTLSListener(t.ingresses, t.secrets)
+	t.recomputeTLSListener(t.cache.ingresses, t.cache.secrets)
 }
 
 func (t *Translator) removeSecret(s *v1.Secret) {
-	delete(t.secrets, metadata{name: s.Name, namespace: s.Namespace})
-	t.recomputeTLSListener(t.ingresses, t.secrets)
+	t.recomputeTLSListener(t.cache.ingresses, t.cache.secrets)
 }
 
 // writeSecret writes the contents of the secret to a fixed location on
@@ -351,8 +338,53 @@ func (t *Translator) writeCerts(s *v1.Secret) {
 	}
 }
 
-func servicename(meta metav1.ObjectMeta, port string) string {
-	return meta.Namespace + "/" + meta.Name + "/" + port
+type translatorCache struct {
+	ingresses map[metadata]*v1beta1.Ingress
+
+	// secrets stores tls secrets
+	secrets map[metadata]*v1.Secret
+}
+
+func (t *translatorCache) OnAdd(obj interface{}) {
+	switch obj := obj.(type) {
+	case *v1.Service:
+		// nada
+	case *v1.Endpoints:
+		// nada
+	case *v1beta1.Ingress:
+		if t.ingresses == nil {
+			t.ingresses = make(map[metadata]*v1beta1.Ingress)
+		}
+		t.ingresses[metadata{name: obj.Name, namespace: obj.Namespace}] = obj
+	case *v1.Secret:
+		if t.secrets == nil {
+			t.secrets = make(map[metadata]*v1.Secret)
+		}
+		t.secrets[metadata{name: obj.Name, namespace: obj.Namespace}] = obj
+	default:
+		// ignore
+	}
+}
+
+func (t *translatorCache) OnUpdate(oldObj, newObj interface{}) {
+	t.OnAdd(newObj)
+}
+
+func (t *translatorCache) OnDelete(obj interface{}) {
+	switch obj := obj.(type) {
+	case *v1.Service:
+		// nada
+	case *v1.Endpoints:
+		// nada
+	case *v1beta1.Ingress:
+		delete(t.ingresses, metadata{name: obj.Name, namespace: obj.Namespace})
+	case *v1.Secret:
+		delete(t.secrets, metadata{name: obj.Name, namespace: obj.Namespace})
+	case cache.DeletedFinalStateUnknown:
+		t.OnDelete(obj.Obj) // recurse into ourselves with the tombstoned value
+	default:
+		// ignore
+	}
 }
 
 // TODO(dfc) need tests
@@ -433,4 +465,8 @@ func apiconfigsource(clusters ...string) *v2.ConfigSource {
 			},
 		},
 	}
+}
+
+func servicename(meta metav1.ObjectMeta, port string) string {
+	return meta.Namespace + "/" + meta.Name + "/" + port
 }
