@@ -178,7 +178,7 @@ func (t *Translator) addEndpoints(e *v1.Endpoints) {
 
 		for _, p := range s.Ports {
 			cla := v2.ClusterLoadAssignment{
-				ClusterName: hashname(60, e.ObjectMeta.Namespace, e.ObjectMeta.Name, strconv.Itoa(int(p.Port))),
+				ClusterName: e.ObjectMeta.Namespace + "/" + e.ObjectMeta.Name + "/" + strconv.Itoa(int(p.Port)),
 				Endpoints: []*v2.LocalityLbEndpoints{{
 					Locality: &v2.Locality{
 						Region:  "ap-southeast-2",
