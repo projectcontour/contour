@@ -116,7 +116,7 @@ func (t *Translator) addService(svc *v1.Service) {
 		case "TCP":
 			config := &v2.Cluster_EdsClusterConfig{
 				EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
-				ServiceName: svc.ObjectMeta.Namespace + "/" + svc.ObjectMeta.Name + "/" + p.TargetPort.String(),
+				ServiceName: serviceName(svc.ObjectMeta.Namespace, svc.ObjectMeta.Name, p.TargetPort.String()),
 			}
 			if p.Name != "" {
 				// service port is named, so we must generate both a cluster for the port name
@@ -178,7 +178,8 @@ func (t *Translator) addEndpoints(e *v1.Endpoints) {
 
 		for _, p := range s.Ports {
 			cla := v2.ClusterLoadAssignment{
-				ClusterName: e.ObjectMeta.Namespace + "/" + e.ObjectMeta.Name + "/" + strconv.Itoa(int(p.Port)),
+				// matches serviceName as specified in corresponding cluster's EDS config
+				ClusterName: serviceName(e.ObjectMeta.Namespace, e.ObjectMeta.Name, strconv.Itoa(int(p.Port))),
 				Endpoints: []*v2.LocalityLbEndpoints{{
 					Locality: &v2.Locality{
 						Region:  "ap-southeast-2",
@@ -348,6 +349,10 @@ func (t *Translator) writeCerts(s *v1.Secret) {
 		t.Errorf("could not write cert %s/%s: %v", s.Namespace, s.Name, err)
 		return
 	}
+}
+
+func serviceName(namespace, name, port string) string {
+	return namespace + "/" + name + "/" + port
 }
 
 // TODO(dfc) need tests
