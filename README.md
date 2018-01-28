@@ -46,6 +46,8 @@ This command creates:
 - A Service of `type: LoadBalancer` that points to the Contour instances
 - Depending on your configuration, new cloud resources -- for example, ELBs in AWS
 
+See also [TLS support](docs/tls.md) for details on configuring TLS support. TLS is available in Contour version 0.3 and later.
+
 #### Example workload
 
 If you don't have an application ready to run with Contour, you can explore with [kuard][14].
@@ -99,11 +101,6 @@ See also the Kubernetes documentation for [Services][11] and [Ingress][12].
 The [detailed documentation][3] provides additional information, including an introduction to Envoy and an explanation of how Contour maps key Envoy concepts to Kubernetes.
 
 We've also got [an FAQ][18] for short-answer questions and conceptual stuff that doesn't quite belong in the docs.
-
-## Known limitations
-
-* Contour does not yet support customizations with annotations.
-* Contour does not yet support SSL/TLS.
 
 ## Troubleshooting
 
