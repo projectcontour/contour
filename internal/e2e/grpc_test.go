@@ -26,6 +26,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	cgrpc "github.com/heptio/contour/internal/grpc"
 	"google.golang.org/grpc"
+	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -203,6 +204,42 @@ func TestIngressPathRouteWithoutHost(t *testing.T) {
 	}, fetchRDS(t, cc))
 }
 
+// heptio/contour#186
+// Cluster.ServiceName and ClusterLoadAssignment.ClusterName should not be truncated.
+func TestClusterLongServiceName(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	rh.OnAdd(service(
+		"kuard",
+		"kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r",
+		v1.ServicePort{
+			Protocol:   "TCP",
+			Port:       8080,
+			TargetPort: intstr.FromInt(8080),
+		},
+	))
+
+	// check that it's been translated correctly.
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []*types.Any{
+			any(t, &v2.Cluster{
+				Name: "kuard/kbujbkuhdod66-edfcfc/8080",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					ServiceName: "kuard/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r/8080",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+			}),
+		},
+		TypeUrl: cgrpc.ClusterType,
+		Nonce:   "0",
+	}, fetchCDS(t, cc))
+}
+
 func fetchRDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
 	t.Helper()
 	rds := v2.NewRouteDiscoveryServiceClient(cc)
@@ -210,6 +247,19 @@ func fetchRDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
 	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 	resp, err := rds.FetchRoutes(ctx, new(v2.DiscoveryRequest))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return resp
+}
+
+func fetchCDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
+	t.Helper()
+	rds := v2.NewClusterDiscoveryServiceClient(cc)
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	defer cancel()
+	resp, err := rds.FetchClusters(ctx, new(v2.DiscoveryRequest))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -272,4 +322,27 @@ func dumpany(any []*types.Any) string {
 		}
 	}
 	return buf.String()
+}
+
+func service(ns, name string, ports ...v1.ServicePort) *v1.Service {
+	return &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: ports,
+		},
+	}
+}
+
+func apiconfigsource(clusters ...string) *v2.ConfigSource {
+	return &v2.ConfigSource{
+		ConfigSourceSpecifier: &v2.ConfigSource_ApiConfigSource{
+			ApiConfigSource: &v2.ApiConfigSource{
+				ApiType:     v2.ApiConfigSource_GRPC,
+				ClusterName: clusters,
+			},
+		},
+	}
 }
