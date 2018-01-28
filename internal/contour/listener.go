@@ -157,6 +157,7 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 	filters := []*v2.Filter{
 		httpfilter(ENVOY_HTTPS_LISTENER),
 	}
+
 	for _, i := range ingresses {
 		if !validTLSIngress(i) {
 			continue
@@ -171,7 +172,7 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 				FilterChainMatch: &v2.FilterChainMatch{
 					SniDomains: tls.Hosts,
 				},
-				TlsContext: tlscontext(i.Namespace, tls.SecretName),
+				TlsContext: tlscontext(i.Namespace, tls.SecretName, "h2", "http/1.1"),
 				Filters:    filters,
 			}
 			if lc.UseProxyProto {
@@ -242,7 +243,7 @@ func socketaddress(address string, port uint32) *v2.Address {
 	}
 }
 
-func tlscontext(namespace, name string) *v2.DownstreamTlsContext {
+func tlscontext(namespace, name string, alpnprotos ...string) *v2.DownstreamTlsContext {
 	const base = "/config/ssl"
 	return &v2.DownstreamTlsContext{
 		CommonTlsContext: &v2.CommonTlsContext{
@@ -258,6 +259,7 @@ func tlscontext(namespace, name string) *v2.DownstreamTlsContext {
 					},
 				},
 			}},
+			AlpnProtocols: alpnprotos,
 		},
 	}
 }
