@@ -31,6 +31,7 @@ import (
 	"github.com/heptio/contour/internal/log"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -41,7 +42,6 @@ type metadata struct {
 // Translator receives notifications from the Kubernetes API and translates those
 // objects into additions and removals entries of Envoy gRPC objects from a cache.
 type Translator struct {
-
 	// The logger for this Translator. There is no valid default, this value
 	// must be supplied by the caller.
 	log.Logger
@@ -116,7 +116,7 @@ func (t *Translator) addService(svc *v1.Service) {
 		case "TCP":
 			config := &v2.Cluster_EdsClusterConfig{
 				EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
-				ServiceName: svc.ObjectMeta.Namespace + "/" + svc.ObjectMeta.Name + "/" + p.TargetPort.String(),
+				ServiceName: servicename(svc.ObjectMeta, p.TargetPort.String()),
 			}
 			if p.Name != "" {
 				// service port is named, so we must generate both a cluster for the port name
@@ -178,7 +178,8 @@ func (t *Translator) addEndpoints(e *v1.Endpoints) {
 
 		for _, p := range s.Ports {
 			cla := v2.ClusterLoadAssignment{
-				ClusterName: hashname(60, e.ObjectMeta.Namespace, e.ObjectMeta.Name, strconv.Itoa(int(p.Port))),
+				// ClusterName must match Cluster.ServiceName
+				ClusterName: servicename(e.ObjectMeta, strconv.Itoa(int(p.Port))),
 				Endpoints: []*v2.LocalityLbEndpoints{{
 					Locality: &v2.Locality{
 						Region:  "ap-southeast-2",
@@ -348,6 +349,10 @@ func (t *Translator) writeCerts(s *v1.Secret) {
 		t.Errorf("could not write cert %s/%s: %v", s.Namespace, s.Name, err)
 		return
 	}
+}
+
+func servicename(meta metav1.ObjectMeta, port string) string {
+	return meta.Namespace + "/" + meta.Name + "/" + port
 }
 
 // TODO(dfc) need tests
