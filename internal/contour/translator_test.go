@@ -945,6 +945,56 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 	}
 }
 
+func TestClusterEDSConfigServiceNameMatchesLoadAssignmentClusterName(t *testing.T) {
+	tests := []struct {
+		name string
+		svc  *v1.Service
+		ep   *v1.Endpoints
+	}{
+		{
+			name: "simple service and endpoint",
+			svc: service("default", "simple", v1.ServicePort{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}),
+			ep: endpoints("default", "simple", v1.EndpointSubset{
+				Addresses: addresses("192.168.183.24"),
+				Ports:     ports(8080),
+			}),
+		},
+		{
+			name: "long namespace and service name",
+			svc: service("beurocratic-company-test-domain-1", "tiny-cog-department-test-instance", v1.ServicePort{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}),
+			ep: endpoints("beurocratic-company-test-domain-1", "tiny-cog-department-test-instance", v1.EndpointSubset{
+				Addresses: addresses("192.168.183.24"),
+				Ports:     ports(8080),
+			}),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			const NOFLAGS = 1 << 16
+			tr := &Translator{
+				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+			}
+			tr.addService(tc.svc)
+			tr.addEndpoints(tc.ep)
+			c := tr.ClusterCache.Values()
+			cla := tr.ClusterLoadAssignmentCache.Values()
+
+			if c[0].EdsClusterConfig.GetServiceName() != cla[0].ClusterName {
+				t.Errorf("cluster EDS config service name: %q does not match clusterLoadAssignment cluster name: %q", c[0].EdsClusterConfig.GetServiceName(), cla[0].ClusterName)
+			}
+		})
+	}
+}
+
 func TestHashname(t *testing.T) {
 	tests := []struct {
 		name string
