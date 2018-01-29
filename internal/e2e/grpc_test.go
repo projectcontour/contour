@@ -340,8 +340,8 @@ func apiconfigsource(clusters ...string) *v2.ConfigSource {
 	return &v2.ConfigSource{
 		ConfigSourceSpecifier: &v2.ConfigSource_ApiConfigSource{
 			ApiConfigSource: &v2.ApiConfigSource{
-				ApiType:     v2.ApiConfigSource_GRPC,
-				ClusterName: clusters,
+				ApiType:      v2.ApiConfigSource_GRPC,
+				ClusterNames: clusters,
 			},
 		},
 	}
