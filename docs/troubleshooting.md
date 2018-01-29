@@ -15,23 +15,49 @@ $ kubectl apply -f https://j.hept.io/contour-kuard-example
 
 ## Access the Envoy admin interface remotely
 
-By default the Envoy admin interface is bound to localhost.
-To access it remotely you can pass the flag `contour bootstrap --admin-address=0.0.0.0 /config/contour.yaml` in the `envoy-initconfig` init container for your Deployment or DaemonSet.
-This binds Envoy's admin interface to the Pod IP.
-(You can also pass `--admin-port=....` to change the port the admin interface is bound to).
+Getting access to the Envoy admin interface can be useful for diagnosing issues with routing or cluster health.
 
-If you wish to access the admin interface with kubeproxy, add the following stanza to your `contour` service object.
+### Enabling the admin interface
+
+To access Envoy's admin interface add the flag `--admin-address=0.0.0.0` in the `envoy-initconfig` init container for your Deployment or DaemonSet. 
+This binds Envoy's admin interface to the Pod IP on port 9001.
+If you are using Contour 0.4 or later, these options are the default.
+
+### Deploying the debug service.
+
+Deploy the [admin interface service][1], which looks like this:
 ```
-    - name: admin
-      port: 9001
-      protocol: TCP
+apiVersion: v1
+kind: Service
+metadata:
+ name: contour-admin
+ namespace: heptio-contour
+spec:
+ ports:
+ - port: 9001
+   name: admin
+   protocol: TCP
+ selector:
+   app: contour
+ type: ClusterIP
 ```
-After you start `kubectl proxy`, you can access the admin interface at this address:
+This will create a new service called `admin` on port `9001` bound to Contour's cluster IP. 
 
-http://127.0.0.1:8001/api/v1/namespaces/heptio-contour/services/contour:9001/proxy/
-
-**Warning** If you are using a service load balancer, this may cause your cloud provider to make the admin port accessible on your external load balancer IP.
+_Note_: It is not advisable to make the admin interface accessible to the internet by editing the `contour` service.
 **The admin interface has no authentication and may expose sensitive information**.
+Always deploy a new service for port 9001.
+
+### Access the interface via kubectl proxy.
+
+If your cluster IP is not routable from your workstation (which is unlikely), the easiest way to access the admin service is via `kubectl proxy`.
+Start `kubectl proxy` in a terminal session:
+```
+% kubectl proxy
+Starting to serve on 127.0.0.1:8001
+```
+Once `kubectl proxy` is running, you can access the admin interface at this address:
+
+http://127.0.0.1:8001/api/v1/namespaces/heptio-contour/services/contour-admin:9001/proxy/
 
 ## Can't make kube-lego work with Contour
 
@@ -41,3 +67,4 @@ This setting causes Contour to ignore the record, and the challenge fails.
 The current workaround is to manually edit the ingress object created by kube-lego to remove the `kubernetes.io/ingress.class` annotation. Or you can set the value of the annotation to `contour`.
 
 [0]: https://github.com/jetstack/kube-lego
+[1]: ../deployment/debug/debug-service.yaml

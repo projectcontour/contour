@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+ name: contour-admin
+ namespace: heptio-contour
+spec:
+ ports:
+ - port: 9001
+   name: admin
+   protocol: TCP
+ selector:
+   app: contour
+ type: ClusterIP
