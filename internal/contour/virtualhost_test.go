@@ -26,15 +26,22 @@ import (
 )
 
 func TestVirtualHostCacheRecomputevhost(t *testing.T) {
+	im := func(ings []*v1beta1.Ingress) map[metadata]*v1beta1.Ingress {
+		m := make(map[metadata]*v1beta1.Ingress)
+		for _, i := range ings {
+			m[metadata{name: i.Name, namespace: i.Namespace}] = i
+		}
+		return m
+	}
 	tests := map[string]struct {
 		vhost         string
-		ingresses     []*v1beta1.Ingress
+		ingresses     map[metadata]*v1beta1.Ingress
 		ingress_http  []*v2.VirtualHost
 		ingress_https []*v2.VirtualHost
 	}{
 		"default backend": {
 			vhost: "*",
-			ingresses: []*v1beta1.Ingress{{
+			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "simple",
 					Namespace: "default",
@@ -42,7 +49,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Spec: v1beta1.IngressSpec{
 					Backend: backend("backend", intstr.FromInt(80)),
 				},
-			}},
+			}}),
 			ingress_http: []*v2.VirtualHost{{
 				Name:    "*",
 				Domains: []string{"*"},
@@ -55,7 +62,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		},
 		"name based vhost": {
 			vhost: "httpbin.org",
-			ingresses: []*v1beta1.Ingress{{
+			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
 					Namespace: "default",
@@ -66,7 +73,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 						IngressRuleValue: ingressrulevalue(backend("httpbin-org", intstr.FromInt(80))),
 					}},
 				},
-			}},
+			}}),
 			ingress_http: []*v2.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
@@ -79,7 +86,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		},
 		"tls": {
 			vhost: "httpbin.org",
-			ingresses: []*v1beta1.Ingress{{
+			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
 					Namespace: "default",
@@ -94,7 +101,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 						IngressRuleValue: ingressrulevalue(backend("httpbin-org", intstr.FromInt(80))),
 					}},
 				},
-			}},
+			}}),
 			ingress_http: []*v2.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
@@ -114,7 +121,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		},
 		"tls, no http": {
 			vhost: "httpbin.org",
-			ingresses: []*v1beta1.Ingress{{
+			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
 					Namespace: "default",
@@ -132,7 +139,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 						IngressRuleValue: ingressrulevalue(backend("httpbin-org", intstr.FromInt(80))),
 					}},
 				},
-			}},
+			}}),
 			ingress_http: []*v2.VirtualHost{}, // kubernetes.io/ingress.allow-http: "false" prevents ingress_http
 			ingress_https: []*v2.VirtualHost{{
 				Name:    "httpbin.org",
@@ -145,7 +152,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		},
 		"tls, force https": {
 			vhost: "httpbin.org",
-			ingresses: []*v1beta1.Ingress{{
+			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
 					Namespace: "default",
@@ -163,7 +170,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 						IngressRuleValue: ingressrulevalue(backend("httpbin-org", intstr.FromInt(80))),
 					}},
 				},
-			}},
+			}}),
 			ingress_http: []*v2.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
@@ -184,7 +191,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		},
 		"regex vhost without match characters": {
 			vhost: "httpbin.org",
-			ingresses: []*v1beta1.Ingress{{
+			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
 					Namespace: "default",
@@ -202,7 +209,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			}}),
 			ingress_http: []*v2.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
@@ -215,7 +222,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		},
 		"regex vhost with match characters": {
 			vhost: "httpbin.org",
-			ingresses: []*v1beta1.Ingress{{
+			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
 					Namespace: "default",
@@ -233,7 +240,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			}}),
 			ingress_http: []*v2.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
@@ -246,7 +253,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		},
 		"named service port": {
 			vhost: "httpbin.org",
-			ingresses: []*v1beta1.Ingress{{
+			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
 					Namespace: "default",
@@ -257,7 +264,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 						IngressRuleValue: ingressrulevalue(backend("httpbin-org", intstr.FromString("http"))),
 					}},
 				},
-			}},
+			}}),
 			ingress_http: []*v2.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
@@ -270,7 +277,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		},
 		"multiple routes": {
 			vhost: "httpbin.org",
-			ingresses: []*v1beta1.Ingress{{
+			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
 					Namespace: "default",
@@ -291,7 +298,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			}}),
 			ingress_http: []*v2.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
@@ -307,7 +314,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		},
 		"multiple rules (httpbin.org)": {
 			vhost: "httpbin.org",
-			ingresses: []*v1beta1.Ingress{{
+			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
 					Namespace: "default",
@@ -321,7 +328,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 						IngressRuleValue: ingressrulevalue(backend("paul", intstr.FromString("paul"))),
 					}},
 				},
-			}},
+			}}),
 			ingress_http: []*v2.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
@@ -334,7 +341,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		},
 		"multiple rules (admin.httpbin.org)": {
 			vhost: "admin.httpbin.org",
-			ingresses: []*v1beta1.Ingress{{
+			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
 					Namespace: "default",
@@ -348,7 +355,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 						IngressRuleValue: ingressrulevalue(backend("paul", intstr.FromString("paul"))),
 					}},
 				},
-			}},
+			}}),
 			ingress_http: []*v2.VirtualHost{{
 				Name:    "admin.httpbin.org",
 				Domains: []string{"admin.httpbin.org"},
@@ -361,7 +368,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		},
 		"vhost name exceeds 60 chars": { // heptio/contour#25
 			vhost: "my-very-very-long-service-host-name.subdomain.boring-dept.my.company",
-			ingresses: []*v1beta1.Ingress{{
+			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-service-name",
 					Namespace: "default",
@@ -372,7 +379,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 						IngressRuleValue: ingressrulevalue(backend("my-service-name", intstr.FromInt(80))),
 					}},
 				},
-			}},
+			}}),
 			ingress_http: []*v2.VirtualHost{{
 				Name:    "d31bb322ca62bb395acad00b3cbf45a3aa1010ca28dca7cddb4f7db786fa",
 				Domains: []string{"my-very-very-long-service-host-name.subdomain.boring-dept.my.company"},
@@ -385,7 +392,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		},
 		"second ingress object extends an existing vhost": {
 			vhost: "httpbin.org",
-			ingresses: []*v1beta1.Ingress{{
+			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin-admin",
 					Namespace: "kube-system",
@@ -421,7 +428,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			}}),
 			ingress_http: []*v2.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
@@ -439,7 +446,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		// callback route for let's encrypt support.
 		"kube-lego style extend vhost definitions": {
 			vhost: "httpbin.davecheney.com",
-			ingresses: []*v1beta1.Ingress{{
+			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kube-lego-nginx",
 					Namespace: "kube-lego",
@@ -485,7 +492,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			}}),
 			ingress_http: []*v2.VirtualHost{{
 				Name:    "httpbin.davecheney.com",
 				Domains: []string{"httpbin.davecheney.com"},
@@ -501,7 +508,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		},
 		"IngressRuleValue without host should become the default vhost": { // heptio/contour#101
 			vhost: "*",
-			ingresses: []*v1beta1.Ingress{{
+			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "hello",
 					Namespace: "default",
@@ -521,7 +528,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 						},
 					}},
 				},
-			}},
+			}}),
 			ingress_http: []*v2.VirtualHost{{
 				Name:    "*",
 				Domains: []string{"*"},
@@ -543,12 +550,12 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			tr.recomputevhost(tc.vhost, tc.ingresses)
 			got := tr.VirtualHostCache.HTTP.Values()
 			if !reflect.DeepEqual(tc.ingress_http, got) {
-				t.Fatalf("recomputevhost(%v):\n (ingress_http) got: %+v\nwant: %+v", tc.vhost, got, tc.ingress_http)
+				t.Fatalf("recomputevhost(%v):\n (ingress_http) want:\n%+v\n got:\n%+v", tc.vhost, tc.ingress_http, got)
 			}
 
 			got = tr.VirtualHostCache.HTTPS.Values()
 			if !reflect.DeepEqual(tc.ingress_https, got) {
-				t.Fatalf("recomputevhost(%v):\n (ingress_https) got: %#v\nwant: %#v", tc.vhost, strip(got), strip(tc.ingress_https))
+				t.Fatalf("recomputevhost(%v):\n (ingress_https) want:\n%#v\ngot:\n%#v", tc.vhost, strip(tc.ingress_https), strip(got))
 			}
 		})
 	}

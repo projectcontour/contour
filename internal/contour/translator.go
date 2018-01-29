@@ -51,17 +51,11 @@ type Translator struct {
 	ListenerCache
 	VirtualHostCache
 
-	// vhosts stores a slice of vhosts with the ingress objects that
-	// went into creating them.
-	vhosts map[string][]*v1beta1.Ingress
-
-	ingresses map[metadata]*v1beta1.Ingress
-
-	// secrets stores tls secrets
-	secrets map[metadata]*v1.Secret
+	cache translatorCache
 }
 
 func (t *Translator) OnAdd(obj interface{}) {
+	t.cache.OnAdd(obj)
 	switch obj := obj.(type) {
 	case *v1.Service:
 		t.addService(obj)
@@ -77,6 +71,7 @@ func (t *Translator) OnAdd(obj interface{}) {
 }
 
 func (t *Translator) OnUpdate(oldObj, newObj interface{}) {
+	t.cache.OnUpdate(oldObj, newObj)
 	// TODO(dfc) need to inspect oldObj and remove unused parts of the config from the cache.
 	switch newObj := newObj.(type) {
 	case *v1.Service:
@@ -93,6 +88,7 @@ func (t *Translator) OnUpdate(oldObj, newObj interface{}) {
 }
 
 func (t *Translator) OnDelete(obj interface{}) {
+	t.cache.OnDelete(obj)
 	switch obj := obj.(type) {
 	case *v1.Service:
 		t.removeService(obj)
@@ -238,30 +234,15 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 		return
 	}
 
-	if t.ingresses == nil {
-		t.ingresses = make(map[metadata]*v1beta1.Ingress)
-	}
-	t.ingresses[metadata{name: i.Name, namespace: i.Namespace}] = i
-
-	t.recomputeListeners(t.ingresses, t.secrets)
+	t.recomputeListeners(t.cache.ingresses, t.cache.secrets)
 
 	// notify watchers that the vhost cache has probably changed.
 	defer t.VirtualHostCache.Notify()
 
-	if t.vhosts == nil {
-		t.vhosts = make(map[string][]*v1beta1.Ingress)
-	}
 	// handle the special case of the default ingress first.
 	if i.Spec.Backend != nil {
 		// update t.vhosts cache
-		vhosts := append(t.vhosts["*"], i)
-		if len(vhosts) > 1 {
-			t.Errorf("ingress %s/%s: default ingress already registered to %s/%s", i.Namespace, i.Name, vhosts[0].Namespace, vhosts[0].Name)
-			return
-		}
-		t.vhosts["*"] = vhosts
-		t.recomputevhost("*", vhosts)
-		return
+		t.recomputevhost("*", t.cache.vhosts["*"])
 	}
 
 	for _, rule := range i.Spec.Rules {
@@ -270,8 +251,7 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 			// If the host is unspecified, the Ingress routes all traffic based on the specified IngressRuleValue.
 			host = "*"
 		}
-		t.vhosts[host] = appendIfMissing(t.vhosts[host], i)
-		t.recomputevhost(host, t.vhosts[host])
+		t.recomputevhost(host, t.cache.vhosts[host])
 	}
 }
 
@@ -288,23 +268,19 @@ func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 
 	defer t.VirtualHostCache.Notify()
 
-	delete(t.ingresses, metadata{name: i.Name, namespace: i.Namespace})
-
-	t.recomputeListeners(t.ingresses, t.secrets)
+	t.recomputeListeners(t.cache.ingresses, t.cache.secrets)
 
 	if i.Spec.Backend != nil {
-		delete(t.vhosts, "*")
 		t.recomputevhost("*", nil)
-		return
-	}
-
-	if t.vhosts == nil {
-		t.vhosts = make(map[string][]*v1beta1.Ingress)
 	}
 
 	for _, rule := range i.Spec.Rules {
-		t.vhosts[rule.Host] = removeIfPresent(t.vhosts[rule.Host], i)
-		t.recomputevhost(rule.Host, t.vhosts[rule.Host])
+		host := rule.Host
+		if host == "" {
+			// If the host is unspecified, the Ingress routes all traffic based on the specified IngressRuleValue.
+			host = "*"
+		}
+		t.recomputevhost(rule.Host, t.cache.vhosts[host])
 	}
 }
 
@@ -318,17 +294,11 @@ func (t *Translator) addSecret(s *v1.Secret) {
 	t.Logger.Infof("caching secret %s/%s", s.Namespace, s.Name)
 	t.writeCerts(s)
 
-	if t.secrets == nil {
-		t.secrets = make(map[metadata]*v1.Secret)
-	}
-	t.secrets[metadata{name: s.Name, namespace: s.Namespace}] = s
-
-	t.recomputeTLSListener(t.ingresses, t.secrets)
+	t.recomputeTLSListener(t.cache.ingresses, t.cache.secrets)
 }
 
 func (t *Translator) removeSecret(s *v1.Secret) {
-	delete(t.secrets, metadata{name: s.Name, namespace: s.Namespace})
-	t.recomputeTLSListener(t.ingresses, t.secrets)
+	t.recomputeTLSListener(t.cache.ingresses, t.cache.secrets)
 }
 
 // writeSecret writes the contents of the secret to a fixed location on
@@ -351,29 +321,99 @@ func (t *Translator) writeCerts(s *v1.Secret) {
 	}
 }
 
-func servicename(meta metav1.ObjectMeta, port string) string {
-	return meta.Namespace + "/" + meta.Name + "/" + port
+type translatorCache struct {
+	ingresses map[metadata]*v1beta1.Ingress
+
+	// secrets stores tls secrets
+	secrets map[metadata]*v1.Secret
+
+	// vhosts stores a slice of vhosts with the ingress objects that
+	// went into creating them.
+	vhosts map[string]map[metadata]*v1beta1.Ingress
 }
 
-// TODO(dfc) need tests
-func appendIfMissing(haystack []*v1beta1.Ingress, needle *v1beta1.Ingress) []*v1beta1.Ingress {
-	for i := range haystack {
-		if haystack[i].Name == needle.Name && haystack[i].Namespace == needle.Namespace {
-			// replace element at i with needle, which may have been edited
-			haystack[i] = needle
-			return haystack
+func (t *translatorCache) OnAdd(obj interface{}) {
+	switch obj := obj.(type) {
+	case *v1.Service:
+		// nada
+	case *v1.Endpoints:
+		// nada
+	case *v1beta1.Ingress:
+		if t.ingresses == nil {
+			t.ingresses = make(map[metadata]*v1beta1.Ingress)
 		}
+		md := metadata{name: obj.Name, namespace: obj.Namespace}
+		t.ingresses[md] = obj
+		if t.vhosts == nil {
+			t.vhosts = make(map[string]map[metadata]*v1beta1.Ingress)
+		}
+		if obj.Spec.Backend != nil {
+			if _, ok := t.vhosts["*"]; !ok {
+				t.vhosts["*"] = make(map[metadata]*v1beta1.Ingress)
+			}
+			t.vhosts["*"][md] = obj
+		}
+		for _, rule := range obj.Spec.Rules {
+			host := rule.Host
+			if host == "" {
+				host = "*"
+			}
+			if _, ok := t.vhosts[host]; !ok {
+				t.vhosts[host] = make(map[metadata]*v1beta1.Ingress)
+			}
+			t.vhosts[host][md] = obj
+		}
+	case *v1.Secret:
+		if t.secrets == nil {
+			t.secrets = make(map[metadata]*v1.Secret)
+		}
+		t.secrets[metadata{name: obj.Name, namespace: obj.Namespace}] = obj
+	default:
+		// ignore
 	}
-	return append(haystack, needle)
 }
 
-func removeIfPresent(haystack []*v1beta1.Ingress, needle *v1beta1.Ingress) []*v1beta1.Ingress {
-	for i := range haystack {
-		if haystack[i].Name == needle.Name && haystack[i].Namespace == needle.Namespace {
-			return append(haystack[:i], haystack[i+1:]...)
-		}
+func (t *translatorCache) OnUpdate(oldObj, newObj interface{}) {
+	switch oldObj := oldObj.(type) {
+	case *v1beta1.Ingress:
+		// ingress objects are special because their contents can change
+		// which affects the t.vhost cache. The simplest way is to model
+		// update as delete, then add.
+		t.OnDelete(oldObj)
 	}
-	return haystack
+	t.OnAdd(newObj)
+}
+
+func (t *translatorCache) OnDelete(obj interface{}) {
+	switch obj := obj.(type) {
+	case *v1.Service:
+		// nada
+	case *v1.Endpoints:
+		// nada
+	case *v1beta1.Ingress:
+		md := metadata{name: obj.Name, namespace: obj.Namespace}
+		delete(t.ingresses, md)
+		delete(t.vhosts["*"], md)
+		for _, rule := range obj.Spec.Rules {
+			host := rule.Host
+			if host == "" {
+				host = "*"
+			}
+			delete(t.vhosts[host], md)
+			if len(t.vhosts[host]) == 0 {
+				delete(t.vhosts, host)
+			}
+		}
+		if len(t.vhosts["*"]) == 0 {
+			delete(t.vhosts, "*")
+		}
+	case *v1.Secret:
+		delete(t.secrets, metadata{name: obj.Name, namespace: obj.Namespace})
+	case cache.DeletedFinalStateUnknown:
+		t.OnDelete(obj.Obj) // recurse into ourselves with the tombstoned value
+	default:
+		// ignore
+	}
 }
 
 // hashname takes a lenth l and a varargs of strings s and returns a string whose length
@@ -433,4 +473,8 @@ func apiconfigsource(clusters ...string) *v2.ConfigSource {
 			},
 		},
 	}
+}
+
+func servicename(meta metav1.ObjectMeta, port string) string {
+	return meta.Namespace + "/" + meta.Name + "/" + port
 }
