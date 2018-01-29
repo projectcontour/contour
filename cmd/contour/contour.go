@@ -14,12 +14,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
@@ -33,6 +36,7 @@ import (
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/log/stdlog"
 	"github.com/heptio/contour/internal/workgroup"
+	"github.com/heptiolabs/healthcheck"
 )
 
 const (
@@ -91,6 +95,21 @@ func main() {
 		k8s.WatchEndpoints(&g, client, logger, buf)
 		k8s.WatchIngress(&g, client, logger, buf)
 		k8s.WatchSecrets(&g, client, logger, buf)
+
+		g.Add(func(stop <-chan struct{}) {
+			logger := logger.WithPrefix("healthcheck")
+			srv := &http.Server{
+				Handler:      healthcheck.NewHandler(),
+				Addr:         "0.0.0.0:8086",
+				WriteTimeout: 15 * time.Second,
+				ReadTimeout:  15 * time.Second,
+			}
+			go srv.ListenAndServe() // run server in another goroutine
+			logger.Infof("started, listening on %v", srv.Addr)
+			defer logger.Infof("stopped")
+			<-stop                             // wait for stop signal
+			srv.Shutdown(context.Background()) // shutdown and wait for server to exit
+		})
 
 		g.Add(func(stop <-chan struct{}) {
 			logger := logger.WithPrefix("gRPCAPI")

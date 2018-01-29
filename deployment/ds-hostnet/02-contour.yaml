@@ -36,6 +36,11 @@ spec:
         name: contour
         command: ["contour"]
         args: ["serve", "--incluster"]
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8086
+          periodSeconds: 5
       initContainers:
       - image: gcr.io/heptio-images/contour:master
         imagePullPolicy: Always
