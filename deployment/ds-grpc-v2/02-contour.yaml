@@ -40,7 +40,7 @@ spec:
         imagePullPolicy: Always
         name: envoy-initconfig
         command: ["contour"]
-        args: ["bootstrap", "/config/contour.yaml"]
+        args: ["bootstrap", "/config/contour.yaml", "--admin-address=0.0.0.0"]
         volumeMounts:
         - name: contour-config
           mountPath: /config
