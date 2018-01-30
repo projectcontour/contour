@@ -210,6 +210,7 @@ func TestClusterLongServiceName(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
 
+	// add service
 	rh.OnAdd(service(
 		"kuard",
 		"kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r",

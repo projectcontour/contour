@@ -108,6 +108,12 @@ func (t *Translator) OnDelete(obj interface{}) {
 }
 
 func (t *Translator) addService(svc *v1.Service) {
+	ep, ok := t.cache.endpoints[metadata{name: svc.Name, namespace: svc.Namespace}]
+	if !ok {
+		t.Infof("ignoring service update, cannot find matching endpoint %s/%s", svc.Namespace, svc.Name)
+	} else {
+		t.recomputeClusterLoadAssignment(nil, ep)
+	}
 	t.recomputeService(nil, svc)
 }
 
@@ -116,6 +122,16 @@ func (t *Translator) removeService(svc *v1.Service) {
 }
 
 func (t *Translator) addEndpoints(e *v1.Endpoints) {
+	if len(e.Subsets) < 1 {
+		// if there are no endpoints in this object, ignore it
+		// to avoid sending a noop notification to watchers.
+		return
+	}
+	_, ok := t.cache.services[metadata{name: e.Name, namespace: e.Namespace}]
+	if !ok {
+		t.Infof("ignoring endpoint update, cannot find matchin service %s/%s", e.Namespace, e.Name)
+		return
+	}
 	t.recomputeClusterLoadAssignment(nil, e)
 }
 

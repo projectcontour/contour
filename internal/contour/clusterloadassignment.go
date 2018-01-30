@@ -101,3 +101,10 @@ func endpoint(addr string, port int32) *v2.Endpoint {
 		},
 	}
 }
+
+func portname(p v1.EndpointPort) string {
+	if p.Name != "" {
+		return p.Name
+	}
+	return strconv.Itoa(int(p.Port))
+}
