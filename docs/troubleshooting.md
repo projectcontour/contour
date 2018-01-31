@@ -15,23 +15,17 @@ $ kubectl apply -f https://j.hept.io/contour-kuard-example
 
 ## Access the Envoy admin interface remotely
 
-By default the Envoy admin interface is bound to localhost.
-To access it remotely you can pass the flag `contour bootstrap --admin-address=0.0.0.0 /config/contour.yaml` in the `envoy-initconfig` init container for your Deployment or DaemonSet.
-This binds Envoy's admin interface to the Pod IP.
-(You can also pass `--admin-port=....` to change the port the admin interface is bound to).
+Getting access to the Envoy admin interface can be useful for diagnosing issues with routing or cluster health.
 
-If you wish to access the admin interface with kubeproxy, add the following stanza to your `contour` service object.
+The Envoy admin interface is bound by default to `http://127.0.0.1:9001`. 
+To access it from your workstation use `kubectl port-forward` like so,
 ```
-    - name: admin
-      port: 9001
-      protocol: TCP
+# Get one of the pods that matches the deployment/daemonset
+CONTOUR_POD=$(kubectl -n heptio-contour get pod -l app=contour -o jsonpath='{.items[0].metadata.name}')
+# Do the port forward to that pod
+kubectl -n heptio-contour port-forward $CONTOUR_POD 9001
 ```
-After you start `kubectl proxy`, you can access the admin interface at this address:
-
-http://127.0.0.1:8001/api/v1/namespaces/heptio-contour/services/contour:9001/proxy/
-
-**Warning** If you are using a service load balancer, this may cause your cloud provider to make the admin port accessible on your external load balancer IP.
-**The admin interface has no authentication and may expose sensitive information**.
+Then navigate to [http://127.0.0.1:9001/](http://127.0.0.1:9001/) to access the admin interface for the Envoy container running on that pod.
 
 ## Can't make kube-lego work with Contour
 
