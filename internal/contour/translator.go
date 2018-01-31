@@ -187,11 +187,7 @@ func (t *Translator) removeEndpoints(e *v1.Endpoints) {
 	defer t.ClusterLoadAssignmentCache.Notify()
 	for _, s := range e.Subsets {
 		for _, p := range s.Ports {
-			if p.Name != "" {
-				// endpoint port is named, so we must remove the named version
-				t.ClusterLoadAssignmentCache.Remove(hashname(60, e.ObjectMeta.Namespace, e.ObjectMeta.Name, p.Name))
-			}
-			t.ClusterLoadAssignmentCache.Remove(hashname(60, e.ObjectMeta.Namespace, e.ObjectMeta.Name, strconv.Itoa(int(p.Port))))
+			t.ClusterLoadAssignmentCache.Remove(servicename(e.ObjectMeta, strconv.Itoa(int(p.Port))))
 		}
 	}
 }

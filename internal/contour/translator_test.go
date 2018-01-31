@@ -303,6 +303,35 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 			}),
 			want: []*v2.ClusterLoadAssignment{},
 		},
+		"remove long name": {
+			setup: func(tr *Translator) {
+				e1 := endpoints(
+					"super-long-namespace-name-oh-boy",
+					"what-a-descriptive-service-name-you-must-be-so-proud",
+					v1.EndpointSubset{
+						Addresses: addresses(
+							"172.16.0.1",
+							"172.16.0.2",
+						),
+						Ports: ports(8000, 8443),
+					},
+				)
+				tr.OnAdd(e1)
+
+			},
+			ep: endpoints(
+				"super-long-namespace-name-oh-boy",
+				"what-a-descriptive-service-name-you-must-be-so-proud",
+				v1.EndpointSubset{
+					Addresses: addresses(
+						"172.16.0.1",
+						"172.16.0.2",
+					),
+					Ports: ports(8000, 8443),
+				},
+			),
+			want: []*v2.ClusterLoadAssignment{},
+		},
 	}
 
 	for name, tc := range tests {
