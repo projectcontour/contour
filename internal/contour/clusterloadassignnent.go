@@ -13,8 +13,49 @@
 
 package contour
 
+import v2 "github.com/envoyproxy/go-control-plane/api"
+
 // ClusterLoadAssignmentCache manage the contents of the gRPC EDS cache.
 type ClusterLoadAssignmentCache struct {
 	clusterLoadAssignmentCache
 	Cond
+}
+
+func clusterloadassignment(name string, lbendpoints ...*v2.LbEndpoint) *v2.ClusterLoadAssignment {
+	return &v2.ClusterLoadAssignment{
+		ClusterName: name,
+		Endpoints: []*v2.LocalityLbEndpoints{{
+			Locality: &v2.Locality{
+				Region:  "ap-southeast-2", // totally a guess
+				Zone:    "2b",
+				SubZone: "banana", // yeah, need to think of better values here
+			},
+			LbEndpoints: lbendpoints,
+		}},
+		Policy: &v2.ClusterLoadAssignment_Policy{
+			DropOverload: 0.0,
+		},
+	}
+}
+
+func lbendpoint(addr string, port int32) *v2.LbEndpoint {
+	return &v2.LbEndpoint{
+		Endpoint: endpoint(addr, port),
+	}
+}
+
+func endpoint(addr string, port int32) *v2.Endpoint {
+	return &v2.Endpoint{
+		Address: &v2.Address{
+			Address: &v2.Address_SocketAddress{
+				SocketAddress: &v2.SocketAddress{
+					Protocol: v2.SocketAddress_TCP,
+					Address:  addr,
+					PortSpecifier: &v2.SocketAddress_PortValue{
+						PortValue: uint32(port),
+					},
+				},
+			},
+		},
+	}
 }

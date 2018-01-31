@@ -137,7 +137,6 @@ func (t *Translator) addService(svc *v1.Service) {
 		default:
 			// ignore UDP and other port types.
 		}
-
 	}
 }
 
@@ -155,7 +154,6 @@ func (t *Translator) removeService(svc *v1.Service) {
 		default:
 			// ignore UDP and other port types.
 		}
-
 	}
 }
 
@@ -173,39 +171,14 @@ func (t *Translator) addEndpoints(e *v1.Endpoints) {
 		}
 
 		for _, p := range s.Ports {
-			cla := v2.ClusterLoadAssignment{
-				// ClusterName must match Cluster.ServiceName
-				ClusterName: servicename(e.ObjectMeta, strconv.Itoa(int(p.Port))),
-				Endpoints: []*v2.LocalityLbEndpoints{{
-					Locality: &v2.Locality{
-						Region:  "ap-southeast-2",
-						Zone:    "2b",
-						SubZone: "banana",
-					},
-				}},
-				Policy: &v2.ClusterLoadAssignment_Policy{
-					DropOverload: 0.0,
-				},
-			}
-
+			// ClusterName must match Cluster.ServiceName
+			cla := clusterloadassignment(servicename(e.ObjectMeta, strconv.Itoa(int(p.Port))))
 			for _, a := range s.Addresses {
 				cla.Endpoints[0].LbEndpoints = append(cla.Endpoints[0].LbEndpoints, &v2.LbEndpoint{
-					Endpoint: &v2.Endpoint{
-						Address: &v2.Address{
-							Address: &v2.Address_SocketAddress{
-								SocketAddress: &v2.SocketAddress{
-									Protocol: v2.SocketAddress_TCP,
-									Address:  a.IP,
-									PortSpecifier: &v2.SocketAddress_PortValue{
-										PortValue: uint32(p.Port),
-									},
-								},
-							},
-						},
-					},
+					Endpoint: endpoint(a.IP, p.Port),
 				})
 			}
-			t.ClusterLoadAssignmentCache.Add(&cla)
+			t.ClusterLoadAssignmentCache.Add(cla)
 		}
 	}
 }
