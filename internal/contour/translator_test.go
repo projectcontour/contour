@@ -223,7 +223,7 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 			Ports:     ports(8080),
 		}),
 		want: []*v2.ClusterLoadAssignment{
-			clusterloadassignment("default/simple/8080", lbendpoints(endpoint("192.168.183.24", 8080))),
+			clusterloadassignment("default/simple/8080", lbendpoint("192.168.183.24", 8080)),
 		},
 	}, {
 		name: "multiple addresses",
@@ -237,11 +237,11 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 			Ports: ports(80),
 		}),
 		want: []*v2.ClusterLoadAssignment{
-			clusterloadassignment("default/httpbin-org/80", lbendpoints(
-				endpoint("23.23.247.89", 80),
-				endpoint("50.17.192.147", 80),
-				endpoint("50.17.206.192", 80),
-				endpoint("50.19.99.160", 80)),
+			clusterloadassignment("default/httpbin-org/80",
+				lbendpoint("23.23.247.89", 80),
+				lbendpoint("50.17.192.147", 80),
+				lbendpoint("50.17.206.192", 80),
+				lbendpoint("50.19.99.160", 80),
 			),
 		},
 	}}
@@ -292,7 +292,7 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 				Ports:     ports(8080),
 			}),
 			want: []*v2.ClusterLoadAssignment{
-				clusterloadassignment("default/simple/8080", lbendpoints(endpoint("192.168.183.24", 8080))),
+				clusterloadassignment("default/simple/8080", lbendpoint("192.168.183.24", 8080)),
 			},
 		},
 		"remove non existant": {
@@ -1714,49 +1714,6 @@ func ports(ps ...int32) []v1.EndpointPort {
 		ports = append(ports, v1.EndpointPort{Port: p})
 	}
 	return ports
-}
-
-func clusterloadassignment(name string, lbendpoints []*v2.LbEndpoint) *v2.ClusterLoadAssignment {
-	return &v2.ClusterLoadAssignment{
-		ClusterName: name,
-		Endpoints: []*v2.LocalityLbEndpoints{{
-			Locality: &v2.Locality{
-				Region:  "ap-southeast-2", // totally a guess
-				Zone:    "2b",
-				SubZone: "banana", // yeah, need to think of better values here
-			},
-			LbEndpoints: lbendpoints,
-		}},
-		Policy: &v2.ClusterLoadAssignment_Policy{
-			DropOverload: 0.0,
-		},
-	}
-}
-
-func endpoint(addr string, port uint32) *v2.Endpoint {
-	return &v2.Endpoint{
-		Address: &v2.Address{
-			Address: &v2.Address_SocketAddress{
-				SocketAddress: &v2.SocketAddress{
-					Protocol: v2.SocketAddress_TCP,
-					Address:  addr,
-					PortSpecifier: &v2.SocketAddress_PortValue{
-						PortValue: port,
-					},
-				},
-			},
-		},
-	}
-}
-
-func lbendpoints(eps ...*v2.Endpoint) []*v2.LbEndpoint {
-	var lbep []*v2.LbEndpoint
-	for _, ep := range eps {
-		lbep = append(lbep, &v2.LbEndpoint{
-			Endpoint: ep,
-		})
-	}
-	return lbep
 }
 
 func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
