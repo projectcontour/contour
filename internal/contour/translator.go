@@ -24,7 +24,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
 
@@ -75,7 +74,11 @@ func (t *Translator) OnUpdate(oldObj, newObj interface{}) {
 	// TODO(dfc) need to inspect oldObj and remove unused parts of the config from the cache.
 	switch newObj := newObj.(type) {
 	case *v1.Service:
-		t.addService(newObj)
+		if oldObj, ok := oldObj.(*v1.Service); ok {
+			t.recomputeService(oldObj, newObj)
+		} else {
+			t.Errorf("OnUpdate service %#v received invalid oldObj %T: %#v", newObj, oldObj, oldObj)
+		}
 	case *v1.Endpoints:
 		t.addEndpoints(newObj)
 	case *v1beta1.Ingress:
@@ -106,55 +109,11 @@ func (t *Translator) OnDelete(obj interface{}) {
 }
 
 func (t *Translator) addService(svc *v1.Service) {
-	defer t.ClusterCache.Notify()
-	for _, p := range svc.Spec.Ports {
-		switch p.Protocol {
-		case "TCP":
-			config := &v2.Cluster_EdsClusterConfig{
-				EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
-				ServiceName: servicename(svc.ObjectMeta, p.TargetPort.String()),
-			}
-			if p.Name != "" {
-				// service port is named, so we must generate both a cluster for the port name
-				// and a cluster for the port number.
-				c := v2.Cluster{
-					Name:             hashname(60, svc.ObjectMeta.Namespace, svc.ObjectMeta.Name, p.Name),
-					Type:             v2.Cluster_EDS,
-					EdsClusterConfig: config,
-					ConnectTimeout:   250 * time.Millisecond,
-					LbPolicy:         v2.Cluster_ROUND_ROBIN,
-				}
-				t.ClusterCache.Add(&c)
-			}
-			c := v2.Cluster{
-				Name:             hashname(60, svc.ObjectMeta.Namespace, svc.ObjectMeta.Name, strconv.Itoa(int(p.Port))),
-				Type:             v2.Cluster_EDS,
-				EdsClusterConfig: config,
-				ConnectTimeout:   250 * time.Millisecond,
-				LbPolicy:         v2.Cluster_ROUND_ROBIN,
-			}
-			t.ClusterCache.Add(&c)
-		default:
-			// ignore UDP and other port types.
-		}
-	}
+	t.recomputeService(nil, svc)
 }
 
 func (t *Translator) removeService(svc *v1.Service) {
-	defer t.ClusterCache.Notify()
-	for _, p := range svc.Spec.Ports {
-		switch p.Protocol {
-		case "TCP":
-			if p.Name != "" {
-				// service port is named, so we must generate both a cluster for the port name
-				// and a cluster for the port number.
-				t.ClusterCache.Remove(hashname(60, svc.ObjectMeta.Namespace, svc.ObjectMeta.Name, p.Name))
-			}
-			t.ClusterCache.Remove(hashname(60, svc.ObjectMeta.Namespace, svc.ObjectMeta.Name, strconv.Itoa(int(p.Port))))
-		default:
-			// ignore UDP and other port types.
-		}
-	}
+	t.recomputeService(svc, nil)
 }
 
 func (t *Translator) addEndpoints(e *v1.Endpoints) {

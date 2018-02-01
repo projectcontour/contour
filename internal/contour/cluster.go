@@ -13,8 +13,112 @@
 
 package contour
 
+import (
+	"strconv"
+	"time"
+
+	v2 "github.com/envoyproxy/go-control-plane/api"
+	"k8s.io/api/core/v1"
+)
+
 // ClusterCache manage the contents of the gRPC SDS cache.
 type ClusterCache struct {
 	clusterCache
 	Cond
+}
+
+// recomputeService recomputes SDS cache entries.
+// If oldsvc is nil, entries in newsvc are unconditionally added to the SDS cache.
+// If oldsvc differs to newsvc, then the entries present only oldsvc will be removed from
+// the SDS cache, present in newsvc will be added. If newsvc is nil, entries in oldsvc
+// will be unconditionally deleted.
+func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
+	if oldsvc == newsvc {
+		// skip if oldsvc & newsvc == nil, or are the same object.
+		return
+	}
+
+	defer cc.Notify()
+
+	if oldsvc == nil {
+		// if oldsvc is nil, replace it with a blank spec so entries
+		// are unconditionally added.
+		oldsvc = &v1.Service{
+			ObjectMeta: newsvc.ObjectMeta,
+		}
+	}
+
+	if newsvc == nil {
+		// if newsvc is nil, replace it with a blank spec so entries
+		// are unconditaionlly deleted.
+		newsvc = &v1.Service{
+			ObjectMeta: oldsvc.ObjectMeta,
+		}
+	}
+
+	named := make(map[string]v1.ServicePort)
+	unnamed := make(map[int32]v1.ServicePort)
+	for _, p := range oldsvc.Spec.Ports {
+		// it is safe to use p.Name as the key because the API server enforces
+		// the invariant that Name will only be blank if there is a single port
+		// in the service spec. This there will only be one entry in the map,
+		// { "": p }
+		named[p.Name] = p
+		unnamed[p.Port] = p
+	}
+
+	for _, p := range newsvc.Spec.Ports {
+		switch p.Protocol {
+		case "TCP":
+			config := edsconfig("xds_cluster", servicename(newsvc.ObjectMeta, p.TargetPort.String()))
+			if p.Name != "" {
+				// service port is named, so we must generate both a cluster for the port name
+				// and a cluster for the port number.
+				c := edscluster(hashname(60, newsvc.ObjectMeta.Namespace, newsvc.ObjectMeta.Name, p.Name), config)
+				cc.Add(c)
+				delete(named, p.Name)
+			}
+			c := edscluster(hashname(60, newsvc.ObjectMeta.Namespace, newsvc.ObjectMeta.Name, strconv.Itoa(int(p.Port))), config)
+			cc.Add(c)
+			delete(unnamed, p.Port)
+		default:
+			// ignore UDP and other port types.
+		}
+	}
+
+	for name, p := range named {
+		switch p.Protocol {
+		case "TCP":
+			cc.Remove(hashname(60, oldsvc.ObjectMeta.Namespace, oldsvc.ObjectMeta.Name, name))
+		default:
+			// ignore UDP and other port types.
+		}
+	}
+
+	for port, p := range unnamed {
+		switch p.Protocol {
+		case "TCP":
+			cc.Remove(hashname(60, oldsvc.ObjectMeta.Namespace, oldsvc.ObjectMeta.Name, strconv.Itoa(int(port))))
+		default:
+			// ignore UDP and other port types.
+		}
+	}
+
+}
+
+func edscluster(name string, config *v2.Cluster_EdsClusterConfig) *v2.Cluster {
+	return &v2.Cluster{
+		Name:             name,
+		Type:             v2.Cluster_EDS,
+		EdsClusterConfig: config,
+		ConnectTimeout:   250 * time.Millisecond,
+		LbPolicy:         v2.Cluster_ROUND_ROBIN,
+	}
+}
+
+func edsconfig(source, name string) *v2.Cluster_EdsClusterConfig {
+	return &v2.Cluster_EdsClusterConfig{
+		EdsConfig:   apiconfigsource(source), // hard coded by initconfig
+		ServiceName: name,
+	}
 }
