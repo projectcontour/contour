@@ -22,7 +22,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
@@ -117,38 +116,11 @@ func (t *Translator) removeService(svc *v1.Service) {
 }
 
 func (t *Translator) addEndpoints(e *v1.Endpoints) {
-	if len(e.Subsets) < 1 {
-		// if there are no endpoints in this object, ignore it
-		// to avoid sending a noop notification to watchers.
-		return
-	}
-	defer t.ClusterLoadAssignmentCache.Notify()
-	for _, s := range e.Subsets {
-		// skip any subsets that don't ahve ready addresses or ports
-		if len(s.Addresses) == 0 || len(s.Ports) == 0 {
-			continue
-		}
-
-		for _, p := range s.Ports {
-			// ClusterName must match Cluster.ServiceName
-			cla := clusterloadassignment(servicename(e.ObjectMeta, strconv.Itoa(int(p.Port))))
-			for _, a := range s.Addresses {
-				cla.Endpoints[0].LbEndpoints = append(cla.Endpoints[0].LbEndpoints, &v2.LbEndpoint{
-					Endpoint: endpoint(a.IP, p.Port),
-				})
-			}
-			t.ClusterLoadAssignmentCache.Add(cla)
-		}
-	}
+	t.recomputeClusterLoadAssignment(nil, e)
 }
 
 func (t *Translator) removeEndpoints(e *v1.Endpoints) {
-	defer t.ClusterLoadAssignmentCache.Notify()
-	for _, s := range e.Subsets {
-		for _, p := range s.Ports {
-			t.ClusterLoadAssignmentCache.Remove(servicename(e.ObjectMeta, strconv.Itoa(int(p.Port))))
-		}
-	}
+	t.recomputeClusterLoadAssignment(e, nil)
 }
 
 func (t *Translator) addIngress(i *v1beta1.Ingress) {
