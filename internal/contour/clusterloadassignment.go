@@ -26,22 +26,58 @@ type ClusterLoadAssignmentCache struct {
 	Cond
 }
 
-// recomputeClusterLoadAssignment recomputes the EDS cache for newep.
-func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldep, newep *v1.Endpoints) {
+// recomputeClusterLoadAssignment recomputes the EDS cache taking into account old and new services and endpoints.
+func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldsvc, newsvc *v1.Service, oldep, newep *v1.Endpoints) {
 	if newep != nil && len(newep.Subsets) < 1 {
 		// if there are no endpoints in this object, ignore it
 		// to avoid sending a noop notification to watchers.
 		return
 	}
-	defer cc.Notify()
-	if newep == nil {
-		for _, s := range oldep.Subsets {
-			for _, p := range s.Ports {
-				cc.Remove(servicename(oldep.ObjectMeta, strconv.Itoa(int(p.Port))))
-			}
-		}
+
+	// skip computation if either old and new services or endpoints are equal (thus also handling nil)
+	if oldsvc == newsvc || oldep == newep {
 		return
 	}
+
+	defer cc.Notify()
+
+	// normalise all the paramters
+	if oldsvc == nil {
+		// if oldsvc is nil, replace it with a blank spec so entries
+		// are conditionally added.
+		oldsvc = &v1.Service{
+			ObjectMeta: newsvc.ObjectMeta,
+		}
+	}
+
+	if newsvc == nil {
+		// if newsvc is nil, replace it with a blank spec so entries
+		// are conditionally deleted.
+		newsvc = &v1.Service{
+			ObjectMeta: oldsvc.ObjectMeta,
+		}
+	}
+
+	if oldep == nil {
+		oldep = &v1.Endpoints{
+			ObjectMeta: newep.ObjectMeta,
+		}
+	}
+
+	if newep == nil {
+		newep = &v1.Endpoints{
+			ObjectMeta: oldep.ObjectMeta,
+		}
+	}
+
+	// sanity check
+	if newep.Name != newsvc.Name || newep.Namespace != newsvc.Namespace {
+		panic("service and endpoint document mismatch: service: " + newsvc.Namespace + "/" +
+			newsvc.Name + ", endpoint: " + newep.Namespace + "/" + newep.Name)
+	}
+
+	services := make(map[string]bool)
+	// add or update endpoints
 	for _, s := range newep.Subsets {
 		// skip any subsets that don't have ready addresses or ports
 		if len(s.Addresses) == 0 || len(s.Ports) == 0 {
@@ -49,16 +85,38 @@ func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldep, newe
 		}
 
 		for _, p := range s.Ports {
-			// ClusterName must match Cluster.ServiceName
-			// TODO(dfc) an endpoint document may list multiple sets of ports, only some of which may
-			// correspond to the specific cluster we're talking about.
-			cla := clusterloadassignment(servicename(newep.ObjectMeta, strconv.Itoa(int(p.Port))))
-			for _, a := range s.Addresses {
-				cla.Endpoints[0].LbEndpoints = append(cla.Endpoints[0].LbEndpoints, &v2.LbEndpoint{
-					Endpoint: endpoint(a.IP, p.Port),
-				})
+			for _, sp := range newsvc.Spec.Ports {
+				// TODO(dfc) ignore non tcp ports
+
+				// we have the generate a service name that matches the
+				// targetPort value in the matching service.
+				name := sp.TargetPort.String()
+				if p.Name != name {
+					if strconv.Itoa(int(p.Port)) != name {
+						// this sevice doesn't match and port in the endpoint
+						// skip it. We'll only match one svc and port pair.
+						continue
+					}
+				}
+				cla := clusterloadassignment(servicename(newep.ObjectMeta, name))
+				for _, a := range s.Addresses {
+					cla.Endpoints[0].LbEndpoints = append(cla.Endpoints[0].LbEndpoints, &v2.LbEndpoint{
+						Endpoint: endpoint(a.IP, p.Port),
+					})
+				}
+				cc.Add(cla)
+				services[name] = true
 			}
-			cc.Add(cla)
+		}
+	}
+
+	// remove endpoints that lack a matching endpoint
+	for _, p := range oldsvc.Spec.Ports {
+		switch p.Protocol {
+		case "TCP":
+			if !services[p.TargetPort.String()] {
+				cc.Remove(servicename(oldsvc.ObjectMeta, p.TargetPort.String()))
+			}
 		}
 	}
 }

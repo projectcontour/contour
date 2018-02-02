@@ -394,6 +394,22 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 		},
 		"remove long name": {
 			setup: func(tr *Translator) {
+				s1 := service(
+					"super-long-namespace-name-oh-boy",
+					"what-a-descriptive-service-name-you-must-be-so-proud",
+					v1.ServicePort{
+
+						Protocol:   "TCP",
+						Port:       80,
+						TargetPort: intstr.FromInt(8080),
+					},
+					v1.ServicePort{
+						Protocol:   "TCP",
+						Port:       443,
+						TargetPort: intstr.FromInt(8443),
+					},
+				)
+				tr.OnAdd(s1)
 				e1 := endpoints(
 					"super-long-namespace-name-oh-boy",
 					"what-a-descriptive-service-name-you-must-be-so-proud",
@@ -406,7 +422,6 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 					},
 				)
 				tr.OnAdd(e1)
-
 			},
 			ep: endpoints(
 				"super-long-namespace-name-oh-boy",

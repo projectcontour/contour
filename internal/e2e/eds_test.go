@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // test that adding, updating, and removing endpoints don't leave turds
@@ -31,6 +32,24 @@ import (
 func TestAddUpdateRemoveEndpoints(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
+
+	s1 := service(
+		"super-long-namespace-name-oh-boy",
+		"what-a-descriptive-service-name-you-must-be-so-proud",
+		v1.ServicePort{
+			Name:       "http",
+			Protocol:   "TCP",
+			Port:       80,
+			TargetPort: intstr.FromInt(8000),
+		},
+		v1.ServicePort{
+			Name:       "https",
+			Protocol:   "TCP",
+			Port:       443,
+			TargetPort: intstr.FromInt(8443),
+		},
+	)
+	rh.OnAdd(s1)
 
 	// e1 is a simple endpoint for two hosts, and two ports
 	// it has a long name to check that it's clustername is _not_
@@ -43,7 +62,13 @@ func TestAddUpdateRemoveEndpoints(t *testing.T) {
 				"172.16.0.1",
 				"172.16.0.2",
 			),
-			Ports: ports(8000, 8443),
+			Ports: []v1.EndpointPort{{
+				Name: "http",
+				Port: 8000,
+			}, {
+				Name: "https",
+				Port: 8443,
+			}},
 		},
 	)
 
@@ -60,6 +85,84 @@ func TestAddUpdateRemoveEndpoints(t *testing.T) {
 			)),
 			any(t, clusterloadassignment(
 				"super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/8443",
+				lbendpoint("172.16.0.1", 8443),
+				lbendpoint("172.16.0.2", 8443),
+			)),
+		},
+		TypeUrl: cgrpc.EndpointType,
+		Nonce:   "0",
+	}, fetchEDS(t, cc))
+
+	// s2 updates s1 to use a named target port
+	s2 := service(
+		"super-long-namespace-name-oh-boy",
+		"what-a-descriptive-service-name-you-must-be-so-proud",
+		v1.ServicePort{
+			Name:       "http",
+			Protocol:   "TCP",
+			Port:       80,
+			TargetPort: intstr.FromInt(8000),
+		},
+		v1.ServicePort{
+			Name:       "https",
+			Protocol:   "TCP",
+			Port:       443,
+			TargetPort: intstr.FromString("https"),
+		},
+	)
+	rh.OnUpdate(s1, s2)
+
+	// at this point the endpoint controller hasn't updated
+	// the endpoint.
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []*types.Any{
+			any(t, clusterloadassignment(
+				"super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/8000",
+				lbendpoint("172.16.0.1", 8000),
+				lbendpoint("172.16.0.2", 8000),
+			)),
+			any(t, clusterloadassignment(
+				"super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https",
+				lbendpoint("172.16.0.1", 8443),
+				lbendpoint("172.16.0.2", 8443),
+			)),
+		},
+		TypeUrl: cgrpc.EndpointType,
+		Nonce:   "0",
+	}, fetchEDS(t, cc))
+
+	// e2 updates e1 with the named target service
+	e2 := endpoints(
+		"super-long-namespace-name-oh-boy",
+		"what-a-descriptive-service-name-you-must-be-so-proud",
+		v1.EndpointSubset{
+			Addresses: addresses(
+				"172.16.0.1",
+				"172.16.0.2",
+			),
+			Ports: []v1.EndpointPort{{
+				Name: "http",
+				Port: 8080,
+			}, {
+				Name: "https",
+				Port: 8443,
+			}},
+		},
+	)
+	rh.OnUpdate(e1, e2)
+
+	// now the endpoint has been updated, EDS should reflect the new service name.
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []*types.Any{
+			any(t, clusterloadassignment(
+				"super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/8000",
+				lbendpoint("172.16.0.1", 8000),
+				lbendpoint("172.16.0.2", 8000),
+			)),
+			any(t, clusterloadassignment(
+				"super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https",
 				lbendpoint("172.16.0.1", 8443),
 				lbendpoint("172.16.0.2", 8443),
 			)),
@@ -134,13 +237,13 @@ func clusterloadassignment(name string, lbendpoints ...*v2.LbEndpoint) *v2.Clust
 		},
 	}
 }
-func lbendpoint(addr string, port int32) *v2.LbEndpoint {
+func lbendpoint(addr string, port uint32) *v2.LbEndpoint {
 	return &v2.LbEndpoint{
 		Endpoint: endpoint(addr, port),
 	}
 }
 
-func endpoint(addr string, port int32) *v2.Endpoint {
+func endpoint(addr string, port uint32) *v2.Endpoint {
 	return &v2.Endpoint{
 		Address: &v2.Address{
 			Address: &v2.Address_SocketAddress{
@@ -148,7 +251,7 @@ func endpoint(addr string, port int32) *v2.Endpoint {
 					Protocol: v2.SocketAddress_TCP,
 					Address:  addr,
 					PortSpecifier: &v2.SocketAddress_PortValue{
-						PortValue: uint32(port),
+						PortValue: port,
 					},
 				},
 			},
