@@ -134,13 +134,14 @@ func clusterloadassignment(name string, lbendpoints ...*v2.LbEndpoint) *v2.Clust
 		},
 	}
 }
-func lbendpoint(addr string, port int32) *v2.LbEndpoint {
+
+func lbendpoint(addr string, port uint32) *v2.LbEndpoint {
 	return &v2.LbEndpoint{
 		Endpoint: endpoint(addr, port),
 	}
 }
 
-func endpoint(addr string, port int32) *v2.Endpoint {
+func endpoint(addr string, port uint32) *v2.Endpoint {
 	return &v2.Endpoint{
 		Address: &v2.Address{
 			Address: &v2.Address_SocketAddress{
@@ -148,10 +149,20 @@ func endpoint(addr string, port int32) *v2.Endpoint {
 					Protocol: v2.SocketAddress_TCP,
 					Address:  addr,
 					PortSpecifier: &v2.SocketAddress_PortValue{
-						PortValue: uint32(port),
+						PortValue: port,
 					},
 				},
 			},
 		},
 	}
+}
+
+func lbendpoints(eps ...*v2.Endpoint) []*v2.LbEndpoint {
+	var lbep []*v2.LbEndpoint
+	for _, ep := range eps {
+		lbep = append(lbep, &v2.LbEndpoint{
+			Endpoint: ep,
+		})
+	}
+	return lbep
 }
