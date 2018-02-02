@@ -73,7 +73,7 @@ static_resources:
     hosts:
     - socket_address:
         address: {{ if .XDSAddress }}{{ .XDSAddress }}{{ else }}127.0.0.1{{ end }}
-        port_value: {{ if .XDSGRPCPort }}{{ .XDSGRPCPOrt }}{{ else }}8001{{ end }}
+        port_value: {{ if .XDSGRPCPort }}{{ .XDSGRPCPort }}{{ else }}8001{{ end }}
     lb_policy: ROUND_ROBIN
     http2_protocol_options: {}
 admin:

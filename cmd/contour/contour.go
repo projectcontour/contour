@@ -20,6 +20,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
@@ -33,10 +34,6 @@ import (
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/log/stdlog"
 	"github.com/heptio/contour/internal/workgroup"
-)
-
-const (
-	V2_API_ADDRESS = "127.0.0.1:8001" // v2 gRPC
 )
 
 // this is necessary due to #113 wherein glog neccessitates a call to flag.Parse
@@ -59,10 +56,14 @@ func main() {
 	path := bootstrap.Arg("path", "Configuration file.").Required().String()
 	bootstrap.Flag("admin-address", "Envoy admin interface address").StringVar(&config.AdminAddress)
 	bootstrap.Flag("admin-port", "Envoy admin interface port").IntVar(&config.AdminPort)
+	bootstrap.Flag("xds-address", "xDS gRPC API address").StringVar(&config.XDSAddress)
+	bootstrap.Flag("xds-port", "xDS gRPC API port").IntVar(&config.XDSGRPCPort)
 
 	serve := app.Command("serve", "Serve xDS API traffic")
 	inCluster := serve.Flag("incluster", "use in cluster configuration.").Bool()
 	kubeconfig := serve.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).String()
+	xdsAddr := serve.Flag("xds-address", "xDS gRPC API address").Default("127.0.0.1").String()
+	xdsPort := serve.Flag("xds-port", "xDS gRPC API port").Default("8001").Int()
 
 	// translator configuration
 	serve.Flag("envoy-http-address", "Envoy HTTP listener address").StringVar(&t.HTTPAddress)
@@ -94,9 +95,10 @@ func main() {
 
 		g.Add(func(stop <-chan struct{}) {
 			logger := logger.WithPrefix("gRPCAPI")
-			l, err := net.Listen("tcp", V2_API_ADDRESS)
+			addr := net.JoinHostPort(*xdsAddr, strconv.Itoa(*xdsPort))
+			l, err := net.Listen("tcp", addr)
 			if err != nil {
-				logger.Errorf("could not listen on %s: %v", V2_API_ADDRESS, err)
+				logger.Errorf("could not listen on %s: %v", addr, err)
 				return // TODO(dfc) should return the error not log it
 			}
 			s := grpc.NewAPI(logger, t)
