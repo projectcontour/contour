@@ -13,12 +13,54 @@
 
 package contour
 
-import v2 "github.com/envoyproxy/go-control-plane/api"
+import (
+	"strconv"
+
+	v2 "github.com/envoyproxy/go-control-plane/api"
+	"k8s.io/api/core/v1"
+)
 
 // ClusterLoadAssignmentCache manage the contents of the gRPC EDS cache.
 type ClusterLoadAssignmentCache struct {
 	clusterLoadAssignmentCache
 	Cond
+}
+
+// recomputeClusterLoadAssignment recomputes the EDS cache for newep.
+func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldep, newep *v1.Endpoints) {
+	if newep != nil && len(newep.Subsets) < 1 {
+		// if there are no endpoints in this object, ignore it
+		// to avoid sending a noop notification to watchers.
+		return
+	}
+	defer cc.Notify()
+	if newep == nil {
+		for _, s := range oldep.Subsets {
+			for _, p := range s.Ports {
+				cc.Remove(servicename(oldep.ObjectMeta, strconv.Itoa(int(p.Port))))
+			}
+		}
+		return
+	}
+	for _, s := range newep.Subsets {
+		// skip any subsets that don't have ready addresses or ports
+		if len(s.Addresses) == 0 || len(s.Ports) == 0 {
+			continue
+		}
+
+		for _, p := range s.Ports {
+			// ClusterName must match Cluster.ServiceName
+			// TODO(dfc) an endpoint document may list multiple sets of ports, only some of which may
+			// correspond to the specific cluster we're talking about.
+			cla := clusterloadassignment(servicename(newep.ObjectMeta, strconv.Itoa(int(p.Port))))
+			for _, a := range s.Addresses {
+				cla.Endpoints[0].LbEndpoints = append(cla.Endpoints[0].LbEndpoints, &v2.LbEndpoint{
+					Endpoint: endpoint(a.IP, p.Port),
+				})
+			}
+			cc.Add(cla)
+		}
+	}
 }
 
 func clusterloadassignment(name string, lbendpoints ...*v2.LbEndpoint) *v2.ClusterLoadAssignment {
