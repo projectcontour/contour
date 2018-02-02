@@ -281,10 +281,16 @@ func TestTranslatorRemoveService(t *testing.T) {
 func TestTranslatorAddEndpoints(t *testing.T) {
 	tests := []struct {
 		name string
+		svc  *v1.Service
 		ep   *v1.Endpoints
 		want []*v2.ClusterLoadAssignment
 	}{{
 		name: "simple",
+		svc: service("default", "simple", v1.ServicePort{
+			Protocol:   "TCP",
+			Port:       80,
+			TargetPort: intstr.FromInt(8080),
+		}),
 		ep: endpoints("default", "simple", v1.EndpointSubset{
 			Addresses: addresses("192.168.183.24"),
 			Ports:     ports(8080),
@@ -294,6 +300,11 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 		},
 	}, {
 		name: "multiple addresses",
+		svc: service("default", "httpbin-org", v1.ServicePort{
+			Protocol:   "TCP",
+			Port:       80,
+			TargetPort: intstr.FromInt(80),
+		}),
 		ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
 			Addresses: addresses(
 				"23.23.247.89",
@@ -315,10 +326,11 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
+			out := &testLogger{t}
 			tr := &Translator{
-				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+				Logger: stdlog.New(out, out, 0),
 			}
+			tr.OnAdd(tc.svc)
 			tr.OnAdd(tc.ep)
 			got := tr.ClusterLoadAssignmentCache.Values()
 			if !reflect.DeepEqual(tc.want, got) {
@@ -336,6 +348,11 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 	}{
 		"remove existing": {
 			setup: func(tr *Translator) {
+				tr.OnAdd(service("default", "simple", v1.ServicePort{
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(8080),
+				}))
 				tr.OnAdd(endpoints("default", "simple", v1.EndpointSubset{
 					Addresses: addresses("192.168.183.24"),
 					Ports:     ports(8080),
@@ -349,6 +366,11 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 		},
 		"remove different": {
 			setup: func(tr *Translator) {
+				tr.OnAdd(service("default", "simple", v1.ServicePort{
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(8080),
+				}))
 				tr.OnAdd(endpoints("default", "simple", v1.EndpointSubset{
 					Addresses: addresses("192.168.183.24"),
 					Ports:     ports(8080),
@@ -1079,8 +1101,8 @@ func TestClusterEDSConfigServiceNameMatchesLoadAssignmentClusterName(t *testing.
 			tr := &Translator{
 				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
 			}
-			tr.addService(tc.svc)
-			tr.addEndpoints(tc.ep)
+			tr.OnAdd(tc.svc)
+			tr.OnAdd(tc.ep)
 			c := tr.ClusterCache.Values()
 			cla := tr.ClusterLoadAssignmentCache.Values()
 
@@ -1827,4 +1849,13 @@ func ingressrulevalue(backend *v1beta1.IngressBackend) v1beta1.IngressRuleValue 
 			}},
 		},
 	}
+}
+
+type testLogger struct {
+	*testing.T
+}
+
+func (t *testLogger) Write(buf []byte) (int, error) {
+	t.Logf("%s", buf)
+	return len(buf), nil
 }
