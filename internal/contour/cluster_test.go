@@ -193,6 +193,39 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 			}},
 		},
+		"update, remove, and rename a named port": {
+			oldObj: service("default", "kuard",
+				v1.ServicePort{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(8080),
+				},
+				v1.ServicePort{
+					Name:       "https",
+					Protocol:   "TCP",
+					Port:       443,
+					TargetPort: intstr.FromInt(8443),
+				},
+			),
+			newObj: service("default", "kuard",
+				v1.ServicePort{
+					Protocol:   "TCP",
+					Port:       443,
+					TargetPort: intstr.FromInt(8000),
+				},
+			),
+			want: []*v2.Cluster{{
+				Name: "default/kuard/443",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					ServiceName: "default/kuard/8000",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+			}},
+		},
 	}
 
 	for name, tc := range tests {

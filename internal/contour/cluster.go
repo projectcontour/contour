@@ -27,7 +27,8 @@ type ClusterCache struct {
 	Cond
 }
 
-// recomputeService recomputes SDS cache entries.
+// recomputeService recomputes SDS cache entries, adding, updating, or removing
+// entries as required.
 // If oldsvc is nil, entries in newsvc are unconditionally added to the SDS cache.
 // If oldsvc differs to newsvc, then the entries present only oldsvc will be removed from
 // the SDS cache, present in newsvc will be added. If newsvc is nil, entries in oldsvc
@@ -56,17 +57,10 @@ func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 		}
 	}
 
+	// iterate over all ports in newsvc adding or updating their records and
+	// recording that face in named and unnamed.
 	named := make(map[string]v1.ServicePort)
 	unnamed := make(map[int32]v1.ServicePort)
-	for _, p := range oldsvc.Spec.Ports {
-		// it is safe to use p.Name as the key because the API server enforces
-		// the invariant that Name will only be blank if there is a single port
-		// in the service spec. This there will only be one entry in the map,
-		// { "": p }
-		named[p.Name] = p
-		unnamed[p.Port] = p
-	}
-
 	for _, p := range newsvc.Spec.Ports {
 		switch p.Protocol {
 		case "TCP":
@@ -76,34 +70,35 @@ func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 				// and a cluster for the port number.
 				c := edscluster(hashname(60, newsvc.ObjectMeta.Namespace, newsvc.ObjectMeta.Name, p.Name), config)
 				cc.Add(c)
-				delete(named, p.Name)
+				// it is safe to use p.Name as the key because the API server enforces
+				// the invariant that Name will only be blank if there is a single port
+				// in the service spec. This there will only be one entry in the map,
+				// { "": p }
+				named[p.Name] = p
 			}
 			c := edscluster(hashname(60, newsvc.ObjectMeta.Namespace, newsvc.ObjectMeta.Name, strconv.Itoa(int(p.Port))), config)
 			cc.Add(c)
-			delete(unnamed, p.Port)
+			unnamed[p.Port] = p
 		default:
 			// ignore UDP and other port types.
 		}
 	}
 
-	for name, p := range named {
+	// iterate over all the ports in oldsvc, if they are not found in named or unnamed then remove their
+	// entires from the cache.
+	for _, p := range oldsvc.Spec.Ports {
 		switch p.Protocol {
 		case "TCP":
-			cc.Remove(hashname(60, oldsvc.ObjectMeta.Namespace, oldsvc.ObjectMeta.Name, name))
+			if _, found := named[p.Name]; !found {
+				cc.Remove(hashname(60, oldsvc.ObjectMeta.Namespace, oldsvc.ObjectMeta.Name, p.Name))
+			}
+			if _, found := unnamed[p.Port]; !found {
+				cc.Remove(hashname(60, oldsvc.ObjectMeta.Namespace, oldsvc.ObjectMeta.Name, strconv.Itoa(int(p.Port))))
+			}
 		default:
 			// ignore UDP and other port types.
 		}
 	}
-
-	for port, p := range unnamed {
-		switch p.Protocol {
-		case "TCP":
-			cc.Remove(hashname(60, oldsvc.ObjectMeta.Namespace, oldsvc.ObjectMeta.Name, strconv.Itoa(int(port))))
-		default:
-			// ignore UDP and other port types.
-		}
-	}
-
 }
 
 func edscluster(name string, config *v2.Cluster_EdsClusterConfig) *v2.Cluster {
