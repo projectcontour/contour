@@ -209,3 +209,160 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 		Nonce:   "0",
 	}, fetchCDS(t, cc))
 }
+
+// pathological hard case, one service is removed, the other is moved to a different port, and its name removed.
+func TestClusterRenameUpdateDelete(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	s1 := service("default", "kuard",
+		v1.ServicePort{
+			Name:       "http",
+			Protocol:   "TCP",
+			Port:       80,
+			TargetPort: intstr.FromInt(8080),
+		},
+		v1.ServicePort{
+			Name:       "https",
+			Protocol:   "TCP",
+			Port:       443,
+			TargetPort: intstr.FromInt(8443),
+		},
+	)
+
+	rh.OnAdd(s1)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []*types.Any{
+			any(t, &v2.Cluster{
+				Name: "default/kuard/443",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					ServiceName: "default/kuard/8443",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+			}),
+			any(t, &v2.Cluster{
+				Name: "default/kuard/80",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					ServiceName: "default/kuard/8080",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+			}),
+			any(t, &v2.Cluster{
+				Name: "default/kuard/http",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					ServiceName: "default/kuard/8080",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+			}),
+			any(t, &v2.Cluster{
+				Name: "default/kuard/https",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					ServiceName: "default/kuard/8443",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+			}),
+		},
+		TypeUrl: cgrpc.ClusterType,
+		Nonce:   "0",
+	}, fetchCDS(t, cc))
+
+	// s2 removes the name on port 80, moves it to port 443 and deletes the https port
+	s2 := service("default", "kuard",
+		v1.ServicePort{
+			Protocol:   "TCP",
+			Port:       443,
+			TargetPort: intstr.FromInt(8000),
+		},
+	)
+
+	rh.OnUpdate(s1, s2)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []*types.Any{
+			any(t, &v2.Cluster{
+				Name: "default/kuard/443",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					ServiceName: "default/kuard/8000",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+			}),
+		},
+		TypeUrl: cgrpc.ClusterType,
+		Nonce:   "0",
+	}, fetchCDS(t, cc))
+
+	// now replace s2 with s1 to check it works in the other direction.
+	rh.OnUpdate(s2, s1)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []*types.Any{
+			any(t, &v2.Cluster{
+				Name: "default/kuard/443",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					ServiceName: "default/kuard/8443",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+			}),
+			any(t, &v2.Cluster{
+				Name: "default/kuard/80",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					ServiceName: "default/kuard/8080",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+			}),
+			any(t, &v2.Cluster{
+				Name: "default/kuard/http",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					ServiceName: "default/kuard/8080",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+			}),
+			any(t, &v2.Cluster{
+				Name: "default/kuard/https",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					ServiceName: "default/kuard/8443",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+			}),
+		},
+		TypeUrl: cgrpc.ClusterType,
+		Nonce:   "0",
+	}, fetchCDS(t, cc))
+
+	// cleanup and check
+	rh.OnDelete(s1)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   []*types.Any{},
+		TypeUrl:     cgrpc.ClusterType,
+		Nonce:       "0",
+	}, fetchCDS(t, cc))
+}
