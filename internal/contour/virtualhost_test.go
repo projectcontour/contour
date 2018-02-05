@@ -55,7 +55,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"*"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"),
-					Action: clusteraction("default/backend/80"),
+					Action: clusteraction("default/backend/80", map[string]string{}),
 				}},
 			}},
 			ingress_https: []*v2.VirtualHost{},
@@ -79,7 +79,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"), // match all
-					Action: clusteraction("default/httpbin-org/80"),
+					Action: clusteraction("default/httpbin-org/80", map[string]string{}),
 				}},
 			}},
 			ingress_https: []*v2.VirtualHost{},
@@ -107,7 +107,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"), // match all
-					Action: clusteraction("default/httpbin-org/80"),
+					Action: clusteraction("default/httpbin-org/80", map[string]string{}),
 				}},
 			}},
 			ingress_https: []*v2.VirtualHost{{
@@ -115,7 +115,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"), // match all
-					Action: clusteraction("default/httpbin-org/80"),
+					Action: clusteraction("default/httpbin-org/80", map[string]string{}),
 				}},
 			}},
 		},
@@ -146,7 +146,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"), // match all
-					Action: clusteraction("default/httpbin-org/80"),
+					Action: clusteraction("default/httpbin-org/80", map[string]string{}),
 				}},
 			}},
 		},
@@ -176,7 +176,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"), // match all
-					Action: clusteraction("default/httpbin-org/80"),
+					Action: clusteraction("default/httpbin-org/80", map[string]string{}),
 				}},
 				RequireTls: v2.VirtualHost_ALL,
 			}},
@@ -185,7 +185,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"), // match all
-					Action: clusteraction("default/httpbin-org/80"),
+					Action: clusteraction("default/httpbin-org/80", map[string]string{}),
 				}},
 			}},
 		},
@@ -215,7 +215,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/ip"), // if the field does not contact any regex characters, we treat it as a prefix
-					Action: clusteraction("default/httpbin-org/80"),
+					Action: clusteraction("default/httpbin-org/80", map[string]string{}),
 				}},
 			}},
 			ingress_https: []*v2.VirtualHost{},
@@ -246,7 +246,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  regexmatch("/get.*"),
-					Action: clusteraction("default/httpbin-org/80"),
+					Action: clusteraction("default/httpbin-org/80", map[string]string{}),
 				}},
 			}},
 			ingress_https: []*v2.VirtualHost{},
@@ -270,7 +270,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"),
-					Action: clusteraction("default/httpbin-org/http"),
+					Action: clusteraction("default/httpbin-org/http", map[string]string{}),
 				}},
 			}},
 			ingress_https: []*v2.VirtualHost{},
@@ -304,10 +304,10 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/peter"),
-					Action: clusteraction("default/peter/80"),
+					Action: clusteraction("default/peter/80", map[string]string{}),
 				}, {
 					Match:  prefixmatch("/paul"),
-					Action: clusteraction("default/paul/paul"),
+					Action: clusteraction("default/paul/paul", map[string]string{}),
 				}},
 			}},
 			ingress_https: []*v2.VirtualHost{},
@@ -334,7 +334,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"),
-					Action: clusteraction("default/peter/80"),
+					Action: clusteraction("default/peter/80", map[string]string{}),
 				}},
 			}},
 			ingress_https: []*v2.VirtualHost{},
@@ -361,7 +361,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"admin.httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"),
-					Action: clusteraction("default/paul/paul"),
+					Action: clusteraction("default/paul/paul", map[string]string{}),
 				}},
 			}},
 			ingress_https: []*v2.VirtualHost{},
@@ -385,7 +385,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"my-very-very-long-service-host-name.subdomain.boring-dept.my.company"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"),
-					Action: clusteraction("default/my-service-name/80"),
+					Action: clusteraction("default/my-service-name/80", map[string]string{}),
 				}},
 			}},
 			ingress_https: []*v2.VirtualHost{},
@@ -434,10 +434,10 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/admin"),
-					Action: clusteraction("kube-system/admin/admin"),
+					Action: clusteraction("kube-system/admin/admin", map[string]string{}),
 				}, {
 					Match:  prefixmatch("/"),
-					Action: clusteraction("default/default/80"),
+					Action: clusteraction("default/default/80", map[string]string{}),
 				}},
 			}},
 			ingress_https: []*v2.VirtualHost{},
@@ -498,10 +498,10 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"httpbin.davecheney.com"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/.well-known/acme-challenge"),
-					Action: clusteraction("kube-lego/kube-lego-nginx/8080"),
+					Action: clusteraction("kube-lego/kube-lego-nginx/8080", map[string]string{}),
 				}, {
 					Match:  prefixmatch("/"),
-					Action: clusteraction("default/httpbin/80"),
+					Action: clusteraction("default/httpbin/80", map[string]string{}),
 				}},
 			}},
 			ingress_https: []*v2.VirtualHost{},
@@ -534,7 +534,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"*"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/hello"),
-					Action: clusteraction("default/hello/80"),
+					Action: clusteraction("default/hello/80", map[string]string{}),
 				}},
 			}},
 			ingress_https: []*v2.VirtualHost{},
@@ -623,6 +623,49 @@ func TestValidTLSSpecforVhost(t *testing.T) {
 			got := validTLSSpecforVhost(tc.vhost, &tc.ing)
 			if got != tc.want {
 				t.Fatal("got", got, "want", tc.want)
+			}
+		})
+	}
+}
+
+func TestClusteraction(t *testing.T) {
+	cluster := "default/backend/80"
+	tests := map[string]struct {
+		annotations map[string]string
+		route       *v2.Route_Route
+	}{
+		"no annotations": {
+			annotations: map[string]string{},
+			route: &v2.Route_Route{
+				Route: &v2.RouteAction{
+					ClusterSpecifier: &v2.RouteAction_Cluster{
+						Cluster: cluster,
+					},
+				},
+			},
+		},
+		"host rewrite": {
+			annotations: map[string]string{
+				"kubernetes.io/ingress.host-rewrite": "example.com",
+			},
+			route: &v2.Route_Route{
+				Route: &v2.RouteAction{
+					ClusterSpecifier: &v2.RouteAction_Cluster{
+						Cluster: cluster,
+					},
+					HostRewriteSpecifier: &v2.RouteAction_HostRewrite{
+						HostRewrite: "example.com",
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := clusteraction(cluster, tc.annotations)
+			if !reflect.DeepEqual(tc.route, got) {
+				t.Fatalf("clusteraction:\n want:\n%+v\ngot:\n%+v", tc.route, got)
 			}
 		})
 	}

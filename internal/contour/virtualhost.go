@@ -48,7 +48,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 			}
 			for _, p := range rule.IngressRuleValue.HTTP.Paths {
 				m := pathToRouteMatch(p)
-				a := clusteraction(ingressBackendToClusterName(ing, &p.Backend))
+				a := clusteraction(ingressBackendToClusterName(ing, &p.Backend), ing.Annotations)
 				vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
 			}
 		}
@@ -74,7 +74,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 		if i.Spec.Backend != nil && len(ingresses) == 1 {
 			vv.Routes = []*v2.Route{{
 				Match:  prefixmatch("/"), // match all
-				Action: clusteraction(ingressBackendToClusterName(i, i.Spec.Backend)),
+				Action: clusteraction(ingressBackendToClusterName(i, i.Spec.Backend), i.Annotations),
 			}}
 			continue
 		}
@@ -88,7 +88,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 			}
 			for _, p := range rule.IngressRuleValue.HTTP.Paths {
 				m := pathToRouteMatch(p)
-				a := clusteraction(ingressBackendToClusterName(i, &p.Backend))
+				a := clusteraction(ingressBackendToClusterName(i, &p.Backend), i.Annotations)
 				vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
 			}
 		}
@@ -187,14 +187,22 @@ func regexmatch(regex string) *v2.RouteMatch {
 }
 
 // clusteraction returns a Route_Route action for the supplied cluster.
-func clusteraction(cluster string) *v2.Route_Route {
-	return &v2.Route_Route{
+func clusteraction(cluster string, annotations map[string]string) *v2.Route_Route {
+	route := &v2.Route_Route{
 		Route: &v2.RouteAction{
 			ClusterSpecifier: &v2.RouteAction_Cluster{
 				Cluster: cluster,
 			},
 		},
 	}
+
+	if host, ok := annotations["kubernetes.io/ingress.host-rewrite"]; ok {
+		route.Route.HostRewriteSpecifier = &v2.RouteAction_HostRewrite{
+			HostRewrite: host,
+		}
+	}
+
+	return route
 }
 
 func virtualhost(hostname string) *v2.VirtualHost {

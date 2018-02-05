@@ -462,7 +462,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Domains: []string{"*"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/"),
-				Action: clusteraction("default/backend/80"),
+				Action: clusteraction("default/backend/80", map[string]string{}),
 			}},
 		}},
 		ingress_https: []*v2.VirtualHost{},
@@ -501,7 +501,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Domains: []string{"*"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/"), // match all
-				Action: clusteraction("default/backend/80"),
+				Action: clusteraction("default/backend/80", map[string]string{}),
 			}},
 		}},
 		ingress_https: []*v2.VirtualHost{},
@@ -524,7 +524,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Domains: []string{"httpbin.org"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/"), // match all
-				Action: clusteraction("default/httpbin-org/80"),
+				Action: clusteraction("default/httpbin-org/80", map[string]string{}),
 			}},
 		}},
 		ingress_https: []*v2.VirtualHost{},
@@ -554,7 +554,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Domains: []string{"httpbin.org"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/ip"), // if the field does not contact any regex characters, we treat it as a prefix
-				Action: clusteraction("default/httpbin-org/80"),
+				Action: clusteraction("default/httpbin-org/80", map[string]string{}),
 			}},
 		}},
 		ingress_https: []*v2.VirtualHost{},
@@ -584,7 +584,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Domains: []string{"httpbin.org"},
 			Routes: []*v2.Route{{
 				Match:  regexmatch("/get.*"),
-				Action: clusteraction("default/httpbin-org/80"),
+				Action: clusteraction("default/httpbin-org/80", map[string]string{}),
 			}},
 		}},
 		ingress_https: []*v2.VirtualHost{},
@@ -607,7 +607,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Domains: []string{"httpbin.org"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/"),
-				Action: clusteraction("default/httpbin-org/http"),
+				Action: clusteraction("default/httpbin-org/http", map[string]string{}),
 			}},
 		}},
 		ingress_https: []*v2.VirtualHost{},
@@ -640,10 +640,10 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Domains: []string{"httpbin.org"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/peter"),
-				Action: clusteraction("default/peter/80"),
+				Action: clusteraction("default/peter/80", map[string]string{}),
 			}, {
 				Match:  prefixmatch("/paul"),
-				Action: clusteraction("default/paul/paul"),
+				Action: clusteraction("default/paul/paul", map[string]string{}),
 			}},
 		}},
 		ingress_https: []*v2.VirtualHost{},
@@ -673,14 +673,14 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Domains: []string{"admin.httpbin.org"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/"),
-				Action: clusteraction("default/paul/paul"),
+				Action: clusteraction("default/paul/paul", map[string]string{}),
 			}},
 		}, {
 			Name:    "httpbin.org",
 			Domains: []string{"httpbin.org"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/"),
-				Action: clusteraction("default/peter/80"),
+				Action: clusteraction("default/peter/80", map[string]string{}),
 			}},
 		}},
 		ingress_https: []*v2.VirtualHost{{
@@ -688,7 +688,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Domains: []string{"admin.httpbin.org"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/"),
-				Action: clusteraction("default/paul/paul"),
+				Action: clusteraction("default/paul/paul", map[string]string{}),
 			}},
 		}},
 	}, {
@@ -721,7 +721,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Domains: []string{"admin.httpbin.org"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/"),
-				Action: clusteraction("default/paul/paul"),
+				Action: clusteraction("default/paul/paul", map[string]string{}),
 			}},
 		}},
 	}, {
@@ -743,7 +743,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Domains: []string{"my-very-very-long-service-host-name.subdomain.boring-dept.my.company"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/"),
-				Action: clusteraction("default/my-service-name/80"),
+				Action: clusteraction("default/my-service-name/80", map[string]string{}),
 			}},
 		}},
 		ingress_https: []*v2.VirtualHost{},
@@ -794,10 +794,10 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Domains: []string{"httpbin.org"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/admin"),
-				Action: clusteraction("kube-system/admin/admin"),
+				Action: clusteraction("kube-system/admin/admin", map[string]string{}),
 			}, {
 				Match:  prefixmatch("/"),
-				Action: clusteraction("default/default/80"),
+				Action: clusteraction("default/default/80", map[string]string{}),
 			}},
 		}},
 		ingress_https: []*v2.VirtualHost{},
@@ -879,20 +879,20 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Domains: []string{"httpbin.davecheney.com"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/.well-known/acme-challenge"),
-				Action: clusteraction("kube-lego/kube-lego-nginx/8080"),
+				Action: clusteraction("kube-lego/kube-lego-nginx/8080", map[string]string{}),
 			}, {
 				Match:  prefixmatch("/"),
-				Action: clusteraction("default/httpbin/80"),
+				Action: clusteraction("default/httpbin/80", map[string]string{}),
 			}},
 		}, {
 			Name:    "httpbin2.davecheney.com",
 			Domains: []string{"httpbin2.davecheney.com"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/.well-known/acme-challenge"),
-				Action: clusteraction("kube-lego/kube-lego-nginx/8080"),
+				Action: clusteraction("kube-lego/kube-lego-nginx/8080", map[string]string{}),
 			}, {
 				Match:  prefixmatch("/"),
-				Action: clusteraction("default/httpbin/80"),
+				Action: clusteraction("default/httpbin/80", map[string]string{}),
 			}},
 		}},
 		ingress_https: []*v2.VirtualHost{},
@@ -924,7 +924,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Domains: []string{"*"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/hello"),
-				Action: clusteraction("default/hello/80"),
+				Action: clusteraction("default/hello/80", map[string]string{}),
 			}},
 		}},
 		ingress_https: []*v2.VirtualHost{},
@@ -1022,7 +1022,7 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []*v2.Route{{
 					Match:  prefixmatch("/"),
-					Action: clusteraction("default/peter/80"),
+					Action: clusteraction("default/peter/80", map[string]string{}),
 				}},
 			}},
 			ingress_https: []*v2.VirtualHost{},
