@@ -19,9 +19,6 @@ package contour
 import (
 	"crypto/sha256"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"strings"
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
@@ -211,33 +208,12 @@ func (t *Translator) addSecret(s *v1.Secret) {
 		return
 	}
 	t.Logger.Infof("caching secret %s/%s", s.Namespace, s.Name)
-	t.writeCerts(s)
 
 	t.recomputeTLSListener(t.cache.ingresses, t.cache.secrets)
 }
 
 func (t *Translator) removeSecret(s *v1.Secret) {
 	t.recomputeTLSListener(t.cache.ingresses, t.cache.secrets)
-}
-
-// writeSecret writes the contents of the secret to a fixed location on
-// disk so that envoy can pick them up.
-// TODO(dfc) this is due to https://github.com/envoyproxy/envoy/issues/1357
-func (t *Translator) writeCerts(s *v1.Secret) {
-	const base = "/config/ssl"
-	path := filepath.Join(base, s.Namespace, s.Name)
-	if err := os.MkdirAll(path, 0644); err != nil {
-		t.Errorf("could not write cert %s/%s: %v", s.Namespace, s.Name, err)
-		return
-	}
-	if err := ioutil.WriteFile(filepath.Join(path, v1.TLSCertKey), s.Data[v1.TLSCertKey], 0755); err != nil {
-		t.Errorf("could not write cert %s/%s: %v", s.Namespace, s.Name, err)
-		return
-	}
-	if err := ioutil.WriteFile(filepath.Join(path, v1.TLSPrivateKeyKey), s.Data[v1.TLSPrivateKeyKey], 0755); err != nil {
-		t.Errorf("could not write cert %s/%s: %v", s.Namespace, s.Name, err)
-		return
-	}
 }
 
 type translatorCache struct {

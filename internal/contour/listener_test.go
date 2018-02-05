@@ -219,10 +219,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 						Name:      "secret",
 						Namespace: "default",
 					},
-					Data: map[string][]byte{
-						v1.TLSCertKey:       []byte("certificate"),
-						v1.TLSPrivateKeyKey: []byte("key"),
-					},
+					Data: secretdata("certificate", "key"),
 				},
 			},
 			add: []*v2.Listener{{
@@ -232,7 +229,9 @@ func TestRecomputeTLSListener(t *testing.T) {
 					FilterChainMatch: &v2.FilterChainMatch{
 						SniDomains: []string{"whatever.example.com"},
 					},
-					TlsContext: tlscontext("default", "secret", "h2", "http/1.1"),
+					TlsContext: tlscontext(&v1.Secret{
+						Data: secretdata("certificate", "key"),
+					}, "h2", "http/1.1"),
 					Filters: []*v2.Filter{
 						httpfilter(ENVOY_HTTPS_LISTENER),
 					},
@@ -266,10 +265,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 						Name:      "secret",
 						Namespace: "default",
 					},
-					Data: map[string][]byte{
-						v1.TLSCertKey:       []byte("certificate"),
-						v1.TLSPrivateKeyKey: []byte("key"),
-					},
+					Data: secretdata("certificate", "key"),
 				},
 			},
 			add: []*v2.Listener{{
@@ -279,7 +275,9 @@ func TestRecomputeTLSListener(t *testing.T) {
 					FilterChainMatch: &v2.FilterChainMatch{
 						SniDomains: []string{"whatever.example.com"},
 					},
-					TlsContext: tlscontext("default", "secret", "h2", "http/1.1"),
+					TlsContext: tlscontext(&v1.Secret{
+						Data: secretdata("certificate", "key"),
+					}, "h2", "http/1.1"),
 					Filters: []*v2.Filter{
 						httpfilter(ENVOY_HTTPS_LISTENER),
 					},
@@ -325,7 +323,9 @@ func TestRecomputeTLSListener(t *testing.T) {
 					FilterChainMatch: &v2.FilterChainMatch{
 						SniDomains: []string{"whatever.example.com"},
 					},
-					TlsContext: tlscontext("default", "secret", "h2", "http/1.1"),
+					TlsContext: tlscontext(&v1.Secret{
+						Data: secretdata("certificate", "key"),
+					}, "h2", "http/1.1"),
 					Filters: []*v2.Filter{
 						httpfilter(ENVOY_HTTPS_LISTENER),
 					},
@@ -541,5 +541,12 @@ func assertCacheNotEmpty(t *testing.T, lc *ListenerCache) {
 	t.Helper()
 	if len(lc.values) == 0 {
 		t.Fatalf("len(lc.values): expected > 0, got %d", len(lc.values))
+	}
+}
+
+func secretdata(cert, key string) map[string][]byte {
+	return map[string][]byte{
+		v1.TLSCertKey:       []byte(cert),
+		v1.TLSPrivateKeyKey: []byte(key),
 	}
 }

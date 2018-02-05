@@ -14,8 +14,6 @@
 package contour
 
 import (
-	"path/filepath"
-
 	v2 "github.com/envoyproxy/go-control-plane/api"
 	"github.com/gogo/protobuf/types"
 	"k8s.io/api/core/v1"
@@ -163,7 +161,7 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 			continue
 		}
 		for _, tls := range i.Spec.TLS {
-			_, ok := secrets[metadata{name: tls.SecretName, namespace: i.Namespace}]
+			secret, ok := secrets[metadata{name: tls.SecretName, namespace: i.Namespace}]
 			if !ok {
 				// no secret for this ingress yet, skip it
 				continue
@@ -172,7 +170,7 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 				FilterChainMatch: &v2.FilterChainMatch{
 					SniDomains: tls.Hosts,
 				},
-				TlsContext: tlscontext(i.Namespace, tls.SecretName, "h2", "http/1.1"),
+				TlsContext: tlscontext(secret, "h2", "http/1.1"),
 				Filters:    filters,
 			}
 			if lc.UseProxyProto {
@@ -243,19 +241,18 @@ func socketaddress(address string, port uint32) *v2.Address {
 	}
 }
 
-func tlscontext(namespace, name string, alpnprotos ...string) *v2.DownstreamTlsContext {
-	const base = "/config/ssl"
+func tlscontext(secret *v1.Secret, alpnprotos ...string) *v2.DownstreamTlsContext {
 	return &v2.DownstreamTlsContext{
 		CommonTlsContext: &v2.CommonTlsContext{
 			TlsCertificates: []*v2.TlsCertificate{{
 				CertificateChain: &v2.DataSource{
-					&v2.DataSource_Filename{
-						Filename: filepath.Join(base, namespace, name, v1.TLSCertKey),
+					Specifier: &v2.DataSource_InlineBytes{
+						InlineBytes: secret.Data[v1.TLSCertKey],
 					},
 				},
 				PrivateKey: &v2.DataSource{
-					&v2.DataSource_Filename{
-						Filename: filepath.Join(base, namespace, name, v1.TLSPrivateKeyKey),
+					Specifier: &v2.DataSource_InlineBytes{
+						InlineBytes: secret.Data[v1.TLSPrivateKeyKey],
 					},
 				},
 			}},
