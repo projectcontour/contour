@@ -13,4 +13,4 @@ You must also add an [entry for port 443][1] to your `contour` service object.
 If you deploy behind an AWS Elastic Load Balancer, see [EC2 ELB PROXY protocol support](proxy-proto.md) for special instructions.
 
 [0]: upgrade.md
-[1]: https://github.com/heptio/contour/blob/master/deployment/deployment-grpc-v2/03-service-tcp.yaml#L18
+[1]: https://github.com/heptio/contour/blob/v0.3.1/deployment/common/service.yaml#L20-L23
