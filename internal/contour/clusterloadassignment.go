@@ -28,12 +28,6 @@ type ClusterLoadAssignmentCache struct {
 
 // recomputeClusterLoadAssignment recomputes the EDS cache taking into account old and new services and endpoints.
 func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldsvc, newsvc *v1.Service, oldep, newep *v1.Endpoints) {
-	if newep != nil && len(newep.Subsets) < 1 {
-		// if there are no endpoints in this object, ignore it
-		// to avoid sending a noop notification to watchers.
-		return
-	}
-
 	// skip computation if either old and new services or endpoints are equal (thus also handling nil)
 	if oldsvc == newsvc || oldep == newep {
 		return

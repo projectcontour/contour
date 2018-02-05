@@ -117,7 +117,7 @@ func (t *Translator) addService(svc *v1.Service) {
 	if ep, ok := t.cache.endpoints[metadata{name: svc.Name, namespace: svc.Namespace}]; ok {
 		t.recomputeClusterLoadAssignment(nil, svc, nil, ep)
 	} else {
-		t.Infof("ignoring endpoint add/update, cannot find matching endpoint for service  %s/%s", svc.Namespace, svc.Name)
+		t.Infof("ignoring endpoint add, cannot find matching endpoint for service %s/%s", svc.Namespace, svc.Name)
 	}
 	t.recomputeService(nil, svc)
 }
@@ -144,11 +144,16 @@ func (t *Translator) addEndpoints(e *v1.Endpoints) {
 	if svc, ok := t.cache.services[metadata{name: e.Name, namespace: e.Namespace}]; ok {
 		t.recomputeClusterLoadAssignment(nil, svc, nil, e)
 	} else {
-		t.Infof("ignoring endpoint add/update, cannot find matching service %s/%s", e.Namespace, e.Name)
+		t.Infof("ignoring endpoint add, cannot find matching service %s/%s", e.Namespace, e.Name)
 	}
 }
 
 func (t *Translator) updateEndpoints(oldep, newep *v1.Endpoints) {
+	if len(newep.Subsets) < 1 {
+		// if there are no endpoints in this object, ignore it
+		// to avoid sending a noop notification to watchers.
+		return
+	}
 	if svc, ok := t.cache.services[metadata{name: newep.Name, namespace: newep.Namespace}]; ok {
 		t.recomputeClusterLoadAssignment(nil, svc, oldep, newep)
 	} else {
