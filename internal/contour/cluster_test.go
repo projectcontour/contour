@@ -230,7 +230,6 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
 			var cc ClusterCache
 			cc.recomputeService(tc.oldObj, tc.newObj)
 			got := cc.Values()
