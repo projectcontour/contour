@@ -40,7 +40,7 @@ func TestTranslatorAddService(t *testing.T) {
 			TargetPort: intstr.FromInt(6502),
 		}),
 		want: []*v2.Cluster{
-			cluster("default/simple/80", "default/simple/6502"),
+			cluster("default/simple/80", "default/simple/80"),
 		},
 	}, {
 		name: "long namespace and service name",
@@ -56,7 +56,7 @@ func TestTranslatorAddService(t *testing.T) {
 		want: []*v2.Cluster{
 			cluster(
 				"beurocratic-company-test-domain-1/tiny-cog-depa-52e801/80",
-				"beurocratic-company-test-domain-1/tiny-cog-department-test-instance/6502", // ServiceName is not subject to the 60 char limit
+				"beurocratic-company-test-domain-1/tiny-cog-department-test-instance/80", // ServiceName is not subject to the 60 char limit
 			),
 		},
 	}, {
@@ -68,8 +68,8 @@ func TestTranslatorAddService(t *testing.T) {
 			TargetPort: intstr.FromInt(6502),
 		}),
 		want: []*v2.Cluster{
-			cluster("default/simple/80", "default/simple/6502"),
-			cluster("default/simple/http", "default/simple/6502"),
+			cluster("default/simple/80", "default/simple/http"),
+			cluster("default/simple/http", "default/simple/http"),
 		},
 	}, {
 		name: "two service ports",
@@ -85,10 +85,10 @@ func TestTranslatorAddService(t *testing.T) {
 			TargetPort: intstr.FromString("9001"),
 		}),
 		want: []*v2.Cluster{
-			cluster("default/simple/80", "default/simple/6502"),
-			cluster("default/simple/8080", "default/simple/9001"),
-			cluster("default/simple/alt", "default/simple/9001"),
-			cluster("default/simple/http", "default/simple/6502"),
+			cluster("default/simple/80", "default/simple/http"),
+			cluster("default/simple/8080", "default/simple/alt"),
+			cluster("default/simple/alt", "default/simple/alt"),
+			cluster("default/simple/http", "default/simple/http"),
 		},
 	}, {
 		name: "one tcp service, one udp service",
@@ -102,7 +102,7 @@ func TestTranslatorAddService(t *testing.T) {
 			TargetPort: intstr.FromString("9001"),
 		}),
 		want: []*v2.Cluster{
-			cluster("default/simple/8080", "default/simple/9001"),
+			cluster("default/simple/8080", "default/simple/8080"),
 		},
 	}, {
 		name: "one udp service",
@@ -123,7 +123,7 @@ func TestTranslatorAddService(t *testing.T) {
 			tr.OnAdd(tc.svc)
 			got := tr.ClusterCache.Values()
 			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("got: %v, want: %v", got, tc.want)
+				t.Fatalf("\nwant: %v\n got: %v", tc.want, got)
 			}
 		})
 	}
@@ -163,7 +163,7 @@ func TestTranslatorUpdateService(t *testing.T) {
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
-					ServiceName: "default/kuard/8443",
+					ServiceName: "default/kuard/https",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
@@ -172,7 +172,7 @@ func TestTranslatorUpdateService(t *testing.T) {
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
-					ServiceName: "default/kuard/8443",
+					ServiceName: "default/kuard/https",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
@@ -190,7 +190,7 @@ func TestTranslatorUpdateService(t *testing.T) {
 			tr.OnUpdate(tc.oldObj, tc.newObj)
 			got := tr.ClusterCache.Values()
 			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("got: %v, want: %v", got, tc.want)
+				t.Fatalf("\nwant: %v\n got: %v", tc.want, got)
 			}
 		})
 	}
@@ -248,7 +248,7 @@ func TestTranslatorRemoveService(t *testing.T) {
 				TargetPort: intstr.FromInt(6502),
 			}),
 			want: []*v2.Cluster{
-				cluster("default/simple/80", "default/simple/6502"),
+				cluster("default/simple/80", "default/simple/80"),
 			},
 		},
 		"remove non existant": {
@@ -272,7 +272,7 @@ func TestTranslatorRemoveService(t *testing.T) {
 			tr.OnDelete(tc.svc)
 			got := tr.ClusterCache.Values()
 			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("got: %v, want: %v", got, tc.want)
+				t.Fatalf("\nwant: %v\n got: %v", tc.want, got)
 			}
 		})
 	}
@@ -448,7 +448,7 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 			tr.OnDelete(tc.ep)
 			got := tr.ClusterLoadAssignmentCache.Values()
 			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("got: %v, want: %v", got, tc.want)
+				t.Fatalf("\nwant: %v\n got: %v", tc.want, got)
 			}
 		})
 	}
@@ -1073,56 +1073,6 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 			got = tr.VirtualHostCache.HTTPS.Values()
 			if !reflect.DeepEqual(tc.ingress_https, got) {
 				t.Fatalf("(ingress_https): got: %v, want: %v", got, tc.ingress_https)
-			}
-		})
-	}
-}
-
-func TestClusterEDSConfigServiceNameMatchesLoadAssignmentClusterName(t *testing.T) {
-	tests := []struct {
-		name string
-		svc  *v1.Service
-		ep   *v1.Endpoints
-	}{
-		{
-			name: "simple service and endpoint",
-			svc: service("default", "simple", v1.ServicePort{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}),
-			ep: endpoints("default", "simple", v1.EndpointSubset{
-				Addresses: addresses("192.168.183.24"),
-				Ports:     ports(8080),
-			}),
-		},
-		{
-			name: "long namespace and service name",
-			svc: service("beurocratic-company-test-domain-1", "tiny-cog-department-test-instance", v1.ServicePort{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}),
-			ep: endpoints("beurocratic-company-test-domain-1", "tiny-cog-department-test-instance", v1.EndpointSubset{
-				Addresses: addresses("192.168.183.24"),
-				Ports:     ports(8080),
-			}),
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
-			tr := &Translator{
-				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
-			}
-			tr.OnAdd(tc.svc)
-			tr.OnAdd(tc.ep)
-			c := tr.ClusterCache.Values()
-			cla := tr.ClusterLoadAssignmentCache.Values()
-
-			if c[0].EdsClusterConfig.GetServiceName() != cla[0].ClusterName {
-				t.Errorf("cluster EDS config service name: %q does not match clusterLoadAssignment cluster name: %q", c[0].EdsClusterConfig.GetServiceName(), cla[0].ClusterName)
 			}
 		})
 	}

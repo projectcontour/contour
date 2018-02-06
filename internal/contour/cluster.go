@@ -64,7 +64,19 @@ func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 	for _, p := range newsvc.Spec.Ports {
 		switch p.Protocol {
 		case "TCP":
-			config := edsconfig("xds_cluster", servicename(newsvc.ObjectMeta, p.TargetPort.String()))
+			// eds needs a stable name to find this sds entry.
+			// ideally we can generate this information from that recorded by the
+			// endpoint controller in the endpoint record.
+			sname := p.Name
+			if sname == "" {
+				// if this port is unnamed, then there is only one service port
+				// for this service.
+				sname = strconv.Itoa(int(p.Port))
+			}
+			config := edsconfig("xds_cluster", servicename(newsvc.ObjectMeta, sname))
+
+			// sname is the entry that EDS will try to match on, it is independant
+			// of named and unnamed ports below.
 			if p.Name != "" {
 				// service port is named, so we must generate both a cluster for the port name
 				// and a cluster for the port number.

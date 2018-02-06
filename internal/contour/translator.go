@@ -114,38 +114,19 @@ func (t *Translator) OnDelete(obj interface{}) {
 }
 
 func (t *Translator) addService(svc *v1.Service) {
-	if ep, ok := t.cache.endpoints[metadata{name: svc.Name, namespace: svc.Namespace}]; ok {
-		t.recomputeClusterLoadAssignment(nil, svc, nil, ep)
-	} else {
-		t.Infof("ignoring endpoint add, cannot find matching endpoint for service %s/%s", svc.Namespace, svc.Name)
-	}
 	t.recomputeService(nil, svc)
 }
 
 func (t *Translator) updateService(oldsvc, newsvc *v1.Service) {
-	if ep, ok := t.cache.endpoints[metadata{name: newsvc.Name, namespace: newsvc.Namespace}]; ok {
-		t.recomputeClusterLoadAssignment(oldsvc, newsvc, nil, ep)
-	} else {
-		t.Infof("ignoring endpoint update, cannot find matching endpoint for service %s/%s", newsvc.Namespace, newsvc.Name)
-	}
 	t.recomputeService(oldsvc, newsvc)
 }
 
 func (t *Translator) removeService(svc *v1.Service) {
-	if ep, ok := t.cache.endpoints[metadata{name: svc.Name, namespace: svc.Namespace}]; ok {
-		t.recomputeClusterLoadAssignment(svc, nil, nil, ep)
-	} else {
-		t.Infof("ignoring endpoint remove, cannot find matching endpoint for service %s/%s", svc.Namespace, svc.Name)
-	}
 	t.recomputeService(svc, nil)
 }
 
 func (t *Translator) addEndpoints(e *v1.Endpoints) {
-	if svc, ok := t.cache.services[metadata{name: e.Name, namespace: e.Namespace}]; ok {
-		t.recomputeClusterLoadAssignment(nil, svc, nil, e)
-	} else {
-		t.Infof("ignoring endpoint add, cannot find matching service %s/%s", e.Namespace, e.Name)
-	}
+	t.recomputeClusterLoadAssignment(nil, e)
 }
 
 func (t *Translator) updateEndpoints(oldep, newep *v1.Endpoints) {
@@ -154,19 +135,11 @@ func (t *Translator) updateEndpoints(oldep, newep *v1.Endpoints) {
 		// to avoid sending a noop notification to watchers.
 		return
 	}
-	if svc, ok := t.cache.services[metadata{name: newep.Name, namespace: newep.Namespace}]; ok {
-		t.recomputeClusterLoadAssignment(nil, svc, oldep, newep)
-	} else {
-		t.Infof("ignoring endpoint update, cannot find matching service %s/%s", newep.Namespace, newep.Name)
-	}
+	t.recomputeClusterLoadAssignment(oldep, newep)
 }
 
 func (t *Translator) removeEndpoints(e *v1.Endpoints) {
-	if svc, ok := t.cache.services[metadata{name: e.Name, namespace: e.Namespace}]; ok {
-		t.recomputeClusterLoadAssignment(svc, nil, e, nil)
-	} else {
-		t.Infof("ignoring endpoint remove, cannot find matching service %s/%s", e.Namespace, e.Name)
-	}
+	t.recomputeClusterLoadAssignment(e, nil)
 }
 
 func (t *Translator) addIngress(i *v1beta1.Ingress) {

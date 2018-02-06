@@ -26,31 +26,14 @@ type ClusterLoadAssignmentCache struct {
 	Cond
 }
 
-// recomputeClusterLoadAssignment recomputes the EDS cache taking into account old and new services and endpoints.
-func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldsvc, newsvc *v1.Service, oldep, newep *v1.Endpoints) {
+// recomputeClusterLoadAssignment recomputes the EDS cache taking into account old and new endpoints.
+func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldep, newep *v1.Endpoints) {
 	// skip computation if either old and new services or endpoints are equal (thus also handling nil)
-	if oldsvc == newsvc || oldep == newep {
+	if oldep == newep {
 		return
 	}
 
 	defer cc.Notify()
-
-	// normalise all the paramters
-	if oldsvc == nil {
-		// if oldsvc is nil, replace it with a blank spec so entries
-		// are conditionally added.
-		oldsvc = &v1.Service{
-			ObjectMeta: newsvc.ObjectMeta,
-		}
-	}
-
-	if newsvc == nil {
-		// if newsvc is nil, replace it with a blank spec so entries
-		// are conditionally deleted.
-		newsvc = &v1.Service{
-			ObjectMeta: oldsvc.ObjectMeta,
-		}
-	}
 
 	if oldep == nil {
 		oldep = &v1.Endpoints{
@@ -64,52 +47,65 @@ func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldsvc, new
 		}
 	}
 
-	// sanity check
-	if newep.Name != newsvc.Name || newep.Namespace != newsvc.Namespace {
-		panic("service and endpoint document mismatch: service: " + newsvc.Namespace + "/" +
-			newsvc.Name + ", endpoint: " + newep.Namespace + "/" + newep.Name)
-	}
-
-	services := make(map[string]bool)
+	clas := make(map[string]*v2.ClusterLoadAssignment)
 	// add or update endpoints
 	for _, s := range newep.Subsets {
-		// skip any subsets that don't have ready addresses or ports
-		if len(s.Addresses) == 0 || len(s.Ports) == 0 {
+		// skip any subsets that don't have ready addresses
+		if len(s.Addresses) == 0 {
 			continue
 		}
 
 		for _, p := range s.Ports {
-			for _, sp := range newsvc.Spec.Ports {
-				// TODO(dfc) ignore non tcp ports
+			// TODO(dfc) check protocol, don't add UDP enties by mistake
 
-				// we have the generate a service name that matches the
-				// targetPort value in the matching service.
-				name := sp.TargetPort.String()
-				if p.Name != name {
-					if strconv.Itoa(int(p.Port)) != name {
-						// this sevice doesn't match and port in the endpoint
-						// skip it. We'll only match one svc and port pair.
-						continue
-					}
-				}
-				cla := clusterloadassignment(servicename(newep.ObjectMeta, name))
-				for _, a := range s.Addresses {
-					cla.Endpoints[0].LbEndpoints = append(cla.Endpoints[0].LbEndpoints, &v2.LbEndpoint{
-						Endpoint: endpoint(a.IP, p.Port),
-					})
-				}
-				cc.Add(cla)
-				services[name] = true
+			// if this endpoint's service's port has a name, then the endpoint
+			// controller will apply the name here. The name may appear once per subset.
+			name := p.Name
+			if name == "" {
+				// if the port's name is not set then the service's port is unnamed
+				// and there is only one port, and it only deploys to an unnamed
+				// container port, therefore the name generated for the service in CDS
+				// will be the port number.
+				name = strconv.Itoa(int(p.Port))
+			}
+			cla, ok := clas[name]
+			if !ok {
+				cla = clusterloadassignment(servicename(newep.ObjectMeta, name))
+				clas[name] = cla
+			}
+			for _, a := range s.Addresses {
+				cla.Endpoints[0].LbEndpoints = append(cla.Endpoints[0].LbEndpoints, &v2.LbEndpoint{
+					Endpoint: endpoint(a.IP, p.Port),
+				})
 			}
 		}
 	}
 
-	// remove endpoints that lack a matching endpoint
-	for _, p := range oldsvc.Spec.Ports {
-		switch p.Protocol {
-		case "TCP":
-			if !services[p.TargetPort.String()] {
-				cc.Remove(servicename(oldsvc.ObjectMeta, p.TargetPort.String()))
+	// iterate all the defined clusters and add or update them.
+	for _, c := range clas {
+		cc.Add(c)
+	}
+
+	// iterate over the ports in the old spec, remove any that are not
+	// mentioned in clas
+	for _, s := range oldep.Subsets {
+		if len(s.Addresses) == 0 {
+			continue
+		}
+		for _, p := range s.Ports {
+			// if this endpoint's service's port has a name, then the endpoint
+			// controller will apply the name here. The name may appear once per subset.
+			name := p.Name
+			if name == "" {
+				// if the port's name is not set then the service's port is unnamed
+				// and there is only one port, and it only deploys to an unnamed
+				// container port, therefore the name generated for the service in CDS
+				// will be the port number.
+				name = strconv.Itoa(int(p.Port))
+			}
+			if _, ok := clas[name]; !ok {
+				// port is not present in the list added / updated, so remove it
+				cc.Remove(servicename(oldep.ObjectMeta, name))
 			}
 		}
 	}
