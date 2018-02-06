@@ -19,21 +19,14 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
 	"k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestClusterLoadAssignmentCacheRecomputeClusterLoadAssignment(t *testing.T) {
 	tests := map[string]struct {
-		oldsvc, newsvc *v1.Service
-		oldep, newep   *v1.Endpoints
-		want           []*v2.ClusterLoadAssignment
+		oldep, newep *v1.Endpoints
+		want         []*v2.ClusterLoadAssignment
 	}{
 		"simple": {
-			newsvc: service("default", "simple", v1.ServicePort{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}),
 			newep: endpoints("default", "simple", v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports:     ports(8080),
@@ -43,11 +36,6 @@ func TestClusterLoadAssignmentCacheRecomputeClusterLoadAssignment(t *testing.T) 
 			},
 		},
 		"multiple addresses": {
-			newsvc: service("default", "httpbin-org", v1.ServicePort{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(80),
-			}),
 			newep: endpoints("default", "httpbin-org", v1.EndpointSubset{
 				Addresses: addresses(
 					"23.23.247.89",
@@ -67,11 +55,6 @@ func TestClusterLoadAssignmentCacheRecomputeClusterLoadAssignment(t *testing.T) 
 			},
 		},
 		"named container port": {
-			newsvc: service("default", "secure", v1.ServicePort{
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromString("https"),
-			}),
 			newep: endpoints("default", "secure", v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports: []v1.EndpointPort{{
@@ -84,11 +67,6 @@ func TestClusterLoadAssignmentCacheRecomputeClusterLoadAssignment(t *testing.T) 
 			},
 		},
 		"remove existing": {
-			newsvc: service("default", "simple", v1.ServicePort{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}),
 			oldep: endpoints("default", "simple", v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports:     ports(8080),
@@ -99,7 +77,7 @@ func TestClusterLoadAssignmentCacheRecomputeClusterLoadAssignment(t *testing.T) 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			var cc ClusterLoadAssignmentCache
-			cc.recomputeClusterLoadAssignment(tc.oldsvc, tc.newsvc, tc.oldep, tc.newep)
+			cc.recomputeClusterLoadAssignment(tc.oldep, tc.newep)
 			got := cc.Values()
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("expected:\n%v\ngot:\n%v", tc.want, got)
