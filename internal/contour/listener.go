@@ -166,6 +166,12 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 				// no secret for this ingress yet, skip it
 				continue
 			}
+			_, cert := secret.Data[v1.TLSCertKey]
+			_, key := secret.Data[v1.TLSPrivateKeyKey]
+			if !cert || !key {
+				// missing cert or private key, skip it
+				continue
+			}
 			fc := &v2.FilterChain{
 				FilterChainMatch: &v2.FilterChainMatch{
 					SniDomains: tls.Hosts,

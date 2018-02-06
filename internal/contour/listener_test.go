@@ -239,6 +239,37 @@ func TestRecomputeTLSListener(t *testing.T) {
 			}},
 			remove: nil,
 		},
+		"simple vhost, with secret missing private key": {
+			ingresses: map[metadata]*v1beta1.Ingress{
+				metadata{namespace: "default", name: "simple"}: {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							Hosts:      []string{"whatever.example.com"},
+							SecretName: "secret",
+						}},
+						Backend: backend("backend", intstr.FromInt(80)),
+					},
+				},
+			},
+			secrets: map[metadata]*v1.Secret{
+				metadata{namespace: "default", name: "secret"}: {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						v1.TLSCertKey: []byte("certificate"),
+						// missing private key
+					},
+				},
+			},
+			add:    nil,
+			remove: []string{ENVOY_HTTPS_LISTENER},
+		},
 		"simple vhost, with non default listener port": {
 			ListenerCache: ListenerCache{
 				HTTPSAddress: "::", // ipv6 voodoo
@@ -407,6 +438,7 @@ func TestListenerCacheRecomputeTLSListener(t *testing.T) {
 			Name:      "secret",
 			Namespace: "default",
 		},
+		Data: secretdata("certificate", "key"),
 	}
 	lc.recomputeTLSListener(i, s)
 	assertCacheNotEmpty(t, lc) // we've got the secret and the ingress, we should have at least one listener

@@ -201,14 +201,6 @@ func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 }
 
 func (t *Translator) addSecret(s *v1.Secret) {
-	_, cert := s.Data[v1.TLSCertKey]
-	_, key := s.Data[v1.TLSPrivateKeyKey]
-	if !cert || !key {
-		t.Logger.Infof("ignoring secret %s/%s", s.Namespace, s.Name)
-		return
-	}
-	t.Logger.Infof("caching secret %s/%s", s.Namespace, s.Name)
-
 	t.recomputeTLSListener(t.cache.ingresses, t.cache.secrets)
 }
 
