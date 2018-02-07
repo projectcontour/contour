@@ -19,7 +19,8 @@ import (
 	"testing"
 	"time"
 
-	v2 "github.com/envoyproxy/go-control-plane/api"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/types"
 	cgrpc "github.com/heptio/contour/internal/grpc"
 	"google.golang.org/grpc"
@@ -77,13 +78,13 @@ func TestEditIngress(t *testing.T) {
 	// check that it's been translated correctly.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_http",
-				VirtualHosts: []*v2.VirtualHost{{
+				VirtualHosts: []envoy_api_v2_route.VirtualHost{{
 					Name:    "*",
 					Domains: []string{"*"},
-					Routes: []*v2.Route{
+					Routes: []envoy_api_v2_route.Route{
 						route(prefixmatch("/"), cluster("default/kuard/80")),
 					},
 				}},
@@ -119,13 +120,13 @@ func TestEditIngress(t *testing.T) {
 	// check that ingress_http has been updated.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_http",
-				VirtualHosts: []*v2.VirtualHost{{
+				VirtualHosts: []envoy_api_v2_route.VirtualHost{{
 					Name:    "*",
 					Domains: []string{"*"},
-					Routes: []*v2.Route{
+					Routes: []envoy_api_v2_route.Route{
 						route(prefixmatch("/testing"), cluster("default/kuard/80")),
 					},
 				}},
@@ -181,13 +182,13 @@ func TestIngressPathRouteWithoutHost(t *testing.T) {
 	// check that it's been translated correctly.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_http",
-				VirtualHosts: []*v2.VirtualHost{{
+				VirtualHosts: []envoy_api_v2_route.VirtualHost{{
 					Name:    "*",
 					Domains: []string{"*"},
-					Routes: []*v2.Route{
+					Routes: []envoy_api_v2_route.Route{
 						route(prefixmatch("/hello"), cluster("default/hello/80")),
 					},
 				}},
@@ -228,13 +229,13 @@ func TestEditIngressInPlace(t *testing.T) {
 	rh.OnAdd(i1)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_http",
-				VirtualHosts: []*v2.VirtualHost{{
+				VirtualHosts: []envoy_api_v2_route.VirtualHost{{
 					Name:    "hello.example.com",
 					Domains: []string{"hello.example.com"},
-					Routes: []*v2.Route{
+					Routes: []envoy_api_v2_route.Route{
 						route(prefixmatch("/"), cluster("default/wowie/80")),
 					},
 				}},
@@ -276,13 +277,13 @@ func TestEditIngressInPlace(t *testing.T) {
 	rh.OnUpdate(i1, i2)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_http",
-				VirtualHosts: []*v2.VirtualHost{{
+				VirtualHosts: []envoy_api_v2_route.VirtualHost{{
 					Name:    "hello.example.com",
 					Domains: []string{"hello.example.com"},
-					Routes: []*v2.Route{
+					Routes: []envoy_api_v2_route.Route{
 						route(prefixmatch("/whoop"), cluster("default/kerpow/9000")),
 						route(prefixmatch("/"), cluster("default/wowie/80")),
 					},
@@ -330,17 +331,17 @@ func TestEditIngressInPlace(t *testing.T) {
 	rh.OnUpdate(i2, i3)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_http",
-				VirtualHosts: []*v2.VirtualHost{{
+				VirtualHosts: []envoy_api_v2_route.VirtualHost{{
 					Name:    "hello.example.com",
 					Domains: []string{"hello.example.com"},
-					Routes: []*v2.Route{
+					Routes: []envoy_api_v2_route.Route{
 						route(prefixmatch("/whoop"), cluster("default/kerpow/9000")),
 						route(prefixmatch("/"), cluster("default/wowie/80")),
 					},
-					RequireTls: v2.VirtualHost_ALL,
+					RequireTls: envoy_api_v2_route.VirtualHost_ALL,
 				}}}),
 			any(t, &v2.RouteConfiguration{Name: "ingress_https"}),
 		},
@@ -387,24 +388,24 @@ func TestEditIngressInPlace(t *testing.T) {
 	rh.OnUpdate(i3, i4)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_http",
-				VirtualHosts: []*v2.VirtualHost{{
+				VirtualHosts: []envoy_api_v2_route.VirtualHost{{
 					Name:    "hello.example.com",
 					Domains: []string{"hello.example.com"},
-					Routes: []*v2.Route{
+					Routes: []envoy_api_v2_route.Route{
 						route(prefixmatch("/whoop"), cluster("default/kerpow/9000")),
 						route(prefixmatch("/"), cluster("default/wowie/80")),
 					},
-					RequireTls: v2.VirtualHost_ALL,
+					RequireTls: envoy_api_v2_route.VirtualHost_ALL,
 				}}}),
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_https",
-				VirtualHosts: []*v2.VirtualHost{{
+				VirtualHosts: []envoy_api_v2_route.VirtualHost{{
 					Name:    "hello.example.com",
 					Domains: []string{"hello.example.com"},
-					Routes: []*v2.Route{
+					Routes: []envoy_api_v2_route.Route{
 						route(prefixmatch("/whoop"), cluster("default/kerpow/9000")),
 						route(prefixmatch("/"), cluster("default/wowie/80")),
 					},
@@ -429,25 +430,25 @@ func fetchRDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
 	return resp
 }
 
-func route(match *v2.RouteMatch, action *v2.Route_Route) *v2.Route {
-	return &v2.Route{
-		Match:  match,
+func route(match *envoy_api_v2_route.RouteMatch, action *envoy_api_v2_route.Route_Route) envoy_api_v2_route.Route {
+	return envoy_api_v2_route.Route{
+		Match:  *match,
 		Action: action,
 	}
 }
 
-func prefixmatch(prefix string) *v2.RouteMatch {
-	return &v2.RouteMatch{
-		PathSpecifier: &v2.RouteMatch_Prefix{
+func prefixmatch(prefix string) *envoy_api_v2_route.RouteMatch {
+	return &envoy_api_v2_route.RouteMatch{
+		PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
 			Prefix: prefix,
 		},
 	}
 }
 
-func cluster(cluster string) *v2.Route_Route {
-	return &v2.Route_Route{
-		Route: &v2.RouteAction{
-			ClusterSpecifier: &v2.RouteAction_Cluster{
+func cluster(cluster string) *envoy_api_v2_route.Route_Route {
+	return &envoy_api_v2_route.Route_Route{
+		Route: &envoy_api_v2_route.RouteAction{
+			ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
 				Cluster: cluster,
 			},
 		},

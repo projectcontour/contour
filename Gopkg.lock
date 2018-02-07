@@ -52,8 +52,19 @@
 [[projects]]
   branch = "master"
   name = "github.com/envoyproxy/go-control-plane"
-  packages = ["api"]
-  revision = "cd217031c55a80342a864f9aff3b7a7f22205891"
+  packages = [
+    "envoy/api/v2",
+    "envoy/api/v2/auth",
+    "envoy/api/v2/cluster",
+    "envoy/api/v2/core",
+    "envoy/api/v2/endpoint",
+    "envoy/api/v2/listener",
+    "envoy/api/v2/route",
+    "envoy/config/filter/accesslog/v2",
+    "envoy/config/filter/network/http_connection_manager/v2",
+    "envoy/service/load_stats/v2"
+  ]
+  revision = "2fe005477d70adc579351a5a9c26408c4a54ef51"
 
 [[projects]]
   name = "github.com/ghodss/yaml"
@@ -89,6 +100,7 @@
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
+    "jsonpb",
     "proto",
     "protoc-gen-gogo/descriptor",
     "sortkeys",
@@ -502,6 +514,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "178653a683ca7a782dfcc5d09cccb58e6b782e33fd3b53ad97cb3bc2f4669166"
+  inputs-digest = "0af7ca6e6588d044f73c38ca56f177c2e69e3a0918faac8a309c9a7cc5fff3aa"
   solver-name = "gps-cdcl"
   solver-version = 1

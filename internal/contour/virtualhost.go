@@ -17,7 +17,7 @@ import (
 	"sort"
 	"strings"
 
-	v2 "github.com/envoyproxy/go-control-plane/api"
+	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"k8s.io/api/extensions/v1beta1"
 )
 
@@ -49,7 +49,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 			for _, p := range rule.IngressRuleValue.HTTP.Paths {
 				m := pathToRouteMatch(p)
 				a := clusteraction(ingressBackendToClusterName(ing, &p.Backend))
-				vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
+				vv.Routes = append(vv.Routes, envoy_api_v2_route.Route{Match: m, Action: a})
 			}
 		}
 	}
@@ -69,10 +69,10 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 		}
 		if i.Annotations["ingress.kubernetes.io/force-ssl-redirect"] == "true" {
 			// set blanket 301 redirect
-			vv.RequireTls = v2.VirtualHost_ALL
+			vv.RequireTls = envoy_api_v2_route.VirtualHost_ALL
 		}
 		if i.Spec.Backend != nil && len(ingresses) == 1 {
-			vv.Routes = []*v2.Route{{
+			vv.Routes = []envoy_api_v2_route.Route{{
 				Match:  prefixmatch("/"), // match all
 				Action: clusteraction(ingressBackendToClusterName(i, i.Spec.Backend)),
 			}}
@@ -89,7 +89,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 			for _, p := range rule.IngressRuleValue.HTTP.Paths {
 				m := pathToRouteMatch(p)
 				a := clusteraction(ingressBackendToClusterName(i, &p.Backend))
-				vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
+				vv.Routes = append(vv.Routes, envoy_api_v2_route.Route{Match: m, Action: a})
 			}
 		}
 	}
@@ -119,18 +119,18 @@ func validTLSSpecforVhost(vhost string, i *v1beta1.Ingress) bool {
 	return false
 }
 
-type longestRouteFirst []*v2.Route
+type longestRouteFirst []envoy_api_v2_route.Route
 
 func (l longestRouteFirst) Len() int      { return len(l) }
 func (l longestRouteFirst) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
 func (l longestRouteFirst) Less(i, j int) bool {
-	a, ok := l[i].Match.PathSpecifier.(*v2.RouteMatch_Prefix)
+	a, ok := l[i].Match.PathSpecifier.(*envoy_api_v2_route.RouteMatch_Prefix)
 	if !ok {
 		// ignore non prefix matches
 		return false
 	}
 
-	b, ok := l[j].Match.PathSpecifier.(*v2.RouteMatch_Prefix)
+	b, ok := l[j].Match.PathSpecifier.(*envoy_api_v2_route.RouteMatch_Prefix)
 	if !ok {
 		// ignore non prefix matches
 		return false
@@ -139,8 +139,8 @@ func (l longestRouteFirst) Less(i, j int) bool {
 	return a.Prefix < b.Prefix
 }
 
-// pathToRoute converts a HTTPIngressPath to a partial v2.RouteMatch.
-func pathToRouteMatch(p v1beta1.HTTPIngressPath) *v2.RouteMatch {
+// pathToRoute converts a HTTPIngressPath to a partial envoy_api_v2_route.RouteMatch.
+func pathToRouteMatch(p v1beta1.HTTPIngressPath) envoy_api_v2_route.RouteMatch {
 	if p.Path == "" {
 		// If the Path is empty, the k8s spec says
 		// "If unspecified, the path defaults to a catch all sending
@@ -169,36 +169,36 @@ func ingressBackendToClusterName(i *v1beta1.Ingress, b *v1beta1.IngressBackend) 
 }
 
 // prefixmatch returns a RouteMatch for the supplied prefix.
-func prefixmatch(prefix string) *v2.RouteMatch {
-	return &v2.RouteMatch{
-		PathSpecifier: &v2.RouteMatch_Prefix{
+func prefixmatch(prefix string) envoy_api_v2_route.RouteMatch {
+	return envoy_api_v2_route.RouteMatch{
+		PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
 			Prefix: prefix,
 		},
 	}
 }
 
 // regexmatch returns a RouteMatch for the supplied regex.
-func regexmatch(regex string) *v2.RouteMatch {
-	return &v2.RouteMatch{
-		PathSpecifier: &v2.RouteMatch_Regex{
+func regexmatch(regex string) envoy_api_v2_route.RouteMatch {
+	return envoy_api_v2_route.RouteMatch{
+		PathSpecifier: &envoy_api_v2_route.RouteMatch_Regex{
 			Regex: regex,
 		},
 	}
 }
 
 // clusteraction returns a Route_Route action for the supplied cluster.
-func clusteraction(cluster string) *v2.Route_Route {
-	return &v2.Route_Route{
-		Route: &v2.RouteAction{
-			ClusterSpecifier: &v2.RouteAction_Cluster{
+func clusteraction(cluster string) *envoy_api_v2_route.Route_Route {
+	return &envoy_api_v2_route.Route_Route{
+		Route: &envoy_api_v2_route.RouteAction{
+			ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
 				Cluster: cluster,
 			},
 		},
 	}
 }
 
-func virtualhost(hostname string) *v2.VirtualHost {
-	return &v2.VirtualHost{
+func virtualhost(hostname string) envoy_api_v2_route.VirtualHost {
+	return envoy_api_v2_route.VirtualHost{
 		Name:    hashname(60, hostname),
 		Domains: []string{hostname},
 	}
