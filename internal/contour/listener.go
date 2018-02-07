@@ -272,13 +272,12 @@ func httpfilter(routename string) *v2.Filter {
 		Name: httpFilter,
 		Config: &types.Struct{
 			Fields: map[string]*types.Value{
-				"codec_type":  sv("auto"),
 				"stat_prefix": sv(routename),
 				"rds": st(map[string]*types.Value{
 					"route_config_name": sv(routename),
 					"config_source": st(map[string]*types.Value{
 						"api_config_source": st(map[string]*types.Value{
-							"api_type": sv("grpc"),
+							"api_type": sv("GRPC"),
 							"cluster_names": lv(
 								sv("xds_cluster"),
 							),
@@ -297,13 +296,15 @@ func httpfilter(routename string) *v2.Filter {
 						"name": sv(router),
 					}),
 				),
-				"access_log": st(map[string]*types.Value{
-					"name": sv(accessLog),
-					"config": st(map[string]*types.Value{
-						"path": sv("/dev/stdout"),
-					}),
-				}),
 				"use_remote_address": bv(true), // TODO(jbeda) should this ever be false?
+				"access_log": lv(
+					st(map[string]*types.Value{
+						"name": sv(accessLog),
+						"config": st(map[string]*types.Value{
+							"path": sv("/dev/stdout"),
+						}),
+					}),
+				),
 			},
 		},
 	}

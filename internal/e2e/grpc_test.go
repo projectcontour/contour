@@ -15,9 +15,7 @@
 package e2e
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -302,26 +300,16 @@ func any(t *testing.T, pb proto.Message) *types.Any {
 
 func assertEqual(t *testing.T, want, got *v2.DiscoveryResponse) {
 	t.Helper()
-	if !proto.Equal(want, got) {
+	m := proto.TextMarshaler{Compact: true, ExpandAny: true}
+	a := m.Text(want)
+	b := m.Text(got)
+	if a != b {
 		m := proto.TextMarshaler{
 			Compact:   false,
 			ExpandAny: true,
 		}
-		t.Fatalf("expected:\n%v\ngot:\n%v\n", m.Text(want), m.Text(got))
+		t.Fatalf("\nexpected:\n%v\ngot:\n%v", m.Text(want), m.Text(got))
 	}
-}
-
-func dumpany(any []*types.Any) string {
-	var buf bytes.Buffer
-	for _, a := range any {
-		pb := new(v2.RouteConfiguration)
-		if err := types.UnmarshalAny(a, pb); err != nil {
-			fmt.Fprintln(&buf, err)
-		} else {
-			fmt.Fprintln(&buf, pb)
-		}
-	}
-	return buf.String()
 }
 
 func service(ns, name string, ports ...v1.ServicePort) *v1.Service {
