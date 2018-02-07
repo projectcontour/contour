@@ -33,9 +33,6 @@ spec:
         name: contour
         command: ["contour"]
         args: ["serve", "--incluster"]
-        volumeMounts:
-        - name: contour-config
-          mountPath: /config
       initContainers:
       - image: gcr.io/heptio-images/contour:master
         imagePullPolicy: Always

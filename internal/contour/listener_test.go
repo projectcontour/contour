@@ -219,10 +219,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 						Name:      "secret",
 						Namespace: "default",
 					},
-					Data: map[string][]byte{
-						v1.TLSCertKey:       []byte("certificate"),
-						v1.TLSPrivateKeyKey: []byte("key"),
-					},
+					Data: secretdata("certificate", "key"),
 				},
 			},
 			add: []*v2.Listener{{
@@ -232,13 +229,46 @@ func TestRecomputeTLSListener(t *testing.T) {
 					FilterChainMatch: &v2.FilterChainMatch{
 						SniDomains: []string{"whatever.example.com"},
 					},
-					TlsContext: tlscontext("default", "secret", "h2", "http/1.1"),
+					TlsContext: tlscontext(&v1.Secret{
+						Data: secretdata("certificate", "key"),
+					}, "h2", "http/1.1"),
 					Filters: []*v2.Filter{
 						httpfilter(ENVOY_HTTPS_LISTENER),
 					},
 				}},
 			}},
 			remove: nil,
+		},
+		"simple vhost, with secret missing private key": {
+			ingresses: map[metadata]*v1beta1.Ingress{
+				metadata{namespace: "default", name: "simple"}: {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							Hosts:      []string{"whatever.example.com"},
+							SecretName: "secret",
+						}},
+						Backend: backend("backend", intstr.FromInt(80)),
+					},
+				},
+			},
+			secrets: map[metadata]*v1.Secret{
+				metadata{namespace: "default", name: "secret"}: {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						v1.TLSCertKey: []byte("certificate"),
+						// missing private key
+					},
+				},
+			},
+			add:    nil,
+			remove: []string{ENVOY_HTTPS_LISTENER},
 		},
 		"simple vhost, with non default listener port": {
 			ListenerCache: ListenerCache{
@@ -266,10 +296,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 						Name:      "secret",
 						Namespace: "default",
 					},
-					Data: map[string][]byte{
-						v1.TLSCertKey:       []byte("certificate"),
-						v1.TLSPrivateKeyKey: []byte("key"),
-					},
+					Data: secretdata("certificate", "key"),
 				},
 			},
 			add: []*v2.Listener{{
@@ -279,7 +306,9 @@ func TestRecomputeTLSListener(t *testing.T) {
 					FilterChainMatch: &v2.FilterChainMatch{
 						SniDomains: []string{"whatever.example.com"},
 					},
-					TlsContext: tlscontext("default", "secret", "h2", "http/1.1"),
+					TlsContext: tlscontext(&v1.Secret{
+						Data: secretdata("certificate", "key"),
+					}, "h2", "http/1.1"),
 					Filters: []*v2.Filter{
 						httpfilter(ENVOY_HTTPS_LISTENER),
 					},
@@ -325,7 +354,9 @@ func TestRecomputeTLSListener(t *testing.T) {
 					FilterChainMatch: &v2.FilterChainMatch{
 						SniDomains: []string{"whatever.example.com"},
 					},
-					TlsContext: tlscontext("default", "secret", "h2", "http/1.1"),
+					TlsContext: tlscontext(&v1.Secret{
+						Data: secretdata("certificate", "key"),
+					}, "h2", "http/1.1"),
 					Filters: []*v2.Filter{
 						httpfilter(ENVOY_HTTPS_LISTENER),
 					},
@@ -407,6 +438,7 @@ func TestListenerCacheRecomputeTLSListener(t *testing.T) {
 			Name:      "secret",
 			Namespace: "default",
 		},
+		Data: secretdata("certificate", "key"),
 	}
 	lc.recomputeTLSListener(i, s)
 	assertCacheNotEmpty(t, lc) // we've got the secret and the ingress, we should have at least one listener
@@ -541,5 +573,12 @@ func assertCacheNotEmpty(t *testing.T, lc *ListenerCache) {
 	t.Helper()
 	if len(lc.values) == 0 {
 		t.Fatalf("len(lc.values): expected > 0, got %d", len(lc.values))
+	}
+}
+
+func secretdata(cert, key string) map[string][]byte {
+	return map[string][]byte{
+		v1.TLSCertKey:       []byte(cert),
+		v1.TLSPrivateKeyKey: []byte(key),
 	}
 }
