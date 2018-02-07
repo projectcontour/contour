@@ -27,6 +27,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	cgrpc "github.com/heptio/contour/internal/grpc"
 	"google.golang.org/grpc"
+	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -58,6 +59,81 @@ func TestNonTLSListener(t *testing.T) {
 
 	// add it and assert that we now have a ingress_http listener
 	rh.OnAdd(i1)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []*types.Any{
+			any(t, listener("ingress_http", "0.0.0.0", 8080,
+				filterchain(false, httpfilter("ingress_http")),
+			)),
+		},
+		TypeUrl: cgrpc.ListenerType,
+		Nonce:   "0",
+	}, fetchLDS(t, cc))
+}
+
+func TestTLSListener(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	// s1 is a tls secret
+	s1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	}
+
+	// i1 is a tls ingress
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"kuard.example.com"},
+				SecretName: "secret",
+			}},
+		},
+	}
+
+	// add secret
+	rh.OnAdd(s1)
+
+	// assert that there are no active listeners
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   []*types.Any{},
+		TypeUrl:     cgrpc.ListenerType,
+		Nonce:       "0",
+	}, fetchLDS(t, cc))
+
+	// add ingress and assert the existence of ingress_http and ingres_https
+	rh.OnAdd(i1)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []*types.Any{
+			any(t, listener("ingress_http", "0.0.0.0", 8080,
+				filterchain(false, httpfilter("ingress_http")),
+			)),
+			any(t, listener("ingress_https", "0.0.0.0", 8443,
+				filterchaintls(
+					[]string{"kuard.example.com"},
+					"certificate", "key",
+					false, httpfilter("ingress_https")),
+			)),
+		},
+		TypeUrl: cgrpc.ListenerType,
+		Nonce:   "0",
+	}, fetchLDS(t, cc))
+
+	// delete secret and assert that ingress_https is removed
+	rh.OnDelete(s1)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []*types.Any{
@@ -120,6 +196,34 @@ func filterchain(useproxy bool, filters ...*v2.Filter) *v2.FilterChain {
 		fc.UseProxyProto = &types.BoolValue{Value: true}
 	}
 	return &fc
+}
+
+func filterchaintls(domains []string, cert, key string, useproxy bool, filters ...*v2.Filter) *v2.FilterChain {
+	fc := filterchain(useproxy, filters...)
+	fc.FilterChainMatch = &v2.FilterChainMatch{
+		SniDomains: domains,
+	}
+	fc.TlsContext = &v2.DownstreamTlsContext{
+		CommonTlsContext: &v2.CommonTlsContext{
+			TlsParams: &v2.TlsParameters{
+				TlsMinimumProtocolVersion: v2.TlsParameters_TLSv1_1,
+			},
+			TlsCertificates: []*v2.TlsCertificate{{
+				CertificateChain: &v2.DataSource{
+					Specifier: &v2.DataSource_InlineBytes{
+						InlineBytes: []byte(cert),
+					},
+				},
+				PrivateKey: &v2.DataSource{
+					Specifier: &v2.DataSource_InlineBytes{
+						InlineBytes: []byte(key),
+					},
+				},
+			}},
+			AlpnProtocols: []string{"h2", "http/1.1"},
+		},
+	}
+	return fc
 }
 
 func httpfilter(routename string) *v2.Filter {
