@@ -201,6 +201,221 @@ func TestIngressPathRouteWithoutHost(t *testing.T) {
 	}, fetchRDS(t, cc))
 }
 
+func TestEditIngressInPlace(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{Name: "hello", Namespace: "default"},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				Host: "hello.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "wowie",
+								ServicePort: intstr.FromInt(80),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	rh.OnAdd(i1)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []*types.Any{
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_http",
+				VirtualHosts: []*v2.VirtualHost{{
+					Name:    "hello.example.com",
+					Domains: []string{"hello.example.com"},
+					Routes: []*v2.Route{
+						route(prefixmatch("/"), cluster("default/wowie/80")),
+					},
+				}},
+			}),
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_https",
+			}),
+		},
+		TypeUrl: cgrpc.RouteType,
+		Nonce:   "0",
+	}, fetchRDS(t, cc))
+
+	// i2 is like i1 but adds a second route
+	i2 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{Name: "hello", Namespace: "default"},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				Host: "hello.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "wowie",
+								ServicePort: intstr.FromInt(80),
+							},
+						}, {
+							Path: "/whoop",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kerpow",
+								ServicePort: intstr.FromInt(9000),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	rh.OnUpdate(i1, i2)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []*types.Any{
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_http",
+				VirtualHosts: []*v2.VirtualHost{{
+					Name:    "hello.example.com",
+					Domains: []string{"hello.example.com"},
+					Routes: []*v2.Route{
+						route(prefixmatch("/whoop"), cluster("default/kerpow/9000")),
+						route(prefixmatch("/"), cluster("default/wowie/80")),
+					},
+				}},
+			}),
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_https",
+			}),
+		},
+		TypeUrl: cgrpc.RouteType,
+		Nonce:   "0",
+	}, fetchRDS(t, cc))
+
+	// i3 is like i2, but adds the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
+	i3 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hello",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"ingress.kubernetes.io/force-ssl-redirect": "true"},
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				Host: "hello.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "wowie",
+								ServicePort: intstr.FromInt(80),
+							},
+						}, {
+							Path: "/whoop",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kerpow",
+								ServicePort: intstr.FromInt(9000),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	rh.OnUpdate(i2, i3)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []*types.Any{
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_http",
+				VirtualHosts: []*v2.VirtualHost{{
+					Name:    "hello.example.com",
+					Domains: []string{"hello.example.com"},
+					Routes: []*v2.Route{
+						route(prefixmatch("/whoop"), cluster("default/kerpow/9000")),
+						route(prefixmatch("/"), cluster("default/wowie/80")),
+					},
+					RequireTls: v2.VirtualHost_ALL,
+				}}}),
+			any(t, &v2.RouteConfiguration{Name: "ingress_https"}),
+		},
+		TypeUrl: cgrpc.RouteType,
+		Nonce:   "0",
+	}, fetchRDS(t, cc))
+
+	// i4 is the same as i3, and includes a TLS spec object to enable ingress_https routes
+	// i3 is like i2, but adds the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
+	i4 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hello",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"ingress.kubernetes.io/force-ssl-redirect": "true"},
+		},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"hello.example.com"},
+				SecretName: "hello-kitty",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "hello.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "wowie",
+								ServicePort: intstr.FromInt(80),
+							},
+						}, {
+							Path: "/whoop",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kerpow",
+								ServicePort: intstr.FromInt(9000),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	rh.OnUpdate(i3, i4)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []*types.Any{
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_http",
+				VirtualHosts: []*v2.VirtualHost{{
+					Name:    "hello.example.com",
+					Domains: []string{"hello.example.com"},
+					Routes: []*v2.Route{
+						route(prefixmatch("/whoop"), cluster("default/kerpow/9000")),
+						route(prefixmatch("/"), cluster("default/wowie/80")),
+					},
+					RequireTls: v2.VirtualHost_ALL,
+				}}}),
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_https",
+				VirtualHosts: []*v2.VirtualHost{{
+					Name:    "hello.example.com",
+					Domains: []string{"hello.example.com"},
+					Routes: []*v2.Route{
+						route(prefixmatch("/whoop"), cluster("default/kerpow/9000")),
+						route(prefixmatch("/"), cluster("default/wowie/80")),
+					},
+				}}}),
+		},
+		TypeUrl: cgrpc.RouteType,
+		Nonce:   "0",
+	}, fetchRDS(t, cc))
+
+}
+
 func fetchRDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
 	t.Helper()
 	rds := v2.NewRouteDiscoveryServiceClient(cc)
