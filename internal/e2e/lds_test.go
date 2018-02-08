@@ -69,6 +69,58 @@ func TestNonTLSListener(t *testing.T) {
 		TypeUrl: cgrpc.ListenerType,
 		Nonce:   "0",
 	}, fetchLDS(t, cc))
+
+	// i2 is the same as i1 but has the kubernetes.io/ingress.allow-http: "false" annotation
+	i2 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.allow-http": "false",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+		},
+	}
+
+	// update i1 to i2 and verify that ingress_http has gone.
+	rh.OnUpdate(i1, i2)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   []*types.Any{},
+		TypeUrl:     cgrpc.ListenerType,
+		Nonce:       "0",
+	}, fetchLDS(t, cc))
+
+	// i3 is similar to i2, but uses the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
+	// to force 80 -> 443 upgrade
+	i3 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"ingress.kubernetes.io/force-ssl-redirect": "true",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+		},
+	}
+
+	// update i2 to i3 and check that ingress_http has returned
+	rh.OnUpdate(i2, i3)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []*types.Any{
+			any(t, listener("ingress_http", "0.0.0.0", 8080,
+				filterchain(false, httpfilter("ingress_http")),
+			)),
+		},
+		TypeUrl: cgrpc.ListenerType,
+		Nonce:   "0",
+	}, fetchLDS(t, cc))
+
 }
 
 func TestTLSListener(t *testing.T) {
@@ -132,17 +184,47 @@ func TestTLSListener(t *testing.T) {
 		Nonce:   "0",
 	}, fetchLDS(t, cc))
 
-	// delete secret and assert that ingress_https is removed
-	rh.OnDelete(s1)
+	// i2 is the same as i1 but has the kubernetes.io/ingress.allow-http: "false" annotation
+	i2 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.allow-http": "false",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"kuard.example.com"},
+				SecretName: "secret",
+			}},
+		},
+	}
+
+	// update i1 to i2 and verify that ingress_http has gone.
+	rh.OnUpdate(i1, i2)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []*types.Any{
-			any(t, listener("ingress_http", "0.0.0.0", 8080,
-				filterchain(false, httpfilter("ingress_http")),
+			any(t, listener("ingress_https", "0.0.0.0", 8443,
+				filterchaintls(
+					[]string{"kuard.example.com"},
+					"certificate", "key",
+					false, httpfilter("ingress_https")),
 			)),
 		},
 		TypeUrl: cgrpc.ListenerType,
 		Nonce:   "0",
+	}, fetchLDS(t, cc))
+
+	// delete secret and assert that ingress_https is removed
+	rh.OnDelete(s1)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   []*types.Any{},
+		TypeUrl:     cgrpc.ListenerType,
+		Nonce:       "0",
 	}, fetchLDS(t, cc))
 }
 
