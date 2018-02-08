@@ -115,16 +115,8 @@ func clusterloadassignment(name string, lbendpoints ...*v2.LbEndpoint) *v2.Clust
 	return &v2.ClusterLoadAssignment{
 		ClusterName: name,
 		Endpoints: []*v2.LocalityLbEndpoints{{
-			Locality: &v2.Locality{
-				Region:  "ap-southeast-2", // totally a guess
-				Zone:    "2b",
-				SubZone: "banana", // yeah, need to think of better values here
-			},
 			LbEndpoints: lbendpoints,
 		}},
-		Policy: &v2.ClusterLoadAssignment_Policy{
-			DropOverload: 0.0,
-		},
 	}
 }
 
