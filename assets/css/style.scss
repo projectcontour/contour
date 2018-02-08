@@ -208,7 +208,6 @@ header ul {
   display: flex;
   list-style: none;
   align-self: center;
-  margin: 0 20px 0 0;
   padding: 0;
 }
 
@@ -257,15 +256,31 @@ nav a:hover {
 section {
   margin-left: 250px;
   margin-top: 90px;
-  max-width: 800px;
+  max-width: 50%;
   padding-bottom: 60px;
 }
 
+@media screen and (min-width: 1100px) {
+  section {
+    max-width: 800px;
+  }
+}
+
+.logo-version--container {
+  display: flex;
+}
+
+.fa {
+  padding-left: 2px;
+}
+
+.social--links {
+  margin-right: 20px;
+}
+
 .version-selector {
-	float: left;
-	width: 100%;
-	padding-left: 1%;
-	padding-top: 16px;
+  padding-top: 4px;
+  align-self: center;
 }
 
 .version-selector:hover ul {
@@ -284,28 +299,28 @@ section {
 .version-selector ul {
   display: none;
   position: fixed;
-  top: 32px;
-	margin-left: -5px;
+  top: 22px;
+  width: 100px;
+  background: #fff;
+  border: 1px solid #2C67EF;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .version-selector li {
   display: block;
-  height: 28px;
+  padding: 0;
 }
 
 .version-selector li a {
-  border: grey;
-	background: #8eacf1;
-  color: white;
-  padding: 7px;
+  color: #2C67EF;
+  padding: 4px 0 5px 16px;
+  transition: all 120ms;
 }
 
 .version-selector li a:hover {
-	color: #2C67EF;
-}
-
-.version-selector li:last-child a {
-  border-radius: 3px;
+  color: #fff;
+  background: #2C67EF;
+  transition: all 120ms;
 }
 
 .version-warning {
