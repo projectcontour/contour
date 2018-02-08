@@ -250,6 +250,10 @@ func socketaddress(address string, port uint32) *v2.Address {
 func tlscontext(secret *v1.Secret, alpnprotos ...string) *v2.DownstreamTlsContext {
 	return &v2.DownstreamTlsContext{
 		CommonTlsContext: &v2.CommonTlsContext{
+			TlsParams: &v2.TlsParameters{
+				// Envoy 1.5.0 defaults to TLS 1.0.
+				TlsMinimumProtocolVersion: v2.TlsParameters_TLSv1_1,
+			},
 			TlsCertificates: []*v2.TlsCertificate{{
 				CertificateChain: &v2.DataSource{
 					Specifier: &v2.DataSource_InlineBytes{
