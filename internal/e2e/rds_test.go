@@ -413,7 +413,116 @@ func TestEditIngressInPlace(t *testing.T) {
 		TypeUrl: cgrpc.RouteType,
 		Nonce:   "0",
 	}, fetchRDS(t, cc))
+}
 
+// contour#164: backend request timeout support
+func TestRequestTimeout(t *testing.T) {
+	const (
+		durationInfinite  = time.Duration(0)
+		duration10Minutes = 10 * time.Minute
+	)
+
+	rh, cc, done := setup(t)
+	defer done()
+
+	// i1 is a simple ingress bound to the default vhost.
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{Name: "hello", Namespace: "default"},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+		},
+	}
+	rh.OnAdd(i1)
+	assertRDS(t, cc, []*v2.VirtualHost{{
+		Name:    "*",
+		Domains: []string{"*"},
+		Routes: []*v2.Route{{
+			Match:  prefixmatch("/"), // match all
+			Action: cluster("default/backend/80"),
+		}},
+	}}, nil)
+
+	// i2 adds an _invalid_ timeout, which we interpret as _infinite_.
+	i2 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{Name: "hello", Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/request-timeout": "600", // not valid
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+		},
+	}
+	rh.OnUpdate(i1, i2)
+	assertRDS(t, cc, []*v2.VirtualHost{{
+		Name:    "*",
+		Domains: []string{"*"},
+		Routes: []*v2.Route{{
+			Match:  prefixmatch("/"), // match all
+			Action: clustertimeout("default/backend/80", durationInfinite),
+		}},
+	}}, nil)
+
+	// i3 corrects i2 to use a proper duration
+	i3 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{Name: "hello", Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/request-timeout": "600s", // 10 * time.Minute
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+		},
+	}
+	rh.OnUpdate(i2, i3)
+	assertRDS(t, cc, []*v2.VirtualHost{{
+		Name:    "*",
+		Domains: []string{"*"},
+		Routes: []*v2.Route{{
+			Match:  prefixmatch("/"), // match all
+			Action: clustertimeout("default/backend/80", duration10Minutes),
+		}},
+	}}, nil)
+
+	// i4 updates i3 to explicitly request infinite timeout
+	i4 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{Name: "hello", Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/request-timeout": "infinity",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+		},
+	}
+	rh.OnUpdate(i3, i4)
+	assertRDS(t, cc, []*v2.VirtualHost{{
+		Name:    "*",
+		Domains: []string{"*"},
+		Routes: []*v2.Route{{
+			Match:  prefixmatch("/"), // match all
+			Action: clustertimeout("default/backend/80", durationInfinite),
+		}},
+	}}, nil)
+}
+
+func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []*v2.VirtualHost) {
+	t.Helper()
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []*types.Any{
+			any(t, &v2.RouteConfiguration{
+				Name:         "ingress_http",
+				VirtualHosts: ingress_http,
+			}),
+			any(t, &v2.RouteConfiguration{
+				Name:         "ingress_https",
+				VirtualHosts: ingress_https,
+			}),
+		},
+		TypeUrl: cgrpc.RouteType,
+		Nonce:   "0",
+	}, fetchRDS(t, cc))
 }
 
 func fetchRDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
@@ -452,6 +561,12 @@ func cluster(cluster string) *v2.Route_Route {
 			},
 		},
 	}
+}
+
+func clustertimeout(c string, timeout time.Duration) *v2.Route_Route {
+	cl := cluster(c)
+	cl.Route.Timeout = &timeout
+	return cl
 }
 
 func service(ns, name string, ports ...v1.ServicePort) *v1.Service {
