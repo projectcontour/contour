@@ -319,11 +319,11 @@ func httpfilter(routename string) *v2.Filter {
 						ConfigSourceSpecifier: &v2.ConfigSource_ApiConfigSource{
 							ApiConfigSource: &v2.ApiConfigSource{
 								ApiType:      v2.ApiConfigSource_GRPC,
-								ClusterNames: []string{"xds_cluster"},
+								ClusterNames: []string{"contour"},
 								GrpcServices: []*v2.GrpcService{{
 									TargetSpecifier: &v2.GrpcService_EnvoyGrpc_{
 										EnvoyGrpc: &v2.GrpcService_EnvoyGrpc{
-											ClusterName: "xds_cluster",
+											ClusterName: "contour",
 										},
 									},
 								}},

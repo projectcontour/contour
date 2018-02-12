@@ -73,7 +73,7 @@ func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 				// for this service.
 				sname = strconv.Itoa(int(p.Port))
 			}
-			config := edsconfig("xds_cluster", servicename(newsvc.ObjectMeta, sname))
+			config := edsconfig("contour", servicename(newsvc.ObjectMeta, sname))
 
 			// sname is the entry that EDS will try to match on, it is independant
 			// of named and unnamed ports below.

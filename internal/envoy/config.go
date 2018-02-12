@@ -54,20 +54,20 @@ const yamlConfig = `dynamic_resources:
   lds_config:
     api_config_source:
       api_type: GRPC
-      cluster_names: [xds_cluster]
+      cluster_names: [contour]
       grpc_services:
       - envoy_grpc:
-          cluster_name: xds_cluster
+          cluster_name: contour
   cds_config:
     api_config_source:
       api_type: GRPC
-      cluster_names: [xds_cluster]
+      cluster_names: [contour]
       grpc_services:
       - envoy_grpc:
-          cluster_name: xds_cluster
+          cluster_name: contour
 static_resources:
   clusters:
-  - name: xds_cluster
+  - name: contour
     connect_timeout: { seconds: 5 }
     type: STATIC
     hosts:
