@@ -630,40 +630,43 @@ func TestValidTLSSpecforVhost(t *testing.T) {
 }
 
 func TestGetRequestTimeout(t *testing.T) {
-	var tenSeconds = 10 * time.Second
-
 	tests := map[string]struct {
 		a    map[string]string
-		want *time.Duration
-		// ok   bool
+		want time.Duration
+		ok   bool
 	}{
 		"nada": {
 			a:    nil,
-			want: nil,
+			want: 0,
+			ok:   false,
 		},
 		"empty": {
 			a:    map[string]string{requestTimeout: ""}, // not even sure this is possible via the API
-			want: nil,
+			want: 0,
+			ok:   false,
 		},
 		"infinity": {
 			a:    map[string]string{requestTimeout: "infinity"},
-			want: &infiniteTimeout,
+			want: 0,
+			ok:   true,
 		},
 		"10 seconds": {
 			a:    map[string]string{requestTimeout: "10s"},
-			want: &tenSeconds,
+			want: 10 * time.Second,
+			ok:   true,
 		},
 		"invalid": {
 			a:    map[string]string{requestTimeout: "10"}, // 10 what?
-			want: &infiniteTimeout,
+			want: 0,
+			ok:   true,
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := getRequestTimeout(tc.a)
-			if got != tc.want { // || ok != tc.ok {
-				t.Fatalf("getRequestTimeout(%q): want: %v, %v, got: %v, %v", tc.a, tc.want, false, got, false)
+			got, ok := getRequestTimeout(tc.a)
+			if got != tc.want || ok != tc.ok {
+				t.Fatalf("getRequestTimeout(%q): want: %v, %v, got: %v, %v", tc.a, tc.want, tc.ok, got, ok)
 			}
 		})
 	}
