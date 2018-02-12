@@ -455,9 +455,6 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 }
 
 func TestTranslatorAddIngress(t *testing.T) {
-	duration20seconds := time.Duration(20 * time.Second)
-	duration0seconds := time.Duration(0)
-
 	tests := []struct {
 		name          string
 		setup         func(*Translator)
@@ -965,7 +962,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Domains: []string{"*"},
 			Routes: []*v2.Route{{
 				Match:  prefixmatch("/"), // match all
-				Action: clusteractiontimeout("default/backend/80", &duration20seconds),
+				Action: clusteractiontimeout("default/backend/80", 20*time.Second),
 			}},
 		}},
 		ingress_https: []*v2.VirtualHost{},
@@ -987,8 +984,8 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Name:    "*",
 			Domains: []string{"*"},
 			Routes: []*v2.Route{{
-				Match:  prefixmatch("/"), // match all
-				Action: clusteractiontimeout("default/backend/80", &duration0seconds),
+				Match:  prefixmatch("/"),                                          // match all
+				Action: clusteractiontimeout("default/backend/80", 0*time.Second), // infinity
 			}},
 		}},
 		ingress_https: []*v2.VirtualHost{},
@@ -1010,8 +1007,8 @@ func TestTranslatorAddIngress(t *testing.T) {
 			Name:    "*",
 			Domains: []string{"*"},
 			Routes: []*v2.Route{{
-				Match:  prefixmatch("/"), // match all
-				Action: clusteractiontimeout("default/backend/80", &duration0seconds),
+				Match:  prefixmatch("/"),                                          // match all
+				Action: clusteractiontimeout("default/backend/80", 0*time.Second), // infinity
 			}},
 		}},
 		ingress_https: []*v2.VirtualHost{},

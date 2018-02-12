@@ -17,6 +17,7 @@ import (
 	"io/ioutil"
 	"reflect"
 	"testing"
+	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
 	"github.com/heptio/contour/internal/log/stdlog"
@@ -626,4 +627,70 @@ func TestValidTLSSpecforVhost(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetRequestTimeout(t *testing.T) {
+	tests := map[string]struct {
+		a    map[string]string
+		want time.Duration
+		ok   bool
+	}{
+		"nada": {
+			a:    nil,
+			want: 0,
+			ok:   false,
+		},
+		"empty": {
+			a:    map[string]string{requestTimeout: ""}, // not even sure this is possible via the API
+			want: 0,
+			ok:   false,
+		},
+		"infinity": {
+			a:    map[string]string{requestTimeout: "infinity"},
+			want: 0,
+			ok:   true,
+		},
+		"10 seconds": {
+			a:    map[string]string{requestTimeout: "10s"},
+			want: 10 * time.Second,
+			ok:   true,
+		},
+		"invalid": {
+			a:    map[string]string{requestTimeout: "10"}, // 10 what?
+			want: 0,
+			ok:   true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, ok := getRequestTimeout(tc.a)
+			if got != tc.want || ok != tc.ok {
+				t.Fatalf("getRequestTimeout(%q): want: %v, %v, got: %v, %v", tc.a, tc.want, tc.ok, got, ok)
+			}
+		})
+	}
+}
+
+// clusteraction returns a route action for the supplied cluster name.
+func clusteraction(name string) *v2.Route_Route {
+	return &v2.Route_Route{
+		Route: &v2.RouteAction{
+			ClusterSpecifier: &v2.RouteAction_Cluster{
+				Cluster: name,
+			},
+		},
+	}
+}
+
+// clusteractiontimeout returns a cluster action with the specified timeout.
+// A timeout of 0 means infinity. If you do not want to specify a timeout, use
+// clusteraction instead.
+func clusteractiontimeout(name string, timeout time.Duration) *v2.Route_Route {
+	// TODO(cmaloney): Pull timeout off of the backend cluster annotation
+	// and use it over the value retrieved from the ingress annotation if
+	// specified.
+	c := clusteraction(name)
+	c.Route.Timeout = &timeout
+	return c
 }

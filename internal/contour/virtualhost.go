@@ -29,23 +29,31 @@ type VirtualHostCache struct {
 	Cond
 }
 
-func getRequestTimeout(annotations map[string]string) *time.Duration {
-	timeoutStr, ok := annotations["contour.heptio.com/request-timeout"]
-	// Error or unspecified is interpreted as no timeout specified, use envoy defaults
-	if !ok {
-		return nil
-	}
+const (
+	requestTimeout = "contour.heptio.com/request-timeout"
 
-	if timeoutStr == "" {
-		return nil
+	// By default envoy applies a 15 second timeout to all backend requests.
+	// The explicit value 0 turns off the timeout, implying "never time out"
+	// https://www.envoyproxy.io/docs/envoy/v1.5.0/api-v2/rds.proto#routeaction
+	infiniteTimeout = time.Duration(0)
+)
+
+// getRequestTimeout parses the annotations map for a contour.heptio.com/request-timeout
+// value. If the value is not present, false is returned and the timeout value should be
+// ignored. If the value is present, but malformed, the timeout value is valid, and represents
+// infinite timeout.
+func getRequestTimeout(annotations map[string]string) (time.Duration, bool) {
+	timeoutStr, ok := annotations[requestTimeout]
+	// Error or unspecified is interpreted as no timeout specified, use envoy defaults
+	if !ok || timeoutStr == "" {
+		return 0, false
 	}
 
 	// Interpret "infinity" explicitly as an infinite timeout, which envoy config
 	// expects as a timeout of 0. This could be specified with the duration string
 	// "0s" but want to give an explicit out for operators.
-	infiniteTimeout := time.Duration(0)
 	if timeoutStr == "infinity" {
-		return &infiniteTimeout
+		return infiniteTimeout, true
 	}
 
 	timeoutParsed, err := time.ParseDuration(timeoutStr)
@@ -53,15 +61,14 @@ func getRequestTimeout(annotations map[string]string) *time.Duration {
 		// TODO(cmalonty) plumb a logger in here so we can log this error.
 		// Assuming infinite duration is going to surprise people less for
 		// a not-parseable duration than a implicit 15 second one.
-		return &infiniteTimeout
+		return infiniteTimeout, true
 	}
-	return &timeoutParsed
+	return timeoutParsed, true
 }
 
 // recomputevhost recomputes the ingress_http (HTTP) and ingress_https (HTTPS) record
 // from the vhost from list of ingresses supplied.
 func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*v1beta1.Ingress) {
-
 	// handle ingress_https (TLS) vhost routes first.
 	vv := virtualhost(vhost)
 	for _, ing := range ingresses {
@@ -77,12 +84,11 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 				continue
 			}
 
-			timeout := getRequestTimeout(ing.Annotations)
-
 			for _, p := range rule.IngressRuleValue.HTTP.Paths {
-				m := pathToRouteMatch(p)
-				a := clusteractiontimeout(ingressBackendToClusterName(ing, &p.Backend), timeout)
-				vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
+				vv.Routes = append(vv.Routes, &v2.Route{
+					Match:  pathToRouteMatch(p),
+					Action: action(ing, &p.Backend),
+				})
 			}
 		}
 	}
@@ -104,12 +110,10 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 			// set blanket 301 redirect
 			vv.RequireTls = v2.VirtualHost_ALL
 		}
-		timeout := getRequestTimeout(i.Annotations)
-
 		if i.Spec.Backend != nil && len(ingresses) == 1 {
 			vv.Routes = []*v2.Route{{
-				Match:  prefixmatch("/"), // match all
-				Action: clusteractiontimeout(ingressBackendToClusterName(i, i.Spec.Backend), timeout),
+				Match:  prefixmatch("/"),
+				Action: action(i, i.Spec.Backend),
 			}}
 			continue
 		}
@@ -122,9 +126,10 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 				continue
 			}
 			for _, p := range rule.IngressRuleValue.HTTP.Paths {
-				m := pathToRouteMatch(p)
-				a := clusteractiontimeout(ingressBackendToClusterName(i, &p.Backend), timeout)
-				vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
+				vv.Routes = append(vv.Routes, &v2.Route{
+					Match:  pathToRouteMatch(p),
+					Action: action(i, &p.Backend),
+				})
 			}
 		}
 	}
@@ -134,6 +139,23 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 	} else {
 		v.HTTP.Remove(vv.Name)
 	}
+}
+
+// action computes the cluster route action, a *v2.Route_route for the
+// supplied ingress and backend.
+func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend) *v2.Route_Route {
+	name := ingressBackendToClusterName(i, be)
+	ca := v2.Route_Route{
+		Route: &v2.RouteAction{
+			ClusterSpecifier: &v2.RouteAction_Cluster{
+				Cluster: name,
+			},
+		},
+	}
+	if timeout, ok := getRequestTimeout(i.Annotations); ok {
+		ca.Route.Timeout = &timeout
+	}
+	return &ca
 }
 
 // validTLSSpecForVhost returns if this ingress object
@@ -219,27 +241,6 @@ func regexmatch(regex string) *v2.RouteMatch {
 			Regex: regex,
 		},
 	}
-}
-
-// clusteraction returns a Route_Route action for the supplied cluster.
-func clusteraction(cluster string) *v2.Route_Route {
-	return &v2.Route_Route{
-		Route: &v2.RouteAction{
-			ClusterSpecifier: &v2.RouteAction_Cluster{
-				Cluster: cluster,
-			},
-		},
-	}
-}
-
-// clusteractiontimeout returns a Route_Route action for the supplied cluster.
-func clusteractiontimeout(cluster string, timeout *time.Duration) *v2.Route_Route {
-	// TODO(cmaloney): Pull timeout off of the backend cluster annotation
-	// and use it over the value retrieved from the ingress annotation if
-	// specified.
-	c := clusteraction(cluster)
-	c.Route.Timeout = timeout
-	return c
 }
 
 func virtualhost(hostname string) *v2.VirtualHost {
