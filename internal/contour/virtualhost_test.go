@@ -17,6 +17,7 @@ import (
 	"io/ioutil"
 	"reflect"
 	"testing"
+	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/api"
 	"github.com/heptio/contour/internal/log/stdlog"
@@ -623,6 +624,46 @@ func TestValidTLSSpecforVhost(t *testing.T) {
 			got := validTLSSpecforVhost(tc.vhost, &tc.ing)
 			if got != tc.want {
 				t.Fatal("got", got, "want", tc.want)
+			}
+		})
+	}
+}
+
+func TestGetRequestTimeout(t *testing.T) {
+	var tenSeconds = 10 * time.Second
+
+	tests := map[string]struct {
+		a    map[string]string
+		want *time.Duration
+		// ok   bool
+	}{
+		"nada": {
+			a:    nil,
+			want: nil,
+		},
+		"empty": {
+			a:    map[string]string{requestTimeout: ""}, // not even sure this is possible via the API
+			want: nil,
+		},
+		"infinity": {
+			a:    map[string]string{requestTimeout: "infinity"},
+			want: &infiniteTimeout,
+		},
+		"10 seconds": {
+			a:    map[string]string{requestTimeout: "10s"},
+			want: &tenSeconds,
+		},
+		"invalid": {
+			a:    map[string]string{requestTimeout: "10"}, // 10 what?
+			want: &infiniteTimeout,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := getRequestTimeout(tc.a)
+			if got != tc.want { // || ok != tc.ok {
+				t.Fatalf("getRequestTimeout(%q): want: %v, %v, got: %v, %v", tc.a, tc.want, false, got, false)
 			}
 		})
 	}

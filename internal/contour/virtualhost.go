@@ -29,8 +29,16 @@ type VirtualHostCache struct {
 	Cond
 }
 
+const (
+	requestTimeout = "contour.heptio.com/request-timeout"
+)
+
+var (
+	infiniteTimeout = time.Duration(0)
+)
+
 func getRequestTimeout(annotations map[string]string) *time.Duration {
-	timeoutStr, ok := annotations["contour.heptio.com/request-timeout"]
+	timeoutStr, ok := annotations[requestTimeout]
 	// Error or unspecified is interpreted as no timeout specified, use envoy defaults
 	if !ok {
 		return nil
@@ -43,7 +51,6 @@ func getRequestTimeout(annotations map[string]string) *time.Duration {
 	// Interpret "infinity" explicitly as an infinite timeout, which envoy config
 	// expects as a timeout of 0. This could be specified with the duration string
 	// "0s" but want to give an explicit out for operators.
-	infiniteTimeout := time.Duration(0)
 	if timeoutStr == "infinity" {
 		return &infiniteTimeout
 	}
@@ -232,7 +239,9 @@ func clusteraction(cluster string) *v2.Route_Route {
 	}
 }
 
-// clusteractiontimeout returns a Route_Route action for the supplied cluster.
+// clusteractiontimeout returns a cluster action with the specified timeout.
+// A timeout of 0 means infinity. If you do not want to specify a timeout, use
+// clusteraction instead.
 func clusteractiontimeout(cluster string, timeout *time.Duration) *v2.Route_Route {
 	// TODO(cmaloney): Pull timeout off of the backend cluster annotation
 	// and use it over the value retrieved from the ingress annotation if
