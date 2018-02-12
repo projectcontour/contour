@@ -50,7 +50,7 @@ func TestClusterLongServiceName(t *testing.T) {
 				Name: "kuard/kbujbkuhdod66-edfcfc/8080",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "kuard/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r/8080",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -83,7 +83,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 				Name: "default/kuard/80",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/80",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -113,7 +113,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 				Name: "default/kuard/80",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/http",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -123,7 +123,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 				Name: "default/kuard/http",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/http",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -163,7 +163,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 				Name: "default/kuard/443",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/https",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -173,7 +173,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 				Name: "default/kuard/80",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/http",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -183,7 +183,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 				Name: "default/kuard/http",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/http",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -193,7 +193,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 				Name: "default/kuard/https",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/https",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -226,7 +226,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 				Name: "default/kuard/443",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/https",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -236,7 +236,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 				Name: "default/kuard/https",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/https",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -276,7 +276,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 				Name: "default/kuard/443",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/https",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -286,7 +286,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 				Name: "default/kuard/80",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/http",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -296,7 +296,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 				Name: "default/kuard/http",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/http",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -306,7 +306,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 				Name: "default/kuard/https",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/https",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -334,7 +334,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 				Name: "default/kuard/443",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/443",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -354,7 +354,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 				Name: "default/kuard/443",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/https",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -364,7 +364,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 				Name: "default/kuard/80",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/http",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -374,7 +374,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 				Name: "default/kuard/http",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/http",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -384,7 +384,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 				Name: "default/kuard/https",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/https",
 				},
 				ConnectTimeout: 250 * time.Millisecond,

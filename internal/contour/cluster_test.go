@@ -43,7 +43,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				Name: "default/kuard/443",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/443",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -70,7 +70,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				Name: "default/kuard/443",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/https",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -79,7 +79,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				Name: "default/kuard/https",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/https",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -106,7 +106,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				Name: "default/kuard/443",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/443",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -134,7 +134,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				Name: "default/kuard/8080",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/http",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -143,7 +143,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				Name: "default/kuard/http",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/http",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -177,7 +177,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				Name: "default/kuard/443",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/https",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -186,7 +186,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				Name: "default/kuard/https",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/https",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -219,7 +219,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				Name: "default/kuard/443",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("xds_cluster"), // hard coded by initconfig
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
 					ServiceName: "default/kuard/443",
 				},
 				ConnectTimeout: 250 * time.Millisecond,

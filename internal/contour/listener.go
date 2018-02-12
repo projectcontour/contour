@@ -283,12 +283,12 @@ func httpfilter(routename string) *v2.Filter {
 						"api_config_source": st(map[string]*types.Value{
 							"api_type": sv("GRPC"),
 							"cluster_names": lv(
-								sv("xds_cluster"),
+								sv("contour"),
 							),
 							"grpc_services": lv(
 								st(map[string]*types.Value{
 									"envoy_grpc": st(map[string]*types.Value{
-										"cluster_name": sv("xds_cluster"),
+										"cluster_name": sv("contour"),
 									}),
 								}),
 							),
