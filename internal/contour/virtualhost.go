@@ -69,7 +69,6 @@ func getRequestTimeout(annotations map[string]string) (time.Duration, bool) {
 // recomputevhost recomputes the ingress_http (HTTP) and ingress_https (HTTPS) record
 // from the vhost from list of ingresses supplied.
 func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*v1beta1.Ingress) {
-
 	// handle ingress_https (TLS) vhost routes first.
 	vv := virtualhost(vhost)
 	for _, ing := range ingresses {
@@ -86,15 +85,10 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 			}
 
 			for _, p := range rule.IngressRuleValue.HTTP.Paths {
-				m := pathToRouteMatch(p)
-				cl := ingressBackendToClusterName(ing, &p.Backend)
-				if timeout, ok := getRequestTimeout(ing.Annotations); ok {
-					a := clusteractiontimeout(cl, timeout)
-					vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
-				} else {
-					a := clusteraction(cl)
-					vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
-				}
+				vv.Routes = append(vv.Routes, &v2.Route{
+					Match:  pathToRouteMatch(p),
+					Action: action(ing, &p.Backend),
+				})
 			}
 		}
 	}
@@ -117,14 +111,10 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 			vv.RequireTls = v2.VirtualHost_ALL
 		}
 		if i.Spec.Backend != nil && len(ingresses) == 1 {
-			cl := ingressBackendToClusterName(i, i.Spec.Backend)
-			if timeout, ok := getRequestTimeout(i.Annotations); ok {
-				a := clusteractiontimeout(cl, timeout)
-				vv.Routes = []*v2.Route{{Match: prefixmatch("/"), Action: a}}
-			} else {
-				a := clusteraction(cl)
-				vv.Routes = []*v2.Route{{Match: prefixmatch("/"), Action: a}}
-			}
+			vv.Routes = []*v2.Route{{
+				Match:  prefixmatch("/"),
+				Action: action(i, i.Spec.Backend),
+			}}
 			continue
 		}
 		for _, rule := range i.Spec.Rules {
@@ -136,15 +126,10 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 				continue
 			}
 			for _, p := range rule.IngressRuleValue.HTTP.Paths {
-				m := pathToRouteMatch(p)
-				cl := ingressBackendToClusterName(i, &p.Backend)
-				if timeout, ok := getRequestTimeout(i.Annotations); ok {
-					a := clusteractiontimeout(cl, timeout)
-					vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
-				} else {
-					a := clusteraction(cl)
-					vv.Routes = append(vv.Routes, &v2.Route{Match: m, Action: a})
-				}
+				vv.Routes = append(vv.Routes, &v2.Route{
+					Match:  pathToRouteMatch(p),
+					Action: action(i, &p.Backend),
+				})
 			}
 		}
 	}
@@ -154,6 +139,23 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 	} else {
 		v.HTTP.Remove(vv.Name)
 	}
+}
+
+// action computes the cluster route action, a *v2.Route_route for the
+// supplied ingress and backend.
+func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend) *v2.Route_Route {
+	name := ingressBackendToClusterName(i, be)
+	ca := v2.Route_Route{
+		Route: &v2.RouteAction{
+			ClusterSpecifier: &v2.RouteAction_Cluster{
+				Cluster: name,
+			},
+		},
+	}
+	if timeout, ok := getRequestTimeout(i.Annotations); ok {
+		ca.Route.Timeout = &timeout
+	}
+	return &ca
 }
 
 // validTLSSpecForVhost returns if this ingress object
@@ -239,29 +241,6 @@ func regexmatch(regex string) *v2.RouteMatch {
 			Regex: regex,
 		},
 	}
-}
-
-// clusteraction returns a Route_Route action for the supplied cluster.
-func clusteraction(cluster string) *v2.Route_Route {
-	return &v2.Route_Route{
-		Route: &v2.RouteAction{
-			ClusterSpecifier: &v2.RouteAction_Cluster{
-				Cluster: cluster,
-			},
-		},
-	}
-}
-
-// clusteractiontimeout returns a cluster action with the specified timeout.
-// A timeout of 0 means infinity. If you do not want to specify a timeout, use
-// clusteraction instead.
-func clusteractiontimeout(cluster string, timeout time.Duration) *v2.Route_Route {
-	// TODO(cmaloney): Pull timeout off of the backend cluster annotation
-	// and use it over the value retrieved from the ingress annotation if
-	// specified.
-	c := clusteraction(cluster)
-	c.Route.Timeout = &timeout
-	return c
 }
 
 func virtualhost(hostname string) *v2.VirtualHost {

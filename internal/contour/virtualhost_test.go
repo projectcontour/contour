@@ -671,3 +671,26 @@ func TestGetRequestTimeout(t *testing.T) {
 		})
 	}
 }
+
+// clusteraction returns a route action for the supplied cluster name.
+func clusteraction(name string) *v2.Route_Route {
+	return &v2.Route_Route{
+		Route: &v2.RouteAction{
+			ClusterSpecifier: &v2.RouteAction_Cluster{
+				Cluster: name,
+			},
+		},
+	}
+}
+
+// clusteractiontimeout returns a cluster action with the specified timeout.
+// A timeout of 0 means infinity. If you do not want to specify a timeout, use
+// clusteraction instead.
+func clusteractiontimeout(name string, timeout time.Duration) *v2.Route_Route {
+	// TODO(cmaloney): Pull timeout off of the backend cluster annotation
+	// and use it over the value retrieved from the ingress annotation if
+	// specified.
+	c := clusteraction(name)
+	c.Route.Timeout = &timeout
+	return c
+}
