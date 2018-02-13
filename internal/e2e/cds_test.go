@@ -21,7 +21,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/gogo/protobuf/types"
-	cgrpc "github.com/heptio/contour/internal/grpc"
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -58,7 +57,7 @@ func TestClusterLongServiceName(t *testing.T) {
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 			}),
 		},
-		TypeUrl: cgrpc.ClusterType,
+		TypeUrl: clusterType,
 		Nonce:   "0",
 	}, fetchCDS(t, cc))
 }
@@ -91,7 +90,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 			}),
 		},
-		TypeUrl: cgrpc.ClusterType,
+		TypeUrl: clusterType,
 		Nonce:   "0",
 	}, fetchCDS(t, cc))
 
@@ -131,7 +130,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 			}),
 		},
-		TypeUrl: cgrpc.ClusterType,
+		TypeUrl: clusterType,
 		Nonce:   "0",
 	}, fetchCDS(t, cc))
 
@@ -201,7 +200,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 			}),
 		},
-		TypeUrl: cgrpc.ClusterType,
+		TypeUrl: clusterType,
 		Nonce:   "0",
 	}, fetchCDS(t, cc))
 
@@ -244,7 +243,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 			}),
 		},
-		TypeUrl: cgrpc.ClusterType,
+		TypeUrl: clusterType,
 		Nonce:   "0",
 	}, fetchCDS(t, cc))
 }
@@ -314,7 +313,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 			}),
 		},
-		TypeUrl: cgrpc.ClusterType,
+		TypeUrl: clusterType,
 		Nonce:   "0",
 	}, fetchCDS(t, cc))
 
@@ -342,7 +341,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 			}),
 		},
-		TypeUrl: cgrpc.ClusterType,
+		TypeUrl: clusterType,
 		Nonce:   "0",
 	}, fetchCDS(t, cc))
 
@@ -392,7 +391,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 			}),
 		},
-		TypeUrl: cgrpc.ClusterType,
+		TypeUrl: clusterType,
 		Nonce:   "0",
 	}, fetchCDS(t, cc))
 
@@ -401,7 +400,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources:   []types.Any{},
-		TypeUrl:     cgrpc.ClusterType,
+		TypeUrl:     clusterType,
 		Nonce:       "0",
 	}, fetchCDS(t, cc))
 }

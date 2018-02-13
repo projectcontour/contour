@@ -28,7 +28,6 @@ import (
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	cgrpc "github.com/heptio/contour/internal/grpc"
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -45,7 +44,7 @@ func TestNonTLSListener(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources:   []types.Any{},
-		TypeUrl:     cgrpc.ListenerType,
+		TypeUrl:     listenerType,
 		Nonce:       "0",
 	}, fetchLDS(t, cc))
 
@@ -73,7 +72,7 @@ func TestNonTLSListener(t *testing.T) {
 				},
 			}),
 		},
-		TypeUrl: cgrpc.ListenerType,
+		TypeUrl: listenerType,
 		Nonce:   "0",
 	}, fetchLDS(t, cc))
 
@@ -96,7 +95,7 @@ func TestNonTLSListener(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources:   []types.Any{},
-		TypeUrl:     cgrpc.ListenerType,
+		TypeUrl:     listenerType,
 		Nonce:       "0",
 	}, fetchLDS(t, cc))
 
@@ -128,7 +127,7 @@ func TestNonTLSListener(t *testing.T) {
 				},
 			}),
 		},
-		TypeUrl: cgrpc.ListenerType,
+		TypeUrl: listenerType,
 		Nonce:   "0",
 	}, fetchLDS(t, cc))
 }
@@ -171,7 +170,7 @@ func TestTLSListener(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources:   []types.Any{},
-		TypeUrl:     cgrpc.ListenerType,
+		TypeUrl:     listenerType,
 		Nonce:       "0",
 	}, fetchLDS(t, cc))
 
@@ -195,7 +194,7 @@ func TestTLSListener(t *testing.T) {
 				},
 			}),
 		},
-		TypeUrl: cgrpc.ListenerType,
+		TypeUrl: listenerType,
 		Nonce:   "0",
 	}, fetchLDS(t, cc))
 
@@ -230,7 +229,7 @@ func TestTLSListener(t *testing.T) {
 				},
 			}),
 		},
-		TypeUrl: cgrpc.ListenerType,
+		TypeUrl: listenerType,
 		Nonce:   "0",
 	}, fetchLDS(t, cc))
 
@@ -239,7 +238,7 @@ func TestTLSListener(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources:   []types.Any{},
-		TypeUrl:     cgrpc.ListenerType,
+		TypeUrl:     listenerType,
 		Nonce:       "0",
 	}, fetchLDS(t, cc))
 }

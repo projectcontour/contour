@@ -22,7 +22,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"github.com/gogo/protobuf/types"
-	cgrpc "github.com/heptio/contour/internal/grpc"
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,7 +71,7 @@ func TestAddRemoveEndpoints(t *testing.T) {
 				lbendpoint("172.16.0.2", 8443),
 			)),
 		},
-		TypeUrl: cgrpc.EndpointType,
+		TypeUrl: endpointType,
 		Nonce:   "0",
 	}, fetchEDS(t, cc))
 
@@ -82,7 +81,7 @@ func TestAddRemoveEndpoints(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources:   []types.Any{},
-		TypeUrl:     cgrpc.EndpointType,
+		TypeUrl:     endpointType,
 		Nonce:       "0",
 	}, fetchEDS(t, cc))
 }
@@ -154,7 +153,7 @@ func TestAddEndpointComplicated(t *testing.T) {
 				lbendpoint("10.48.1.78", 8080),
 			)),
 		},
-		TypeUrl: cgrpc.EndpointType,
+		TypeUrl: endpointType,
 		Nonce:   "0",
 	}, fetchEDS(t, cc))
 }

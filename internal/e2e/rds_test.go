@@ -22,7 +22,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/types"
-	cgrpc "github.com/heptio/contour/internal/grpc"
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -94,7 +93,7 @@ func TestEditIngress(t *testing.T) {
 				Name: "ingress_https",
 			}),
 		},
-		TypeUrl: cgrpc.RouteType,
+		TypeUrl: routeType,
 		Nonce:   "0",
 	}, fetchRDS(t, cc))
 
@@ -137,7 +136,7 @@ func TestEditIngress(t *testing.T) {
 				Name: "ingress_https",
 			}),
 		},
-		TypeUrl: cgrpc.RouteType,
+		TypeUrl: routeType,
 		Nonce:   "0",
 	}, fetchRDS(t, cc))
 }
@@ -200,7 +199,7 @@ func TestIngressPathRouteWithoutHost(t *testing.T) {
 				Name: "ingress_https",
 			}),
 		},
-		TypeUrl: cgrpc.RouteType,
+		TypeUrl: routeType,
 		Nonce:   "0",
 	}, fetchRDS(t, cc))
 }
@@ -248,7 +247,7 @@ func TestEditIngressInPlace(t *testing.T) {
 				Name: "ingress_https",
 			}),
 		},
-		TypeUrl: cgrpc.RouteType,
+		TypeUrl: routeType,
 		Nonce:   "0",
 	}, fetchRDS(t, cc))
 
@@ -300,7 +299,7 @@ func TestEditIngressInPlace(t *testing.T) {
 				Name: "ingress_https",
 			}),
 		},
-		TypeUrl: cgrpc.RouteType,
+		TypeUrl: routeType,
 		Nonce:   "0",
 	}, fetchRDS(t, cc))
 
@@ -355,7 +354,7 @@ func TestEditIngressInPlace(t *testing.T) {
 				}}}),
 			any(t, &v2.RouteConfiguration{Name: "ingress_https"}),
 		},
-		TypeUrl: cgrpc.RouteType,
+		TypeUrl: routeType,
 		Nonce:   "0",
 	}, fetchRDS(t, cc))
 
@@ -427,7 +426,7 @@ func TestEditIngressInPlace(t *testing.T) {
 					}},
 				}}}),
 		},
-		TypeUrl: cgrpc.RouteType,
+		TypeUrl: routeType,
 		Nonce:   "0",
 	}, fetchRDS(t, cc))
 }
@@ -537,7 +536,7 @@ func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []
 				VirtualHosts: ingress_https,
 			}),
 		},
-		TypeUrl: cgrpc.RouteType,
+		TypeUrl: routeType,
 		Nonce:   "0",
 	}, fetchRDS(t, cc))
 }

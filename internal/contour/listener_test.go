@@ -28,13 +28,6 @@ import (
 )
 
 func TestRecomputeListener(t *testing.T) {
-	ingress_http := &v2.Listener{
-		Name:    ENVOY_HTTP_LISTENER,
-		Address: socketaddress("0.0.0.0", 8080),
-		FilterChains: []listener.FilterChain{
-			filterchain(false, httpfilter(ENVOY_HTTP_LISTENER)),
-		},
-	}
 	tests := map[string]struct {
 		ingresses map[metadata]*v1beta1.Ingress
 		add       []*v2.Listener
@@ -58,9 +51,13 @@ func TestRecomputeListener(t *testing.T) {
 					},
 				},
 			},
-			add: []*v2.Listener{
-				ingress_http,
-			},
+			add: []*v2.Listener{{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: socketaddress("0.0.0.0", 8080),
+				FilterChains: []listener.FilterChain{
+					filterchain(false, httpfilter(ENVOY_HTTP_LISTENER)),
+				},
+			}},
 			remove: nil,
 		},
 		// setting kubernetes.io/ingress.allow-http: "false" should remove this
