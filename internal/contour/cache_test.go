@@ -17,7 +17,8 @@ import (
 	"reflect"
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/api"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 )
 
 func TestClusterCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
@@ -350,7 +351,7 @@ func TestListenerCacheRemove(t *testing.T) {
 
 func TestVirtualHostCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 	var cc virtualHostCache
-	c := &v2.VirtualHost{
+	c := envoy_api_v2_route.VirtualHost{
 		Name: "alpha",
 	}
 	cc.Add(c)
@@ -361,38 +362,22 @@ func TestVirtualHostCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 	if &v1[0] == &v2[0] {
 		// the address of the 0th element of the values slice should not be the same
 		// if it is, then we don't have a copy.
-		t.Fatalf("VirtualHostCache, consecutive calls to Values return the same backing slice: got: %p, want: %p", &v1[0], &v2[0])
-	}
-}
-
-func TestVirtualHostCacheValuesReturnsTheSameContents(t *testing.T) {
-	var cc virtualHostCache
-	c := &v2.VirtualHost{
-		Name: "alpha",
-	}
-	cc.Add(c)
-
-	v1 := cc.Values()
-	v2 := cc.Values()
-
-	if v1[0] != v2[0] {
-		// the value of the 0th element, a pointer to a v2.VirtualHost should be the same
-		t.Fatalf("VirtualHostCache, consecutive calls to Values returned different slice contents: got: %p, want: %p", v1[0], v2[0])
+		t.Fatalf("VirtualHostCache, consecutive calls to Values return the same backing slice: got: %v, want: %v", v1[0], v2[0])
 	}
 }
 
 func TestVirtualHostCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 	var cc virtualHostCache
-	c1 := &v2.VirtualHost{
+	c1 := envoy_api_v2_route.VirtualHost{
 		Name: "beta",
 	}
 	cc.Add(c1)
-	c2 := &v2.VirtualHost{
+	c2 := envoy_api_v2_route.VirtualHost{
 		Name: "alpha",
 	}
 	cc.Add(c2)
 	got := cc.Values()
-	want := []*v2.VirtualHost{{
+	want := []envoy_api_v2_route.VirtualHost{{
 		Name: "alpha",
 	}, {
 		Name: "beta",
@@ -404,14 +389,14 @@ func TestVirtualHostCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 
 func TestVirtualHostCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 	var cc virtualHostCache
-	c1 := &v2.VirtualHost{
+	c1 := envoy_api_v2_route.VirtualHost{
 		Name: "alpha",
 		Domains: []string{
 			"example.com",
 		},
 	}
 	cc.Add(c1)
-	c2 := &v2.VirtualHost{
+	c2 := envoy_api_v2_route.VirtualHost{
 		Name: "alpha",
 		Domains: []string{
 			"heptio.com",
@@ -419,7 +404,7 @@ func TestVirtualHostCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 	}
 	cc.Add(c2)
 	got := cc.Values()
-	want := []*v2.VirtualHost{
+	want := []envoy_api_v2_route.VirtualHost{
 		c2,
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -429,13 +414,13 @@ func TestVirtualHostCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 
 func TestVirtualHostCacheAddIsCopyOnWrite(t *testing.T) {
 	var cc virtualHostCache
-	c1 := &v2.VirtualHost{
+	c1 := envoy_api_v2_route.VirtualHost{
 		Name: "alpha",
 	}
 	cc.Add(c1)
 	v1 := cc.Values()
 
-	c2 := &v2.VirtualHost{
+	c2 := envoy_api_v2_route.VirtualHost{
 		Name: "beta",
 	}
 	cc.Add(c2)
@@ -448,13 +433,13 @@ func TestVirtualHostCacheAddIsCopyOnWrite(t *testing.T) {
 
 func TestVirtualHostCacheRemove(t *testing.T) {
 	var cc virtualHostCache
-	c1 := &v2.VirtualHost{
+	c1 := envoy_api_v2_route.VirtualHost{
 		Name: "alpha",
 	}
 	cc.Add(c1)
 	cc.Remove("alpha")
 	got := cc.Values()
-	want := []*v2.VirtualHost{}
+	want := []envoy_api_v2_route.VirtualHost{}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("VirtualHostCache.Remove: got: %v, want: %v", got, want)
 	}

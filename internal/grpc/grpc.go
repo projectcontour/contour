@@ -23,7 +23,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	v2 "github.com/envoyproxy/go-control-plane/api"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	envoy_service_v2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
+
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/log"
@@ -185,7 +188,7 @@ func (e *EDS) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsSer
 	return stream(srv, e, log)
 }
 
-func (e *EDS) StreamLoadStats(srv v2.EndpointDiscoveryService_StreamLoadStatsServer) error {
+func (e *EDS) StreamLoadStats(srv envoy_service_v2.LoadReportingService_StreamLoadStatsServer) error {
 	return grpc.Errorf(codes.Unimplemented, "FetchListeners Unimplemented")
 }
 
@@ -227,7 +230,7 @@ func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersSer
 type values interface {
 	// Values returns a copy of the contents of the cache.
 	// The slice and its contents should be treated as read-only.
-	Values() []*v2.VirtualHost
+	Values() []envoy_api_v2_route.VirtualHost
 }
 
 // RDS implements the RDS v2 gRPC API.
@@ -277,9 +280,13 @@ func (r *RDS) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) (err
 // fetch returns a *v2.DiscoveryResponse for the current resourcer, typeurl, version and nonce.
 func fetch(r resourcer, version, nonce int) (*v2.DiscoveryResponse, error) {
 	resources, err := r.Resources()
+	var resourcesValue []types.Any
+	for _, v := range resources {
+		resourcesValue = append(resourcesValue, *v)
+	}
 	return &v2.DiscoveryResponse{
 		VersionInfo: strconv.FormatInt(int64(version), 10),
-		Resources:   resources,
+		Resources:   resourcesValue,
 		TypeUrl:     r.TypeURL(),
 		Nonce:       strconv.FormatInt(int64(nonce), 10),
 	}, err

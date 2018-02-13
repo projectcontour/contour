@@ -18,7 +18,9 @@ import (
 	"testing"
 	"time"
 
-	v2 "github.com/envoyproxy/go-control-plane/api"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"github.com/gogo/protobuf/types"
 	cgrpc "github.com/heptio/contour/internal/grpc"
 	"google.golang.org/grpc"
@@ -58,7 +60,7 @@ func TestAddRemoveEndpoints(t *testing.T) {
 	// check that it's been translated correctly.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, clusterloadassignment(
 				"super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http",
 				lbendpoint("172.16.0.1", 8000),
@@ -79,7 +81,7 @@ func TestAddRemoveEndpoints(t *testing.T) {
 
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources:   []*types.Any{},
+		Resources:   []types.Any{},
 		TypeUrl:     cgrpc.EndpointType,
 		Nonce:       "0",
 	}, fetchEDS(t, cc))
@@ -140,7 +142,7 @@ func TestAddEndpointComplicated(t *testing.T) {
 
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, clusterloadassignment(
 				"default/kuard/admin",
 				lbendpoint("10.48.1.77", 9000),
@@ -196,28 +198,33 @@ func ports(ps ...int32) []v1.EndpointPort {
 	return ports
 }
 
-func clusterloadassignment(name string, lbendpoints ...*v2.LbEndpoint) *v2.ClusterLoadAssignment {
+func clusterloadassignment(name string, lbendpoints ...envoy_api_v2_endpoint.LbEndpoint) *v2.ClusterLoadAssignment {
 	return &v2.ClusterLoadAssignment{
 		ClusterName: name,
-		Endpoints: []*v2.LocalityLbEndpoints{{
+		Endpoints: []envoy_api_v2_endpoint.LocalityLbEndpoints{{
+			Locality: &envoy_api_v2_core.Locality{
+				Region:  "ap-southeast-2", // totally a guess
+				Zone:    "2b",
+				SubZone: "banana", // yeah, need to think of better values here
+			},
 			LbEndpoints: lbendpoints,
 		}},
 	}
 }
-func lbendpoint(addr string, port uint32) *v2.LbEndpoint {
-	return &v2.LbEndpoint{
+func lbendpoint(addr string, port uint32) envoy_api_v2_endpoint.LbEndpoint {
+	return envoy_api_v2_endpoint.LbEndpoint{
 		Endpoint: endpoint(addr, port),
 	}
 }
 
-func endpoint(addr string, port uint32) *v2.Endpoint {
-	return &v2.Endpoint{
-		Address: &v2.Address{
-			Address: &v2.Address_SocketAddress{
-				SocketAddress: &v2.SocketAddress{
-					Protocol: v2.SocketAddress_TCP,
+func endpoint(addr string, port uint32) *envoy_api_v2_endpoint.Endpoint {
+	return &envoy_api_v2_endpoint.Endpoint{
+		Address: &envoy_api_v2_core.Address{
+			Address: &envoy_api_v2_core.Address_SocketAddress{
+				SocketAddress: &envoy_api_v2_core.SocketAddress{
+					Protocol: envoy_api_v2_core.TCP,
 					Address:  addr,
-					PortSpecifier: &v2.SocketAddress_PortValue{
+					PortSpecifier: &envoy_api_v2_core.SocketAddress_PortValue{
 						PortValue: port,
 					},
 				},

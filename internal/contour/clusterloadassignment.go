@@ -16,7 +16,9 @@ package contour
 import (
 	"strconv"
 
-	v2 "github.com/envoyproxy/go-control-plane/api"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"k8s.io/api/core/v1"
 )
 
@@ -74,7 +76,7 @@ func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldep, newe
 				clas[name] = cla
 			}
 			for _, a := range s.Addresses {
-				cla.Endpoints[0].LbEndpoints = append(cla.Endpoints[0].LbEndpoints, &v2.LbEndpoint{
+				cla.Endpoints[0].LbEndpoints = append(cla.Endpoints[0].LbEndpoints, envoy_api_v2_endpoint.LbEndpoint{
 					Endpoint: endpoint(a.IP, p.Port),
 				})
 			}
@@ -111,29 +113,34 @@ func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldep, newe
 	}
 }
 
-func clusterloadassignment(name string, lbendpoints ...*v2.LbEndpoint) *v2.ClusterLoadAssignment {
+func clusterloadassignment(name string, lbendpoints ...envoy_api_v2_endpoint.LbEndpoint) *v2.ClusterLoadAssignment {
 	return &v2.ClusterLoadAssignment{
 		ClusterName: name,
-		Endpoints: []*v2.LocalityLbEndpoints{{
+		Endpoints: []envoy_api_v2_endpoint.LocalityLbEndpoints{{
+			Locality: &envoy_api_v2_core.Locality{
+				Region:  "ap-southeast-2", // totally a guess
+				Zone:    "2b",
+				SubZone: "banana", // yeah, need to think of better values here
+			},
 			LbEndpoints: lbendpoints,
 		}},
 	}
 }
 
-func lbendpoint(addr string, port int32) *v2.LbEndpoint {
-	return &v2.LbEndpoint{
+func lbendpoint(addr string, port int32) envoy_api_v2_endpoint.LbEndpoint {
+	return envoy_api_v2_endpoint.LbEndpoint{
 		Endpoint: endpoint(addr, port),
 	}
 }
 
-func endpoint(addr string, port int32) *v2.Endpoint {
-	return &v2.Endpoint{
-		Address: &v2.Address{
-			Address: &v2.Address_SocketAddress{
-				SocketAddress: &v2.SocketAddress{
-					Protocol: v2.SocketAddress_TCP,
+func endpoint(addr string, port int32) *envoy_api_v2_endpoint.Endpoint {
+	return &envoy_api_v2_endpoint.Endpoint{
+		Address: &envoy_api_v2_core.Address{
+			Address: &envoy_api_v2_core.Address_SocketAddress{
+				SocketAddress: &envoy_api_v2_core.SocketAddress{
+					Protocol: envoy_api_v2_core.TCP,
 					Address:  addr,
-					PortSpecifier: &v2.SocketAddress_PortValue{
+					PortSpecifier: &envoy_api_v2_core.SocketAddress_PortValue{
 						PortValue: uint32(port),
 					},
 				},

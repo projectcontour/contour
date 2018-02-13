@@ -17,7 +17,7 @@ import (
 	"strconv"
 	"time"
 
-	v2 "github.com/envoyproxy/go-control-plane/api"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"k8s.io/api/core/v1"
 )
 

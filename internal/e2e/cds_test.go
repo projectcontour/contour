@@ -18,7 +18,8 @@ import (
 	"testing"
 	"time"
 
-	v2 "github.com/envoyproxy/go-control-plane/api"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/gogo/protobuf/types"
 	cgrpc "github.com/heptio/contour/internal/grpc"
 	"google.golang.org/grpc"
@@ -45,7 +46,7 @@ func TestClusterLongServiceName(t *testing.T) {
 	// check that it's been translated correctly.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, &v2.Cluster{
 				Name: "kuard/kbujbkuhdod66-edfcfc/8080",
 				Type: v2.Cluster_EDS,
@@ -78,7 +79,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, &v2.Cluster{
 				Name: "default/kuard/80",
 				Type: v2.Cluster_EDS,
@@ -108,7 +109,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	// check that we get two CDS records because the port is now named.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, &v2.Cluster{
 				Name: "default/kuard/80",
 				Type: v2.Cluster_EDS,
@@ -158,7 +159,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	// because the CDS cache is sorted.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, &v2.Cluster{
 				Name: "default/kuard/443",
 				Type: v2.Cluster_EDS,
@@ -221,7 +222,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	// records have been removed even though the service object remains.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, &v2.Cluster{
 				Name: "default/kuard/443",
 				Type: v2.Cluster_EDS,
@@ -271,7 +272,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	rh.OnAdd(s1)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, &v2.Cluster{
 				Name: "default/kuard/443",
 				Type: v2.Cluster_EDS,
@@ -329,7 +330,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	rh.OnUpdate(s1, s2)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, &v2.Cluster{
 				Name: "default/kuard/443",
 				Type: v2.Cluster_EDS,
@@ -349,7 +350,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	rh.OnUpdate(s2, s1)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, &v2.Cluster{
 				Name: "default/kuard/443",
 				Type: v2.Cluster_EDS,
@@ -399,7 +400,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	rh.OnDelete(s1)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources:   []*types.Any{},
+		Resources:   []types.Any{},
 		TypeUrl:     cgrpc.ClusterType,
 		Nonce:       "0",
 	}, fetchCDS(t, cc))
@@ -418,11 +419,11 @@ func fetchCDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
 	return resp
 }
 
-func apiconfigsource(clusters ...string) *v2.ConfigSource {
-	return &v2.ConfigSource{
-		ConfigSourceSpecifier: &v2.ConfigSource_ApiConfigSource{
-			ApiConfigSource: &v2.ApiConfigSource{
-				ApiType:      v2.ApiConfigSource_GRPC,
+func apiconfigsource(clusters ...string) *envoy_api_v2_core.ConfigSource {
+	return &envoy_api_v2_core.ConfigSource{
+		ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
+			ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
+				ApiType:      envoy_api_v2_core.ApiConfigSource_GRPC,
 				ClusterNames: clusters,
 			},
 		},
