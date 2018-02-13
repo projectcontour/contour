@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"github.com/gogo/protobuf/types"
 	cgrpc "github.com/heptio/contour/internal/grpc"
 	"google.golang.org/grpc"
@@ -198,34 +198,25 @@ func ports(ps ...int32) []v1.EndpointPort {
 	return ports
 }
 
-func clusterloadassignment(name string, lbendpoints ...envoy_api_v2_endpoint.LbEndpoint) *v2.ClusterLoadAssignment {
+func clusterloadassignment(name string, lbendpoints ...endpoint.LbEndpoint) *v2.ClusterLoadAssignment {
 	return &v2.ClusterLoadAssignment{
 		ClusterName: name,
-		Endpoints: []envoy_api_v2_endpoint.LocalityLbEndpoints{{
-			Locality: &envoy_api_v2_core.Locality{
-				Region:  "ap-southeast-2", // totally a guess
-				Zone:    "2b",
-				SubZone: "banana", // yeah, need to think of better values here
-			},
+		Endpoints: []endpoint.LocalityLbEndpoints{{
 			LbEndpoints: lbendpoints,
 		}},
 	}
 }
-func lbendpoint(addr string, port uint32) envoy_api_v2_endpoint.LbEndpoint {
-	return envoy_api_v2_endpoint.LbEndpoint{
-		Endpoint: endpoint(addr, port),
-	}
-}
-
-func endpoint(addr string, port uint32) *envoy_api_v2_endpoint.Endpoint {
-	return &envoy_api_v2_endpoint.Endpoint{
-		Address: &envoy_api_v2_core.Address{
-			Address: &envoy_api_v2_core.Address_SocketAddress{
-				SocketAddress: &envoy_api_v2_core.SocketAddress{
-					Protocol: envoy_api_v2_core.TCP,
-					Address:  addr,
-					PortSpecifier: &envoy_api_v2_core.SocketAddress_PortValue{
-						PortValue: port,
+func lbendpoint(addr string, port uint32) endpoint.LbEndpoint {
+	return endpoint.LbEndpoint{
+		Endpoint: &endpoint.Endpoint{
+			Address: &core.Address{
+				Address: &core.Address_SocketAddress{
+					SocketAddress: &core.SocketAddress{
+						Protocol: core.TCP,
+						Address:  addr,
+						PortSpecifier: &core.SocketAddress_PortValue{
+							PortValue: port,
+						},
 					},
 				},
 			},

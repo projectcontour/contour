@@ -117,11 +117,6 @@ func clusterloadassignment(name string, lbendpoints ...envoy_api_v2_endpoint.LbE
 	return &v2.ClusterLoadAssignment{
 		ClusterName: name,
 		Endpoints: []envoy_api_v2_endpoint.LocalityLbEndpoints{{
-			Locality: &envoy_api_v2_core.Locality{
-				Region:  "ap-southeast-2", // totally a guess
-				Zone:    "2b",
-				SubZone: "banana", // yeah, need to think of better values here
-			},
 			LbEndpoints: lbendpoints,
 		}},
 	}

@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/gogo/protobuf/types"
 	cgrpc "github.com/heptio/contour/internal/grpc"
 	"google.golang.org/grpc"
@@ -419,11 +419,11 @@ func fetchCDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
 	return resp
 }
 
-func apiconfigsource(clusters ...string) *envoy_api_v2_core.ConfigSource {
-	return &envoy_api_v2_core.ConfigSource{
-		ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
-			ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
-				ApiType:      envoy_api_v2_core.ApiConfigSource_GRPC,
+func apiconfigsource(clusters ...string) *core.ConfigSource {
+	return &core.ConfigSource{
+		ConfigSourceSpecifier: &core.ConfigSource_ApiConfigSource{
+			ApiConfigSource: &core.ApiConfigSource{
+				ApiType:      core.ApiConfigSource_GRPC,
 				ClusterNames: clusters,
 			},
 		},
