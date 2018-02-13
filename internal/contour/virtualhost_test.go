@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/heptio/contour/internal/log/stdlog"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,8 +37,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 	tests := map[string]struct {
 		vhost         string
 		ingresses     map[metadata]*v1beta1.Ingress
-		ingress_http  []envoy_api_v2_route.VirtualHost
-		ingress_https []envoy_api_v2_route.VirtualHost
+		ingress_http  []route.VirtualHost
+		ingress_https []route.VirtualHost
 	}{
 		"default backend": {
 			vhost: "*",
@@ -51,15 +51,15 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Backend: backend("backend", intstr.FromInt(80)),
 				},
 			}}),
-			ingress_http: []envoy_api_v2_route.VirtualHost{{
+			ingress_http: []route.VirtualHost{{
 				Name:    "*",
 				Domains: []string{"*"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  prefixmatch("/"),
 					Action: clusteraction("default/backend/80"),
 				}},
 			}},
-			ingress_https: []envoy_api_v2_route.VirtualHost{},
+			ingress_https: []route.VirtualHost{},
 		},
 		"name based vhost": {
 			vhost: "httpbin.org",
@@ -75,15 +75,15 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []envoy_api_v2_route.VirtualHost{{
+			ingress_http: []route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  prefixmatch("/"), // match all
 					Action: clusteraction("default/httpbin-org/80"),
 				}},
 			}},
-			ingress_https: []envoy_api_v2_route.VirtualHost{},
+			ingress_https: []route.VirtualHost{},
 		},
 		"tls": {
 			vhost: "httpbin.org",
@@ -103,18 +103,18 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []envoy_api_v2_route.VirtualHost{{
+			ingress_http: []route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  prefixmatch("/"), // match all
 					Action: clusteraction("default/httpbin-org/80"),
 				}},
 			}},
-			ingress_https: []envoy_api_v2_route.VirtualHost{{
+			ingress_https: []route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  prefixmatch("/"), // match all
 					Action: clusteraction("default/httpbin-org/80"),
 				}},
@@ -141,11 +141,11 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []envoy_api_v2_route.VirtualHost{}, // kubernetes.io/ingress.allow-http: "false" prevents ingress_http
-			ingress_https: []envoy_api_v2_route.VirtualHost{{
+			ingress_http: []route.VirtualHost{}, // kubernetes.io/ingress.allow-http: "false" prevents ingress_http
+			ingress_https: []route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  prefixmatch("/"), // match all
 					Action: clusteraction("default/httpbin-org/80"),
 				}},
@@ -172,19 +172,19 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []envoy_api_v2_route.VirtualHost{{
+			ingress_http: []route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  prefixmatch("/"), // match all
 					Action: clusteraction("default/httpbin-org/80"),
 				}},
-				RequireTls: envoy_api_v2_route.VirtualHost_ALL,
+				RequireTls: route.VirtualHost_ALL,
 			}},
-			ingress_https: []envoy_api_v2_route.VirtualHost{{
+			ingress_https: []route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  prefixmatch("/"), // match all
 					Action: clusteraction("default/httpbin-org/80"),
 				}},
@@ -211,15 +211,15 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []envoy_api_v2_route.VirtualHost{{
+			ingress_http: []route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  prefixmatch("/ip"), // if the field does not contact any regex characters, we treat it as a prefix
 					Action: clusteraction("default/httpbin-org/80"),
 				}},
 			}},
-			ingress_https: []envoy_api_v2_route.VirtualHost{},
+			ingress_https: []route.VirtualHost{},
 		},
 		"regex vhost with match characters": {
 			vhost: "httpbin.org",
@@ -242,15 +242,15 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []envoy_api_v2_route.VirtualHost{{
+			ingress_http: []route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  regexmatch("/get.*"),
 					Action: clusteraction("default/httpbin-org/80"),
 				}},
 			}},
-			ingress_https: []envoy_api_v2_route.VirtualHost{},
+			ingress_https: []route.VirtualHost{},
 		},
 		"named service port": {
 			vhost: "httpbin.org",
@@ -266,15 +266,15 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []envoy_api_v2_route.VirtualHost{{
+			ingress_http: []route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  prefixmatch("/"),
 					Action: clusteraction("default/httpbin-org/http"),
 				}},
 			}},
-			ingress_https: []envoy_api_v2_route.VirtualHost{},
+			ingress_https: []route.VirtualHost{},
 		},
 		"multiple routes": {
 			vhost: "httpbin.org",
@@ -300,10 +300,10 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []envoy_api_v2_route.VirtualHost{{
+			ingress_http: []route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  prefixmatch("/peter"),
 					Action: clusteraction("default/peter/80"),
 				}, {
@@ -311,7 +311,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Action: clusteraction("default/paul/paul"),
 				}},
 			}},
-			ingress_https: []envoy_api_v2_route.VirtualHost{},
+			ingress_https: []route.VirtualHost{},
 		},
 		"multiple rules (httpbin.org)": {
 			vhost: "httpbin.org",
@@ -330,15 +330,15 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []envoy_api_v2_route.VirtualHost{{
+			ingress_http: []route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  prefixmatch("/"),
 					Action: clusteraction("default/peter/80"),
 				}},
 			}},
-			ingress_https: []envoy_api_v2_route.VirtualHost{},
+			ingress_https: []route.VirtualHost{},
 		},
 		"multiple rules (admin.httpbin.org)": {
 			vhost: "admin.httpbin.org",
@@ -357,15 +357,15 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []envoy_api_v2_route.VirtualHost{{
+			ingress_http: []route.VirtualHost{{
 				Name:    "admin.httpbin.org",
 				Domains: []string{"admin.httpbin.org"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  prefixmatch("/"),
 					Action: clusteraction("default/paul/paul"),
 				}},
 			}},
-			ingress_https: []envoy_api_v2_route.VirtualHost{},
+			ingress_https: []route.VirtualHost{},
 		},
 		"vhost name exceeds 60 chars": { // heptio/contour#25
 			vhost: "my-very-very-long-service-host-name.subdomain.boring-dept.my.company",
@@ -381,15 +381,15 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []envoy_api_v2_route.VirtualHost{{
+			ingress_http: []route.VirtualHost{{
 				Name:    "d31bb322ca62bb395acad00b3cbf45a3aa1010ca28dca7cddb4f7db786fa",
 				Domains: []string{"my-very-very-long-service-host-name.subdomain.boring-dept.my.company"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  prefixmatch("/"),
 					Action: clusteraction("default/my-service-name/80"),
 				}},
 			}},
-			ingress_https: []envoy_api_v2_route.VirtualHost{},
+			ingress_https: []route.VirtualHost{},
 		},
 		"second ingress object extends an existing vhost": {
 			vhost: "httpbin.org",
@@ -430,10 +430,10 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []envoy_api_v2_route.VirtualHost{{
+			ingress_http: []route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  prefixmatch("/admin"),
 					Action: clusteraction("kube-system/admin/admin"),
 				}, {
@@ -441,7 +441,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Action: clusteraction("default/default/80"),
 				}},
 			}},
-			ingress_https: []envoy_api_v2_route.VirtualHost{},
+			ingress_https: []route.VirtualHost{},
 		},
 		// kube-lego uses a single vhost in its own namespace to insert its
 		// callback route for let's encrypt support.
@@ -494,10 +494,10 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []envoy_api_v2_route.VirtualHost{{
+			ingress_http: []route.VirtualHost{{
 				Name:    "httpbin.davecheney.com",
 				Domains: []string{"httpbin.davecheney.com"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  prefixmatch("/.well-known/acme-challenge"),
 					Action: clusteraction("kube-lego/kube-lego-nginx/8080"),
 				}, {
@@ -505,7 +505,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Action: clusteraction("default/httpbin/80"),
 				}},
 			}},
-			ingress_https: []envoy_api_v2_route.VirtualHost{},
+			ingress_https: []route.VirtualHost{},
 		},
 		"IngressRuleValue without host should become the default vhost": { // heptio/contour#101
 			vhost: "*",
@@ -530,15 +530,15 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []envoy_api_v2_route.VirtualHost{{
+			ingress_http: []route.VirtualHost{{
 				Name:    "*",
 				Domains: []string{"*"},
-				Routes: []envoy_api_v2_route.Route{{
+				Routes: []route.Route{{
 					Match:  prefixmatch("/hello"),
 					Action: clusteraction("default/hello/80"),
 				}},
 			}},
-			ingress_https: []envoy_api_v2_route.VirtualHost{},
+			ingress_https: []route.VirtualHost{},
 		},
 	}
 
@@ -562,7 +562,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 	}
 }
 
-func strip(v []envoy_api_v2_route.VirtualHost) (r []envoy_api_v2_route.VirtualHost) {
+func strip(v []route.VirtualHost) (r []route.VirtualHost) {
 	for _, v := range v {
 		r = append(r, v)
 	}
@@ -674,10 +674,10 @@ func TestGetRequestTimeout(t *testing.T) {
 
 // clusteraction returns a route action for the supplied cluster name.
 // clusteraction returns a Route_Route action for the supplied cluster.
-func clusteraction(cluster string) *envoy_api_v2_route.Route_Route {
-	return &envoy_api_v2_route.Route_Route{
-		Route: &envoy_api_v2_route.RouteAction{
-			ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+func clusteraction(cluster string) *route.Route_Route {
+	return &route.Route_Route{
+		Route: &route.RouteAction{
+			ClusterSpecifier: &route.RouteAction_Cluster{
 				Cluster: cluster,
 			},
 		},
@@ -687,7 +687,7 @@ func clusteraction(cluster string) *envoy_api_v2_route.Route_Route {
 // clusteractiontimeout returns a cluster action with the specified timeout.
 // A timeout of 0 means infinity. If you do not want to specify a timeout, use
 // clusteraction instead.
-func clusteractiontimeout(name string, timeout time.Duration) *envoy_api_v2_route.Route_Route {
+func clusteractiontimeout(name string, timeout time.Duration) *route.Route_Route {
 	// TODO(cmaloney): Pull timeout off of the backend cluster annotation
 	// and use it over the value retrieved from the ingress annotation if
 	// specified.

@@ -23,12 +23,18 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/gogo/protobuf/types"
 )
 
 func TestRecomputeListener(t *testing.T) {
-	ingress_http := listener(ENVOY_HTTP_LISTENER, "0.0.0.0", 8080, filterchain(false, httpfilter(ENVOY_HTTP_LISTENER)))
+	ingress_http := &v2.Listener{
+		Name:    ENVOY_HTTP_LISTENER,
+		Address: socketaddress("0.0.0.0", 8080),
+		FilterChains: []listener.FilterChain{
+			filterchain(false, httpfilter(ENVOY_HTTP_LISTENER)),
+		},
+	}
 	tests := map[string]struct {
 		ingresses map[metadata]*v1beta1.Ingress
 		add       []*v2.Listener
@@ -94,9 +100,13 @@ func TestRecomputeListener(t *testing.T) {
 					},
 				},
 			},
-			add: []*v2.Listener{
-				listener(ENVOY_HTTP_LISTENER, "127.0.0.1", 9000, filterchain(false, httpfilter(ENVOY_HTTP_LISTENER))),
-			},
+			add: []*v2.Listener{{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: socketaddress("127.0.0.1", 9000),
+				FilterChains: []listener.FilterChain{
+					filterchain(false, httpfilter(ENVOY_HTTP_LISTENER)),
+				},
+			}},
 			remove: nil,
 		},
 		"use proxy protocol": {
@@ -114,9 +124,13 @@ func TestRecomputeListener(t *testing.T) {
 					},
 				},
 			},
-			add: []*v2.Listener{
-				listener(ENVOY_HTTP_LISTENER, "0.0.0.0", 8080, filterchain(true, httpfilter(ENVOY_HTTP_LISTENER))),
-			},
+			add: []*v2.Listener{{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: socketaddress("0.0.0.0", 8080),
+				FilterChains: []listener.FilterChain{
+					filterchain(true, httpfilter(ENVOY_HTTP_LISTENER)),
+				},
+			}},
 			remove: nil,
 		},
 	}
@@ -135,19 +149,6 @@ func TestRecomputeListener(t *testing.T) {
 }
 
 func TestRecomputeTLSListener(t *testing.T) {
-	ingresss_http := listener(ENVOY_HTTPS_LISTENER, "0.0.0.0", 8443)
-	ingresss_http.FilterChains = []envoy_api_v2_listener.FilterChain{{
-		Filters: []envoy_api_v2_listener.Filter{
-			httpfilter(ENVOY_HTTPS_LISTENER),
-		},
-	}}
-	ingress_http2 := listener(ENVOY_HTTPS_LISTENER, "::", 9000) // issue 72
-	ingress_http2.FilterChains = []envoy_api_v2_listener.FilterChain{{
-		Filters: []envoy_api_v2_listener.Filter{
-			httpfilter(ENVOY_HTTPS_LISTENER),
-		},
-	}}
-
 	tests := map[string]struct {
 		ingresses map[metadata]*v1beta1.Ingress
 		secrets   map[metadata]*v1.Secret
@@ -226,14 +227,14 @@ func TestRecomputeTLSListener(t *testing.T) {
 			add: []*v2.Listener{{
 				Name:    ENVOY_HTTPS_LISTENER,
 				Address: socketaddress("0.0.0.0", 8443),
-				FilterChains: []envoy_api_v2_listener.FilterChain{{
-					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+				FilterChains: []listener.FilterChain{{
+					FilterChainMatch: &listener.FilterChainMatch{
 						SniDomains: []string{"whatever.example.com"},
 					},
 					TlsContext: tlscontext(&v1.Secret{
 						Data: secretdata("certificate", "key"),
 					}, "h2", "http/1.1"),
-					Filters: []envoy_api_v2_listener.Filter{
+					Filters: []listener.Filter{
 						httpfilter(ENVOY_HTTPS_LISTENER),
 					},
 				}},
@@ -303,14 +304,14 @@ func TestRecomputeTLSListener(t *testing.T) {
 			add: []*v2.Listener{{
 				Name:    ENVOY_HTTPS_LISTENER,
 				Address: socketaddress("::", 9000),
-				FilterChains: []envoy_api_v2_listener.FilterChain{{
-					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+				FilterChains: []listener.FilterChain{{
+					FilterChainMatch: &listener.FilterChainMatch{
 						SniDomains: []string{"whatever.example.com"},
 					},
 					TlsContext: tlscontext(&v1.Secret{
 						Data: secretdata("certificate", "key"),
 					}, "h2", "http/1.1"),
-					Filters: []envoy_api_v2_listener.Filter{
+					Filters: []listener.Filter{
 						httpfilter(ENVOY_HTTPS_LISTENER),
 					},
 				}},
@@ -351,14 +352,14 @@ func TestRecomputeTLSListener(t *testing.T) {
 			add: []*v2.Listener{{
 				Name:    ENVOY_HTTPS_LISTENER,
 				Address: socketaddress("0.0.0.0", 8443),
-				FilterChains: []envoy_api_v2_listener.FilterChain{{
-					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+				FilterChains: []listener.FilterChain{{
+					FilterChainMatch: &listener.FilterChainMatch{
 						SniDomains: []string{"whatever.example.com"},
 					},
 					TlsContext: tlscontext(&v1.Secret{
 						Data: secretdata("certificate", "key"),
 					}, "h2", "http/1.1"),
-					Filters: []envoy_api_v2_listener.Filter{
+					Filters: []listener.Filter{
 						httpfilter(ENVOY_HTTPS_LISTENER),
 					},
 					UseProxyProto: &types.BoolValue{Value: true},

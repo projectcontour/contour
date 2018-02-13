@@ -15,9 +15,9 @@ package contour
 
 import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/gogo/protobuf/types"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -95,7 +95,10 @@ func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.In
 // recomputeListener returns a slice of listeners to be added to the cache, and a slice of names of listeners
 // to be removed.
 func (lc *ListenerCache) recomputeListener0(ingresses map[metadata]*v1beta1.Ingress) ([]*v2.Listener, []string) {
-	l := listener(ENVOY_HTTP_LISTENER, lc.httpAddress(), lc.httpPort())
+	l := &v2.Listener{
+		Name:    ENVOY_HTTP_LISTENER,
+		Address: socketaddress(lc.httpAddress(), lc.httpPort()),
+	}
 
 	var valid int
 	for _, i := range ingresses {
@@ -104,7 +107,7 @@ func (lc *ListenerCache) recomputeListener0(ingresses map[metadata]*v1beta1.Ingr
 		}
 	}
 	if valid > 0 {
-		l.FilterChains = []envoy_api_v2_listener.FilterChain{
+		l.FilterChains = []listener.FilterChain{
 			filterchain(lc.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER)),
 		}
 	}
@@ -154,8 +157,12 @@ func validIngress(i *v1beta1.Ingress) bool {
 // and a slice of names of listeners to be removed. If the list of
 // TLS enabled listeners is zero, the listener is removed.
 func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.Ingress, secrets map[metadata]*v1.Secret) ([]*v2.Listener, []string) {
-	l := listener(ENVOY_HTTPS_LISTENER, lc.httpsAddress(), lc.httpsPort())
-	filters := []envoy_api_v2_listener.Filter{
+	l := &v2.Listener{
+		Name:    ENVOY_HTTPS_LISTENER,
+		Address: socketaddress(lc.httpsAddress(), lc.httpsPort()),
+	}
+
+	filters := []listener.Filter{
 		httpfilter(ENVOY_HTTPS_LISTENER),
 	}
 
@@ -175,8 +182,8 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 				// missing cert or private key, skip it
 				continue
 			}
-			fc := envoy_api_v2_listener.FilterChain{
-				FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+			fc := listener.FilterChain{
+				FilterChainMatch: &listener.FilterChainMatch{
 					SniDomains: tls.Hosts,
 				},
 				TlsContext: tlscontext(secret, "h2", "http/1.1"),
@@ -228,21 +235,13 @@ func validTLSIngress(i *v1beta1.Ingress) bool {
 	return true
 }
 
-func listener(name, address string, port uint32, filterchains ...envoy_api_v2_listener.FilterChain) *v2.Listener {
-	return &v2.Listener{
-		Name:         name, // TODO(dfc) should come from the name of the service port
-		Address:      socketaddress(address, port),
-		FilterChains: filterchains,
-	}
-}
-
-func socketaddress(address string, port uint32) envoy_api_v2_core.Address {
-	return envoy_api_v2_core.Address{
-		Address: &envoy_api_v2_core.Address_SocketAddress{
-			SocketAddress: &envoy_api_v2_core.SocketAddress{
-				Protocol: envoy_api_v2_core.TCP,
+func socketaddress(address string, port uint32) core.Address {
+	return core.Address{
+		Address: &core.Address_SocketAddress{
+			SocketAddress: &core.SocketAddress{
+				Protocol: core.TCP,
 				Address:  address,
-				PortSpecifier: &envoy_api_v2_core.SocketAddress_PortValue{
+				PortSpecifier: &core.SocketAddress_PortValue{
 					PortValue: port,
 				},
 			},
@@ -250,21 +249,21 @@ func socketaddress(address string, port uint32) envoy_api_v2_core.Address {
 	}
 }
 
-func tlscontext(secret *v1.Secret, alpnprotos ...string) *envoy_api_v2_auth.DownstreamTlsContext {
-	return &envoy_api_v2_auth.DownstreamTlsContext{
-		CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
-			TlsParams: &envoy_api_v2_auth.TlsParameters{
+func tlscontext(secret *v1.Secret, alpnprotos ...string) *auth.DownstreamTlsContext {
+	return &auth.DownstreamTlsContext{
+		CommonTlsContext: &auth.CommonTlsContext{
+			TlsParams: &auth.TlsParameters{
 				// Envoy 1.5.0 defaults to TLS 1.0.
-				TlsMinimumProtocolVersion: envoy_api_v2_auth.TlsParameters_TLSv1_1,
+				TlsMinimumProtocolVersion: auth.TlsParameters_TLSv1_1,
 			},
-			TlsCertificates: []*envoy_api_v2_auth.TlsCertificate{{
-				CertificateChain: &envoy_api_v2_core.DataSource{
-					Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+			TlsCertificates: []*auth.TlsCertificate{{
+				CertificateChain: &core.DataSource{
+					Specifier: &core.DataSource_InlineBytes{
 						InlineBytes: secret.Data[v1.TLSCertKey],
 					},
 				},
-				PrivateKey: &envoy_api_v2_core.DataSource{
-					Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+				PrivateKey: &core.DataSource{
+					Specifier: &core.DataSource_InlineBytes{
 						InlineBytes: secret.Data[v1.TLSPrivateKeyKey],
 					},
 				},
@@ -274,8 +273,8 @@ func tlscontext(secret *v1.Secret, alpnprotos ...string) *envoy_api_v2_auth.Down
 	}
 }
 
-func httpfilter(routename string) envoy_api_v2_listener.Filter {
-	return envoy_api_v2_listener.Filter{
+func httpfilter(routename string) listener.Filter {
+	return listener.Filter{
 		Name: httpFilter,
 		Config: &types.Struct{
 			Fields: map[string]*types.Value{
@@ -317,8 +316,8 @@ func httpfilter(routename string) envoy_api_v2_listener.Filter {
 	}
 }
 
-func filterchain(useproxy bool, filters ...envoy_api_v2_listener.Filter) envoy_api_v2_listener.FilterChain {
-	fc := envoy_api_v2_listener.FilterChain{
+func filterchain(useproxy bool, filters ...listener.Filter) listener.FilterChain {
+	fc := listener.FilterChain{
 		Filters: filters,
 	}
 	if useproxy {

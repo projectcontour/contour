@@ -17,8 +17,8 @@ import (
 	"strconv"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"k8s.io/api/core/v1"
 )
 
@@ -76,9 +76,7 @@ func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldep, newe
 				clas[name] = cla
 			}
 			for _, a := range s.Addresses {
-				cla.Endpoints[0].LbEndpoints = append(cla.Endpoints[0].LbEndpoints, envoy_api_v2_endpoint.LbEndpoint{
-					Endpoint: endpoint(a.IP, p.Port),
-				})
+				cla.Endpoints[0].LbEndpoints = append(cla.Endpoints[0].LbEndpoints, lbendpoint(a.IP, p.Port))
 			}
 		}
 	}
@@ -113,30 +111,26 @@ func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldep, newe
 	}
 }
 
-func clusterloadassignment(name string, lbendpoints ...envoy_api_v2_endpoint.LbEndpoint) *v2.ClusterLoadAssignment {
+func clusterloadassignment(name string, lbendpoints ...endpoint.LbEndpoint) *v2.ClusterLoadAssignment {
 	return &v2.ClusterLoadAssignment{
 		ClusterName: name,
-		Endpoints: []envoy_api_v2_endpoint.LocalityLbEndpoints{{
+		Endpoints: []endpoint.LocalityLbEndpoints{{
 			LbEndpoints: lbendpoints,
 		}},
 	}
 }
 
-func lbendpoint(addr string, port int32) envoy_api_v2_endpoint.LbEndpoint {
-	return envoy_api_v2_endpoint.LbEndpoint{
-		Endpoint: endpoint(addr, port),
-	}
-}
-
-func endpoint(addr string, port int32) *envoy_api_v2_endpoint.Endpoint {
-	return &envoy_api_v2_endpoint.Endpoint{
-		Address: &envoy_api_v2_core.Address{
-			Address: &envoy_api_v2_core.Address_SocketAddress{
-				SocketAddress: &envoy_api_v2_core.SocketAddress{
-					Protocol: envoy_api_v2_core.TCP,
-					Address:  addr,
-					PortSpecifier: &envoy_api_v2_core.SocketAddress_PortValue{
-						PortValue: uint32(port),
+func lbendpoint(addr string, port int32) endpoint.LbEndpoint {
+	return endpoint.LbEndpoint{
+		Endpoint: &endpoint.Endpoint{
+			Address: &core.Address{
+				Address: &core.Address_SocketAddress{
+					SocketAddress: &core.SocketAddress{
+						Protocol: core.TCP,
+						Address:  addr,
+						PortSpecifier: &core.SocketAddress_PortValue{
+							PortValue: uint32(port),
+						},
 					},
 				},
 			},

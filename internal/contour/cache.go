@@ -18,7 +18,7 @@ import (
 	"sync"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 )
 
 // clusterCache is a thread safe, atomic, copy on write cache of *v2.Cluster objects.
@@ -236,23 +236,23 @@ func (l listenersByName) Len() int           { return len(l) }
 func (l listenersByName) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
 func (l listenersByName) Less(i, j int) bool { return l[i].Name < l[j].Name }
 
-// VirtualHostCache is a thread safe, atomic, copy on write cache of envoy_api_v2_route.VirtualHost objects.
+// VirtualHostCache is a thread safe, atomic, copy on write cache of route.VirtualHost objects.
 type virtualHostCache struct {
 	sync.Mutex
-	values []envoy_api_v2_route.VirtualHost
+	values []route.VirtualHost
 }
 
 // Values returns a copy of the contents of the cache.
-func (vc *virtualHostCache) Values() []envoy_api_v2_route.VirtualHost {
+func (vc *virtualHostCache) Values() []route.VirtualHost {
 	vc.Lock()
-	r := append([]envoy_api_v2_route.VirtualHost{}, vc.values...)
+	r := append([]route.VirtualHost{}, vc.values...)
 	vc.Unlock()
 	return r
 }
 
 // Add adds an entry to the cache. If a VirtualHost with the same
 // name exists, it is replaced.
-func (vc *virtualHostCache) Add(virtualhosts ...envoy_api_v2_route.VirtualHost) {
+func (vc *virtualHostCache) Add(virtualhosts ...route.VirtualHost) {
 	if len(virtualhosts) == 0 {
 		return
 	}
@@ -266,7 +266,7 @@ func (vc *virtualHostCache) Add(virtualhosts ...envoy_api_v2_route.VirtualHost) 
 
 // add adds v to the cache. If v is already present, the cached value of v is overwritten.
 // invariant: vc.values should be sorted on entry.
-func (vc *virtualHostCache) add(v envoy_api_v2_route.VirtualHost) {
+func (vc *virtualHostCache) add(v route.VirtualHost) {
 	i := sort.Search(len(vc.values), func(i int) bool { return vc.values[i].Name >= v.Name })
 	if i < len(vc.values) && vc.values[i].Name == v.Name {
 		// c is already present, replace
@@ -302,7 +302,7 @@ func (vc *virtualHostCache) remove(name string) {
 	}
 }
 
-type virtualHostsByName []envoy_api_v2_route.VirtualHost
+type virtualHostsByName []route.VirtualHost
 
 func (v virtualHostsByName) Len() int           { return len(v) }
 func (v virtualHostsByName) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }

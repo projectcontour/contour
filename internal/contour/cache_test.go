@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 )
 
 func TestClusterCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
@@ -351,7 +351,7 @@ func TestListenerCacheRemove(t *testing.T) {
 
 func TestVirtualHostCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 	var cc virtualHostCache
-	c := envoy_api_v2_route.VirtualHost{
+	c := route.VirtualHost{
 		Name: "alpha",
 	}
 	cc.Add(c)
@@ -368,16 +368,16 @@ func TestVirtualHostCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 
 func TestVirtualHostCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 	var cc virtualHostCache
-	c1 := envoy_api_v2_route.VirtualHost{
+	c1 := route.VirtualHost{
 		Name: "beta",
 	}
 	cc.Add(c1)
-	c2 := envoy_api_v2_route.VirtualHost{
+	c2 := route.VirtualHost{
 		Name: "alpha",
 	}
 	cc.Add(c2)
 	got := cc.Values()
-	want := []envoy_api_v2_route.VirtualHost{{
+	want := []route.VirtualHost{{
 		Name: "alpha",
 	}, {
 		Name: "beta",
@@ -389,14 +389,14 @@ func TestVirtualHostCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 
 func TestVirtualHostCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 	var cc virtualHostCache
-	c1 := envoy_api_v2_route.VirtualHost{
+	c1 := route.VirtualHost{
 		Name: "alpha",
 		Domains: []string{
 			"example.com",
 		},
 	}
 	cc.Add(c1)
-	c2 := envoy_api_v2_route.VirtualHost{
+	c2 := route.VirtualHost{
 		Name: "alpha",
 		Domains: []string{
 			"heptio.com",
@@ -404,7 +404,7 @@ func TestVirtualHostCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 	}
 	cc.Add(c2)
 	got := cc.Values()
-	want := []envoy_api_v2_route.VirtualHost{
+	want := []route.VirtualHost{
 		c2,
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -414,13 +414,13 @@ func TestVirtualHostCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 
 func TestVirtualHostCacheAddIsCopyOnWrite(t *testing.T) {
 	var cc virtualHostCache
-	c1 := envoy_api_v2_route.VirtualHost{
+	c1 := route.VirtualHost{
 		Name: "alpha",
 	}
 	cc.Add(c1)
 	v1 := cc.Values()
 
-	c2 := envoy_api_v2_route.VirtualHost{
+	c2 := route.VirtualHost{
 		Name: "beta",
 	}
 	cc.Add(c2)
@@ -433,13 +433,13 @@ func TestVirtualHostCacheAddIsCopyOnWrite(t *testing.T) {
 
 func TestVirtualHostCacheRemove(t *testing.T) {
 	var cc virtualHostCache
-	c1 := envoy_api_v2_route.VirtualHost{
+	c1 := route.VirtualHost{
 		Name: "alpha",
 	}
 	cc.Add(c1)
 	cc.Remove("alpha")
 	got := cc.Values()
-	want := []envoy_api_v2_route.VirtualHost{}
+	want := []route.VirtualHost{}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("VirtualHostCache.Remove: got: %v, want: %v", got, want)
 	}

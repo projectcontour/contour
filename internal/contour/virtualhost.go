@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"k8s.io/api/extensions/v1beta1"
 )
 
@@ -85,7 +85,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 			}
 
 			for _, p := range rule.IngressRuleValue.HTTP.Paths {
-				vv.Routes = append(vv.Routes, envoy_api_v2_route.Route{
+				vv.Routes = append(vv.Routes, route.Route{
 					Match:  pathToRouteMatch(p),
 					Action: action(ing, &p.Backend),
 				})
@@ -108,10 +108,10 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 		}
 		if i.Annotations["ingress.kubernetes.io/force-ssl-redirect"] == "true" {
 			// set blanket 301 redirect
-			vv.RequireTls = envoy_api_v2_route.VirtualHost_ALL
+			vv.RequireTls = route.VirtualHost_ALL
 		}
 		if i.Spec.Backend != nil && len(ingresses) == 1 {
-			vv.Routes = []envoy_api_v2_route.Route{{
+			vv.Routes = []route.Route{{
 				Match:  prefixmatch("/"),
 				Action: action(i, i.Spec.Backend),
 			}}
@@ -126,7 +126,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 				continue
 			}
 			for _, p := range rule.IngressRuleValue.HTTP.Paths {
-				vv.Routes = append(vv.Routes, envoy_api_v2_route.Route{
+				vv.Routes = append(vv.Routes, route.Route{
 					Match:  pathToRouteMatch(p),
 					Action: action(i, &p.Backend),
 				})
@@ -143,11 +143,11 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 
 // action computes the cluster route action, a *v2.Route_route for the
 // supplied ingress and backend.
-func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend) *envoy_api_v2_route.Route_Route {
+func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend) *route.Route_Route {
 	name := ingressBackendToClusterName(i, be)
-	ca := envoy_api_v2_route.Route_Route{
-		Route: &envoy_api_v2_route.RouteAction{
-			ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+	ca := route.Route_Route{
+		Route: &route.RouteAction{
+			ClusterSpecifier: &route.RouteAction_Cluster{
 				Cluster: name,
 			},
 		},
@@ -176,18 +176,18 @@ func validTLSSpecforVhost(vhost string, i *v1beta1.Ingress) bool {
 	return false
 }
 
-type longestRouteFirst []envoy_api_v2_route.Route
+type longestRouteFirst []route.Route
 
 func (l longestRouteFirst) Len() int      { return len(l) }
 func (l longestRouteFirst) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
 func (l longestRouteFirst) Less(i, j int) bool {
-	a, ok := l[i].Match.PathSpecifier.(*envoy_api_v2_route.RouteMatch_Prefix)
+	a, ok := l[i].Match.PathSpecifier.(*route.RouteMatch_Prefix)
 	if !ok {
 		// ignore non prefix matches
 		return false
 	}
 
-	b, ok := l[j].Match.PathSpecifier.(*envoy_api_v2_route.RouteMatch_Prefix)
+	b, ok := l[j].Match.PathSpecifier.(*route.RouteMatch_Prefix)
 	if !ok {
 		// ignore non prefix matches
 		return false
@@ -196,8 +196,8 @@ func (l longestRouteFirst) Less(i, j int) bool {
 	return a.Prefix < b.Prefix
 }
 
-// pathToRoute converts a HTTPIngressPath to a partial envoy_api_v2_route.RouteMatch.
-func pathToRouteMatch(p v1beta1.HTTPIngressPath) envoy_api_v2_route.RouteMatch {
+// pathToRoute converts a HTTPIngressPath to a partial route.RouteMatch.
+func pathToRouteMatch(p v1beta1.HTTPIngressPath) route.RouteMatch {
 	if p.Path == "" {
 		// If the Path is empty, the k8s spec says
 		// "If unspecified, the path defaults to a catch all sending
@@ -226,25 +226,25 @@ func ingressBackendToClusterName(i *v1beta1.Ingress, b *v1beta1.IngressBackend) 
 }
 
 // prefixmatch returns a RouteMatch for the supplied prefix.
-func prefixmatch(prefix string) envoy_api_v2_route.RouteMatch {
-	return envoy_api_v2_route.RouteMatch{
-		PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
+func prefixmatch(prefix string) route.RouteMatch {
+	return route.RouteMatch{
+		PathSpecifier: &route.RouteMatch_Prefix{
 			Prefix: prefix,
 		},
 	}
 }
 
 // regexmatch returns a RouteMatch for the supplied regex.
-func regexmatch(regex string) envoy_api_v2_route.RouteMatch {
-	return envoy_api_v2_route.RouteMatch{
-		PathSpecifier: &envoy_api_v2_route.RouteMatch_Regex{
+func regexmatch(regex string) route.RouteMatch {
+	return route.RouteMatch{
+		PathSpecifier: &route.RouteMatch_Regex{
 			Regex: regex,
 		},
 	}
 }
 
-func virtualhost(hostname string) envoy_api_v2_route.VirtualHost {
-	return envoy_api_v2_route.VirtualHost{
+func virtualhost(hostname string) route.VirtualHost {
+	return route.VirtualHost{
 		Name:    hashname(60, hostname),
 		Domains: []string{hostname},
 	}
