@@ -114,7 +114,7 @@ func newgrpcServer(l log.Logger, t *contour.Translator) *grpcServer {
 
 // A resourcer provides resources formatted as []*types.Any.
 type resourcer interface {
-	Resources() ([]types.Any, error)
+	Resources() ([]*types.Any, error)
 	TypeURL() string
 }
 
@@ -128,15 +128,15 @@ type CDS struct {
 // Resources returns the contents of CDS"s cache as a []*types.Any.
 // TODO(dfc) cache the results of Resources in the ClusterCache so
 // we can avoid the error handling.
-func (c *CDS) Resources() ([]types.Any, error) {
+func (c *CDS) Resources() ([]*types.Any, error) {
 	v := c.Values()
-	resources := make([]types.Any, len(v))
+	resources := make([]*types.Any, len(v))
 	for i := range v {
 		any, err := types.MarshalAny(v[i])
 		if err != nil {
 			return nil, err
 		}
-		resources[i] = *any
+		resources[i] = any
 	}
 	return resources, nil
 }
@@ -163,15 +163,15 @@ type EDS struct {
 // Resources returns the contents of EDS"s cache as a []*types.Any.
 // TODO(dfc) cache the results of Resources in the ClusterLoadAssignmentCache so
 // we can avoid the error handling.
-func (e *EDS) Resources() ([]types.Any, error) {
+func (e *EDS) Resources() ([]*types.Any, error) {
 	v := e.Values()
-	resources := make([]types.Any, len(v))
+	resources := make([]*types.Any, len(v))
 	for i := range v {
 		any, err := types.MarshalAny(v[i])
 		if err != nil {
 			return nil, err
 		}
-		resources[i] = *any
+		resources[i] = any
 	}
 	return resources, nil
 }
@@ -202,15 +202,15 @@ type LDS struct {
 // Resources returns the contents of LDS"s cache as a []*types.Any.
 // TODO(dfc) cache the results of Resources in the ListenerCache so
 // we can avoid the error handling.
-func (l *LDS) Resources() ([]types.Any, error) {
+func (l *LDS) Resources() ([]*types.Any, error) {
 	v := l.Values()
-	resources := make([]types.Any, len(v))
+	resources := make([]*types.Any, len(v))
 	for i := range v {
 		any, err := types.MarshalAny(v[i])
 		if err != nil {
 			return nil, err
 		}
-		resources[i] = *any
+		resources[i] = any
 	}
 	return resources, nil
 }
@@ -244,7 +244,7 @@ type RDS struct {
 // Resources returns the contents of RDS"s cache as a []*types.Any.
 // TODO(dfc) cache the results of Resources in the VirtualHostCache so
 // we can avoid the error handling.
-func (r *RDS) Resources() ([]types.Any, error) {
+func (r *RDS) Resources() ([]*types.Any, error) {
 	ingress_http, err := types.MarshalAny(&v2.RouteConfiguration{
 		Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
 		VirtualHosts: r.HTTP.Values(),
@@ -259,9 +259,9 @@ func (r *RDS) Resources() ([]types.Any, error) {
 	if err != nil {
 		return nil, err
 	}
-	return []types.Any{
-		*ingress_http,
-		*ingress_https,
+	return []*types.Any{
+		ingress_http,
+		ingress_https,
 	}, nil
 }
 
@@ -280,9 +280,13 @@ func (r *RDS) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) (err
 // fetch returns a *v2.DiscoveryResponse for the current resourcer, typeurl, version and nonce.
 func fetch(r resourcer, version, nonce int) (*v2.DiscoveryResponse, error) {
 	resources, err := r.Resources()
+	var resourcesValue []types.Any
+	for _, v := range resources {
+		resourcesValue = append(resourcesValue, *v)
+	}
 	return &v2.DiscoveryResponse{
 		VersionInfo: strconv.FormatInt(int64(version), 10),
-		Resources:   resources,
+		Resources:   resourcesValue,
 		TypeUrl:     r.TypeURL(),
 		Nonce:       strconv.FormatInt(int64(nonce), 10),
 	}, err
