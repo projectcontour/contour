@@ -366,22 +366,6 @@ func TestVirtualHostCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 	}
 }
 
-func TestVirtualHostCacheValuesReturnsTheSameContents(t *testing.T) {
-	var cc virtualHostCache
-	c := &route.VirtualHost{
-		Name: "alpha",
-	}
-	cc.Add(c)
-
-	v1 := cc.Values()
-	v2 := cc.Values()
-
-	if v1[0] != v2[0] {
-		// the value of the 0th element, a pointer to a v2.VirtualHost should be the same
-		t.Fatalf("VirtualHostCache, consecutive calls to Values returned different slice contents: got: %p, want: %p", v1[0], v2[0])
-	}
-}
-
 func TestVirtualHostCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 	var cc virtualHostCache
 	c1 := &route.VirtualHost{
@@ -393,7 +377,7 @@ func TestVirtualHostCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 	}
 	cc.Add(c2)
 	got := cc.Values()
-	want := []*route.VirtualHost{{
+	want := []route.VirtualHost{{
 		Name: "alpha",
 	}, {
 		Name: "beta",
@@ -420,8 +404,8 @@ func TestVirtualHostCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 	}
 	cc.Add(c2)
 	got := cc.Values()
-	want := []*route.VirtualHost{
-		c2,
+	want := []route.VirtualHost{
+		*c2,
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("VirtualHostCache.Add/Values returned a stale element, got: %v, want: %v", got, want)
@@ -455,7 +439,7 @@ func TestVirtualHostCacheRemove(t *testing.T) {
 	cc.Add(c1)
 	cc.Remove("alpha")
 	got := cc.Values()
-	want := []*route.VirtualHost{}
+	want := []route.VirtualHost{}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("VirtualHostCache.Remove: got: %v, want: %v", got, want)
 	}
