@@ -243,8 +243,8 @@ func regexmatch(regex string) route.RouteMatch {
 	}
 }
 
-func virtualhost(hostname string) route.VirtualHost {
-	return route.VirtualHost{
+func virtualhost(hostname string) *route.VirtualHost {
+	return &route.VirtualHost{
 		Name:    hashname(60, hostname),
 		Domains: []string{hostname},
 	}

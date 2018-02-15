@@ -37,8 +37,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 	tests := map[string]struct {
 		vhost         string
 		ingresses     map[metadata]*v1beta1.Ingress
-		ingress_http  []route.VirtualHost
-		ingress_https []route.VirtualHost
+		ingress_http  []*route.VirtualHost
+		ingress_https []*route.VirtualHost
 	}{
 		"default backend": {
 			vhost: "*",
@@ -51,7 +51,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Backend: backend("backend", intstr.FromInt(80)),
 				},
 			}}),
-			ingress_http: []route.VirtualHost{{
+			ingress_http: []*route.VirtualHost{{
 				Name:    "*",
 				Domains: []string{"*"},
 				Routes: []route.Route{{
@@ -59,7 +59,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Action: clusteraction("default/backend/80"),
 				}},
 			}},
-			ingress_https: []route.VirtualHost{},
+			ingress_https: []*route.VirtualHost{},
 		},
 		"name based vhost": {
 			vhost: "httpbin.org",
@@ -75,7 +75,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []route.VirtualHost{{
+			ingress_http: []*route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
@@ -83,7 +83,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Action: clusteraction("default/httpbin-org/80"),
 				}},
 			}},
-			ingress_https: []route.VirtualHost{},
+			ingress_https: []*route.VirtualHost{},
 		},
 		"tls": {
 			vhost: "httpbin.org",
@@ -103,7 +103,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []route.VirtualHost{{
+			ingress_http: []*route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
@@ -111,7 +111,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Action: clusteraction("default/httpbin-org/80"),
 				}},
 			}},
-			ingress_https: []route.VirtualHost{{
+			ingress_https: []*route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
@@ -141,8 +141,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []route.VirtualHost{}, // kubernetes.io/ingress.allow-http: "false" prevents ingress_http
-			ingress_https: []route.VirtualHost{{
+			ingress_http: []*route.VirtualHost{}, // kubernetes.io/ingress.allow-http: "false" prevents ingress_http
+			ingress_https: []*route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
@@ -172,7 +172,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []route.VirtualHost{{
+			ingress_http: []*route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
@@ -181,7 +181,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				}},
 				RequireTls: route.VirtualHost_ALL,
 			}},
-			ingress_https: []route.VirtualHost{{
+			ingress_https: []*route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
@@ -211,7 +211,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []route.VirtualHost{{
+			ingress_http: []*route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
@@ -219,7 +219,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Action: clusteraction("default/httpbin-org/80"),
 				}},
 			}},
-			ingress_https: []route.VirtualHost{},
+			ingress_https: []*route.VirtualHost{},
 		},
 		"regex vhost with match characters": {
 			vhost: "httpbin.org",
@@ -242,7 +242,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []route.VirtualHost{{
+			ingress_http: []*route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
@@ -250,7 +250,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Action: clusteraction("default/httpbin-org/80"),
 				}},
 			}},
-			ingress_https: []route.VirtualHost{},
+			ingress_https: []*route.VirtualHost{},
 		},
 		"named service port": {
 			vhost: "httpbin.org",
@@ -266,7 +266,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []route.VirtualHost{{
+			ingress_http: []*route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
@@ -274,7 +274,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Action: clusteraction("default/httpbin-org/http"),
 				}},
 			}},
-			ingress_https: []route.VirtualHost{},
+			ingress_https: []*route.VirtualHost{},
 		},
 		"multiple routes": {
 			vhost: "httpbin.org",
@@ -300,7 +300,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []route.VirtualHost{{
+			ingress_http: []*route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
@@ -311,7 +311,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Action: clusteraction("default/paul/paul"),
 				}},
 			}},
-			ingress_https: []route.VirtualHost{},
+			ingress_https: []*route.VirtualHost{},
 		},
 		"multiple rules (httpbin.org)": {
 			vhost: "httpbin.org",
@@ -330,7 +330,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []route.VirtualHost{{
+			ingress_http: []*route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
@@ -338,7 +338,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Action: clusteraction("default/peter/80"),
 				}},
 			}},
-			ingress_https: []route.VirtualHost{},
+			ingress_https: []*route.VirtualHost{},
 		},
 		"multiple rules (admin.httpbin.org)": {
 			vhost: "admin.httpbin.org",
@@ -357,7 +357,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []route.VirtualHost{{
+			ingress_http: []*route.VirtualHost{{
 				Name:    "admin.httpbin.org",
 				Domains: []string{"admin.httpbin.org"},
 				Routes: []route.Route{{
@@ -365,7 +365,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Action: clusteraction("default/paul/paul"),
 				}},
 			}},
-			ingress_https: []route.VirtualHost{},
+			ingress_https: []*route.VirtualHost{},
 		},
 		"vhost name exceeds 60 chars": { // heptio/contour#25
 			vhost: "my-very-very-long-service-host-name.subdomain.boring-dept.my.company",
@@ -381,7 +381,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []route.VirtualHost{{
+			ingress_http: []*route.VirtualHost{{
 				Name:    "d31bb322ca62bb395acad00b3cbf45a3aa1010ca28dca7cddb4f7db786fa",
 				Domains: []string{"my-very-very-long-service-host-name.subdomain.boring-dept.my.company"},
 				Routes: []route.Route{{
@@ -389,7 +389,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Action: clusteraction("default/my-service-name/80"),
 				}},
 			}},
-			ingress_https: []route.VirtualHost{},
+			ingress_https: []*route.VirtualHost{},
 		},
 		"second ingress object extends an existing vhost": {
 			vhost: "httpbin.org",
@@ -430,7 +430,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []route.VirtualHost{{
+			ingress_http: []*route.VirtualHost{{
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
@@ -441,7 +441,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Action: clusteraction("default/default/80"),
 				}},
 			}},
-			ingress_https: []route.VirtualHost{},
+			ingress_https: []*route.VirtualHost{},
 		},
 		// kube-lego uses a single vhost in its own namespace to insert its
 		// callback route for let's encrypt support.
@@ -494,7 +494,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []route.VirtualHost{{
+			ingress_http: []*route.VirtualHost{{
 				Name:    "httpbin.davecheney.com",
 				Domains: []string{"httpbin.davecheney.com"},
 				Routes: []route.Route{{
@@ -505,7 +505,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Action: clusteraction("default/httpbin/80"),
 				}},
 			}},
-			ingress_https: []route.VirtualHost{},
+			ingress_https: []*route.VirtualHost{},
 		},
 		"IngressRuleValue without host should become the default vhost": { // heptio/contour#101
 			vhost: "*",
@@ -530,7 +530,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			}}),
-			ingress_http: []route.VirtualHost{{
+			ingress_http: []*route.VirtualHost{{
 				Name:    "*",
 				Domains: []string{"*"},
 				Routes: []route.Route{{
@@ -538,7 +538,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Action: clusteraction("default/hello/80"),
 				}},
 			}},
-			ingress_https: []route.VirtualHost{},
+			ingress_https: []*route.VirtualHost{},
 		},
 	}
 
@@ -562,7 +562,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 	}
 }
 
-func strip(v []route.VirtualHost) (r []route.VirtualHost) {
+func strip(v []*route.VirtualHost) (r []*route.VirtualHost) {
 	for _, v := range v {
 		r = append(r, v)
 	}

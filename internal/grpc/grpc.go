@@ -229,16 +229,14 @@ func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersSer
 	return stream(srv, l, log)
 }
 
-type values interface {
-	// Values returns a copy of the contents of the cache.
-	// The slice and its contents should be treated as read-only.
-	Values() []route.VirtualHost
-}
-
 // RDS implements the RDS v2 gRPC API.
 type RDS struct {
 	log.Logger
-	HTTP, HTTPS values
+	HTTP, HTTPS interface {
+		// Values returns a copy of the contents of the cache.
+		// The slice and its contents should be treated as read-only.
+		Values() []route.VirtualHost
+	}
 	*contour.Cond
 	count uint64
 }
