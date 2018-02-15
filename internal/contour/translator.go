@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	v2 "github.com/envoyproxy/go-control-plane/api"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 
 	"github.com/heptio/contour/internal/log"
 	"k8s.io/api/core/v1"
@@ -359,11 +359,11 @@ func min(a, b int) int {
 	return a
 }
 
-func apiconfigsource(clusters ...string) *v2.ConfigSource {
-	return &v2.ConfigSource{
-		ConfigSourceSpecifier: &v2.ConfigSource_ApiConfigSource{
-			ApiConfigSource: &v2.ApiConfigSource{
-				ApiType:      v2.ApiConfigSource_GRPC,
+func apiconfigsource(clusters ...string) *core.ConfigSource {
+	return &core.ConfigSource{
+		ConfigSourceSpecifier: &core.ConfigSource_ApiConfigSource{
+			ApiConfigSource: &core.ApiConfigSource{
+				ApiType:      core.ApiConfigSource_GRPC,
 				ClusterNames: clusters,
 			},
 		},

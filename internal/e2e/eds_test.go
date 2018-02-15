@@ -18,9 +18,10 @@ import (
 	"testing"
 	"time"
 
-	v2 "github.com/envoyproxy/go-control-plane/api"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"github.com/gogo/protobuf/types"
-	cgrpc "github.com/heptio/contour/internal/grpc"
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -58,7 +59,7 @@ func TestAddRemoveEndpoints(t *testing.T) {
 	// check that it's been translated correctly.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, clusterloadassignment(
 				"super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http",
 				lbendpoint("172.16.0.1", 8000),
@@ -70,7 +71,7 @@ func TestAddRemoveEndpoints(t *testing.T) {
 				lbendpoint("172.16.0.2", 8443),
 			)),
 		},
-		TypeUrl: cgrpc.EndpointType,
+		TypeUrl: endpointType,
 		Nonce:   "0",
 	}, fetchEDS(t, cc))
 
@@ -79,8 +80,8 @@ func TestAddRemoveEndpoints(t *testing.T) {
 
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources:   []*types.Any{},
-		TypeUrl:     cgrpc.EndpointType,
+		Resources:   []types.Any{},
+		TypeUrl:     endpointType,
 		Nonce:       "0",
 	}, fetchEDS(t, cc))
 }
@@ -140,7 +141,7 @@ func TestAddEndpointComplicated(t *testing.T) {
 
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []*types.Any{
+		Resources: []types.Any{
 			any(t, clusterloadassignment(
 				"default/kuard/admin",
 				lbendpoint("10.48.1.77", 9000),
@@ -152,7 +153,7 @@ func TestAddEndpointComplicated(t *testing.T) {
 				lbendpoint("10.48.1.78", 8080),
 			)),
 		},
-		TypeUrl: cgrpc.EndpointType,
+		TypeUrl: endpointType,
 		Nonce:   "0",
 	}, fetchEDS(t, cc))
 }
@@ -196,29 +197,25 @@ func ports(ps ...int32) []v1.EndpointPort {
 	return ports
 }
 
-func clusterloadassignment(name string, lbendpoints ...*v2.LbEndpoint) *v2.ClusterLoadAssignment {
+func clusterloadassignment(name string, lbendpoints ...endpoint.LbEndpoint) *v2.ClusterLoadAssignment {
 	return &v2.ClusterLoadAssignment{
 		ClusterName: name,
-		Endpoints: []*v2.LocalityLbEndpoints{{
+		Endpoints: []endpoint.LocalityLbEndpoints{{
 			LbEndpoints: lbendpoints,
 		}},
 	}
 }
-func lbendpoint(addr string, port uint32) *v2.LbEndpoint {
-	return &v2.LbEndpoint{
-		Endpoint: endpoint(addr, port),
-	}
-}
-
-func endpoint(addr string, port uint32) *v2.Endpoint {
-	return &v2.Endpoint{
-		Address: &v2.Address{
-			Address: &v2.Address_SocketAddress{
-				SocketAddress: &v2.SocketAddress{
-					Protocol: v2.SocketAddress_TCP,
-					Address:  addr,
-					PortSpecifier: &v2.SocketAddress_PortValue{
-						PortValue: port,
+func lbendpoint(addr string, port uint32) endpoint.LbEndpoint {
+	return endpoint.LbEndpoint{
+		Endpoint: &endpoint.Endpoint{
+			Address: &core.Address{
+				Address: &core.Address_SocketAddress{
+					SocketAddress: &core.SocketAddress{
+						Protocol: core.TCP,
+						Address:  addr,
+						PortSpecifier: &core.SocketAddress_PortValue{
+							PortValue: port,
+						},
 					},
 				},
 			},

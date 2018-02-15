@@ -16,7 +16,9 @@ package contour
 import (
 	"strconv"
 
-	v2 "github.com/envoyproxy/go-control-plane/api"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"k8s.io/api/core/v1"
 )
 
@@ -74,9 +76,7 @@ func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldep, newe
 				clas[name] = cla
 			}
 			for _, a := range s.Addresses {
-				cla.Endpoints[0].LbEndpoints = append(cla.Endpoints[0].LbEndpoints, &v2.LbEndpoint{
-					Endpoint: endpoint(a.IP, p.Port),
-				})
+				cla.Endpoints[0].LbEndpoints = append(cla.Endpoints[0].LbEndpoints, lbendpoint(a.IP, p.Port))
 			}
 		}
 	}
@@ -111,30 +111,26 @@ func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldep, newe
 	}
 }
 
-func clusterloadassignment(name string, lbendpoints ...*v2.LbEndpoint) *v2.ClusterLoadAssignment {
+func clusterloadassignment(name string, lbendpoints ...endpoint.LbEndpoint) *v2.ClusterLoadAssignment {
 	return &v2.ClusterLoadAssignment{
 		ClusterName: name,
-		Endpoints: []*v2.LocalityLbEndpoints{{
+		Endpoints: []endpoint.LocalityLbEndpoints{{
 			LbEndpoints: lbendpoints,
 		}},
 	}
 }
 
-func lbendpoint(addr string, port int32) *v2.LbEndpoint {
-	return &v2.LbEndpoint{
-		Endpoint: endpoint(addr, port),
-	}
-}
-
-func endpoint(addr string, port int32) *v2.Endpoint {
-	return &v2.Endpoint{
-		Address: &v2.Address{
-			Address: &v2.Address_SocketAddress{
-				SocketAddress: &v2.SocketAddress{
-					Protocol: v2.SocketAddress_TCP,
-					Address:  addr,
-					PortSpecifier: &v2.SocketAddress_PortValue{
-						PortValue: uint32(port),
+func lbendpoint(addr string, port int32) endpoint.LbEndpoint {
+	return endpoint.LbEndpoint{
+		Endpoint: &endpoint.Endpoint{
+			Address: &core.Address{
+				Address: &core.Address_SocketAddress{
+					SocketAddress: &core.SocketAddress{
+						Protocol: core.TCP,
+						Address:  addr,
+						PortSpecifier: &core.SocketAddress_PortValue{
+							PortValue: uint32(port),
+						},
 					},
 				},
 			},

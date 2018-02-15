@@ -17,18 +17,18 @@ package e2e
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/api"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 )
 
-func any(t *testing.T, pb proto.Message) *types.Any {
+func any(t *testing.T, pb proto.Message) types.Any {
 	t.Helper()
 	any, err := types.MarshalAny(pb)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return any
+	return *any
 }
 
 func assertEqual(t *testing.T, want, got *v2.DiscoveryResponse) {

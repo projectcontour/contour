@@ -23,7 +23,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	v2 "github.com/envoyproxy/go-control-plane/api"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	envoy_service_v2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
+
+	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/log"
@@ -31,11 +35,12 @@ import (
 
 // Resource types in xDS v2.
 const (
-	typePrefix   = "type.googleapis.com/envoy.api.v2."
-	EndpointType = typePrefix + "ClusterLoadAssignment"
-	ClusterType  = typePrefix + "Cluster"
-	RouteType    = typePrefix + "RouteConfiguration"
-	ListenerType = typePrefix + "Listener"
+	googleApis   = "type.googleapis.com/"
+	typePrefix   = googleApis + "envoy.api.v2."
+	endpointType = typePrefix + "ClusterLoadAssignment"
+	clusterType  = typePrefix + "Cluster"
+	routeType    = typePrefix + "RouteConfiguration"
+	listenerType = typePrefix + "Listener"
 )
 
 // ClusterCache holds a set of computed v2.Cluster resources.
@@ -109,9 +114,9 @@ func newgrpcServer(l log.Logger, t *contour.Translator) *grpcServer {
 	}
 }
 
-// A resourcer provides resources formatted as []*types.Any.
+// A resourcer provides resources formatted as []types.Any.
 type resourcer interface {
-	Resources() ([]*types.Any, error)
+	Resources() ([]types.Any, error)
 	TypeURL() string
 }
 
@@ -122,23 +127,23 @@ type CDS struct {
 	count uint64
 }
 
-// Resources returns the contents of CDS"s cache as a []*types.Any.
+// Resources returns the contents of CDS"s cache as a []types.Any.
 // TODO(dfc) cache the results of Resources in the ClusterCache so
 // we can avoid the error handling.
-func (c *CDS) Resources() ([]*types.Any, error) {
+func (c *CDS) Resources() ([]types.Any, error) {
 	v := c.Values()
-	resources := make([]*types.Any, len(v))
+	resources := make([]types.Any, len(v))
 	for i := range v {
-		any, err := types.MarshalAny(v[i])
+		value, err := proto.Marshal(v[i])
 		if err != nil {
 			return nil, err
 		}
-		resources[i] = any
+		resources[i] = types.Any{TypeUrl: c.TypeURL(), Value: value}
 	}
 	return resources, nil
 }
 
-func (c *CDS) TypeURL() string { return ClusterType }
+func (c *CDS) TypeURL() string { return clusterType }
 
 func (c *CDS) FetchClusters(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
 	return fetch(c, 0, 0)
@@ -157,23 +162,23 @@ type EDS struct {
 	count uint64
 }
 
-// Resources returns the contents of EDS"s cache as a []*types.Any.
+// Resources returns the contents of EDS"s cache as a []types.Any.
 // TODO(dfc) cache the results of Resources in the ClusterLoadAssignmentCache so
 // we can avoid the error handling.
-func (e *EDS) Resources() ([]*types.Any, error) {
+func (e *EDS) Resources() ([]types.Any, error) {
 	v := e.Values()
-	resources := make([]*types.Any, len(v))
+	resources := make([]types.Any, len(v))
 	for i := range v {
-		any, err := types.MarshalAny(v[i])
+		value, err := proto.Marshal(v[i])
 		if err != nil {
 			return nil, err
 		}
-		resources[i] = any
+		resources[i] = types.Any{TypeUrl: e.TypeURL(), Value: value}
 	}
 	return resources, nil
 }
 
-func (e *EDS) TypeURL() string { return EndpointType }
+func (e *EDS) TypeURL() string { return endpointType }
 
 func (e *EDS) FetchEndpoints(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
 	return fetch(e, 0, 0)
@@ -185,7 +190,7 @@ func (e *EDS) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsSer
 	return stream(srv, e, log)
 }
 
-func (e *EDS) StreamLoadStats(srv v2.EndpointDiscoveryService_StreamLoadStatsServer) error {
+func (e *EDS) StreamLoadStats(srv envoy_service_v2.LoadReportingService_StreamLoadStatsServer) error {
 	return grpc.Errorf(codes.Unimplemented, "FetchListeners Unimplemented")
 }
 
@@ -196,23 +201,23 @@ type LDS struct {
 	count uint64
 }
 
-// Resources returns the contents of LDS"s cache as a []*types.Any.
+// Resources returns the contents of LDS"s cache as a []types.Any.
 // TODO(dfc) cache the results of Resources in the ListenerCache so
 // we can avoid the error handling.
-func (l *LDS) Resources() ([]*types.Any, error) {
+func (l *LDS) Resources() ([]types.Any, error) {
 	v := l.Values()
-	resources := make([]*types.Any, len(v))
+	resources := make([]types.Any, len(v))
 	for i := range v {
-		any, err := types.MarshalAny(v[i])
+		value, err := proto.Marshal(v[i])
 		if err != nil {
 			return nil, err
 		}
-		resources[i] = any
+		resources[i] = types.Any{TypeUrl: l.TypeURL(), Value: value}
 	}
 	return resources, nil
 }
 
-func (l *LDS) TypeURL() string { return ListenerType }
+func (l *LDS) TypeURL() string { return listenerType }
 
 func (l *LDS) FetchListeners(ctx context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
 	return fetch(l, 0, 0)
@@ -224,45 +229,45 @@ func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersSer
 	return stream(srv, l, log)
 }
 
-type values interface {
-	// Values returns a copy of the contents of the cache.
-	// The slice and its contents should be treated as read-only.
-	Values() []*v2.VirtualHost
-}
-
 // RDS implements the RDS v2 gRPC API.
 type RDS struct {
 	log.Logger
-	HTTP, HTTPS values
+	HTTP, HTTPS interface {
+		// Values returns a copy of the contents of the cache.
+		// The slice and its contents should be treated as read-only.
+		Values() []route.VirtualHost
+	}
 	*contour.Cond
 	count uint64
 }
 
-// Resources returns the contents of RDS"s cache as a []*types.Any.
+// Resources returns the contents of RDS"s cache as a []types.Any.
 // TODO(dfc) cache the results of Resources in the VirtualHostCache so
 // we can avoid the error handling.
-func (r *RDS) Resources() ([]*types.Any, error) {
-	ingress_http, err := types.MarshalAny(&v2.RouteConfiguration{
+func (r *RDS) Resources() ([]types.Any, error) {
+	ingress_http, err := proto.Marshal(&v2.RouteConfiguration{
 		Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
 		VirtualHosts: r.HTTP.Values(),
 	})
 	if err != nil {
 		return nil, err
 	}
-	ingress_https, err := types.MarshalAny(&v2.RouteConfiguration{
+	ingress_https, err := proto.Marshal(&v2.RouteConfiguration{
+
 		Name:         "ingress_https", // TODO(dfc) matches LDS configuration?
 		VirtualHosts: r.HTTPS.Values(),
 	})
 	if err != nil {
 		return nil, err
 	}
-	return []*types.Any{
-		ingress_http,
-		ingress_https,
-	}, nil
+	return []types.Any{{
+		TypeUrl: r.TypeURL(), Value: ingress_http,
+	}, {
+		TypeUrl: r.TypeURL(), Value: ingress_https,
+	}}, nil
 }
 
-func (r *RDS) TypeURL() string { return RouteType }
+func (r *RDS) TypeURL() string { return routeType }
 
 func (r *RDS) FetchRoutes(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
 	return fetch(r, 0, 0)

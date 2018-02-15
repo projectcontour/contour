@@ -27,6 +27,15 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+const (
+	googleApis   = "type.googleapis.com/"
+	typePrefix   = googleApis + "envoy.api.v2."
+	endpointType = typePrefix + "ClusterLoadAssignment"
+	clusterType  = typePrefix + "Cluster"
+	routeType    = typePrefix + "RouteConfiguration"
+	listenerType = typePrefix + "Listener"
+)
+
 type testLogger struct {
 	*testing.T
 }

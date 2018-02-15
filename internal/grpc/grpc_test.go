@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	v2 "github.com/envoyproxy/go-control-plane/api"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/log/stdlog"
 	"google.golang.org/grpc"
