@@ -22,6 +22,8 @@ spec:
         ports:
         - containerPort: 8080
           name: http
+        - containerPort: 8443
+          name: https
         command: ["envoy"]
         args: ["-c", "/config/contour.yaml", "--service-cluster", "cluster0", "--service-node", "node0", "-l", "info", "--v2-config-only"]
         volumeMounts:
