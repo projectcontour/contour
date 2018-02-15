@@ -45,7 +45,7 @@ static_resources:
   clusters:
   - name: contour
     connect_timeout: { seconds: 5 }
-    type: STATIC
+    type: STRICT_DNS
     hosts:
     - socket_address:
         address: 127.0.0.1
