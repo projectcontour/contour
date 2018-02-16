@@ -22,7 +22,7 @@ import (
 
 	"github.com/heptio/contour/internal/contour"
 	cgrpc "github.com/heptio/contour/internal/grpc"
-	"github.com/heptio/contour/internal/log/stdlog"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"k8s.io/client-go/tools/cache"
 )
@@ -36,29 +36,18 @@ const (
 	listenerType = typePrefix + "Listener"
 )
 
-type testLogger struct {
-	*testing.T
-}
-
-func (t *testLogger) Write(buf []byte) (int, error) {
-	t.Logf("%s", buf)
-	return len(buf), nil
-}
-
 func setup(t *testing.T) (cache.ResourceEventHandler, *grpc.ClientConn, func()) {
-	w := &testLogger{t}
-
-	log := stdlog.New(w, w, 0)
+	fl := logrus.WithField("test", "true")
 
 	tr := &contour.Translator{
-		Logger: log,
+		FieldLogger: fl,
 	}
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	check(t, err)
 	var wg sync.WaitGroup
 	wg.Add(1)
-	srv := cgrpc.NewAPI(log, tr)
+	srv := cgrpc.NewAPI(fl, tr)
 	go func() {
 		defer wg.Done()
 		srv.Serve(l)

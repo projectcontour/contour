@@ -17,8 +17,8 @@ package k8s
 import (
 	"time"
 
-	"github.com/heptio/contour/internal/log"
 	"github.com/heptio/contour/internal/workgroup"
+	"github.com/sirupsen/logrus"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -29,35 +29,34 @@ import (
 )
 
 // WatchServices creates a SharedInformer for v1.Services and registers it with g.
-func WatchServices(g *workgroup.Group, client *kubernetes.Clientset, l log.Logger, rs ...cache.ResourceEventHandler) {
-	watch(g, client.CoreV1().RESTClient(), l, "services", new(v1.Service), rs...)
+func WatchServices(g *workgroup.Group, client *kubernetes.Clientset, log logrus.StdLogger, rs ...cache.ResourceEventHandler) {
+	watch(g, client.CoreV1().RESTClient(), log, "services", new(v1.Service), rs...)
 }
 
 // WatchEndpoints creates a SharedInformer for v1.Endpoints and registers it with g.
-func WatchEndpoints(g *workgroup.Group, client *kubernetes.Clientset, l log.Logger, rs ...cache.ResourceEventHandler) {
-	watch(g, client.CoreV1().RESTClient(), l, "endpoints", new(v1.Endpoints), rs...)
+func WatchEndpoints(g *workgroup.Group, client *kubernetes.Clientset, log logrus.StdLogger, rs ...cache.ResourceEventHandler) {
+	watch(g, client.CoreV1().RESTClient(), log, "endpoints", new(v1.Endpoints), rs...)
 }
 
 // WatchIngress creates a SharedInformer for v1beta1.Ingress and registers it with g.
-func WatchIngress(g *workgroup.Group, client *kubernetes.Clientset, l log.Logger, rs ...cache.ResourceEventHandler) {
-	watch(g, client.ExtensionsV1beta1().RESTClient(), l, "ingresses", new(v1beta1.Ingress), rs...)
+func WatchIngress(g *workgroup.Group, client *kubernetes.Clientset, log logrus.StdLogger, rs ...cache.ResourceEventHandler) {
+	watch(g, client.ExtensionsV1beta1().RESTClient(), log, "ingresses", new(v1beta1.Ingress), rs...)
 }
 
 // WatchSecrets creates a SharedInformer for v1.Secrets and registers it with g.
-func WatchSecrets(g *workgroup.Group, client *kubernetes.Clientset, l log.Logger, rs ...cache.ResourceEventHandler) {
-	watch(g, client.CoreV1().RESTClient(), l, "secrets", new(v1.Secret), rs...)
+func WatchSecrets(g *workgroup.Group, client *kubernetes.Clientset, log logrus.StdLogger, rs ...cache.ResourceEventHandler) {
+	watch(g, client.CoreV1().RESTClient(), log, "secrets", new(v1.Secret), rs...)
 }
 
-func watch(g *workgroup.Group, c cache.Getter, l log.Logger, resource string, objType runtime.Object, rs ...cache.ResourceEventHandler) {
+func watch(g *workgroup.Group, c cache.Getter, log logrus.StdLogger, resource string, objType runtime.Object, rs ...cache.ResourceEventHandler) {
 	lw := cache.NewListWatchFromClient(c, resource, v1.NamespaceAll, fields.Everything())
 	sw := cache.NewSharedInformer(lw, objType, 30*time.Minute)
 	for _, r := range rs {
 		sw.AddEventHandler(r)
 	}
 	g.Add(func(stop <-chan struct{}) {
-		l := l.WithPrefix("watch(" + resource + ")")
-		l.Infof("started")
-		defer l.Infof("stopped")
+		log.Println("started")
+		defer log.Println("stopped")
 		sw.Run(stop)
 	})
 }

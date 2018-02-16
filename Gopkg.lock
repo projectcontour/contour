@@ -221,6 +221,12 @@
   version = "v2.0.1"
 
 [[projects]]
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
+  version = "v1.0.4"
+
+[[projects]]
   name = "github.com/spf13/pflag"
   packages = ["."]
   revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
@@ -514,6 +520,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0af7ca6e6588d044f73c38ca56f177c2e69e3a0918faac8a309c9a7cc5fff3aa"
+  inputs-digest = "0b6a1804604b425c4781076a2ec1d6c7f1f8fe51b4d2fc11c9d9de7e0f8f0a90"
   solver-name = "gps-cdcl"
   solver-version = 1

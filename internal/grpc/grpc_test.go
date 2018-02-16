@@ -24,6 +24,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/log/stdlog"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -196,7 +197,7 @@ func TestGRPCStreaming(t *testing.T) {
 			tr = &contour.Translator{
 				Logger: log,
 			}
-			srv := NewAPI(log, tr)
+			srv := NewAPI(logrus.WithField("test", "true"), tr)
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)
@@ -276,7 +277,7 @@ func TestGRPCFetching(t *testing.T) {
 			tr := &contour.Translator{
 				Logger: log,
 			}
-			srv := NewAPI(log, tr)
+			srv := NewAPI(logrus.WithField("test", "true"), tr)
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)

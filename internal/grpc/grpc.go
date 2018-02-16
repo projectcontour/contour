@@ -16,7 +16,6 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"sync/atomic"
 
@@ -26,11 +25,11 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	envoy_service_v2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
+	"github.com/sirupsen/logrus"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/contour"
-	"github.com/heptio/contour/internal/log"
 )
 
 // Resource types in xDS v2.
@@ -74,7 +73,7 @@ type ListenerCache interface {
 }
 
 // NewAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
-func NewAPI(l log.Logger, t *contour.Translator) *grpc.Server {
+func NewAPI(l logrus.FieldLogger, t *contour.Translator) *grpc.Server {
 	g := grpc.NewServer()
 	s := newgrpcServer(l, t)
 	v2.RegisterClusterDiscoveryServiceServer(g, s)
@@ -91,25 +90,25 @@ type grpcServer struct {
 	RDS
 }
 
-func newgrpcServer(l log.Logger, t *contour.Translator) *grpcServer {
+func newgrpcServer(l logrus.FieldLogger, t *contour.Translator) *grpcServer {
 	return &grpcServer{
 		CDS: CDS{
 			ClusterCache: &t.ClusterCache,
-			Logger:       l.WithPrefix("CDS"),
+			FieldLogger:  l.WithField("api", "CDS"),
 		},
 		EDS: EDS{
 			ClusterLoadAssignmentCache: &t.ClusterLoadAssignmentCache,
-			Logger: l.WithPrefix("EDS"),
+			FieldLogger:                l.WithField("api", "EDS"),
 		},
 		LDS: LDS{
 			ListenerCache: &t.ListenerCache,
-			Logger:        l.WithPrefix("LDS"),
+			FieldLogger:   l.WithField("api", "LDS"),
 		},
 		RDS: RDS{
-			HTTP:   &t.VirtualHostCache.HTTP,
-			HTTPS:  &t.VirtualHostCache.HTTPS,
-			Cond:   &t.VirtualHostCache.Cond,
-			Logger: l.WithPrefix("RDS"),
+			HTTP:        &t.VirtualHostCache.HTTP,
+			HTTPS:       &t.VirtualHostCache.HTTPS,
+			Cond:        &t.VirtualHostCache.Cond,
+			FieldLogger: l.WithField("api", "RDS"),
 		},
 	}
 }
@@ -122,7 +121,7 @@ type resourcer interface {
 
 // CDS implements the CDS v2 gRPC API.
 type CDS struct {
-	log.Logger
+	logrus.FieldLogger
 	ClusterCache
 	count uint64
 }
@@ -150,14 +149,14 @@ func (c *CDS) FetchClusters(context.Context, *v2.DiscoveryRequest) (*v2.Discover
 }
 
 func (c *CDS) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) (err1 error) {
-	log := c.Logger.WithPrefix(fmt.Sprintf("CDS(%06x)", atomic.AddUint64(&c.count, 1)))
+	log := c.WithField("connection", atomic.AddUint64(&c.count, 1))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
 	return stream(srv, c, log)
 }
 
 // EDS implements the EDS v2 gRPC API.
 type EDS struct {
-	log.Logger
+	logrus.FieldLogger
 	ClusterLoadAssignmentCache
 	count uint64
 }
@@ -185,7 +184,7 @@ func (e *EDS) FetchEndpoints(context.Context, *v2.DiscoveryRequest) (*v2.Discove
 }
 
 func (e *EDS) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsServer) (err1 error) {
-	log := e.Logger.WithPrefix(fmt.Sprintf("EDS(%06x)", atomic.AddUint64(&e.count, 1)))
+	log := e.WithField("connection", atomic.AddUint64(&e.count, 1))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
 	return stream(srv, e, log)
 }
@@ -196,7 +195,7 @@ func (e *EDS) StreamLoadStats(srv envoy_service_v2.LoadReportingService_StreamLo
 
 // LDS implements the LDS v2 gRPC API.
 type LDS struct {
-	log.Logger
+	logrus.FieldLogger
 	ListenerCache
 	count uint64
 }
@@ -224,14 +223,14 @@ func (l *LDS) FetchListeners(ctx context.Context, req *v2.DiscoveryRequest) (*v2
 }
 
 func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) (err1 error) {
-	log := l.Logger.WithPrefix(fmt.Sprintf("LDS(%06x)", atomic.AddUint64(&l.count, 1)))
+	log := l.WithField("connection", atomic.AddUint64(&l.count, 1))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
 	return stream(srv, l, log)
 }
 
 // RDS implements the RDS v2 gRPC API.
 type RDS struct {
-	log.Logger
+	logrus.FieldLogger
 	HTTP, HTTPS interface {
 		// Values returns a copy of the contents of the cache.
 		// The slice and its contents should be treated as read-only.
@@ -274,7 +273,7 @@ func (r *RDS) FetchRoutes(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryR
 }
 
 func (r *RDS) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) (err1 error) {
-	log := r.Logger.WithPrefix(fmt.Sprintf("RDS(%06x)", atomic.AddUint64(&r.count, 1)))
+	log := r.WithField("connection", atomic.AddUint64(&r.count, 1))
 	defer func() { log.Infof("stream terminated with error: %v", err1) }()
 	return stream(srv, r, log)
 }
@@ -302,17 +301,17 @@ type notifier interface {
 }
 
 // stream streams a *v2.DiscoveryResponses to the receiver.
-func stream(st grpcStream, n notifier, log log.Logger) error {
+func stream(st grpcStream, n notifier, log logrus.StdLogger) error {
 	ch := make(chan int, 1)
 	last := 0
 	nonce := 0
 	ctx := st.Context()
 	for {
-		log.Infof("waiting for notification, version: %d", last)
+		log.Printf("waiting for notification, version: %d", last)
 		n.Register(ch, last)
 		select {
 		case last = <-ch:
-			log.Infof("notification received version: %d", last)
+			log.Printf("notification received version: %d", last)
 			out, err := fetch(n, last, nonce)
 			if err != nil {
 				return err

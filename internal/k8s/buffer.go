@@ -14,15 +14,15 @@
 package k8s
 
 import (
-	"github.com/heptio/contour/internal/log"
 	"github.com/heptio/contour/internal/workgroup"
+	"github.com/sirupsen/logrus"
 
 	"k8s.io/client-go/tools/cache"
 )
 
 type buffer struct {
 	ev chan interface{}
-	log.Logger
+	logrus.StdLogger
 	rh cache.ResourceEventHandler
 }
 
@@ -39,20 +39,19 @@ type deleteEvent struct {
 }
 
 // NewBuffer returns a ResourceEventHandler which buffers and serialises ResourceEventHandler events.
-func NewBuffer(g *workgroup.Group, rh cache.ResourceEventHandler, log log.Logger, size int) cache.ResourceEventHandler {
+func NewBuffer(g *workgroup.Group, rh cache.ResourceEventHandler, log logrus.StdLogger, size int) cache.ResourceEventHandler {
 	buf := &buffer{
-		ev:     make(chan interface{}, size),
-		Logger: log,
-		rh:     rh,
+		ev:        make(chan interface{}, size),
+		StdLogger: log,
+		rh:        rh,
 	}
 	g.Add(buf.loop)
 	return buf
 }
 
 func (b *buffer) loop(stop <-chan struct{}) {
-	log := b.WithPrefix("buffer.loop")
-	log.Infof("started")
-	defer log.Infof("stopped")
+	b.Println("started")
+	defer b.Println("stopped")
 
 	for {
 		select {
@@ -65,7 +64,7 @@ func (b *buffer) loop(stop <-chan struct{}) {
 			case *deleteEvent:
 				b.rh.OnDelete(ev.obj)
 			default:
-				log.Errorf("unhandled event type: %T: %v", ev, ev)
+				b.Printf("unhandled event type: %T: %v", ev, ev)
 			}
 		case <-stop:
 			return
@@ -90,7 +89,7 @@ func (b *buffer) send(ev interface{}) {
 	case b.ev <- ev:
 		// all good
 	default:
-		b.Infof("event channel is full, len: %v, cap: %v", len(b.ev), cap(b.ev))
+		b.Printf("event channel is full, len: %v, cap: %v", len(b.ev), cap(b.ev))
 		b.ev <- ev
 	}
 }
