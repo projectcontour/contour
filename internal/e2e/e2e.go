@@ -36,18 +36,28 @@ const (
 	listenerType = typePrefix + "Listener"
 )
 
+type testWriter struct {
+	*testing.T
+}
+
+func (t *testWriter) Write(buf []byte) (int, error) {
+	t.Logf("%s", buf)
+	return len(buf), nil
+}
+
 func setup(t *testing.T) (cache.ResourceEventHandler, *grpc.ClientConn, func()) {
-	fl := logrus.WithField("test", "true")
+	log := logrus.New()
+	log.Out = &testWriter{t}
 
 	tr := &contour.Translator{
-		FieldLogger: fl,
+		FieldLogger: log,
 	}
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	check(t, err)
 	var wg sync.WaitGroup
 	wg.Add(1)
-	srv := cgrpc.NewAPI(fl, tr)
+	srv := cgrpc.NewAPI(log, tr)
 	go func() {
 		defer wg.Done()
 		srv.Serve(l)

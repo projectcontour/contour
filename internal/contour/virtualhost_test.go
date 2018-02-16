@@ -14,13 +14,12 @@
 package contour
 
 import (
-	"io/ioutil"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	"github.com/heptio/contour/internal/log/stdlog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -542,11 +541,12 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		},
 	}
 
+	log := logrus.New()
+	log.Out = &testWriter{t}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
 			tr := &Translator{
-				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+				FieldLogger: log,
 			}
 			tr.recomputevhost(tc.vhost, tc.ingresses)
 			got := tr.VirtualHostCache.HTTP.Values()
