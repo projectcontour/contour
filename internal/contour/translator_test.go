@@ -14,14 +14,13 @@
 package contour
 
 import (
-	"io/ioutil"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	"github.com/heptio/contour/internal/log/stdlog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -115,11 +114,12 @@ func TestTranslatorAddService(t *testing.T) {
 		want: []*v2.Cluster{},
 	}}
 
+	log := logrus.New()
+	log.Out = &testWriter{t}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
 			tr := &Translator{
-				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+				FieldLogger: log,
 			}
 			tr.OnAdd(tc.svc)
 			got := tr.ClusterCache.Values()
@@ -181,11 +181,12 @@ func TestTranslatorUpdateService(t *testing.T) {
 		},
 	}
 
+	log := logrus.New()
+	log.Out = &testWriter{t}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
 			tr := &Translator{
-				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+				FieldLogger: log,
 			}
 			tr.OnAdd(tc.oldObj)
 			tr.OnUpdate(tc.oldObj, tc.newObj)
@@ -263,11 +264,12 @@ func TestTranslatorRemoveService(t *testing.T) {
 		},
 	}
 
+	log := logrus.New()
+	log.Out = &testWriter{t}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
 			tr := &Translator{
-				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+				FieldLogger: log,
 			}
 			tc.setup(tr)
 			tr.OnDelete(tc.svc)
@@ -325,11 +327,12 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 		},
 	}}
 
+	log := logrus.New()
+	log.Out = &testWriter{t}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			out := &testLogger{t}
 			tr := &Translator{
-				Logger: stdlog.New(out, out, 0),
+				FieldLogger: log,
 			}
 			tr.OnAdd(tc.svc)
 			tr.OnAdd(tc.ep)
@@ -439,11 +442,12 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 		},
 	}
 
+	log := logrus.New()
+	log.Out = &testWriter{t}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
 			tr := &Translator{
-				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+				FieldLogger: log,
 			}
 			tc.setup(tr)
 			tr.OnDelete(tc.ep)
@@ -1015,11 +1019,12 @@ func TestTranslatorAddIngress(t *testing.T) {
 		ingress_https: []route.VirtualHost{},
 	}}
 
+	log := logrus.New()
+	log.Out = &testWriter{t}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
 			tr := &Translator{
-				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+				FieldLogger: log,
 			}
 			if tc.setup != nil {
 				tc.setup(tr)
@@ -1127,11 +1132,13 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 			ingress_https: []route.VirtualHost{},
 		},
 	}
+
+	log := logrus.New()
+	log.Out = &testWriter{t}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			const NOFLAGS = 1 << 16
 			tr := &Translator{
-				Logger: stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS),
+				FieldLogger: log,
 			}
 			tc.setup(tr)
 			tr.OnDelete(tc.ing)
@@ -1886,11 +1893,11 @@ func ingressrulevalue(backend *v1beta1.IngressBackend) v1beta1.IngressRuleValue 
 	}
 }
 
-type testLogger struct {
+type testWriter struct {
 	*testing.T
 }
 
-func (t *testLogger) Write(buf []byte) (int, error) {
+func (t *testWriter) Write(buf []byte) (int, error) {
 	t.Logf("%s", buf)
 	return len(buf), nil
 }

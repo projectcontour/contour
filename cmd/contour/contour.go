@@ -32,8 +32,9 @@ import (
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/grpc"
 	"github.com/heptio/contour/internal/k8s"
-	"github.com/heptio/contour/internal/log/stdlog"
 	"github.com/heptio/contour/internal/workgroup"
+
+	"github.com/sirupsen/logrus"
 )
 
 // this is necessary due to #113 wherein glog neccessitates a call to flag.Parse
@@ -44,9 +45,9 @@ func init() {
 }
 
 func main() {
-	logger := stdlog.New(os.Stdout, os.Stderr, 0)
+	log := logrus.StandardLogger()
 	t := &contour.Translator{
-		Logger: logger.WithPrefix("translator"),
+		FieldLogger: log.WithField("context", "translator"),
 	}
 
 	app := kingpin.New("contour", "Heptio Contour Kubernetes ingress controller.")
@@ -80,30 +81,31 @@ func main() {
 	case bootstrap.FullCommand():
 		writeBootstrapConfig(&config, *path)
 	case serve.FullCommand():
-		logger.Infof("args: %v", args)
+		log.Infof("args: %v", args)
 		var g workgroup.Group
 
 		// buffer notifications to t to ensure they are handled sequentially.
-		buf := k8s.NewBuffer(&g, t, logger, 128)
+		buf := k8s.NewBuffer(&g, t, log.WithField("context", "buffer"), 128)
 
 		client := newClient(*kubeconfig, *inCluster)
 
-		k8s.WatchServices(&g, client, logger, buf)
-		k8s.WatchEndpoints(&g, client, logger, buf)
-		k8s.WatchIngress(&g, client, logger, buf)
-		k8s.WatchSecrets(&g, client, logger, buf)
+		wl := log.WithField("context", "watch")
+		k8s.WatchServices(&g, client, wl.WithField("resource", "service"), buf)
+		k8s.WatchEndpoints(&g, client, wl.WithField("resource", "endpoints"), buf)
+		k8s.WatchIngress(&g, client, wl.WithField("resource", "ingress"), buf)
+		k8s.WatchSecrets(&g, client, wl.WithField("resource", "secrets"), buf)
 
 		g.Add(func(stop <-chan struct{}) {
-			logger := logger.WithPrefix("gRPCAPI")
+			log := log.WithField("context", "grpc")
 			addr := net.JoinHostPort(*xdsAddr, strconv.Itoa(*xdsPort))
 			l, err := net.Listen("tcp", addr)
 			if err != nil {
-				logger.Errorf("could not listen on %s: %v", addr, err)
+				log.Errorf("could not listen on %s: %v", addr, err)
 				return // TODO(dfc) should return the error not log it
 			}
-			s := grpc.NewAPI(logger, t)
-			logger.Infof("started")
-			defer logger.Infof("stopped")
+			s := grpc.NewAPI(log, t)
+			log.Println("started")
+			defer log.Println("stopped")
 			s.Serve(l)
 		})
 

@@ -22,8 +22,8 @@ import (
 	"strings"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/sirupsen/logrus"
 
-	"github.com/heptio/contour/internal/log"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +39,7 @@ type metadata struct {
 type Translator struct {
 	// The logger for this Translator. There is no valid default, this value
 	// must be supplied by the caller.
-	log.Logger
+	logrus.FieldLogger
 
 	ClusterCache
 	ClusterLoadAssignmentCache

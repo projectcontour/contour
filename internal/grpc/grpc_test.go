@@ -15,7 +15,6 @@ package grpc
 
 import (
 	"context"
-	"io/ioutil"
 	"net"
 	"sync"
 	"testing"
@@ -23,7 +22,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/heptio/contour/internal/contour"
-	"github.com/heptio/contour/internal/log/stdlog"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -33,10 +32,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestGRPCStreaming(t *testing.T) {
-	const NOFLAGS = 1 << 16
-	log := stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS)
+type testWriter struct {
+	*testing.T
+}
 
+func (t *testWriter) Write(buf []byte) (int, error) {
+	t.Logf("%s", buf)
+	return len(buf), nil
+}
+
+func TestGRPCStreaming(t *testing.T) {
 	var l net.Listener
 
 	// tr is recreated before the start of each test.
@@ -191,10 +196,12 @@ func TestGRPCStreaming(t *testing.T) {
 		},
 	}
 
+	log := logrus.New()
+	log.Out = &testWriter{t}
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr = &contour.Translator{
-				Logger: log,
+				FieldLogger: log,
 			}
 			srv := NewAPI(log, tr)
 			var err error
@@ -217,9 +224,6 @@ func TestGRPCStreaming(t *testing.T) {
 }
 
 func TestGRPCFetching(t *testing.T) {
-	const NOFLAGS = 1 << 16
-	log := stdlog.New(ioutil.Discard, ioutil.Discard, NOFLAGS)
-
 	var l net.Listener
 
 	newClient := func(t *testing.T) *grpc.ClientConn {
@@ -271,10 +275,12 @@ func TestGRPCFetching(t *testing.T) {
 		},
 	}
 
+	log := logrus.New()
+	log.Out = &testWriter{t}
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr := &contour.Translator{
-				Logger: log,
+				FieldLogger: log,
 			}
 			srv := NewAPI(log, tr)
 			var err error
