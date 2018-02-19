@@ -32,15 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-type testWriter struct {
-	*testing.T
-}
-
-func (t *testWriter) Write(buf []byte) (int, error) {
-	t.Logf("%s", buf)
-	return len(buf), nil
-}
-
 func TestGRPCStreaming(t *testing.T) {
 	var l net.Listener
 
@@ -196,8 +187,7 @@ func TestGRPCStreaming(t *testing.T) {
 		},
 	}
 
-	log := logrus.New()
-	log.Out = &testWriter{t}
+	log := testLogger(t)
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr = &contour.Translator{
@@ -332,4 +322,19 @@ func checktimeout(t *testing.T, stream interface {
 	if s.Code() != codes.DeadlineExceeded {
 		t.Fatalf("expected %q, got %q", codes.DeadlineExceeded, s.Code())
 	}
+}
+
+func testLogger(t *testing.T) logrus.FieldLogger {
+	log := logrus.New()
+	log.Out = &testWriter{t}
+	return log
+}
+
+type testWriter struct {
+	*testing.T
+}
+
+func (t *testWriter) Write(buf []byte) (int, error) {
+	t.Logf("%s", buf)
+	return len(buf), nil
 }
