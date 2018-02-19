@@ -67,16 +67,8 @@ func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 			// eds needs a stable name to find this sds entry.
 			// ideally we can generate this information from that recorded by the
 			// endpoint controller in the endpoint record.
-			sname := p.Name
-			if sname == "" {
-				// if this port is unnamed, then there is only one service port
-				// for this service.
-				sname = strconv.Itoa(int(p.Port))
-			}
-			config := edsconfig("contour", servicename(newsvc.ObjectMeta, sname))
+			config := edsconfig("contour", servicename(newsvc.ObjectMeta, portname(p)))
 
-			// sname is the entry that EDS will try to match on, it is independant
-			// of named and unnamed ports below.
 			if p.Name != "" {
 				// service port is named, so we must generate both a cluster for the port name
 				// and a cluster for the port number.
@@ -110,6 +102,20 @@ func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 		default:
 			// ignore UDP and other port types.
 		}
+	}
+}
+
+// portname returns the string identifier for the v1.ServicePort.
+// If p.Name is not empty, then the ServicePort is one of several, thus
+// the endpoint controller will have recorded the the port's name in the
+// endpoint record which EDS can find later. If p.Name is empty, then
+// the name of the port is the value of p.TargetPort.
+func portname(p v1.ServicePort) string {
+	switch p.Name {
+	case "":
+		return p.TargetPort.String()
+	default:
+		return p.Name
 	}
 }
 

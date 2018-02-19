@@ -44,7 +44,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/443",
+					ServiceName: "default/kuard/8443",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
@@ -107,7 +107,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/443",
+					ServiceName: "default/kuard/8443",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
@@ -220,7 +220,27 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/443",
+					ServiceName: "default/kuard/8000",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+			}},
+		},
+		"issue#243": {
+			oldObj: nil,
+			newObj: service("default", "kuard",
+				v1.ServicePort{
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(8080),
+				},
+			),
+			want: []*v2.Cluster{{
+				Name: "default/kuard/80",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+					ServiceName: "default/kuard/8080",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
@@ -238,5 +258,51 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestPortname(t *testing.T) {
+	tests := map[string]struct {
+		sp   v1.ServicePort
+		want string
+	}{
+		"unnamed": { // issue#243
+			sp: v1.ServicePort{
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			},
+			want: "8080",
+		},
+		"named": {
+			sp: v1.ServicePort{
+				Name:       "http",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			},
+			want: "http",
+		},
+		"unnamed, named targetport": {
+			sp: v1.ServicePort{
+				Port:       80,
+				TargetPort: intstr.FromString("http"),
+			},
+			want: "http",
+		},
+		"named, different targetport name": {
+			sp: v1.ServicePort{
+				Name:       "httpbin",
+				Port:       80,
+				TargetPort: intstr.FromString("http"),
+			},
+			want: "httpbin",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := portname(tc.sp)
+			if got != tc.want {
+				t.Fatalf("portname(%#v): want %q, got %q", tc.sp, tc.want, got)
+			}
+		})
+	}
 }

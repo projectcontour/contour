@@ -84,7 +84,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/80",
+					ServiceName: "default/kuard/8080",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
@@ -335,7 +335,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/443",
+					ServiceName: "default/kuard/8000",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
@@ -402,6 +402,38 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 		Resources:   []types.Any{},
 		TypeUrl:     clusterType,
 		Nonce:       "0",
+	}, fetchCDS(t, cc))
+}
+
+// issue#243. A single unnamed service with a different numeric target port
+func TestCDSSingleUnnamedService(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	s1 := service("default", "kuard",
+		v1.ServicePort{
+			Protocol:   "TCP",
+			Port:       80,
+			TargetPort: intstr.FromInt(8080),
+		},
+	)
+	rh.OnAdd(s1)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.Cluster{
+				Name: "default/kuard/80",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+					ServiceName: "default/kuard/8080",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+			}),
+		},
+		TypeUrl: clusterType,
+		Nonce:   "0",
 	}, fetchCDS(t, cc))
 }
 
