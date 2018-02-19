@@ -370,6 +370,15 @@ func apiconfigsource(clusters ...string) *core.ConfigSource {
 	}
 }
 
-func servicename(meta metav1.ObjectMeta, port string) string {
-	return meta.Namespace + "/" + meta.Name + "/" + port
+// servicename returns a fixed name for this service and portname
+func servicename(meta metav1.ObjectMeta, portname string) string {
+	sn := []string{
+		meta.Namespace,
+		meta.Name,
+		"",
+	}[:2]
+	if portname != "" {
+		sn = append(sn, portname)
+	}
+	return strings.Join(sn, "/")
 }

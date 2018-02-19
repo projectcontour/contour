@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -44,7 +45,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/8443",
+					ServiceName: "default/kuard",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
@@ -107,7 +108,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/8443",
+					ServiceName: "default/kuard",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
@@ -220,7 +221,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/8000",
+					ServiceName: "default/kuard",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
@@ -240,7 +241,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/8080",
+					ServiceName: "default/kuard",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
@@ -260,48 +261,34 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 	}
 }
 
-func TestPortname(t *testing.T) {
+func TestServiceName(t *testing.T) {
 	tests := map[string]struct {
-		sp   v1.ServicePort
+		meta metav1.ObjectMeta
+		name string
 		want string
 	}{
-		"unnamed": { // issue#243
-			sp: v1.ServicePort{
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
+		"named service": {
+			meta: metav1.ObjectMeta{
+				Namespace: "default",
+				Name:      "kuard",
 			},
-			want: "8080",
+			name: "http",
+			want: "default/kuard/http",
 		},
-		"named": {
-			sp: v1.ServicePort{
-				Name:       "http",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
+		"unnamed service": {
+			meta: metav1.ObjectMeta{
+				Namespace: "default",
+				Name:      "kuard",
 			},
-			want: "http",
-		},
-		"unnamed, named targetport": {
-			sp: v1.ServicePort{
-				Port:       80,
-				TargetPort: intstr.FromString("http"),
-			},
-			want: "http",
-		},
-		"named, different targetport name": {
-			sp: v1.ServicePort{
-				Name:       "httpbin",
-				Port:       80,
-				TargetPort: intstr.FromString("http"),
-			},
-			want: "httpbin",
+			want: "default/kuard",
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := portname(tc.sp)
+			got := servicename(tc.meta, tc.name)
 			if got != tc.want {
-				t.Fatalf("portname(%#v): want %q, got %q", tc.sp, tc.want, got)
+				t.Fatalf("servicename(%#v, %q): want %q, got %q", tc.meta, tc.name, tc.want, got)
 			}
 		})
 	}

@@ -14,8 +14,6 @@
 package contour
 
 import (
-	"strconv"
-
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
@@ -63,13 +61,6 @@ func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldep, newe
 			// if this endpoint's service's port has a name, then the endpoint
 			// controller will apply the name here. The name may appear once per subset.
 			name := p.Name
-			if name == "" {
-				// if the port's name is not set then the service's port is unnamed
-				// and there is only one port, and it only deploys to an unnamed
-				// container port, therefore the name generated for the service in CDS
-				// will be the port number.
-				name = strconv.Itoa(int(p.Port))
-			}
 			cla, ok := clas[name]
 			if !ok {
 				cla = clusterloadassignment(servicename(newep.ObjectMeta, name))
@@ -96,13 +87,6 @@ func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldep, newe
 			// if this endpoint's service's port has a name, then the endpoint
 			// controller will apply the name here. The name may appear once per subset.
 			name := p.Name
-			if name == "" {
-				// if the port's name is not set then the service's port is unnamed
-				// and there is only one port, and it only deploys to an unnamed
-				// container port, therefore the name generated for the service in CDS
-				// will be the port number.
-				name = strconv.Itoa(int(p.Port))
-			}
 			if _, ok := clas[name]; !ok {
 				// port is not present in the list added / updated, so remove it
 				cc.Remove(servicename(oldep.ObjectMeta, name))

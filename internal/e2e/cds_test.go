@@ -51,7 +51,7 @@ func TestClusterLongServiceName(t *testing.T) {
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "kuard/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r/8080",
+					ServiceName: "kuard/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
@@ -84,7 +84,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/8080",
+					ServiceName: "default/kuard",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
@@ -335,7 +335,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/8000",
+					ServiceName: "default/kuard",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
@@ -406,35 +406,77 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 }
 
 // issue#243. A single unnamed service with a different numeric target port
-func TestCDSSingleUnnamedService(t *testing.T) {
+func TestIssue243(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
 
-	s1 := service("default", "kuard",
-		v1.ServicePort{
-			Protocol:   "TCP",
-			Port:       80,
-			TargetPort: intstr.FromInt(8080),
-		},
-	)
-	rh.OnAdd(s1)
-	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "0",
-		Resources: []types.Any{
-			any(t, &v2.Cluster{
-				Name: "default/kuard/80",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/8080",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
-		},
-		TypeUrl: clusterType,
-		Nonce:   "0",
-	}, fetchCDS(t, cc))
+	t.Run("single unnamed service with a different numeric target port", func(t *testing.T) {
+		s1 := service("default", "kuard",
+			v1.ServicePort{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			},
+		)
+		rh.OnAdd(s1)
+		assertEqual(t, &v2.DiscoveryResponse{
+			VersionInfo: "0",
+			Resources: []types.Any{
+				any(t, &v2.Cluster{
+					Name: "default/kuard/80",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				}),
+			},
+			TypeUrl: clusterType,
+			Nonce:   "0",
+		}, fetchCDS(t, cc))
+	})
+}
+
+// issue 247, a single unnamed service with a named target port
+func TestIssue247(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	t.Run("single unnamed service with a named target port", func(t *testing.T) {
+
+		// spec:
+		//   ports:
+		//   - port: 80
+		//     protocol: TCP
+		//     targetPort: kuard
+		s1 := service("default", "kuard",
+			v1.ServicePort{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromString("kuard"),
+			},
+		)
+		rh.OnAdd(s1)
+		assertEqual(t, &v2.DiscoveryResponse{
+			VersionInfo: "0",
+			Resources: []types.Any{
+				any(t, &v2.Cluster{
+					Name: "default/kuard/80",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				}),
+			},
+			TypeUrl: clusterType,
+			Nonce:   "0",
+		}, fetchCDS(t, cc))
+	})
 }
 
 func fetchCDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
