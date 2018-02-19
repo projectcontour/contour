@@ -114,8 +114,7 @@ func TestTranslatorAddService(t *testing.T) {
 		want: []*v2.Cluster{},
 	}}
 
-	log := logrus.New()
-	log.Out = &testWriter{t}
+	log := testLogger(t)
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			tr := &Translator{
@@ -181,8 +180,7 @@ func TestTranslatorUpdateService(t *testing.T) {
 		},
 	}
 
-	log := logrus.New()
-	log.Out = &testWriter{t}
+	log := testLogger(t)
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr := &Translator{
@@ -264,8 +262,7 @@ func TestTranslatorRemoveService(t *testing.T) {
 		},
 	}
 
-	log := logrus.New()
-	log.Out = &testWriter{t}
+	log := testLogger(t)
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr := &Translator{
@@ -327,8 +324,7 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 		},
 	}}
 
-	log := logrus.New()
-	log.Out = &testWriter{t}
+	log := testLogger(t)
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			tr := &Translator{
@@ -442,8 +438,7 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 		},
 	}
 
-	log := logrus.New()
-	log.Out = &testWriter{t}
+	log := testLogger(t)
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr := &Translator{
@@ -1019,8 +1014,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 		ingress_https: []route.VirtualHost{},
 	}}
 
-	log := logrus.New()
-	log.Out = &testWriter{t}
+	log := testLogger(t)
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			tr := &Translator{
@@ -1133,8 +1127,7 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 		},
 	}
 
-	log := logrus.New()
-	log.Out = &testWriter{t}
+	log := testLogger(t)
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			tr := &Translator{
@@ -1891,6 +1884,12 @@ func ingressrulevalue(backend *v1beta1.IngressBackend) v1beta1.IngressRuleValue 
 			}},
 		},
 	}
+}
+
+func testLogger(t *testing.T) logrus.FieldLogger {
+	log := logrus.New()
+	log.Out = &testWriter{t}
+	return log
 }
 
 type testWriter struct {

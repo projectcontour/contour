@@ -73,9 +73,9 @@ type ListenerCache interface {
 }
 
 // NewAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
-func NewAPI(l logrus.FieldLogger, t *contour.Translator) *grpc.Server {
+func NewAPI(log logrus.FieldLogger, t *contour.Translator) *grpc.Server {
 	g := grpc.NewServer()
-	s := newgrpcServer(l, t)
+	s := newgrpcServer(log, t)
 	v2.RegisterClusterDiscoveryServiceServer(g, s)
 	v2.RegisterEndpointDiscoveryServiceServer(g, s)
 	v2.RegisterListenerDiscoveryServiceServer(g, s)
@@ -90,25 +90,25 @@ type grpcServer struct {
 	RDS
 }
 
-func newgrpcServer(l logrus.FieldLogger, t *contour.Translator) *grpcServer {
+func newgrpcServer(log logrus.FieldLogger, t *contour.Translator) *grpcServer {
 	return &grpcServer{
 		CDS: CDS{
 			ClusterCache: &t.ClusterCache,
-			FieldLogger:  l.WithField("api", "CDS"),
+			FieldLogger:  log.WithField("api", "CDS"),
 		},
 		EDS: EDS{
 			ClusterLoadAssignmentCache: &t.ClusterLoadAssignmentCache,
-			FieldLogger:                l.WithField("api", "EDS"),
+			FieldLogger:                log.WithField("api", "EDS"),
 		},
 		LDS: LDS{
 			ListenerCache: &t.ListenerCache,
-			FieldLogger:   l.WithField("api", "LDS"),
+			FieldLogger:   log.WithField("api", "LDS"),
 		},
 		RDS: RDS{
 			HTTP:        &t.VirtualHostCache.HTTP,
 			HTTPS:       &t.VirtualHostCache.HTTPS,
 			Cond:        &t.VirtualHostCache.Cond,
-			FieldLogger: l.WithField("api", "RDS"),
+			FieldLogger: log.WithField("api", "RDS"),
 		},
 	}
 }
@@ -148,9 +148,8 @@ func (c *CDS) FetchClusters(context.Context, *v2.DiscoveryRequest) (*v2.Discover
 	return fetch(c, 0, 0)
 }
 
-func (c *CDS) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) (err1 error) {
+func (c *CDS) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) error {
 	log := c.WithField("connection", atomic.AddUint64(&c.count, 1))
-	defer func() { log.Infof("stream terminated with error: %v", err1) }()
 	return stream(srv, c, log)
 }
 
@@ -183,9 +182,8 @@ func (e *EDS) FetchEndpoints(context.Context, *v2.DiscoveryRequest) (*v2.Discove
 	return fetch(e, 0, 0)
 }
 
-func (e *EDS) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsServer) (err1 error) {
+func (e *EDS) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsServer) error {
 	log := e.WithField("connection", atomic.AddUint64(&e.count, 1))
-	defer func() { log.Infof("stream terminated with error: %v", err1) }()
 	return stream(srv, e, log)
 }
 
@@ -222,9 +220,8 @@ func (l *LDS) FetchListeners(ctx context.Context, req *v2.DiscoveryRequest) (*v2
 	return fetch(l, 0, 0)
 }
 
-func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) (err1 error) {
+func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) error {
 	log := l.WithField("connection", atomic.AddUint64(&l.count, 1))
-	defer func() { log.Infof("stream terminated with error: %v", err1) }()
 	return stream(srv, l, log)
 }
 
@@ -272,9 +269,8 @@ func (r *RDS) FetchRoutes(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryR
 	return fetch(r, 0, 0)
 }
 
-func (r *RDS) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) (err1 error) {
+func (r *RDS) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) error {
 	log := r.WithField("connection", atomic.AddUint64(&r.count, 1))
-	defer func() { log.Infof("stream terminated with error: %v", err1) }()
 	return stream(srv, r, log)
 }
 
@@ -301,17 +297,27 @@ type notifier interface {
 }
 
 // stream streams a *v2.DiscoveryResponses to the receiver.
-func stream(st grpcStream, n notifier, log logrus.StdLogger) error {
+func stream(st grpcStream, n notifier, log logrus.FieldLogger) error {
+	err := stream0(st, n, log)
+	if err != nil {
+		log.WithError(err).Error("stream terminated")
+	} else {
+		log.Info("stream terminated")
+	}
+	return err
+}
+
+func stream0(st grpcStream, n notifier, log logrus.FieldLogger) error {
 	ch := make(chan int, 1)
 	last := 0
 	nonce := 0
 	ctx := st.Context()
 	for {
-		log.Printf("waiting for notification, version: %d", last)
+		log.WithField("version", last).Info("waiting for notification")
 		n.Register(ch, last)
 		select {
 		case last = <-ch:
-			log.Printf("notification received version: %d", last)
+			log.WithField("version", last).Info("notification received")
 			out, err := fetch(n, last, nonce)
 			if err != nil {
 				return err

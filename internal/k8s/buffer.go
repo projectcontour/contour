@@ -39,10 +39,10 @@ type deleteEvent struct {
 }
 
 // NewBuffer returns a ResourceEventHandler which buffers and serialises ResourceEventHandler events.
-func NewBuffer(g *workgroup.Group, rh cache.ResourceEventHandler, log logrus.StdLogger, size int) cache.ResourceEventHandler {
+func NewBuffer(g *workgroup.Group, rh cache.ResourceEventHandler, log logrus.FieldLogger, size int) cache.ResourceEventHandler {
 	buf := &buffer{
 		ev:        make(chan interface{}, size),
-		StdLogger: log,
+		StdLogger: log.WithField("context", "buffer"),
 		rh:        rh,
 	}
 	g.Add(buf.loop)

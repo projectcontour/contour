@@ -85,15 +85,15 @@ func main() {
 		var g workgroup.Group
 
 		// buffer notifications to t to ensure they are handled sequentially.
-		buf := k8s.NewBuffer(&g, t, log.WithField("context", "buffer"), 128)
+		buf := k8s.NewBuffer(&g, t, log, 128)
 
 		client := newClient(*kubeconfig, *inCluster)
 
 		wl := log.WithField("context", "watch")
-		k8s.WatchServices(&g, client, wl.WithField("resource", "service"), buf)
-		k8s.WatchEndpoints(&g, client, wl.WithField("resource", "endpoints"), buf)
-		k8s.WatchIngress(&g, client, wl.WithField("resource", "ingress"), buf)
-		k8s.WatchSecrets(&g, client, wl.WithField("resource", "secrets"), buf)
+		k8s.WatchServices(&g, client, wl, buf)
+		k8s.WatchEndpoints(&g, client, wl, buf)
+		k8s.WatchIngress(&g, client, wl, buf)
+		k8s.WatchSecrets(&g, client, wl, buf)
 
 		g.Add(func(stop <-chan struct{}) {
 			log := log.WithField("context", "grpc")
