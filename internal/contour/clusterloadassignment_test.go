@@ -32,7 +32,7 @@ func TestClusterLoadAssignmentCacheRecomputeClusterLoadAssignment(t *testing.T) 
 				Ports:     ports(8080),
 			}),
 			want: []*v2.ClusterLoadAssignment{
-				clusterloadassignment("default/simple/8080", lbendpoint("192.168.183.24", 8080)),
+				clusterloadassignment("default/simple", lbendpoint("192.168.183.24", 8080)),
 			},
 		},
 		"multiple addresses": {
@@ -46,7 +46,7 @@ func TestClusterLoadAssignmentCacheRecomputeClusterLoadAssignment(t *testing.T) 
 				Ports: ports(80),
 			}),
 			want: []*v2.ClusterLoadAssignment{
-				clusterloadassignment("default/httpbin-org/80",
+				clusterloadassignment("default/httpbin-org",
 					lbendpoint("23.23.247.89", 80),
 					lbendpoint("50.17.192.147", 80),
 					lbendpoint("50.17.206.192", 80),

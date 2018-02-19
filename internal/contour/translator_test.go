@@ -40,7 +40,7 @@ func TestTranslatorAddService(t *testing.T) {
 			TargetPort: intstr.FromInt(6502),
 		}),
 		want: []*v2.Cluster{
-			cluster("default/simple/80", "default/simple/6502"),
+			cluster("default/simple/80", "default/simple"),
 		},
 	}, {
 		name: "long namespace and service name",
@@ -56,7 +56,7 @@ func TestTranslatorAddService(t *testing.T) {
 		want: []*v2.Cluster{
 			cluster(
 				"beurocratic-company-test-domain-1/tiny-cog-depa-52e801/80",
-				"beurocratic-company-test-domain-1/tiny-cog-department-test-instance/6502", // ServiceName is not subject to the 60 char limit
+				"beurocratic-company-test-domain-1/tiny-cog-department-test-instance", // ServiceName is not subject to the 60 char limit
 			),
 		},
 	}, {
@@ -104,7 +104,7 @@ func TestTranslatorAddService(t *testing.T) {
 			TargetPort: intstr.FromString("9001"),
 		}),
 		want: []*v2.Cluster{
-			cluster("default/simple/8080", "default/simple/9001"),
+			cluster("default/simple/8080", "default/simple"),
 		},
 	}, {
 		name: "one udp service",
@@ -250,7 +250,7 @@ func TestTranslatorRemoveService(t *testing.T) {
 				TargetPort: intstr.FromInt(6502),
 			}),
 			want: []*v2.Cluster{
-				cluster("default/simple/80", "default/simple/6502"),
+				cluster("default/simple/80", "default/simple"),
 			},
 		},
 		"remove non existant": {
@@ -298,7 +298,7 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 			Ports:     ports(8080),
 		}),
 		want: []*v2.ClusterLoadAssignment{
-			clusterloadassignment("default/simple/8080", lbendpoint("192.168.183.24", 8080)),
+			clusterloadassignment("default/simple", lbendpoint("192.168.183.24", 8080)),
 		},
 	}, {
 		name: "multiple addresses",
@@ -317,7 +317,7 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 			Ports: ports(80),
 		}),
 		want: []*v2.ClusterLoadAssignment{
-			clusterloadassignment("default/httpbin-org/80",
+			clusterloadassignment("default/httpbin-org",
 				lbendpoint("23.23.247.89", 80),
 				lbendpoint("50.17.192.147", 80),
 				lbendpoint("50.17.206.192", 80),
@@ -383,7 +383,7 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 				Ports:     ports(8080),
 			}),
 			want: []*v2.ClusterLoadAssignment{
-				clusterloadassignment("default/simple/8080", lbendpoint("192.168.183.24", 8080)),
+				clusterloadassignment("default/simple", lbendpoint("192.168.183.24", 8080)),
 			},
 		},
 		"remove non existant": {

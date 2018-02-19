@@ -33,6 +33,15 @@ type ClusterCache struct {
 // If oldsvc differs to newsvc, then the entries present only oldsvc will be removed from
 // the SDS cache, present in newsvc will be added. If newsvc is nil, entries in oldsvc
 // will be unconditionally deleted.
+//
+// Each CDS entry has a name, which is hashed according to the envoy 60 char limit, and
+// a sevicename which is freeform. The servicename is how EDS and CDS locate each other.
+// In order to avoid having to have access to the endpoints during service recomputation,
+// and vice versa, the service name is generated blindly with prior knowlege of how the
+// endpoint controller will write the endpoints record for EDS. In effect, all service
+// names come in the form NAMESPACE / NAME / SERVICEPORT NAME. However SERVICEPORT NAME
+// may be blank, and so both the SERVICEPORT NAME component and the preceeding slash may
+// be elided in the case that there is a single, unnamed, service port in the spec.
 func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 	if oldsvc == newsvc {
 		// skip if oldsvc & newsvc == nil, or are the same object.
@@ -67,7 +76,9 @@ func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 			// eds needs a stable name to find this sds entry.
 			// ideally we can generate this information from that recorded by the
 			// endpoint controller in the endpoint record.
-			config := edsconfig("contour", servicename(newsvc.ObjectMeta, portname(p)))
+			// p.Name will be blank on the condition that there is a single serviceport
+			// entry in this service spec.
+			config := edsconfig("contour", servicename(newsvc.ObjectMeta, p.Name))
 
 			if p.Name != "" {
 				// service port is named, so we must generate both a cluster for the port name
@@ -102,20 +113,6 @@ func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 		default:
 			// ignore UDP and other port types.
 		}
-	}
-}
-
-// portname returns the string identifier for the v1.ServicePort.
-// If p.Name is not empty, then the ServicePort is one of several, thus
-// the endpoint controller will have recorded the the port's name in the
-// endpoint record which EDS can find later. If p.Name is empty, then
-// the name of the port is the value of p.TargetPort.
-func portname(p v1.ServicePort) string {
-	switch p.Name {
-	case "":
-		return p.TargetPort.String()
-	default:
-		return p.Name
 	}
 }
 
