@@ -40,7 +40,7 @@ func TestTranslatorAddService(t *testing.T) {
 			TargetPort: intstr.FromInt(6502),
 		}),
 		want: []*v2.Cluster{
-			cluster("default/simple/80", "default/simple/80"),
+			cluster("default/simple/80", "default/simple/6502"),
 		},
 	}, {
 		name: "long namespace and service name",
@@ -56,7 +56,7 @@ func TestTranslatorAddService(t *testing.T) {
 		want: []*v2.Cluster{
 			cluster(
 				"beurocratic-company-test-domain-1/tiny-cog-depa-52e801/80",
-				"beurocratic-company-test-domain-1/tiny-cog-department-test-instance/80", // ServiceName is not subject to the 60 char limit
+				"beurocratic-company-test-domain-1/tiny-cog-department-test-instance/6502", // ServiceName is not subject to the 60 char limit
 			),
 		},
 	}, {
@@ -91,6 +91,8 @@ func TestTranslatorAddService(t *testing.T) {
 			cluster("default/simple/http", "default/simple/http"),
 		},
 	}, {
+		// TODO(dfc) I think this is impossible, the apiserver would require
+		// these ports to be named.
 		name: "one tcp service, one udp service",
 		svc: service("default", "simple", v1.ServicePort{
 			Protocol:   "UDP",
@@ -102,7 +104,7 @@ func TestTranslatorAddService(t *testing.T) {
 			TargetPort: intstr.FromString("9001"),
 		}),
 		want: []*v2.Cluster{
-			cluster("default/simple/8080", "default/simple/8080"),
+			cluster("default/simple/8080", "default/simple/9001"),
 		},
 	}, {
 		name: "one udp service",
@@ -248,7 +250,7 @@ func TestTranslatorRemoveService(t *testing.T) {
 				TargetPort: intstr.FromInt(6502),
 			}),
 			want: []*v2.Cluster{
-				cluster("default/simple/80", "default/simple/80"),
+				cluster("default/simple/80", "default/simple/6502"),
 			},
 		},
 		"remove non existant": {
