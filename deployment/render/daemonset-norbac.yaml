@@ -12,7 +12,19 @@ metadata:
   name: contour
   namespace: heptio-contour
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: routes.contour.heptio.com
+  labels:
+    component: route
+spec:
+  group: contour.heptio.com
+  version: v1alpha1
+  scope: Namespaced
+  names:
+    plural: routes
+    kind: RouteapiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   labels:

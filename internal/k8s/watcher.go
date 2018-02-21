@@ -18,6 +18,8 @@ import (
 	"time"
 
 	"github.com/heptio/contour/internal/workgroup"
+	v1alpha1 "github.com/heptio/contour/pkg/apis/contour/v1alpha1"
+	clientset "github.com/heptio/contour/pkg/generated/clientset/versioned"
 	"github.com/sirupsen/logrus"
 
 	"k8s.io/api/core/v1"
@@ -46,6 +48,11 @@ func WatchIngress(g *workgroup.Group, client *kubernetes.Clientset, log logrus.F
 // WatchSecrets creates a SharedInformer for v1.Secrets and registers it with g.
 func WatchSecrets(g *workgroup.Group, client *kubernetes.Clientset, log logrus.FieldLogger, rs ...cache.ResourceEventHandler) {
 	watch(g, client.CoreV1().RESTClient(), log, "secrets", new(v1.Secret), rs...)
+}
+
+// WatchRoutes creates a SharedInformer for contour.heptio.com/v1alpha1.Routes and registers it with g.
+func WatchRoutes(g *workgroup.Group, client *clientset.Clientset, log logrus.FieldLogger, rs ...cache.ResourceEventHandler) {
+	watch(g, client.ContourV1alpha1().RESTClient(), log, v1alpha1.ResourcePlural, new(v1alpha1.Route), rs...)
 }
 
 func watch(g *workgroup.Group, c cache.Getter, log logrus.FieldLogger, resource string, objType runtime.Object, rs ...cache.ResourceEventHandler) {
