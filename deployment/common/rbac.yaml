@@ -49,4 +49,10 @@ rules:
   - get
   - list
   - watch
+- apiGroups: ["contour.heptio.com"]
+  resources: ["routes"]
+  verbs:
+  - get
+  - list
+  - watch
 ---

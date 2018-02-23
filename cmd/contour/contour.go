@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	clientset "github.com/heptio/contour/pkg/generated/clientset/versioned"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"k8s.io/client-go/kubernetes"
@@ -87,13 +88,14 @@ func main() {
 		// buffer notifications to t to ensure they are handled sequentially.
 		buf := k8s.NewBuffer(&g, t, log, 128)
 
-		client := newClient(*kubeconfig, *inCluster)
+		client, contourClient := newClient(*kubeconfig, *inCluster)
 
 		wl := log.WithField("context", "watch")
 		k8s.WatchServices(&g, client, wl, buf)
 		k8s.WatchEndpoints(&g, client, wl, buf)
 		k8s.WatchIngress(&g, client, wl, buf)
 		k8s.WatchSecrets(&g, client, wl, buf)
+		k8s.WatchRoutes(&g, contourClient, wl, buf)
 
 		g.Add(func(stop <-chan struct{}) {
 			log := log.WithField("context", "grpc")
@@ -135,7 +137,7 @@ func writeBootstrapConfig(config configWriter, path string) {
 	check(f.Close())
 }
 
-func newClient(kubeconfig string, inCluster bool) *kubernetes.Clientset {
+func newClient(kubeconfig string, inCluster bool) (*kubernetes.Clientset, *clientset.Clientset) {
 	var err error
 	var config *rest.Config
 	if kubeconfig != "" && !inCluster {
@@ -148,7 +150,9 @@ func newClient(kubeconfig string, inCluster bool) *kubernetes.Clientset {
 
 	client, err := kubernetes.NewForConfig(config)
 	check(err)
-	return client
+	contourClient, err := clientset.NewForConfig(config)
+	check(err)
+	return client, contourClient
 }
 
 func check(err error) {

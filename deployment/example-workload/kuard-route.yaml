@@ -1,0 +1,12 @@
+apiVersion: contour.heptio.com/v1alpha1
+kind: Route
+metadata: 
+  name: kuard
+  namespace: default
+spec: 
+  host: 
+  routes: 
+    - pathPrefix: /
+      upstreams: 
+        - serviceName: kuard
+          servicePort: 80
