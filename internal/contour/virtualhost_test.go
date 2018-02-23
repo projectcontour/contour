@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	v1alpha1 "github.com/heptio/contour/pkg/apis/contour/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -549,6 +550,267 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				FieldLogger: log,
 			}
 			tr.recomputevhost(tc.vhost, tc.ingresses)
+			got := tr.VirtualHostCache.HTTP.Values()
+			if !reflect.DeepEqual(tc.ingress_http, got) {
+				t.Fatalf("recomputevhost(%v):\n (ingress_http) want:\n%+v\n got:\n%+v", tc.vhost, tc.ingress_http, got)
+			}
+
+			got = tr.VirtualHostCache.HTTPS.Values()
+			if !reflect.DeepEqual(tc.ingress_https, got) {
+				t.Fatalf("recomputevhost(%v):\n (ingress_https) want:\n%#v\ngot:\n%#v", tc.vhost, tc.ingress_https, got)
+			}
+		})
+	}
+}
+func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
+	im := func(routes []*v1alpha1.Route) map[metadata]*v1alpha1.Route {
+		m := make(map[metadata]*v1alpha1.Route)
+		for _, i := range routes {
+			m[metadata{name: i.Name, namespace: i.Namespace}] = i
+		}
+		return m
+	}
+	tests := map[string]struct {
+		vhost         string
+		routes        map[metadata]*v1alpha1.Route
+		ingress_http  []route.VirtualHost
+		ingress_https []route.VirtualHost
+	}{
+		"default backend": {
+			vhost: "*",
+			routes: im([]*v1alpha1.Route{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Routes: []v1alpha1.IngressRoute{
+						{
+							PathPrefix: "/",
+							Upstreams: []v1alpha1.Upstream{
+								{
+									ServiceName: "backend",
+									ServicePort: 80,
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []route.VirtualHost{{
+				Name:    "*",
+				Domains: []string{"*"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/backend/80"),
+				}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
+		"name based vhost": {
+			vhost: "httpbin.org",
+			routes: im([]*v1alpha1.Route{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Host: "httpbin.org",
+					Routes: []v1alpha1.IngressRoute{
+						{
+							PathPrefix: "/",
+							Upstreams: []v1alpha1.Upstream{
+								{
+									ServiceName: "httpbin-org",
+									ServicePort: 80,
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []route.VirtualHost{{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"), // match all
+					Action: clusteraction("default/httpbin-org/80"),
+				}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
+		"multiple routes": {
+			vhost: "httpbin.org",
+			routes: im([]*v1alpha1.Route{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Host: "httpbin.org",
+					Routes: []v1alpha1.IngressRoute{
+						{
+							PathPrefix: "/peter",
+							Upstreams: []v1alpha1.Upstream{
+								{
+									ServiceName: "peter",
+									ServicePort: 80,
+								},
+							},
+						},
+						{
+							PathPrefix: "/paul",
+							Upstreams: []v1alpha1.Upstream{
+								{
+									ServiceName: "paul",
+									ServicePort: 80,
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []route.VirtualHost{{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/peter"),
+					Action: clusteraction("default/peter/80"),
+				}, {
+					Match:  prefixmatch("/paul"),
+					Action: clusteraction("default/paul/80"),
+				}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
+		"vhost name exceeds 60 chars": { // heptio/contour#25
+			vhost: "my-very-very-long-service-host-name.subdomain.boring-dept.my.company",
+			routes: im([]*v1alpha1.Route{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "my-service-name",
+					Namespace: "default",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Host: "my-very-very-long-service-host-name.subdomain.boring-dept.my.company",
+					Routes: []v1alpha1.IngressRoute{
+						{
+							PathPrefix: "/",
+							Upstreams: []v1alpha1.Upstream{
+								{
+									ServiceName: "my-service-name",
+									ServicePort: 80,
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []route.VirtualHost{{
+				Name:    "d31bb322ca62bb395acad00b3cbf45a3aa1010ca28dca7cddb4f7db786fa",
+				Domains: []string{"my-very-very-long-service-host-name.subdomain.boring-dept.my.company"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/my-service-name/80"),
+				}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
+		"second ingress object extends an existing vhost": {
+			vhost: "httpbin.org",
+			routes: im([]*v1alpha1.Route{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "httpbin-admin",
+						Namespace: "kube-system",
+					},
+					Spec: v1alpha1.RouteSpec{
+						Host: "httpbin.org",
+						Routes: []v1alpha1.IngressRoute{
+							{
+								PathPrefix: "/admin",
+								Upstreams: []v1alpha1.Upstream{
+									{
+										ServiceName: "admin",
+										ServicePort: 80,
+									},
+								},
+							},
+						},
+					},
+				}, {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "httpbin",
+						Namespace: "default",
+					},
+					Spec: v1alpha1.RouteSpec{
+						Host: "httpbin.org",
+						Routes: []v1alpha1.IngressRoute{
+							{
+								PathPrefix: "/",
+								Upstreams: []v1alpha1.Upstream{
+									{
+										ServiceName: "default",
+										ServicePort: 80,
+									},
+								},
+							},
+						},
+					},
+				}}),
+			ingress_http: []route.VirtualHost{{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/admin"),
+					Action: clusteraction("kube-system/admin/80"),
+				}, {
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/default/80"),
+				}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
+		"IngressRuleValue without host should become the default vhost": { // heptio/contour#101
+			vhost: "*",
+			routes: im([]*v1alpha1.Route{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hello",
+					Namespace: "default",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Routes: []v1alpha1.IngressRoute{
+						{
+							PathPrefix: "/hello",
+							Upstreams: []v1alpha1.Upstream{
+								{
+									ServiceName: "hello",
+									ServicePort: 80,
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []route.VirtualHost{{
+				Name:    "*",
+				Domains: []string{"*"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/hello"),
+					Action: clusteraction("default/hello/80"),
+				}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
+	}
+
+	log := logrus.New()
+	log.Out = &testWriter{t}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			tr := &Translator{
+				FieldLogger: log,
+			}
+			tr.recomputevhostcrd(tc.vhost, tc.routes)
 			got := tr.VirtualHostCache.HTTP.Values()
 			if !reflect.DeepEqual(tc.ingress_http, got) {
 				t.Fatalf("recomputevhost(%v):\n (ingress_http) want:\n%+v\n got:\n%+v", tc.vhost, tc.ingress_http, got)

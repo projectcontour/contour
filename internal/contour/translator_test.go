@@ -20,6 +20,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	v1alpha1 "github.com/heptio/contour/pkg/apis/contour/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -1038,6 +1039,179 @@ func TestTranslatorAddIngress(t *testing.T) {
 		})
 	}
 }
+func TestTranslatorAddRouteCRD(t *testing.T) {
+	tests := []struct {
+		name          string
+		setup         func(*Translator)
+		route         *v1alpha1.Route
+		ingress_http  []route.VirtualHost
+		ingress_https []route.VirtualHost
+	}{
+		{
+			name: "default backend",
+			route: &v1alpha1.Route{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Host: "",
+					Routes: []v1alpha1.IngressRoute{
+						v1alpha1.IngressRoute{
+							PathPrefix: "/",
+							Upstreams: []v1alpha1.Upstream{
+								v1alpha1.Upstream{
+									ServiceName: "backend",
+									ServicePort: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			ingress_http: []route.VirtualHost{{
+				Name:    "*",
+				Domains: []string{"*"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/backend/80"),
+				}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
+		{
+			name: "basic hostname",
+			route: &v1alpha1.Route{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Host: "foo.bar",
+					Routes: []v1alpha1.IngressRoute{
+						v1alpha1.IngressRoute{
+							PathPrefix: "/",
+							Upstreams: []v1alpha1.Upstream{
+								v1alpha1.Upstream{
+									ServiceName: "backend",
+									ServicePort: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			ingress_http: []route.VirtualHost{{
+				Name:    "foo.bar",
+				Domains: []string{"foo.bar"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/backend/80"),
+				}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
+		{
+			name: "basic path",
+			route: &v1alpha1.Route{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Host: "foo.bar",
+					Routes: []v1alpha1.IngressRoute{
+						v1alpha1.IngressRoute{
+							PathPrefix: "/zed",
+							Upstreams: []v1alpha1.Upstream{
+								v1alpha1.Upstream{
+									ServiceName: "backend",
+									ServicePort: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			ingress_http: []route.VirtualHost{{
+				Name:    "foo.bar",
+				Domains: []string{"foo.bar"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/zed"),
+					Action: clusteraction("default/backend/80"),
+				}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
+		{
+			name: "multiple routes",
+			route: &v1alpha1.Route{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Host: "foo.bar",
+					Routes: []v1alpha1.IngressRoute{
+						v1alpha1.IngressRoute{
+							PathPrefix: "/zed",
+							Upstreams: []v1alpha1.Upstream{
+								v1alpha1.Upstream{
+									ServiceName: "backend",
+									ServicePort: 80,
+								},
+							},
+						},
+						v1alpha1.IngressRoute{
+							PathPrefix: "/",
+							Upstreams: []v1alpha1.Upstream{
+								v1alpha1.Upstream{
+									ServiceName: "backendtwo",
+									ServicePort: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			ingress_http: []route.VirtualHost{{
+				Name:    "foo.bar",
+				Domains: []string{"foo.bar"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/zed"),
+					Action: clusteraction("default/backend/80"),
+				},
+					{
+						Match:  prefixmatch("/"),
+						Action: clusteraction("default/backendtwo/80"),
+					}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
+	}
+
+	log := testLogger(t)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			tr := &Translator{
+				FieldLogger: log,
+			}
+			if tc.setup != nil {
+				tc.setup(tr)
+			}
+			tr.OnAdd(tc.route)
+			got := tr.VirtualHostCache.HTTP.Values()
+			if !reflect.DeepEqual(tc.ingress_http, got) {
+				t.Fatalf("(ingress_http) want:\n%v\n got:\n%v", tc.ingress_http, got)
+			}
+
+			got = tr.VirtualHostCache.HTTPS.Values()
+			if !reflect.DeepEqual(tc.ingress_https, got) {
+				t.Fatalf("(ingress_https) want:\n%v\n got:\n%v", tc.ingress_https, got)
+			}
+		})
+	}
+}
 
 func TestTranslatorRemoveIngress(t *testing.T) {
 	tests := map[string]struct {
@@ -1137,6 +1311,156 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 			}
 			tc.setup(tr)
 			tr.OnDelete(tc.ing)
+			got := tr.VirtualHostCache.HTTP.Values()
+			if !reflect.DeepEqual(tc.ingress_http, got) {
+				t.Fatalf("(ingress_http): got: %v, want: %v", got, tc.ingress_http)
+			}
+
+			got = tr.VirtualHostCache.HTTPS.Values()
+			if !reflect.DeepEqual(tc.ingress_https, got) {
+				t.Fatalf("(ingress_https): got: %v, want: %v", got, tc.ingress_https)
+			}
+		})
+	}
+}
+func TestTranslatorRemoveRouteCRD(t *testing.T) {
+	tests := map[string]struct {
+		setup         func(*Translator)
+		route         *v1alpha1.Route
+		ingress_http  []route.VirtualHost
+		ingress_https []route.VirtualHost
+	}{
+		"remove existing": {
+			setup: func(tr *Translator) {
+				tr.OnAdd(&v1alpha1.Route{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1alpha1.RouteSpec{
+						Host: "httpbin.org",
+						Routes: []v1alpha1.IngressRoute{
+							{
+								Upstreams: []v1alpha1.Upstream{
+									{
+										ServiceName: "peter",
+										ServicePort: 80,
+									},
+								},
+							},
+						},
+					},
+				})
+			},
+			route: &v1alpha1.Route{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Host: "httpbin.org",
+					Routes: []v1alpha1.IngressRoute{
+						{
+							Upstreams: []v1alpha1.Upstream{
+								{
+									ServiceName: "peter",
+									ServicePort: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			ingress_http:  []route.VirtualHost{},
+			ingress_https: []route.VirtualHost{},
+		},
+		"remove different": {
+			setup: func(tr *Translator) {
+				tr.OnAdd(&v1alpha1.Route{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1alpha1.RouteSpec{
+						Host: "httpbin.org",
+						Routes: []v1alpha1.IngressRoute{
+							{
+								PathPrefix: "/",
+								Upstreams: []v1alpha1.Upstream{
+									{
+										ServiceName: "peter",
+										ServicePort: 80,
+									},
+								},
+							},
+						},
+					},
+				})
+			},
+			route: &v1alpha1.Route{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "different",
+					Namespace: "default",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Host: "example.org",
+					Routes: []v1alpha1.IngressRoute{
+						{
+							PathPrefix: "/",
+							Upstreams: []v1alpha1.Upstream{
+								{
+									ServiceName: "peter",
+									ServicePort: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			ingress_http: []route.VirtualHost{{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/peter/80"),
+				}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
+		"remove non existant": {
+			setup: func(*Translator) {},
+			route: &v1alpha1.Route{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Host: "httpbin.org",
+					Routes: []v1alpha1.IngressRoute{
+						{
+							Upstreams: []v1alpha1.Upstream{
+								{
+									ServiceName: "backend",
+									ServicePort: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			ingress_http:  []route.VirtualHost{},
+			ingress_https: []route.VirtualHost{},
+		},
+	}
+
+	log := testLogger(t)
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			tr := &Translator{
+				FieldLogger: log,
+			}
+			tc.setup(tr)
+			tr.OnDelete(tc.route)
 			got := tr.VirtualHostCache.HTTP.Values()
 			if !reflect.DeepEqual(tc.ingress_http, got) {
 				t.Fatalf("(ingress_http): got: %v, want: %v", got, tc.ingress_http)

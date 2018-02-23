@@ -34,17 +34,15 @@ spec:
   sessionAffinity: None
   type: ClusterIP
 ---
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
+apiVersion: contour.heptio.com/v1alpha1
+kind: Route
+metadata: 
   name: kuard
-  labels:
-    app: kuard
-spec:
-  rules:
-  - host: k8s.local
-    http:
-      paths:
-      - backend:
-          serviceName: kuard
+  namespace: default
+spec: 
+  host: k8s.local
+  routes: 
+    - pathPrefix: /
+      upstreams: 
+        - serviceName: kuard
           servicePort: 80

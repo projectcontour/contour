@@ -215,16 +215,40 @@ func (t *Translator) removeSecret(s *v1.Secret) {
 	t.recomputeTLSListener(t.cache.ingresses, t.cache.secrets)
 }
 
-func (t *Translator) addRoute(s *v1alpha1.Route) {
-	t.Infof("-------- ADD ROUTE: %s", s.ObjectMeta.Name)
+func (t *Translator) addRoute(r *v1alpha1.Route) {
+
+	t.recomputeListenerscrd(t.cache.routes, t.cache.secrets)
+
+	// notify watchers that the vhost cache has probably changed.
+	defer t.VirtualHostCache.Notify()
+
+	host := r.Spec.Host
+	if host == "" {
+		// If the host is unspecified, the Ingress routes all traffic based on the specified IngressRuleValue.
+		host = "*"
+	}
+
+	t.recomputevhostcrd(host, t.cache.vhostscrd[host])
 }
 
-func (t *Translator) removeRoute(s *v1alpha1.Route) {
-	t.Infof("-------- DELETE ROUTE: %s", s.ObjectMeta.Name)
+func (t *Translator) removeRoute(r *v1alpha1.Route) {
+
+	defer t.VirtualHostCache.Notify()
+
+	t.recomputeListenerscrd(t.cache.routes, t.cache.secrets)
+
+	host := r.Spec.Host
+	if host == "" {
+		// If the host is unspecified, the Ingress routes all traffic based on the specified IngressRuleValue.
+		host = "*"
+	}
+
+	t.recomputevhostcrd(host, t.cache.vhostscrd[host])
 }
 
 type translatorCache struct {
 	ingresses map[metadata]*v1beta1.Ingress
+	routes    map[metadata]*v1alpha1.Route
 	endpoints map[metadata]*v1.Endpoints
 	services  map[metadata]*v1.Service
 
@@ -234,6 +258,10 @@ type translatorCache struct {
 	// vhosts stores a slice of vhosts with the ingress objects that
 	// went into creating them.
 	vhosts map[string]map[metadata]*v1beta1.Ingress
+
+	// vhostscrd stores a slice of vhosts with the route objects that
+	// went into creating them.
+	vhostscrd map[string]map[metadata]*v1alpha1.Route
 }
 
 func (t *translatorCache) OnAdd(obj interface{}) {
@@ -278,6 +306,24 @@ func (t *translatorCache) OnAdd(obj interface{}) {
 			t.secrets = make(map[metadata]*v1.Secret)
 		}
 		t.secrets[metadata{name: obj.Name, namespace: obj.Namespace}] = obj
+	case *v1alpha1.Route:
+		if t.routes == nil {
+			t.routes = make(map[metadata]*v1alpha1.Route)
+		}
+		md := metadata{name: obj.Name, namespace: obj.Namespace}
+		t.routes[md] = obj
+		if t.vhostscrd == nil {
+			t.vhostscrd = make(map[string]map[metadata]*v1alpha1.Route)
+		}
+
+		host := obj.Spec.Host
+		if host == "" {
+			host = "*"
+		}
+		if _, ok := t.vhostscrd[host]; !ok {
+			t.vhostscrd[host] = make(map[metadata]*v1alpha1.Route)
+		}
+		t.vhostscrd[host][md] = obj
 	default:
 		// ignore
 	}
@@ -285,7 +331,7 @@ func (t *translatorCache) OnAdd(obj interface{}) {
 
 func (t *translatorCache) OnUpdate(oldObj, newObj interface{}) {
 	switch oldObj := oldObj.(type) {
-	case *v1beta1.Ingress:
+	case *v1beta1.Ingress, *v1alpha1.Route:
 		// ingress objects are special because their contents can change
 		// which affects the t.vhost cache. The simplest way is to model
 		// update as delete, then add.
@@ -316,6 +362,21 @@ func (t *translatorCache) OnDelete(obj interface{}) {
 		}
 		if len(t.vhosts["*"]) == 0 {
 			delete(t.vhosts, "*")
+		}
+	case *v1alpha1.Route:
+		md := metadata{name: obj.Name, namespace: obj.Namespace}
+		delete(t.routes, md)
+		host := obj.Spec.Host
+		if host == "" {
+			host = "*"
+		}
+		delete(t.vhostscrd[host], md)
+		if len(t.vhostscrd[host]) == 0 {
+			delete(t.vhostscrd, host)
+		}
+
+		if len(t.vhostscrd["*"]) == 0 {
+			delete(t.vhostscrd, "*")
 		}
 	case *v1.Secret:
 		delete(t.secrets, metadata{name: obj.Name, namespace: obj.Namespace})
