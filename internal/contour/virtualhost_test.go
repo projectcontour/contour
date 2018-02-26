@@ -176,9 +176,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
 					Match:  prefixmatch("/"), // match all
-					Action: clusteraction("default/httpbin-org/80"),
+					Action: redirecthttps(),
 				}},
-				RequireTls: route.VirtualHost_ALL,
 			}},
 			ingress_https: []route.VirtualHost{{
 				Name:    "httpbin.org",
@@ -687,4 +686,13 @@ func clusteractiontimeout(name string, timeout time.Duration) *route.Route_Route
 	c := clusteraction(name)
 	c.Route.Timeout = &timeout
 	return c
+}
+
+// redirecthttps returns a 301 redirect to the HTTPS scheme.
+func redirecthttps() *route.Route_Redirect {
+	return &route.Route_Redirect{
+		Redirect: &route.RedirectAction{
+			HttpsRedirect: true,
+		},
+	}
 }
