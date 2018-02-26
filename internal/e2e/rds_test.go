@@ -345,12 +345,11 @@ func TestEditIngressInPlace(t *testing.T) {
 					Domains: []string{"hello.example.com"},
 					Routes: []route.Route{{
 						Match:  prefixmatch("/whoop"),
-						Action: cluster("default/kerpow/9000"),
+						Action: redirecthttps(),
 					}, {
 						Match:  prefixmatch("/"),
-						Action: cluster("default/wowie/80"),
+						Action: redirecthttps(),
 					}},
-					RequireTls: route.VirtualHost_ALL,
 				}}}),
 			any(t, &v2.RouteConfiguration{Name: "ingress_https"}),
 		},
@@ -405,12 +404,11 @@ func TestEditIngressInPlace(t *testing.T) {
 					Domains: []string{"hello.example.com"},
 					Routes: []route.Route{{
 						Match:  prefixmatch("/whoop"),
-						Action: cluster("default/kerpow/9000"),
+						Action: redirecthttps(),
 					}, {
 						Match:  prefixmatch("/"),
-						Action: cluster("default/wowie/80"),
+						Action: redirecthttps(),
 					}},
-					RequireTls: route.VirtualHost_ALL,
 				}}}),
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_https",
@@ -522,6 +520,86 @@ func TestRequestTimeout(t *testing.T) {
 	}}, nil)
 }
 
+// contour#250 ingress.kubernetes.io/force-ssl-redirect: "true" should apply
+// per route, not per vhost.
+func TestSSLRedirectOverlay(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	// i1 is a stock ingress with force-ssl-redirect on the / route
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "app",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"ingress.kubernetes.io/force-ssl-redirect": "true",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"example.com"},
+				SecretName: "example-tls",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "app-service",
+								ServicePort: intstr.FromInt(8080),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	rh.OnAdd(i1)
+
+	// i2 is an overlay to add the let's encrypt handler.
+	i2 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{Name: "challenge", Namespace: "nginx-ingress"},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				Host: "example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "challenge-service",
+								ServicePort: intstr.FromInt(8009),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	rh.OnAdd(i2)
+
+	assertRDS(t, cc, []route.VirtualHost{{ // ingress_http
+		Name:    "example.com",
+		Domains: []string{"example.com"},
+		Routes: []route.Route{{
+			Match:  prefixmatch("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+			Action: cluster("nginx-ingress/challenge-service/8009"),
+		}, {
+			Match:  prefixmatch("/"), // match all
+			Action: redirecthttps(),
+		}},
+	}}, []route.VirtualHost{{ // ingress_https
+		Name:    "example.com",
+		Domains: []string{"example.com"},
+		Routes: []route.Route{{
+			Match:  prefixmatch("/"), // match all
+			Action: cluster("default/app-service/8080"),
+		}},
+	}})
+}
+
 func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []route.VirtualHost) {
 	t.Helper()
 	assertEqual(t, &v2.DiscoveryResponse{
@@ -586,6 +664,15 @@ func service(ns, name string, ports ...v1.ServicePort) *v1.Service {
 		},
 		Spec: v1.ServiceSpec{
 			Ports: ports,
+		},
+	}
+}
+
+// redirecthttps returns a 301 redirect to the HTTPS scheme.
+func redirecthttps() *route.Route_Redirect {
+	return &route.Route_Redirect{
+		Redirect: &route.RedirectAction{
+			HttpsRedirect: true,
 		},
 	}
 }

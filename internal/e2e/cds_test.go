@@ -445,7 +445,6 @@ func TestIssue247(t *testing.T) {
 	defer done()
 
 	t.Run("single unnamed service with a named target port", func(t *testing.T) {
-
 		// spec:
 		//   ports:
 		//   - port: 80

@@ -38,7 +38,6 @@ const (
 
 // ListenerCache manages the contents of the gRPC LDS cache.
 type ListenerCache struct {
-
 	// Envoy's HTTP (non TLS) listener address.
 	// If not set, defaults to DEFAULT_HTTP_LISTENER_ADDRESS.
 	HTTPAddress string

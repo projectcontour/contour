@@ -106,15 +106,21 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 			// skip this vhosts ingress_http route.
 			continue
 		}
-		if i.Annotations["ingress.kubernetes.io/force-ssl-redirect"] == "true" {
-			// set blanket 301 redirect
-			vv.RequireTls = route.VirtualHost_ALL
-		}
+		requireTLS := i.Annotations["ingress.kubernetes.io/force-ssl-redirect"] == "true"
 		if i.Spec.Backend != nil && len(ingresses) == 1 {
-			vv.Routes = []route.Route{{
+			r := route.Route{
 				Match:  prefixmatch("/"),
 				Action: action(i, i.Spec.Backend),
-			}}
+			}
+
+			if requireTLS {
+				r.Action = &route.Route_Redirect{
+					Redirect: &route.RedirectAction{
+						HttpsRedirect: true,
+					},
+				}
+			}
+			vv.Routes = []route.Route{r}
 			continue
 		}
 		for _, rule := range i.Spec.Rules {
@@ -126,10 +132,18 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 				continue
 			}
 			for _, p := range rule.IngressRuleValue.HTTP.Paths {
-				vv.Routes = append(vv.Routes, route.Route{
+				r := route.Route{
 					Match:  pathToRouteMatch(p),
 					Action: action(i, &p.Backend),
-				})
+				}
+				if requireTLS {
+					r.Action = &route.Route_Redirect{
+						Redirect: &route.RedirectAction{
+							HttpsRedirect: true,
+						},
+					}
+				}
+				vv.Routes = append(vv.Routes, r)
 			}
 		}
 	}
