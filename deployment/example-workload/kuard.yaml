@@ -41,6 +41,10 @@ metadata:
   labels:
     app: kuard
 spec:
-  backend:
-    serviceName: kuard
-    servicePort: 80
+  rules:
+  - host: kuard.containersteve.com
+    http:
+      paths:
+      - backend:
+          serviceName: kuard
+          servicePort: 80

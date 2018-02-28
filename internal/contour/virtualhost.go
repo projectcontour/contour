@@ -15,10 +15,12 @@ package contour
 
 import (
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	v1alpha1 "github.com/heptio/contour/pkg/apis/contour/v1alpha1"
 	"k8s.io/api/extensions/v1beta1"
 )
 
@@ -141,10 +143,38 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 	}
 }
 
+// recomputevhostcrd recomputes the ingress_http (HTTP) and ingress_https (HTTPS) record
+// from the vhost from list of ingresses supplied.
+func (v *VirtualHostCache) recomputevhostcrd(vhost string, routes map[metadata]*v1alpha1.Route) {
+	// now handle ingress_http (non tls) routes.
+	vv := virtualhost(vhost)
+	for _, i := range routes {
+		for _, j := range i.Spec.Routes {
+
+			// TODO(sas): Handle case of no default path (e.g. "/")
+
+			for _, upstream := range j.Upstreams {
+
+				vv.Routes = append(vv.Routes, route.Route{
+					Match:  prefixmatch(j.PathPrefix),
+					Action: actioncrd(i.ObjectMeta.Namespace, &upstream),
+				})
+			}
+		}
+	}
+
+	if len(vv.Routes) > 0 {
+		sort.Stable(sort.Reverse(longestRouteFirst(vv.Routes)))
+		v.HTTP.Add(vv)
+	} else {
+		v.HTTP.Remove(vv.Name)
+	}
+}
+
 // action computes the cluster route action, a *v2.Route_route for the
 // supplied ingress and backend.
 func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend) *route.Route_Route {
-	name := ingressBackendToClusterName(i, be)
+	name := ingressBackendToClusterName(i.ObjectMeta.Namespace, be.ServiceName, be.ServicePort.String())
 	ca := route.Route_Route{
 		Route: &route.RouteAction{
 			ClusterSpecifier: &route.RouteAction_Cluster{
@@ -155,6 +185,24 @@ func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend) *route.Route_Route {
 	if timeout, ok := getRequestTimeout(i.Annotations); ok {
 		ca.Route.Timeout = &timeout
 	}
+	return &ca
+}
+
+// actioncrd computes the cluster route action, a *v2.Route_route for the
+// supplied ingress and backend
+func actioncrd(namespace string, be *v1alpha1.Upstream) *route.Route_Route {
+
+	name := ingressBackendToClusterName(namespace, be.ServiceName, strconv.Itoa(be.ServicePort))
+	ca := route.Route_Route{
+		Route: &route.RouteAction{
+			ClusterSpecifier: &route.RouteAction_Cluster{
+				Cluster: name,
+			},
+		},
+	}
+	// if timeout, ok := getRequestTimeout(i.Annotations); ok {
+	// 	ca.Route.Timeout = &timeout
+	// }
 	return &ca
 }
 
@@ -220,9 +268,9 @@ func pathToRouteMatch(p v1beta1.HTTPIngressPath) route.RouteMatch {
 	return regexmatch(p.Path)
 }
 
-// ingressBackendToClusterName renders a cluster name from an Ingress and an IngressBackend.
-func ingressBackendToClusterName(i *v1beta1.Ingress, b *v1beta1.IngressBackend) string {
-	return hashname(60, i.ObjectMeta.Namespace, b.ServiceName, b.ServicePort.String())
+// ingressBackendToClusterName renders a cluster name from an namespace, servicename, & service port
+func ingressBackendToClusterName(namespace, servicename, serviceport string) string {
+	return hashname(60, namespace, servicename, serviceport)
 }
 
 // prefixmatch returns a RouteMatch for the supplied prefix.
