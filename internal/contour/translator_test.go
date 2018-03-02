@@ -20,6 +20,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	google_protobuf1 "github.com/gogo/protobuf/types"
 	v1alpha1 "github.com/heptio/contour/pkg/apis/contour/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
@@ -1073,8 +1074,23 @@ func TestTranslatorAddRouteCRD(t *testing.T) {
 				Name:    "*",
 				Domains: []string{"*"},
 				Routes: []route.Route{{
-					Match:  prefixmatch("/"),
-					Action: clusteraction("default/backend/80"),
+					Match: prefixmatch("/"),
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "default/backend/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(100),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				}},
 			}},
 			ingress_https: []route.VirtualHost{},
@@ -1105,8 +1121,23 @@ func TestTranslatorAddRouteCRD(t *testing.T) {
 				Name:    "foo.bar",
 				Domains: []string{"foo.bar"},
 				Routes: []route.Route{{
-					Match:  prefixmatch("/"),
-					Action: clusteraction("default/backend/80"),
+					Match: prefixmatch("/"),
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "default/backend/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(100),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				}},
 			}},
 			ingress_https: []route.VirtualHost{},
@@ -1137,8 +1168,23 @@ func TestTranslatorAddRouteCRD(t *testing.T) {
 				Name:    "foo.bar",
 				Domains: []string{"foo.bar"},
 				Routes: []route.Route{{
-					Match:  prefixmatch("/zed"),
-					Action: clusteraction("default/backend/80"),
+					Match: prefixmatch("/zed"),
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "default/backend/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(100),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				}},
 			}},
 			ingress_https: []route.VirtualHost{},
@@ -1178,12 +1224,42 @@ func TestTranslatorAddRouteCRD(t *testing.T) {
 				Name:    "foo.bar",
 				Domains: []string{"foo.bar"},
 				Routes: []route.Route{{
-					Match:  prefixmatch("/zed"),
-					Action: clusteraction("default/backend/80"),
+					Match: prefixmatch("/zed"),
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "default/backend/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(100),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				},
 					{
-						Match:  prefixmatch("/"),
-						Action: clusteraction("default/backendtwo/80"),
+						Match: prefixmatch("/"),
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/backendtwo/80",
+												Weight: &google_protobuf1.UInt32Value{
+													Value: uint32(100),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
 					}},
 			}},
 			ingress_https: []route.VirtualHost{},
@@ -1421,8 +1497,23 @@ func TestTranslatorRemoveRouteCRD(t *testing.T) {
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
-					Match:  prefixmatch("/"),
-					Action: clusteraction("default/peter/80"),
+					Match: prefixmatch("/"),
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "default/peter/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(100),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				}},
 			}},
 			ingress_https: []route.VirtualHost{},
