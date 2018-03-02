@@ -523,6 +523,51 @@ func TestTranslatorAddIngress(t *testing.T) {
 		}},
 		ingress_https: []route.VirtualHost{},
 	}, {
+		name: "explicit custom ingress class",
+		setup: func(tr *Translator) {
+			tr.IngressClass = "testingress"
+		},
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "correct",
+				Namespace: "default",
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.class": "testingress",
+				},
+			},
+			Spec: v1beta1.IngressSpec{
+				Backend: backend("backend", intstr.FromInt(80)),
+			},
+		},
+		ingress_http: []route.VirtualHost{{
+			Name:    "*",
+			Domains: []string{"*"},
+			Routes: []route.Route{{
+				Match:  prefixmatch("/"), // match all
+				Action: clusteraction("default/backend/80"),
+			}},
+		}},
+		ingress_https: []route.VirtualHost{},
+	}, {
+		name: "explicit incorrect custom ingress class",
+		setup: func(tr *Translator) {
+			tr.IngressClass = "badingress"
+		},
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "correct",
+				Namespace: "default",
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.class": "goodingress",
+				},
+			},
+			Spec: v1beta1.IngressSpec{
+				Backend: backend("backend", intstr.FromInt(80)),
+			},
+		},
+		ingress_http:  []route.VirtualHost{}, // expected to be empty, the ingress class is ingnored
+		ingress_https: []route.VirtualHost{},
+	}, {
 		name: "name based vhost",
 		ing: &v1beta1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{

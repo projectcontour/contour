@@ -30,6 +30,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+const DEFAULT_INGRESS_CLASS = "contour"
+
 type metadata struct {
 	name, namespace string
 }
@@ -45,6 +47,10 @@ type Translator struct {
 	ClusterLoadAssignmentCache
 	ListenerCache
 	VirtualHostCache
+
+	// Contour's IngressClass.
+	// If not set, defaults to DEFAULT_INGRESS_CLASS.
+	IngressClass string
 
 	cache translatorCache
 }
@@ -139,11 +145,20 @@ func (t *Translator) removeEndpoints(e *v1.Endpoints) {
 	t.recomputeClusterLoadAssignment(e, nil)
 }
 
+// ingressClass returns the IngressClass
+// or DEFAULT_INGRESS_CLASS if not configured.
+func (t *Translator) ingressClass() string {
+	if t.IngressClass != "" {
+		return t.IngressClass
+	}
+	return DEFAULT_INGRESS_CLASS
+}
+
 func (t *Translator) addIngress(i *v1beta1.Ingress) {
 	class, ok := i.Annotations["kubernetes.io/ingress.class"]
-	if ok && class != "contour" {
-		// if there is an ingress class set, but it is not set to "contour"
-		// ignore this ingress.
+	if ok && class != t.ingressClass() {
+		// if there is an ingress class set, but it is not set to configured
+		// or default ingress class, ignore this ingress.
 		// TODO(dfc) we should also skip creating any cluster backends,
 		// but this is hard to do at the moment because cds and rds are
 		// independent.
@@ -173,9 +188,9 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 
 func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 	class, ok := i.Annotations["kubernetes.io/ingress.class"]
-	if ok && class != "contour" {
-		// if there is an ingress class set, but it is not set to "contour"
-		// ignore this ingress.
+	if ok && class != t.ingressClass() {
+		// if there is an ingress class set, but it is not set to configured
+		// or default ingress class, ignore this ingress.
 		// TODO(dfc) we should also skip creating any cluster backends,
 		// but this is hard to do at the moment because cds and rds are
 		// independent.
