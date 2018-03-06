@@ -14,12 +14,14 @@
 package contour
 
 import (
+	"math"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	google_protobuf1 "github.com/gogo/protobuf/types"
 	v1alpha1 "github.com/heptio/contour/pkg/apis/contour/v1alpha1"
 	"k8s.io/api/extensions/v1beta1"
 )
@@ -153,13 +155,10 @@ func (v *VirtualHostCache) recomputevhostcrd(vhost string, routes map[metadata]*
 
 			// TODO(sas): Handle case of no default path (e.g. "/")
 
-			for _, upstream := range j.Upstreams {
-
-				vv.Routes = append(vv.Routes, route.Route{
-					Match:  prefixmatch(j.PathPrefix),
-					Action: actioncrd(i.ObjectMeta.Namespace, &upstream),
-				})
-			}
+			vv.Routes = append(vv.Routes, route.Route{
+				Match:  prefixmatch(j.PathPrefix),
+				Action: actioncrd(i.ObjectMeta.Namespace, j.Upstreams),
+			})
 		}
 	}
 
@@ -190,16 +189,37 @@ func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend) *route.Route_Route {
 
 // actioncrd computes the cluster route action, a *v2.Route_route for the
 // supplied ingress and backend
-func actioncrd(namespace string, be *v1alpha1.Upstream) *route.Route_Route {
+func actioncrd(namespace string, be []v1alpha1.Upstream) *route.Route_Route {
 
-	name := ingressBackendToClusterName(namespace, be.ServiceName, strconv.Itoa(be.ServicePort))
+	upstreams := []*route.WeightedCluster_ClusterWeight{}
+
+	// Loop over all the upstreams and add to slice
+	for _, i := range be {
+
+		name := ingressBackendToClusterName(namespace, i.ServiceName, strconv.Itoa(i.ServicePort))
+
+		//TODO(sas): Implement TotalWeight field to make easier to calculate weight
+		upstream := route.WeightedCluster_ClusterWeight{
+			Name: name,
+			Weight: &google_protobuf1.UInt32Value{
+				Value: uint32(math.Floor(100 / float64(len(be)))),
+			},
+		}
+
+		upstreams = append(upstreams, &upstream)
+	}
+
+	// Create Route with slice of upstreams
 	ca := route.Route_Route{
 		Route: &route.RouteAction{
-			ClusterSpecifier: &route.RouteAction_Cluster{
-				Cluster: name,
+			ClusterSpecifier: &route.RouteAction_WeightedClusters{
+				WeightedClusters: &route.WeightedCluster{
+					Clusters: upstreams,
+				},
 			},
 		},
 	}
+
 	// if timeout, ok := getRequestTimeout(i.Annotations); ok {
 	// 	ca.Route.Timeout = &timeout
 	// }

@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	google_protobuf1 "github.com/gogo/protobuf/types"
 	v1alpha1 "github.com/heptio/contour/pkg/apis/contour/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/extensions/v1beta1"
@@ -576,7 +577,7 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 		ingress_http  []route.VirtualHost
 		ingress_https []route.VirtualHost
 	}{
-		"default backend": {
+		"crd default backend": {
 			vhost: "*",
 			routes: im([]*v1alpha1.Route{{
 				ObjectMeta: metav1.ObjectMeta{
@@ -601,13 +602,28 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 				Name:    "*",
 				Domains: []string{"*"},
 				Routes: []route.Route{{
-					Match:  prefixmatch("/"),
-					Action: clusteraction("default/backend/80"),
+					Match: prefixmatch("/"),
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "default/backend/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(100),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				}},
 			}},
 			ingress_https: []route.VirtualHost{},
 		},
-		"name based vhost": {
+		"crd name based vhost": {
 			vhost: "httpbin.org",
 			routes: im([]*v1alpha1.Route{{
 				ObjectMeta: metav1.ObjectMeta{
@@ -633,13 +649,28 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
-					Match:  prefixmatch("/"), // match all
-					Action: clusteraction("default/httpbin-org/80"),
+					Match: prefixmatch("/"), // match all
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "default/httpbin-org/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(100),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				}},
 			}},
 			ingress_https: []route.VirtualHost{},
 		},
-		"multiple routes": {
+		"crd multiple routes": {
 			vhost: "httpbin.org",
 			routes: im([]*v1alpha1.Route{{
 				ObjectMeta: metav1.ObjectMeta{
@@ -674,16 +705,46 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
-					Match:  prefixmatch("/peter"),
-					Action: clusteraction("default/peter/80"),
+					Match: prefixmatch("/peter"),
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "default/peter/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(100),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				}, {
-					Match:  prefixmatch("/paul"),
-					Action: clusteraction("default/paul/80"),
+					Match: prefixmatch("/paul"),
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "default/paul/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(100),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				}},
 			}},
 			ingress_https: []route.VirtualHost{},
 		},
-		"vhost name exceeds 60 chars": { // heptio/contour#25
+		"crd vhost name exceeds 60 chars": { // heptio/contour#25
 			vhost: "my-very-very-long-service-host-name.subdomain.boring-dept.my.company",
 			routes: im([]*v1alpha1.Route{{
 				ObjectMeta: metav1.ObjectMeta{
@@ -709,13 +770,28 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 				Name:    "d31bb322ca62bb395acad00b3cbf45a3aa1010ca28dca7cddb4f7db786fa",
 				Domains: []string{"my-very-very-long-service-host-name.subdomain.boring-dept.my.company"},
 				Routes: []route.Route{{
-					Match:  prefixmatch("/"),
-					Action: clusteraction("default/my-service-name/80"),
+					Match: prefixmatch("/"),
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "default/my-service-name/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(100),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				}},
 			}},
 			ingress_https: []route.VirtualHost{},
 		},
-		"second ingress object extends an existing vhost": {
+		"crd second ingress object extends an existing vhost": {
 			vhost: "httpbin.org",
 			routes: im([]*v1alpha1.Route{
 				{
@@ -761,16 +837,46 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 				Name:    "httpbin.org",
 				Domains: []string{"httpbin.org"},
 				Routes: []route.Route{{
-					Match:  prefixmatch("/admin"),
-					Action: clusteraction("kube-system/admin/80"),
+					Match: prefixmatch("/admin"),
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "kube-system/admin/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(100),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				}, {
-					Match:  prefixmatch("/"),
-					Action: clusteraction("default/default/80"),
+					Match: prefixmatch("/"),
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "default/default/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(100),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				}},
 			}},
 			ingress_https: []route.VirtualHost{},
 		},
-		"IngressRuleValue without host should become the default vhost": { // heptio/contour#101
+		"crd IngressRuleValue without host should become the default vhost": { // heptio/contour#101
 			vhost: "*",
 			routes: im([]*v1alpha1.Route{{
 				ObjectMeta: metav1.ObjectMeta{
@@ -795,8 +901,80 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 				Name:    "*",
 				Domains: []string{"*"},
 				Routes: []route.Route{{
-					Match:  prefixmatch("/hello"),
-					Action: clusteraction("default/hello/80"),
+					Match: prefixmatch("/hello"),
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "default/hello/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(100),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
+		"crd multiple upstreams": {
+			vhost: "httpbin.org",
+			routes: im([]*v1alpha1.Route{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Host: "httpbin.org",
+					Routes: []v1alpha1.IngressRoute{
+						{
+							PathPrefix: "/",
+							Upstreams: []v1alpha1.Upstream{
+								{
+									ServiceName: "httpbin-org",
+									ServicePort: 80,
+								},
+								{
+									ServiceName: "foo-org",
+									ServicePort: 8001,
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []route.VirtualHost{{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []route.Route{{
+					Match: prefixmatch("/"), // match all
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "default/httpbin-org/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(50),
+											},
+										},
+										{
+											Name: "default/foo-org/8001",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(50),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				}},
 			}},
 			ingress_https: []route.VirtualHost{},
