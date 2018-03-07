@@ -74,7 +74,7 @@ type Upstream struct {
 	// ServicePort (defined as Integer) to proxy traffic to since a service can have multiple defined
 	ServicePort int `json:"servicePort"`
 	// Weight defines percentage of traffic to balance traffic
-	Weight int `json:"weight"`
+	Weight *int `json:"weight"`
 	//LBHealthCheck defines the check checks to apply to upstreams
 	LBHealthCheck `json:"lbHealthCheck"`
 }

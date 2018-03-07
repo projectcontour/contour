@@ -979,6 +979,192 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 			}},
 			ingress_https: []route.VirtualHost{},
 		},
+		"crd multiple upstreams - weights - one specified": {
+			vhost: "httpbin.org",
+			routes: im([]*v1alpha1.Route{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Host: "httpbin.org",
+					Routes: []v1alpha1.IngressRoute{
+						{
+							PathPrefix: "/",
+							Upstreams: []v1alpha1.Upstream{
+								{
+									ServiceName: "httpbin-org",
+									ServicePort: 80,
+									Weight:      func(i int) *int { return &i }(33),
+								},
+								{
+									ServiceName: "foo-org",
+									ServicePort: 8001,
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []route.VirtualHost{{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []route.Route{{
+					Match: prefixmatch("/"), // match all
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "default/httpbin-org/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(33),
+											},
+										},
+										{
+											Name: "default/foo-org/8001",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(67),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
+		"crd multiple upstreams - weights - all specified": {
+			vhost: "httpbin.org",
+			routes: im([]*v1alpha1.Route{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Host: "httpbin.org",
+					Routes: []v1alpha1.IngressRoute{
+						{
+							PathPrefix: "/",
+							Upstreams: []v1alpha1.Upstream{
+								{
+									ServiceName: "httpbin-org",
+									ServicePort: 80,
+									Weight:      func(i int) *int { return &i }(33),
+								},
+								{
+									ServiceName: "foo-org",
+									ServicePort: 8001,
+									Weight:      func(i int) *int { return &i }(33),
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []route.VirtualHost{{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []route.Route{{
+					Match: prefixmatch("/"), // match all
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "default/httpbin-org/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(33),
+											},
+										},
+										{
+											Name: "default/foo-org/8001",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(33),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
+		"crd multiple upstreams - weights - two specified": {
+			vhost: "httpbin.org",
+			routes: im([]*v1alpha1.Route{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Host: "httpbin.org",
+					Routes: []v1alpha1.IngressRoute{
+						{
+							PathPrefix: "/",
+							Upstreams: []v1alpha1.Upstream{
+								{
+									ServiceName: "httpbin-org",
+									ServicePort: 80,
+									Weight:      func(i int) *int { return &i }(33),
+								},
+								{
+									ServiceName: "foo-org",
+									ServicePort: 8001,
+									Weight:      func(i int) *int { return &i }(2),
+								},
+								{
+									ServiceName: "bar-org",
+									ServicePort: 8001,
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []route.VirtualHost{{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []route.Route{{
+					Match: prefixmatch("/"), // match all
+					Action: &route.Route_Route{
+						Route: &route.RouteAction{
+							ClusterSpecifier: &route.RouteAction_WeightedClusters{
+								WeightedClusters: &route.WeightedCluster{
+									Clusters: []*route.WeightedCluster_ClusterWeight{
+										{
+											Name: "default/httpbin-org/80",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(33),
+											},
+										},
+										{
+											Name: "default/foo-org/8001",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(2),
+											},
+										},
+										{
+											Name: "default/bar-org/8001",
+											Weight: &google_protobuf1.UInt32Value{
+												Value: uint32(65),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
 	}
 
 	log := logrus.New()
