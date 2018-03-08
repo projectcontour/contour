@@ -116,7 +116,7 @@ See the [AWS NLB tutorial][3] as an example.
 
 ## Running Contour in tandem with another ingress controller
 
-If you're running multiple ingress controllers, or running on a cloudprovider that natively handles ingress, you can specify the annotation `kubernetes.io/ingress.class: "contour"` on all ingresses that you would like Contour to claim.
+If you're running multiple ingress controllers, or running on a cloudprovider that natively handles ingress, you can specify the annotation `kubernetes.io/ingress.class: "contour"` on all ingresses that you would like Contour to claim. You can customize the class name with the `--ingress-class-name` flag at runtime.
 If the `kubernetes.io/ingress.class` annotation is present with a value other than `"contour"`, Contour will ignore that ingress.
 
 ## Uninstall Contour

@@ -33,5 +33,6 @@ If you use [kube-lego][0] for Let's Encrypt SSL certificates, kube-lego appears 
 This setting causes Contour to ignore the record, and the challenge fails.
 
 The current workaround is to manually edit the ingress object created by kube-lego to remove the `kubernetes.io/ingress.class` annotation. Or you can set the value of the annotation to `contour`.
+If your topology allow it, you may configure Contour to catch `nginx` ingress class by overriding the default value with the `--ingress-class-name=nginx` flag in your Contour deployment.
 
 [0]: https://github.com/jetstack/kube-lego
