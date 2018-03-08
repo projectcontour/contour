@@ -36,11 +36,11 @@ Following is an layout of the spec which the CRD will be implemented:
   - **host**: Host name (e.g. heptio.com)
   - **[]routes**: List of route objects
     - **pathPrefix**: Allows for further route definition
-    - **strategy (Optional)**: Load balancer algorithm type (Defaults to RoundRobin if not specified): RoundRobin / WeightedLeastRequest / Random (Note: A strategy defined here overrides anything specified above)
     - **[]upstreams**: List of upstreams to proxy traffic
       - **serviceName**: Name of Kubernetes service to proxy traffic. Names defined here will be used to look up corresponding endpoints which contain the ips to route. (Note: Must match service name in same namespace)
       - **servicePort**: Port (defined as Integer) to proxy traffic to since a service can have multiple defined
       - **weight (Optional)**: Percentage of traffic to balance traffic
+      - **strategy (Optional)**: Load balancer algorithm type (Defaults to RoundRobin if not specified): RoundRobin / WeightedLeastRequest / Random (Note: A strategy defined here overrides anything specified above)
       - **lbHealthCheck (Optional)**: Note: health checks defined here override any defined above
         - **path**: HTTP endpoint used to perform health checks on upstream service (e.g. /healthz). It expects a 200 response if the host is healthy. The upstream host can return 503 if it wants to immediately notify downstream hosts to no longer forward traffic to it.
         - **intervalSeconds**: The interval (seconds) between health checks. Defaults to 5 seconds if not set.
