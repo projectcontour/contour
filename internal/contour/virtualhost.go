@@ -191,6 +191,9 @@ func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend) *route.Route_Route {
 // supplied ingress and backend
 func actioncrd(namespace string, be []v1alpha1.Upstream) *route.Route_Route {
 
+	totalWeight := 100
+	totalUpstreams := len(be)
+
 	upstreams := []*route.WeightedCluster_ClusterWeight{}
 
 	// Loop over all the upstreams and add to slice
@@ -200,10 +203,16 @@ func actioncrd(namespace string, be []v1alpha1.Upstream) *route.Route_Route {
 
 		//TODO(sas): Implement TotalWeight field to make easier to calculate weight
 		upstream := route.WeightedCluster_ClusterWeight{
-			Name: name,
-			Weight: &google_protobuf1.UInt32Value{
-				Value: uint32(math.Floor(100 / float64(len(be)))),
-			},
+			Name:   name,
+			Weight: &google_protobuf1.UInt32Value{},
+		}
+
+		if i.Weight != nil {
+			upstream.Weight.Value = uint32(*i.Weight)
+			totalWeight -= *i.Weight
+			totalUpstreams--
+		} else {
+			upstream.Weight.Value = uint32(math.Floor(float64(totalWeight) / float64(totalUpstreams)))
 		}
 
 		upstreams = append(upstreams, &upstream)
