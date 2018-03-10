@@ -129,6 +129,6 @@ To remove Contour from your cluster, delete the namespace:
 
 
 [0]: ../README.md#get-started
-[1]: /architecture.md
+[1]: architecture.md
 [2]: https://github.com/kubernetes-up-and-running/kuard
 [3]: deploy-aws-nlb.md
