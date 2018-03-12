@@ -19,6 +19,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	v2cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"k8s.io/api/core/v1"
 )
 
@@ -27,6 +28,7 @@ const (
 	annotationMaxPendingRequests = "contour.heptio.com/max-pending-requests"
 	annotationMaxRequests        = "contour.heptio.com/max-requests"
 	annotationMaxRetries         = "contour.heptio.com/max-retries"
+	annotationUpstreamProtocol   = "contour.heptio.com/upstream-protocol"
 )
 
 // ClusterCache manage the contents of the gRPC SDS cache.
@@ -74,6 +76,9 @@ func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 		}
 	}
 
+	// parse upstream protocol annotations
+	up := parseUpstreamProtocols(newsvc.Annotations, annotationUpstreamProtocol, "h2")
+
 	// iterate over all ports in newsvc adding or updating their records and
 	// recording that face in named and unnamed.
 	named := make(map[string]v1.ServicePort)
@@ -90,7 +95,7 @@ func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 			if p.Name != "" {
 				// service port is named, so we must generate both a cluster for the port name
 				// and a cluster for the port number.
-				c := edscluster(newsvc, p.Name, config)
+				c := edscluster(newsvc, p.Name, up[p.Name], config)
 				cc.Add(c)
 				// it is safe to use p.Name as the key because the API server enforces
 				// the invariant that Name will only be blank if there is a single port
@@ -98,7 +103,8 @@ func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 				// { "": p }
 				named[p.Name] = p
 			}
-			c := edscluster(newsvc, strconv.Itoa(int(p.Port)), config)
+			portString := strconv.Itoa(int(p.Port))
+			c := edscluster(newsvc, portString, up[portString], config)
 			cc.Add(c)
 			unnamed[p.Port] = p
 		default:
@@ -123,7 +129,7 @@ func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 	}
 }
 
-func edscluster(svc *v1.Service, portString string, config *v2.Cluster_EdsClusterConfig) *v2.Cluster {
+func edscluster(svc *v1.Service, portString, upstreamProtocol string, config *v2.Cluster_EdsClusterConfig) *v2.Cluster {
 	cluster := &v2.Cluster{
 		Name:             hashname(60, svc.ObjectMeta.Namespace, svc.ObjectMeta.Name, portString),
 		Type:             v2.Cluster_EDS,
@@ -141,6 +147,11 @@ func edscluster(svc *v1.Service, portString string, config *v2.Cluster_EdsCluste
 	if thresholds.MaxConnections != nil || thresholds.MaxPendingRequests != nil ||
 		thresholds.MaxRequests != nil || thresholds.MaxRetries != nil {
 		cluster.CircuitBreakers = &v2cluster.CircuitBreakers{Thresholds: []*v2cluster.CircuitBreakers_Thresholds{thresholds}}
+	}
+
+	switch upstreamProtocol {
+	case "h2":
+		cluster.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
 	}
 
 	return cluster

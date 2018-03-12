@@ -14,6 +14,7 @@
 package contour
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -23,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 )
 
 func TestClusterCacheRecomputeService(t *testing.T) {
@@ -246,6 +248,45 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 			}},
+		},
+		"http2 upstream": {
+			oldObj: nil,
+			newObj: serviceWithAnnotations(
+				"default",
+				"kuard",
+				map[string]string{
+					fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): "80,http",
+				},
+				v1.ServicePort{
+					Protocol: "TCP",
+					Name:     "http",
+					Port:     80,
+				},
+			),
+			want: []*v2.Cluster{
+				&v2.Cluster{
+					Name: "default/kuard/80",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/http",
+					},
+					ConnectTimeout:       250 * time.Millisecond,
+					LbPolicy:             v2.Cluster_ROUND_ROBIN,
+					Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+				},
+				&v2.Cluster{
+					Name: "default/kuard/http",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/http",
+					},
+					ConnectTimeout:       250 * time.Millisecond,
+					LbPolicy:             v2.Cluster_ROUND_ROBIN,
+					Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+				},
+			},
 		},
 	}
 

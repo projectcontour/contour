@@ -14,7 +14,9 @@
 package contour
 
 import (
+	"fmt"
 	"math"
+	"reflect"
 	"testing"
 	"time"
 
@@ -106,6 +108,50 @@ func TestParseAnnotationUInt32(t *testing.T) {
 
 			if ((got == nil) != tc.isNil) || (got != nil && *got != full) {
 				t.Fatalf("parseAnnotationUInt32(%q): want: %v, isNil: %v, got: %v", tc.a, tc.want, tc.isNil, got)
+			}
+		})
+	}
+}
+
+func TestParseUpstreamProtocols(t *testing.T) {
+	tests := map[string]struct {
+		a    map[string]string
+		want map[string]string
+	}{
+		"nada": {
+			a:    nil,
+			want: map[string]string{},
+		},
+		"empty": {
+			a:    map[string]string{fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): ""},
+			want: map[string]string{},
+		},
+		"empty with spaces": {
+			a:    map[string]string{fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): ", ,"},
+			want: map[string]string{},
+		},
+		"single value": {
+			a: map[string]string{fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): "80"},
+			want: map[string]string{
+				"80": "h2",
+			},
+		},
+		"multiple value": {
+			a: map[string]string{fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): "80,http,443,https"},
+			want: map[string]string{
+				"80":    "h2",
+				"http":  "h2",
+				"443":   "h2",
+				"https": "h2",
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := parseUpstreamProtocols(tc.a, annotationUpstreamProtocol, "h2")
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("parseUpstreamProtocols(%q): want: %v, got: %v", tc.a, tc.want, got)
 			}
 		})
 	}
