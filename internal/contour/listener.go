@@ -101,7 +101,7 @@ func (lc *ListenerCache) recomputeListener0(ingresses map[metadata]*v1beta1.Ingr
 
 	var valid int
 	for _, i := range ingresses {
-		if validIngress(i) {
+		if httpAllowed(i) {
 			valid++
 		}
 	}
@@ -138,16 +138,6 @@ func (lc *ListenerCache) httpPort() uint32 {
 		return uint32(lc.HTTPPort)
 	}
 	return DEFAULT_HTTP_LISTENER_PORT
-}
-
-// validIngress returns true if this is a valid non ssl ingress object.
-// ingresses are invalid if they contain annotations which exclude them from
-// the ingress_http listener.
-func validIngress(i *v1beta1.Ingress) bool {
-	if i.Annotations["kubernetes.io/ingress.allow-http"] == "false" {
-		return false
-	}
-	return true
 }
 
 // recomputeTLSListener0 recomputes the SSL listener for port 8443
