@@ -18,7 +18,15 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"k8s.io/api/core/v1"
+)
+
+const (
+	annotationMaxConnections     = "contour.heptio.com/max-connections"
+	annotationMaxPendingRequests = "contour.heptio.com/max-pending-requests"
+	annotationMaxRequests        = "contour.heptio.com/max-requests"
+	annotationMaxRetries         = "contour.heptio.com/max-retries"
 )
 
 // ClusterCache manage the contents of the gRPC SDS cache.
@@ -79,11 +87,10 @@ func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 			// p.Name will be blank on the condition that there is a single serviceport
 			// entry in this service spec.
 			config := edsconfig("contour", servicename(newsvc.ObjectMeta, p.Name))
-
 			if p.Name != "" {
 				// service port is named, so we must generate both a cluster for the port name
 				// and a cluster for the port number.
-				c := edscluster(hashname(60, newsvc.ObjectMeta.Namespace, newsvc.ObjectMeta.Name, p.Name), config)
+				c := edscluster(newsvc, p.Name, config)
 				cc.Add(c)
 				// it is safe to use p.Name as the key because the API server enforces
 				// the invariant that Name will only be blank if there is a single port
@@ -91,7 +98,7 @@ func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 				// { "": p }
 				named[p.Name] = p
 			}
-			c := edscluster(hashname(60, newsvc.ObjectMeta.Namespace, newsvc.ObjectMeta.Name, strconv.Itoa(int(p.Port))), config)
+			c := edscluster(newsvc, strconv.Itoa(int(p.Port)), config)
 			cc.Add(c)
 			unnamed[p.Port] = p
 		default:
@@ -116,14 +123,26 @@ func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 	}
 }
 
-func edscluster(name string, config *v2.Cluster_EdsClusterConfig) *v2.Cluster {
-	return &v2.Cluster{
-		Name:             name,
+func edscluster(svc *v1.Service, portString string, config *v2.Cluster_EdsClusterConfig) *v2.Cluster {
+	cluster := &v2.Cluster{
+		Name:             hashname(60, svc.ObjectMeta.Namespace, svc.ObjectMeta.Name, portString),
 		Type:             v2.Cluster_EDS,
 		EdsClusterConfig: config,
 		ConnectTimeout:   250 * time.Millisecond,
 		LbPolicy:         v2.Cluster_ROUND_ROBIN,
 	}
+	thresholds := &v2cluster.CircuitBreakers_Thresholds{
+		MaxConnections:     parseAnnotationUInt32(svc.Annotations, annotationMaxConnections),
+		MaxPendingRequests: parseAnnotationUInt32(svc.Annotations, annotationMaxPendingRequests),
+		MaxRequests:        parseAnnotationUInt32(svc.Annotations, annotationMaxRequests),
+		MaxRetries:         parseAnnotationUInt32(svc.Annotations, annotationMaxRetries),
+	}
+	if thresholds.MaxConnections != nil || thresholds.MaxPendingRequests != nil ||
+		thresholds.MaxRequests != nil || thresholds.MaxRetries != nil {
+		cluster.CircuitBreakers = &v2cluster.CircuitBreakers{Thresholds: []*v2cluster.CircuitBreakers_Thresholds{thresholds}}
+	}
+
+	return cluster
 }
 
 func edsconfig(source, name string) *v2.Cluster_EdsClusterConfig {

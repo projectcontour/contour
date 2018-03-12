@@ -15,10 +15,12 @@ package contour
 
 import (
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/gogo/protobuf/types"
 	"k8s.io/api/extensions/v1beta1"
 )
 
@@ -30,7 +32,10 @@ type VirtualHostCache struct {
 }
 
 const (
-	requestTimeout = "contour.heptio.com/request-timeout"
+	annotationRequestTimeout = "contour.heptio.com/request-timeout"
+	annotationRetryOn        = "contour.heptio.com/retry-on"
+	annotationNumRetries     = "contour.heptio.com/num-retries"
+	annotationPerTryTimeout  = "contour.heptio.com/per-try-timeout"
 
 	// By default envoy applies a 15 second timeout to all backend requests.
 	// The explicit value 0 turns off the timeout, implying "never time out"
@@ -42,13 +47,12 @@ const (
 // value. If the value is not present, false is returned and the timeout value should be
 // ignored. If the value is present, but malformed, the timeout value is valid, and represents
 // infinite timeout.
-func getRequestTimeout(annotations map[string]string) (time.Duration, bool) {
-	timeoutStr, ok := annotations[requestTimeout]
+func parseAnnotationTimeout(annotations map[string]string, annotation string) (time.Duration, bool) {
+	timeoutStr, ok := annotations[annotationRequestTimeout]
 	// Error or unspecified is interpreted as no timeout specified, use envoy defaults
 	if !ok || timeoutStr == "" {
 		return 0, false
 	}
-
 	// Interpret "infinity" explicitly as an infinite timeout, which envoy config
 	// expects as a timeout of 0. This could be specified with the duration string
 	// "0s" but want to give an explicit out for operators.
@@ -64,6 +68,19 @@ func getRequestTimeout(annotations map[string]string) (time.Duration, bool) {
 		return infiniteTimeout, true
 	}
 	return timeoutParsed, true
+}
+
+func parseAnnotationUInt32(annotations map[string]string, annotation string) *types.UInt32Value {
+	uint32Str, ok := annotations[annotation]
+	// Error or unspecified is interpreted as use envoy defaults
+	if !ok || uint32Str == "" {
+		return nil
+	}
+	uint32value, err := strconv.ParseUint(uint32Str, 10, 32)
+	if err != nil {
+		return nil
+	}
+	return &types.UInt32Value{Value: uint32(uint32value)}
 }
 
 // recomputevhost recomputes the ingress_http (HTTP) and ingress_https (HTTPS) record
@@ -155,7 +172,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 	}
 }
 
-// action computes the cluster route action, a *v2.Route_route for the
+// action computes the cluster route action, a *route.Route_route for the
 // supplied ingress and backend.
 func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend) *route.Route_Route {
 	name := ingressBackendToClusterName(i, be)
@@ -166,9 +183,20 @@ func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend) *route.Route_Route {
 			},
 		},
 	}
-	if timeout, ok := getRequestTimeout(i.Annotations); ok {
+	if timeout, ok := parseAnnotationTimeout(i.Annotations, annotationRequestTimeout); ok {
 		ca.Route.Timeout = &timeout
 	}
+
+	if retryOn, ok := i.Annotations[annotationRetryOn]; ok {
+		ca.Route.RetryPolicy = &route.RouteAction_RetryPolicy{
+			RetryOn:    retryOn,
+			NumRetries: parseAnnotationUInt32(i.Annotations, annotationNumRetries),
+		}
+		if perTryTimeout, ok := parseAnnotationTimeout(i.Annotations, annotationPerTryTimeout); ok {
+			ca.Route.RetryPolicy.PerTryTimeout = &perTryTimeout
+		}
+	}
+
 	return &ca
 }
 
