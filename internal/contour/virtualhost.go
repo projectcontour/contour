@@ -64,7 +64,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 	// now handle ingress_http (non tls) routes.
 	vv = virtualhost(vhost)
 	for _, i := range ingresses {
-		if i.Annotations["kubernetes.io/ingress.allow-http"] == "false" {
+		if !httpAllowed(i) {
 			// skip this vhosts ingress_http route.
 			continue
 		}

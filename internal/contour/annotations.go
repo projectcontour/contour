@@ -18,9 +18,15 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"k8s.io/api/extensions/v1beta1"
 )
 
 const (
+	// set docs/annotations.md for details of how these annotations
+	// are applied by Contour.
+
+	kubernetesIngressAllowHttp = "kubernetes.io/ingress.allow-http"
+
 	annotationRequestTimeout = "contour.heptio.com/request-timeout"
 	annotationRetryOn        = "contour.heptio.com/retry-on"
 	annotationNumRetries     = "contour.heptio.com/num-retries"
@@ -67,4 +73,10 @@ func parseAnnotationUInt32(annotations map[string]string, annotation string) *ty
 		return nil
 	}
 	return &types.UInt32Value{Value: uint32(v)}
+}
+
+// httpAllowed returns true unless the kubernetes.io/ingress.allow-http annotation is
+// present and set to false.
+func httpAllowed(i *v1beta1.Ingress) bool {
+	return !(i.Annotations["kubernetes.io/ingress.allow-http"] == "false")
 }
