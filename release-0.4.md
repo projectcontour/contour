@@ -16,11 +16,14 @@ Much effort has been expended on the Contour to Envoy gRPC API, including a set 
 
 ### Additional annotations
 
-Contour now supports the Contour specific `contour.heptio.com/request-timeout` annotation to control the amount of time Envoy will wait for a backend to respond.
-This annotation inherets a default of 15 seconds from Envoy.
+Contour now supports the following annotations to control Envoy's retry behaviour:
+- `contour.heptio.com/request-timeout` to control the amount of time Envoy will wait for a backend to respond.
+- `contour.heptio.com/retry-on` to control under which conditions Envoy should retry a request.
+- `contour.heptio.com/num-retries` to control the number of retries Envoy will perform.
+- `contour.heptio.com/per-try-timeout` to control the request timeout _per attempt_.
 For more information please consult the [annotation documentation][4].
 Thanks @cmaloney.
-Fixes #164
+Fixes #164 and #221.
 
 ### Ingress class now configurable
 
