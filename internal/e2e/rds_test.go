@@ -600,6 +600,103 @@ func TestSSLRedirectOverlay(t *testing.T) {
 	}})
 }
 
+// issue #257: editing default ingress did not remove original default route
+func TestIssue257(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	// apiVersion: extensions/v1beta1
+	// kind: Ingress
+	// metadata:
+	//   name: kuard-ing
+	//   labels:
+	//     app: kuard
+	//   annotations:
+	//     kubernetes.io/ingress.class: contour
+	// spec:
+	//   backend:
+	//     serviceName: kuard
+	//     servicePort: 80
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-ing",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "contour",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "kuard",
+				ServicePort: intstr.FromInt(80),
+			},
+		},
+	}
+	rh.OnAdd(i1)
+
+	assertRDS(t, cc, []route.VirtualHost{{
+		Name:    "*",
+		Domains: []string{"*"},
+		Routes: []route.Route{{
+			Match:  prefixmatch("/"), // match all
+			Action: cluster("default/kuard/80"),
+		}},
+	}}, nil)
+
+	// apiVersion: extensions/v1beta1
+	// kind: Ingress
+	// metadata:
+	//   name: kuard-ing
+	//   labels:
+	//     app: kuard
+	//   annotations:
+	//     kubernetes.io/ingress.class: contour
+	// spec:
+	//  rules:
+	//  - host: kuard.db.gd-ms.com
+	//    http:
+	//      paths:
+	//      - backend:
+	//         serviceName: kuard
+	//         servicePort: 80
+	//        path: /
+	i2 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-ing",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "contour",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				Host: "kuard.db.gd-ms.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromInt(80),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	rh.OnUpdate(i1, i2)
+
+	assertRDS(t, cc, []route.VirtualHost{{
+		Name:    "kuard.db.gd-ms.com",
+		Domains: []string{"kuard.db.gd-ms.com"},
+		Routes: []route.Route{{
+			Match:  prefixmatch("/"), // match all
+			Action: cluster("default/kuard/80"),
+		}},
+	}}, nil)
+}
+
 func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []route.VirtualHost) {
 	t.Helper()
 	assertEqual(t, &v2.DiscoveryResponse{
