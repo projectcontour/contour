@@ -131,6 +131,7 @@ func edscluster(svc *v1.Service, portString string, config *v2.Cluster_EdsCluste
 		ConnectTimeout:   250 * time.Millisecond,
 		LbPolicy:         v2.Cluster_ROUND_ROBIN,
 	}
+
 	thresholds := &v2cluster.CircuitBreakers_Thresholds{
 		MaxConnections:     parseAnnotationUInt32(svc.Annotations, annotationMaxConnections),
 		MaxPendingRequests: parseAnnotationUInt32(svc.Annotations, annotationMaxPendingRequests),

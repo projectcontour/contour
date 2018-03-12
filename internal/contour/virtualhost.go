@@ -43,14 +43,14 @@ const (
 	infiniteTimeout = time.Duration(0)
 )
 
-// getRequestTimeout parses the annotations map for a contour.heptio.com/request-timeout
+// parseAnnotationTimeout parses the annotations map for a contour.heptio.com/request-timeout
 // value. If the value is not present, false is returned and the timeout value should be
 // ignored. If the value is present, but malformed, the timeout value is valid, and represents
 // infinite timeout.
 func parseAnnotationTimeout(annotations map[string]string, annotation string) (time.Duration, bool) {
-	timeoutStr, ok := annotations[annotationRequestTimeout]
+	timeoutStr := annotations[annotationRequestTimeout]
 	// Error or unspecified is interpreted as no timeout specified, use envoy defaults
-	if !ok || timeoutStr == "" {
+	if timeoutStr == "" {
 		return 0, false
 	}
 	// Interpret "infinity" explicitly as an infinite timeout, which envoy config
@@ -70,17 +70,14 @@ func parseAnnotationTimeout(annotations map[string]string, annotation string) (t
 	return timeoutParsed, true
 }
 
+// parseAnnotationUint32 parsers the annotation map for the supplied annotation key.
+// If the value is not present, or malformed, then nil is returned.
 func parseAnnotationUInt32(annotations map[string]string, annotation string) *types.UInt32Value {
-	uint32Str, ok := annotations[annotation]
-	// Error or unspecified is interpreted as use envoy defaults
-	if !ok || uint32Str == "" {
-		return nil
-	}
-	uint32value, err := strconv.ParseUint(uint32Str, 10, 32)
+	v, err := strconv.ParseUint(annotations[annotation], 10, 32)
 	if err != nil {
 		return nil
 	}
-	return &types.UInt32Value{Value: uint32(uint32value)}
+	return &types.UInt32Value{Value: uint32(v)}
 }
 
 // recomputevhost recomputes the ingress_http (HTTP) and ingress_https (HTTPS) record
