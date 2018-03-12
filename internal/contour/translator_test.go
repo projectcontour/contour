@@ -1084,7 +1084,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 	}
 }
 
-func TestTranslatorupdateIngress(t *testing.T) {
+func TestTranslatorUpdateIngress(t *testing.T) {
 	tests := map[string]struct {
 		before, after               *v1beta1.Ingress
 		ingress_http, ingress_https []route.VirtualHost
@@ -1138,7 +1138,7 @@ func TestTranslatorupdateIngress(t *testing.T) {
 					Action: clusteraction("default/kuard/80"),
 				}},
 			}},
-			ingress_https: nil,
+			ingress_https: []route.VirtualHost{},
 		},
 	}
 
@@ -1875,6 +1875,124 @@ func TestTranslatorCacheOnUpdateIngress(t *testing.T) {
 				},
 			},
 		},
+		"move rename default ingress to named vhost without renaming object": { // issue 257
+			c: translatorCache{
+				ingresses: map[metadata]*v1beta1.Ingress{
+					metadata{name: "kuard-ing", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "kuard-ing",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Backend: &v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromInt(80),
+							},
+						},
+					},
+				},
+				vhosts: map[string]map[metadata]*v1beta1.Ingress{
+					"*": map[metadata]*v1beta1.Ingress{
+						metadata{name: "kuard-ing", namespace: "default"}: &v1beta1.Ingress{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "kuard-ing",
+								Namespace: "default",
+							},
+							Spec: v1beta1.IngressSpec{
+								Backend: &v1beta1.IngressBackend{
+									ServiceName: "kuard",
+									ServicePort: intstr.FromInt(80),
+								},
+							},
+						},
+					},
+				},
+			},
+			oldObj: v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kuard-ing",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Backend: &v1beta1.IngressBackend{
+						ServiceName: "kuard",
+						ServicePort: intstr.FromInt(80),
+					},
+				},
+			},
+			newObj: v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kuard-ing",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						Host: "kuard.db.gd-ms.com",
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Path: "/",
+									Backend: v1beta1.IngressBackend{
+										ServiceName: "kuard",
+										ServicePort: intstr.FromInt(80),
+									},
+								}},
+							},
+						},
+					}},
+				},
+			},
+			wantIngresses: map[metadata]*v1beta1.Ingress{
+				metadata{name: "kuard-ing", namespace: "default"}: &v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard-ing",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Rules: []v1beta1.IngressRule{{
+							Host: "kuard.db.gd-ms.com",
+							IngressRuleValue: v1beta1.IngressRuleValue{
+								HTTP: &v1beta1.HTTPIngressRuleValue{
+									Paths: []v1beta1.HTTPIngressPath{{
+										Path: "/",
+										Backend: v1beta1.IngressBackend{
+											ServiceName: "kuard",
+											ServicePort: intstr.FromInt(80),
+										},
+									}},
+								},
+							},
+						}},
+					},
+				},
+			},
+			wantVhosts: map[string]map[metadata]*v1beta1.Ingress{
+				"kuard.db.gd-ms.com": map[metadata]*v1beta1.Ingress{
+					metadata{name: "kuard-ing", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "kuard-ing",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Rules: []v1beta1.IngressRule{{
+								Host: "kuard.db.gd-ms.com",
+								IngressRuleValue: v1beta1.IngressRuleValue{
+									HTTP: &v1beta1.HTTPIngressRuleValue{
+										Paths: []v1beta1.HTTPIngressPath{{
+											Path: "/",
+											Backend: v1beta1.IngressBackend{
+												ServiceName: "kuard",
+												ServicePort: intstr.FromInt(80),
+											},
+										}},
+									},
+								},
+							}},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -1885,6 +2003,77 @@ func TestTranslatorCacheOnUpdateIngress(t *testing.T) {
 			}
 			if !reflect.DeepEqual(tc.wantVhosts, tc.c.vhosts) {
 				t.Fatalf("vhosts want:\n%+v\n got:\n%+v", tc.wantVhosts, tc.c.vhosts)
+			}
+		})
+	}
+}
+
+func TestTranslatorCacheOnDeleteIngress(t *testing.T) {
+	tests := map[string]struct {
+		c             translatorCache
+		i             v1beta1.Ingress
+		wantIngresses map[metadata]*v1beta1.Ingress
+		wantVhosts    map[string]map[metadata]*v1beta1.Ingress
+	}{
+		"remove default ingress": {
+			c: translatorCache{
+				ingresses: map[metadata]*v1beta1.Ingress{
+					metadata{name: "kuard-ing", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "kuard-ing",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Backend: &v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromInt(80),
+							},
+						},
+					},
+				},
+				vhosts: map[string]map[metadata]*v1beta1.Ingress{
+					"*": map[metadata]*v1beta1.Ingress{
+						metadata{name: "kuard-ing", namespace: "default"}: &v1beta1.Ingress{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "kuard-ing",
+								Namespace: "default",
+							},
+							Spec: v1beta1.IngressSpec{
+								Backend: &v1beta1.IngressBackend{
+									ServiceName: "kuard",
+									ServicePort: intstr.FromInt(80),
+								},
+							},
+						},
+					},
+				},
+			},
+			i: v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kuard-ing",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Backend: &v1beta1.IngressBackend{
+						ServiceName: "kuard",
+						ServicePort: intstr.FromInt(80),
+					},
+				},
+			},
+
+			wantIngresses: map[metadata]*v1beta1.Ingress{},
+			wantVhosts:    map[string]map[metadata]*v1beta1.Ingress{},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			tc.c.OnDelete(&tc.i)
+			if !reflect.DeepEqual(tc.wantIngresses, tc.c.ingresses) {
+				t.Errorf("want:\n%v\n got:\n%v", tc.wantIngresses, tc.c.ingresses)
+			}
+			if !reflect.DeepEqual(tc.wantVhosts, tc.c.vhosts) {
+				t.Fatalf("want:\n%v\n got:\n%v", tc.wantVhosts, tc.c.vhosts)
 			}
 		})
 	}

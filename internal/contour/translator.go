@@ -90,7 +90,12 @@ func (t *Translator) OnUpdate(oldObj, newObj interface{}) {
 		}
 		t.updateEndpoints(oldObj, newObj)
 	case *v1beta1.Ingress:
-		t.addIngress(newObj)
+		oldObj, ok := oldObj.(*v1beta1.Ingress)
+		if !ok {
+			t.Errorf("OnUpdate endpoints %#v received invalid oldObj %T; %#v", newObj, oldObj, oldObj)
+			return
+		}
+		t.updateIngress(oldObj, newObj)
 	case *v1.Secret:
 		t.addSecret(newObj)
 	default:
@@ -184,6 +189,11 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 		}
 		t.recomputevhost(host, t.cache.vhosts[host])
 	}
+}
+
+func (t *Translator) updateIngress(oldIng, newIng *v1beta1.Ingress) {
+	t.removeIngress(oldIng)
+	t.addIngress(newIng)
 }
 
 func (t *Translator) removeIngress(i *v1beta1.Ingress) {
