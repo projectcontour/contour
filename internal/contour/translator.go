@@ -64,6 +64,7 @@ func (t *Translator) OnAdd(obj interface{}) {
 		t.addEndpoints(obj)
 	case *v1beta1.Ingress:
 		t.addIngress(obj)
+		t.VirtualHostCache.Notify()
 	case *v1.Secret:
 		t.addSecret(obj)
 	default:
@@ -90,7 +91,13 @@ func (t *Translator) OnUpdate(oldObj, newObj interface{}) {
 		}
 		t.updateEndpoints(oldObj, newObj)
 	case *v1beta1.Ingress:
-		t.addIngress(newObj)
+		oldObj, ok := oldObj.(*v1beta1.Ingress)
+		if !ok {
+			t.Errorf("OnUpdate endpoints %#v received invalid oldObj %T; %#v", newObj, oldObj, oldObj)
+			return
+		}
+		t.updateIngress(oldObj, newObj)
+		t.VirtualHostCache.Notify()
 	case *v1.Secret:
 		t.addSecret(newObj)
 	default:
@@ -107,6 +114,7 @@ func (t *Translator) OnDelete(obj interface{}) {
 		t.removeEndpoints(obj)
 	case *v1beta1.Ingress:
 		t.removeIngress(obj)
+		t.VirtualHostCache.Notify()
 	case *v1.Secret:
 		t.removeSecret(obj)
 	case cache.DeletedFinalStateUnknown:
@@ -167,9 +175,6 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 
 	t.recomputeListeners(t.cache.ingresses, t.cache.secrets)
 
-	// notify watchers that the vhost cache has probably changed.
-	defer t.VirtualHostCache.Notify()
-
 	// handle the special case of the default ingress first.
 	if i.Spec.Backend != nil {
 		// update t.vhosts cache
@@ -186,6 +191,11 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 	}
 }
 
+func (t *Translator) updateIngress(oldIng, newIng *v1beta1.Ingress) {
+	t.removeIngress(oldIng)
+	t.addIngress(newIng)
+}
+
 func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 	class, ok := i.Annotations["kubernetes.io/ingress.class"]
 	if ok && class != t.ingressClass() {
@@ -196,8 +206,6 @@ func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 		// independent.
 		return
 	}
-
-	defer t.VirtualHostCache.Notify()
 
 	t.recomputeListeners(t.cache.ingresses, t.cache.secrets)
 
