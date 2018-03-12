@@ -68,7 +68,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 			// skip this vhosts ingress_http route.
 			continue
 		}
-		requireTLS := i.Annotations["ingress.kubernetes.io/force-ssl-redirect"] == "true"
+		requireTLS := tlsRequired(i)
 		if i.Spec.Backend != nil && len(ingresses) == 1 {
 			r := route.Route{
 				Match:  prefixmatch("/"),

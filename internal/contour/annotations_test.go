@@ -19,6 +19,9 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"k8s.io/api/extensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestParseAnnotationTimeout(t *testing.T) {
@@ -103,6 +106,59 @@ func TestParseAnnotationUInt32(t *testing.T) {
 
 			if ((got == nil) != tc.isNil) || (got != nil && *got != full) {
 				t.Fatalf("parseAnnotationUInt32(%q): want: %v, isNil: %v, got: %v", tc.a, tc.want, tc.isNil, got)
+			}
+		})
+	}
+}
+
+func TestHttpAllowed(t *testing.T) {
+	tests := map[string]struct {
+		i     *v1beta1.Ingress
+		valid bool
+	}{
+		"basic ingress": {
+			i: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					TLS: []v1beta1.IngressTLS{{
+						Hosts:      []string{"whatever.example.com"},
+						SecretName: "secret",
+					}},
+					Backend: backend("backend", intstr.FromInt(80)),
+				},
+			},
+			valid: true,
+		},
+		"kubernetes.io/ingress.allow-http: \"false\"": {
+			i: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"kubernetes.io/ingress.allow-http": "false",
+					},
+				},
+				Spec: v1beta1.IngressSpec{
+					TLS: []v1beta1.IngressTLS{{
+						Hosts:      []string{"whatever.example.com"},
+						SecretName: "secret",
+					}},
+					Backend: backend("backend", intstr.FromInt(80)),
+				},
+			},
+			valid: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := httpAllowed(tc.i)
+			want := tc.valid
+			if got != want {
+				t.Fatalf("got: %v, want: %v", got, want)
 			}
 		})
 	}

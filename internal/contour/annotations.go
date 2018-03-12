@@ -26,6 +26,7 @@ const (
 	// are applied by Contour.
 
 	kubernetesIngressAllowHttp = "kubernetes.io/ingress.allow-http"
+	kubernetesIngressForceSSL  = "ingress.kubernetes.io/force-ssl-redirect"
 
 	annotationRequestTimeout = "contour.heptio.com/request-timeout"
 	annotationRetryOn        = "contour.heptio.com/retry-on"
@@ -79,4 +80,10 @@ func parseAnnotationUInt32(annotations map[string]string, annotation string) *ty
 // present and set to false.
 func httpAllowed(i *v1beta1.Ingress) bool {
 	return !(i.Annotations["kubernetes.io/ingress.allow-http"] == "false")
+}
+
+// tlsRequired returns true iff the ingress.kubernetes.io/force-ssl-redirect annotation is
+// present and set to true.
+func tlsRequired(i *v1beta1.Ingress) bool {
+	return i.Annotations["ingress.kubernetes.io/force-ssl-redirect"] == "true"
 }
