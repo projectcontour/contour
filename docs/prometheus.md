@@ -1,15 +1,15 @@
 # Prometheus
 
-With Contour it is possible to get metrics from Envoy. In order for this to work properly,
-you must expose the Envoy admin socket and configure the Prometheus service discovery correctly.
+With Contour you can get metrics from Envoy. To do so you must expose the Envoy
+admin socket and configure the Prometheus service discovery correctly.
 
-The admin socket can be made public by running
+Make the admin socket public:
 
 ```
 sed 's#"bootstrap", "/config/contour.yaml"#"bootstrap", "/config/contour.yaml", "--admin-address", "0.0.0.0"#g' <your-contour-deployment>.yaml
 ```
 
-Prometheus needs to have a configuration block that looks like this:
+Prometheus needs a configuration block that looks like this:
 
 ```yaml
     - job_name: 'kubernetes-pods'
