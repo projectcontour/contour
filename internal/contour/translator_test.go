@@ -1084,6 +1084,85 @@ func TestTranslatorAddIngress(t *testing.T) {
 	}
 }
 
+func TestTranslatorupdateIngress(t *testing.T) {
+	tests := map[string]struct {
+		before, after               *v1beta1.Ingress
+		ingress_http, ingress_https []route.VirtualHost
+	}{
+		"move rename default ingress to named vhost without renaming object": { // issue 257
+			before: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kuard-ing",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"kubernetes.io/ingress.class": "contour",
+					},
+				},
+				Spec: v1beta1.IngressSpec{
+					Backend: &v1beta1.IngressBackend{
+						ServiceName: "kuard",
+						ServicePort: intstr.FromInt(80),
+					},
+				},
+			},
+			after: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kuard-ing",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"kubernetes.io/ingress.class": "contour",
+					},
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						Host: "kuard.db.gd-ms.com",
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Path: "/",
+									Backend: v1beta1.IngressBackend{
+										ServiceName: "kuard",
+										ServicePort: intstr.FromInt(80),
+									},
+								}},
+							},
+						},
+					}},
+				},
+			},
+			ingress_http: []route.VirtualHost{{
+				Name:    "kuard.db.gd-ms.com",
+				Domains: []string{"kuard.db.gd-ms.com"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"), // match all
+					Action: clusteraction("default/kuard/80"),
+				}},
+			}},
+			ingress_https: nil,
+		},
+	}
+
+	log := testLogger(t)
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			tr := &Translator{
+				FieldLogger: log,
+			}
+			tr.OnAdd(tc.before)
+			tr.OnUpdate(tc.before, tc.after)
+			got := tr.VirtualHostCache.HTTP.Values()
+			if !reflect.DeepEqual(tc.ingress_http, got) {
+				t.Fatalf("(ingress_http): got: %v, want: %v", got, tc.ingress_http)
+			}
+
+			got = tr.VirtualHostCache.HTTPS.Values()
+			if !reflect.DeepEqual(tc.ingress_https, got) {
+				t.Fatalf("(ingress_https): got: %v, want: %v", got, tc.ingress_https)
+			}
+		})
+	}
+}
+
 func TestTranslatorRemoveIngress(t *testing.T) {
 	tests := map[string]struct {
 		setup         func(*Translator)
