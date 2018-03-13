@@ -417,6 +417,54 @@ func TestVirtualHostCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 	}
 }
 
+func TestVirtualHostCacheIngnoresInvalidVirtualHosts(t *testing.T) {
+	tests := map[string]struct {
+		vh *route.VirtualHost
+	}{
+		"missing name": {
+			&route.VirtualHost{
+				Name: "",
+			},
+		},
+		"missing domains": {
+			&route.VirtualHost{
+				Name:    "foo",
+				Domains: nil,
+			},
+		},
+		"empty domain": {
+			&route.VirtualHost{
+				Name:    "foo",
+				Domains: []string{"foo.example.com", "", "bar.example.com"},
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var cc virtualHostCache
+			cc.Add(tc.vh)
+			got := cc.Values()
+			want := []route.VirtualHost{}
+			if !reflect.DeepEqual(got, want) {
+				t.Fatalf("VirtualHostCache.Add/Values accepted invalid VirtualHost, got: %v, want: %v", got, want)
+			}
+		})
+	}
+}
+
+func TestVirtualHostCacheIngnoreElementsWithBlankDomains(t *testing.T) {
+	var cc virtualHostCache
+	c1 := &route.VirtualHost{
+		Name: "alpha",
+	}
+	cc.Add(c1)
+	got := cc.Values()
+	want := []route.VirtualHost{}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("VirtualHostCache.Add/Values accepted invalid VirtualHost, got: %v, want: %v", got, want)
+	}
+}
+
 func TestVirtualHostCacheAddIsCopyOnWrite(t *testing.T) {
 	var cc virtualHostCache
 	c1 := &route.VirtualHost{
