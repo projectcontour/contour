@@ -68,12 +68,19 @@ Fixes #250.
 
 ## Upgrading
 
+Until Envoy 1.6 is released it is recommended to pin the version of Envoy used in your deployments to a known hash.
+The recommended hash is
+```
+spec:
+  containers:
+  - image: docker.io/envoyproxy/envoy-alpine:e6ff690611b8a3373f6d66066b52d613873e446e
+```
 Consult the [upgrade notes][0] for how to update your Deployment or Daemonset manifests to the YAML bootstrap configuration format.
 
 [0]: docs/upgrade.md
 [1]: https://kubernetes.io/docs/concepts/services-networking/ingress/#tls
 [2]: docs/tls.md
-[3]: docs/troubleshooting.mdA
+[3]: docs/troubleshooting.md
 [4]: annotations.md
 [5]: https://blog.pcisecuritystandards.org/are-you-ready-for-30-june-2018-sayin-goodbye-to-ssl-early-tls
 [6]: https://github.com/heptio/contour/graphs/contributors
