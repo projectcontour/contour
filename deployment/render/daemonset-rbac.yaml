@@ -36,7 +36,7 @@ spec:
         prometheus.io/format: "prometheus"
     spec:
       containers:
-      - image: docker.io/envoyproxy/envoy-alpine:latest
+      - image: docker.io/envoyproxy/envoy-alpine:e6ff690611b8a3373f6d66066b52d613873e446e
         name: envoy
         ports:
         - containerPort: 8080
