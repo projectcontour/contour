@@ -19,6 +19,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/sirupsen/logrus"
 )
 
 // clusterCache is a thread safe, atomic, copy on write cache of *v2.Cluster objects.
@@ -265,7 +266,22 @@ func (vc *virtualHostCache) Add(virtualhosts ...*route.VirtualHost) {
 	}
 	vc.Lock()
 	sort.Sort(virtualHostsByName(vc.values))
+next:
 	for _, v := range virtualhosts {
+		if v.Name == "" {
+			logrus.WithField("virtualhost", v).Println("skipping VirtualHost with empty name")
+			continue
+		}
+		if len(v.Domains) == 0 {
+			logrus.WithField("virtualhost", v).Println("skipping VirtualHost with blank domain list")
+			continue
+		}
+		for _, d := range v.Domains {
+			if d == "" {
+				logrus.WithField("virtualhost", v).Println("skipping VirtualHost with blank entry in domain list")
+				continue next
+			}
+		}
 		vc.add(v)
 	}
 	vc.Unlock()
