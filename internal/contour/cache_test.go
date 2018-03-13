@@ -352,7 +352,8 @@ func TestListenerCacheRemove(t *testing.T) {
 func TestVirtualHostCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 	var cc virtualHostCache
 	c := &route.VirtualHost{
-		Name: "alpha",
+		Name:    "alpha",
+		Domains: []string{"alpha"},
 	}
 	cc.Add(c)
 
@@ -369,18 +370,22 @@ func TestVirtualHostCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 func TestVirtualHostCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 	var cc virtualHostCache
 	c1 := &route.VirtualHost{
-		Name: "beta",
+		Name:    "beta",
+		Domains: []string{"beta"},
 	}
 	cc.Add(c1)
 	c2 := &route.VirtualHost{
-		Name: "alpha",
+		Name:    "alpha",
+		Domains: []string{"alpha"},
 	}
 	cc.Add(c2)
 	got := cc.Values()
 	want := []route.VirtualHost{{
-		Name: "alpha",
+		Name:    "alpha",
+		Domains: []string{"alpha"},
 	}, {
-		Name: "beta",
+		Name:    "beta",
+		Domains: []string{"beta"},
 	}}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("VirtualHostCache.Add/Values returned elements missing or out of order, got: %v, want: %v", got, want)
@@ -415,13 +420,15 @@ func TestVirtualHostCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 func TestVirtualHostCacheAddIsCopyOnWrite(t *testing.T) {
 	var cc virtualHostCache
 	c1 := &route.VirtualHost{
-		Name: "alpha",
+		Name:    "alpha",
+		Domains: []string{"alpha"},
 	}
 	cc.Add(c1)
 	v1 := cc.Values()
 
 	c2 := &route.VirtualHost{
-		Name: "beta",
+		Name:    "beta",
+		Domains: []string{"beta"},
 	}
 	cc.Add(c2)
 	v2 := cc.Values()
@@ -434,7 +441,8 @@ func TestVirtualHostCacheAddIsCopyOnWrite(t *testing.T) {
 func TestVirtualHostCacheRemove(t *testing.T) {
 	var cc virtualHostCache
 	c1 := &route.VirtualHost{
-		Name: "alpha",
+		Name:    "alpha",
+		Domains: []string{"alpha"},
 	}
 	cc.Add(c1)
 	cc.Remove("alpha")
