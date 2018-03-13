@@ -14,7 +14,6 @@
 package contour
 
 import (
-	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -22,6 +21,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	google_protobuf1 "github.com/gogo/protobuf/types"
+	"github.com/heptio/contour/internal/k8s"
 	v1alpha1 "github.com/heptio/contour/pkg/apis/contour/v1alpha1"
 	"k8s.io/api/extensions/v1beta1"
 )
@@ -147,18 +147,39 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 
 // recomputevhostcrd recomputes the ingress_http (HTTP) and ingress_https (HTTPS) record
 // from the vhost from list of ingresses supplied.
-func (v *VirtualHostCache) recomputevhostcrd(vhost string, routes map[metadata]*v1alpha1.Route) {
+func (v *VirtualHostCache) recomputevhostcrd(vhost string, routes map[metadata]*v1alpha1.Route) (routeStatus []k8s.RouteStatus) {
 	// now handle ingress_http (non tls) routes.
 	vv := virtualhost(vhost)
 	for _, i := range routes {
+
+		var thisRouteStatus []k8s.RouteStatus
+
 		for _, j := range i.Spec.Routes {
 
 			// TODO(sas): Handle case of no default path (e.g. "/")
+			action, err := actioncrd(i.ObjectMeta.Namespace, j.Upstreams)
 
-			vv.Routes = append(vv.Routes, route.Route{
-				Match:  prefixmatch(j.PathPrefix),
-				Action: actioncrd(i.ObjectMeta.Namespace, j.Upstreams),
+			// Check if the route + upstreams have any errors
+			if err != nil {
+				// Set the `status` field of the CRD
+				thisRouteStatus = append(thisRouteStatus, *err)
+			} else {
+				vv.Routes = append(vv.Routes, route.Route{
+					Match:  prefixmatch(j.PathPrefix),
+					Action: action,
+				})
+			}
+		}
+
+		// If no errors on any routes, it's valid
+		if len(thisRouteStatus) == 0 {
+			routeStatus = append(routeStatus, k8s.RouteStatus{
+				Namespace:     i.ObjectMeta.Namespace,
+				RouteName:     i.ObjectMeta.Name,
+				StatusMessage: "Valid",
 			})
+		} else {
+			routeStatus = append(routeStatus, thisRouteStatus...)
 		}
 	}
 
@@ -168,6 +189,8 @@ func (v *VirtualHostCache) recomputevhostcrd(vhost string, routes map[metadata]*
 	} else {
 		v.HTTP.Remove(vv.Name)
 	}
+
+	return
 }
 
 // action computes the cluster route action, a *v2.Route_route for the
@@ -189,10 +212,9 @@ func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend) *route.Route_Route {
 
 // actioncrd computes the cluster route action, a *v2.Route_route for the
 // supplied ingress and backend
-func actioncrd(namespace string, be []v1alpha1.Upstream) *route.Route_Route {
+func actioncrd(namespace string, be []v1alpha1.Upstream) (*route.Route_Route, *k8s.RouteStatus) {
 
-	totalWeight := 100
-	totalUpstreams := len(be)
+	totalWeight := 0
 
 	upstreams := []*route.WeightedCluster_ClusterWeight{}
 
@@ -201,21 +223,27 @@ func actioncrd(namespace string, be []v1alpha1.Upstream) *route.Route_Route {
 
 		name := ingressBackendToClusterName(namespace, i.ServiceName, strconv.Itoa(i.ServicePort))
 
-		//TODO(sas): Implement TotalWeight field to make easier to calculate weight
 		upstream := route.WeightedCluster_ClusterWeight{
-			Name:   name,
-			Weight: &google_protobuf1.UInt32Value{},
+			Name: name,
+			Weight: &google_protobuf1.UInt32Value{
+				Value: uint32(0),
+			},
 		}
 
 		if i.Weight != nil {
 			upstream.Weight.Value = uint32(*i.Weight)
-			totalWeight -= *i.Weight
-			totalUpstreams--
-		} else {
-			upstream.Weight.Value = uint32(math.Floor(float64(totalWeight) / float64(totalUpstreams)))
+			totalWeight += *i.Weight
 		}
 
 		upstreams = append(upstreams, &upstream)
+	}
+
+	// Check if no weights were defined, if not default to even distribution
+	if totalWeight == 0 {
+		for _, u := range upstreams {
+			u.Weight.Value = 1
+		}
+		totalWeight = len(be)
 	}
 
 	// Create Route with slice of upstreams
@@ -224,6 +252,9 @@ func actioncrd(namespace string, be []v1alpha1.Upstream) *route.Route_Route {
 			ClusterSpecifier: &route.RouteAction_WeightedClusters{
 				WeightedClusters: &route.WeightedCluster{
 					Clusters: upstreams,
+					TotalWeight: &google_protobuf1.UInt32Value{
+						Value: uint32(totalWeight),
+					},
 				},
 			},
 		},
@@ -232,7 +263,7 @@ func actioncrd(namespace string, be []v1alpha1.Upstream) *route.Route_Route {
 	// if timeout, ok := getRequestTimeout(i.Annotations); ok {
 	// 	ca.Route.Timeout = &timeout
 	// }
-	return &ca
+	return &ca, nil
 }
 
 // validTLSSpecForVhost returns if this ingress object
