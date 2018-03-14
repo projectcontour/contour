@@ -24,7 +24,87 @@ spec:
   scope: Namespaced
   names:
     plural: routes
-    kind: RouteapiVersion: extensions/v1beta1
+    kind: Route
+  validation:
+    # openAPIV3Schema is the schema for validating custom objects.
+    openAPIV3Schema:
+      properties:
+        spec:
+          required:
+            - host
+            - routes
+          properties:
+            strategy:
+              type: string
+              enum:
+                - RoundRobin
+                - WeightedLeastRequest
+                - Random
+            lbHealthCheck:
+              type: object
+              required:
+                - path
+              properties:
+                path:
+                  type: string
+                  pattern: ^\/.*
+                intervalSeconds:
+                  type: integer
+                timeoutSeconds: 
+                  type: integer
+                unhealthyThresholdCount:
+                  type: integer
+                healthyThresholdCount:
+                  type: integer
+            host:
+              type: string
+            routes:
+              type: array
+              items:
+                type: object
+                required:
+                  - pathPrefix
+                  - upstreams
+                properties:
+                  pathPrefix:
+                    type: string
+                    pattern: ^\/.*
+                  upstreams:
+                    type: array
+                    items:
+                      required:
+                        - serviceName
+                        - servicePort
+                      properties:
+                        serviceName:
+                          type: string
+                        servicePort:
+                          type: integer
+                        weight:
+                          type: integer
+                        strategy:
+                          type: string
+                          enum:
+                            - RoundRobin
+                            - WeightedLeastRequest
+                            - Random
+                        lbHealthCheck:
+                          type: object
+                          required:
+                            - path
+                          properties:
+                            path:
+                              type: string
+                              pattern: ^\/.*
+                            intervalSeconds:
+                              type: integer
+                            timeoutSeconds: 
+                              type: integer
+                            unhealthyThresholdCount:
+                              type: integer
+                            healthyThresholdCount:
+                              type: integer
+apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   labels:
