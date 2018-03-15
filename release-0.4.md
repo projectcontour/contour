@@ -58,6 +58,12 @@ In Contour 0.4 this behaviour is applied per Ingress, that is, to all routes in 
 This allows a split Ingress setup in which some routes on a virtual host are redirected with a 301, and others are not. 
 Fixes #250.
 
+### Tutorial for Prometheus metrics
+
+A [tutorial for configuring Prometheus to scrape Envoy metrics][8] was added. Envoy provides very rich metrics, for
+example you can get requests grouped by service and status code or the amount of retries and timeout for a given
+service.
+
 ### Other bug fixes and improvements in this release
 
 - The Contour Docker image no longer bundles the `ocid` and `gcp` authentication plugins, because they are not required for `-incluster` deployments.
@@ -86,3 +92,4 @@ Consult the [upgrade notes][0] for how to update your Deployment or Daemonset ma
 [5]: https://blog.pcisecuritystandards.org/are-you-ready-for-30-june-2018-sayin-goodbye-to-ssl-early-tls
 [6]: https://github.com/heptio/contour/graphs/contributors
 [7]: https://www.ephemera-inc.com/You-re-Awesome-p/6401.htm
+[8]: docs/prometheus.md
