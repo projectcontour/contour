@@ -7,7 +7,9 @@
 ## Overview
 Contour is an Ingress controller for Kubernetes that works by deploying the [Envoy proxy][13] as a reverse proxy and load balancer. Unlike other Ingress controllers, Contour supports dynamic configuration updates out of the box while maintaining a lightweight profile.
 
-See [the launch blog post][17] for our vision of how Contour fits into the larger Kubernetes ecosystem.
+This is an early release so that we can start sharing with the community. Check out [the roadmap][15] to see where we plan to go with the project.
+
+And see [the launch blog post][17] for our vision of how Contour fits into the larger Kubernetes ecosystem.
 
 ## Prerequisites
 
@@ -22,7 +24,7 @@ What you do need:
 - A Kubernetes cluster that supports Service objects of `type: LoadBalancer` ([AWS Quickstart cluster][9] or Minikube, for example)
 - `kubectl` configured with admin access to your cluster
 
-The documentation explains more deployment options if you don't meet these requirements.
+See the [deployment documentation][10] for more deployment options if you don't meet these requirements.
 
 ### Add Contour to your cluster
 
@@ -44,7 +46,7 @@ This command creates:
 - A Service of `type: LoadBalancer` that points to the Contour instances
 - Depending on your configuration, new cloud resources -- for example, ELBs in AWS
 
-TLS is available in Contour version 0.3 and later. See the documentation for details.
+See also [TLS support](docs/tls.md) for details on configuring TLS support. TLS is available in Contour version 0.3 and later.
 
 #### Example workload
 
@@ -92,9 +94,13 @@ This example yaml specifies `kuard.192.168.99.100.nip.io` as a specific ingress 
 
 ### More information and documentation
 
-The documentation provides more detailed information about deployment options, and the FAQ provides short-answer questions and conceptual stuff that doesn't quite belong elsewhere in the docs.
+For more deployment options, including uninstalling Contour, see the [deployment documentation][10].
 
 See also the Kubernetes documentation for [Services][11] and [Ingress][12].
+
+The [detailed documentation][3] provides additional information, including an introduction to Envoy and an explanation of how Contour maps key Envoy concepts to Kubernetes.
+
+We've also got [an FAQ][18] for short-answer questions and conceptual stuff that doesn't quite belong in the docs.
 
 ## Troubleshooting
 
@@ -115,17 +121,18 @@ See [the list of releases][6] to find out about feature changes.
 [0]: https://github.com/heptio
 [1]: https://travis-ci.org/heptio/contour.svg?branch=master
 [2]: https://travis-ci.org/heptio/contour
+[3]: /
 [4]: https://github.com/heptio/contour/issues
-[5]: https://github.com/heptio/contour/blob/master/CONTRIBUTING.md
+[5]: https://github.com/heptio/contour/tree/v0.4.0/CONTRIBUTING.md
 [6]: https://github.com/heptio/contour/releases
-[8]: https://github.com/heptio/contour/blob/master/CODE_OF_CONDUCT.md
+[8]: https://github.com/heptio/contour/tree/v0.4.0/CODE_OF_CONDUCT.md
 [9]: https://aws.amazon.com/quickstart/architecture/heptio-kubernetes/
-[10]: /deploy-options
+[10]: /deploy-options.md
 [11]: https://kubernetes.io/docs/concepts/services-networking/service/
 [12]: https://kubernetes.io/docs/concepts/services-networking/ingress/
 [13]: https://www.envoyproxy.io/
 [14]: https://github.com/kubernetes-up-and-running/kuard
-[15]: /roadmap
+[15]: https://github.com/heptio/contour/tree/v0.4.0/design/roadmap.md
 [16]: https://github.com/envoyproxy/envoy/issues/95
 [17]: https://blog.heptio.com/making-it-easy-to-use-envoy-as-a-kubernetes-load-balancer-dde82959f171
-[18]: /FAQ.md
+[18]: https://github.com/heptio/contour/tree/v0.4.0/FAQ.md

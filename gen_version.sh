@@ -6,7 +6,7 @@ fi
 
 VERSION=$1
 
-if [[ $VERSION != "latest" ]]; then
+if [[ $VERSION != "master" ]]; then
   GH_BASE_URL=https://github.com/heptio/contour/tags/$VERSION
 else
   GH_BASE_URL=https://github.com/heptio/contour/branches/master

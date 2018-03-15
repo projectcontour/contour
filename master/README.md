@@ -46,6 +46,8 @@ This command creates:
 - A Service of `type: LoadBalancer` that points to the Contour instances
 - Depending on your configuration, new cloud resources -- for example, ELBs in AWS
 
+See also [TLS support](docs/tls.md) for details on configuring TLS support. TLS is available in Contour version 0.3 and later.
+
 #### Example workload
 
 If you don't have an application ready to run with Contour, you can explore with [kuard][14].
@@ -80,7 +82,15 @@ How you configure DNS depends on your platform:
 
 - On AWS, create a CNAME record that maps the host in your Ingress object to the ELB address.
 - If you have an IP address instead (on GCE, for example), create an A record.
-- On Minikube, you can fake DNS by editing `/etc/hosts`.
+- On Minikube, you can fake DNS by editing `/etc/hosts` or you can use the provided example and not have to modify dns on your local machine.
+
+Run:
+
+```
+$ kubectl apply -f https://j.hept.io/contour-kuard-minikube-example
+```
+
+This example yaml specifies `kuard.192.168.99.100.nip.io` as a specific ingress backend for kuard. It uses nip.io and the minikube ip address to have kuard only respond to http://kuard.192.168.99.100.nip.io. Once that is applied you can visit http://kuard.192.168.99.100.nip.io and see the kuard example application.
 
 ### More information and documentation
 
@@ -91,12 +101,6 @@ See also the Kubernetes documentation for [Services][11] and [Ingress][12].
 The [detailed documentation][3] provides additional information, including an introduction to Envoy and an explanation of how Contour maps key Envoy concepts to Kubernetes.
 
 We've also got [an FAQ][18] for short-answer questions and conceptual stuff that doesn't quite belong in the docs.
-
-## Known limitations
-
-* Contour does not yet support customizations with annotations.
-* Contour and Envoy do not yet support SSL/TLS.
-  [Work is underway][16] in the Envoy project to support SNI. This work will let Contour support TLS for multiple hostnames.
 
 ## Troubleshooting
 
@@ -119,16 +123,16 @@ See [the list of releases][6] to find out about feature changes.
 [2]: https://travis-ci.org/heptio/contour
 [3]: /
 [4]: https://github.com/heptio/contour/issues
-[5]: https://github.com/heptio/contour/tree/v0.2.0/CONTRIBUTING.md
-[6]: https://github.com/heptio/contour/tree/v0.2.0/CHANGELOG.md
-[8]: https://github.com/heptio/contour/tree/v0.2.0/CODE_OF_CONDUCT.md
+[5]: https://github.com/heptio/contour/tree/master/CONTRIBUTING.md
+[6]: https://github.com/heptio/contour/releases
+[8]: https://github.com/heptio/contour/tree/master/CODE_OF_CONDUCT.md
 [9]: https://aws.amazon.com/quickstart/architecture/heptio-kubernetes/
 [10]: /deploy-options.md
 [11]: https://kubernetes.io/docs/concepts/services-networking/service/
 [12]: https://kubernetes.io/docs/concepts/services-networking/ingress/
 [13]: https://www.envoyproxy.io/
 [14]: https://github.com/kubernetes-up-and-running/kuard
-[15]: https://github.com/heptio/contour/tree/v0.2.0/design/roadmap.md
+[15]: https://github.com/heptio/contour/tree/master/design/roadmap.md
 [16]: https://github.com/envoyproxy/envoy/issues/95
 [17]: https://blog.heptio.com/making-it-easy-to-use-envoy-as-a-kubernetes-load-balancer-dde82959f171
-[18]: https://github.com/heptio/contour/tree/v0.2.0/FAQ.md
+[18]: https://github.com/heptio/contour/tree/master/FAQ.md

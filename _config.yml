@@ -1,7 +1,8 @@
 name: contour
 baseurl: /contour
-latest: "v0.3.0"
+latest: "v0.4.0"
 versions:
+  - "v0.4.0"
   - "v0.3.0"
   - "v0.2.0"
   - "v0.1.0"
@@ -23,10 +24,15 @@ contact:
 
 defaults:
   - scope:
-      path: "latest"
+      path: "master"
     values:
-      version: "latest"
+      version: "master"
       gh: https://github.com/heptio/contour/tree/master
+  - scope:
+      path: "v0.4.0"
+    values:
+      version: "v0.4.0"
+      gh: https://github.com/heptio/contour/tree/v0.4.0
   - scope:
       path: "v0.3.0"
     values:

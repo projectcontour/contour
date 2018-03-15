@@ -279,8 +279,9 @@ section {
 }
 
 .version-selector {
-  padding-top: 4px;
-  align-self: center;
+	padding-top: 4px;
+	align-self: center;
+	color: white;
 }
 
 .version-selector:hover ul {
@@ -323,8 +324,17 @@ section {
   transition: all 120ms;
 }
 
+.version-selector li:last-child a {
+  border-radius: 3px;
+}
+
 .version-warning {
     background: #d6d7d8;
     padding: 20px;
     margin-bottom: 30px;
+}
+
+.edit-page {
+	position: fixed;
+	right: 5%;
 }
