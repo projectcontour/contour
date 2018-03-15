@@ -48,13 +48,13 @@ spec:
         volumeMounts:
         - name: contour-config
           mountPath: /config
-      - image: gcr.io/heptio-images/contour:master
+      - image: gcr.io/heptio-images/contour:v0.4.0
         imagePullPolicy: Always
         name: contour
         command: ["contour"]
         args: ["serve", "--incluster"]
       initContainers:
-      - image: gcr.io/heptio-images/contour:master
+      - image: gcr.io/heptio-images/contour:v0.4.0
         imagePullPolicy: Always
         name: envoy-initconfig
         command: ["contour"]
