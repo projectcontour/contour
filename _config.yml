@@ -48,3 +48,5 @@ defaults:
     values:
       version: "v0.1.0"
       gh: https://github.com/heptio/contour/tree/v0.1.0
+
+theme: jekyll-theme-minimal
