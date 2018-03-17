@@ -32,6 +32,7 @@ const (
 	annotationRetryOn        = "contour.heptio.com/retry-on"
 	annotationNumRetries     = "contour.heptio.com/num-retries"
 	annotationPerTryTimeout  = "contour.heptio.com/per-try-timeout"
+	annotationRewriteTarget  = "contour.heptio.com/rewrite-target"
 
 	// By default envoy applies a 15 second timeout to all backend requests.
 	// The explicit value 0 turns off the timeout, implying "never time out"
