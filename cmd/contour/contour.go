@@ -16,7 +16,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -60,6 +59,14 @@ func main() {
 	bootstrap.Flag("xds-address", "xDS gRPC API address").StringVar(&config.XDSAddress)
 	bootstrap.Flag("xds-port", "xDS gRPC API port").IntVar(&config.XDSGRPCPort)
 
+	cli := app.Command("cli", "A CLI client for the Heptio Contour Kubernetes ingress controller.")
+	var client Client
+	cli.Flag("contour", "contour host:port.").Default("127.0.0.1:8001").StringVar(&client.ContourAddr)
+	cds := cli.Command("cds", "watch services.")
+	eds := cli.Command("eds", "watch endpoints.")
+	lds := cli.Command("lds", "watch listerners.")
+	rds := cli.Command("rds", "watch routes.")
+
 	serve := app.Command("serve", "Serve xDS API traffic")
 	inCluster := serve.Flag("incluster", "use in cluster configuration.").Bool()
 	kubeconfig := serve.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).String()
@@ -76,11 +83,20 @@ func main() {
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
-	default:
-		app.Usage(args)
-		os.Exit(2)
 	case bootstrap.FullCommand():
 		writeBootstrapConfig(&config, *path)
+	case cds.FullCommand():
+		stream := client.ClusterStream()
+		watchstream(stream)
+	case eds.FullCommand():
+		stream := client.EndpointStream()
+		watchstream(stream)
+	case lds.FullCommand():
+		stream := client.ListenerStream()
+		watchstream(stream)
+	case rds.FullCommand():
+		stream := client.RouteStream()
+		watchstream(stream)
 	case serve.FullCommand():
 		log.Infof("args: %v", args)
 		var g workgroup.Group
@@ -111,29 +127,10 @@ func main() {
 		})
 
 		g.Run()
-	}
-}
-
-type configWriter interface {
-	WriteYAML(io.Writer) error
-}
-
-// writeBootstrapConfig writes a bootstrap configuration to the supplied path.
-// If the path ends in .yaml, the configuration file will be in v2 YAML format.
-func writeBootstrapConfig(config configWriter, path string) {
-	f, err := os.Create(path)
-	check(err)
-	switch filepath.Ext(path) {
-	case ".json":
-		check(fmt.Errorf("JSON bootstrap configuration has been removed.\nPlease see https://github.com/heptio/contour/blob/master/docs/upgrade.md"))
-	case ".yaml":
-		err = config.WriteYAML(f)
-		check(err)
 	default:
-		f.Close()
-		check(fmt.Errorf("path %s must end in .yaml", path))
+		app.Usage(args)
+		os.Exit(2)
 	}
-	check(f.Close())
 }
 
 func newClient(kubeconfig string, inCluster bool) *kubernetes.Clientset {
