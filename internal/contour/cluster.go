@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	v2cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"k8s.io/api/core/v1"
@@ -29,6 +30,8 @@ const (
 	annotationMaxRequests        = "contour.heptio.com/max-requests"
 	annotationMaxRetries         = "contour.heptio.com/max-retries"
 	annotationUpstreamProtocol   = "contour.heptio.com/upstream-protocol"
+	annotationUpstreamTls        = "contour.heptio.com/upstream-tls"
+	annotationUpstreamTlsSni     = "contour.heptio.com/upstream-tls-sni"
 )
 
 // ClusterCache manage the contents of the gRPC SDS cache.
@@ -152,6 +155,13 @@ func edscluster(svc *v1.Service, portString, upstreamProtocol string, config *v2
 	switch upstreamProtocol {
 	case "h2":
 		cluster.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
+	}
+
+	if tls := svc.Annotations[annotationUpstreamTls]; tls == "true" {
+		cluster.TlsContext = &auth.UpstreamTlsContext{}
+		if sni := svc.Annotations[annotationUpstreamTlsSni]; sni != "" {
+			cluster.TlsContext.Sni = sni
+		}
 	}
 
 	return cluster
