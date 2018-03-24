@@ -6,8 +6,8 @@ The [README][0] shows you a simple way to get started with Contour on your clust
 
 We provide example deployment manifests for setting up Contour by creating either a DaemonSet or a Deployment.
 
-- The DaemonSet creates a instance of Contour runs on each node in your cluster.
-- The Deployment creates two instances of Contour run on the cluster, on two arbitrary nodes.
+- The DaemonSet creates an instance of Contour that runs on each node in your cluster.
+- The Deployment creates two instances of Contour that run on the cluster, on two arbitrary nodes.
 
 In either case, a Service of `type: LoadBalancer` is set up to forward to the Contour instances.
 

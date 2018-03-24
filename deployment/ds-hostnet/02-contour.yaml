@@ -23,13 +23,15 @@ spec:
     spec:
       hostNetwork: true
       containers:
-      - image: docker.io/envoyproxy/envoy-alpine:e6ff690611b8a3373f6d66066b52d613873e446e
+      - image: docker.io/envoyproxy/envoy-alpine:v1.6.0
         name: envoy
         ports:
         - containerPort: 8080
           name: http
+        - containerPort: 8443
+          name: https
         command: ["envoy"]
-        args: ["-c", "/config/contour.yaml", "--service-cluster", "cluster0", "--service-node", "node0"]
+        args: ["-c", "/config/contour.yaml", "--service-cluster", "cluster0", "--service-node", "node0", "-l", "info", "--v2-config-only"]
         volumeMounts:
         - name: contour-config
           mountPath: /config
