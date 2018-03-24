@@ -14,7 +14,9 @@
 package contour
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -74,6 +76,23 @@ func parseAnnotationUInt32(annotations map[string]string, annotation string) *ty
 		return nil
 	}
 	return &types.UInt32Value{Value: uint32(v)}
+}
+
+// parseUpstreamProtocols parses the annotations map for a contour.heptio.com/upstream-protocol.{protocol}
+// where 'protocol' identifies which protocol must be used in the upstream.
+// If the value is not present, or malformed, then an empty map is returned.
+func parseUpstreamProtocols(annotations map[string]string, annotation string, protocols ...string) map[string]string {
+	up := make(map[string]string)
+	for _, protocol := range protocols {
+		ports := annotations[fmt.Sprintf("%s.%s", annotation, protocol)]
+		for _, v := range strings.Split(ports, ",") {
+			port := strings.TrimSpace(v)
+			if port != "" {
+				up[port] = protocol
+			}
+		}
+	}
+	return up
 }
 
 // httpAllowed returns true unless the kubernetes.io/ingress.allow-http annotation is
