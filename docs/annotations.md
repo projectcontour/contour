@@ -17,6 +17,7 @@ Contour supports the following annotations.
  - `contour.heptio.com/num-retries`: [The maximum number of retries](https://www.envoyproxy.io/docs/envoy/latest/configuration/http_filters/router_filter.html#config-http-filters-router-x-envoy-max-retries) Envoy should make before abandoning and returning an error to the client. Applies only if `contour.heptio.com/retry-on` is specified.
  - `contour.heptio.com/per-try-timeout`: [The timeout per retry attempt](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-field-route-routeaction-retrypolicy-retry-on), if there should be one. Applies only if `contour.heptio.com/retry-on` is specified.
 - `contour.heptio.com/tls-minimum-protocol-version` : [The minimum TLS protocol version](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/auth/cert.proto#envoy-api-msg-auth-tlsparameters) the TLS listener should support.
+ - `contour.heptio.com/websocket-routes`: [The routes supporting websocket protocol](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-field-route-routeaction-use-websocket), the annotation value contains a list of route paths separated by a comma that must match with the ones defined in the `Ingress` definition. Defaults to Envoy's default behaviour which is `use_websocket` to `false`.
 
 ## Contour specific Service annotations
 
