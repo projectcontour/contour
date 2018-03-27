@@ -286,7 +286,7 @@ func (t *Translator) updateRouteStatus(status k8s.RouteStatus) error {
 	if err != nil {
 		return err
 	}
-	_, err = client.Patch(updated.Name, types.StrategicMergePatchType, patchBytes)
+	_, err = client.Patch(updated.Name, types.MergePatchType, patchBytes)
 	return err
 }
 

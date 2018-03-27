@@ -64,11 +64,8 @@ func main() {
 	xdsAddr := serve.Flag("xds-address", "xDS gRPC API address").Default("127.0.0.1").String()
 	xdsPort := serve.Flag("xds-port", "xDS gRPC API port").Default("8001").Int()
 
-	kubeclient, contourClient := newClient(*kubeconfig, *inCluster)
-
 	t := &contour.Translator{
-		FieldLogger:   log.WithField("context", "translator"),
-		ContourClient: contourClient,
+		FieldLogger: log.WithField("context", "translator"),
 	}
 
 	// translator configuration
@@ -89,6 +86,8 @@ func main() {
 		log.Infof("args: %v", args)
 		var g workgroup.Group
 
+		kubeclient, contourClient := newClient(*kubeconfig, *inCluster)
+
 		// buffer notifications to t to ensure they are handled sequentially.
 		buf := k8s.NewBuffer(&g, t, log, 128)
 
@@ -98,6 +97,8 @@ func main() {
 		k8s.WatchIngress(&g, kubeclient, wl, buf)
 		k8s.WatchSecrets(&g, kubeclient, wl, buf)
 		k8s.WatchRoutes(&g, contourClient, wl, buf)
+
+		t.ContourClient = contourClient
 
 		g.Add(func(stop <-chan struct{}) {
 			log := log.WithField("context", "grpc")
