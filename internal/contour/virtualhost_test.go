@@ -611,9 +611,12 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 										{
 											Name: "default/backend/80",
 											Weight: &google_protobuf1.UInt32Value{
-												Value: uint32(100),
+												Value: uint32(1),
 											},
 										},
+									},
+									TotalWeight: &google_protobuf1.UInt32Value{
+										Value: uint32(1),
 									},
 								},
 							},
@@ -658,9 +661,12 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 										{
 											Name: "default/httpbin-org/80",
 											Weight: &google_protobuf1.UInt32Value{
-												Value: uint32(100),
+												Value: uint32(1),
 											},
 										},
+									},
+									TotalWeight: &google_protobuf1.UInt32Value{
+										Value: uint32(1),
 									},
 								},
 							},
@@ -714,9 +720,12 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 										{
 											Name: "default/peter/80",
 											Weight: &google_protobuf1.UInt32Value{
-												Value: uint32(100),
+												Value: uint32(1),
 											},
 										},
+									},
+									TotalWeight: &google_protobuf1.UInt32Value{
+										Value: uint32(1),
 									},
 								},
 							},
@@ -732,9 +741,12 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 										{
 											Name: "default/paul/80",
 											Weight: &google_protobuf1.UInt32Value{
-												Value: uint32(100),
+												Value: uint32(1),
 											},
 										},
+									},
+									TotalWeight: &google_protobuf1.UInt32Value{
+										Value: uint32(1),
 									},
 								},
 							},
@@ -779,9 +791,12 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 										{
 											Name: "default/my-service-name/80",
 											Weight: &google_protobuf1.UInt32Value{
-												Value: uint32(100),
+												Value: uint32(1),
 											},
 										},
+									},
+									TotalWeight: &google_protobuf1.UInt32Value{
+										Value: uint32(1),
 									},
 								},
 							},
@@ -846,9 +861,12 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 										{
 											Name: "kube-system/admin/80",
 											Weight: &google_protobuf1.UInt32Value{
-												Value: uint32(100),
+												Value: uint32(1),
 											},
 										},
+									},
+									TotalWeight: &google_protobuf1.UInt32Value{
+										Value: uint32(1),
 									},
 								},
 							},
@@ -864,9 +882,12 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 										{
 											Name: "default/default/80",
 											Weight: &google_protobuf1.UInt32Value{
-												Value: uint32(100),
+												Value: uint32(1),
 											},
 										},
+									},
+									TotalWeight: &google_protobuf1.UInt32Value{
+										Value: uint32(1),
 									},
 								},
 							},
@@ -910,9 +931,12 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 										{
 											Name: "default/hello/80",
 											Weight: &google_protobuf1.UInt32Value{
-												Value: uint32(100),
+												Value: uint32(1),
 											},
 										},
+									},
+									TotalWeight: &google_protobuf1.UInt32Value{
+										Value: uint32(1),
 									},
 								},
 							},
@@ -961,15 +985,18 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 										{
 											Name: "default/httpbin-org/80",
 											Weight: &google_protobuf1.UInt32Value{
-												Value: uint32(50),
+												Value: uint32(1),
 											},
 										},
 										{
 											Name: "default/foo-org/8001",
 											Weight: &google_protobuf1.UInt32Value{
-												Value: uint32(50),
+												Value: uint32(1),
 											},
 										},
+									},
+									TotalWeight: &google_protobuf1.UInt32Value{
+										Value: uint32(2),
 									},
 								},
 							},
@@ -1025,9 +1052,12 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 										{
 											Name: "default/foo-org/8001",
 											Weight: &google_protobuf1.UInt32Value{
-												Value: uint32(67),
+												Value: uint32(0),
 											},
 										},
+									},
+									TotalWeight: &google_protobuf1.UInt32Value{
+										Value: uint32(33),
 									},
 								},
 							},
@@ -1088,6 +1118,9 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 											},
 										},
 									},
+									TotalWeight: &google_protobuf1.UInt32Value{
+										Value: uint32(66),
+									},
 								},
 							},
 						},
@@ -1112,7 +1145,6 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 								{
 									ServiceName: "httpbin-org",
 									ServicePort: 80,
-									Weight:      func(i int) *int { return &i }(33),
 								},
 								{
 									ServiceName: "foo-org",
@@ -1122,6 +1154,7 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 								{
 									ServiceName: "bar-org",
 									ServicePort: 8001,
+									Weight:      func(i int) *int { return &i }(33),
 								},
 							},
 						},
@@ -1141,7 +1174,7 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 										{
 											Name: "default/httpbin-org/80",
 											Weight: &google_protobuf1.UInt32Value{
-												Value: uint32(33),
+												Value: uint32(0),
 											},
 										},
 										{
@@ -1153,9 +1186,12 @@ func TestVirtualHostCacheRecomputevhostCRD(t *testing.T) {
 										{
 											Name: "default/bar-org/8001",
 											Weight: &google_protobuf1.UInt32Value{
-												Value: uint32(65),
+												Value: uint32(33),
 											},
 										},
+									},
+									TotalWeight: &google_protobuf1.UInt32Value{
+										Value: uint32(35),
 									},
 								},
 							},

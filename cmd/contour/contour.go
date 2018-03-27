@@ -47,9 +47,6 @@ func init() {
 
 func main() {
 	log := logrus.StandardLogger()
-	t := &contour.Translator{
-		FieldLogger: log.WithField("context", "translator"),
-	}
 
 	app := kingpin.New("contour", "Heptio Contour Kubernetes ingress controller.")
 	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")
@@ -66,6 +63,10 @@ func main() {
 	kubeconfig := serve.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).String()
 	xdsAddr := serve.Flag("xds-address", "xDS gRPC API address").Default("127.0.0.1").String()
 	xdsPort := serve.Flag("xds-port", "xDS gRPC API port").Default("8001").Int()
+
+	t := &contour.Translator{
+		FieldLogger: log.WithField("context", "translator"),
+	}
 
 	// translator configuration
 	serve.Flag("envoy-http-address", "Envoy HTTP listener address").StringVar(&t.HTTPAddress)
@@ -85,17 +86,19 @@ func main() {
 		log.Infof("args: %v", args)
 		var g workgroup.Group
 
+		kubeclient, contourClient := newClient(*kubeconfig, *inCluster)
+
 		// buffer notifications to t to ensure they are handled sequentially.
 		buf := k8s.NewBuffer(&g, t, log, 128)
 
-		client, contourClient := newClient(*kubeconfig, *inCluster)
-
 		wl := log.WithField("context", "watch")
-		k8s.WatchServices(&g, client, wl, buf)
-		k8s.WatchEndpoints(&g, client, wl, buf)
-		k8s.WatchIngress(&g, client, wl, buf)
-		k8s.WatchSecrets(&g, client, wl, buf)
+		k8s.WatchServices(&g, kubeclient, wl, buf)
+		k8s.WatchEndpoints(&g, kubeclient, wl, buf)
+		k8s.WatchIngress(&g, kubeclient, wl, buf)
+		k8s.WatchSecrets(&g, kubeclient, wl, buf)
 		k8s.WatchRoutes(&g, contourClient, wl, buf)
+
+		t.ContourClient = contourClient
 
 		g.Add(func(stop <-chan struct{}) {
 			log := log.WithField("context", "grpc")

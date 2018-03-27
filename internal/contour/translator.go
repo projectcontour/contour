@@ -20,14 +20,21 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	v1alpha1 "github.com/heptio/contour/pkg/apis/contour/v1alpha1"
 	"github.com/sirupsen/logrus"
 
+	"encoding/json"
+
+	"github.com/heptio/contour/internal/k8s"
+	clientset "github.com/heptio/contour/pkg/generated/clientset/versioned"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -48,6 +55,8 @@ type Translator struct {
 	VirtualHostCache
 
 	cache translatorCache
+
+	ContourClient clientset.Interface
 }
 
 func (t *Translator) OnAdd(obj interface{}) {
@@ -228,7 +237,15 @@ func (t *Translator) addRoute(r *v1alpha1.Route) {
 		host = "*"
 	}
 
-	t.recomputevhostcrd(host, t.cache.vhostscrd[host])
+	routeStatus := t.recomputevhostcrd(host, t.cache.vhostscrd[host])
+
+	for _, r := range routeStatus {
+
+		err := t.updateRouteStatus(r)
+		if err != nil {
+			t.FieldLogger.Infof("Error updating status: ", err)
+		}
+	}
 }
 
 func (t *Translator) removeRoute(r *v1alpha1.Route) {
@@ -244,6 +261,33 @@ func (t *Translator) removeRoute(r *v1alpha1.Route) {
 	}
 
 	t.recomputevhostcrd(host, t.cache.vhostscrd[host])
+}
+
+// updateRouteStatus updated the Status of the Route CRD
+func (t *Translator) updateRouteStatus(status k8s.RouteStatus) error {
+	client := t.ContourClient.ContourV1alpha1().Routes(status.Namespace)
+	existing, err := client.Get(status.RouteName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	existingBytes, err := json.Marshal(existing)
+	if err != nil {
+		return err
+	}
+
+	updated := existing.DeepCopy()
+	updated.Status.CurrentStatus = status.StatusMessage
+	updated.Status.LastProcessTime = time.Now().UTC().String()
+	updatedBytes, err := json.Marshal(updated)
+	if err != nil {
+		return err
+	}
+	patchBytes, err := strategicpatch.CreateTwoWayMergePatch(existingBytes, updatedBytes, v1alpha1.Route{})
+	if err != nil {
+		return err
+	}
+	_, err = client.Patch(updated.Name, types.MergePatchType, patchBytes)
+	return err
 }
 
 type translatorCache struct {
