@@ -32,6 +32,7 @@ const (
 	DEFAULT_HTTPS_LISTENER_PORT    = 8443
 
 	router     = "envoy.router"
+	grpcWeb    = "envoy.grpc_web"
 	httpFilter = "envoy.http_connection_manager"
 	accessLog  = "envoy.file_access_log"
 )
@@ -54,10 +55,16 @@ type ListenerCache struct {
 	// If not set, defaults to DEFAULT_HTTPS_LISTENER_PORT.
 	HTTPSPort int
 
-	// UseProxyProto configurs all listeners to expect a PROXY protocol
+	// UseProxyProto configures all listeners to expect a PROXY protocol
 	// V1 header on new connections.
 	// If not set, defaults to false.
 	UseProxyProto bool
+
+	// UseGrpcWeb enables a filter when bridging of a gRPC-Web client to a
+	// compliant gRPC server by following
+	// https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md.
+	// If not set, defaults to false.
+	UseGrpcWeb bool
 
 	listenerCache
 	Cond
@@ -107,7 +114,7 @@ func (lc *ListenerCache) recomputeListener0(ingresses map[metadata]*v1beta1.Ingr
 	}
 	if valid > 0 {
 		l.FilterChains = []listener.FilterChain{
-			filterchain(lc.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER)),
+			filterchain(lc.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER, lc.UseGrpcWeb)),
 		}
 	}
 	// TODO(dfc) some annotations may require the Ingress to no appear on
@@ -152,7 +159,7 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 	}
 
 	filters := []listener.Filter{
-		httpfilter(ENVOY_HTTPS_LISTENER),
+		httpfilter(ENVOY_HTTPS_LISTENER, lc.UseGrpcWeb),
 	}
 
 	for _, i := range ingresses {
@@ -262,7 +269,17 @@ func tlscontext(secret *v1.Secret, alpnprotos ...string) *auth.DownstreamTlsCont
 	}
 }
 
-func httpfilter(routename string) listener.Filter {
+func httpfilter(routename string, useGrpcWeb bool) listener.Filter {
+	filters := []*types.Value{
+		st(map[string]*types.Value{
+			"name": sv(router),
+		}),
+	}
+	if useGrpcWeb {
+		filters = append(filters, st(map[string]*types.Value{
+			"name": sv(grpcWeb),
+		}))
+	}
 	return listener.Filter{
 		Name: httpFilter,
 		Config: &types.Struct{
@@ -286,11 +303,7 @@ func httpfilter(routename string) listener.Filter {
 						}),
 					}),
 				}),
-				"http_filters": lv(
-					st(map[string]*types.Value{
-						"name": sv(router),
-					}),
-				),
+				"http_filters":       lv(filters...),
 				"use_remote_address": bv(true), // TODO(jbeda) should this ever be false?
 				"access_log": lv(
 					st(map[string]*types.Value{
