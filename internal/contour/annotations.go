@@ -30,10 +30,11 @@ const (
 	kubernetesIngressAllowHttp = "kubernetes.io/ingress.allow-http"
 	kubernetesIngressForceSSL  = "ingress.kubernetes.io/force-ssl-redirect"
 
-	annotationRequestTimeout = "contour.heptio.com/request-timeout"
-	annotationRetryOn        = "contour.heptio.com/retry-on"
-	annotationNumRetries     = "contour.heptio.com/num-retries"
-	annotationPerTryTimeout  = "contour.heptio.com/per-try-timeout"
+	annotationRequestTimeout  = "contour.heptio.com/request-timeout"
+	annotationRetryOn         = "contour.heptio.com/retry-on"
+	annotationNumRetries      = "contour.heptio.com/num-retries"
+	annotationPerTryTimeout   = "contour.heptio.com/per-try-timeout"
+	annotationWebsocketRoutes = "contour.heptio.com/websocket-routes"
 
 	// By default envoy applies a 15 second timeout to all backend requests.
 	// The explicit value 0 turns off the timeout, implying "never time out"

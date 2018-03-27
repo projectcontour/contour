@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/gogo/protobuf/types"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -538,6 +539,85 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			}},
 			ingress_https: []route.VirtualHost{},
 		},
+		"websocket routes": {
+			vhost: "echo.websocket.org",
+			ingresses: im([]*v1beta1.Ingress{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "echo",
+					Namespace: "default",
+					Annotations: map[string]string{
+						annotationWebsocketRoutes: "/ws1",
+					},
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						Host: "echo.websocket.org",
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Path:    "/ws1",
+									Backend: *backend("ws1", intstr.FromInt(80)),
+								}},
+							},
+						},
+					}},
+				},
+			}}),
+			ingress_http: []route.VirtualHost{{
+				Name:    "echo.websocket.org",
+				Domains: []string{"echo.websocket.org"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/ws1"),
+					Action: clusteractionwebsocket("default/ws1/80"),
+				}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
+		"websocket routes, tls": {
+			vhost: "echo.websocket.org",
+			ingresses: im([]*v1beta1.Ingress{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "echo",
+					Namespace: "default",
+					Annotations: map[string]string{
+						annotationWebsocketRoutes: "/ws1",
+					},
+				},
+				Spec: v1beta1.IngressSpec{
+					TLS: []v1beta1.IngressTLS{{
+						Hosts:      []string{"echo.websocket.org"},
+						SecretName: "echo",
+					}},
+					Rules: []v1beta1.IngressRule{{
+						Host: "echo.websocket.org",
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Path:    "/ws1",
+									Backend: *backend("ws1", intstr.FromInt(80)),
+								}},
+							},
+						},
+					}},
+				},
+			}}),
+			ingress_http: []route.VirtualHost{{
+				Name:    "echo.websocket.org",
+				Domains: []string{"echo.websocket.org"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/ws1"),
+					Action: clusteractionwebsocket("default/ws1/80"),
+				}},
+			}},
+			ingress_https: []route.VirtualHost{{
+				Name:    "echo.websocket.org",
+				Domains: []string{"echo.websocket.org"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/ws1"),
+					Action: clusteractionwebsocket("default/ws1/80"),
+				}},
+			}},
+		},
 	}
 
 	log := logrus.New()
@@ -641,6 +721,13 @@ func clusteractiontimeout(name string, timeout time.Duration) *route.Route_Route
 	// specified.
 	c := clusteraction(name)
 	c.Route.Timeout = &timeout
+	return c
+}
+
+// clusteractionwebsocket returns a cluster action with websocket support.
+func clusteractionwebsocket(name string) *route.Route_Route {
+	c := clusteraction(name)
+	c.Route.UseWebsocket = &types.BoolValue{Value: true}
 	return c
 }
 
