@@ -14,11 +14,14 @@
 package contour
 
 import (
+	"math"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/types"
+	ingressroutev1 "github.com/heptio/contour/pkg/apis/contour/v1"
 	"k8s.io/api/extensions/v1beta1"
 )
 
@@ -120,10 +123,35 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 	}
 }
 
+// recomputevhostIngressRoute recomputes the ingress_http (HTTP) and ingress_https (HTTPS) record
+// from the vhost from list of ingresses supplied.
+func (v *VirtualHostCache) recomputevhostIngressRoute(vhost string, routes map[metadata]*ingressroutev1.IngressRoute) {
+	// now handle ingress_http (non tls) routes.
+	vv := virtualhost(vhost)
+	for _, i := range routes {
+		for _, j := range i.Spec.Routes {
+
+			// TODO(sas): Handle case of no default path (e.g. "/")
+
+			vv.Routes = append(vv.Routes, route.Route{
+				Match:  prefixmatch(j.Match),
+				Action: actionroute(i.ObjectMeta.Namespace, j.Services),
+			})
+		}
+	}
+
+	if len(vv.Routes) > 0 {
+		sort.Stable(sort.Reverse(longestRouteFirst(vv.Routes)))
+		v.HTTP.Add(vv)
+	} else {
+		v.HTTP.Remove(vv.Name)
+	}
+}
+
 // action computes the cluster route action, a *route.Route_route for the
 // supplied ingress and backend.
 func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend, useWebsocket *types.BoolValue) *route.Route_Route {
-	name := ingressBackendToClusterName(i, be)
+	name := ingressBackendToClusterName(i.ObjectMeta.Namespace, be.ServiceName, be.ServicePort.String())
 	ca := route.Route_Route{
 		Route: &route.RouteAction{
 			ClusterSpecifier: &route.RouteAction_Cluster{
@@ -147,6 +175,55 @@ func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend, useWebsocket *types.
 
 	ca.Route.UseWebsocket = useWebsocket
 
+	return &ca
+}
+
+// actionroute computes the cluster route action, a *v2.Route_route for the
+// supplied ingress and backend
+func actionroute(namespace string, be []ingressroutev1.Service) *route.Route_Route {
+
+	totalWeight := 100
+	totalUpstreams := len(be)
+
+	upstreams := []*route.WeightedCluster_ClusterWeight{}
+
+	// Loop over all the upstreams and add to slice
+	for _, i := range be {
+
+		name := ingressBackendToClusterName(namespace, i.Name, strconv.Itoa(i.Port))
+
+		// Create the empty upstream
+		upstream := route.WeightedCluster_ClusterWeight{
+			Name:   name,
+			Weight: &types.UInt32Value{},
+		}
+
+		// If weight is passed, then use otherwise calculate
+		if i.Weight != nil {
+			upstream.Weight.Value = uint32(*i.Weight)
+			totalWeight -= *i.Weight
+			totalUpstreams--
+		} else {
+			upstream.Weight.Value = uint32(math.Floor(float64(totalWeight) / float64(totalUpstreams)))
+		}
+
+		upstreams = append(upstreams, &upstream)
+	}
+
+	// Create Route with slice of upstreams
+	ca := route.Route_Route{
+		Route: &route.RouteAction{
+			ClusterSpecifier: &route.RouteAction_WeightedClusters{
+				WeightedClusters: &route.WeightedCluster{
+					Clusters: upstreams,
+				},
+			},
+		},
+	}
+
+	// if timeout, ok := getRequestTimeout(i.Annotations); ok {
+	// 	ca.Route.Timeout = &timeout
+	// }
 	return &ca
 }
 
@@ -212,9 +289,9 @@ func pathToRouteMatch(p v1beta1.HTTPIngressPath) route.RouteMatch {
 	return regexmatch(p.Path)
 }
 
-// ingressBackendToClusterName renders a cluster name from an Ingress and an IngressBackend.
-func ingressBackendToClusterName(i *v1beta1.Ingress, b *v1beta1.IngressBackend) string {
-	return hashname(60, i.ObjectMeta.Namespace, b.ServiceName, b.ServicePort.String())
+// ingressBackendToClusterName renders a cluster name from an namespace, servicename, & service port
+func ingressBackendToClusterName(namespace, servicename, serviceport string) string {
+	return hashname(60, namespace, servicename, serviceport)
 }
 
 // prefixmatch returns a RouteMatch for the supplied prefix.
