@@ -22,6 +22,8 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/proto"
+	google_protobuf1 "github.com/gogo/protobuf/types"
+	ingressroutev1 "github.com/heptio/contour/pkg/apis/contour/v1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -1589,6 +1591,273 @@ func TestTranslatorCacheOnAddIngress(t *testing.T) {
 	}
 }
 
+func TestTranslatorAddIngressRoute(t *testing.T) {
+	tests := []struct {
+		name          string
+		setup         func(*Translator)
+		route         *ingressroutev1.IngressRoute
+		ingress_http  []proto.Message
+		ingress_https []proto.Message
+	}{
+		{
+			name: "default backend",
+			route: &ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "",
+					},
+					Routes: []ingressroutev1.Route{
+						ingressroutev1.Route{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								ingressroutev1.Service{
+									Name: "backend",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "*",
+					Domains: []string{"*"},
+					Routes: []route.Route{{
+						Match: prefixmatch("/"),
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/backend/80",
+												Weight: &google_protobuf1.UInt32Value{
+													Value: uint32(100),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
+		{
+			name: "basic hostname",
+			route: &ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "foo.bar",
+					},
+					Routes: []ingressroutev1.Route{
+						ingressroutev1.Route{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								ingressroutev1.Service{
+									Name: "backend",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "foo.bar",
+					Domains: []string{"foo.bar"},
+					Routes: []route.Route{{
+						Match: prefixmatch("/"),
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/backend/80",
+												Weight: &google_protobuf1.UInt32Value{
+													Value: uint32(100),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
+		{
+			name: "basic path",
+			route: &ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "foo.bar",
+					},
+					Routes: []ingressroutev1.Route{
+						ingressroutev1.Route{
+							Match: "/zed",
+							Services: []ingressroutev1.Service{
+								ingressroutev1.Service{
+									Name: "backend",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "foo.bar",
+					Domains: []string{"foo.bar"},
+					Routes: []route.Route{{
+						Match: prefixmatch("/zed"),
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/backend/80",
+												Weight: &google_protobuf1.UInt32Value{
+													Value: uint32(100),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
+		{
+			name: "multiple routes",
+			route: &ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "foo.bar",
+					},
+					Routes: []ingressroutev1.Route{
+						ingressroutev1.Route{
+							Match: "/zed",
+							Services: []ingressroutev1.Service{
+								ingressroutev1.Service{
+									Name: "backend",
+									Port: 80,
+								},
+							},
+						},
+						ingressroutev1.Route{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								ingressroutev1.Service{
+									Name: "backendtwo",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "foo.bar",
+					Domains: []string{"foo.bar"},
+					Routes: []route.Route{{
+						Match: prefixmatch("/zed"),
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/backend/80",
+												Weight: &google_protobuf1.UInt32Value{
+													Value: uint32(100),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+						{
+							Match: prefixmatch("/"),
+							Action: &route.Route_Route{
+								Route: &route.RouteAction{
+									ClusterSpecifier: &route.RouteAction_WeightedClusters{
+										WeightedClusters: &route.WeightedCluster{
+											Clusters: []*route.WeightedCluster_ClusterWeight{
+												{
+													Name: "default/backendtwo/80",
+													Weight: &google_protobuf1.UInt32Value{
+														Value: uint32(100),
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
+	}
+
+	log := testLogger(t)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			tr := &Translator{
+				FieldLogger: log,
+			}
+			if tc.setup != nil {
+				tc.setup(tr)
+			}
+			tr.OnAdd(tc.route)
+			got := contents(&tr.VirtualHostCache.HTTP)
+			sort.Stable(virtualHostsByName(got))
+			if !reflect.DeepEqual(tc.ingress_http, got) {
+				t.Fatalf("(ingress_http) want:\n%v\n got:\n%v", tc.ingress_http, got)
+			}
+
+			got = contents(&tr.VirtualHostCache.HTTPS)
+			sort.Stable(virtualHostsByName(got))
+			if !reflect.DeepEqual(tc.ingress_https, got) {
+				t.Fatalf("(ingress_https) want:\n%v\n got:\n%v", tc.ingress_https, got)
+			}
+		})
+	}
+}
+
 func TestTranslatorCacheOnUpdateIngress(t *testing.T) {
 	tests := map[string]struct {
 		c              translatorCache
@@ -2063,6 +2332,560 @@ func TestTranslatorCacheOnUpdateIngress(t *testing.T) {
 	}
 }
 
+func TestTranslatorCacheOnUpdateIngressRoute(t *testing.T) {
+	tests := map[string]struct {
+		c              translatorCache
+		oldObj, newObj ingressroutev1.IngressRoute
+		wantRoutes     map[metadata]*ingressroutev1.IngressRoute
+		wantVhosts     map[string]map[metadata]*ingressroutev1.IngressRoute
+	}{
+		"ingressroute update default ingress": {
+			c: translatorCache{
+				routes: map[metadata]*ingressroutev1.IngressRoute{
+					metadata{name: "simple", namespace: "default"}: &ingressroutev1.IngressRoute{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: ingressroutev1.IngressRouteSpec{
+							Routes: []ingressroutev1.Route{
+								{
+									Services: []ingressroutev1.Service{
+										{
+											Name: "simple",
+											Port: 80,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				vhostroutes: map[string]map[metadata]*ingressroutev1.IngressRoute{
+					"*": map[metadata]*ingressroutev1.IngressRoute{
+						metadata{name: "simple", namespace: "default"}: &ingressroutev1.IngressRoute{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "simple",
+								Namespace: "default",
+							},
+							Spec: ingressroutev1.IngressRouteSpec{
+								Routes: []ingressroutev1.Route{
+									{
+										Services: []ingressroutev1.Service{
+											{
+												Name: "simple",
+												Port: 80,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			oldObj: ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					Routes: []ingressroutev1.Route{
+						{
+							Services: []ingressroutev1.Service{
+								{
+									Name: "simple",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			newObj: ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					Routes: []ingressroutev1.Route{
+						{
+							Services: []ingressroutev1.Service{
+								{
+									Name: "simple",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantRoutes: map[metadata]*ingressroutev1.IngressRoute{
+				metadata{name: "simple", namespace: "default"}: &ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						Routes: []ingressroutev1.Route{
+							{
+								Services: []ingressroutev1.Service{
+									{
+										Name: "simple",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantVhosts: map[string]map[metadata]*ingressroutev1.IngressRoute{
+				"*": map[metadata]*ingressroutev1.IngressRoute{
+					metadata{name: "simple", namespace: "default"}: &ingressroutev1.IngressRoute{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: ingressroutev1.IngressRouteSpec{
+							Routes: []ingressroutev1.Route{
+								{
+									Services: []ingressroutev1.Service{
+										{
+											Name: "simple",
+											Port: 80,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"ingressroute update default with host ingress": {
+			c: translatorCache{
+				routes: map[metadata]*ingressroutev1.IngressRoute{
+					metadata{name: "simple", namespace: "default"}: &ingressroutev1.IngressRoute{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: ingressroutev1.IngressRouteSpec{
+							Routes: []ingressroutev1.Route{
+								{
+									Services: []ingressroutev1.Service{
+										{
+											Name: "simple",
+											Port: 80,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				vhostroutes: map[string]map[metadata]*ingressroutev1.IngressRoute{
+					"*": map[metadata]*ingressroutev1.IngressRoute{
+						metadata{name: "simple", namespace: "default"}: &ingressroutev1.IngressRoute{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "simple",
+								Namespace: "default",
+							},
+							Spec: ingressroutev1.IngressRouteSpec{
+								Routes: []ingressroutev1.Route{
+									{
+										Services: []ingressroutev1.Service{
+											{
+												Name: "simple",
+												Port: 80,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			oldObj: ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					Routes: []ingressroutev1.Route{
+						{
+							Services: []ingressroutev1.Service{
+								{
+									Name: "simple",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			newObj: ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "hello.example.com",
+					},
+					Routes: []ingressroutev1.Route{
+						{
+							Services: []ingressroutev1.Service{
+								{
+									Name: "simple",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantRoutes: map[metadata]*ingressroutev1.IngressRoute{
+				metadata{name: "simple", namespace: "default"}: &ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: ingressroutev1.VirtualHost{
+							Fqdn: "hello.example.com",
+						},
+						Routes: []ingressroutev1.Route{
+							{
+								Services: []ingressroutev1.Service{
+									{
+										Name: "simple",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantVhosts: map[string]map[metadata]*ingressroutev1.IngressRoute{
+				"hello.example.com": map[metadata]*ingressroutev1.IngressRoute{
+					metadata{name: "simple", namespace: "default"}: &ingressroutev1.IngressRoute{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: ingressroutev1.IngressRouteSpec{
+							VirtualHost: ingressroutev1.VirtualHost{
+								Fqdn: "hello.example.com",
+							},
+							Routes: []ingressroutev1.Route{
+								{
+									Services: []ingressroutev1.Service{
+										{
+											Name: "simple",
+											Port: 80,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"ingressroute update host ingress to default": {
+			c: translatorCache{
+				routes: map[metadata]*ingressroutev1.IngressRoute{
+					metadata{name: "simple", namespace: "default"}: &ingressroutev1.IngressRoute{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: ingressroutev1.IngressRouteSpec{
+							VirtualHost: ingressroutev1.VirtualHost{
+								Fqdn: "hello.example.com",
+							},
+							Routes: []ingressroutev1.Route{
+								{
+									Services: []ingressroutev1.Service{
+										{
+											Name: "simple",
+											Port: 80,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				vhostroutes: map[string]map[metadata]*ingressroutev1.IngressRoute{
+					"hello.example.com": map[metadata]*ingressroutev1.IngressRoute{
+						metadata{name: "simple", namespace: "default"}: &ingressroutev1.IngressRoute{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "simple",
+								Namespace: "default",
+							},
+							Spec: ingressroutev1.IngressRouteSpec{
+								VirtualHost: ingressroutev1.VirtualHost{
+									Fqdn: "hello.example.com",
+								},
+								Routes: []ingressroutev1.Route{
+									{
+										Services: []ingressroutev1.Service{
+											{
+												Name: "simple",
+												Port: 80,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			oldObj: ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "hello.example.com",
+					},
+					Routes: []ingressroutev1.Route{
+						{
+							Services: []ingressroutev1.Service{
+								{
+									Name: "simple",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			newObj: ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					Routes: []ingressroutev1.Route{
+						{
+							Services: []ingressroutev1.Service{
+								{
+									Name: "simple",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantRoutes: map[metadata]*ingressroutev1.IngressRoute{
+				metadata{name: "simple", namespace: "default"}: &ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						Routes: []ingressroutev1.Route{
+							{
+								Services: []ingressroutev1.Service{
+									{
+										Name: "simple",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantVhosts: map[string]map[metadata]*ingressroutev1.IngressRoute{
+				"*": map[metadata]*ingressroutev1.IngressRoute{
+					metadata{name: "simple", namespace: "default"}: &ingressroutev1.IngressRoute{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: ingressroutev1.IngressRouteSpec{
+							Routes: []ingressroutev1.Route{
+								{
+									Services: []ingressroutev1.Service{
+										{
+											Name: "simple",
+											Port: 80,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"ingressroute update rename host ingress": {
+			c: translatorCache{
+				routes: map[metadata]*ingressroutev1.IngressRoute{
+					metadata{name: "simple", namespace: "default"}: &ingressroutev1.IngressRoute{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: ingressroutev1.IngressRouteSpec{
+							VirtualHost: ingressroutev1.VirtualHost{
+								Fqdn: "hello.example.com",
+							},
+							Routes: []ingressroutev1.Route{
+								{
+									Services: []ingressroutev1.Service{
+										{
+											Name: "simple",
+											Port: 80,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				vhostroutes: map[string]map[metadata]*ingressroutev1.IngressRoute{
+					"hello.example.com": map[metadata]*ingressroutev1.IngressRoute{
+						metadata{name: "simple", namespace: "default"}: &ingressroutev1.IngressRoute{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "simple",
+								Namespace: "default",
+							},
+							Spec: ingressroutev1.IngressRouteSpec{
+								VirtualHost: ingressroutev1.VirtualHost{
+									Fqdn: "hello.example.com",
+								},
+								Routes: []ingressroutev1.Route{
+									{
+										Services: []ingressroutev1.Service{
+											{
+												Name: "simple",
+												Port: 80,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			oldObj: ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "hello.example.com",
+					},
+					Routes: []ingressroutev1.Route{
+						{
+							Services: []ingressroutev1.Service{
+								{
+									Name: "simple",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			newObj: ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "goodbye.example.com",
+					},
+					Routes: []ingressroutev1.Route{
+						{
+							Services: []ingressroutev1.Service{
+								{
+									Name: "simple",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantRoutes: map[metadata]*ingressroutev1.IngressRoute{
+				metadata{name: "simple", namespace: "default"}: &ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: ingressroutev1.VirtualHost{
+							Fqdn: "goodbye.example.com",
+						},
+						Routes: []ingressroutev1.Route{
+							{
+								Services: []ingressroutev1.Service{
+									{
+										Name: "simple",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantVhosts: map[string]map[metadata]*ingressroutev1.IngressRoute{
+				"goodbye.example.com": map[metadata]*ingressroutev1.IngressRoute{
+					metadata{name: "simple", namespace: "default"}: &ingressroutev1.IngressRoute{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "simple",
+							Namespace: "default",
+						},
+						Spec: ingressroutev1.IngressRouteSpec{
+							VirtualHost: ingressroutev1.VirtualHost{
+								Fqdn: "goodbye.example.com",
+							},
+							Routes: []ingressroutev1.Route{
+								{
+									Services: []ingressroutev1.Service{
+										{
+											Name: "simple",
+											Port: 80,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			tc.c.OnUpdate(&tc.oldObj, &tc.newObj)
+			if !reflect.DeepEqual(tc.wantRoutes, tc.c.routes) {
+				t.Errorf("routes want:\n%v\n got:\n%v", tc.wantRoutes, tc.c.routes)
+			}
+			if !reflect.DeepEqual(tc.wantVhosts, tc.c.vhostroutes) {
+				t.Fatalf("vhosts want:\n%+v\n got:\n%+v", tc.wantVhosts, tc.c.vhostroutes)
+			}
+		})
+	}
+}
+
 func TestTranslatorCacheOnDeleteIngress(t *testing.T) {
 	tests := map[string]struct {
 		c             translatorCache
@@ -2129,6 +2952,187 @@ func TestTranslatorCacheOnDeleteIngress(t *testing.T) {
 			}
 			if !reflect.DeepEqual(tc.wantVhosts, tc.c.vhosts) {
 				t.Fatalf("want:\n%v\n got:\n%v", tc.wantVhosts, tc.c.vhosts)
+			}
+		})
+	}
+}
+
+func TestTranslatorRemoveIngressRoute(t *testing.T) {
+	tests := map[string]struct {
+		setup         func(*Translator)
+		route         *ingressroutev1.IngressRoute
+		ingress_http  []proto.Message
+		ingress_https []proto.Message
+	}{
+		"remove existing": {
+			setup: func(tr *Translator) {
+				tr.OnAdd(&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: ingressroutev1.VirtualHost{
+							Fqdn: "httpbin.org",
+						},
+						Routes: []ingressroutev1.Route{
+							{
+								Services: []ingressroutev1.Service{
+									{
+										Name: "peter",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				})
+			},
+			route: &ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "httpbin.org",
+					},
+					Routes: []ingressroutev1.Route{
+						{
+							Services: []ingressroutev1.Service{
+								{
+									Name: "peter",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			ingress_http:  []proto.Message{},
+			ingress_https: []proto.Message{},
+		},
+		"remove different": {
+			setup: func(tr *Translator) {
+				tr.OnAdd(&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: ingressroutev1.VirtualHost{
+							Fqdn: "httpbin.org",
+						},
+						Routes: []ingressroutev1.Route{
+							{
+								Match: "/",
+								Services: []ingressroutev1.Service{
+									{
+										Name: "peter",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				})
+			},
+			route: &ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "different",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "httpbin.org",
+					},
+					Routes: []ingressroutev1.Route{
+						{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								{
+									Name: "peter",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "httpbin.org",
+					Domains: []string{"httpbin.org"},
+					Routes: []route.Route{{
+						Match: prefixmatch("/"),
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/peter/80",
+												Weight: &google_protobuf1.UInt32Value{
+													Value: uint32(100),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
+		"remove non existant": {
+			setup: func(*Translator) {},
+			route: &ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "httpbin.org",
+					},
+					Routes: []ingressroutev1.Route{
+						{
+							Services: []ingressroutev1.Service{
+								{
+									Name: "backend",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			},
+			ingress_http:  []proto.Message{},
+			ingress_https: []proto.Message{},
+		},
+	}
+
+	log := testLogger(t)
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			tr := &Translator{
+				FieldLogger: log,
+			}
+			tc.setup(tr)
+			tr.OnDelete(tc.route)
+
+			got := contents(&tr.VirtualHostCache.HTTP)
+			sort.Stable(virtualHostsByName(got))
+			if !reflect.DeepEqual(tc.ingress_http, got) {
+				t.Fatalf("(ingress_http) want:\n%v\n got:\n%v", tc.ingress_http, got)
+			}
+
+			got = contents(&tr.VirtualHostCache.HTTPS)
+			sort.Stable(virtualHostsByName(got))
+			if !reflect.DeepEqual(tc.ingress_https, got) {
+				t.Fatalf("(ingress_https) want:\n%v\n got:\n%v", tc.ingress_https, got)
 			}
 		})
 	}

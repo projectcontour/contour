@@ -19,6 +19,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/gogo/protobuf/types"
+	ingressroutev1 "github.com/heptio/contour/pkg/apis/contour/v1"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 )
@@ -90,6 +91,22 @@ func (lc *ListenerCache) recomputeListeners(ingresses map[metadata]*v1beta1.Ingr
 	}
 }
 
+// recomputeListenersIngressRoute recomputes the ingress_http and ingress_https listeners
+// and notifies the watchers any change.
+func (lc *ListenerCache) recomputeListenersIngressRoute(routes map[metadata]*ingressroutev1.IngressRoute, secrets map[metadata]*v1.Secret) {
+	add, remove := lc.recomputeListenerIngressRoute0(routes) // recompute ingress_http
+	// ssladd, sslremove := lc.recomputeTLSListener0(ingresses, secrets) // recompute ingress_https
+
+	// add = append(add, ssladd...)
+	// remove = append(remove, sslremove...)
+	lc.Add(add...)
+	lc.Remove(remove...)
+
+	if len(add) > 0 || len(remove) > 0 {
+		lc.Notify()
+	}
+}
+
 // recomputeTLSListener recomputes the ingress_https listener and notifies the watchers
 // of any change.
 func (lc *ListenerCache) recomputeTLSListener(ingresses map[metadata]*v1beta1.Ingress, secrets map[metadata]*v1.Secret) {
@@ -121,6 +138,33 @@ func (lc *ListenerCache) recomputeListener0(ingresses map[metadata]*v1beta1.Ingr
 			filterchain(lc.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER, lc.httpAccessLog())),
 		}
 	}
+	// TODO(dfc) some annotations may require the Ingress to no appear on
+	// port 80, therefore may result in an empty effective set of ingresses.
+	switch len(l.FilterChains) {
+	case 0:
+		// no ingresses registered, remove this listener.
+		return nil, []string{l.Name}
+	default:
+		// at least one ingress registered, refresh listener
+		return []*v2.Listener{l}, nil
+	}
+}
+
+// recomputeListener recomputes the non SSL listener for port 8080 using the list of routes provided.
+// recomputeListener returns a slice of listeners to be added to the cache, and a slice of names of listeners
+// to be removed.
+func (lc *ListenerCache) recomputeListenerIngressRoute0(routes map[metadata]*ingressroutev1.IngressRoute) ([]*v2.Listener, []string) {
+	l := &v2.Listener{
+		Name:    ENVOY_HTTP_LISTENER,
+		Address: socketaddress(lc.httpAddress(), lc.httpPort()),
+	}
+
+	if len(routes) > 0 {
+		l.FilterChains = []listener.FilterChain{
+			filterchain(lc.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER, lc.httpsAccessLog())),
+		}
+	}
+
 	// TODO(dfc) some annotations may require the Ingress to no appear on
 	// port 80, therefore may result in an empty effective set of ingresses.
 	switch len(l.FilterChains) {
