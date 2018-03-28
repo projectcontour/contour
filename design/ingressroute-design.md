@@ -269,7 +269,9 @@ spec:
 
 ## TLS
 
-TLS configuration, certificates and cipher suites, remains similar in form to the existing ingress object, however because the `spec.virtualhost.tls` is is only present in root objects.
+TLS configuration, certificates and cipher suites, remains similar in form to the existing ingress object, however because the `spec.virtualhost.tls` is is only present in root objects there is no ambiguity as to which IngressRoute holds the canonical TLS information (this cannot be said for the current Ingress object).
+This also implies that the IngressRoute root and the tls Secret must live in the same namespace.
+However as mentioned above, the entire routespace (/ onwards) can be delegated to another namespace, which allows operators to define virtual hosts and their TLS configuration in one namespace, and delegate the operation those virtual hosts to another namespace.
 
 # Alternatives Considered
 
