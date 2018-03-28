@@ -193,7 +193,41 @@ The DAG design treats the delegation from one IngressRoute to another as permiss
 
 ## Reporting status
 
-Because the presence of semantically valid object is not proof that it will be used
+The presence of semantically valid object is not proof that it will be used.
+This is a break from the kubernetes model whereby an object which is valid will generally be acted on by controllers.
+
+An `IngressRoute` edge may be present but not consulted if it is not part of a delegation chain from a root.
+This models the DNS model above, you can add any zone file that you want to your local DNS server, but unless someone delegates to you, those records are ignored.
+
+In the case there an IngressRoute is present, but has no active delegation, it is known as _orphened_.
+We record this information on a top level `status` key for operators and tools.
+
+An example of an ophaned IngresRoute object:
+
+```yaml
+status:
+  delegationStatuses:
+  - state:
+     orphaned:
+       lastParent:
+         name: ...
+         namespace: ...
+```
+
+Note: `delegationStatuses` is a list, because in the non orphaned case, an IngressRoute may be a part of several delegation chains.
+
+And example of a correctly delegated IngressRoute with a single parent:
+```yaml:
+status:
+  delegationStatuses:
+  - state:
+      connected:
+        parent:
+          name: ...
+          namespace: ...
+          prefix: ...
+        connectedAt: ...
+```
 
 ## IngressRoutes only dispatch to services in the same namespace
 
