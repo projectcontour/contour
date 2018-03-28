@@ -250,6 +250,7 @@ spec:
       - www.heptio.com
   routes:
   - match: /
+    # delegate everything to heptio-wordpress/wordpress
     delegate:
       name: wordpress
       namespace: heptio-wordpress
@@ -275,13 +276,13 @@ However as mentioned above, the entire routespace (/ onwards) can be delegated t
 
 # Alternatives Considered
 
-This proposal presents itself as an alternative to the more traditional proposals that split ingress into two classes of objects; one describing the properties of the ingress virtual host, the other describing the properties of the routes attached to that virtual host.
+This proposal presents itself as an alternative to more traditional designs that split ingress into two classes of objects; one describing the properties of the ingress virtual host, the other describing the properties of the routes attached to that virtual host.
 
 The downside of these proposals is the minimum use case, the http://hello.world case, needs to two CRD objects per ingress, one stating the url of the virtual host, the other stating the name of the CRD that holds the url of the virtual host.
 
 Restricting who can create this pair of CRD objects further complicates things and draws towards a design with a third and possibly fourth CRD to apply policy to their counterparts.
 
-By "overloading", or as Joe likes to say, making the CRD polymorphic, creates a more complex mental model for complex deployments, but in return "scales down" to a single CRD containing both the vhost details and the route details (as there is no delegation in the hello world example).
+By "overloading", or as Joe likes to say, making the CRD polymorphic, creates a more complex mental model for complicated deployments, but in return "scales down" to a single CRD containing both the vhost details and the route details (as there is no delegation in the hello world example).
 This property makes the design proposed appealing from a usability standpoint as _most_ ingress usecases are simple--publish my web app on this url--so it feels right to favour a design that does not penalise the default, simple, use case.
 
 - links to other proposals
