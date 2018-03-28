@@ -119,33 +119,24 @@ spec:
   # routes contains the set of routes for this virtual host.
   # routes must _always_ be present and non empty.
   # routes can be present in any order, and will be matched from most to least
-  # specific, however as this is an edge, only prefixes that fall under the
-  # 
+  # specific, however as this is an edge, only prefixes that match the prefix
+  # that delegated to this object.
   routes:
-  # each route entry starts with a prefix match
-  # and one of service or delegate
-  - match: /static
-    # service defines the properties of the service in the current namespace
-    # that will handle traffic matching the route
-    service:
-    - name: google-static
-      port: 9000
+  # each route in this object must start with /finance as this was the prefix which
+  # delegated to this object.
   - match: /finance
-    # delegate delegates the matching route to another IngressRoute object.
-    # This delegates the responsibility for /finance to the IngressRoute matching the delegate parameters
-    delegate:
-      # the name of the IngressRoute object to delegate to
-      name: google-finance
-      # the namespace of the IngressRoute object, if blank the current namespace is assumed
-      namespace: finance
-  - match: /ads
-    # more than one service name/port pair may be present allowing the services for a route to
-    # be handled by more than one service.
     service:
-    - name: ads-red
-      port: 9090
-    - name: ads-blue
-      port: 9090
+    - name: finance-app
+      port: 9999
+  - match: /finance/static
+    service:
+    - name: finance-static-content
+      port: 8080
+  - match: /finance/partners
+    # delegate the /finance/partners prefix to the partners namespace
+    delegate:
+      name: finance-partners
+      namespace: partners
 ```
 
 ## Delegation rules
@@ -202,7 +193,7 @@ The DAG design treats the delegation from one IngressRoute to another as permiss
 
 ## Reporting status
 
-Because the presence of semantically valid object is not proof that it will be 
+Because the presence of semantically valid object is not proof that it will be used
 
 ## IngressRoutes only dispatch to services in the same namespace
 
