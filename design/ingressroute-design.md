@@ -33,12 +33,12 @@ As the owner of a DNS domain, for example `.com`, I _delegate_ to another namese
 Any nameserver can hold a record for `heptio.com`, but without the linkage from the parent `.com` TLD, its information is unreachable and non authorative.
 
 Each _root_ of a DAG starts at a virtual host, which describes properties like the fully qualified name of the virtual host, any aliases (for example a www. prefix) of that vhost, TLS configuration, and possibly global access list details.
-The edges of a graph do not contain virtual host information, they are only reachable from a root via a delegation.
+The vertices of a graph do not contain virtual host information, they are only reachable from a root via a delegation.
 This permits the _owner_ of an ingress root to both delegate the authority to publish a service on a portion of the route space inside a virtual host, and to itself further delegate authority to publish and delegate.
 
 This also means that 
 
-In practice the linkage, or delegation, from root to edge, is performed with a specific type of route action.
+In practice the linkage, or delegation, from root to vertex, is performed with a specific type of route action.
 You can think of it that rather than routing traffic to a service, it is routed to another ingressroute object for further processing.
 
 
@@ -115,11 +115,11 @@ metadata:
   name: google-finance
   namespace: finance
 spec:
-  # note that this is an edge, so there is no virtualhost key
+  # note that this is a vertex, so there is no virtualhost key
   # routes contains the set of routes for this virtual host.
   # routes must _always_ be present and non empty.
   # routes can be present in any order, and will be matched from most to least
-  # specific, however as this is an edge, only prefixes that match the prefix
+  # specific, however as this is a vertex, only prefixes that match the prefix
   # that delegated to this object.
   routes:
   # each route in this object must start with /finance as this was the prefix which
@@ -144,9 +144,9 @@ spec:
 The delegation rules applied are as follows
 
 1. If an `IngressRoute` object contains a `spec.virtualhost` key it is considered a root.
-2. If an `IngressRoute` object does not contain `spec.virtualhost` key is considered an edge.
-3. An edge is reachable if a delegation to it exists in another `IngressRoute` object.
-4. Edges which are not reachable are considered orphened. Orphened edges have no effect on the running configuration.
+2. If an `IngressRoute` object does not contain `spec.virtualhost` key is considered a vertex.
+3. A vertex is reachable if a delegation to it exists in another `IngressRoute` object.
+4. Vertices which are not reachable are considered orphened. Orphened vertices have no effect on the running configuration.
 
 ## Validation rules
 
@@ -187,7 +187,7 @@ spec:
 
 ## Authorisation
 
-It is important to highlight that both root and edge IngressRoute objects are of the same type.
+It is important to highlight that both root and vertex IngressRoute objects are of the same type.
 This is a departure from other designs which treat the permission to create a VirtualHost type object and a Route type object as separate.
 The DAG design treats the delegation from one IngressRoute to another as permission to create routes.
 
@@ -196,7 +196,7 @@ The DAG design treats the delegation from one IngressRoute to another as permiss
 The presence of semantically valid object is not proof that it will be used.
 This is a break from the kubernetes model whereby an object which is valid will generally be acted on by controllers.
 
-An `IngressRoute` edge may be present but not consulted if it is not part of a delegation chain from a root.
+An `IngressRoute` vertex may be present but not consulted if it is not part of a delegation chain from a root.
 This models the DNS model above, you can add any zone file that you want to your local DNS server, but unless someone delegates to you, those records are ignored.
 
 In the case there an IngressRoute is present, but has no active delegation, it is known as _orphened_.
