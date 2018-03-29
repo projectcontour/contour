@@ -299,3 +299,100 @@ Future work outside the scope of this design includes:
 As it relates to the CRD the security implications of this proposal, the model of delegating a part of a vhost's route space to a CRD in another namespace is implies a level of trust.
 I, the owner of the virtual host, delegate to you the /foo prefix and everything under it, implies that you cannot operate on this vhost outside /foo, but it also means that whatever you do in /foo; host malware, leak k8s session keys, is something I'm trusting you not to do.
 
+## No ability to prevent route delegation
+
+In writing up this proposal an issue occured to me.
+It happens when Contour is operating in the, poorly specified, enforcing mode; where Contour only recognises root IngressRoutes in a set of authorised namespaces.
+(well, it happens regurdless of enforcement mode, but the argument is that if you do not turn on enforcement you are explicitly saying you trust you users, or you have another mechanism in place -- CI/CD -- to handle this).
+
+Imaging this scenario:
+```yaml
+apiVersion: contour.heptio.com/v1alpha1
+kind: IngressRoute
+metadata:
+  # this is www.google.com's root object
+  name: google
+  namespace: virtualhost-namespace
+spec:
+  virtualhost:
+    fqdn: www.google.com
+    tls:
+      # required, the name of a secret in the current namespace
+      secretName: google-tls
+      # other properties like cipher suites may be added later
+  routes:
+  - match: /mail
+    # delegate to the gmail service running in another namespace
+    delegate:
+      name: gmail
+      namespace: gmail
+    ...
+```
+And in the gmail namespace we have a IngressRoute vertex
+```yaml
+apiVersion: contour.heptio.com/v1alpha1
+kind: IngressRoute
+metadata:
+  name: gmail 
+  namespace: gmail
+spec:
+  routes:
+  - match: /mail
+    service:
+      name: gmail-tomcat-svc
+      port: 8000
+```
+That's all fine, the operators in the `gmail` namespace can't change the delegation in the `virtualhost-namespace` and the admins in the `virtualhost-namespace` feel confident that they control `www.google.com` and that gmail is being served over tls.
+
+However, at some time later ad money is getting tight and the operators take on a new customer, who is very cheap and doesn't want to pay for tls.
+```yaml
+apiVersion: contour.heptio.com/v1alpha1
+kind: IngressRoute
+metadata:
+  name: daves-cheap-webhosting
+  namespace: virtualhost-namespace
+spec:
+  virtualhost:
+    fqdn: dave.cheney.net
+  routes:
+  - match: /
+    delegate:
+      name: webapp
+      namespace: customer-dave
+```
+Because the ingress operators don't want to have to handle tickets for dave's cheap webhosting, they delegate `/` to dave's namespace and tell him if he has a problem getting it working he can ask for help on the forum.
+
+_However_, dave deploys this vertex ingressroute CRD.
+```yaml
+apiVersion: contour.heptio.com/v1alpha1
+kind: IngressRoute
+metadata:
+  name: webapp 
+  namespace: customer-dave
+spec:
+  routes:
+  - match: /mail
+    delegate:
+      name: gmail
+      namespace: gmail
+```
+And all of a sudden, `http://dave.cheney.net/mail` is serving up the full gmail application, sans TLS.
+
+This is a large worked example, but the problem boils down to "vertices have no way to list whom they are delegated too".
+Without a way to deny or permit delegations, anyone who knows the name of the object (which I don't believe is a secret, and even if it was, is security via obscurity) can expose those routes on a virtualhost they own.
+
+### Mitigations
+
+The best way I've thought to mitigate this so far is the vertex ingress routes would have to list the name of either
+
+- the name/namespace of the incoming delegation
+- the virtualhost.fqdn at the root of a delegation chain.
+
+This is unfortunate for two reasons,
+
+1. It's more boilerplate; a deletates to b, b has to list a as a cross check.
+2. It turns a DAG into a linked list (possibly not the right term), but it would be impossible for a web service to be a member of multiple roots, unless of course we made the list of incoming vertices be a list -- which would probably push the solution into using virtualhost.fqdn.
+
+The last thing is that this boilerplate _should be required_ even when not in enforcing mode.
+I'm not interested in proposing a design where the security interlock that prevents dave's cheap webhosting from publishing gmail without TLS is considered to be the customers problem because they did not add an optional key. 
+Said again, if this is the mitigation we choose to adopt, it has to be mandatory for all users, because we all know how effective optional security features are.
