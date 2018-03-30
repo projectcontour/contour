@@ -188,6 +188,40 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				}},
 			}},
 		},
+		"rewrite target": {
+			vhost: "httpbin.org",
+			ingresses: im([]*v1beta1.Ingress{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"ingress.kubernetes.io/rewrite-target": "/",
+					},
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						Host: "httpbin.org",
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Path:    "/service-prefix/",
+									Backend: *backend("httpbin-org", intstr.FromInt(80)),
+								}},
+							},
+						},
+					}},
+				},
+			}}),
+			ingress_http: []route.VirtualHost{{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []route.Route{{
+					Match: prefixmatch("/service-prefix/"),
+					Action: clusteractionprefixrewrite("default/httpbin-org/80", "/"),
+				}},
+			}},
+			ingress_https: []route.VirtualHost{},
+		},
 		"regex vhost without match characters": {
 			vhost: "httpbin.org",
 			ingresses: im([]*v1beta1.Ingress{{
@@ -641,6 +675,13 @@ func clusteractiontimeout(name string, timeout time.Duration) *route.Route_Route
 	// specified.
 	c := clusteraction(name)
 	c.Route.Timeout = &timeout
+	return c
+}
+
+// clusteractionprefix returns a cluster action with prefix rewrite
+func clusteractionprefixrewrite(name string, prefix string) *route.Route_Route {
+	c := clusteraction(name)
+	c.Route.PrefixRewrite = prefix
 	return c
 }
 
