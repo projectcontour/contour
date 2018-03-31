@@ -76,7 +76,7 @@ static_resources:
         port_value: {{ if .XDSGRPCPort }}{{ .XDSGRPCPort }}{{ else }}8001{{ end }}
     lb_policy: ROUND_ROBIN
     http2_protocol_options: {}
-	circuit_breakers:
+    circuit_breakers:
       thresholds:
         - priority: high
           max_connections: 100000
