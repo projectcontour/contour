@@ -52,6 +52,18 @@ static_resources:
         port_value: 8001
     lb_policy: ROUND_ROBIN
     http2_protocol_options: {}
+    circuit_breakers:
+      thresholds:
+        - priority: high
+          max_connections: 100000
+          max_pending_requests: 100000
+          max_requests: 60000000
+          max_retries: 50
+        - priority: default
+          max_connections: 100000
+          max_pending_requests: 100000
+          max_requests: 60000000
+          max_retries: 50
 admin:
   access_log_path: /dev/null
   address:
