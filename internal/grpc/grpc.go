@@ -42,6 +42,8 @@ const (
 	listenerType = typePrefix + "Listener"
 )
 
+const grpcMaxConcurrentStreams = 1000000
+
 // ClusterCache holds a set of computed v2.Cluster resources.
 type ClusterCache interface {
 	// Values returns a copy of the contents of the cache.
@@ -74,7 +76,9 @@ type ListenerCache interface {
 
 // NewAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
 func NewAPI(log logrus.FieldLogger, t *contour.Translator) *grpc.Server {
-	g := grpc.NewServer()
+	var grpcOptions []grpc.ServerOption
+	grpcOptions = append(grpcOptions, grpc.MaxConcurrentStreams(grpcMaxConcurrentStreams))
+	g := grpc.NewServer(grpcOptions...)
 	s := newgrpcServer(log, t)
 	v2.RegisterClusterDiscoveryServiceServer(g, s)
 	v2.RegisterEndpointDiscoveryServiceServer(g, s)
