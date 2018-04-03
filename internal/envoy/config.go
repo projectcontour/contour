@@ -76,6 +76,18 @@ static_resources:
         port_value: {{ if .XDSGRPCPort }}{{ .XDSGRPCPort }}{{ else }}8001{{ end }}
     lb_policy: ROUND_ROBIN
     http2_protocol_options: {}
+    circuit_breakers:
+      thresholds:
+        - priority: high
+          max_connections: 100000
+          max_pending_requests: 100000
+          max_requests: 60000000
+          max_retries: 50
+        - priority: default
+          max_connections: 100000
+          max_pending_requests: 100000
+          max_requests: 60000000
+          max_retries: 50
 admin:
   access_log_path: {{ if .AdminAccessLogPath }}{{ .AdminAccessLogPath }}{{ else }}/dev/null{{ end }}
   address:
