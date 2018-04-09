@@ -157,6 +157,71 @@ func TestParseUpstreamProtocols(t *testing.T) {
 	}
 }
 
+func TestWebsocketRoutes(t *testing.T) {
+	tests := map[string]struct {
+		a    *v1beta1.Ingress
+		want map[string]*types.BoolValue
+	}{
+		"empty": {
+			a: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{annotationWebsocketRoutes: ""},
+				},
+			},
+			want: map[string]*types.BoolValue{},
+		},
+		"empty with spaces": {
+			a: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{annotationWebsocketRoutes: ", ,"},
+				},
+			},
+			want: map[string]*types.BoolValue{},
+		},
+		"single value": {
+			a: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{annotationWebsocketRoutes: "/ws1"},
+				},
+			},
+			want: map[string]*types.BoolValue{
+				"/ws1": &types.BoolValue{Value: true},
+			},
+		},
+		"multiple values": {
+			a: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{annotationWebsocketRoutes: "/ws1,/ws2"},
+				},
+			},
+			want: map[string]*types.BoolValue{
+				"/ws1": &types.BoolValue{Value: true},
+				"/ws2": &types.BoolValue{Value: true},
+			},
+		},
+		"multiple values with spaces and invalid entries": {
+			a: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{annotationWebsocketRoutes: " /ws1, , /ws2 "},
+				},
+			},
+			want: map[string]*types.BoolValue{
+				"/ws1": &types.BoolValue{Value: true},
+				"/ws2": &types.BoolValue{Value: true},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := websocketRoutes(tc.a)
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("websocketRoutes(%q): want: %v, got: %v", tc.a, tc.want, got)
+			}
+		})
+	}
+}
+
 func TestHttpAllowed(t *testing.T) {
 	tests := map[string]struct {
 		i     *v1beta1.Ingress

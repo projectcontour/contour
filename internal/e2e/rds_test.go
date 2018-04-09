@@ -797,6 +797,47 @@ func TestRDSFilter(t *testing.T) {
 	}, fetchRDS(t, cc, "ingress_https"))
 }
 
+func TestWebsocketRoutes(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	// add default/hello to translator.
+	rh.OnAdd(&v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ws",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/websocket-routes": "/",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				Host: "websocket.hello.world",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "ws",
+								ServicePort: intstr.FromInt(80),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	})
+
+	assertRDS(t, cc, []route.VirtualHost{{
+		Name:    "websocket.hello.world",
+		Domains: []string{"websocket.hello.world"},
+		Routes: []route.Route{{
+			Match:  prefixmatch("/"), // match all
+			Action: websocketroute("default/ws/80"),
+		}},
+	}}, nil)
+}
+
 func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []route.VirtualHost) {
 	t.Helper()
 	assertEqual(t, &v2.DiscoveryResponse{
@@ -848,6 +889,12 @@ func routecluster(cluster string) *route.Route_Route {
 			},
 		},
 	}
+}
+
+func websocketroute(c string) *route.Route_Route {
+	cl := routecluster(c)
+	cl.Route.UseWebsocket = &types.BoolValue{Value: true}
+	return cl
 }
 
 func clustertimeout(c string, timeout time.Duration) *route.Route_Route {

@@ -38,7 +38,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 		if !validTLSSpecforVhost(vhost, ing) {
 			continue
 		}
-		wr := websocketRoutes(ing.Annotations)
+		wr := websocketRoutes(ing)
 		for _, rule := range ing.Spec.Rules {
 			if rule.Host != "" && rule.Host != vhost {
 				continue
@@ -70,7 +70,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 			// skip this vhosts ingress_http route.
 			continue
 		}
-		wr := websocketRoutes(i.Annotations)
+		wr := websocketRoutes(i)
 		requireTLS := tlsRequired(i)
 		if i.Spec.Backend != nil && len(ingresses) == 1 {
 			r := route.Route{
@@ -240,17 +240,4 @@ func virtualhost(hostname string) *route.VirtualHost {
 		Name:    hashname(60, hostname),
 		Domains: []string{hostname},
 	}
-}
-
-// websocketRoutes parses the annotations map for a contour.heptio.com/websocket-routes.
-// If the value is not present, or malformed, then an empty map is returned.
-func websocketRoutes(annotations map[string]string) map[string]*types.BoolValue {
-	routes := make(map[string]*types.BoolValue)
-	for _, v := range strings.Split(annotations[annotationWebsocketRoutes], ",") {
-		route := strings.TrimSpace(v)
-		if route != "" {
-			routes[route] = &types.BoolValue{Value: true}
-		}
-	}
-	return routes
 }
