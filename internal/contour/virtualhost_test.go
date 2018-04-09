@@ -568,7 +568,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"echo.websocket.org"},
 				Routes: []route.Route{{
 					Match:  prefixmatch("/ws1"),
-					Action: clusteractionwebsocket("default/ws1/80"),
+					Action: websocketaction("default/ws1/80"),
 				}},
 			}},
 			ingress_https: []route.VirtualHost{},
@@ -606,7 +606,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"echo.websocket.org"},
 				Routes: []route.Route{{
 					Match:  prefixmatch("/ws1"),
-					Action: clusteractionwebsocket("default/ws1/80"),
+					Action: websocketaction("default/ws1/80"),
 				}},
 			}},
 			ingress_https: []route.VirtualHost{{
@@ -614,7 +614,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				Domains: []string{"echo.websocket.org"},
 				Routes: []route.Route{{
 					Match:  prefixmatch("/ws1"),
-					Action: clusteractionwebsocket("default/ws1/80"),
+					Action: websocketaction("default/ws1/80"),
 				}},
 			}},
 		},
@@ -724,8 +724,8 @@ func clusteractiontimeout(name string, timeout time.Duration) *route.Route_Route
 	return c
 }
 
-// clusteractionwebsocket returns a cluster action with websocket support.
-func clusteractionwebsocket(name string) *route.Route_Route {
+// websocketaction returns a cluster action with websocket support.
+func websocketaction(name string) *route.Route_Route {
 	c := clusteraction(name)
 	c.Route.UseWebsocket = &types.BoolValue{Value: true}
 	return c
