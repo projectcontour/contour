@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/gogo/protobuf/types"
 	"k8s.io/api/extensions/v1beta1"
 )
 
@@ -37,6 +38,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 		if !validTLSSpecforVhost(vhost, ing) {
 			continue
 		}
+		wr := websocketRoutes(ing)
 		for _, rule := range ing.Spec.Rules {
 			if rule.Host != "" && rule.Host != vhost {
 				continue
@@ -49,7 +51,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 			for _, p := range rule.IngressRuleValue.HTTP.Paths {
 				vv.Routes = append(vv.Routes, route.Route{
 					Match:  pathToRouteMatch(p),
-					Action: action(ing, &p.Backend),
+					Action: action(ing, &p.Backend, wr[p.Path]),
 				})
 			}
 		}
@@ -68,11 +70,12 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 			// skip this vhosts ingress_http route.
 			continue
 		}
+		wr := websocketRoutes(i)
 		requireTLS := tlsRequired(i)
 		if i.Spec.Backend != nil && len(ingresses) == 1 {
 			r := route.Route{
 				Match:  prefixmatch("/"),
-				Action: action(i, i.Spec.Backend),
+				Action: action(i, i.Spec.Backend, wr["/"]),
 			}
 
 			if requireTLS {
@@ -96,7 +99,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 			for _, p := range rule.IngressRuleValue.HTTP.Paths {
 				r := route.Route{
 					Match:  pathToRouteMatch(p),
-					Action: action(i, &p.Backend),
+					Action: action(i, &p.Backend, wr[p.Path]),
 				}
 				if requireTLS {
 					r.Action = &route.Route_Redirect{
@@ -119,7 +122,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 
 // action computes the cluster route action, a *route.Route_route for the
 // supplied ingress and backend.
-func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend) *route.Route_Route {
+func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend, useWebsocket *types.BoolValue) *route.Route_Route {
 	name := ingressBackendToClusterName(i, be)
 	ca := route.Route_Route{
 		Route: &route.RouteAction{
@@ -141,6 +144,8 @@ func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend) *route.Route_Route {
 			ca.Route.RetryPolicy.PerTryTimeout = &perTryTimeout
 		}
 	}
+
+	ca.Route.UseWebsocket = useWebsocket
 
 	return &ca
 }
