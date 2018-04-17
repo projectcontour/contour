@@ -1,4 +1,4 @@
-FROM golang:1.10
+FROM golang:1.10.1
 WORKDIR /go/src/github.com/heptio/contour
 
 RUN go get github.com/golang/dep/cmd/dep
