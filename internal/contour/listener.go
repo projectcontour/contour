@@ -171,11 +171,25 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 				// missing cert or private key, skip it
 				continue
 			}
+			var tlsMinProtoVer auth.TlsParameters_TlsProtocol
+			switch i.ObjectMeta.Annotations["contour.heptio.com/tls-minimum-protocol-version"] {
+			case "1.3":
+				tlsMinProtoVer = auth.TlsParameters_TLSv1_3
+			case "1.2":
+				tlsMinProtoVer = auth.TlsParameters_TLSv1_2
+			case "1.1":
+				tlsMinProtoVer = auth.TlsParameters_TLSv1_1
+			case "1.0":
+				tlsMinProtoVer = auth.TlsParameters_TLSv1_0
+			default:
+				// Envoy 1.5.0 defaults to TLS 1.0.
+				tlsMinProtoVer = auth.TlsParameters_TLSv1_1
+			}
 			fc := listener.FilterChain{
 				FilterChainMatch: &listener.FilterChainMatch{
 					SniDomains: tls.Hosts,
 				},
-				TlsContext: tlscontext(secret, "h2", "http/1.1"),
+				TlsContext: tlscontext(secret, tlsMinProtoVer, "h2", "http/1.1"),
 				Filters:    filters,
 			}
 			if lc.UseProxyProto {
@@ -238,12 +252,11 @@ func socketaddress(address string, port uint32) core.Address {
 	}
 }
 
-func tlscontext(secret *v1.Secret, alpnprotos ...string) *auth.DownstreamTlsContext {
+func tlscontext(secret *v1.Secret, tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnprotos ...string) *auth.DownstreamTlsContext {
 	return &auth.DownstreamTlsContext{
 		CommonTlsContext: &auth.CommonTlsContext{
 			TlsParams: &auth.TlsParameters{
-				// Envoy 1.5.0 defaults to TLS 1.0.
-				TlsMinimumProtocolVersion: auth.TlsParameters_TLSv1_1,
+				TlsMinimumProtocolVersion: tlsMinProtoVersion,
 			},
 			TlsCertificates: []*auth.TlsCertificate{{
 				CertificateChain: &core.DataSource{

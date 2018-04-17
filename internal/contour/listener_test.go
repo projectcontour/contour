@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/gogo/protobuf/types"
 )
@@ -230,7 +231,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 					},
 					TlsContext: tlscontext(&v1.Secret{
 						Data: secretdata("certificate", "key"),
-					}, "h2", "http/1.1"),
+					}, auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters: []listener.Filter{
 						httpfilter(ENVOY_HTTPS_LISTENER),
 					},
@@ -307,7 +308,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 					},
 					TlsContext: tlscontext(&v1.Secret{
 						Data: secretdata("certificate", "key"),
-					}, "h2", "http/1.1"),
+					}, auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters: []listener.Filter{
 						httpfilter(ENVOY_HTTPS_LISTENER),
 					},
@@ -355,13 +356,58 @@ func TestRecomputeTLSListener(t *testing.T) {
 					},
 					TlsContext: tlscontext(&v1.Secret{
 						Data: secretdata("certificate", "key"),
-					}, "h2", "http/1.1"),
+					}, auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters: []listener.Filter{
 						httpfilter(ENVOY_HTTPS_LISTENER),
 					},
 					UseProxyProto: &types.BoolValue{Value: true},
 				}},
 			}},
+		},
+		"simple vhost, with minimum TLS version annotation": {
+			ingresses: map[metadata]*v1beta1.Ingress{
+				metadata{namespace: "default", name: "simple"}: {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"contour.heptio.com/tls-minimum-protocol-version": "1.3",
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							Hosts:      []string{"whatever.example.com"},
+							SecretName: "secret",
+						}},
+						Backend: backend("backend", intstr.FromInt(80)),
+					},
+				},
+			},
+			secrets: map[metadata]*v1.Secret{
+				metadata{namespace: "default", name: "secret"}: {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: secretdata("certificate", "key"),
+				},
+			},
+			add: []*v2.Listener{{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: socketaddress("0.0.0.0", 8443),
+				FilterChains: []listener.FilterChain{{
+					FilterChainMatch: &listener.FilterChainMatch{
+						SniDomains: []string{"whatever.example.com"},
+					},
+					TlsContext: tlscontext(&v1.Secret{
+						Data: secretdata("certificate", "key"),
+					}, auth.TlsParameters_TLSv1_3, "h2", "http/1.1"),
+					Filters: []listener.Filter{
+						httpfilter(ENVOY_HTTPS_LISTENER),
+					},
+				}},
+			}},
+			remove: nil,
 		},
 	}
 
