@@ -15,20 +15,28 @@ package contour
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	v2cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"k8s.io/api/core/v1"
 )
 
 const (
-	annotationMaxConnections     = "contour.heptio.com/max-connections"
-	annotationMaxPendingRequests = "contour.heptio.com/max-pending-requests"
-	annotationMaxRequests        = "contour.heptio.com/max-requests"
-	annotationMaxRetries         = "contour.heptio.com/max-retries"
-	annotationUpstreamProtocol   = "contour.heptio.com/upstream-protocol"
+	annotationMaxConnections                    = "contour.heptio.com/max-connections"
+	annotationMaxPendingRequests                = "contour.heptio.com/max-pending-requests"
+	annotationMaxRequests                       = "contour.heptio.com/max-requests"
+	annotationMaxRetries                        = "contour.heptio.com/max-retries"
+	annotationUpstreamProtocol                  = "contour.heptio.com/upstream-protocol"
+	annotationUpstreamTls                       = "contour.heptio.com/upstream-tls"
+	annotationUpstreamTlsCipherSuites           = "contour.heptio.com/upstream-tls-ciphersuites"
+	annotationUpstreamTlsECDHCurves             = "contour.heptio.com/upstream-tls-ecdh-curves"
+	annotationUpstreamTlsMaximumProtocolVersion = "contour.heptio.com/upstream-tls-maximim-protocol-version"
+	annotationUpstreamTlsMinimumProtocolVersion = "contour.heptio.com/upstream-tls-minimum-protocol-version"
+	annotationUpstreamTlsSni                    = "contour.heptio.com/upstream-tls-sni"
 )
 
 // ClusterCache manage the contents of the gRPC SDS cache.
@@ -154,7 +162,60 @@ func edscluster(svc *v1.Service, portString, upstreamProtocol string, config *v2
 		cluster.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
 	}
 
+	if tls := svc.Annotations[annotationUpstreamTls]; tls == "true" {
+		cluster.TlsContext = &auth.UpstreamTlsContext{}
+		getCtx := func() (ctx *auth.CommonTlsContext) {
+			ctx = cluster.TlsContext.CommonTlsContext
+			if ctx == nil {
+				ctx = &auth.CommonTlsContext{}
+				cluster.TlsContext.CommonTlsContext = ctx
+			}
+			return ctx
+		}
+		getTLSParams := func() (params *auth.TlsParameters) {
+			params = getCtx().TlsParams
+			if params == nil {
+				params = &auth.TlsParameters{}
+				getCtx().TlsParams = params
+			}
+			return params
+		}
+		if sni := svc.Annotations[annotationUpstreamTlsSni]; sni != "" {
+			cluster.TlsContext.Sni = sni
+		}
+		if ciphers := svc.Annotations[annotationUpstreamTlsCipherSuites]; ciphers != "" {
+			getTLSParams().CipherSuites = strings.Split(ciphers, ",")
+		}
+		if minProtoVer := svc.Annotations[annotationUpstreamTlsMinimumProtocolVersion]; minProtoVer != "" {
+			getTLSParams().TlsMinimumProtocolVersion = parseTlsProtocol(minProtoVer)
+		}
+		if maxProtoVer := svc.Annotations[annotationUpstreamTlsMaximumProtocolVersion]; maxProtoVer != "" {
+			getTLSParams().TlsMaximumProtocolVersion = parseTlsProtocol(maxProtoVer)
+		}
+		if ecdhCurves := svc.Annotations[annotationUpstreamTlsECDHCurves]; ecdhCurves != "" {
+			getTLSParams().EcdhCurves = strings.Split(ecdhCurves, ",")
+		}
+		switch upstreamProtocol {
+		case "h2":
+			getCtx().AlpnProtocols = []string{"h2"}
+		}
+	}
+
 	return cluster
+}
+
+func parseTlsProtocol(proto string) auth.TlsParameters_TlsProtocol {
+	switch proto {
+	case "1.0":
+		return auth.TlsParameters_TLSv1_0
+	case "1.1":
+		return auth.TlsParameters_TLSv1_1
+	case "1.2":
+		return auth.TlsParameters_TLSv1_2
+	case "1.3":
+		return auth.TlsParameters_TLSv1_3
+	}
+	return auth.TlsParameters_TLS_AUTO
 }
 
 func edsconfig(source, name string) *v2.Cluster_EdsClusterConfig {

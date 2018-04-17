@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 )
 
@@ -285,6 +286,296 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 					ConnectTimeout:       250 * time.Millisecond,
 					LbPolicy:             v2.Cluster_ROUND_ROBIN,
 					Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+				},
+			},
+		},
+		"tls upstream": {
+			oldObj: nil,
+			newObj: serviceWithAnnotations(
+				"default",
+				"kuard",
+				map[string]string{annotationUpstreamTls: "true"},
+				v1.ServicePort{
+					Protocol: "TCP",
+					Name:     "https",
+					Port:     443,
+				},
+			),
+			want: []*v2.Cluster{
+				&v2.Cluster{
+					Name: "default/kuard/443",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					TlsContext:     &auth.UpstreamTlsContext{},
+				},
+				&v2.Cluster{
+					Name: "default/kuard/https",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					TlsContext:     &auth.UpstreamTlsContext{},
+				},
+			},
+		},
+		"tls sni upstream": {
+			oldObj: nil,
+			newObj: serviceWithAnnotations(
+				"default",
+				"kuard",
+				map[string]string{
+					annotationUpstreamTls:    "true",
+					annotationUpstreamTlsSni: "kuard.example.com",
+				},
+				v1.ServicePort{
+					Protocol: "TCP",
+					Name:     "https",
+					Port:     443,
+				},
+			),
+			want: []*v2.Cluster{
+				&v2.Cluster{
+					Name: "default/kuard/443",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					TlsContext: &auth.UpstreamTlsContext{
+						Sni: "kuard.example.com",
+					},
+				},
+				&v2.Cluster{
+					Name: "default/kuard/https",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					TlsContext: &auth.UpstreamTlsContext{
+						Sni: "kuard.example.com",
+					},
+				},
+			},
+		},
+		"tls upstream cipher suites ": {
+			oldObj: nil,
+			newObj: serviceWithAnnotations(
+				"default",
+				"kuard",
+				map[string]string{
+					annotationUpstreamTlsCipherSuites: "ECDHE-RSA-AES256-GCM-SHA384,ECDHE-RSA-AES128-GCM-SHA256",
+					annotationUpstreamTls:             "true",
+				},
+				v1.ServicePort{
+					Protocol: "TCP",
+					Name:     "https",
+					Port:     443,
+				},
+			),
+			want: []*v2.Cluster{
+				&v2.Cluster{
+					Name: "default/kuard/443",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					TlsContext: &auth.UpstreamTlsContext{
+						CommonTlsContext: &auth.CommonTlsContext{
+							TlsParams: &auth.TlsParameters{
+								CipherSuites: []string{"ECDHE-RSA-AES256-GCM-SHA384", "ECDHE-RSA-AES128-GCM-SHA256"},
+							},
+						},
+					},
+				},
+				&v2.Cluster{
+					Name: "default/kuard/https",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					TlsContext: &auth.UpstreamTlsContext{
+						CommonTlsContext: &auth.CommonTlsContext{
+							TlsParams: &auth.TlsParameters{
+								CipherSuites: []string{"ECDHE-RSA-AES256-GCM-SHA384", "ECDHE-RSA-AES128-GCM-SHA256"},
+							},
+						},
+					},
+				},
+			},
+		},
+		"tls upstream ecdh curves": {
+			oldObj: nil,
+			newObj: serviceWithAnnotations(
+				"default",
+				"kuard",
+				map[string]string{
+					annotationUpstreamTls:           "true",
+					annotationUpstreamTlsECDHCurves: "X25519,P-256,P-384",
+				},
+				v1.ServicePort{
+					Protocol: "TCP",
+					Name:     "https",
+					Port:     443,
+				},
+			),
+			want: []*v2.Cluster{
+				&v2.Cluster{
+					Name: "default/kuard/443",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					TlsContext: &auth.UpstreamTlsContext{
+						CommonTlsContext: &auth.CommonTlsContext{
+							TlsParams: &auth.TlsParameters{
+								EcdhCurves: []string{"X25519", "P-256", "P-384"},
+							},
+						},
+					},
+				},
+				&v2.Cluster{
+					Name: "default/kuard/https",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					TlsContext: &auth.UpstreamTlsContext{
+						CommonTlsContext: &auth.CommonTlsContext{
+							TlsParams: &auth.TlsParameters{
+								EcdhCurves: []string{"X25519", "P-256", "P-384"},
+							},
+						},
+					},
+				},
+			},
+		},
+		"tls upstream proto version": {
+			oldObj: nil,
+			newObj: serviceWithAnnotations(
+				"default",
+				"kuard",
+				map[string]string{
+					annotationUpstreamTls:                       "true",
+					annotationUpstreamTlsMinimumProtocolVersion: "1.1",
+					annotationUpstreamTlsMaximumProtocolVersion: "1.2",
+				},
+				v1.ServicePort{
+					Protocol: "TCP",
+					Name:     "https",
+					Port:     443,
+				},
+			),
+			want: []*v2.Cluster{
+				&v2.Cluster{
+					Name: "default/kuard/443",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					TlsContext: &auth.UpstreamTlsContext{
+						CommonTlsContext: &auth.CommonTlsContext{
+							TlsParams: &auth.TlsParameters{
+								TlsMinimumProtocolVersion: auth.TlsParameters_TLSv1_1,
+								TlsMaximumProtocolVersion: auth.TlsParameters_TLSv1_2,
+							},
+						},
+					},
+				},
+				&v2.Cluster{
+					Name: "default/kuard/https",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					TlsContext: &auth.UpstreamTlsContext{
+						CommonTlsContext: &auth.CommonTlsContext{
+							TlsParams: &auth.TlsParameters{
+								TlsMinimumProtocolVersion: auth.TlsParameters_TLSv1_1,
+								TlsMaximumProtocolVersion: auth.TlsParameters_TLSv1_2,
+							},
+						},
+					},
+				},
+			},
+		},
+		"tls h2 upstream": {
+			oldObj: nil,
+			newObj: serviceWithAnnotations(
+				"default",
+				"kuard",
+				map[string]string{
+					fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): "443,https",
+					annotationUpstreamTls:                                  "true",
+				},
+				v1.ServicePort{
+					Protocol: "TCP",
+					Name:     "https",
+					Port:     443,
+				},
+			),
+			want: []*v2.Cluster{
+				&v2.Cluster{
+					Name: "default/kuard/443",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout:       250 * time.Millisecond,
+					LbPolicy:             v2.Cluster_ROUND_ROBIN,
+					Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+					TlsContext: &auth.UpstreamTlsContext{
+						CommonTlsContext: &auth.CommonTlsContext{
+							AlpnProtocols: []string{"h2"},
+						},
+					},
+				},
+				&v2.Cluster{
+					Name: "default/kuard/https",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout:       250 * time.Millisecond,
+					LbPolicy:             v2.Cluster_ROUND_ROBIN,
+					Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+					TlsContext: &auth.UpstreamTlsContext{
+						CommonTlsContext: &auth.CommonTlsContext{
+							AlpnProtocols: []string{"h2"},
+						},
+					},
 				},
 			},
 		},
