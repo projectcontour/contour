@@ -74,6 +74,8 @@ func main() {
 	xdsPort := serve.Flag("xds-port", "xDS gRPC API port").Default("8001").Int()
 
 	// translator configuration
+	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&t.HTTPAccessLog)
+	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&t.HTTPSAccessLog)
 	serve.Flag("envoy-http-address", "Envoy HTTP listener address").StringVar(&t.HTTPAddress)
 	serve.Flag("envoy-https-address", "Envoy HTTPS listener address").StringVar(&t.HTTPSAddress)
 	serve.Flag("envoy-http-port", "Envoy HTTP listener port").IntVar(&t.HTTPPort)
