@@ -142,6 +142,10 @@ func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend) *route.Route_Route {
 		}
 	}
 
+	if rewriteTarget, ok := i.Annotations[kubernetesIngressRewriteTarget]; ok {
+		ca.Route.PrefixRewrite = rewriteTarget
+	}
+
 	return &ca
 }
 
