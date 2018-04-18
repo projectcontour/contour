@@ -28,7 +28,7 @@ import (
 )
 
 func TestRecomputeListener(t *testing.T) {
-	tests := map[string]struct {
+	tests := map[string]*struct {
 		ingresses map[metadata]*v1beta1.Ingress
 		add       []*v2.Listener
 		remove    []string
@@ -146,7 +146,7 @@ func TestRecomputeListener(t *testing.T) {
 }
 
 func TestRecomputeTLSListener(t *testing.T) {
-	tests := map[string]struct {
+	tests := map[string]*struct {
 		ingresses map[metadata]*v1beta1.Ingress
 		secrets   map[metadata]*v1.Secret
 		add       []*v2.Listener

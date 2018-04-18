@@ -4,7 +4,7 @@ test: install
 vet: | test
 	go vet ./...
 
-check: test vet
+check: | test vet
 	@echo Checking code is gofmted
 	@bash -c 'if [ -n "$(gofmt -s -l .)" ]; then echo "Go code is not formatted:"; gofmt -s -d -e .; exit 1;fi'
 	@echo Checking rendered files are up to date
