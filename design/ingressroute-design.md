@@ -1,5 +1,7 @@
 # Executive Summary
 
+**Status**: _Draft_
+
 This document describes the design of a new CRD designed to replace the v1beta1.Ingress Kubernetes object.
 This new CRD will be integrated into Contour 0.5/0.6.
 Contour will continue to support the current v1beta1.Ingress object for as long as it is supported in upstream Kubernetes.
@@ -36,13 +38,8 @@ Each _root_ of a DAG starts at a virtual host, which describes properties like t
 The vertices of a graph do not contain virtual host information, they are only reachable from a root via a delegation.
 This permits the _owner_ of an ingress root to both delegate the authority to publish a service on a portion of the route space inside a virtual host, and to itself further delegate authority to publish and delegate.
 
-This also means that 
-
 In practice the linkage, or delegation, from root to vertex, is performed with a specific type of route action.
 You can think of it that rather than routing traffic to a service, it is routed to another ingressroute object for further processing.
-
-
-##
 
 # Detailed Design
 
