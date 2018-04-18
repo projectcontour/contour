@@ -46,8 +46,8 @@
     ".",
     "log"
   ]
-  revision = "26b41036311f2da8242db402557a0dbd09dc83da"
-  version = "v2.6.0"
+  revision = "92cd0815dd1a028a6e69faee9757c7436238e252"
+  version = "v2.6.1"
 
 [[projects]]
   name = "github.com/envoyproxy/go-control-plane"
@@ -64,8 +64,8 @@
     "envoy/service/load_stats/v2",
     "envoy/type"
   ]
-  revision = "89abfa00ef3cae559f2739ce9e1f181ffc7caf92"
-  version = "v0.1"
+  revision = "469a90e97a000f23f2ab0bf494cdc8e1480a3dfa"
+  version = "v0.2"
 
 [[projects]]
   name = "github.com/ghodss/yaml"
@@ -423,7 +423,7 @@
     "storage/v1alpha1",
     "storage/v1beta1"
   ]
-  revision = "c6c40fa5f71e46739e69d43b8ce08fad9720bab9"
+  revision = "53400f2739169693b7f1f64cf856f6d3d780d3db"
 
 [[projects]]
   branch = "release-1.9"
@@ -468,7 +468,7 @@
     "pkg/watch",
     "third_party/forked/golang/reflect"
   ]
-  revision = "cb88e003047fb517f284ff8af294451b20f0b403"
+  revision = "4a1945a9cfdfa104d202059c7e64250618d8d009"
 
 [[projects]]
   branch = "release-6.0"
@@ -528,7 +528,7 @@
     "util/integer",
     "util/jsonpath"
   ]
-  revision = "90539b4e75a8daaf7f67c3874c6180bfb1a63936"
+  revision = "65b43df093d1d129e9608582d98ac9bfbba7e486"
 
 [[projects]]
   branch = "master"
