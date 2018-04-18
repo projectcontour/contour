@@ -179,10 +179,7 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 				tlsMinProtoVer = auth.TlsParameters_TLSv1_2
 			case "1.1":
 				tlsMinProtoVer = auth.TlsParameters_TLSv1_1
-			case "1.0":
-				tlsMinProtoVer = auth.TlsParameters_TLSv1_0
 			default:
-				// Envoy 1.5.0 defaults to TLS 1.0.
 				tlsMinProtoVer = auth.TlsParameters_TLSv1_1
 			}
 			fc := listener.FilterChain{
