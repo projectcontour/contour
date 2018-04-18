@@ -120,7 +120,8 @@ func TestGRPCStreaming(t *testing.T) {
 			cc := newClient(t)
 			defer cc.Close()
 			lds := v2.NewListenerDiscoveryServiceClient(cc)
-			ctx, _ := context.WithTimeout(context.Background(), 100*time.Millisecond)
+			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+			defer cancel()
 			stream, err := lds.StreamListeners(ctx)
 			check(t, err)
 			checktimeout(t, stream) // check that the first receive times out, there is no default listener
@@ -147,7 +148,8 @@ func TestGRPCStreaming(t *testing.T) {
 					}},
 				},
 			})
-			ctx, _ = context.WithTimeout(context.Background(), 100*time.Millisecond)
+			ctx, cancel = context.WithTimeout(context.Background(), 100*time.Millisecond)
+			defer cancel()
 			stream, err = lds.StreamListeners(ctx)
 			check(t, err)
 			checkrecv(t, stream) // check we receive one notification

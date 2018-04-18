@@ -22,7 +22,8 @@ import (
 )
 
 func ExampleCond() {
-	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
 	ch := make(chan int, 1)
 	last := 0
 	var c contour.Cond
