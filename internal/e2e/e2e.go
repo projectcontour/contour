@@ -65,6 +65,10 @@ func setup(t *testing.T) (cache.ResourceEventHandler, *grpc.ClientConn, func()) 
 	cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
 	check(t, err)
 	return tr, cc, func() {
+		// close client connection
+		cc.Close()
+
+		// shut down listener, stop server and wait for it to stop
 		l.Close()
 		srv.Stop()
 		wg.Wait()
