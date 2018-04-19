@@ -136,8 +136,9 @@ func (s *grpcServer) FetchRoutes(_ context.Context, req *v2.DiscoveryRequest) (*
 	return s.fetch(req)
 }
 
+// fetch handles a single DiscoveryRequest.
 func (s *grpcServer) fetch(req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	s.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("fetch")
+	s.WithField("connection", atomic.AddUint64(&s.count, 1)).WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("fetch")
 	r, ok := s.resources[req.TypeUrl]
 	if !ok {
 		return nil, fmt.Errorf("no resourcer registered for typeURL %q", req.TypeUrl)
@@ -171,6 +172,13 @@ func (s *grpcServer) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServe
 	return s.stream(srv)
 }
 
+type grpcStream interface {
+	Context() context.Context
+	Send(*v2.DiscoveryResponse) error
+	Recv() (*v2.DiscoveryRequest, error)
+}
+
+// stream processes a stream of DiscoveryRequests.
 func (s *grpcServer) stream(st grpcStream) (err error) {
 	log := s.WithField("connection", atomic.AddUint64(&s.count, 1))
 	defer func() {
@@ -193,26 +201,26 @@ func (s *grpcServer) stream(st grpcStream) (err error) {
 		if !ok {
 			return fmt.Errorf("no resourcer registered for typeURL %q", req.TypeUrl)
 		}
-		log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("stream request")
+		log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("stream_wait")
 
 		r.Register(ch, last)
 		select {
 		case last = <-ch:
-			out, err := s.fetch(req)
+			resources, err := r.Resources()
 			if err != nil {
 				return err
 			}
-			if err := st.Send(out); err != nil {
+			resp := &v2.DiscoveryResponse{
+				VersionInfo: "0",
+				Resources:   resources,
+				TypeUrl:     r.TypeURL(),
+				Nonce:       "0",
+			}
+			if err := st.Send(resp); err != nil {
 				return err
 			}
 		case <-ctx.Done():
 			return ctx.Err()
 		}
 	}
-}
-
-type grpcStream interface {
-	Context() context.Context
-	Send(*v2.DiscoveryResponse) error
-	Recv() (*v2.DiscoveryRequest, error)
 }
