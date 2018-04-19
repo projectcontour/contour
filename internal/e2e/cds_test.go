@@ -484,7 +484,9 @@ func fetchCDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
-	resp, err := rds.FetchClusters(ctx, new(v2.DiscoveryRequest))
+	resp, err := rds.FetchClusters(ctx, &v2.DiscoveryRequest{
+		TypeUrl: clusterType,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

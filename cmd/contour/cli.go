@@ -22,6 +22,15 @@ import (
 	"google.golang.org/grpc"
 )
 
+const (
+	googleApis   = "type.googleapis.com/"
+	typePrefix   = googleApis + "envoy.api.v2."
+	endpointType = typePrefix + "ClusterLoadAssignment"
+	clusterType  = typePrefix + "Cluster"
+	routeType    = typePrefix + "RouteConfiguration"
+	listenerType = typePrefix + "Listener"
+)
+
 type Client struct {
 	ContourAddr string
 }
@@ -57,15 +66,21 @@ func (c *Client) RouteStream() v2.ClusterDiscoveryService_StreamClustersClient {
 }
 
 type stream interface {
+	Send(*v2.DiscoveryRequest) error
 	Recv() (*v2.DiscoveryResponse, error)
 }
 
-func watchstream(st stream) {
+func watchstream(st stream, typeURL string) {
 	m := proto.TextMarshaler{
 		Compact:   false,
 		ExpandAny: true,
 	}
 	for {
+		req := &v2.DiscoveryRequest{
+			TypeUrl: typeURL,
+		}
+		err := st.Send(req)
+		check(err)
 		resp, err := st.Recv()
 		check(err)
 		m.Marshal(os.Stdout, resp)

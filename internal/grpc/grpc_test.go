@@ -70,8 +70,9 @@ func TestGRPCStreaming(t *testing.T) {
 			defer cancel()
 			stream, err := sds.StreamClusters(ctx)
 			check(t, err)
-			checkrecv(t, stream)    // check we receive one notification
-			checktimeout(t, stream) // check that the second receive times out
+			sendreq(t, stream, clusterType) // send initial notification
+			checkrecv(t, stream)            // check we receive one notification
+			checktimeout(t, stream)         // check that the second receive times out
 		},
 		"StreamEndpoints": func(t *testing.T) {
 			// endpoints will be ignored unless there is a matching service.
@@ -113,8 +114,9 @@ func TestGRPCStreaming(t *testing.T) {
 			defer cancel()
 			stream, err := eds.StreamEndpoints(ctx)
 			check(t, err)
-			checkrecv(t, stream)    // check we receive one notification
-			checktimeout(t, stream) // check that the second receive times out
+			sendreq(t, stream, endpointType) // send initial notification
+			checkrecv(t, stream)             // check we receive one notification
+			checktimeout(t, stream)          // check that the second receive times out
 		},
 		"StreamListeners": func(t *testing.T) {
 			cc := newClient(t)
@@ -124,7 +126,8 @@ func TestGRPCStreaming(t *testing.T) {
 			defer cancel()
 			stream, err := lds.StreamListeners(ctx)
 			check(t, err)
-			checktimeout(t, stream) // check that the first receive times out, there is no default listener
+			sendreq(t, stream, listenerType) // send initial notification
+			checktimeout(t, stream)          // check that the first receive times out, there is no default listener
 
 			// add an ingress, which will create a non tls listener
 			tr.OnAdd(&v1beta1.Ingress{
@@ -152,7 +155,9 @@ func TestGRPCStreaming(t *testing.T) {
 			defer cancel()
 			stream, err = lds.StreamListeners(ctx)
 			check(t, err)
-			checkrecv(t, stream) // check we receive one notification
+			sendreq(t, stream, listenerType) // send initial notification
+			checkrecv(t, stream)             // check we receive one notification
+			checktimeout(t, stream)          // check that the second receive times out
 		},
 		"StreamRoutes": func(t *testing.T) {
 			tr.OnAdd(&v1beta1.Ingress{
@@ -184,8 +189,9 @@ func TestGRPCStreaming(t *testing.T) {
 			defer cancel()
 			stream, err := rds.StreamRoutes(ctx)
 			check(t, err)
-			checkrecv(t, stream)    // check we receive one notification
-			checktimeout(t, stream) // check that the second receive times out
+			sendreq(t, stream, routeType) // send initial notification
+			checkrecv(t, stream)          // check we receive one notification
+			checktimeout(t, stream)       // check that the second receive times out
 		},
 	}
 
@@ -231,7 +237,9 @@ func TestGRPCFetching(t *testing.T) {
 			sds := v2.NewClusterDiscoveryServiceClient(cc)
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
-			req := &v2.DiscoveryRequest{}
+			req := &v2.DiscoveryRequest{
+				TypeUrl: clusterType,
+			}
 			_, err := sds.FetchClusters(ctx, req)
 			check(t, err)
 		},
@@ -241,7 +249,9 @@ func TestGRPCFetching(t *testing.T) {
 			eds := v2.NewEndpointDiscoveryServiceClient(cc)
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
-			req := &v2.DiscoveryRequest{}
+			req := &v2.DiscoveryRequest{
+				TypeUrl: endpointType,
+			}
 			_, err := eds.FetchEndpoints(ctx, req)
 			check(t, err)
 		},
@@ -251,7 +261,9 @@ func TestGRPCFetching(t *testing.T) {
 			lds := v2.NewListenerDiscoveryServiceClient(cc)
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
-			req := &v2.DiscoveryRequest{}
+			req := &v2.DiscoveryRequest{
+				TypeUrl: listenerType,
+			}
 			_, err := lds.FetchListeners(ctx, req)
 			check(t, err)
 		},
@@ -261,7 +273,9 @@ func TestGRPCFetching(t *testing.T) {
 			rds := v2.NewRouteDiscoveryServiceClient(cc)
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
-			req := &v2.DiscoveryRequest{}
+			req := &v2.DiscoveryRequest{
+				TypeUrl: routeType,
+			}
 			_, err := rds.FetchRoutes(ctx, req)
 			check(t, err)
 		},
@@ -299,6 +313,16 @@ func check(t *testing.T, err error) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func sendreq(t *testing.T, stream interface {
+	Send(*v2.DiscoveryRequest) error
+}, typeurl string) {
+	t.Helper()
+	err := stream.Send(&v2.DiscoveryRequest{
+		TypeUrl: typeurl,
+	})
+	check(t, err)
 }
 
 func checkrecv(t *testing.T, stream interface {
