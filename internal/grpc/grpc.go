@@ -96,31 +96,29 @@ func NewAPI(log logrus.FieldLogger, t *contour.Translator) *grpc.Server {
 }
 
 type grpcServer struct {
-	CDS
-	EDS
-	LDS
-	RDS
+	logrus.FieldLogger
+	count     uint64               // connection count, incremented atomically
+	resources map[string]resourcer // registered resource types
 }
 
 func newgrpcServer(log logrus.FieldLogger, t *contour.Translator) *grpcServer {
 	return &grpcServer{
-		CDS: CDS{
-			ClusterCache: &t.ClusterCache,
-			FieldLogger:  log,
-		},
-		EDS: EDS{
-			ClusterLoadAssignmentCache: &t.ClusterLoadAssignmentCache,
-			FieldLogger:                log,
-		},
-		LDS: LDS{
-			ListenerCache: &t.ListenerCache,
-			FieldLogger:   log,
-		},
-		RDS: RDS{
-			HTTP:        &t.VirtualHostCache.HTTP,
-			HTTPS:       &t.VirtualHostCache.HTTPS,
-			Cond:        &t.VirtualHostCache.Cond,
-			FieldLogger: log,
+		FieldLogger: log,
+		resources: map[string]resourcer{
+			clusterType: &CDS{
+				ClusterCache: &t.ClusterCache,
+			},
+			endpointType: &EDS{
+				ClusterLoadAssignmentCache: &t.ClusterLoadAssignmentCache,
+			},
+			listenerType: &LDS{
+				ListenerCache: &t.ListenerCache,
+			},
+			routeType: &RDS{
+				HTTP:  &t.VirtualHostCache.HTTP,
+				HTTPS: &t.VirtualHostCache.HTTPS,
+				Cond:  &t.VirtualHostCache.Cond,
+			},
 		},
 	}
 }
@@ -129,13 +127,103 @@ func newgrpcServer(log logrus.FieldLogger, t *contour.Translator) *grpcServer {
 type resourcer interface {
 	Resources() ([]types.Any, error)
 	TypeURL() string
+	Register(chan int, int)
+}
+
+func (s *grpcServer) FetchClusters(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	return s.fetch(req)
+}
+
+func (s *grpcServer) FetchEndpoints(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	return s.fetch(req)
+}
+
+func (s *grpcServer) FetchListeners(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	return s.fetch(req)
+}
+
+func (s *grpcServer) FetchRoutes(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	return s.fetch(req)
+}
+
+func (s *grpcServer) fetch(req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	s.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("fetch")
+	r, ok := s.resources[req.TypeUrl]
+	if !ok {
+		return nil, fmt.Errorf("no resourcer registered for typeURL %q", req.TypeUrl)
+	}
+	resources, err := r.Resources()
+	return &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   resources,
+		TypeUrl:     r.TypeURL(),
+		Nonce:       "0",
+	}, err
+}
+
+func (s *grpcServer) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) error {
+	return s.stream(srv)
+}
+
+func (s *grpcServer) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsServer) error {
+	return s.stream(srv)
+}
+
+func (s *grpcServer) StreamLoadStats(srv envoy_service_v2.LoadReportingService_StreamLoadStatsServer) error {
+	return grpc.Errorf(codes.Unimplemented, "FetchListeners Unimplemented")
+}
+
+func (s *grpcServer) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) error {
+	return s.stream(srv)
+}
+
+func (s *grpcServer) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) error {
+	return s.stream(srv)
+}
+
+func (s *grpcServer) stream(st grpcStream) (err error) {
+	log := s.WithField("connection", atomic.AddUint64(&s.count, 1))
+	defer func() {
+		if err != nil {
+			log.WithError(err).Error("stream terminated")
+		} else {
+			log.Info("stream terminated")
+		}
+	}()
+
+	ch := make(chan int, 1)
+	last := 0
+	ctx := st.Context()
+	for {
+		req, err := st.Recv()
+		if err != nil {
+			return err
+		}
+		r, ok := s.resources[req.TypeUrl]
+		if !ok {
+			return fmt.Errorf("no resourcer registered for typeURL %q", req.TypeUrl)
+		}
+		log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("stream request")
+
+		r.Register(ch, last)
+		select {
+		case last = <-ch:
+			out, err := s.fetch(req)
+			if err != nil {
+				return err
+			}
+			if err := st.Send(out); err != nil {
+				return err
+			}
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
 }
 
 // CDS implements the CDS v2 gRPC API.
 type CDS struct {
-	logrus.FieldLogger
 	ClusterCache
-	count uint64
 }
 
 // Resources returns the contents of CDS"s cache as a []types.Any.
@@ -156,20 +244,9 @@ func (c *CDS) Resources() ([]types.Any, error) {
 
 func (c *CDS) TypeURL() string { return clusterType }
 
-func (c *CDS) FetchClusters(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return fetch(c, req, c)
-}
-
-func (c *CDS) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) error {
-	log := c.WithField("connection", atomic.AddUint64(&c.count, 1))
-	return stream(srv, c, log)
-}
-
 // EDS implements the EDS v2 gRPC API.
 type EDS struct {
-	logrus.FieldLogger
 	ClusterLoadAssignmentCache
-	count uint64
 }
 
 // Resources returns the contents of EDS"s cache as a []types.Any.
@@ -190,24 +267,9 @@ func (e *EDS) Resources() ([]types.Any, error) {
 
 func (e *EDS) TypeURL() string { return endpointType }
 
-func (e *EDS) FetchEndpoints(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return fetch(e, req, e)
-}
-
-func (e *EDS) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsServer) error {
-	log := e.WithField("connection", atomic.AddUint64(&e.count, 1))
-	return stream(srv, e, log)
-}
-
-func (e *EDS) StreamLoadStats(srv envoy_service_v2.LoadReportingService_StreamLoadStatsServer) error {
-	return grpc.Errorf(codes.Unimplemented, "FetchListeners Unimplemented")
-}
-
 // LDS implements the LDS v2 gRPC API.
 type LDS struct {
-	logrus.FieldLogger
 	ListenerCache
-	count uint64
 }
 
 // Resources returns the contents of LDS"s cache as a []types.Any.
@@ -228,25 +290,14 @@ func (l *LDS) Resources() ([]types.Any, error) {
 
 func (l *LDS) TypeURL() string { return listenerType }
 
-func (l *LDS) FetchListeners(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return fetch(l, req, l)
-}
-
-func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) error {
-	log := l.WithField("connection", atomic.AddUint64(&l.count, 1))
-	return stream(srv, l, log)
-}
-
 // RDS implements the RDS v2 gRPC API.
 type RDS struct {
-	logrus.FieldLogger
 	HTTP, HTTPS interface {
 		// Values returns a copy of the contents of the cache.
 		// The slice and its contents should be treated as read-only.
 		Values() []route.VirtualHost
 	}
 	*contour.Cond
-	count uint64
 }
 
 // Resources returns the contents of RDS"s cache as a []types.Any.
@@ -277,30 +328,6 @@ func (r *RDS) Resources() ([]types.Any, error) {
 
 func (r *RDS) TypeURL() string { return routeType }
 
-func (r *RDS) FetchRoutes(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return fetch(r, req, r)
-}
-
-func (r *RDS) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) error {
-	log := r.WithField("connection", atomic.AddUint64(&r.count, 1))
-	return stream(srv, r, log)
-}
-
-func fetch(log logrus.FieldLogger, req *v2.DiscoveryRequest, r resourcer) (*v2.DiscoveryResponse, error) {
-	log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("fetch")
-
-	if req.TypeUrl != r.TypeURL() {
-		return nil, fmt.Errorf("mismatched type url: expected %q, got %q", r.TypeURL(), req.TypeUrl)
-	}
-	resources, err := r.Resources()
-	return &v2.DiscoveryResponse{
-		VersionInfo: "0",
-		Resources:   resources,
-		TypeUrl:     r.TypeURL(),
-		Nonce:       "0",
-	}, err
-}
-
 type grpcStream interface {
 	Context() context.Context
 	Send(*v2.DiscoveryResponse) error
@@ -309,45 +336,4 @@ type grpcStream interface {
 
 type notifier interface {
 	resourcer
-	Register(chan int, int)
-}
-
-// stream streams a *v2.DiscoveryResponses to the receiver.
-func stream(st grpcStream, n notifier, log logrus.FieldLogger) error {
-	err := stream0(st, n, log)
-	if err != nil {
-		log.WithError(err).Error("stream terminated")
-	} else {
-		log.Info("stream terminated")
-	}
-	return err
-}
-
-func stream0(st grpcStream, n notifier, log logrus.FieldLogger) error {
-	ch := make(chan int, 1)
-	last := 0
-	nonce := 0
-	ctx := st.Context()
-	for {
-		req, err := st.Recv()
-		if err != nil {
-			return err
-		}
-		log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("stream request")
-
-		n.Register(ch, last)
-		select {
-		case last = <-ch:
-			out, err := fetch(log, req, n)
-			if err != nil {
-				return err
-			}
-			if err := st.Send(out); err != nil {
-				return err
-			}
-			nonce++
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
 }
