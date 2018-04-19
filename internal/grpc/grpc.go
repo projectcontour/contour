@@ -16,7 +16,7 @@ package grpc
 
 import (
 	"context"
-	"strconv"
+	"fmt"
 	"sync/atomic"
 
 	"google.golang.org/grpc"
@@ -106,21 +106,21 @@ func newgrpcServer(log logrus.FieldLogger, t *contour.Translator) *grpcServer {
 	return &grpcServer{
 		CDS: CDS{
 			ClusterCache: &t.ClusterCache,
-			FieldLogger:  log.WithField("api", "CDS"),
+			FieldLogger:  log,
 		},
 		EDS: EDS{
 			ClusterLoadAssignmentCache: &t.ClusterLoadAssignmentCache,
-			FieldLogger:                log.WithField("api", "EDS"),
+			FieldLogger:                log,
 		},
 		LDS: LDS{
 			ListenerCache: &t.ListenerCache,
-			FieldLogger:   log.WithField("api", "LDS"),
+			FieldLogger:   log,
 		},
 		RDS: RDS{
 			HTTP:        &t.VirtualHostCache.HTTP,
 			HTTPS:       &t.VirtualHostCache.HTTPS,
 			Cond:        &t.VirtualHostCache.Cond,
-			FieldLogger: log.WithField("api", "RDS"),
+			FieldLogger: log,
 		},
 	}
 }
@@ -156,8 +156,8 @@ func (c *CDS) Resources() ([]types.Any, error) {
 
 func (c *CDS) TypeURL() string { return clusterType }
 
-func (c *CDS) FetchClusters(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return fetch(c, 0, 0)
+func (c *CDS) FetchClusters(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	return fetch(c, req, c)
 }
 
 func (c *CDS) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) error {
@@ -190,8 +190,8 @@ func (e *EDS) Resources() ([]types.Any, error) {
 
 func (e *EDS) TypeURL() string { return endpointType }
 
-func (e *EDS) FetchEndpoints(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return fetch(e, 0, 0)
+func (e *EDS) FetchEndpoints(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	return fetch(e, req, e)
 }
 
 func (e *EDS) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsServer) error {
@@ -228,8 +228,8 @@ func (l *LDS) Resources() ([]types.Any, error) {
 
 func (l *LDS) TypeURL() string { return listenerType }
 
-func (l *LDS) FetchListeners(ctx context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return fetch(l, 0, 0)
+func (l *LDS) FetchListeners(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	return fetch(l, req, l)
 }
 
 func (l *LDS) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) error {
@@ -277,8 +277,8 @@ func (r *RDS) Resources() ([]types.Any, error) {
 
 func (r *RDS) TypeURL() string { return routeType }
 
-func (r *RDS) FetchRoutes(context.Context, *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return fetch(r, 0, 0)
+func (r *RDS) FetchRoutes(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	return fetch(r, req, r)
 }
 
 func (r *RDS) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) error {
@@ -286,14 +286,18 @@ func (r *RDS) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) erro
 	return stream(srv, r, log)
 }
 
-// fetch returns a *v2.DiscoveryResponse for the current resourcer, typeurl, version and nonce.
-func fetch(r resourcer, version, nonce int) (*v2.DiscoveryResponse, error) {
+func fetch(log logrus.FieldLogger, req *v2.DiscoveryRequest, r resourcer) (*v2.DiscoveryResponse, error) {
+	log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("fetch")
+
+	if req.TypeUrl != r.TypeURL() {
+		return nil, fmt.Errorf("mismatched type url: expected %q, got %q", r.TypeURL(), req.TypeUrl)
+	}
 	resources, err := r.Resources()
 	return &v2.DiscoveryResponse{
-		VersionInfo: strconv.FormatInt(int64(version), 10),
+		VersionInfo: "0",
 		Resources:   resources,
 		TypeUrl:     r.TypeURL(),
-		Nonce:       strconv.FormatInt(int64(nonce), 10),
+		Nonce:       "0",
 	}, err
 }
 
@@ -325,12 +329,16 @@ func stream0(st grpcStream, n notifier, log logrus.FieldLogger) error {
 	nonce := 0
 	ctx := st.Context()
 	for {
-		log.WithField("version", last).Info("waiting for notification")
+		req, err := st.Recv()
+		if err != nil {
+			return err
+		}
+		log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("stream request")
+
 		n.Register(ch, last)
 		select {
 		case last = <-ch:
-			log.WithField("version", last).Info("notification received")
-			out, err := fetch(n, last, nonce)
+			out, err := fetch(log, req, n)
 			if err != nil {
 				return err
 			}

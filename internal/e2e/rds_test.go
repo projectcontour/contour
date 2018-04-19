@@ -722,7 +722,9 @@ func fetchRDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
-	resp, err := rds.FetchRoutes(ctx, new(v2.DiscoveryRequest))
+	resp, err := rds.FetchRoutes(ctx, &v2.DiscoveryRequest{
+		TypeUrl: routeType,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

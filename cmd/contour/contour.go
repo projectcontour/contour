@@ -87,16 +87,16 @@ func main() {
 		writeBootstrapConfig(&config, *path)
 	case cds.FullCommand():
 		stream := client.ClusterStream()
-		watchstream(stream)
+		watchstream(stream, clusterType)
 	case eds.FullCommand():
 		stream := client.EndpointStream()
-		watchstream(stream)
+		watchstream(stream, endpointType)
 	case lds.FullCommand():
 		stream := client.ListenerStream()
-		watchstream(stream)
+		watchstream(stream, listenerType)
 	case rds.FullCommand():
 		stream := client.RouteStream()
-		watchstream(stream)
+		watchstream(stream, routeType)
 	case serve.FullCommand():
 		log.Infof("args: %v", args)
 		var g workgroup.Group
