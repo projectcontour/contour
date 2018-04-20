@@ -22,6 +22,48 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// cache holds a set of objects confirming to the proto.Message interface
+type cache struct {
+	mu      sync.Mutex
+	entries map[string]message
+}
+
+// insert inserts the value into the cache with the key name.
+func (c *cache) insert(name string, value message) {
+	c.mu.Lock()
+	if c.entries == nil {
+		c.entries = make(map[string]message)
+	}
+	c.entries[name] = value
+	c.mu.Unlock()
+}
+
+// remote removes a value from the cache.
+func (c *cache) remove(name string) {
+	c.mu.Lock()
+	delete(c.entries, name)
+	c.mu.Unlock()
+}
+
+// values returns a slice of the value stored in the cache.
+func (c *cache) values() []message {
+	var values []message
+	c.mu.Lock()
+	values = make([]message, 0, len(c.entries))
+	for _, v := range c.entries {
+		values = append(values, v)
+	}
+	c.mu.Unlock()
+	return values
+}
+
+// message is implemented by generated protocol buffer messages.
+type message interface {
+	Reset()
+	String() string
+	ProtoMessage()
+}
+
 // clusterCache is a thread safe, atomic, copy on write cache of *v2.Cluster objects.
 type clusterCache struct {
 	sync.Mutex

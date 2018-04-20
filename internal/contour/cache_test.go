@@ -21,6 +21,103 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 )
 
+func TestCacheInsert(t *testing.T) {
+	var val, val2 v2.Cluster
+
+	tests := map[string]struct {
+		cache
+		key   string
+		value message
+		want  map[string]message
+	}{
+		"empty, add new key": {
+			key:   "alpha",
+			value: &val,
+			want: map[string]message{
+				"alpha": &val,
+			},
+		},
+		"one key, add second": {
+			cache: cache{
+				entries: map[string]message{
+					"alpha": &val,
+				},
+			},
+			key:   "beta",
+			value: &val,
+			want: map[string]message{
+				"alpha": &val,
+				"beta":  &val,
+			},
+		},
+		"one key overwritten": {
+			cache: cache{
+				entries: map[string]message{
+					"alpha": &val,
+				},
+			},
+			key:   "alpha",
+			value: &val2,
+			want: map[string]message{
+				"alpha": &val2,
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			tc.cache.insert(tc.key, tc.value)
+			if !reflect.DeepEqual(tc.cache.entries, tc.want) {
+				t.Fatalf("expected: %#v, got %#v", tc.want, tc.cache.entries)
+			}
+		})
+	}
+}
+
+func TestCacheRemove(t *testing.T) {
+	var val v2.Cluster
+
+	tests := map[string]struct {
+		cache
+		key  string
+		want map[string]message
+	}{
+		"one key, remove": {
+			cache: cache{
+				entries: map[string]message{
+					"alpha": &val,
+				},
+			},
+			key:  "alpha",
+			want: map[string]message{},
+		},
+		"one key, remove unrelated": {
+			cache: cache{
+				entries: map[string]message{
+					"alpha": &val,
+				},
+			},
+			key: "beta",
+			want: map[string]message{
+				"alpha": &val,
+			},
+		},
+		"empty, remove anything": {
+			key:  "alpha",
+			want: nil,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			tc.cache.remove(tc.key)
+			if !reflect.DeepEqual(tc.cache.entries, tc.want) {
+				t.Fatalf("expected: %#v, got %#v", tc.want, tc.cache.entries)
+			}
+		})
+	}
+}
+
 func TestClusterCacheValuesReturnsACopyOfItsInternalSlice(t *testing.T) {
 	var cc clusterCache
 	c := &v2.Cluster{
