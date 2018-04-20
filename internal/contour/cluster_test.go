@@ -25,13 +25,16 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/gogo/protobuf/proto"
 )
+
+// TODO(dfc) clean up these tests with helpers for the want: fixtures.
 
 func TestClusterCacheRecomputeService(t *testing.T) {
 	tests := map[string]struct {
 		oldObj *v1.Service
 		newObj *v1.Service
-		want   []*v2.Cluster
+		want   []proto.Message
 	}{
 		"add unnamed service": {
 			oldObj: nil,
@@ -42,16 +45,18 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 					TargetPort: intstr.FromInt(8443),
 				},
 			),
-			want: []*v2.Cluster{{
-				Name: "default/kuard/443",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard",
+			want: []proto.Message{
+				&v2.Cluster{
+					Name: "default/kuard/443",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}},
+			},
 		},
 		"name previously unnamed port": {
 			oldObj: service("default", "kuard",
@@ -69,25 +74,27 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 					TargetPort: intstr.FromInt(8443),
 				},
 			),
-			want: []*v2.Cluster{{
-				Name: "default/kuard/443",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/https",
+			want: []proto.Message{
+				&v2.Cluster{
+					Name: "default/kuard/443",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				}, &v2.Cluster{
+					Name: "default/kuard/https",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}, {
-				Name: "default/kuard/https",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/https",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}},
+			},
 		},
 		"remove name from port": {
 			oldObj: service("default", "kuard",
@@ -105,16 +112,18 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 					TargetPort: intstr.FromInt(8443),
 				},
 			),
-			want: []*v2.Cluster{{
-				Name: "default/kuard/443",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard",
+			want: []proto.Message{
+				&v2.Cluster{
+					Name: "default/kuard/443",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}},
+			},
 		},
 		"update service port": {
 			oldObj: service("default", "kuard",
@@ -133,25 +142,27 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 					TargetPort: intstr.FromInt(8080),
 				},
 			),
-			want: []*v2.Cluster{{
-				Name: "default/kuard/8080",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/http",
+			want: []proto.Message{
+				&v2.Cluster{
+					Name: "default/kuard/8080",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/http",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				}, &v2.Cluster{
+					Name: "default/kuard/http",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/http",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}, {
-				Name: "default/kuard/http",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/http",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}},
+			},
 		},
 		"remove named service port": {
 			oldObj: service("default", "kuard",
@@ -176,25 +187,27 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 					TargetPort: intstr.FromInt(8443),
 				},
 			),
-			want: []*v2.Cluster{{
-				Name: "default/kuard/443",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/https",
+			want: []proto.Message{
+				&v2.Cluster{
+					Name: "default/kuard/443",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				}, &v2.Cluster{
+					Name: "default/kuard/https",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}, {
-				Name: "default/kuard/https",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/https",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}},
+			},
 		},
 		"update, remove, and rename a named port": {
 			oldObj: service("default", "kuard",
@@ -218,16 +231,18 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 					TargetPort: intstr.FromInt(8000),
 				},
 			),
-			want: []*v2.Cluster{{
-				Name: "default/kuard/443",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard",
+			want: []proto.Message{
+				&v2.Cluster{
+					Name: "default/kuard/443",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}},
+			},
 		},
 		"issue#243": {
 			oldObj: nil,
@@ -238,16 +253,18 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 					TargetPort: intstr.FromInt(8080),
 				},
 			),
-			want: []*v2.Cluster{{
-				Name: "default/kuard/80",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard",
+			want: []proto.Message{
+				&v2.Cluster{
+					Name: "default/kuard/80",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}},
+			},
 		},
 		"http2 upstream": {
 			oldObj: nil,
@@ -263,7 +280,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 					Port:     80,
 				},
 			),
-			want: []*v2.Cluster{
+			want: []proto.Message{
 				&v2.Cluster{
 					Name: "default/kuard/80",
 					Type: v2.Cluster_EDS,

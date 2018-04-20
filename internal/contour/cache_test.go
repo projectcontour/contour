@@ -19,6 +19,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/gogo/protobuf/proto"
 )
 
 func TestCacheInsert(t *testing.T) {
@@ -27,38 +28,38 @@ func TestCacheInsert(t *testing.T) {
 	tests := map[string]struct {
 		cache
 		key   string
-		value message
-		want  map[string]message
+		value proto.Message
+		want  map[string]proto.Message
 	}{
 		"empty, add new key": {
 			key:   "alpha",
 			value: &val,
-			want: map[string]message{
+			want: map[string]proto.Message{
 				"alpha": &val,
 			},
 		},
 		"one key, add second": {
 			cache: cache{
-				entries: map[string]message{
+				entries: map[string]proto.Message{
 					"alpha": &val,
 				},
 			},
 			key:   "beta",
 			value: &val,
-			want: map[string]message{
+			want: map[string]proto.Message{
 				"alpha": &val,
 				"beta":  &val,
 			},
 		},
 		"one key overwritten": {
 			cache: cache{
-				entries: map[string]message{
+				entries: map[string]proto.Message{
 					"alpha": &val,
 				},
 			},
 			key:   "alpha",
 			value: &val2,
-			want: map[string]message{
+			want: map[string]proto.Message{
 				"alpha": &val2,
 			},
 		},
@@ -80,25 +81,25 @@ func TestCacheRemove(t *testing.T) {
 	tests := map[string]struct {
 		cache
 		key  string
-		want map[string]message
+		want map[string]proto.Message
 	}{
 		"one key, remove": {
 			cache: cache{
-				entries: map[string]message{
+				entries: map[string]proto.Message{
 					"alpha": &val,
 				},
 			},
 			key:  "alpha",
-			want: map[string]message{},
+			want: map[string]proto.Message{},
 		},
 		"one key, remove unrelated": {
 			cache: cache{
-				entries: map[string]message{
+				entries: map[string]proto.Message{
 					"alpha": &val,
 				},
 			},
 			key: "beta",
-			want: map[string]message{
+			want: map[string]proto.Message{
 				"alpha": &val,
 			},
 		},
@@ -162,11 +163,12 @@ func TestClusterCacheAddInsertsTwoElementsInSortOrder(t *testing.T) {
 	}
 	cc.Add(c2)
 	got := cc.Values()
-	want := []*v2.Cluster{{
-		Name: "alpha",
-	}, {
-		Name: "beta",
-	}}
+	want := []proto.Message{
+		&v2.Cluster{
+			Name: "alpha",
+		}, &v2.Cluster{
+			Name: "beta",
+		}}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("ClusterCache.Add/Values returned elements missing or out of order, got: %v, want: %v", got, want)
 	}
@@ -185,7 +187,7 @@ func TestClusterCacheAddOverwritesElementsWithTheSameName(t *testing.T) {
 	}
 	cc.Add(c2)
 	got := cc.Values()
-	want := []*v2.Cluster{
+	want := []proto.Message{
 		c2,
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -220,7 +222,7 @@ func TestClusterCacheRemove(t *testing.T) {
 	cc.Add(c1)
 	cc.Remove("alpha")
 	got := cc.Values()
-	want := []*v2.Cluster{}
+	want := []proto.Message{}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("ClusterCache.Remove: got: %v, want: %v", got, want)
 	}

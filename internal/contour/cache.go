@@ -19,20 +19,21 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/gogo/protobuf/proto"
 	"github.com/sirupsen/logrus"
 )
 
 // cache holds a set of objects confirming to the proto.Message interface
 type cache struct {
 	mu      sync.Mutex
-	entries map[string]message
+	entries map[string]proto.Message
 }
 
 // insert inserts the value into the cache with the key name.
-func (c *cache) insert(name string, value message) {
+func (c *cache) insert(name string, value proto.Message) {
 	c.mu.Lock()
 	if c.entries == nil {
-		c.entries = make(map[string]message)
+		c.entries = make(map[string]proto.Message)
 	}
 	c.entries[name] = value
 	c.mu.Unlock()
@@ -46,22 +47,14 @@ func (c *cache) remove(name string) {
 }
 
 // values returns a slice of the value stored in the cache.
-func (c *cache) values() []message {
-	var values []message
+func (c *cache) values() []proto.Message {
 	c.mu.Lock()
-	values = make([]message, 0, len(c.entries))
+	values := make([]proto.Message, 0, len(c.entries))
 	for _, v := range c.entries {
 		values = append(values, v)
 	}
 	c.mu.Unlock()
 	return values
-}
-
-// message is implemented by generated protocol buffer messages.
-type message interface {
-	Reset()
-	String() string
-	ProtoMessage()
 }
 
 // clusterCache is a thread safe, atomic, copy on write cache of *v2.Cluster objects.
@@ -70,11 +63,8 @@ type clusterCache struct {
 }
 
 // Values returns a copy of the contents of the cache.
-func (cc *clusterCache) Values() []*v2.Cluster {
-	values := []*v2.Cluster{}
-	for _, v := range cc.values() {
-		values = append(values, v.(*v2.Cluster))
-	}
+func (cc *clusterCache) Values() []proto.Message {
+	values := cc.values()
 	sort.Sort(clusterByName(values))
 	return values
 }
@@ -95,11 +85,11 @@ func (cc *clusterCache) Remove(names ...string) {
 	}
 }
 
-type clusterByName []*v2.Cluster
+type clusterByName []proto.Message
 
 func (c clusterByName) Len() int           { return len(c) }
 func (c clusterByName) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
-func (c clusterByName) Less(i, j int) bool { return c[i].Name < c[j].Name }
+func (c clusterByName) Less(i, j int) bool { return c[i].(*v2.Cluster).Name < c[j].(*v2.Cluster).Name }
 
 // clusterLoadAssignmentCache is a thread safe, atomic, copy on write cache of v2.ClusterLoadAssignment objects.
 type clusterLoadAssignmentCache struct {

@@ -20,6 +20,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/gogo/protobuf/proto"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -31,7 +32,7 @@ func TestTranslatorAddService(t *testing.T) {
 	tests := []struct {
 		name string
 		svc  *v1.Service
-		want []*v2.Cluster
+		want []proto.Message
 	}{{
 		name: "single service port",
 		svc: service("default", "simple", v1.ServicePort{
@@ -39,7 +40,7 @@ func TestTranslatorAddService(t *testing.T) {
 			Port:       80,
 			TargetPort: intstr.FromInt(6502),
 		}),
-		want: []*v2.Cluster{
+		want: []proto.Message{
 			cluster("default/simple/80", "default/simple"),
 		},
 	}, {
@@ -53,7 +54,7 @@ func TestTranslatorAddService(t *testing.T) {
 				TargetPort: intstr.FromInt(6502),
 			},
 		),
-		want: []*v2.Cluster{
+		want: []proto.Message{
 			cluster(
 				"beurocratic-company-test-domain-1/tiny-cog-depa-52e801/80",
 				"beurocratic-company-test-domain-1/tiny-cog-department-test-instance", // ServiceName is not subject to the 60 char limit
@@ -67,7 +68,7 @@ func TestTranslatorAddService(t *testing.T) {
 			Port:       80,
 			TargetPort: intstr.FromInt(6502),
 		}),
-		want: []*v2.Cluster{
+		want: []proto.Message{
 			cluster("default/simple/80", "default/simple/http"),
 			cluster("default/simple/http", "default/simple/http"),
 		},
@@ -84,7 +85,7 @@ func TestTranslatorAddService(t *testing.T) {
 			Port:       8080,
 			TargetPort: intstr.FromString("9001"),
 		}),
-		want: []*v2.Cluster{
+		want: []proto.Message{
 			cluster("default/simple/80", "default/simple/http"),
 			cluster("default/simple/8080", "default/simple/alt"),
 			cluster("default/simple/alt", "default/simple/alt"),
@@ -103,7 +104,7 @@ func TestTranslatorAddService(t *testing.T) {
 			Port:       8080,
 			TargetPort: intstr.FromString("9001"),
 		}),
-		want: []*v2.Cluster{
+		want: []proto.Message{
 			cluster("default/simple/8080", "default/simple"),
 		},
 	}, {
@@ -113,7 +114,7 @@ func TestTranslatorAddService(t *testing.T) {
 			Port:       80,
 			TargetPort: intstr.FromInt(6502),
 		}),
-		want: []*v2.Cluster{},
+		want: []proto.Message{},
 	}}
 
 	log := testLogger(t)
@@ -135,7 +136,7 @@ func TestTranslatorUpdateService(t *testing.T) {
 	tests := map[string]struct {
 		oldObj *v1.Service
 		newObj *v1.Service
-		want   []*v2.Cluster
+		want   []proto.Message
 	}{
 		"remove named service port": {
 			oldObj: service("default", "kuard",
@@ -160,25 +161,27 @@ func TestTranslatorUpdateService(t *testing.T) {
 					TargetPort: intstr.FromInt(8443),
 				},
 			),
-			want: []*v2.Cluster{{
-				Name: "default/kuard/443",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/https",
+			want: []proto.Message{
+				&v2.Cluster{
+					Name: "default/kuard/443",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				}, &v2.Cluster{
+					Name: "default/kuard/https",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}, {
-				Name: "default/kuard/https",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/https",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}},
+			},
 		},
 	}
 
@@ -202,7 +205,7 @@ func TestTranslatorRemoveService(t *testing.T) {
 	tests := map[string]struct {
 		setup func(*Translator)
 		svc   *v1.Service
-		want  []*v2.Cluster
+		want  []proto.Message
 	}{
 		"remove existing": {
 			setup: func(tr *Translator) {
@@ -217,7 +220,7 @@ func TestTranslatorRemoveService(t *testing.T) {
 				Port:       80,
 				TargetPort: intstr.FromInt(6502),
 			}),
-			want: []*v2.Cluster{},
+			want: []proto.Message{},
 		},
 		"remove named": {
 			setup: func(tr *Translator) {
@@ -234,7 +237,7 @@ func TestTranslatorRemoveService(t *testing.T) {
 				Port:       80,
 				TargetPort: intstr.FromInt(6502),
 			}),
-			want: []*v2.Cluster{},
+			want: []proto.Message{},
 		},
 		"remove different": {
 			setup: func(tr *Translator) {
@@ -249,7 +252,7 @@ func TestTranslatorRemoveService(t *testing.T) {
 				Port:       80,
 				TargetPort: intstr.FromInt(6502),
 			}),
-			want: []*v2.Cluster{
+			want: []proto.Message{
 				cluster("default/simple/80", "default/simple"),
 			},
 		},
@@ -260,7 +263,7 @@ func TestTranslatorRemoveService(t *testing.T) {
 				Port:       80,
 				TargetPort: intstr.FromInt(6502),
 			}),
-			want: []*v2.Cluster{},
+			want: []proto.Message{},
 		},
 	}
 
