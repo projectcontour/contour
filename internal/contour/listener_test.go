@@ -510,15 +510,15 @@ func TestValidTLSIngress(t *testing.T) {
 
 func assertCacheEmpty(t *testing.T, lc *ListenerCache) {
 	t.Helper()
-	if len(lc.values) > 0 {
-		t.Fatalf("len(lc.values): expected 0, got %d", len(lc.values))
+	if len(lc.values()) > 0 {
+		t.Fatalf("len(lc.values): expected 0, got %d", len(lc.values()))
 	}
 }
 
 func assertCacheNotEmpty(t *testing.T, lc *ListenerCache) {
 	t.Helper()
-	if len(lc.values) == 0 {
-		t.Fatalf("len(lc.values): expected > 0, got %d", len(lc.values))
+	if len(lc.values()) == 0 {
+		t.Fatalf("len(lc.values): expected > 0, got %d", len(lc.values()))
 	}
 }
 

@@ -66,68 +66,32 @@ type message interface {
 
 // clusterCache is a thread safe, atomic, copy on write cache of *v2.Cluster objects.
 type clusterCache struct {
-	sync.Mutex
-	values []*v2.Cluster
+	cache
 }
 
 // Values returns a copy of the contents of the cache.
 func (cc *clusterCache) Values() []*v2.Cluster {
-	cc.Lock()
-	r := append([]*v2.Cluster{}, cc.values...)
-	cc.Unlock()
-	return r
+	values := []*v2.Cluster{}
+	for _, v := range cc.values() {
+		values = append(values, v.(*v2.Cluster))
+	}
+	sort.Sort(clusterByName(values))
+	return values
 }
 
 // Add adds an entry to the cache. If a Cluster with the same
 // name exists, it is replaced.
 func (cc *clusterCache) Add(clusters ...*v2.Cluster) {
-	if len(clusters) == 0 {
-		return
-	}
-	cc.Lock()
-	sort.Sort(clusterByName(cc.values))
 	for _, c := range clusters {
-		cc.add(c)
-	}
-	cc.Unlock()
-}
-
-// add adds c to the cache. If c is already present, the cached value of c is overwritten.
-// invariant: cc.values should be sorted on entry.
-func (cc *clusterCache) add(c *v2.Cluster) {
-	i := sort.Search(len(cc.values), func(i int) bool { return cc.values[i].Name >= c.Name })
-	if i < len(cc.values) && cc.values[i].Name == c.Name {
-		// c is already present, replace
-		cc.values[i] = c
-	} else {
-		// c is not present, append
-		cc.values = append(cc.values, c)
-		// restort to convert append into insert
-		sort.Sort(clusterByName(cc.values))
+		cc.insert(c.Name, c)
 	}
 }
 
 // Remove removes the named entry from the cache. If the entry
 // is not present in the cache, the operation is a no-op.
 func (cc *clusterCache) Remove(names ...string) {
-	if len(names) == 0 {
-		return
-	}
-	cc.Lock()
-	sort.Sort(clusterByName(cc.values))
 	for _, n := range names {
 		cc.remove(n)
-	}
-	cc.Unlock()
-}
-
-// remove removes the named entry from the cache.
-// invariant: cc.values should be sorted on entry.
-func (cc *clusterCache) remove(name string) {
-	i := sort.Search(len(cc.values), func(i int) bool { return cc.values[i].Name >= name })
-	if i < len(cc.values) && cc.values[i].Name == name {
-		// c is present, remove
-		cc.values = append(cc.values[:i], cc.values[i+1:]...)
 	}
 }
 
@@ -139,65 +103,32 @@ func (c clusterByName) Less(i, j int) bool { return c[i].Name < c[j].Name }
 
 // clusterLoadAssignmentCache is a thread safe, atomic, copy on write cache of v2.ClusterLoadAssignment objects.
 type clusterLoadAssignmentCache struct {
-	sync.Mutex
-	values []*v2.ClusterLoadAssignment
+	cache
 }
 
 // Values returns a copy of the contents of the cache.
 func (c *clusterLoadAssignmentCache) Values() []*v2.ClusterLoadAssignment {
-	c.Lock()
-	r := append([]*v2.ClusterLoadAssignment{}, c.values...)
-	c.Unlock()
-	return r
+	values := []*v2.ClusterLoadAssignment{}
+	for _, v := range c.values() {
+		values = append(values, v.(*v2.ClusterLoadAssignment))
+	}
+	sort.Sort(clusterLoadAssignmentsByName(values))
+	return values
 }
 
 // Add adds an entry to the cache. If a ClusterLoadAssignment with the same
 // name exists, it is replaced.
 func (c *clusterLoadAssignmentCache) Add(assignments ...*v2.ClusterLoadAssignment) {
-	if len(assignments) == 0 {
-		return
-	}
-	c.Lock()
-	sort.Sort(clusterLoadAssignmentsByName(c.values))
 	for _, a := range assignments {
-		c.add(a)
-	}
-	c.Unlock()
-}
-
-// add adds a to the cache. If a is already present, the cached value of a is overwritten.
-// invariant: c.values should be sorted on entry.
-func (c *clusterLoadAssignmentCache) add(a *v2.ClusterLoadAssignment) {
-	i := sort.Search(len(c.values), func(i int) bool { return c.values[i].ClusterName >= a.ClusterName })
-	if i < len(c.values) && c.values[i].ClusterName == a.ClusterName {
-		c.values[i] = a
-	} else {
-		c.values = append(c.values, a)
-		sort.Sort(clusterLoadAssignmentsByName(c.values))
+		c.insert(a.ClusterName, a)
 	}
 }
 
 // Remove removes the named entry from the cache. If the entry
 // is not present in the cache, the operation is a no-op.
 func (c *clusterLoadAssignmentCache) Remove(names ...string) {
-	if len(names) == 0 {
-		return
-	}
-	c.Lock()
-	sort.Sort(clusterLoadAssignmentsByName(c.values))
 	for _, n := range names {
 		c.remove(n)
-	}
-	c.Unlock()
-}
-
-// remove removes the named entry from the cache.
-// invariant: c.values should be sorted on entry.
-func (c *clusterLoadAssignmentCache) remove(name string) {
-	i := sort.Search(len(c.values), func(i int) bool { return c.values[i].ClusterName >= name })
-	if i < len(c.values) && c.values[i].ClusterName == name {
-		// c is present, remove
-		c.values = append(c.values[:i], c.values[i+1:]...)
 	}
 }
 
@@ -209,67 +140,32 @@ func (c clusterLoadAssignmentsByName) Less(i, j int) bool { return c[i].ClusterN
 
 // ListenerCache is a thread safe, atomic, copy on write cache of v2.Listener objects.
 type listenerCache struct {
-	sync.Mutex
-	values []*v2.Listener
+	cache
 }
 
 // Values returns a copy of the contents of the cache.
 func (lc *listenerCache) Values() []*v2.Listener {
-	lc.Lock()
-	r := append([]*v2.Listener{}, lc.values...)
-	lc.Unlock()
-	return r
+	values := []*v2.Listener{}
+	for _, v := range lc.values() {
+		values = append(values, v.(*v2.Listener))
+	}
+	sort.Sort(listenersByName(values))
+	return values
 }
 
 // Add adds an entry to the cache. If a Listener with the same
 // name exists, it is replaced.
 func (lc *listenerCache) Add(listeners ...*v2.Listener) {
-	if len(listeners) == 0 {
-		return
-	}
-	lc.Lock()
-	sort.Sort(listenersByName(lc.values))
 	for _, l := range listeners {
-		lc.add(l)
-	}
-	lc.Unlock()
-}
-
-// add adds l to the cache. If l is already present, the cached value of l is overwritten.
-// invariant: lc.values should be sorted on entry.
-func (lc *listenerCache) add(l *v2.Listener) {
-	i := sort.Search(len(lc.values), func(i int) bool { return lc.values[i].Name >= l.Name })
-	if i < len(lc.values) && lc.values[i].Name == l.Name {
-		// c is already present, replace
-		lc.values[i] = l
-	} else {
-		// c is not present, append and sort
-		lc.values = append(lc.values, l)
-		sort.Sort(listenersByName(lc.values))
+		lc.insert(l.Name, l)
 	}
 }
 
 // Remove removes the named entry from the cache. If the entry
 // is not present in the cache, the operation is a no-op.
 func (lc *listenerCache) Remove(names ...string) {
-	if len(names) == 0 {
-		return
-	}
-	lc.Lock()
-	sort.Sort(listenersByName(lc.values))
 	for _, n := range names {
 		lc.remove(n)
-	}
-	lc.Unlock()
-}
-
-// remove removes the named entry from the cache.
-// invariant: lc.values should be sorted on entry.
-func (lc *listenerCache) remove(name string) {
-	i := sort.Search(len(lc.values), func(i int) bool { return lc.values[i].Name >= name })
-	if i < len(lc.values) && lc.values[i].Name == name {
-		// c is present, remove
-		lc.values = append(lc.values[:i], lc.values[i+1:]...)
 	}
 }
 
@@ -281,8 +177,7 @@ func (l listenersByName) Less(i, j int) bool { return l[i].Name < l[j].Name }
 
 // VirtualHostCache is a thread safe, atomic, copy on write cache of route.VirtualHost objects.
 type virtualHostCache struct {
-	sync.Mutex
-	values []*route.VirtualHost
+	cache
 }
 
 // Values returns a copy of the contents of the cache.
@@ -291,23 +186,17 @@ type virtualHostCache struct {
 // rather than copying the pointer values, we create a slice of dereferenced
 // values, this creates a copy of each element in the cache.
 func (vc *virtualHostCache) Values() []route.VirtualHost {
-	vc.Lock()
-	r := make([]route.VirtualHost, len(vc.values))
-	for i, v := range vc.values {
-		r[i] = *v
+	values := []route.VirtualHost{}
+	for _, v := range vc.values() {
+		values = append(values, *v.(*route.VirtualHost))
 	}
-	vc.Unlock()
-	return r
+	sort.Sort(virtualHostsByName(values))
+	return values
 }
 
 // Add adds an entry to the cache. If a VirtualHost with the same
 // name exists, it is replaced.
 func (vc *virtualHostCache) Add(virtualhosts ...*route.VirtualHost) {
-	if len(virtualhosts) == 0 {
-		return
-	}
-	vc.Lock()
-	sort.Sort(virtualHostsByName(vc.values))
 next:
 	for _, v := range virtualhosts {
 		if v.Name == "" {
@@ -324,50 +213,19 @@ next:
 				continue next
 			}
 		}
-		vc.add(v)
-	}
-	vc.Unlock()
-}
-
-// add adds v to the cache. If v is already present, the cached value of v is overwritten.
-// invariant: vc.values should be sorted on entry.
-func (vc *virtualHostCache) add(v *route.VirtualHost) {
-	i := sort.Search(len(vc.values), func(i int) bool { return vc.values[i].Name >= v.Name })
-	if i < len(vc.values) && vc.values[i].Name == v.Name {
-		// c is already present, replace
-		vc.values[i] = v
-	} else {
-		// c is not present, append and sort
-		vc.values = append(vc.values, v)
-		sort.Sort(virtualHostsByName(vc.values))
+		vc.insert(v.Name, v)
 	}
 }
 
 // Remove removes the named entry from the cache. If the entry
 // is not present in the cache, the operation is a no-op.
 func (vc *virtualHostCache) Remove(names ...string) {
-	if len(names) == 0 {
-		return
-	}
-	vc.Lock()
-	sort.Sort(virtualHostsByName(vc.values))
 	for _, n := range names {
 		vc.remove(n)
 	}
-	vc.Unlock()
 }
 
-// remove removes the named entry from the cache.
-// invariant: vc.values should be sorted on entry.
-func (vc *virtualHostCache) remove(name string) {
-	i := sort.Search(len(vc.values), func(i int) bool { return vc.values[i].Name >= name })
-	if i < len(vc.values) && vc.values[i].Name == name {
-		// c is present, remove
-		vc.values = append(vc.values[:i], vc.values[i+1:]...)
-	}
-}
-
-type virtualHostsByName []*route.VirtualHost
+type virtualHostsByName []route.VirtualHost
 
 func (v virtualHostsByName) Len() int           { return len(v) }
 func (v virtualHostsByName) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
