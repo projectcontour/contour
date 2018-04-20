@@ -25,7 +25,7 @@ import (
 func TestCacheInsert(t *testing.T) {
 	var val, val2 v2.Cluster
 
-	tests := map[string]struct {
+	tests := map[string]*struct {
 		cache
 		key   string
 		value proto.Message
@@ -78,7 +78,7 @@ func TestCacheInsert(t *testing.T) {
 func TestCacheRemove(t *testing.T) {
 	var val v2.Cluster
 
-	tests := map[string]struct {
+	tests := map[string]*struct {
 		cache
 		key  string
 		want map[string]proto.Message
