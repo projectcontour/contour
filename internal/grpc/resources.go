@@ -56,13 +56,13 @@ func (c *CDS) Resources() ([]types.Any, error) {
 	return resources, nil
 }
 
+func (c *CDS) TypeURL() string { return clusterType }
+
 type clusterByName []proto.Message
 
 func (c clusterByName) Len() int           { return len(c) }
 func (c clusterByName) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
 func (c clusterByName) Less(i, j int) bool { return c[i].(*v2.Cluster).Name < c[j].(*v2.Cluster).Name }
-
-func (c *CDS) TypeURL() string { return clusterType }
 
 // EDS implements the EDS v2 gRPC API.
 type EDS struct {
@@ -74,6 +74,7 @@ type EDS struct {
 // we can avoid the error handling.
 func (e *EDS) Resources() ([]types.Any, error) {
 	v := e.Values()
+	sort.Stable(clusterLoadAssignmentsByName(v))
 	resources := make([]types.Any, len(v))
 	for i := range v {
 		value, err := proto.Marshal(v[i])
@@ -86,6 +87,14 @@ func (e *EDS) Resources() ([]types.Any, error) {
 }
 
 func (e *EDS) TypeURL() string { return endpointType }
+
+type clusterLoadAssignmentsByName []proto.Message
+
+func (c clusterLoadAssignmentsByName) Len() int      { return len(c) }
+func (c clusterLoadAssignmentsByName) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
+func (c clusterLoadAssignmentsByName) Less(i, j int) bool {
+	return c[i].(*v2.ClusterLoadAssignment).ClusterName < c[j].(*v2.ClusterLoadAssignment).ClusterName
+}
 
 // LDS implements the LDS v2 gRPC API.
 type LDS struct {

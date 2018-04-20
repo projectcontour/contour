@@ -292,7 +292,7 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 		name string
 		svc  *v1.Service
 		ep   *v1.Endpoints
-		want []*v2.ClusterLoadAssignment
+		want []proto.Message
 	}{{
 		name: "simple",
 		svc: service("default", "simple", v1.ServicePort{
@@ -304,7 +304,7 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 			Addresses: addresses("192.168.183.24"),
 			Ports:     ports(8080),
 		}),
-		want: []*v2.ClusterLoadAssignment{
+		want: []proto.Message{
 			clusterloadassignment("default/simple", lbendpoint("192.168.183.24", 8080)),
 		},
 	}, {
@@ -323,7 +323,7 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 			),
 			Ports: ports(80),
 		}),
-		want: []*v2.ClusterLoadAssignment{
+		want: []proto.Message{
 			clusterloadassignment("default/httpbin-org",
 				lbendpoint("23.23.247.89", 80),
 				lbendpoint("50.17.192.147", 80),
@@ -342,6 +342,7 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 			tr.OnAdd(tc.svc)
 			tr.OnAdd(tc.ep)
 			got := tr.ClusterLoadAssignmentCache.Values()
+			sort.Stable(clusterLoadAssignmentsByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("got: %v, want: %v", got, tc.want)
 			}
@@ -353,7 +354,7 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 	tests := map[string]struct {
 		setup func(*Translator)
 		ep    *v1.Endpoints
-		want  []*v2.ClusterLoadAssignment
+		want  []proto.Message
 	}{
 		"remove existing": {
 			setup: func(tr *Translator) {
@@ -371,7 +372,7 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 				Addresses: addresses("192.168.183.24"),
 				Ports:     ports(8080),
 			}),
-			want: []*v2.ClusterLoadAssignment{},
+			want: []proto.Message{},
 		},
 		"remove different": {
 			setup: func(tr *Translator) {
@@ -389,7 +390,7 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 				Addresses: addresses("192.168.183.24"),
 				Ports:     ports(8080),
 			}),
-			want: []*v2.ClusterLoadAssignment{
+			want: []proto.Message{
 				clusterloadassignment("default/simple", lbendpoint("192.168.183.24", 8080)),
 			},
 		},
@@ -399,7 +400,7 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 				Addresses: addresses("192.168.183.24"),
 				Ports:     ports(8080),
 			}),
-			want: []*v2.ClusterLoadAssignment{},
+			want: []proto.Message{},
 		},
 		"remove long name": {
 			setup: func(tr *Translator) {
@@ -443,7 +444,7 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 					Ports: ports(8000, 8443),
 				},
 			),
-			want: []*v2.ClusterLoadAssignment{},
+			want: []proto.Message{},
 		},
 	}
 
@@ -456,6 +457,7 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 			tc.setup(tr)
 			tr.OnDelete(tc.ep)
 			got := tr.ClusterLoadAssignmentCache.Values()
+			sort.Stable(clusterLoadAssignmentsByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("\nwant: %v\n got: %v", tc.want, got)
 			}

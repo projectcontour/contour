@@ -46,8 +46,8 @@ func (c *cache) remove(name string) {
 	c.mu.Unlock()
 }
 
-// values returns a slice of the value stored in the cache.
-func (c *cache) values() []proto.Message {
+// Values returns a slice of the value stored in the cache.
+func (c *cache) Values() []proto.Message {
 	c.mu.Lock()
 	values := make([]proto.Message, 0, len(c.entries))
 	for _, v := range c.entries {
@@ -60,11 +60,6 @@ func (c *cache) values() []proto.Message {
 // clusterCache is a thread safe, atomic, copy on write cache of *v2.Cluster objects.
 type clusterCache struct {
 	cache
-}
-
-// Values returns a copy of the contents of the cache.
-func (cc *clusterCache) Values() []proto.Message {
-	return cc.values()
 }
 
 // Add adds an entry to the cache. If a Cluster with the same
@@ -88,16 +83,6 @@ type clusterLoadAssignmentCache struct {
 	cache
 }
 
-// Values returns a copy of the contents of the cache.
-func (c *clusterLoadAssignmentCache) Values() []*v2.ClusterLoadAssignment {
-	values := []*v2.ClusterLoadAssignment{}
-	for _, v := range c.values() {
-		values = append(values, v.(*v2.ClusterLoadAssignment))
-	}
-	sort.Sort(clusterLoadAssignmentsByName(values))
-	return values
-}
-
 // Add adds an entry to the cache. If a ClusterLoadAssignment with the same
 // name exists, it is replaced.
 func (c *clusterLoadAssignmentCache) Add(assignments ...*v2.ClusterLoadAssignment) {
@@ -114,12 +99,6 @@ func (c *clusterLoadAssignmentCache) Remove(names ...string) {
 	}
 }
 
-type clusterLoadAssignmentsByName []*v2.ClusterLoadAssignment
-
-func (c clusterLoadAssignmentsByName) Len() int           { return len(c) }
-func (c clusterLoadAssignmentsByName) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
-func (c clusterLoadAssignmentsByName) Less(i, j int) bool { return c[i].ClusterName < c[j].ClusterName }
-
 // ListenerCache is a thread safe, atomic, copy on write cache of v2.Listener objects.
 type listenerCache struct {
 	cache
@@ -128,7 +107,7 @@ type listenerCache struct {
 // Values returns a copy of the contents of the cache.
 func (lc *listenerCache) Values() []*v2.Listener {
 	values := []*v2.Listener{}
-	for _, v := range lc.values() {
+	for _, v := range lc.cache.Values() {
 		values = append(values, v.(*v2.Listener))
 	}
 	sort.Sort(listenersByName(values))
@@ -169,7 +148,7 @@ type virtualHostCache struct {
 // values, this creates a copy of each element in the cache.
 func (vc *virtualHostCache) Values() []route.VirtualHost {
 	values := []route.VirtualHost{}
-	for _, v := range vc.values() {
+	for _, v := range vc.cache.Values() {
 		values = append(values, *v.(*route.VirtualHost))
 	}
 	sort.Sort(virtualHostsByName(values))

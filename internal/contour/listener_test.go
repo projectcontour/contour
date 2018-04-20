@@ -24,6 +24,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 )
 
@@ -510,15 +511,15 @@ func TestValidTLSIngress(t *testing.T) {
 
 func assertCacheEmpty(t *testing.T, lc *ListenerCache) {
 	t.Helper()
-	if len(lc.values()) > 0 {
-		t.Fatalf("len(lc.values): expected 0, got %d", len(lc.values()))
+	if len(lc.Values()) > 0 {
+		t.Fatalf("len(lc.values): expected 0, got %d", len(lc.Values()))
 	}
 }
 
 func assertCacheNotEmpty(t *testing.T, lc *ListenerCache) {
 	t.Helper()
-	if len(lc.values()) == 0 {
-		t.Fatalf("len(lc.values): expected > 0, got %d", len(lc.values()))
+	if len(lc.Values()) == 0 {
+		t.Fatalf("len(lc.values): expected > 0, got %d", len(lc.Values()))
 	}
 }
 
@@ -527,4 +528,12 @@ func secretdata(cert, key string) map[string][]byte {
 		v1.TLSCertKey:       []byte(cert),
 		v1.TLSPrivateKeyKey: []byte(key),
 	}
+}
+
+type clusterLoadAssignmentsByName []proto.Message
+
+func (c clusterLoadAssignmentsByName) Len() int      { return len(c) }
+func (c clusterLoadAssignmentsByName) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
+func (c clusterLoadAssignmentsByName) Less(i, j int) bool {
+	return c[i].(*v2.ClusterLoadAssignment).ClusterName < c[j].(*v2.ClusterLoadAssignment).ClusterName
 }
