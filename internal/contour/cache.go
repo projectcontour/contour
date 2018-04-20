@@ -104,16 +104,6 @@ type listenerCache struct {
 	cache
 }
 
-// Values returns a copy of the contents of the cache.
-func (lc *listenerCache) Values() []*v2.Listener {
-	values := []*v2.Listener{}
-	for _, v := range lc.cache.Values() {
-		values = append(values, v.(*v2.Listener))
-	}
-	sort.Sort(listenersByName(values))
-	return values
-}
-
 // Add adds an entry to the cache. If a Listener with the same
 // name exists, it is replaced.
 func (lc *listenerCache) Add(listeners ...*v2.Listener) {
@@ -129,12 +119,6 @@ func (lc *listenerCache) Remove(names ...string) {
 		lc.remove(n)
 	}
 }
-
-type listenersByName []*v2.Listener
-
-func (l listenersByName) Len() int           { return len(l) }
-func (l listenersByName) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
-func (l listenersByName) Less(i, j int) bool { return l[i].Name < l[j].Name }
 
 // VirtualHostCache is a thread safe, atomic, copy on write cache of route.VirtualHost objects.
 type virtualHostCache struct {

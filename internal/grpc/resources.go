@@ -106,6 +106,7 @@ type LDS struct {
 // we can avoid the error handling.
 func (l *LDS) Resources() ([]types.Any, error) {
 	v := l.Values()
+	sort.Stable(listenersByName(v))
 	resources := make([]types.Any, len(v))
 	for i := range v {
 		value, err := proto.Marshal(v[i])
@@ -118,6 +119,14 @@ func (l *LDS) Resources() ([]types.Any, error) {
 }
 
 func (l *LDS) TypeURL() string { return listenerType }
+
+type listenersByName []proto.Message
+
+func (l listenersByName) Len() int      { return len(l) }
+func (l listenersByName) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
+func (l listenersByName) Less(i, j int) bool {
+	return l[i].(*v2.Listener).Name < l[j].(*v2.Listener).Name
+}
 
 // RDS implements the RDS v2 gRPC API.
 type RDS struct {

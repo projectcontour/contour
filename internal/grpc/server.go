@@ -60,7 +60,7 @@ type ClusterLoadAssignmentCache interface {
 type ListenerCache interface {
 	// Values returns a copy of the contents of the cache.
 	// The slice and its contents should be treated as read-only.
-	Values() []*v2.Listener
+	Values() []proto.Message
 
 	// Register registers ch to receive a value when Notify is called.
 	Register(chan int, int)
