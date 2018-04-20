@@ -14,6 +14,8 @@
 package grpc
 
 import (
+	"sort"
+
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 
@@ -42,6 +44,7 @@ type CDS struct {
 // we can avoid the error handling.
 func (c *CDS) Resources() ([]types.Any, error) {
 	v := c.Values()
+	sort.Stable(clusterByName(v))
 	resources := make([]types.Any, len(v))
 	for i := range v {
 		value, err := proto.Marshal(v[i])
@@ -52,6 +55,12 @@ func (c *CDS) Resources() ([]types.Any, error) {
 	}
 	return resources, nil
 }
+
+type clusterByName []proto.Message
+
+func (c clusterByName) Len() int           { return len(c) }
+func (c clusterByName) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
+func (c clusterByName) Less(i, j int) bool { return c[i].(*v2.Cluster).Name < c[j].(*v2.Cluster).Name }
 
 func (c *CDS) TypeURL() string { return clusterType }
 

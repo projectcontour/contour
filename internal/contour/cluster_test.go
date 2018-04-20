@@ -16,6 +16,7 @@ package contour
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 
@@ -312,6 +313,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 			var cc ClusterCache
 			cc.recomputeService(tc.oldObj, tc.newObj)
 			got := cc.Values()
+			sort.Stable(clusterByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("expected:\n%v\ngot:\n%v\n", tc.want, got)
 			}
@@ -351,3 +353,9 @@ func TestServiceName(t *testing.T) {
 		})
 	}
 }
+
+type clusterByName []proto.Message
+
+func (c clusterByName) Len() int           { return len(c) }
+func (c clusterByName) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
+func (c clusterByName) Less(i, j int) bool { return c[i].(*v2.Cluster).Name < c[j].(*v2.Cluster).Name }

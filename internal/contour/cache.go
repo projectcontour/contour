@@ -64,9 +64,7 @@ type clusterCache struct {
 
 // Values returns a copy of the contents of the cache.
 func (cc *clusterCache) Values() []proto.Message {
-	values := cc.values()
-	sort.Sort(clusterByName(values))
-	return values
+	return cc.values()
 }
 
 // Add adds an entry to the cache. If a Cluster with the same
@@ -84,12 +82,6 @@ func (cc *clusterCache) Remove(names ...string) {
 		cc.remove(n)
 	}
 }
-
-type clusterByName []proto.Message
-
-func (c clusterByName) Len() int           { return len(c) }
-func (c clusterByName) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
-func (c clusterByName) Less(i, j int) bool { return c[i].(*v2.Cluster).Name < c[j].(*v2.Cluster).Name }
 
 // clusterLoadAssignmentCache is a thread safe, atomic, copy on write cache of v2.ClusterLoadAssignment objects.
 type clusterLoadAssignmentCache struct {

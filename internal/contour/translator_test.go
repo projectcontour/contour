@@ -15,6 +15,7 @@ package contour
 
 import (
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 
@@ -125,6 +126,7 @@ func TestTranslatorAddService(t *testing.T) {
 			}
 			tr.OnAdd(tc.svc)
 			got := tr.ClusterCache.Values()
+			sort.Stable(clusterByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("\nwant: %v\n got: %v", tc.want, got)
 			}
@@ -194,6 +196,7 @@ func TestTranslatorUpdateService(t *testing.T) {
 			tr.OnAdd(tc.oldObj)
 			tr.OnUpdate(tc.oldObj, tc.newObj)
 			got := tr.ClusterCache.Values()
+			sort.Stable(clusterByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("\nwant: %v\n got: %v", tc.want, got)
 			}
@@ -276,6 +279,7 @@ func TestTranslatorRemoveService(t *testing.T) {
 			tc.setup(tr)
 			tr.OnDelete(tc.svc)
 			got := tr.ClusterCache.Values()
+			sort.Stable(clusterByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("\nwant: %v\n got: %v", tc.want, got)
 			}
