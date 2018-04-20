@@ -27,7 +27,7 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/cache"
+	_cache "k8s.io/client-go/tools/cache"
 )
 
 const DEFAULT_INGRESS_CLASS = "contour"
@@ -117,7 +117,7 @@ func (t *Translator) OnDelete(obj interface{}) {
 		t.VirtualHostCache.Notify()
 	case *v1.Secret:
 		t.removeSecret(obj)
-	case cache.DeletedFinalStateUnknown:
+	case _cache.DeletedFinalStateUnknown:
 		t.OnDelete(obj.Obj) // recurse into ourselves with the tombstoned value
 	default:
 		t.Errorf("OnDelete unexpected type %T: %#v", obj, obj)
@@ -327,7 +327,7 @@ func (t *translatorCache) OnDelete(obj interface{}) {
 		}
 	case *v1.Secret:
 		delete(t.secrets, metadata{name: obj.Name, namespace: obj.Namespace})
-	case cache.DeletedFinalStateUnknown:
+	case _cache.DeletedFinalStateUnknown:
 		t.OnDelete(obj.Obj) // recurse into ourselves with the tombstoned value
 	default:
 		// ignore

@@ -15,23 +15,24 @@ package contour
 
 import (
 	"reflect"
+	"sort"
 	"testing"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/gogo/protobuf/proto"
 	"k8s.io/api/core/v1"
 )
 
 func TestClusterLoadAssignmentCacheRecomputeClusterLoadAssignment(t *testing.T) {
 	tests := map[string]struct {
 		oldep, newep *v1.Endpoints
-		want         []*v2.ClusterLoadAssignment
+		want         []proto.Message
 	}{
 		"simple": {
 			newep: endpoints("default", "simple", v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports:     ports(8080),
 			}),
-			want: []*v2.ClusterLoadAssignment{
+			want: []proto.Message{
 				clusterloadassignment("default/simple", lbendpoint("192.168.183.24", 8080)),
 			},
 		},
@@ -45,7 +46,7 @@ func TestClusterLoadAssignmentCacheRecomputeClusterLoadAssignment(t *testing.T) 
 				),
 				Ports: ports(80),
 			}),
-			want: []*v2.ClusterLoadAssignment{
+			want: []proto.Message{
 				clusterloadassignment("default/httpbin-org",
 					lbendpoint("23.23.247.89", 80),
 					lbendpoint("50.17.192.147", 80),
@@ -62,7 +63,7 @@ func TestClusterLoadAssignmentCacheRecomputeClusterLoadAssignment(t *testing.T) 
 					Port: 8443,
 				}},
 			}),
-			want: []*v2.ClusterLoadAssignment{
+			want: []proto.Message{
 				clusterloadassignment("default/secure/https", lbendpoint("192.168.183.24", 8443)),
 			},
 		},
@@ -71,7 +72,7 @@ func TestClusterLoadAssignmentCacheRecomputeClusterLoadAssignment(t *testing.T) 
 				Addresses: addresses("192.168.183.24"),
 				Ports:     ports(8080),
 			}),
-			want: []*v2.ClusterLoadAssignment{},
+			want: []proto.Message{},
 		},
 	}
 	for name, tc := range tests {
@@ -79,6 +80,7 @@ func TestClusterLoadAssignmentCacheRecomputeClusterLoadAssignment(t *testing.T) 
 			var cc ClusterLoadAssignmentCache
 			cc.recomputeClusterLoadAssignment(tc.oldep, tc.newep)
 			got := cc.Values()
+			sort.Stable(clusterLoadAssignmentsByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("expected:\n%v\ngot:\n%v", tc.want, got)
 			}

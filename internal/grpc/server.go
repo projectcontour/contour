@@ -26,6 +26,7 @@ import (
 	envoy_service_v2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
 	"github.com/sirupsen/logrus"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/contour"
 )
@@ -39,7 +40,7 @@ const (
 type ClusterCache interface {
 	// Values returns a copy of the contents of the cache.
 	// The slice and its contents should be treated as read-only.
-	Values() []*v2.Cluster
+	Values() []proto.Message
 
 	// Register registers ch to receive a value when Notify is called.
 	Register(chan int, int)
@@ -49,7 +50,7 @@ type ClusterCache interface {
 type ClusterLoadAssignmentCache interface {
 	// Values returns a copy of the contents of the cache.
 	// The slice and its contents should be treated as read-only.
-	Values() []*v2.ClusterLoadAssignment
+	Values() []proto.Message
 
 	// Register registers ch to receive a value when Notify is called.
 	Register(chan int, int)
@@ -59,7 +60,7 @@ type ClusterLoadAssignmentCache interface {
 type ListenerCache interface {
 	// Values returns a copy of the contents of the cache.
 	// The slice and its contents should be treated as read-only.
-	Values() []*v2.Listener
+	Values() []proto.Message
 
 	// Register registers ch to receive a value when Notify is called.
 	Register(chan int, int)
