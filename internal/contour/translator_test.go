@@ -470,8 +470,8 @@ func TestTranslatorAddIngress(t *testing.T) {
 		name          string
 		setup         func(*Translator)
 		ing           *v1beta1.Ingress
-		ingress_http  []route.VirtualHost
-		ingress_https []route.VirtualHost
+		ingress_http  []proto.Message
+		ingress_https []proto.Message
 	}{{
 		name: "default backend",
 		ing: &v1beta1.Ingress{
@@ -483,15 +483,17 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		ingress_http: []route.VirtualHost{{
-			Name:    "*",
-			Domains: []string{"*"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/"),
-				Action: clusteraction("default/backend/80"),
-			}},
-		}},
-		ingress_https: []route.VirtualHost{},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "*",
+				Domains: []string{"*"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/backend/80"),
+				}},
+			},
+		},
+		ingress_https: []proto.Message{},
 	}, {
 		name: "incorrect ingress class",
 		ing: &v1beta1.Ingress{
@@ -506,8 +508,8 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		ingress_http:  []route.VirtualHost{}, // expected to be empty, the ingress class is ingnored
-		ingress_https: []route.VirtualHost{}, // expected to be empty, the ingress class is ingnored
+		ingress_http:  []proto.Message{}, // expected to be empty, the ingress class is ingnored
+		ingress_https: []proto.Message{}, // expected to be empty, the ingress class is ingnored
 	}, {
 		name: "explicit ingress class",
 		ing: &v1beta1.Ingress{
@@ -522,15 +524,17 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		ingress_http: []route.VirtualHost{{
-			Name:    "*",
-			Domains: []string{"*"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/"), // match all
-				Action: clusteraction("default/backend/80"),
-			}},
-		}},
-		ingress_https: []route.VirtualHost{},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "*",
+				Domains: []string{"*"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"), // match all
+					Action: clusteraction("default/backend/80"),
+				}},
+			},
+		},
+		ingress_https: []proto.Message{},
 	}, {
 		name: "explicit custom ingress class",
 		setup: func(tr *Translator) {
@@ -548,15 +552,17 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		ingress_http: []route.VirtualHost{{
-			Name:    "*",
-			Domains: []string{"*"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/"), // match all
-				Action: clusteraction("default/backend/80"),
-			}},
-		}},
-		ingress_https: []route.VirtualHost{},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "*",
+				Domains: []string{"*"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"), // match all
+					Action: clusteraction("default/backend/80"),
+				}},
+			},
+		},
+		ingress_https: []proto.Message{},
 	}, {
 		name: "explicit incorrect custom ingress class",
 		setup: func(tr *Translator) {
@@ -574,8 +580,8 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		ingress_http:  []route.VirtualHost{}, // expected to be empty, the ingress class is ingnored
-		ingress_https: []route.VirtualHost{},
+		ingress_http:  []proto.Message{}, // expected to be empty, the ingress class is ingnored
+		ingress_https: []proto.Message{},
 	}, {
 		name: "name based vhost",
 		ing: &v1beta1.Ingress{
@@ -590,15 +596,17 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		ingress_http: []route.VirtualHost{{
-			Name:    "httpbin.org",
-			Domains: []string{"httpbin.org"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/"), // match all
-				Action: clusteraction("default/httpbin-org/80"),
-			}},
-		}},
-		ingress_https: []route.VirtualHost{},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"), // match all
+					Action: clusteraction("default/httpbin-org/80"),
+				}},
+			},
+		},
+		ingress_https: []proto.Message{},
 	}, {
 		name: "regex vhost without match characters",
 		ing: &v1beta1.Ingress{
@@ -620,15 +628,17 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		ingress_http: []route.VirtualHost{{
-			Name:    "httpbin.org",
-			Domains: []string{"httpbin.org"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/ip"), // if the field does not contact any regex characters, we treat it as a prefix
-				Action: clusteraction("default/httpbin-org/80"),
-			}},
-		}},
-		ingress_https: []route.VirtualHost{},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/ip"), // if the field does not contact any regex characters, we treat it as a prefix
+					Action: clusteraction("default/httpbin-org/80"),
+				}},
+			},
+		},
+		ingress_https: []proto.Message{},
 	}, {
 		name: "regex vhost with match characters",
 		ing: &v1beta1.Ingress{
@@ -650,15 +660,17 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		ingress_http: []route.VirtualHost{{
-			Name:    "httpbin.org",
-			Domains: []string{"httpbin.org"},
-			Routes: []route.Route{{
-				Match:  regexmatch("/get.*"),
-				Action: clusteraction("default/httpbin-org/80"),
-			}},
-		}},
-		ingress_https: []route.VirtualHost{},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []route.Route{{
+					Match:  regexmatch("/get.*"),
+					Action: clusteraction("default/httpbin-org/80"),
+				}},
+			},
+		},
+		ingress_https: []proto.Message{},
 	}, {
 		name: "named service port",
 		ing: &v1beta1.Ingress{
@@ -673,15 +685,17 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		ingress_http: []route.VirtualHost{{
-			Name:    "httpbin.org",
-			Domains: []string{"httpbin.org"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/"),
-				Action: clusteraction("default/httpbin-org/http"),
-			}},
-		}},
-		ingress_https: []route.VirtualHost{},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/httpbin-org/http"),
+				}},
+			},
+		},
+		ingress_https: []proto.Message{},
 	}, {
 		name: "multiple routes",
 		ing: &v1beta1.Ingress{
@@ -706,18 +720,20 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		ingress_http: []route.VirtualHost{{
-			Name:    "httpbin.org",
-			Domains: []string{"httpbin.org"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/peter"),
-				Action: clusteraction("default/peter/80"),
-			}, {
-				Match:  prefixmatch("/paul"),
-				Action: clusteraction("default/paul/paul"),
-			}},
-		}},
-		ingress_https: []route.VirtualHost{},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/peter"),
+					Action: clusteraction("default/peter/80"),
+				}, {
+					Match:  prefixmatch("/paul"),
+					Action: clusteraction("default/paul/paul"),
+				}},
+			},
+		},
+		ingress_https: []proto.Message{},
 	}, {
 		name: "multiple rules, tls admin",
 		ing: &v1beta1.Ingress{
@@ -739,29 +755,33 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		ingress_http: []route.VirtualHost{{
-			Name:    "admin.httpbin.org",
-			Domains: []string{"admin.httpbin.org"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/"),
-				Action: clusteraction("default/paul/paul"),
-			}},
-		}, {
-			Name:    "httpbin.org",
-			Domains: []string{"httpbin.org"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/"),
-				Action: clusteraction("default/peter/80"),
-			}},
-		}},
-		ingress_https: []route.VirtualHost{{
-			Name:    "admin.httpbin.org",
-			Domains: []string{"admin.httpbin.org"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/"),
-				Action: clusteraction("default/paul/paul"),
-			}},
-		}},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "admin.httpbin.org",
+				Domains: []string{"admin.httpbin.org"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/paul/paul"),
+				}},
+			}, &route.VirtualHost{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/peter/80"),
+				}},
+			},
+		},
+		ingress_https: []proto.Message{
+			&route.VirtualHost{
+				Name:    "admin.httpbin.org",
+				Domains: []string{"admin.httpbin.org"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/paul/paul"),
+				}},
+			},
+		},
 	}, {
 		name: "multiple rules, tls admin, no http",
 		ing: &v1beta1.Ingress{
@@ -786,15 +806,17 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		ingress_http: []route.VirtualHost{}, //  allow-http: false disables the http route entirely.
-		ingress_https: []route.VirtualHost{{
-			Name:    "admin.httpbin.org",
-			Domains: []string{"admin.httpbin.org"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/"),
-				Action: clusteraction("default/paul/paul"),
-			}},
-		}},
+		ingress_http: []proto.Message{}, //  allow-http: false disables the http route entirely.
+		ingress_https: []proto.Message{
+			&route.VirtualHost{
+				Name:    "admin.httpbin.org",
+				Domains: []string{"admin.httpbin.org"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/paul/paul"),
+				}},
+			},
+		},
 	}, {
 		name: "vhost name exceeds 60 chars", // heptio/contour#25
 		ing: &v1beta1.Ingress{
@@ -809,15 +831,17 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		ingress_http: []route.VirtualHost{{
-			Name:    "d31bb322ca62bb395acad00b3cbf45a3aa1010ca28dca7cddb4f7db786fa",
-			Domains: []string{"my-very-very-long-service-host-name.subdomain.boring-dept.my.company"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/"),
-				Action: clusteraction("default/my-service-name/80"),
-			}},
-		}},
-		ingress_https: []route.VirtualHost{},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "d31bb322ca62bb395acad00b3cbf45a3aa1010ca28dca7cddb4f7db786fa",
+				Domains: []string{"my-very-very-long-service-host-name.subdomain.boring-dept.my.company"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/my-service-name/80"),
+				}},
+			},
+		},
+		ingress_https: []proto.Message{},
 	}, {
 		name: "second ingress object extends an existing vhost",
 		setup: func(tr *Translator) {
@@ -860,18 +884,20 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		ingress_http: []route.VirtualHost{{
-			Name:    "httpbin.org",
-			Domains: []string{"httpbin.org"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/admin"),
-				Action: clusteraction("kube-system/admin/admin"),
-			}, {
-				Match:  prefixmatch("/"),
-				Action: clusteraction("default/default/80"),
-			}},
-		}},
-		ingress_https: []route.VirtualHost{},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "httpbin.org",
+				Domains: []string{"httpbin.org"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/admin"),
+					Action: clusteraction("kube-system/admin/admin"),
+				}, {
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/default/80"),
+				}},
+			},
+		},
+		ingress_https: []proto.Message{},
 	}, {
 		// kube-lego uses a single vhost in its own namespace to insert its
 		// callback route for let's encrypt support.
@@ -945,28 +971,30 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		ingress_http: []route.VirtualHost{{
-			Name:    "httpbin.davecheney.com",
-			Domains: []string{"httpbin.davecheney.com"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/.well-known/acme-challenge"),
-				Action: clusteraction("kube-lego/kube-lego-nginx/8080"),
-			}, {
-				Match:  prefixmatch("/"),
-				Action: clusteraction("default/httpbin/80"),
-			}},
-		}, {
-			Name:    "httpbin2.davecheney.com",
-			Domains: []string{"httpbin2.davecheney.com"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/.well-known/acme-challenge"),
-				Action: clusteraction("kube-lego/kube-lego-nginx/8080"),
-			}, {
-				Match:  prefixmatch("/"),
-				Action: clusteraction("default/httpbin/80"),
-			}},
-		}},
-		ingress_https: []route.VirtualHost{},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "httpbin.davecheney.com",
+				Domains: []string{"httpbin.davecheney.com"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/.well-known/acme-challenge"),
+					Action: clusteraction("kube-lego/kube-lego-nginx/8080"),
+				}, {
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/httpbin/80"),
+				}},
+			}, &route.VirtualHost{
+				Name:    "httpbin2.davecheney.com",
+				Domains: []string{"httpbin2.davecheney.com"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/.well-known/acme-challenge"),
+					Action: clusteraction("kube-lego/kube-lego-nginx/8080"),
+				}, {
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/httpbin/80"),
+				}},
+			},
+		},
+		ingress_https: []proto.Message{},
 	}, {
 		name: "IngressRuleValue without host should become the default vhost", // heptio/contour#101
 		ing: &v1beta1.Ingress{
@@ -990,15 +1018,17 @@ func TestTranslatorAddIngress(t *testing.T) {
 				}},
 			},
 		},
-		ingress_http: []route.VirtualHost{{
-			Name:    "*",
-			Domains: []string{"*"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/hello"),
-				Action: clusteraction("default/hello/80"),
-			}},
-		}},
-		ingress_https: []route.VirtualHost{},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "*",
+				Domains: []string{"*"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/hello"),
+					Action: clusteraction("default/hello/80"),
+				}},
+			},
+		},
+		ingress_https: []proto.Message{},
 	}, {
 		name: "explicitly set upstream timeout to seconds",
 		ing: &v1beta1.Ingress{
@@ -1013,15 +1043,17 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		ingress_http: []route.VirtualHost{{
-			Name:    "*",
-			Domains: []string{"*"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/"), // match all
-				Action: clusteractiontimeout("default/backend/80", 20*time.Second),
-			}},
-		}},
-		ingress_https: []route.VirtualHost{},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "*",
+				Domains: []string{"*"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"), // match all
+					Action: clusteractiontimeout("default/backend/80", 20*time.Second),
+				}},
+			},
+		},
+		ingress_https: []proto.Message{},
 	}, {
 		name: "explicitly set upstream timeout to infinite",
 		ing: &v1beta1.Ingress{
@@ -1036,15 +1068,17 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		ingress_http: []route.VirtualHost{{
-			Name:    "*",
-			Domains: []string{"*"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/"),                                          // match all
-				Action: clusteractiontimeout("default/backend/80", 0*time.Second), // infinity
-			}},
-		}},
-		ingress_https: []route.VirtualHost{},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "*",
+				Domains: []string{"*"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"),                                          // match all
+					Action: clusteractiontimeout("default/backend/80", 0*time.Second), // infinity
+				}},
+			},
+		},
+		ingress_https: []proto.Message{},
 	}, {
 		name: "explicitly set upstream timeout to an invalid duration",
 		ing: &v1beta1.Ingress{
@@ -1059,15 +1093,17 @@ func TestTranslatorAddIngress(t *testing.T) {
 				Backend: backend("backend", intstr.FromInt(80)),
 			},
 		},
-		ingress_http: []route.VirtualHost{{
-			Name:    "*",
-			Domains: []string{"*"},
-			Routes: []route.Route{{
-				Match:  prefixmatch("/"),                                          // match all
-				Action: clusteractiontimeout("default/backend/80", 0*time.Second), // infinity
-			}},
-		}},
-		ingress_https: []route.VirtualHost{},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "*",
+				Domains: []string{"*"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"),                                          // match all
+					Action: clusteractiontimeout("default/backend/80", 0*time.Second), // infinity
+				}},
+			},
+		},
+		ingress_https: []proto.Message{},
 	}}
 
 	log := testLogger(t)
@@ -1081,11 +1117,13 @@ func TestTranslatorAddIngress(t *testing.T) {
 			}
 			tr.OnAdd(tc.ing)
 			got := tr.VirtualHostCache.HTTP.Values()
+			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_http, got) {
 				t.Fatalf("(ingress_http) want:\n%v\n got:\n%v", tc.ingress_http, got)
 			}
 
 			got = tr.VirtualHostCache.HTTPS.Values()
+			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_https, got) {
 				t.Fatalf("(ingress_https) want:\n%v\n got:\n%v", tc.ingress_https, got)
 			}
@@ -1096,7 +1134,7 @@ func TestTranslatorAddIngress(t *testing.T) {
 func TestTranslatorUpdateIngress(t *testing.T) {
 	tests := map[string]struct {
 		before, after               *v1beta1.Ingress
-		ingress_http, ingress_https []route.VirtualHost
+		ingress_http, ingress_https []proto.Message
 	}{
 		"move rename default ingress to named vhost without renaming object": { // issue 257
 			before: &v1beta1.Ingress{
@@ -1139,15 +1177,17 @@ func TestTranslatorUpdateIngress(t *testing.T) {
 					}},
 				},
 			},
-			ingress_http: []route.VirtualHost{{
-				Name:    "kuard.db.gd-ms.com",
-				Domains: []string{"kuard.db.gd-ms.com"},
-				Routes: []route.Route{{
-					Match:  prefixmatch("/"), // match all
-					Action: clusteraction("default/kuard/80"),
-				}},
-			}},
-			ingress_https: []route.VirtualHost{},
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "kuard.db.gd-ms.com",
+					Domains: []string{"kuard.db.gd-ms.com"},
+					Routes: []route.Route{{
+						Match:  prefixmatch("/"), // match all
+						Action: clusteraction("default/kuard/80"),
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
 		},
 	}
 
@@ -1160,11 +1200,13 @@ func TestTranslatorUpdateIngress(t *testing.T) {
 			tr.OnAdd(tc.before)
 			tr.OnUpdate(tc.before, tc.after)
 			got := tr.VirtualHostCache.HTTP.Values()
+			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_http, got) {
 				t.Fatalf("(ingress_http): got: %v, want: %v", got, tc.ingress_http)
 			}
 
 			got = tr.VirtualHostCache.HTTPS.Values()
+			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_https, got) {
 				t.Fatalf("(ingress_https): got: %v, want: %v", got, tc.ingress_https)
 			}
@@ -1176,8 +1218,8 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 	tests := map[string]struct {
 		setup         func(*Translator)
 		ing           *v1beta1.Ingress
-		ingress_http  []route.VirtualHost
-		ingress_https []route.VirtualHost
+		ingress_http  []proto.Message
+		ingress_https []proto.Message
 	}{
 		"remove existing": {
 			setup: func(tr *Translator) {
@@ -1206,8 +1248,8 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 					}},
 				},
 			},
-			ingress_http:  []route.VirtualHost{},
-			ingress_https: []route.VirtualHost{},
+			ingress_http:  []proto.Message{},
+			ingress_https: []proto.Message{},
 		},
 		"remove different": {
 			setup: func(tr *Translator) {
@@ -1236,15 +1278,17 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 					}},
 				},
 			},
-			ingress_http: []route.VirtualHost{{
-				Name:    "httpbin.org",
-				Domains: []string{"httpbin.org"},
-				Routes: []route.Route{{
-					Match:  prefixmatch("/"),
-					Action: clusteraction("default/peter/80"),
-				}},
-			}},
-			ingress_https: []route.VirtualHost{},
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "httpbin.org",
+					Domains: []string{"httpbin.org"},
+					Routes: []route.Route{{
+						Match:  prefixmatch("/"),
+						Action: clusteraction("default/peter/80"),
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
 		},
 		"remove non existant": {
 			setup: func(*Translator) {},
@@ -1257,8 +1301,8 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 					Backend: backend("backend", intstr.FromInt(80)),
 				},
 			},
-			ingress_http:  []route.VirtualHost{},
-			ingress_https: []route.VirtualHost{},
+			ingress_http:  []proto.Message{},
+			ingress_https: []proto.Message{},
 		},
 	}
 
@@ -1271,11 +1315,13 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 			tc.setup(tr)
 			tr.OnDelete(tc.ing)
 			got := tr.VirtualHostCache.HTTP.Values()
+			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_http, got) {
 				t.Fatalf("(ingress_http): got: %v, want: %v", got, tc.ingress_http)
 			}
 
 			got = tr.VirtualHostCache.HTTPS.Values()
+			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_https, got) {
 				t.Fatalf("(ingress_https): got: %v, want: %v", got, tc.ingress_https)
 			}

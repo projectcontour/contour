@@ -133,7 +133,7 @@ type RDS struct {
 	HTTP, HTTPS interface {
 		// Values returns a copy of the contents of the cache.
 		// The slice and its contents should be treated as read-only.
-		Values() []route.VirtualHost
+		Values() []proto.Message
 	}
 	*contour.Cond
 }
@@ -142,9 +142,19 @@ type RDS struct {
 // TODO(dfc) cache the results of Resources in the VirtualHostCache so
 // we can avoid the error handling.
 func (r *RDS) Resources() ([]types.Any, error) {
+	// TODO(dfc) avoid this expensive
+	toRouteVirtualHosts := func(ms []proto.Message) []route.VirtualHost {
+		r := make([]route.VirtualHost, 0, len(ms))
+		for _, m := range ms {
+			r = append(r, *(m.(*route.VirtualHost)))
+		}
+		sort.Stable(virtualHostsByName(r))
+		return r
+	}
+
 	ingress_http, err := proto.Marshal(&v2.RouteConfiguration{
 		Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
-		VirtualHosts: r.HTTP.Values(),
+		VirtualHosts: toRouteVirtualHosts(r.HTTP.Values()),
 	})
 	if err != nil {
 		return nil, err
@@ -152,7 +162,7 @@ func (r *RDS) Resources() ([]types.Any, error) {
 	ingress_https, err := proto.Marshal(&v2.RouteConfiguration{
 
 		Name:         "ingress_https", // TODO(dfc) matches LDS configuration?
-		VirtualHosts: r.HTTPS.Values(),
+		VirtualHosts: toRouteVirtualHosts(r.HTTPS.Values()),
 	})
 	if err != nil {
 		return nil, err
@@ -165,3 +175,9 @@ func (r *RDS) Resources() ([]types.Any, error) {
 }
 
 func (r *RDS) TypeURL() string { return routeType }
+
+type virtualHostsByName []route.VirtualHost
+
+func (v virtualHostsByName) Len() int           { return len(v) }
+func (v virtualHostsByName) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
+func (v virtualHostsByName) Less(i, j int) bool { return v[i].Name < v[j].Name }

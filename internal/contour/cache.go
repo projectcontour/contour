@@ -14,7 +14,6 @@
 package contour
 
 import (
-	"sort"
 	"sync"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -125,20 +124,6 @@ type virtualHostCache struct {
 	cache
 }
 
-// Values returns a copy of the contents of the cache.
-// Although internally we store pointers to route.VirtualHost
-// items, because the output of Values is used in a v2.RouteConfiguration
-// rather than copying the pointer values, we create a slice of dereferenced
-// values, this creates a copy of each element in the cache.
-func (vc *virtualHostCache) Values() []route.VirtualHost {
-	values := []route.VirtualHost{}
-	for _, v := range vc.cache.Values() {
-		values = append(values, *v.(*route.VirtualHost))
-	}
-	sort.Sort(virtualHostsByName(values))
-	return values
-}
-
 // Add adds an entry to the cache. If a VirtualHost with the same
 // name exists, it is replaced.
 func (vc *virtualHostCache) Add(virtualhosts ...*route.VirtualHost) {
@@ -169,9 +154,3 @@ func (vc *virtualHostCache) Remove(names ...string) {
 		vc.remove(n)
 	}
 }
-
-type virtualHostsByName []route.VirtualHost
-
-func (v virtualHostsByName) Len() int           { return len(v) }
-func (v virtualHostsByName) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
-func (v virtualHostsByName) Less(i, j int) bool { return v[i].Name < v[j].Name }
