@@ -115,8 +115,7 @@ func (s *grpcServer) fetch(req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, err
 	if !ok {
 		return nil, fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl)
 	}
-	filter := func(string) bool { return true }
-	resources, err := toAny(r, filter)
+	resources, err := toAny(r, toFilter(req.ResourceNames))
 	return &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources:   resources,
@@ -174,15 +173,19 @@ func (s *grpcServer) stream(st grpcStream) (err error) {
 		if !ok {
 			return fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl)
 		}
-		log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("stream_wait")
+		log := log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail)
+		log.Info("stream_wait")
 
 		r.Register(ch, last)
 		select {
 		case last = <-ch:
-			filter := func(string) bool { return true }
-			resources, err := toAny(r, filter)
+			resources, err := toAny(r, toFilter(req.ResourceNames))
 			if err != nil {
 				return err
+			}
+			if len(resources) == 0 {
+				log.Info("skipping update")
+				continue
 			}
 			resp := &v2.DiscoveryResponse{
 				VersionInfo: "0",
