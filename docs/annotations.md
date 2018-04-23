@@ -16,6 +16,7 @@ Contour supports the following annotations.
  - `contour.heptio.com/retry-on`: [The conditions for Envoy to retry a request](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-field-route-routeaction-retrypolicy-retry-on). See also [possible values and their meanings for `retry-on`](https://www.envoyproxy.io/docs/envoy/latest/configuration/http_filters/router_filter.html#config-http-filters-router-x-envoy-retry-on).
  - `contour.heptio.com/num-retries`: [The maximum number of retries](https://www.envoyproxy.io/docs/envoy/latest/configuration/http_filters/router_filter.html#config-http-filters-router-x-envoy-max-retries) Envoy should make before abandoning and returning an error to the client. Applies only if `contour.heptio.com/retry-on` is specified.
  - `contour.heptio.com/per-try-timeout`: [The timeout per retry attempt](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-field-route-routeaction-retrypolicy-retry-on), if there should be one. Applies only if `contour.heptio.com/retry-on` is specified.
+- `contour.heptio.com/tls-minimum-protocol-version` : [The minimum TLS protocol version](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/auth/cert.proto#envoy-api-msg-auth-tlsparameters) the TLS listener should support.
 
 ## Contour specific Service annotations
 
