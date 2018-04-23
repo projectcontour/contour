@@ -36,9 +36,9 @@ const (
 // cache represents a source of proto.Message valus that can be registered
 // for interest.
 type cache interface {
-	// Values returns a copy of the contents of the cache.
-	// The slice and its contents should be treated as read-only.
-	Values() []proto.Message
+	// Values returns a slice of proto.Message implementations that match
+	// the provided filter.
+	Values(func(string) bool) []proto.Message
 
 	// Register registers ch to receive a value when Notify is called.
 	Register(chan int, int)
@@ -51,7 +51,7 @@ type CDS struct {
 
 // Values returns a sorted list of Clusters.
 func (c *CDS) Values(filter func(string) bool) []proto.Message {
-	v := c.cache.Values()
+	v := c.cache.Values(filter)
 	sort.Stable(clusterByName(v))
 	return v
 }
@@ -71,7 +71,7 @@ type EDS struct {
 
 // Values returns a sorted list of ClusterLoadAssignments.
 func (e *EDS) Values(filter func(string) bool) []proto.Message {
-	v := e.cache.Values()
+	v := e.cache.Values(filter)
 	sort.Stable(clusterLoadAssignmentsByName(v))
 	return v
 }
@@ -93,7 +93,7 @@ type LDS struct {
 
 // Values returns a sorted list of Listeners.
 func (l *LDS) Values(filter func(string) bool) []proto.Message {
-	v := l.cache.Values()
+	v := l.cache.Values(filter)
 	sort.Stable(listenersByName(v))
 	return v
 }
@@ -111,9 +111,9 @@ func (l listenersByName) Less(i, j int) bool {
 // RDS implements the RDS v2 gRPC API.
 type RDS struct {
 	HTTP, HTTPS interface {
-		// Values returns a copy of the contents of the cache.
-		// The slice and its contents should be treated as read-only.
-		Values() []proto.Message
+		// Values returns a slice of proto.Message implementations that match
+		// the provided filter.
+		Values(func(string) bool) []proto.Message
 	}
 	*contour.Cond
 }
@@ -129,15 +129,17 @@ func (r *RDS) Values(filter func(string) bool) []proto.Message {
 		sort.Stable(virtualHostsByName(r))
 		return r
 	}
+
+	matchAll := func(string) bool { return true }
 	return []proto.Message{
 		&v2.RouteConfiguration{
 			Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
-			VirtualHosts: toRouteVirtualHosts(r.HTTP.Values()),
+			VirtualHosts: toRouteVirtualHosts(r.HTTP.Values(matchAll)),
 		},
 		&v2.RouteConfiguration{
 
 			Name:         "ingress_https", // TODO(dfc) matches LDS configuration?
-			VirtualHosts: toRouteVirtualHosts(r.HTTPS.Values()),
+			VirtualHosts: toRouteVirtualHosts(r.HTTPS.Values(matchAll)),
 		},
 	}
 }

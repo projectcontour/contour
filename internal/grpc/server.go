@@ -86,15 +86,10 @@ func newgrpcServer(log logrus.FieldLogger, t *contour.Translator) *grpcServer {
 
 // A resource provides resources formatted as []types.Any.
 type resource interface {
-	// Values returns a slice of proto.Message implementations that match
-	// the provided filter.
-	Values(func(string) bool) []proto.Message
+	cache
 
 	// TypeURL returns the typeURL of messages returned from Values.
 	TypeURL() string
-
-	// Register registers the channel for change notifications.
-	Register(chan int, int)
 }
 
 func (s *grpcServer) FetchClusters(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {

@@ -79,7 +79,7 @@ func TestClusterLoadAssignmentCacheRecomputeClusterLoadAssignment(t *testing.T) 
 		t.Run(name, func(t *testing.T) {
 			var cc ClusterLoadAssignmentCache
 			cc.recomputeClusterLoadAssignment(tc.oldep, tc.newep)
-			got := cc.Values()
+			got := contents(&cc)
 			sort.Stable(clusterLoadAssignmentsByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("expected:\n%v\ngot:\n%v", tc.want, got)
