@@ -46,7 +46,7 @@ func (c *cache) remove(name string) {
 }
 
 // Values returns a slice of the value stored in the cache.
-func (c *cache) Values() []proto.Message {
+func (c *cache) Values(filter func(string) bool) []proto.Message {
 	c.mu.Lock()
 	values := make([]proto.Message, 0, len(c.entries))
 	for _, v := range c.entries {

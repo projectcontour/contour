@@ -583,13 +583,13 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				FieldLogger: log,
 			}
 			tr.recomputevhost(tc.vhost, tc.ingresses)
-			got := tr.VirtualHostCache.HTTP.Values()
+			got := contents(&tr.VirtualHostCache.HTTP)
 			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_http, got) {
 				t.Fatalf("recomputevhost(%v):\n (ingress_http) want:\n%+v\n got:\n%+v", tc.vhost, tc.ingress_http, got)
 			}
 
-			got = tr.VirtualHostCache.HTTPS.Values()
+			got = contents(&tr.VirtualHostCache.HTTPS)
 			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_https, got) {
 				t.Fatalf("recomputevhost(%v):\n (ingress_https) want:\n%#v\ngot:\n%#v", tc.vhost, tc.ingress_https, got)

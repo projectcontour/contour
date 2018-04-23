@@ -36,36 +36,6 @@ const (
 	grpcMaxConcurrentStreams = 1 << 20
 )
 
-// ClusterCache holds a set of computed v2.Cluster resources.
-type ClusterCache interface {
-	// Values returns a copy of the contents of the cache.
-	// The slice and its contents should be treated as read-only.
-	Values() []proto.Message
-
-	// Register registers ch to receive a value when Notify is called.
-	Register(chan int, int)
-}
-
-// ClusterLoadAssignmentCache holds a set of computed v2.ClusterLoadAssignment resources.
-type ClusterLoadAssignmentCache interface {
-	// Values returns a copy of the contents of the cache.
-	// The slice and its contents should be treated as read-only.
-	Values() []proto.Message
-
-	// Register registers ch to receive a value when Notify is called.
-	Register(chan int, int)
-}
-
-// ListenerCache holds a set of computed v2.Listener resources.
-type ListenerCache interface {
-	// Values returns a copy of the contents of the cache.
-	// The slice and its contents should be treated as read-only.
-	Values() []proto.Message
-
-	// Register registers ch to receive a value when Notify is called.
-	Register(chan int, int)
-}
-
 // NewAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
 func NewAPI(log logrus.FieldLogger, t *contour.Translator) *grpc.Server {
 	opts := []grpc.ServerOption{
@@ -88,22 +58,22 @@ func NewAPI(log logrus.FieldLogger, t *contour.Translator) *grpc.Server {
 
 type grpcServer struct {
 	logrus.FieldLogger
-	count     uint64               // connection count, incremented atomically
-	resources map[string]resourcer // registered resource types
+	count     uint64              // connection count, incremented atomically
+	resources map[string]resource // registered resource types
 }
 
 func newgrpcServer(log logrus.FieldLogger, t *contour.Translator) *grpcServer {
 	return &grpcServer{
 		FieldLogger: log,
-		resources: map[string]resourcer{
+		resources: map[string]resource{
 			clusterType: &CDS{
-				ClusterCache: &t.ClusterCache,
+				cache: &t.ClusterCache,
 			},
 			endpointType: &EDS{
-				ClusterLoadAssignmentCache: &t.ClusterLoadAssignmentCache,
+				cache: &t.ClusterLoadAssignmentCache,
 			},
 			listenerType: &LDS{
-				ListenerCache: &t.ListenerCache,
+				cache: &t.ListenerCache,
 			},
 			routeType: &RDS{
 				HTTP:  &t.VirtualHostCache.HTTP,
@@ -114,11 +84,12 @@ func newgrpcServer(log logrus.FieldLogger, t *contour.Translator) *grpcServer {
 	}
 }
 
-// A resourcer provides resources formatted as []types.Any.
-type resourcer interface {
-	Resources() ([]types.Any, error)
+// A resource provides resources formatted as []types.Any.
+type resource interface {
+	cache
+
+	// TypeURL returns the typeURL of messages returned from Values.
 	TypeURL() string
-	Register(chan int, int)
 }
 
 func (s *grpcServer) FetchClusters(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
@@ -142,9 +113,10 @@ func (s *grpcServer) fetch(req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, err
 	s.WithField("connection", atomic.AddUint64(&s.count, 1)).WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("fetch")
 	r, ok := s.resources[req.TypeUrl]
 	if !ok {
-		return nil, fmt.Errorf("no resourcer registered for typeURL %q", req.TypeUrl)
+		return nil, fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl)
 	}
-	resources, err := r.Resources()
+	filter := func(string) bool { return true }
+	resources, err := toAny(r, filter)
 	return &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources:   resources,
@@ -162,7 +134,7 @@ func (s *grpcServer) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpo
 }
 
 func (s *grpcServer) StreamLoadStats(srv envoy_service_v2.LoadReportingService_StreamLoadStatsServer) error {
-	return grpc.Errorf(codes.Unimplemented, "FetchListeners Unimplemented")
+	return grpc.Errorf(codes.Unimplemented, "StreamLoadStats Unimplemented")
 }
 
 func (s *grpcServer) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) error {
@@ -200,14 +172,15 @@ func (s *grpcServer) stream(st grpcStream) (err error) {
 		}
 		r, ok := s.resources[req.TypeUrl]
 		if !ok {
-			return fmt.Errorf("no resourcer registered for typeURL %q", req.TypeUrl)
+			return fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl)
 		}
 		log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("stream_wait")
 
 		r.Register(ch, last)
 		select {
 		case last = <-ch:
-			resources, err := r.Resources()
+			filter := func(string) bool { return true }
+			resources, err := toAny(r, filter)
 			if err != nil {
 				return err
 			}
@@ -224,4 +197,33 @@ func (s *grpcServer) stream(st grpcStream) (err error) {
 			return ctx.Err()
 		}
 	}
+}
+
+// toAny converts the contens of a resourcer's Values to the
+// respective slice of types.Any.
+func toAny(res resource, filter func(string) bool) ([]types.Any, error) {
+	v := res.Values(filter)
+	resources := make([]types.Any, len(v))
+	for i := range v {
+		value, err := proto.Marshal(v[i])
+		if err != nil {
+			return nil, err
+		}
+		resources[i] = types.Any{TypeUrl: res.TypeURL(), Value: value}
+	}
+	return resources, nil
+}
+
+// toFilter converts a slice of strings into a filter function.
+// If the slice is empty, then a filter function that matches everything
+// is returned.
+func toFilter(names []string) func(string) bool {
+	if len(names) == 0 {
+		return func(string) bool { return true }
+	}
+	m := make(map[string]bool)
+	for _, n := range names {
+		m[n] = true
+	}
+	return func(name string) bool { return m[name] }
 }

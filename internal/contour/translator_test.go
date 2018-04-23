@@ -125,7 +125,7 @@ func TestTranslatorAddService(t *testing.T) {
 				FieldLogger: log,
 			}
 			tr.OnAdd(tc.svc)
-			got := tr.ClusterCache.Values()
+			got := contents(&tr.ClusterCache)
 			sort.Stable(clusterByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("\nwant: %v\n got: %v", tc.want, got)
@@ -195,7 +195,7 @@ func TestTranslatorUpdateService(t *testing.T) {
 			}
 			tr.OnAdd(tc.oldObj)
 			tr.OnUpdate(tc.oldObj, tc.newObj)
-			got := tr.ClusterCache.Values()
+			got := contents(&tr.ClusterCache)
 			sort.Stable(clusterByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("\nwant: %v\n got: %v", tc.want, got)
@@ -278,7 +278,7 @@ func TestTranslatorRemoveService(t *testing.T) {
 			}
 			tc.setup(tr)
 			tr.OnDelete(tc.svc)
-			got := tr.ClusterCache.Values()
+			got := contents(&tr.ClusterCache)
 			sort.Stable(clusterByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("\nwant: %v\n got: %v", tc.want, got)
@@ -341,7 +341,7 @@ func TestTranslatorAddEndpoints(t *testing.T) {
 			}
 			tr.OnAdd(tc.svc)
 			tr.OnAdd(tc.ep)
-			got := tr.ClusterLoadAssignmentCache.Values()
+			got := contents(&tr.ClusterLoadAssignmentCache)
 			sort.Stable(clusterLoadAssignmentsByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("got: %v, want: %v", got, tc.want)
@@ -456,7 +456,7 @@ func TestTranslatorRemoveEndpoints(t *testing.T) {
 			}
 			tc.setup(tr)
 			tr.OnDelete(tc.ep)
-			got := tr.ClusterLoadAssignmentCache.Values()
+			got := contents(&tr.ClusterLoadAssignmentCache)
 			sort.Stable(clusterLoadAssignmentsByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("\nwant: %v\n got: %v", tc.want, got)
@@ -1116,13 +1116,13 @@ func TestTranslatorAddIngress(t *testing.T) {
 				tc.setup(tr)
 			}
 			tr.OnAdd(tc.ing)
-			got := tr.VirtualHostCache.HTTP.Values()
+			got := contents(&tr.VirtualHostCache.HTTP)
 			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_http, got) {
 				t.Fatalf("(ingress_http) want:\n%v\n got:\n%v", tc.ingress_http, got)
 			}
 
-			got = tr.VirtualHostCache.HTTPS.Values()
+			got = contents(&tr.VirtualHostCache.HTTPS)
 			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_https, got) {
 				t.Fatalf("(ingress_https) want:\n%v\n got:\n%v", tc.ingress_https, got)
@@ -1199,13 +1199,13 @@ func TestTranslatorUpdateIngress(t *testing.T) {
 			}
 			tr.OnAdd(tc.before)
 			tr.OnUpdate(tc.before, tc.after)
-			got := tr.VirtualHostCache.HTTP.Values()
+			got := contents(&tr.VirtualHostCache.HTTP)
 			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_http, got) {
 				t.Fatalf("(ingress_http): got: %v, want: %v", got, tc.ingress_http)
 			}
 
-			got = tr.VirtualHostCache.HTTPS.Values()
+			got = contents(&tr.VirtualHostCache.HTTPS)
 			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_https, got) {
 				t.Fatalf("(ingress_https): got: %v, want: %v", got, tc.ingress_https)
@@ -1314,13 +1314,13 @@ func TestTranslatorRemoveIngress(t *testing.T) {
 			}
 			tc.setup(tr)
 			tr.OnDelete(tc.ing)
-			got := tr.VirtualHostCache.HTTP.Values()
+			got := contents(&tr.VirtualHostCache.HTTP)
 			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_http, got) {
 				t.Fatalf("(ingress_http): got: %v, want: %v", got, tc.ingress_http)
 			}
 
-			got = tr.VirtualHostCache.HTTPS.Values()
+			got = contents(&tr.VirtualHostCache.HTTPS)
 			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_https, got) {
 				t.Fatalf("(ingress_https): got: %v, want: %v", got, tc.ingress_https)
@@ -2274,4 +2274,10 @@ type testWriter struct {
 func (t *testWriter) Write(buf []byte) (int, error) {
 	t.Logf("%s", buf)
 	return len(buf), nil
+}
+
+func contents(v interface {
+	Values(func(string) bool) []proto.Message
+}) []proto.Message {
+	return v.Values(func(string) bool { return true })
 }

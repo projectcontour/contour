@@ -312,7 +312,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			var cc ClusterCache
 			cc.recomputeService(tc.oldObj, tc.newObj)
-			got := cc.Values()
+			got := contents(&cc)
 			sort.Stable(clusterByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("expected:\n%v\ngot:\n%v\n", tc.want, got)

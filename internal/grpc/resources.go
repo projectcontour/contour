@@ -20,7 +20,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/contour"
 )
 
@@ -34,26 +33,27 @@ const (
 	listenerType = typePrefix + "Listener"
 )
 
-// CDS implements the CDS v2 gRPC API.
-type CDS struct {
-	ClusterCache
+// cache represents a source of proto.Message valus that can be registered
+// for interest.
+type cache interface {
+	// Values returns a slice of proto.Message implementations that match
+	// the provided filter.
+	Values(func(string) bool) []proto.Message
+
+	// Register registers ch to receive a value when Notify is called.
+	Register(chan int, int)
 }
 
-// Resources returns the contents of CDS"s cache as a []types.Any.
-// TODO(dfc) cache the results of Resources in the ClusterCache so
-// we can avoid the error handling.
-func (c *CDS) Resources() ([]types.Any, error) {
-	v := c.Values()
+// CDS implements the CDS v2 gRPC API.
+type CDS struct {
+	cache
+}
+
+// Values returns a sorted list of Clusters.
+func (c *CDS) Values(filter func(string) bool) []proto.Message {
+	v := c.cache.Values(filter)
 	sort.Stable(clusterByName(v))
-	resources := make([]types.Any, len(v))
-	for i := range v {
-		value, err := proto.Marshal(v[i])
-		if err != nil {
-			return nil, err
-		}
-		resources[i] = types.Any{TypeUrl: c.TypeURL(), Value: value}
-	}
-	return resources, nil
+	return v
 }
 
 func (c *CDS) TypeURL() string { return clusterType }
@@ -66,24 +66,14 @@ func (c clusterByName) Less(i, j int) bool { return c[i].(*v2.Cluster).Name < c[
 
 // EDS implements the EDS v2 gRPC API.
 type EDS struct {
-	ClusterLoadAssignmentCache
+	cache
 }
 
-// Resources returns the contents of EDS"s cache as a []types.Any.
-// TODO(dfc) cache the results of Resources in the ClusterLoadAssignmentCache so
-// we can avoid the error handling.
-func (e *EDS) Resources() ([]types.Any, error) {
-	v := e.Values()
+// Values returns a sorted list of ClusterLoadAssignments.
+func (e *EDS) Values(filter func(string) bool) []proto.Message {
+	v := e.cache.Values(filter)
 	sort.Stable(clusterLoadAssignmentsByName(v))
-	resources := make([]types.Any, len(v))
-	for i := range v {
-		value, err := proto.Marshal(v[i])
-		if err != nil {
-			return nil, err
-		}
-		resources[i] = types.Any{TypeUrl: e.TypeURL(), Value: value}
-	}
-	return resources, nil
+	return v
 }
 
 func (e *EDS) TypeURL() string { return endpointType }
@@ -98,24 +88,14 @@ func (c clusterLoadAssignmentsByName) Less(i, j int) bool {
 
 // LDS implements the LDS v2 gRPC API.
 type LDS struct {
-	ListenerCache
+	cache
 }
 
-// Resources returns the contents of LDS"s cache as a []types.Any.
-// TODO(dfc) cache the results of Resources in the ListenerCache so
-// we can avoid the error handling.
-func (l *LDS) Resources() ([]types.Any, error) {
-	v := l.Values()
+// Values returns a sorted list of Listeners.
+func (l *LDS) Values(filter func(string) bool) []proto.Message {
+	v := l.cache.Values(filter)
 	sort.Stable(listenersByName(v))
-	resources := make([]types.Any, len(v))
-	for i := range v {
-		value, err := proto.Marshal(v[i])
-		if err != nil {
-			return nil, err
-		}
-		resources[i] = types.Any{TypeUrl: l.TypeURL(), Value: value}
-	}
-	return resources, nil
+	return v
 }
 
 func (l *LDS) TypeURL() string { return listenerType }
@@ -131,18 +111,16 @@ func (l listenersByName) Less(i, j int) bool {
 // RDS implements the RDS v2 gRPC API.
 type RDS struct {
 	HTTP, HTTPS interface {
-		// Values returns a copy of the contents of the cache.
-		// The slice and its contents should be treated as read-only.
-		Values() []proto.Message
+		// Values returns a slice of proto.Message implementations that match
+		// the provided filter.
+		Values(func(string) bool) []proto.Message
 	}
 	*contour.Cond
 }
 
-// Resources returns the contents of RDS"s cache as a []types.Any.
-// TODO(dfc) cache the results of Resources in the VirtualHostCache so
-// we can avoid the error handling.
-func (r *RDS) Resources() ([]types.Any, error) {
-	// TODO(dfc) avoid this expensive
+// Values returns a sorted list of RouteConfigurations.
+func (r *RDS) Values(filter func(string) bool) []proto.Message {
+	// TODO(dfc) avoid this expensive sort
 	toRouteVirtualHosts := func(ms []proto.Message) []route.VirtualHost {
 		r := make([]route.VirtualHost, 0, len(ms))
 		for _, m := range ms {
@@ -152,26 +130,18 @@ func (r *RDS) Resources() ([]types.Any, error) {
 		return r
 	}
 
-	ingress_http, err := proto.Marshal(&v2.RouteConfiguration{
-		Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
-		VirtualHosts: toRouteVirtualHosts(r.HTTP.Values()),
-	})
-	if err != nil {
-		return nil, err
-	}
-	ingress_https, err := proto.Marshal(&v2.RouteConfiguration{
+	matchAll := func(string) bool { return true }
+	return []proto.Message{
+		&v2.RouteConfiguration{
+			Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
+			VirtualHosts: toRouteVirtualHosts(r.HTTP.Values(matchAll)),
+		},
+		&v2.RouteConfiguration{
 
-		Name:         "ingress_https", // TODO(dfc) matches LDS configuration?
-		VirtualHosts: toRouteVirtualHosts(r.HTTPS.Values()),
-	})
-	if err != nil {
-		return nil, err
+			Name:         "ingress_https", // TODO(dfc) matches LDS configuration?
+			VirtualHosts: toRouteVirtualHosts(r.HTTPS.Values(matchAll)),
+		},
 	}
-	return []types.Any{{
-		TypeUrl: r.TypeURL(), Value: ingress_http,
-	}, {
-		TypeUrl: r.TypeURL(), Value: ingress_https,
-	}}, nil
 }
 
 func (r *RDS) TypeURL() string { return routeType }
