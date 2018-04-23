@@ -20,7 +20,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/contour"
 )
 
@@ -50,20 +49,6 @@ type CDS struct {
 	cache
 }
 
-// Resources returns the contents of CDS"s cache as a []types.Any.
-func (c *CDS) Resources() ([]types.Any, error) {
-	v := c.Values()
-	resources := make([]types.Any, len(v))
-	for i := range v {
-		value, err := proto.Marshal(v[i])
-		if err != nil {
-			return nil, err
-		}
-		resources[i] = types.Any{TypeUrl: c.TypeURL(), Value: value}
-	}
-	return resources, nil
-}
-
 // Values returns a sorted list of Clusters.
 func (c *CDS) Values() []proto.Message {
 	v := c.cache.Values()
@@ -82,20 +67,6 @@ func (c clusterByName) Less(i, j int) bool { return c[i].(*v2.Cluster).Name < c[
 // EDS implements the EDS v2 gRPC API.
 type EDS struct {
 	cache
-}
-
-// Resources returns the contents of EDS"s cache as a []types.Any.
-func (e *EDS) Resources() ([]types.Any, error) {
-	v := e.Values()
-	resources := make([]types.Any, len(v))
-	for i := range v {
-		value, err := proto.Marshal(v[i])
-		if err != nil {
-			return nil, err
-		}
-		resources[i] = types.Any{TypeUrl: e.TypeURL(), Value: value}
-	}
-	return resources, nil
 }
 
 // Values returns a sorted list of ClusterLoadAssignments.
@@ -118,20 +89,6 @@ func (c clusterLoadAssignmentsByName) Less(i, j int) bool {
 // LDS implements the LDS v2 gRPC API.
 type LDS struct {
 	cache
-}
-
-// Resources returns the contents of LDS"s cache as a []types.Any.
-func (l *LDS) Resources() ([]types.Any, error) {
-	v := l.Values()
-	resources := make([]types.Any, len(v))
-	for i := range v {
-		value, err := proto.Marshal(v[i])
-		if err != nil {
-			return nil, err
-		}
-		resources[i] = types.Any{TypeUrl: l.TypeURL(), Value: value}
-	}
-	return resources, nil
 }
 
 // Values returns a sorted list of Listeners.
@@ -159,20 +116,6 @@ type RDS struct {
 		Values() []proto.Message
 	}
 	*contour.Cond
-}
-
-// Resources returns the contents of RDS"s cache as a []types.Any.
-func (r *RDS) Resources() ([]types.Any, error) {
-	v := r.Values()
-	resources := make([]types.Any, len(v))
-	for i := range v {
-		value, err := proto.Marshal(v[i])
-		if err != nil {
-			return nil, err
-		}
-		resources[i] = types.Any{TypeUrl: r.TypeURL(), Value: value}
-	}
-	return resources, nil
 }
 
 // Values returns a sorted list of RouteConfigurations.

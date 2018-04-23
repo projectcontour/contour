@@ -26,6 +26,7 @@ import (
 	envoy_service_v2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
 	"github.com/sirupsen/logrus"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/contour"
 )
@@ -85,7 +86,7 @@ func newgrpcServer(log logrus.FieldLogger, t *contour.Translator) *grpcServer {
 
 // A resourcer provides resources formatted as []types.Any.
 type resourcer interface {
-	Resources() ([]types.Any, error)
+	Values() []proto.Message
 	TypeURL() string
 	Register(chan int, int)
 }
@@ -113,7 +114,7 @@ func (s *grpcServer) fetch(req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, err
 	if !ok {
 		return nil, fmt.Errorf("no resourcer registered for typeURL %q", req.TypeUrl)
 	}
-	resources, err := r.Resources()
+	resources, err := toAny(r)
 	return &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources:   resources,
@@ -176,7 +177,7 @@ func (s *grpcServer) stream(st grpcStream) (err error) {
 		r.Register(ch, last)
 		select {
 		case last = <-ch:
-			resources, err := r.Resources()
+			resources, err := toAny(r)
 			if err != nil {
 				return err
 			}
@@ -193,4 +194,19 @@ func (s *grpcServer) stream(st grpcStream) (err error) {
 			return ctx.Err()
 		}
 	}
+}
+
+// toAny converts the contens of a resourcer's Values to the
+// respective slice of types.Any.
+func toAny(res resourcer) ([]types.Any, error) {
+	v := res.Values()
+	resources := make([]types.Any, len(v))
+	for i := range v {
+		value, err := proto.Marshal(v[i])
+		if err != nil {
+			return nil, err
+		}
+		resources[i] = types.Any{TypeUrl: res.TypeURL(), Value: value}
+	}
+	return resources, nil
 }
