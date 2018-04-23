@@ -58,14 +58,14 @@ func NewAPI(log logrus.FieldLogger, t *contour.Translator) *grpc.Server {
 
 type grpcServer struct {
 	logrus.FieldLogger
-	count     uint64               // connection count, incremented atomically
-	resources map[string]resourcer // registered resource types
+	count     uint64              // connection count, incremented atomically
+	resources map[string]resource // registered resource types
 }
 
 func newgrpcServer(log logrus.FieldLogger, t *contour.Translator) *grpcServer {
 	return &grpcServer{
 		FieldLogger: log,
-		resources: map[string]resourcer{
+		resources: map[string]resource{
 			clusterType: &CDS{
 				cache: &t.ClusterCache,
 			},
@@ -84,10 +84,16 @@ func newgrpcServer(log logrus.FieldLogger, t *contour.Translator) *grpcServer {
 	}
 }
 
-// A resourcer provides resources formatted as []types.Any.
-type resourcer interface {
-	Values() []proto.Message
+// A resource provides resources formatted as []types.Any.
+type resource interface {
+	// Values returns a slice of proto.Message implementations that match
+	// the provided filter.
+	Values(func(string) bool) []proto.Message
+
+	// TypeURL returns the typeURL of messages returned from Values.
 	TypeURL() string
+
+	// Register registers the channel for change notifications.
 	Register(chan int, int)
 }
 
@@ -112,9 +118,10 @@ func (s *grpcServer) fetch(req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, err
 	s.WithField("connection", atomic.AddUint64(&s.count, 1)).WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("fetch")
 	r, ok := s.resources[req.TypeUrl]
 	if !ok {
-		return nil, fmt.Errorf("no resourcer registered for typeURL %q", req.TypeUrl)
+		return nil, fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl)
 	}
-	resources, err := toAny(r)
+	filter := func(string) bool { return true }
+	resources, err := toAny(r, filter)
 	return &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources:   resources,
@@ -170,14 +177,15 @@ func (s *grpcServer) stream(st grpcStream) (err error) {
 		}
 		r, ok := s.resources[req.TypeUrl]
 		if !ok {
-			return fmt.Errorf("no resourcer registered for typeURL %q", req.TypeUrl)
+			return fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl)
 		}
 		log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("stream_wait")
 
 		r.Register(ch, last)
 		select {
 		case last = <-ch:
-			resources, err := toAny(r)
+			filter := func(string) bool { return true }
+			resources, err := toAny(r, filter)
 			if err != nil {
 				return err
 			}
@@ -198,8 +206,8 @@ func (s *grpcServer) stream(st grpcStream) (err error) {
 
 // toAny converts the contens of a resourcer's Values to the
 // respective slice of types.Any.
-func toAny(res resourcer) ([]types.Any, error) {
-	v := res.Values()
+func toAny(res resource, filter func(string) bool) ([]types.Any, error) {
+	v := res.Values(filter)
 	resources := make([]types.Any, len(v))
 	for i := range v {
 		value, err := proto.Marshal(v[i])

@@ -50,7 +50,7 @@ type CDS struct {
 }
 
 // Values returns a sorted list of Clusters.
-func (c *CDS) Values() []proto.Message {
+func (c *CDS) Values(filter func(string) bool) []proto.Message {
 	v := c.cache.Values()
 	sort.Stable(clusterByName(v))
 	return v
@@ -70,7 +70,7 @@ type EDS struct {
 }
 
 // Values returns a sorted list of ClusterLoadAssignments.
-func (e *EDS) Values() []proto.Message {
+func (e *EDS) Values(filter func(string) bool) []proto.Message {
 	v := e.cache.Values()
 	sort.Stable(clusterLoadAssignmentsByName(v))
 	return v
@@ -92,7 +92,7 @@ type LDS struct {
 }
 
 // Values returns a sorted list of Listeners.
-func (l *LDS) Values() []proto.Message {
+func (l *LDS) Values(filter func(string) bool) []proto.Message {
 	v := l.cache.Values()
 	sort.Stable(listenersByName(v))
 	return v
@@ -119,7 +119,7 @@ type RDS struct {
 }
 
 // Values returns a sorted list of RouteConfigurations.
-func (r *RDS) Values() []proto.Message {
+func (r *RDS) Values(filter func(string) bool) []proto.Message {
 	// TODO(dfc) avoid this expensive sort
 	toRouteVirtualHosts := func(ms []proto.Message) []route.VirtualHost {
 		r := make([]route.VirtualHost, 0, len(ms))
