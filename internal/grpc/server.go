@@ -139,7 +139,7 @@ func (s *grpcServer) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpo
 }
 
 func (s *grpcServer) StreamLoadStats(srv envoy_service_v2.LoadReportingService_StreamLoadStatsServer) error {
-	return grpc.Errorf(codes.Unimplemented, "FetchListeners Unimplemented")
+	return grpc.Errorf(codes.Unimplemented, "StreamLoadStats Unimplemented")
 }
 
 func (s *grpcServer) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) error {
@@ -217,4 +217,18 @@ func toAny(res resource, filter func(string) bool) ([]types.Any, error) {
 		resources[i] = types.Any{TypeUrl: res.TypeURL(), Value: value}
 	}
 	return resources, nil
+}
+
+// toFilter converts a slice of strings into a filter function.
+// If the slice is empty, then a filter function that matches everything
+// is returned.
+func toFilter(names []string) func(string) bool {
+	if len(names) == 0 {
+		return func(string) bool { return true }
+	}
+	m := make(map[string]bool)
+	for _, n := range names {
+		m[n] = true
+	}
+	return func(name string) bool { return m[name] }
 }
