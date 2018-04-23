@@ -62,10 +62,16 @@ func main() {
 	cli := app.Command("cli", "A CLI client for the Heptio Contour Kubernetes ingress controller.")
 	var client Client
 	cli.Flag("contour", "contour host:port.").Default("127.0.0.1:8001").StringVar(&client.ContourAddr)
+
+	var resources []string
 	cds := cli.Command("cds", "watch services.")
+	cds.Arg("resources", "CDS resource filter").StringsVar(&resources)
 	eds := cli.Command("eds", "watch endpoints.")
+	eds.Arg("resources", "EDS resource filter").StringsVar(&resources)
 	lds := cli.Command("lds", "watch listerners.")
+	lds.Arg("resources", "LDS resource filter").StringsVar(&resources)
 	rds := cli.Command("rds", "watch routes.")
+	rds.Arg("resources", "RDS resource filter").StringsVar(&resources)
 
 	serve := app.Command("serve", "Serve xDS API traffic")
 	inCluster := serve.Flag("incluster", "use in cluster configuration.").Bool()
@@ -95,16 +101,16 @@ func main() {
 		writeBootstrapConfig(&config, *path)
 	case cds.FullCommand():
 		stream := client.ClusterStream()
-		watchstream(stream, clusterType)
+		watchstream(stream, clusterType, resources)
 	case eds.FullCommand():
 		stream := client.EndpointStream()
-		watchstream(stream, endpointType)
+		watchstream(stream, endpointType, resources)
 	case lds.FullCommand():
 		stream := client.ListenerStream()
-		watchstream(stream, listenerType)
+		watchstream(stream, listenerType, resources)
 	case rds.FullCommand():
 		stream := client.RouteStream()
-		watchstream(stream, routeType)
+		watchstream(stream, routeType, resources)
 	case serve.FullCommand():
 		log.Infof("args: %v", args)
 		var g workgroup.Group
