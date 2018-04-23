@@ -1,50 +1,52 @@
 name: contour
 baseurl: /contour
-latest: "v0.4.0"
-versions:
-  - "v0.4.0"
-  - "v0.3.0"
-  - "v0.2.0"
-  - "v0.1.0"
 google_analytics: FILL_OUT
+latest: v0.5.0
+versions:
+- v0.5.0
+- v0.4.0
+- v0.3.0
+- v0.2.0
+- v0.1.0
 versioning: true
-
 logo: assets/img/logo.svg
-
 exclude:
-  - gen_version.sh
+- gen_version.sh
 plugins:
-  - jekyll-redirect-from
-
+- jekyll-redirect-from
 contact:
   google: https://groups.google.com/forum/#!forum/heptio-contour
   github: https://github.com/heptio/contour
   twitter: https://twitter.com/heptiocontour
   slack: https://kubernetes.slack.com/messages/contour
-
 defaults:
-  - scope:
-      path: "master"
-    values:
-      version: "master"
-      gh: https://github.com/heptio/contour/tree/master
-  - scope:
-      path: "v0.4.0"
-    values:
-      version: "v0.4.0"
-      gh: https://github.com/heptio/contour/tree/v0.4.0
-  - scope:
-      path: "v0.3.0"
-    values:
-      version: "v0.3.0"
-      gh: https://github.com/heptio/contour/tree/v0.3.0
-  - scope:
-      path: "v0.2.0"
-    values:
-      version: "v0.2.0"
-      gh: https://github.com/heptio/contour/tree/v0.2.0
-  - scope:
-      path: "v0.1.0"
-    values:
-      version: "v0.1.0"
-      gh: https://github.com/heptio/contour/tree/v0.1.0
+- scope:
+    path: master
+  values:
+    version: master
+    gh: https://github.com/heptio/contour/tree/master
+- scope:
+    path: v0.5.0
+  values:
+    version: v0.5.0
+    gh: https:/github.com/heptio/contour/tree/v0.5.0
+- scope:
+    path: v0.4.0
+  values:
+    version: v0.4.0
+    gh: https://github.com/heptio/contour/tree/v0.4.0
+- scope:
+    path: v0.3.0
+  values:
+    version: v0.3.0
+    gh: https://github.com/heptio/contour/tree/v0.3.0
+- scope:
+    path: v0.2.0
+  values:
+    version: v0.2.0
+    gh: https://github.com/heptio/contour/tree/v0.2.0
+- scope:
+    path: v0.1.0
+  values:
+    version: v0.1.0
+    gh: https://github.com/heptio/contour/tree/v0.1.0
