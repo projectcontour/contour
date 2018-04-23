@@ -51,11 +51,8 @@ type CDS struct {
 }
 
 // Resources returns the contents of CDS"s cache as a []types.Any.
-// TODO(dfc) cache the results of Resources in the ClusterCache so
-// we can avoid the error handling.
 func (c *CDS) Resources() ([]types.Any, error) {
 	v := c.Values()
-	sort.Stable(clusterByName(v))
 	resources := make([]types.Any, len(v))
 	for i := range v {
 		value, err := proto.Marshal(v[i])
@@ -65,6 +62,13 @@ func (c *CDS) Resources() ([]types.Any, error) {
 		resources[i] = types.Any{TypeUrl: c.TypeURL(), Value: value}
 	}
 	return resources, nil
+}
+
+// Values returns a sorted list of Clusters.
+func (c *CDS) Values() []proto.Message {
+	v := c.cache.Values()
+	sort.Stable(clusterByName(v))
+	return v
 }
 
 func (c *CDS) TypeURL() string { return clusterType }
@@ -81,11 +85,8 @@ type EDS struct {
 }
 
 // Resources returns the contents of EDS"s cache as a []types.Any.
-// TODO(dfc) cache the results of Resources in the ClusterLoadAssignmentCache so
-// we can avoid the error handling.
 func (e *EDS) Resources() ([]types.Any, error) {
 	v := e.Values()
-	sort.Stable(clusterLoadAssignmentsByName(v))
 	resources := make([]types.Any, len(v))
 	for i := range v {
 		value, err := proto.Marshal(v[i])
@@ -95,6 +96,13 @@ func (e *EDS) Resources() ([]types.Any, error) {
 		resources[i] = types.Any{TypeUrl: e.TypeURL(), Value: value}
 	}
 	return resources, nil
+}
+
+// Values returns a sorted list of ClusterLoadAssignments.
+func (e *EDS) Values() []proto.Message {
+	v := e.cache.Values()
+	sort.Stable(clusterLoadAssignmentsByName(v))
+	return v
 }
 
 func (e *EDS) TypeURL() string { return endpointType }
@@ -113,11 +121,8 @@ type LDS struct {
 }
 
 // Resources returns the contents of LDS"s cache as a []types.Any.
-// TODO(dfc) cache the results of Resources in the ListenerCache so
-// we can avoid the error handling.
 func (l *LDS) Resources() ([]types.Any, error) {
 	v := l.Values()
-	sort.Stable(listenersByName(v))
 	resources := make([]types.Any, len(v))
 	for i := range v {
 		value, err := proto.Marshal(v[i])
@@ -127,6 +132,13 @@ func (l *LDS) Resources() ([]types.Any, error) {
 		resources[i] = types.Any{TypeUrl: l.TypeURL(), Value: value}
 	}
 	return resources, nil
+}
+
+// Values returns a sorted list of Listeners.
+func (l *LDS) Values() []proto.Message {
+	v := l.cache.Values()
+	sort.Stable(listenersByName(v))
+	return v
 }
 
 func (l *LDS) TypeURL() string { return listenerType }
@@ -150,8 +162,6 @@ type RDS struct {
 }
 
 // Resources returns the contents of RDS"s cache as a []types.Any.
-// TODO(dfc) cache the results of Resources in the VirtualHostCache so
-// we can avoid the error handling.
 func (r *RDS) Resources() ([]types.Any, error) {
 	v := r.Values()
 	resources := make([]types.Any, len(v))
@@ -165,6 +175,7 @@ func (r *RDS) Resources() ([]types.Any, error) {
 	return resources, nil
 }
 
+// Values returns a sorted list of RouteConfigurations.
 func (r *RDS) Values() []proto.Message {
 	// TODO(dfc) avoid this expensive sort
 	toRouteVirtualHosts := func(ms []proto.Message) []route.VirtualHost {
