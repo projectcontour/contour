@@ -26,7 +26,6 @@ import (
 	envoy_service_v2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
 	"github.com/sirupsen/logrus"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/contour"
 )
@@ -35,36 +34,6 @@ const (
 	// somewhat arbitrary limit to handle many, many, EDS streams
 	grpcMaxConcurrentStreams = 1 << 20
 )
-
-// ClusterCache holds a set of computed v2.Cluster resources.
-type ClusterCache interface {
-	// Values returns a copy of the contents of the cache.
-	// The slice and its contents should be treated as read-only.
-	Values() []proto.Message
-
-	// Register registers ch to receive a value when Notify is called.
-	Register(chan int, int)
-}
-
-// ClusterLoadAssignmentCache holds a set of computed v2.ClusterLoadAssignment resources.
-type ClusterLoadAssignmentCache interface {
-	// Values returns a copy of the contents of the cache.
-	// The slice and its contents should be treated as read-only.
-	Values() []proto.Message
-
-	// Register registers ch to receive a value when Notify is called.
-	Register(chan int, int)
-}
-
-// ListenerCache holds a set of computed v2.Listener resources.
-type ListenerCache interface {
-	// Values returns a copy of the contents of the cache.
-	// The slice and its contents should be treated as read-only.
-	Values() []proto.Message
-
-	// Register registers ch to receive a value when Notify is called.
-	Register(chan int, int)
-}
 
 // NewAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
 func NewAPI(log logrus.FieldLogger, t *contour.Translator) *grpc.Server {
@@ -97,13 +66,13 @@ func newgrpcServer(log logrus.FieldLogger, t *contour.Translator) *grpcServer {
 		FieldLogger: log,
 		resources: map[string]resourcer{
 			clusterType: &CDS{
-				ClusterCache: &t.ClusterCache,
+				cache: &t.ClusterCache,
 			},
 			endpointType: &EDS{
-				ClusterLoadAssignmentCache: &t.ClusterLoadAssignmentCache,
+				cache: &t.ClusterLoadAssignmentCache,
 			},
 			listenerType: &LDS{
-				ListenerCache: &t.ListenerCache,
+				cache: &t.ListenerCache,
 			},
 			routeType: &RDS{
 				HTTP:  &t.VirtualHostCache.HTTP,

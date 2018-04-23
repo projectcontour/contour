@@ -34,9 +34,20 @@ const (
 	listenerType = typePrefix + "Listener"
 )
 
+// cache represents a source of proto.Message valus that can be registered
+// for interest.
+type cache interface {
+	// Values returns a copy of the contents of the cache.
+	// The slice and its contents should be treated as read-only.
+	Values() []proto.Message
+
+	// Register registers ch to receive a value when Notify is called.
+	Register(chan int, int)
+}
+
 // CDS implements the CDS v2 gRPC API.
 type CDS struct {
-	ClusterCache
+	cache
 }
 
 // Resources returns the contents of CDS"s cache as a []types.Any.
@@ -66,7 +77,7 @@ func (c clusterByName) Less(i, j int) bool { return c[i].(*v2.Cluster).Name < c[
 
 // EDS implements the EDS v2 gRPC API.
 type EDS struct {
-	ClusterLoadAssignmentCache
+	cache
 }
 
 // Resources returns the contents of EDS"s cache as a []types.Any.
@@ -98,7 +109,7 @@ func (c clusterLoadAssignmentsByName) Less(i, j int) bool {
 
 // LDS implements the LDS v2 gRPC API.
 type LDS struct {
-	ListenerCache
+	cache
 }
 
 // Resources returns the contents of LDS"s cache as a []types.Any.
@@ -142,7 +153,20 @@ type RDS struct {
 // TODO(dfc) cache the results of Resources in the VirtualHostCache so
 // we can avoid the error handling.
 func (r *RDS) Resources() ([]types.Any, error) {
-	// TODO(dfc) avoid this expensive
+	v := r.Values()
+	resources := make([]types.Any, len(v))
+	for i := range v {
+		value, err := proto.Marshal(v[i])
+		if err != nil {
+			return nil, err
+		}
+		resources[i] = types.Any{TypeUrl: r.TypeURL(), Value: value}
+	}
+	return resources, nil
+}
+
+func (r *RDS) Values() []proto.Message {
+	// TODO(dfc) avoid this expensive sort
 	toRouteVirtualHosts := func(ms []proto.Message) []route.VirtualHost {
 		r := make([]route.VirtualHost, 0, len(ms))
 		for _, m := range ms {
@@ -151,27 +175,17 @@ func (r *RDS) Resources() ([]types.Any, error) {
 		sort.Stable(virtualHostsByName(r))
 		return r
 	}
+	return []proto.Message{
+		&v2.RouteConfiguration{
+			Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
+			VirtualHosts: toRouteVirtualHosts(r.HTTP.Values()),
+		},
+		&v2.RouteConfiguration{
 
-	ingress_http, err := proto.Marshal(&v2.RouteConfiguration{
-		Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
-		VirtualHosts: toRouteVirtualHosts(r.HTTP.Values()),
-	})
-	if err != nil {
-		return nil, err
+			Name:         "ingress_https", // TODO(dfc) matches LDS configuration?
+			VirtualHosts: toRouteVirtualHosts(r.HTTPS.Values()),
+		},
 	}
-	ingress_https, err := proto.Marshal(&v2.RouteConfiguration{
-
-		Name:         "ingress_https", // TODO(dfc) matches LDS configuration?
-		VirtualHosts: toRouteVirtualHosts(r.HTTPS.Values()),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return []types.Any{{
-		TypeUrl: r.TypeURL(), Value: ingress_http,
-	}, {
-		TypeUrl: r.TypeURL(), Value: ingress_https,
-	}}, nil
 }
 
 func (r *RDS) TypeURL() string { return routeType }
