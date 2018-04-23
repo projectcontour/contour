@@ -30,8 +30,6 @@ func writeBootstrapConfig(config configWriter, path string) {
 	f, err := os.Create(path)
 	check(err)
 	switch filepath.Ext(path) {
-	case ".json":
-		check(fmt.Errorf("JSON bootstrap configuration has been removed.\nPlease see https://github.com/heptio/contour/blob/master/docs/upgrade.md"))
 	case ".yaml":
 		err = config.WriteYAML(f)
 		check(err)
