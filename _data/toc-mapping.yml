@@ -4,8 +4,9 @@
 #
 # Below is a commented out example of what this may look like:
 
+ v0.5.0: v05
+ master: v05
  v0.4.0: v04
- master: v04
 # v0.9.0: old
 # # v0.10.0 is unspecified, so it uses the toc under default.yml
 # v0.11.0: default
