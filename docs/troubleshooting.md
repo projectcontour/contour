@@ -27,6 +27,18 @@ kubectl -n heptio-contour port-forward $CONTOUR_POD 9001
 ```
 Then navigate to [http://127.0.0.1:9001/](http://127.0.0.1:9001/) to access the admin interface for the Envoy container running on that pod.
 
+## Accessing Contour's /debug/pprof service
+
+Contour exposes the [net/http/pprof] handlers for `go tool pprof` and `go tool trace` by default on `127.0.0.1:8000`.
+This service is useful for profiling Contour. 
+To access it from your workstation use `kubectl port-forward` like so,
+```
+# Get one of the pods that matches the deployment/daemonset
+CONTOUR_POD=$(kubectl -n heptio-contour get pod -l app=contour -o jsonpath='{.items[0].metadata.name}')
+# Do the port forward to that pod
+kubectl -n heptio-contour port-forward $CONTOUR_POD 8000
+```
+
 ## Interrogate Contour's gRPC API
 
 Sometimes it's helpful to be able to interrogate Contour to find out exactly the data it is sending to Envoy.
