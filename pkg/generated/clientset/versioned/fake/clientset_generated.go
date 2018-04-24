@@ -41,18 +41,18 @@ func NewSimpleClientset(objects ...runtime.Object) *Clientset {
 		}
 	}
 
-	fakePtr := testing.Fake{}
+	fakePtr := &testing.Fake{}
 	fakePtr.AddReactor("*", "*", testing.ObjectReaction(o))
 	fakePtr.AddWatchReactor("*", testing.DefaultWatchReactor(watch.NewFake(), nil))
 
-	return &Clientset{fakePtr, &fakediscovery.FakeDiscovery{Fake: &fakePtr}}
+	return &Clientset{fakePtr, &fakediscovery.FakeDiscovery{Fake: fakePtr}}
 }
 
 // Clientset implements clientset.Interface. Meant to be embedded into a
 // struct to get a default implementation. This makes faking out just the method
 // you want to test easier.
 type Clientset struct {
-	testing.Fake
+	*testing.Fake
 	discovery *fakediscovery.FakeDiscovery
 }
 
@@ -64,10 +64,10 @@ var _ clientset.Interface = &Clientset{}
 
 // ContourV1 retrieves the ContourV1Client
 func (c *Clientset) ContourV1() contourv1.ContourV1Interface {
-	return &fakecontourv1.FakeContourV1{Fake: &c.Fake}
+	return &fakecontourv1.FakeContourV1{Fake: c.Fake}
 }
 
 // Contour retrieves the ContourV1Client
 func (c *Clientset) Contour() contourv1.ContourV1Interface {
-	return &fakecontourv1.FakeContourV1{Fake: &c.Fake}
+	return &fakecontourv1.FakeContourV1{Fake: c.Fake}
 }
