@@ -1,0 +1,73 @@
+// Copyright © 2018 Heptio
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/pprof"
+	"time"
+
+	"github.com/sirupsen/logrus"
+)
+
+// pprof debug service
+
+// debugService serves the /debug/pprof endpoint.
+type debugService struct {
+	Addr string
+	Port int
+
+	logrus.FieldLogger
+}
+
+// Start fulfills the g.Start contract.
+// When stop is closed the http server will shutdown.
+func (d *debugService) Start(stop <-chan struct{}) {
+	mux := http.NewServeMux()
+
+	// register the /debug/pprof handlers on this mux.
+	mux.HandleFunc("/debug/pprof/", pprof.Index)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+	s := http.Server{
+		Addr:           fmt.Sprintf("%s:%d", d.Addr, d.Port),
+		Handler:        mux,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   5 * time.Minute, // allow for long trace requests
+		MaxHeaderBytes: 1 << 11,         // 8kb should be enough for anyone
+	}
+
+	go func() {
+		// wait for stop signal from group.
+		<-stop
+
+		// shutdown the server with 5 seconds grace.
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+		s.Shutdown(ctx)
+	}()
+
+	d.WithField("address", s.Addr).Info("started")
+	if err := s.ListenAndServe(); err != nil {
+		d.WithError(err).Error("terminated with error")
+	} else {
+		d.Info("stopped")
+	}
+}

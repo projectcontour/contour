@@ -73,6 +73,14 @@ func main() {
 	xdsAddr := serve.Flag("xds-address", "xDS gRPC API address").Default("127.0.0.1").String()
 	xdsPort := serve.Flag("xds-port", "xDS gRPC API port").Default("8001").Int()
 
+	// configuration parameters for debug service
+	debug := debugService{
+		FieldLogger: log.WithField("context", "debugsvc"),
+	}
+
+	serve.Flag("debug address", "address the /debug/pprof endpoint will bind too").Default("127.0.0.1").StringVar(&debug.Addr)
+	serve.Flag("debug port", "port the /debug/pprof endpoint will bind too").Default("8000").IntVar(&debug.Port)
+
 	// translator configuration
 	serve.Flag("envoy-http-address", "Envoy HTTP listener address").StringVar(&t.HTTPAddress)
 	serve.Flag("envoy-https-address", "Envoy HTTPS listener address").StringVar(&t.HTTPSAddress)
@@ -111,6 +119,8 @@ func main() {
 		k8s.WatchEndpoints(&g, client, wl, buf)
 		k8s.WatchIngress(&g, client, wl, buf)
 		k8s.WatchSecrets(&g, client, wl, buf)
+
+		g.Add(debug.Start)
 
 		g.Add(func(stop <-chan struct{}) {
 			log := log.WithField("context", "grpc")
