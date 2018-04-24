@@ -148,7 +148,7 @@ func TestRecomputeListener(t *testing.T) {
 	}
 }
 func TestRecomputeListenerIngressRoute(t *testing.T) {
-	tests := map[string]struct {
+	tests := map[string]*struct {
 		routes map[metadata]*ingressroutev1.IngressRoute
 		add    []*v2.Listener
 		remove []string
