@@ -49,8 +49,10 @@ func (c *cache) remove(name string) {
 func (c *cache) Values(filter func(string) bool) []proto.Message {
 	c.mu.Lock()
 	values := make([]proto.Message, 0, len(c.entries))
-	for _, v := range c.entries {
-		values = append(values, v)
+	for n, v := range c.entries {
+		if filter(n) {
+			values = append(values, v)
+		}
 	}
 	c.mu.Unlock()
 	return values
