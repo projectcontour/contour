@@ -20,6 +20,9 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/contour"
 	cgrpc "github.com/heptio/contour/internal/grpc"
 	"github.com/sirupsen/logrus"
@@ -79,5 +82,28 @@ func check(t *testing.T, err error) {
 	t.Helper()
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func any(t *testing.T, pb proto.Message) types.Any {
+	t.Helper()
+	any, err := types.MarshalAny(pb)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return *any
+}
+
+func assertEqual(t *testing.T, want, got *v2.DiscoveryResponse) {
+	t.Helper()
+	m := proto.TextMarshaler{Compact: true, ExpandAny: true}
+	a := m.Text(want)
+	b := m.Text(got)
+	if a != b {
+		m := proto.TextMarshaler{
+			Compact:   false,
+			ExpandAny: true,
+		}
+		t.Fatalf("\nexpected:\n%v\ngot:\n%v", m.Text(want), m.Text(got))
 	}
 }

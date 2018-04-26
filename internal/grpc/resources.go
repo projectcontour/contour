@@ -130,18 +130,21 @@ func (r *RDS) Values(filter func(string) bool) []proto.Message {
 		return r
 	}
 
+	v := make([]proto.Message, 0, 1) // common case is a filter with one entry
 	matchAll := func(string) bool { return true }
-	return []proto.Message{
-		&v2.RouteConfiguration{
+	if filter("ingress_http") {
+		v = append(v, &v2.RouteConfiguration{
 			Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
 			VirtualHosts: toRouteVirtualHosts(r.HTTP.Values(matchAll)),
-		},
-		&v2.RouteConfiguration{
-
+		})
+	}
+	if filter("ingress_https") {
+		v = append(v, &v2.RouteConfiguration{
 			Name:         "ingress_https", // TODO(dfc) matches LDS configuration?
 			VirtualHosts: toRouteVirtualHosts(r.HTTPS.Values(matchAll)),
-		},
+		})
 	}
+	return v
 }
 
 func (r *RDS) TypeURL() string { return routeType }

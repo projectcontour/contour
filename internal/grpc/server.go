@@ -115,8 +115,7 @@ func (s *grpcServer) fetch(req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, err
 	if !ok {
 		return nil, fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl)
 	}
-	filter := func(string) bool { return true }
-	resources, err := toAny(r, filter)
+	resources, err := toAny(r, toFilter(req.ResourceNames))
 	return &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources:   resources,
@@ -153,7 +152,12 @@ type grpcStream interface {
 
 // stream processes a stream of DiscoveryRequests.
 func (s *grpcServer) stream(st grpcStream) (err error) {
+
+	// bump connection counter and set it as a field on the logger
 	log := s.WithField("connection", atomic.AddUint64(&s.count, 1))
+
+	// set up some nice function exit handling which notifies if the
+	// stream terminated on error or not.
 	defer func() {
 		if err != nil {
 			log.WithError(err).Error("stream terminated")
@@ -165,25 +169,56 @@ func (s *grpcServer) stream(st grpcStream) (err error) {
 	ch := make(chan int, 1)
 	last := 0
 	ctx := st.Context()
+
+	// now stick in this loop until the client disconnects.
 	for {
+
+		// first we wait for the request from Envoy, this is part of
+		// the xDS protocol.
 		req, err := st.Recv()
 		if err != nil {
 			return err
 		}
+
+		// from the request we derive the resource to stream which have
+		// been registered according to the typeURL.
 		r, ok := s.resources[req.TypeUrl]
 		if !ok {
 			return fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl)
 		}
-		log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("stream_wait")
 
+		// stick some debugging details on the logger, not that we redeclare log in this scope
+		// so the next time around the loop all is forgotten.
+		log := log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail)
+		log.Info("stream_wait")
+
+		// now we wait for a notification, if this is the first time throught the loop
+		// then last will be zero and that will trigger a notification immediately.
 		r.Register(ch, last)
 		select {
+
+		// boom, something in the cache has changed
 		case last = <-ch:
-			filter := func(string) bool { return true }
-			resources, err := toAny(r, filter)
+
+			// generate a filter from the request, then call toAny which
+			// will get r's (our resource) filter values, then convert them
+			// to the types.Any from required by gRPC.
+			resources, err := toAny(r, toFilter(req.ResourceNames))
 			if err != nil {
 				return err
 			}
+
+			// if we didn't get any resources because they were filter out
+			// or are not present in the cache, then skip the update. This will
+			// mean that if Envoy asks EDS for a set of end points that are not
+			// present (say during pre-warming) it will stay in pre-warming, rather
+			// than receive an result with an empty set of ClusterLoadAssignments.
+			if len(resources) == 0 {
+				log.Info("skipping update")
+				continue
+			}
+
+			// otherwise, build the response object and stream it back to the client.
 			resp := &v2.DiscoveryResponse{
 				VersionInfo: "0",
 				Resources:   resources,
@@ -193,6 +228,8 @@ func (s *grpcServer) stream(st grpcStream) (err error) {
 			if err := st.Send(resp); err != nil {
 				return err
 			}
+
+			// ok, the client hung up, return any error stored in the context and we're done.
 		case <-ctx.Done():
 			return ctx.Err()
 		}

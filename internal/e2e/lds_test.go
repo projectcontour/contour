@@ -243,14 +243,90 @@ func TestTLSListener(t *testing.T) {
 	}, fetchLDS(t, cc))
 }
 
-func fetchLDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
+func TestLDSFilter(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	// s1 is a tls secret
+	s1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	}
+
+	// i1 is a tls ingress
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"kuard.example.com"},
+				SecretName: "secret",
+			}},
+		},
+	}
+
+	// add secret
+	rh.OnAdd(s1)
+
+	// add ingress and fetch ingress_https
+	rh.OnAdd(i1)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.Listener{
+				Name:    "ingress_https",
+				Address: socketaddress("0.0.0.0", 8443),
+				FilterChains: []listener.FilterChain{
+					filterchaintls([]string{"kuard.example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
+				},
+			}),
+		},
+		TypeUrl: listenerType,
+		Nonce:   "0",
+	}, fetchLDS(t, cc, "ingress_https"))
+
+	// fetch ingress_http
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+
+			any(t, &v2.Listener{
+				Name:    "ingress_http",
+				Address: socketaddress("0.0.0.0", 8080),
+				FilterChains: []listener.FilterChain{
+					filterchain(false, httpfilter("ingress_http")),
+				},
+			}),
+		},
+		TypeUrl: listenerType,
+		Nonce:   "0",
+	}, fetchLDS(t, cc, "ingress_http"))
+
+	// fetch something non existent.
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		TypeUrl:     listenerType, Nonce: "0",
+	}, fetchLDS(t, cc, "HTTP"))
+}
+
+func fetchLDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
 	t.Helper()
 	rds := v2.NewListenerDiscoveryServiceClient(cc)
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 	resp, err := rds.FetchListeners(ctx, &v2.DiscoveryRequest{
-		TypeUrl: listenerType,
+		TypeUrl:       listenerType,
+		ResourceNames: rn,
 	})
 	if err != nil {
 		t.Fatal(err)

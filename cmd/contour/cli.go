@@ -70,14 +70,15 @@ type stream interface {
 	Recv() (*v2.DiscoveryResponse, error)
 }
 
-func watchstream(st stream, typeURL string) {
+func watchstream(st stream, typeURL string, resources []string) {
 	m := proto.TextMarshaler{
 		Compact:   false,
 		ExpandAny: true,
 	}
 	for {
 		req := &v2.DiscoveryRequest{
-			TypeUrl: typeURL,
+			TypeUrl:       typeURL,
+			ResourceNames: resources,
 		}
 		err := st.Send(req)
 		check(err)
