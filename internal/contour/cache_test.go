@@ -15,6 +15,7 @@ package contour
 
 import (
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -113,6 +114,57 @@ func TestCacheRemove(t *testing.T) {
 			tc.cache.remove(tc.key)
 			if !reflect.DeepEqual(tc.cache.entries, tc.want) {
 				t.Fatalf("expected: %#v, got %#v", tc.want, tc.cache.entries)
+			}
+		})
+	}
+}
+
+func TestCacheValues(t *testing.T) {
+	var (
+		c  cache
+		c1 = v2.Cluster{
+			Name: "c1",
+		}
+		c2 = v2.Cluster{
+			Name: "c2",
+		}
+		c3 = v2.Cluster{
+			Name: "c3",
+		}
+	)
+
+	c.insert("c1", &c1)
+	c.insert("c2", &c2)
+	c.insert("c3", &c3)
+
+	tests := map[string]*struct {
+		filter func(string) bool
+		want   []proto.Message
+	}{
+		"match none": {
+			filter: func(string) bool { return false },
+			want:   []proto.Message{}, // not nil TODO(dfc) should Values return nil if len(values) == 0
+		},
+		"match all": {
+			filter: func(string) bool { return true },
+			want: []proto.Message{
+				&c1, &c2, &c3, // sorted to match sort of got
+			},
+		},
+		"match c3": {
+			filter: func(s string) bool { return s == "c3" },
+			want: []proto.Message{
+				&c3,
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := c.Values(tc.filter)
+			sort.Stable(clusterByName(got))
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("expected: %#v, got %#v", tc.want, got)
 			}
 		})
 	}
