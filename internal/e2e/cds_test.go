@@ -46,16 +46,7 @@ func TestClusterLongServiceName(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, &v2.Cluster{
-				Name: "kuard/kbujbkuhdod66-edfcfc/8080",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "kuard/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
+			any(t, cluster("kuard/kbujbkuhdod66-edfcfc/8080", "kuard/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -79,16 +70,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, &v2.Cluster{
-				Name: "default/kuard/80",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
+			any(t, cluster("default/kuard/80", "default/kuard")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -109,26 +91,8 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, &v2.Cluster{
-				Name: "default/kuard/80",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/http",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
-			any(t, &v2.Cluster{
-				Name: "default/kuard/http",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/http",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
+			any(t, cluster("default/kuard/80", "default/kuard/http")),
+			any(t, cluster("default/kuard/http", "default/kuard/http")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -159,46 +123,10 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, &v2.Cluster{
-				Name: "default/kuard/443",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/https",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
-			any(t, &v2.Cluster{
-				Name: "default/kuard/80",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/http",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
-			any(t, &v2.Cluster{
-				Name: "default/kuard/http",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/http",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
-			any(t, &v2.Cluster{
-				Name: "default/kuard/https",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/https",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
+			any(t, cluster("default/kuard/443", "default/kuard/https")),
+			any(t, cluster("default/kuard/80", "default/kuard/http")),
+			any(t, cluster("default/kuard/http", "default/kuard/http")),
+			any(t, cluster("default/kuard/https", "default/kuard/https")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -222,26 +150,8 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, &v2.Cluster{
-				Name: "default/kuard/443",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/https",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
-			any(t, &v2.Cluster{
-				Name: "default/kuard/https",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/https",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
+			any(t, cluster("default/kuard/443", "default/kuard/https")),
+			any(t, cluster("default/kuard/https", "default/kuard/https")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -272,46 +182,10 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, &v2.Cluster{
-				Name: "default/kuard/443",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/https",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
-			any(t, &v2.Cluster{
-				Name: "default/kuard/80",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/http",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
-			any(t, &v2.Cluster{
-				Name: "default/kuard/http",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/http",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
-			any(t, &v2.Cluster{
-				Name: "default/kuard/https",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/https",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
+			any(t, cluster("default/kuard/443", "default/kuard/https")),
+			any(t, cluster("default/kuard/80", "default/kuard/http")),
+			any(t, cluster("default/kuard/http", "default/kuard/http")),
+			any(t, cluster("default/kuard/https", "default/kuard/https")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -330,16 +204,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, &v2.Cluster{
-				Name: "default/kuard/443",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
+			any(t, cluster("default/kuard/443", "default/kuard")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -350,46 +215,10 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, &v2.Cluster{
-				Name: "default/kuard/443",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/https",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
-			any(t, &v2.Cluster{
-				Name: "default/kuard/80",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/http",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
-			any(t, &v2.Cluster{
-				Name: "default/kuard/http",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/http",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
-			any(t, &v2.Cluster{
-				Name: "default/kuard/https",
-				Type: v2.Cluster_EDS,
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-					ServiceName: "default/kuard/https",
-				},
-				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-			}),
+			any(t, cluster("default/kuard/443", "default/kuard/https")),
+			any(t, cluster("default/kuard/80", "default/kuard/http")),
+			any(t, cluster("default/kuard/http", "default/kuard/http")),
+			any(t, cluster("default/kuard/https", "default/kuard/https")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -422,16 +251,7 @@ func TestIssue243(t *testing.T) {
 		assertEqual(t, &v2.DiscoveryResponse{
 			VersionInfo: "0",
 			Resources: []types.Any{
-				any(t, &v2.Cluster{
-					Name: "default/kuard/80",
-					Type: v2.Cluster_EDS,
-					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-						ServiceName: "default/kuard",
-					},
-					ConnectTimeout: 250 * time.Millisecond,
-					LbPolicy:       v2.Cluster_ROUND_ROBIN,
-				}),
+				any(t, cluster("default/kuard/80", "default/kuard")),
 			},
 			TypeUrl: clusterType,
 			Nonce:   "0",
@@ -444,38 +264,27 @@ func TestIssue247(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
 
-	t.Run("single unnamed service with a named target port", func(t *testing.T) {
-		// spec:
-		//   ports:
-		//   - port: 80
-		//     protocol: TCP
-		//     targetPort: kuard
-		s1 := service("default", "kuard",
-			v1.ServicePort{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromString("kuard"),
-			},
-		)
-		rh.OnAdd(s1)
-		assertEqual(t, &v2.DiscoveryResponse{
-			VersionInfo: "0",
-			Resources: []types.Any{
-				any(t, &v2.Cluster{
-					Name: "default/kuard/80",
-					Type: v2.Cluster_EDS,
-					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-						ServiceName: "default/kuard",
-					},
-					ConnectTimeout: 250 * time.Millisecond,
-					LbPolicy:       v2.Cluster_ROUND_ROBIN,
-				}),
-			},
-			TypeUrl: clusterType,
-			Nonce:   "0",
-		}, fetchCDS(t, cc))
-	})
+	// spec:
+	//   ports:
+	//   - port: 80
+	//     protocol: TCP
+	//     targetPort: kuard
+	s1 := service("default", "kuard",
+		v1.ServicePort{
+			Protocol:   "TCP",
+			Port:       80,
+			TargetPort: intstr.FromString("kuard"),
+		},
+	)
+	rh.OnAdd(s1)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, cluster("default/kuard/80", "default/kuard")),
+		},
+		TypeUrl: clusterType,
+		Nonce:   "0",
+	}, fetchCDS(t, cc))
 }
 
 func fetchCDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
@@ -491,6 +300,19 @@ func fetchCDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
 		t.Fatal(err)
 	}
 	return resp
+}
+
+func cluster(name, servicename string) *v2.Cluster {
+	return &v2.Cluster{
+		Name: name,
+		Type: v2.Cluster_EDS,
+		EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+			EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+			ServiceName: servicename,
+		},
+		ConnectTimeout: 250 * time.Millisecond,
+		LbPolicy:       v2.Cluster_ROUND_ROBIN,
+	}
 }
 
 func apiconfigsource(clusters ...string) *core.ConfigSource {
