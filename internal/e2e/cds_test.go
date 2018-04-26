@@ -286,15 +286,66 @@ func TestIssue247(t *testing.T) {
 		Nonce:   "0",
 	}, fetchCDS(t, cc))
 }
+func TestCDSResourceFiltering(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
 
-func fetchCDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
+	// add two services, check that they are there
+	s1 := service("default", "kuard",
+		v1.ServicePort{
+			Protocol:   "TCP",
+			Port:       80,
+			TargetPort: intstr.FromString("kuard"),
+		},
+	)
+	rh.OnAdd(s1)
+	s2 := service("default", "httpbin",
+		v1.ServicePort{
+			Protocol:   "TCP",
+			Port:       8080,
+			TargetPort: intstr.FromString("httpbin"),
+		},
+	)
+	rh.OnAdd(s2)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			// note, resources are sorted by Cluster.Name
+			any(t, cluster("default/httpbin/8080", "default/httpbin")),
+			any(t, cluster("default/kuard/80", "default/kuard")),
+		},
+		TypeUrl: clusterType,
+		Nonce:   "0",
+	}, fetchCDS(t, cc))
+
+	// assert we can filter on one resource
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, cluster("default/kuard/80", "default/kuard")),
+		},
+		TypeUrl: clusterType,
+		Nonce:   "0",
+	}, fetchCDS(t, cc, "default/kuard/80"))
+
+	// assert a non matching filter returns no results
+	// note: streamCDS would stall at this point.
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		TypeUrl:     clusterType,
+		Nonce:       "0",
+	}, fetchCDS(t, cc, "default/httpbin/9000"))
+}
+
+func fetchCDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
 	t.Helper()
 	rds := v2.NewClusterDiscoveryServiceClient(cc)
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 	resp, err := rds.FetchClusters(ctx, &v2.DiscoveryRequest{
-		TypeUrl: clusterType,
+		TypeUrl:       clusterType,
+		ResourceNames: rn,
 	})
 	if err != nil {
 		t.Fatal(err)
