@@ -697,6 +697,106 @@ func TestIssue257(t *testing.T) {
 	}}, nil)
 }
 
+func TestRDSFilter(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	// i1 is a stock ingress with force-ssl-redirect on the / route
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "app",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"ingress.kubernetes.io/force-ssl-redirect": "true",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"example.com"},
+				SecretName: "example-tls",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "app-service",
+								ServicePort: intstr.FromInt(8080),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	rh.OnAdd(i1)
+
+	// i2 is an overlay to add the let's encrypt handler.
+	i2 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{Name: "challenge", Namespace: "nginx-ingress"},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				Host: "example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "challenge-service",
+								ServicePort: intstr.FromInt(8009),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	rh.OnAdd(i2)
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_http",
+				VirtualHosts: []route.VirtualHost{{ // ingress_http
+					Name:    "example.com",
+					Domains: []string{"example.com"},
+					Routes: []route.Route{{
+						Match:  prefixmatch("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+						Action: routecluster("nginx-ingress/challenge-service/8009"),
+					}, {
+						Match:  prefixmatch("/"), // match all
+						Action: redirecthttps(),
+					}},
+				}},
+			}),
+		},
+		TypeUrl: routeType,
+		Nonce:   "0",
+	}, fetchRDS(t, cc, "ingress_http"))
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_https",
+				VirtualHosts: []route.VirtualHost{{ // ingress_https
+					Name:    "example.com",
+					Domains: []string{"example.com"},
+					Routes: []route.Route{{
+						Match:  prefixmatch("/"), // match all
+						Action: routecluster("default/app-service/8080"),
+					}},
+				}},
+			}),
+		},
+		TypeUrl: routeType,
+		Nonce:   "0",
+	}, fetchRDS(t, cc, "ingress_https"))
+}
+
 func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []route.VirtualHost) {
 	t.Helper()
 	assertEqual(t, &v2.DiscoveryResponse{
@@ -716,14 +816,15 @@ func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []
 	}, fetchRDS(t, cc))
 }
 
-func fetchRDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
+func fetchRDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
 	t.Helper()
 	rds := v2.NewRouteDiscoveryServiceClient(cc)
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 	resp, err := rds.FetchRoutes(ctx, &v2.DiscoveryRequest{
-		TypeUrl: routeType,
+		TypeUrl:       routeType,
+		ResourceNames: rn,
 	})
 	if err != nil {
 		t.Fatal(err)
