@@ -149,7 +149,7 @@ func TestAddEndpointComplicated(t *testing.T) {
 			)),
 			any(t, clusterloadassignment(
 				"default/kuard/foo",
-				lbendpoint("10.48.1.77", 9999), // TODO(dfc) order is not guarentteed by endpoint controller
+				lbendpoint("10.48.1.77", 9999), // TODO(dfc) order is not guarenteed by endpoint controller
 				lbendpoint("10.48.1.78", 8080),
 			)),
 		},
@@ -158,14 +158,77 @@ func TestAddEndpointComplicated(t *testing.T) {
 	}, fetchEDS(t, cc))
 }
 
-func fetchEDS(t *testing.T, cc *grpc.ClientConn) *v2.DiscoveryResponse {
+func TestEndpointFilter(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	// a single endpoint that represents several
+	// cluster load assignments.
+	e1 := endpoints(
+		"default",
+		"kuard",
+		v1.EndpointSubset{
+			Addresses: addresses(
+				"10.48.1.77",
+			),
+			Ports: []v1.EndpointPort{{
+				Name: "foo",
+				Port: 9999,
+			}},
+		},
+		v1.EndpointSubset{
+			Addresses: addresses(
+				"10.48.1.78",
+			),
+			Ports: []v1.EndpointPort{{
+				Name: "foo",
+				Port: 8080,
+			}},
+		},
+		v1.EndpointSubset{
+			Addresses: addresses(
+				"10.48.1.77",
+				"10.48.1.78",
+			),
+			Ports: []v1.EndpointPort{{
+				Name: "admin",
+				Port: 9000,
+			}},
+		},
+	)
+
+	rh.OnAdd(e1)
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, clusterloadassignment(
+				"default/kuard/foo",
+				lbendpoint("10.48.1.77", 9999), // TODO(dfc) order is not guarenteed by endpoint controller
+				lbendpoint("10.48.1.78", 8080),
+			)),
+		},
+		TypeUrl: endpointType,
+		Nonce:   "0",
+	}, fetchEDS(t, cc, "default/kuard/foo"))
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		TypeUrl:     endpointType,
+		Nonce:       "0",
+	}, fetchEDS(t, cc, "default/kuard/bar"))
+
+}
+
+func fetchEDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
 	t.Helper()
 	rds := v2.NewEndpointDiscoveryServiceClient(cc)
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 	resp, err := rds.FetchEndpoints(ctx, &v2.DiscoveryRequest{
-		TypeUrl: endpointType,
+		TypeUrl:       endpointType,
+		ResourceNames: rn,
 	})
 	if err != nil {
 		t.Fatal(err)
