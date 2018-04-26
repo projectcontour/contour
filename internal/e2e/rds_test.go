@@ -85,7 +85,7 @@ func TestEditIngress(t *testing.T) {
 					Domains: []string{"*"},
 					Routes: []route.Route{{
 						Match:  prefixmatch("/"),
-						Action: cluster("default/kuard/80"),
+						Action: routecluster("default/kuard/80"),
 					}},
 				}},
 			}),
@@ -128,7 +128,7 @@ func TestEditIngress(t *testing.T) {
 					Domains: []string{"*"},
 					Routes: []route.Route{{
 						Match:  prefixmatch("/testing"),
-						Action: cluster("default/kuard/80"),
+						Action: routecluster("default/kuard/80"),
 					}},
 				}},
 			}),
@@ -191,7 +191,7 @@ func TestIngressPathRouteWithoutHost(t *testing.T) {
 					Domains: []string{"*"},
 					Routes: []route.Route{{
 						Match:  prefixmatch("/hello"),
-						Action: cluster("default/hello/80"),
+						Action: routecluster("default/hello/80"),
 					}},
 				}},
 			}),
@@ -239,7 +239,7 @@ func TestEditIngressInPlace(t *testing.T) {
 					Domains: []string{"hello.example.com"},
 					Routes: []route.Route{{
 						Match:  prefixmatch("/"),
-						Action: cluster("default/wowie/80"),
+						Action: routecluster("default/wowie/80"),
 					}},
 				}},
 			}),
@@ -288,10 +288,10 @@ func TestEditIngressInPlace(t *testing.T) {
 					Domains: []string{"hello.example.com"},
 					Routes: []route.Route{{
 						Match:  prefixmatch("/whoop"),
-						Action: cluster("default/kerpow/9000"),
+						Action: routecluster("default/kerpow/9000"),
 					}, {
 						Match:  prefixmatch("/"),
-						Action: cluster("default/wowie/80"),
+						Action: routecluster("default/wowie/80"),
 					}},
 				}},
 			}),
@@ -417,10 +417,10 @@ func TestEditIngressInPlace(t *testing.T) {
 					Domains: []string{"hello.example.com"},
 					Routes: []route.Route{{
 						Match:  prefixmatch("/whoop"),
-						Action: cluster("default/kerpow/9000"),
+						Action: routecluster("default/kerpow/9000"),
 					}, {
 						Match:  prefixmatch("/"),
-						Action: cluster("default/wowie/80"),
+						Action: routecluster("default/wowie/80"),
 					}},
 				}}}),
 		},
@@ -452,7 +452,7 @@ func TestRequestTimeout(t *testing.T) {
 		Domains: []string{"*"},
 		Routes: []route.Route{{
 			Match:  prefixmatch("/"), // match all
-			Action: cluster("default/backend/80"),
+			Action: routecluster("default/backend/80"),
 		}},
 	}}, nil)
 
@@ -585,7 +585,7 @@ func TestSSLRedirectOverlay(t *testing.T) {
 		Domains: []string{"example.com"},
 		Routes: []route.Route{{
 			Match:  prefixmatch("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
-			Action: cluster("nginx-ingress/challenge-service/8009"),
+			Action: routecluster("nginx-ingress/challenge-service/8009"),
 		}, {
 			Match:  prefixmatch("/"), // match all
 			Action: redirecthttps(),
@@ -595,7 +595,7 @@ func TestSSLRedirectOverlay(t *testing.T) {
 		Domains: []string{"example.com"},
 		Routes: []route.Route{{
 			Match:  prefixmatch("/"), // match all
-			Action: cluster("default/app-service/8080"),
+			Action: routecluster("default/app-service/8080"),
 		}},
 	}})
 }
@@ -639,7 +639,7 @@ func TestIssue257(t *testing.T) {
 		Domains: []string{"*"},
 		Routes: []route.Route{{
 			Match:  prefixmatch("/"), // match all
-			Action: cluster("default/kuard/80"),
+			Action: routecluster("default/kuard/80"),
 		}},
 	}}, nil)
 
@@ -692,7 +692,7 @@ func TestIssue257(t *testing.T) {
 		Domains: []string{"kuard.db.gd-ms.com"},
 		Routes: []route.Route{{
 			Match:  prefixmatch("/"), // match all
-			Action: cluster("default/kuard/80"),
+			Action: routecluster("default/kuard/80"),
 		}},
 	}}, nil)
 }
@@ -739,7 +739,7 @@ func prefixmatch(prefix string) route.RouteMatch {
 	}
 }
 
-func cluster(cluster string) *route.Route_Route {
+func routecluster(cluster string) *route.Route_Route {
 	return &route.Route_Route{
 		Route: &route.RouteAction{
 			ClusterSpecifier: &route.RouteAction_Cluster{
@@ -750,7 +750,7 @@ func cluster(cluster string) *route.Route_Route {
 }
 
 func clustertimeout(c string, timeout time.Duration) *route.Route_Route {
-	cl := cluster(c)
+	cl := routecluster(c)
 	cl.Route.Timeout = &timeout
 	return cl
 }
