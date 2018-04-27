@@ -26,8 +26,10 @@ import (
 const (
 	ENVOY_HTTP_LISTENER            = "ingress_http"
 	ENVOY_HTTPS_LISTENER           = "ingress_https"
+	DEFAULT_HTTP_ACCESS_LOG        = "/dev/stdout"
 	DEFAULT_HTTP_LISTENER_ADDRESS  = "0.0.0.0"
 	DEFAULT_HTTP_LISTENER_PORT     = 8080
+	DEFAULT_HTTPS_ACCESS_LOG       = "/dev/stdout"
 	DEFAULT_HTTPS_LISTENER_ADDRESS = DEFAULT_HTTP_LISTENER_ADDRESS
 	DEFAULT_HTTPS_LISTENER_PORT    = 8443
 
@@ -46,6 +48,10 @@ type ListenerCache struct {
 	// If not set, defaults to DEFAULT_HTTP_LISTENER_PORT.
 	HTTPPort int
 
+	// Envoy's HTTP (non TLS) access log path.
+	// If not set, defaults to DEFAULT_HTTP_ACCESS_LOG.
+	HTTPAccessLog string
+
 	// Envoy's HTTPS (TLS) listener address.
 	// If not set, defaults to DEFAULT_HTTPS_LISTENER_ADDRESS.
 	HTTPSAddress string
@@ -53,6 +59,10 @@ type ListenerCache struct {
 	// Envoy's HTTPS (TLS) listener port.
 	// If not set, defaults to DEFAULT_HTTPS_LISTENER_PORT.
 	HTTPSPort int
+
+	// Envoy's HTTPS (TLS) access log path.
+	// If not set, defaults to DEFAULT_HTTPS_ACCESS_LOG.
+	HTTPSAccessLog string
 
 	// UseProxyProto configurs all listeners to expect a PROXY protocol
 	// V1 header on new connections.
@@ -107,7 +117,7 @@ func (lc *ListenerCache) recomputeListener0(ingresses map[metadata]*v1beta1.Ingr
 	}
 	if valid > 0 {
 		l.FilterChains = []listener.FilterChain{
-			filterchain(lc.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER)),
+			filterchain(lc.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER, lc.httpAccessLog())),
 		}
 	}
 	// TODO(dfc) some annotations may require the Ingress to no appear on
@@ -140,6 +150,15 @@ func (lc *ListenerCache) httpPort() uint32 {
 	return DEFAULT_HTTP_LISTENER_PORT
 }
 
+// httpAccessLog returns the access log for the HTTP (non TLS)
+// listener or DEFAULT_HTTP_ACCESS_LOG if not configured.
+func (lc *ListenerCache) httpAccessLog() string {
+	if lc.HTTPAccessLog != "" {
+		return lc.HTTPAccessLog
+	}
+	return DEFAULT_HTTP_ACCESS_LOG
+}
+
 // recomputeTLSListener0 recomputes the SSL listener for port 8443
 // using the list of ingresses and secrets provided.
 // recomputeListener returns a slice of listeners to be added to the cache,
@@ -152,7 +171,7 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 	}
 
 	filters := []listener.Filter{
-		httpfilter(ENVOY_HTTPS_LISTENER),
+		httpfilter(ENVOY_HTTPS_LISTENER, lc.httpsAccessLog()),
 	}
 
 	for _, i := range ingresses {
@@ -224,6 +243,15 @@ func (lc *ListenerCache) httpsPort() uint32 {
 	return DEFAULT_HTTPS_LISTENER_PORT
 }
 
+// httpsAccessLog returns the access log for the HTTPS (TLS)
+// listener or DEFAULT_HTTPS_ACCESS_LOG if not configured.
+func (lc *ListenerCache) httpsAccessLog() string {
+	if lc.HTTPSAccessLog != "" {
+		return lc.HTTPSAccessLog
+	}
+	return DEFAULT_HTTPS_ACCESS_LOG
+}
+
 // validTLSIngress returns true if this is a valid ssl ingress object.
 // ingresses are invalid if they contain annotations, or are missing information
 // which excludes them from the ingress_https listener.
@@ -272,7 +300,7 @@ func tlscontext(secret *v1.Secret, tlsMinProtoVersion auth.TlsParameters_TlsProt
 	}
 }
 
-func httpfilter(routename string) listener.Filter {
+func httpfilter(routename, accessLogPath string) listener.Filter {
 	return listener.Filter{
 		Name: httpFilter,
 		Config: &types.Struct{
@@ -302,17 +330,21 @@ func httpfilter(routename string) listener.Filter {
 					}),
 				),
 				"use_remote_address": bv(true), // TODO(jbeda) should this ever be false?
-				"access_log": lv(
-					st(map[string]*types.Value{
-						"name": sv(accessLog),
-						"config": st(map[string]*types.Value{
-							"path": sv("/dev/stdout"),
-						}),
-					}),
-				),
+				"access_log":         accesslog(accessLogPath),
 			},
 		},
 	}
+}
+
+func accesslog(path string) *types.Value {
+	return lv(
+		st(map[string]*types.Value{
+			"name": sv(accessLog),
+			"config": st(map[string]*types.Value{
+				"path": sv(path),
+			}),
+		}),
+	)
 }
 
 func filterchain(useproxy bool, filters ...listener.Filter) listener.FilterChain {

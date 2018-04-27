@@ -57,7 +57,7 @@ func TestRecomputeListener(t *testing.T) {
 				Name:    ENVOY_HTTP_LISTENER,
 				Address: socketaddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
-					filterchain(false, httpfilter(ENVOY_HTTP_LISTENER)),
+					filterchain(false, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
 				},
 			}},
 			remove: nil,
@@ -103,7 +103,7 @@ func TestRecomputeListener(t *testing.T) {
 				Name:    ENVOY_HTTP_LISTENER,
 				Address: socketaddress("127.0.0.1", 9000),
 				FilterChains: []listener.FilterChain{
-					filterchain(false, httpfilter(ENVOY_HTTP_LISTENER)),
+					filterchain(false, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
 				},
 			}},
 			remove: nil,
@@ -127,7 +127,7 @@ func TestRecomputeListener(t *testing.T) {
 				Name:    ENVOY_HTTP_LISTENER,
 				Address: socketaddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
-					filterchain(true, httpfilter(ENVOY_HTTP_LISTENER)),
+					filterchain(true, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
 				},
 			}},
 			remove: nil,
@@ -234,7 +234,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 						Data: secretdata("certificate", "key"),
 					}, auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters: []listener.Filter{
-						httpfilter(ENVOY_HTTPS_LISTENER),
+						httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
 					},
 				}},
 			}},
@@ -311,7 +311,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 						Data: secretdata("certificate", "key"),
 					}, auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters: []listener.Filter{
-						httpfilter(ENVOY_HTTPS_LISTENER),
+						httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
 					},
 				}},
 			}},
@@ -359,7 +359,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 						Data: secretdata("certificate", "key"),
 					}, auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters: []listener.Filter{
-						httpfilter(ENVOY_HTTPS_LISTENER),
+						httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
 					},
 					UseProxyProto: &types.BoolValue{Value: true},
 				}},
@@ -404,7 +404,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 						Data: secretdata("certificate", "key"),
 					}, auth.TlsParameters_TLSv1_3, "h2", "http/1.1"),
 					Filters: []listener.Filter{
-						httpfilter(ENVOY_HTTPS_LISTENER),
+						httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
 					},
 				}},
 			}},
