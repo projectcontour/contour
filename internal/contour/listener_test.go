@@ -404,7 +404,7 @@ func TestRecomputeTLSListener(t *testing.T) {
 						Data: secretdata("certificate", "key"),
 					}, auth.TlsParameters_TLSv1_3, "h2", "http/1.1"),
 					Filters: []listener.Filter{
-						httpfilter(ENVOY_HTTPS_LISTENER),
+						httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
 					},
 				}},
 			}},

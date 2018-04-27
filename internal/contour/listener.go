@@ -330,17 +330,21 @@ func httpfilter(routename, accessLogPath string) listener.Filter {
 					}),
 				),
 				"use_remote_address": bv(true), // TODO(jbeda) should this ever be false?
-				"access_log": lv(
-					st(map[string]*types.Value{
-						"name": sv(accessLog),
-						"config": st(map[string]*types.Value{
-							"path": sv(accessLogPath),
-						}),
-					}),
-				),
+				"access_log":         accesslog(accessLogPath),
 			},
 		},
 	}
+}
+
+func accesslog(path string) *types.Value {
+	return lv(
+		st(map[string]*types.Value{
+			"name": sv(accessLog),
+			"config": st(map[string]*types.Value{
+				"path": sv(path),
+			}),
+		}),
+	)
 }
 
 func filterchain(useproxy bool, filters ...listener.Filter) listener.FilterChain {
