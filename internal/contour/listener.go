@@ -196,9 +196,8 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 				tlsMinProtoVer = auth.TlsParameters_TLSv1_3
 			case "1.2":
 				tlsMinProtoVer = auth.TlsParameters_TLSv1_2
-			case "1.1":
-				tlsMinProtoVer = auth.TlsParameters_TLSv1_1
 			default:
+				// any other value is interpreted as TLS/1.1
 				tlsMinProtoVer = auth.TlsParameters_TLSv1_1
 			}
 			fc := listener.FilterChain{
