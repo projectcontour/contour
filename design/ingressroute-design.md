@@ -8,7 +8,7 @@ Contour will continue to support the current v1beta1.Ingress object for as long 
 
 # Goals
 
-- Support multi-tenant clusters, with the ability to limit the management of routes to specific virtua lhosts.
+- Support multi-tenant clusters, with the ability to limit the management of routes to specific virtual hosts.
 - Support delegating the configuration of some or all the routes for a virtual host to another Namespace
 - Create a clear separation between singleton configuration items--items that apply to the virtual host--and sets of configuration items--that is, routes on the virtual host.
 
@@ -182,7 +182,7 @@ spec:
   - match: /css
 ```    
 
-## Authorisation
+## Authorization
 
 It is important to highlight that both root and vertex IngressRoute objects are of the same type.
 This is a departure from other designs which treat the permission to create a VirtualHost type object and a Route type object as separate.
