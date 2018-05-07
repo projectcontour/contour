@@ -254,14 +254,6 @@ func addresses(ips ...string) []v1.EndpointAddress {
 	return addrs
 }
 
-func ports(ps ...int32) []v1.EndpointPort {
-	var ports []v1.EndpointPort
-	for _, p := range ps {
-		ports = append(ports, v1.EndpointPort{Port: p})
-	}
-	return ports
-}
-
 func clusterloadassignment(name string, lbendpoints ...endpoint.LbEndpoint) *v2.ClusterLoadAssignment {
 	return &v2.ClusterLoadAssignment{
 		ClusterName: name,
