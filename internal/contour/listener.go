@@ -34,6 +34,7 @@ const (
 	DEFAULT_HTTPS_LISTENER_PORT    = 8443
 
 	router     = "envoy.router"
+	grpcWeb    = "envoy.grpc_web"
 	httpFilter = "envoy.http_connection_manager"
 	accessLog  = "envoy.file_access_log"
 )
@@ -324,6 +325,9 @@ func httpfilter(routename, accessLogPath string) listener.Filter {
 					}),
 				}),
 				"http_filters": lv(
+					st(map[string]*types.Value{
+						"name": sv(grpcWeb),
+					}),
 					st(map[string]*types.Value{
 						"name": sv(router),
 					}),
