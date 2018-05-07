@@ -12,7 +12,7 @@ test: install
 vet: | test
 	go vet ./...
 
-check: test vet staticcheck
+check: test vet staticcheck unused
 	@echo Checking code is gofmted
 	@bash -c 'if [ -n "$(gofmt -s -l .)" ]; then echo "Go code is not formatted:"; gofmt -s -d -e .; exit 1;fi'
 	@echo Checking rendered files are up to date
@@ -35,3 +35,8 @@ push: container
 staticcheck:
 	@go get honnef.co/go/tools/cmd/staticcheck
 	staticcheck $(PKGS)
+
+unused:
+	@go get honnef.co/go/tools/cmd/unused
+	unused $(PKGS)
+
