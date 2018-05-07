@@ -21,6 +21,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_service_v2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
@@ -133,7 +134,7 @@ func (s *grpcServer) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpo
 }
 
 func (s *grpcServer) StreamLoadStats(srv envoy_service_v2.LoadReportingService_StreamLoadStatsServer) error {
-	return grpc.Errorf(codes.Unimplemented, "StreamLoadStats Unimplemented")
+	return status.Errorf(codes.Unimplemented, "StreamLoadStats Unimplemented")
 }
 
 func (s *grpcServer) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) error {

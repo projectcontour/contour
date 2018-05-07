@@ -1,6 +1,7 @@
 PROJECT = contour
 REGISTRY ?= gcr.io/heptio-images
 IMAGE := $(REGISTRY)/$(PROJECT)
+PKGS := $(shell go list ./...)
 
 GIT_REF = $(shell git rev-parse --short=8 --verify HEAD)
 VERSION ?= $(GIT_REF)
@@ -11,7 +12,7 @@ test: install
 vet: | test
 	go vet ./...
 
-check: | test vet
+check: test vet staticcheck
 	@echo Checking code is gofmted
 	@bash -c 'if [ -n "$(gofmt -s -l .)" ]; then echo "Go code is not formatted:"; gofmt -s -d -e .; exit 1;fi'
 	@echo Checking rendered files are up to date
@@ -30,3 +31,7 @@ push: container
 		docker tag $(IMAGE):$(VERSION) $(IMAGE):latest; \
 		docker push $(IMAGE):latest; \
 	fi
+
+staticcheck:
+	@go get honnef.co/go/tools/cmd/staticcheck
+	staticcheck $(PKGS)
