@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/gogo/protobuf/proto"
 )
@@ -267,13 +268,13 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				},
 			},
 		},
-		"http2 upstream": {
+		"h2c upstream": {
 			oldObj: nil,
 			newObj: serviceWithAnnotations(
 				"default",
 				"kuard",
 				map[string]string{
-					fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): "80,http",
+					fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2c"): "80,http",
 				},
 				v1.ServicePort{
 					Protocol: "TCP",
@@ -303,6 +304,55 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 					ConnectTimeout:       250 * time.Millisecond,
 					LbPolicy:             v2.Cluster_ROUND_ROBIN,
 					Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+				},
+			},
+		},
+		"h2 upstream": {
+			oldObj: nil,
+			newObj: serviceWithAnnotations(
+				"default",
+				"kuard",
+				map[string]string{
+					fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): "443,https",
+				},
+				v1.ServicePort{
+					Protocol: "TCP",
+					Name:     "https",
+					Port:     443,
+				},
+			),
+			want: []proto.Message{
+				&v2.Cluster{
+					Name: "default/kuard/443",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout:       250 * time.Millisecond,
+					LbPolicy:             v2.Cluster_ROUND_ROBIN,
+					Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+					TlsContext: &auth.UpstreamTlsContext{
+						CommonTlsContext: &auth.CommonTlsContext{
+							AlpnProtocols: []string{"h2"},
+						},
+					},
+				},
+				&v2.Cluster{
+					Name: "default/kuard/https",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout:       250 * time.Millisecond,
+					LbPolicy:             v2.Cluster_ROUND_ROBIN,
+					Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+					TlsContext: &auth.UpstreamTlsContext{
+						CommonTlsContext: &auth.CommonTlsContext{
+							AlpnProtocols: []string{"h2"},
+						},
+					},
 				},
 			},
 		},
