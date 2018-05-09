@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	v2cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"k8s.io/api/core/v1"
@@ -77,7 +78,7 @@ func (cc *ClusterCache) recomputeService(oldsvc, newsvc *v1.Service) {
 	}
 
 	// parse upstream protocol annotations
-	up := parseUpstreamProtocols(newsvc.Annotations, annotationUpstreamProtocol, "h2")
+	up := parseUpstreamProtocols(newsvc.Annotations, annotationUpstreamProtocol, "h2", "h2c")
 
 	// iterate over all ports in newsvc adding or updating their records and
 	// recording that face in named and unnamed.
@@ -151,6 +152,13 @@ func edscluster(svc *v1.Service, portString, upstreamProtocol string, config *v2
 
 	switch upstreamProtocol {
 	case "h2":
+		cluster.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
+		cluster.TlsContext = &auth.UpstreamTlsContext{
+			CommonTlsContext: &auth.CommonTlsContext{
+				AlpnProtocols: []string{"h2"},
+			},
+		}
+	case "h2c":
 		cluster.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
 	}
 
