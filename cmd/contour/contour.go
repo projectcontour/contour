@@ -58,6 +58,9 @@ func main() {
 	bootstrap.Flag("admin-port", "Envoy admin interface port").IntVar(&config.AdminPort)
 	bootstrap.Flag("xds-address", "xDS gRPC API address").StringVar(&config.XDSAddress)
 	bootstrap.Flag("xds-port", "xDS gRPC API port").IntVar(&config.XDSGRPCPort)
+	bootstrap.Flag("statsd-enabled", "enable statsd output").BoolVar(&config.StatsdEnabled)
+	bootstrap.Flag("statsd-address", "statsd address").StringVar(&config.StatsdAddress)
+	bootstrap.Flag("statsd-port", "statsd port").IntVar(&config.StatsdPort)
 
 	cli := app.Command("cli", "A CLI client for the Heptio Contour Kubernetes ingress controller.")
 	var client Client

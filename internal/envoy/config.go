@@ -48,6 +48,18 @@ type ConfigWriter struct {
 	// XDSGRPCPort is the management server port that provides the v2 gRPC API.
 	// Defaults to 8001.
 	XDSGRPCPort int
+
+	// StatsdEnabled enables metrics output via statsd
+	// Defaults to false.
+	StatsdEnabled bool
+
+	// StatsdAddress is the UDP address of the statsd endpoint
+	// Defaults to 127.0.0.1.
+	StatsdAddress string
+
+	// StatsdPort is port of the statsd endpoint
+	// Defaults to 9125.
+	StatsdPort int
 }
 
 const yamlConfig = `dynamic_resources:
@@ -87,7 +99,15 @@ static_resources:
           max_connections: 100000
           max_pending_requests: 100000
           max_requests: 60000000
-          max_retries: 50
+          max_retries: 50{{ if .StatsdEnabled }}
+stats_sinks:
+  - name: envoy.statsd
+    config:
+      address:
+        socket_address:
+          protocol: UDP
+          address: {{ if .StatsdAddress }}{{ .StatsdAddress }}{{ else }}127.0.0.1{{ end }}
+          port_value: {{ if .StatsdPort }}{{ .StatsdPort }}{{ else }}9125{{ end }}{{ end }}
 admin:
   access_log_path: {{ if .AdminAccessLogPath }}{{ .AdminAccessLogPath }}{{ else }}/dev/null{{ end }}
   address:
