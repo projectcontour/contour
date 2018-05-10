@@ -35,6 +35,14 @@ type ConfigWriter struct {
 	// Defaults to 9001.
 	AdminPort int
 
+	// StatsAddress is the address that the /stats path will listen on.
+	// Defaults to 0.0.0.0.
+	StatsAddress int
+
+	// StatsPort is the port that the /stats path will listen on.
+	// Defaults to 8001.
+	StatsPort int
+
 	// XDSAddress is the TCP address of the XDS management server. For JSON configurations
 	// this is the address of the v1 REST API server. For YAML configurations this is the
 	// address of the v2 gRPC management server.
@@ -99,7 +107,41 @@ static_resources:
           max_connections: 100000
           max_pending_requests: 100000
           max_requests: 60000000
-          max_retries: 50{{ if .StatsdEnabled }}
+          max_retries: 50
+  - name: service_stats
+    connect_timeout: 0.250s
+    type: LOGICAL_DNS
+    lb_policy: ROUND_ROBIN
+    hosts:
+      - socket_address:
+          protocol: TCP
+          address: 127.0.0.1
+          port_value: {{ if .AdminPort }}{{ .AdminPort }}{{ else }}9001{{ end }}
+  listeners:
+    - address:
+        socket_address:
+          protocol: TCP
+          address: {{ if .StatsAddress }}{{ .StatsAddress }}{{ else }}0.0.0.0{{ end }} 
+          port_value: {{ if .StatsPort }}{{ .StatsPort }}{{ else }}8001{{ end }}
+      filter_chains:
+        - filters:
+            - name: envoy.http_connection_manager
+              config:
+                codec_type: AUTO
+                stat_prefix: ingress_http
+                route_config:
+                  virtual_hosts:
+                    - name: backend
+                      domains:
+                        - "*"
+                      routes:
+                        - match:
+                            prefix: /stats
+                          route:
+                            cluster: service_stats
+                http_filters:
+                  - name: envoy.router
+                    config:{{ if .StatsdEnabled }}
 stats_sinks:
   - name: envoy.statsd
     config:

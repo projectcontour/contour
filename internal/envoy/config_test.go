@@ -64,6 +64,40 @@ static_resources:
           max_pending_requests: 100000
           max_requests: 60000000
           max_retries: 50
+  - name: service_stats
+    connect_timeout: 0.250s
+    type: LOGICAL_DNS
+    lb_policy: ROUND_ROBIN
+    hosts:
+      - socket_address:
+          protocol: TCP
+          address: 127.0.0.1
+          port_value: 9001
+  listeners:
+    - address:
+        socket_address:
+          protocol: TCP
+          address: 0.0.0.0 
+          port_value: 8001
+      filter_chains:
+        - filters:
+            - name: envoy.http_connection_manager
+              config:
+                codec_type: AUTO
+                stat_prefix: ingress_http
+                route_config:
+                  virtual_hosts:
+                    - name: backend
+                      domains:
+                        - "*"
+                      routes:
+                        - match:
+                            prefix: /stats
+                          route:
+                            cluster: service_stats
+                http_filters:
+                  - name: envoy.router
+                    config:
 admin:
   access_log_path: /dev/null
   address:
