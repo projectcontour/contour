@@ -191,48 +191,57 @@ func (s *grpcServer) stream(st grpcStream) (err error) {
 		// stick some debugging details on the logger, not that we redeclare log in this scope
 		// so the next time around the loop all is forgotten.
 		log := log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail)
-		log.Info("stream_wait")
 
-		// now we wait for a notification, if this is the first time throught the loop
-		// then last will be zero and that will trigger a notification immediately.
-		r.Register(ch, last)
-		select {
+		// we wait in this loop until we find at least one resource that matches the filter supplied
+	streamwait:
+		for {
+			log.Info("stream_wait")
 
-		// boom, something in the cache has changed
-		case last = <-ch:
+			// now we wait for a notification, if this is the first time throught the loop
+			// then last will be zero and that will trigger a notification immediately.
+			r.Register(ch, last)
+			select {
 
-			// generate a filter from the request, then call toAny which
-			// will get r's (our resource) filter values, then convert them
-			// to the types.Any from required by gRPC.
-			resources, err := toAny(r, toFilter(req.ResourceNames))
-			if err != nil {
-				return err
+			// boom, something in the cache has changed
+			case last = <-ch:
+
+				// generate a filter from the request, then call toAny which
+				// will get r's (our resource) filter values, then convert them
+				// to the types.Any from required by gRPC.
+				resources, err := toAny(r, toFilter(req.ResourceNames))
+				if err != nil {
+					return err
+				}
+
+				// if we didn't get any resources because they were filter out
+				// or are not present in the cache, then skip the update. This will
+				// mean that if Envoy asks EDS for a set of end points that are not
+				// present (say during pre-warming) it will stay in pre-warming, rather
+				// than receive an result with an empty set of ClusterLoadAssignments.
+				if len(resources) == 0 {
+
+					// there were no matching resources, or no resources at all, found
+					// so don't send anything back to the caller.
+					log.Info("skipping update")
+					continue streamwait
+				}
+
+				// otherwise, build the response object and stream it back to the client.
+				resp := &v2.DiscoveryResponse{
+					VersionInfo: "0",
+					Resources:   resources,
+					TypeUrl:     r.TypeURL(),
+					Nonce:       "0",
+				}
+				if err := st.Send(resp); err != nil {
+					return err
+				}
+
+				// ok, the client hung up, return any error stored in the context and we're done.
+			case <-ctx.Done():
+				return ctx.Err()
 			}
 
-			// if we didn't get any resources because they were filter out
-			// or are not present in the cache, then skip the update. This will
-			// mean that if Envoy asks EDS for a set of end points that are not
-			// present (say during pre-warming) it will stay in pre-warming, rather
-			// than receive an result with an empty set of ClusterLoadAssignments.
-			if len(resources) == 0 {
-				log.Info("skipping update")
-				continue
-			}
-
-			// otherwise, build the response object and stream it back to the client.
-			resp := &v2.DiscoveryResponse{
-				VersionInfo: "0",
-				Resources:   resources,
-				TypeUrl:     r.TypeURL(),
-				Nonce:       "0",
-			}
-			if err := st.Send(resp); err != nil {
-				return err
-			}
-
-			// ok, the client hung up, return any error stored in the context and we're done.
-		case <-ctx.Done():
-			return ctx.Err()
 		}
 	}
 }
