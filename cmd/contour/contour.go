@@ -36,13 +36,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// this is necessary due to #113 wherein glog neccessitates a call to flag.Parse
-// before any logging statements can be invoked. (See also https://github.com/golang/glog/blob/master/glog.go#L679)
-// unsure why this seemingly unnecessary prerequisite is in place but there must be some sane reason.
-func init() {
-	flag.Parse()
-}
-
 func main() {
 	log := logrus.StandardLogger()
 	t := &contour.Translator{
@@ -122,6 +115,12 @@ func main() {
 
 		// buffer notifications to t to ensure they are handled sequentially.
 		buf := k8s.NewBuffer(&g, t, log, 128)
+
+		// this is necessary due to #113 wherein glog neccessitates a call to flag.Parse
+		// before any logging statements can be invoked. (See also https://github.com/golang/glog/blob/master/glog.go#L679)
+		// unsure why this seemingly unnecessary prerequisite is in place but there must be some sane reason.
+		// this must be done here to also fix #371
+		flag.Parse()
 
 		client := newClient(*kubeconfig, *inCluster)
 
