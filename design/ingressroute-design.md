@@ -26,7 +26,7 @@ Since that time, the Ingress object has not progressed beyond the beta stage, an
 
 # High-level design
 
-At a high level, this document proposes modeling ingress configuation as a graph of documents throughout a Kubernetes API server, which when taken together form a directed acyclic graph (DAG) of the configuration for virtual hosts and their constituent routes.
+At a high level, this document proposes modeling ingress configuration as a graph of documents throughout a Kubernetes API server, which when taken together form a directed acyclic graph (DAG) of the configuration for virtual hosts and their constituent routes.
 
 ## Delegation
 
@@ -143,7 +143,7 @@ The delegation rules applied are as follows
 1. If an `IngressRoute` object contains a `spec.virtualhost` key it is considered a root.
 2. If an `IngressRoute` object does not contain `spec.virtualhost` key is considered a vertex.
 3. A vertex is reachable if a delegation to it exists in another `IngressRoute` object.
-4. Vertices which are not reachable are considered orphened. Orphened vertices have no effect on the running configuration.
+4. Vertices which are not reachable are considered orphaned. Orphaned vertices have no effect on the running configuration.
 
 ## Validation rules
 
@@ -199,7 +199,7 @@ This models the DNS model above. You can add any zone file that you want to your
 In the case where an IngressRoute is present, but has no active delegation, it is known as **orphaned**.
 We record this information in a top level `status` key for operators and tools.
 
-An example of an ophaned IngresRoute object:
+An example of an orphaned IngresRoute object:
 
 ```yaml
 status:
@@ -280,7 +280,7 @@ The downside of these proposals is that the minimum use case, the http://hello.w
 Restricting who can create this pair of CRD objects further complicates things and moves toward a design with a third and possibly fourth CRD to apply policy to their counterparts.
 
 Overloading, or making the CRD polymorphic, creates a more complex mental model for complicated deployments, but in exchange scales down to a single CRD containing both the vhost details and the route details, because there is no delegation in the hello world example.
-This property makes the proposed design appealing from a usability standpoint, as **most** ingress use cases are simple--publish my web app on this URL--so it feels right to favour a design that does not penalise the default, simple, use case.
+This property makes the proposed design appealing from a usability standpoint, as **most** ingress use cases are simple--publish my web app on this URL--so it feels right to favour a design that does not penalize the default, simple, use case.
 
 - links to other proposals
 
@@ -288,7 +288,7 @@ This property makes the proposed design appealing from a usability standpoint, a
 
 Future work outside the scope of this design includes:
 
-- Limiting the set of namespaces where root IngressRoutes are valid. Only those permitted to operate in those namespaces can therefore create virtual hosts and delegate the permission to operate on them to other namespaces. This would most likely be acomplished with a command line flag or ConfigMap.
+- Limiting the set of namespaces where root IngressRoutes are valid. Only those permitted to operate in those namespaces can therefore create virtual hosts and delegate the permission to operate on them to other namespaces. This would most likely be accomplished with a command line flag or ConfigMap.
 - Delegation to matching labels, rather than names. This may be added in the future. This is valid, as long as none of the matching IngressRoute objects are roots, because routes are a set, so can be merged from several objects _in the same namespace_.
 
 # Security Concerns
@@ -298,8 +298,8 @@ I, the owner of the virtual host, delegate to you the /foo prefix and everything
 
 ## No ability to prevent route delegation
 
-In writing up this proposal an issue occured to me.
-It happens when Contour is operating in the poorly specified enforcing mode, where Contour recognises root IngressRoutes only in a set of authorised namespaces.
+In writing up this proposal an issue occurred to me.
+It happens when Contour is operating in the poorly specified enforcing mode, where Contour recognizes root IngressRoutes only in a set of authorized namespaces.
 (In fact it happens regardless of enforcement mode, but the argument is that if you do not turn on enforcement you are explicitly saying you trust you users, or you have another mechanism in place -- CI/CD -- to handle this).
 
 Imaging this scenario:
@@ -387,9 +387,31 @@ The best way I've thought to mitigate this so far is the vertex ingress routes w
 
 This is unfortunate for two reasons:
 
-- It's more boilerplate: a deletates to b, b has to list a as a cross check.
+- It's more boilerplate: a delegates to b, b has to list a as a cross check.
 - It turns a DAG into a linked list (possibly not the right term), but it would be impossible for a web service to be a member of multiple roots, unless of course we made the list of incoming vertices be a list -- which would probably push the solution into using virtualhost.fqdn.
 
 The last thing is that this boilerplate _should be required_ even when not in enforcing mode.
 I'm not interested in proposing a design where the security interlock that prevents dave's cheap webhosting from publishing gmail without TLS is considered to be the customer's problem because they did not add an optional key. 
 Said again, if this is the mitigation we choose to adopt, it has to be mandatory for all users, because we all know how effective optional security features are.
+
+# Metrics
+
+Metrics are essential to any system. Contour will expose a `/metrics` Prometheus endpoint with the following metrics:
+
+- **contour_ingressroute_total (gauge):** Number of IngressRoutes
+  - namespace
+  - vhost
+- **contour_ingressroute_upstream_total (gauge):** Number of Upstreams per IngressRoute
+  - namespace
+  - name
+- **contour_ingressroute_upstream_endpoints_total (gauge):** Number of Endpoints per Upstream
+  - namespace
+  - name
+- **contour_ingressroute_upstream_endpoints_healthy (gauge):** Number of healthy Endpoints per Upstream
+  - namespace
+  - name
+- **contour_ingressroute_upstream_endpoints_change (counter):** Number of changes of Endpoints per Upstream
+  - namespace
+  - name
+- **contour_ingressroute_invalid_total (gauge):**  Number of Invalid Routes (Routes who have no root delegating to them)
+  - namespace
