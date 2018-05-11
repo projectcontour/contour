@@ -36,11 +36,11 @@ type ConfigWriter struct {
 	AdminPort int
 
 	// StatsAddress is the address that the /stats path will listen on.
-	// Defaults to 0.0.0.0.
+	// Defaults to 127.0.0.1 and is only enabled if StatsdEnabled is true.
 	StatsAddress int
 
 	// StatsPort is the port that the /stats path will listen on.
-	// Defaults to 8002.
+	// Defaults to 8002 and is only enabled if StatsdEnabled is true.
 	StatsPort int
 
 	// XDSAddress is the TCP address of the XDS management server. For JSON configurations
@@ -117,18 +117,18 @@ static_resources:
           protocol: TCP
           address: 127.0.0.1
           port_value: {{ if .AdminPort }}{{ .AdminPort }}{{ else }}9001{{ end }}
-  listeners:
+{{ if .StatsdEnabled }}  listeners:
     - address:
         socket_address:
           protocol: TCP
-          address: {{ if .StatsAddress }}{{ .StatsAddress }}{{ else }}0.0.0.0{{ end }} 
+          address: {{ if .StatsAddress }}{{ .StatsAddress }}{{ else }}127.0.0.1{{ end }} 
           port_value: {{ if .StatsPort }}{{ .StatsPort }}{{ else }}8002{{ end }}
       filter_chains:
         - filters:
             - name: envoy.http_connection_manager
               config:
                 codec_type: AUTO
-                stat_prefix: ingress_http
+                stat_prefix: statds
                 route_config:
                   virtual_hosts:
                     - name: backend
@@ -141,7 +141,7 @@ static_resources:
                             cluster: service_stats
                 http_filters:
                   - name: envoy.router
-                    config:{{ if .StatsdEnabled }}
+                    config: true
 stats_sinks:
   - name: envoy.statsd
     config:
@@ -149,7 +149,8 @@ stats_sinks:
         socket_address:
           protocol: UDP
           address: {{ if .StatsdAddress }}{{ .StatsdAddress }}{{ else }}127.0.0.1{{ end }}
-          port_value: {{ if .StatsdPort }}{{ .StatsdPort }}{{ else }}9125{{ end }}{{ end }}
+          port_value: {{ if .StatsdPort }}{{ .StatsdPort }}{{ else }}9125{{ end }}
+{{ end -}}
 admin:
   access_log_path: {{ if .AdminAccessLogPath }}{{ .AdminAccessLogPath }}{{ else }}/dev/null{{ end }}
   address:

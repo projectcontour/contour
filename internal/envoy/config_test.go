@@ -19,14 +19,72 @@ import (
 )
 
 func TestConfigWriter_WriteYAML(t *testing.T) {
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		ConfigWriter
 		want string
-	}{{
-		name:         "default configuration",
-		ConfigWriter: ConfigWriter{},
-		want: `dynamic_resources:
+	}{
+		"default configuration": {
+			ConfigWriter: ConfigWriter{},
+			want: `dynamic_resources:
+  lds_config:
+    api_config_source:
+      api_type: GRPC
+      cluster_names: [contour]
+      grpc_services:
+      - envoy_grpc:
+          cluster_name: contour
+  cds_config:
+    api_config_source:
+      api_type: GRPC
+      cluster_names: [contour]
+      grpc_services:
+      - envoy_grpc:
+          cluster_name: contour
+static_resources:
+  clusters:
+  - name: contour
+    connect_timeout: { seconds: 5 }
+    type: STRICT_DNS
+    hosts:
+    - socket_address:
+        address: 127.0.0.1
+        port_value: 8001
+    lb_policy: ROUND_ROBIN
+    http2_protocol_options: {}
+    circuit_breakers:
+      thresholds:
+        - priority: high
+          max_connections: 100000
+          max_pending_requests: 100000
+          max_requests: 60000000
+          max_retries: 50
+        - priority: default
+          max_connections: 100000
+          max_pending_requests: 100000
+          max_requests: 60000000
+          max_retries: 50
+  - name: service_stats
+    connect_timeout: 0.250s
+    type: LOGICAL_DNS
+    lb_policy: ROUND_ROBIN
+    hosts:
+      - socket_address:
+          protocol: TCP
+          address: 127.0.0.1
+          port_value: 9001
+admin:
+  access_log_path: /dev/null
+  address:
+    socket_address:
+      address: 127.0.0.1
+      port_value: 9001
+`,
+		},
+		"statsd endabled": {
+			ConfigWriter: ConfigWriter{
+				StatsdEnabled: true,
+			},
+			want: `dynamic_resources:
   lds_config:
     api_config_source:
       api_type: GRPC
@@ -77,14 +135,14 @@ static_resources:
     - address:
         socket_address:
           protocol: TCP
-          address: 0.0.0.0 
+          address: 127.0.0.1 
           port_value: 8002
       filter_chains:
         - filters:
             - name: envoy.http_connection_manager
               config:
                 codec_type: AUTO
-                stat_prefix: ingress_http
+                stat_prefix: statds
                 route_config:
                   virtual_hosts:
                     - name: backend
@@ -97,7 +155,15 @@ static_resources:
                             cluster: service_stats
                 http_filters:
                   - name: envoy.router
-                    config:
+                    config: true
+stats_sinks:
+  - name: envoy.statsd
+    config:
+      address:
+        socket_address:
+          protocol: UDP
+          address: 127.0.0.1
+          port_value: 9125
 admin:
   access_log_path: /dev/null
   address:
@@ -105,10 +171,11 @@ admin:
       address: 127.0.0.1
       port_value: 9001
 `,
-	}}
+		},
+	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			var buf bytes.Buffer
 			err := tc.ConfigWriter.WriteYAML(&buf)
 			checkErr(t, err)
