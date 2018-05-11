@@ -22,6 +22,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
+	ingressroutev1 "github.com/heptio/contour/pkg/apis/contour/v1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -781,6 +782,670 @@ func redirecthttps() *route.Route_Redirect {
 		Redirect: &route.RedirectAction{
 			HttpsRedirect: true,
 		},
+	}
+}
+
+func TestVirtualHostCacheRecomputevhostIngressRoute(t *testing.T) {
+	im := func(routes []*ingressroutev1.IngressRoute) map[metadata]*ingressroutev1.IngressRoute {
+		m := make(map[metadata]*ingressroutev1.IngressRoute)
+		for _, i := range routes {
+			m[metadata{name: i.Name, namespace: i.Namespace}] = i
+		}
+		return m
+	}
+	tests := map[string]struct {
+		vhost         string
+		routes        map[metadata]*ingressroutev1.IngressRoute
+		ingress_http  []proto.Message
+		ingress_https []proto.Message
+	}{
+		"ingress route default backend": {
+			vhost: "*",
+			routes: im([]*ingressroutev1.IngressRoute{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					Routes: []ingressroutev1.Route{
+						{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								{
+									Name: "backend",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "*",
+					Domains: []string{"*"},
+					Routes: []route.Route{{
+						Match: prefixmatch("/"),
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/backend/80",
+												Weight: &types.UInt32Value{
+													Value: uint32(100),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
+		"ingress route name based vhost": {
+			vhost: "httpbin.org",
+			routes: im([]*ingressroutev1.IngressRoute{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "httpbin.org",
+					},
+					Routes: []ingressroutev1.Route{
+						{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								{
+									Name: "httpbin-org",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "httpbin.org",
+					Domains: []string{"httpbin.org"},
+					Routes: []route.Route{{
+						Match: prefixmatch("/"), // match all
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/httpbin-org/80",
+												Weight: &types.UInt32Value{
+													Value: uint32(100),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
+		"ingress route multiple routes": {
+			vhost: "httpbin.org",
+			routes: im([]*ingressroutev1.IngressRoute{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "httpbin.org",
+					},
+					Routes: []ingressroutev1.Route{
+						{
+							Match: "/peter",
+							Services: []ingressroutev1.Service{
+								{
+									Name: "peter",
+									Port: 80,
+								},
+							},
+						},
+						{
+							Match: "/paul",
+							Services: []ingressroutev1.Service{
+								{
+									Name: "paul",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "httpbin.org",
+					Domains: []string{"httpbin.org"},
+					Routes: []route.Route{{
+						Match: prefixmatch("/peter"),
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/peter/80",
+												Weight: &types.UInt32Value{
+													Value: uint32(100),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}, {
+						Match: prefixmatch("/paul"),
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/paul/80",
+												Weight: &types.UInt32Value{
+													Value: uint32(100),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
+		"ingress route vhost name exceeds 60 chars": { // heptio/contour#25
+			vhost: "my-very-very-long-service-host-name.subdomain.boring-dept.my.company",
+			routes: im([]*ingressroutev1.IngressRoute{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "my-service-name",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "my-very-very-long-service-host-name.subdomain.boring-dept.my.company",
+					},
+					Routes: []ingressroutev1.Route{
+						{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								{
+									Name: "my-service-name",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "d31bb322ca62bb395acad00b3cbf45a3aa1010ca28dca7cddb4f7db786fa",
+					Domains: []string{"my-very-very-long-service-host-name.subdomain.boring-dept.my.company"},
+					Routes: []route.Route{{
+						Match: prefixmatch("/"),
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/my-service-name/80",
+												Weight: &types.UInt32Value{
+													Value: uint32(100),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
+		"ingress route second ingress object extends an existing vhost": {
+			vhost: "httpbin.org",
+			routes: im([]*ingressroutev1.IngressRoute{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "httpbin-admin",
+						Namespace: "kube-system",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: ingressroutev1.VirtualHost{
+							Fqdn: "httpbin.org",
+						},
+						Routes: []ingressroutev1.Route{
+							{
+								Match: "/admin",
+								Services: []ingressroutev1.Service{
+									{
+										Name: "admin",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				}, {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "httpbin",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: ingressroutev1.VirtualHost{
+							Fqdn: "httpbin.org",
+						},
+						Routes: []ingressroutev1.Route{
+							{
+								Match: "/",
+								Services: []ingressroutev1.Service{
+									{
+										Name: "default",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				}}),
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "httpbin.org",
+					Domains: []string{"httpbin.org"},
+					Routes: []route.Route{{
+						Match: prefixmatch("/admin"),
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "kube-system/admin/80",
+												Weight: &types.UInt32Value{
+													Value: uint32(100),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}, {
+						Match: prefixmatch("/"),
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/default/80",
+												Weight: &types.UInt32Value{
+													Value: uint32(100),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
+		"ingress route IngressRuleValue without host should become the default vhost": { // heptio/contour#101
+			vhost: "*",
+			routes: im([]*ingressroutev1.IngressRoute{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hello",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					Routes: []ingressroutev1.Route{
+						{
+							Match: "/hello",
+							Services: []ingressroutev1.Service{
+								{
+									Name: "hello",
+									Port: 80,
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "*",
+					Domains: []string{"*"},
+					Routes: []route.Route{{
+						Match: prefixmatch("/hello"),
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/hello/80",
+												Weight: &types.UInt32Value{
+													Value: uint32(100),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
+		"ingress route multiple Services": {
+			vhost: "httpbin.org",
+			routes: im([]*ingressroutev1.IngressRoute{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "httpbin.org",
+					},
+					Routes: []ingressroutev1.Route{
+						{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								{
+									Name: "httpbin-org",
+									Port: 80,
+								},
+								{
+									Name: "foo-org",
+									Port: 8001,
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "httpbin.org",
+					Domains: []string{"httpbin.org"},
+					Routes: []route.Route{{
+						Match: prefixmatch("/"), // match all
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/httpbin-org/80",
+												Weight: &types.UInt32Value{
+													Value: uint32(50),
+												},
+											},
+											{
+												Name: "default/foo-org/8001",
+												Weight: &types.UInt32Value{
+													Value: uint32(50),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
+		"ingress route multiple Services - weights - one specified": {
+			vhost: "httpbin.org",
+			routes: im([]*ingressroutev1.IngressRoute{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "httpbin.org",
+					},
+					Routes: []ingressroutev1.Route{
+						{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								{
+									Name:   "httpbin-org",
+									Port:   80,
+									Weight: func(i int) *int { return &i }(33),
+								},
+								{
+									Name: "foo-org",
+									Port: 8001,
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "httpbin.org",
+					Domains: []string{"httpbin.org"},
+					Routes: []route.Route{{
+						Match: prefixmatch("/"), // match all
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/httpbin-org/80",
+												Weight: &types.UInt32Value{
+													Value: uint32(33),
+												},
+											},
+											{
+												Name: "default/foo-org/8001",
+												Weight: &types.UInt32Value{
+													Value: uint32(67),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
+		"ingress route multiple Services - weights - all specified": {
+			vhost: "httpbin.org",
+			routes: im([]*ingressroutev1.IngressRoute{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "httpbin.org",
+					},
+					Routes: []ingressroutev1.Route{
+						{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								{
+									Name:   "httpbin-org",
+									Port:   80,
+									Weight: func(i int) *int { return &i }(33),
+								},
+								{
+									Name:   "foo-org",
+									Port:   8001,
+									Weight: func(i int) *int { return &i }(33),
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "httpbin.org",
+					Domains: []string{"httpbin.org"},
+					Routes: []route.Route{{
+						Match: prefixmatch("/"), // match all
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/httpbin-org/80",
+												Weight: &types.UInt32Value{
+													Value: uint32(33),
+												},
+											},
+											{
+												Name: "default/foo-org/8001",
+												Weight: &types.UInt32Value{
+													Value: uint32(33),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
+		"ingress route multiple Services - weights - two specified": {
+			vhost: "httpbin.org",
+			routes: im([]*ingressroutev1.IngressRoute{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: ingressroutev1.VirtualHost{
+						Fqdn: "httpbin.org",
+					},
+					Routes: []ingressroutev1.Route{
+						{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								{
+									Name:   "httpbin-org",
+									Port:   80,
+									Weight: func(i int) *int { return &i }(33),
+								},
+								{
+									Name:   "foo-org",
+									Port:   8001,
+									Weight: func(i int) *int { return &i }(2),
+								},
+								{
+									Name: "bar-org",
+									Port: 8001,
+								},
+							},
+						},
+					},
+				},
+			}}),
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "httpbin.org",
+					Domains: []string{"httpbin.org"},
+					Routes: []route.Route{{
+						Match: prefixmatch("/"), // match all
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{
+											{
+												Name: "default/httpbin-org/80",
+												Weight: &types.UInt32Value{
+													Value: uint32(33),
+												},
+											},
+											{
+												Name: "default/foo-org/8001",
+												Weight: &types.UInt32Value{
+													Value: uint32(2),
+												},
+											},
+											{
+												Name: "default/bar-org/8001",
+												Weight: &types.UInt32Value{
+													Value: uint32(65),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
+	}
+	log := logrus.New()
+	log.Out = &testWriter{t}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			tr := &Translator{
+				FieldLogger: log,
+			}
+			tr.recomputevhostIngressRoute(tc.vhost, tc.routes)
+			got := contents(&tr.VirtualHostCache.HTTP)
+			sort.Stable(virtualHostsByName(got))
+			if !reflect.DeepEqual(tc.ingress_http, got) {
+				t.Fatalf("recomputevhost(%v):\n (ingress_http) want:\n%+v\n got:\n%+v", tc.vhost, tc.ingress_http, got)
+			}
+
+			got = contents(&tr.VirtualHostCache.HTTPS)
+			sort.Stable(virtualHostsByName(got))
+			if !reflect.DeepEqual(tc.ingress_https, got) {
+				t.Fatalf("recomputevhost(%v):\n (ingress_https) want:\n%#v\ngot:\n%#v", tc.vhost, tc.ingress_https, got)
+			}
+		})
 	}
 }
 
