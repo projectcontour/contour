@@ -4,8 +4,8 @@
 [[projects]]
   name = "cloud.google.com/go"
   packages = ["compute/metadata"]
-  revision = "29f476ffa9c4cd4fd14336b6043090ac1ad76733"
-  version = "v0.21.0"
+  revision = "056a55f54a6cc77b440b31a56a5e7c3982d32811"
+  version = "v0.22.0"
 
 [[projects]]
   branch = "master"
@@ -90,8 +90,8 @@
     "ptypes/duration",
     "ptypes/timestamp"
   ]
-  revision = "925541529c1fa6821df4e44ce2723319eb2be768"
-  version = "v1.0.0"
+  revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
+  version = "v1.1.0"
 
 [[projects]]
   branch = "master"
@@ -170,7 +170,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "d6449816ce06963d9d136eee5a56fca5b0616e7e"
+  revision = "94e3fad7f1b4eed4ec147751ad6b4c4d33f00611"
 
 [[projects]]
   branch = "master"
@@ -183,10 +183,9 @@
     "http2/hpack",
     "idna",
     "internal/timeseries",
-    "lex/httplex",
     "trace"
   ]
-  revision = "d41e8174641f662c5a2d1c7a5f9e828788eb8706"
+  revision = "2491c5de3490fced2f6cff376127c667efeed857"
 
 [[projects]]
   branch = "master"
@@ -198,7 +197,7 @@
     "jws",
     "jwt"
   ]
-  revision = "6881fee410a5daf86371371f9ad451b95e168b71"
+  revision = "cdc340f7c179dbbfa4afd43b7614e8fcadde4269"
 
 [[projects]]
   branch = "master"
@@ -207,7 +206,7 @@
     "unix",
     "windows"
   ]
-  revision = "3ccc7e5779793fd54564baf60c51bf017955e0ba"
+  revision = "d0faeb539838e250bd0a9db4182d48d4a1915181"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -241,9 +240,10 @@
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
-    "imports"
+    "imports",
+    "internal/fastwalk"
   ]
-  revision = "77106db15f689a60e7d4e085d967ac557b918fb2"
+  revision = "48418e5732e1b1e2a10207c8007a5f959e422f20"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -266,7 +266,7 @@
   branch = "master"
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
-  revision = "7fd901a49ba6a7f87732eb344f6e3c5b19d1b200"
+  revision = "86e600f69ee4704c6efbf6a2a40a5c10700e76c2"
 
 [[projects]]
   name = "google.golang.org/grpc"
@@ -349,7 +349,7 @@
     "storage/v1alpha1",
     "storage/v1beta1"
   ]
-  revision = "edd5e319fc45211023fffb41c7aa5555229c4179"
+  revision = "590a9173e3b65d74e907fcfd94b78465cf314760"
 
 [[projects]]
   branch = "release-1.10"
