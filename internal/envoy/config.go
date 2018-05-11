@@ -40,7 +40,7 @@ type ConfigWriter struct {
 	StatsAddress int
 
 	// StatsPort is the port that the /stats path will listen on.
-	// Defaults to 8001.
+	// Defaults to 8002.
 	StatsPort int
 
 	// XDSAddress is the TCP address of the XDS management server. For JSON configurations
@@ -122,7 +122,7 @@ static_resources:
         socket_address:
           protocol: TCP
           address: {{ if .StatsAddress }}{{ .StatsAddress }}{{ else }}0.0.0.0{{ end }} 
-          port_value: {{ if .StatsPort }}{{ .StatsPort }}{{ else }}8001{{ end }}
+          port_value: {{ if .StatsPort }}{{ .StatsPort }}{{ else }}8002{{ end }}
       filter_chains:
         - filters:
             - name: envoy.http_connection_manager

@@ -78,7 +78,7 @@ static_resources:
         socket_address:
           protocol: TCP
           address: 0.0.0.0 
-          port_value: 8001
+          port_value: 8002
       filter_chains:
         - filters:
             - name: envoy.http_connection_manager
