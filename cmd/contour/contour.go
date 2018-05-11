@@ -37,13 +37,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// this is necessary due to #113 wherein glog neccessitates a call to flag.Parse
-// before any logging statements can be invoked. (See also https://github.com/golang/glog/blob/master/glog.go#L679)
-// unsure why this seemingly unnecessary prerequisite is in place but there must be some sane reason.
-func init() {
-	flag.Parse()
-}
-
 func main() {
 	log := logrus.StandardLogger()
 	t := &contour.Translator{
@@ -126,6 +119,12 @@ func main() {
 		// buffer notifications to t to ensure they are handled sequentially.
 		buf := k8s.NewBuffer(&g, t, log, 128)
 
+		// client-go uses glog which requires initialisation as a side effect of calling
+		// flag.Parse (see #118 and https://github.com/golang/glog/blob/master/glog.go#L679)
+		// However kingpin owns our flag parsing, so we defer calling flag.Parse until
+		// this point to avoid the Go flag package from rejecting flags which are defined
+		// in kingpin. See #371
+		flag.Parse()
 		client, contourClient := newClient(*kubeconfig, *inCluster)
 
 		wl := log.WithField("context", "watch")
