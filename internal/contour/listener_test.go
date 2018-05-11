@@ -17,6 +17,7 @@ import (
 	"reflect"
 	"testing"
 
+	ingressroutev1 "github.com/heptio/contour/pkg/apis/contour/v1"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -137,6 +138,130 @@ func TestRecomputeListener(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			add, remove := tc.recomputeListener0(tc.ingresses)
+			if !reflect.DeepEqual(add, tc.add) {
+				t.Errorf("add:\n\texpected: %v\n\tgot: %v", tc.add, add)
+			}
+			if !reflect.DeepEqual(remove, tc.remove) {
+				t.Errorf("remove:\n\texpected: %v,\n\tgot: %v", tc.remove, remove)
+			}
+		})
+	}
+}
+func TestRecomputeListenerIngressRoute(t *testing.T) {
+	tests := map[string]*struct {
+		routes map[metadata]*ingressroutev1.IngressRoute
+		add    []*v2.Listener
+		remove []string
+		ListenerCache
+	}{
+		"empty ingress map": {
+			routes: nil,
+			add:    nil,
+			remove: []string{ENVOY_HTTP_LISTENER},
+		},
+		"default vhost ingress": {
+			routes: map[metadata]*ingressroutev1.IngressRoute{
+				metadata{namespace: "default", name: "simple"}: {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						Routes: []ingressroutev1.Route{
+							{
+								Services: []ingressroutev1.Service{
+									{
+										Name: "backend",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			add: []*v2.Listener{{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: socketaddress("0.0.0.0", 8080),
+				FilterChains: []listener.FilterChain{
+					filterchain(false, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+				},
+			}},
+			remove: nil,
+		},
+		// http listener on non default port.
+		"issue#72": {
+			ListenerCache: ListenerCache{
+				HTTPAddress: "127.0.0.1",
+				HTTPPort:    9000,
+			},
+			routes: map[metadata]*ingressroutev1.IngressRoute{
+				metadata{namespace: "default", name: "simple"}: {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						Routes: []ingressroutev1.Route{
+							{
+								Services: []ingressroutev1.Service{
+									{
+										Name: "backend",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			add: []*v2.Listener{{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: socketaddress("127.0.0.1", 9000),
+				FilterChains: []listener.FilterChain{
+					filterchain(false, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+				},
+			}},
+			remove: nil,
+		},
+		"use proxy protocol": {
+			ListenerCache: ListenerCache{
+				UseProxyProto: true,
+			},
+			routes: map[metadata]*ingressroutev1.IngressRoute{
+				metadata{namespace: "default", name: "simple"}: {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						Routes: []ingressroutev1.Route{
+							{
+								Services: []ingressroutev1.Service{
+									{
+										Name: "backend",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			add: []*v2.Listener{{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: socketaddress("0.0.0.0", 8080),
+				FilterChains: []listener.FilterChain{
+					filterchain(true, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+				},
+			}},
+			remove: nil,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			add, remove := tc.recomputeListenerIngressRoute0(tc.routes)
 			if !reflect.DeepEqual(add, tc.add) {
 				t.Errorf("add:\n\texpected: %v\n\tgot: %v", tc.add, add)
 			}
@@ -441,6 +566,33 @@ func TestListenerCacheRecomputeListener(t *testing.T) {
 		},
 	}
 	lc.recomputeListeners(i, nil)
+	assertCacheNotEmpty(t, lc)
+}
+func TestListenerCacheRecomputeListenerIngressRoute(t *testing.T) {
+	lc := new(ListenerCache)
+	assertCacheEmpty(t, lc)
+
+	i := map[metadata]*ingressroutev1.IngressRoute{
+		metadata{name: "example", namespace: "default"}: &ingressroutev1.IngressRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "simple",
+				Namespace: "default",
+			},
+			Spec: ingressroutev1.IngressRouteSpec{
+				Routes: []ingressroutev1.Route{
+					{
+						Services: []ingressroutev1.Service{
+							{
+								Name: "backend",
+								Port: 80,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	lc.recomputeListenersIngressRoute(i, nil)
 	assertCacheNotEmpty(t, lc)
 }
 
