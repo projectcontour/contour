@@ -135,7 +135,7 @@ static_resources:
     - address:
         socket_address:
           protocol: TCP
-          address: 127.0.0.1 
+          address: 0.0.0.0
           port_value: 8002
       filter_chains:
         - filters:

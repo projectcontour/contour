@@ -36,7 +36,7 @@ type ConfigWriter struct {
 	AdminPort int
 
 	// StatsAddress is the address that the /stats path will listen on.
-	// Defaults to 127.0.0.1 and is only enabled if StatsdEnabled is true.
+	// Defaults to 0.0.0.0 and is only enabled if StatsdEnabled is true.
 	StatsAddress int
 
 	// StatsPort is the port that the /stats path will listen on.
@@ -121,7 +121,7 @@ static_resources:
     - address:
         socket_address:
           protocol: TCP
-          address: {{ if .StatsAddress }}{{ .StatsAddress }}{{ else }}127.0.0.1{{ end }} 
+          address: {{ if .StatsAddress }}{{ .StatsAddress }}{{ else }}0.0.0.0{{ end }}
           port_value: {{ if .StatsPort }}{{ .StatsPort }}{{ else }}8002{{ end }}
       filter_chains:
         - filters:
