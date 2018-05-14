@@ -24,7 +24,9 @@ spec:
   scope: Namespaced
   names:
     plural: ingressroutes
-    kind: IngressRouteapiVersion: extensions/v1beta1
+    kind: IngressRoute
+---
+apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
