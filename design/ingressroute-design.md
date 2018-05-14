@@ -21,7 +21,7 @@ Contour will continue to support the current v1beta1.Ingress object for as long 
 
 # Background
 
-The Ingress object was added to Kubernetes in version 1.2 to describe properties of a cluster-wide reverse HTTP proxy. 
+The Ingress object was added to Kubernetes in version 1.2 to describe properties of a cluster-wide reverse HTTP proxy.
 Since that time, the Ingress object has not progressed beyond the beta stage, and its stagnation inspired an explosion of annotations to express missing properties of HTTP routing.
 
 # High-level design
@@ -30,14 +30,14 @@ At a high level, this document proposes modeling ingress configuration as a grap
 
 ## Delegation
 
-The working model for delegation is DNS. As the owner of a DNS domain, for example `.com`, I _delegate_ to another nameserver the responsibility for handing the subdomain `heptio.com`. Any nameserver can hold a record for `heptio.com`, but without the linkage from the parent `.com` TLD, its information is unreachable and non authoritative.
+The working model for delegation is DNS. As the owner of a DNS domain, for example `.com`, I _delegate_ to another nameserver the responsibility for handing the subdomain `heptio.com`. 
+Any nameserver can hold a record for `heptio.com`, but without the linkage from the parent `.com` TLD, its information is unreachable and non authoritative.
 
-Each _root_ of a DAG starts at a virtual host, which describes properties such as the fully qualified name of the virtual host, any aliases of the vhost (for example, a `www.` prefix), TLS configuration, and possibly global access list details. 
-The vertices of a graph do not contain virtual host information. 
-They are reachable from a root only by delegation. 
+Each _root_ of a DAG starts at a virtual host, which describes properties such as the fully qualified name of the virtual host, any aliases of the vhost (for example, a `www.` prefix), TLS configuration, and possibly global access list details.
+The vertices of a graph do not contain virtual host information. They are reachable from a root only by delegation.
 This permits the _owner_ of an ingress root to both delegate the authority to publish a service on a portion of the route space inside a virtual host, and to further delegate authority to publish and delegate.
 
-In practice the linkage, or delegation, from root to vertex, is performed with a specific type of route action. 
+In practice the linkage, or delegation, from root to vertex, is performed with a specific type of route action.
 You can think of it as routing traffic to another ingress route for further processing, instead of routing traffic directly to a service.
 
 # Detailed Design
@@ -182,21 +182,22 @@ The delegation rules applied are as follows
 
 ## Validation rules
 
-The validation rules applied in this design are as follows. Some of these rules may be relaxed in future designs.
+The validation rules applied in this design are as follows. 
+Some of these rules may be relaxed in future designs.
 
 If a validation error is encountered, the entire object is rejected. Partial application of the valid portions of the configuration is **not** attempted.
 
 
 ## Authorization
 
-It is important to highlight that both root and vertex IngressRoute objects are of the same type. 
+It is important to highlight that both root and vertex IngressRoute objects are of the same type.
 This is a departure from other designs which treat the permission to create a VirtualHost type object and a Route type object as separate. 
 The DAG design treats the delegation from one IngressRoute to another as permission to create routes.
 
 ### Enforcing Mode
 
 While the IngressRoute delegation allows for Administrators to limit route usage by namespace, it does not restrict where the `root` IngressRoutes can be created. 
-Contour should allow for an `enforcing` mode which takes in a set of namespaces where root IngressRoutes are valid. 
+Contour should allow for an `enforcing` mode which takes in a set of namespaces where root IngressRoutes are valid.
 Only those permitted to operate in those namespaces can therefore create virtual hosts and delegate the permission to operate on them to other namespaces. 
 This would most likely be accomplished with a command line flag (`--root-namespaces=[]`) or ConfigMap.
 
@@ -206,13 +207,13 @@ Status about the object should be reported by using a scheme within the IngressR
 
 ### Orphaned Status
 
-The presence of a semantically valid object is not a guarantee that it will be used. 
+The presence of a semantically valid object is not a guarantee that it will be used.
 This is a break from the Kubernetes model, in which a valid object is generally be acted on by controllers.
 
-An `IngressRoute` vertex may be present but not consulted if it is not part of a delegation chain from a root. 
+An `IngressRoute` vertex may be present but not consulted if it is not part of a delegation chain from a root.
 This models the DNS model above. You can add any zone file that you want to your local DNS server, but unless someone delegates to you, those records are ignored.
 
-In the case where an IngressRoute is present, but has no active delegation, it is known as **orphaned**. 
+In the case where an IngressRoute is present, but has no active delegation, it is known as **orphaned**.
 We record this information in a top level `status` key for operators and tools.
 
 An example of an orphaned IngressRoute object:
@@ -234,7 +235,7 @@ status:
 
 ### Delegation Status
 
-Since delegate IngressRoutes do not contain the VHost or Path information, it's important to understand what root IngressRoutes are delegating to a namespace. 
+Since delegate IngressRoutes do not contain the VHost or Path information, it's important to understand what root IngressRoutes are delegating to a namespace.
 This will be accomplished by reporting a `valid` status and include the root IngressRoute information.
 
 An example of a valid IngressRoute object:
@@ -283,10 +284,10 @@ status:
 
 ## IngressRoutes dispatch only to services in the same namespace
 
-While a matching route may list more than one service/port pair, the services are always within the same namespace. 
+While a matching route may list more than one service/port pair, the services are always within the same namespace.
 This is to prevent unintentional exposure of services running in other namespaces.
 
-To publish a service in another namespace on a domain that you control, you must delegate the permission to publish to the namespace. 
+To publish a service in another namespace on a domain that you control, you must delegate the permission to publish to the namespace.
 For example, the `kube-system/heptio` IngressRoute holds information about `heptio.com` but delegates the provision of the service to the `heptio-wordpress/wordpress` IngressRoute:
 
 ```yaml
@@ -322,7 +323,7 @@ spec:
 
 ## TLS
 
-TLS configuration, certificates, and cipher suites, remain similar in form to the existing Ingress object. 
+TLS configuration, certificates, and cipher suites, remain similar in form to the existing Ingress object.
 However, because the `spec.virtualhost.tls` is present only in root objects, there is no ambiguity as to which IngressRoute holds the canonical TLS information. (This cannot be said for the current Ingress object).
 This also implies that the IngressRoute root and the TLS Secret must live in the same namespace.
 However as mentioned above, the entire routespace (/ onwards) can be delegated to another namespace, which allows operators to define virtual hosts and their TLS configuration in one namespace, and delegate the operation of those virtual hosts to another namespace.
@@ -331,14 +332,14 @@ However as mentioned above, the entire routespace (/ onwards) can be delegated t
 
 ## Blue-Green deployments
 
-Blue-green deployment is a technique that reduces downtime and risk by running two identical production environments called Blue and Green. 
+Blue-green deployment is a technique that reduces downtime and risk by running two identical production environments called Blue and Green.
 This can be accomplished by creating two delegated Ingress resources, one for Blue and one for Green. 
 The Green IngressRoute would essentially be an Orphan route, then the user would swap the delegate IngressResource from pointing from the Blue to the Green so that traffic switches. 
 
 ## Canary Deployments
 
-Similar to how Blue/Green deployments swap traffic between different versions of an application, Canary can also be an effective alternative. 
-This is accomplished by moving traffic into a new deployment slowly so that the new service can be watched for performance or any other kind of errors. 
+Similar to how Blue/Green deployments swap traffic between different versions of an application, Canary can also be an effective alternative.
+This is accomplished by moving traffic into a new deployment slowly so that the new service can be watched for performance or any other kind of errors.
 To implement Canary deployments, the user creates a new version of an application along side the existing, utilizing `weights` on the backend services, traffic can be slowly moved between the services.
 
 _Note: This pattern will only work if your application can be run as two different versions at the same time._
@@ -464,7 +465,7 @@ This is unfortunate for two reasons:
 - It turns a DAG into a linked list (possibly not the right term), but it would be impossible for a web service to be a member of multiple roots, unless of course we made the list of incoming vertices be a list -- which would probably push the solution into using virtualhost.fqdn.
 
 The last thing is that this boilerplate _should be required_ even when not in enforcing mode.
-I'm not interested in proposing a design where the security interlock that prevents dave's cheap webhosting from publishing gmail without TLS is considered to be the customer's problem because they did not add an optional key. 
+I'm not interested in proposing a design where the security interlock that prevents dave's cheap webhosting from publishing gmail without TLS is considered to be the customer's problem because they did not add an optional key.
 Said again, if this is the mitigation we choose to adopt, it has to be mandatory for all users, because we all know how effective optional security features are.
 
 # Metrics
