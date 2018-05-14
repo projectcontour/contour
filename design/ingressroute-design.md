@@ -30,7 +30,8 @@ At a high level, this document proposes modeling ingress configuration as a grap
 
 ## Delegation
 
-The working model for delegation is DNS. As the owner of a DNS domain, for example `.com`, I _delegate_ to another nameserver the responsibility for handing the subdomain `heptio.com`. 
+The working model for delegation is DNS. 
+As the owner of a DNS domain, for example `.com`, I _delegate_ to another nameserver the responsibility for handing the subdomain `heptio.com`.
 Any nameserver can hold a record for `heptio.com`, but without the linkage from the parent `.com` TLD, its information is unreachable and non authoritative.
 
 Each _root_ of a DAG starts at a virtual host, which describes properties such as the fully qualified name of the virtual host, any aliases of the vhost (for example, a `www.` prefix), TLS configuration, and possibly global access list details.
