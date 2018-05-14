@@ -128,7 +128,7 @@ static_resources:
             - name: envoy.http_connection_manager
               config:
                 codec_type: AUTO
-                stat_prefix: statds
+                stat_prefix: stats
                 route_config:
                   virtual_hosts:
                     - name: backend
@@ -141,7 +141,7 @@ static_resources:
                             cluster: service_stats
                 http_filters:
                   - name: envoy.router
-                    config: true
+                    config:
 stats_sinks:
   - name: envoy.statsd
     config:
