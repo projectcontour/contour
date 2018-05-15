@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
@@ -659,6 +660,45 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					}},
 				},
 			},
+		},
+		"add remove headers": {
+			vhost: "httpbin.org",
+			ingresses: im([]*v1beta1.Ingress{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"contour.heptio.com/add-header-max-age":         "10",
+						"contour.heptio.com/remove-header-X-Powered-By": "",
+					},
+				},
+				Spec: v1beta1.IngressSpec{
+					Rules: []v1beta1.IngressRule{{
+						Host:             "httpbin.org",
+						IngressRuleValue: ingressrulevalue(backend("httpbin-org", intstr.FromInt(80))),
+					}},
+				},
+			}}),
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "httpbin.org",
+					Domains: []string{"httpbin.org"},
+					Routes: []route.Route{{
+						Match:  prefixmatch("/"), // match all
+						Action: clusteraction("default/httpbin-org/80"),
+					}},
+					ResponseHeadersToAdd: []*core.HeaderValueOption{
+						&core.HeaderValueOption{
+							Header: &core.HeaderValue{
+								Key:   "Max-Age",
+								Value: "10",
+							},
+						},
+					},
+					ResponseHeadersToRemove: []string{"X-Powered-By"},
+				},
+			},
+			ingress_https: []proto.Message{},
 		},
 	}
 

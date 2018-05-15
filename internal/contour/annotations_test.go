@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/gogo/protobuf/types"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -270,6 +271,101 @@ func TestHttpAllowed(t *testing.T) {
 			want := tc.valid
 			if got != want {
 				t.Fatalf("got: %v, want: %v", got, want)
+			}
+		})
+	}
+}
+
+func TestParseAnnotationResponseHeadersToAdd(t *testing.T) {
+	newHeader := func(k, v string) *core.HeaderValueOption {
+		return &core.HeaderValueOption{
+			Header: &core.HeaderValue{
+				Key:   k,
+				Value: v,
+			},
+		}
+	}
+	tests := map[string]struct {
+		a    map[string]string
+		want []*core.HeaderValueOption
+	}{
+		"nada": {
+			a:    nil,
+			want: nil,
+		},
+		"empty key": {
+			a:    map[string]string{annotationAddHeader: ""},
+			want: nil,
+		},
+		"other key": {
+			a:    map[string]string{annotationMaxRetries: "10"},
+			want: nil,
+		},
+		"empty value": {
+			a:    map[string]string{fmt.Sprintf("%s%s", annotationAddHeader, "max-age"): ""},
+			want: nil,
+		},
+		"single value": {
+			a:    map[string]string{fmt.Sprintf("%s%s", annotationAddHeader, "max-age"): "10"},
+			want: []*core.HeaderValueOption{newHeader("Max-Age", "10")},
+		},
+		"multiple value": {
+			a: map[string]string{
+				fmt.Sprintf("%s%s", annotationAddHeader, "max-age"):   "10",
+				fmt.Sprintf("%s%s", annotationAddHeader, "x-testing"): "valid",
+			},
+			want: []*core.HeaderValueOption{
+				newHeader("Max-Age", "10"),
+				newHeader("X-Testing", "valid"),
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := parseAnnotationAddHeader(tc.a)
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("parseAnnotationAddHeader(%q): want: %v, got: %v", tc.a, tc.want, got)
+			}
+		})
+	}
+}
+
+func TestParseAnnotationRemoveHeader(t *testing.T) {
+	tests := map[string]struct {
+		a    map[string]string
+		want []string
+	}{
+		"nada": {
+			a:    nil,
+			want: nil,
+		},
+		"empty key": {
+			a:    map[string]string{annotationRemoveHeader: ""},
+			want: nil,
+		},
+		"other key": {
+			a:    map[string]string{annotationMaxRetries: "10"},
+			want: nil,
+		},
+		"single value": {
+			a:    map[string]string{fmt.Sprintf("%s%s", annotationRemoveHeader, "x-powered-by"): ""},
+			want: []string{"X-Powered-By"},
+		},
+		"multiple value": {
+			a: map[string]string{
+				fmt.Sprintf("%s%s", annotationRemoveHeader, "X-Powered-By"): "unused",
+				fmt.Sprintf("%s%s", annotationRemoveHeader, "x-trace-id"):   "",
+			},
+			want: []string{"X-Powered-By", "X-Trace-Id"},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := parseAnnotationRemoveHeader(tc.a)
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("parseAnnotationRemoveHeader(%q): want: %v, got: %v", tc.a, tc.want, got)
 			}
 		})
 	}
