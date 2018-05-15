@@ -476,14 +476,19 @@
     "cmd/client-gen/path",
     "cmd/client-gen/types",
     "cmd/deepcopy-gen",
+    "cmd/deepcopy-gen/args",
     "cmd/defaulter-gen",
+    "cmd/defaulter-gen/args",
     "cmd/informer-gen",
+    "cmd/informer-gen/args",
     "cmd/informer-gen/generators",
     "cmd/lister-gen",
-    "cmd/lister-gen/generators"
+    "cmd/lister-gen/args",
+    "cmd/lister-gen/generators",
+    "pkg/util"
   ]
-  revision = "fef8bcdbaf36ac6a1a18c9ef7d85200b249fad30"
-  version = "kubernetes-1.9.0"
+  revision = "7ead8f38b01cf8653249f5af80ce7b2c8aba12e2"
+  version = "kubernetes-1.10.0"
 
 [[projects]]
   branch = "master"
@@ -503,6 +508,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5ddebb9476ccd9721a165a6835c4998a1c8ef71035cb231d885635064c0060fb"
+  inputs-digest = "72b22b97f822eefe14652f9467510effe10fef0f814a39487378de69409ab9da"
   solver-name = "gps-cdcl"
   solver-version = 1

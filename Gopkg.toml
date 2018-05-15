@@ -31,5 +31,4 @@ required = [
 
 [[constraint]]
   name = "k8s.io/code-generator"
-  version = "kubernetes-1.9.0"
-
+  version = "kubernetes-1.10.0"

@@ -70,7 +70,7 @@ spec:
   sessionAffinity: None
   type: ClusterIP
 ---
-apiVersion: contour.heptio.com/v1
+apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 metadata: 
   name: kuard

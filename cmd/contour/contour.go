@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	clientset "github.com/heptio/contour/pkg/generated/clientset/versioned"
+	clientset "github.com/heptio/contour/internal/generated/clientset/versioned"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"k8s.io/client-go/kubernetes"

@@ -40,3 +40,10 @@ unused:
 	@go get honnef.co/go/tools/cmd/unused
 	unused $(PKGS)
 
+render:
+	@echo Rendering deployment files...
+	@(cd deployment && bash render.sh)
+
+updategenerated:
+	@echo Updating CRD generated code...
+	@(bash hack/update-generated-crd-code.sh)

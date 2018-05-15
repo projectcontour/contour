@@ -22,7 +22,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	ingressroutev1 "github.com/heptio/contour/pkg/apis/contour/v1"
+	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
