@@ -17,7 +17,7 @@ import (
 	"reflect"
 	"testing"
 
-	ingressroutev1 "github.com/heptio/contour/pkg/apis/contour/v1"
+	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

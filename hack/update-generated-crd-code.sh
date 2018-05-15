@@ -20,8 +20,8 @@ REPO_ROOT=${HACK_DIR}/..
 
 ${REPO_ROOT}/vendor/k8s.io/code-generator/generate-groups.sh \
   all \
-  github.com/heptio/contour/pkg/generated \
-  github.com/heptio/contour/pkg/apis \
-  contour:v1 \
+  github.com/heptio/contour/internal/generated \
+  github.com/heptio/contour/apis \
+  contour:v1beta1 \
   --go-header-file hack/boilerplate.go.tmpl \
   $@

@@ -7,7 +7,7 @@ RUN dep ensure -v -vendor-only
 
 COPY cmd cmd
 COPY internal internal
-COPY pkg pkg
+COPY apis apis
 RUN CGO_ENABLED=0 GOOS=linux go install -ldflags="-w -s" -v github.com/heptio/contour/cmd/contour
 
 FROM alpine:latest
