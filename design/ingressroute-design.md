@@ -132,22 +132,24 @@ spec:
   # routes contains the set of routes for this virtual host.
   # routes must _always_ be present and non empty.
   # routes can be present in any order, and will be matched from most to least
-  # specific, prefixes defined here are appended to those delegated to this object.
+  # specific, however as this is a vertex, only prefixes that match the prefix
+  # that delegated to this object.
   routes:
-  # each route in this object is appended to the prefix which delegated to this object, so any path displayed here will be appended to the root
-  - match: /
+  # each route in this object must start with /finance as this was the prefix which
+  # delegated to this object.
+  - match: /finance
     service:
     - name: finance-app
       port: 9999
-  - match: /static # Full path is: www.google.com/finance/static (also all aliases)
+  - match: /finance/static
     service:
     - name: finance-static-content
       port: 8080
-  - match: /partners
-    # delegate the /partners prefix to the partners namespace
+  - match: /finance/partners
+    # delegate the /finance/partners prefix to the partners namespace
     delegate:
       name: finance-partners
-      namespace: partners # www.google.com/finance/partners is delegated (also aliases)
+      namespace: partners
 ```
 
 ### Load Balancing
@@ -170,6 +172,7 @@ Contour will only support HTTP health checking along with various settings (chec
 During HTTP health checking Envoy will send an HTTP request to the upstream host. 
 It expects a 200 response if the host is healthy. 
 The upstream host can return 503 if it wants to immediately notify downstream hosts to no longer forward traffic to it.
+It is also important to note these are health checks that Envoy is implementing and are separate from any other system such as those that exist in Kubernetes.
 
 _Note: Passive health checking is implemented via Outlier detection and is used to dynamically determine whether some number of hosts in an upstream cluster are performing unlike others and removing them from the healthy load balancing set. Passive checking is not included yet but will be in a future release._
 
@@ -202,6 +205,11 @@ While the IngressRoute delegation allows for Administrators to limit route usage
 Contour should allow for an `enforcing` mode which takes in a set of namespaces where root IngressRoutes are valid.
 Only those permitted to operate in those namespaces can therefore create virtual hosts and delegate the permission to operate on them to other namespaces. 
 This would most likely be accomplished with a command line flag (`--root-namespaces=[]`) or ConfigMap.
+
+### Disable v1beta1.Ingress
+
+In the scenario where teams want to utilize the `IngressRoute` CRD it may be beneficial to disable Contour from processing `Ingress` resources.
+This can be accomplished by passing the `--disable-k8s-ingress` flag.
 
 ## Reporting status
 
@@ -390,22 +398,8 @@ Metrics are essential to any system. Contour will expose a `/metrics` Prometheus
 - **contour_ingressroute_upstream_endpoints_change (counter):** Number of changes of Endpoints per Upstream
   - namespace
   - name
-- **contour_ingressroute_invalid_total (gauge):**  Number of Invalid Routes (Routes who have no root delegating to them)
+- **contour_ingressroute_orphaned_total (gauge):**  Number of Invalid Routes (Routes who have no root delegating to them)
   - namespace
-- **upstream-services**: Number of upstream services, labeled by cluster and tenant/namespace
-  - cluster
-  - tenant/namespace
-- **replicated-services:** Number of services replicated to gimbal cluster labeled by cluster and tenant/namespace
-  - cluster
-  - tenant/namespace
-- **upstream-endpoints:** Number of endpoints - meaning IP:Port - in the upstream labeled by cluster, namespace, and service name
-  - cluster
-  - tenant/namespace
-  - service
-- **replicated-endpoints:** Number of endpoints - meaning IP:Port - replicated to Gimbal cluster labeled by cluster, namespace and service name
-  - cluster
-  - tenant/namespace
-  - service
 
 ## Envoy Metrics
 
