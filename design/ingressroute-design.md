@@ -209,7 +209,7 @@ This would most likely be accomplished with a command line flag (`--root-namespa
 ### Disable v1beta1.Ingress
 
 In the scenario where teams want to utilize the `IngressRoute` CRD it may be beneficial to disable Contour from processing `Ingress` resources.
-This can be accomplished by passing the `--disable-k8s-ingress` flag.
+This can be accomplished by restricting users via RBAC from having permissions to create these types of resources. 
 
 ## Reporting status
 
@@ -374,6 +374,7 @@ Future work outside the scope of this design includes:
 - Delegation to matching labels, rather than names. This may be added in the future. This is valid, as long as none of the matching IngressRoute objects are roots, because routes are a set, so can be merged from several objects _in the same namespace_.
 - Allowing users to send traffic multiple upstreams by weighting first, or by lbAlgorithm first (e.g. Create a set of endpoints from multiple services to send traffic).
 - Outlier detection for passive health checking (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/outlier#arch-overview-outlier-detection).
+- v1beta1.Ingress resources could be disabled by passing a `--disable-k8s-ingress` flag.
 
 # Security Concerns
 
