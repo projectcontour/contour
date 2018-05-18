@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/heptio/contour/internal/debug"
 	clientset "github.com/heptio/contour/internal/generated/clientset/versioned"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
@@ -79,7 +80,7 @@ func main() {
 	xdsPort := serve.Flag("xds-port", "xDS gRPC API port").Default("8001").Int()
 
 	// configuration parameters for debug service
-	debug := debugService{
+	debug := debug.Service{
 		FieldLogger: log.WithField("context", "debugsvc"),
 	}
 
