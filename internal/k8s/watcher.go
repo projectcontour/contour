@@ -57,7 +57,7 @@ func WatchIngressRoutes(g *workgroup.Group, client *clientset.Clientset, log log
 
 func watch(g *workgroup.Group, c cache.Getter, log logrus.FieldLogger, resource string, objType runtime.Object, rs ...cache.ResourceEventHandler) {
 	lw := cache.NewListWatchFromClient(c, resource, v1.NamespaceAll, fields.Everything())
-	sw := cache.NewSharedInformer(lw, objType, 30*time.Minute)
+	sw := cache.NewSharedInformer(lw, objType, time.Duration(0)) // resync timer disabled
 	for _, r := range rs {
 		sw.AddEventHandler(r)
 	}
