@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package debug
 
 import (
 	"context"
@@ -23,10 +23,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// pprof debug service
+// contour debugging services
 
-// debugService serves the /debug/pprof endpoint.
-type debugService struct {
+// debugService serves various debugging endpoints including
+// /debug/pprof.
+type Service struct {
 	Addr string
 	Port int
 
@@ -35,7 +36,7 @@ type debugService struct {
 
 // Start fulfills the g.Start contract.
 // When stop is closed the http server will shutdown.
-func (d *debugService) Start(stop <-chan struct{}) {
+func (svc *Service) Start(stop <-chan struct{}) {
 	mux := http.NewServeMux()
 
 	// register the /debug/pprof handlers on this mux.
@@ -46,7 +47,7 @@ func (d *debugService) Start(stop <-chan struct{}) {
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
 	s := http.Server{
-		Addr:           fmt.Sprintf("%s:%d", d.Addr, d.Port),
+		Addr:           fmt.Sprintf("%s:%d", svc.Addr, svc.Port),
 		Handler:        mux,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   5 * time.Minute, // allow for long trace requests
@@ -64,10 +65,10 @@ func (d *debugService) Start(stop <-chan struct{}) {
 		s.Shutdown(ctx)
 	}()
 
-	d.WithField("address", s.Addr).Info("started")
+	svc.WithField("address", s.Addr).Info("started")
 	if err := s.ListenAndServe(); err != nil {
-		d.WithError(err).Error("terminated with error")
+		svc.WithError(err).Error("terminated with error")
 	} else {
-		d.Info("stopped")
+		svc.Info("stopped")
 	}
 }
