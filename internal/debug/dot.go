@@ -50,7 +50,7 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 			name = fmt.Sprintf("%s/path/%s", vhost, v.Prefix())
 			fmt.Fprintf(w, "%q [shape=record, label=\"{prefix|%s}\"]\n", name, v.Prefix())
 		}
-		v.ChildVertices(func(v dag.Vertex) {
+		v.Visit(func(v dag.Vertex) {
 			visit(v)
 			switch v := v.(type) {
 			case *dag.Secret:
@@ -65,7 +65,7 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 		})
 	}
 
-	dw.DAG.Roots(visit)
+	dw.DAG.Visit(visit)
 
 	fmt.Fprintln(w, "}")
 }

@@ -19,10 +19,13 @@ type ResourceEventHandler struct {
 }
 
 func (r *ResourceEventHandler) OnAdd(obj interface{}) {
+	r.Insert(obj)
 }
 
 func (r *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
+	r.Insert(newObj)
 }
 
 func (r *ResourceEventHandler) OnDelete(obj interface{}) {
+	r.Remove(obj)
 }
