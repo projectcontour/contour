@@ -236,7 +236,7 @@ func TestEditIngressInPlace(t *testing.T) {
 				Name: "ingress_http",
 				VirtualHosts: []route.VirtualHost{{
 					Name:    "hello.example.com",
-					Domains: []string{"hello.example.com"},
+					Domains: []string{"hello.example.com", "hello.example.com:80"},
 					Routes: []route.Route{{
 						Match:  prefixmatch("/"),
 						Action: routecluster("default/wowie/80"),
@@ -285,7 +285,7 @@ func TestEditIngressInPlace(t *testing.T) {
 				Name: "ingress_http",
 				VirtualHosts: []route.VirtualHost{{
 					Name:    "hello.example.com",
-					Domains: []string{"hello.example.com"},
+					Domains: []string{"hello.example.com", "hello.example.com:80"},
 					Routes: []route.Route{{
 						Match:  prefixmatch("/whoop"),
 						Action: routecluster("default/kerpow/9000"),
@@ -342,7 +342,7 @@ func TestEditIngressInPlace(t *testing.T) {
 				Name: "ingress_http",
 				VirtualHosts: []route.VirtualHost{{
 					Name:    "hello.example.com",
-					Domains: []string{"hello.example.com"},
+					Domains: []string{"hello.example.com", "hello.example.com:80"},
 					Routes: []route.Route{{
 						Match:  prefixmatch("/whoop"),
 						Action: redirecthttps(),
@@ -401,7 +401,7 @@ func TestEditIngressInPlace(t *testing.T) {
 				Name: "ingress_http",
 				VirtualHosts: []route.VirtualHost{{
 					Name:    "hello.example.com",
-					Domains: []string{"hello.example.com"},
+					Domains: []string{"hello.example.com", "hello.example.com:80"},
 					Routes: []route.Route{{
 						Match:  prefixmatch("/whoop"),
 						Action: redirecthttps(),
@@ -414,7 +414,7 @@ func TestEditIngressInPlace(t *testing.T) {
 				Name: "ingress_https",
 				VirtualHosts: []route.VirtualHost{{
 					Name:    "hello.example.com",
-					Domains: []string{"hello.example.com"},
+					Domains: []string{"hello.example.com", "hello.example.com:443"},
 					Routes: []route.Route{{
 						Match:  prefixmatch("/whoop"),
 						Action: routecluster("default/kerpow/9000"),
@@ -582,7 +582,7 @@ func TestSSLRedirectOverlay(t *testing.T) {
 
 	assertRDS(t, cc, []route.VirtualHost{{ // ingress_http
 		Name:    "example.com",
-		Domains: []string{"example.com"},
+		Domains: []string{"example.com", "example.com:80"},
 		Routes: []route.Route{{
 			Match:  prefixmatch("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 			Action: routecluster("nginx-ingress/challenge-service/8009"),
@@ -592,7 +592,7 @@ func TestSSLRedirectOverlay(t *testing.T) {
 		}},
 	}}, []route.VirtualHost{{ // ingress_https
 		Name:    "example.com",
-		Domains: []string{"example.com"},
+		Domains: []string{"example.com", "example.com:443"},
 		Routes: []route.Route{{
 			Match:  prefixmatch("/"), // match all
 			Action: routecluster("default/app-service/8080"),
@@ -689,7 +689,7 @@ func TestIssue257(t *testing.T) {
 
 	assertRDS(t, cc, []route.VirtualHost{{
 		Name:    "kuard.db.gd-ms.com",
-		Domains: []string{"kuard.db.gd-ms.com"},
+		Domains: []string{"kuard.db.gd-ms.com", "kuard.db.gd-ms.com:80"},
 		Routes: []route.Route{{
 			Match:  prefixmatch("/"), // match all
 			Action: routecluster("default/kuard/80"),
@@ -762,7 +762,7 @@ func TestRDSFilter(t *testing.T) {
 				Name: "ingress_http",
 				VirtualHosts: []route.VirtualHost{{ // ingress_http
 					Name:    "example.com",
-					Domains: []string{"example.com"},
+					Domains: []string{"example.com", "example.com:80"},
 					Routes: []route.Route{{
 						Match:  prefixmatch("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 						Action: routecluster("nginx-ingress/challenge-service/8009"),
@@ -784,7 +784,7 @@ func TestRDSFilter(t *testing.T) {
 				Name: "ingress_https",
 				VirtualHosts: []route.VirtualHost{{ // ingress_https
 					Name:    "example.com",
-					Domains: []string{"example.com"},
+					Domains: []string{"example.com", "example.com:443"},
 					Routes: []route.Route{{
 						Match:  prefixmatch("/"), // match all
 						Action: routecluster("default/app-service/8080"),
@@ -830,7 +830,7 @@ func TestWebsocketRoutes(t *testing.T) {
 
 	assertRDS(t, cc, []route.VirtualHost{{
 		Name:    "websocket.hello.world",
-		Domains: []string{"websocket.hello.world"},
+		Domains: []string{"websocket.hello.world", "websocket.hello.world:80"},
 		Routes: []route.Route{{
 			Match:  prefixmatch("/"), // match all
 			Action: websocketroute("default/ws/80"),

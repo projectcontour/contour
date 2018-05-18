@@ -36,7 +36,7 @@ type VirtualHostCache struct {
 // from the vhost from list of ingresses supplied.
 func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*v1beta1.Ingress) {
 	// handle ingress_https (TLS) vhost routes first.
-	vv := virtualhost(vhost)
+	vv := virtualhost(vhost, "443")
 	for _, ing := range ingresses {
 		if !validTLSSpecforVhost(vhost, ing) {
 			continue
@@ -67,7 +67,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 	}
 
 	// now handle ingress_http (non tls) routes.
-	vv = virtualhost(vhost)
+	vv = virtualhost(vhost, "80")
 	for _, i := range ingresses {
 		if !httpAllowed(i) {
 			// skip this vhosts ingress_http route.
@@ -127,7 +127,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 // from the vhost from list of ingresses supplied.
 func (v *VirtualHostCache) recomputevhostIngressRoute(vhost string, routes map[metadata]*ingressroutev1.IngressRoute) {
 	// now handle ingress_http (non tls) routes.
-	vv := virtualhost(vhost)
+	vv := virtualhost(vhost, "80")
 	for _, i := range routes {
 		for _, j := range i.Spec.Routes {
 
@@ -312,9 +312,15 @@ func regexmatch(regex string) route.RouteMatch {
 	}
 }
 
-func virtualhost(hostname string) *route.VirtualHost {
+func virtualhost(hostname, hostport string) *route.VirtualHost {
+	var domains []string
+	if hostname != "*" {
+		domains = []string{hostname, hostname + ":" + hostport}
+	} else {
+		domains = []string{hostname}
+	}
 	return &route.VirtualHost{
 		Name:    hashname(60, hostname),
-		Domains: []string{hostname},
+		Domains: domains,
 	}
 }
