@@ -104,7 +104,7 @@ We've also got [an FAQ][18] for short-answer questions and conceptual stuff that
 
 ## Troubleshooting
 
-If you encounter any problems that the documentation does not address, [file an issue][4].
+If you encounter issues, review the [troubleshooting docs][19], [file an issue][4], or talk to us on the [#contour channel][20] on the Kubernetes Slack server.
 
 ## Contributing
 
@@ -136,3 +136,5 @@ See [the list of releases][6] to find out about feature changes.
 [16]: https://github.com/envoyproxy/envoy/issues/95
 [17]: https://blog.heptio.com/making-it-easy-to-use-envoy-as-a-kubernetes-load-balancer-dde82959f171
 [18]: /FAQ.md
+[19]: /docs/troubleshooting.md
+[20]: https://kubernetes.slack.com/messages/contour
