@@ -36,8 +36,9 @@ import (
 func TestGRPCStreaming(t *testing.T) {
 	var l net.Listener
 
-	// tr is recreated before the start of each test.
+	// tr and et is recreated before the start of each test.
 	var tr *contour.Translator
+	var et *contour.EndpointsTranslator
 
 	newClient := func(t *testing.T) *grpc.ClientConn {
 		cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
@@ -77,7 +78,7 @@ func TestGRPCStreaming(t *testing.T) {
 		},
 		"StreamEndpoints": func(t *testing.T) {
 			// endpoints will be ignored unless there is a matching service.
-			tr.OnAdd(&v1.Service{
+			et.OnAdd(&v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kube-scheduler",
 					Namespace: "kube-system",
@@ -91,7 +92,7 @@ func TestGRPCStreaming(t *testing.T) {
 				},
 			})
 
-			tr.OnAdd(&v1.Endpoints{
+			et.OnAdd(&v1.Endpoints{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kube-scheduler",
 					Namespace: "kube-system",
@@ -202,7 +203,10 @@ func TestGRPCStreaming(t *testing.T) {
 			tr = &contour.Translator{
 				FieldLogger: log,
 			}
-			srv := NewAPI(log, tr)
+			et = &contour.EndpointsTranslator{
+				FieldLogger: log,
+			}
+			srv := NewAPI(log, tr, et)
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)
@@ -289,7 +293,10 @@ func TestGRPCFetching(t *testing.T) {
 			tr := &contour.Translator{
 				FieldLogger: log,
 			}
-			srv := NewAPI(log, tr)
+			et := &contour.EndpointsTranslator{
+				FieldLogger: log,
+			}
+			srv := NewAPI(log, tr, et)
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)

@@ -45,7 +45,6 @@ type Translator struct {
 	logrus.FieldLogger
 
 	ClusterCache
-	ClusterLoadAssignmentCache
 	ListenerCache
 	VirtualHostCache
 
@@ -61,8 +60,6 @@ func (t *Translator) OnAdd(obj interface{}) {
 	switch obj := obj.(type) {
 	case *v1.Service:
 		t.addService(obj)
-	case *v1.Endpoints:
-		t.addEndpoints(obj)
 	case *v1beta1.Ingress:
 		t.addIngress(obj)
 		t.VirtualHostCache.Notify()
@@ -86,13 +83,6 @@ func (t *Translator) OnUpdate(oldObj, newObj interface{}) {
 			return
 		}
 		t.updateService(oldObj, newObj)
-	case *v1.Endpoints:
-		oldObj, ok := oldObj.(*v1.Endpoints)
-		if !ok {
-			t.Errorf("OnUpdate endpoints %#v received invalid oldObj %T; %#v", newObj, oldObj, oldObj)
-			return
-		}
-		t.updateEndpoints(oldObj, newObj)
 	case *v1beta1.Ingress:
 		oldObj, ok := oldObj.(*v1beta1.Ingress)
 		if !ok {
@@ -121,8 +111,6 @@ func (t *Translator) OnDelete(obj interface{}) {
 	switch obj := obj.(type) {
 	case *v1.Service:
 		t.removeService(obj)
-	case *v1.Endpoints:
-		t.removeEndpoints(obj)
 	case *v1beta1.Ingress:
 		t.removeIngress(obj)
 		t.VirtualHostCache.Notify()
@@ -147,23 +135,6 @@ func (t *Translator) updateService(oldsvc, newsvc *v1.Service) {
 
 func (t *Translator) removeService(svc *v1.Service) {
 	t.recomputeService(svc, nil)
-}
-
-func (t *Translator) addEndpoints(e *v1.Endpoints) {
-	t.recomputeClusterLoadAssignment(nil, e)
-}
-
-func (t *Translator) updateEndpoints(oldep, newep *v1.Endpoints) {
-	if len(newep.Subsets) < 1 {
-		// if there are no endpoints in this object, ignore it
-		// to avoid sending a noop notification to watchers.
-		return
-	}
-	t.recomputeClusterLoadAssignment(oldep, newep)
-}
-
-func (t *Translator) removeEndpoints(e *v1.Endpoints) {
-	t.recomputeClusterLoadAssignment(e, nil)
 }
 
 // ingressClass returns the IngressClass

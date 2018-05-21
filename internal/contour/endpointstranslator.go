@@ -1,4 +1,4 @@
-// Copyright © 2017 Heptio
+// Copyright © 2018 Heptio
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -17,23 +17,78 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
+	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
+	_cache "k8s.io/client-go/tools/cache"
 )
 
-// ClusterLoadAssignmentCache manage the contents of the gRPC EDS cache.
-type ClusterLoadAssignmentCache struct {
+// A EndpointsTranslator translates Kubernetes Endpoints objects into Envoy
+// ClusterLoadAssignment objects.
+type EndpointsTranslator struct {
+	logrus.FieldLogger
 	clusterLoadAssignmentCache
 	Cond
 }
 
+func (e *EndpointsTranslator) OnAdd(obj interface{}) {
+	switch obj := obj.(type) {
+	case *v1.Endpoints:
+		e.addEndpoints(obj)
+	default:
+		e.Errorf("OnAdd unexpected type %T: %#v", obj, obj)
+	}
+}
+
+func (e *EndpointsTranslator) OnUpdate(oldObj, newObj interface{}) {
+	switch newObj := newObj.(type) {
+	case *v1.Endpoints:
+		oldObj, ok := oldObj.(*v1.Endpoints)
+		if !ok {
+			e.Errorf("OnUpdate endpoints %#v received invalid oldObj %T; %#v", newObj, oldObj, oldObj)
+			return
+		}
+		e.updateEndpoints(oldObj, newObj)
+	default:
+		e.Errorf("OnUpdate unexpected type %T: %#v", newObj, newObj)
+	}
+}
+
+func (e *EndpointsTranslator) OnDelete(obj interface{}) {
+	switch obj := obj.(type) {
+	case *v1.Endpoints:
+		e.removeEndpoints(obj)
+	case _cache.DeletedFinalStateUnknown:
+		e.OnDelete(obj.Obj) // recurse into ourselves with the tombstoned value
+	default:
+		e.Errorf("OnDelete unexpected type %T: %#v", obj, obj)
+	}
+}
+
+func (e *EndpointsTranslator) addEndpoints(ep *v1.Endpoints) {
+	e.recomputeClusterLoadAssignment(nil, ep)
+}
+
+func (e *EndpointsTranslator) updateEndpoints(oldep, newep *v1.Endpoints) {
+	if len(newep.Subsets) < 1 {
+		// if there are no endpoints in this object, ignore it
+		// to avoid sending a noop notification to watchers.
+		return
+	}
+	e.recomputeClusterLoadAssignment(oldep, newep)
+}
+
+func (e *EndpointsTranslator) removeEndpoints(ep *v1.Endpoints) {
+	e.recomputeClusterLoadAssignment(ep, nil)
+}
+
 // recomputeClusterLoadAssignment recomputes the EDS cache taking into account old and new endpoints.
-func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldep, newep *v1.Endpoints) {
+func (e *EndpointsTranslator) recomputeClusterLoadAssignment(oldep, newep *v1.Endpoints) {
 	// skip computation if either old and new services or endpoints are equal (thus also handling nil)
 	if oldep == newep {
 		return
 	}
 
-	defer cc.Notify()
+	defer e.Notify()
 
 	if oldep == nil {
 		oldep = &v1.Endpoints{
@@ -74,7 +129,7 @@ func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldep, newe
 
 	// iterate all the defined clusters and add or update them.
 	for _, c := range clas {
-		cc.Add(c)
+		e.Add(c)
 	}
 
 	// iterate over the ports in the old spec, remove any that are not
@@ -89,7 +144,7 @@ func (cc *ClusterLoadAssignmentCache) recomputeClusterLoadAssignment(oldep, newe
 			name := p.Name
 			if _, ok := clas[name]; !ok {
 				// port is not present in the list added / updated, so remove it
-				cc.Remove(servicename(oldep.ObjectMeta, name))
+				e.Remove(servicename(oldep.ObjectMeta, name))
 			}
 		}
 	}

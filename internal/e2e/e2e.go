@@ -27,6 +27,7 @@ import (
 	cgrpc "github.com/heptio/contour/internal/grpc"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -55,19 +56,28 @@ func setup(t *testing.T) (cache.ResourceEventHandler, *grpc.ClientConn, func()) 
 	tr := &contour.Translator{
 		FieldLogger: log,
 	}
+	et := &contour.EndpointsTranslator{
+		FieldLogger: log,
+	}
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	check(t, err)
 	var wg sync.WaitGroup
 	wg.Add(1)
-	srv := cgrpc.NewAPI(log, tr)
+	srv := cgrpc.NewAPI(log, tr, et)
 	go func() {
 		defer wg.Done()
 		srv.Serve(l)
 	}()
 	cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
 	check(t, err)
-	return tr, cc, func() {
+
+	reh := &resourceEventHandler{
+		Translator:          tr,
+		EndpointsTranslator: et,
+	}
+
+	return reh, cc, func() {
 		// close client connection
 		cc.Close()
 
@@ -75,6 +85,40 @@ func setup(t *testing.T) (cache.ResourceEventHandler, *grpc.ClientConn, func()) 
 		l.Close()
 		srv.Stop()
 		wg.Wait()
+	}
+}
+
+// resourceEventHandler composes a contour.Translator and a contour.EndpointsTranslator
+// into a single ResourceEventHandler type.
+type resourceEventHandler struct {
+	*contour.Translator
+	*contour.EndpointsTranslator
+}
+
+func (r *resourceEventHandler) OnAdd(obj interface{}) {
+	switch obj.(type) {
+	case *v1.Endpoints:
+		r.EndpointsTranslator.OnAdd(obj)
+	default:
+		r.Translator.OnAdd(obj)
+	}
+}
+
+func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
+	switch newObj.(type) {
+	case *v1.Endpoints:
+		r.EndpointsTranslator.OnUpdate(oldObj, newObj)
+	default:
+		r.Translator.OnUpdate(oldObj, newObj)
+	}
+}
+
+func (r *resourceEventHandler) OnDelete(obj interface{}) {
+	switch obj.(type) {
+	case *v1.Endpoints:
+		r.EndpointsTranslator.OnDelete(obj)
+	default:
+		r.Translator.OnDelete(obj)
 	}
 }
 
