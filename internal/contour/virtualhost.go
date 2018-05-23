@@ -58,6 +58,9 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 				})
 			}
 		}
+
+		vv.ResponseHeadersToAdd = parseAnnotationAddHeader(ing.Annotations)
+		vv.ResponseHeadersToRemove = parseAnnotationRemoveHeader(ing.Annotations)
 	}
 	if len(vv.Routes) > 0 {
 		sort.Stable(sort.Reverse(longestRouteFirst(vv.Routes)))
@@ -114,6 +117,9 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 				vv.Routes = append(vv.Routes, r)
 			}
 		}
+
+		vv.ResponseHeadersToAdd = parseAnnotationAddHeader(i.Annotations)
+		vv.ResponseHeadersToRemove = parseAnnotationRemoveHeader(i.Annotations)
 	}
 	if len(vv.Routes) > 0 {
 		sort.Stable(sort.Reverse(longestRouteFirst(vv.Routes)))

@@ -15,10 +15,13 @@ package contour
 
 import (
 	"fmt"
+	"net/textproto"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/gogo/protobuf/types"
 	"k8s.io/api/extensions/v1beta1"
 )
@@ -32,6 +35,8 @@ const (
 	annotationNumRetries      = "contour.heptio.com/num-retries"
 	annotationPerTryTimeout   = "contour.heptio.com/per-try-timeout"
 	annotationWebsocketRoutes = "contour.heptio.com/websocket-routes"
+	annotationAddHeader       = "contour.heptio.com/add-header-"
+	annotationRemoveHeader    = "contour.heptio.com/remove-header-"
 
 	// By default envoy applies a 15 second timeout to all backend requests.
 	// The explicit value 0 turns off the timeout, implying "never time out"
@@ -116,4 +121,59 @@ func websocketRoutes(i *v1beta1.Ingress) map[string]*types.BoolValue {
 		}
 	}
 	return routes
+}
+
+// parseAnnotationAddHeader extracts http headers from annotations. Header keys are encoded within
+// annotation keys with a known prefix, annotation values are header values. If no valid keys are
+// present then an empty slice is returned.
+func parseAnnotationAddHeader(annotations map[string]string) []*core.HeaderValueOption {
+	var headers []*core.HeaderValueOption
+	for k, v := range annotations {
+		header := strings.ToLower(k)
+		if !strings.HasPrefix(header, annotationAddHeader) {
+			continue
+		}
+		header = strings.TrimPrefix(header, annotationAddHeader)
+		if len(header) == 0 {
+			continue
+		}
+		if len(v) == 0 {
+			continue
+		}
+		header = textproto.CanonicalMIMEHeaderKey(header)
+		headerValueOption := &core.HeaderValueOption{
+			Header: &core.HeaderValue{
+				Key:   header,
+				Value: v,
+			},
+		}
+		headers = append(headers, headerValueOption)
+	}
+	sort.Slice(headers, func(i, j int) bool {
+		if headers[i].Header.Key < headers[j].Header.Key {
+			return true
+		}
+		return false
+	})
+	return headers
+}
+
+// parseAnnotationRemoveHeader returns a slice of headers to remove. Headers are encoded within the
+// annotation key, the annotation value is ignored. If no valid keys are present then an empty slice
+// is returned.
+func parseAnnotationRemoveHeader(annotations map[string]string) []string {
+	var headers []string
+	for k := range annotations {
+		header := strings.ToLower(k)
+		if !strings.HasPrefix(header, annotationRemoveHeader) {
+			continue
+		}
+		header = strings.TrimPrefix(header, annotationRemoveHeader)
+		if len(header) == 0 {
+			continue
+		}
+		headers = append(headers, textproto.CanonicalMIMEHeaderKey(header))
+	}
+	sort.Strings(headers)
+	return headers
 }
