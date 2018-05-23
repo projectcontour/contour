@@ -682,7 +682,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			ingress_http: []proto.Message{
 				&route.VirtualHost{
 					Name:    "httpbin.org",
-					Domains: []string{"httpbin.org"},
+					Domains: []string{"httpbin.org", "httpbin.org:80"},
 					Routes: []route.Route{{
 						Match:  prefixmatch("/"), // match all
 						Action: clusteraction("default/httpbin-org/80"),
