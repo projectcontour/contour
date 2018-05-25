@@ -66,10 +66,21 @@ type ListenerCache struct {
 	// If not set, defaults to DEFAULT_HTTPS_ACCESS_LOG.
 	HTTPSAccessLog string
 
-	// UseProxyProto configurs all listeners to expect a PROXY protocol
+	// UseProxyProto configures all listeners to expect a PROXY protocol
 	// V1 header on new connections.
 	// If not set, defaults to false.
 	UseProxyProto bool
+
+	// DefaultTLSSecretName allows definition of a default TLS secret,
+	// a secret to be applied to Ingress specs with a TLS section but
+	// no secretName specified.
+	// If not set, defaults to ""
+	DefaultTLSSecretName string
+
+	// DefaultTLSSecretNamespace defines the namespace used to locate
+	// the default TLS secret.
+	// If not set, defaults to ""
+	DefaultTLSSecretNamespace string
 
 	listenerCache
 	Cond
@@ -224,7 +235,12 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 			continue
 		}
 		for _, tls := range i.Spec.TLS {
-			secret, ok := secrets[metadata{name: tls.SecretName, namespace: i.Namespace}]
+			secretName, secretNamespace := tls.SecretName, i.Namespace
+			if secretName == "" && lc.DefaultTLSSecretName != "" {
+				secretName = lc.DefaultTLSSecretName
+				secretNamespace = lc.DefaultTLSSecretNamespace
+			}
+			secret, ok := secrets[metadata{name: secretName, namespace: secretNamespace}]
 			if !ok {
 				// no secret for this ingress yet, skip it
 				continue

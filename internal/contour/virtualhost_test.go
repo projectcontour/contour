@@ -39,12 +39,14 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 	}
 	tests := map[string]struct {
 		vhost         string
+		secretname    string
 		ingresses     map[metadata]*v1beta1.Ingress
 		ingress_http  []proto.Message
 		ingress_https []proto.Message
 	}{
 		"default backend": {
-			vhost: "*",
+			vhost:      "*",
+			secretname: "default",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "simple",
@@ -66,7 +68,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			ingress_https: []proto.Message{},
 		},
 		"name based vhost": {
-			vhost: "httpbin.org",
+			vhost:      "httpbin.org",
+			secretname: "",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
@@ -92,7 +95,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			ingress_https: []proto.Message{},
 		},
 		"tls": {
-			vhost: "httpbin.org",
+			vhost:      "httpbin.org",
+			secretname: "",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
@@ -130,8 +134,48 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				},
 			},
 		},
+		"tls, default secret": {
+			vhost:      "httpbin.org",
+			secretname: "default",
+			ingresses: im([]*v1beta1.Ingress{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httpbin",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					TLS: []v1beta1.IngressTLS{{
+						Hosts: []string{"httpbin.org"},
+					}},
+					Rules: []v1beta1.IngressRule{{
+						Host:             "httpbin.org",
+						IngressRuleValue: ingressrulevalue(backend("httpbin-org", intstr.FromInt(80))),
+					}},
+				},
+			}}),
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "httpbin.org",
+					Domains: []string{"httpbin.org", "httpbin.org:80"},
+					Routes: []route.Route{{
+						Match:  prefixmatch("/"), // match all
+						Action: clusteraction("default/httpbin-org/80"),
+					}},
+				},
+			},
+			ingress_https: []proto.Message{
+				&route.VirtualHost{
+					Name:    "httpbin.org",
+					Domains: []string{"httpbin.org", "httpbin.org:443"},
+					Routes: []route.Route{{
+						Match:  prefixmatch("/"), // match all
+						Action: clusteraction("default/httpbin-org/80"),
+					}},
+				},
+			},
+		},
 		"tls, no http": {
-			vhost: "httpbin.org",
+			vhost:      "httpbin.org",
+			secretname: "",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
@@ -164,7 +208,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			},
 		},
 		"tls, force https": {
-			vhost: "httpbin.org",
+			vhost:      "httpbin.org",
+			secretname: "",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
@@ -206,7 +251,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			},
 		},
 		"regex vhost without match characters": {
-			vhost: "httpbin.org",
+			vhost:      "httpbin.org",
+			secretname: "",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
@@ -239,7 +285,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			ingress_https: []proto.Message{},
 		},
 		"regex vhost with match characters": {
-			vhost: "httpbin.org",
+			vhost:      "httpbin.org",
+			secretname: "",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
@@ -272,7 +319,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			ingress_https: []proto.Message{},
 		},
 		"named service port": {
-			vhost: "httpbin.org",
+			vhost:      "httpbin.org",
+			secretname: "",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
@@ -298,7 +346,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			ingress_https: []proto.Message{},
 		},
 		"multiple routes": {
-			vhost: "httpbin.org",
+			vhost:      "httpbin.org",
+			secretname: "",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
@@ -337,7 +386,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			ingress_https: []proto.Message{},
 		},
 		"multiple rules (httpbin.org)": {
-			vhost: "httpbin.org",
+			vhost:      "httpbin.org",
+			secretname: "",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
@@ -366,7 +416,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			ingress_https: []proto.Message{},
 		},
 		"multiple rules (admin.httpbin.org)": {
-			vhost: "admin.httpbin.org",
+			vhost:      "admin.httpbin.org",
+			secretname: "",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin",
@@ -395,7 +446,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			ingress_https: []proto.Message{},
 		},
 		"vhost name exceeds 60 chars": { // heptio/contour#25
-			vhost: "my-very-very-long-service-host-name.subdomain.boring-dept.my.company",
+			vhost:      "my-very-very-long-service-host-name.subdomain.boring-dept.my.company",
+			secretname: "",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-service-name",
@@ -421,7 +473,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			ingress_https: []proto.Message{},
 		},
 		"second ingress object extends an existing vhost": {
-			vhost: "httpbin.org",
+			vhost:      "httpbin.org",
+			secretname: "",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin-admin",
@@ -477,7 +530,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 		// kube-lego uses a single vhost in its own namespace to insert its
 		// callback route for let's encrypt support.
 		"kube-lego style extend vhost definitions": {
-			vhost: "httpbin.davecheney.com",
+			vhost:      "httpbin.davecheney.com",
+			secretname: "",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kube-lego-nginx",
@@ -541,7 +595,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			ingress_https: []proto.Message{},
 		},
 		"IngressRuleValue without host should become the default vhost": { // heptio/contour#101
-			vhost: "*",
+			vhost:      "*",
+			secretname: "",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "hello",
@@ -576,7 +631,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			ingress_https: []proto.Message{},
 		},
 		"websocket routes": {
-			vhost: "echo.websocket.org",
+			vhost:      "echo.websocket.org",
+			secretname: "",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "echo",
@@ -612,7 +668,8 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			ingress_https: []proto.Message{},
 		},
 		"websocket routes, tls": {
-			vhost: "echo.websocket.org",
+			vhost:      "echo.websocket.org",
+			secretname: "",
 			ingresses: im([]*v1beta1.Ingress{{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "echo",
@@ -670,17 +727,17 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			tr := &Translator{
 				FieldLogger: log,
 			}
-			tr.recomputevhost(tc.vhost, tc.ingresses)
+			tr.recomputevhost(tc.vhost, tc.secretname, tc.ingresses)
 			got := contents(&tr.VirtualHostCache.HTTP)
 			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_http, got) {
-				t.Fatalf("recomputevhost(%v):\n (ingress_http) want:\n%+v\n got:\n%+v", tc.vhost, tc.ingress_http, got)
+				t.Fatalf(name, "recomputevhost(%v):\n (ingress_http) want:\n%+v\n got:\n%+v", tc.vhost, tc.ingress_http, got)
 			}
 
 			got = contents(&tr.VirtualHostCache.HTTPS)
 			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_https, got) {
-				t.Fatalf("recomputevhost(%v):\n (ingress_https) want:\n%#v\ngot:\n%#v", tc.vhost, tc.ingress_https, got)
+				t.Fatalf(name, "recomputevhost(%v):\n (ingress_https) want:\n%#v\ngot:\n%#v", tc.vhost, tc.ingress_https, got)
 			}
 		})
 	}
@@ -688,19 +745,22 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 
 func TestValidTLSSpecforVhost(t *testing.T) {
 	tests := map[string]struct {
-		vhost string
-		ing   v1beta1.Ingress
-		want  bool
+		vhost      string
+		secretname string
+		ing        v1beta1.Ingress
+		want       bool
 	}{
 		"default vhost": {
-			vhost: "*",
+			vhost:      "*",
+			secretname: "",
 			ing: v1beta1.Ingress{
 				Spec: v1beta1.IngressSpec{},
 			},
 			want: false,
 		},
 		"tls enabled": {
-			vhost: "httpbin.davecheney.com",
+			vhost:      "httpbin.davecheney.com",
+			secretname: "",
 			ing: v1beta1.Ingress{
 				Spec: v1beta1.IngressSpec{
 					TLS: []v1beta1.IngressTLS{{
@@ -712,7 +772,8 @@ func TestValidTLSSpecforVhost(t *testing.T) {
 			want: true,
 		},
 		"wrong hostname": {
-			vhost: "httpbin.davecheney.com",
+			vhost:      "httpbin.davecheney.com",
+			secretname: "",
 			ing: v1beta1.Ingress{
 				Spec: v1beta1.IngressSpec{
 					TLS: []v1beta1.IngressTLS{{
@@ -723,8 +784,9 @@ func TestValidTLSSpecforVhost(t *testing.T) {
 			},
 			want: false,
 		},
-		"missing secret spec": {
-			vhost: "httpbin.davecheney.com",
+		"missing secret spec and default secret": {
+			vhost:      "httpbin.davecheney.com",
+			secretname: "",
 			ing: v1beta1.Ingress{
 				Spec: v1beta1.IngressSpec{
 					TLS: []v1beta1.IngressTLS{{
@@ -734,13 +796,33 @@ func TestValidTLSSpecforVhost(t *testing.T) {
 			},
 			want: false,
 		},
+		"tls enabled by default secret": {
+			vhost:      "httpbin.davecheney.com",
+			secretname: "default",
+			ing: v1beta1.Ingress{
+				Spec: v1beta1.IngressSpec{
+					TLS: []v1beta1.IngressTLS{{
+						Hosts: []string{"httpbin.davecheney.com"},
+					}},
+				},
+			},
+			want: true,
+		},
+		"default vhost with default secret": {
+			vhost:      "*",
+			secretname: "default",
+			ing: v1beta1.Ingress{
+				Spec: v1beta1.IngressSpec{},
+			},
+			want: false,
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := validTLSSpecforVhost(tc.vhost, &tc.ing)
+			got := validTLSSpecforVhost(tc.vhost, tc.secretname, &tc.ing)
 			if got != tc.want {
-				t.Fatal("got", got, "want", tc.want)
+				t.Fatal(name, "got", got, "want", tc.want)
 			}
 		})
 	}

@@ -34,11 +34,11 @@ type VirtualHostCache struct {
 
 // recomputevhost recomputes the ingress_http (HTTP) and ingress_https (HTTPS) record
 // from the vhost from list of ingresses supplied.
-func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*v1beta1.Ingress) {
+func (v *VirtualHostCache) recomputevhost(vhost, secretname string, ingresses map[metadata]*v1beta1.Ingress) {
 	// handle ingress_https (TLS) vhost routes first.
 	vv := virtualhost(vhost, "443")
 	for _, ing := range ingresses {
-		if !validTLSSpecforVhost(vhost, ing) {
+		if !validTLSSpecforVhost(vhost, secretname, ing) {
 			continue
 		}
 		wr := websocketRoutes(ing)
@@ -229,9 +229,9 @@ func actionroute(namespace string, be []ingressroutev1.Service) *route.Route_Rou
 
 // validTLSSpecForVhost returns if this ingress object
 // contains a TLS spec that matches the vhost supplied,
-func validTLSSpecforVhost(vhost string, i *v1beta1.Ingress) bool {
+func validTLSSpecforVhost(vhost, secretname string, i *v1beta1.Ingress) bool {
 	for _, tls := range i.Spec.TLS {
-		if tls.SecretName == "" {
+		if tls.SecretName == "" && secretname == "" {
 			// not a valid TLS spec without a secret for the cert.
 			continue
 		}

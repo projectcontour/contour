@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/heptio/contour/internal/debug"
 	clientset "github.com/heptio/contour/internal/generated/clientset/versioned"
@@ -88,6 +89,7 @@ func main() {
 	serve.Flag("debug port", "port the /debug/pprof endpoint will bind too").Default("8000").IntVar(&debug.Port)
 
 	// translator configuration
+	q := qualifiedName{&t.DefaultTLSSecretName, &t.DefaultTLSSecretNamespace}
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&t.HTTPAccessLog)
 	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&t.HTTPSAccessLog)
 	serve.Flag("envoy-http-address", "Envoy HTTP listener address").StringVar(&t.HTTPAddress)
@@ -96,6 +98,7 @@ func main() {
 	serve.Flag("envoy-https-port", "Envoy HTTPS listener port").IntVar(&t.HTTPSPort)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&t.UseProxyProto)
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&t.IngressClass)
+	serve.Flag("default-tls-secret", "Default TLS secret, <namespace>/<name>").SetValue(&q)
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
@@ -181,4 +184,28 @@ func check(err error) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+type qualifiedName struct {
+	name, namespace *string
+}
+
+// Set values the object from a string or errors.
+func (q *qualifiedName) Set(value string) error {
+	parts := strings.SplitN(strings.TrimSpace(value), "/", 2)
+	switch {
+	case len(parts) != 2:
+		return fmt.Errorf("expected '<namespace>/<name>' found '%s'", value)
+	case parts[0] == "" || parts[1] == "":
+		return fmt.Errorf("expected '<namespace>/<name>' got '%s'", value)
+	}
+	*q.namespace, *q.name = parts[0], parts[1]
+	return nil
+}
+
+func (q *qualifiedName) String() string {
+	if q.namespace != nil && q.name != nil {
+		return *q.namespace + "/" + *q.name
+	}
+	return ""
 }
