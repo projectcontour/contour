@@ -38,7 +38,7 @@ const (
 )
 
 // NewAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
-func NewAPI(log logrus.FieldLogger, t *contour.Translator) *grpc.Server {
+func NewAPI(log logrus.FieldLogger, t *contour.Translator, endpoints cache) *grpc.Server {
 	opts := []grpc.ServerOption{
 		// By default the Go grpc library defaults to a value of ~100 streams per
 		// connection. This number is likely derived from the HTTP/2 spec:
@@ -49,7 +49,7 @@ func NewAPI(log logrus.FieldLogger, t *contour.Translator) *grpc.Server {
 		grpc.MaxConcurrentStreams(grpcMaxConcurrentStreams),
 	}
 	g := grpc.NewServer(opts...)
-	s := newgrpcServer(log, t)
+	s := newgrpcServer(log, t, endpoints)
 	v2.RegisterClusterDiscoveryServiceServer(g, s)
 	v2.RegisterEndpointDiscoveryServiceServer(g, s)
 	v2.RegisterListenerDiscoveryServiceServer(g, s)
@@ -63,7 +63,7 @@ type grpcServer struct {
 	resources map[string]resource // registered resource types
 }
 
-func newgrpcServer(log logrus.FieldLogger, t *contour.Translator) *grpcServer {
+func newgrpcServer(log logrus.FieldLogger, t *contour.Translator, endpoints cache) *grpcServer {
 	return &grpcServer{
 		FieldLogger: log,
 		resources: map[string]resource{
@@ -71,7 +71,7 @@ func newgrpcServer(log logrus.FieldLogger, t *contour.Translator) *grpcServer {
 				cache: &t.ClusterCache,
 			},
 			endpointType: &EDS{
-				cache: &t.ClusterLoadAssignmentCache,
+				cache: endpoints,
 			},
 			listenerType: &LDS{
 				cache: &t.ListenerCache,

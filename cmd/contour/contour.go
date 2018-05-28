@@ -130,10 +130,16 @@ func main() {
 
 		wl := log.WithField("context", "watch")
 		k8s.WatchServices(&g, client, wl, buf)
-		k8s.WatchEndpoints(&g, client, wl, buf)
 		k8s.WatchIngress(&g, client, wl, buf)
 		k8s.WatchSecrets(&g, client, wl, buf)
 		k8s.WatchIngressRoutes(&g, contourClient, wl, buf)
+
+		// Endpoints updates are handled directly by the EndpointsTranslator
+		// due to their high update rate and their orthogonal nature.
+		et := &contour.EndpointsTranslator{
+			FieldLogger: log.WithField("context", "endpointstranslator"),
+		}
+		k8s.WatchEndpoints(&g, client, wl, et)
 
 		g.Add(debug.Start)
 
@@ -145,7 +151,7 @@ func main() {
 				log.Errorf("could not listen on %s: %v", addr, err)
 				return // TODO(dfc) should return the error not log it
 			}
-			s := grpc.NewAPI(log, t)
+			s := grpc.NewAPI(log, t, et)
 			log.Println("started")
 			defer log.Println("stopped")
 			s.Serve(l)
