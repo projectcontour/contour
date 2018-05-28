@@ -14,9 +14,76 @@
 package grpc
 
 import (
+	"context"
+	"fmt"
+	"io"
 	"reflect"
 	"testing"
+
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/gogo/protobuf/proto"
 )
+
+func TestXDSHandlerStream(t *testing.T) {
+	log := testLogger(t)
+	tests := map[string]struct {
+		xh     xdsHandler
+		stream grpcStream
+		want   error
+	}{
+		"recv returns error immediately": {
+			xh: xdsHandler{FieldLogger: log},
+			stream: &mockStream{
+				context: context.Background,
+				recv: func() (*v2.DiscoveryRequest, error) {
+					return nil, io.EOF
+				},
+			},
+			want: io.EOF,
+		},
+		"no registered typeURL": {
+			xh: xdsHandler{FieldLogger: log},
+			stream: &mockStream{
+				context: context.Background,
+				recv: func() (*v2.DiscoveryRequest, error) {
+					return &v2.DiscoveryRequest{
+						TypeUrl: "com.heptio.potato",
+					}, nil
+				},
+			},
+			want: fmt.Errorf("no resource registered for typeURL %q", "com.heptio.potato"),
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tc.xh.stream(tc.stream)
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("expected: %v, got: %v", tc.want, got)
+			}
+		})
+	}
+}
+
+type mockStream struct {
+	context func() context.Context
+	send    func(*v2.DiscoveryResponse) error
+	recv    func() (*v2.DiscoveryRequest, error)
+}
+
+func (m *mockStream) Context() context.Context              { return m.context() }
+func (m *mockStream) Send(resp *v2.DiscoveryResponse) error { return m.send(resp) }
+func (m *mockStream) Recv() (*v2.DiscoveryRequest, error)   { return m.recv() }
+
+type mockResource struct {
+	values   func(func(string) bool) []proto.Message
+	register func(chan int, int)
+	typeurl  func() string
+}
+
+func (m *mockResource) Values(fn func(string) bool) []proto.Message { return m.values(fn) }
+func (m *mockResource) Register(ch chan int, last int)              { m.register(ch, last) }
+func (m *mockResource) TypeURL() string                             { return m.typeurl() }
 
 func TestToFilter(t *testing.T) {
 	tests := map[string]struct {
