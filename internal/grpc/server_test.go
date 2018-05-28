@@ -77,21 +77,6 @@ func TestGRPCStreaming(t *testing.T) {
 			checktimeout(t, stream)         // check that the second receive times out
 		},
 		"StreamEndpoints": func(t *testing.T) {
-			// endpoints will be ignored unless there is a matching service.
-			et.OnAdd(&v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "kube-scheduler",
-					Namespace: "kube-system",
-				},
-				Spec: v1.ServiceSpec{
-					Ports: []v1.ServicePort{{
-						Protocol:   "TCP",
-						Port:       80,
-						TargetPort: intstr.FromInt(6502),
-					}},
-				},
-			})
-
 			et.OnAdd(&v1.Endpoints{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kube-scheduler",
