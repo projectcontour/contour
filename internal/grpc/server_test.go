@@ -16,7 +16,6 @@ package grpc
 import (
 	"context"
 	"net"
-	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -356,52 +355,4 @@ type testWriter struct {
 func (t *testWriter) Write(buf []byte) (int, error) {
 	t.Logf("%s", buf)
 	return len(buf), nil
-}
-
-func TestToFilter(t *testing.T) {
-	tests := map[string]struct {
-		names []string
-		input []string
-		want  []string
-	}{
-		"empty names": {
-			names: nil,
-			input: []string{"a", "b", "c"},
-			want:  []string{"a", "b", "c"},
-		},
-		"empty input": {
-			names: []string{"a", "b", "c"},
-			input: nil,
-			want:  []string{},
-		},
-		"fully matching filter": {
-			names: []string{"a", "b", "c"},
-			input: []string{"a", "b", "c"},
-			want:  []string{"a", "b", "c"},
-		},
-		"non matching filter": {
-			names: []string{"d", "e"},
-			input: []string{"a", "b", "c"},
-			want:  []string{},
-		},
-		"partially matching filter": {
-			names: []string{"c", "e"},
-			input: []string{"a", "b", "c", "d"},
-			want:  []string{"c"},
-		},
-	}
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := []string{}
-			filter := toFilter(tc.names)
-			for _, i := range tc.input {
-				if filter(i) {
-					got = append(got, i)
-				}
-			}
-			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("expected: %v, got: %v", tc.want, got)
-			}
-		})
-	}
 }
