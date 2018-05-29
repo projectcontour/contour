@@ -24,6 +24,45 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
+func TestXDSHandlerFetch(t *testing.T) {
+	log := testLogger(t)
+	tests := map[string]struct {
+		xh   xdsHandler
+		req  *v2.DiscoveryRequest
+		want error
+	}{
+		"no registered typeURL": {
+			xh:   xdsHandler{FieldLogger: log},
+			req:  &v2.DiscoveryRequest{TypeUrl: "com.heptio.potato"},
+			want: fmt.Errorf("no resource registered for typeURL %q", "com.heptio.potato"),
+		},
+		"failed to convert values to any": {
+			xh: xdsHandler{
+				FieldLogger: log,
+				resources: map[string]resource{
+					"com.heptio.potato": &mockResource{
+						values: func(fn func(string) bool) []proto.Message {
+							return []proto.Message{nil}
+						},
+						typeurl: func() string { return "com.heptio.potato" },
+					},
+				},
+			},
+			req:  &v2.DiscoveryRequest{TypeUrl: "com.heptio.potato"},
+			want: fmt.Errorf("proto: Marshal called with nil"),
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, got := tc.xh.fetch(tc.req)
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("expected: %v, got: %v", tc.want, got)
+			}
+		})
+	}
+}
+
 func TestXDSHandlerStream(t *testing.T) {
 	log := testLogger(t)
 	tests := map[string]struct {
@@ -52,6 +91,87 @@ func TestXDSHandlerStream(t *testing.T) {
 				},
 			},
 			want: fmt.Errorf("no resource registered for typeURL %q", "com.heptio.potato"),
+		},
+		"failed to convert values to any": {
+			xh: xdsHandler{
+				FieldLogger: log,
+				resources: map[string]resource{
+					"com.heptio.potato": &mockResource{
+						register: func(ch chan int, i int) {
+							ch <- i + 1
+						},
+						values: func(fn func(string) bool) []proto.Message {
+							return []proto.Message{nil}
+						},
+					},
+				},
+			},
+			stream: &mockStream{
+				context: context.Background,
+				recv: func() (*v2.DiscoveryRequest, error) {
+					return &v2.DiscoveryRequest{
+						TypeUrl: "com.heptio.potato",
+					}, nil
+				},
+			},
+			want: fmt.Errorf("proto: Marshal called with nil"),
+		},
+		"failed to send": {
+			xh: xdsHandler{
+				FieldLogger: log,
+				resources: map[string]resource{
+					"com.heptio.potato": &mockResource{
+						register: func(ch chan int, i int) {
+							ch <- i + 1
+						},
+						values: func(fn func(string) bool) []proto.Message {
+							return []proto.Message{new(v2.ClusterLoadAssignment)}
+						},
+						typeurl: func() string { return "com.heptio.potato" },
+					},
+				},
+			},
+			stream: &mockStream{
+				context: context.Background,
+				recv: func() (*v2.DiscoveryRequest, error) {
+					return &v2.DiscoveryRequest{
+						TypeUrl: "com.heptio.potato",
+					}, nil
+				},
+				send: func(resp *v2.DiscoveryResponse) error {
+					return io.EOF
+				},
+			},
+			want: io.EOF,
+		},
+		"context canceled": {
+			xh: xdsHandler{
+				FieldLogger: log,
+				resources: map[string]resource{
+					"com.heptio.potato": &mockResource{
+						register: func(ch chan int, i int) {
+							// do nothing
+						},
+					},
+				},
+			},
+			stream: &mockStream{
+				context: func() context.Context {
+					ctx := context.Background()
+					ctx, cancel := context.WithCancel(ctx)
+					cancel()
+					return ctx
+				},
+				recv: func() (*v2.DiscoveryRequest, error) {
+					return &v2.DiscoveryRequest{
+						TypeUrl: "com.heptio.potato",
+					}, nil
+				},
+				send: func(resp *v2.DiscoveryResponse) error {
+					return io.EOF
+				},
+			},
+			want: fmt.Errorf("context canceled"),
 		},
 	}
 
