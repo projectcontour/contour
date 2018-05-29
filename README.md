@@ -70,27 +70,12 @@ NAME      CLUSTER-IP     EXTERNAL-IP                                            
 contour   10.106.53.14   a47761ccbb9ce11e7b27f023b7e83d33-2036788482.ap-southeast-2.elb.amazonaws.com   80:30274/TCP   3h        app=contour
 ```
 
-On Minikube:
-```
-$ minikube service -n heptio-contour contour --url
-http://192.168.99.100:30588
-```
-
 ## Configuring DNS
 
 How you configure DNS depends on your platform:
 
 - On AWS, create a CNAME record that maps the host in your Ingress object to the ELB address.
 - If you have an IP address instead (on GCE, for example), create an A record.
-- On Minikube, you can fake DNS by editing `/etc/hosts` or you can use the provided example and not have to modify dns on your local machine.
-
-Run:
-
-```
-$ kubectl apply -f https://j.hept.io/contour-kuard-minikube-example
-```
-
-This example yaml specifies `kuard.192.168.99.100.nip.io` as a specific ingress backend for kuard. It uses nip.io and the minikube ip address to have kuard only respond to http://kuard.192.168.99.100.nip.io. Once that is applied you can visit http://kuard.192.168.99.100.nip.io and see the kuard example application.
 
 ### More information and documentation
 
