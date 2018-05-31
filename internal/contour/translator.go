@@ -253,7 +253,6 @@ func (t *Translator) updateIngressRoute(oldIng, newIng *ingressroutev1.IngressRo
 
 type translatorCache struct {
 	ingresses map[metadata]*v1beta1.Ingress
-	endpoints map[metadata]*v1.Endpoints
 	services  map[metadata]*v1.Service
 	routes    map[metadata]*ingressroutev1.IngressRoute
 
@@ -276,11 +275,6 @@ func (t *translatorCache) OnAdd(obj interface{}) {
 			t.services = make(map[metadata]*v1.Service)
 		}
 		t.services[metadata{name: obj.Name, namespace: obj.Namespace}] = obj
-	case *v1.Endpoints:
-		if t.endpoints == nil {
-			t.endpoints = make(map[metadata]*v1.Endpoints)
-		}
-		t.endpoints[metadata{name: obj.Name, namespace: obj.Namespace}] = obj
 	case *v1beta1.Ingress:
 		if t.ingresses == nil {
 			t.ingresses = make(map[metadata]*v1beta1.Ingress)
@@ -351,8 +345,6 @@ func (t *translatorCache) OnDelete(obj interface{}) {
 	switch obj := obj.(type) {
 	case *v1.Service:
 		delete(t.services, metadata{name: obj.Name, namespace: obj.Namespace})
-	case *v1.Endpoints:
-		delete(t.endpoints, metadata{name: obj.Name, namespace: obj.Namespace})
 	case *v1beta1.Ingress:
 		md := metadata{name: obj.Name, namespace: obj.Namespace}
 		delete(t.ingresses, md)
