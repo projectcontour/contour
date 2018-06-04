@@ -16,6 +16,8 @@ package envoy
 import (
 	"bytes"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestConfigWriter_WriteYAML(t *testing.T) {
@@ -24,7 +26,6 @@ func TestConfigWriter_WriteYAML(t *testing.T) {
 		want string
 	}{
 		"default configuration": {
-			ConfigWriter: ConfigWriter{},
 			want: `dynamic_resources:
   lds_config:
     api_config_source:
@@ -61,44 +62,6 @@ static_resources:
           max_pending_requests: 100000
           max_requests: 60000000
           max_retries: 50
-  - name: service_stats
-    connect_timeout: 0.250s
-    type: LOGICAL_DNS
-    lb_policy: ROUND_ROBIN
-    hosts:
-      - socket_address:
-          protocol: TCP
-          address: 127.0.0.1
-          port_value: 9001
-  listeners:
-    - address:
-        socket_address:
-          protocol: TCP
-          address: 0.0.0.0
-          port_value: 8002
-      filter_chains:
-        - filters:
-            - name: envoy.http_connection_manager
-              config:
-                codec_type: AUTO
-                stat_prefix: stats
-                route_config:
-                  virtual_hosts:
-                    - name: backend
-                      domains:
-                        - "*"
-                      routes:
-                        - match:
-                            prefix: /stats
-                          route:
-                            cluster: service_stats
-                http_filters:
-                  - name: envoy.health_check
-                    config:
-                      endpoint: "/healthz"
-                      pass_through_mode: false
-                  - name: envoy.router
-                    config:
 admin:
   access_log_path: /dev/null
   address:
@@ -209,18 +172,13 @@ admin:
 		t.Run(name, func(t *testing.T) {
 			var buf bytes.Buffer
 			err := tc.ConfigWriter.WriteYAML(&buf)
-			checkErr(t, err)
+			if err != nil {
+				t.Fatal(err)
+			}
 			got := buf.String()
-			if tc.want != got {
-				t.Errorf("%#v: want: %s\n, got: %s", tc.ConfigWriter, tc.want, got)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
 			}
 		})
-	}
-}
-
-func checkErr(t *testing.T, err error) {
-	t.Helper()
-	if err != nil {
-		t.Fatal(err)
 	}
 }

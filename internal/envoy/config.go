@@ -108,7 +108,7 @@ static_resources:
           max_pending_requests: 100000
           max_requests: 60000000
           max_retries: 50
-  - name: service_stats
+{{ if .StatsdEnabled }}  - name: service_stats
     connect_timeout: 0.250s
     type: LOGICAL_DNS
     lb_policy: ROUND_ROBIN
@@ -146,7 +146,7 @@ static_resources:
                       pass_through_mode: false
                   - name: envoy.router
                     config:
-{{ if .StatsdEnabled }}stats_sinks:
+stats_sinks:
   - name: envoy.statsd
     config:
       address:
