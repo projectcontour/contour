@@ -14,7 +14,7 @@
 package k8s
 
 import (
-	"github.com/heptio/contour/internal/workgroup"
+	"github.com/heptio/workgroup"
 	"github.com/sirupsen/logrus"
 
 	"k8s.io/client-go/tools/cache"
@@ -45,7 +45,10 @@ func NewBuffer(g *workgroup.Group, rh cache.ResourceEventHandler, log logrus.Fie
 		StdLogger: log.WithField("context", "buffer"),
 		rh:        rh,
 	}
-	g.Add(buf.loop)
+	g.Add(func(stop <-chan struct{}) error {
+		buf.loop(stop)
+		return nil
+	})
 	return buf
 }
 

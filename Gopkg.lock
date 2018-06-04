@@ -119,6 +119,12 @@
   revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
+  name = "github.com/heptio/workgroup"
+  packages = ["."]
+  revision = "905fccf41a08323fdad6a1bd277290fdc54d92c3"
+  version = "v0.8.0-beta.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/howeyc/gopass"
   packages = ["."]
@@ -508,6 +514,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "72b22b97f822eefe14652f9467510effe10fef0f814a39487378de69409ab9da"
+  inputs-digest = "b8ed62d2fbe8083f5d7e479ff9db0cc507d3cc2e9fbe621099930cd22b9a1d25"
   solver-name = "gps-cdcl"
   solver-version = 1

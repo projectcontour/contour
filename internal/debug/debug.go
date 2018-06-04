@@ -36,7 +36,14 @@ type Service struct {
 
 // Start fulfills the g.Start contract.
 // When stop is closed the http server will shutdown.
-func (svc *Service) Start(stop <-chan struct{}) {
+func (svc *Service) Start(stop <-chan struct{}) (err error) {
+	defer func() {
+		if err != nil {
+			svc.WithError(err).Error("terminated with error")
+		} else {
+			svc.Info("stopped")
+		}
+	}()
 	mux := http.NewServeMux()
 
 	// register the /debug/pprof handlers on this mux.
@@ -66,9 +73,5 @@ func (svc *Service) Start(stop <-chan struct{}) {
 	}()
 
 	svc.WithField("address", s.Addr).Info("started")
-	if err := s.ListenAndServe(); err != nil {
-		svc.WithError(err).Error("terminated with error")
-	} else {
-		svc.Info("stopped")
-	}
+	return s.ListenAndServe()
 }

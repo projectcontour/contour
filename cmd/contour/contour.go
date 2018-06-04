@@ -23,6 +23,7 @@ import (
 
 	"github.com/heptio/contour/internal/debug"
 	clientset "github.com/heptio/contour/internal/generated/clientset/versioned"
+	"github.com/heptio/workgroup"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"k8s.io/client-go/kubernetes"
@@ -33,7 +34,6 @@ import (
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/grpc"
 	"github.com/heptio/contour/internal/k8s"
-	"github.com/heptio/contour/internal/workgroup"
 
 	"github.com/sirupsen/logrus"
 )
@@ -143,18 +143,17 @@ func main() {
 
 		g.Add(debug.Start)
 
-		g.Add(func(stop <-chan struct{}) {
+		g.Add(func(stop <-chan struct{}) error {
 			log := log.WithField("context", "grpc")
 			addr := net.JoinHostPort(*xdsAddr, strconv.Itoa(*xdsPort))
 			l, err := net.Listen("tcp", addr)
 			if err != nil {
-				log.Errorf("could not listen on %s: %v", addr, err)
-				return // TODO(dfc) should return the error not log it
+				return err
 			}
 			s := grpc.NewAPI(log, t, et)
 			log.Println("started")
 			defer log.Println("stopped")
-			s.Serve(l)
+			return s.Serve(l)
 		})
 
 		g.Run()

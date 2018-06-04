@@ -19,7 +19,7 @@ import (
 
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	clientset "github.com/heptio/contour/internal/generated/clientset/versioned"
-	"github.com/heptio/contour/internal/workgroup"
+	"github.com/heptio/workgroup"
 	"github.com/sirupsen/logrus"
 
 	"k8s.io/api/core/v1"
@@ -61,10 +61,11 @@ func watch(g *workgroup.Group, c cache.Getter, log logrus.FieldLogger, resource 
 	for _, r := range rs {
 		sw.AddEventHandler(r)
 	}
-	g.Add(func(stop <-chan struct{}) {
+	g.Add(func(stop <-chan struct{}) error {
 		log := log.WithField("resource", resource)
 		log.Println("started")
 		defer log.Println("stopped")
 		sw.Run(stop)
+		return nil
 	})
 }
