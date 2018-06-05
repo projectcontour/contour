@@ -65,8 +65,8 @@ If your topology allow it, you may configure Contour to catch `nginx` ingress cl
 
 ## I've deployed on Minikube and nothing seems to work
 
-Minikube is not recommended as a platform to test or develop Contour due to its network limitations.
-A [seperate document][3] details deployment and troubleshooting information when working with Minikube.
+Minikube is not recommended for testing or developing Contour because of its network limitations.
+To run Contour on Minikube for exploration only, see [Contour on Minikube][3]
 
 [0]: https://github.com/jetstack/kube-lego
 [1]: https://github.com/heptio/contour/issues/210
