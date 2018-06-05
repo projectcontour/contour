@@ -35,6 +35,7 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 	var visit func(dag.Vertex)
 	visit = func(v dag.Vertex) {
 		var name string
+		var route *dag.Route
 		switch v := v.(type) {
 		case *dag.Secret:
 			name = fmt.Sprintf("secret/%s/%s", v.Namespace(), v.Name())
@@ -48,6 +49,7 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 			fmt.Fprintf(w, "%q [shape=record, label=\"{host|%s}\"]\n", name, v.FQDN())
 		case *dag.Route:
 			name = fmt.Sprintf("%s/path/%s", vhost, v.Prefix())
+			route = v
 			fmt.Fprintf(w, "%q [shape=record, label=\"{prefix|%s}\"]\n", name, v.Prefix())
 		}
 		v.Visit(func(v dag.Vertex) {
@@ -56,7 +58,7 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 			case *dag.Secret:
 				fmt.Fprintf(w, "%q -> \"secret/%s/%s\"\n", name, v.Namespace(), v.Name())
 			case *dag.Service:
-				fmt.Fprintf(w, "%q -> \"service/%s/%s\"\n", name, v.Namespace(), v.Name())
+				fmt.Fprintf(w, "%q -> \"service/%s/%s\" [label=\"port: %s\"]\n", name, v.Namespace(), v.Name(), route.ServicePort())
 			case *dag.VirtualHost:
 				fmt.Fprintf(w, "%q -> \"virtualhost/%s\"\n", name, v.FQDN())
 			case *dag.Route:

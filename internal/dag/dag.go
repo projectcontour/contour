@@ -105,50 +105,56 @@ func (d *DAG) insertSecret(s *v1.Secret) {
 
 	// lookup vertex in secrets map
 	v, ok := d.secrets[m]
-	if ok {
-		// found, that means v is already a child of any ingressVertex
-		// that requires it, just update the attached object and we're done
-		v.object = s
-		return
+	if !ok {
+		v = new(Secret)
+		if d.secrets == nil {
+			d.secrets = make(map[meta]*Secret)
+		}
+		d.secrets[m] = v
 	}
+	v.object = s
 
-	// the vertex was not present in the secret map which means it is not
-	// a attached to any ingressVertices.
-	v = &Secret{
-		object: s,
-	}
-	if d.secrets == nil {
-		d.secrets = make(map[meta]*Secret)
-	}
-	d.secrets[m] = v
-
-	// foreach root, if r.object references this secret, attach secret as child.
+	// now visit each root and if there is an ingress object matching this secret,
+	// add this secret as a child of that root.
+	d.visit(func(v Vertex) {
+		vh := v.(*VirtualHost)
+		vh.Visit(func(v Vertex) {
+			r, ok := v.(*Route)
+			if !ok {
+				// not a route, skip it
+				return
+			}
+			if r.object.Namespace != s.Namespace {
+				// this secret does not match the namespace the ingress
+				// that geneated this route belogs to, skip it.
+				return
+			}
+			for _, tls := range r.object.Spec.TLS {
+				m := meta{name: tls.SecretName, namespace: s.Namespace}
+				if s, ok := d.secrets[m]; ok {
+					vh.secrets[m] = s
+				}
+			}
+		})
+	})
 }
 
 // insertService inserts a Servce into the DAG. If there is an existing Service with
 // the same name and namespace, it will be replaced.
-func (d *DAG) insertService(s *v1.Service) {
+func (d *DAG) insertService(svc *v1.Service) {
 
-	m := meta{name: s.Name, namespace: s.Namespace}
+	m := meta{name: svc.Name, namespace: svc.Namespace}
 
 	// lookup vertex in services map
-	v, ok := d.services[m]
-	if ok {
-		// found, that means v is already a child of any prefixVertex
-		// that requires it, just update the attached object and we're done
-		v.object = s
-		return
+	s, ok := d.services[m]
+	if !ok {
+		s = new(Service)
+		if d.services == nil {
+			d.services = make(map[meta]*Service)
+		}
+		d.services[m] = s
 	}
-
-	// the vertex was not present in the services map which means it is not
-	// a attached to any prefixVertex.
-	v = &Service{
-		object: s,
-	}
-	if d.services == nil {
-		d.services = make(map[meta]*Service)
-	}
-	d.services[m] = v
+	s.object = svc
 
 	// foreach root, foreach route, attach this vertex as a child if the
 	// name and namespace match.
@@ -159,12 +165,21 @@ func (d *DAG) insertService(s *v1.Service) {
 				// not a route, skip it
 				return
 			}
-			if r.object.Namespace != s.Namespace {
+			if r.object.Namespace != s.object.Namespace {
 				// route's ingress object doesn't match service
 				return
 			}
-			if r.object.Spec.Backend != nil && r.object.Spec.Backend.ServiceName == s.Name {
-				r.insertIfNotPresent(v)
+			if r.backend.ServiceName != s.object.Name {
+				// services's name doesn't match ingress's backend
+				return
+			}
+			// iterate through the ports on the service object, if we
+			// find a match against the port's name or number, we add
+			// the service as a child of the route.
+			for _, p := range s.object.Spec.Ports {
+				if r.backend.ServicePort.IntValue() == int(p.Port) || r.backend.ServicePort.String() == p.Name {
+					r.addService(s)
+				}
 			}
 		})
 	})
@@ -174,15 +189,22 @@ func (d *DAG) insertIngress(i *v1beta1.Ingress) {
 	if i.Spec.Backend != nil {
 		vh := d.virtualhost("*")
 		r := &Route{
-			path:   "/",
-			object: i,
+			path:    "/",
+			object:  i,
+			backend: i.Spec.Backend,
 		}
 		vh.routes[r.path] = r
 
-		m := meta{name: i.Spec.Backend.ServiceName, namespace: i.Namespace}
-		s, ok := d.services[m]
-		if ok {
-			r.children = append(r.children, s)
+		m := meta{name: r.backend.ServiceName, namespace: r.object.Namespace}
+		if s, ok := d.services[m]; ok {
+			// iterate through the ports on the service object, if we
+			// find a match against the backends port's name or number, we add
+			// the service as a child of the route.
+			for _, p := range s.object.Spec.Ports {
+				if r.backend.ServicePort.IntValue() == int(p.Port) || r.backend.ServicePort.String() == p.Name {
+					r.addService(s)
+				}
+			}
 		}
 	}
 
@@ -209,18 +231,23 @@ func (d *DAG) insertIngress(i *v1beta1.Ingress) {
 				path = "/"
 			}
 			r := &Route{
-				path:   path,
-				object: i,
+				path:    path,
+				object:  i,
+				backend: &p.Backend,
 			}
 			vh.routes[r.path] = r
 
-			m := meta{name: p.Backend.ServiceName, namespace: i.Namespace}
-			s, ok := d.services[m]
-			if !ok {
-				continue
+			m := meta{name: r.backend.ServiceName, namespace: r.object.Namespace}
+			if s, ok := d.services[m]; ok {
+				// iterate through the ports on the service object, if we
+				// find a match against the backends port's name or number, we add
+				// the service as a child of the route.
+				for _, p := range s.object.Spec.Ports {
+					if r.backend.ServicePort.IntValue() == int(p.Port) || r.backend.ServicePort.String() == p.Name {
+						r.addService(s)
+					}
+				}
 			}
-			// add this service as a child of the route
-			r.children = append(r.children, s)
 		}
 	}
 }
@@ -249,18 +276,22 @@ type Root interface {
 type Route struct {
 	path     string
 	object   *v1beta1.Ingress // the ingress which mentioned this route
-	children []Vertex
+	services map[meta]*Service
+	backend  *v1beta1.IngressBackend
 }
 
-func (r *Route) insertIfNotPresent(v Vertex) {
-	// TODO(dfc) hack
-	r.children = append(r.children, v)
-}
+func (r *Route) Prefix() string      { return r.path }
+func (r *Route) ServicePort() string { return r.backend.ServicePort.String() }
 
-func (r *Route) Prefix() string { return r.path }
+func (r *Route) addService(s *Service) {
+	if r.services == nil {
+		r.services = make(map[meta]*Service)
+	}
+	r.services[s.toMeta()] = s
+}
 
 func (r *Route) Visit(f func(Vertex)) {
-	for _, c := range r.children {
+	for _, c := range r.services {
 		f(c)
 	}
 }
@@ -295,6 +326,13 @@ type Service struct {
 func (s *Service) Name() string       { return s.object.Name }
 func (s *Service) Namespace() string  { return s.object.Namespace }
 func (s *Service) Visit(func(Vertex)) {}
+
+func (s *Service) toMeta() meta {
+	return meta{
+		name:      s.object.Name,
+		namespace: s.object.Namespace,
+	}
+}
 
 // Secret represents a K8s Secret as a DAG Vertex. A Secret is
 // a leaf in the DAG.
