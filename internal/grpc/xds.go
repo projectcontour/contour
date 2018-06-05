@@ -93,8 +93,6 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 		// so the next time around the loop all is forgotten.
 		log := log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail)
 
-		// we wait in this loop until we find at least one resource that matches the filter supplied
-	streamwait:
 		for {
 			log.Info("stream_wait")
 
@@ -102,8 +100,10 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 			// then last will be zero and that will trigger a notification immediately.
 			r.Register(ch, last)
 			select {
-			// boom, something in the cache has changed
 			case last = <-ch:
+				// boom, something in the cache has changed.
+				// TODO(dfc) the thing that has changed may not be in the scope of the filter
+				// so we're going to be sending an update that is a no-op. See #426
 
 				// generate a filter from the request, then call toAny which
 				// will get r's (our resource) filter values, then convert them
@@ -113,19 +113,6 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 					return err
 				}
 
-				// if we didn't get any resources because they were filter out
-				// or are not present in the cache, then skip the update. This will
-				// mean that if Envoy asks EDS for a set of end points that are not
-				// present (say during pre-warming) it will stay in pre-warming, rather
-				// than receive an result with an empty set of ClusterLoadAssignments.
-				if len(resources) == 0 {
-					// there were no matching resources, or no resources at all, found
-					// so don't send anything back to the caller.
-					log.Info("skipping update")
-					continue streamwait
-				}
-
-				// otherwise, build the response object and stream it back to the client.
 				resp := &v2.DiscoveryResponse{
 					VersionInfo: "0",
 					Resources:   resources,
@@ -135,12 +122,12 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 				if err := st.Send(resp); err != nil {
 					return err
 				}
+				log.WithField("count", len(resources)).Info("response")
 
 				// ok, the client hung up, return any error stored in the context and we're done.
 			case <-ctx.Done():
 				return ctx.Err()
 			}
-
 		}
 	}
 }
