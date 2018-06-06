@@ -20,6 +20,7 @@ import (
 	"net/http/pprof"
 	"time"
 
+	"github.com/heptio/contour/internal/dag"
 	"github.com/sirupsen/logrus"
 )
 
@@ -32,6 +33,8 @@ type Service struct {
 	Port int
 
 	logrus.FieldLogger
+
+	*dag.DAG
 }
 
 // Start fulfills the g.Start contract.
@@ -52,6 +55,7 @@ func (svc *Service) Start(stop <-chan struct{}) (err error) {
 	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	mux.HandleFunc("/debug/dag", svc.writeDot)
 
 	s := http.Server{
 		Addr:           fmt.Sprintf("%s:%d", svc.Addr, svc.Port),
@@ -74,4 +78,13 @@ func (svc *Service) Start(stop <-chan struct{}) (err error) {
 
 	svc.WithField("address", s.Addr).Info("started")
 	return s.ListenAndServe()
+}
+
+// Write out a .dot representation of the DAG.
+func (svc *Service) writeDot(w http.ResponseWriter, r *http.Request) {
+	dw := &dotWriter{
+		DAG:         svc.DAG,
+		FieldLogger: svc.FieldLogger,
+	}
+	dw.writeDot(w)
 }

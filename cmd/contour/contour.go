@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/debug"
 	clientset "github.com/heptio/contour/internal/generated/clientset/versioned"
 	"github.com/heptio/workgroup"
@@ -120,6 +121,10 @@ func main() {
 		// buffer notifications to t to ensure they are handled sequentially.
 		buf := k8s.NewBuffer(&g, t, log, 128)
 
+		// setup DAG watcher and debug handler
+		var dagrh dag.ResourceEventHandler
+		debug.DAG = &dagrh.DAG
+
 		// client-go uses glog which requires initialisation as a side effect of calling
 		// flag.Parse (see #118 and https://github.com/golang/glog/blob/master/glog.go#L679)
 		// However kingpin owns our flag parsing, so we defer calling flag.Parse until
@@ -129,10 +134,10 @@ func main() {
 		client, contourClient := newClient(*kubeconfig, *inCluster)
 
 		wl := log.WithField("context", "watch")
-		k8s.WatchServices(&g, client, wl, buf)
-		k8s.WatchIngress(&g, client, wl, buf)
-		k8s.WatchSecrets(&g, client, wl, buf)
-		k8s.WatchIngressRoutes(&g, contourClient, wl, buf)
+		k8s.WatchServices(&g, client, wl, buf, &dagrh)
+		k8s.WatchIngress(&g, client, wl, buf, &dagrh)
+		k8s.WatchSecrets(&g, client, wl, buf, &dagrh)
+		k8s.WatchIngressRoutes(&g, contourClient, wl, buf, &dagrh)
 
 		// Endpoints updates are handled directly by the EndpointsTranslator
 		// due to their high update rate and their orthogonal nature.
