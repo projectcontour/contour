@@ -130,31 +130,29 @@ func (d *DAG) insertSecret(s *v1.Secret) {
 				return
 			}
 			for _, tls := range r.object.Spec.TLS {
-				m := meta{name: tls.SecretName, namespace: s.Namespace}
-				if s, ok := d.secrets[m]; ok {
-					vh.secrets[m] = s
-				}
+				d.addSecret(&tls, vh, tls.SecretName, s.Namespace)
 			}
 		})
 	})
 }
 
+// addSecret looks up the named secret and if it exists
+// adds it to vh.
+func (d *DAG) addSecret(tls *v1beta1.IngressTLS, vh *VirtualHost, name, namespace string) {
+	m := meta{name: name, namespace: namespace}
+	if s, ok := d.secrets[m]; ok {
+		for _, host := range tls.Hosts {
+			if host == vh.FQDN() {
+				vh.addSecret(s)
+			}
+		}
+	}
+}
+
 // insertService inserts a Servce into the DAG. If there is an existing Service with
 // the same name and namespace, it will be replaced.
 func (d *DAG) insertService(svc *v1.Service) {
-
-	m := meta{name: svc.Name, namespace: svc.Namespace}
-
-	// lookup vertex in services map
-	s, ok := d.services[m]
-	if !ok {
-		s = new(Service)
-		if d.services == nil {
-			d.services = make(map[meta]*Service)
-		}
-		d.services[m] = s
-	}
-	s.object = svc
+	s := d.service(svc)
 
 	// foreach root, foreach route, attach this vertex as a child if the
 	// name and namespace match.
@@ -216,24 +214,18 @@ func (d *DAG) insertIngress(i *v1beta1.Ingress) {
 		vh := d.virtualhost(host)
 
 		for _, tls := range i.Spec.TLS {
-			if tls.SecretName == "" {
-				continue
-			}
-			m := meta{name: tls.SecretName, namespace: i.Namespace}
-			if s, ok := d.secrets[m]; ok {
-				vh.secrets[m] = s
-			}
+			d.addSecret(&tls, vh, tls.SecretName, i.Namespace)
 		}
 
-		for _, p := range rule.IngressRuleValue.HTTP.Paths {
-			path := p.Path
+		for n := range rule.IngressRuleValue.HTTP.Paths {
+			path := rule.IngressRuleValue.HTTP.Paths[n].Path
 			if path == "" {
 				path = "/"
 			}
 			r := &Route{
 				path:    path,
 				object:  i,
-				backend: &p.Backend,
+				backend: &rule.IngressRuleValue.HTTP.Paths[n].Backend,
 			}
 			vh.routes[r.path] = r
 
@@ -252,21 +244,38 @@ func (d *DAG) insertIngress(i *v1beta1.Ingress) {
 	}
 }
 
+// virtualhost returns the *VirtualHost record
+// for this host. If none exists, it is created.
 func (d *DAG) virtualhost(host string) *VirtualHost {
 	vh, ok := d.roots[host]
 	if ok {
 		return vh
 	}
 	vh = &VirtualHost{
-		host:    host,
-		routes:  make(map[string]*Route),
-		secrets: make(map[meta]*Secret),
+		host:   host,
+		routes: make(map[string]*Route),
 	}
 	if d.roots == nil {
 		d.roots = make(map[string]*VirtualHost)
 	}
 	d.roots[vh.host] = vh
 	return vh
+}
+
+// service returns the *Service record for the *v1.Service.
+// If none exists, it is created.
+func (d *DAG) service(svc *v1.Service) *Service {
+	m := meta{name: svc.Name, namespace: svc.Namespace}
+	s, ok := d.services[m]
+	if !ok {
+		s = new(Service)
+		if d.services == nil {
+			d.services = make(map[meta]*Service)
+		}
+		d.services[m] = s
+	}
+	s.object = svc
+	return s
 }
 
 type Root interface {
@@ -313,6 +322,13 @@ func (v *VirtualHost) Visit(f func(Vertex)) {
 	}
 }
 
+func (v *VirtualHost) addSecret(s *Secret) {
+	if v.secrets == nil {
+		v.secrets = make(map[meta]*Secret)
+	}
+	v.secrets[s.toMeta()] = s
+}
+
 type Vertex interface {
 	Visit(func(Vertex))
 }
@@ -343,3 +359,10 @@ type Secret struct {
 func (s *Secret) Name() string       { return s.object.Name }
 func (s *Secret) Namespace() string  { return s.object.Namespace }
 func (s *Secret) Visit(func(Vertex)) {}
+
+func (s *Secret) toMeta() meta {
+	return meta{
+		name:      s.object.Name,
+		namespace: s.object.Namespace,
+	}
+}
