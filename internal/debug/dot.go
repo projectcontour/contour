@@ -31,38 +31,27 @@ type dotWriter struct {
 func (dw *dotWriter) writeDot(w io.Writer) {
 	fmt.Fprintln(w, "digraph DAG {\nrankdir=\"LR\"")
 
-	var vhost string
 	var visit func(dag.Vertex)
-	visit = func(v dag.Vertex) {
-		var name string
+	visit = func(parent dag.Vertex) {
 		var route *dag.Route
-		switch v := v.(type) {
+		switch parent := parent.(type) {
 		case *dag.Secret:
-			name = fmt.Sprintf("secret/%s/%s", v.Namespace(), v.Name())
-			fmt.Fprintf(w, "%q [shape=record, label=\"{secret|%s}\"]\n", name, name[len("secret/"):])
+			fmt.Fprintf(w, `"%p" [shape=record, label="{secret|%s/%s}"]`+"\n", parent, parent.Namespace(), parent.Name())
 		case *dag.Service:
-			name = fmt.Sprintf("service/%s/%s", v.Namespace(), v.Name())
-			fmt.Fprintf(w, "%q [shape=record, label=\"{service|%s}\"]\n", name, name[len("service/"):])
+			fmt.Fprintf(w, `"%p" [shape=record, label="{service|%s/%s}"]`+"\n", parent, parent.Namespace(), parent.Name())
 		case *dag.VirtualHost:
-			vhost = fmt.Sprintf("virtualhost/%s", v.FQDN())
-			name = vhost
-			fmt.Fprintf(w, "%q [shape=record, label=\"{host|%s}\"]\n", name, v.FQDN())
+			fmt.Fprintf(w, `"%p" [shape=record, label="{host|%s}"]`+"\n", parent, parent.FQDN())
 		case *dag.Route:
-			name = fmt.Sprintf("%s/path/%s", vhost, v.Prefix())
-			route = v
-			fmt.Fprintf(w, "%q [shape=record, label=\"{prefix|%s}\"]\n", name, v.Prefix())
+			route = parent
+			fmt.Fprintf(w, `"%p" [shape=record, label="{prefix|%s}"]`+"\n", parent, parent.Prefix())
 		}
-		v.Visit(func(v dag.Vertex) {
-			visit(v)
-			switch v := v.(type) {
-			case *dag.Secret:
-				fmt.Fprintf(w, "%q -> \"secret/%s/%s\"\n", name, v.Namespace(), v.Name())
+		parent.Visit(func(child dag.Vertex) {
+			visit(child)
+			switch child := child.(type) {
+			default:
+				fmt.Fprintf(w, `"%p" -> "%p"`+"\n", parent, child)
 			case *dag.Service:
-				fmt.Fprintf(w, "%q -> \"service/%s/%s\" [label=\"port: %s\"]\n", name, v.Namespace(), v.Name(), route.ServicePort())
-			case *dag.VirtualHost:
-				fmt.Fprintf(w, "%q -> \"virtualhost/%s\"\n", name, v.FQDN())
-			case *dag.Route:
-				fmt.Fprintf(w, "%q -> \"%s/path/%s\"\n", vhost, name, v.Prefix())
+				fmt.Fprintf(w, `"%p" -> "%p" [label="port: %s"]`+"\n", parent, child, route.ServicePort())
 			}
 		})
 	}
