@@ -899,6 +899,7 @@ func TestInsert(t *testing.T) {
 			for _, o := range tc.objs {
 				d.Insert(o)
 			}
+			d.Recompute()
 
 			got := make(map[string]*VirtualHost)
 			d.Visit(func(v Vertex) {
