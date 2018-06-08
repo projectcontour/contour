@@ -104,21 +104,12 @@ func (d *DAG) remove(obj interface{}) {
 	case *v1.Secret:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
 		delete(d.secrets, m)
-		if len(d.secrets) == 0 {
-			d.secrets = nil
-		}
 	case *v1.Service:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
 		delete(d.services, m)
-		if len(d.services) == 0 {
-			d.services = nil
-		}
 	case *v1beta1.Ingress:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
 		delete(d.ingresses, m)
-		if len(d.ingresses) == 0 {
-			d.ingresses = nil
-		}
 	default:
 		// not interesting
 	}
@@ -133,6 +124,10 @@ func (d *DAG) Recompute() {
 
 // recompute builds a new *dag.dag.
 func (d *DAG) recompute() *dag {
+
+	// memoise access to a service map, built
+	// as needed from the list of services cached
+	// from k8s.
 	_services := make(map[meta]*Service)
 	service := func(m meta) *Service {
 		if s, ok := _services[m]; ok {
@@ -149,6 +144,9 @@ func (d *DAG) recompute() *dag {
 		return s
 	}
 
+	// memoise access to a secrets map, built
+	// as needed from the list of secrets cached
+	// from k8s.
 	_secrets := make(map[meta]*Secret)
 	secret := func(m meta) *Secret {
 		if s, ok := _secrets[m]; ok {
@@ -165,6 +163,7 @@ func (d *DAG) recompute() *dag {
 		return s
 	}
 
+	// memoise the production of vhost entries as needed.
 	_vhosts := make(map[string]*VirtualHost)
 	vhost := func(host string) *VirtualHost {
 		vh, ok := _vhosts[host]
@@ -178,10 +177,11 @@ func (d *DAG) recompute() *dag {
 		return vh
 	}
 
-	// step 3. deconstruct each ingress into routes and virtualhost entries
-	// routes := make(map[hostpath]*Route)
+	// deconstruct each ingress into routes and virtualhost entries
 	for _, ing := range d.ingresses {
 		if ing.Spec.Backend != nil {
+
+			// handle the annoying default ingress
 			r := &Route{
 				path:    "/",
 				object:  ing,
@@ -201,6 +201,7 @@ func (d *DAG) recompute() *dag {
 			vhost("*").routes[r.path] = r
 		}
 
+		// attach secrets from ingress to vhosts
 		for _, tls := range ing.Spec.TLS {
 			m := meta{name: tls.SecretName, namespace: ing.Namespace}
 			if sec := secret(m); sec != nil {
@@ -211,6 +212,8 @@ func (d *DAG) recompute() *dag {
 		}
 
 		for _, rule := range ing.Spec.Rules {
+
+			// handle Spec.Rule declarations
 			host := rule.Host
 			if host == "" {
 				host = "*"
@@ -241,6 +244,10 @@ func (d *DAG) recompute() *dag {
 			}
 		}
 	}
+
+	// append each computed vhost as a root of the dag.
+	// this may include vhosts without routes, only secrets,
+	// this is something a walker will have to be aware of.
 	_d := new(dag)
 	for _, vh := range _vhosts {
 		_d.roots = append(_d.roots, vh)
