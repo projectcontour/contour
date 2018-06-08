@@ -213,7 +213,7 @@ func (d *DAG) recompute() *dag {
 			m := meta{name: tls.SecretName, namespace: ing.Namespace}
 			if sec := secret(m); sec != nil {
 				for _, host := range tls.Hosts {
-					vhost(host, 80).addSecret(sec)
+					vhost(host, 443).addSecret(sec)
 				}
 			}
 		}
@@ -248,6 +248,9 @@ func (d *DAG) recompute() *dag {
 					}
 				}
 				vhost(host, 80).routes[r.path] = r
+				if _, ok := _vhosts[hostport{host: host, port: 443}]; ok && host != "*" {
+					vhost(host, 443).routes[r.path] = r
+				}
 			}
 		}
 	}

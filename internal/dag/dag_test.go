@@ -573,6 +573,16 @@ func TestDAGInsert(t *testing.T) {
 						backend: &i3.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
 					},
 				},
+			}, {
+				Port: 443,
+				host: "kuard.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i3,
+						backend: &i3.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+					},
+				},
 				secrets: map[meta]*Secret{
 					meta{
 						name:      "secret",
@@ -590,6 +600,16 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []*VirtualHost{{
 				Port: 80,
+				host: "kuard.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i3,
+						backend: &i3.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+					},
+				},
+			}, {
+				Port: 443,
 				host: "kuard.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -762,6 +782,24 @@ func TestDAGInsert(t *testing.T) {
 						},
 					},
 				},
+			}, {
+				Port: 443,
+				host: "b.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i6,
+						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
+						services: map[meta]*Service{
+							meta{
+								name:      "kuard",
+								namespace: "default",
+							}: &Service{
+								object: s1,
+							},
+						},
+					},
+				},
 				secrets: map[meta]*Secret{
 					meta{
 						name:      "secret",
@@ -798,6 +836,24 @@ func TestDAGInsert(t *testing.T) {
 				},
 			}, {
 				Port: 80,
+				host: "b.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i6,
+						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
+						services: map[meta]*Service{
+							meta{
+								name:      "kuard",
+								namespace: "default",
+							}: &Service{
+								object: s1,
+							},
+						},
+					},
+				},
+			}, {
+				Port: 443,
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -931,16 +987,16 @@ func TestDAGInsert(t *testing.T) {
 			}
 			d.Recompute()
 
-			got := make(map[string]*VirtualHost)
+			got := make(map[hostport]*VirtualHost)
 			d.Visit(func(v Vertex) {
 				if v, ok := v.(*VirtualHost); ok {
-					got[v.FQDN()] = v
+					got[hostport{host: v.FQDN(), port: v.Port}] = v
 				}
 			})
 
-			want := make(map[string]*VirtualHost)
-			for _, vh := range tc.want {
-				want[vh.FQDN()] = vh
+			want := make(map[hostport]*VirtualHost)
+			for _, v := range tc.want {
+				want[hostport{host: v.FQDN(), port: v.Port}] = v
 			}
 
 			if !reflect.DeepEqual(want, got) {
@@ -949,6 +1005,11 @@ func TestDAGInsert(t *testing.T) {
 
 		})
 	}
+}
+
+type hostport struct {
+	host string
+	port int
 }
 
 func TestDAGRemove(t *testing.T) {
@@ -1349,6 +1410,16 @@ func TestDAGRemove(t *testing.T) {
 						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
 					},
 				},
+			}, {
+				Port: 443,
+				host: "b.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i6,
+						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
+					},
+				},
 				secrets: map[meta]*Secret{
 					meta{
 						name:      "secret",
@@ -1407,16 +1478,16 @@ func TestDAGRemove(t *testing.T) {
 			}
 			d.Recompute()
 
-			got := make(map[string]*VirtualHost)
+			got := make(map[hostport]*VirtualHost)
 			d.Visit(func(v Vertex) {
 				if v, ok := v.(*VirtualHost); ok {
-					got[v.FQDN()] = v
+					got[hostport{host: v.FQDN(), port: v.Port}] = v
 				}
 			})
 
-			want := make(map[string]*VirtualHost)
-			for _, vh := range tc.want {
-				want[vh.FQDN()] = vh
+			want := make(map[hostport]*VirtualHost)
+			for _, v := range tc.want {
+				want[hostport{host: v.FQDN(), port: v.Port}] = v
 			}
 
 			if !reflect.DeepEqual(want, got) {
@@ -1428,7 +1499,7 @@ func TestDAGRemove(t *testing.T) {
 }
 
 func (v *VirtualHost) String() string {
-	return fmt.Sprintf("host: %v {routes: %v, secrets: %v}", v.FQDN(), v.routes, v.secrets)
+	return fmt.Sprintf("host: %v:%d {routes: %v, secrets: %v}", v.FQDN(), v.Port, v.routes, v.secrets)
 }
 
 func (r *Route) String() string {
