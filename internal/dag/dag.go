@@ -26,14 +26,20 @@ import (
 // A DAG represents a directed acylic graph of objects representing the relationship
 // between Kubernetes Ingress objects, the backend Services, and Secret objects.
 // The DAG models these relationships as Roots and Vertices.
-//
-// A DAG is mutable and not thread safe.
 type DAG struct {
-	rwm sync.RWMutex
+	mu sync.Mutex
 
-	roots    map[string]*VirtualHost
-	secrets  map[meta]*Secret
-	services map[meta]*Service
+	ingresses map[meta]*v1beta1.Ingress
+	secrets   map[meta]*v1.Secret
+	services  map[meta]*v1.Service
+
+	dag *dag
+}
+
+// dag represents
+type dag struct {
+	// roots are the roots of this dag
+	roots []Vertex
 }
 
 // meta holds the name and namespace of a Kubernetes object.
@@ -43,194 +49,146 @@ type meta struct {
 
 // Visit calls f for every root of this DAG.
 func (d *DAG) Visit(f func(Vertex)) {
-	d.rwm.RLock()
-	defer d.rwm.RUnlock()
-	d.visit(f)
-}
-
-func (d *DAG) visit(f func(Vertex)) {
-	for _, r := range d.roots {
+	d.mu.Lock()
+	dag := d.dag
+	d.mu.Unlock()
+	for _, r := range dag.roots {
 		f(r)
-	}
-}
-
-// VisitAll calls the function f for each Vertex registered with this DAG.
-// This includes Vertices which are not reachable from a Root, ie, those that
-// are orphaned.
-func (d *DAG) VisitAll(f func(Vertex)) {
-	d.rwm.RLock()
-	defer d.rwm.RUnlock()
-	for _, v := range d.roots {
-		f(v)
-	}
-	for _, v := range d.secrets {
-		f(v)
-	}
-	for _, v := range d.services {
-		f(v)
 	}
 }
 
 // Insert inserts obj into the DAG. If an object with a matching type, name, and
 // namespace exists, it will be overwritten.
 func (d *DAG) Insert(obj interface{}) {
-	d.rwm.Lock()
-	defer d.rwm.Unlock()
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	switch obj := obj.(type) {
 	case *v1.Secret:
-		d.insertSecret(obj)
+		m := meta{name: obj.Name, namespace: obj.Namespace}
+		if d.secrets == nil {
+			d.secrets = make(map[meta]*v1.Secret)
+		}
+		d.secrets[m] = obj
 	case *v1.Service:
-		d.insertService(obj)
+		m := meta{name: obj.Name, namespace: obj.Namespace}
+		if d.services == nil {
+			d.services = make(map[meta]*v1.Service)
+		}
+		d.services[m] = obj
 	case *v1beta1.Ingress:
-		d.insertIngress(obj)
+		m := meta{name: obj.Name, namespace: obj.Namespace}
+		if d.ingresses == nil {
+			d.ingresses = make(map[meta]*v1beta1.Ingress)
+		}
+		d.ingresses[m] = obj
+	default:
+		// not an interesting object
 	}
 }
 
 // Remove removes obj from the DAG. If no object with a matching type, name, and
 // namespace exists in the DAG, no action is taken.
 func (d *DAG) Remove(obj interface{}) {
-	d.rwm.Lock()
-	defer d.rwm.Unlock()
 	switch obj := obj.(type) {
+	default:
+		d.remove(obj)
 	case cache.DeletedFinalStateUnknown:
 		d.Remove(obj.Obj) // recurse into ourselves with the tombstoned value
 	}
 }
 
-// insertSecret inserts a Secret into the DAG. If there is an existing Service with
-// the same name and namespace, it will be replaced.
-func (d *DAG) insertSecret(s *v1.Secret) {
-
-	m := meta{name: s.Name, namespace: s.Namespace}
-
-	// lookup vertex in secrets map
-	v, ok := d.secrets[m]
-	if !ok {
-		v = new(Secret)
-		if d.secrets == nil {
-			d.secrets = make(map[meta]*Secret)
-		}
-		d.secrets[m] = v
-	}
-	v.object = s
-
-	// now visit each root and if there is an ingress object matching this secret,
-	// add this secret as a child of that root.
-	d.visit(func(v Vertex) {
-		vh := v.(*VirtualHost)
-		vh.Visit(func(v Vertex) {
-			r, ok := v.(*Route)
-			if !ok {
-				// not a route, skip it
-				return
-			}
-			if r.object.Namespace != s.Namespace {
-				// this secret does not match the namespace the ingress
-				// that geneated this route belogs to, skip it.
-				return
-			}
-			for _, tls := range r.object.Spec.TLS {
-				d.addSecret(&tls, vh, tls.SecretName, s.Namespace)
-			}
-		})
-	})
-}
-
-// addSecret looks up the named secret and if it exists
-// adds it to vh.
-func (d *DAG) addSecret(tls *v1beta1.IngressTLS, vh *VirtualHost, name, namespace string) {
-	m := meta{name: name, namespace: namespace}
-	if s, ok := d.secrets[m]; ok {
-		for _, host := range tls.Hosts {
-			if host == vh.FQDN() {
-				vh.addSecret(s)
-			}
-		}
+func (d *DAG) remove(obj interface{}) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	switch obj := obj.(type) {
+	case *v1.Secret:
+		m := meta{name: obj.Name, namespace: obj.Namespace}
+		delete(d.secrets, m)
+	case *v1.Service:
+		m := meta{name: obj.Name, namespace: obj.Namespace}
+		delete(d.services, m)
+	case *v1beta1.Ingress:
+		m := meta{name: obj.Name, namespace: obj.Namespace}
+		delete(d.ingresses, m)
+	default:
+		// not interesting
 	}
 }
 
-// insertService inserts a Servce into the DAG. If there is an existing Service with
-// the same name and namespace, it will be replaced.
-func (d *DAG) insertService(svc *v1.Service) {
-	s := d.service(svc)
-
-	// foreach root, foreach route, attach this vertex as a child if the
-	// name and namespace match.
-	d.visit(func(virtualhost Vertex) {
-		virtualhost.Visit(func(v Vertex) {
-			r, ok := v.(*Route)
-			if !ok {
-				// not a route, skip it
-				return
-			}
-			if r.object.Namespace != s.object.Namespace {
-				// route's ingress object doesn't match service
-				return
-			}
-			if r.backend.ServiceName != s.object.Name {
-				// services's name doesn't match ingress's backend
-				return
-			}
-			// iterate through the ports on the service object, if we
-			// find a match against the port's name or number, we add
-			// the service as a child of the route.
-			for _, p := range s.object.Spec.Ports {
-				if r.backend.ServicePort.IntValue() == int(p.Port) || r.backend.ServicePort.String() == p.Name {
-					r.addService(s)
-				}
-			}
-		})
-	})
+// Recompute recomputes the DAG.
+func (d *DAG) Recompute() {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.dag = d.recompute()
 }
 
-func (d *DAG) insertIngress(i *v1beta1.Ingress) {
-	if i.Spec.Backend != nil {
-		vh := d.virtualhost("*")
-		r := &Route{
-			path:    "/",
-			object:  i,
-			backend: i.Spec.Backend,
-		}
-		vh.routes[r.path] = r
+// recompute builds a new *dag.dag.
+func (d *DAG) recompute() *dag {
 
-		m := meta{name: r.backend.ServiceName, namespace: r.object.Namespace}
-		if s, ok := d.services[m]; ok {
-			// iterate through the ports on the service object, if we
-			// find a match against the backends port's name or number, we add
-			// the service as a child of the route.
-			for _, p := range s.object.Spec.Ports {
-				if r.backend.ServicePort.IntValue() == int(p.Port) || r.backend.ServicePort.String() == p.Name {
-					r.addService(s)
-				}
-			}
+	// memoise access to a service map, built
+	// as needed from the list of services cached
+	// from k8s.
+	_services := make(map[meta]*Service)
+	service := func(m meta) *Service {
+		if s, ok := _services[m]; ok {
+			return s
 		}
+		svc, ok := d.services[m]
+		if !ok {
+			return nil
+		}
+		s := &Service{
+			object: svc,
+		}
+		_services[s.toMeta()] = s
+		return s
 	}
 
-	for _, rule := range i.Spec.Rules {
-		host := rule.Host
-		if host == "" {
-			host = "*"
+	// memoise access to a secrets map, built
+	// as needed from the list of secrets cached
+	// from k8s.
+	_secrets := make(map[meta]*Secret)
+	secret := func(m meta) *Secret {
+		if s, ok := _secrets[m]; ok {
+			return s
 		}
-		vh := d.virtualhost(host)
-
-		for _, tls := range i.Spec.TLS {
-			d.addSecret(&tls, vh, tls.SecretName, i.Namespace)
+		sec, ok := d.secrets[m]
+		if !ok {
+			return nil
 		}
+		s := &Secret{
+			object: sec,
+		}
+		_secrets[s.toMeta()] = s
+		return s
+	}
 
-		for n := range rule.IngressRuleValue.HTTP.Paths {
-			path := rule.IngressRuleValue.HTTP.Paths[n].Path
-			if path == "" {
-				path = "/"
+	// memoise the production of vhost entries as needed.
+	_vhosts := make(map[string]*VirtualHost)
+	vhost := func(host string) *VirtualHost {
+		vh, ok := _vhosts[host]
+		if !ok {
+			vh = &VirtualHost{
+				host:   host,
+				routes: make(map[string]*Route),
 			}
+			_vhosts[host] = vh
+		}
+		return vh
+	}
+
+	// deconstruct each ingress into routes and virtualhost entries
+	for _, ing := range d.ingresses {
+		if ing.Spec.Backend != nil {
+
+			// handle the annoying default ingress
 			r := &Route{
-				path:    path,
-				object:  i,
-				backend: &rule.IngressRuleValue.HTTP.Paths[n].Backend,
+				path:    "/",
+				object:  ing,
+				backend: ing.Spec.Backend,
 			}
-			vh.routes[r.path] = r
-
 			m := meta{name: r.backend.ServiceName, namespace: r.object.Namespace}
-			if s, ok := d.services[m]; ok {
+			if s := service(m); s != nil {
 				// iterate through the ports on the service object, if we
 				// find a match against the backends port's name or number, we add
 				// the service as a child of the route.
@@ -240,42 +198,61 @@ func (d *DAG) insertIngress(i *v1beta1.Ingress) {
 					}
 				}
 			}
+			vhost("*").routes[r.path] = r
+		}
+
+		// attach secrets from ingress to vhosts
+		for _, tls := range ing.Spec.TLS {
+			m := meta{name: tls.SecretName, namespace: ing.Namespace}
+			if sec := secret(m); sec != nil {
+				for _, host := range tls.Hosts {
+					vhost(host).addSecret(sec)
+				}
+			}
+		}
+
+		for _, rule := range ing.Spec.Rules {
+
+			// handle Spec.Rule declarations
+			host := rule.Host
+			if host == "" {
+				host = "*"
+			}
+			for n := range rule.IngressRuleValue.HTTP.Paths {
+				path := rule.IngressRuleValue.HTTP.Paths[n].Path
+				if path == "" {
+					path = "/"
+				}
+				r := &Route{
+					path:    path,
+					object:  ing,
+					backend: &rule.IngressRuleValue.HTTP.Paths[n].Backend,
+				}
+
+				m := meta{name: r.backend.ServiceName, namespace: r.object.Namespace}
+				if s := service(m); s != nil {
+					// iterate through the ports on the service object, if we
+					// find a match against the backends port's name or number, we add
+					// the service as a child of the route.
+					for _, p := range s.object.Spec.Ports {
+						if r.backend.ServicePort.IntValue() == int(p.Port) || r.backend.ServicePort.String() == p.Name {
+							r.addService(s)
+						}
+					}
+				}
+				vhost(host).routes[r.path] = r
+			}
 		}
 	}
-}
 
-// virtualhost returns the *VirtualHost record
-// for this host. If none exists, it is created.
-func (d *DAG) virtualhost(host string) *VirtualHost {
-	vh, ok := d.roots[host]
-	if ok {
-		return vh
+	// append each computed vhost as a root of the dag.
+	// this may include vhosts without routes, only secrets,
+	// this is something a walker will have to be aware of.
+	_d := new(dag)
+	for _, vh := range _vhosts {
+		_d.roots = append(_d.roots, vh)
 	}
-	vh = &VirtualHost{
-		host:   host,
-		routes: make(map[string]*Route),
-	}
-	if d.roots == nil {
-		d.roots = make(map[string]*VirtualHost)
-	}
-	d.roots[vh.host] = vh
-	return vh
-}
-
-// service returns the *Service record for the *v1.Service.
-// If none exists, it is created.
-func (d *DAG) service(svc *v1.Service) *Service {
-	m := meta{name: svc.Name, namespace: svc.Namespace}
-	s, ok := d.services[m]
-	if !ok {
-		s = new(Service)
-		if d.services == nil {
-			d.services = make(map[meta]*Service)
-		}
-		d.services[m] = s
-	}
-	s.object = svc
-	return s
+	return _d
 }
 
 type Root interface {

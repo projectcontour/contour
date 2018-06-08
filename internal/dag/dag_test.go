@@ -24,10 +24,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestInsert(t *testing.T) {
+func TestDAGInsert(t *testing.T) {
 	// The DAG is senstive to ordering, adding an ingress, then a service,
-	// should have the same result as adding a sevice, then an ingress, but
-	// operationally triggers very different code paths.
+	// should have the same result as adding a sevice, then an ingress.
 
 	i1 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -899,6 +898,471 @@ func TestInsert(t *testing.T) {
 			for _, o := range tc.objs {
 				d.Insert(o)
 			}
+			d.Recompute()
+
+			got := make(map[string]*VirtualHost)
+			d.Visit(func(v Vertex) {
+				if v, ok := v.(*VirtualHost); ok {
+					got[v.FQDN()] = v
+				}
+			})
+
+			want := make(map[string]*VirtualHost)
+			for _, vh := range tc.want {
+				want[vh.FQDN()] = vh
+			}
+
+			if !reflect.DeepEqual(want, got) {
+				t.Fatal("expected:\n", want, "\ngot:\n", got)
+			}
+
+		})
+	}
+}
+
+func TestDAGRemove(t *testing.T) {
+	// The DAG is senstive to ordering, removing an ingress, then a service,
+	// has a different effect than removing a sevice, then an ingress.
+
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("kuard", intstr.FromInt(8080))},
+	}
+	// i2 is functionally identical to i1
+	i2 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: ingressrulevalue(backend("kuard", intstr.FromInt(8080))),
+			}},
+		},
+	}
+	// i3 is similar to i2 but includes a hostname on the ingress rule
+	i3 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"kuard.example.com"},
+				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host:             "kuard.example.com",
+				IngressRuleValue: ingressrulevalue(backend("kuard", intstr.FromInt(8080))),
+			}},
+		},
+	}
+	// i5 is functionally identical to i2
+	i5 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: ingressrulevalue(backend("kuard", intstr.FromString("http"))),
+			}},
+		},
+	}
+	// i6 contains two named vhosts which point to the same sevice
+	// one of those has TLS
+	i6 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-vhosts",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host:             "a.example.com",
+				IngressRuleValue: ingressrulevalue(backend("kuard", intstr.FromInt(8080))),
+			}, {
+				Host:             "b.example.com",
+				IngressRuleValue: ingressrulevalue(backend("kuard", intstr.FromString("http"))),
+			}},
+		},
+	}
+	// i7 contains a single vhost with two paths
+	i7 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-paths",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "b.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}, {
+							Path: "/kuarder",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuarder",
+								ServicePort: intstr.FromInt(8080),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	// s2 is like s1 but with a different name
+	s2 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuarder",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	sec1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Data: secretdata("certificate", "key"),
+	}
+
+	tests := map[string]struct {
+		insert []interface{}
+		remove []interface{}
+		want   []*VirtualHost
+	}{
+		"remove ingress w/ default backend": {
+			insert: []interface{}{
+				i1,
+			},
+			remove: []interface{}{
+				i1,
+			},
+			want: []*VirtualHost{},
+		},
+		"remove ingress w/ single unnamed backend": {
+			insert: []interface{}{
+				i2,
+			},
+			remove: []interface{}{
+				i2,
+			},
+			want: []*VirtualHost{},
+		},
+		"insert ingress w/ host name and single backend": {
+			insert: []interface{}{
+				i3,
+			},
+			want: []*VirtualHost{{
+				host: "kuard.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i3,
+						backend: &i3.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+					},
+				},
+			}},
+		},
+		"remove ingress w/ default backend leaving matching service": {
+			insert: []interface{}{
+				i1,
+				s1,
+			},
+			remove: []interface{}{
+				i1,
+			},
+			want: []*VirtualHost{},
+		},
+		"remove service leaving ingress w/ default backend": {
+			insert: []interface{}{
+				s1,
+				i1,
+			},
+			remove: []interface{}{
+				s1,
+			},
+			want: []*VirtualHost{{
+				host: "*",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i1,
+						backend: i1.Spec.Backend,
+					},
+				},
+			}},
+		},
+		"remove non matching service leaving ingress w/ default backend": {
+			insert: []interface{}{
+				i1,
+				s2,
+			},
+			remove: []interface{}{
+				s2,
+			},
+			want: []*VirtualHost{{
+				host: "*",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i1,
+						backend: i1.Spec.Backend,
+					},
+				},
+			}},
+		},
+		"remove ingress w/ default backend leaving non matching service": {
+			insert: []interface{}{
+				s2,
+				i1,
+			},
+			remove: []interface{}{
+				i1,
+			},
+			want: []*VirtualHost{},
+		},
+		"remove service w/ named service port leaving ingress w/ single unnamed backend": {
+			insert: []interface{}{
+				i5,
+				s1,
+			},
+			remove: []interface{}{
+				s1,
+			},
+			want: []*VirtualHost{{
+				host: "*",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i5,
+						backend: &i5.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+					},
+				},
+			}},
+		},
+		"remove secret leaving ingress w/ tls": {
+			insert: []interface{}{
+				sec1,
+				i3,
+			},
+			remove: []interface{}{
+				sec1,
+			},
+			want: []*VirtualHost{{
+				host: "kuard.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i3,
+						backend: &i3.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+					},
+				},
+			}},
+		},
+		"remove ingress w/ two vhosts": {
+			insert: []interface{}{
+				i6,
+			},
+			remove: []interface{}{
+				i6,
+			},
+			want: []*VirtualHost{},
+		},
+		"remove service leaving ingress w/ two vhosts": {
+			insert: []interface{}{
+				i6,
+				s1,
+			},
+			remove: []interface{}{
+				s1,
+			},
+			want: []*VirtualHost{{
+				host: "a.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i6,
+						backend: &i6.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+					},
+				},
+			}, {
+				host: "b.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i6,
+						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
+					},
+				},
+			}},
+		},
+		"remove secret from ingress w/ two vhosts and service": {
+			insert: []interface{}{
+				i6,
+				s1,
+				sec1,
+			},
+			remove: []interface{}{
+				sec1,
+			},
+			want: []*VirtualHost{{
+				host: "a.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i6,
+						backend: &i6.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						services: map[meta]*Service{
+							meta{
+								name:      "kuard",
+								namespace: "default",
+							}: &Service{
+								object: s1,
+							},
+						},
+					},
+				},
+			}, {
+				host: "b.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i6,
+						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
+						services: map[meta]*Service{
+							meta{
+								name:      "kuard",
+								namespace: "default",
+							}: &Service{
+								object: s1,
+							},
+						},
+					},
+				},
+			}},
+		},
+		"remove service from ingress w/ two vhosts and secret": {
+			insert: []interface{}{
+				s1,
+				sec1,
+				i6,
+			},
+			remove: []interface{}{
+				s1,
+			},
+			want: []*VirtualHost{{
+				host: "a.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i6,
+						backend: &i6.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+					},
+				},
+			}, {
+				host: "b.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i6,
+						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
+					},
+				},
+				secrets: map[meta]*Secret{
+					meta{
+						name:      "secret",
+						namespace: "default",
+					}: &Secret{
+						object: sec1,
+					},
+				},
+			}},
+		},
+		"remove service from  ingress w/ two paths": {
+			insert: []interface{}{
+				i7,
+				s2,
+				s1,
+			},
+			remove: []interface{}{
+				s2,
+			},
+			want: []*VirtualHost{{
+				host: "b.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i7,
+						backend: &i7.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						services: map[meta]*Service{
+							meta{
+								name:      "kuard",
+								namespace: "default",
+							}: &Service{
+								object: s1,
+							},
+						},
+					},
+					"/kuarder": &Route{
+						path:    "/kuarder",
+						object:  i7,
+						backend: &i7.Spec.Rules[0].IngressRuleValue.HTTP.Paths[1].Backend,
+					},
+				},
+			}},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var d DAG
+			for _, o := range tc.insert {
+				d.Insert(o)
+			}
+			d.Recompute()
+			for _, o := range tc.remove {
+				d.Remove(o)
+			}
+			d.Recompute()
 
 			got := make(map[string]*VirtualHost)
 			d.Visit(func(v Vertex) {
