@@ -163,16 +163,23 @@ func (d *DAG) recompute() *dag {
 		return s
 	}
 
+	type hostport struct {
+		host string
+		port int
+	}
+
 	// memoise the production of vhost entries as needed.
-	_vhosts := make(map[string]*VirtualHost)
-	vhost := func(host string) *VirtualHost {
-		vh, ok := _vhosts[host]
+	_vhosts := make(map[hostport]*VirtualHost)
+	vhost := func(host string, port int) *VirtualHost {
+		hp := hostport{host: host, port: port}
+		vh, ok := _vhosts[hp]
 		if !ok {
 			vh = &VirtualHost{
+				Port:   port,
 				host:   host,
 				routes: make(map[string]*Route),
 			}
-			_vhosts[host] = vh
+			_vhosts[hp] = vh
 		}
 		return vh
 	}
@@ -198,7 +205,7 @@ func (d *DAG) recompute() *dag {
 					}
 				}
 			}
-			vhost("*").routes[r.path] = r
+			vhost("*", 80).routes[r.path] = r
 		}
 
 		// attach secrets from ingress to vhosts
@@ -206,7 +213,7 @@ func (d *DAG) recompute() *dag {
 			m := meta{name: tls.SecretName, namespace: ing.Namespace}
 			if sec := secret(m); sec != nil {
 				for _, host := range tls.Hosts {
-					vhost(host).addSecret(sec)
+					vhost(host, 80).addSecret(sec)
 				}
 			}
 		}
@@ -240,7 +247,7 @@ func (d *DAG) recompute() *dag {
 						}
 					}
 				}
-				vhost(host).routes[r.path] = r
+				vhost(host, 80).routes[r.path] = r
 			}
 		}
 	}
@@ -282,7 +289,15 @@ func (r *Route) Visit(f func(Vertex)) {
 	}
 }
 
+// A VirtualHost describes a Vertex that represents the root
+// of a tree of objects associated with a HTTP Host: header.
 type VirtualHost struct {
+
+	// Port is the port that the VirtualHost will listen on.
+	// Expected values are 80 and 443, but others are possible
+	// if the VirtualHost is generated inside Contour.
+	Port int
+
 	host    string
 	routes  map[string]*Route
 	secrets map[meta]*Secret

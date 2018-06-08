@@ -240,6 +240,7 @@ func TestDAGInsert(t *testing.T) {
 				i1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -255,6 +256,7 @@ func TestDAGInsert(t *testing.T) {
 				i2,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -270,6 +272,7 @@ func TestDAGInsert(t *testing.T) {
 				i3,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "kuard.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -286,6 +289,7 @@ func TestDAGInsert(t *testing.T) {
 				s1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -310,6 +314,7 @@ func TestDAGInsert(t *testing.T) {
 				i1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -334,6 +339,7 @@ func TestDAGInsert(t *testing.T) {
 				s2,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -350,6 +356,7 @@ func TestDAGInsert(t *testing.T) {
 				i1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -366,6 +373,7 @@ func TestDAGInsert(t *testing.T) {
 				s3,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -382,6 +390,7 @@ func TestDAGInsert(t *testing.T) {
 				i1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -398,6 +407,7 @@ func TestDAGInsert(t *testing.T) {
 				s3,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -414,6 +424,7 @@ func TestDAGInsert(t *testing.T) {
 				i2,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -430,6 +441,7 @@ func TestDAGInsert(t *testing.T) {
 				s1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -454,6 +466,7 @@ func TestDAGInsert(t *testing.T) {
 				i4,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -478,6 +491,7 @@ func TestDAGInsert(t *testing.T) {
 				s1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -502,6 +516,7 @@ func TestDAGInsert(t *testing.T) {
 				i5,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -532,6 +547,7 @@ func TestDAGInsert(t *testing.T) {
 				i1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -548,6 +564,7 @@ func TestDAGInsert(t *testing.T) {
 				i3,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "kuard.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -572,6 +589,7 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "kuard.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -595,6 +613,7 @@ func TestDAGInsert(t *testing.T) {
 				i6,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "a.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -604,6 +623,7 @@ func TestDAGInsert(t *testing.T) {
 					},
 				},
 			}, {
+				Port: 80,
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -620,6 +640,7 @@ func TestDAGInsert(t *testing.T) {
 				s1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "a.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -637,6 +658,7 @@ func TestDAGInsert(t *testing.T) {
 					},
 				},
 			}, {
+				Port: 80,
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -661,6 +683,7 @@ func TestDAGInsert(t *testing.T) {
 				i6,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "a.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -678,6 +701,7 @@ func TestDAGInsert(t *testing.T) {
 					},
 				},
 			}, {
+				Port: 80,
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -703,6 +727,7 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "a.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -720,6 +745,7 @@ func TestDAGInsert(t *testing.T) {
 					},
 				},
 			}, {
+				Port: 80,
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -753,6 +779,7 @@ func TestDAGInsert(t *testing.T) {
 				i6,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "a.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -770,6 +797,7 @@ func TestDAGInsert(t *testing.T) {
 					},
 				},
 			}, {
+				Port: 80,
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -801,6 +829,7 @@ func TestDAGInsert(t *testing.T) {
 				i7,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -823,6 +852,7 @@ func TestDAGInsert(t *testing.T) {
 				s1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -859,6 +889,7 @@ func TestDAGInsert(t *testing.T) {
 				s1, s2, i8,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -1092,6 +1123,7 @@ func TestDAGRemove(t *testing.T) {
 				i3,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "kuard.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -1121,6 +1153,7 @@ func TestDAGRemove(t *testing.T) {
 				s1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -1140,6 +1173,7 @@ func TestDAGRemove(t *testing.T) {
 				s2,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -1169,6 +1203,7 @@ func TestDAGRemove(t *testing.T) {
 				s1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -1188,6 +1223,7 @@ func TestDAGRemove(t *testing.T) {
 				sec1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "kuard.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -1216,6 +1252,7 @@ func TestDAGRemove(t *testing.T) {
 				s1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "a.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -1225,6 +1262,7 @@ func TestDAGRemove(t *testing.T) {
 					},
 				},
 			}, {
+				Port: 80,
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -1245,6 +1283,7 @@ func TestDAGRemove(t *testing.T) {
 				sec1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "a.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -1262,6 +1301,7 @@ func TestDAGRemove(t *testing.T) {
 					},
 				},
 			}, {
+				Port: 80,
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -1290,6 +1330,7 @@ func TestDAGRemove(t *testing.T) {
 				s1,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "a.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -1299,6 +1340,7 @@ func TestDAGRemove(t *testing.T) {
 					},
 				},
 			}, {
+				Port: 80,
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
@@ -1327,6 +1369,7 @@ func TestDAGRemove(t *testing.T) {
 				s2,
 			},
 			want: []*VirtualHost{{
+				Port: 80,
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
