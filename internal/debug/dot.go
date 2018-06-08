@@ -28,31 +28,66 @@ type dotWriter struct {
 	logrus.FieldLogger
 }
 
+type pair struct {
+	a, b interface{}
+}
+
+type ctx struct {
+	w     io.Writer
+	nodes map[interface{}]bool
+	edges map[pair]bool
+	route *dag.Route
+}
+
+func (c *ctx) writeVertex(v dag.Vertex) {
+	if r, ok := v.(*dag.Route); ok {
+		c.route = r
+	}
+	if c.nodes[v] {
+		return
+	}
+	c.nodes[v] = true
+	switch v := v.(type) {
+	case *dag.Secret:
+		fmt.Fprintf(c.w, `"%p" [shape=record, label="{secret|%s/%s}"]`+"\n", v, v.Namespace(), v.Name())
+	case *dag.Service:
+		fmt.Fprintf(c.w, `"%p" [shape=record, label="{service|%s/%s}"]`+"\n", v, v.Namespace(), v.Name())
+	case *dag.VirtualHost:
+		fmt.Fprintf(c.w, `"%p" [shape=record, label="{host|%s:%d}"]`+"\n", v, v.FQDN(), v.Port)
+	case *dag.Route:
+		fmt.Fprintf(c.w, `"%p" [shape=record, label="{prefix|%s}"]`+"\n", v, v.Prefix())
+	}
+}
+
+func (c *ctx) writeEdge(parent, child dag.Vertex) {
+	if c.edges[pair{parent, child}] {
+		return
+	}
+	c.edges[pair{parent, child}] = true
+	switch child := child.(type) {
+	default:
+		fmt.Fprintf(c.w, `"%p" -> "%p"`+"\n", parent, child)
+	case *dag.Service:
+		fmt.Fprintf(c.w, `"%p" -> "%p" [label="port: %s"]`+"\n", parent, child, c.route.ServicePort())
+	}
+
+}
+
 func (dw *dotWriter) writeDot(w io.Writer) {
 	fmt.Fprintln(w, "digraph DAG {\nrankdir=\"LR\"")
 
+	ctx := &ctx{
+		w:     w,
+		nodes: make(map[interface{}]bool),
+		edges: make(map[pair]bool),
+	}
+
 	var visit func(dag.Vertex)
 	visit = func(parent dag.Vertex) {
-		var route *dag.Route
-		switch parent := parent.(type) {
-		case *dag.Secret:
-			fmt.Fprintf(w, `"%p" [shape=record, label="{secret|%s/%s}"]`+"\n", parent, parent.Namespace(), parent.Name())
-		case *dag.Service:
-			fmt.Fprintf(w, `"%p" [shape=record, label="{service|%s/%s}"]`+"\n", parent, parent.Namespace(), parent.Name())
-		case *dag.VirtualHost:
-			fmt.Fprintf(w, `"%p" [shape=record, label="{host|%s:%d}"]`+"\n", parent, parent.FQDN(), parent.Port)
-		case *dag.Route:
-			route = parent
-			fmt.Fprintf(w, `"%p" [shape=record, label="{prefix|%s}"]`+"\n", parent, parent.Prefix())
-		}
+		ctx.writeVertex(parent)
 		parent.Visit(func(child dag.Vertex) {
 			visit(child)
-			switch child := child.(type) {
-			default:
-				fmt.Fprintf(w, `"%p" -> "%p"`+"\n", parent, child)
-			case *dag.Service:
-				fmt.Fprintf(w, `"%p" -> "%p" [label="port: %s"]`+"\n", parent, child, route.ServicePort())
-			}
+			ctx.writeEdge(parent, child)
 		})
 	}
 
