@@ -40,7 +40,7 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 		case *dag.Service:
 			fmt.Fprintf(w, `"%p" [shape=record, label="{service|%s/%s}"]`+"\n", parent, parent.Namespace(), parent.Name())
 		case *dag.VirtualHost:
-			fmt.Fprintf(w, `"%p" [shape=record, label="{host|%s}"]`+"\n", parent, parent.FQDN())
+			fmt.Fprintf(w, `"%p" [shape=record, label="{host|%s:%d}"]`+"\n", parent, parent.FQDN(), parent.Port)
 		case *dag.Route:
 			route = parent
 			fmt.Fprintf(w, `"%p" [shape=record, label="{prefix|%s}"]`+"\n", parent, parent.Prefix())
