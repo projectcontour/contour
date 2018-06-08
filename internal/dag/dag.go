@@ -186,6 +186,10 @@ func (d *DAG) recompute() *dag {
 
 	// deconstruct each ingress into routes and virtualhost entries
 	for _, ing := range d.ingresses {
+
+		// should we create port 80 routes for this ingress
+		httpAllowed := httpAllowed(ing)
+
 		if ing.Spec.Backend != nil {
 
 			// handle the annoying default ingress
@@ -205,7 +209,9 @@ func (d *DAG) recompute() *dag {
 					}
 				}
 			}
-			vhost("*", 80).routes[r.path] = r
+			if httpAllowed {
+				vhost("*", 80).routes[r.path] = r
+			}
 		}
 
 		// attach secrets from ingress to vhosts
@@ -247,7 +253,9 @@ func (d *DAG) recompute() *dag {
 						}
 					}
 				}
-				vhost(host, 80).routes[r.path] = r
+				if httpAllowed {
+					vhost(host, 80).routes[r.path] = r
+				}
 				if _, ok := _vhosts[hostport{host: host, port: 443}]; ok && host != "*" {
 					vhost(host, 443).routes[r.path] = r
 				}

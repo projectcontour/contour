@@ -36,6 +36,18 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			Backend: backend("kuard", intstr.FromInt(8080))},
 	}
+	i1a := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.allow-http": "false",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("kuard", intstr.FromInt(8080))},
+	}
+
 	// i2 is functionally identical to i1
 	i2 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -107,6 +119,29 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+	i6a := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-vhosts",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.allow-http": "false",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host:             "a.example.com",
+				IngressRuleValue: ingressrulevalue(backend("kuard", intstr.FromInt(8080))),
+			}, {
+				Host:             "b.example.com",
+				IngressRuleValue: ingressrulevalue(backend("kuard", intstr.FromString("http"))),
+			}},
+		},
+	}
+
 	// i7 contains a single vhost with two paths
 	i7 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -139,11 +174,54 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+
 	// i8 is identical to i7 but uses multiple IngressRules
 	i8 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "two-rules",
 			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "b.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}},
+					},
+				},
+			}, {
+				Host: "b.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/kuarder",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuarder",
+								ServicePort: intstr.FromInt(8080),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	// i9 is identical to i8 but disables non TLS connections
+	i9 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-rules",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.allow-http": "false",
+			},
 		},
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
@@ -977,6 +1055,109 @@ func TestDAGInsert(t *testing.T) {
 				},
 			}},
 		},
+		"insert ingress w/ two paths httpAllowed: false": {
+			objs: []interface{}{
+				i9,
+			},
+			want: []*VirtualHost{},
+		},
+		"insert ingress w/ two paths httpAllowed: false then tls and service": {
+			objs: []interface{}{
+				i9,
+				sec1,
+				s1, s2,
+			},
+			want: []*VirtualHost{{
+				Port: 443,
+				host: "b.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i9,
+						backend: &i9.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						services: map[meta]*Service{
+							meta{
+								name:      "kuard",
+								namespace: "default",
+							}: &Service{
+								object: s1,
+							},
+						},
+					},
+					"/kuarder": &Route{
+						path:    "/kuarder",
+						object:  i9,
+						backend: &i9.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
+						services: map[meta]*Service{
+							meta{
+								name:      "kuarder",
+								namespace: "default",
+							}: &Service{
+								object: s2,
+							},
+						},
+					},
+				},
+				secrets: map[meta]*Secret{
+					meta{
+						name:      "secret",
+						namespace: "default",
+					}: &Secret{
+						object: sec1,
+					},
+				},
+			}},
+		},
+		"insert default ingress httpAllowed: false": {
+			objs: []interface{}{
+				i1a,
+			},
+			want: []*VirtualHost{},
+		},
+		"insert default ingress httpAllowed: false then tls and service": {
+			objs: []interface{}{
+				i1a, sec1, s1,
+			},
+			want: []*VirtualHost{}, // default ingress cannot be tls
+		},
+		"insert ingress w/ two vhosts httpAllowed: false": {
+			objs: []interface{}{
+				i6a,
+			},
+			want: []*VirtualHost{},
+		},
+		"insert ingress w/ two vhosts httpAllowed: false then tls and service": {
+			objs: []interface{}{
+				i6a, sec1, s1,
+			},
+			want: []*VirtualHost{{
+				Port: 443,
+				host: "b.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:    "/",
+						object:  i6a,
+						backend: &i6a.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
+						services: map[meta]*Service{
+							meta{
+								name:      "kuard",
+								namespace: "default",
+							}: &Service{
+								object: s1,
+							},
+						},
+					},
+				},
+				secrets: map[meta]*Secret{
+					meta{
+						name:      "secret",
+						namespace: "default",
+					}: &Secret{
+						object: sec1,
+					},
+				},
+			}},
+		},
 	}
 
 	for name, tc := range tests {
@@ -1430,7 +1611,7 @@ func TestDAGRemove(t *testing.T) {
 				},
 			}},
 		},
-		"remove service from  ingress w/ two paths": {
+		"remove service from ingress w/ two paths": {
 			insert: []interface{}{
 				i7,
 				s2,
