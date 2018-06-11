@@ -21,6 +21,8 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/client-go/tools/cache"
+
+	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 )
 
 // A DAG represents a directed acylic graph of objects representing the relationship
@@ -29,9 +31,10 @@ import (
 type DAG struct {
 	mu sync.Mutex
 
-	ingresses map[meta]*v1beta1.Ingress
-	secrets   map[meta]*v1.Secret
-	services  map[meta]*v1.Service
+	ingresses     map[meta]*v1beta1.Ingress
+	ingressroutes map[meta]*ingressroutev1.IngressRoute
+	secrets       map[meta]*v1.Secret
+	services      map[meta]*v1.Service
 
 	dag *dag
 }
@@ -81,6 +84,13 @@ func (d *DAG) Insert(obj interface{}) {
 			d.ingresses = make(map[meta]*v1beta1.Ingress)
 		}
 		d.ingresses[m] = obj
+
+	case *ingressroutev1.IngressRoute:
+		m := meta{name: obj.Name, namespace: obj.Namespace}
+		if d.ingressroutes == nil {
+			d.ingressroutes = make(map[meta]*ingressroutev1.IngressRoute)
+		}
+		d.ingressroutes[m] = obj
 	default:
 		// not an interesting object
 	}
@@ -110,6 +120,9 @@ func (d *DAG) remove(obj interface{}) {
 	case *v1beta1.Ingress:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
 		delete(d.ingresses, m)
+	case *ingressroutev1.IngressRoute:
+		m := meta{name: obj.Name, namespace: obj.Namespace}
+		delete(d.ingressroutes, m)
 	default:
 		// not interesting
 	}
@@ -124,7 +137,6 @@ func (d *DAG) Recompute() {
 
 // recompute builds a new *dag.dag.
 func (d *DAG) recompute() *dag {
-
 	// memoise access to a service map, built
 	// as needed from the list of services cached
 	// from k8s.
@@ -186,12 +198,10 @@ func (d *DAG) recompute() *dag {
 
 	// deconstruct each ingress into routes and virtualhost entries
 	for _, ing := range d.ingresses {
-
 		// should we create port 80 routes for this ingress
 		httpAllowed := httpAllowed(ing)
 
 		if ing.Spec.Backend != nil {
-
 			// handle the annoying default ingress
 			r := &Route{
 				path:    "/",
@@ -225,7 +235,6 @@ func (d *DAG) recompute() *dag {
 		}
 
 		for _, rule := range ing.Spec.Rules {
-
 			// handle Spec.Rule declarations
 			host := rule.Host
 			if host == "" {
@@ -303,7 +312,6 @@ func (r *Route) Visit(f func(Vertex)) {
 // A VirtualHost describes a Vertex that represents the root
 // of a tree of objects associated with a HTTP Host: header.
 type VirtualHost struct {
-
 	// Port is the port that the VirtualHost will listen on.
 	// Expected values are 80 and 443, but others are possible
 	// if the VirtualHost is generated inside Contour.
