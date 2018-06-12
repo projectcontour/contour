@@ -36,6 +36,7 @@ const (
 
 	router     = "envoy.router"
 	grpcWeb    = "envoy.grpc_web"
+	cors       = "envoy.cors"
 	httpFilter = "envoy.http_connection_manager"
 	accessLog  = "envoy.file_access_log"
 )
@@ -66,10 +67,14 @@ type ListenerCache struct {
 	// If not set, defaults to DEFAULT_HTTPS_ACCESS_LOG.
 	HTTPSAccessLog string
 
-	// UseProxyProto configurs all listeners to expect a PROXY protocol
+	// UseProxyProto configures all listeners to expect a PROXY protocol
 	// V1 header on new connections.
 	// If not set, defaults to false.
 	UseProxyProto bool
+
+	// EnableCORS configures all listeners to allow Cross Origin Resource Sharing.
+	// If not set, defaults to false.
+	EnableCORS bool
 
 	listenerCache
 	Cond
@@ -135,7 +140,7 @@ func (lc *ListenerCache) recomputeListener0(ingresses map[metadata]*v1beta1.Ingr
 	}
 	if valid > 0 {
 		l.FilterChains = []listener.FilterChain{
-			filterchain(lc.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER, lc.httpAccessLog())),
+			filterchain(lc.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER, lc.httpAccessLog(), lc.EnableCORS)),
 		}
 	}
 	// TODO(dfc) some annotations may require the Ingress to no appear on
@@ -161,7 +166,7 @@ func (lc *ListenerCache) recomputeListenerIngressRoute0(routes map[metadata]*ing
 
 	if len(routes) > 0 {
 		l.FilterChains = []listener.FilterChain{
-			filterchain(lc.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER, lc.httpsAccessLog())),
+			filterchain(lc.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER, lc.httpsAccessLog(), lc.EnableCORS)),
 		}
 	}
 
@@ -216,7 +221,7 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 	}
 
 	filters := []listener.Filter{
-		httpfilter(ENVOY_HTTPS_LISTENER, lc.httpsAccessLog()),
+		httpfilter(ENVOY_HTTPS_LISTENER, lc.httpsAccessLog(), lc.EnableCORS),
 	}
 
 	for _, i := range ingresses {
@@ -344,7 +349,14 @@ func tlscontext(secret *v1.Secret, tlsMinProtoVersion auth.TlsParameters_TlsProt
 	}
 }
 
-func httpfilter(routename, accessLogPath string) listener.Filter {
+func httpfilter(routename, accessLogPath string, enableCORS bool) listener.Filter {
+	fv := []*types.Value{}
+	fv = append(fv, st(map[string]*types.Value{"name": sv(grpcWeb)}))
+	if enableCORS {
+		fv = append(fv, st(map[string]*types.Value{"name": sv(cors)}))
+	}
+	fv = append(fv, st(map[string]*types.Value{"name": sv(router)}))
+
 	return listener.Filter{
 		Name: httpFilter,
 		Config: &types.Struct{
@@ -368,14 +380,7 @@ func httpfilter(routename, accessLogPath string) listener.Filter {
 						}),
 					}),
 				}),
-				"http_filters": lv(
-					st(map[string]*types.Value{
-						"name": sv(grpcWeb),
-					}),
-					st(map[string]*types.Value{
-						"name": sv(router),
-					}),
-				),
+				"http_filters":       lv(fv...),
 				"use_remote_address": bv(true), // TODO(jbeda) should this ever be false?
 				"access_log":         accesslog(accessLogPath),
 			},
