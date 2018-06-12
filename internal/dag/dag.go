@@ -208,7 +208,7 @@ func (d *DAG) recompute() *dag {
 				object:  ing,
 				backend: ing.Spec.Backend,
 			}
-			m := meta{name: r.backend.ServiceName, namespace: r.object.Namespace}
+			m := meta{name: r.backend.ServiceName, namespace: ing.Namespace}
 			if s := service(m); s != nil {
 				// iterate through the ports on the service object, if we
 				// find a match against the backends port's name or number, we add
@@ -251,7 +251,7 @@ func (d *DAG) recompute() *dag {
 					backend: &rule.IngressRuleValue.HTTP.Paths[n].Backend,
 				}
 
-				m := meta{name: r.backend.ServiceName, namespace: r.object.Namespace}
+				m := meta{name: r.backend.ServiceName, namespace: ing.Namespace}
 				if s := service(m); s != nil {
 					// iterate through the ports on the service object, if we
 					// find a match against the backends port's name or number, we add
@@ -288,7 +288,7 @@ type Root interface {
 
 type Route struct {
 	path     string
-	object   *v1beta1.Ingress // the ingress which mentioned this route
+	object   interface{} // one of Ingress or IngressRoute
 	services map[meta]*Service
 	backend  *v1beta1.IngressBackend
 }
