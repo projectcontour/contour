@@ -27,11 +27,18 @@ const (
 	// set docs/annotations.md for details of how these annotations
 	// are applied by Contour.
 
-	annotationRequestTimeout  = "contour.heptio.com/request-timeout"
-	annotationRetryOn         = "contour.heptio.com/retry-on"
-	annotationNumRetries      = "contour.heptio.com/num-retries"
-	annotationPerTryTimeout   = "contour.heptio.com/per-try-timeout"
-	annotationWebsocketRoutes = "contour.heptio.com/websocket-routes"
+	annotationRequestTimeout       = "contour.heptio.com/request-timeout"
+	annotationRetryOn              = "contour.heptio.com/retry-on"
+	annotationNumRetries           = "contour.heptio.com/num-retries"
+	annotationPerTryTimeout        = "contour.heptio.com/per-try-timeout"
+	annotationWebsocketRoutes      = "contour.heptio.com/websocket-routes"
+	annotationEnableCORS           = "contour.heptio.com/enable-cors"
+	annotationCORSAllowOrigin      = "contour.heptio.com/cors-allow-origin"
+	annotationCORSAllowMethods     = "contour.heptio.com/cors-allow-methods"
+	annotationCORSAllowHeaders     = "contour.heptio.com/cors-allow-headers"
+	annotationCORSExposeHeaders    = "contour.heptio.com/cors-expose-headers"
+	annotationCORSAllowCredentials = "contour.heptio.com/cors-allow-credentials"
+	annotationCORSMaxAge           = "contour.heptio.com/cors-max-age"
 
 	// By default envoy applies a 15 second timeout to all backend requests.
 	// The explicit value 0 turns off the timeout, implying "never time out"
@@ -82,13 +89,9 @@ func parseAnnotationUInt32(annotations map[string]string, annotation string) *ty
 func parseUpstreamProtocols(annotations map[string]string, annotation string, protocols ...string) map[string]string {
 	up := make(map[string]string)
 	for _, protocol := range protocols {
-		ports := annotations[fmt.Sprintf("%s.%s", annotation, protocol)]
-		for _, v := range strings.Split(ports, ",") {
-			port := strings.TrimSpace(v)
-			if port != "" {
-				up[port] = protocol
-			}
-		}
+		parseCommaSeparatedList(annotations[fmt.Sprintf("%s.%s", annotation, protocol)], func(port string) {
+			up[port] = protocol
+		})
 	}
 	return up
 }
@@ -109,11 +112,19 @@ func tlsRequired(i *v1beta1.Ingress) bool {
 // malformed, then an empty map is returned.
 func websocketRoutes(i *v1beta1.Ingress) map[string]*types.BoolValue {
 	routes := make(map[string]*types.BoolValue)
-	for _, v := range strings.Split(i.Annotations[annotationWebsocketRoutes], ",") {
-		route := strings.TrimSpace(v)
-		if route != "" {
-			routes[route] = &types.BoolValue{Value: true}
+	parseCommaSeparatedList(i.Annotations[annotationWebsocketRoutes], func(route string) {
+		routes[route] = &types.BoolValue{Value: true}
+	})
+	return routes
+}
+
+// parseCommaSeparatedList parses a comma separated list and calls a function
+// for every non-empty element found.
+func parseCommaSeparatedList(s string, f func(string)) {
+	for _, v := range strings.Split(s, ",") {
+		v = strings.TrimSpace(v)
+		if v != "" {
+			f(v)
 		}
 	}
-	return routes
 }

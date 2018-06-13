@@ -97,7 +97,6 @@ func main() {
 	serve.Flag("envoy-https-port", "Envoy HTTPS listener port").IntVar(&t.HTTPSPort)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&t.UseProxyProto)
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&t.IngressClass)
-	serve.Flag("enable-cors", "Enable HTTP CORS filter for all listeners").BoolVar(&t.EnableCORS)
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {

@@ -72,10 +72,6 @@ type ListenerCache struct {
 	// If not set, defaults to false.
 	UseProxyProto bool
 
-	// EnableCORS configures all listeners to allow Cross Origin Resource Sharing.
-	// If not set, defaults to false.
-	EnableCORS bool
-
 	listenerCache
 	Cond
 }
@@ -140,7 +136,7 @@ func (lc *ListenerCache) recomputeListener0(ingresses map[metadata]*v1beta1.Ingr
 	}
 	if valid > 0 {
 		l.FilterChains = []listener.FilterChain{
-			filterchain(lc.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER, lc.httpAccessLog(), lc.EnableCORS)),
+			filterchain(lc.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER, lc.httpAccessLog())),
 		}
 	}
 	// TODO(dfc) some annotations may require the Ingress to no appear on
@@ -166,7 +162,7 @@ func (lc *ListenerCache) recomputeListenerIngressRoute0(routes map[metadata]*ing
 
 	if len(routes) > 0 {
 		l.FilterChains = []listener.FilterChain{
-			filterchain(lc.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER, lc.httpsAccessLog(), lc.EnableCORS)),
+			filterchain(lc.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER, lc.httpsAccessLog())),
 		}
 	}
 
@@ -221,7 +217,7 @@ func (lc *ListenerCache) recomputeTLSListener0(ingresses map[metadata]*v1beta1.I
 	}
 
 	filters := []listener.Filter{
-		httpfilter(ENVOY_HTTPS_LISTENER, lc.httpsAccessLog(), lc.EnableCORS),
+		httpfilter(ENVOY_HTTPS_LISTENER, lc.httpsAccessLog()),
 	}
 
 	for _, i := range ingresses {
@@ -349,14 +345,7 @@ func tlscontext(secret *v1.Secret, tlsMinProtoVersion auth.TlsParameters_TlsProt
 	}
 }
 
-func httpfilter(routename, accessLogPath string, enableCORS bool) listener.Filter {
-	fv := []*types.Value{}
-	fv = append(fv, st(map[string]*types.Value{"name": sv(grpcWeb)}))
-	if enableCORS {
-		fv = append(fv, st(map[string]*types.Value{"name": sv(cors)}))
-	}
-	fv = append(fv, st(map[string]*types.Value{"name": sv(router)}))
-
+func httpfilter(routename, accessLogPath string) listener.Filter {
 	return listener.Filter{
 		Name: httpFilter,
 		Config: &types.Struct{
@@ -380,7 +369,17 @@ func httpfilter(routename, accessLogPath string, enableCORS bool) listener.Filte
 						}),
 					}),
 				}),
-				"http_filters":       lv(fv...),
+				"http_filters": lv(
+					st(map[string]*types.Value{
+						"name": sv(grpcWeb),
+					}),
+					st(map[string]*types.Value{
+						"name": sv(cors),
+					}),
+					st(map[string]*types.Value{
+						"name": sv(router),
+					}),
+				),
 				"use_remote_address": bv(true), // TODO(jbeda) should this ever be false?
 				"access_log":         accesslog(accessLogPath),
 			},

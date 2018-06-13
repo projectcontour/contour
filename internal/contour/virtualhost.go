@@ -157,6 +157,7 @@ func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend, useWebsocket *types.
 			ClusterSpecifier: &route.RouteAction_Cluster{
 				Cluster: name,
 			},
+			Cors: corspolicy(i.Annotations),
 		},
 	}
 	if timeout, ok := parseAnnotationTimeout(i.Annotations, annotationRequestTimeout); ok {
@@ -176,6 +177,27 @@ func action(i *v1beta1.Ingress, be *v1beta1.IngressBackend, useWebsocket *types.
 	ca.Route.UseWebsocket = useWebsocket
 
 	return &ca
+}
+
+// corspolicy computes the cors policy for the supplied annotations list.
+func corspolicy(annotations map[string]string) *route.CorsPolicy {
+	if !(annotations[annotationEnableCORS] == "true") {
+		return nil
+	}
+
+	corsPolicy := &route.CorsPolicy{Enabled: &types.BoolValue{Value: true}}
+	parseCommaSeparatedList(annotations[annotationCORSAllowOrigin], func(origin string) {
+		corsPolicy.AllowOrigin = append(corsPolicy.AllowOrigin, origin)
+	})
+	corsPolicy.AllowMethods = annotations[annotationCORSAllowMethods]
+	corsPolicy.AllowHeaders = annotations[annotationCORSAllowHeaders]
+	corsPolicy.ExposeHeaders = annotations[annotationCORSExposeHeaders]
+	corsPolicy.MaxAge = annotations[annotationCORSMaxAge]
+	if annotations[annotationCORSAllowCredentials] == "true" {
+		corsPolicy.AllowCredentials = &types.BoolValue{Value: true}
+	}
+
+	return corsPolicy
 }
 
 // actionroute computes the cluster route action, a *v2.Route_route for the
