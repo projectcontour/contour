@@ -303,7 +303,7 @@ func TestTranslatorAddIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "",
 					},
 					Routes: []ingressroutev1.Route{
@@ -354,7 +354,7 @@ func TestTranslatorAddIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "foo.bar",
 					},
 					Routes: []ingressroutev1.Route{
@@ -405,7 +405,7 @@ func TestTranslatorAddIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "foo.bar",
 					},
 					Routes: []ingressroutev1.Route{
@@ -456,7 +456,7 @@ func TestTranslatorAddIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "foo.bar",
 					},
 					Routes: []ingressroutev1.Route{
@@ -1228,7 +1228,7 @@ func TestTranslatorCacheOnUpdateIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "hello.example.com",
 					},
 					Routes: []ingressroutev1.Route{
@@ -1250,7 +1250,7 @@ func TestTranslatorCacheOnUpdateIngressRoute(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: ingressroutev1.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "hello.example.com",
 						},
 						Routes: []ingressroutev1.Route{
@@ -1274,7 +1274,7 @@ func TestTranslatorCacheOnUpdateIngressRoute(t *testing.T) {
 							Namespace: "default",
 						},
 						Spec: ingressroutev1.IngressRouteSpec{
-							VirtualHost: ingressroutev1.VirtualHost{
+							VirtualHost: &ingressroutev1.VirtualHost{
 								Fqdn: "hello.example.com",
 							},
 							Routes: []ingressroutev1.Route{
@@ -1301,7 +1301,7 @@ func TestTranslatorCacheOnUpdateIngressRoute(t *testing.T) {
 							Namespace: "default",
 						},
 						Spec: ingressroutev1.IngressRouteSpec{
-							VirtualHost: ingressroutev1.VirtualHost{
+							VirtualHost: &ingressroutev1.VirtualHost{
 								Fqdn: "hello.example.com",
 							},
 							Routes: []ingressroutev1.Route{
@@ -1325,7 +1325,7 @@ func TestTranslatorCacheOnUpdateIngressRoute(t *testing.T) {
 								Namespace: "default",
 							},
 							Spec: ingressroutev1.IngressRouteSpec{
-								VirtualHost: ingressroutev1.VirtualHost{
+								VirtualHost: &ingressroutev1.VirtualHost{
 									Fqdn: "hello.example.com",
 								},
 								Routes: []ingressroutev1.Route{
@@ -1349,7 +1349,7 @@ func TestTranslatorCacheOnUpdateIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "hello.example.com",
 					},
 					Routes: []ingressroutev1.Route{
@@ -1434,7 +1434,7 @@ func TestTranslatorCacheOnUpdateIngressRoute(t *testing.T) {
 							Namespace: "default",
 						},
 						Spec: ingressroutev1.IngressRouteSpec{
-							VirtualHost: ingressroutev1.VirtualHost{
+							VirtualHost: &ingressroutev1.VirtualHost{
 								Fqdn: "hello.example.com",
 							},
 							Routes: []ingressroutev1.Route{
@@ -1458,7 +1458,7 @@ func TestTranslatorCacheOnUpdateIngressRoute(t *testing.T) {
 								Namespace: "default",
 							},
 							Spec: ingressroutev1.IngressRouteSpec{
-								VirtualHost: ingressroutev1.VirtualHost{
+								VirtualHost: &ingressroutev1.VirtualHost{
 									Fqdn: "hello.example.com",
 								},
 								Routes: []ingressroutev1.Route{
@@ -1482,7 +1482,7 @@ func TestTranslatorCacheOnUpdateIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "hello.example.com",
 					},
 					Routes: []ingressroutev1.Route{
@@ -1503,7 +1503,7 @@ func TestTranslatorCacheOnUpdateIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "goodbye.example.com",
 					},
 					Routes: []ingressroutev1.Route{
@@ -1525,7 +1525,7 @@ func TestTranslatorCacheOnUpdateIngressRoute(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: ingressroutev1.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "goodbye.example.com",
 						},
 						Routes: []ingressroutev1.Route{
@@ -1549,7 +1549,7 @@ func TestTranslatorCacheOnUpdateIngressRoute(t *testing.T) {
 							Namespace: "default",
 						},
 						Spec: ingressroutev1.IngressRouteSpec{
-							VirtualHost: ingressroutev1.VirtualHost{
+							VirtualHost: &ingressroutev1.VirtualHost{
 								Fqdn: "goodbye.example.com",
 							},
 							Routes: []ingressroutev1.Route{
@@ -1668,7 +1668,7 @@ func TestTranslatorRemoveIngressRoute(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: ingressroutev1.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "httpbin.org",
 						},
 						Routes: []ingressroutev1.Route{
@@ -1690,7 +1690,7 @@ func TestTranslatorRemoveIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "httpbin.org",
 					},
 					Routes: []ingressroutev1.Route{
@@ -1716,7 +1716,7 @@ func TestTranslatorRemoveIngressRoute(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: ingressroutev1.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "httpbin.org",
 						},
 						Routes: []ingressroutev1.Route{
@@ -1739,7 +1739,7 @@ func TestTranslatorRemoveIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "httpbin.org",
 					},
 					Routes: []ingressroutev1.Route{
@@ -1790,7 +1790,7 @@ func TestTranslatorRemoveIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "httpbin.org",
 					},
 					Routes: []ingressroutev1.Route{

@@ -21,7 +21,7 @@ import (
 type IngressRouteSpec struct {
 	// Virtualhost appears at most once. If it is present, the object is considered
 	// to be a "root".
-	VirtualHost `json:"virtualhost"`
+	VirtualHost *VirtualHost `json:"virtualhost"`
 	// Routes are the ingress routes
 	Routes []Route `json:"routes"`
 }
@@ -38,7 +38,7 @@ type VirtualHost struct {
 	// If present describes tls properties. The CNI names that will be matched on
 	// are described in fqdn and aliases, the tls.secretName secret must contain a
 	// matching certificate
-	TLS `json:"tls"`
+	TLS *TLS `json:"tls"`
 }
 
 // TLS describes tls properties. The CNI names that will be matched on
