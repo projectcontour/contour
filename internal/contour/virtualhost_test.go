@@ -956,7 +956,7 @@ func TestVirtualHostCacheRecomputevhostIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "httpbin.org",
 					},
 					Routes: []ingressroutev1.Route{
@@ -1007,7 +1007,7 @@ func TestVirtualHostCacheRecomputevhostIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "httpbin.org",
 					},
 					Routes: []ingressroutev1.Route{
@@ -1085,7 +1085,7 @@ func TestVirtualHostCacheRecomputevhostIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "my-very-very-long-service-host-name.subdomain.boring-dept.my.company",
 					},
 					Routes: []ingressroutev1.Route{
@@ -1137,7 +1137,7 @@ func TestVirtualHostCacheRecomputevhostIngressRoute(t *testing.T) {
 						Namespace: "kube-system",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: ingressroutev1.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "httpbin.org",
 						},
 						Routes: []ingressroutev1.Route{
@@ -1158,7 +1158,7 @@ func TestVirtualHostCacheRecomputevhostIngressRoute(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: ingressroutev1.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "httpbin.org",
 						},
 						Routes: []ingressroutev1.Route{
@@ -1275,7 +1275,7 @@ func TestVirtualHostCacheRecomputevhostIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "httpbin.org",
 					},
 					Routes: []ingressroutev1.Route{
@@ -1336,7 +1336,7 @@ func TestVirtualHostCacheRecomputevhostIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "httpbin.org",
 					},
 					Routes: []ingressroutev1.Route{
@@ -1398,7 +1398,7 @@ func TestVirtualHostCacheRecomputevhostIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "httpbin.org",
 					},
 					Routes: []ingressroutev1.Route{
@@ -1461,7 +1461,7 @@ func TestVirtualHostCacheRecomputevhostIngressRoute(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: ingressroutev1.VirtualHost{
+					VirtualHost: &ingressroutev1.VirtualHost{
 						Fqdn: "httpbin.org",
 					},
 					Routes: []ingressroutev1.Route{
