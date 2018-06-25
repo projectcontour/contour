@@ -36,6 +36,7 @@ const (
 
 	router     = "envoy.router"
 	grpcWeb    = "envoy.grpc_web"
+	cors       = "envoy.cors"
 	httpFilter = "envoy.http_connection_manager"
 	accessLog  = "envoy.file_access_log"
 )
@@ -66,7 +67,7 @@ type ListenerCache struct {
 	// If not set, defaults to DEFAULT_HTTPS_ACCESS_LOG.
 	HTTPSAccessLog string
 
-	// UseProxyProto configurs all listeners to expect a PROXY protocol
+	// UseProxyProto configures all listeners to expect a PROXY protocol
 	// V1 header on new connections.
 	// If not set, defaults to false.
 	UseProxyProto bool
@@ -371,6 +372,9 @@ func httpfilter(routename, accessLogPath string) listener.Filter {
 				"http_filters": lv(
 					st(map[string]*types.Value{
 						"name": sv(grpcWeb),
+					}),
+					st(map[string]*types.Value{
+						"name": sv(cors),
 					}),
 					st(map[string]*types.Value{
 						"name": sv(router),
