@@ -339,7 +339,7 @@ func (r *Route) ServicePort() string {
 	case *v1beta1.IngressBackend:
 		return b.ServicePort.String()
 	default:
-		panic(b)
+		return "unknown"
 	}
 }
 
