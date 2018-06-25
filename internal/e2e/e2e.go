@@ -68,7 +68,7 @@ func setup(t *testing.T, opts ...func(*contour.Translator)) (cache.ResourceEvent
 	check(t, err)
 	var wg sync.WaitGroup
 	wg.Add(1)
-	srv := cgrpc.NewAPI(log, tr, et)
+	srv := cgrpc.NewAPI(log, tr, &tr.ListenerCache, et)
 	go func() {
 		defer wg.Done()
 		srv.Serve(l)

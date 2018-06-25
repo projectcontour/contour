@@ -183,7 +183,7 @@ func TestGRPCStreaming(t *testing.T) {
 			et = &contour.EndpointsTranslator{
 				FieldLogger: log,
 			}
-			srv := NewAPI(log, tr, et)
+			srv := NewAPI(log, tr, &tr.ListenerCache, et)
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)
@@ -273,7 +273,7 @@ func TestGRPCFetching(t *testing.T) {
 			et := &contour.EndpointsTranslator{
 				FieldLogger: log,
 			}
-			srv := NewAPI(log, tr, et)
+			srv := NewAPI(log, tr, &tr.ListenerCache, et)
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)

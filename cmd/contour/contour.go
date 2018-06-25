@@ -155,7 +155,12 @@ func main() {
 			if err != nil {
 				return err
 			}
-			s := grpc.NewAPI(log, t, et)
+			s := grpc.NewAPI(
+				log,
+				t, // routes and clusters
+				&t.ListenerCache,
+				et,
+			)
 			log.Println("started")
 			defer log.Println("stopped")
 			return s.Serve(l)
