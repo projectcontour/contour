@@ -271,6 +271,108 @@ func TestTranslatorCacheOnAddIngress(t *testing.T) {
 				},
 			},
 		},
+		"issue/404": {
+			i: v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hello",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Backend: backend("kuard", intstr.FromInt(80)),
+					Rules: []v1beta1.IngressRule{{
+						Host: "test-gui",
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Path: "/",
+									Backend: v1beta1.IngressBackend{
+										ServiceName: "test-gui",
+										ServicePort: intstr.FromInt(80),
+									},
+								}},
+							},
+						},
+					}},
+				},
+			},
+			wantIngresses: map[metadata]*v1beta1.Ingress{
+				metadata{name: "hello", namespace: "default"}: &v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "hello",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: backend("kuard", intstr.FromInt(80)),
+						Rules: []v1beta1.IngressRule{{
+							Host: "test-gui",
+							IngressRuleValue: v1beta1.IngressRuleValue{
+								HTTP: &v1beta1.HTTPIngressRuleValue{
+									Paths: []v1beta1.HTTPIngressPath{{
+										Path: "/",
+										Backend: v1beta1.IngressBackend{
+											ServiceName: "test-gui",
+											ServicePort: intstr.FromInt(80),
+										},
+									}},
+								},
+							},
+						}},
+					},
+				},
+			},
+			wantVhosts: map[string]map[metadata]*v1beta1.Ingress{
+				"*": map[metadata]*v1beta1.Ingress{
+					metadata{name: "hello", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "hello",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Backend: backend("kuard", intstr.FromInt(80)),
+							Rules: []v1beta1.IngressRule{{
+								Host: "test-gui",
+								IngressRuleValue: v1beta1.IngressRuleValue{
+									HTTP: &v1beta1.HTTPIngressRuleValue{
+										Paths: []v1beta1.HTTPIngressPath{{
+											Path: "/",
+											Backend: v1beta1.IngressBackend{
+												ServiceName: "test-gui",
+												ServicePort: intstr.FromInt(80),
+											},
+										}},
+									},
+								},
+							}},
+						},
+					},
+				},
+				"test-gui": map[metadata]*v1beta1.Ingress{
+					metadata{name: "hello", namespace: "default"}: &v1beta1.Ingress{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "hello",
+							Namespace: "default",
+						},
+						Spec: v1beta1.IngressSpec{
+							Backend: backend("kuard", intstr.FromInt(80)),
+							Rules: []v1beta1.IngressRule{{
+								Host: "test-gui",
+								IngressRuleValue: v1beta1.IngressRuleValue{
+									HTTP: &v1beta1.HTTPIngressRuleValue{
+										Paths: []v1beta1.HTTPIngressPath{{
+											Path: "/",
+											Backend: v1beta1.IngressBackend{
+												ServiceName: "test-gui",
+												ServicePort: intstr.FromInt(80),
+											},
+										}},
+									},
+								},
+							}},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {

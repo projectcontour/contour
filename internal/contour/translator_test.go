@@ -926,6 +926,50 @@ func TestTranslatorAddIngress(t *testing.T) {
 			},
 		},
 		ingress_https: []proto.Message{},
+	}, {
+		name: "default vhost should not overwrite named vhost",
+		ing: &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hello",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Backend: backend("kuard", intstr.FromInt(80)),
+				Rules: []v1beta1.IngressRule{{
+					Host: "test-gui",
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{{
+								Path: "/",
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "test-gui",
+									ServicePort: intstr.FromInt(80),
+								},
+							}},
+						},
+					},
+				}},
+			},
+		},
+		ingress_http: []proto.Message{
+			&route.VirtualHost{
+				Name:    "*",
+				Domains: []string{"*"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/kuard/80"),
+				}},
+			},
+			&route.VirtualHost{
+				Name:    "test-gui",
+				Domains: []string{"test-gui", "test-gui:80"},
+				Routes: []route.Route{{
+					Match:  prefixmatch("/"),
+					Action: clusteraction("default/test-gui/80"),
+				}},
+			},
+		},
+		ingress_https: []proto.Message{},
 	}}
 
 	log := testLogger(t)
