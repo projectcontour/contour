@@ -75,7 +75,7 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 		}
 		wr := websocketRoutes(i)
 		requireTLS := tlsRequired(i)
-		if i.Spec.Backend != nil && len(ingresses) == 1 {
+		if i.Spec.Backend != nil && vhost == "*" {
 			r := route.Route{
 				Match:  prefixmatch("/"),
 				Action: action(i, i.Spec.Backend, wr["/"]),
@@ -130,7 +130,6 @@ func (v *VirtualHostCache) recomputevhostIngressRoute(vhost string, routes map[m
 	vv := virtualhost(vhost, "80")
 	for _, i := range routes {
 		for _, j := range i.Spec.Routes {
-
 			// TODO(sas): Handle case of no default path (e.g. "/")
 
 			vv.Routes = append(vv.Routes, route.Route{

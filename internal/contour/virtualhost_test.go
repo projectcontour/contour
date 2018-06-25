@@ -660,6 +660,80 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 				},
 			},
 		},
+		"default vhost does not overwrite named vhost/1": { // issue 404
+			vhost: "*",
+			ingresses: im([]*v1beta1.Ingress{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hello",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Backend: backend("kuard", intstr.FromInt(80)),
+					Rules: []v1beta1.IngressRule{{
+						Host: "test-gui",
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Path: "/",
+									Backend: v1beta1.IngressBackend{
+										ServiceName: "test-gui",
+										ServicePort: intstr.FromInt(80),
+									},
+								}},
+							},
+						},
+					}},
+				},
+			}}),
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "*",
+					Domains: []string{"*"},
+					Routes: []route.Route{{
+						Match:  prefixmatch("/"),
+						Action: clusteraction("default/kuard/80"),
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
+		"default vhost does not overwrite named vhost/2": { // issue 404
+			vhost: "test-gui",
+			ingresses: im([]*v1beta1.Ingress{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hello",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					Backend: backend("kuard", intstr.FromInt(80)),
+					Rules: []v1beta1.IngressRule{{
+						Host: "test-gui",
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Path: "/",
+									Backend: v1beta1.IngressBackend{
+										ServiceName: "test-gui",
+										ServicePort: intstr.FromInt(80),
+									},
+								}},
+							},
+						},
+					}},
+				},
+			}}),
+			ingress_http: []proto.Message{
+				&route.VirtualHost{
+					Name:    "test-gui",
+					Domains: []string{"test-gui", "test-gui:80"},
+					Routes: []route.Route{{
+						Match:  prefixmatch("/"),
+						Action: clusteraction("default/test-gui/80"),
+					}},
+				},
+			},
+			ingress_https: []proto.Message{},
+		},
 	}
 
 	log := logrus.New()
@@ -674,7 +748,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			got := contents(&tr.VirtualHostCache.HTTP)
 			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_http, got) {
-				t.Fatalf("recomputevhost(%v):\n (ingress_http) want:\n%+v\n got:\n%+v", tc.vhost, tc.ingress_http, got)
+				t.Fatalf("recomputevhost(%v):\n (ingress_http) want:\n%+v\n got:\n%+v\n%+v", tc.vhost, tc.ingress_http, got, tc.ingresses)
 			}
 
 			got = contents(&tr.VirtualHostCache.HTTPS)

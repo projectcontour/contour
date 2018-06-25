@@ -838,6 +838,66 @@ func TestWebsocketRoutes(t *testing.T) {
 	}}, nil)
 }
 
+// issue 404
+func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	rh.OnAdd(&v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hello",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "kuard",
+				ServicePort: intstr.FromInt(80),
+			},
+
+			Rules: []v1beta1.IngressRule{{
+				Host: "test-gui",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "test-gui",
+								ServicePort: intstr.FromInt(80),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	})
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_http",
+				VirtualHosts: []route.VirtualHost{{
+					Name:    "*",
+					Domains: []string{"*"},
+					Routes: []route.Route{{
+						Match:  prefixmatch("/"),
+						Action: routecluster("default/kuard/80"),
+					}},
+				}, {
+					Name:    "test-gui",
+					Domains: []string{"test-gui", "test-gui:80"},
+					Routes: []route.Route{{
+						Match:  prefixmatch("/"),
+						Action: routecluster("default/test-gui/80"),
+					}},
+				}},
+			}),
+		},
+		TypeUrl: routeType,
+		Nonce:   "0",
+	}, fetchRDS(t, cc, "ingress_http"))
+}
+
 func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []route.VirtualHost) {
 	t.Helper()
 	assertEqual(t, &v2.DiscoveryResponse{
