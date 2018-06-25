@@ -18,6 +18,7 @@ import (
 	"reflect"
 	"testing"
 
+	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -253,6 +254,48 @@ func TestDAGInsert(t *testing.T) {
 						}},
 					},
 				},
+			}},
+		},
+	}
+
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// ir2 is like ir1 but refers to two backend services
+	ir2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}, {
+					Name: "kuarder",
+					Port: 8080,
+				}},
 			}},
 		},
 	}
@@ -1158,6 +1201,96 @@ func TestDAGInsert(t *testing.T) {
 				},
 			}},
 		},
+		"insert ingressroute": {
+			objs: []interface{}{
+				ir1,
+			},
+			want: []*VirtualHost{{
+				Port: 80,
+				host: "example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:   "/",
+						object: ir1,
+					},
+				},
+			}},
+		},
+		"insert ingressroute and service": {
+			objs: []interface{}{
+				ir1, s1,
+			},
+			want: []*VirtualHost{{
+				Port: 80,
+				host: "example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:   "/",
+						object: ir1,
+						services: map[meta]*Service{
+							meta{
+								name:      "kuard",
+								namespace: "default",
+							}: &Service{
+								object: s1,
+							},
+						},
+					},
+				},
+			}},
+		},
+		"insert ingressroute referencing two backends, one missing": {
+			objs: []interface{}{
+				ir2, s2,
+			},
+			want: []*VirtualHost{{
+				Port: 80,
+				host: "example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:   "/",
+						object: ir2,
+						services: map[meta]*Service{
+							meta{
+								name:      "kuarder",
+								namespace: "default",
+							}: &Service{
+								object: s2,
+							},
+						},
+					},
+				},
+			}},
+		},
+		"insert ingressroute referencing two backends": {
+			objs: []interface{}{
+				ir2, s1, s2,
+			},
+			want: []*VirtualHost{{
+				Port: 80,
+				host: "example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:   "/",
+						object: ir2,
+						services: map[meta]*Service{
+							meta{
+								name:      "kuard",
+								namespace: "default",
+							}: &Service{
+								object: s1,
+							},
+							meta{
+								name:      "kuarder",
+								namespace: "default",
+							}: &Service{
+								object: s2,
+							},
+						},
+					},
+				},
+			}},
+		},
 	}
 
 	for name, tc := range tests {
@@ -1684,7 +1817,7 @@ func (v *VirtualHost) String() string {
 }
 
 func (r *Route) String() string {
-	return fmt.Sprintf("route: %q {services: %v, object: %p, backend: %+v}", r.Prefix(), r.services, r.object, *r.backend)
+	return fmt.Sprintf("route: %q {services: %v, object: %p, backend: %+v}", r.Prefix(), r.services, r.object, r.backend)
 }
 
 func (s *Service) String() string {
