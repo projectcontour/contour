@@ -69,7 +69,6 @@ spec:
             routes:
               type: array
               items:
-                type: object
                 required:
                   - match
                 properties:
@@ -88,7 +87,7 @@ spec:
                       namespace:
                         type: string
                         pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123
-                  service:
+                  services:
                     type: array
                     items:
                       type: object
