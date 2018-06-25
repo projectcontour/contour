@@ -300,6 +300,26 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// ir3 is like ir1, but does not specify a match on the route
+	ir3 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -1205,6 +1225,19 @@ func TestDAGInsert(t *testing.T) {
 			objs: []interface{}{
 				ir1,
 			},
+			want: []*VirtualHost{{
+				Port: 80,
+				host: "example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:   "/",
+						object: ir1,
+					},
+				},
+			}},
+		},
+		"insert ingressroute with no prefix match": {
+			objs: []interface{}{ir3},
 			want: []*VirtualHost{{
 				Port: 80,
 				host: "example.com",

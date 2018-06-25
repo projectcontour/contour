@@ -291,8 +291,12 @@ func (d *DAG) recompute() *dag {
 
 		// attach routes to vhost
 		for _, route := range ir.Spec.Routes {
+			path := route.Match
+			if path == "" {
+				path = "/"
+			}
 			r := &Route{
-				path:   route.Match,
+				path:   path,
 				object: ir,
 			}
 			for _, s := range route.Services {
@@ -308,7 +312,7 @@ func (d *DAG) recompute() *dag {
 					}
 				}
 			}
-			vhost(host, 80).routes[r.path] = r
+			vhost(host, 80).routes[path] = r
 		}
 	}
 
