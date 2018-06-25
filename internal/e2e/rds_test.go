@@ -867,6 +867,18 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 						}},
 					},
 				},
+			}, {
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/kuard",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromInt(8080),
+							},
+						}},
+					},
+				},
 			}},
 		},
 	})
@@ -880,6 +892,9 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 					Name:    "*",
 					Domains: []string{"*"},
 					Routes: []route.Route{{
+						Match:  prefixmatch("/kuard"),
+						Action: routecluster("default/kuard/8080"),
+					}, {
 						Match:  prefixmatch("/"),
 						Action: routecluster("default/kuard/80"),
 					}},

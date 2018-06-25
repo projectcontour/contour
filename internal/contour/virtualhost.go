@@ -89,12 +89,18 @@ func (v *VirtualHostCache) recomputevhost(vhost string, ingresses map[metadata]*
 				}
 			}
 			vv.Routes = []route.Route{r}
-			continue
 		}
 		for _, rule := range i.Spec.Rules {
-			if rule.Host != "" && rule.Host != vhost {
+			host := rule.Host
+			if host == "" {
+				host = "*"
+			}
+
+			if host != vhost {
+				// not this vhost
 				continue
 			}
+
 			if rule.IngressRuleValue.HTTP == nil {
 				// TODO(dfc) plumb a logger in here so we can log this error.
 				continue

@@ -682,6 +682,18 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 								}},
 							},
 						},
+					}, {
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Path: "/kuard",
+									Backend: v1beta1.IngressBackend{
+										ServiceName: "kuard",
+										ServicePort: intstr.FromInt(8080),
+									},
+								}},
+							},
+						},
 					}},
 				},
 			}}),
@@ -690,6 +702,9 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 					Name:    "*",
 					Domains: []string{"*"},
 					Routes: []route.Route{{
+						Match:  prefixmatch("/kuard"),
+						Action: clusteraction("default/kuard/8080"),
+					}, {
 						Match:  prefixmatch("/"),
 						Action: clusteraction("default/kuard/80"),
 					}},
@@ -715,6 +730,18 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 									Backend: v1beta1.IngressBackend{
 										ServiceName: "test-gui",
 										ServicePort: intstr.FromInt(80),
+									},
+								}},
+							},
+						},
+					}, {
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{{
+									Path: "/kuard",
+									Backend: v1beta1.IngressBackend{
+										ServiceName: "kuard",
+										ServicePort: intstr.FromInt(8080),
 									},
 								}},
 							},
@@ -748,7 +775,7 @@ func TestVirtualHostCacheRecomputevhost(t *testing.T) {
 			got := contents(&tr.VirtualHostCache.HTTP)
 			sort.Stable(virtualHostsByName(got))
 			if !reflect.DeepEqual(tc.ingress_http, got) {
-				t.Fatalf("recomputevhost(%v):\n (ingress_http) want:\n%+v\n got:\n%+v\n%+v", tc.vhost, tc.ingress_http, got, tc.ingresses)
+				t.Fatalf("recomputevhost(%v):\n (ingress_http) want:\n%+v\n got:\n%+v", tc.vhost, tc.ingress_http, got)
 			}
 
 			got = contents(&tr.VirtualHostCache.HTTPS)
