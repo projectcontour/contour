@@ -21,7 +21,12 @@ import (
 	"testing"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
+	"k8s.io/api/extensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestListenerVisit(t *testing.T) {
@@ -33,6 +38,65 @@ func TestListenerVisit(t *testing.T) {
 			objs: nil,
 			want: map[string]*v2.Listener{},
 		},
+		"one http only ingress": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromInt(8080),
+						},
+					},
+				},
+			},
+			want: map[string]*v2.Listener{
+				ENVOY_HTTP_LISTENER: &v2.Listener{
+					Name:    ENVOY_HTTP_LISTENER,
+					Address: socketaddress("0.0.0.0", 8080),
+					FilterChains: []listener.FilterChain{
+						filterchain(false, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+					},
+				},
+			},
+		},
+		"one http only ingressroute": {
+			objs: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []ingressroutev1.Route{
+							{
+								Services: []ingressroutev1.Service{
+									{
+										Name: "backend",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: map[string]*v2.Listener{
+				ENVOY_HTTP_LISTENER: &v2.Listener{
+					Name:    ENVOY_HTTP_LISTENER,
+					Address: socketaddress("0.0.0.0", 8080),
+					FilterChains: []listener.FilterChain{
+						filterchain(false, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -41,6 +105,7 @@ func TestListenerVisit(t *testing.T) {
 			for _, o := range tc.objs {
 				d.Insert(o)
 			}
+			d.Recompute()
 			v := Visitor{
 				DAG: &d,
 			}
