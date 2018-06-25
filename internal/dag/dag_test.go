@@ -1446,6 +1446,97 @@ func TestDAGRemove(t *testing.T) {
 		},
 	}
 
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "kuard.example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match:    "/",
+				Services: []ingressroutev1.Service{{Name: "kuard", Port: 8080}},
+			}},
+		},
+	}
+
+	// ir2 is similar to ir1, but it contains two backend services
+	ir2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "kuard.example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match:    "/",
+				Services: []ingressroutev1.Service{{Name: "kuard", Port: 8080}, {Name: "nginx", Port: 80}},
+			}},
+		},
+	}
+
+	// ir3 is similar to ir1, but it contains TLS configuration
+	ir3 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "kuard.example.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName: "secret",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match:    "/",
+				Services: []ingressroutev1.Service{{Name: "kuard", Port: 8080}},
+			}},
+		},
+	}
+
+	// ir4 contains two vhosts which point to the same service
+	ir4 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-vhosts",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn:    "b.example.com",
+				Aliases: []string{"a.example.com"},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match:    "/",
+				Services: []ingressroutev1.Service{{Name: "kuard", Port: 8080}},
+			}},
+		},
+	}
+
+	// ir5 contains a single vhost with two paths
+	ir5 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-paths",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "b.example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match:    "/",
+				Services: []ingressroutev1.Service{{Name: "kuard", Port: 8080}},
+			}, {
+				Match:    "/kuarder",
+				Services: []ingressroutev1.Service{{Name: "kuarder", Port: 8080}},
+			}},
+		},
+	}
+
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -1779,6 +1870,144 @@ func TestDAGRemove(t *testing.T) {
 					"/kuarder": &Route{
 						path:   "/kuarder",
 						object: i7,
+					},
+				},
+			}},
+		},
+		"remove ingressroute w/ default backend": {
+			insert: []interface{}{
+				ir1,
+			},
+			remove: []interface{}{
+				ir1,
+			},
+			want: []*VirtualHost{},
+		},
+		"remove ingressroute w/ two backends": {
+			insert: []interface{}{
+				ir2,
+			},
+			remove: []interface{}{
+				ir2,
+			},
+			want: []*VirtualHost{},
+		},
+		"remove ingressroute w/ default backend leaving matching service": {
+			insert: []interface{}{
+				ir1,
+				s1,
+			},
+			remove: []interface{}{
+				ir1,
+			},
+			want: []*VirtualHost{},
+		},
+		"remove service leaving ingressroute w/ default backend": {
+			insert: []interface{}{
+				s1,
+				ir1,
+			},
+			remove: []interface{}{
+				s1,
+			},
+			want: []*VirtualHost{{
+				Port: 80,
+				host: "kuard.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:   "/",
+						object: ir1,
+					},
+				},
+			}},
+		},
+		"remove non matching service leaving ingressroute w/ default backend": {
+			insert: []interface{}{
+				ir1,
+				s2,
+			},
+			remove: []interface{}{
+				s2,
+			},
+			want: []*VirtualHost{{
+				Port: 80,
+				host: "kuard.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:   "/",
+						object: ir1,
+					},
+				},
+			}},
+		},
+		"remove ingressroute w/ default backend leaving non matching service": {
+			insert: []interface{}{
+				s2,
+				ir1,
+			},
+			remove: []interface{}{
+				ir1,
+			},
+			want: []*VirtualHost{},
+		},
+		"remove secret leaving ingressroute w/ tls": {
+			insert: []interface{}{
+				sec1,
+				ir3,
+			},
+			remove: []interface{}{
+				sec1,
+			},
+			want: []*VirtualHost{{
+				Port: 80,
+				host: "kuard.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:   "/",
+						object: ir3,
+					},
+				},
+			}},
+		},
+		"remove ingressroute w/ two vhosts": {
+			insert: []interface{}{
+				ir4,
+			},
+			remove: []interface{}{
+				ir4,
+			},
+			want: []*VirtualHost{},
+		},
+		"remove service from ingressroute w/ two paths": {
+			insert: []interface{}{
+				ir5,
+				s2,
+				s1,
+			},
+			remove: []interface{}{
+				s2,
+			},
+			want: []*VirtualHost{{
+				Port: 80,
+				host: "b.example.com",
+				routes: map[string]*Route{
+					"/": &Route{
+						path:   "/",
+						object: ir5,
+						services: map[portmeta]*Service{
+							portmeta{
+								name:      "kuard",
+								namespace: "default",
+								port:      8080,
+							}: &Service{
+								object: s1,
+								Port:   8080,
+							},
+						},
+					},
+					"/kuarder": &Route{
+						path:   "/kuarder",
+						object: ir5,
 					},
 				},
 			}},
