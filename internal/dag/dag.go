@@ -56,6 +56,9 @@ func (d *DAG) Visit(f func(Vertex)) {
 	d.mu.Lock()
 	dag := d.dag
 	d.mu.Unlock()
+	if dag == nil {
+		return
+	}
 	for _, r := range dag.roots {
 		f(r)
 	}
