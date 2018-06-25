@@ -21,6 +21,8 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/client-go/tools/cache"
+
+	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 )
 
 // A DAG represents a directed acylic graph of objects representing the relationship
@@ -29,9 +31,10 @@ import (
 type DAG struct {
 	mu sync.Mutex
 
-	ingresses map[meta]*v1beta1.Ingress
-	secrets   map[meta]*v1.Secret
-	services  map[meta]*v1.Service
+	ingresses     map[meta]*v1beta1.Ingress
+	ingressroutes map[meta]*ingressroutev1.IngressRoute
+	secrets       map[meta]*v1.Secret
+	services      map[meta]*v1.Service
 
 	dag *dag
 }
@@ -81,6 +84,13 @@ func (d *DAG) Insert(obj interface{}) {
 			d.ingresses = make(map[meta]*v1beta1.Ingress)
 		}
 		d.ingresses[m] = obj
+
+	case *ingressroutev1.IngressRoute:
+		m := meta{name: obj.Name, namespace: obj.Namespace}
+		if d.ingressroutes == nil {
+			d.ingressroutes = make(map[meta]*ingressroutev1.IngressRoute)
+		}
+		d.ingressroutes[m] = obj
 	default:
 		// not an interesting object
 	}
@@ -110,6 +120,9 @@ func (d *DAG) remove(obj interface{}) {
 	case *v1beta1.Ingress:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
 		delete(d.ingresses, m)
+	case *ingressroutev1.IngressRoute:
+		m := meta{name: obj.Name, namespace: obj.Namespace}
+		delete(d.ingressroutes, m)
 	default:
 		// not interesting
 	}
@@ -124,7 +137,6 @@ func (d *DAG) Recompute() {
 
 // recompute builds a new *dag.dag.
 func (d *DAG) recompute() *dag {
-
 	// memoise access to a service map, built
 	// as needed from the list of services cached
 	// from k8s.
@@ -186,25 +198,23 @@ func (d *DAG) recompute() *dag {
 
 	// deconstruct each ingress into routes and virtualhost entries
 	for _, ing := range d.ingresses {
-
 		// should we create port 80 routes for this ingress
 		httpAllowed := httpAllowed(ing)
 
 		if ing.Spec.Backend != nil {
-
 			// handle the annoying default ingress
 			r := &Route{
 				path:    "/",
 				object:  ing,
 				backend: ing.Spec.Backend,
 			}
-			m := meta{name: r.backend.ServiceName, namespace: r.object.Namespace}
+			m := meta{name: ing.Spec.Backend.ServiceName, namespace: ing.Namespace}
 			if s := service(m); s != nil {
 				// iterate through the ports on the service object, if we
 				// find a match against the backends port's name or number, we add
 				// the service as a child of the route.
 				for _, p := range s.object.Spec.Ports {
-					if r.backend.ServicePort.IntValue() == int(p.Port) || r.backend.ServicePort.String() == p.Name {
+					if ing.Spec.Backend.ServicePort.IntValue() == int(p.Port) || ing.Spec.Backend.ServicePort.String() == p.Name {
 						r.addService(s)
 					}
 				}
@@ -225,7 +235,6 @@ func (d *DAG) recompute() *dag {
 		}
 
 		for _, rule := range ing.Spec.Rules {
-
 			// handle Spec.Rule declarations
 			host := rule.Host
 			if host == "" {
@@ -242,13 +251,13 @@ func (d *DAG) recompute() *dag {
 					backend: &rule.IngressRuleValue.HTTP.Paths[n].Backend,
 				}
 
-				m := meta{name: r.backend.ServiceName, namespace: r.object.Namespace}
+				m := meta{name: rule.IngressRuleValue.HTTP.Paths[n].Backend.ServiceName, namespace: ing.Namespace}
 				if s := service(m); s != nil {
 					// iterate through the ports on the service object, if we
 					// find a match against the backends port's name or number, we add
 					// the service as a child of the route.
 					for _, p := range s.object.Spec.Ports {
-						if r.backend.ServicePort.IntValue() == int(p.Port) || r.backend.ServicePort.String() == p.Name {
+						if rule.IngressRuleValue.HTTP.Paths[n].Backend.ServicePort.IntValue() == int(p.Port) || rule.IngressRuleValue.HTTP.Paths[n].Backend.ServicePort.String() == p.Name {
 							r.addService(s)
 						}
 					}
@@ -260,6 +269,46 @@ func (d *DAG) recompute() *dag {
 					vhost(host, 443).routes[r.path] = r
 				}
 			}
+		}
+	}
+
+	// process ingressroute documents
+	for _, ir := range d.ingressroutes {
+		if ir.Spec.VirtualHost == nil {
+			// delegate ingressroute, skip it
+			continue
+		}
+
+		host := ir.Spec.VirtualHost.Fqdn
+
+		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
+			// attach secrets to TLS enabled vhosts
+			m := meta{name: tls.SecretName, namespace: ir.Namespace}
+			if sec := secret(m); sec != nil {
+				vhost(host, 443).addSecret(sec)
+			}
+		}
+
+		// attach routes to vhost
+		for _, route := range ir.Spec.Routes {
+			r := &Route{
+				path:   route.Match,
+				object: ir,
+			}
+			for _, s := range route.Services {
+				m := meta{name: s.Name, namespace: ir.Namespace}
+				if svc := service(m); svc != nil {
+					// iterate through the ports on the service object, if we
+					// find a match against the backends port's name or number, we add
+					// the service as a child of the route.
+					for _, p := range svc.object.Spec.Ports {
+						if s.Port == int(p.Port) {
+							r.addService(svc)
+						}
+					}
+				}
+			}
+			vhost(host, 80).routes[r.path] = r
 		}
 	}
 
@@ -279,13 +328,20 @@ type Root interface {
 
 type Route struct {
 	path     string
-	object   *v1beta1.Ingress // the ingress which mentioned this route
+	object   interface{} // one of Ingress or IngressRoute
 	services map[meta]*Service
-	backend  *v1beta1.IngressBackend
+	backend  interface{} // one of *v1beta1.IngressBackend or ingressroute.service
 }
 
-func (r *Route) Prefix() string      { return r.path }
-func (r *Route) ServicePort() string { return r.backend.ServicePort.String() }
+func (r *Route) Prefix() string { return r.path }
+func (r *Route) ServicePort() string {
+	switch b := r.backend.(type) {
+	case *v1beta1.IngressBackend:
+		return b.ServicePort.String()
+	default:
+		return "unknown"
+	}
+}
 
 func (r *Route) addService(s *Service) {
 	if r.services == nil {
@@ -303,7 +359,6 @@ func (r *Route) Visit(f func(Vertex)) {
 // A VirtualHost describes a Vertex that represents the root
 // of a tree of objects associated with a HTTP Host: header.
 type VirtualHost struct {
-
 	// Port is the port that the VirtualHost will listen on.
 	// Expected values are 80 and 443, but others are possible
 	// if the VirtualHost is generated inside Contour.
