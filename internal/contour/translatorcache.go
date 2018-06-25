@@ -82,10 +82,13 @@ func (t *translatorCache) OnAdd(obj interface{}) {
 			t.vhostroutes = make(map[string]map[metadata]*ingressroutev1.IngressRoute)
 		}
 
-		host := obj.Spec.VirtualHost.Fqdn
-		if host == "" {
-			host = "*"
+		host := "*"
+		if obj.Spec.VirtualHost != nil {
+			if obj.Spec.VirtualHost.Fqdn != "" {
+				host = obj.Spec.VirtualHost.Fqdn
+			}
 		}
+
 		if _, ok := t.vhostroutes[host]; !ok {
 			t.vhostroutes[host] = make(map[metadata]*ingressroutev1.IngressRoute)
 		}
@@ -137,10 +140,14 @@ func (t *translatorCache) OnDelete(obj interface{}) {
 	case *ingressroutev1.IngressRoute:
 		md := metadata{name: obj.Name, namespace: obj.Namespace}
 		delete(t.routes, md)
-		host := obj.Spec.VirtualHost.Fqdn
-		if host == "" {
-			host = "*"
+
+		host := "*"
+		if obj.Spec.VirtualHost != nil {
+			if obj.Spec.VirtualHost.Fqdn != "" {
+				host = obj.Spec.VirtualHost.Fqdn
+			}
 		}
+
 		delete(t.vhostroutes[host], md)
 		if len(t.vhostroutes[host]) == 0 {
 			delete(t.vhostroutes, host)
