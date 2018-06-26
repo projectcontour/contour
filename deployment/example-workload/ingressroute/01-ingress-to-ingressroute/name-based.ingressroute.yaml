@@ -21,7 +21,7 @@ metadata:
   namespace: default
 spec: 
   virtualhost:
-    fqdn: bar1.bar.com
+    fqdn: bar1.foo.com
   routes: 
     - match: /
       services: 

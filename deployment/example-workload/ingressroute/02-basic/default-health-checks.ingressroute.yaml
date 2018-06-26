@@ -4,9 +4,15 @@ kind: IngressRoute
 metadata: 
   name: health-check
   namespace: default
-spec: 
+spec:
   virtualhost:
     fqdn: health.bar.com
+  lbHealthCheck:
+    path: /healthy
+    intervalSeconds: 5
+    timeoutSeconds: 2
+    unhealthyThresholdCount: 3
+    healthyThresholdCount: 5
   routes: 
     - match: /
       services: 
