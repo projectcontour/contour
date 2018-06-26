@@ -15,10 +15,12 @@ package listener
 
 import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
+	"k8s.io/api/core/v1"
 )
 
 const (
@@ -44,12 +46,44 @@ type Visitor struct {
 func (v *Visitor) Visit() map[string]*v2.Listener {
 	m := make(map[string]*v2.Listener)
 	http := 0
+	ingress_https := v2.Listener{
+		Name:    ENVOY_HTTPS_LISTENER,
+		Address: socketaddress(DEFAULT_HTTPS_LISTENER_ADDRESS, DEFAULT_HTTPS_LISTENER_PORT),
+	}
+	filters := []listener.Filter{
+		httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
+	}
 	v.DAG.Visit(func(v dag.Vertex) {
 		switch v := v.(type) {
 		case *dag.VirtualHost:
 			if v.Port == 80 {
+				// we only create on http listener so record the fact
+				// that we need to then double back at the end and add
+				// the listener properly.
 				http++
 			}
+			var data map[string][]byte
+			v.Visit(func(ch dag.Vertex) {
+				switch ch := ch.(type) {
+				case *dag.Secret:
+					data = ch.Data()
+				default:
+					// some other child, yolo
+				}
+			})
+			if data == nil {
+				// no secret for this virtual host, skip it
+				return
+			}
+			// TODO TLS proto
+			fc := listener.FilterChain{
+				FilterChainMatch: &listener.FilterChainMatch{
+					SniDomains: []string{v.FQDN()},
+				},
+				TlsContext: tlscontext(data, auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+				Filters:    filters,
+			}
+			ingress_https.FilterChains = append(ingress_https.FilterChains, fc)
 		}
 	})
 	if http > 0 {
@@ -57,9 +91,12 @@ func (v *Visitor) Visit() map[string]*v2.Listener {
 			Name:    ENVOY_HTTP_LISTENER,
 			Address: socketaddress(DEFAULT_HTTP_LISTENER_ADDRESS, DEFAULT_HTTP_LISTENER_PORT),
 			FilterChains: []listener.FilterChain{
-				filterchain(false, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
+				filterchain(false, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
 			},
 		}
+	}
+	if len(ingress_https.FilterChains) > 0 {
+		m[ENVOY_HTTPS_LISTENER] = &ingress_https
 	}
 	return m
 }
@@ -123,6 +160,29 @@ func httpfilter(routename, accessLogPath string) listener.Filter {
 				"use_remote_address": bv(true), // TODO(jbeda) should this ever be false?
 				"access_log":         accesslog(accessLogPath),
 			},
+		},
+	}
+}
+
+func tlscontext(data map[string][]byte, tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnprotos ...string) *auth.DownstreamTlsContext {
+	return &auth.DownstreamTlsContext{
+		CommonTlsContext: &auth.CommonTlsContext{
+			TlsParams: &auth.TlsParameters{
+				TlsMinimumProtocolVersion: tlsMinProtoVersion,
+			},
+			TlsCertificates: []*auth.TlsCertificate{{
+				CertificateChain: &core.DataSource{
+					Specifier: &core.DataSource_InlineBytes{
+						InlineBytes: data[v1.TLSCertKey],
+					},
+				},
+				PrivateKey: &core.DataSource{
+					Specifier: &core.DataSource_InlineBytes{
+						InlineBytes: data[v1.TLSPrivateKeyKey],
+					},
+				},
+			}},
+			AlpnProtocols: alpnprotos,
 		},
 	}
 }

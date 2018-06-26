@@ -456,6 +456,11 @@ func (s *Secret) Name() string       { return s.object.Name }
 func (s *Secret) Namespace() string  { return s.object.Namespace }
 func (s *Secret) Visit(func(Vertex)) {}
 
+// Data returns the contents of the backing secret's map.
+func (s *Secret) Data() map[string][]byte {
+	return s.object.Data
+}
+
 func (s *Secret) toMeta() meta {
 	return meta{
 		name:      s.object.Name,
