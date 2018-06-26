@@ -3078,6 +3078,113 @@ func TestDAGIngressRouteDelegatePrefixDoesntMatch(t *testing.T) {
 		t.Fatal("expected:\n", want, "\ngot:\n", got)
 	}
 }
+func TestDAGRootNamespaces(t *testing.T) {
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "allowed1",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// ir2 is like ir1, but in a different namespace
+	ir2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "allowed2",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example2.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	tests := map[string]struct {
+		rootNamespaces []string
+		objs           []interface{}
+		want           int
+	}{
+		"nil root namespaces": {
+			objs: []interface{}{ir1},
+			want: 1,
+		},
+		"empty root namespaces": {
+			objs: []interface{}{ir1},
+			want: 1,
+		},
+		"single root namespace with root ingressroute": {
+			rootNamespaces: []string{"allowed1"},
+			objs:           []interface{}{ir1},
+			want:           1,
+		},
+		"multiple root namespaces, one with a root ingressroute": {
+			rootNamespaces: []string{"foo", "allowed1", "bar"},
+			objs:           []interface{}{ir1},
+			want:           1,
+		},
+		"multiple root namespaces, each with a root ingressroute": {
+			rootNamespaces: []string{"foo", "allowed1", "allowed2"},
+			objs:           []interface{}{ir1, ir2},
+			want:           2,
+		},
+		"root ingressroute defined outside single root namespaces": {
+			rootNamespaces: []string{"foo"},
+			objs:           []interface{}{ir1},
+			want:           0,
+		},
+		"root ingressroute defined outside multiple root namespaces": {
+			rootNamespaces: []string{"foo", "bar"},
+			objs:           []interface{}{ir1},
+			want:           0,
+		},
+		"two root ingressroutes, one inside root namespace, one outside": {
+			rootNamespaces: []string{"foo", "allowed2"},
+			objs:           []interface{}{ir1, ir2},
+			want:           1,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var d DAG
+			d.IngressRouteRootNamespaces = tc.rootNamespaces
+			for _, o := range tc.objs {
+				d.Insert(o)
+			}
+			d.Recompute()
+
+			var count int
+			d.Visit(func(v Vertex) {
+				if _, ok := v.(*VirtualHost); ok {
+					count++
+				}
+			})
+
+			if tc.want != count {
+				t.Errorf("wanted %d vertices, but got %d", tc.want, count)
+			}
+		})
+	}
+}
 
 func TestDAGIngressRouteDelegatePrefixMatchesStringPrefixButNotPathPrefix(t *testing.T) {
 	ir1 := &ingressroutev1.IngressRoute{
