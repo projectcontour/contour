@@ -16,22 +16,34 @@
 // additions/deletions in caches connected to the Envoy xDS gRPC API server.
 package contour
 
-import "github.com/heptio/contour/internal/dag"
+import (
+	"github.com/heptio/contour/internal/dag"
+	"github.com/heptio/contour/internal/listener"
+)
 
 // DAGAdapter wraps a dag.ResourceEventHandler to hook post update cache
 // generation.
 type DAGAdapter struct {
 	dag.ResourceEventHandler // provides a Visit method
+	ListenerCache            listener.Cache
 }
 
 func (d *DAGAdapter) OnAdd(obj interface{}) {
 	d.ResourceEventHandler.OnAdd(obj)
+	d.updateListeners()
 }
 
 func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
 	d.ResourceEventHandler.OnUpdate(oldObj, newObj)
+	d.updateListeners()
 }
 
 func (d *DAGAdapter) OnDelete(obj interface{}) {
 	d.ResourceEventHandler.OnDelete(obj)
+	d.updateListeners()
+}
+
+func (d *DAGAdapter) updateListeners() {
+	v := listener.Visitor{&d.DAG}
+	d.ListenerCache.Update(v.Visit())
 }

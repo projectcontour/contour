@@ -157,7 +157,7 @@ func main() {
 			s := grpc.NewAPI(
 				log,
 				t, // routes and clusters
-				&t.ListenerCache,
+				&da.ListenerCache,
 				et,
 			)
 			log.Println("started")
