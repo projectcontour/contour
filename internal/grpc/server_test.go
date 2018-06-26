@@ -38,6 +38,7 @@ func TestGRPCStreaming(t *testing.T) {
 	// tr and et is recreated before the start of each test.
 	var tr *contour.Translator
 	var et *contour.EndpointsTranslator
+	var da *contour.DAGAdapter
 
 	newClient := func(t *testing.T) *grpc.ClientConn {
 		cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
@@ -111,7 +112,7 @@ func TestGRPCStreaming(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			// add an ingress, which will create a non tls listener
-			tr.OnAdd(&v1beta1.Ingress{
+			da.OnAdd(&v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin-org",
 					Namespace: "default",
@@ -183,7 +184,8 @@ func TestGRPCStreaming(t *testing.T) {
 			et = &contour.EndpointsTranslator{
 				FieldLogger: log,
 			}
-			srv := NewAPI(log, tr, &tr.ListenerCache, et)
+			da = new(contour.DAGAdapter)
+			srv := NewAPI(log, tr, &da.ListenerCache, et)
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)
