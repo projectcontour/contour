@@ -117,9 +117,6 @@ func main() {
 		log.Infof("args: %v", args)
 		var g workgroup.Group
 
-		// buffer notifications to t to ensure they are handled sequentially.
-		buf := k8s.NewBuffer(&g, t, log, 128)
-
 		// setup DAG Adapter and debug handler
 		var da contour.DAGAdapter
 		debug.DAG = &da.ResourceEventHandler.DAG
@@ -133,10 +130,10 @@ func main() {
 		client, contourClient := newClient(*kubeconfig, *inCluster)
 
 		wl := log.WithField("context", "watch")
-		k8s.WatchServices(&g, client, wl, buf, &da)
-		k8s.WatchIngress(&g, client, wl, buf, &da)
-		k8s.WatchSecrets(&g, client, wl, buf, &da)
-		k8s.WatchIngressRoutes(&g, contourClient, wl, buf, &da)
+		k8s.WatchServices(&g, client, wl, t, &da)
+		k8s.WatchIngress(&g, client, wl, t, &da)
+		k8s.WatchSecrets(&g, client, wl, t, &da)
+		k8s.WatchIngressRoutes(&g, contourClient, wl, t, &da)
 
 		// Endpoints updates are handled directly by the EndpointsTranslator
 		// due to their high update rate and their orthogonal nature.
