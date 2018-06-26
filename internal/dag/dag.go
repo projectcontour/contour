@@ -136,47 +136,59 @@ func (d *DAG) Recompute() {
 	d.dag = d.recompute()
 }
 
-// recompute builds a new *dag.dag.
-func (d *DAG) recompute() *dag {
-	// memoise access to a service map, built
-	// as needed from the list of services cached
-	// from k8s.
-	_services := make(map[portmeta]*Service)
-	service := func(m meta, port intstr.IntOrString) *Service {
-		switch port.Type {
-		case intstr.Int:
-			if s, ok := _services[portmeta{name: m.name, namespace: m.namespace, port: int(port.IntValue())}]; ok {
-				return s
-			}
+// serviceMap memoise access to a service map, built
+// as needed from the list of services cached
+// from k8s.
+type serviceMap struct {
+
+	// backing services from k8s api.
+	services map[meta]*v1.Service
+
+	// cached Services.
+	_services map[portmeta]*Service
+}
+
+// lookup returns a Service that matches the meta and port supplied.
+// If no matching Service is found lookup returns nil.
+func (sm *serviceMap) lookup(m meta, port intstr.IntOrString) *Service {
+	if port.Type == intstr.Int {
+		if s, ok := sm._services[portmeta{name: m.name, namespace: m.namespace, port: int(port.IntValue())}]; ok {
+			return s
 		}
-		svc, ok := d.services[m]
-		if !ok {
-			return nil
-		}
-		for _, p := range svc.Spec.Ports {
-			switch port.Type {
-			case intstr.Int:
-				if int(p.Port) == port.IntValue() {
-					s := &Service{
-						object: svc,
-						Port:   int(p.Port),
-					}
-					_services[s.toMeta()] = s
-					return s
-				}
-			case intstr.String:
-				if port.String() == p.Name {
-					s := &Service{
-						object: svc,
-						Port:   int(p.Port),
-					}
-					_services[s.toMeta()] = s
-					return s
-				}
-			}
-		}
+	}
+	svc, ok := sm.services[m]
+	if !ok {
 		return nil
 	}
+	for _, p := range svc.Spec.Ports {
+		if int(p.Port) == port.IntValue() {
+			return sm.insert(svc, int(p.Port))
+		}
+		if port.String() == p.Name {
+			return sm.insert(svc, int(p.Port))
+		}
+	}
+	return nil
+}
+
+func (sm *serviceMap) insert(svc *v1.Service, port int) *Service {
+	if sm._services == nil {
+		sm._services = make(map[portmeta]*Service)
+	}
+	s := &Service{
+		object: svc,
+		Port:   port,
+	}
+	sm._services[s.toMeta()] = s
+	return s
+}
+
+// recompute builds a new *dag.dag.
+func (d *DAG) recompute() *dag {
+	sm := serviceMap{
+		services: d.services,
+	}
+	service := sm.lookup
 
 	// memoise access to a secrets map, built
 	// as needed from the list of secrets cached

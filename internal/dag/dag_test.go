@@ -1856,3 +1856,72 @@ func secretdata(cert, key string) map[string][]byte {
 		v1.TLSPrivateKeyKey: []byte(key),
 	}
 }
+
+func TestServiceMapLookup(t *testing.T) {
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	services := map[meta]*v1.Service{
+		meta{name: "service1", namespace: "default"}: s1,
+	}
+
+	tests := map[string]struct {
+		meta
+		port intstr.IntOrString
+		want *Service
+	}{
+		"lookup sevice by port number": {
+			meta: meta{name: "service1", namespace: "default"},
+			port: intstr.FromInt(8080),
+			want: &Service{
+				object: s1,
+				Port:   8080,
+			},
+		},
+		"lookup service by port name": {
+			meta: meta{name: "service1", namespace: "default"},
+			port: intstr.FromString("http"),
+			want: &Service{
+				object: s1,
+				Port:   8080,
+			},
+		},
+		"lookup service by port number (as string)": {
+			meta: meta{name: "service1", namespace: "default"},
+			port: intstr.Parse("8080"),
+			want: &Service{
+				object: s1,
+				Port:   8080,
+			},
+		},
+		"lookup service by port number (from string)": {
+			meta: meta{name: "service1", namespace: "default"},
+			port: intstr.FromString("8080"),
+			want: &Service{
+				object: s1,
+				Port:   8080,
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			sm := serviceMap{services: services}
+			got := sm.lookup(tc.meta, tc.port)
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.want, got)
+			}
+		})
+	}
+}
