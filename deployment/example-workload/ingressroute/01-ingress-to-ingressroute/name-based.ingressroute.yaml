@@ -21,7 +21,7 @@ metadata:
   namespace: default
 spec: 
   virtualhost:
-    fqdn: bar1.foo.com
+    fqdn: bar1.bar.com
   routes: 
     - match: /
       services: 
@@ -40,7 +40,7 @@ spec:
 #       - backend:
 #           serviceName: s1
 #           servicePort: 80
-#   - host: bar1.foo.com
+#   - host: bar1.bar.com
 #     http:
 #       paths:
 #       - backend:
