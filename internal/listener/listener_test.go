@@ -18,9 +18,11 @@ import (
 	"testing"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
+	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -94,6 +96,91 @@ func TestListenerVisit(t *testing.T) {
 				},
 			},
 		},
+		"simple ingress with secret": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							Hosts:      []string{"whatever.example.com"},
+							SecretName: "secret",
+						}},
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromInt(8080),
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: secretdata("certificate", "key"),
+				},
+			},
+			want: map[string]*v2.Listener{
+				ENVOY_HTTP_LISTENER: &v2.Listener{
+					Name:    ENVOY_HTTP_LISTENER,
+					Address: socketaddress("0.0.0.0", 8080),
+					FilterChains: []listener.FilterChain{
+						filterchain(false, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+					},
+				},
+				ENVOY_HTTPS_LISTENER: &v2.Listener{
+					Name:    ENVOY_HTTPS_LISTENER,
+					Address: socketaddress("0.0.0.0", 8443),
+					FilterChains: []listener.FilterChain{{
+						FilterChainMatch: &listener.FilterChainMatch{
+							SniDomains: []string{"whatever.example.com"},
+						},
+						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						Filters: []listener.Filter{
+							httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
+						},
+					}},
+				},
+			},
+		},
+		"simple ingress with missing secret": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							Hosts:      []string{"whatever.example.com"},
+							SecretName: "missing",
+						}},
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromInt(8080),
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: secretdata("certificate", "key"),
+				},
+			},
+			want: map[string]*v2.Listener{
+				ENVOY_HTTP_LISTENER: &v2.Listener{
+					Name:    ENVOY_HTTP_LISTENER,
+					Address: socketaddress("0.0.0.0", 8080),
+					FilterChains: []listener.FilterChain{
+						filterchain(false, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -111,5 +198,12 @@ func TestListenerVisit(t *testing.T) {
 				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.want, got)
 			}
 		})
+	}
+}
+
+func secretdata(cert, key string) map[string][]byte {
+	return map[string][]byte{
+		v1.TLSCertKey:       []byte(cert),
+		v1.TLSPrivateKeyKey: []byte(key),
 	}
 }
