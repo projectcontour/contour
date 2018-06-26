@@ -391,15 +391,18 @@
     "pkg/util/framer",
     "pkg/util/intstr",
     "pkg/util/json",
+    "pkg/util/mergepatch",
     "pkg/util/net",
     "pkg/util/runtime",
     "pkg/util/sets",
+    "pkg/util/strategicpatch",
     "pkg/util/validation",
     "pkg/util/validation/field",
     "pkg/util/wait",
     "pkg/util/yaml",
     "pkg/version",
     "pkg/watch",
+    "third_party/forked/golang/json",
     "third_party/forked/golang/reflect"
   ]
   revision = "01bc873149a1802eb74df583613872d126449ed5"
@@ -511,9 +514,15 @@
   ]
   revision = "01a732e01d00cb9a81bb0ca050d3e6d2b947927b"
 
+[[projects]]
+  branch = "master"
+  name = "k8s.io/kube-openapi"
+  packages = ["pkg/util/proto"]
+  revision = "4cac20de16b951c103aa40c4bafbc8cefdd18a12"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b8ed62d2fbe8083f5d7e479ff9db0cc507d3cc2e9fbe621099930cd22b9a1d25"
+  inputs-digest = "dd69473075601a34d20f128492269d60c4570ea8823e1e6d56b5bba8671d379f"
   solver-name = "gps-cdcl"
   solver-version = 1
