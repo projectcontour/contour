@@ -36,13 +36,9 @@ type ctx struct {
 	w     io.Writer
 	nodes map[interface{}]bool
 	edges map[pair]bool
-	route *dag.Route
 }
 
 func (c *ctx) writeVertex(v dag.Vertex) {
-	if r, ok := v.(*dag.Route); ok {
-		c.route = r
-	}
 	if c.nodes[v] {
 		return
 	}
@@ -68,7 +64,7 @@ func (c *ctx) writeEdge(parent, child dag.Vertex) {
 	default:
 		fmt.Fprintf(c.w, `"%p" -> "%p"`+"\n", parent, child)
 	case *dag.Service:
-		fmt.Fprintf(c.w, `"%p" -> "%p" [label="port: %s"]`+"\n", parent, child, c.route.ServicePort())
+		fmt.Fprintf(c.w, `"%p" -> "%p" [label="port: %d"]`+"\n", parent, child, child.Port)
 	}
 
 }

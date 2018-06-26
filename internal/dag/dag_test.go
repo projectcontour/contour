@@ -365,9 +365,8 @@ func TestDAGInsert(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i1,
-						backend: i1.Spec.Backend,
+						path:   "/",
+						object: i1,
 					},
 				},
 			}},
@@ -381,9 +380,8 @@ func TestDAGInsert(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i2,
-						backend: &i2.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i2,
 					},
 				},
 			}},
@@ -397,9 +395,8 @@ func TestDAGInsert(t *testing.T) {
 				host: "kuard.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i3,
-						backend: &i3.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i3,
 					},
 				},
 			}},
@@ -414,15 +411,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i1,
-						backend: i1.Spec.Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i1,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -439,15 +437,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i1,
-						backend: i1.Spec.Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i1,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -464,9 +463,8 @@ func TestDAGInsert(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i1,
-						backend: i1.Spec.Backend,
+						path:   "/",
+						object: i1,
 					},
 				},
 			}},
@@ -481,9 +479,8 @@ func TestDAGInsert(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i1,
-						backend: i1.Spec.Backend,
+						path:   "/",
+						object: i1,
 					},
 				},
 			}},
@@ -498,9 +495,8 @@ func TestDAGInsert(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i1,
-						backend: i1.Spec.Backend,
+						path:   "/",
+						object: i1,
 					},
 				},
 			}},
@@ -515,9 +511,8 @@ func TestDAGInsert(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i1,
-						backend: i1.Spec.Backend,
+						path:   "/",
+						object: i1,
 					},
 				},
 			}},
@@ -532,9 +527,8 @@ func TestDAGInsert(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i2,
-						backend: &i2.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i2,
 					},
 				},
 			}},
@@ -549,9 +543,8 @@ func TestDAGInsert(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i2,
-						backend: &i2.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i2,
 					},
 				},
 			}},
@@ -566,15 +559,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i4,
-						backend: i4.Spec.Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i4,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -591,15 +585,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i4,
-						backend: i4.Spec.Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i4,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -616,15 +611,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i5,
-						backend: &i5.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i5,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -641,15 +637,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i5,
-						backend: &i5.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i5,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -672,9 +669,8 @@ func TestDAGInsert(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i1,
-						backend: i1.Spec.Backend,
+						path:   "/",
+						object: i1,
 					},
 				},
 			}},
@@ -689,9 +685,8 @@ func TestDAGInsert(t *testing.T) {
 				host: "kuard.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i3,
-						backend: &i3.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i3,
 					},
 				},
 			}, {
@@ -699,9 +694,8 @@ func TestDAGInsert(t *testing.T) {
 				host: "kuard.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i3,
-						backend: &i3.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i3,
 					},
 				},
 				secrets: map[meta]*Secret{
@@ -724,9 +718,8 @@ func TestDAGInsert(t *testing.T) {
 				host: "kuard.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i3,
-						backend: &i3.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i3,
 					},
 				},
 			}, {
@@ -734,9 +727,8 @@ func TestDAGInsert(t *testing.T) {
 				host: "kuard.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i3,
-						backend: &i3.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i3,
 					},
 				},
 				secrets: map[meta]*Secret{
@@ -758,9 +750,8 @@ func TestDAGInsert(t *testing.T) {
 				host: "a.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i6,
 					},
 				},
 			}, {
@@ -768,9 +759,8 @@ func TestDAGInsert(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i6,
 					},
 				},
 			}},
@@ -785,15 +775,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "a.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i6,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -803,15 +794,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i6,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -828,15 +820,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "a.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i6,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -846,15 +839,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i6,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -872,15 +866,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "a.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i6,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -890,15 +885,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i6,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -908,15 +904,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i6,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -942,15 +939,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "a.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i6,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -960,15 +958,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i6,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -978,15 +977,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i6,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -1010,14 +1010,12 @@ func TestDAGInsert(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i7,
-						backend: &i7.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i7,
 					},
 					"/kuarder": &Route{
-						path:    "/kuarder",
-						object:  i7,
-						backend: &i7.Spec.Rules[0].IngressRuleValue.HTTP.Paths[1].Backend,
+						path:   "/kuarder",
+						object: i7,
 					},
 				},
 			}},
@@ -1033,28 +1031,30 @@ func TestDAGInsert(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i7,
-						backend: &i7.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i7,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
 					"/kuarder": &Route{
-						path:    "/kuarder",
-						object:  i7,
-						backend: &i7.Spec.Rules[0].IngressRuleValue.HTTP.Paths[1].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/kuarder",
+						object: i7,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuarder",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s2,
+								Port:   8080,
 							},
 						},
 					},
@@ -1070,28 +1070,30 @@ func TestDAGInsert(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i8,
-						backend: &i8.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i8,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
 					"/kuarder": &Route{
-						path:    "/kuarder",
-						object:  i8,
-						backend: &i8.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/kuarder",
+						object: i8,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuarder",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s2,
+								Port:   8080,
 							},
 						},
 					},
@@ -1115,28 +1117,30 @@ func TestDAGInsert(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i9,
-						backend: &i9.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i9,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
 					"/kuarder": &Route{
-						path:    "/kuarder",
-						object:  i9,
-						backend: &i9.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/kuarder",
+						object: i9,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuarder",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s2,
+								Port:   8080,
 							},
 						},
 					},
@@ -1178,15 +1182,16 @@ func TestDAGInsert(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6a,
-						backend: &i6a.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i6a,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -1227,12 +1232,14 @@ func TestDAGInsert(t *testing.T) {
 					"/": &Route{
 						path:   "/",
 						object: ir1,
-						services: map[meta]*Service{
-							meta{
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -1250,12 +1257,14 @@ func TestDAGInsert(t *testing.T) {
 					"/": &Route{
 						path:   "/",
 						object: ir2,
-						services: map[meta]*Service{
-							meta{
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuarder",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s2,
+								Port:   8080,
 							},
 						},
 					},
@@ -1273,18 +1282,22 @@ func TestDAGInsert(t *testing.T) {
 					"/": &Route{
 						path:   "/",
 						object: ir2,
-						services: map[meta]*Service{
-							meta{
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
-							meta{
+							portmeta{
 								name:      "kuarder",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s2,
+								Port:   8080,
 							},
 						},
 					},
@@ -1502,9 +1515,8 @@ func TestDAGRemove(t *testing.T) {
 				host: "kuard.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i3,
-						backend: &i3.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i3,
 					},
 				},
 			}},
@@ -1532,9 +1544,8 @@ func TestDAGRemove(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i1,
-						backend: i1.Spec.Backend,
+						path:   "/",
+						object: i1,
 					},
 				},
 			}},
@@ -1552,9 +1563,8 @@ func TestDAGRemove(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i1,
-						backend: i1.Spec.Backend,
+						path:   "/",
+						object: i1,
 					},
 				},
 			}},
@@ -1582,9 +1592,8 @@ func TestDAGRemove(t *testing.T) {
 				host: "*",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i5,
-						backend: &i5.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i5,
 					},
 				},
 			}},
@@ -1602,9 +1611,8 @@ func TestDAGRemove(t *testing.T) {
 				host: "kuard.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i3,
-						backend: &i3.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i3,
 					},
 				},
 			}},
@@ -1631,9 +1639,8 @@ func TestDAGRemove(t *testing.T) {
 				host: "a.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i6,
 					},
 				},
 			}, {
@@ -1641,9 +1648,8 @@ func TestDAGRemove(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i6,
 					},
 				},
 			}},
@@ -1662,15 +1668,16 @@ func TestDAGRemove(t *testing.T) {
 				host: "a.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i6,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -1680,15 +1687,16 @@ func TestDAGRemove(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i6,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
@@ -1709,9 +1717,8 @@ func TestDAGRemove(t *testing.T) {
 				host: "a.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i6,
 					},
 				},
 			}, {
@@ -1719,9 +1726,8 @@ func TestDAGRemove(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i6,
 					},
 				},
 			}, {
@@ -1729,9 +1735,8 @@ func TestDAGRemove(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i6,
-						backend: &i6.Spec.Rules[1].IngressRuleValue.HTTP.Paths[0].Backend,
+						path:   "/",
+						object: i6,
 					},
 				},
 				secrets: map[meta]*Secret{
@@ -1758,22 +1763,22 @@ func TestDAGRemove(t *testing.T) {
 				host: "b.example.com",
 				routes: map[string]*Route{
 					"/": &Route{
-						path:    "/",
-						object:  i7,
-						backend: &i7.Spec.Rules[0].IngressRuleValue.HTTP.Paths[0].Backend,
-						services: map[meta]*Service{
-							meta{
+						path:   "/",
+						object: i7,
+						services: map[portmeta]*Service{
+							portmeta{
 								name:      "kuard",
 								namespace: "default",
+								port:      8080,
 							}: &Service{
 								object: s1,
+								Port:   8080,
 							},
 						},
 					},
 					"/kuarder": &Route{
-						path:    "/kuarder",
-						object:  i7,
-						backend: &i7.Spec.Rules[0].IngressRuleValue.HTTP.Paths[1].Backend,
+						path:   "/kuarder",
+						object: i7,
 					},
 				},
 			}},
@@ -1817,7 +1822,7 @@ func (v *VirtualHost) String() string {
 }
 
 func (r *Route) String() string {
-	return fmt.Sprintf("route: %q {services: %v, object: %p, backend: %+v}", r.Prefix(), r.services, r.object, r.backend)
+	return fmt.Sprintf("route: %q {services: %v, object: %p}", r.Prefix(), r.services, r.object)
 }
 
 func (s *Service) String() string {
