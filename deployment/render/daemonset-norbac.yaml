@@ -25,6 +25,108 @@ spec:
   names:
     plural: ingressroutes
     kind: IngressRoute
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          required:
+            - routes
+          properties:
+            virtualhost:
+              properties:
+                fqdn:
+                  type: string
+                  pattern: ^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\.)+[a-z]{2,}$
+                aliases:
+                  type: array
+                  items:
+                    type: string
+                    pattern: ^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$
+                tls:
+                  properties:
+                    secretName:
+                      type: string
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123
+            strategy:
+              type: string
+              enum:
+                - RoundRobin
+                - WeightedLeastRequest
+                - Random
+            lbHealthCheck:
+              type: object
+              required:
+                - path
+              properties:
+                path:
+                  type: string
+                  pattern: ^\/.*$
+                intervalSeconds:
+                  type: integer
+                timeoutSeconds: 
+                  type: integer
+                unhealthyThresholdCount:
+                  type: integer
+                healthyThresholdCount:
+                  type: integer
+            routes:
+              type: array
+              items:
+                required:
+                  - match
+                properties:
+                  match:
+                    type: string
+                    pattern: ^\/.*$
+                  delegate:
+                    type: object
+                    required:
+                      - name
+                      - namespace
+                    properties:
+                      name:
+                        type: string
+                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123
+                      namespace:
+                        type: string
+                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123
+                  services:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - name
+                        - port
+                      properties:
+                        name:
+                          type: string
+                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123
+                        port: 
+                          type: integer
+                        weight:
+                          type: integer
+                        strategy:
+                          type: string
+                          enum:
+                            - RoundRobin
+                            - WeightedLeastRequest
+                            - Random
+                        lbHealthCheck:
+                          type: object
+                          required:
+                            - path
+                          properties:
+                            path:
+                              type: string
+                              pattern: ^\/.*$
+                            intervalSeconds:
+                              type: integer
+                            timeoutSeconds: 
+                              type: integer
+                            unhealthyThresholdCount:
+                              type: integer
+                            healthyThresholdCount:
+                              type: integer
 ---
 apiVersion: extensions/v1beta1
 kind: DaemonSet
