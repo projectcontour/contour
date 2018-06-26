@@ -63,12 +63,13 @@ func setup(t *testing.T, opts ...func(*contour.Translator)) (cache.ResourceEvent
 	et := &contour.EndpointsTranslator{
 		FieldLogger: log,
 	}
+	var da contour.DAGAdapter
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	check(t, err)
 	var wg sync.WaitGroup
 	wg.Add(1)
-	srv := cgrpc.NewAPI(log, tr, &tr.ListenerCache, et)
+	srv := cgrpc.NewAPI(log, tr, &da.ListenerCache, et)
 	go func() {
 		defer wg.Done()
 		srv.Serve(l)
@@ -78,6 +79,7 @@ func setup(t *testing.T, opts ...func(*contour.Translator)) (cache.ResourceEvent
 
 	reh := &resourceEventHandler{
 		Translator:          tr,
+		DAGAdapter:          &da,
 		EndpointsTranslator: et,
 	}
 
@@ -97,6 +99,7 @@ func setup(t *testing.T, opts ...func(*contour.Translator)) (cache.ResourceEvent
 type resourceEventHandler struct {
 	*contour.Translator
 	*contour.EndpointsTranslator
+	*contour.DAGAdapter
 }
 
 func (r *resourceEventHandler) OnAdd(obj interface{}) {
@@ -105,6 +108,7 @@ func (r *resourceEventHandler) OnAdd(obj interface{}) {
 		r.EndpointsTranslator.OnAdd(obj)
 	default:
 		r.Translator.OnAdd(obj)
+		r.DAGAdapter.OnAdd(obj)
 	}
 }
 
@@ -114,6 +118,7 @@ func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 		r.EndpointsTranslator.OnUpdate(oldObj, newObj)
 	default:
 		r.Translator.OnUpdate(oldObj, newObj)
+		r.DAGAdapter.OnUpdate(oldObj, newObj)
 	}
 }
 
@@ -123,6 +128,7 @@ func (r *resourceEventHandler) OnDelete(obj interface{}) {
 		r.EndpointsTranslator.OnDelete(obj)
 	default:
 		r.Translator.OnDelete(obj)
+		r.DAGAdapter.OnDelete(obj)
 	}
 }
 
