@@ -20,6 +20,7 @@ import (
 
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/cache"
 
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
@@ -135,26 +136,59 @@ func (d *DAG) Recompute() {
 	d.dag = d.recompute()
 }
 
-// recompute builds a new *dag.dag.
-func (d *DAG) recompute() *dag {
-	// memoise access to a service map, built
-	// as needed from the list of services cached
-	// from k8s.
-	_services := make(map[meta]*Service)
-	service := func(m meta) *Service {
-		if s, ok := _services[m]; ok {
+// serviceMap memoise access to a service map, built
+// as needed from the list of services cached
+// from k8s.
+type serviceMap struct {
+
+	// backing services from k8s api.
+	services map[meta]*v1.Service
+
+	// cached Services.
+	_services map[portmeta]*Service
+}
+
+// lookup returns a Service that matches the meta and port supplied.
+// If no matching Service is found lookup returns nil.
+func (sm *serviceMap) lookup(m meta, port intstr.IntOrString) *Service {
+	if port.Type == intstr.Int {
+		if s, ok := sm._services[portmeta{name: m.name, namespace: m.namespace, port: int(port.IntValue())}]; ok {
 			return s
 		}
-		svc, ok := d.services[m]
-		if !ok {
-			return nil
-		}
-		s := &Service{
-			object: svc,
-		}
-		_services[s.toMeta()] = s
-		return s
 	}
+	svc, ok := sm.services[m]
+	if !ok {
+		return nil
+	}
+	for _, p := range svc.Spec.Ports {
+		if int(p.Port) == port.IntValue() {
+			return sm.insert(svc, int(p.Port))
+		}
+		if port.String() == p.Name {
+			return sm.insert(svc, int(p.Port))
+		}
+	}
+	return nil
+}
+
+func (sm *serviceMap) insert(svc *v1.Service, port int) *Service {
+	if sm._services == nil {
+		sm._services = make(map[portmeta]*Service)
+	}
+	s := &Service{
+		object: svc,
+		Port:   port,
+	}
+	sm._services[s.toMeta()] = s
+	return s
+}
+
+// recompute builds a new *dag.dag.
+func (d *DAG) recompute() *dag {
+	sm := serviceMap{
+		services: d.services,
+	}
+	service := sm.lookup
 
 	// memoise access to a secrets map, built
 	// as needed from the list of secrets cached
@@ -204,20 +238,12 @@ func (d *DAG) recompute() *dag {
 		if ing.Spec.Backend != nil {
 			// handle the annoying default ingress
 			r := &Route{
-				path:    "/",
-				object:  ing,
-				backend: ing.Spec.Backend,
+				path:   "/",
+				object: ing,
 			}
 			m := meta{name: ing.Spec.Backend.ServiceName, namespace: ing.Namespace}
-			if s := service(m); s != nil {
-				// iterate through the ports on the service object, if we
-				// find a match against the backends port's name or number, we add
-				// the service as a child of the route.
-				for _, p := range s.object.Spec.Ports {
-					if ing.Spec.Backend.ServicePort.IntValue() == int(p.Port) || ing.Spec.Backend.ServicePort.String() == p.Name {
-						r.addService(s)
-					}
-				}
+			if s := service(m, ing.Spec.Backend.ServicePort); s != nil {
+				r.addService(s)
 			}
 			if httpAllowed {
 				vhost("*", 80).routes[r.path] = r
@@ -246,21 +272,13 @@ func (d *DAG) recompute() *dag {
 					path = "/"
 				}
 				r := &Route{
-					path:    path,
-					object:  ing,
-					backend: &rule.IngressRuleValue.HTTP.Paths[n].Backend,
+					path:   path,
+					object: ing,
 				}
 
 				m := meta{name: rule.IngressRuleValue.HTTP.Paths[n].Backend.ServiceName, namespace: ing.Namespace}
-				if s := service(m); s != nil {
-					// iterate through the ports on the service object, if we
-					// find a match against the backends port's name or number, we add
-					// the service as a child of the route.
-					for _, p := range s.object.Spec.Ports {
-						if rule.IngressRuleValue.HTTP.Paths[n].Backend.ServicePort.IntValue() == int(p.Port) || rule.IngressRuleValue.HTTP.Paths[n].Backend.ServicePort.String() == p.Name {
-							r.addService(s)
-						}
-					}
+				if s := service(m, rule.IngressRuleValue.HTTP.Paths[n].Backend.ServicePort); s != nil {
+					r.addService(s)
 				}
 				if httpAllowed {
 					vhost(host, 80).routes[r.path] = r
@@ -297,15 +315,8 @@ func (d *DAG) recompute() *dag {
 			}
 			for _, s := range route.Services {
 				m := meta{name: s.Name, namespace: ir.Namespace}
-				if svc := service(m); svc != nil {
-					// iterate through the ports on the service object, if we
-					// find a match against the backends port's name or number, we add
-					// the service as a child of the route.
-					for _, p := range svc.object.Spec.Ports {
-						if s.Port == int(p.Port) {
-							r.addService(svc)
-						}
-					}
+				if svc := service(m, intstr.FromInt(s.Port)); svc != nil {
+					r.addService(svc)
 				}
 			}
 			vhost(host, 80).routes[r.path] = r
@@ -329,23 +340,14 @@ type Root interface {
 type Route struct {
 	path     string
 	object   interface{} // one of Ingress or IngressRoute
-	services map[meta]*Service
-	backend  interface{} // one of *v1beta1.IngressBackend or ingressroute.service
+	services map[portmeta]*Service
 }
 
 func (r *Route) Prefix() string { return r.path }
-func (r *Route) ServicePort() string {
-	switch b := r.backend.(type) {
-	case *v1beta1.IngressBackend:
-		return b.ServicePort.String()
-	default:
-		return "unknown"
-	}
-}
 
 func (r *Route) addService(s *Service) {
 	if r.services == nil {
-		r.services = make(map[meta]*Service)
+		r.services = make(map[portmeta]*Service)
 	}
 	r.services[s.toMeta()] = s
 }
@@ -395,16 +397,26 @@ type Vertex interface {
 // a leaf in the DAG.
 type Service struct {
 	object *v1.Service
+
+	// Port is the port of this service
+	Port int
 }
 
 func (s *Service) Name() string       { return s.object.Name }
 func (s *Service) Namespace() string  { return s.object.Namespace }
 func (s *Service) Visit(func(Vertex)) {}
 
-func (s *Service) toMeta() meta {
-	return meta{
+type portmeta struct {
+	name      string
+	namespace string
+	port      int
+}
+
+func (s *Service) toMeta() portmeta {
+	return portmeta{
 		name:      s.object.Name,
 		namespace: s.object.Namespace,
+		port:      s.Port,
 	}
 }
 

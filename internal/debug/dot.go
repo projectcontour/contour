@@ -36,13 +36,9 @@ type ctx struct {
 	w     io.Writer
 	nodes map[interface{}]bool
 	edges map[pair]bool
-	route *dag.Route
 }
 
 func (c *ctx) writeVertex(v dag.Vertex) {
-	if r, ok := v.(*dag.Route); ok {
-		c.route = r
-	}
 	if c.nodes[v] {
 		return
 	}
@@ -51,7 +47,7 @@ func (c *ctx) writeVertex(v dag.Vertex) {
 	case *dag.Secret:
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{secret|%s/%s}"]`+"\n", v, v.Namespace(), v.Name())
 	case *dag.Service:
-		fmt.Fprintf(c.w, `"%p" [shape=record, label="{service|%s/%s}"]`+"\n", v, v.Namespace(), v.Name())
+		fmt.Fprintf(c.w, `"%p" [shape=record, label="{service|%s/%s:%d}"]`+"\n", v, v.Namespace(), v.Name(), v.Port)
 	case *dag.VirtualHost:
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{host|%s:%d}"]`+"\n", v, v.FQDN(), v.Port)
 	case *dag.Route:
@@ -67,8 +63,6 @@ func (c *ctx) writeEdge(parent, child dag.Vertex) {
 	switch child := child.(type) {
 	default:
 		fmt.Fprintf(c.w, `"%p" -> "%p"`+"\n", parent, child)
-	case *dag.Service:
-		fmt.Fprintf(c.w, `"%p" -> "%p" [label="port: %s"]`+"\n", parent, child, c.route.ServicePort())
 	}
 
 }
