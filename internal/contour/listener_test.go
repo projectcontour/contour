@@ -1,3 +1,5 @@
+// +build trololo
+
 // Copyright © 2017 Heptio
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -726,12 +728,4 @@ func secretdata(cert, key string) map[string][]byte {
 		v1.TLSCertKey:       []byte(cert),
 		v1.TLSPrivateKeyKey: []byte(key),
 	}
-}
-
-type clusterLoadAssignmentsByName []proto.Message
-
-func (c clusterLoadAssignmentsByName) Len() int      { return len(c) }
-func (c clusterLoadAssignmentsByName) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
-func (c clusterLoadAssignmentsByName) Less(i, j int) bool {
-	return c[i].(*v2.ClusterLoadAssignment).ClusterName < c[j].(*v2.ClusterLoadAssignment).ClusterName
 }

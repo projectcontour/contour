@@ -238,6 +238,71 @@ func TestListenerVisit(t *testing.T) {
 				},
 			},
 		},
+		"ingress with allow-http: false": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"kubernetes.io/ingress.allow-http": "false",
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromInt(8080),
+						},
+					},
+				},
+			},
+			want: map[string]*v2.Listener{},
+		},
+		"simple tls ingress with allow-https:false": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"kubernetes.io/ingress.allow-http": "false",
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							Hosts:      []string{"whatever.example.com"},
+							SecretName: "secret",
+						}},
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromInt(8080),
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: secretdata("certificate", "key"),
+				},
+			},
+			want: map[string]*v2.Listener{
+				ENVOY_HTTPS_LISTENER: &v2.Listener{
+					Name:    ENVOY_HTTPS_LISTENER,
+					Address: socketaddress("0.0.0.0", 8443),
+					FilterChains: []listener.FilterChain{{
+						FilterChainMatch: &listener.FilterChainMatch{
+							SniDomains: []string{"whatever.example.com"},
+						},
+						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						Filters: []listener.Filter{
+							httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
+						},
+					}},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
