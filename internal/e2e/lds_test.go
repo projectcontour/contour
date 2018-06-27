@@ -28,6 +28,7 @@ import (
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
+	"github.com/heptio/contour/internal/contour"
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -316,6 +317,302 @@ func TestLDSFilter(t *testing.T) {
 		VersionInfo: "0",
 		TypeUrl:     listenerType, Nonce: "0",
 	}, streamLDS(t, cc, "HTTP"))
+}
+
+func TestLDSStreamEmpty(t *testing.T) {
+	_, cc, done := setup(t)
+	defer done()
+
+	// assert that streaming LDS with no ingresses does not stall.
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		TypeUrl:     listenerType, Nonce: "0",
+	}, streamLDS(t, cc, "HTTP"))
+}
+
+func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	// s1 is a tls secret
+	s1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	}
+	rh.OnAdd(s1)
+
+	// i1 is a tls ingress
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"kuard.example.com"},
+				SecretName: "secret",
+			}},
+		},
+	}
+
+	rh.OnAdd(i1)
+
+	// add ingress and fetch ingress_https
+	rh.OnAdd(i1)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.Listener{
+				Name:    "ingress_https",
+				Address: socketaddress("0.0.0.0", 8443),
+				FilterChains: []listener.FilterChain{
+					filterchaintls([]string{"kuard.example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
+				},
+			}),
+		},
+		TypeUrl: listenerType,
+		Nonce:   "0",
+	}, streamLDS(t, cc, "ingress_https"))
+
+	i2 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/tls-minimum-protocol-version": "1.3",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"kuard.example.com"},
+				SecretName: "secret",
+			}},
+		},
+	}
+
+	// update tls version and fetch ingress_https
+	rh.OnUpdate(i1, i2)
+
+	l1 := &v2.Listener{
+		Name:    "ingress_https",
+		Address: socketaddress("0.0.0.0", 8443),
+		FilterChains: []listener.FilterChain{
+			filterchaintls([]string{"kuard.example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
+		},
+	}
+	// easier to patch this up than add more params to filterchaintls
+	l1.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = auth.TlsParameters_TLSv1_3
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, l1),
+		},
+		TypeUrl: listenerType,
+		Nonce:   "0",
+	}, streamLDS(t, cc, "ingress_https"))
+}
+
+func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
+	rh, cc, done := setup(t, func(tr *contour.Translator) {
+		tr.UseProxyProto = true
+	})
+	defer done()
+
+	// assert that without any ingress objects registered
+	// there are no active listeners
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   []types.Any{},
+		TypeUrl:     listenerType,
+		Nonce:       "0",
+	}, streamLDS(t, cc))
+
+	// i1 is a simple ingress, no hostname, no tls.
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+		},
+	}
+
+	// add it and assert that we now have a ingress_http listener using
+	// the proxy protocol (the true param to filterchain)
+	rh.OnAdd(i1)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.Listener{
+				Name:    "ingress_http",
+				Address: socketaddress("0.0.0.0", 8080),
+				FilterChains: []listener.FilterChain{
+					filterchain(true, httpfilter("ingress_http")),
+				},
+			}),
+		},
+		TypeUrl: listenerType,
+		Nonce:   "0",
+	}, streamLDS(t, cc))
+}
+
+func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
+	rh, cc, done := setup(t, func(tr *contour.Translator) {
+		tr.UseProxyProto = true
+	})
+	defer done()
+
+	// s1 is a tls secret
+	s1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	}
+
+	// i1 is a tls ingress
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"kuard.example.com"},
+				SecretName: "secret",
+			}},
+		},
+	}
+
+	// add secret
+	rh.OnAdd(s1)
+
+	// assert that there are no active listeners
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   []types.Any{},
+		TypeUrl:     listenerType,
+		Nonce:       "0",
+	}, streamLDS(t, cc))
+
+	// add ingress and assert the existence of ingress_http and ingres_https and both
+	// are using proxy protocol
+	rh.OnAdd(i1)
+
+	ingress_https := &v2.Listener{
+		Name:    "ingress_https",
+		Address: socketaddress("0.0.0.0", 8443),
+		FilterChains: []listener.FilterChain{
+			filterchaintls([]string{"kuard.example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
+		},
+	}
+	ingress_https.FilterChains[0].UseProxyProto = &types.BoolValue{Value: true}
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.Listener{
+				Name:    "ingress_http",
+				Address: socketaddress("0.0.0.0", 8080),
+				FilterChains: []listener.FilterChain{
+					filterchain(true, httpfilter("ingress_http")),
+				},
+			}),
+			any(t, ingress_https),
+		},
+		TypeUrl: listenerType,
+		Nonce:   "0",
+	}, streamLDS(t, cc))
+}
+
+func TestLDSCustomAddressAndPort(t *testing.T) {
+	rh, cc, done := setup(t, func(tr *contour.Translator) {
+		tr.HTTPAddress = "127.0.0.100"
+		tr.HTTPPort = 9100
+		tr.HTTPSAddress = "127.0.0.200"
+		tr.HTTPSPort = 9200
+	})
+	defer done()
+
+	// s1 is a tls secret
+	s1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	}
+
+	// i1 is a tls ingress
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"kuard.example.com"},
+				SecretName: "secret",
+			}},
+		},
+	}
+
+	// add secret
+	rh.OnAdd(s1)
+
+	// assert that there are no active listeners
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   []types.Any{},
+		TypeUrl:     listenerType,
+		Nonce:       "0",
+	}, streamLDS(t, cc))
+
+	// add ingress and assert the existence of ingress_http and ingres_https and both
+	// are using proxy protocol
+	rh.OnAdd(i1)
+
+	ingress_http := &v2.Listener{
+		Name:    "ingress_http",
+		Address: socketaddress("127.0.0.100", 9100),
+		FilterChains: []listener.FilterChain{
+			filterchain(false, httpfilter("ingress_http")),
+		},
+	}
+	ingress_https := &v2.Listener{
+		Name:    "ingress_https",
+		Address: socketaddress("127.0.0.200", 9200),
+		FilterChains: []listener.FilterChain{
+			filterchaintls([]string{"kuard.example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
+		},
+	}
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, ingress_http),
+			any(t, ingress_https),
+		},
+		TypeUrl: listenerType,
+		Nonce:   "0",
+	}, streamLDS(t, cc))
 }
 
 func streamLDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
