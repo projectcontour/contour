@@ -46,7 +46,7 @@ func TestNonTLSListener(t *testing.T) {
 		Resources:   []types.Any{},
 		TypeUrl:     listenerType,
 		Nonce:       "0",
-	}, fetchLDS(t, cc))
+	}, streamLDS(t, cc))
 
 	// i1 is a simple ingress, no hostname, no tls.
 	i1 := &v1beta1.Ingress{
@@ -74,7 +74,7 @@ func TestNonTLSListener(t *testing.T) {
 		},
 		TypeUrl: listenerType,
 		Nonce:   "0",
-	}, fetchLDS(t, cc))
+	}, streamLDS(t, cc))
 
 	// i2 is the same as i1 but has the kubernetes.io/ingress.allow-http: "false" annotation
 	i2 := &v1beta1.Ingress{
@@ -97,7 +97,7 @@ func TestNonTLSListener(t *testing.T) {
 		Resources:   []types.Any{},
 		TypeUrl:     listenerType,
 		Nonce:       "0",
-	}, fetchLDS(t, cc))
+	}, streamLDS(t, cc))
 
 	// i3 is similar to i2, but uses the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
 	// to force 80 -> 443 upgrade
@@ -129,7 +129,7 @@ func TestNonTLSListener(t *testing.T) {
 		},
 		TypeUrl: listenerType,
 		Nonce:   "0",
-	}, fetchLDS(t, cc))
+	}, streamLDS(t, cc))
 }
 
 func TestTLSListener(t *testing.T) {
@@ -172,7 +172,7 @@ func TestTLSListener(t *testing.T) {
 		Resources:   []types.Any{},
 		TypeUrl:     listenerType,
 		Nonce:       "0",
-	}, fetchLDS(t, cc))
+	}, streamLDS(t, cc))
 
 	// add ingress and assert the existence of ingress_http and ingres_https
 	rh.OnAdd(i1)
@@ -196,7 +196,7 @@ func TestTLSListener(t *testing.T) {
 		},
 		TypeUrl: listenerType,
 		Nonce:   "0",
-	}, fetchLDS(t, cc))
+	}, streamLDS(t, cc))
 
 	// i2 is the same as i1 but has the kubernetes.io/ingress.allow-http: "false" annotation
 	i2 := &v1beta1.Ingress{
@@ -231,7 +231,7 @@ func TestTLSListener(t *testing.T) {
 		},
 		TypeUrl: listenerType,
 		Nonce:   "0",
-	}, fetchLDS(t, cc))
+	}, streamLDS(t, cc))
 
 	// delete secret and assert that ingress_https is removed
 	rh.OnDelete(s1)
@@ -240,7 +240,7 @@ func TestTLSListener(t *testing.T) {
 		Resources:   []types.Any{},
 		TypeUrl:     listenerType,
 		Nonce:       "0",
-	}, fetchLDS(t, cc))
+	}, streamLDS(t, cc))
 }
 
 func TestLDSFilter(t *testing.T) {
@@ -292,7 +292,7 @@ func TestLDSFilter(t *testing.T) {
 		},
 		TypeUrl: listenerType,
 		Nonce:   "0",
-	}, fetchLDS(t, cc, "ingress_https"))
+	}, streamLDS(t, cc, "ingress_https"))
 
 	// fetch ingress_http
 	assertEqual(t, &v2.DiscoveryResponse{
@@ -309,29 +309,29 @@ func TestLDSFilter(t *testing.T) {
 		},
 		TypeUrl: listenerType,
 		Nonce:   "0",
-	}, fetchLDS(t, cc, "ingress_http"))
+	}, streamLDS(t, cc, "ingress_http"))
 
 	// fetch something non existent.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		TypeUrl:     listenerType, Nonce: "0",
-	}, fetchLDS(t, cc, "HTTP"))
+	}, streamLDS(t, cc, "HTTP"))
 }
 
-func fetchLDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
+func streamLDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
 	t.Helper()
 	rds := v2.NewListenerDiscoveryServiceClient(cc)
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
-	resp, err := rds.FetchListeners(ctx, &v2.DiscoveryRequest{
-		TypeUrl:       listenerType,
-		ResourceNames: rn,
-	})
+	st, err := rds.StreamListeners(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return resp
+	return stream(t, st, &v2.DiscoveryRequest{
+		TypeUrl:       listenerType,
+		ResourceNames: rn,
+	})
 }
 
 func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {

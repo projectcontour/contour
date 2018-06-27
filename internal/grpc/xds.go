@@ -70,7 +70,11 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 	}()
 
 	ch := make(chan int, 1)
-	last := 0
+
+	// internally all registration values start at zero so sending
+	// a last that is less than zero will guarentee that each stream
+	// will generate a response immediately, then wait.
+	last := -1
 	ctx := st.Context()
 
 	// now stick in this loop until the client disconnects.

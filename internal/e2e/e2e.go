@@ -132,10 +132,21 @@ func check(t *testing.T, err error) {
 func any(t *testing.T, pb proto.Message) types.Any {
 	t.Helper()
 	any, err := types.MarshalAny(pb)
-	if err != nil {
-		t.Fatal(err)
-	}
+	check(t, err)
 	return *any
+}
+
+type grpcStream interface {
+	Send(*v2.DiscoveryRequest) error
+	Recv() (*v2.DiscoveryResponse, error)
+}
+
+func stream(t *testing.T, st grpcStream, req *v2.DiscoveryRequest) *v2.DiscoveryResponse {
+	err := st.Send(req)
+	check(t, err)
+	resp, err := st.Recv()
+	check(t, err)
+	return resp
 }
 
 func assertEqual(t *testing.T, want, got *v2.DiscoveryResponse) {

@@ -95,7 +95,7 @@ func TestEditIngress(t *testing.T) {
 		},
 		TypeUrl: routeType,
 		Nonce:   "0",
-	}, fetchRDS(t, cc))
+	}, streamRDS(t, cc))
 
 	// update old to new
 	rh.OnUpdate(old, &v1beta1.Ingress{
@@ -138,7 +138,7 @@ func TestEditIngress(t *testing.T) {
 		},
 		TypeUrl: routeType,
 		Nonce:   "0",
-	}, fetchRDS(t, cc))
+	}, streamRDS(t, cc))
 }
 
 // heptio/contour#101
@@ -201,7 +201,7 @@ func TestIngressPathRouteWithoutHost(t *testing.T) {
 		},
 		TypeUrl: routeType,
 		Nonce:   "0",
-	}, fetchRDS(t, cc))
+	}, streamRDS(t, cc))
 }
 
 func TestEditIngressInPlace(t *testing.T) {
@@ -249,7 +249,7 @@ func TestEditIngressInPlace(t *testing.T) {
 		},
 		TypeUrl: routeType,
 		Nonce:   "0",
-	}, fetchRDS(t, cc))
+	}, streamRDS(t, cc))
 
 	// i2 is like i1 but adds a second route
 	i2 := &v1beta1.Ingress{
@@ -301,7 +301,7 @@ func TestEditIngressInPlace(t *testing.T) {
 		},
 		TypeUrl: routeType,
 		Nonce:   "0",
-	}, fetchRDS(t, cc))
+	}, streamRDS(t, cc))
 
 	// i3 is like i2, but adds the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
 	i3 := &v1beta1.Ingress{
@@ -355,7 +355,7 @@ func TestEditIngressInPlace(t *testing.T) {
 		},
 		TypeUrl: routeType,
 		Nonce:   "0",
-	}, fetchRDS(t, cc))
+	}, streamRDS(t, cc))
 
 	// i4 is the same as i3, and includes a TLS spec object to enable ingress_https routes
 	// i3 is like i2, but adds the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
@@ -426,7 +426,7 @@ func TestEditIngressInPlace(t *testing.T) {
 		},
 		TypeUrl: routeType,
 		Nonce:   "0",
-	}, fetchRDS(t, cc))
+	}, streamRDS(t, cc))
 }
 
 // contour#164: backend request timeout support
@@ -775,7 +775,7 @@ func TestRDSFilter(t *testing.T) {
 		},
 		TypeUrl: routeType,
 		Nonce:   "0",
-	}, fetchRDS(t, cc, "ingress_http"))
+	}, streamRDS(t, cc, "ingress_http"))
 
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
@@ -794,7 +794,7 @@ func TestRDSFilter(t *testing.T) {
 		},
 		TypeUrl: routeType,
 		Nonce:   "0",
-	}, fetchRDS(t, cc, "ingress_https"))
+	}, streamRDS(t, cc, "ingress_https"))
 }
 
 func TestWebsocketRoutes(t *testing.T) {
@@ -910,7 +910,7 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 		},
 		TypeUrl: routeType,
 		Nonce:   "0",
-	}, fetchRDS(t, cc, "ingress_http"))
+	}, streamRDS(t, cc, "ingress_http"))
 }
 
 func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []route.VirtualHost) {
@@ -929,23 +929,23 @@ func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []
 		},
 		TypeUrl: routeType,
 		Nonce:   "0",
-	}, fetchRDS(t, cc))
+	}, streamRDS(t, cc))
 }
 
-func fetchRDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
+func streamRDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
 	t.Helper()
 	rds := v2.NewRouteDiscoveryServiceClient(cc)
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
-	resp, err := rds.FetchRoutes(ctx, &v2.DiscoveryRequest{
-		TypeUrl:       routeType,
-		ResourceNames: rn,
-	})
+	st, err := rds.StreamRoutes(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return resp
+	return stream(t, st, &v2.DiscoveryRequest{
+		TypeUrl:       routeType,
+		ResourceNames: rn,
+	})
 }
 
 func prefixmatch(prefix string) route.RouteMatch {

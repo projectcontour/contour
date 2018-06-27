@@ -50,7 +50,7 @@ func TestClusterLongServiceName(t *testing.T) {
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
-	}, fetchCDS(t, cc))
+	}, streamCDS(t, cc))
 }
 
 // Test adding, updating, and removing a service
@@ -74,7 +74,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
-	}, fetchCDS(t, cc))
+	}, streamCDS(t, cc))
 
 	// s2 is the same as s2, but the service port has a name
 	s2 := service("default", "kuard", v1.ServicePort{
@@ -96,7 +96,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
-	}, fetchCDS(t, cc))
+	}, streamCDS(t, cc))
 
 	// s3 is like s2, but has a second named port. The k8s spec
 	// requires all ports to be named if there is more than one of them.
@@ -130,7 +130,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
-	}, fetchCDS(t, cc))
+	}, streamCDS(t, cc))
 
 	// s4 is s3 with the http port removed.
 	s4 := service("default", "kuard",
@@ -155,7 +155,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
-	}, fetchCDS(t, cc))
+	}, streamCDS(t, cc))
 }
 
 // pathological hard case, one service is removed, the other is moved to a different port, and its name removed.
@@ -189,7 +189,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
-	}, fetchCDS(t, cc))
+	}, streamCDS(t, cc))
 
 	// s2 removes the name on port 80, moves it to port 443 and deletes the https port
 	s2 := service("default", "kuard",
@@ -208,7 +208,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
-	}, fetchCDS(t, cc))
+	}, streamCDS(t, cc))
 
 	// now replace s2 with s1 to check it works in the other direction.
 	rh.OnUpdate(s2, s1)
@@ -222,7 +222,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
-	}, fetchCDS(t, cc))
+	}, streamCDS(t, cc))
 
 	// cleanup and check
 	rh.OnDelete(s1)
@@ -231,7 +231,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 		Resources:   []types.Any{},
 		TypeUrl:     clusterType,
 		Nonce:       "0",
-	}, fetchCDS(t, cc))
+	}, streamCDS(t, cc))
 }
 
 // issue#243. A single unnamed service with a different numeric target port
@@ -255,7 +255,7 @@ func TestIssue243(t *testing.T) {
 			},
 			TypeUrl: clusterType,
 			Nonce:   "0",
-		}, fetchCDS(t, cc))
+		}, streamCDS(t, cc))
 	})
 }
 
@@ -284,7 +284,7 @@ func TestIssue247(t *testing.T) {
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
-	}, fetchCDS(t, cc))
+	}, streamCDS(t, cc))
 }
 func TestCDSResourceFiltering(t *testing.T) {
 	rh, cc, done := setup(t)
@@ -316,7 +316,7 @@ func TestCDSResourceFiltering(t *testing.T) {
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
-	}, fetchCDS(t, cc))
+	}, streamCDS(t, cc))
 
 	// assert we can filter on one resource
 	assertEqual(t, &v2.DiscoveryResponse{
@@ -326,7 +326,7 @@ func TestCDSResourceFiltering(t *testing.T) {
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
-	}, fetchCDS(t, cc, "default/kuard/80"))
+	}, streamCDS(t, cc, "default/kuard/80"))
 
 	// assert a non matching filter returns no results
 	// note: streamCDS would stall at this point.
@@ -334,23 +334,23 @@ func TestCDSResourceFiltering(t *testing.T) {
 		VersionInfo: "0",
 		TypeUrl:     clusterType,
 		Nonce:       "0",
-	}, fetchCDS(t, cc, "default/httpbin/9000"))
+	}, streamCDS(t, cc, "default/httpbin/9000"))
 }
 
-func fetchCDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
+func streamCDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
 	t.Helper()
 	rds := v2.NewClusterDiscoveryServiceClient(cc)
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
-	resp, err := rds.FetchClusters(ctx, &v2.DiscoveryRequest{
-		TypeUrl:       clusterType,
-		ResourceNames: rn,
-	})
+	st, err := rds.StreamClusters(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return resp
+	return stream(t, st, &v2.DiscoveryRequest{
+		TypeUrl:       clusterType,
+		ResourceNames: rn,
+	})
 }
 
 func cluster(name, servicename string) *v2.Cluster {
