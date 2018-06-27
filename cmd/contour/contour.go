@@ -23,6 +23,7 @@ import (
 
 	"github.com/heptio/contour/internal/debug"
 	clientset "github.com/heptio/contour/internal/generated/clientset/versioned"
+	"github.com/heptio/contour/internal/listener"
 	"github.com/heptio/workgroup"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
@@ -43,7 +44,6 @@ func main() {
 	t := &contour.Translator{
 		FieldLogger: log.WithField("context", "translator"),
 	}
-
 	app := kingpin.New("contour", "Heptio Contour Kubernetes ingress controller.")
 	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")
 
@@ -87,14 +87,16 @@ func main() {
 	serve.Flag("debug address", "address the /debug/pprof endpoint will bind too").Default("127.0.0.1").StringVar(&debug.Addr)
 	serve.Flag("debug port", "port the /debug/pprof endpoint will bind too").Default("8000").IntVar(&debug.Port)
 
-	// translator configuration
-	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&t.HTTPAccessLog)
-	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&t.HTTPSAccessLog)
-	serve.Flag("envoy-http-address", "Envoy HTTP listener address").StringVar(&t.HTTPAddress)
-	serve.Flag("envoy-https-address", "Envoy HTTPS listener address").StringVar(&t.HTTPSAddress)
-	serve.Flag("envoy-http-port", "Envoy HTTP listener port").IntVar(&t.HTTPPort)
-	serve.Flag("envoy-https-port", "Envoy HTTPS listener port").IntVar(&t.HTTPSPort)
-	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&t.UseProxyProto)
+	// translator and DAGAdapter configuration
+	var da contour.DAGAdapter
+
+	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(listener.DEFAULT_HTTP_ACCESS_LOG).StringVar(&da.HTTPAccessLog)
+	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(listener.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&da.HTTPSAccessLog)
+	serve.Flag("envoy-http-address", "Envoy HTTP listener address").StringVar(&da.HTTPAddress)
+	serve.Flag("envoy-https-address", "Envoy HTTPS listener address").StringVar(&da.HTTPSAddress)
+	serve.Flag("envoy-http-port", "Envoy HTTP listener port").IntVar(&da.HTTPPort)
+	serve.Flag("envoy-https-port", "Envoy HTTPS listener port").IntVar(&da.HTTPSPort)
+	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&da.UseProxyProto)
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&t.IngressClass)
 
 	args := os.Args[1:]
@@ -118,7 +120,6 @@ func main() {
 		var g workgroup.Group
 
 		// setup DAG Adapter and debug handler
-		var da contour.DAGAdapter
 		debug.DAG = &da.ResourceEventHandler.DAG
 
 		// client-go uses glog which requires initialisation as a side effect of calling

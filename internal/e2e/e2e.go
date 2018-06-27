@@ -49,21 +49,20 @@ func (t *testWriter) Write(buf []byte) (int, error) {
 	return len(buf), nil
 }
 
-func setup(t *testing.T, opts ...func(*contour.Translator)) (cache.ResourceEventHandler, *grpc.ClientConn, func()) {
+func setup(t *testing.T, opts ...func(*contour.DAGAdapter)) (cache.ResourceEventHandler, *grpc.ClientConn, func()) {
 	log := logrus.New()
 	log.Out = &testWriter{t}
 
 	tr := &contour.Translator{
 		FieldLogger: log,
 	}
-	for _, opt := range opts {
-		opt(tr)
-	}
-
 	et := &contour.EndpointsTranslator{
 		FieldLogger: log,
 	}
 	var da contour.DAGAdapter
+	for _, opt := range opts {
+		opt(&da)
+	}
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	check(t, err)

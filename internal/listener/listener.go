@@ -20,7 +20,95 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
-type Cache struct {
+// ListenerCache manages the contents of the gRPC LDS cache.
+type ListenerCache struct {
+	// Envoy's HTTP (non TLS) listener address.
+	// If not set, defaults to DEFAULT_HTTP_LISTENER_ADDRESS.
+	HTTPAddress string
+
+	// Envoy's HTTP (non TLS) listener port.
+	// If not set, defaults to DEFAULT_HTTP_LISTENER_PORT.
+	HTTPPort int
+
+	// Envoy's HTTP (non TLS) access log path.
+	// If not set, defaults to DEFAULT_HTTP_ACCESS_LOG.
+	HTTPAccessLog string
+
+	// Envoy's HTTPS (TLS) listener address.
+	// If not set, defaults to DEFAULT_HTTPS_LISTENER_ADDRESS.
+	HTTPSAddress string
+
+	// Envoy's HTTPS (TLS) listener port.
+	// If not set, defaults to DEFAULT_HTTPS_LISTENER_PORT.
+	HTTPSPort int
+
+	// Envoy's HTTPS (TLS) access log path.
+	// If not set, defaults to DEFAULT_HTTPS_ACCESS_LOG.
+	HTTPSAccessLog string
+
+	// UseProxyProto configurs all listeners to expect a PROXY protocol
+	// V1 header on new connections.
+	// If not set, defaults to false.
+	UseProxyProto bool
+
+	cache
+}
+
+// httpAddress returns the port for the HTTP (non TLS)
+// listener or DEFAULT_HTTP_LISTENER_ADDRESS if not configured.
+func (lc *ListenerCache) httpAddress() string {
+	if lc.HTTPAddress != "" {
+		return lc.HTTPAddress
+	}
+	return DEFAULT_HTTP_LISTENER_ADDRESS
+}
+
+// httpPort returns the port for the HTTP (non TLS)
+// listener or DEFAULT_HTTP_LISTENER_PORT if not configured.
+func (lc *ListenerCache) httpPort() uint32 {
+	if lc.HTTPPort != 0 {
+		return uint32(lc.HTTPPort)
+	}
+	return DEFAULT_HTTP_LISTENER_PORT
+}
+
+// httpAccessLog returns the access log for the HTTP (non TLS)
+// listener or DEFAULT_HTTP_ACCESS_LOG if not configured.
+func (lc *ListenerCache) httpAccessLog() string {
+	if lc.HTTPAccessLog != "" {
+		return lc.HTTPAccessLog
+	}
+	return DEFAULT_HTTP_ACCESS_LOG
+}
+
+// httpsAddress returns the port for the HTTPS (TLS)
+// listener or DEFAULT_HTTPS_LISTENER_ADDRESS if not configured.
+func (lc *ListenerCache) httpsAddress() string {
+	if lc.HTTPSAddress != "" {
+		return lc.HTTPSAddress
+	}
+	return DEFAULT_HTTPS_LISTENER_ADDRESS
+}
+
+// httpsPort returns the port for the HTTPS (TLS) listener
+// or DEFAULT_HTTPS_LISTENER_PORT if not configured.
+func (lc *ListenerCache) httpsPort() uint32 {
+	if lc.HTTPSPort != 0 {
+		return uint32(lc.HTTPSPort)
+	}
+	return DEFAULT_HTTPS_LISTENER_PORT
+}
+
+// httpsAccessLog returns the access log for the HTTPS (TLS)
+// listener or DEFAULT_HTTPS_ACCESS_LOG if not configured.
+func (lc *ListenerCache) httpsAccessLog() string {
+	if lc.HTTPSAccessLog != "" {
+		return lc.HTTPSAccessLog
+	}
+	return DEFAULT_HTTPS_ACCESS_LOG
+}
+
+type cache struct {
 	mu      sync.Mutex
 	values  map[string]*v2.Listener
 	waiters []chan int
@@ -35,7 +123,7 @@ type Cache struct {
 //
 // Sends by the broadcaster to ch must not block, therefor ch must have a capacity
 // of at least 1.
-func (c *Cache) Register(ch chan int, last int) {
+func (c *cache) Register(ch chan int, last int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -48,7 +136,7 @@ func (c *Cache) Register(ch chan int, last int) {
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *Cache) Update(v map[string]*v2.Listener) {
+func (c *cache) Update(v map[string]*v2.Listener) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -57,7 +145,7 @@ func (c *Cache) Update(v map[string]*v2.Listener) {
 }
 
 // notify notifies all registered waiters that an event has occured.
-func (c *Cache) notify() {
+func (c *cache) notify() {
 	c.last++
 
 	for _, ch := range c.waiters {
@@ -67,7 +155,7 @@ func (c *Cache) notify() {
 }
 
 // Values returns a slice of the value stored in the cache.
-func (c *Cache) Values(filter func(string) bool) []proto.Message {
+func (c *cache) Values(filter func(string) bool) []proto.Message {
 	c.mu.Lock()
 	values := make([]proto.Message, 0, len(c.values))
 	for n, v := range c.values {

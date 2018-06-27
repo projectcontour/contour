@@ -25,7 +25,7 @@ import (
 // generation.
 type DAGAdapter struct {
 	dag.ResourceEventHandler // provides a Visit method
-	ListenerCache            listener.Cache
+	listener.ListenerCache
 }
 
 func (d *DAGAdapter) OnAdd(obj interface{}) {

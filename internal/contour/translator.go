@@ -45,7 +45,6 @@ type Translator struct {
 	logrus.FieldLogger
 
 	ClusterCache
-	ListenerCache
 	VirtualHostCache
 
 	// Contour's IngressClass.
