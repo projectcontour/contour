@@ -110,11 +110,6 @@ func TestGRPCStreaming(t *testing.T) {
 			lds := v2.NewListenerDiscoveryServiceClient(cc)
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
-			stream, err := lds.StreamListeners(ctx)
-			check(t, err)
-			sendreq(t, stream, listenerType) // send initial notification
-			checktimeout(t, stream)          // check that the first receive times out, there is no default listener
-
 			// add an ingress, which will create a non tls listener
 			tr.OnAdd(&v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
@@ -137,9 +132,7 @@ func TestGRPCStreaming(t *testing.T) {
 					}},
 				},
 			})
-			ctx, cancel = context.WithTimeout(context.Background(), 100*time.Millisecond)
-			defer cancel()
-			stream, err = lds.StreamListeners(ctx)
+			stream, err := lds.StreamListeners(ctx)
 			check(t, err)
 			sendreq(t, stream, listenerType) // send initial notification
 			checkrecv(t, stream)             // check we receive one notification
@@ -353,6 +346,7 @@ type testWriter struct {
 }
 
 func (t *testWriter) Write(buf []byte) (int, error) {
+	t.Helper()
 	t.Logf("%s", buf)
 	return len(buf), nil
 }
