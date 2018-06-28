@@ -44,6 +44,9 @@ func (d *DAGAdapter) OnDelete(obj interface{}) {
 }
 
 func (d *DAGAdapter) updateListeners() {
-	v := listener.Visitor{&d.DAG}
+	v := listener.Visitor{
+		ListenerCache: &d.ListenerCache,
+		DAG:           &d.DAG,
+	}
 	d.ListenerCache.Update(v.Visit())
 }

@@ -40,6 +40,7 @@ const (
 )
 
 type Visitor struct {
+	*ListenerCache
 	*dag.DAG
 }
 
@@ -48,10 +49,10 @@ func (v *Visitor) Visit() map[string]*v2.Listener {
 	http := 0
 	ingress_https := v2.Listener{
 		Name:    ENVOY_HTTPS_LISTENER,
-		Address: socketaddress(DEFAULT_HTTPS_LISTENER_ADDRESS, DEFAULT_HTTPS_LISTENER_PORT),
+		Address: socketaddress(v.httpsAddress(), v.httpsPort()),
 	}
 	filters := []listener.Filter{
-		httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
+		httpfilter(ENVOY_HTTPS_LISTENER, v.httpsAccessLog()),
 	}
 	v.DAG.Visit(func(v dag.Vertex) {
 		switch v := v.(type) {
@@ -89,9 +90,9 @@ func (v *Visitor) Visit() map[string]*v2.Listener {
 	if http > 0 {
 		m[ENVOY_HTTP_LISTENER] = &v2.Listener{
 			Name:    ENVOY_HTTP_LISTENER,
-			Address: socketaddress(DEFAULT_HTTP_LISTENER_ADDRESS, DEFAULT_HTTP_LISTENER_PORT),
+			Address: socketaddress(v.httpAddress(), v.httpPort()),
 			FilterChains: []listener.FilterChain{
-				filterchain(false, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+				filterchain(v.UseProxyProto, httpfilter(ENVOY_HTTP_LISTENER, v.httpAccessLog())),
 			},
 		}
 	}

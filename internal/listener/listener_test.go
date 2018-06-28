@@ -30,6 +30,7 @@ import (
 
 func TestListenerVisit(t *testing.T) {
 	tests := map[string]struct {
+		ListenerCache
 		objs []interface{}
 		want map[string]*v2.Listener
 	}{
@@ -270,7 +271,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					Spec: v1beta1.IngressSpec{
 						TLS: []v1beta1.IngressTLS{{
-							Hosts:      []string{"whatever.example.com"},
+							Hosts:      []string{"www.example.com"},
 							SecretName: "secret",
 						}},
 						Backend: &v1beta1.IngressBackend{
@@ -293,6 +294,61 @@ func TestListenerVisit(t *testing.T) {
 					Address: socketaddress("0.0.0.0", 8443),
 					FilterChains: []listener.FilterChain{{
 						FilterChainMatch: &listener.FilterChainMatch{
+							SniDomains: []string{"www.example.com"},
+						},
+						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						Filters: []listener.Filter{
+							httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
+						},
+					}},
+				},
+			},
+		},
+		"http listener on non default port": { // issue 72
+			ListenerCache: ListenerCache{
+				HTTPAddress:  "127.0.0.100",
+				HTTPPort:     9100,
+				HTTPSAddress: "127.0.0.200",
+				HTTPSPort:    9200,
+			},
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							Hosts:      []string{"whatever.example.com"},
+							SecretName: "secret",
+						}},
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromInt(8080),
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: secretdata("certificate", "key"),
+				},
+			},
+			want: map[string]*v2.Listener{
+				ENVOY_HTTP_LISTENER: &v2.Listener{
+					Name:    ENVOY_HTTP_LISTENER,
+					Address: socketaddress("127.0.0.100", 9100),
+					FilterChains: []listener.FilterChain{
+						filterchain(false, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+					},
+				},
+				ENVOY_HTTPS_LISTENER: &v2.Listener{
+					Name:    ENVOY_HTTPS_LISTENER,
+					Address: socketaddress("127.0.0.200", 9200),
+					FilterChains: []listener.FilterChain{{
+						FilterChainMatch: &listener.FilterChainMatch{
 							SniDomains: []string{"whatever.example.com"},
 						},
 						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
@@ -313,7 +369,8 @@ func TestListenerVisit(t *testing.T) {
 			}
 			d.Recompute()
 			v := Visitor{
-				DAG: &d,
+				ListenerCache: &tc.ListenerCache,
+				DAG:           &d,
 			}
 			got := v.Visit()
 			if !reflect.DeepEqual(tc.want, got) {
