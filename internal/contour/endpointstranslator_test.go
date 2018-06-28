@@ -18,6 +18,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/gogo/protobuf/proto"
 	"k8s.io/api/core/v1"
 )
@@ -226,4 +227,12 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 			}
 		})
 	}
+}
+
+type clusterLoadAssignmentsByName []proto.Message
+
+func (c clusterLoadAssignmentsByName) Len() int      { return len(c) }
+func (c clusterLoadAssignmentsByName) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
+func (c clusterLoadAssignmentsByName) Less(i, j int) bool {
+	return c[i].(*v2.ClusterLoadAssignment).ClusterName < c[j].(*v2.ClusterLoadAssignment).ClusterName
 }

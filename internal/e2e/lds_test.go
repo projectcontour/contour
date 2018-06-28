@@ -422,8 +422,8 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 }
 
 func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
-	rh, cc, done := setup(t, func(tr *contour.Translator) {
-		tr.UseProxyProto = true
+	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
+		da.UseProxyProto = true
 	})
 	defer done()
 
@@ -467,8 +467,8 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 }
 
 func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
-	rh, cc, done := setup(t, func(tr *contour.Translator) {
-		tr.UseProxyProto = true
+	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
+		da.UseProxyProto = true
 	})
 	defer done()
 
@@ -540,11 +540,11 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 }
 
 func TestLDSCustomAddressAndPort(t *testing.T) {
-	rh, cc, done := setup(t, func(tr *contour.Translator) {
-		tr.HTTPAddress = "127.0.0.100"
-		tr.HTTPPort = 9100
-		tr.HTTPSAddress = "127.0.0.200"
-		tr.HTTPSPort = 9200
+	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
+		da.HTTPAddress = "127.0.0.100"
+		da.HTTPPort = 9100
+		da.HTTPSAddress = "127.0.0.200"
+		da.HTTPSPort = 9200
 	})
 	defer done()
 

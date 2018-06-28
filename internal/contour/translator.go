@@ -45,7 +45,6 @@ type Translator struct {
 	logrus.FieldLogger
 
 	ClusterCache
-	ListenerCache
 	VirtualHostCache
 
 	// Contour's IngressClass.
@@ -64,7 +63,7 @@ func (t *Translator) OnAdd(obj interface{}) {
 		t.addIngress(obj)
 		t.VirtualHostCache.Notify()
 	case *v1.Secret:
-		t.addSecret(obj)
+		// nothing, already cached
 	case *ingressroutev1.IngressRoute:
 		t.addIngressRoute(obj)
 	default:
@@ -92,7 +91,7 @@ func (t *Translator) OnUpdate(oldObj, newObj interface{}) {
 		t.updateIngress(oldObj, newObj)
 		t.VirtualHostCache.Notify()
 	case *v1.Secret:
-		t.addSecret(newObj)
+		// nothing, already cached
 	case *ingressroutev1.IngressRoute:
 		oldObj, ok := oldObj.(*ingressroutev1.IngressRoute)
 		if !ok {
@@ -115,7 +114,7 @@ func (t *Translator) OnDelete(obj interface{}) {
 		t.removeIngress(obj)
 		t.VirtualHostCache.Notify()
 	case *v1.Secret:
-		t.removeSecret(obj)
+		// nothing, already cached
 	case _cache.DeletedFinalStateUnknown:
 		t.OnDelete(obj.Obj) // recurse into ourselves with the tombstoned value
 	case *ingressroutev1.IngressRoute:
@@ -157,8 +156,6 @@ func (t *Translator) addIngress(i *v1beta1.Ingress) {
 		return
 	}
 
-	t.recomputeListeners(t.cache.ingresses, t.cache.secrets)
-
 	// handle the special case of the default ingress first.
 	if i.Spec.Backend != nil {
 		// update t.vhosts cache
@@ -191,8 +188,6 @@ func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 		return
 	}
 
-	t.recomputeListeners(t.cache.ingresses, t.cache.secrets)
-
 	if i.Spec.Backend != nil {
 		t.recomputevhost("*", nil)
 	}
@@ -207,17 +202,7 @@ func (t *Translator) removeIngress(i *v1beta1.Ingress) {
 	}
 }
 
-func (t *Translator) addSecret(s *v1.Secret) {
-	t.recomputeTLSListener(t.cache.ingresses, t.cache.secrets)
-}
-
-func (t *Translator) removeSecret(s *v1.Secret) {
-	t.recomputeTLSListener(t.cache.ingresses, t.cache.secrets)
-}
-
 func (t *Translator) addIngressRoute(r *ingressroutev1.IngressRoute) {
-
-	t.recomputeListenersIngressRoute(t.cache.routes, t.cache.secrets)
 
 	// notify watchers that the vhost cache has probably changed.
 	defer t.VirtualHostCache.Notify()
@@ -234,8 +219,6 @@ func (t *Translator) addIngressRoute(r *ingressroutev1.IngressRoute) {
 func (t *Translator) removeIngressRoute(r *ingressroutev1.IngressRoute) {
 
 	defer t.VirtualHostCache.Notify()
-
-	t.recomputeListenersIngressRoute(t.cache.routes, t.cache.secrets)
 
 	host := r.Spec.VirtualHost.Fqdn
 	if host == "" {

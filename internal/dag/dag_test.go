@@ -18,6 +18,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -250,6 +251,36 @@ func TestDAGInsert(t *testing.T) {
 							Backend: v1beta1.IngressBackend{
 								ServiceName: "kuarder",
 								ServicePort: intstr.FromInt(8080),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	// i10 specifies a minimum tls version
+	i10 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-rules",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/tls-minimum-protocol-version": "1.3",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "b.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
 							},
 						}},
 					},
@@ -696,8 +727,9 @@ func TestDAGInsert(t *testing.T) {
 					},
 				},
 				&SecureVirtualHost{
-					Port: 443,
-					host: "kuard.example.com",
+					Port:            443,
+					MinProtoVersion: auth.TlsParameters_TLSv1_1,
+					host:            "kuard.example.com",
 					routes: map[string]*Route{
 						"/": &Route{
 							path:   "/",
@@ -727,8 +759,9 @@ func TestDAGInsert(t *testing.T) {
 					},
 				},
 				&SecureVirtualHost{
-					Port: 443,
-					host: "kuard.example.com",
+					Port:            443,
+					MinProtoVersion: auth.TlsParameters_TLSv1_1,
+					host:            "kuard.example.com",
 					routes: map[string]*Route{
 						"/": &Route{
 							path:   "/",
@@ -911,8 +944,9 @@ func TestDAGInsert(t *testing.T) {
 						},
 					},
 				}, &SecureVirtualHost{
-					Port: 443,
-					host: "b.example.com",
+					Port:            443,
+					MinProtoVersion: auth.TlsParameters_TLSv1_1,
+					host:            "b.example.com",
 					routes: map[string]*Route{
 						"/": &Route{
 							path:   "/",
@@ -981,8 +1015,9 @@ func TestDAGInsert(t *testing.T) {
 						},
 					},
 				}, &SecureVirtualHost{
-					Port: 443,
-					host: "b.example.com",
+					Port:            443,
+					MinProtoVersion: auth.TlsParameters_TLSv1_1,
+					host:            "b.example.com",
 					routes: map[string]*Route{
 						"/": &Route{
 							path:   "/",
@@ -1121,8 +1156,9 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&SecureVirtualHost{
-					Port: 443,
-					host: "b.example.com",
+					Port:            443,
+					MinProtoVersion: auth.TlsParameters_TLSv1_1,
+					host:            "b.example.com",
 					routes: map[string]*Route{
 						"/": &Route{
 							path:   "/",
@@ -1182,8 +1218,9 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&SecureVirtualHost{
-					Port: 443,
-					host: "b.example.com",
+					Port:            443,
+					MinProtoVersion: auth.TlsParameters_TLSv1_1,
+					host:            "b.example.com",
 					routes: map[string]*Route{
 						"/": &Route{
 							path:   "/",
@@ -1306,6 +1343,59 @@ func TestDAGInsert(t *testing.T) {
 						},
 					},
 				}},
+		},
+		"insert ingress w/ tls min proto annotation": {
+			objs: []interface{}{
+				i10,
+				sec1,
+				s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i10,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+						},
+					},
+				},
+				&SecureVirtualHost{
+					Port:            443,
+					MinProtoVersion: auth.TlsParameters_TLSv1_3,
+					host:            "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i10,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+						},
+					},
+					secret: &Secret{
+						object: sec1,
+					},
+				},
+			},
 		},
 	}
 
@@ -1844,8 +1934,9 @@ func TestDAGRemove(t *testing.T) {
 					},
 				},
 				&SecureVirtualHost{
-					Port: 443,
-					host: "b.example.com",
+					Port:            443,
+					MinProtoVersion: auth.TlsParameters_TLSv1_1,
+					host:            "b.example.com",
 					routes: map[string]*Route{
 						"/": &Route{
 							path:   "/",
