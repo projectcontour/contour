@@ -100,27 +100,6 @@ func (c *clusterLoadAssignmentCache) Remove(names ...string) {
 	}
 }
 
-// ListenerCache is a thread safe, atomic, copy on write cache of v2.Listener objects.
-type listenerCache struct {
-	cache
-}
-
-// Add adds an entry to the cache. If a Listener with the same
-// name exists, it is replaced.
-func (lc *listenerCache) Add(listeners ...*v2.Listener) {
-	for _, l := range listeners {
-		lc.insert(l.Name, l)
-	}
-}
-
-// Remove removes the named entry from the cache. If the entry
-// is not present in the cache, the operation is a no-op.
-func (lc *listenerCache) Remove(names ...string) {
-	for _, n := range names {
-		lc.remove(n)
-	}
-}
-
 // VirtualHostCache is a thread safe, atomic, copy on write cache of route.VirtualHost objects.
 type virtualHostCache struct {
 	cache

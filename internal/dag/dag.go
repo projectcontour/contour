@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/cache"
 
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 )
 
@@ -143,7 +144,6 @@ func (d *DAG) Recompute() {
 // as needed from the list of services cached
 // from k8s.
 type serviceMap struct {
-
 	// backing services from k8s api.
 	services map[meta]*v1.Service
 
@@ -274,6 +274,16 @@ func (d *DAG) recompute() *dag {
 			if sec := secret(m); sec != nil {
 				for _, host := range tls.Hosts {
 					svhost(host, 443).secret = sec
+					// process annotations
+					switch ing.ObjectMeta.Annotations["contour.heptio.com/tls-minimum-protocol-version"] {
+					case "1.3":
+						svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_3
+					case "1.2":
+						svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_2
+					default:
+						// any other value is interpreted as TLS/1.1
+						svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_1
+					}
 				}
 			}
 		}
@@ -322,6 +332,7 @@ func (d *DAG) recompute() *dag {
 			m := meta{name: tls.SecretName, namespace: ir.Namespace}
 			if sec := secret(m); sec != nil {
 				svhost(host, 443).secret = sec
+				svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_1 // TODO(dfc) issue 467
 			}
 		}
 
@@ -402,9 +413,19 @@ type SecureVirtualHost struct {
 	// if the VirtualHost is generated inside Contour.
 	Port int
 
+	// TLS minimum protocol version. Defaults to auth.TlsParameters_TLS_AUTO
+	MinProtoVersion auth.TlsParameters_TlsProtocol
+
 	host   string
 	routes map[string]*Route
 	secret *Secret
+}
+
+func (s *SecureVirtualHost) Data() map[string][]byte {
+	if s.secret == nil {
+		return nil
+	}
+	return s.secret.Data()
 }
 
 func (s *SecureVirtualHost) FQDN() string { return s.host }
@@ -446,7 +467,7 @@ func (s *Service) toMeta() portmeta {
 	}
 }
 
-// Secret represents a K8s Secret as a DAG Vertex. A Secret is
+// Secret represents a K8s Secret for TLS usage as a DAG Vertex. A Secret is
 // a leaf in the DAG.
 type Secret struct {
 	object *v1.Secret

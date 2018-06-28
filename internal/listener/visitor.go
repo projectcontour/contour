@@ -54,35 +54,28 @@ func (v *Visitor) Visit() map[string]*v2.Listener {
 	filters := []listener.Filter{
 		httpfilter(ENVOY_HTTPS_LISTENER, v.httpsAccessLog()),
 	}
-	v.DAG.Visit(func(v dag.Vertex) {
-		switch v := v.(type) {
+	v.DAG.Visit(func(vh dag.Vertex) {
+		switch vh := vh.(type) {
 		case *dag.VirtualHost:
-			if v.Port == 80 {
-				// we only create on http listener so record the fact
-				// that we need to then double back at the end and add
-				// the listener properly.
-				http++
-			}
-			var data map[string][]byte
-			v.Visit(func(ch dag.Vertex) {
-				switch ch := ch.(type) {
-				case *dag.Secret:
-					data = ch.Data()
-				default:
-					// some other child, yolo
-				}
-			})
+			// we only create on http listener so record the fact
+			// that we need to then double back at the end and add
+			// the listener properly.
+			http++
+		case *dag.SecureVirtualHost:
+			data := vh.Data()
 			if data == nil {
-				// no secret for this virtual host, skip it
+				// no secret for this vhost, skip it
 				return
 			}
-			// TODO TLS proto
 			fc := listener.FilterChain{
 				FilterChainMatch: &listener.FilterChainMatch{
-					SniDomains: []string{v.FQDN()},
+					SniDomains: []string{vh.FQDN()},
 				},
-				TlsContext: tlscontext(data, auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+				TlsContext: tlscontext(data, vh.MinProtoVersion, "h2", "http/1.1"),
 				Filters:    filters,
+			}
+			if v.UseProxyProto {
+				fc.UseProxyProto = &types.BoolValue{Value: true}
 			}
 			ingress_https.FilterChains = append(ingress_https.FilterChains, fc)
 		}

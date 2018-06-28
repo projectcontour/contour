@@ -20,6 +20,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 	"k8s.io/api/core/v1"
@@ -30,7 +31,7 @@ import (
 
 func TestListenerVisit(t *testing.T) {
 	tests := map[string]struct {
-		ListenerCache
+		*ListenerCache
 		objs []interface{}
 		want map[string]*v2.Listener
 	}{
@@ -259,7 +260,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: map[string]*v2.Listener{},
 		},
-		"simple tls ingress with allow-https:false": {
+		"simple tls ingress with allow-http:false": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
@@ -305,7 +306,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 		},
 		"http listener on non default port": { // issue 72
-			ListenerCache: ListenerCache{
+			ListenerCache: &ListenerCache{
 				HTTPAddress:  "127.0.0.100",
 				HTTPPort:     9100,
 				HTTPSAddress: "127.0.0.200",
@@ -359,6 +360,59 @@ func TestListenerVisit(t *testing.T) {
 				},
 			},
 		},
+		"use proxy proto": {
+			ListenerCache: &ListenerCache{
+				UseProxyProto: true,
+			},
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							Hosts:      []string{"whatever.example.com"},
+							SecretName: "secret",
+						}},
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromInt(8080),
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: secretdata("certificate", "key"),
+				},
+			},
+			want: map[string]*v2.Listener{
+				ENVOY_HTTP_LISTENER: &v2.Listener{
+					Name:    ENVOY_HTTP_LISTENER,
+					Address: socketaddress("0.0.0.0", 8080),
+					FilterChains: []listener.FilterChain{
+						filterchain(true, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+					},
+				},
+				ENVOY_HTTPS_LISTENER: &v2.Listener{
+					Name:    ENVOY_HTTPS_LISTENER,
+					Address: socketaddress("0.0.0.0", 8443),
+					FilterChains: []listener.FilterChain{{
+						FilterChainMatch: &listener.FilterChainMatch{
+							SniDomains: []string{"whatever.example.com"},
+						},
+						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						Filters: []listener.Filter{
+							httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
+						},
+						UseProxyProto: &types.BoolValue{Value: true},
+					}},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -368,8 +422,12 @@ func TestListenerVisit(t *testing.T) {
 				d.Insert(o)
 			}
 			d.Recompute()
+			lc := tc.ListenerCache
+			if lc == nil {
+				lc = new(ListenerCache)
+			}
 			v := Visitor{
-				ListenerCache: &tc.ListenerCache,
+				ListenerCache: lc,
 				DAG:           &d,
 			}
 			got := v.Visit()
