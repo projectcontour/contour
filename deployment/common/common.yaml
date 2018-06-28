@@ -79,7 +79,6 @@ spec:
                     type: object
                     required:
                       - name
-                      - namespace
                     properties:
                       name:
                         type: string
