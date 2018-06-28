@@ -22,6 +22,8 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/types"
+	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/heptio/contour/internal/contour"
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -1154,6 +1156,99 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 		},
 		TypeUrl: routeType,
 		Nonce:   "0",
+	}, streamRDS(t, cc, "ingress_http"))
+}
+
+func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
+	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
+		da.IngressRouteRootNamespaces = []string{"roots"}
+	})
+	defer done()
+
+	// ir1 is an ingressroute that is in the root namespaces
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "roots",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "example.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// add ingressroute
+	rh.OnAdd(ir1)
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_http",
+				VirtualHosts: []route.VirtualHost{{
+					Name:    "example.com",
+					Domains: []string{"example.com", "example.com:80"},
+					Routes: []route.Route{{
+						Match: prefixmatch("/"),
+						Action: &route.Route_Route{
+							Route: &route.RouteAction{
+								ClusterSpecifier: &route.RouteAction_WeightedClusters{
+									WeightedClusters: &route.WeightedCluster{
+										Clusters: []*route.WeightedCluster_ClusterWeight{{
+											Name:   "roots/kuard/8080",
+											Weight: &types.UInt32Value{Value: uint32(100)},
+										}},
+									},
+								},
+							},
+						},
+					}},
+				}},
+			}),
+		},
+		TypeUrl: routeType,
+		Nonce:   "0",
+	}, streamRDS(t, cc, "ingress_http"))
+}
+
+func TestRDSIngressRouteOutsideRootNamespaces(t *testing.T) {
+	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
+		da.IngressRouteRootNamespaces = []string{"roots"}
+	})
+	defer done()
+
+	// ir1 is an ingressroute that is not in the root namespaces
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "example.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// add ingressroute
+	rh.OnAdd(ir1)
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   []types.Any{},
+		TypeUrl:     routeType,
+		Nonce:       "0",
 	}, streamRDS(t, cc, "ingress_http"))
 }
 
