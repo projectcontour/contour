@@ -331,6 +331,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// ir3 delegates a route to ir4
 	ir3 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -350,6 +351,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// ir4 is a delegate ingressroute, and itself delegates to another one.
 	ir4 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog",
@@ -372,6 +374,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// ir5 is a delegate ingressroute
 	ir5 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "marketing-admin",
@@ -2408,7 +2411,7 @@ func TestServiceMapLookup(t *testing.T) {
 	}
 }
 
-func TestDAGCycle(t *testing.T) {
+func TestDAGIngressRouteCycle(t *testing.T) {
 	ir1 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -2472,7 +2475,7 @@ func TestDAGCycle(t *testing.T) {
 	}
 }
 
-func TestDAGCycleSelfEdge(t *testing.T) {
+func TestDAGIngressRouteCycleSelfEdge(t *testing.T) {
 	ir1 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -2493,6 +2496,97 @@ func TestDAGCycleSelfEdge(t *testing.T) {
 	}
 
 	var d DAG
+	d.Insert(ir1)
+	d.Recompute()
+
+	got := make(map[hostport]*VirtualHost)
+	d.Visit(func(v Vertex) {
+		if v, ok := v.(*VirtualHost); ok {
+			got[hostport{host: v.FQDN(), port: v.Port}] = v
+		}
+	})
+
+	want := make(map[hostport]*VirtualHost)
+
+	if !reflect.DeepEqual(want, got) {
+		t.Fatal("expected:\n", want, "\ngot:\n", got)
+	}
+}
+
+func TestDAGIngressRouteDelegatesToNonExistent(t *testing.T) {
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "example-com",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/finance",
+				Delegate: ingressroutev1.Delegate{
+					Name:      "non-existent",
+					Namespace: "non-existent",
+				},
+			}},
+		},
+	}
+
+	var d DAG
+	d.Insert(ir1)
+	d.Recompute()
+
+	got := make(map[hostport]*VirtualHost)
+	d.Visit(func(v Vertex) {
+		if v, ok := v.(*VirtualHost); ok {
+			got[hostport{host: v.FQDN(), port: v.Port}] = v
+		}
+	})
+
+	want := make(map[hostport]*VirtualHost)
+
+	if !reflect.DeepEqual(want, got) {
+		t.Fatal("expected:\n", want, "\ngot:\n", got)
+	}
+}
+
+func TestDAGIngressRouteDelegatePrefixDoesntMatch(t *testing.T) {
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "example-com",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/finance",
+				Delegate: ingressroutev1.Delegate{
+					Name:      "finance-root",
+					Namespace: "finance",
+				},
+			}},
+		},
+	}
+	ir2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "finance",
+			Name:      "finance-root",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			Routes: []ingressroutev1.Route{{
+				Match: "/prefixDoesntMatch",
+				Services: []ingressroutev1.Service{{
+					Name: "home",
+				}},
+			}},
+		},
+	}
+
+	var d DAG
+	d.Insert(ir2)
 	d.Insert(ir1)
 	d.Recompute()
 

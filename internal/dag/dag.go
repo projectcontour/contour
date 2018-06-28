@@ -16,6 +16,7 @@
 package dag
 
 import (
+	"strings"
 	"sync"
 
 	"k8s.io/api/core/v1"
@@ -337,7 +338,8 @@ func (d *DAG) recompute() *dag {
 		}
 
 		visited := make(map[meta]bool)
-		processIngressRoute(ir, visited, host, d, service, vhost)
+		prefixMatch := ""
+		processIngressRoute(ir, prefixMatch, visited, host, d, service, vhost)
 	}
 
 	_d := new(dag)
@@ -351,7 +353,7 @@ func (d *DAG) recompute() *dag {
 	return _d
 }
 
-func processIngressRoute(ir *ingressroutev1.IngressRoute, visited map[meta]bool, host string, d *DAG, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost) {
+func processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited map[meta]bool, host string, d *DAG, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost) {
 	// check if we have already visited this ingressroute. if we have, there is a cycle in the dag.
 	if visited[meta{name: ir.Name, namespace: ir.Namespace}] {
 		// TODO(abrand): Handle the cycle. Invalidate IngressRoute and set status?
@@ -361,7 +363,7 @@ func processIngressRoute(ir *ingressroutev1.IngressRoute, visited map[meta]bool,
 	for _, route := range ir.Spec.Routes {
 
 		// base case: The route points to services, so we add them to the vhost
-		if len(route.Services) > 0 {
+		if len(route.Services) > 0 && strings.HasPrefix(route.Match, prefixMatch) {
 			r := &Route{
 				path:   route.Match,
 				object: ir,
@@ -387,7 +389,7 @@ func processIngressRoute(ir *ingressroutev1.IngressRoute, visited map[meta]bool,
 			if ok {
 				// follow the link and process the target ingress route
 				visited[meta{name: ir.Name, namespace: ir.Namespace}] = true
-				processIngressRoute(dir, visited, host, d, service, vhost)
+				processIngressRoute(dir, route.Match, visited, host, d, service, vhost)
 			}
 		}
 	}
