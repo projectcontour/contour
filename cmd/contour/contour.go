@@ -156,6 +156,7 @@ func main() {
 				log,
 				t, // routes and clusters
 				&da.ListenerCache,
+				&da.RouteCache,
 				et,
 			)
 			log.Println("started")

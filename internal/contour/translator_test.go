@@ -1342,3 +1342,52 @@ func contents(v interface {
 }) []proto.Message {
 	return v.Values(func(string) bool { return true })
 }
+
+// prefixmatch returns a RouteMatch for the supplied prefix.
+func prefixmatch(prefix string) route.RouteMatch {
+	return route.RouteMatch{
+		PathSpecifier: &route.RouteMatch_Prefix{
+			Prefix: prefix,
+		},
+	}
+}
+
+// clusteraction returns a Route_Route action for the supplied cluster.
+func clusteraction(cluster string) *route.Route_Route {
+	return &route.Route_Route{
+		Route: &route.RouteAction{
+			ClusterSpecifier: &route.RouteAction_Cluster{
+				Cluster: cluster,
+			},
+		},
+	}
+}
+
+// clusteractiontimeout returns a cluster action with the specified timeout.
+// A timeout of 0 means infinity. If you do not want to specify a timeout, use
+// clusteraction instead.
+func clusteractiontimeout(name string, timeout time.Duration) *route.Route_Route {
+	// TODO(cmaloney): Pull timeout off of the backend cluster annotation
+	// and use it over the value retrieved from the ingress annotation if
+	// specified.
+	c := clusteraction(name)
+	c.Route.Timeout = &timeout
+	return c
+}
+
+type virtualHostsByName []proto.Message
+
+func (v virtualHostsByName) Len() int      { return len(v) }
+func (v virtualHostsByName) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
+func (v virtualHostsByName) Less(i, j int) bool {
+	return v[i].(*route.VirtualHost).Name < v[j].(*route.VirtualHost).Name
+}
+
+// regexmatch returns a RouteMatch for the supplied regex.
+func regexmatch(regex string) route.RouteMatch {
+	return route.RouteMatch{
+		PathSpecifier: &route.RouteMatch_Regex{
+			Regex: regex,
+		},
+	}
+}

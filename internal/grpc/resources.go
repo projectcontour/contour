@@ -20,7 +20,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/heptio/contour/internal/contour"
 )
 
 // Resource types in xDS v2.
@@ -110,44 +109,28 @@ func (l listenersByName) Less(i, j int) bool {
 
 // RDS implements the RDS v2 gRPC API.
 type RDS struct {
-	HTTP, HTTPS interface {
-		// Values returns a slice of proto.Message implementations that match
-		// the provided filter.
-		Values(func(string) bool) []proto.Message
-	}
-	*contour.Cond
+	cache
 }
 
 // Values returns a sorted list of RouteConfigurations.
 func (r *RDS) Values(filter func(string) bool) []proto.Message {
-	// TODO(dfc) avoid this expensive sort
-	toRouteVirtualHosts := func(ms []proto.Message) []route.VirtualHost {
-		r := make([]route.VirtualHost, 0, len(ms))
-		for _, m := range ms {
-			r = append(r, *(m.(*route.VirtualHost)))
-		}
-		sort.Stable(virtualHostsByName(r))
-		return r
-	}
-
-	v := make([]proto.Message, 0, 1) // common case is a filter with one entry
-	matchAll := func(string) bool { return true }
-	if filter("ingress_http") {
-		v = append(v, &v2.RouteConfiguration{
-			Name:         "ingress_http", // TODO(dfc) matches LDS configuration?
-			VirtualHosts: toRouteVirtualHosts(r.HTTP.Values(matchAll)),
-		})
-	}
-	if filter("ingress_https") {
-		v = append(v, &v2.RouteConfiguration{
-			Name:         "ingress_https", // TODO(dfc) matches LDS configuration?
-			VirtualHosts: toRouteVirtualHosts(r.HTTPS.Values(matchAll)),
-		})
+	v := r.cache.Values(filter)
+	sort.Stable(routeConfigurationsByName(v))
+	for i := range v {
+		sort.Stable(virtualHostsByName(v[i].(*v2.RouteConfiguration).VirtualHosts))
 	}
 	return v
 }
 
 func (r *RDS) TypeURL() string { return routeType }
+
+type routeConfigurationsByName []proto.Message
+
+func (r routeConfigurationsByName) Len() int      { return len(r) }
+func (r routeConfigurationsByName) Swap(i, j int) { r[i], r[j] = r[j], r[i] }
+func (r routeConfigurationsByName) Less(i, j int) bool {
+	return r[i].(*v2.RouteConfiguration).Name < r[j].(*v2.RouteConfiguration).Name
+}
 
 type virtualHostsByName []route.VirtualHost
 
