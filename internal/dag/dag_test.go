@@ -1769,6 +1769,37 @@ func TestDAGRemove(t *testing.T) {
 		},
 	}
 
+	// ir6 contains a single vhost that delegates to ir7
+	ir6 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "delegate",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "b.example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match:    "/",
+				Delegate: ingressroutev1.Delegate{Name: "delegated"},
+			}},
+		},
+	}
+
+	// ir7 is a delegated ingressroute with a single route pointing to s1
+	ir7 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "delegated",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			Routes: []ingressroutev1.Route{{
+				Match:    "/",
+				Services: []ingressroutev1.Service{{Name: "kuard", Port: 8080}},
+			}},
+		},
+	}
+
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -2256,6 +2287,44 @@ func TestDAGRemove(t *testing.T) {
 					},
 				}},
 		},
+		"delegated ingressroute: remove parent ingressroute": {
+			insert: []interface{}{
+				ir6, ir7, s1,
+			},
+			remove: []interface{}{
+				ir6,
+			},
+			want: []Vertex{},
+		},
+		"delegated ingressroute: remove child ingressroute": {
+			insert: []interface{}{
+				ir6, ir7, s1,
+			},
+			remove: []interface{}{
+				ir7,
+			},
+			want: []Vertex{},
+		},
+		"delegated ingressroute: remove service that matches child ingressroute": {
+			insert: []interface{}{
+				ir6, ir7, s1,
+			},
+			remove: []interface{}{
+				s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: ir7,
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -2291,7 +2360,7 @@ func TestDAGRemove(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(want, got) {
-				t.Fatal("expected:\n", want, "\ngot:\n", got)
+				t.Fatal("\nexpected:\n", want, "\ngot:\n", got)
 			}
 
 		})
