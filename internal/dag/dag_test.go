@@ -354,506 +354,515 @@ func TestDAGInsert(t *testing.T) {
 
 	tests := map[string]struct {
 		objs []interface{}
-		want []*VirtualHost
+		want []Vertex
 	}{
 		"insert ingress w/ default backend": {
 			objs: []interface{}{
 				i1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i1,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i1,
+						},
 					},
-				},
-			}},
+				}},
 		},
 		"insert ingress w/ single unnamed backend": {
 			objs: []interface{}{
 				i2,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i2,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i2,
+						},
 					},
-				},
-			}},
+				}},
 		},
 		"insert ingress w/ host name and single backend": {
 			objs: []interface{}{
 				i3,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "kuard.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i3,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "kuard.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i3,
+						},
 					},
 				},
-			}},
+			},
 		},
 		"insert ingress w/ default backend then matching service": {
 			objs: []interface{}{
 				i1,
 				s1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i1,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i1,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
-				},
-			}},
+				}},
 		},
 		"insert service then ingress w/ default backend": {
 			objs: []interface{}{
 				s1,
 				i1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i1,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i1,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
-				},
-			}},
+				}},
 		},
 		"insert ingress w/ default backend then non-matching service": {
 			objs: []interface{}{
 				i1,
 				s2,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i1,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i1,
+						},
 					},
 				},
-			}},
+			},
 		},
 		"insert non matching service then ingress w/ default backend": {
 			objs: []interface{}{
 				s2,
 				i1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i1,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i1,
+						},
 					},
-				},
-			}},
+				}},
 		},
 		"insert ingress w/ default backend then matching service with wrong port": {
 			objs: []interface{}{
 				i1,
 				s3,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i1,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i1,
+						},
 					},
 				},
-			}},
-		},
-		"insert service then matching ingress w/ default backend but wrong port": {
-			objs: []interface{}{
-				s3,
-				i1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i1,
-					},
-				},
-			}},
 		},
 		"insert unnamed ingress w/ single backend then matching service with wrong port": {
 			objs: []interface{}{
 				i2,
 				s3,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i2,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i2,
+						},
 					},
 				},
-			}},
+			},
 		},
 		"insert service then matching unnamed ingress w/ single backend but wrong port": {
 			objs: []interface{}{
 				s3,
 				i2,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i2,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i2,
+						},
 					},
-				},
-			}},
+				}},
 		},
 		"insert ingress w/ default backend then matching service w/ named port": {
 			objs: []interface{}{
 				i4,
 				s1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i4,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i4,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
-				},
-			}},
+				}},
 		},
 		"insert service w/ named port then ingress w/ default backend": {
 			objs: []interface{}{
 				s1,
 				i4,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i4,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i4,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
-				},
-			}},
+				}},
 		},
 		"insert ingress w/ single unnamed backend w/ named service port then service": {
 			objs: []interface{}{
 				i5,
 				s1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i5,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i5,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
 				},
-			}},
+			},
 		},
 		"insert service then ingress w/ single unnamed backend w/ named service port": {
 			objs: []interface{}{
 				s1,
 				i5,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i5,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i5,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
-				},
-			}},
+				}},
 		},
 		"insert secret": {
 			objs: []interface{}{
 				sec1,
 			},
-			want: []*VirtualHost{},
+			want: []Vertex{},
 		},
 		"insert secret then ingress w/o tls": {
 			objs: []interface{}{
 				sec1,
 				i1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i1,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i1,
+						},
 					},
-				},
-			}},
+				}},
 		},
 		"insert secret then ingress w/ tls": {
 			objs: []interface{}{
 				sec1,
 				i3,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "kuard.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i3,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "kuard.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i3,
+						},
 					},
 				},
-			}, {
-				Port: 443,
-				host: "kuard.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i3,
+				&SecureVirtualHost{
+					Port: 443,
+					host: "kuard.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i3,
+						},
 					},
-				},
-				secrets: map[meta]*Secret{
-					meta{
-						name:      "secret",
-						namespace: "default",
-					}: &Secret{
+					secret: &Secret{
 						object: sec1,
 					},
 				},
-			}},
+			},
 		},
 		"insert ingress w/ tls then secret": {
 			objs: []interface{}{
 				i3,
 				sec1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "kuard.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i3,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "kuard.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i3,
+						},
 					},
 				},
-			}, {
-				Port: 443,
-				host: "kuard.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i3,
+				&SecureVirtualHost{
+					Port: 443,
+					host: "kuard.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i3,
+						},
 					},
-				},
-				secrets: map[meta]*Secret{
-					meta{
-						name:      "secret",
-						namespace: "default",
-					}: &Secret{
+					secret: &Secret{
 						object: sec1,
 					},
 				},
-			}},
+			},
 		},
 		"insert ingress w/ two vhosts": {
 			objs: []interface{}{
 				i6,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "a.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "a.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+						},
 					},
 				},
-			}, {
-				Port: 80,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
+				&VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+						},
 					},
 				},
-			}},
+			},
 		},
 		"insert ingress w/ two vhosts then matching service": {
 			objs: []interface{}{
 				i6,
 				s1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "a.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "a.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
 				},
-			}, {
-				Port: 80,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+				&VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
 				},
-			}},
+			},
 		},
 		"insert service then ingress w/ two vhosts": {
 			objs: []interface{}{
 				s1,
 				i6,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "a.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "a.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
 				},
-			}, {
-				Port: 80,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+				&VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
 				},
-			}},
+			},
 		},
 		"insert ingress w/ two vhosts then service then secret": {
 			objs: []interface{}{
@@ -861,72 +870,70 @@ func TestDAGInsert(t *testing.T) {
 				s1,
 				sec1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "a.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "a.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
 				},
-			}, {
-				Port: 80,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+				&VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
-				},
-			}, {
-				Port: 443,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+				}, &SecureVirtualHost{
+					Port: 443,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
-				},
-				secrets: map[meta]*Secret{
-					meta{
-						name:      "secret",
-						namespace: "default",
-					}: &Secret{
+					secret: &Secret{
 						object: sec1,
 					},
 				},
-			}},
+			},
 		},
 		"insert service then secret then ingress w/ two vhosts": {
 			objs: []interface{}{
@@ -934,91 +941,89 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				i6,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "a.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "a.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
-				},
-			}, {
-				Port: 80,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+				}, &VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
-				},
-			}, {
-				Port: 443,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+				}, &SecureVirtualHost{
+					Port: 443,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
-				},
-				secrets: map[meta]*Secret{
-					meta{
-						name:      "secret",
-						namespace: "default",
-					}: &Secret{
+					secret: &Secret{
 						object: sec1,
 					},
 				},
-			}},
+			},
 		},
 		"insert ingress w/ two paths": {
 			objs: []interface{}{
 				i7,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i7,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i7,
+						},
+						"/kuarder": &Route{
+							path:   "/kuarder",
+							object: i7,
+						},
 					},
-					"/kuarder": &Route{
-						path:   "/kuarder",
-						object: i7,
-					},
-				},
-			}},
+				}},
 		},
 		"insert ingress w/ two paths then services": {
 			objs: []interface{}{
@@ -1026,85 +1031,87 @@ func TestDAGInsert(t *testing.T) {
 				s2,
 				s1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i7,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i7,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+						},
+						"/kuarder": &Route{
+							path:   "/kuarder",
+							object: i7,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuarder",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s2,
+									Port:   8080,
+								},
 							},
 						},
 					},
-					"/kuarder": &Route{
-						path:   "/kuarder",
-						object: i7,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuarder",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s2,
-								Port:   8080,
-							},
-						},
-					},
-				},
-			}},
+				}},
 		},
 		"insert two services then ingress w/ two ingress rules": {
 			objs: []interface{}{
 				s1, s2, i8,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i8,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i8,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+						},
+						"/kuarder": &Route{
+							path:   "/kuarder",
+							object: i8,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuarder",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s2,
+									Port:   8080,
+								},
 							},
 						},
 					},
-					"/kuarder": &Route{
-						path:   "/kuarder",
-						object: i8,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuarder",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s2,
-								Port:   8080,
-							},
-						},
-					},
-				},
-			}},
+				}},
 		},
 		"insert ingress w/ two paths httpAllowed: false": {
 			objs: []interface{}{
 				i9,
 			},
-			want: []*VirtualHost{},
+			want: []Vertex{},
 		},
 		"insert ingress w/ two paths httpAllowed: false then tls and service": {
 			objs: []interface{}{
@@ -1112,197 +1119,193 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				s1, s2,
 			},
-			want: []*VirtualHost{{
-				Port: 443,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i9,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&SecureVirtualHost{
+					Port: 443,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i9,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+						},
+						"/kuarder": &Route{
+							path:   "/kuarder",
+							object: i9,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuarder",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s2,
+									Port:   8080,
+								},
 							},
 						},
 					},
-					"/kuarder": &Route{
-						path:   "/kuarder",
-						object: i9,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuarder",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s2,
-								Port:   8080,
-							},
-						},
-					},
-				},
-				secrets: map[meta]*Secret{
-					meta{
-						name:      "secret",
-						namespace: "default",
-					}: &Secret{
+					secret: &Secret{
 						object: sec1,
 					},
-				},
-			}},
+				}},
 		},
 		"insert default ingress httpAllowed: false": {
 			objs: []interface{}{
 				i1a,
 			},
-			want: []*VirtualHost{},
+			want: []Vertex{},
 		},
 		"insert default ingress httpAllowed: false then tls and service": {
 			objs: []interface{}{
 				i1a, sec1, s1,
 			},
-			want: []*VirtualHost{}, // default ingress cannot be tls
+			want: []Vertex{}, // default ingress cannot be tls
 		},
 		"insert ingress w/ two vhosts httpAllowed: false": {
 			objs: []interface{}{
 				i6a,
 			},
-			want: []*VirtualHost{},
+			want: []Vertex{},
 		},
 		"insert ingress w/ two vhosts httpAllowed: false then tls and service": {
 			objs: []interface{}{
 				i6a, sec1, s1,
 			},
-			want: []*VirtualHost{{
-				Port: 443,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6a,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&SecureVirtualHost{
+					Port: 443,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6a,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
-				},
-				secrets: map[meta]*Secret{
-					meta{
-						name:      "secret",
-						namespace: "default",
-					}: &Secret{
+					secret: &Secret{
 						object: sec1,
 					},
-				},
-			}},
+				}},
 		},
 		"insert ingressroute": {
 			objs: []interface{}{
 				ir1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: ir1,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: ir1,
+						},
 					},
-				},
-			}},
+				}},
 		},
 		"insert ingressroute and service": {
 			objs: []interface{}{
 				ir1, s1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: ir1,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: ir1,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
-				},
-			}},
+				}},
 		},
 		"insert ingressroute referencing two backends, one missing": {
 			objs: []interface{}{
 				ir2, s2,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: ir2,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuarder",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s2,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: ir2,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuarder",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s2,
+									Port:   8080,
+								},
 							},
 						},
 					},
-				},
-			}},
+				}},
 		},
 		"insert ingressroute referencing two backends": {
 			objs: []interface{}{
 				ir2, s1, s2,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: ir2,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
-							},
-							portmeta{
-								name:      "kuarder",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s2,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: ir2,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+								portmeta{
+									name:      "kuarder",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s2,
+									Port:   8080,
+								},
 							},
 						},
 					},
-				},
-			}},
+				}},
 		},
 	}
 
@@ -1314,16 +1317,24 @@ func TestDAGInsert(t *testing.T) {
 			}
 			d.Recompute()
 
-			got := make(map[hostport]*VirtualHost)
+			got := make(map[hostport]Vertex)
 			d.Visit(func(v Vertex) {
-				if v, ok := v.(*VirtualHost); ok {
+				switch v := v.(type) {
+				case *VirtualHost:
+					got[hostport{host: v.FQDN(), port: v.Port}] = v
+				case *SecureVirtualHost:
 					got[hostport{host: v.FQDN(), port: v.Port}] = v
 				}
 			})
 
-			want := make(map[hostport]*VirtualHost)
+			want := make(map[hostport]Vertex)
 			for _, v := range tc.want {
-				want[hostport{host: v.FQDN(), port: v.Port}] = v
+				switch v := v.(type) {
+				case *VirtualHost:
+					want[hostport{host: v.FQDN(), port: v.Port}] = v
+				case *SecureVirtualHost:
+					want[hostport{host: v.FQDN(), port: v.Port}] = v
+				}
 			}
 
 			if !reflect.DeepEqual(want, got) {
@@ -1577,7 +1588,7 @@ func TestDAGRemove(t *testing.T) {
 	tests := map[string]struct {
 		insert []interface{}
 		remove []interface{}
-		want   []*VirtualHost
+		want   []Vertex
 	}{
 		"remove ingress w/ default backend": {
 			insert: []interface{}{
@@ -1586,7 +1597,7 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				i1,
 			},
-			want: []*VirtualHost{},
+			want: []Vertex{},
 		},
 		"remove ingress w/ single unnamed backend": {
 			insert: []interface{}{
@@ -1595,22 +1606,23 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				i2,
 			},
-			want: []*VirtualHost{},
+			want: []Vertex{},
 		},
 		"insert ingress w/ host name and single backend": {
 			insert: []interface{}{
 				i3,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "kuard.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i3,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "kuard.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i3,
+						},
 					},
-				},
-			}},
+				}},
 		},
 		"remove ingress w/ default backend leaving matching service": {
 			insert: []interface{}{
@@ -1620,7 +1632,7 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				i1,
 			},
-			want: []*VirtualHost{},
+			want: []Vertex{},
 		},
 		"remove service leaving ingress w/ default backend": {
 			insert: []interface{}{
@@ -1630,16 +1642,17 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				s1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i1,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i1,
+						},
 					},
-				},
-			}},
+				}},
 		},
 		"remove non matching service leaving ingress w/ default backend": {
 			insert: []interface{}{
@@ -1649,16 +1662,17 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				s2,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i1,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i1,
+						},
 					},
-				},
-			}},
+				}},
 		},
 		"remove ingress w/ default backend leaving non matching service": {
 			insert: []interface{}{
@@ -1668,7 +1682,7 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				i1,
 			},
-			want: []*VirtualHost{},
+			want: []Vertex{},
 		},
 		"remove service w/ named service port leaving ingress w/ single unnamed backend": {
 			insert: []interface{}{
@@ -1678,16 +1692,17 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				s1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "*",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i5,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i5,
+						},
 					},
-				},
-			}},
+				}},
 		},
 		"remove secret leaving ingress w/ tls": {
 			insert: []interface{}{
@@ -1697,16 +1712,17 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				sec1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "kuard.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i3,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "kuard.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i3,
+						},
 					},
-				},
-			}},
+				}},
 		},
 		"remove ingress w/ two vhosts": {
 			insert: []interface{}{
@@ -1715,7 +1731,7 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				i6,
 			},
-			want: []*VirtualHost{},
+			want: []Vertex{},
 		},
 		"remove service leaving ingress w/ two vhosts": {
 			insert: []interface{}{
@@ -1725,25 +1741,27 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				s1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "a.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "a.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+						},
 					},
 				},
-			}, {
-				Port: 80,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
+				&VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+						},
 					},
-				},
-			}},
+				}},
 		},
 		"remove secret from ingress w/ two vhosts and service": {
 			insert: []interface{}{
@@ -1754,45 +1772,46 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				sec1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "a.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "a.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
-				},
-			}, {
-				Port: 80,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+				}, &VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
 					},
-				},
-			}},
+				}},
 		},
 		"remove service from ingress w/ two vhosts and secret": {
 			insert: []interface{}{
@@ -1803,42 +1822,40 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				s1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "a.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "a.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+						},
 					},
 				},
-			}, {
-				Port: 80,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
+				&VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+						},
 					},
 				},
-			}, {
-				Port: 443,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i6,
+				&SecureVirtualHost{
+					Port: 443,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6,
+						},
 					},
-				},
-				secrets: map[meta]*Secret{
-					meta{
-						name:      "secret",
-						namespace: "default",
-					}: &Secret{
+					secret: &Secret{
 						object: sec1,
 					},
-				},
-			}},
+				}},
 		},
 		"remove service from ingress w/ two paths": {
 			insert: []interface{}{
@@ -1849,30 +1866,31 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				s2,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: i7,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i7,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
+						"/kuarder": &Route{
+							path:   "/kuarder",
+							object: i7,
+						},
 					},
-					"/kuarder": &Route{
-						path:   "/kuarder",
-						object: i7,
-					},
-				},
-			}},
+				}},
 		},
 		"remove ingressroute w/ default backend": {
 			insert: []interface{}{
@@ -1881,7 +1899,7 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				ir1,
 			},
-			want: []*VirtualHost{},
+			want: []Vertex{},
 		},
 		"remove ingressroute w/ two backends": {
 			insert: []interface{}{
@@ -1890,7 +1908,7 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				ir2,
 			},
-			want: []*VirtualHost{},
+			want: []Vertex{},
 		},
 		"remove ingressroute w/ default backend leaving matching service": {
 			insert: []interface{}{
@@ -1900,7 +1918,7 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				ir1,
 			},
-			want: []*VirtualHost{},
+			want: []Vertex{},
 		},
 		"remove service leaving ingressroute w/ default backend": {
 			insert: []interface{}{
@@ -1910,16 +1928,17 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				s1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "kuard.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: ir1,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "kuard.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: ir1,
+						},
 					},
-				},
-			}},
+				}},
 		},
 		"remove non matching service leaving ingressroute w/ default backend": {
 			insert: []interface{}{
@@ -1929,16 +1948,17 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				s2,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "kuard.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: ir1,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "kuard.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: ir1,
+						},
 					},
-				},
-			}},
+				}},
 		},
 		"remove ingressroute w/ default backend leaving non matching service": {
 			insert: []interface{}{
@@ -1948,7 +1968,7 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				ir1,
 			},
-			want: []*VirtualHost{},
+			want: []Vertex{},
 		},
 		"remove secret leaving ingressroute w/ tls": {
 			insert: []interface{}{
@@ -1958,16 +1978,17 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				sec1,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "kuard.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: ir3,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "kuard.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: ir3,
+						},
 					},
-				},
-			}},
+				}},
 		},
 		"remove ingressroute w/ two vhosts": {
 			insert: []interface{}{
@@ -1976,7 +1997,7 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				ir4,
 			},
-			want: []*VirtualHost{},
+			want: []Vertex{},
 		},
 		"remove service from ingressroute w/ two paths": {
 			insert: []interface{}{
@@ -1987,30 +2008,31 @@ func TestDAGRemove(t *testing.T) {
 			remove: []interface{}{
 				s2,
 			},
-			want: []*VirtualHost{{
-				Port: 80,
-				host: "b.example.com",
-				routes: map[string]*Route{
-					"/": &Route{
-						path:   "/",
-						object: ir5,
-						services: map[portmeta]*Service{
-							portmeta{
-								name:      "kuard",
-								namespace: "default",
-								port:      8080,
-							}: &Service{
-								object: s1,
-								Port:   8080,
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: ir5,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
 							},
 						},
+						"/kuarder": &Route{
+							path:   "/kuarder",
+							object: ir5,
+						},
 					},
-					"/kuarder": &Route{
-						path:   "/kuarder",
-						object: ir5,
-					},
-				},
-			}},
+				}},
 		},
 	}
 
@@ -2026,16 +2048,24 @@ func TestDAGRemove(t *testing.T) {
 			}
 			d.Recompute()
 
-			got := make(map[hostport]*VirtualHost)
+			got := make(map[hostport]Vertex)
 			d.Visit(func(v Vertex) {
-				if v, ok := v.(*VirtualHost); ok {
+				switch v := v.(type) {
+				case *VirtualHost:
+					got[hostport{host: v.FQDN(), port: v.Port}] = v
+				case *SecureVirtualHost:
 					got[hostport{host: v.FQDN(), port: v.Port}] = v
 				}
 			})
 
-			want := make(map[hostport]*VirtualHost)
+			want := make(map[hostport]Vertex)
 			for _, v := range tc.want {
-				want[hostport{host: v.FQDN(), port: v.Port}] = v
+				switch v := v.(type) {
+				case *VirtualHost:
+					want[hostport{host: v.FQDN(), port: v.Port}] = v
+				case *SecureVirtualHost:
+					want[hostport{host: v.FQDN(), port: v.Port}] = v
+				}
 			}
 
 			if !reflect.DeepEqual(want, got) {
@@ -2047,7 +2077,11 @@ func TestDAGRemove(t *testing.T) {
 }
 
 func (v *VirtualHost) String() string {
-	return fmt.Sprintf("host: %v:%d {routes: %v, secrets: %v}", v.FQDN(), v.Port, v.routes, v.secrets)
+	return fmt.Sprintf("host: %v:%d {routes: %v}", v.FQDN(), v.Port, v.routes)
+}
+
+func (s *SecureVirtualHost) String() string {
+	return fmt.Sprintf("secure host: %v:%d {routes: %v, secret: %v}", s.FQDN(), s.Port, s.routes, s.secret)
 }
 
 func (r *Route) String() string {
