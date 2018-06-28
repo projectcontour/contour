@@ -336,8 +336,32 @@ func (d *DAG) recompute() *dag {
 			}
 		}
 
-		// attach routes to vhost
-		for _, route := range ir.Spec.Routes {
+		visited := make(map[meta]bool)
+		processIngressRoute(ir, visited, host, d, service, vhost)
+	}
+
+	_d := new(dag)
+	for _, vh := range _vhosts {
+		_d.roots = append(_d.roots, vh)
+	}
+	for _, svh := range _svhosts {
+		_d.roots = append(_d.roots, svh)
+	}
+
+	return _d
+}
+
+func processIngressRoute(ir *ingressroutev1.IngressRoute, visited map[meta]bool, host string, d *DAG, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost) {
+	// check if we have already visited this ingressroute. if we have, there is a cycle in the dag.
+	if visited[meta{name: ir.Name, namespace: ir.Namespace}] {
+		// TODO(abrand): Handle the cycle. Invalidate IngressRoute and set status?
+		return
+	}
+
+	for _, route := range ir.Spec.Routes {
+
+		// base case: The route points to services, so we add them to the vhost
+		if len(route.Services) > 0 {
 			r := &Route{
 				path:   route.Match,
 				object: ir,
@@ -349,17 +373,24 @@ func (d *DAG) recompute() *dag {
 				}
 			}
 			vhost(host, 80).routes[r.path] = r
+			continue
+		}
+
+		// otherwise, if the route is delegating to another ingressroute, find it and process it.
+		if route.Delegate.Name != "" {
+			namespace := route.Delegate.Namespace
+			if namespace == "" {
+				// we are delegating to another IngressRoute in the same namespace
+				namespace = ir.Namespace
+			}
+			dir, ok := d.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]
+			if ok {
+				// follow the link and process the target ingress route
+				visited[meta{name: ir.Name, namespace: ir.Namespace}] = true
+				processIngressRoute(dir, visited, host, d, service, vhost)
+			}
 		}
 	}
-
-	_d := new(dag)
-	for _, vh := range _vhosts {
-		_d.roots = append(_d.roots, vh)
-	}
-	for _, svh := range _svhosts {
-		_d.roots = append(_d.roots, svh)
-	}
-	return _d
 }
 
 type Root interface {

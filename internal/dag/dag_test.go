@@ -331,6 +331,78 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	ir3 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/blog",
+				Delegate: ingressroutev1.Delegate{
+					Name:      "blog",
+					Namespace: "marketing",
+				},
+			}},
+		},
+	}
+
+	ir4 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blog",
+			Namespace: "marketing",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			Routes: []ingressroutev1.Route{{
+				Match: "/blog",
+				Services: []ingressroutev1.Service{{
+					Name: "blog",
+					Port: 8080,
+				}},
+			}, {
+				Match: "/blog/admin",
+				Delegate: ingressroutev1.Delegate{
+					Name:      "marketing-admin",
+					Namespace: "operations",
+				},
+			}},
+		},
+	}
+
+	ir5 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "marketing-admin",
+			Namespace: "operations",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			Routes: []ingressroutev1.Route{{
+				Match: "/blog/admin",
+				Services: []ingressroutev1.Service{{
+					Name: "blog-admin",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	s5 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blog-admin",
+			Namespace: "operations",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -375,6 +447,22 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+
+	s4 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blog",
+			Namespace: "marketing",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
 	sec1 := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "secret",
@@ -1397,6 +1485,46 @@ func TestDAGInsert(t *testing.T) {
 				},
 			},
 		},
+		"insert root ingress route and delegate ingress route": {
+			objs: []interface{}{
+				ir5, s4, ir4, s5, ir3,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "example.com",
+					routes: map[string]*Route{
+						"/blog": &Route{
+							path:   "/blog",
+							object: ir4,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "blog",
+									namespace: "marketing",
+									port:      8080,
+								}: &Service{
+									object: s4,
+									Port:   8080,
+								},
+							},
+						},
+						"/blog/admin": &Route{
+							path:   "/blog/admin",
+							object: ir5,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "blog-admin",
+									namespace: "operations",
+									port:      8080,
+								}: &Service{
+									object: s5,
+									Port:   8080,
+								},
+							},
+						},
+					},
+				}},
+		},
 	}
 
 	for name, tc := range tests {
@@ -2277,5 +2405,107 @@ func TestServiceMapLookup(t *testing.T) {
 				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.want, got)
 			}
 		})
+	}
+}
+
+func TestDAGCycle(t *testing.T) {
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "example-com",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/finance",
+				Delegate: ingressroutev1.Delegate{
+					Name:      "finance-root",
+					Namespace: "finance",
+				},
+			}},
+		},
+	}
+	ir2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "finance",
+			Name:      "finance-root",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			Routes: []ingressroutev1.Route{{
+				Match: "/finance",
+				Services: []ingressroutev1.Service{{
+					Name: "home",
+				}},
+			}, {
+				Match: "/finance/stocks",
+				Delegate: ingressroutev1.Delegate{
+					Name:      "example-com",
+					Namespace: "default",
+				},
+			}},
+		},
+	}
+
+	var d DAG
+	d.Insert(ir2)
+	d.Insert(ir1)
+	d.Recompute()
+
+	got := make(map[hostport]*VirtualHost)
+	d.Visit(func(v Vertex) {
+		if v, ok := v.(*VirtualHost); ok {
+			got[hostport{host: v.FQDN(), port: v.Port}] = v
+		}
+	})
+
+	want := make(map[hostport]*VirtualHost)
+	want[hostport{host: "example.com", port: 80}] = &VirtualHost{
+		Port:   80,
+		host:   "example.com",
+		routes: map[string]*Route{"/finance": &Route{path: "/finance", object: ir2}},
+	}
+
+	if !reflect.DeepEqual(want, got) {
+		t.Fatal("expected:\n", want, "\ngot:\n", got)
+	}
+}
+
+func TestDAGCycleSelfEdge(t *testing.T) {
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "example-com",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/finance",
+				Delegate: ingressroutev1.Delegate{
+					Name:      "example-com",
+					Namespace: "default",
+				},
+			}},
+		},
+	}
+
+	var d DAG
+	d.Insert(ir1)
+	d.Recompute()
+
+	got := make(map[hostport]*VirtualHost)
+	d.Visit(func(v Vertex) {
+		if v, ok := v.(*VirtualHost); ok {
+			got[hostport{host: v.FQDN(), port: v.Port}] = v
+		}
+	})
+
+	want := make(map[hostport]*VirtualHost)
+
+	if !reflect.DeepEqual(want, got) {
+		t.Fatal("expected:\n", want, "\ngot:\n", got)
 	}
 }
