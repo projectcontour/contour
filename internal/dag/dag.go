@@ -230,6 +230,21 @@ func (d *DAG) recompute() *dag {
 		return vh
 	}
 
+	_svhosts := make(map[hostport]*SecureVirtualHost)
+	svhost := func(host string, port int) *SecureVirtualHost {
+		hp := hostport{host: host, port: port}
+		svh, ok := _svhosts[hp]
+		if !ok {
+			svh = &SecureVirtualHost{
+				Port:   port,
+				host:   host,
+				routes: make(map[string]*Route),
+			}
+			_svhosts[hp] = svh
+		}
+		return svh
+	}
+
 	// deconstruct each ingress into routes and virtualhost entries
 	for _, ing := range d.ingresses {
 		// should we create port 80 routes for this ingress
@@ -255,7 +270,7 @@ func (d *DAG) recompute() *dag {
 			m := meta{name: tls.SecretName, namespace: ing.Namespace}
 			if sec := secret(m); sec != nil {
 				for _, host := range tls.Hosts {
-					vhost(host, 443).addSecret(sec)
+					svhost(host, 443).secret = sec
 				}
 			}
 		}
@@ -283,8 +298,8 @@ func (d *DAG) recompute() *dag {
 				if httpAllowed {
 					vhost(host, 80).routes[r.path] = r
 				}
-				if _, ok := _vhosts[hostport{host: host, port: 443}]; ok && host != "*" {
-					vhost(host, 443).routes[r.path] = r
+				if _, ok := _svhosts[hostport{host: host, port: 443}]; ok && host != "*" {
+					svhost(host, 443).routes[r.path] = r
 				}
 			}
 		}
@@ -303,7 +318,7 @@ func (d *DAG) recompute() *dag {
 			// attach secrets to TLS enabled vhosts
 			m := meta{name: tls.SecretName, namespace: ir.Namespace}
 			if sec := secret(m); sec != nil {
-				vhost(host, 443).addSecret(sec)
+				svhost(host, 443).secret = sec
 			}
 		}
 
@@ -323,12 +338,12 @@ func (d *DAG) recompute() *dag {
 		}
 	}
 
-	// append each computed vhost as a root of the dag.
-	// this may include vhosts without routes, only secrets,
-	// this is something a walker will have to be aware of.
 	_d := new(dag)
 	for _, vh := range _vhosts {
 		_d.roots = append(_d.roots, vh)
+	}
+	for _, svh := range _svhosts {
+		_d.roots = append(_d.roots, svh)
 	}
 	return _d
 }
@@ -358,17 +373,15 @@ func (r *Route) Visit(f func(Vertex)) {
 	}
 }
 
-// A VirtualHost describes a Vertex that represents the root
-// of a tree of objects associated with a HTTP Host: header.
+// A VirtualHost represents an insecure HTTP host.
 type VirtualHost struct {
 	// Port is the port that the VirtualHost will listen on.
 	// Expected values are 80 and 443, but others are possible
 	// if the VirtualHost is generated inside Contour.
 	Port int
 
-	host    string
-	routes  map[string]*Route
-	secrets map[meta]*Secret
+	host   string
+	routes map[string]*Route
 }
 
 func (v *VirtualHost) FQDN() string { return v.host }
@@ -377,16 +390,26 @@ func (v *VirtualHost) Visit(f func(Vertex)) {
 	for _, r := range v.routes {
 		f(r)
 	}
-	for _, s := range v.secrets {
-		f(s)
-	}
 }
 
-func (v *VirtualHost) addSecret(s *Secret) {
-	if v.secrets == nil {
-		v.secrets = make(map[meta]*Secret)
+// A SecureVirtualHost represents a HTTP host protected by TLS.
+type SecureVirtualHost struct {
+	// Port is the port that the VirtualHost will listen on.
+	// Expected values are 80 and 443, but others are possible
+	// if the VirtualHost is generated inside Contour.
+	Port int
+
+	host   string
+	routes map[string]*Route
+	secret *Secret
+}
+
+func (s *SecureVirtualHost) FQDN() string { return s.host }
+func (s *SecureVirtualHost) Visit(f func(Vertex)) {
+	for _, r := range s.routes {
+		f(r)
 	}
-	v.secrets[s.toMeta()] = s
+	f(s.secret)
 }
 
 type Vertex interface {
