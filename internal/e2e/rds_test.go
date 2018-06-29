@@ -725,6 +725,9 @@ func TestSSLRedirectOverlay(t *testing.T) {
 		Name:    "example.com",
 		Domains: []string{"example.com", "example.com:443"},
 		Routes: []route.Route{{
+			Match:  prefixmatch("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+			Action: routecluster("nginx-ingress/challenge-service/8009"),
+		}, {
 			Match:  prefixmatch("/"), // match all
 			Action: routecluster("default/app-service/8080"),
 		}},
@@ -976,6 +979,9 @@ func TestRDSFilter(t *testing.T) {
 					Name:    "example.com",
 					Domains: []string{"example.com", "example.com:443"},
 					Routes: []route.Route{{
+						Match:  prefixmatch("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+						Action: routecluster("nginx-ingress/challenge-service/8009"),
+					}, {
 						Match:  prefixmatch("/"), // match all
 						Action: routecluster("default/app-service/8080"),
 					}},
