@@ -103,14 +103,12 @@ func tlsRequired(i *v1beta1.Ingress) bool {
 	return i.Annotations["ingress.kubernetes.io/force-ssl-redirect"] == "true"
 }
 
-// websocketRoutes returns a map of websocket routes. If the value is not present, or
-// malformed, then an empty map is returned.
-func websocketRoutes(i *v1beta1.Ingress) map[string]*types.BoolValue {
-	routes := make(map[string]*types.BoolValue)
+func websocketRoutes(i *v1beta1.Ingress) map[string]bool {
+	routes := make(map[string]bool)
 	for _, v := range strings.Split(i.Annotations[annotationWebsocketRoutes], ",") {
 		route := strings.TrimSpace(v)
 		if route != "" {
-			routes[route] = &types.BoolValue{Value: true}
+			routes[route] = true
 		}
 	}
 	return routes

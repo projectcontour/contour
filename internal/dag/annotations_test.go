@@ -160,7 +160,7 @@ func TestParseUpstreamProtocols(t *testing.T) {
 func TestWebsocketRoutes(t *testing.T) {
 	tests := map[string]struct {
 		a    *v1beta1.Ingress
-		want map[string]*types.BoolValue
+		want map[string]bool
 	}{
 		"empty": {
 			a: &v1beta1.Ingress{
@@ -168,7 +168,7 @@ func TestWebsocketRoutes(t *testing.T) {
 					Annotations: map[string]string{annotationWebsocketRoutes: ""},
 				},
 			},
-			want: map[string]*types.BoolValue{},
+			want: map[string]bool{},
 		},
 		"empty with spaces": {
 			a: &v1beta1.Ingress{
@@ -176,7 +176,7 @@ func TestWebsocketRoutes(t *testing.T) {
 					Annotations: map[string]string{annotationWebsocketRoutes: ", ,"},
 				},
 			},
-			want: map[string]*types.BoolValue{},
+			want: map[string]bool{},
 		},
 		"single value": {
 			a: &v1beta1.Ingress{
@@ -184,8 +184,8 @@ func TestWebsocketRoutes(t *testing.T) {
 					Annotations: map[string]string{annotationWebsocketRoutes: "/ws1"},
 				},
 			},
-			want: map[string]*types.BoolValue{
-				"/ws1": &types.BoolValue{Value: true},
+			want: map[string]bool{
+				"/ws1": true,
 			},
 		},
 		"multiple values": {
@@ -194,9 +194,9 @@ func TestWebsocketRoutes(t *testing.T) {
 					Annotations: map[string]string{annotationWebsocketRoutes: "/ws1,/ws2"},
 				},
 			},
-			want: map[string]*types.BoolValue{
-				"/ws1": &types.BoolValue{Value: true},
-				"/ws2": &types.BoolValue{Value: true},
+			want: map[string]bool{
+				"/ws1": true,
+				"/ws2": true,
 			},
 		},
 		"multiple values with spaces and invalid entries": {
@@ -205,9 +205,9 @@ func TestWebsocketRoutes(t *testing.T) {
 					Annotations: map[string]string{annotationWebsocketRoutes: " /ws1, , /ws2 "},
 				},
 			},
-			want: map[string]*types.BoolValue{
-				"/ws1": &types.BoolValue{Value: true},
-				"/ws2": &types.BoolValue{Value: true},
+			want: map[string]bool{
+				"/ws1": true,
+				"/ws2": true,
 			},
 		},
 	}

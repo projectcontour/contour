@@ -19,6 +19,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 	"k8s.io/api/core/v1"
@@ -494,6 +495,74 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 		},
+		"ingress with websocket annotation": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"contour.heptio.com/websocket-routes": "/ws1 , /ws2",
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						Rules: []v1beta1.IngressRule{{
+							Host: "www.example.com",
+							IngressRuleValue: v1beta1.IngressRuleValue{
+								HTTP: &v1beta1.HTTPIngressRuleValue{
+									Paths: []v1beta1.HTTPIngressPath{{
+										Path: "/",
+										Backend: v1beta1.IngressBackend{
+											ServiceName: "kuard",
+											ServicePort: intstr.FromString("www"),
+										},
+									}, {
+										Path: "/ws1",
+										Backend: v1beta1.IngressBackend{
+											ServiceName: "kuard",
+											ServicePort: intstr.FromString("www"),
+										},
+									}},
+								},
+							},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:       "www",
+							Protocol:   "TCP",
+							Port:       8080,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: map[string]*v2.RouteConfiguration{
+				"ingress_http": &v2.RouteConfiguration{
+					Name: "ingress_http",
+					VirtualHosts: []route.VirtualHost{{
+						Name:    "www.example.com",
+						Domains: []string{"www.example.com", "www.example.com:80"},
+						Routes: []route.Route{{
+							Match:  prefixmatch("/ws1"),
+							Action: websocketroute("default/kuard/8080"),
+						}, {
+							Match:  prefixmatch("/"),
+							Action: routeroute("default/kuard/8080"),
+						}},
+					}},
+				},
+				"ingress_https": &v2.RouteConfiguration{
+					Name: "ingress_https",
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -534,4 +603,10 @@ func routeroute(cluster string) *route.Route_Route {
 			},
 		},
 	}
+}
+
+func websocketroute(c string) *route.Route_Route {
+	cl := routeroute(c)
+	cl.Route.UseWebsocket = &types.BoolValue{Value: true}
+	return cl
 }

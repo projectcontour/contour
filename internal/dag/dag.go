@@ -255,11 +255,16 @@ func (d *DAG) recompute() dag {
 		// should we create port 80 routes for this ingress
 		httpAllowed := httpAllowed(ing)
 
+		// compute websocket enabled routes
+		wr := websocketRoutes(ing)
+
 		if ing.Spec.Backend != nil {
 			// handle the annoying default ingress
 			r := &Route{
-				path:   "/",
-				object: ing,
+				path:         "/",
+				object:       ing,
+				HTTPSUpgrade: tlsRequired(ing),
+				Websocket:    wr["/"],
 			}
 			m := meta{name: ing.Spec.Backend.ServiceName, namespace: ing.Namespace}
 			if s := service(m, ing.Spec.Backend.ServicePort); s != nil {
@@ -305,6 +310,7 @@ func (d *DAG) recompute() dag {
 					path:         path,
 					object:       ing,
 					HTTPSUpgrade: tlsRequired(ing),
+					Websocket:    wr[path],
 				}
 
 				m := meta{name: rule.IngressRuleValue.HTTP.Paths[n].Backend.ServiceName, namespace: ing.Namespace}
@@ -407,8 +413,12 @@ type Route struct {
 	services map[portmeta]*Service
 
 	// Should this route generate a 301 upgrade if accessed
-	// insecurely?
+	// over HTTP?
 	HTTPSUpgrade bool
+
+	// Is this a websocket route?
+	// TODO(dfc) this should go on the service
+	Websocket bool
 }
 
 func (r *Route) Prefix() string { return r.path }

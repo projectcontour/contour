@@ -308,6 +308,37 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// i11 has a websocket route
+	i11 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "websocket",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/websocket-routes": "/ws1 , /ws2",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}, {
+							Path: "/ws1",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
 	ir1 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -1556,6 +1587,50 @@ func TestDAGInsert(t *testing.T) {
 					},
 					secret: &Secret{
 						object: sec1,
+					},
+				},
+			},
+		},
+
+		"insert ingress w/ websocket route annotation": {
+			objs: []interface{}{
+				i11,
+				s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i11,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+						},
+						"/ws1": &Route{
+							path:   "/ws1",
+							object: i11,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+							Websocket: true,
+						},
 					},
 				},
 			},

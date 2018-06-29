@@ -22,6 +22,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
 )
 
@@ -72,7 +73,8 @@ func (v *Visitor) Visit() map[string]*v2.RouteConfiguration {
 							svcs[0].Namespace(),
 							svcs[0].Name(),
 							svcs[0].Port,
-						)} // TODO(dfc) support more than one weighted service
+							r.Websocket), // TODO(dfc) support more than one weighted service
+					}
 
 					if r.HTTPSUpgrade {
 						rr.Action = &route.Route_Redirect{
@@ -118,7 +120,7 @@ func (v *Visitor) Visit() map[string]*v2.RouteConfiguration {
 							svcs[0].Namespace(),
 							svcs[0].Name(),
 							svcs[0].Port,
-						), // TODO(dfc) support more than one weighted service
+							r.Websocket), // TODO(dfc) support more than one weighted service
 					})
 				}
 			})
@@ -163,7 +165,7 @@ func prefixmatch(prefix string) route.RouteMatch {
 
 // action computes the cluster route action, a *route.Route_route for the
 // supplied ingress and backend.
-func actionroute(namespace, name string, port int) *route.Route_Route {
+func actionroute(namespace, name string, port int, ws bool) *route.Route_Route {
 	cluster := hashname(60, namespace, name, strconv.Itoa(port))
 	rr := route.Route_Route{
 		Route: &route.RouteAction{
@@ -172,6 +174,10 @@ func actionroute(namespace, name string, port int) *route.Route_Route {
 			},
 		},
 	}
+	if ws {
+		rr.Route.UseWebsocket = &types.BoolValue{Value: ws}
+	}
+
 	return &rr
 }
 

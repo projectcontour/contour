@@ -991,7 +991,20 @@ func TestWebsocketRoutes(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
 
-	// add default/hello to translator.
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ws",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
 	rh.OnAdd(&v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ws",
