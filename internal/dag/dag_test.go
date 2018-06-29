@@ -3079,6 +3079,157 @@ func TestDAGIngressRouteDelegatePrefixDoesntMatch(t *testing.T) {
 	}
 }
 
+func TestDAGIngressRouteDelegatePrefixMatchesStringPrefixButNotPathPrefix(t *testing.T) {
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "example-com",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Delegate: ingressroutev1.Delegate{
+					Name:      "finance-root",
+					Namespace: "finance",
+				},
+			}},
+		},
+	}
+	ir2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "finance",
+			Name:      "finance-root",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			Routes: []ingressroutev1.Route{{
+				Match: "/foobar",
+				Services: []ingressroutev1.Service{{
+					Name: "home",
+				}},
+			}, {
+				Match: "/foo/bar",
+				Services: []ingressroutev1.Service{{
+					Name: "home",
+				}},
+			}},
+		},
+	}
+
+	var d DAG
+	d.Insert(ir2)
+	d.Insert(ir1)
+	d.Recompute()
+
+	got := make(map[hostport]*VirtualHost)
+	d.Visit(func(v Vertex) {
+		if v, ok := v.(*VirtualHost); ok {
+			got[hostport{host: v.FQDN(), port: v.Port}] = v
+		}
+	})
+
+	want := make(map[hostport]*VirtualHost)
+
+	if !reflect.DeepEqual(want, got) {
+		t.Fatal("expected:\n", want, "\ngot:\n", got)
+	}
+}
+
+func TestMatchesPathPrefix(t *testing.T) {
+	tests := map[string]struct {
+		path    string
+		prefix  string
+		matches bool
+	}{
+		"no path cannot match the prefix": {
+			prefix:  "/foo",
+			path:    "",
+			matches: false,
+		},
+		"any path has the empty string as the prefix": {
+			prefix:  "",
+			path:    "/foo",
+			matches: true,
+		},
+		"strict match": {
+			prefix:  "/foo",
+			path:    "/foo",
+			matches: true,
+		},
+		"no case sensitivity": {
+			prefix:  "/foo",
+			path:    "/FOO",
+			matches: true,
+		},
+		"strict match with / at the end": {
+			prefix:  "/foo/",
+			path:    "/foo/",
+			matches: true,
+		},
+		"no match": {
+			prefix:  "/foo",
+			path:    "/bar",
+			matches: false,
+		},
+		"string prefix match should not match": {
+			prefix:  "/foo",
+			path:    "/foobar",
+			matches: false,
+		},
+		"prefix match": {
+			prefix:  "/foo",
+			path:    "/foo/bar",
+			matches: true,
+		},
+		"prefix match with trailing slash in prefix": {
+			prefix:  "/foo/",
+			path:    "/foo/bar",
+			matches: true,
+		},
+		"prefix match with trailing slash in path": {
+			prefix:  "/foo",
+			path:    "/foo/bar/",
+			matches: true,
+		},
+		"prefix match with trailing slashes": {
+			prefix:  "/foo/",
+			path:    "/foo/bar/",
+			matches: true,
+		},
+		"prefix match two levels": {
+			prefix:  "/foo/bar",
+			path:    "/foo/bar",
+			matches: true,
+		},
+		"prefix match two levels trailing slash in prefix": {
+			prefix:  "/foo/bar/",
+			path:    "/foo/bar",
+			matches: true,
+		},
+		"prefix match two levels trailing slash in path": {
+			prefix:  "/foo/bar",
+			path:    "/foo/bar/",
+			matches: true,
+		},
+		"no match two levels": {
+			prefix:  "/foo/bar",
+			path:    "/foo/baz",
+			matches: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := matchesPathPrefix(tc.path, tc.prefix)
+			if got != tc.matches {
+				t.Errorf("expected %v but got %v", tc.matches, got)
+			}
+		})
+	}
+}
+
 func routemap(routes ...*Route) map[string]*Route {
 	m := make(map[string]*Route)
 	for _, r := range routes {
