@@ -39,11 +39,13 @@ func (d *DAGAdapter) OnAdd(obj interface{}) {
 func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
 	d.ResourceEventHandler.OnUpdate(oldObj, newObj)
 	d.updateListeners()
+	d.updateRoutes()
 }
 
 func (d *DAGAdapter) OnDelete(obj interface{}) {
 	d.ResourceEventHandler.OnDelete(obj)
 	d.updateListeners()
+	d.updateRoutes()
 }
 
 func (d *DAGAdapter) updateListeners() {
@@ -59,5 +61,6 @@ func (d *DAGAdapter) updateRoutes() {
 		RouteCache: &d.RouteCache,
 		DAG:        &d.DAG,
 	}
-	d.RouteCache.Update(v.Visit())
+	routes := v.Visit()
+	d.RouteCache.Update(routes)
 }

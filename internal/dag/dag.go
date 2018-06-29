@@ -39,13 +39,15 @@ type DAG struct {
 	secrets       map[meta]*v1.Secret
 	services      map[meta]*v1.Service
 
-	dag *dag
+	dag
 }
 
 // dag represents
 type dag struct {
 	// roots are the roots of this dag
 	roots []Vertex
+
+	version int
 }
 
 // meta holds the name and namespace of a Kubernetes object.
@@ -58,9 +60,6 @@ func (d *DAG) Visit(f func(Vertex)) {
 	d.mu.Lock()
 	dag := d.dag
 	d.mu.Unlock()
-	if dag == nil {
-		return
-	}
 	for _, r := range dag.roots {
 		f(r)
 	}
@@ -138,7 +137,9 @@ func (d *DAG) remove(obj interface{}) {
 func (d *DAG) Recompute() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	version := d.dag.version
 	d.dag = d.recompute()
+	d.dag.version = version + 1
 }
 
 // serviceMap memoise access to a service map, built
@@ -188,7 +189,7 @@ func (sm *serviceMap) insert(svc *v1.Service, port int) *Service {
 }
 
 // recompute builds a new *dag.dag.
-func (d *DAG) recompute() *dag {
+func (d *DAG) recompute() dag {
 	sm := serviceMap{
 		services: d.services,
 	}
@@ -339,10 +340,10 @@ func (d *DAG) recompute() *dag {
 
 		visited := make(map[meta]bool)
 		prefixMatch := ""
-		processIngressRoute(ir, prefixMatch, visited, host, d, service, vhost)
+		d.processIngressRoute(ir, prefixMatch, visited, host, service, vhost)
 	}
 
-	_d := new(dag)
+	var _d dag
 	for _, vh := range _vhosts {
 		_d.roots = append(_d.roots, vh)
 	}
@@ -353,7 +354,7 @@ func (d *DAG) recompute() *dag {
 	return _d
 }
 
-func processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited map[meta]bool, host string, d *DAG, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost) {
+func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited map[meta]bool, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost) {
 	// check if we have already visited this ingressroute. if we have, there is a cycle in the dag.
 	if visited[meta{name: ir.Name, namespace: ir.Namespace}] {
 		// TODO(abrand): Handle the cycle. Invalidate IngressRoute and set status?
@@ -389,7 +390,7 @@ func processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, vi
 			if ok {
 				// follow the link and process the target ingress route
 				visited[meta{name: ir.Name, namespace: ir.Namespace}] = true
-				processIngressRoute(dir, route.Match, visited, host, d, service, vhost)
+				d.processIngressRoute(dir, route.Match, visited, host, service, vhost)
 			}
 		}
 	}

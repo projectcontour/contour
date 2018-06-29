@@ -17,9 +17,7 @@ import (
 	"sync"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/proto"
-	"github.com/sirupsen/logrus"
 )
 
 // cache holds a set of objects confirming to the proto.Message interface
@@ -97,41 +95,5 @@ func (c *clusterLoadAssignmentCache) Add(assignments ...*v2.ClusterLoadAssignmen
 func (c *clusterLoadAssignmentCache) Remove(names ...string) {
 	for _, n := range names {
 		c.remove(n)
-	}
-}
-
-// VirtualHostCache is a thread safe, atomic, copy on write cache of route.VirtualHost objects.
-type virtualHostCache struct {
-	cache
-}
-
-// Add adds an entry to the cache. If a VirtualHost with the same
-// name exists, it is replaced.
-func (vc *virtualHostCache) Add(virtualhosts ...*route.VirtualHost) {
-next:
-	for _, v := range virtualhosts {
-		if v.Name == "" {
-			logrus.WithField("virtualhost", v).Println("skipping VirtualHost with empty name")
-			continue
-		}
-		if len(v.Domains) == 0 {
-			logrus.WithField("virtualhost", v).Println("skipping VirtualHost with blank domain list")
-			continue
-		}
-		for _, d := range v.Domains {
-			if d == "" {
-				logrus.WithField("virtualhost", v).Println("skipping VirtualHost with blank entry in domain list")
-				continue next
-			}
-		}
-		vc.insert(v.Name, v)
-	}
-}
-
-// Remove removes the named entry from the cache. If the entry
-// is not present in the cache, the operation is a no-op.
-func (vc *virtualHostCache) Remove(names ...string) {
-	for _, n := range names {
-		vc.remove(n)
 	}
 }

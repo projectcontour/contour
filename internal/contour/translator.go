@@ -121,15 +121,6 @@ func (t *Translator) removeService(svc *v1.Service) {
 	t.recomputeService(svc, nil)
 }
 
-// ingressClass returns the IngressClass
-// or DEFAULT_INGRESS_CLASS if not configured.
-func (t *Translator) ingressClass() string {
-	if t.IngressClass != "" {
-		return t.IngressClass
-	}
-	return DEFAULT_INGRESS_CLASS
-}
-
 // hashname takes a lenth l and a varargs of strings s and returns a string whose length
 // which does not exceed l. Internally s is joined with strings.Join(s, "/"). If the
 // combined length exceeds l then hashname truncates each element in s, starting from the

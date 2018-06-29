@@ -76,14 +76,6 @@ func setup(t *testing.T, opts ...func(*contour.DAGAdapter)) (cache.ResourceEvent
 	discard := logrus.New()
 	discard.Out = new(discardWriter)
 	// Resource types in xDS v2.
-	const (
-		googleApis   = "type.googleapis.com/"
-		typePrefix   = googleApis + "envoy.api.v2."
-		endpointType = typePrefix + "ClusterLoadAssignment"
-		clusterType  = typePrefix + "Cluster"
-		routeType    = typePrefix + "RouteConfiguration"
-		listenerType = typePrefix + "Listener"
-	)
 	srv := cgrpc.NewAPI(discard, map[string]cgrpc.Cache{
 		clusterType:  &tr.ClusterCache,
 		routeType:    &da.RouteCache,
@@ -130,8 +122,8 @@ func (r *resourceEventHandler) OnAdd(obj interface{}) {
 	case *v1.Endpoints:
 		r.EndpointsTranslator.OnAdd(obj)
 	default:
-		r.Translator.OnAdd(obj)
 		r.DAGAdapter.OnAdd(obj)
+		r.Translator.OnAdd(obj)
 	}
 }
 
@@ -140,8 +132,8 @@ func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 	case *v1.Endpoints:
 		r.EndpointsTranslator.OnUpdate(oldObj, newObj)
 	default:
-		r.Translator.OnUpdate(oldObj, newObj)
 		r.DAGAdapter.OnUpdate(oldObj, newObj)
+		r.Translator.OnUpdate(oldObj, newObj)
 	}
 }
 
@@ -150,8 +142,8 @@ func (r *resourceEventHandler) OnDelete(obj interface{}) {
 	case *v1.Endpoints:
 		r.EndpointsTranslator.OnDelete(obj)
 	default:
-		r.Translator.OnDelete(obj)
 		r.DAGAdapter.OnDelete(obj)
+		r.Translator.OnDelete(obj)
 	}
 }
 

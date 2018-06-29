@@ -62,6 +62,22 @@ func TestEditIngress(t *testing.T) {
 
 	meta := metav1.ObjectMeta{Name: "kuard", Namespace: "default"}
 
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(s1)
+
 	// add default/kuard to translator.
 	old := &v1beta1.Ingress{
 		ObjectMeta: meta,
@@ -180,6 +196,22 @@ func TestIngressPathRouteWithoutHost(t *testing.T) {
 		},
 	})
 
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hello",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(s1)
+
 	// check that it's been translated correctly.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
@@ -219,7 +251,7 @@ func TestEditIngressInPlace(t *testing.T) {
 							Path: "/",
 							Backend: v1beta1.IngressBackend{
 								ServiceName: "wowie",
-								ServicePort: intstr.FromInt(80),
+								ServicePort: intstr.FromString("http"),
 							},
 						}},
 					},
@@ -227,8 +259,40 @@ func TestEditIngressInPlace(t *testing.T) {
 			}},
 		},
 	}
-
 	rh.OnAdd(i1)
+
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "wowie",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(s1)
+
+	s2 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kerpow",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       9000,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(s2)
+
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
@@ -634,6 +698,22 @@ func TestIssue257(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(s1)
+
 	assertRDS(t, cc, []route.VirtualHost{{
 		Name:    "*",
 		Domains: []string{"*"},
@@ -733,6 +813,22 @@ func TestRDSFilter(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "app-service",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(s1)
+
 	// i2 is an overlay to add the let's encrypt handler.
 	i2 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{Name: "challenge", Namespace: "nginx-ingress"},
@@ -754,6 +850,22 @@ func TestRDSFilter(t *testing.T) {
 		},
 	}
 	rh.OnAdd(i2)
+
+	s2 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "challenge-service",
+			Namespace: "nginx-ingress",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8009,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(s2)
 
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
@@ -842,6 +954,41 @@ func TestWebsocketRoutes(t *testing.T) {
 func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}, {
+				Name:       "alt",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-gui",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
 
 	rh.OnAdd(&v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
