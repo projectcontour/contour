@@ -75,9 +75,24 @@ func setup(t *testing.T, opts ...func(*contour.DAGAdapter)) (cache.ResourceEvent
 	check(t, err)
 	discard := logrus.New()
 	discard.Out = new(discardWriter)
+	// Resource types in xDS v2.
+	const (
+		googleApis   = "type.googleapis.com/"
+		typePrefix   = googleApis + "envoy.api.v2."
+		endpointType = typePrefix + "ClusterLoadAssignment"
+		clusterType  = typePrefix + "Cluster"
+		routeType    = typePrefix + "RouteConfiguration"
+		listenerType = typePrefix + "Listener"
+	)
+	srv := cgrpc.NewAPI(discard, map[string]cgrpc.Cache{
+		clusterType:  &tr.ClusterCache,
+		routeType:    &da.RouteCache,
+		listenerType: &da.ListenerCache,
+		endpointType: et,
+	})
+
 	var wg sync.WaitGroup
 	wg.Add(1)
-	srv := cgrpc.NewAPI(discard, tr, &da.ListenerCache, &da.RouteCache, et)
 	go func() {
 		defer wg.Done()
 		srv.Serve(l)

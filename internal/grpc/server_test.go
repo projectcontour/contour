@@ -185,7 +185,12 @@ func TestGRPCStreaming(t *testing.T) {
 				FieldLogger: log,
 			}
 			da = new(contour.DAGAdapter)
-			srv := NewAPI(log, tr, &da.ListenerCache, &da.RouteCache, et)
+			srv := NewAPI(log, map[string]Cache{
+				clusterType:  &tr.ClusterCache,
+				routeType:    &da.RouteCache,
+				listenerType: &da.ListenerCache,
+				endpointType: et,
+			})
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)
@@ -276,7 +281,12 @@ func TestGRPCFetching(t *testing.T) {
 				FieldLogger: log,
 			}
 			var da contour.DAGAdapter
-			srv := NewAPI(log, tr, &da.ListenerCache, &da.RouteCache, et)
+			srv := NewAPI(log, map[string]Cache{
+				clusterType:  &tr.ClusterCache,
+				routeType:    &da.RouteCache,
+				listenerType: &da.ListenerCache,
+				endpointType: et,
+			})
 			var err error
 			l, err = net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)

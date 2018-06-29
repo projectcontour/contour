@@ -34,7 +34,7 @@ const (
 
 // cache represents a source of proto.Message valus that can be registered
 // for interest.
-type cache interface {
+type Cache interface {
 	// Values returns a slice of proto.Message implementations that match
 	// the provided filter.
 	Values(func(string) bool) []proto.Message
@@ -45,12 +45,12 @@ type cache interface {
 
 // CDS implements the CDS v2 gRPC API.
 type CDS struct {
-	cache
+	Cache
 }
 
 // Values returns a sorted list of Clusters.
 func (c *CDS) Values(filter func(string) bool) []proto.Message {
-	v := c.cache.Values(filter)
+	v := c.Cache.Values(filter)
 	sort.Stable(clusterByName(v))
 	return v
 }
@@ -65,12 +65,12 @@ func (c clusterByName) Less(i, j int) bool { return c[i].(*v2.Cluster).Name < c[
 
 // EDS implements the EDS v2 gRPC API.
 type EDS struct {
-	cache
+	Cache
 }
 
 // Values returns a sorted list of ClusterLoadAssignments.
 func (e *EDS) Values(filter func(string) bool) []proto.Message {
-	v := e.cache.Values(filter)
+	v := e.Cache.Values(filter)
 	sort.Stable(clusterLoadAssignmentsByName(v))
 	return v
 }
@@ -87,12 +87,12 @@ func (c clusterLoadAssignmentsByName) Less(i, j int) bool {
 
 // LDS implements the LDS v2 gRPC API.
 type LDS struct {
-	cache
+	Cache
 }
 
 // Values returns a sorted list of Listeners.
 func (l *LDS) Values(filter func(string) bool) []proto.Message {
-	v := l.cache.Values(filter)
+	v := l.Cache.Values(filter)
 	sort.Stable(listenersByName(v))
 	return v
 }
@@ -109,12 +109,12 @@ func (l listenersByName) Less(i, j int) bool {
 
 // RDS implements the RDS v2 gRPC API.
 type RDS struct {
-	cache
+	Cache
 }
 
 // Values returns a sorted list of RouteConfigurations.
 func (r *RDS) Values(filter func(string) bool) []proto.Message {
-	v := r.cache.Values(filter)
+	v := r.Cache.Values(filter)
 	sort.Stable(routeConfigurationsByName(v))
 	for i := range v {
 		sort.Stable(virtualHostsByName(v[i].(*v2.RouteConfiguration).VirtualHosts))
