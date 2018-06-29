@@ -514,6 +514,21 @@ func TestRequestTimeout(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
 
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(s1)
+
 	// i1 is a simple ingress bound to the default vhost.
 	i1 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{Name: "hello", Namespace: "default"},
@@ -633,6 +648,32 @@ func TestSSLRedirectOverlay(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
+	rh.OnAdd(&v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-tls",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	})
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "app-service",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
 	// i2 is an overlay to add the let's encrypt handler.
 	i2 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{Name: "challenge", Namespace: "nginx-ingress"},
@@ -654,6 +695,21 @@ func TestSSLRedirectOverlay(t *testing.T) {
 		},
 	}
 	rh.OnAdd(i2)
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "challenge-service",
+			Namespace: "nginx-ingress",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8009,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
 
 	assertRDS(t, cc, []route.VirtualHost{{ // ingress_http
 		Name:    "example.com",
@@ -823,6 +879,17 @@ func TestRDSFilter(t *testing.T) {
 		},
 	}
 	rh.OnAdd(i1)
+
+	rh.OnAdd(&v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-tls",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	})
 
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
