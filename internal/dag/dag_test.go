@@ -2925,6 +2925,7 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 				Match: "/finance",
 				Services: []ingressroutev1.Service{{
 					Name: "home",
+					Port: 8080,
 				}},
 			}, {
 				Match: "/finance/stocks",
@@ -2937,6 +2938,10 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 	}
 
 	var d DAG
+	fakeClient := fake.NewSimpleClientset()
+	d.IngressRouteStatus = &k8s.IngressRouteStatus{
+		Client: fakeClient,
+	}
 	d.Insert(ir2)
 	d.Insert(ir1)
 	d.Recompute()
@@ -2981,6 +2986,10 @@ func TestDAGIngressRouteCycleSelfEdge(t *testing.T) {
 	}
 
 	var d DAG
+	fakeClient := fake.NewSimpleClientset()
+	d.IngressRouteStatus = &k8s.IngressRouteStatus{
+		Client: fakeClient,
+	}
 	d.Insert(ir1)
 	d.Recompute()
 
@@ -3019,6 +3028,10 @@ func TestDAGIngressRouteDelegatesToNonExistent(t *testing.T) {
 	}
 
 	var d DAG
+	fakeClient := fake.NewSimpleClientset()
+	d.IngressRouteStatus = &k8s.IngressRouteStatus{
+		Client: fakeClient,
+	}
 	d.Insert(ir1)
 	d.Recompute()
 
@@ -3071,6 +3084,10 @@ func TestDAGIngressRouteDelegatePrefixDoesntMatch(t *testing.T) {
 	}
 
 	var d DAG
+	fakeClient := fake.NewSimpleClientset()
+	d.IngressRouteStatus = &k8s.IngressRouteStatus{
+		Client: fakeClient,
+	}
 	d.Insert(ir2)
 	d.Insert(ir1)
 	d.Recompute()
@@ -3176,6 +3193,10 @@ func TestDAGRootNamespaces(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			var d DAG
+			fakeClient := fake.NewSimpleClientset()
+			d.IngressRouteStatus = &k8s.IngressRouteStatus{
+				Client: fakeClient,
+			}
 			d.IngressRouteRootNamespaces = tc.rootNamespaces
 			for _, o := range tc.objs {
 				d.Insert(o)
@@ -3236,6 +3257,10 @@ func TestDAGIngressRouteDelegatePrefixMatchesStringPrefixButNotPathPrefix(t *tes
 	}
 
 	var d DAG
+	fakeClient := fake.NewSimpleClientset()
+	d.IngressRouteStatus = &k8s.IngressRouteStatus{
+		Client: fakeClient,
+	}
 	d.Insert(ir2)
 	d.Insert(ir1)
 	d.Recompute()

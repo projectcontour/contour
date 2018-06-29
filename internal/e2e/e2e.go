@@ -24,7 +24,9 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/contour"
+	"github.com/heptio/contour/internal/generated/clientset/versioned/fake"
 	cgrpc "github.com/heptio/contour/internal/grpc"
+	"github.com/heptio/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
@@ -64,6 +66,10 @@ func setup(t *testing.T, opts ...func(*contour.DAGAdapter)) (cache.ResourceEvent
 		FieldLogger: log,
 	}
 	var da contour.DAGAdapter
+	fakeClient := fake.NewSimpleClientset()
+	da.IngressRouteStatus = &k8s.IngressRouteStatus{
+		Client: fakeClient,
+	}
 	for _, opt := range opts {
 		opt(&da)
 	}

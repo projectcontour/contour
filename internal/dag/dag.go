@@ -16,6 +16,7 @@
 package dag
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -394,15 +395,28 @@ func (d *DAG) recompute() dag {
 func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited map[meta]bool, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost) {
 	// check if we have already visited this ingressroute. if we have, there is a cycle in the dag.
 	if visited[meta{name: ir.Name, namespace: ir.Namespace}] {
-		// TODO(abrand): Handle the cycle. Invalidate IngressRoute and set status?
 		return
 	}
 
 	for _, route := range ir.Spec.Routes {
+		// a route cannot both delegate and point to services
+		if len(route.Services) > 0 && route.Delegate.Name != "" {
+			msg := fmt.Sprintf("route %q: cannot specify services and delegate in the same route", route.Match)
+			if err := d.IngressRouteStatus.SetInvalidStatus(msg, ir); err != nil {
+				// TODO: Log
+				fmt.Printf("error setting status: %v\n", err)
+			}
+			return
+		}
+
 		// base case: The route points to services, so we add them to the vhost
 		if len(route.Services) > 0 {
 			if !matchesPathPrefix(route.Match, prefixMatch) {
-				// TODO: set status
+				msg := "the path prefix does not match the parent's path prefix"
+				if err := d.IngressRouteStatus.SetInvalidStatus(msg, ir); err != nil {
+					// TODO: Log
+					fmt.Printf("error setting status: %v\n", err)
+				}
 				return
 			}
 			r := &Route{
@@ -410,10 +424,20 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 				object: ir,
 			}
 			for _, s := range route.Services {
+				if err := validateService(route, s); err != nil {
+					if err := d.IngressRouteStatus.SetInvalidStatus(err.Error(), ir); err != nil {
+						fmt.Printf("error setting status: %v\n", err)
+					}
+					return
+				}
 				m := meta{name: s.Name, namespace: ir.Namespace}
 				if svc := service(m, intstr.FromInt(s.Port)); svc != nil {
 					r.addService(svc)
 				}
+			}
+			if err := d.IngressRouteStatus.SetValidStatus("ingressroute is valid", ir); err != nil {
+				//TODO: log
+				fmt.Printf("error setting status: %v\n", err)
 			}
 			vhost(host, 80).routes[r.path] = r
 			continue
@@ -465,6 +489,16 @@ func (d *DAG) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 		}
 	}
 	return false
+}
+
+func validateService(r ingressroutev1.Route, s ingressroutev1.Service) error {
+	if s.Port < 1 || s.Port > 65535 {
+		return fmt.Errorf("route %q: service %q: port must be in the range 1-65535", r.Match, s.Name)
+	}
+	if s.Weight != nil && *s.Weight < 0 {
+		return fmt.Errorf("route %q: service %q: weight must be greater than zero", r.Match, s.Name)
+	}
+	return nil
 }
 
 type Root interface {
