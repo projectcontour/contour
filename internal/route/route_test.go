@@ -413,6 +413,87 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 		},
+		"simple tls ingress with force-ssl-redirect": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"ingress.kubernetes.io/force-ssl-redirect": "true",
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							Hosts:      []string{"www.example.com"},
+							SecretName: "secret",
+						}},
+						Rules: []v1beta1.IngressRule{{
+							Host: "www.example.com",
+							IngressRuleValue: v1beta1.IngressRuleValue{
+								HTTP: &v1beta1.HTTPIngressRuleValue{
+									Paths: []v1beta1.HTTPIngressPath{{
+										Backend: v1beta1.IngressBackend{
+											ServiceName: "kuard",
+											ServicePort: intstr.FromString("www"),
+										},
+									}},
+								},
+							},
+						}},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: secretdata("certificate", "key"),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:       "www",
+							Protocol:   "TCP",
+							Port:       8080,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: map[string]*v2.RouteConfiguration{
+				"ingress_http": &v2.RouteConfiguration{
+					Name: "ingress_http",
+					VirtualHosts: []route.VirtualHost{{
+						Name:    "www.example.com",
+						Domains: []string{"www.example.com", "www.example.com:80"},
+						Routes: []route.Route{{
+							Match: prefixmatch("/"),
+							Action: &route.Route_Redirect{
+								Redirect: &route.RedirectAction{
+									HttpsRedirect: true,
+								},
+							},
+						}},
+					}},
+				},
+				"ingress_https": &v2.RouteConfiguration{
+					Name: "ingress_https",
+					VirtualHosts: []route.VirtualHost{{
+						Name:    "www.example.com",
+						Domains: []string{"www.example.com", "www.example.com:443"},
+						Routes: []route.Route{{
+							Match:  prefixmatch("/"),
+							Action: routeroute("default/kuard/8080"),
+						}},
+					}},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {

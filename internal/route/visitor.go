@@ -66,14 +66,22 @@ func (v *Visitor) Visit() map[string]*v2.RouteConfiguration {
 						// no services for this route, skip it.
 						return
 					}
-					vhost.Routes = append(vhost.Routes, route.Route{
+					rr := route.Route{
 						Match: prefixmatch(r.Prefix()),
 						Action: actionroute(
 							svcs[0].Namespace(),
 							svcs[0].Name(),
 							svcs[0].Port,
-						), // TODO(dfc) support more than one weighted service
-					})
+						)} // TODO(dfc) support more than one weighted service
+
+					if r.HTTPSUpgrade {
+						rr.Action = &route.Route_Redirect{
+							Redirect: &route.RedirectAction{
+								HttpsRedirect: true,
+							},
+						}
+					}
+					vhost.Routes = append(vhost.Routes, rr)
 				}
 			})
 			if len(vhost.Routes) < 1 {

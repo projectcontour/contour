@@ -302,8 +302,9 @@ func (d *DAG) recompute() dag {
 					path = "/"
 				}
 				r := &Route{
-					path:   path,
-					object: ing,
+					path:         path,
+					object:       ing,
+					HTTPSUpgrade: tlsRequired(ing),
 				}
 
 				m := meta{name: rule.IngressRuleValue.HTTP.Paths[n].Backend.ServiceName, namespace: ing.Namespace}
@@ -404,6 +405,10 @@ type Route struct {
 	path     string
 	object   interface{} // one of Ingress or IngressRoute
 	services map[portmeta]*Service
+
+	// Should this route generate a 301 upgrade if accessed
+	// insecurely?
+	HTTPSUpgrade bool
 }
 
 func (r *Route) Prefix() string { return r.path }

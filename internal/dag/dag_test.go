@@ -143,6 +143,25 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+	i6b := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-vhosts",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"ingress.kubernetes.io/force-ssl-redirect": "true",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host:             "b.example.com",
+				IngressRuleValue: ingressrulevalue(backend("kuard", intstr.FromString("http"))),
+			}},
+		},
+	}
 
 	// i7 contains a single vhost with two paths
 	i7 := &v1beta1.Ingress{
@@ -1333,6 +1352,59 @@ func TestDAGInsert(t *testing.T) {
 					},
 				}},
 		},
+		"insert ingress w/ force-ssl-redirect: true": {
+			objs: []interface{}{
+				i6b, sec1, s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6b,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+							HTTPSUpgrade: true,
+						},
+					},
+				},
+				&SecureVirtualHost{
+					Port:            443,
+					MinProtoVersion: auth.TlsParameters_TLSv1_1,
+					host:            "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6b,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+							HTTPSUpgrade: true,
+						},
+					},
+					secret: &Secret{
+						object: sec1,
+					},
+				}},
+		},
+
 		"insert ingressroute": {
 			objs: []interface{}{
 				ir1,

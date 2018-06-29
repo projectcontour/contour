@@ -97,6 +97,12 @@ func httpAllowed(i *v1beta1.Ingress) bool {
 	return !(i.Annotations["kubernetes.io/ingress.allow-http"] == "false")
 }
 
+// tlsRequired returns true if the ingress.kubernetes.io/force-ssl-redirect annotation is
+// present and set to true.
+func tlsRequired(i *v1beta1.Ingress) bool {
+	return i.Annotations["ingress.kubernetes.io/force-ssl-redirect"] == "true"
+}
+
 // websocketRoutes returns a map of websocket routes. If the value is not present, or
 // malformed, then an empty map is returned.
 func websocketRoutes(i *v1beta1.Ingress) map[string]*types.BoolValue {
