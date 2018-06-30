@@ -713,6 +713,62 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 		},
+		"vhost name exceeds 60 chars": { // heptio/contour#25
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-service-name",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Rules: []v1beta1.IngressRule{{
+							Host: "my-very-very-long-service-host-name.subdomain.boring-dept.my.company",
+							IngressRuleValue: v1beta1.IngressRuleValue{
+								HTTP: &v1beta1.HTTPIngressRuleValue{
+									Paths: []v1beta1.HTTPIngressPath{{
+										Path: "/",
+										Backend: v1beta1.IngressBackend{
+											ServiceName: "kuard",
+											ServicePort: intstr.FromString("www"),
+										},
+									}},
+								},
+							},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:       "www",
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: map[string]*v2.RouteConfiguration{
+				"ingress_http": &v2.RouteConfiguration{
+					Name: "ingress_http",
+					VirtualHosts: []route.VirtualHost{{
+						Name:    "d31bb322ca62bb395acad00b3cbf45a3aa1010ca28dca7cddb4f7db786fa",
+						Domains: []string{"my-very-very-long-service-host-name.subdomain.boring-dept.my.company", "my-very-very-long-service-host-name.subdomain.boring-dept.my.company:80"},
+						Routes: []route.Route{{
+							Match:  prefixmatch("/"),
+							Action: routeroute("default/kuard/80"),
+						}},
+					}},
+				},
+				"ingress_https": &v2.RouteConfiguration{
+					Name: "ingress_https",
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
