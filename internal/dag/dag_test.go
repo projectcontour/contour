@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
@@ -337,6 +338,77 @@ func TestDAGInsert(t *testing.T) {
 				},
 			}},
 		},
+	}
+
+	// i12a has an invalid timeout
+	i12a := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/request-timeout": "peanut",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	// i12b has a reasonable timeout
+	i12b := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/request-timeout": "1m30s", // 90 seconds y'all
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	// i12c has an unreasonable timeout
+	i12c := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/request-timeout": "infinite",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{HTTP: &v1beta1.HTTPIngressRuleValue{
+					Paths: []v1beta1.HTTPIngressPath{{Path: "/",
+						Backend: v1beta1.IngressBackend{ServiceName: "kuard",
+							ServicePort: intstr.FromString("http")},
+					}}},
+				}}}},
 	}
 
 	ir1 := &ingressroutev1.IngressRoute{
@@ -1591,7 +1663,6 @@ func TestDAGInsert(t *testing.T) {
 				},
 			},
 		},
-
 		"insert ingress w/ websocket route annotation": {
 			objs: []interface{}{
 				i11,
@@ -1630,6 +1701,93 @@ func TestDAGInsert(t *testing.T) {
 								},
 							},
 							Websocket: true,
+						},
+					},
+				},
+			},
+		},
+		"insert ingress w/ invalid timeout annotation": {
+			objs: []interface{}{
+				i12a,
+				s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i12a,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+							Timeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
+						},
+					},
+				},
+			},
+		},
+		"insert ingress w/ valid timeout annotation": {
+			objs: []interface{}{
+				i12b,
+				s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i12b,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+							Timeout: 90 * time.Second,
+						},
+					},
+				},
+			},
+		},
+		"insert ingress w/ infinite timeout annotation": {
+			objs: []interface{}{
+				i12c,
+				s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i12c,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+							Timeout: -1,
 						},
 					},
 				},

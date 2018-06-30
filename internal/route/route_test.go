@@ -16,6 +16,7 @@ package route
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
@@ -29,6 +30,11 @@ import (
 )
 
 func TestRouteVisit(t *testing.T) {
+	var (
+		infinity     = time.Duration(0)
+		nintyseconds = time.Duration(90 * time.Second)
+	)
+
 	tests := map[string]struct {
 		*RouteCache
 		objs []interface{}
@@ -563,6 +569,150 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 		},
+		"ingress invalid timeout": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"contour.heptio.com/request-timeout": "heptio",
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromInt(8080),
+						},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       8080,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: map[string]*v2.RouteConfiguration{
+				"ingress_http": &v2.RouteConfiguration{
+					Name: "ingress_http",
+					VirtualHosts: []route.VirtualHost{{
+						Name:    "*",
+						Domains: []string{"*"},
+						Routes: []route.Route{{
+							Match:  prefixmatch("/"),
+							Action: routetimeout("default/kuard/8080", &infinity),
+						}},
+					}},
+				},
+				"ingress_https": &v2.RouteConfiguration{
+					Name: "ingress_https",
+				},
+			},
+		},
+		"ingress infinite timeout": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"contour.heptio.com/request-timeout": "infinity",
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromInt(8080),
+						},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       8080,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: map[string]*v2.RouteConfiguration{
+				"ingress_http": &v2.RouteConfiguration{
+					Name: "ingress_http",
+					VirtualHosts: []route.VirtualHost{{
+						Name:    "*",
+						Domains: []string{"*"},
+						Routes: []route.Route{{
+							Match:  prefixmatch("/"),
+							Action: routetimeout("default/kuard/8080", &infinity),
+						}},
+					}},
+				},
+				"ingress_https": &v2.RouteConfiguration{
+					Name: "ingress_https",
+				},
+			},
+		},
+		"ingress 90 second timeout": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"contour.heptio.com/request-timeout": "1m30s",
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromInt(8080),
+						},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       8080,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: map[string]*v2.RouteConfiguration{
+				"ingress_http": &v2.RouteConfiguration{
+					Name: "ingress_http",
+					VirtualHosts: []route.VirtualHost{{
+						Name:    "*",
+						Domains: []string{"*"},
+						Routes: []route.Route{{
+							Match:  prefixmatch("/"),
+							Action: routetimeout("default/kuard/8080", &nintyseconds),
+						}},
+					}},
+				},
+				"ingress_https": &v2.RouteConfiguration{
+					Name: "ingress_https",
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -608,5 +758,11 @@ func routeroute(cluster string) *route.Route_Route {
 func websocketroute(c string) *route.Route_Route {
 	cl := routeroute(c)
 	cl.Route.UseWebsocket = &types.BoolValue{Value: true}
+	return cl
+}
+
+func routetimeout(cluster string, timeout *time.Duration) *route.Route_Route {
+	cl := routeroute(cluster)
+	cl.Route.Timeout = timeout
 	return cl
 }

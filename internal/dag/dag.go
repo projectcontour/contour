@@ -18,6 +18,7 @@ package dag
 import (
 	"strings"
 	"sync"
+	"time"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -258,6 +259,9 @@ func (d *DAG) recompute() dag {
 		// compute websocket enabled routes
 		wr := websocketRoutes(ing)
 
+		// compute timeout for any routes on this ingress
+		timeout := parseAnnotationTimeout(ing.Annotations, annotationRequestTimeout)
+
 		if ing.Spec.Backend != nil {
 			// handle the annoying default ingress
 			r := &Route{
@@ -265,6 +269,7 @@ func (d *DAG) recompute() dag {
 				object:       ing,
 				HTTPSUpgrade: tlsRequired(ing),
 				Websocket:    wr["/"],
+				Timeout:      timeout,
 			}
 			m := meta{name: ing.Spec.Backend.ServiceName, namespace: ing.Namespace}
 			if s := service(m, ing.Spec.Backend.ServicePort); s != nil {
@@ -311,6 +316,7 @@ func (d *DAG) recompute() dag {
 					object:       ing,
 					HTTPSUpgrade: tlsRequired(ing),
 					Websocket:    wr[path],
+					Timeout:      timeout,
 				}
 
 				m := meta{name: rule.IngressRuleValue.HTTP.Paths[n].Backend.ServiceName, namespace: ing.Namespace}
@@ -369,7 +375,6 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 	}
 
 	for _, route := range ir.Spec.Routes {
-
 		// base case: The route points to services, so we add them to the vhost
 		if len(route.Services) > 0 && strings.HasPrefix(route.Match, prefixMatch) {
 			r := &Route{
@@ -419,6 +424,12 @@ type Route struct {
 	// Is this a websocket route?
 	// TODO(dfc) this should go on the service
 	Websocket bool
+
+	// A timeout applied to requests on this route.
+	// A timeout of zero implies "use envoy's default"
+	// A timeout of -1 represents "infinity"
+	// TODO(dfc) should this move to service?
+	Timeout time.Duration
 }
 
 func (r *Route) Prefix() string { return r.path }

@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
@@ -72,8 +73,9 @@ func (v *Visitor) Visit() map[string]*v2.RouteConfiguration {
 						Action: actionroute(
 							svcs[0].Namespace(),
 							svcs[0].Name(),
-							svcs[0].Port,
-							r.Websocket), // TODO(dfc) support more than one weighted service
+							svcs[0].Port, // TODO(dfc) support more than one weighted service
+							r.Websocket,
+							r.Timeout),
 					}
 
 					if r.HTTPSUpgrade {
@@ -120,7 +122,8 @@ func (v *Visitor) Visit() map[string]*v2.RouteConfiguration {
 							svcs[0].Namespace(),
 							svcs[0].Name(),
 							svcs[0].Port,
-							r.Websocket), // TODO(dfc) support more than one weighted service
+							r.Websocket,
+							r.Timeout),
 					})
 				}
 			})
@@ -165,7 +168,7 @@ func prefixmatch(prefix string) route.RouteMatch {
 
 // action computes the cluster route action, a *route.Route_route for the
 // supplied ingress and backend.
-func actionroute(namespace, name string, port int, ws bool) *route.Route_Route {
+func actionroute(namespace, name string, port int, ws bool, timeout time.Duration) *route.Route_Route {
 	cluster := hashname(60, namespace, name, strconv.Itoa(port))
 	rr := route.Route_Route{
 		Route: &route.RouteAction{
@@ -176,6 +179,17 @@ func actionroute(namespace, name string, port int, ws bool) *route.Route_Route {
 	}
 	if ws {
 		rr.Route.UseWebsocket = &types.BoolValue{Value: ws}
+	}
+	switch timeout {
+	case 0:
+		// no timeout specified, do nothing
+	case -1:
+		// infinite timeout, set timeout value to a pointer to zero which tells
+		// envoy "infinite timeout"
+		infinity := time.Duration(0)
+		rr.Route.Timeout = &infinity
+	default:
+		rr.Route.Timeout = &timeout
 	}
 
 	return &rr

@@ -30,40 +30,34 @@ func TestParseAnnotationTimeout(t *testing.T) {
 	tests := map[string]struct {
 		a    map[string]string
 		want time.Duration
-		ok   bool
 	}{
 		"nada": {
 			a:    nil,
 			want: 0,
-			ok:   false,
 		},
 		"empty": {
 			a:    map[string]string{annotationRequestTimeout: ""}, // not even sure this is possible via the API
 			want: 0,
-			ok:   false,
 		},
 		"infinity": {
 			a:    map[string]string{annotationRequestTimeout: "infinity"},
-			want: 0,
-			ok:   true,
+			want: -1,
 		},
 		"10 seconds": {
 			a:    map[string]string{annotationRequestTimeout: "10s"},
 			want: 10 * time.Second,
-			ok:   true,
 		},
 		"invalid": {
 			a:    map[string]string{annotationRequestTimeout: "10"}, // 10 what?
-			want: 0,
-			ok:   true,
+			want: -1,
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, ok := parseAnnotationTimeout(tc.a, annotationRequestTimeout)
-			if got != tc.want || ok != tc.ok {
-				t.Fatalf("parseAnnotationTimeout(%q): want: %v, %v, got: %v, %v", tc.a, tc.want, tc.ok, got, ok)
+			got := parseAnnotationTimeout(tc.a, annotationRequestTimeout)
+			if got != tc.want {
+				t.Fatalf("parseAnnotationTimeout(%q): want: %v, got: %v", tc.a, tc.want, got)
 			}
 		})
 	}
