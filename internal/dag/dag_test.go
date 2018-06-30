@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -1985,9 +1984,8 @@ func TestDAGInsert(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(want, got) {
-				t.Fatal(cmp.Diff(want, got, cmp.AllowUnexported(Route{}, hostport{}, VirtualHost{}, SecureVirtualHost{}, Service{}, Secret{})))
+				t.Fatal("expected:\n", want, "\ngot:\n", got)
 			}
-
 		})
 	}
 }

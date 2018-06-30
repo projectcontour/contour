@@ -114,7 +114,6 @@ func (v *Visitor) Visit() map[string]*v2.RouteConfiguration {
 					})
 					if len(svcs) < 1 {
 						// no services for this route, skip it.
-						fmt.Printf("no services for %v:%d%s\n", hostname, 443, r.Prefix())
 						return
 					}
 					vhost.Routes = append(vhost.Routes, route.Route{
@@ -129,7 +128,6 @@ func (v *Visitor) Visit() map[string]*v2.RouteConfiguration {
 				}
 			})
 			if len(vhost.Routes) < 1 {
-				fmt.Printf("no routes for %v:%d\n", hostname, 443)
 				return
 			}
 			sort.Stable(sort.Reverse(longestRouteFirst(vhost.Routes)))

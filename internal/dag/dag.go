@@ -251,6 +251,30 @@ func (d *DAG) recompute() dag {
 		return svh
 	}
 
+	// setup secure vhosts if there is a matching secret
+	// we do this first so that the set of active secure vhosts is stable
+	// during the second ingress pass
+	for _, ing := range d.ingresses {
+		for _, tls := range ing.Spec.TLS {
+			m := meta{name: tls.SecretName, namespace: ing.Namespace}
+			if sec := secret(m); sec != nil {
+				for _, host := range tls.Hosts {
+					svhost(host, 443).secret = sec
+					// process annotations
+					switch ing.ObjectMeta.Annotations["contour.heptio.com/tls-minimum-protocol-version"] {
+					case "1.3":
+						svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_3
+					case "1.2":
+						svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_2
+					default:
+						// any other value is interpreted as TLS/1.1
+						svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_1
+					}
+				}
+			}
+		}
+	}
+
 	// deconstruct each ingress into routes and virtualhost entries
 	for _, ing := range d.ingresses {
 		// should we create port 80 routes for this ingress
@@ -277,26 +301,6 @@ func (d *DAG) recompute() dag {
 			}
 			if httpAllowed {
 				vhost("*", 80).routes[r.path] = r
-			}
-		}
-
-		// attach secrets from ingress to vhosts
-		for _, tls := range ing.Spec.TLS {
-			m := meta{name: tls.SecretName, namespace: ing.Namespace}
-			if sec := secret(m); sec != nil {
-				for _, host := range tls.Hosts {
-					svhost(host, 443).secret = sec
-					// process annotations
-					switch ing.ObjectMeta.Annotations["contour.heptio.com/tls-minimum-protocol-version"] {
-					case "1.3":
-						svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_3
-					case "1.2":
-						svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_2
-					default:
-						// any other value is interpreted as TLS/1.1
-						svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_1
-					}
-				}
 			}
 		}
 
