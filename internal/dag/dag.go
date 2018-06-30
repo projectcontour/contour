@@ -393,22 +393,14 @@ func (d *DAG) recompute() dag {
 }
 
 func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost) {
-	// check if we have already visited this ingressroute. if we have, there is a cycle in the dag.
-	var path []string
-	for _, vir := range visited {
-		path = append(path, fmt.Sprintf("%s/%s", vir.Namespace, vir.Name))
-	}
-	for _, vir := range visited {
-		if ir.Name == vir.Name && ir.Namespace == vir.Namespace {
-			path = append(path, fmt.Sprintf("%s/%s", ir.Namespace, ir.Name))
-			msg := fmt.Sprintf("Detected a cycle in the IngressRoute delegation: %s", strings.Join(path, " -> "))
-			if err := d.IngressRouteStatus.SetInvalidStatus(msg, ir); err != nil {
-				fmt.Printf("error setting status: %v\n", err)
-			}
-			return
-		}
-	}
+	visited = append(visited, ir)
+	defer func() {
+		visited = visited[:len(visited)-1]
+	}()
 
+	// collect valid routes as we go, and add them to the vhost if the
+	// entire ingressroute is valid
+	validRoutes := make(map[string]*Route)
 	for _, route := range ir.Spec.Routes {
 		// a route cannot both delegate and point to services
 		if len(route.Services) > 0 && route.Delegate.Name != "" {
@@ -450,7 +442,7 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 				//TODO: log
 				fmt.Printf("error setting status: %v\n", err)
 			}
-			vhost(host, 80).routes[r.path] = r
+			validRoutes[r.path] = r
 			continue
 		}
 
@@ -461,14 +453,31 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 				// we are delegating to another IngressRoute in the same namespace
 				namespace = ir.Namespace
 			}
-			dir, ok := d.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]
+			dest, ok := d.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]
 			if ok {
+				// before visiting the destination, make sure we are not following an edge
+				// that produces a cycle
+				var path []string
+				for _, vir := range visited {
+					path = append(path, fmt.Sprintf("%s/%s", vir.Namespace, vir.Name))
+				}
+				for _, vir := range visited {
+					if dest.Name == vir.Name && dest.Namespace == vir.Namespace {
+						path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
+						msg := fmt.Sprintf("route creates a delegation cycle: %s", strings.Join(path, " -> "))
+						if err := d.IngressRouteStatus.SetInvalidStatus(msg, ir); err != nil {
+							fmt.Printf("error setting status: %v\n", err)
+						}
+						return
+					}
+				}
 				// follow the link and process the target ingress route
-				visited = append(visited, ir)
-				d.processIngressRoute(dir, route.Match, visited, host, service, vhost)
-				visited = visited[:len(visited)-1]
+				d.processIngressRoute(dest, route.Match, visited, host, service, vhost)
 			}
 		}
+	}
+	for path, route := range validRoutes {
+		vhost(host, 80).routes[path] = route
 	}
 }
 

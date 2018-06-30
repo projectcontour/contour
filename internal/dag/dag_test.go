@@ -2954,11 +2954,11 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 	})
 
 	want := make(map[hostport]*VirtualHost)
-	want[hostport{host: "example.com", port: 80}] = &VirtualHost{
-		Port:   80,
-		host:   "example.com",
-		routes: routemap(&Route{path: "/finance", object: ir2}),
-	}
+	// want[hostport{host: "example.com", port: 80}] = &VirtualHost{
+	// 	Port:   80,
+	// 	host:   "example.com",
+	// 	routes: routemap(&Route{path: "/finance", object: ir2}),
+	// }
 
 	if !reflect.DeepEqual(want, got) {
 		t.Fatal("expected:\n", want, "\ngot:\n", got)
@@ -2981,6 +2981,12 @@ func TestDAGIngressRouteCycleSelfEdge(t *testing.T) {
 					Name:      "example-com",
 					Namespace: "default",
 				},
+			}, {
+				Match: "/foo",
+				Services: []ingressroutev1.Service{{
+					Name: "foo",
+					Port: 80,
+				}},
 			}},
 		},
 	}

@@ -65,10 +65,7 @@ func (irs *IngressRouteStatus) setStatus(existing, updated *ingressroutev1.Ingre
 	if err != nil {
 		return err
 	}
-	// Need to set the resource version of the updated endpoints to the resource
-	// version of the current service. Otherwise, the resulting patch does not
-	// have a resource version, and the server complains.
-	updated.ResourceVersion = existing.ResourceVersion
+
 	updatedBytes, err := json.Marshal(updated)
 	if err != nil {
 		return err
