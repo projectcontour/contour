@@ -152,12 +152,22 @@ func main() {
 			if err != nil {
 				return err
 			}
-			s := grpc.NewAPI(
-				log,
-				t, // routes and clusters
-				&da.ListenerCache,
-				et,
+
+			// Resource types in xDS v2.
+			const (
+				googleApis   = "type.googleapis.com/"
+				typePrefix   = googleApis + "envoy.api.v2."
+				endpointType = typePrefix + "ClusterLoadAssignment"
+				clusterType  = typePrefix + "Cluster"
+				routeType    = typePrefix + "RouteConfiguration"
+				listenerType = typePrefix + "Listener"
 			)
+			s := grpc.NewAPI(log, map[string]grpc.Cache{
+				clusterType:  &t.ClusterCache,
+				routeType:    &da.RouteCache,
+				listenerType: &da.ListenerCache,
+				endpointType: et,
+			})
 			log.Println("started")
 			defer log.Println("stopped")
 			return s.Serve(l)

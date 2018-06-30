@@ -19,6 +19,7 @@ package contour
 import (
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/listener"
+	"github.com/heptio/contour/internal/route"
 )
 
 // DAGAdapter wraps a dag.ResourceEventHandler to hook post update cache
@@ -26,21 +27,25 @@ import (
 type DAGAdapter struct {
 	dag.ResourceEventHandler // provides a Visit method
 	listener.ListenerCache
+	route.RouteCache
 }
 
 func (d *DAGAdapter) OnAdd(obj interface{}) {
 	d.ResourceEventHandler.OnAdd(obj)
 	d.updateListeners()
+	d.updateRoutes()
 }
 
 func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
 	d.ResourceEventHandler.OnUpdate(oldObj, newObj)
 	d.updateListeners()
+	d.updateRoutes()
 }
 
 func (d *DAGAdapter) OnDelete(obj interface{}) {
 	d.ResourceEventHandler.OnDelete(obj)
 	d.updateListeners()
+	d.updateRoutes()
 }
 
 func (d *DAGAdapter) updateListeners() {
@@ -49,4 +54,13 @@ func (d *DAGAdapter) updateListeners() {
 		DAG:           &d.DAG,
 	}
 	d.ListenerCache.Update(v.Visit())
+}
+
+func (d *DAGAdapter) updateRoutes() {
+	v := route.Visitor{
+		RouteCache: &d.RouteCache,
+		DAG:        &d.DAG,
+	}
+	routes := v.Visit()
+	d.RouteCache.Update(routes)
 }

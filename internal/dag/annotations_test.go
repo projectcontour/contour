@@ -30,40 +30,34 @@ func TestParseAnnotationTimeout(t *testing.T) {
 	tests := map[string]struct {
 		a    map[string]string
 		want time.Duration
-		ok   bool
 	}{
 		"nada": {
 			a:    nil,
 			want: 0,
-			ok:   false,
 		},
 		"empty": {
 			a:    map[string]string{annotationRequestTimeout: ""}, // not even sure this is possible via the API
 			want: 0,
-			ok:   false,
 		},
 		"infinity": {
 			a:    map[string]string{annotationRequestTimeout: "infinity"},
-			want: 0,
-			ok:   true,
+			want: -1,
 		},
 		"10 seconds": {
 			a:    map[string]string{annotationRequestTimeout: "10s"},
 			want: 10 * time.Second,
-			ok:   true,
 		},
 		"invalid": {
 			a:    map[string]string{annotationRequestTimeout: "10"}, // 10 what?
-			want: 0,
-			ok:   true,
+			want: -1,
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, ok := parseAnnotationTimeout(tc.a, annotationRequestTimeout)
-			if got != tc.want || ok != tc.ok {
-				t.Fatalf("parseAnnotationTimeout(%q): want: %v, %v, got: %v, %v", tc.a, tc.want, tc.ok, got, ok)
+			got := parseAnnotationTimeout(tc.a, annotationRequestTimeout)
+			if got != tc.want {
+				t.Fatalf("parseAnnotationTimeout(%q): want: %v, got: %v", tc.a, tc.want, got)
 			}
 		})
 	}
@@ -160,7 +154,7 @@ func TestParseUpstreamProtocols(t *testing.T) {
 func TestWebsocketRoutes(t *testing.T) {
 	tests := map[string]struct {
 		a    *v1beta1.Ingress
-		want map[string]*types.BoolValue
+		want map[string]bool
 	}{
 		"empty": {
 			a: &v1beta1.Ingress{
@@ -168,7 +162,7 @@ func TestWebsocketRoutes(t *testing.T) {
 					Annotations: map[string]string{annotationWebsocketRoutes: ""},
 				},
 			},
-			want: map[string]*types.BoolValue{},
+			want: map[string]bool{},
 		},
 		"empty with spaces": {
 			a: &v1beta1.Ingress{
@@ -176,7 +170,7 @@ func TestWebsocketRoutes(t *testing.T) {
 					Annotations: map[string]string{annotationWebsocketRoutes: ", ,"},
 				},
 			},
-			want: map[string]*types.BoolValue{},
+			want: map[string]bool{},
 		},
 		"single value": {
 			a: &v1beta1.Ingress{
@@ -184,8 +178,8 @@ func TestWebsocketRoutes(t *testing.T) {
 					Annotations: map[string]string{annotationWebsocketRoutes: "/ws1"},
 				},
 			},
-			want: map[string]*types.BoolValue{
-				"/ws1": &types.BoolValue{Value: true},
+			want: map[string]bool{
+				"/ws1": true,
 			},
 		},
 		"multiple values": {
@@ -194,9 +188,9 @@ func TestWebsocketRoutes(t *testing.T) {
 					Annotations: map[string]string{annotationWebsocketRoutes: "/ws1,/ws2"},
 				},
 			},
-			want: map[string]*types.BoolValue{
-				"/ws1": &types.BoolValue{Value: true},
-				"/ws2": &types.BoolValue{Value: true},
+			want: map[string]bool{
+				"/ws1": true,
+				"/ws2": true,
 			},
 		},
 		"multiple values with spaces and invalid entries": {
@@ -205,9 +199,9 @@ func TestWebsocketRoutes(t *testing.T) {
 					Annotations: map[string]string{annotationWebsocketRoutes: " /ws1, , /ws2 "},
 				},
 			},
-			want: map[string]*types.BoolValue{
-				"/ws1": &types.BoolValue{Value: true},
-				"/ws2": &types.BoolValue{Value: true},
+			want: map[string]bool{
+				"/ws1": true,
+				"/ws2": true,
 			},
 		},
 	}

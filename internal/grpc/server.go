@@ -22,8 +22,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_service_v2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
 	"github.com/sirupsen/logrus"
-
-	"github.com/heptio/contour/internal/contour"
 )
 
 const (
@@ -32,7 +30,7 @@ const (
 )
 
 // NewAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
-func NewAPI(log logrus.FieldLogger, t *contour.Translator, listeners, endpoints cache) *grpc.Server {
+func NewAPI(log logrus.FieldLogger, cacheMap map[string]Cache) *grpc.Server {
 	opts := []grpc.ServerOption{
 		// By default the Go grpc library defaults to a value of ~100 streams per
 		// connection. This number is likely derived from the HTTP/2 spec:
@@ -48,18 +46,16 @@ func NewAPI(log logrus.FieldLogger, t *contour.Translator, listeners, endpoints 
 			FieldLogger: log,
 			resources: map[string]resource{
 				clusterType: &CDS{
-					cache: &t.ClusterCache,
+					Cache: cacheMap[clusterType],
 				},
 				endpointType: &EDS{
-					cache: endpoints,
+					Cache: cacheMap[endpointType],
 				},
 				listenerType: &LDS{
-					cache: listeners,
+					Cache: cacheMap[listenerType],
 				},
 				routeType: &RDS{
-					HTTP:  &t.VirtualHostCache.HTTP,
-					HTTPS: &t.VirtualHostCache.HTTPS,
-					Cond:  &t.VirtualHostCache.Cond,
+					Cache: cacheMap[routeType],
 				},
 			},
 		},
@@ -79,7 +75,7 @@ type grpcServer struct {
 
 // A resource provides resources formatted as []types.Any.
 type resource interface {
-	cache
+	Cache
 
 	// TypeURL returns the typeURL of messages returned from Values.
 	TypeURL() string

@@ -45,7 +45,6 @@ type Translator struct {
 	logrus.FieldLogger
 
 	ClusterCache
-	VirtualHostCache
 
 	// Contour's IngressClass.
 	// If not set, defaults to DEFAULT_INGRESS_CLASS.
@@ -60,12 +59,11 @@ func (t *Translator) OnAdd(obj interface{}) {
 	case *v1.Service:
 		t.addService(obj)
 	case *v1beta1.Ingress:
-		t.addIngress(obj)
-		t.VirtualHostCache.Notify()
+		// nothing, already cached
 	case *v1.Secret:
 		// nothing, already cached
 	case *ingressroutev1.IngressRoute:
-		t.addIngressRoute(obj)
+		// nothing, already cached
 	default:
 		t.Errorf("OnAdd unexpected type %T: %#v", obj, obj)
 	}
@@ -83,23 +81,11 @@ func (t *Translator) OnUpdate(oldObj, newObj interface{}) {
 		}
 		t.updateService(oldObj, newObj)
 	case *v1beta1.Ingress:
-		oldObj, ok := oldObj.(*v1beta1.Ingress)
-		if !ok {
-			t.Errorf("OnUpdate endpoints %#v received invalid oldObj %T; %#v", newObj, oldObj, oldObj)
-			return
-		}
-		t.updateIngress(oldObj, newObj)
-		t.VirtualHostCache.Notify()
+		// nothing, already cached
 	case *v1.Secret:
 		// nothing, already cached
 	case *ingressroutev1.IngressRoute:
-		oldObj, ok := oldObj.(*ingressroutev1.IngressRoute)
-		if !ok {
-			t.Errorf("OnUpdate ingressRoute %#v received invalid oldObj %T; %#v", newObj, oldObj, oldObj)
-			return
-		}
-		t.updateIngressRoute(oldObj, newObj)
-		t.VirtualHostCache.Notify()
+		// nothing, already cached
 	default:
 		t.Errorf("OnUpdate unexpected type %T: %#v", newObj, newObj)
 	}
@@ -111,14 +97,13 @@ func (t *Translator) OnDelete(obj interface{}) {
 	case *v1.Service:
 		t.removeService(obj)
 	case *v1beta1.Ingress:
-		t.removeIngress(obj)
-		t.VirtualHostCache.Notify()
+		// nothing, already cached
 	case *v1.Secret:
 		// nothing, already cached
 	case _cache.DeletedFinalStateUnknown:
 		t.OnDelete(obj.Obj) // recurse into ourselves with the tombstoned value
 	case *ingressroutev1.IngressRoute:
-		t.removeIngressRoute(obj)
+		// nothing, already cached
 	default:
 		t.Errorf("OnDelete unexpected type %T: %#v", obj, obj)
 	}
@@ -134,104 +119,6 @@ func (t *Translator) updateService(oldsvc, newsvc *v1.Service) {
 
 func (t *Translator) removeService(svc *v1.Service) {
 	t.recomputeService(svc, nil)
-}
-
-// ingressClass returns the IngressClass
-// or DEFAULT_INGRESS_CLASS if not configured.
-func (t *Translator) ingressClass() string {
-	if t.IngressClass != "" {
-		return t.IngressClass
-	}
-	return DEFAULT_INGRESS_CLASS
-}
-
-func (t *Translator) addIngress(i *v1beta1.Ingress) {
-	class, ok := i.Annotations["kubernetes.io/ingress.class"]
-	if ok && class != t.ingressClass() {
-		// if there is an ingress class set, but it is not set to configured
-		// or default ingress class, ignore this ingress.
-		// TODO(dfc) we should also skip creating any cluster backends,
-		// but this is hard to do at the moment because cds and rds are
-		// independent.
-		return
-	}
-
-	// handle the special case of the default ingress first.
-	if i.Spec.Backend != nil {
-		// update t.vhosts cache
-		t.recomputevhost("*", t.cache.vhosts["*"])
-	}
-
-	for _, rule := range i.Spec.Rules {
-		host := rule.Host
-		if host == "" {
-			// If the host is unspecified, the Ingress routes all traffic based on the specified IngressRuleValue.
-			host = "*"
-		}
-		t.recomputevhost(host, t.cache.vhosts[host])
-	}
-}
-
-func (t *Translator) updateIngress(oldIng, newIng *v1beta1.Ingress) {
-	t.removeIngress(oldIng)
-	t.addIngress(newIng)
-}
-
-func (t *Translator) removeIngress(i *v1beta1.Ingress) {
-	class, ok := i.Annotations["kubernetes.io/ingress.class"]
-	if ok && class != t.ingressClass() {
-		// if there is an ingress class set, but it is not set to configured
-		// or default ingress class, ignore this ingress.
-		// TODO(dfc) we should also skip creating any cluster backends,
-		// but this is hard to do at the moment because cds and rds are
-		// independent.
-		return
-	}
-
-	if i.Spec.Backend != nil {
-		t.recomputevhost("*", nil)
-	}
-
-	for _, rule := range i.Spec.Rules {
-		host := rule.Host
-		if host == "" {
-			// If the host is unspecified, the Ingress routes all traffic based on the specified IngressRuleValue.
-			host = "*"
-		}
-		t.recomputevhost(rule.Host, t.cache.vhosts[host])
-	}
-}
-
-func (t *Translator) addIngressRoute(r *ingressroutev1.IngressRoute) {
-
-	// notify watchers that the vhost cache has probably changed.
-	defer t.VirtualHostCache.Notify()
-
-	host := r.Spec.VirtualHost.Fqdn
-	if host == "" {
-		// If the host is unspecified, the Ingress routes all traffic based on the specified IngressRuleValue.
-		host = "*"
-	}
-
-	t.recomputevhostIngressRoute(host, t.cache.vhostroutes[host])
-}
-
-func (t *Translator) removeIngressRoute(r *ingressroutev1.IngressRoute) {
-
-	defer t.VirtualHostCache.Notify()
-
-	host := r.Spec.VirtualHost.Fqdn
-	if host == "" {
-		// If the host is unspecified, the Ingress routes all traffic based on the specified IngressRuleValue.
-		host = "*"
-	}
-
-	t.recomputevhostIngressRoute(host, t.cache.vhostroutes[host])
-}
-
-func (t *Translator) updateIngressRoute(oldIng, newIng *ingressroutev1.IngressRoute) {
-	t.removeIngressRoute(oldIng)
-	t.addIngressRoute(newIng)
 }
 
 // hashname takes a lenth l and a varargs of strings s and returns a string whose length

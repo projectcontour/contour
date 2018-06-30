@@ -158,8 +158,8 @@ func (c *cache) notify() {
 func (c *cache) Values(filter func(string) bool) []proto.Message {
 	c.mu.Lock()
 	values := make([]proto.Message, 0, len(c.values))
-	for n, v := range c.values {
-		if filter(n) {
+	for _, v := range c.values {
+		if filter(v.Name) {
 			values = append(values, v)
 		}
 	}

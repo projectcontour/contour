@@ -18,6 +18,7 @@ package dag
 import (
 	"strings"
 	"sync"
+	"time"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -39,13 +40,15 @@ type DAG struct {
 	secrets       map[meta]*v1.Secret
 	services      map[meta]*v1.Service
 
-	dag *dag
+	dag
 }
 
 // dag represents
 type dag struct {
 	// roots are the roots of this dag
 	roots []Vertex
+
+	version int
 }
 
 // meta holds the name and namespace of a Kubernetes object.
@@ -58,9 +61,6 @@ func (d *DAG) Visit(f func(Vertex)) {
 	d.mu.Lock()
 	dag := d.dag
 	d.mu.Unlock()
-	if dag == nil {
-		return
-	}
 	for _, r := range dag.roots {
 		f(r)
 	}
@@ -138,7 +138,9 @@ func (d *DAG) remove(obj interface{}) {
 func (d *DAG) Recompute() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	version := d.dag.version
 	d.dag = d.recompute()
+	d.dag.version = version + 1
 }
 
 // serviceMap memoise access to a service map, built
@@ -188,7 +190,7 @@ func (sm *serviceMap) insert(svc *v1.Service, port int) *Service {
 }
 
 // recompute builds a new *dag.dag.
-func (d *DAG) recompute() *dag {
+func (d *DAG) recompute() dag {
 	sm := serviceMap{
 		services: d.services,
 	}
@@ -249,27 +251,10 @@ func (d *DAG) recompute() *dag {
 		return svh
 	}
 
-	// deconstruct each ingress into routes and virtualhost entries
+	// setup secure vhosts if there is a matching secret
+	// we do this first so that the set of active secure vhosts is stable
+	// during the second ingress pass
 	for _, ing := range d.ingresses {
-		// should we create port 80 routes for this ingress
-		httpAllowed := httpAllowed(ing)
-
-		if ing.Spec.Backend != nil {
-			// handle the annoying default ingress
-			r := &Route{
-				path:   "/",
-				object: ing,
-			}
-			m := meta{name: ing.Spec.Backend.ServiceName, namespace: ing.Namespace}
-			if s := service(m, ing.Spec.Backend.ServicePort); s != nil {
-				r.addService(s)
-			}
-			if httpAllowed {
-				vhost("*", 80).routes[r.path] = r
-			}
-		}
-
-		// attach secrets from ingress to vhosts
 		for _, tls := range ing.Spec.TLS {
 			m := meta{name: tls.SecretName, namespace: ing.Namespace}
 			if sec := secret(m); sec != nil {
@@ -288,6 +273,36 @@ func (d *DAG) recompute() *dag {
 				}
 			}
 		}
+	}
+
+	// deconstruct each ingress into routes and virtualhost entries
+	for _, ing := range d.ingresses {
+		// should we create port 80 routes for this ingress
+		httpAllowed := httpAllowed(ing)
+
+		// compute websocket enabled routes
+		wr := websocketRoutes(ing)
+
+		// compute timeout for any routes on this ingress
+		timeout := parseAnnotationTimeout(ing.Annotations, annotationRequestTimeout)
+
+		if ing.Spec.Backend != nil {
+			// handle the annoying default ingress
+			r := &Route{
+				path:         "/",
+				object:       ing,
+				HTTPSUpgrade: tlsRequired(ing),
+				Websocket:    wr["/"],
+				Timeout:      timeout,
+			}
+			m := meta{name: ing.Spec.Backend.ServiceName, namespace: ing.Namespace}
+			if s := service(m, ing.Spec.Backend.ServicePort); s != nil {
+				r.addService(s)
+			}
+			if httpAllowed {
+				vhost("*", 80).routes[r.path] = r
+			}
+		}
 
 		for _, rule := range ing.Spec.Rules {
 			// handle Spec.Rule declarations
@@ -301,8 +316,11 @@ func (d *DAG) recompute() *dag {
 					path = "/"
 				}
 				r := &Route{
-					path:   path,
-					object: ing,
+					path:         path,
+					object:       ing,
+					HTTPSUpgrade: tlsRequired(ing),
+					Websocket:    wr[path],
+					Timeout:      timeout,
 				}
 
 				m := meta{name: rule.IngressRuleValue.HTTP.Paths[n].Backend.ServiceName, namespace: ing.Namespace}
@@ -339,10 +357,10 @@ func (d *DAG) recompute() *dag {
 
 		visited := make(map[meta]bool)
 		prefixMatch := ""
-		processIngressRoute(ir, prefixMatch, visited, host, d, service, vhost)
+		d.processIngressRoute(ir, prefixMatch, visited, host, service, vhost)
 	}
 
-	_d := new(dag)
+	var _d dag
 	for _, vh := range _vhosts {
 		_d.roots = append(_d.roots, vh)
 	}
@@ -353,7 +371,7 @@ func (d *DAG) recompute() *dag {
 	return _d
 }
 
-func processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited map[meta]bool, host string, d *DAG, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost) {
+func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited map[meta]bool, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost) {
 	// check if we have already visited this ingressroute. if we have, there is a cycle in the dag.
 	if visited[meta{name: ir.Name, namespace: ir.Namespace}] {
 		// TODO(abrand): Handle the cycle. Invalidate IngressRoute and set status?
@@ -361,7 +379,6 @@ func processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, vi
 	}
 
 	for _, route := range ir.Spec.Routes {
-
 		// base case: The route points to services, so we add them to the vhost
 		if len(route.Services) > 0 && strings.HasPrefix(route.Match, prefixMatch) {
 			r := &Route{
@@ -389,7 +406,7 @@ func processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, vi
 			if ok {
 				// follow the link and process the target ingress route
 				visited[meta{name: ir.Name, namespace: ir.Namespace}] = true
-				processIngressRoute(dir, route.Match, visited, host, d, service, vhost)
+				d.processIngressRoute(dir, route.Match, visited, host, service, vhost)
 			}
 		}
 	}
@@ -403,6 +420,20 @@ type Route struct {
 	path     string
 	object   interface{} // one of Ingress or IngressRoute
 	services map[portmeta]*Service
+
+	// Should this route generate a 301 upgrade if accessed
+	// over HTTP?
+	HTTPSUpgrade bool
+
+	// Is this a websocket route?
+	// TODO(dfc) this should go on the service
+	Websocket bool
+
+	// A timeout applied to requests on this route.
+	// A timeout of zero implies "use envoy's default"
+	// A timeout of -1 represents "infinity"
+	// TODO(dfc) should this move to service?
+	Timeout time.Duration
 }
 
 func (r *Route) Prefix() string { return r.path }

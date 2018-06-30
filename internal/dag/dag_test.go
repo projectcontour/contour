@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
@@ -138,6 +139,25 @@ func TestDAGInsert(t *testing.T) {
 				Host:             "a.example.com",
 				IngressRuleValue: ingressrulevalue(backend("kuard", intstr.FromInt(8080))),
 			}, {
+				Host:             "b.example.com",
+				IngressRuleValue: ingressrulevalue(backend("kuard", intstr.FromString("http"))),
+			}},
+		},
+	}
+	i6b := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-vhosts",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"ingress.kubernetes.io/force-ssl-redirect": "true",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
 				Host:             "b.example.com",
 				IngressRuleValue: ingressrulevalue(backend("kuard", intstr.FromString("http"))),
 			}},
@@ -285,6 +305,201 @@ func TestDAGInsert(t *testing.T) {
 						}},
 					},
 				},
+			}},
+		},
+	}
+
+	// i11 has a websocket route
+	i11 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "websocket",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/websocket-routes": "/ws1 , /ws2",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}, {
+							Path: "/ws1",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	// i12a has an invalid timeout
+	i12a := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/request-timeout": "peanut",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	// i12b has a reasonable timeout
+	i12b := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/request-timeout": "1m30s", // 90 seconds y'all
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	// i12c has an unreasonable timeout
+	i12c := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/request-timeout": "infinite",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{HTTP: &v1beta1.HTTPIngressRuleValue{
+					Paths: []v1beta1.HTTPIngressPath{{Path: "/",
+						Backend: v1beta1.IngressBackend{ServiceName: "kuard",
+							ServicePort: intstr.FromString("http")},
+					}}},
+				}}}},
+	}
+
+	// i13 a and b are a pair of ingresses for the same vhost
+	// they represent a tricky way over 'overlaying' routes from one
+	// ingress onto another
+	i13a := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "app",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"ingress.kubernetes.io/force-ssl-redirect": "true",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"example.com"},
+				SecretName: "example-tls",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "app-service",
+								ServicePort: intstr.FromInt(8080),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	i13b := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{Name: "challenge", Namespace: "nginx-ingress"},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				Host: "example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "challenge-service",
+								ServicePort: intstr.FromInt(8009),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	sec13 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-tls",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	}
+
+	s13a := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "app-service",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	s13b := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "challenge-service",
+			Namespace: "nginx-ingress",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8009,
+				TargetPort: intstr.FromInt(8080),
 			}},
 		},
 	}
@@ -486,13 +701,14 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i1,
 						},
-					},
-				}},
+					),
+				},
+			},
 		},
 		"insert ingress w/ single unnamed backend": {
 			objs: []interface{}{
@@ -502,13 +718,14 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i2,
 						},
-					},
-				}},
+					),
+				},
+			},
 		},
 		"insert ingress w/ host name and single backend": {
 			objs: []interface{}{
@@ -518,12 +735,12 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "kuard.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i3,
 						},
-					},
+					),
 				},
 			},
 		},
@@ -536,23 +753,20 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i1,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
-				}},
+					),
+				},
+			},
 		},
 		"insert service then ingress w/ default backend": {
 			objs: []interface{}{
@@ -563,23 +777,20 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i1,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
-				}},
+					),
+				},
+			},
 		},
 		"insert ingress w/ default backend then non-matching service": {
 			objs: []interface{}{
@@ -590,12 +801,12 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i1,
 						},
-					},
+					),
 				},
 			},
 		},
@@ -608,13 +819,14 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i1,
 						},
-					},
-				}},
+					),
+				},
+			},
 		},
 		"insert ingress w/ default backend then matching service with wrong port": {
 			objs: []interface{}{
@@ -625,12 +837,12 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i1,
 						},
-					},
+					),
 				},
 			},
 		},
@@ -643,12 +855,12 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i2,
 						},
-					},
+					),
 				},
 			},
 		},
@@ -661,13 +873,14 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i2,
 						},
-					},
-				}},
+					),
+				},
+			},
 		},
 		"insert ingress w/ default backend then matching service w/ named port": {
 			objs: []interface{}{
@@ -678,23 +891,20 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i4,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
-				}},
+					),
+				},
+			},
 		},
 		"insert service w/ named port then ingress w/ default backend": {
 			objs: []interface{}{
@@ -705,23 +915,20 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i4,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
-				}},
+					),
+				},
+			},
 		},
 		"insert ingress w/ single unnamed backend w/ named service port then service": {
 			objs: []interface{}{
@@ -732,22 +939,18 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i5,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 				},
 			},
 		},
@@ -760,23 +963,20 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i5,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
-				}},
+					),
+				},
+			},
 		},
 		"insert secret": {
 			objs: []interface{}{
@@ -793,12 +993,12 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i1,
 						},
-					},
+					),
 				}},
 		},
 		"insert secret then ingress w/ tls": {
@@ -810,23 +1010,23 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "kuard.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i3,
 						},
-					},
+					),
 				},
 				&SecureVirtualHost{
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "kuard.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i3,
 						},
-					},
+					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -842,23 +1042,23 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "kuard.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i3,
 						},
-					},
+					),
 				},
 				&SecureVirtualHost{
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "kuard.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i3,
 						},
-					},
+					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -873,22 +1073,22 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "a.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
 						},
-					},
+					),
 				},
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
 						},
-					},
+					),
 				},
 			},
 		},
@@ -901,42 +1101,34 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "a.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 				},
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 				},
 			},
 		},
@@ -949,22 +1141,18 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "a.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 				},
 				&VirtualHost{
 					Port: 80,
@@ -1333,6 +1521,59 @@ func TestDAGInsert(t *testing.T) {
 					},
 				}},
 		},
+		"insert ingress w/ force-ssl-redirect: true": {
+			objs: []interface{}{
+				i6b, sec1, s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6b,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+							HTTPSUpgrade: true,
+						},
+					},
+				},
+				&SecureVirtualHost{
+					Port:            443,
+					MinProtoVersion: auth.TlsParameters_TLSv1_1,
+					host:            "b.example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i6b,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+							HTTPSUpgrade: true,
+						},
+					},
+					secret: &Secret{
+						object: sec1,
+					},
+				}},
+		},
+
 		"insert ingressroute": {
 			objs: []interface{}{
 				ir1,
@@ -1488,6 +1729,132 @@ func TestDAGInsert(t *testing.T) {
 				},
 			},
 		},
+		"insert ingress w/ websocket route annotation": {
+			objs: []interface{}{
+				i11,
+				s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i11,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+						},
+						"/ws1": &Route{
+							path:   "/ws1",
+							object: i11,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+							Websocket: true,
+						},
+					},
+				},
+			},
+		},
+		"insert ingress w/ invalid timeout annotation": {
+			objs: []interface{}{
+				i12a,
+				s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i12a,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+							Timeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
+						},
+					},
+				},
+			},
+		},
+		"insert ingress w/ valid timeout annotation": {
+			objs: []interface{}{
+				i12b,
+				s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: i12b,
+							services: map[portmeta]*Service{
+								portmeta{
+									name:      "kuard",
+									namespace: "default",
+									port:      8080,
+								}: &Service{
+									object: s1,
+									Port:   8080,
+								},
+							},
+							Timeout: 90 * time.Second,
+						},
+					},
+				},
+			},
+		},
+		"insert ingress w/ infinite timeout annotation": {
+			objs: []interface{}{
+				i12c,
+				s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: routemap(
+						&Route{
+							path:   "/",
+							object: i12c,
+							services: servicemap(
+								&Service{
+									object: s1,
+									Port:   8080,
+								},
+							),
+							Timeout: -1,
+						},
+					),
+				},
+			},
+		},
 		"insert root ingress route and delegate ingress route": {
 			objs: []interface{}{
 				ir5, s4, ir4, s5, ir3,
@@ -1496,37 +1863,95 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "example.com",
-					routes: map[string]*Route{
-						"/blog": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/blog",
 							object: ir4,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "blog",
-									namespace: "marketing",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s4,
 									Port:   8080,
 								},
-							},
+							),
 						},
-						"/blog/admin": &Route{
+						&Route{
 							path:   "/blog/admin",
 							object: ir5,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "blog-admin",
-									namespace: "operations",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s5,
 									Port:   8080,
 								},
-							},
+							),
 						},
+					),
+				},
+			},
+		},
+		"insert ingress overlay": {
+			objs: []interface{}{
+				i13a, i13b, sec13, s13a, s13b,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "example.com",
+					routes: routemap(
+						&Route{
+							path:   "/",
+							object: i13a,
+							services: servicemap(
+								&Service{
+									object: s13a,
+									Port:   8080,
+								},
+							),
+							HTTPSUpgrade: true,
+						},
+						&Route{
+							path:   "/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk",
+							object: i13b,
+							services: servicemap(
+								&Service{
+									object: s13b,
+									Port:   8009,
+								},
+							),
+						},
+					),
+				},
+				&SecureVirtualHost{
+					Port:            443,
+					MinProtoVersion: auth.TlsParameters_TLSv1_1,
+					host:            "example.com",
+					routes: routemap(
+						&Route{
+							path:   "/",
+							object: i13a,
+							services: servicemap(
+								&Service{
+									object: s13a,
+									Port:   8080,
+								},
+							),
+							HTTPSUpgrade: true,
+						},
+						&Route{
+							path:   "/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk",
+							object: i13b,
+							services: servicemap(
+								&Service{
+									object: s13b,
+									Port:   8009,
+								},
+							),
+						},
+					),
+					secret: &Secret{
+						object: sec13,
 					},
-				}},
+				},
+			},
 		},
 	}
 
@@ -1561,7 +1986,6 @@ func TestDAGInsert(t *testing.T) {
 			if !reflect.DeepEqual(want, got) {
 				t.Fatal("expected:\n", want, "\ngot:\n", got)
 			}
-
 		})
 	}
 }
@@ -2376,7 +2800,7 @@ func (s *SecureVirtualHost) String() string {
 }
 
 func (r *Route) String() string {
-	return fmt.Sprintf("route: %q {services: %v, object: %p}", r.Prefix(), r.services, r.object)
+	return fmt.Sprintf("route: %q {services: %v, object: %p, upgrade: %v}", r.Prefix(), r.services, r.object, r.HTTPSUpgrade)
 }
 
 func (s *Service) String() string {
@@ -2671,4 +3095,20 @@ func TestDAGIngressRouteDelegatePrefixDoesntMatch(t *testing.T) {
 	if !reflect.DeepEqual(want, got) {
 		t.Fatal("expected:\n", want, "\ngot:\n", got)
 	}
+}
+
+func routemap(routes ...*Route) map[string]*Route {
+	m := make(map[string]*Route)
+	for _, r := range routes {
+		m[r.path] = r
+	}
+	return m
+}
+
+func servicemap(services ...*Service) map[portmeta]*Service {
+	m := make(map[portmeta]*Service)
+	for _, s := range services {
+		m[s.toMeta()] = s
+	}
+	return m
 }

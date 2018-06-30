@@ -49,6 +49,13 @@ func (t *testWriter) Write(buf []byte) (int, error) {
 	return len(buf), nil
 }
 
+type discardWriter struct {
+}
+
+func (d *discardWriter) Write(buf []byte) (int, error) {
+	return len(buf), nil
+}
+
 func setup(t *testing.T, opts ...func(*contour.DAGAdapter)) (cache.ResourceEventHandler, *grpc.ClientConn, func()) {
 	log := logrus.New()
 	log.Out = &testWriter{t}
@@ -66,9 +73,18 @@ func setup(t *testing.T, opts ...func(*contour.DAGAdapter)) (cache.ResourceEvent
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	check(t, err)
+	discard := logrus.New()
+	discard.Out = new(discardWriter)
+	// Resource types in xDS v2.
+	srv := cgrpc.NewAPI(discard, map[string]cgrpc.Cache{
+		clusterType:  &tr.ClusterCache,
+		routeType:    &da.RouteCache,
+		listenerType: &da.ListenerCache,
+		endpointType: et,
+	})
+
 	var wg sync.WaitGroup
 	wg.Add(1)
-	srv := cgrpc.NewAPI(log, tr, &da.ListenerCache, et)
 	go func() {
 		defer wg.Done()
 		srv.Serve(l)
@@ -106,8 +122,8 @@ func (r *resourceEventHandler) OnAdd(obj interface{}) {
 	case *v1.Endpoints:
 		r.EndpointsTranslator.OnAdd(obj)
 	default:
-		r.Translator.OnAdd(obj)
 		r.DAGAdapter.OnAdd(obj)
+		r.Translator.OnAdd(obj)
 	}
 }
 
@@ -116,8 +132,8 @@ func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 	case *v1.Endpoints:
 		r.EndpointsTranslator.OnUpdate(oldObj, newObj)
 	default:
-		r.Translator.OnUpdate(oldObj, newObj)
 		r.DAGAdapter.OnUpdate(oldObj, newObj)
+		r.Translator.OnUpdate(oldObj, newObj)
 	}
 }
 
@@ -126,8 +142,8 @@ func (r *resourceEventHandler) OnDelete(obj interface{}) {
 	case *v1.Endpoints:
 		r.EndpointsTranslator.OnDelete(obj)
 	default:
-		r.Translator.OnDelete(obj)
 		r.DAGAdapter.OnDelete(obj)
+		r.Translator.OnDelete(obj)
 	}
 }
 
