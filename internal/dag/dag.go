@@ -166,24 +166,26 @@ func (sm *serviceMap) lookup(m meta, port intstr.IntOrString) *Service {
 	if !ok {
 		return nil
 	}
-	for _, p := range svc.Spec.Ports {
+	for i := range svc.Spec.Ports {
+		p := &svc.Spec.Ports[i]
 		if int(p.Port) == port.IntValue() {
-			return sm.insert(svc, int(p.Port))
+			return sm.insert(svc, p)
 		}
 		if port.String() == p.Name {
-			return sm.insert(svc, int(p.Port))
+			return sm.insert(svc, p)
 		}
 	}
 	return nil
 }
 
-func (sm *serviceMap) insert(svc *v1.Service, port int) *Service {
+func (sm *serviceMap) insert(svc *v1.Service, port *v1.ServicePort) *Service {
 	if sm._services == nil {
 		sm._services = make(map[portmeta]*Service)
 	}
 	s := &Service{
-		object: svc,
-		Port:   port,
+		object:      svc,
+		Port:        int(port.Port),
+		ServicePort: port,
 	}
 	sm._services[s.toMeta()] = s
 	return s
@@ -511,6 +513,8 @@ type Service struct {
 
 	// Port is the port of this service
 	Port int
+
+	*v1.ServicePort
 }
 
 func (s *Service) Name() string       { return s.object.Name }
