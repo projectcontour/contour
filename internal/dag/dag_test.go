@@ -1157,22 +1157,18 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 				},
 			},
 		},
@@ -1186,62 +1182,50 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "a.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 				},
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 				}, &SecureVirtualHost{
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -1258,61 +1242,49 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "a.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 				}, &VirtualHost{
 					Port: 80,
 					host: "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 				}, &SecureVirtualHost{
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -1327,16 +1299,16 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i7,
 						},
-						"/kuarder": &Route{
+						&Route{
 							path:   "/kuarder",
 							object: i7,
 						},
-					},
+					),
 				}},
 		},
 		"insert ingress w/ two paths then services": {
@@ -1349,37 +1321,30 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i7,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-						"/kuarder": &Route{
+						&Route{
 							path:   "/kuarder",
 							object: i7,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuarder",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s2,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
-				}},
+					),
+				},
+			},
 		},
 		"insert two services then ingress w/ two ingress rules": {
 			objs: []interface{}{
@@ -1389,37 +1354,30 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i8,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-						"/kuarder": &Route{
+						&Route{
 							path:   "/kuarder",
 							object: i8,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuarder",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s2,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
-				}},
+					),
+				},
+			},
 		},
 		"insert ingress w/ two paths httpAllowed: false": {
 			objs: []interface{}{
@@ -1438,40 +1396,33 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i9,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-						"/kuarder": &Route{
+						&Route{
 							path:   "/kuarder",
 							object: i9,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuarder",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s2,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 					secret: &Secret{
 						object: sec1,
 					},
-				}},
+				},
+			},
 		},
 		"insert default ingress httpAllowed: false": {
 			objs: []interface{}{
@@ -1500,26 +1451,23 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6a,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 					secret: &Secret{
 						object: sec1,
 					},
-				}},
+				},
+			},
 		},
 		"insert ingress w/ force-ssl-redirect: true": {
 			objs: []interface{}{
@@ -1529,45 +1477,37 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6b,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 							HTTPSUpgrade: true,
 						},
-					},
+					),
 				},
 				&SecureVirtualHost{
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6b,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 							HTTPSUpgrade: true,
 						},
-					},
+					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -1582,12 +1522,12 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: ir1,
 						},
-					},
+					),
 				}},
 		},
 		"insert ingressroute and service": {
@@ -1598,22 +1538,18 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: ir1,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 				}},
 		},
 		"insert ingressroute referencing two backends, one missing": {
@@ -1624,22 +1560,18 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: ir2,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuarder",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s2,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 				}},
 		},
 		"insert ingressroute referencing two backends": {
@@ -1650,30 +1582,22 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: ir2,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-								portmeta{
-									name:      "kuarder",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+								&Service{
 									object: s2,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 				}},
 		},
 		"insert ingress w/ tls min proto annotation": {
@@ -1686,43 +1610,35 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i10,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 				},
 				&SecureVirtualHost{
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_3,
 					host:            "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i10,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -1738,37 +1654,29 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i11,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-						"/ws1": &Route{
+						&Route{
 							path:   "/ws1",
 							object: i11,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 							Websocket: true,
 						},
-					},
+					),
 				},
 			},
 		},
@@ -1781,23 +1689,19 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i12a,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 							Timeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
 						},
-					},
+					),
 				},
 			},
 		},
@@ -1810,23 +1714,19 @@ func TestDAGInsert(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i12b,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 							Timeout: 90 * time.Second,
 						},
-					},
+					),
 				},
 			},
 		},
@@ -2292,12 +2192,12 @@ func TestDAGRemove(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "kuard.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i3,
 						},
-					},
+					),
 				}},
 		},
 		"remove ingress w/ default backend leaving matching service": {
@@ -2322,12 +2222,12 @@ func TestDAGRemove(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i1,
 						},
-					},
+					),
 				}},
 		},
 		"remove non matching service leaving ingress w/ default backend": {
@@ -2342,12 +2242,12 @@ func TestDAGRemove(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i1,
 						},
-					},
+					),
 				}},
 		},
 		"remove ingress w/ default backend leaving non matching service": {
@@ -2372,12 +2272,12 @@ func TestDAGRemove(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "*",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i5,
 						},
-					},
+					),
 				}},
 		},
 		"remove secret leaving ingress w/ tls": {
@@ -2392,12 +2292,12 @@ func TestDAGRemove(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "kuard.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i3,
 						},
-					},
+					),
 				}},
 		},
 		"remove ingress w/ two vhosts": {
@@ -2421,22 +2321,22 @@ func TestDAGRemove(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "a.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
 						},
-					},
+					),
 				},
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
 						},
-					},
+					),
 				}},
 		},
 		"remove secret from ingress w/ two vhosts and service": {
@@ -2452,41 +2352,33 @@ func TestDAGRemove(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "a.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 				}, &VirtualHost{
 					Port: 80,
 					host: "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-					},
+					),
 				}},
 		},
 		"remove service from ingress w/ two vhosts and secret": {
@@ -2502,33 +2394,33 @@ func TestDAGRemove(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "a.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
 						},
-					},
+					),
 				},
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
 						},
-					},
+					),
 				},
 				&SecureVirtualHost{
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i6,
 						},
-					},
+					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -2547,26 +2439,22 @@ func TestDAGRemove(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: i7,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-						"/kuarder": &Route{
+						&Route{
 							path:   "/kuarder",
 							object: i7,
 						},
-					},
+					),
 				}},
 		},
 		"remove ingressroute w/ default backend": {
@@ -2609,12 +2497,12 @@ func TestDAGRemove(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "kuard.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: ir1,
 						},
-					},
+					),
 				}},
 		},
 		"remove non matching service leaving ingressroute w/ default backend": {
@@ -2629,12 +2517,12 @@ func TestDAGRemove(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "kuard.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: ir1,
 						},
-					},
+					),
 				}},
 		},
 		"remove ingressroute w/ default backend leaving non matching service": {
@@ -2659,12 +2547,12 @@ func TestDAGRemove(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "kuard.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: ir3,
 						},
-					},
+					),
 				}},
 		},
 		"remove ingressroute w/ two vhosts": {
@@ -2689,26 +2577,22 @@ func TestDAGRemove(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: ir5,
-							services: map[portmeta]*Service{
-								portmeta{
-									name:      "kuard",
-									namespace: "default",
-									port:      8080,
-								}: &Service{
+							services: servicemap(
+								&Service{
 									object: s1,
 									Port:   8080,
 								},
-							},
+							),
 						},
-						"/kuarder": &Route{
+						&Route{
 							path:   "/kuarder",
 							object: ir5,
 						},
-					},
+					),
 				}},
 		},
 		"delegated ingressroute: remove parent ingressroute": {
@@ -2740,12 +2624,12 @@ func TestDAGRemove(t *testing.T) {
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
-					routes: map[string]*Route{
-						"/": &Route{
+					routes: routemap(
+						&Route{
 							path:   "/",
 							object: ir7,
 						},
-					},
+					),
 				},
 			},
 		},
@@ -2960,7 +2844,7 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 	want[hostport{host: "example.com", port: 80}] = &VirtualHost{
 		Port:   80,
 		host:   "example.com",
-		routes: map[string]*Route{"/finance": &Route{path: "/finance", object: ir2}},
+		routes: routemap(&Route{path: "/finance", object: ir2}),
 	}
 
 	if !reflect.DeepEqual(want, got) {
