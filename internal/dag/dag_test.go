@@ -760,7 +760,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -785,7 +784,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -900,7 +898,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -925,7 +922,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -950,7 +946,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -975,7 +970,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1114,7 +1108,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1131,7 +1124,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1156,7 +1148,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1173,7 +1164,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1199,7 +1189,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1216,7 +1205,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1233,7 +1221,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1262,7 +1249,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1278,7 +1264,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1295,7 +1280,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1344,7 +1328,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1355,7 +1338,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s2,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1379,7 +1361,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1390,7 +1371,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s2,
-									Port:        8080,
 									ServicePort: &s2.Spec.Ports[0],
 								},
 							),
@@ -1423,7 +1403,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1434,7 +1413,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s2,
-									Port:        8080,
 									ServicePort: &s2.Spec.Ports[0],
 								},
 							),
@@ -1480,7 +1458,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1507,7 +1484,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1526,7 +1502,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1570,7 +1545,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1593,7 +1567,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s2,
-									Port:        8080,
 									ServicePort: &s2.Spec.Ports[0],
 								},
 							),
@@ -1616,12 +1589,10 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 								&Service{
 									object:      s2,
-									Port:        8080,
 									ServicePort: &s2.Spec.Ports[0],
 								},
 							),
@@ -1646,7 +1617,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1664,7 +1634,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1692,7 +1661,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1703,7 +1671,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1729,7 +1696,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1755,7 +1721,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1781,7 +1746,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1806,7 +1770,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s4,
-									Port:        8080,
 									ServicePort: &s4.Spec.Ports[0],
 								},
 							),
@@ -1817,7 +1780,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s5,
-									Port:        8080,
 									ServicePort: &s5.Spec.Ports[0],
 								},
 							),
@@ -1841,7 +1803,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s13a,
-									Port:        8080,
 									ServicePort: &s13a.Spec.Ports[0],
 								},
 							),
@@ -1853,7 +1814,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s13b,
-									Port:        8009,
 									ServicePort: &s13b.Spec.Ports[0],
 								},
 							),
@@ -1871,7 +1831,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s13a,
-									Port:        8080,
 									ServicePort: &s13a.Spec.Ports[0],
 								},
 							),
@@ -1883,7 +1842,6 @@ func TestDAGInsert(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s13b,
-									Port:        8009,
 									ServicePort: &s13b.Spec.Ports[0],
 								},
 							),
@@ -2401,7 +2359,6 @@ func TestDAGRemove(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -2417,7 +2374,6 @@ func TestDAGRemove(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -2490,7 +2446,6 @@ func TestDAGRemove(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -2629,7 +2584,6 @@ func TestDAGRemove(t *testing.T) {
 							services: servicemap(
 								&Service{
 									object:      s1,
-									Port:        8080,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -2794,7 +2748,6 @@ func TestServiceMapLookup(t *testing.T) {
 			port: intstr.FromInt(8080),
 			want: &Service{
 				object:      s1,
-				Port:        8080,
 				ServicePort: &s1.Spec.Ports[0],
 			},
 		},
@@ -2803,7 +2756,6 @@ func TestServiceMapLookup(t *testing.T) {
 			port: intstr.FromString("http"),
 			want: &Service{
 				object:      s1,
-				Port:        8080,
 				ServicePort: &s1.Spec.Ports[0],
 			},
 		},
@@ -2812,7 +2764,6 @@ func TestServiceMapLookup(t *testing.T) {
 			port: intstr.Parse("8080"),
 			want: &Service{
 				object:      s1,
-				Port:        8080,
 				ServicePort: &s1.Spec.Ports[0],
 			},
 		},
@@ -2821,7 +2772,6 @@ func TestServiceMapLookup(t *testing.T) {
 			port: intstr.FromString("8080"),
 			want: &Service{
 				object:      s1,
-				Port:        8080,
 				ServicePort: &s1.Spec.Ports[0],
 			},
 		},
