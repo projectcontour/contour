@@ -158,7 +158,7 @@ type serviceMap struct {
 // If no matching Service is found lookup returns nil.
 func (sm *serviceMap) lookup(m meta, port intstr.IntOrString) *Service {
 	if port.Type == intstr.Int {
-		if s, ok := sm._services[portmeta{name: m.name, namespace: m.namespace, port: int(port.IntValue())}]; ok {
+		if s, ok := sm._services[portmeta{name: m.name, namespace: m.namespace, port: int32(port.IntValue())}]; ok {
 			return s
 		}
 	}
@@ -166,24 +166,25 @@ func (sm *serviceMap) lookup(m meta, port intstr.IntOrString) *Service {
 	if !ok {
 		return nil
 	}
-	for _, p := range svc.Spec.Ports {
+	for i := range svc.Spec.Ports {
+		p := &svc.Spec.Ports[i]
 		if int(p.Port) == port.IntValue() {
-			return sm.insert(svc, int(p.Port))
+			return sm.insert(svc, p)
 		}
 		if port.String() == p.Name {
-			return sm.insert(svc, int(p.Port))
+			return sm.insert(svc, p)
 		}
 	}
 	return nil
 }
 
-func (sm *serviceMap) insert(svc *v1.Service, port int) *Service {
+func (sm *serviceMap) insert(svc *v1.Service, port *v1.ServicePort) *Service {
 	if sm._services == nil {
 		sm._services = make(map[portmeta]*Service)
 	}
 	s := &Service{
-		object: svc,
-		Port:   port,
+		object:      svc,
+		ServicePort: port,
 	}
 	sm._services[s.toMeta()] = s
 	return s
@@ -509,8 +510,7 @@ type Vertex interface {
 type Service struct {
 	object *v1.Service
 
-	// Port is the port of this service
-	Port int
+	*v1.ServicePort
 }
 
 func (s *Service) Name() string       { return s.object.Name }
@@ -520,7 +520,7 @@ func (s *Service) Visit(func(Vertex)) {}
 type portmeta struct {
 	name      string
 	namespace string
-	port      int
+	port      int32
 }
 
 func (s *Service) toMeta() portmeta {

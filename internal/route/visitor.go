@@ -73,7 +73,7 @@ func (v *Visitor) Visit() map[string]*v2.RouteConfiguration {
 						Action: actionroute(
 							svcs[0].Namespace(),
 							svcs[0].Name(),
-							svcs[0].Port, // TODO(dfc) support more than one weighted service
+							int(svcs[0].Port), // TODO(dfc) support more than one weighted service
 							r.Websocket,
 							r.Timeout),
 					}
@@ -121,7 +121,7 @@ func (v *Visitor) Visit() map[string]*v2.RouteConfiguration {
 						Action: actionroute(
 							svcs[0].Namespace(),
 							svcs[0].Name(),
-							svcs[0].Port,
+							int(svcs[0].Port),
 							r.Websocket,
 							r.Timeout),
 					})
