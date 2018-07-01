@@ -1916,9 +1916,9 @@ func TestDAGInsert(t *testing.T) {
 							object: i3a,
 							services: servicemap(
 								&Service{
-									object:   s3a,
-									Port:     80,
-									Protocol: "h2c",
+									object:      s3a,
+									Protocol:    "h2c",
+									ServicePort: &s3a.Spec.Ports[0],
 								},
 							),
 						},
@@ -1940,9 +1940,9 @@ func TestDAGInsert(t *testing.T) {
 							object: i3a,
 							services: servicemap(
 								&Service{
-									object:   s3b,
-									Port:     80,
-									Protocol: "h2",
+									object:      s3b,
+									Protocol:    "h2",
+									ServicePort: &s3b.Spec.Ports[0],
 								},
 							),
 						},

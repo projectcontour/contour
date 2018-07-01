@@ -48,7 +48,7 @@ func (v *Visitor) visit(vertex dag.Vertex) {
 }
 
 func (v *Visitor) edscluster(svc *dag.Service) {
-	name := hashname(60, svc.Namespace(), svc.Name(), strconv.Itoa(svc.Port))
+	name := hashname(60, svc.Namespace(), svc.Name(), strconv.Itoa(int(svc.Port)))
 	if _, ok := v.clusters[name]; ok {
 		// already created this cluster via another edge. skip it.
 		return
@@ -57,7 +57,7 @@ func (v *Visitor) edscluster(svc *dag.Service) {
 	c := &v2.Cluster{
 		Name:             name,
 		Type:             v2.Cluster_EDS,
-		EdsClusterConfig: edsconfig("contour", name),
+		EdsClusterConfig: edsconfig("contour", servicename(svc.Namespace(), svc.Name(), svc.ServicePort.Name)),
 		ConnectTimeout:   250 * time.Millisecond,
 		LbPolicy:         v2.Cluster_ROUND_ROBIN,
 	}
@@ -157,4 +157,17 @@ func min(a, b int) int {
 		return b
 	}
 	return a
+}
+
+// servicename returns a fixed name for this service and portname
+func servicename(namespace, name, portname string) string {
+	sn := []string{
+		namespace,
+		name,
+		portname,
+	}
+	if portname == "" {
+		sn = sn[:2]
+	}
+	return strings.Join(sn, "/")
 }

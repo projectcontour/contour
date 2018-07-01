@@ -16,7 +16,6 @@
 package dag
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -185,10 +184,9 @@ func (sm *serviceMap) insert(svc *v1.Service, port *v1.ServicePort) *Service {
 		sm._services = make(map[portmeta]*Service)
 	}
 	up := parseUpstreamProtocols(svc.Annotations, annotationUpstreamProtocol, "h2", "h2c")
-	sp := findServicePort(svc, port)
-	protocol := up[sp.Name]
+	protocol := up[port.Name]
 	if protocol == "" {
-		protocol = up[strconv.Itoa(port)]
+		protocol = up[strconv.Itoa(int(port.Port))]
 	}
 	s := &Service{
 		object:      svc,
@@ -197,15 +195,6 @@ func (sm *serviceMap) insert(svc *v1.Service, port *v1.ServicePort) *Service {
 	}
 	sm._services[s.toMeta()] = s
 	return s
-}
-
-func findServicePort(svc *v1.Service, port int) *v1.ServicePort {
-	for _, p := range svc.Spec.Ports {
-		if int(p.Port) == port {
-			return &p
-		}
-	}
-	panic(fmt.Sprintf("port %d was not found on service: %s/%s", port, svc.Namespace, svc.Name))
 }
 
 // recompute builds a new *dag.dag.

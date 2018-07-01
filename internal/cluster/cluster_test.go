@@ -64,7 +64,7 @@ func TestClusterVisit(t *testing.T) {
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-						ServiceName: "default/kuard/443",
+						ServiceName: "default/kuard",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
@@ -99,7 +99,7 @@ func TestClusterVisit(t *testing.T) {
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-						ServiceName: "default/kuard/443",
+						ServiceName: "default/kuard/https",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
@@ -138,7 +138,7 @@ func TestClusterVisit(t *testing.T) {
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
-						ServiceName: "default/kuard/80",
+						ServiceName: "default/kuard/http",
 					},
 					ConnectTimeout:       250 * time.Millisecond,
 					LbPolicy:             v2.Cluster_ROUND_ROBIN,
@@ -190,4 +190,33 @@ func clustermap(clusters ...*v2.Cluster) map[string]*v2.Cluster {
 		m[c.Name] = c
 	}
 	return m
+}
+
+func TestServiceName(t *testing.T) {
+	tests := map[string]struct {
+		name, namespace string
+		portname        string
+		want            string
+	}{
+		"named service": {
+			namespace: "default",
+			name:      "kuard",
+			portname:  "http",
+			want:      "default/kuard/http",
+		},
+		"unnamed service": {
+			namespace: "default",
+			name:      "kuard",
+			want:      "default/kuard",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := servicename(tc.namespace, tc.name, tc.portname)
+			if got != tc.want {
+				t.Fatalf("servicename(%s/%s, %q): want %q, got %q", tc.namespace, tc.name, tc.portname, tc.want, got)
+			}
+		})
+	}
 }
