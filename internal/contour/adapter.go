@@ -17,6 +17,7 @@
 package contour
 
 import (
+	"github.com/heptio/contour/internal/cluster"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/listener"
 	"github.com/heptio/contour/internal/route"
@@ -28,24 +29,28 @@ type DAGAdapter struct {
 	dag.ResourceEventHandler // provides a Visit method
 	listener.ListenerCache
 	route.RouteCache
+	cluster.ClusterCache
 }
 
 func (d *DAGAdapter) OnAdd(obj interface{}) {
 	d.ResourceEventHandler.OnAdd(obj)
 	d.updateListeners()
 	d.updateRoutes()
+	d.updateClusters()
 }
 
 func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
 	d.ResourceEventHandler.OnUpdate(oldObj, newObj)
 	d.updateListeners()
 	d.updateRoutes()
+	d.updateClusters()
 }
 
 func (d *DAGAdapter) OnDelete(obj interface{}) {
 	d.ResourceEventHandler.OnDelete(obj)
 	d.updateListeners()
 	d.updateRoutes()
+	d.updateClusters()
 }
 
 func (d *DAGAdapter) updateListeners() {
@@ -63,4 +68,12 @@ func (d *DAGAdapter) updateRoutes() {
 	}
 	routes := v.Visit()
 	d.RouteCache.Update(routes)
+}
+
+func (d *DAGAdapter) updateClusters() {
+	v := cluster.Visitor{
+		ClusterCache: &d.ClusterCache,
+		DAG:          &d.DAG,
+	}
+	d.ClusterCache.Update(v.Visit())
 }

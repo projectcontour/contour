@@ -44,7 +44,7 @@ func TestClusterCacheRecomputeService(t *testing.T) {
 				v1.ServicePort{
 					Protocol:   "TCP",
 					Port:       443,
-					TargetPort: intstr.FromInt(8443),
+					TargetPort: intstr.FromInt(8444),
 				},
 			),
 			want: []proto.Message{

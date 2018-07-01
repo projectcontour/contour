@@ -60,9 +60,6 @@ func setup(t *testing.T, opts ...func(*contour.DAGAdapter)) (cache.ResourceEvent
 	log := logrus.New()
 	log.Out = &testWriter{t}
 
-	tr := &contour.Translator{
-		FieldLogger: log,
-	}
 	et := &contour.EndpointsTranslator{
 		FieldLogger: log,
 	}
@@ -77,7 +74,7 @@ func setup(t *testing.T, opts ...func(*contour.DAGAdapter)) (cache.ResourceEvent
 	discard.Out = new(discardWriter)
 	// Resource types in xDS v2.
 	srv := cgrpc.NewAPI(discard, map[string]cgrpc.Cache{
-		clusterType:  &tr.ClusterCache,
+		clusterType:  &da.ClusterCache,
 		routeType:    &da.RouteCache,
 		listenerType: &da.ListenerCache,
 		endpointType: et,
@@ -93,7 +90,6 @@ func setup(t *testing.T, opts ...func(*contour.DAGAdapter)) (cache.ResourceEvent
 	check(t, err)
 
 	reh := &resourceEventHandler{
-		Translator:          tr,
 		DAGAdapter:          &da,
 		EndpointsTranslator: et,
 	}
@@ -112,7 +108,6 @@ func setup(t *testing.T, opts ...func(*contour.DAGAdapter)) (cache.ResourceEvent
 // resourceEventHandler composes a contour.Translator and a contour.EndpointsTranslator
 // into a single ResourceEventHandler type.
 type resourceEventHandler struct {
-	*contour.Translator
 	*contour.EndpointsTranslator
 	*contour.DAGAdapter
 }
@@ -123,7 +118,6 @@ func (r *resourceEventHandler) OnAdd(obj interface{}) {
 		r.EndpointsTranslator.OnAdd(obj)
 	default:
 		r.DAGAdapter.OnAdd(obj)
-		r.Translator.OnAdd(obj)
 	}
 }
 
@@ -133,7 +127,6 @@ func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 		r.EndpointsTranslator.OnUpdate(oldObj, newObj)
 	default:
 		r.DAGAdapter.OnUpdate(oldObj, newObj)
-		r.Translator.OnUpdate(oldObj, newObj)
 	}
 }
 
@@ -143,7 +136,6 @@ func (r *resourceEventHandler) OnDelete(obj interface{}) {
 		r.EndpointsTranslator.OnDelete(obj)
 	default:
 		r.DAGAdapter.OnDelete(obj)
-		r.Translator.OnDelete(obj)
 	}
 }
 

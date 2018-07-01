@@ -23,6 +23,8 @@ import (
 	"github.com/gogo/protobuf/types"
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -31,6 +33,17 @@ import (
 func TestClusterLongServiceName(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
+
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{Name: "kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r", Namespace: "kuard"},
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "kuard",
+				ServicePort: intstr.FromInt(80),
+			},
+		},
+	}
+	rh.OnAdd(i1)
 
 	rh.OnAdd(service(
 		"kuard",
