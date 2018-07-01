@@ -56,27 +56,6 @@ func (c *cache) Values(filter func(string) bool) []proto.Message {
 	return values
 }
 
-// clusterCache is a thread safe, atomic, copy on write cache of *v2.Cluster objects.
-type clusterCache struct {
-	cache
-}
-
-// Add adds an entry to the cache. If a Cluster with the same
-// name exists, it is replaced.
-func (cc *clusterCache) Add(clusters ...*v2.Cluster) {
-	for _, c := range clusters {
-		cc.insert(c.Name, c)
-	}
-}
-
-// Remove removes the named entry from the cache. If the entry
-// is not present in the cache, the operation is a no-op.
-func (cc *clusterCache) Remove(names ...string) {
-	for _, n := range names {
-		cc.remove(n)
-	}
-}
-
 // clusterLoadAssignmentCache is a thread safe, atomic, copy on write cache of v2.ClusterLoadAssignment objects.
 type clusterLoadAssignmentCache struct {
 	cache

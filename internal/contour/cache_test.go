@@ -23,7 +23,7 @@ import (
 )
 
 func TestCacheInsert(t *testing.T) {
-	var val, val2 v2.Cluster
+	var val, val2 v2.ClusterLoadAssignment
 
 	tests := map[string]*struct {
 		cache
@@ -76,7 +76,7 @@ func TestCacheInsert(t *testing.T) {
 }
 
 func TestCacheRemove(t *testing.T) {
-	var val v2.Cluster
+	var val v2.ClusterLoadAssignment
 
 	tests := map[string]*struct {
 		cache
@@ -122,14 +122,14 @@ func TestCacheRemove(t *testing.T) {
 func TestCacheValues(t *testing.T) {
 	var (
 		c  cache
-		c1 = v2.Cluster{
-			Name: "c1",
+		c1 = v2.ClusterLoadAssignment{
+			ClusterName: "c1",
 		}
-		c2 = v2.Cluster{
-			Name: "c2",
+		c2 = v2.ClusterLoadAssignment{
+			ClusterName: "c2",
 		}
-		c3 = v2.Cluster{
-			Name: "c3",
+		c3 = v2.ClusterLoadAssignment{
+			ClusterName: "c3",
 		}
 	)
 
@@ -162,7 +162,7 @@ func TestCacheValues(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := c.Values(tc.filter)
-			sort.Stable(clusterByName(got))
+			sort.Stable(clusterLoadAssignmentsByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("expected: %#v, got %#v", tc.want, got)
 			}

@@ -14,14 +14,12 @@
 package contour
 
 import (
-	"fmt"
 	"math"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -109,50 +107,6 @@ func TestParseAnnotationUInt32(t *testing.T) {
 
 			if ((got == nil) != tc.isNil) || (got != nil && *got != full) {
 				t.Fatalf("parseAnnotationUInt32(%q): want: %v, isNil: %v, got: %v", tc.a, tc.want, tc.isNil, got)
-			}
-		})
-	}
-}
-
-func TestParseUpstreamProtocols(t *testing.T) {
-	tests := map[string]struct {
-		a    map[string]string
-		want map[string]string
-	}{
-		"nada": {
-			a:    nil,
-			want: map[string]string{},
-		},
-		"empty": {
-			a:    map[string]string{fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): ""},
-			want: map[string]string{},
-		},
-		"empty with spaces": {
-			a:    map[string]string{fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): ", ,"},
-			want: map[string]string{},
-		},
-		"single value": {
-			a: map[string]string{fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): "80"},
-			want: map[string]string{
-				"80": "h2",
-			},
-		},
-		"multiple value": {
-			a: map[string]string{fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): "80,http,443,https"},
-			want: map[string]string{
-				"80":    "h2",
-				"http":  "h2",
-				"443":   "h2",
-				"https": "h2",
-			},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := parseUpstreamProtocols(tc.a, annotationUpstreamProtocol, "h2")
-			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("parseUpstreamProtocols(%q): want: %v, got: %v", tc.a, tc.want, got)
 			}
 		})
 	}
@@ -280,22 +234,5 @@ func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
 	return &v1beta1.IngressBackend{
 		ServiceName: name,
 		ServicePort: port,
-	}
-}
-
-func service(ns, name string, ports ...v1.ServicePort) *v1.Service {
-	return serviceWithAnnotations(ns, name, nil, ports...)
-}
-
-func serviceWithAnnotations(ns, name string, annotations map[string]string, ports ...v1.ServicePort) *v1.Service {
-	return &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   ns,
-			Annotations: annotations,
-		},
-		Spec: v1.ServiceSpec{
-			Ports: ports,
-		},
 	}
 }

@@ -131,10 +131,10 @@ func main() {
 		client, contourClient := newClient(*kubeconfig, *inCluster)
 
 		wl := log.WithField("context", "watch")
-		k8s.WatchServices(&g, client, wl, t, &da)
-		k8s.WatchIngress(&g, client, wl, t, &da)
-		k8s.WatchSecrets(&g, client, wl, t, &da)
-		k8s.WatchIngressRoutes(&g, contourClient, wl, t, &da)
+		k8s.WatchServices(&g, client, wl, &da)
+		k8s.WatchIngress(&g, client, wl, &da)
+		k8s.WatchSecrets(&g, client, wl, &da)
+		k8s.WatchIngressRoutes(&g, contourClient, wl, &da)
 
 		// Endpoints updates are handled directly by the EndpointsTranslator
 		// due to their high update rate and their orthogonal nature.
@@ -163,7 +163,7 @@ func main() {
 				listenerType = typePrefix + "Listener"
 			)
 			s := grpc.NewAPI(log, map[string]grpc.Cache{
-				clusterType:  &t.ClusterCache,
+				clusterType:  &da.ClusterCache,
 				routeType:    &da.RouteCache,
 				listenerType: &da.ListenerCache,
 				endpointType: et,
