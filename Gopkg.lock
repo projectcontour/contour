@@ -47,6 +47,12 @@
   version = "v0.2"
 
 [[projects]]
+  name = "github.com/evanphx/json-patch"
+  packages = ["."]
+  revision = "afac545df32f2287a079e2dfb7ba2745a643747e"
+  version = "v3.0.0"
+
+[[projects]]
   name = "github.com/ghodss/yaml"
   packages = ["."]
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
@@ -391,18 +397,15 @@
     "pkg/util/framer",
     "pkg/util/intstr",
     "pkg/util/json",
-    "pkg/util/mergepatch",
     "pkg/util/net",
     "pkg/util/runtime",
     "pkg/util/sets",
-    "pkg/util/strategicpatch",
     "pkg/util/validation",
     "pkg/util/validation/field",
     "pkg/util/wait",
     "pkg/util/yaml",
     "pkg/version",
     "pkg/watch",
-    "third_party/forked/golang/json",
     "third_party/forked/golang/reflect"
   ]
   revision = "01bc873149a1802eb74df583613872d126449ed5"
@@ -514,15 +517,9 @@
   ]
   revision = "01a732e01d00cb9a81bb0ca050d3e6d2b947927b"
 
-[[projects]]
-  branch = "master"
-  name = "k8s.io/kube-openapi"
-  packages = ["pkg/util/proto"]
-  revision = "4cac20de16b951c103aa40c4bafbc8cefdd18a12"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "dd69473075601a34d20f128492269d60c4570ea8823e1e6d56b5bba8671d379f"
+  inputs-digest = "45c6d5ef016faa48bdccad27072bb79786ac46a1757380b31f38a6b53d588c79"
   solver-name = "gps-cdcl"
   solver-version = 1

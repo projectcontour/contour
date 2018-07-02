@@ -16,10 +16,10 @@ package k8s
 import (
 	"encoding/json"
 
+	jsonpatch "github.com/evanphx/json-patch"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	clientset "github.com/heptio/contour/internal/generated/clientset/versioned"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/strategicpatch"
 )
 
 // IngressRouteStatus allows for updating the object's Status field
@@ -73,7 +73,7 @@ func (irs *IngressRouteStatus) setStatus(existing, updated *ingressroutev1.Ingre
 	if err != nil {
 		return err
 	}
-	patchBytes, err := strategicpatch.CreateTwoWayMergePatch(existingBytes, updatedBytes, ingressroutev1.IngressRoute{})
+	patchBytes, err := jsonpatch.CreateMergePatch(existingBytes, updatedBytes)
 	if err != nil {
 		return err
 	}

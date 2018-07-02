@@ -232,7 +232,6 @@ An example of an orphaned IngressRoute object:
 status:
   currentStatus: orphaned
   description: not part of a delegation chain from a root
-  lastProcessTime: time the object was processed
 ```
 
 ### Delegation Status
@@ -246,9 +245,6 @@ An example of a valid IngressRoute object:
 status:
   currentStatus: valid
   description: delegated ingress route
-  lastProcessTime: time the object was processed
-  paths:
-    - www_google_com/path/to/my/ingressRoute
 ```
 
 ### Invalid Status
@@ -262,9 +258,6 @@ An example of an invalid IngressRoute object:
 status:
   currentStatus: invalid
   description: conflicting lb algorithm with ingressroute "someingress"
-  lastProcessTime: time the object was processed
-  paths:
-    - www_google_com/path/to/my/ingressRoute
 ```
 
 ## IngressRoutes dispatch only to services in the same namespace
