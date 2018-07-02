@@ -19,7 +19,6 @@ package contour
 import (
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/listener"
-	"github.com/heptio/contour/internal/route"
 )
 
 const DEFAULT_INGRESS_CLASS = "contour"
@@ -33,7 +32,7 @@ type DAGAdapter struct {
 
 	dag.ResourceEventHandler // provides a Visit method
 	listener.ListenerCache
-	route.RouteCache
+	RouteCache
 	ClusterCache
 }
 
@@ -67,7 +66,7 @@ func (d *DAGAdapter) updateListeners() {
 }
 
 func (d *DAGAdapter) updateRoutes() {
-	v := route.Visitor{
+	v := routeVisitor{
 		RouteCache: &d.RouteCache,
 		DAG:        &d.DAG,
 	}

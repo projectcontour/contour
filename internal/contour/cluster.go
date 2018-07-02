@@ -16,8 +16,6 @@ package contour
 import (
 	"sync"
 
-	"crypto/sha256"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -178,54 +176,6 @@ func apiconfigsource(clusters ...string) *core.ConfigSource {
 			},
 		},
 	}
-}
-
-// hashname takes a lenth l and a varargs of strings s and returns a string whose length
-// which does not exceed l. Internally s is joined with strings.Join(s, "/"). If the
-// combined length exceeds l then hashname truncates each element in s, starting from the
-// end using a hash derived from the contents of s (not the current element). This process
-// continues until the length of s does not exceed l, or all elements have been truncated.
-// In which case, the entire string is replaced with a hash not exceeding the length of l.
-func hashname(l int, s ...string) string {
-	const shorthash = 6 // the length of the shorthash
-
-	r := strings.Join(s, "/")
-	if l > len(r) {
-		// we're under the limit, nothing to do
-		return r
-	}
-	hash := fmt.Sprintf("%x", sha256.Sum256([]byte(r)))
-	for n := len(s) - 1; n >= 0; n-- {
-		s[n] = truncate(l/len(s), s[n], hash[:shorthash])
-		r = strings.Join(s, "/")
-		if l > len(r) {
-			return r
-		}
-	}
-	// truncated everything, but we're still too long
-	// just return the hash truncated to l.
-	return hash[:min(len(hash), l)]
-}
-
-// truncate truncates s to l length by replacing the
-// end of s with -suffix.
-func truncate(l int, s, suffix string) string {
-	if l >= len(s) {
-		// under the limit, nothing to do
-		return s
-	}
-	if l <= len(suffix) {
-		// easy case, just return the start of the suffix
-		return suffix[:min(l, len(suffix))]
-	}
-	return s[:l-len(suffix)-1] + "-" + suffix
-}
-
-func min(a, b int) int {
-	if a > b {
-		return b
-	}
-	return a
 }
 
 // servicename returns a fixed name for this service and portname
