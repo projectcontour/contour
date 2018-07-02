@@ -364,6 +364,8 @@ func (d *DAG) recompute() dag {
 
 		// ensure root ingressroute lives in allowed namespace
 		if !d.rootAllowed(ir) {
+			msg := "Root IngressRoutes cannot be defined in this namespace"
+			setInvalidStatus(d.IngressRouteStatus, d.Log, ir, msg)
 			continue
 		}
 
