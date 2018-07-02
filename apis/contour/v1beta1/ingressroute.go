@@ -69,6 +69,8 @@ type Service struct {
 	Weight *int `json:"weight"`
 	// HealthCheck defines optional healthchecks on the upstream service
 	HealthCheck *HealthCheck `json:"lbHealthCheck"`
+	// LB Algorithm to apply (see https://github.com/heptio/contour/blob/master/design/ingressroute-design.md#load-balancing)
+	Strategy string `json:"strategy"`
 }
 
 // Delegate allows for passing delgating VHosts to other IngressRoutes

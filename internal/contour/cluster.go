@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	// Default healthcheck values
+	// Default healthcheck / lb algorithm values
 	hcTimeout            = int64(2)
 	hcInterval           = int64(10)
 	hcUnhealthyThreshold = uint32(3)
@@ -139,7 +139,7 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 		Type:             v2.Cluster_EDS,
 		EdsClusterConfig: edsconfig("contour", servicename(svc.Namespace(), svc.Name(), svc.ServicePort.Name)),
 		ConnectTimeout:   250 * time.Millisecond,
-		LbPolicy:         v2.Cluster_ROUND_ROBIN,
+		LbPolicy:         edslbstrategy(svc.LoadBalancerStrategy),
 	}
 
 	// Set HealthCheck if requested
@@ -176,6 +176,24 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 		c.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
 	}
 	v.clusters[c.Name] = c
+}
+
+func edslbstrategy(lbStrategy string) v2.Cluster_LbPolicy {
+	switch lbStrategy {
+	case "RoundRobin":
+		return v2.Cluster_ROUND_ROBIN
+	case "WeightedLeastRequest":
+		return v2.Cluster_LEAST_REQUEST
+	case "RingHash":
+		return v2.Cluster_RING_HASH
+	case "Maglev":
+		return v2.Cluster_MAGLEV
+	case "Random":
+		return v2.Cluster_RANDOM
+	}
+
+	// Default
+	return v2.Cluster_ROUND_ROBIN
 }
 
 func edshealthcheck(hc *ingressroutev1.HealthCheck) []*envoy_api_v2_core4.HealthCheck {
