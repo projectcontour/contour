@@ -137,9 +137,7 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 					rr := route.Route{
 						Match: prefixmatch(r.Prefix()),
 						Action: actionroute(
-							svcs[0].Namespace(),
-							svcs[0].Name(),
-							int(svcs[0].Port), // TODO(dfc) support more than one weighted service
+							svcs,
 							r.Websocket,
 							r.Timeout),
 					}
@@ -185,9 +183,7 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 					vhost.Routes = append(vhost.Routes, route.Route{
 						Match: prefixmatch(r.Prefix()),
 						Action: actionroute(
-							svcs[0].Namespace(),
-							svcs[0].Name(),
-							int(svcs[0].Port),
+							svcs,
 							r.Websocket,
 							r.Timeout),
 					})
@@ -234,12 +230,45 @@ func prefixmatch(prefix string) route.RouteMatch {
 
 // action computes the cluster route action, a *route.Route_route for the
 // supplied ingress and backend.
-func actionroute(namespace, name string, port int, ws bool, timeout time.Duration) *route.Route_Route {
-	cluster := hashname(60, namespace, name, strconv.Itoa(port))
+func actionroute(be []*dag.Service, ws bool, timeout time.Duration) *route.Route_Route {
+	totalWeight := 0
+	upstreams := []*route.WeightedCluster_ClusterWeight{}
+
+	// Loop over all the upstreams and add to slice
+	for _, i := range be {
+
+		// Create the empty upstream
+		upstream := route.WeightedCluster_ClusterWeight{
+			Name:   hashname(60, i.Namespace(), i.Name(), strconv.Itoa(int(i.Port))),
+			Weight: &types.UInt32Value{Value: uint32(0)},
+		}
+
+		// If weight is passed, then use otherwise calculate
+		if i.Weight != nil {
+			upstream.Weight.Value = uint32(*i.Weight)
+			totalWeight += *i.Weight
+		}
+
+		upstreams = append(upstreams, &upstream)
+	}
+
+	// Check if no weights were defined, if not default to even distribution
+	if totalWeight == 0 {
+		for _, u := range upstreams {
+			u.Weight.Value = 1
+		}
+		totalWeight = len(be)
+	}
+
 	rr := route.Route_Route{
 		Route: &route.RouteAction{
-			ClusterSpecifier: &route.RouteAction_Cluster{
-				Cluster: cluster,
+			ClusterSpecifier: &route.RouteAction_WeightedClusters{
+				WeightedClusters: &route.WeightedCluster{
+					Clusters: upstreams,
+					TotalWeight: &types.UInt32Value{
+						Value: uint32(totalWeight),
+					},
+				},
 			},
 		},
 	}

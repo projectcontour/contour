@@ -769,6 +769,270 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 		},
+		"ingressroute no weights defined": {
+			objs: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								{
+									Name: "backend",
+									Port: 80,
+								},
+								{
+									Name: "backendtwo",
+									Port: 80,
+								},
+							},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backendtwo",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: map[string]*v2.RouteConfiguration{
+				"ingress_http": &v2.RouteConfiguration{
+					Name: "ingress_http",
+					VirtualHosts: []route.VirtualHost{{
+						Name:    "www.example.com",
+						Domains: []string{"www.example.com", "www.example.com:80"},
+						Routes: []route.Route{{
+							Match: prefixmatch("/"),
+							Action: &route.Route_Route{
+								Route: &route.RouteAction{
+									ClusterSpecifier: &route.RouteAction_WeightedClusters{
+										WeightedClusters: &route.WeightedCluster{
+											Clusters: []*route.WeightedCluster_ClusterWeight{{
+												Name:   "default/backend/80",
+												Weight: &types.UInt32Value{Value: uint32(1)},
+											}, {
+												Name:   "default/backendtwo/80",
+												Weight: &types.UInt32Value{Value: uint32(1)},
+											}},
+											TotalWeight: &types.UInt32Value{
+												Value: uint32(2),
+											},
+										},
+									},
+								},
+							},
+						}},
+					}},
+				},
+				"ingress_https": &v2.RouteConfiguration{
+					Name: "ingress_https",
+				},
+			},
+		},
+		"ingressroute one weight defined": {
+			objs: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								{
+									Name: "backend",
+									Port: 80,
+								},
+								{
+									Name:   "backendtwo",
+									Port:   80,
+									Weight: func(i int) *int { return &i }(50),
+								},
+							},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backendtwo",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: map[string]*v2.RouteConfiguration{
+				"ingress_http": &v2.RouteConfiguration{
+					Name: "ingress_http",
+					VirtualHosts: []route.VirtualHost{{
+						Name:    "www.example.com",
+						Domains: []string{"www.example.com", "www.example.com:80"},
+						Routes: []route.Route{{
+							Match: prefixmatch("/"),
+							Action: &route.Route_Route{
+								Route: &route.RouteAction{
+									ClusterSpecifier: &route.RouteAction_WeightedClusters{
+										WeightedClusters: &route.WeightedCluster{
+											Clusters: []*route.WeightedCluster_ClusterWeight{{
+												Name:   "default/backend/80",
+												Weight: &types.UInt32Value{Value: uint32(0)},
+											}, {
+												Name:   "default/backendtwo/80",
+												Weight: &types.UInt32Value{Value: uint32(50)},
+											}},
+											TotalWeight: &types.UInt32Value{
+												Value: uint32(50),
+											},
+										},
+									},
+								},
+							},
+						}},
+					}},
+				},
+				"ingress_https": &v2.RouteConfiguration{
+					Name: "ingress_https",
+				},
+			},
+		},
+		"ingressroute all weights defined": {
+			objs: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								{
+									Name:   "backend",
+									Port:   80,
+									Weight: func(i int) *int { return &i }(22),
+								},
+								{
+									Name:   "backendtwo",
+									Port:   80,
+									Weight: func(i int) *int { return &i }(50),
+								},
+							},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backendtwo",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: map[string]*v2.RouteConfiguration{
+				"ingress_http": &v2.RouteConfiguration{
+					Name: "ingress_http",
+					VirtualHosts: []route.VirtualHost{{
+						Name:    "www.example.com",
+						Domains: []string{"www.example.com", "www.example.com:80"},
+						Routes: []route.Route{{
+							Match: prefixmatch("/"),
+							Action: &route.Route_Route{
+								Route: &route.RouteAction{
+									ClusterSpecifier: &route.RouteAction_WeightedClusters{
+										WeightedClusters: &route.WeightedCluster{
+											Clusters: []*route.WeightedCluster_ClusterWeight{{
+												Name:   "default/backend/80",
+												Weight: &types.UInt32Value{Value: uint32(22)},
+											}, {
+												Name:   "default/backendtwo/80",
+												Weight: &types.UInt32Value{Value: uint32(50)},
+											}},
+											TotalWeight: &types.UInt32Value{
+												Value: uint32(72),
+											},
+										},
+									},
+								},
+							},
+						}},
+					}},
+				},
+				"ingress_https": &v2.RouteConfiguration{
+					Name: "ingress_https",
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -797,8 +1061,16 @@ func TestRouteVisit(t *testing.T) {
 func routeroute(cluster string) *route.Route_Route {
 	return &route.Route_Route{
 		Route: &route.RouteAction{
-			ClusterSpecifier: &route.RouteAction_Cluster{
-				Cluster: cluster,
+			ClusterSpecifier: &route.RouteAction_WeightedClusters{
+				WeightedClusters: &route.WeightedCluster{
+					Clusters: []*route.WeightedCluster_ClusterWeight{{
+						Name:   cluster,
+						Weight: &types.UInt32Value{Value: uint32(1)},
+					}},
+					TotalWeight: &types.UInt32Value{
+						Value: uint32(1),
+					},
+				},
 			},
 		},
 	}
