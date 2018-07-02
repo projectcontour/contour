@@ -794,13 +794,6 @@ func TestRouteVisit(t *testing.T) {
 	}
 }
 
-func secretdata(cert, key string) map[string][]byte {
-	return map[string][]byte{
-		v1.TLSCertKey:       []byte(cert),
-		v1.TLSPrivateKeyKey: []byte(key),
-	}
-}
-
 func routeroute(cluster string) *route.Route_Route {
 	return &route.Route_Route{
 		Route: &route.RouteAction{

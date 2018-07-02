@@ -18,7 +18,6 @@ package contour
 
 import (
 	"github.com/heptio/contour/internal/dag"
-	"github.com/heptio/contour/internal/listener"
 )
 
 const DEFAULT_INGRESS_CLASS = "contour"
@@ -31,7 +30,7 @@ type DAGAdapter struct {
 	IngressClass string
 
 	dag.ResourceEventHandler // provides a Visit method
-	listener.ListenerCache
+	ListenerCache
 	RouteCache
 	ClusterCache
 }
@@ -58,7 +57,7 @@ func (d *DAGAdapter) OnDelete(obj interface{}) {
 }
 
 func (d *DAGAdapter) updateListeners() {
-	v := listener.Visitor{
+	v := listenerVisitor{
 		ListenerCache: &d.ListenerCache,
 		DAG:           &d.DAG,
 	}
