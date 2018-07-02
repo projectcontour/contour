@@ -23,9 +23,16 @@ import (
 	"github.com/heptio/contour/internal/route"
 )
 
+const DEFAULT_INGRESS_CLASS = "contour"
+
 // DAGAdapter wraps a dag.ResourceEventHandler to hook post update cache
 // generation.
 type DAGAdapter struct {
+
+	// Contour's IngressClass.
+	// If not set, defaults to DEFAULT_INGRESS_CLASS.
+	IngressClass string
+
 	dag.ResourceEventHandler // provides a Visit method
 	listener.ListenerCache
 	route.RouteCache

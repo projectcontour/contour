@@ -41,9 +41,6 @@ import (
 
 func main() {
 	log := logrus.StandardLogger()
-	t := &contour.Translator{
-		FieldLogger: log.WithField("context", "translator"),
-	}
 	app := kingpin.New("contour", "Heptio Contour Kubernetes ingress controller.")
 	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")
 
@@ -97,7 +94,7 @@ func main() {
 	serve.Flag("envoy-http-port", "Envoy HTTP listener port").IntVar(&da.HTTPPort)
 	serve.Flag("envoy-https-port", "Envoy HTTPS listener port").IntVar(&da.HTTPSPort)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&da.UseProxyProto)
-	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&t.IngressClass)
+	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&da.IngressClass)
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {

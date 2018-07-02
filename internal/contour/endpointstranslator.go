@@ -14,11 +14,14 @@
 package contour
 
 import (
+	"strings"
+
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	_cache "k8s.io/client-go/tools/cache"
 )
 
@@ -175,4 +178,17 @@ func lbendpoint(addr string, port int32) endpoint.LbEndpoint {
 			},
 		},
 	}
+}
+
+// servicename returns a fixed name for this service and portname
+func servicename(meta metav1.ObjectMeta, portname string) string {
+	sn := []string{
+		meta.Namespace,
+		meta.Name,
+		"",
+	}[:2]
+	if portname != "" {
+		sn = append(sn, portname)
+	}
+	return strings.Join(sn, "/")
 }
