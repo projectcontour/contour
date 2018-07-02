@@ -20,6 +20,8 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_api_v2_core4 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	google_protobuf "github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 	"k8s.io/api/core/v1"
@@ -237,6 +239,137 @@ func TestClusterVisit(t *testing.T) {
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				},
+			),
+		},
+		"ingressroute with simple path healthcheck": {
+			objs: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{{
+								Name: "backend",
+								Port: 80,
+								HealthCheck: &ingressroutev1.HealthCheck{
+									Path: "/healthy",
+								},
+							}},
+						}},
+					},
+				},
+				service("default", "backend", v1.ServicePort{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(6502),
+				}),
+			},
+			want: clustermap(
+				&v2.Cluster{
+					Name: "default/backend/80",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/backend/http",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					HealthChecks: []*envoy_api_v2_core4.HealthCheck{{
+						Timeout: &google_protobuf.Duration{
+							Seconds: hcTimeout,
+						},
+						Interval: &google_protobuf.Duration{
+							Seconds: hcInterval,
+						},
+						UnhealthyThreshold: &google_protobuf.UInt32Value{
+							Value: hcUnhealthyThreshold,
+						},
+						HealthyThreshold: &google_protobuf.UInt32Value{
+							Value: hcHealthyThreshold,
+						},
+						HealthChecker: &envoy_api_v2_core4.HealthCheck_HttpHealthCheck_{
+							HttpHealthCheck: &envoy_api_v2_core4.HealthCheck_HttpHealthCheck{
+								Path: "/healthy",
+								Host: "contour-envoy-heathcheck",
+							},
+						},
+					}},
+				},
+			),
+		},
+		"ingressroute with custom healthcheck": {
+			objs: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{{
+								Name: "backend",
+								Port: 80,
+								HealthCheck: &ingressroutev1.HealthCheck{
+									Path:                    "/healthy",
+									TimeoutSeconds:          99,
+									IntervalSeconds:         98,
+									UnhealthyThresholdCount: 97,
+									HealthyThresholdCount:   96,
+									Host: "foo-bar-host",
+								},
+							}},
+						}},
+					},
+				},
+				service("default", "backend", v1.ServicePort{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(6502),
+				}),
+			},
+			want: clustermap(
+				&v2.Cluster{
+					Name: "default/backend/80",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/backend/http",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					HealthChecks: []*envoy_api_v2_core4.HealthCheck{{
+						Timeout: &google_protobuf.Duration{
+							Seconds: 99,
+						},
+						Interval: &google_protobuf.Duration{
+							Seconds: 98,
+						},
+						UnhealthyThreshold: &google_protobuf.UInt32Value{
+							Value: 97,
+						},
+						HealthyThreshold: &google_protobuf.UInt32Value{
+							Value: 96,
+						},
+						HealthChecker: &envoy_api_v2_core4.HealthCheck_HttpHealthCheck_{
+							HttpHealthCheck: &envoy_api_v2_core4.HealthCheck_HttpHealthCheck{
+								Path: "/healthy",
+								Host: "foo-bar-host",
+							},
+						},
+					}},
 				},
 			),
 		},

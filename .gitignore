@@ -1,5 +1,4 @@
 *.swp
 *.swo
 vendor/
-
 .vs/
