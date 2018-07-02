@@ -356,9 +356,11 @@ func (d *DAG) recompute() dag {
 	}
 
 	// process ingressroute documents
+	orphaned := make(map[meta]*ingressroutev1.IngressRoute)
 	for _, ir := range d.ingressroutes {
 		if ir.Spec.VirtualHost == nil {
 			// delegate ingressroute, skip it
+			orphaned[meta{name: ir.Name, namespace: ir.Namespace}] = ir
 			continue
 		}
 
@@ -382,7 +384,7 @@ func (d *DAG) recompute() dag {
 
 		var visited []*ingressroutev1.IngressRoute
 		prefixMatch := ""
-		d.processIngressRoute(ir, prefixMatch, visited, host, service, vhost)
+		d.processIngressRoute(ir, prefixMatch, visited, host, service, vhost, orphaned)
 	}
 
 	var _d dag
@@ -393,10 +395,19 @@ func (d *DAG) recompute() dag {
 		_d.roots = append(_d.roots, svh)
 	}
 
+	msg := "This IngressRoute is not part of a delegation chain from a root IngressRoute"
+	for _, ir := range orphaned {
+		if err := d.IngressRouteStatus.SetOrphanStatus(msg, ir); err != nil {
+			d.Log.Errorf("error setting status on orphaned IR: %v", err)
+		}
+	}
+
 	return _d
 }
 
-func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost) {
+func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string,
+	service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost,
+	orphaned map[meta]*ingressroutev1.IngressRoute) {
 	visited = append(visited, ir)
 	defer func() {
 		visited = visited[:len(visited)-1]
@@ -462,8 +473,9 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 						return
 					}
 				}
+				delete(orphaned, meta{name: dest.Name, namespace: dest.Namespace})
 				// follow the link and process the target ingress route
-				d.processIngressRoute(dest, route.Match, visited, host, service, vhost)
+				d.processIngressRoute(dest, route.Match, visited, host, service, vhost, orphaned)
 			}
 		}
 	}
