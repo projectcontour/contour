@@ -20,6 +20,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -143,6 +144,99 @@ func TestClusterVisit(t *testing.T) {
 					ConnectTimeout:       250 * time.Millisecond,
 					LbPolicy:             v2.Cluster_ROUND_ROBIN,
 					Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+				},
+			),
+		},
+		"long namespace and service name": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "webserver-1-unimatrix-zero-one",
+						Namespace: "beurocratic-company-test-domain-1",
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "tiny-cog-department-test-instance",
+							ServicePort: intstr.FromInt(443),
+						},
+					},
+				},
+				service("beurocratic-company-test-domain-1", "tiny-cog-department-test-instance",
+					v1.ServicePort{
+						Name:       "svc-0",
+						Protocol:   "TCP",
+						Port:       443,
+						TargetPort: intstr.FromInt(8443),
+					},
+				),
+			},
+			want: clustermap(
+				&v2.Cluster{
+					Name: "beurocratic-company-test-domain-1/tiny-cog-depa-81582b/443",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "beurocratic-company-test-domain-1/tiny-cog-department-test-instance/svc-0",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				}),
+		},
+		"two service ports": {
+			objs: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{{
+								Name: "backend",
+								Port: 80,
+							}, {
+								Name: "backend",
+								Port: 8080,
+							}},
+						}},
+					},
+				},
+				service("default", "backend", v1.ServicePort{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(6502),
+				}, v1.ServicePort{
+					Name:       "alt",
+					Protocol:   "TCP",
+					Port:       8080,
+					TargetPort: intstr.FromString("9001"),
+				}),
+			},
+			want: clustermap(
+				&v2.Cluster{
+					Name: "default/backend/80",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/backend/http",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				},
+				&v2.Cluster{
+					Name: "default/backend/8080",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/backend/alt",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				},
 			),
 		},
