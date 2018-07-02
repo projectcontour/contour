@@ -388,7 +388,11 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 
 	for _, route := range ir.Spec.Routes {
 		// base case: The route points to services, so we add them to the vhost
-		if len(route.Services) > 0 && strings.HasPrefix(route.Match, prefixMatch) {
+		if len(route.Services) > 0 {
+			if !matchesPathPrefix(route.Match, prefixMatch) {
+				// TODO: set status
+				return
+			}
 			r := &Route{
 				path:   route.Match,
 				object: ir,
@@ -418,6 +422,24 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 			}
 		}
 	}
+}
+
+// matchesPathPrefix checks whether the given path matches the given prefix
+func matchesPathPrefix(path, prefix string) bool {
+	if len(prefix) == 0 {
+		return true
+	}
+	// an empty string cannot have a prefix
+	if len(path) == 0 {
+		return false
+	}
+	if prefix[len(prefix)-1] != '/' {
+		prefix = prefix + "/"
+	}
+	if path[len(path)-1] != '/' {
+		path = path + "/"
+	}
+	return strings.HasPrefix(path, prefix)
 }
 
 type Root interface {
