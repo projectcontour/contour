@@ -94,6 +94,7 @@ func main() {
 	serve.Flag("envoy-https-port", "Envoy HTTPS listener port").IntVar(&da.HTTPSPort)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&da.UseProxyProto)
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&da.IngressClass)
+	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringsVar(&da.IngressRouteRootNamespaces)
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {

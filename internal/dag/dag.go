@@ -34,6 +34,11 @@ import (
 // between Kubernetes Ingress objects, the backend Services, and Secret objects.
 // The DAG models these relationships as Roots and Vertices.
 type DAG struct {
+	// IngressRouteRootNamespaces specifies the namespaces where root
+	// IngressRoutes can be defined. If empty, roots can be defined in any
+	// namespace.
+	IngressRouteRootNamespaces []string
+
 	mu sync.Mutex
 
 	ingresses     map[meta]*v1beta1.Ingress
@@ -352,6 +357,11 @@ func (d *DAG) recompute() dag {
 			continue
 		}
 
+		// ensure root ingressroute lives in allowed namespace
+		if !d.rootAllowed(ir) {
+			continue
+		}
+
 		host := ir.Spec.VirtualHost.Fqdn
 
 		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
@@ -440,6 +450,19 @@ func matchesPathPrefix(path, prefix string) bool {
 		path = path + "/"
 	}
 	return strings.HasPrefix(path, prefix)
+}
+
+// returns true if the root ingressroute lives in a root namespace
+func (d *DAG) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
+	if len(d.IngressRouteRootNamespaces) == 0 {
+		return true
+	}
+	for _, ns := range d.IngressRouteRootNamespaces {
+		if ns == ir.Namespace {
+			return true
+		}
+	}
+	return false
 }
 
 type Root interface {

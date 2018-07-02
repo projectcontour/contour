@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -612,6 +614,102 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 		},
 		TypeUrl: listenerType,
 		Nonce:   "0",
+	}, streamLDS(t, cc))
+}
+
+func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
+	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
+		da.IngressRouteRootNamespaces = []string{"roots"}
+	})
+	defer done()
+
+	// assert that there are no active listeners
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   []types.Any{},
+		TypeUrl:     listenerType,
+		Nonce:       "0",
+	}, streamLDS(t, cc))
+
+	// ir1 is an ingressroute that is in the root namespace
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "roots",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "example.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// add ingressroute
+	rh.OnAdd(ir1)
+
+	// assert there is an active listener
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.Listener{
+				Name:    "ingress_http",
+				Address: socketaddress("0.0.0.0", 8080),
+				FilterChains: []listener.FilterChain{
+					filterchain(false, httpfilter("ingress_http")),
+				},
+			}),
+		},
+		TypeUrl: listenerType,
+		Nonce:   "0",
+	}, streamLDS(t, cc))
+}
+
+func TestLDSIngressRouteOutsideRootNamespaces(t *testing.T) {
+	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
+		da.IngressRouteRootNamespaces = []string{"roots"}
+	})
+	defer done()
+
+	// assert that there are no active listeners
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   []types.Any{},
+		TypeUrl:     listenerType,
+		Nonce:       "0",
+	}, streamLDS(t, cc))
+
+	// ir1 is an ingressroute that is not in the root namespaces
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "example.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// add ingressroute
+	rh.OnAdd(ir1)
+
+	// assert that there are no active listeners
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   []types.Any{},
+		TypeUrl:     listenerType,
+		Nonce:       "0",
 	}, streamLDS(t, cc))
 }
 
