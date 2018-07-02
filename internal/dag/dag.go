@@ -30,6 +30,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	k8s "github.com/heptio/contour/internal/k8s"
+	"github.com/sirupsen/logrus"
 )
 
 // A DAG represents a directed acylic graph of objects representing the relationship
@@ -48,8 +49,9 @@ type DAG struct {
 	secrets       map[meta]*v1.Secret
 	services      map[meta]*v1.Service
 
-	IngressRouteStatus *k8s.IngressRouteStatus
 	dag
+	IngressRouteStatus *k8s.IngressRouteStatus
+	Log                logrus.FieldLogger
 }
 
 // dag represents
@@ -405,10 +407,7 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 		// a route cannot both delegate and point to services
 		if len(route.Services) > 0 && route.Delegate.Name != "" {
 			msg := fmt.Sprintf("route %q: cannot specify services and delegate in the same route", route.Match)
-			if err := d.IngressRouteStatus.SetInvalidStatus(msg, ir); err != nil {
-				// TODO: Log
-				fmt.Printf("error setting status: %v\n", err)
-			}
+			setInvalidStatus(d.IngressRouteStatus, d.Log, ir, msg)
 			return
 		}
 
@@ -416,10 +415,7 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 		if len(route.Services) > 0 {
 			if !matchesPathPrefix(route.Match, prefixMatch) {
 				msg := "the path prefix does not match the parent's path prefix"
-				if err := d.IngressRouteStatus.SetInvalidStatus(msg, ir); err != nil {
-					// TODO: Log
-					fmt.Printf("error setting status: %v\n", err)
-				}
+				setInvalidStatus(d.IngressRouteStatus, d.Log, ir, msg)
 				return
 			}
 			r := &Route{
@@ -428,9 +424,7 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 			}
 			for _, s := range route.Services {
 				if err := validateService(route, s); err != nil {
-					if err := d.IngressRouteStatus.SetInvalidStatus(err.Error(), ir); err != nil {
-						fmt.Printf("error setting status: %v\n", err)
-					}
+					setInvalidStatus(d.IngressRouteStatus, d.Log, ir, err.Error())
 					return
 				}
 				m := meta{name: s.Name, namespace: ir.Namespace}
@@ -438,10 +432,7 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 					r.addService(svc)
 				}
 			}
-			if err := d.IngressRouteStatus.SetValidStatus("ingressroute is valid", ir); err != nil {
-				//TODO: log
-				fmt.Printf("error setting status: %v\n", err)
-			}
+			setValidStatus(d.IngressRouteStatus, d.Log, ir, "ingress route is valid")
 			validRoutes[r.path] = r
 			continue
 		}
@@ -465,9 +456,7 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 					if dest.Name == vir.Name && dest.Namespace == vir.Namespace {
 						path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
 						msg := fmt.Sprintf("route creates a delegation cycle: %s", strings.Join(path, " -> "))
-						if err := d.IngressRouteStatus.SetInvalidStatus(msg, ir); err != nil {
-							fmt.Printf("error setting status: %v\n", err)
-						}
+						setInvalidStatus(d.IngressRouteStatus, d.Log, ir, msg)
 						return
 					}
 				}
@@ -510,6 +499,28 @@ func (d *DAG) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 		}
 	}
 	return false
+}
+
+func setValidStatus(irs *k8s.IngressRouteStatus, log logrus.FieldLogger, ir *ingressroutev1.IngressRoute, msg string) {
+	if err := irs.SetValidStatus(msg, ir); err != nil {
+		log.
+			WithField("name", ir.Name).
+			WithField("namespace", ir.Namespace).
+			WithField("status", "invalid").
+			WithField("description", msg).
+			Errorf("error updating status of ingressroute: %v", err)
+	}
+}
+
+func setInvalidStatus(irs *k8s.IngressRouteStatus, log logrus.FieldLogger, ir *ingressroutev1.IngressRoute, msg string) {
+	if err := irs.SetInvalidStatus(msg, ir); err != nil {
+		log.
+			WithField("name", ir.Name).
+			WithField("namespace", ir.Namespace).
+			WithField("status", "invalid").
+			WithField("description", msg).
+			Errorf("error updating status of ingressroute: %v", err)
+	}
 }
 
 func validateService(r ingressroutev1.Route, s ingressroutev1.Service) error {
