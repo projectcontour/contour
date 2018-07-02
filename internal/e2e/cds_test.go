@@ -23,6 +23,8 @@ import (
 	"github.com/gogo/protobuf/types"
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -32,8 +34,22 @@ func TestClusterLongServiceName(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
 
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "kuard",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r",
+				ServicePort: intstr.FromInt(8080),
+			},
+		},
+	}
+	rh.OnAdd(i1)
+
 	rh.OnAdd(service(
-		"kuard",
+		"default",
 		"kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r",
 		v1.ServicePort{
 			Protocol:   "TCP",
@@ -46,7 +62,7 @@ func TestClusterLongServiceName(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, cluster("kuard/kbujbkuhdod66-edfcfc/8080", "kuard/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r")),
+			any(t, cluster("default/kbujbkuhdod66-172bef/8080", "default/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -58,6 +74,44 @@ func TestClusterLongServiceName(t *testing.T) {
 func TestClusterAddUpdateDelete(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
+
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "kuard",
+				ServicePort: intstr.FromInt(80),
+			},
+		},
+	}
+	rh.OnAdd(i1)
+
+	i2 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuarder",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				Host: "www.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/kuarder",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("https"),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	rh.OnAdd(i2)
 
 	// s1 is a simple tcp 80 -> 8080 sevice.
 	s1 := service("default", "kuard", v1.ServicePort{
@@ -92,7 +146,6 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 		VersionInfo: "0",
 		Resources: []types.Any{
 			any(t, cluster("default/kuard/80", "default/kuard/http")),
-			any(t, cluster("default/kuard/http", "default/kuard/http")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -125,8 +178,6 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 		Resources: []types.Any{
 			any(t, cluster("default/kuard/443", "default/kuard/https")),
 			any(t, cluster("default/kuard/80", "default/kuard/http")),
-			any(t, cluster("default/kuard/http", "default/kuard/http")),
-			any(t, cluster("default/kuard/https", "default/kuard/https")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -151,7 +202,6 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 		VersionInfo: "0",
 		Resources: []types.Any{
 			any(t, cluster("default/kuard/443", "default/kuard/https")),
-			any(t, cluster("default/kuard/https", "default/kuard/https")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -162,6 +212,35 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 func TestClusterRenameUpdateDelete(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
+
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				Host: "www.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}, {
+							Path: "/kuarder",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromInt(443),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	rh.OnAdd(i1)
 
 	s1 := service("default", "kuard",
 		v1.ServicePort{
@@ -184,8 +263,6 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 		Resources: []types.Any{
 			any(t, cluster("default/kuard/443", "default/kuard/https")),
 			any(t, cluster("default/kuard/80", "default/kuard/http")),
-			any(t, cluster("default/kuard/http", "default/kuard/http")),
-			any(t, cluster("default/kuard/https", "default/kuard/https")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -217,8 +294,6 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 		Resources: []types.Any{
 			any(t, cluster("default/kuard/443", "default/kuard/https")),
 			any(t, cluster("default/kuard/80", "default/kuard/http")),
-			any(t, cluster("default/kuard/http", "default/kuard/http")),
-			any(t, cluster("default/kuard/https", "default/kuard/https")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -240,6 +315,20 @@ func TestIssue243(t *testing.T) {
 	defer done()
 
 	t.Run("single unnamed service with a different numeric target port", func(t *testing.T) {
+
+		i1 := &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kuard",
+				Namespace: "default",
+			},
+			Spec: v1beta1.IngressSpec{
+				Backend: &v1beta1.IngressBackend{
+					ServiceName: "kuard",
+					ServicePort: intstr.FromInt(80),
+				},
+			},
+		}
+		rh.OnAdd(i1)
 		s1 := service("default", "kuard",
 			v1.ServicePort{
 				Protocol:   "TCP",
@@ -263,6 +352,20 @@ func TestIssue243(t *testing.T) {
 func TestIssue247(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
+
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "kuard",
+				ServicePort: intstr.FromInt(80),
+			},
+		},
+	}
+	rh.OnAdd(i1)
 
 	// spec:
 	//   ports:
@@ -289,6 +392,35 @@ func TestIssue247(t *testing.T) {
 func TestCDSResourceFiltering(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
+
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				Host: "www.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromInt(80),
+							},
+						}, {
+							Path: "/httpbin",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "httpbin",
+								ServicePort: intstr.FromInt(8080),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	rh.OnAdd(i1)
 
 	// add two services, check that they are there
 	s1 := service("default", "kuard",

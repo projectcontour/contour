@@ -36,7 +36,6 @@ func TestGRPCStreaming(t *testing.T) {
 	var l net.Listener
 
 	// tr and et is recreated before the start of each test.
-	var tr *contour.Translator
 	var et *contour.EndpointsTranslator
 	var da *contour.DAGAdapter
 
@@ -48,7 +47,7 @@ func TestGRPCStreaming(t *testing.T) {
 
 	tests := map[string]func(*testing.T){
 		"StreamClusters": func(t *testing.T) {
-			tr.OnAdd(&v1.Service{
+			da.OnAdd(&v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "simple",
 					Namespace: "default",
@@ -140,7 +139,7 @@ func TestGRPCStreaming(t *testing.T) {
 			checktimeout(t, stream)          // check that the second receive times out
 		},
 		"StreamRoutes": func(t *testing.T) {
-			tr.OnAdd(&v1beta1.Ingress{
+			da.OnAdd(&v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin-org",
 					Namespace: "default",
@@ -178,15 +177,12 @@ func TestGRPCStreaming(t *testing.T) {
 	log := testLogger(t)
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
-			tr = &contour.Translator{
-				FieldLogger: log,
-			}
 			et = &contour.EndpointsTranslator{
 				FieldLogger: log,
 			}
 			da = new(contour.DAGAdapter)
 			srv := NewAPI(log, map[string]Cache{
-				clusterType:  &tr.ClusterCache,
+				clusterType:  &da.ClusterCache,
 				routeType:    &da.RouteCache,
 				listenerType: &da.ListenerCache,
 				endpointType: et,
@@ -274,15 +270,12 @@ func TestGRPCFetching(t *testing.T) {
 	log.Out = &testWriter{t}
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
-			tr := &contour.Translator{
-				FieldLogger: log,
-			}
 			et := &contour.EndpointsTranslator{
 				FieldLogger: log,
 			}
 			var da contour.DAGAdapter
 			srv := NewAPI(log, map[string]Cache{
-				clusterType:  &tr.ClusterCache,
+				clusterType:  &da.ClusterCache,
 				routeType:    &da.RouteCache,
 				listenerType: &da.ListenerCache,
 				endpointType: et,

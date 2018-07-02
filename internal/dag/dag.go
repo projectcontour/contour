@@ -16,6 +16,7 @@
 package dag
 
 import (
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -182,9 +183,15 @@ func (sm *serviceMap) insert(svc *v1.Service, port *v1.ServicePort) *Service {
 	if sm._services == nil {
 		sm._services = make(map[portmeta]*Service)
 	}
+	up := parseUpstreamProtocols(svc.Annotations, annotationUpstreamProtocol, "h2", "h2c")
+	protocol := up[port.Name]
+	if protocol == "" {
+		protocol = up[strconv.Itoa(int(port.Port))]
+	}
 	s := &Service{
 		object:      svc,
 		ServicePort: port,
+		Protocol:    protocol,
 	}
 	sm._services[s.toMeta()] = s
 	return s
@@ -511,6 +518,9 @@ type Service struct {
 	object *v1.Service
 
 	*v1.ServicePort
+
+	// Protocol is the layer 7 protocol of this service
+	Protocol string
 }
 
 func (s *Service) Name() string       { return s.object.Name }

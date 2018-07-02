@@ -463,6 +463,55 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	i3a := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: ingressrulevalue(backend("kuard", intstr.FromInt(80))),
+			}},
+		},
+	}
+
+	// s3a and b have http/2 protocol annotations
+	s3a := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/upstream-protocol.h2c": "80,http",
+			},
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8888),
+			}},
+		},
+	}
+
+	s3b := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/upstream-protocol.h2": "80,http",
+			},
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8888),
+			}},
+		},
+	}
+
 	sec13 := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-tls",
@@ -1853,6 +1902,54 @@ func TestDAGInsert(t *testing.T) {
 				},
 			},
 		},
+		"h2c service annotation": {
+			objs: []interface{}{
+				i3a, s3a,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: routemap(
+						&Route{
+							path:   "/",
+							object: i3a,
+							services: servicemap(
+								&Service{
+									object:      s3a,
+									Protocol:    "h2c",
+									ServicePort: &s3a.Spec.Ports[0],
+								},
+							),
+						},
+					),
+				},
+			},
+		},
+		"h2 service annotation": {
+			objs: []interface{}{
+				i3a, s3b,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: routemap(
+						&Route{
+							path:   "/",
+							object: i3a,
+							services: servicemap(
+								&Service{
+									object:      s3b,
+									Protocol:    "h2",
+									ServicePort: &s3b.Spec.Ports[0],
+								},
+							),
+						},
+					),
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -2153,6 +2250,7 @@ func TestDAGRemove(t *testing.T) {
 			}},
 		},
 	}
+
 	sec1 := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "secret",

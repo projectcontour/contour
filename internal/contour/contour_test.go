@@ -68,3 +68,36 @@ func ports(ps ...int32) []v1.EndpointPort {
 	}
 	return ports
 }
+
+func TestServiceName(t *testing.T) {
+	tests := map[string]struct {
+		meta metav1.ObjectMeta
+		name string
+		want string
+	}{
+		"named service": {
+			meta: metav1.ObjectMeta{
+				Namespace: "default",
+				Name:      "kuard",
+			},
+			name: "http",
+			want: "default/kuard/http",
+		},
+		"unnamed service": {
+			meta: metav1.ObjectMeta{
+				Namespace: "default",
+				Name:      "kuard",
+			},
+			want: "default/kuard",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := servicename(tc.meta, tc.name)
+			if got != tc.want {
+				t.Fatalf("servicename(%#v, %q): want %q, got %q", tc.meta, tc.name, tc.want, got)
+			}
+		})
+	}
+}
