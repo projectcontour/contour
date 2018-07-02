@@ -1165,6 +1165,20 @@ func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
 	})
 	defer done()
 
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "roots",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
 	// ir1 is an ingressroute that is in the root namespaces
 	ir1 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1195,19 +1209,8 @@ func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
 					Name:    "example.com",
 					Domains: []string{"example.com", "example.com:80"},
 					Routes: []route.Route{{
-						Match: prefixmatch("/"),
-						Action: &route.Route_Route{
-							Route: &route.RouteAction{
-								ClusterSpecifier: &route.RouteAction_WeightedClusters{
-									WeightedClusters: &route.WeightedCluster{
-										Clusters: []*route.WeightedCluster_ClusterWeight{{
-											Name:   "roots/kuard/8080",
-											Weight: &types.UInt32Value{Value: uint32(100)},
-										}},
-									},
-								},
-							},
-						},
+						Match:  prefixmatch("/"),
+						Action: routecluster("roots/kuard/8080"),
 					}},
 				}},
 			}),
@@ -1246,9 +1249,13 @@ func TestRDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources:   []types.Any{},
-		TypeUrl:     routeType,
-		Nonce:       "0",
+		Resources: []types.Any{
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_http",
+			}),
+		},
+		TypeUrl: routeType,
+		Nonce:   "0",
 	}, streamRDS(t, cc, "ingress_http"))
 }
 
