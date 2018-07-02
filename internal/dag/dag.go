@@ -439,7 +439,7 @@ func matchesPathPrefix(path, prefix string) bool {
 	if path[len(path)-1] != '/' {
 		path = path + "/"
 	}
-	return strings.HasPrefix(strings.ToLower(path), strings.ToLower(prefix))
+	return strings.HasPrefix(path, prefix)
 }
 
 type Root interface {

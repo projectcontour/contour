@@ -3158,11 +3158,6 @@ func TestMatchesPathPrefix(t *testing.T) {
 			path:    "/foo",
 			matches: true,
 		},
-		"no case sensitivity": {
-			prefix:  "/foo",
-			path:    "/FOO",
-			matches: true,
-		},
 		"strict match with / at the end": {
 			prefix:  "/foo/",
 			path:    "/foo/",
