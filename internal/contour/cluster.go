@@ -11,35 +11,102 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cluster
+package contour
 
 import (
-	"crypto/sha256"
-	"fmt"
+	"sync"
+
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/gogo/protobuf/proto"
+
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/heptio/contour/internal/dag"
 )
 
-type Visitor struct {
+// ClusterCache manages the contents of the gRPC CDS cache.
+type ClusterCache struct {
+	clusterCache
+}
+
+type clusterCache struct {
+	mu      sync.Mutex
+	values  map[string]*v2.Cluster
+	waiters []chan int
+	last    int
+}
+
+// Register registers ch to receive a value when Notify is called.
+// The value of last is the count of the times Notify has been called on this Cache.
+// It functions of a sequence counter, if the value of last supplied to Register
+// is less than the Cache's internal counter, then the caller has missed at least
+// one notification and will fire immediately.
+//
+// Sends by the broadcaster to ch must not block, therefor ch must have a capacity
+// of at least 1.
+func (c *clusterCache) Register(ch chan int, last int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if last < c.last {
+		// notify this channel immediately
+		ch <- c.last
+		return
+	}
+	c.waiters = append(c.waiters, ch)
+}
+
+// Update replaces the contents of the cache with the supplied map.
+func (c *clusterCache) Update(v map[string]*v2.Cluster) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.values = v
+	c.notify()
+}
+
+// notify notifies all registered waiters that an event has occured.
+func (c *clusterCache) notify() {
+	c.last++
+
+	for _, ch := range c.waiters {
+		ch <- c.last
+	}
+	c.waiters = c.waiters[:0]
+}
+
+// Values returns a slice of the value stored in the cache.
+func (c *clusterCache) Values(filter func(string) bool) []proto.Message {
+	c.mu.Lock()
+	values := make([]proto.Message, 0, len(c.values))
+	for _, v := range c.values {
+		if filter(v.Name) {
+			values = append(values, v)
+		}
+	}
+	c.mu.Unlock()
+	return values
+}
+
+// clusterVisitor walks a *dag.DAG and produces a map of *v2.Clusters.
+type clusterVisitor struct {
 	*ClusterCache
 	*dag.DAG
 
 	clusters map[string]*v2.Cluster
 }
 
-func (v *Visitor) Visit() map[string]*v2.Cluster {
+func (v *clusterVisitor) Visit() map[string]*v2.Cluster {
 	v.clusters = make(map[string]*v2.Cluster)
 	v.DAG.Visit(v.visit)
 	return v.clusters
 }
 
-func (v *Visitor) visit(vertex dag.Vertex) {
+func (v *clusterVisitor) visit(vertex dag.Vertex) {
 	if service, ok := vertex.(*dag.Service); ok {
 		v.edscluster(service)
 	}
@@ -47,7 +114,7 @@ func (v *Visitor) visit(vertex dag.Vertex) {
 	vertex.Visit(v.visit)
 }
 
-func (v *Visitor) edscluster(svc *dag.Service) {
+func (v *clusterVisitor) edscluster(svc *dag.Service) {
 	name := hashname(60, svc.Namespace(), svc.Name(), strconv.Itoa(int(svc.Port)))
 	if _, ok := v.clusters[name]; ok {
 		// already created this cluster via another edge. skip it.
@@ -109,54 +176,6 @@ func apiconfigsource(clusters ...string) *core.ConfigSource {
 			},
 		},
 	}
-}
-
-// hashname takes a lenth l and a varargs of strings s and returns a string whose length
-// which does not exceed l. Internally s is joined with strings.Join(s, "/"). If the
-// combined length exceeds l then hashname truncates each element in s, starting from the
-// end using a hash derived from the contents of s (not the current element). This process
-// continues until the length of s does not exceed l, or all elements have been truncated.
-// In which case, the entire string is replaced with a hash not exceeding the length of l.
-func hashname(l int, s ...string) string {
-	const shorthash = 6 // the length of the shorthash
-
-	r := strings.Join(s, "/")
-	if l > len(r) {
-		// we're under the limit, nothing to do
-		return r
-	}
-	hash := fmt.Sprintf("%x", sha256.Sum256([]byte(r)))
-	for n := len(s) - 1; n >= 0; n-- {
-		s[n] = truncate(l/len(s), s[n], hash[:shorthash])
-		r = strings.Join(s, "/")
-		if l > len(r) {
-			return r
-		}
-	}
-	// truncated everything, but we're still too long
-	// just return the hash truncated to l.
-	return hash[:min(len(hash), l)]
-}
-
-// truncate truncates s to l length by replacing the
-// end of s with -suffix.
-func truncate(l int, s, suffix string) string {
-	if l >= len(s) {
-		// under the limit, nothing to do
-		return s
-	}
-	if l <= len(suffix) {
-		// easy case, just return the start of the suffix
-		return suffix[:min(l, len(suffix))]
-	}
-	return s[:l-len(suffix)-1] + "-" + suffix
-}
-
-func min(a, b int) int {
-	if a > b {
-		return b
-	}
-	return a
 }
 
 // servicename returns a fixed name for this service and portname

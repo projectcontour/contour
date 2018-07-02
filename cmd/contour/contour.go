@@ -23,7 +23,6 @@ import (
 
 	"github.com/heptio/contour/internal/debug"
 	clientset "github.com/heptio/contour/internal/generated/clientset/versioned"
-	"github.com/heptio/contour/internal/listener"
 	"github.com/heptio/workgroup"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
@@ -87,8 +86,8 @@ func main() {
 	// translator and DAGAdapter configuration
 	var da contour.DAGAdapter
 
-	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(listener.DEFAULT_HTTP_ACCESS_LOG).StringVar(&da.HTTPAccessLog)
-	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(listener.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&da.HTTPSAccessLog)
+	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&da.HTTPAccessLog)
+	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&da.HTTPSAccessLog)
 	serve.Flag("envoy-http-address", "Envoy HTTP listener address").StringVar(&da.HTTPAddress)
 	serve.Flag("envoy-https-address", "Envoy HTTPS listener address").StringVar(&da.HTTPSAddress)
 	serve.Flag("envoy-http-port", "Envoy HTTP listener port").IntVar(&da.HTTPPort)

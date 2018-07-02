@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package route
+package contour
 
 import (
 	"reflect"
@@ -782,7 +782,7 @@ func TestRouteVisit(t *testing.T) {
 			if rc == nil {
 				rc = new(RouteCache)
 			}
-			v := Visitor{
+			v := routeVisitor{
 				RouteCache: rc,
 				DAG:        &d,
 			}
@@ -791,13 +791,6 @@ func TestRouteVisit(t *testing.T) {
 				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.want, got)
 			}
 		})
-	}
-}
-
-func secretdata(cert, key string) map[string][]byte {
-	return map[string][]byte{
-		v1.TLSCertKey:       []byte(cert),
-		v1.TLSPrivateKeyKey: []byte(key),
 	}
 }
 

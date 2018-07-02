@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package listener
+package contour
 
 import (
 	"reflect"
@@ -426,7 +426,7 @@ func TestListenerVisit(t *testing.T) {
 			if lc == nil {
 				lc = new(ListenerCache)
 			}
-			v := Visitor{
+			v := listenerVisitor{
 				ListenerCache: lc,
 				DAG:           &d,
 			}

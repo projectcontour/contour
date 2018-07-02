@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package route
+package contour
 
 import (
 	"crypto/sha256"
@@ -19,20 +19,86 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
 )
 
-type Visitor struct {
+// RouteCache manages the contents of the gRPC RDS cache.
+type RouteCache struct {
+	routeCache
+}
+
+type routeCache struct {
+	mu      sync.Mutex
+	values  map[string]*v2.RouteConfiguration
+	waiters []chan int
+	last    int
+}
+
+// Register registers ch to receive a value when Notify is called.
+// The value of last is the count of the times Notify has been called on this Cache.
+// It functions of a sequence counter, if the value of last supplied to Register
+// is less than the Cache's internal counter, then the caller has missed at least
+// one notification and will fire immediately.
+//
+// Sends by the broadcaster to ch must not block, therefor ch must have a capacity
+// of at least 1.
+func (c *routeCache) Register(ch chan int, last int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if last < c.last {
+		// notify this channel immediately
+		ch <- c.last
+		return
+	}
+	c.waiters = append(c.waiters, ch)
+}
+
+// Update replaces the contents of the cache with the supplied map.
+func (c *routeCache) Update(v map[string]*v2.RouteConfiguration) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.values = v
+	c.notify()
+}
+
+// notify notifies all registered waiters that an event has occured.
+func (c *routeCache) notify() {
+	c.last++
+
+	for _, ch := range c.waiters {
+		ch <- c.last
+	}
+	c.waiters = c.waiters[:0]
+}
+
+// Values returns a slice of the value stored in the cache.
+func (c *routeCache) Values(filter func(string) bool) []proto.Message {
+	c.mu.Lock()
+	values := make([]proto.Message, 0, len(c.values))
+	for _, v := range c.values {
+		if filter(v.Name) {
+			values = append(values, v)
+		}
+	}
+	c.mu.Unlock()
+	return values
+}
+
+type routeVisitor struct {
 	*RouteCache
 	*dag.DAG
 }
 
-func (v *Visitor) Visit() map[string]*v2.RouteConfiguration {
+func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 	ingress_http := &v2.RouteConfiguration{
 		Name: "ingress_http",
 	}
