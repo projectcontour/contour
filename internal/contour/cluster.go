@@ -11,9 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cluster
+package contour
 
 import (
+	"sync"
+
 	"crypto/sha256"
 	"fmt"
 	"strconv"
@@ -21,25 +23,92 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/gogo/protobuf/proto"
+
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/heptio/contour/internal/dag"
 )
 
-type Visitor struct {
+// ClusterCache manages the contents of the gRPC CDS cache.
+type ClusterCache struct {
+	clusterCache
+}
+
+type clusterCache struct {
+	mu      sync.Mutex
+	values  map[string]*v2.Cluster
+	waiters []chan int
+	last    int
+}
+
+// Register registers ch to receive a value when Notify is called.
+// The value of last is the count of the times Notify has been called on this Cache.
+// It functions of a sequence counter, if the value of last supplied to Register
+// is less than the Cache's internal counter, then the caller has missed at least
+// one notification and will fire immediately.
+//
+// Sends by the broadcaster to ch must not block, therefor ch must have a capacity
+// of at least 1.
+func (c *clusterCache) Register(ch chan int, last int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if last < c.last {
+		// notify this channel immediately
+		ch <- c.last
+		return
+	}
+	c.waiters = append(c.waiters, ch)
+}
+
+// Update replaces the contents of the cache with the supplied map.
+func (c *clusterCache) Update(v map[string]*v2.Cluster) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.values = v
+	c.notify()
+}
+
+// notify notifies all registered waiters that an event has occured.
+func (c *clusterCache) notify() {
+	c.last++
+
+	for _, ch := range c.waiters {
+		ch <- c.last
+	}
+	c.waiters = c.waiters[:0]
+}
+
+// Values returns a slice of the value stored in the cache.
+func (c *clusterCache) Values(filter func(string) bool) []proto.Message {
+	c.mu.Lock()
+	values := make([]proto.Message, 0, len(c.values))
+	for _, v := range c.values {
+		if filter(v.Name) {
+			values = append(values, v)
+		}
+	}
+	c.mu.Unlock()
+	return values
+}
+
+// clusterVisitor walks a *dag.DAG and produces a map of *v2.Clusters.
+type clusterVisitor struct {
 	*ClusterCache
 	*dag.DAG
 
 	clusters map[string]*v2.Cluster
 }
 
-func (v *Visitor) Visit() map[string]*v2.Cluster {
+func (v *clusterVisitor) Visit() map[string]*v2.Cluster {
 	v.clusters = make(map[string]*v2.Cluster)
 	v.DAG.Visit(v.visit)
 	return v.clusters
 }
 
-func (v *Visitor) visit(vertex dag.Vertex) {
+func (v *clusterVisitor) visit(vertex dag.Vertex) {
 	if service, ok := vertex.(*dag.Service); ok {
 		v.edscluster(service)
 	}
@@ -47,7 +116,7 @@ func (v *Visitor) visit(vertex dag.Vertex) {
 	vertex.Visit(v.visit)
 }
 
-func (v *Visitor) edscluster(svc *dag.Service) {
+func (v *clusterVisitor) edscluster(svc *dag.Service) {
 	name := hashname(60, svc.Namespace(), svc.Name(), strconv.Itoa(int(svc.Port)))
 	if _, ok := v.clusters[name]; ok {
 		// already created this cluster via another edge. skip it.

@@ -17,7 +17,6 @@
 package contour
 
 import (
-	"github.com/heptio/contour/internal/cluster"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/listener"
 	"github.com/heptio/contour/internal/route"
@@ -28,7 +27,6 @@ const DEFAULT_INGRESS_CLASS = "contour"
 // DAGAdapter wraps a dag.ResourceEventHandler to hook post update cache
 // generation.
 type DAGAdapter struct {
-
 	// Contour's IngressClass.
 	// If not set, defaults to DEFAULT_INGRESS_CLASS.
 	IngressClass string
@@ -36,7 +34,7 @@ type DAGAdapter struct {
 	dag.ResourceEventHandler // provides a Visit method
 	listener.ListenerCache
 	route.RouteCache
-	cluster.ClusterCache
+	ClusterCache
 }
 
 func (d *DAGAdapter) OnAdd(obj interface{}) {
@@ -78,9 +76,9 @@ func (d *DAGAdapter) updateRoutes() {
 }
 
 func (d *DAGAdapter) updateClusters() {
-	v := cluster.Visitor{
+	v := clusterVisitor{
 		ClusterCache: &d.ClusterCache,
 		DAG:          &d.DAG,
 	}
-	d.ClusterCache.Update(v.Visit())
+	d.clusterCache.Update(v.Visit())
 }
