@@ -362,9 +362,13 @@ func (d *DAG) recompute() (dag, []validationError) {
 
 	// process ingressroute documents
 	var verrs []validationError
+	orphaned := make(map[meta]bool)
 	for _, ir := range d.ingressroutes {
 		if ir.Spec.VirtualHost == nil {
-			// delegate ingressroute, skip it
+			// delegate ingress route. mark as orphaned if we haven't reached it before.
+			if _, ok := orphaned[meta{name: ir.Name, namespace: ir.Namespace}]; !ok {
+				orphaned[meta{name: ir.Name, namespace: ir.Namespace}] = true
+			}
 			continue
 		}
 
@@ -387,7 +391,7 @@ func (d *DAG) recompute() (dag, []validationError) {
 
 		var visited []*ingressroutev1.IngressRoute
 		prefixMatch := ""
-		ve := d.processIngressRoute(ir, prefixMatch, visited, host, service, vhost)
+		ve := d.processIngressRoute(ir, prefixMatch, visited, host, service, vhost, orphaned)
 		verrs = append(verrs, ve...)
 	}
 
@@ -399,10 +403,18 @@ func (d *DAG) recompute() (dag, []validationError) {
 		_d.roots = append(_d.roots, svh)
 	}
 
+	for meta, orph := range orphaned {
+		if orph {
+			ir, ok := d.ingressroutes[meta]
+			if ok {
+				verrs = append(verrs, validationError{object: ir, msg: "this IngressRoute is not part of a delegation chain from a root IngressRoute"})
+			}
+		}
+	}
 	return _d, verrs
 }
 
-func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost) []validationError {
+func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost, orphaned map[meta]bool) []validationError {
 	visited = append(visited, ir)
 	defer func() {
 		visited = visited[:len(visited)-1]
@@ -447,6 +459,9 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 			}
 			dest, ok := d.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]
 			if ok {
+				// dest is not an orphaned route, as there is an IR that points to it
+				orphaned[meta{name: dest.Name, namespace: dest.Namespace}] = false
+
 				// ensure we are not following an edge that produces a cycle
 				var path []string
 				for _, vir := range visited {
@@ -461,7 +476,7 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 				}
 
 				// follow the link and process the target ingress route
-				return d.processIngressRoute(dest, route.Match, visited, host, service, vhost)
+				return d.processIngressRoute(dest, route.Match, visited, host, service, vhost, orphaned)
 			}
 		}
 	}

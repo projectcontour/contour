@@ -3596,6 +3596,10 @@ func TestDAGIngressRouteValidation(t *testing.T) {
 			objs: []*ingressroutev1.IngressRoute{ir9},
 			want: []validationError{{object: ir9, msg: `route "/foo": cannot specify services and delegate in the same route`}},
 		},
+		"ingressroute is an orphaned route": {
+			objs: []*ingressroutev1.IngressRoute{ir8},
+			want: []validationError{{object: ir8, msg: "this IngressRoute is not part of a delegation chain from a root IngressRoute"}},
+		},
 	}
 
 	for name, tc := range tests {
