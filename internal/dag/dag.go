@@ -28,6 +28,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"fmt"
 )
 
 // A DAG represents a directed acylic graph of objects representing the relationship
@@ -363,6 +364,12 @@ func (d *DAG) recompute() dag {
 		}
 
 		host := ir.Spec.VirtualHost.Fqdn
+
+		// Validate the fqdn is passed
+		if len(strings.TrimSpace(host)) == 0 {
+			fmt.Println("[ERROR] Spec.VirtualHost.Fqdn must be specified!")
+			continue
+		}
 
 		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
 			// attach secrets to TLS enabled vhosts

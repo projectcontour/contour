@@ -1950,6 +1950,77 @@ func TestDAGInsert(t *testing.T) {
 				},
 			},
 		},
+		"insert ingress with empty fqdn": {
+			objs: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match:    "/",
+							Services: []ingressroutev1.Service{{Name: "kuard", Port: 8080}},
+						}},
+					},
+				},
+			},
+			want: []Vertex{},
+		},
+		"insert ingress with empty chars in fqdn": {
+			objs: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "    ",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match:    "/",
+							Services: []ingressroutev1.Service{{Name: "kuard", Port: 8080}},
+						}},
+					},
+				},
+			},
+			want: []Vertex{},
+		},
+		"insert valid ingressroute along with invalid fqdn": {
+			objs: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match:    "/",
+							Services: []ingressroutev1.Service{{Name: "kuard", Port: 8080}},
+						}},
+					},
+				},
+				ir1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "example.com",
+					routes: map[string]*Route{
+						"/": &Route{
+							path:   "/",
+							object: ir1,
+						},
+					},
+				}},
+		},
 	}
 
 	for name, tc := range tests {
