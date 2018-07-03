@@ -3621,6 +3621,24 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	// ir13 is invalid because it does not specify and FQDN
+	ir13 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "parent",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Services: []ingressroutev1.Service{{
+					Name: "foo",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []*ingressroutev1.IngressRoute
 		want []ingressrouteStatus
@@ -3647,6 +3665,10 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		"invalid weight in service": {
 			objs: []*ingressroutev1.IngressRoute{ir5},
 			want: []ingressrouteStatus{{object: ir5, status: "invalid", msg: `route "/foo": service "home": weight must be greater than zero`}},
+		},
+		"root ingressroute does not specify FQDN": {
+			objs: []*ingressroutev1.IngressRoute{ir13},
+			want: []ingressrouteStatus{{object: ir13, status: "invalid", msg: "Spec.VirtualHost.Fqdn must be specified"}},
 		},
 		"self-edge produces a cycle": {
 			objs: []*ingressroutev1.IngressRoute{ir6},

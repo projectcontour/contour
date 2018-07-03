@@ -379,6 +379,10 @@ func (d *DAG) recompute() (dag, []ingressrouteStatus) {
 		}
 
 		host := ir.Spec.VirtualHost.Fqdn
+		if len(strings.TrimSpace(host)) == 0 {
+			status = append(status, ingressrouteStatus{object: ir, status: "invalid", msg: "Spec.VirtualHost.Fqdn must be specified"})
+			continue
+		}
 
 		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
 			// attach secrets to TLS enabled vhosts
