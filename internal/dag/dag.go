@@ -385,7 +385,7 @@ func (d *DAG) recompute() (dag, []validationError) {
 			}
 		}
 
-		visited := make(map[meta]bool)
+		var visited []*ingressroutev1.IngressRoute
 		prefixMatch := ""
 		ve := d.processIngressRoute(ir, prefixMatch, visited, host, service, vhost)
 		verrs = append(verrs, ve...)
@@ -402,12 +402,11 @@ func (d *DAG) recompute() (dag, []validationError) {
 	return _d, verrs
 }
 
-func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited map[meta]bool, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost) []validationError {
-	// check if we have already visited this ingressroute. if we have, there is a cycle in the dag.
-	if visited[meta{name: ir.Name, namespace: ir.Namespace}] {
-		// TODO(abrand): Handle the cycle. Invalidate IngressRoute and set status?
-		return nil
-	}
+func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost) []validationError {
+	visited = append(visited, ir)
+	defer func() {
+		visited = visited[:len(visited)-1]
+	}()
 
 	for _, route := range ir.Spec.Routes {
 		// base case: The route points to services, so we add them to the vhost
@@ -442,11 +441,23 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 				// we are delegating to another IngressRoute in the same namespace
 				namespace = ir.Namespace
 			}
-			dir, ok := d.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]
+			dest, ok := d.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]
 			if ok {
+				// ensure we are not following an edge that produces a cycle
+				var path []string
+				for _, vir := range visited {
+					path = append(path, fmt.Sprintf("%s/%s", vir.Namespace, vir.Name))
+				}
+				for _, vir := range visited {
+					if dest.Name == vir.Name && dest.Namespace == vir.Namespace {
+						path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
+						msg := fmt.Sprintf("route creates a delegation cycle: %s", strings.Join(path, " -> "))
+						return []validationError{{object: ir, msg: msg}}
+					}
+				}
+
 				// follow the link and process the target ingress route
-				visited[meta{name: ir.Name, namespace: ir.Namespace}] = true
-				return d.processIngressRoute(dir, route.Match, visited, host, service, vhost)
+				return d.processIngressRoute(dest, route.Match, visited, host, service, vhost)
 			}
 		}
 	}

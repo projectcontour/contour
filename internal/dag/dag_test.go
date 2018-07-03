@@ -3488,6 +3488,59 @@ func TestDAGIngressRouteValidation(t *testing.T) {
 		},
 	}
 
+	// ir6 is invalid because it delegates to itself, producing a cycle
+	ir6 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "self",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Delegate: ingressroutev1.Delegate{
+					Name: "self",
+				},
+			}},
+		},
+	}
+
+	// ir7 delegates to ir8, which is invalid because it delegates back to ir7
+	ir7 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "parent",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Delegate: ingressroutev1.Delegate{
+					Name: "child",
+				},
+			}},
+		},
+	}
+
+	ir8 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "child",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Delegate: ingressroutev1.Delegate{
+					Name: "parent",
+				},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []*ingressroutev1.IngressRoute
 		want []validationError
@@ -3507,6 +3560,14 @@ func TestDAGIngressRouteValidation(t *testing.T) {
 		"invalid weight in service": {
 			objs: []*ingressroutev1.IngressRoute{ir5},
 			want: []validationError{{object: ir5, msg: `route "/foo": service "home": weight must be greater than zero`}},
+		},
+		"self-edge produces a cycle": {
+			objs: []*ingressroutev1.IngressRoute{ir6},
+			want: []validationError{{object: ir6, msg: "route creates a delegation cycle: roots/self -> roots/self"}},
+		},
+		"child delegates to parent, producing a cycle": {
+			objs: []*ingressroutev1.IngressRoute{ir7, ir8},
+			want: []validationError{{object: ir8, msg: "route creates a delegation cycle: roots/parent -> roots/child -> roots/parent"}},
 		},
 	}
 
