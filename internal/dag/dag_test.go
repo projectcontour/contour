@@ -3383,7 +3383,7 @@ func TestMatchesPathPrefix(t *testing.T) {
 	}
 }
 
-func TestDAGIngressRouteValidation(t *testing.T) {
+func TestDAGIngressRouteStatus(t *testing.T) {
 	// ir1 is a valid ingressroute
 	ir1 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -3564,41 +3564,116 @@ func TestDAGIngressRouteValidation(t *testing.T) {
 		},
 	}
 
+	// ir10 delegates to ir11 and ir 12.
+	ir10 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "parent",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Delegate: ingressroutev1.Delegate{
+					Name: "validChild",
+				},
+			}, {
+				Match: "/bar",
+				Delegate: ingressroutev1.Delegate{
+					Name: "invalidChild",
+				},
+			}},
+		},
+	}
+
+	ir11 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "validChild",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Services: []ingressroutev1.Service{{
+					Name: "foo",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// ir12 is invalid because it contains an invalid port
+	ir12 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "invalidChild",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			Routes: []ingressroutev1.Route{{
+				Match: "/bar",
+				Services: []ingressroutev1.Service{{
+					Name: "foo",
+					Port: 12345678,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []*ingressroutev1.IngressRoute
-		want []validationError
+		want []ingressrouteStatus
 	}{
+		"valid ingressroute": {
+			objs: []*ingressroutev1.IngressRoute{ir1},
+			want: []ingressrouteStatus{{object: ir1, status: "valid", msg: "valid IngressRoute"}},
+		},
 		"invalid port in service": {
 			objs: []*ingressroutev1.IngressRoute{ir2},
-			want: []validationError{{object: ir2, msg: `route "/foo": service "home": port must be in the range 1-65535`}},
+			want: []ingressrouteStatus{{object: ir2, status: "invalid", msg: `route "/foo": service "home": port must be in the range 1-65535`}},
 		},
 		"root ingressroute outside of roots namespace": {
 			objs: []*ingressroutev1.IngressRoute{ir3},
-			want: []validationError{{object: ir3, msg: "root IngressRoute cannot be defined in this namespace"}},
+			want: []ingressrouteStatus{{object: ir3, status: "invalid", msg: "root IngressRoute cannot be defined in this namespace"}},
 		},
 		"delegated route's match prefix does not match parent's prefix": {
 			objs: []*ingressroutev1.IngressRoute{ir1, ir4},
-			want: []validationError{{object: ir4, msg: "the path prefix does not match the parent's path prefix"}},
+			want: []ingressrouteStatus{
+				{object: ir4, status: "invalid", msg: "the path prefix does not match the parent's path prefix"},
+				{object: ir1, status: "valid", msg: "valid IngressRoute"},
+			},
 		},
 		"invalid weight in service": {
 			objs: []*ingressroutev1.IngressRoute{ir5},
-			want: []validationError{{object: ir5, msg: `route "/foo": service "home": weight must be greater than zero`}},
+			want: []ingressrouteStatus{{object: ir5, status: "invalid", msg: `route "/foo": service "home": weight must be greater than zero`}},
 		},
 		"self-edge produces a cycle": {
 			objs: []*ingressroutev1.IngressRoute{ir6},
-			want: []validationError{{object: ir6, msg: "route creates a delegation cycle: roots/self -> roots/self"}},
+			want: []ingressrouteStatus{{object: ir6, status: "invalid", msg: "route creates a delegation cycle: roots/self -> roots/self"}},
 		},
 		"child delegates to parent, producing a cycle": {
 			objs: []*ingressroutev1.IngressRoute{ir7, ir8},
-			want: []validationError{{object: ir8, msg: "route creates a delegation cycle: roots/parent -> roots/child -> roots/parent"}},
+			want: []ingressrouteStatus{
+				{object: ir8, status: "invalid", msg: "route creates a delegation cycle: roots/parent -> roots/child -> roots/parent"},
+				{object: ir7, status: "valid", msg: "valid IngressRoute"},
+			},
 		},
 		"route has a list of services and also delegates": {
 			objs: []*ingressroutev1.IngressRoute{ir9},
-			want: []validationError{{object: ir9, msg: `route "/foo": cannot specify services and delegate in the same route`}},
+			want: []ingressrouteStatus{{object: ir9, status: "invalid", msg: `route "/foo": cannot specify services and delegate in the same route`}},
 		},
 		"ingressroute is an orphaned route": {
 			objs: []*ingressroutev1.IngressRoute{ir8},
-			want: []validationError{{object: ir8, msg: "this IngressRoute is not part of a delegation chain from a root IngressRoute"}},
+			want: []ingressrouteStatus{{object: ir8, status: "orphaned", msg: "this IngressRoute is not part of a delegation chain from a root IngressRoute"}},
+		},
+		"ingressroute delegates to multiple ingressroutes, one is invalid": {
+			objs: []*ingressroutev1.IngressRoute{ir10, ir11, ir12},
+			want: []ingressrouteStatus{
+				{object: ir11, status: "valid", msg: "valid IngressRoute"},
+				{object: ir12, status: "invalid", msg: `route "/bar": service "foo": port must be in the range 1-65535`},
+				{object: ir10, status: "valid", msg: "valid IngressRoute"},
+			},
 		},
 	}
 

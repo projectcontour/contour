@@ -145,11 +145,11 @@ func (d *DAG) Recompute() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	version := d.dag.version
-	var verrs []validationError
-	d.dag, verrs = d.recompute()
+	var status []ingressrouteStatus
+	d.dag, status = d.recompute()
 	d.dag.version = version + 1
-	for _, ve := range verrs {
-		fmt.Printf("%v", ve)
+	for _, s := range status {
+		fmt.Printf("%v\n", s)
 	}
 }
 
@@ -213,7 +213,7 @@ func (sm *serviceMap) insert(svc *v1.Service, port *v1.ServicePort) *Service {
 }
 
 // recompute builds a new *dag.dag.
-func (d *DAG) recompute() (dag, []validationError) {
+func (d *DAG) recompute() (dag, []ingressrouteStatus) {
 	sm := serviceMap{
 		services: d.services,
 	}
@@ -361,7 +361,7 @@ func (d *DAG) recompute() (dag, []validationError) {
 	}
 
 	// process ingressroute documents
-	var verrs []validationError
+	var status []ingressrouteStatus
 	orphaned := make(map[meta]bool)
 	for _, ir := range d.ingressroutes {
 		if ir.Spec.VirtualHost == nil {
@@ -374,7 +374,7 @@ func (d *DAG) recompute() (dag, []validationError) {
 
 		// ensure root ingressroute lives in allowed namespace
 		if !d.rootAllowed(ir) {
-			verrs = append(verrs, validationError{object: ir, msg: "root IngressRoute cannot be defined in this namespace"})
+			status = append(status, ingressrouteStatus{object: ir, status: "invalid", msg: "root IngressRoute cannot be defined in this namespace"})
 			continue
 		}
 
@@ -392,7 +392,7 @@ func (d *DAG) recompute() (dag, []validationError) {
 		var visited []*ingressroutev1.IngressRoute
 		prefixMatch := ""
 		ve := d.processIngressRoute(ir, prefixMatch, visited, host, service, vhost, orphaned)
-		verrs = append(verrs, ve...)
+		status = append(status, ve...)
 	}
 
 	var _d dag
@@ -407,28 +407,29 @@ func (d *DAG) recompute() (dag, []validationError) {
 		if orph {
 			ir, ok := d.ingressroutes[meta]
 			if ok {
-				verrs = append(verrs, validationError{object: ir, msg: "this IngressRoute is not part of a delegation chain from a root IngressRoute"})
+				status = append(status, ingressrouteStatus{object: ir, status: "orphaned", msg: "this IngressRoute is not part of a delegation chain from a root IngressRoute"})
 			}
 		}
 	}
-	return _d, verrs
+	return _d, status
 }
 
-func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost, orphaned map[meta]bool) []validationError {
+func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost, orphaned map[meta]bool) []ingressrouteStatus {
 	visited = append(visited, ir)
 	defer func() {
 		visited = visited[:len(visited)-1]
 	}()
 
+	var status []ingressrouteStatus
 	for _, route := range ir.Spec.Routes {
 		// route cannot both delegate and point to services
 		if len(route.Services) > 0 && route.Delegate.Name != "" {
-			return []validationError{{object: ir, msg: fmt.Sprintf("route %q: cannot specify services and delegate in the same route", route.Match)}}
+			return []ingressrouteStatus{{object: ir, status: "invalid", msg: fmt.Sprintf("route %q: cannot specify services and delegate in the same route", route.Match)}}
 		}
 		// base case: The route points to services, so we add them to the vhost
 		if len(route.Services) > 0 {
 			if !matchesPathPrefix(route.Match, prefixMatch) {
-				return []validationError{{object: ir, msg: "the path prefix does not match the parent's path prefix"}}
+				return []ingressrouteStatus{{object: ir, status: "invalid", msg: "the path prefix does not match the parent's path prefix"}}
 			}
 			r := &Route{
 				path:   route.Match,
@@ -436,10 +437,10 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 			}
 			for _, s := range route.Services {
 				if s.Port < 1 || s.Port > 65535 {
-					return []validationError{{object: ir, msg: fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", route.Match, s.Name)}}
+					return []ingressrouteStatus{{object: ir, status: "invalid", msg: fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", route.Match, s.Name)}}
 				}
 				if s.Weight != nil && *s.Weight < 0 {
-					return []validationError{{object: ir, msg: fmt.Sprintf("route %q: service %q: weight must be greater than zero", route.Match, s.Name)}}
+					return []ingressrouteStatus{{object: ir, status: "invalid", msg: fmt.Sprintf("route %q: service %q: weight must be greater than zero", route.Match, s.Name)}}
 				}
 				m := meta{name: s.Name, namespace: ir.Namespace}
 				if svc := service(m, intstr.FromInt(s.Port)); svc != nil {
@@ -471,16 +472,16 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 					if dest.Name == vir.Name && dest.Namespace == vir.Namespace {
 						path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
 						msg := fmt.Sprintf("route creates a delegation cycle: %s", strings.Join(path, " -> "))
-						return []validationError{{object: ir, msg: msg}}
+						return []ingressrouteStatus{{object: ir, status: "invalid", msg: msg}}
 					}
 				}
 
 				// follow the link and process the target ingress route
-				return d.processIngressRoute(dest, route.Match, visited, host, service, vhost, orphaned)
+				status = append(status, d.processIngressRoute(dest, route.Match, visited, host, service, vhost, orphaned)...)
 			}
 		}
 	}
-	return nil
+	return append(status, ingressrouteStatus{object: ir, status: "valid", msg: "valid IngressRoute"})
 }
 
 // matchesPathPrefix checks whether the given path matches the given prefix
@@ -682,7 +683,8 @@ func (s *Secret) toMeta() meta {
 	}
 }
 
-type validationError struct {
+type ingressrouteStatus struct {
 	object *ingressroutev1.IngressRoute
+	status string
 	msg    string
 }
