@@ -370,6 +370,7 @@ func (d *DAG) recompute() (dag, []validationError) {
 
 		// ensure root ingressroute lives in allowed namespace
 		if !d.rootAllowed(ir) {
+			verrs = append(verrs, validationError{object: ir, msg: "root IngressRoute cannot be defined in this namespace"})
 			continue
 		}
 
@@ -412,14 +413,19 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 		// base case: The route points to services, so we add them to the vhost
 		if len(route.Services) > 0 {
 			if !matchesPathPrefix(route.Match, prefixMatch) {
-				// TODO: set status
-				return nil
+				return []validationError{{object: ir, msg: "the path prefix does not match the parent's path prefix"}}
 			}
 			r := &Route{
 				path:   route.Match,
 				object: ir,
 			}
 			for _, s := range route.Services {
+				if s.Port < 1 || s.Port > 65535 {
+					return []validationError{{object: ir, msg: fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", route.Match, s.Name)}}
+				}
+				if s.Weight != nil && *s.Weight < 0 {
+					return []validationError{{object: ir, msg: fmt.Sprintf("route %q: service %q: weight must be greater than zero", route.Match, s.Name)}}
+				}
 				m := meta{name: s.Name, namespace: ir.Namespace}
 				if svc := service(m, intstr.FromInt(s.Port)); svc != nil {
 					r.addService(svc, s.HealthCheck, s.Strategy, s.Weight)

@@ -2965,6 +2965,7 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 				Match: "/finance",
 				Services: []ingressroutev1.Service{{
 					Name: "home",
+					Port: 8080,
 				}},
 			}, {
 				Match: "/finance/stocks",
@@ -3377,6 +3378,148 @@ func TestMatchesPathPrefix(t *testing.T) {
 			got := matchesPathPrefix(tc.path, tc.prefix)
 			if got != tc.matches {
 				t.Errorf("expected %v but got %v", tc.matches, got)
+			}
+		})
+	}
+}
+
+func TestDAGIngressRouteValidation(t *testing.T) {
+	// ir1 is a valid ingressroute
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Services: []ingressroutev1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}, {
+				Match: "/prefix",
+				Delegate: ingressroutev1.Delegate{
+					Name: "delegated",
+				}},
+			},
+		},
+	}
+
+	// ir2 is invalid because it contains a service with negative port
+	ir2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Services: []ingressroutev1.Service{{
+					Name: "home",
+					Port: -80,
+				}},
+			}},
+		},
+	}
+
+	// ir3 is invalid because it lives outside the roots namespace
+	ir3 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "finance",
+			Name:      "example",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foobar",
+				Services: []ingressroutev1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// ir4 is invalid because its match prefix does not match its parent's (ir1)
+	ir4 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "delegated",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			Routes: []ingressroutev1.Route{{
+				Match: "/doesnotmatch",
+				Services: []ingressroutev1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// ir5 is invalid because its service weight is less than zero
+	w := -10
+	ir5 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "delegated",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Services: []ingressroutev1.Service{{
+					Name:   "home",
+					Port:   8080,
+					Weight: &w,
+				}},
+			}},
+		},
+	}
+
+	tests := map[string]struct {
+		objs []*ingressroutev1.IngressRoute
+		want []validationError
+	}{
+		"invalid port in service": {
+			objs: []*ingressroutev1.IngressRoute{ir2},
+			want: []validationError{{object: ir2, msg: `route "/foo": service "home": port must be in the range 1-65535`}},
+		},
+		"root ingressroute outside of roots namespace": {
+			objs: []*ingressroutev1.IngressRoute{ir3},
+			want: []validationError{{object: ir3, msg: "root IngressRoute cannot be defined in this namespace"}},
+		},
+		"delegated route's match prefix does not match parent's prefix": {
+			objs: []*ingressroutev1.IngressRoute{ir1, ir4},
+			want: []validationError{{object: ir4, msg: "the path prefix does not match the parent's path prefix"}},
+		},
+		"invalid weight in service": {
+			objs: []*ingressroutev1.IngressRoute{ir5},
+			want: []validationError{{object: ir5, msg: `route "/foo": service "home": weight must be greater than zero`}},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var d DAG
+			d.IngressRouteRootNamespaces = []string{"roots"}
+			for _, o := range tc.objs {
+				d.Insert(o)
+			}
+			_, got := d.recompute()
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Errorf("expected:\n%v\ngot:\n%v", tc.want, got)
 			}
 		})
 	}
