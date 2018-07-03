@@ -85,6 +85,7 @@ func main() {
 
 	// translator and DAGAdapter configuration
 	var da contour.DAGAdapter
+	da.DAG.Log = log.WithField("context", "dag")
 
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&da.HTTPAccessLog)
 	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&da.HTTPSAccessLog)
@@ -126,6 +127,9 @@ func main() {
 		// in kingpin. See #371
 		flag.Parse()
 		client, contourClient := newClient(*kubeconfig, *inCluster)
+		da.ResourceEventHandler.DAG.IngressRouteStatus = &k8s.IngressRouteStatus{
+			Client: contourClient,
+		}
 
 		wl := log.WithField("context", "watch")
 		k8s.WatchServices(&g, client, wl, &da)

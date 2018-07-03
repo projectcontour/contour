@@ -16,6 +16,7 @@
 package dag
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -28,6 +29,8 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	k8s "github.com/heptio/contour/internal/k8s"
+	"github.com/sirupsen/logrus"
 )
 
 // A DAG represents a directed acylic graph of objects representing the relationship
@@ -47,6 +50,8 @@ type DAG struct {
 	services      map[meta]*v1.Service
 
 	dag
+	IngressRouteStatus *k8s.IngressRouteStatus
+	Log                logrus.FieldLogger
 }
 
 // dag represents
@@ -351,14 +356,18 @@ func (d *DAG) recompute() dag {
 	}
 
 	// process ingressroute documents
+	orphaned := make(map[meta]*ingressroutev1.IngressRoute)
 	for _, ir := range d.ingressroutes {
 		if ir.Spec.VirtualHost == nil {
 			// delegate ingressroute, skip it
+			orphaned[meta{name: ir.Name, namespace: ir.Namespace}] = ir
 			continue
 		}
 
 		// ensure root ingressroute lives in allowed namespace
 		if !d.rootAllowed(ir) {
+			msg := "Root IngressRoutes cannot be defined in this namespace"
+			setInvalidStatus(d.IngressRouteStatus, d.Log, ir, msg)
 			continue
 		}
 
@@ -373,9 +382,9 @@ func (d *DAG) recompute() dag {
 			}
 		}
 
-		visited := make(map[meta]bool)
+		var visited []*ingressroutev1.IngressRoute
 		prefixMatch := ""
-		d.processIngressRoute(ir, prefixMatch, visited, host, service, vhost)
+		d.processIngressRoute(ir, prefixMatch, visited, host, service, vhost, orphaned)
 	}
 
 	var _d dag
@@ -386,21 +395,40 @@ func (d *DAG) recompute() dag {
 		_d.roots = append(_d.roots, svh)
 	}
 
+	msg := "This IngressRoute is not part of a delegation chain from a root IngressRoute"
+	for _, ir := range orphaned {
+		if err := d.IngressRouteStatus.SetOrphanStatus(msg, ir); err != nil {
+			d.Log.Errorf("error setting status on orphaned IR: %v", err)
+		}
+	}
+
 	return _d
 }
 
-func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited map[meta]bool, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost) {
-	// check if we have already visited this ingressroute. if we have, there is a cycle in the dag.
-	if visited[meta{name: ir.Name, namespace: ir.Namespace}] {
-		// TODO(abrand): Handle the cycle. Invalidate IngressRoute and set status?
-		return
-	}
+func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string,
+	service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost,
+	orphaned map[meta]*ingressroutev1.IngressRoute) {
+	visited = append(visited, ir)
+	defer func() {
+		visited = visited[:len(visited)-1]
+	}()
 
+	// collect valid routes as we go, and add them to the vhost if the
+	// entire ingressroute is valid
+	validRoutes := make(map[string]*Route)
 	for _, route := range ir.Spec.Routes {
+		// a route cannot both delegate and point to services
+		if len(route.Services) > 0 && route.Delegate.Name != "" {
+			msg := fmt.Sprintf("route %q: cannot specify services and delegate in the same route", route.Match)
+			setInvalidStatus(d.IngressRouteStatus, d.Log, ir, msg)
+			return
+		}
+
 		// base case: The route points to services, so we add them to the vhost
 		if len(route.Services) > 0 {
 			if !matchesPathPrefix(route.Match, prefixMatch) {
-				// TODO: set status
+				msg := "the path prefix does not match the parent's path prefix"
+				setInvalidStatus(d.IngressRouteStatus, d.Log, ir, msg)
 				return
 			}
 			r := &Route{
@@ -408,12 +436,17 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 				object: ir,
 			}
 			for _, s := range route.Services {
+				if err := validateService(route, s); err != nil {
+					setInvalidStatus(d.IngressRouteStatus, d.Log, ir, err.Error())
+					return
+				}
 				m := meta{name: s.Name, namespace: ir.Namespace}
 				if svc := service(m, intstr.FromInt(s.Port)); svc != nil {
 					r.addService(svc)
 				}
 			}
-			vhost(host, 80).routes[r.path] = r
+			setValidStatus(d.IngressRouteStatus, d.Log, ir, "ingress route is valid")
+			validRoutes[r.path] = r
 			continue
 		}
 
@@ -424,13 +457,30 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 				// we are delegating to another IngressRoute in the same namespace
 				namespace = ir.Namespace
 			}
-			dir, ok := d.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]
+			dest, ok := d.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]
 			if ok {
+				// before visiting the destination, make sure we are not following an edge
+				// that produces a cycle
+				var path []string
+				for _, vir := range visited {
+					path = append(path, fmt.Sprintf("%s/%s", vir.Namespace, vir.Name))
+				}
+				for _, vir := range visited {
+					if dest.Name == vir.Name && dest.Namespace == vir.Namespace {
+						path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
+						msg := fmt.Sprintf("route creates a delegation cycle: %s", strings.Join(path, " -> "))
+						setInvalidStatus(d.IngressRouteStatus, d.Log, ir, msg)
+						return
+					}
+				}
+				delete(orphaned, meta{name: dest.Name, namespace: dest.Namespace})
 				// follow the link and process the target ingress route
-				visited[meta{name: ir.Name, namespace: ir.Namespace}] = true
-				d.processIngressRoute(dir, route.Match, visited, host, service, vhost)
+				d.processIngressRoute(dest, route.Match, visited, host, service, vhost, orphaned)
 			}
 		}
+	}
+	for path, route := range validRoutes {
+		vhost(host, 80).routes[path] = route
 	}
 }
 
@@ -463,6 +513,38 @@ func (d *DAG) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 		}
 	}
 	return false
+}
+
+func setValidStatus(irs *k8s.IngressRouteStatus, log logrus.FieldLogger, ir *ingressroutev1.IngressRoute, msg string) {
+	if err := irs.SetValidStatus(msg, ir); err != nil {
+		log.
+			WithField("name", ir.Name).
+			WithField("namespace", ir.Namespace).
+			WithField("status", "invalid").
+			WithField("description", msg).
+			Errorf("error updating status of ingressroute: %v", err)
+	}
+}
+
+func setInvalidStatus(irs *k8s.IngressRouteStatus, log logrus.FieldLogger, ir *ingressroutev1.IngressRoute, msg string) {
+	if err := irs.SetInvalidStatus(msg, ir); err != nil {
+		log.
+			WithField("name", ir.Name).
+			WithField("namespace", ir.Namespace).
+			WithField("status", "invalid").
+			WithField("description", msg).
+			Errorf("error updating status of ingressroute: %v", err)
+	}
+}
+
+func validateService(r ingressroutev1.Route, s ingressroutev1.Service) error {
+	if s.Port < 1 || s.Port > 65535 {
+		return fmt.Errorf("route %q: service %q: port must be in the range 1-65535", r.Match, s.Name)
+	}
+	if s.Weight != nil && *s.Weight < 0 {
+		return fmt.Errorf("route %q: service %q: weight must be greater than zero", r.Match, s.Name)
+	}
+	return nil
 }
 
 type Root interface {

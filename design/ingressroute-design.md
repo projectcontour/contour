@@ -230,17 +230,8 @@ An example of an orphaned IngressRoute object:
 
 ```yaml
 status:
-  delegationStatuses:
-  - state:
-     orphaned:
-       lastParent:
-         name: ...
-         namespace: ...
-```
-
-```yaml
-status:
-  orphaned: true
+  currentStatus: orphaned
+  description: not part of a delegation chain from a root
 ```
 
 ### Delegation Status
@@ -252,44 +243,21 @@ An example of a valid IngressRoute object:
 
 ```yaml
 status:
-  delegationStatuses:
-  - state:
-      valid:
-        roots: ...
-        - name: ...
-          namespace: ...
-          - fqdn: ...
-            aliases:
-              - ...
-              - ...
+  currentStatus: valid
+  description: delegated ingress route
 ```
 
-New Design:
+### Invalid Status
+
+IngressRoutes may be considered invalid if they encounter an edge case which makes them conflict with other IngressRoutes.
+In the event this happens, both IngressRoute objects are rejected and their status field is updated. 
+
+An example of an invalid IngressRoute object:
+
 ```yaml
 status:
-  delegationStatuses:
-  - www_google_com/path/to/my/ingressRoute # <-------- Validate this!
-    status: 
-      currentStatus: Current Status of the route (e.g. Invalid, Error, <needs defined>)
-      lastProcessTime: Time the object was processed
-      []errors: List of errors
-```
-
-### 
-
-Note: `delegationStatuses` is a list, because in the non-orphaned case, an IngressRoute may be a part of several delegation chains.
-
-An example of a correctly delegated IngressRoute with a single parent:
-```yaml:
-status:
-  delegationStatuses:
-  - state:
-      connected:
-        parent:
-          name: ...
-          namespace: ...
-          prefix: ...
-        connectedAt: ...
+  currentStatus: invalid
+  description: conflicting lb algorithm with ingressroute "someingress"
 ```
 
 ## IngressRoutes dispatch only to services in the same namespace
