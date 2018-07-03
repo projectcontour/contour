@@ -25,18 +25,17 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	envoy_api_v2_core4 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	google_protobuf "github.com/gogo/protobuf/types"
+	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 )
 
 const (
 	// Default healthcheck / lb algorithm values
-	hcTimeout            = int64(2)
-	hcInterval           = int64(10)
-	hcUnhealthyThreshold = uint32(3)
-	hcHealthyThreshold   = uint32(2)
+	hcTimeout            = 2 * time.Second
+	hcInterval           = 10 * time.Second
+	hcUnhealthyThreshold = 3
+	hcHealthyThreshold   = 2
 	hcHost               = "contour-envoy-heathcheck"
 )
 
@@ -180,8 +179,6 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 
 func edslbstrategy(lbStrategy string) v2.Cluster_LbPolicy {
 	switch lbStrategy {
-	case "RoundRobin":
-		return v2.Cluster_ROUND_ROBIN
 	case "WeightedLeastRequest":
 		return v2.Cluster_LEAST_REQUEST
 	case "RingHash":
@@ -190,56 +187,53 @@ func edslbstrategy(lbStrategy string) v2.Cluster_LbPolicy {
 		return v2.Cluster_MAGLEV
 	case "Random":
 		return v2.Cluster_RANDOM
+	default:
+		return v2.Cluster_ROUND_ROBIN
 	}
-
-	// Default
-	return v2.Cluster_ROUND_ROBIN
 }
 
-func edshealthcheck(hc *ingressroutev1.HealthCheck) []*envoy_api_v2_core4.HealthCheck {
-	timeout := hcTimeout
-	interval := hcInterval
-	unhealthyThreshold := hcUnhealthyThreshold
-	healthyThreshold := hcHealthyThreshold
+func edshealthcheck(hc *ingressroutev1.HealthCheck) []*core.HealthCheck {
 	host := hcHost
-
-	if hc.TimeoutSeconds != 0 {
-		timeout = hc.TimeoutSeconds
-	}
-	if hc.IntervalSeconds != 0 {
-		interval = hc.IntervalSeconds
-	}
-	if hc.UnhealthyThresholdCount != 0 {
-		unhealthyThreshold = hc.UnhealthyThresholdCount
-	}
-	if hc.HealthyThresholdCount != 0 {
-		healthyThreshold = hc.HealthyThresholdCount
-	}
 	if hc.Host != "" {
 		host = hc.Host
 	}
 
-	return []*envoy_api_v2_core4.HealthCheck{{
-		Timeout: &google_protobuf.Duration{
-			Seconds: timeout,
-		},
-		Interval: &google_protobuf.Duration{
-			Seconds: int64(interval),
-		},
-		UnhealthyThreshold: &google_protobuf.UInt32Value{
-			Value: unhealthyThreshold,
-		},
-		HealthyThreshold: &google_protobuf.UInt32Value{
-			Value: healthyThreshold,
-		},
-		HealthChecker: &envoy_api_v2_core4.HealthCheck_HttpHealthCheck_{
-			HttpHealthCheck: &envoy_api_v2_core4.HealthCheck_HttpHealthCheck{
+	// TODO(dfc) why do we need to specify our own default, what is the default
+	// that envoy applies if these fields are left nil?
+	return []*core.HealthCheck{{
+		Timeout:            secondsOrDefault(hc.TimeoutSeconds, hcTimeout),
+		Interval:           secondsOrDefault(hc.IntervalSeconds, hcInterval),
+		UnhealthyThreshold: countOrDefault(hc.UnhealthyThresholdCount, hcUnhealthyThreshold),
+		HealthyThreshold:   countOrDefault(hc.HealthyThresholdCount, hcHealthyThreshold),
+		HealthChecker: &core.HealthCheck_HttpHealthCheck_{
+			HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
 				Path: hc.Path,
 				Host: host,
 			},
 		},
 	}}
+}
 
+func secondsOrDefault(seconds int64, def time.Duration) *types.Duration {
+	if seconds != 0 {
+		return &types.Duration{
+			Seconds: seconds,
+		}
+	}
+	return &types.Duration{
+		Seconds: int64(def / time.Second),
+	}
+}
+
+func countOrDefault(count, def uint32) *types.UInt32Value {
+	if count != 0 {
+		return &types.UInt32Value{
+			Value: count,
+		}
+	}
+	return &types.UInt32Value{
+		Value: def,
+	}
 }
 
 func edsconfig(source, name string) *v2.Cluster_EdsClusterConfig {
