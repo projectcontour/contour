@@ -409,6 +409,10 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 	}()
 
 	for _, route := range ir.Spec.Routes {
+		// route cannot both delegate and point to services
+		if len(route.Services) > 0 && route.Delegate.Name != "" {
+			return []validationError{{object: ir, msg: fmt.Sprintf("route %q: cannot specify services and delegate in the same route", route.Match)}}
+		}
 		// base case: The route points to services, so we add them to the vhost
 		if len(route.Services) > 0 {
 			if !matchesPathPrefix(route.Match, prefixMatch) {

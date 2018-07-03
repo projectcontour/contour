@@ -3541,6 +3541,29 @@ func TestDAGIngressRouteValidation(t *testing.T) {
 		},
 	}
 
+	// ir9 is invalid because it has a route that both delegates and has a list of services
+	ir9 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "parent",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Delegate: ingressroutev1.Delegate{
+					Name: "child",
+				},
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []*ingressroutev1.IngressRoute
 		want []validationError
@@ -3568,6 +3591,10 @@ func TestDAGIngressRouteValidation(t *testing.T) {
 		"child delegates to parent, producing a cycle": {
 			objs: []*ingressroutev1.IngressRoute{ir7, ir8},
 			want: []validationError{{object: ir8, msg: "route creates a delegation cycle: roots/parent -> roots/child -> roots/parent"}},
+		},
+		"route has a list of services and also delegates": {
+			objs: []*ingressroutev1.IngressRoute{ir9},
+			want: []validationError{{object: ir9, msg: `route "/foo": cannot specify services and delegate in the same route`}},
 		},
 	}
 
