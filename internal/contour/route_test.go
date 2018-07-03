@@ -877,7 +877,7 @@ func TestRouteVisit(t *testing.T) {
 								{
 									Name:   "backendtwo",
 									Port:   80,
-									Weight: func(i int) *int { return &i }(50),
+									Weight: 50,
 								},
 							},
 						}},
@@ -961,12 +961,12 @@ func TestRouteVisit(t *testing.T) {
 								{
 									Name:   "backend",
 									Port:   80,
-									Weight: func(i int) *int { return &i }(22),
+									Weight: 22,
 								},
 								{
 									Name:   "backendtwo",
 									Port:   80,
-									Weight: func(i int) *int { return &i }(50),
+									Weight: 50,
 								},
 							},
 						}},

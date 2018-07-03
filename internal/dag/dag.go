@@ -310,7 +310,7 @@ func (d *DAG) recompute() dag {
 			}
 			m := meta{name: ing.Spec.Backend.ServiceName, namespace: ing.Namespace}
 			if s := service(m, ing.Spec.Backend.ServicePort); s != nil {
-				r.addService(s, nil)
+				r.addService(s, 0)
 			}
 			if httpAllowed {
 				vhost("*", 80).routes[r.path] = r
@@ -338,7 +338,7 @@ func (d *DAG) recompute() dag {
 
 				m := meta{name: rule.IngressRuleValue.HTTP.Paths[n].Backend.ServiceName, namespace: ing.Namespace}
 				if s := service(m, rule.IngressRuleValue.HTTP.Paths[n].Backend.ServicePort); s != nil {
-					r.addService(s, nil)
+					r.addService(s, s.Weight)
 				}
 				if httpAllowed {
 					vhost(host, 80).routes[r.path] = r
@@ -492,7 +492,7 @@ type Route struct {
 
 func (r *Route) Prefix() string { return r.path }
 
-func (r *Route) addService(s *Service, weight *int) {
+func (r *Route) addService(s *Service, weight int) {
 	if r.services == nil {
 		r.services = make(map[portmeta]*Service)
 	}
@@ -565,7 +565,7 @@ type Service struct {
 	object *v1.Service
 
 	*v1.ServicePort
-	Weight *int
+	Weight int
 
 	// Protocol is the layer 7 protocol of this service
 	Protocol string

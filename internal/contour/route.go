@@ -240,15 +240,10 @@ func actionroute(be []*dag.Service, ws bool, timeout time.Duration) *route.Route
 		// Create the empty upstream
 		upstream := route.WeightedCluster_ClusterWeight{
 			Name:   hashname(60, i.Namespace(), i.Name(), strconv.Itoa(int(i.Port))),
-			Weight: &types.UInt32Value{Value: uint32(0)},
+			Weight: &types.UInt32Value{Value: uint32(i.Weight)},
 		}
 
-		// If weight is passed, then use otherwise calculate
-		if i.Weight != nil {
-			upstream.Weight.Value = uint32(*i.Weight)
-			totalWeight += *i.Weight
-		}
-
+   		totalWeight += i.Weight
 		upstreams = append(upstreams, &upstream)
 	}
 

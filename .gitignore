@@ -1,5 +1,5 @@
 *.swp
 *.swo
 vendor/
-
 .vs/
+.idea/
