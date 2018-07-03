@@ -3639,6 +3639,23 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	// ir14 delegates tp ir15 but it is invalid because it is missing fqdn
+	ir14 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "invalidParent",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Delegate: ingressroutev1.Delegate{
+					Name: "validChild",
+				},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []*ingressroutev1.IngressRoute
 		want []ingressrouteStatus
@@ -3697,6 +3714,21 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{object: ir10, status: "valid", msg: "valid IngressRoute"},
 			},
 		},
+		"invalid parent orphans children": {
+			objs: []*ingressroutev1.IngressRoute{ir14, ir11},
+			want: []ingressrouteStatus{
+				{object: ir14, status: "invalid", msg: "Spec.VirtualHost.Fqdn must be specified"},
+				{object: ir11, status: "orphaned", msg: "this IngressRoute is not part of a delegation chain from a root IngressRoute"},
+			},
+		},
+		"multi-parent children is not orphaned when one of the parents is invalid": {
+			objs: []*ingressroutev1.IngressRoute{ir14, ir11, ir10},
+			want: []ingressrouteStatus{
+				{object: ir14, status: "invalid", msg: "Spec.VirtualHost.Fqdn must be specified"},
+				{object: ir11, status: "valid", msg: "valid IngressRoute"},
+				{object: ir10, status: "valid", msg: "valid IngressRoute"},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -3707,8 +3739,20 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				d.Insert(o)
 			}
 			_, got := d.recompute()
-			if !reflect.DeepEqual(tc.want, got) {
-				t.Errorf("expected:\n%v\ngot:\n%v", tc.want, got)
+			if len(tc.want) != len(got) {
+				t.Fatalf("expected %d statuses, but got %d", len(tc.want), len(got))
+			}
+			for _, ex := range tc.want {
+				var found bool
+				for _, g := range got {
+					if reflect.DeepEqual(ex, g) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Fatalf("expected to find:\n%v\nbut did not find it in:\n%v", ex, got)
+				}
 			}
 		})
 	}
