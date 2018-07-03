@@ -230,21 +230,20 @@ func prefixmatch(prefix string) route.RouteMatch {
 
 // action computes the cluster route action, a *route.Route_route for the
 // supplied ingress and backend.
-func actionroute(be []*dag.Service, ws bool, timeout time.Duration) *route.Route_Route {
+func actionroute(services []*dag.Service, ws bool, timeout time.Duration) *route.Route_Route {
 	totalWeight := 0
 	upstreams := []*route.WeightedCluster_ClusterWeight{}
 
 	// Loop over all the upstreams and add to slice
-	for _, i := range be {
+	for _, svc := range services {
 
-		// Create the empty upstream
-		upstream := route.WeightedCluster_ClusterWeight{
-			Name:   hashname(60, i.Namespace(), i.Name(), strconv.Itoa(int(i.Port))),
-			Weight: &types.UInt32Value{Value: uint32(i.Weight)},
-		}
+		// Create the upstream
+		upstreams = append(upstreams, &route.WeightedCluster_ClusterWeight{
+			Name:   hashname(60, svc.Namespace(), svc.Name(), strconv.Itoa(int(svc.Port))),
+			Weight: &types.UInt32Value{Value: uint32(svc.Weight)},
+		})
 
-   		totalWeight += i.Weight
-		upstreams = append(upstreams, &upstream)
+   		totalWeight += svc.Weight
 	}
 
 	// Check if no weights were defined, if not default to even distribution
@@ -252,7 +251,7 @@ func actionroute(be []*dag.Service, ws bool, timeout time.Duration) *route.Route
 		for _, u := range upstreams {
 			u.Weight.Value = 1
 		}
-		totalWeight = len(be)
+		totalWeight = len(services)
 	}
 
 	rr := route.Route_Route{
