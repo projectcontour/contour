@@ -67,6 +67,10 @@ type Service struct {
 	Port int `json:"port"`
 	// Weight defines percentage of traffic to balance traffic
 	Weight *int `json:"weight"`
+	// HealthCheck defines optional healthchecks on the upstream service
+	HealthCheck *HealthCheck `json:"lbHealthCheck"`
+	// LB Algorithm to apply (see https://github.com/heptio/contour/blob/master/design/ingressroute-design.md#load-balancing)
+	Strategy string `json:"strategy"`
 }
 
 // Delegate allows for passing delgating VHosts to other IngressRoutes
@@ -75,6 +79,24 @@ type Delegate struct {
 	Name string `json:"name"`
 	// Namespace of the IngressRoute
 	Namespace string `json:"namespace"`
+}
+
+// HealthCheck defines optional healthchecks on the upstream service
+type HealthCheck struct {
+	// HTTP endpoint used to perform health checks on upstream service
+	Path string `json:"path"`
+	// The value of the host header in the HTTP health check request.
+	// If left empty (default value), the name "contour-envoy-heathcheck"
+	// will be used.
+	Host string `json:"host"`
+	// The interval (seconds) between health checks
+	IntervalSeconds int64 `json:"intervalSeconds"`
+	// The time to wait (seconds) for a health check response
+	TimeoutSeconds int64 `json:"timeoutSeconds"`
+	// The number of unhealthy health checks required before a host is marked unhealthy
+	UnhealthyThresholdCount uint32 `json:"unhealthyThresholdCount"`
+	// The number of healthy health checks required before a host is marked healthy
+	HealthyThresholdCount uint32 `json:"healthyThresholdCount"`
 }
 
 // +genclient

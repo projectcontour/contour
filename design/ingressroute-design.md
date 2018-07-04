@@ -113,6 +113,7 @@ spec:
       weight: 50
       lbHealthCheck (Optional):
         path: /healthz # HTTP endpoint used to perform health checks on upstream service (e.g. /healthz). It expects a 200 response if the host is healthy. The upstream host can return 503 if it wants to immediately notify downstream hosts to no longer forward traffic to it.
+        host: "contour-envoy-heathcheck" # The value of the host header in the HTTP health check request. If left empty (default value), the name "contour-envoy-heathcheck" will be used.
         intervalSeconds: 30 # The interval (seconds) between health checks. Defaults to 5 seconds if not set.
         timeoutSeconds: 60 # The time to wait (seconds) for a health check response. If the timeout is reached the health check attempt will be considered a failure. Defaults to 2 seconds if not set.
         unhealthyThresholdCount: 3 # The number of unhealthy health checks required before a host is marked unhealthy. Note that for http health checking if a host responds with 503 this threshold is ignored and the host is considered unhealthy immediately. Defaults to 3 if not defined.

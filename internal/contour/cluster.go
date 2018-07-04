@@ -25,7 +25,18 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/gogo/protobuf/types"
+	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
+)
+
+const (
+	// Default healthcheck / lb algorithm values
+	hcTimeout            = 2 * time.Second
+	hcInterval           = 10 * time.Second
+	hcUnhealthyThreshold = 3
+	hcHealthyThreshold   = 2
+	hcHost               = "contour-envoy-heathcheck"
 )
 
 // ClusterCache manages the contents of the gRPC CDS cache.
@@ -107,6 +118,7 @@ func (v *clusterVisitor) Visit() map[string]*v2.Cluster {
 }
 
 func (v *clusterVisitor) visit(vertex dag.Vertex) {
+
 	if service, ok := vertex.(*dag.Service); ok {
 		v.edscluster(service)
 	}
@@ -126,7 +138,12 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 		Type:             v2.Cluster_EDS,
 		EdsClusterConfig: edsconfig("contour", servicename(svc.Namespace(), svc.Name(), svc.ServicePort.Name)),
 		ConnectTimeout:   250 * time.Millisecond,
-		LbPolicy:         v2.Cluster_ROUND_ROBIN,
+		LbPolicy:         edslbstrategy(svc.LoadBalancerStrategy),
+	}
+
+	// Set HealthCheck if requested
+	if svc.HealthCheck != nil {
+		c.HealthChecks = edshealthcheck(svc.HealthCheck)
 	}
 
 	/*
@@ -158,6 +175,65 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 		c.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
 	}
 	v.clusters[c.Name] = c
+}
+
+func edslbstrategy(lbStrategy string) v2.Cluster_LbPolicy {
+	switch lbStrategy {
+	case "WeightedLeastRequest":
+		return v2.Cluster_LEAST_REQUEST
+	case "RingHash":
+		return v2.Cluster_RING_HASH
+	case "Maglev":
+		return v2.Cluster_MAGLEV
+	case "Random":
+		return v2.Cluster_RANDOM
+	default:
+		return v2.Cluster_ROUND_ROBIN
+	}
+}
+
+func edshealthcheck(hc *ingressroutev1.HealthCheck) []*core.HealthCheck {
+	host := hcHost
+	if hc.Host != "" {
+		host = hc.Host
+	}
+
+	// TODO(dfc) why do we need to specify our own default, what is the default
+	// that envoy applies if these fields are left nil?
+	return []*core.HealthCheck{{
+		Timeout:            secondsOrDefault(hc.TimeoutSeconds, hcTimeout),
+		Interval:           secondsOrDefault(hc.IntervalSeconds, hcInterval),
+		UnhealthyThreshold: countOrDefault(hc.UnhealthyThresholdCount, hcUnhealthyThreshold),
+		HealthyThreshold:   countOrDefault(hc.HealthyThresholdCount, hcHealthyThreshold),
+		HealthChecker: &core.HealthCheck_HttpHealthCheck_{
+			HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
+				Path: hc.Path,
+				Host: host,
+			},
+		},
+	}}
+}
+
+func secondsOrDefault(seconds int64, def time.Duration) *types.Duration {
+	if seconds != 0 {
+		return &types.Duration{
+			Seconds: seconds,
+		}
+	}
+	return &types.Duration{
+		Seconds: int64(def / time.Second),
+	}
+}
+
+func countOrDefault(count, def uint32) *types.UInt32Value {
+	if count != 0 {
+		return &types.UInt32Value{
+			Value: count,
+		}
+	}
+	return &types.UInt32Value{
+		Value: def,
+	}
 }
 
 func edsconfig(source, name string) *v2.Cluster_EdsClusterConfig {

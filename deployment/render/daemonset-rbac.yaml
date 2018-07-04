@@ -110,6 +110,8 @@ spec:
                             - RoundRobin
                             - WeightedLeastRequest
                             - Random
+                            - RingHash
+                            - Maglev
                         lbHealthCheck:
                           type: object
                           required:

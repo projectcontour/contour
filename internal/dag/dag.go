@@ -310,7 +310,7 @@ func (d *DAG) recompute() dag {
 			}
 			m := meta{name: ing.Spec.Backend.ServiceName, namespace: ing.Namespace}
 			if s := service(m, ing.Spec.Backend.ServicePort); s != nil {
-				r.addService(s)
+				r.addService(s, nil, "")
 			}
 			if httpAllowed {
 				vhost("*", 80).routes[r.path] = r
@@ -338,7 +338,7 @@ func (d *DAG) recompute() dag {
 
 				m := meta{name: rule.IngressRuleValue.HTTP.Paths[n].Backend.ServiceName, namespace: ing.Namespace}
 				if s := service(m, rule.IngressRuleValue.HTTP.Paths[n].Backend.ServicePort); s != nil {
-					r.addService(s)
+					r.addService(s, nil, "")
 				}
 				if httpAllowed {
 					vhost(host, 80).routes[r.path] = r
@@ -410,7 +410,7 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 			for _, s := range route.Services {
 				m := meta{name: s.Name, namespace: ir.Namespace}
 				if svc := service(m, intstr.FromInt(s.Port)); svc != nil {
-					r.addService(svc)
+					r.addService(svc, s.HealthCheck, s.Strategy)
 				}
 			}
 			vhost(host, 80).routes[r.path] = r
@@ -491,10 +491,12 @@ type Route struct {
 
 func (r *Route) Prefix() string { return r.path }
 
-func (r *Route) addService(s *Service) {
+func (r *Route) addService(s *Service, hc *ingressroutev1.HealthCheck, lbStrat string) {
 	if r.services == nil {
 		r.services = make(map[portmeta]*Service)
 	}
+	s.HealthCheck = hc
+	s.LoadBalancerStrategy = lbStrat
 	r.services[s.toMeta()] = s
 }
 
@@ -566,6 +568,9 @@ type Service struct {
 
 	// Protocol is the layer 7 protocol of this service
 	Protocol string
+
+	HealthCheck          *ingressroutev1.HealthCheck
+	LoadBalancerStrategy string
 }
 
 func (s *Service) Name() string       { return s.object.Name }
