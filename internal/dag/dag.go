@@ -193,10 +193,16 @@ func (sm *serviceMap) insert(svc *v1.Service, port *v1.ServicePort) *Service {
 	if protocol == "" {
 		protocol = up[strconv.Itoa(int(port.Port))]
 	}
+
 	s := &Service{
 		object:      svc,
 		ServicePort: port,
 		Protocol:    protocol,
+
+		MaxConnections:     parseAnnotation(svc.Annotations, annotationMaxConnections),
+		MaxPendingRequests: parseAnnotation(svc.Annotations, annotationMaxPendingRequests),
+		MaxRequests:        parseAnnotation(svc.Annotations, annotationMaxRequests),
+		MaxRetries:         parseAnnotation(svc.Annotations, annotationMaxRetries),
 	}
 	sm._services[s.toMeta()] = s
 	return s
@@ -571,6 +577,24 @@ type Service struct {
 
 	HealthCheck          *ingressroutev1.HealthCheck
 	LoadBalancerStrategy string
+
+	// Curcuit breaking limits
+
+	// Max connections is maximum number of connections
+	// that Envoy will make to the upstream cluster.
+	MaxConnections int
+
+	// MaxPendingRequests is maximum number of pending
+	// requests that Envoy will allow to the upstream cluster.
+	MaxPendingRequests int
+
+	// MaxRequests is the maximum number of parallel requests that
+	// Envoy will make to the upstream cluster.
+	MaxRequests int
+
+	// MaxRetries is the maximum number of parallel retries that
+	// Envoy will allow to the upstream cluster.
+	MaxRetries int
 }
 
 func (s *Service) Name() string       { return s.object.Name }

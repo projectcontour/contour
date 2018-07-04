@@ -684,6 +684,28 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+	// s1b carries all four ingress annotations{
+	s1b := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/max-connections":      "9000",
+				"contour.heptio.com/max-pending-requests": "4096",
+				"contour.heptio.com/max-requests":         "404",
+				"contour.heptio.com/max-retries":          "7",
+			},
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
 	// s2 is like s1 but with a different name
 	s2 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1943,6 +1965,34 @@ func TestDAGInsert(t *testing.T) {
 									object:      s3b,
 									Protocol:    "h2",
 									ServicePort: &s3b.Spec.Ports[0],
+								},
+							),
+						},
+					),
+				},
+			},
+		},
+		"insert ingress then service w/ upstream annotations": {
+			objs: []interface{}{
+				i1,
+				s1b,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "*",
+					routes: routemap(
+						&Route{
+							path:   "/",
+							object: i1,
+							services: servicemap(
+								&Service{
+									object:             s1b,
+									ServicePort:        &s1b.Spec.Ports[0],
+									MaxConnections:     9000,
+									MaxPendingRequests: 4096,
+									MaxRequests:        404,
+									MaxRetries:         7,
 								},
 							),
 						},
