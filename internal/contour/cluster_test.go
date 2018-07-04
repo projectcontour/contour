@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
@@ -610,6 +611,57 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
+		"circuirbreaker annotations": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromString("http"),
+						},
+					},
+				},
+				serviceWithAnnotations(
+					"default",
+					"kuard",
+					map[string]string{
+						"contour.heptio.com/max-connections":      "9000",
+						"contour.heptio.com/max-pending-requests": "4096",
+						"contour.heptio.com/max-requests":         "404",
+						"contour.heptio.com/max-retries":          "7",
+					},
+					v1.ServicePort{
+						Protocol: "TCP",
+						Name:     "http",
+						Port:     80,
+					},
+				),
+			},
+			want: clustermap(
+				&v2.Cluster{
+					Name: "default/kuard/80",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/kuard/http",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					CircuitBreakers: &cluster.CircuitBreakers{
+						Thresholds: []*cluster.CircuitBreakers_Thresholds{{
+							MaxConnections:     uint32t(9000),
+							MaxPendingRequests: uint32t(4096),
+							MaxRequests:        uint32t(404),
+							MaxRetries:         uint32t(7),
+						}},
+					},
+				},
+			),
+		},
 	}
 
 	for name, tc := range tests {
@@ -629,6 +681,10 @@ func TestClusterVisit(t *testing.T) {
 			}
 		})
 	}
+}
+
+func uint32t(v int) *types.UInt32Value {
+	return &types.UInt32Value{Value: uint32(v)}
 }
 
 func service(ns, name string, ports ...v1.ServicePort) *v1.Service {

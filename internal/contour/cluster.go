@@ -21,10 +21,10 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/gogo/protobuf/proto"
-
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
@@ -146,22 +146,16 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 		c.HealthChecks = edshealthcheck(svc.HealthCheck)
 	}
 
-	/*
-		thresholds := &cluster.CircuitBreakers_Thresholds{
-			MaxConnections:     parseAnnotationUInt32(svc.Annotations, annotationMaxConnections),
-			MaxPendingRequests: parseAnnotationUInt32(svc.Annotations, annotationMaxPendingRequests),
-			MaxRequests:        parseAnnotationUInt32(svc.Annotations, annotationMaxRequests),
-			MaxRetries:         parseAnnotationUInt32(svc.Annotations, annotationMaxRetries),
+	if svc.MaxConnections > 0 || svc.MaxPendingRequests > 0 || svc.MaxRequests > 0 || svc.MaxRetries > 0 {
+		c.CircuitBreakers = &cluster.CircuitBreakers{
+			Thresholds: []*cluster.CircuitBreakers_Thresholds{{
+				MaxConnections:     uint32OrNil(svc.MaxConnections),
+				MaxPendingRequests: uint32OrNil(svc.MaxPendingRequests),
+				MaxRequests:        uint32OrNil(svc.MaxRequests),
+				MaxRetries:         uint32OrNil(svc.MaxRetries),
+			}},
 		}
-		if thresholds.MaxConnections != nil || thresholds.MaxPendingRequests != nil ||
-			thresholds.MaxRequests != nil || thresholds.MaxRetries != nil {
-			c.CircuitBreakers = &cluster.CircuitBreakers{
-				Thresholds: []*cluster.CircuitBreakers_Thresholds{
-					thresholds,
-				},
-			}
-		}
-	*/
+	}
 
 	switch svc.Protocol {
 	case "h2":
@@ -233,6 +227,16 @@ func countOrDefault(count, def uint32) *types.UInt32Value {
 	}
 	return &types.UInt32Value{
 		Value: def,
+	}
+}
+
+// uint32OrNil returns a *types.UInt32Value containing the v or nil if v is zero.
+func uint32OrNil(v int) *types.UInt32Value {
+	switch v {
+	case 0:
+		return nil
+	default:
+		return &types.UInt32Value{Value: uint32(v)}
 	}
 }
 
