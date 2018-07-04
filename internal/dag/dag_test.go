@@ -3681,7 +3681,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 		"invalid weight in service": {
 			objs: []*ingressroutev1.IngressRoute{ir5},
-			want: []ingressrouteStatus{{object: ir5, status: "invalid", msg: `route "/foo": service "home": weight must be greater than zero`}},
+			want: []ingressrouteStatus{{object: ir5, status: "invalid", msg: `route "/foo": service "home": weight must be greater than or equal to zero`}},
 		},
 		"root ingressroute does not specify FQDN": {
 			objs: []*ingressroutev1.IngressRoute{ir13},

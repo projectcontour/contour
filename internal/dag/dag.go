@@ -444,7 +444,7 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 					return []ingressrouteStatus{{object: ir, status: "invalid", msg: fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", route.Match, s.Name)}}
 				}
 				if s.Weight != nil && *s.Weight < 0 {
-					return []ingressrouteStatus{{object: ir, status: "invalid", msg: fmt.Sprintf("route %q: service %q: weight must be greater than zero", route.Match, s.Name)}}
+					return []ingressrouteStatus{{object: ir, status: "invalid", msg: fmt.Sprintf("route %q: service %q: weight must be greater than or equal to zero", route.Match, s.Name)}}
 				}
 				m := meta{name: s.Name, namespace: ir.Namespace}
 				if svc := service(m, intstr.FromInt(s.Port)); svc != nil {
