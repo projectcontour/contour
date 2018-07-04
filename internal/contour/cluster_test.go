@@ -611,7 +611,7 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
-		"circuirbreaker annotations": {
+		"circuitbreaker annotations": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
