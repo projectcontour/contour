@@ -145,12 +145,9 @@ func (d *DAG) Recompute() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	version := d.dag.version
-	var status []ingressrouteStatus
-	d.dag, status = d.recompute()
+	// TODO(abrand): Handle status returned by recompute
+	d.dag, _ = d.recompute()
 	d.dag.version = version + 1
-	for _, s := range status {
-		fmt.Printf("%v\n", s)
-	}
 }
 
 // serviceMap memoise access to a service map, built
@@ -393,9 +390,8 @@ func (d *DAG) recompute() (dag, []ingressrouteStatus) {
 			}
 		}
 
-		var visited []*ingressroutev1.IngressRoute
 		prefixMatch := ""
-		ve := d.processIngressRoute(ir, prefixMatch, visited, host, service, vhost, orphaned)
+		ve := d.processIngressRoute(ir, prefixMatch, nil, host, service, vhost, orphaned)
 		status = append(status, ve...)
 	}
 
