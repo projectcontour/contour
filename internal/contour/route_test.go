@@ -22,7 +22,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
-	"github.com/heptio/contour/internal/dag"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -769,22 +768,109 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 		},
+		"incorrect ingress class": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "incorrect",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"kubernetes.io/ingress.class": "nginx",
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromInt(8080),
+						},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       8080,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: map[string]*v2.RouteConfiguration{
+				"ingress_http": &v2.RouteConfiguration{
+					Name: "ingress_http", // expected to be empty, the ingress class is ignored
+				},
+				"ingress_https": &v2.RouteConfiguration{
+					Name: "ingress_https", // expected to be empty, the ingress class is ignored
+				},
+			},
+		},
+		"explicit ingress class": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "incorrect",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"kubernetes.io/ingress.class": new(DAGAdapter).ingressClass(),
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromInt(8080),
+						},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       8080,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: map[string]*v2.RouteConfiguration{
+				"ingress_http": &v2.RouteConfiguration{
+					Name: "ingress_http",
+					VirtualHosts: []route.VirtualHost{{
+						Name:    "*",
+						Domains: []string{"*"},
+						Routes: []route.Route{{
+							Match:  prefixmatch("/"),
+							Action: routeroute("default/kuard/8080"),
+						}},
+					}},
+				},
+				"ingress_https": &v2.RouteConfiguration{
+					Name: "ingress_https",
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var d dag.DAG
+			var d DAGAdapter
 			for _, o := range tc.objs {
-				d.Insert(o)
+				d.OnAdd(o)
 			}
-			d.Recompute()
 			rc := tc.RouteCache
 			if rc == nil {
 				rc = new(RouteCache)
 			}
 			v := routeVisitor{
 				RouteCache: rc,
-				DAG:        &d,
+				DAG:        &d.DAG,
 			}
 			got := v.Visit()
 			if !reflect.DeepEqual(tc.want, got) {

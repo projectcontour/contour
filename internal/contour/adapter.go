@@ -18,6 +18,7 @@ package contour
 
 import (
 	"github.com/heptio/contour/internal/dag"
+	"k8s.io/api/extensions/v1beta1"
 )
 
 const DEFAULT_INGRESS_CLASS = "contour"
@@ -36,6 +37,9 @@ type DAGAdapter struct {
 }
 
 func (d *DAGAdapter) OnAdd(obj interface{}) {
+	if !d.validIngressClass(obj) {
+		return
+	}
 	d.ResourceEventHandler.OnAdd(obj)
 	d.updateListeners()
 	d.updateRoutes()
@@ -43,17 +47,52 @@ func (d *DAGAdapter) OnAdd(obj interface{}) {
 }
 
 func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
-	d.ResourceEventHandler.OnUpdate(oldObj, newObj)
+	oldValid, newValid := d.validIngressClass(oldObj), d.validIngressClass(newObj)
+	switch {
+	case !oldValid && !newValid:
+		// the old object did not match the ingress class, nor does
+		// the new object, nothing to do
+	case oldValid && !newValid:
+		// if the old object was valid, and the replacement is not, then we need
+		// to remove the old object and _not_ insert the new object.
+		d.OnDelete(oldObj)
+	default:
+		d.ResourceEventHandler.OnUpdate(oldObj, newObj)
+		d.updateListeners()
+		d.updateRoutes()
+		d.updateClusters()
+	}
+}
+
+func (d *DAGAdapter) OnDelete(obj interface{}) {
+	// no need to check ingress class here
+	d.ResourceEventHandler.OnDelete(obj)
 	d.updateListeners()
 	d.updateRoutes()
 	d.updateClusters()
 }
 
-func (d *DAGAdapter) OnDelete(obj interface{}) {
-	d.ResourceEventHandler.OnDelete(obj)
-	d.updateListeners()
-	d.updateRoutes()
-	d.updateClusters()
+// validIngressClass returns true iff:
+//
+// 1. obj is not of type *v1beta1.Ingress.
+// 2. obj has no ingress.class annotation.
+// 2. obj's ingress.class annotation matches d.IngressClass.
+func (d *DAGAdapter) validIngressClass(obj interface{}) bool {
+	i, ok := obj.(*v1beta1.Ingress)
+	if !ok {
+		return true
+	}
+	class, ok := i.Annotations["kubernetes.io/ingress.class"]
+	return !ok || class == d.ingressClass()
+}
+
+// ingressClass returns the IngressClass
+// or DEFAULT_INGRESS_CLASS if not configured.
+func (d *DAGAdapter) ingressClass() string {
+	if d.IngressClass != "" {
+		return d.IngressClass
+	}
+	return DEFAULT_INGRESS_CLASS
 }
 
 func (d *DAGAdapter) updateListeners() {

@@ -799,7 +799,7 @@ func TestIssue257(t *testing.T) {
 	// kind: Ingress
 	// metadata:
 	//   name: kuard-ing
-	//   labels:
+	//   labhls:
 	//     app: kuard
 	//   annotations:
 	//     kubernetes.io/ingress.class: contour
@@ -1226,6 +1226,20 @@ func TestRDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 	})
 	defer done()
 
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
 	// ir1 is an ingressroute that is not in the root namespaces
 	ir1 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1257,6 +1271,98 @@ func TestRDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 		TypeUrl: routeType,
 		Nonce:   "0",
 	}, streamRDS(t, cc, "ingress_http"))
+}
+
+// Test DAGAdapter.IngressClass setting works, this could be done
+// in LDS or RDS, or even CDS, but this test mirrors the place it's
+// tested in internal/contour/route_test.go
+func TestRDSIngressClass(t *testing.T) {
+	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
+		da.IngressClass = "linkerd"
+	})
+	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-ing",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "kuard",
+				ServicePort: intstr.FromInt(8080),
+			},
+		},
+	}
+	rh.OnAdd(i1)
+	assertRDS(t, cc, []route.VirtualHost{{
+		Name:    "*",
+		Domains: []string{"*"},
+		Routes: []route.Route{{
+			Match:  prefixmatch("/"),
+			Action: routecluster("default/kuard/8080"),
+		}},
+	}}, nil)
+
+	i2 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-ing",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "contour",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "kuard",
+				ServicePort: intstr.FromInt(8080),
+			},
+		},
+	}
+	rh.OnUpdate(i1, i2)
+	assertRDS(t, cc, nil, nil)
+
+	i3 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-ing",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "linkerd",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "kuard",
+				ServicePort: intstr.FromInt(8080),
+			},
+		},
+	}
+	rh.OnUpdate(i2, i3)
+	assertRDS(t, cc, []route.VirtualHost{{
+		Name:    "*",
+		Domains: []string{"*"},
+		Routes: []route.Route{{
+			Match:  prefixmatch("/"),
+			Action: routecluster("default/kuard/8080"),
+		}},
+	}}, nil)
+
+	rh.OnUpdate(i3, i2)
+	assertRDS(t, cc, nil, nil)
 }
 
 func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []route.VirtualHost) {

@@ -96,7 +96,6 @@ func (d *DAG) Insert(obj interface{}) {
 			d.ingresses = make(map[meta]*v1beta1.Ingress)
 		}
 		d.ingresses[m] = obj
-
 	case *ingressroutev1.IngressRoute:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
 		if d.ingressroutes == nil {
