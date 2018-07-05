@@ -154,7 +154,9 @@ func (in *Route) DeepCopyInto(out *Route) {
 	if in.Services != nil {
 		in, out := &in.Services, &out.Services
 		*out = make([]Service, len(*in))
-		copy(*out, *in)
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	out.Delegate = in.Delegate
 	return
