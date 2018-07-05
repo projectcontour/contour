@@ -50,7 +50,7 @@ spec:
                 - RoundRobin
                 - WeightedLeastRequest
                 - Random
-            lbHealthCheck:
+            healthCheck:
               type: object
               required:
                 - path
@@ -109,7 +109,7 @@ spec:
                             - Random
                             - RingHash
                             - Maglev
-                        lbHealthCheck:
+                        healthCheck:
                           type: object
                           required:
                             - path

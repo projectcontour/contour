@@ -12,7 +12,7 @@ spec:
       services: 
         - name: s1-health
           port: 80
-          lbHealthCheck:
+          healthCheck:
             path: /healthy
             intervalSeconds: 5
             timeoutSeconds: 2

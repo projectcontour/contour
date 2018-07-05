@@ -74,7 +74,7 @@ spec:
       secretName: google-tls
       # other properties like cipher suites may be added later
   strategy: RoundRobin # (Optional) LB Algorithm to apply to all services, defaults for all services
-  lbHealthCheck (Optional):
+  healthCheck (Optional):
     path: /healthz # HTTP endpoint used to perform health checks on upstream service (e.g. /healthz). It expects a 200 response if the host is healthy. The upstream host can return 503 if it wants to immediately notify downstream hosts to no longer forward traffic to it.
     intervalSeconds: 30 # The interval (seconds) between health checks. Defaults to 5 seconds if not set.
     timeoutSeconds: 60 # The time to wait (seconds) for a health check response. If the timeout is reached the health check attempt will be considered a failure. Defaults to 2 seconds if not set.
@@ -111,7 +111,7 @@ spec:
     - name: ads-blue
       port: 9090
       weight: 50
-      lbHealthCheck (Optional):
+      healthCheck (Optional):
         path: /healthz # HTTP endpoint used to perform health checks on upstream service (e.g. /healthz). It expects a 200 response if the host is healthy. The upstream host can return 503 if it wants to immediately notify downstream hosts to no longer forward traffic to it.
         host: "contour-envoy-heathcheck" # The value of the host header in the HTTP health check request. If left empty (default value), the name "contour-envoy-heathcheck" will be used.
         intervalSeconds: 30 # The interval (seconds) between health checks. Defaults to 5 seconds if not set.
