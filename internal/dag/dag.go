@@ -429,7 +429,7 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 		// base case: The route points to services, so we add them to the vhost
 		if len(route.Services) > 0 {
 			if !matchesPathPrefix(route.Match, prefixMatch) {
-				return []ingressrouteStatus{{object: ir, status: "invalid", msg: "the path prefix does not match the parent's path prefix"}}
+				return []ingressrouteStatus{{object: ir, status: "invalid", msg: fmt.Sprintf("the path prefix %q does not match the parent's path prefix %q", route.Match, prefixMatch)}}
 			}
 			r := &Route{
 				path:   route.Match,

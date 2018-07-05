@@ -3674,7 +3674,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		"delegated route's match prefix does not match parent's prefix": {
 			objs: []*ingressroutev1.IngressRoute{ir1, ir4},
 			want: []ingressrouteStatus{
-				{object: ir4, status: "invalid", msg: "the path prefix does not match the parent's path prefix"},
+				{object: ir4, status: "invalid", msg: `the path prefix "/doesnotmatch" does not match the parent's path prefix "/prefix"`},
 				{object: ir1, status: "valid", msg: "valid IngressRoute"},
 			},
 		},
