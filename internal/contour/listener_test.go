@@ -22,7 +22,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
-	"github.com/heptio/contour/internal/dag"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -417,9 +416,9 @@ func TestListenerVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var d dag.DAG
+			var d DAGAdapter
 			for _, o := range tc.objs {
-				d.Insert(o)
+				d.OnAdd(o)
 			}
 			d.Recompute()
 			lc := tc.ListenerCache
@@ -428,7 +427,7 @@ func TestListenerVisit(t *testing.T) {
 			}
 			v := listenerVisitor{
 				ListenerCache: lc,
-				DAG:           &d,
+				DAG:           &d.DAG,
 			}
 			got := v.Visit()
 			if !reflect.DeepEqual(tc.want, got) {
