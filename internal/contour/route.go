@@ -243,8 +243,11 @@ func actionroute(services []*dag.Service, ws bool, timeout time.Duration) *route
 			Weight: &types.UInt32Value{Value: uint32(svc.Weight)},
 		})
 
-   		totalWeight += svc.Weight
+		totalWeight += svc.Weight
 	}
+
+	// sort upstreams by name to keep the list stable
+	sort.Stable(clusterWeightByName(upstreams))
 
 	// Check if no weights were defined, if not default to even distribution
 	if totalWeight == 0 {
@@ -283,6 +286,12 @@ func actionroute(services []*dag.Service, ws bool, timeout time.Duration) *route
 
 	return &rr
 }
+
+type clusterWeightByName []*route.WeightedCluster_ClusterWeight
+
+func (c clusterWeightByName) Len() int           { return len(c) }
+func (c clusterWeightByName) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
+func (c clusterWeightByName) Less(i, j int) bool { return c[i].Name < c[j].Name }
 
 // hashname takes a lenth l and a varargs of strings s and returns a string whose length
 // which does not exceed l. Internally s is joined with strings.Join(s, "/"). If the
