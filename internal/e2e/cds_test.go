@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/gogo/protobuf/types"
 	"google.golang.org/grpc"
@@ -467,6 +468,127 @@ func TestCDSResourceFiltering(t *testing.T) {
 		TypeUrl:     clusterType,
 		Nonce:       "0",
 	}, streamCDS(t, cc, "default/httpbin/9000"))
+}
+
+func TestClusterCircuitbreakerAnnotations(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "kuard",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "kuard",
+				ServicePort: intstr.FromInt(8080),
+			},
+		},
+	}
+	rh.OnAdd(i1)
+
+	s1 := serviceWithAnnotations(
+		"default",
+		"kuard",
+		map[string]string{
+			"contour.heptio.com/max-connections":      "9000",
+			"contour.heptio.com/max-pending-requests": "4096",
+			"contour.heptio.com/max-requests":         "404",
+			"contour.heptio.com/max-retries":          "7",
+		},
+		v1.ServicePort{
+			Protocol:   "TCP",
+			Port:       8080,
+			TargetPort: intstr.FromInt(8080),
+		},
+	)
+	rh.OnAdd(s1)
+
+	// check that it's been translated correctly.
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.Cluster{
+				Name: "default/kuard/8080",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+					ServiceName: "default/kuard",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				CircuitBreakers: &envoy_cluster.CircuitBreakers{
+					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
+						MaxConnections:     uint32t(9000),
+						MaxPendingRequests: uint32t(4096),
+						MaxRequests:        uint32t(404),
+						MaxRetries:         uint32t(7),
+					}},
+				},
+			}),
+		},
+		TypeUrl: clusterType,
+		Nonce:   "0",
+	}, streamCDS(t, cc))
+
+	// update s1 with slightly weird values
+	s2 := serviceWithAnnotations(
+		"default",
+		"kuard",
+		map[string]string{
+			"contour.heptio.com/max-pending-requests": "9999",
+			"contour.heptio.com/max-requests":         "1e6",
+			"contour.heptio.com/max-retries":          "0",
+		},
+		v1.ServicePort{
+			Protocol:   "TCP",
+			Port:       8080,
+			TargetPort: intstr.FromInt(8080),
+		},
+	)
+	rh.OnUpdate(s1, s2)
+
+	// check that it's been translated correctly.
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.Cluster{
+				Name: "default/kuard/8080",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+					ServiceName: "default/kuard",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				CircuitBreakers: &envoy_cluster.CircuitBreakers{
+					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
+						MaxPendingRequests: uint32t(9999),
+					}},
+				},
+			}),
+		},
+		TypeUrl: clusterType,
+		Nonce:   "0",
+	}, streamCDS(t, cc))
+}
+
+func uint32t(v int) *types.UInt32Value {
+	return &types.UInt32Value{Value: uint32(v)}
+}
+
+func serviceWithAnnotations(ns, name string, annotations map[string]string, ports ...v1.ServicePort) *v1.Service {
+	return &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   ns,
+			Annotations: annotations,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: ports,
+		},
+	}
 }
 
 func streamCDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {

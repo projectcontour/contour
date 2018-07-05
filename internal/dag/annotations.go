@@ -27,9 +27,13 @@ const (
 	// set docs/annotations.md for details of how these annotations
 	// are applied by Contour.
 
-	annotationRequestTimeout   = "contour.heptio.com/request-timeout"
-	annotationWebsocketRoutes  = "contour.heptio.com/websocket-routes"
-	annotationUpstreamProtocol = "contour.heptio.com/upstream-protocol"
+	annotationRequestTimeout     = "contour.heptio.com/request-timeout"
+	annotationWebsocketRoutes    = "contour.heptio.com/websocket-routes"
+	annotationUpstreamProtocol   = "contour.heptio.com/upstream-protocol"
+	annotationMaxConnections     = "contour.heptio.com/max-connections"
+	annotationMaxPendingRequests = "contour.heptio.com/max-pending-requests"
+	annotationMaxRequests        = "contour.heptio.com/max-requests"
+	annotationMaxRetries         = "contour.heptio.com/max-retries"
 
 	// By default envoy applies a 15 second timeout to all backend requests.
 	// The explicit value 0 turns off the timeout, implying "never time out"
@@ -62,6 +66,13 @@ func parseAnnotationTimeout(annotations map[string]string, annotation string) ti
 		return infiniteTimeout
 	}
 	return timeoutParsed
+}
+
+// parseAnnotation parses the annotation map for the supplied key.
+// If the value is not present, or malformed, then zero is returned.
+func parseAnnotation(annotations map[string]string, annotation string) int {
+	v, _ := strconv.ParseInt(annotations[annotation], 10, 32)
+	return int(v)
 }
 
 // parseAnnotationUint32 parsers the annotation map for the supplied annotation key.
