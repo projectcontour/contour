@@ -315,7 +315,7 @@ func (d *DAG) recompute() dag {
 			}
 			m := meta{name: ing.Spec.Backend.ServiceName, namespace: ing.Namespace}
 			if s := service(m, ing.Spec.Backend.ServicePort); s != nil {
-				r.addService(s, nil, "")
+				r.addService(s, nil, "", 0)
 			}
 			if httpAllowed {
 				vhost("*", 80).routes[r.path] = r
@@ -343,7 +343,7 @@ func (d *DAG) recompute() dag {
 
 				m := meta{name: rule.IngressRuleValue.HTTP.Paths[n].Backend.ServiceName, namespace: ing.Namespace}
 				if s := service(m, rule.IngressRuleValue.HTTP.Paths[n].Backend.ServicePort); s != nil {
-					r.addService(s, nil, "")
+					r.addService(s, nil, "", s.Weight)
 				}
 				if httpAllowed {
 					vhost(host, 80).routes[r.path] = r
@@ -395,6 +395,7 @@ func (d *DAG) recompute() dag {
 }
 
 func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited map[meta]bool, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost) {
+
 	// check if we have already visited this ingressroute. if we have, there is a cycle in the dag.
 	if visited[meta{name: ir.Name, namespace: ir.Namespace}] {
 		// TODO(abrand): Handle the cycle. Invalidate IngressRoute and set status?
@@ -415,7 +416,7 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 			for _, s := range route.Services {
 				m := meta{name: s.Name, namespace: ir.Namespace}
 				if svc := service(m, intstr.FromInt(s.Port)); svc != nil {
-					r.addService(svc, s.HealthCheck, s.Strategy)
+					r.addService(svc, s.HealthCheck, s.Strategy, s.Weight)
 				}
 			}
 			vhost(host, 80).routes[r.path] = r
@@ -496,12 +497,13 @@ type Route struct {
 
 func (r *Route) Prefix() string { return r.path }
 
-func (r *Route) addService(s *Service, hc *ingressroutev1.HealthCheck, lbStrat string) {
+func (r *Route) addService(s *Service, hc *ingressroutev1.HealthCheck, lbStrat string, weight int) {
 	if r.services == nil {
 		r.services = make(map[portmeta]*Service)
 	}
 	s.HealthCheck = hc
 	s.LoadBalancerStrategy = lbStrat
+	s.Weight = weight
 	r.services[s.toMeta()] = s
 }
 
@@ -564,12 +566,13 @@ type Vertex interface {
 	Visit(func(Vertex))
 }
 
-// Secret represents a K8s Sevice as a DAG vertex. A Serivce is
+// Service represents a K8s Sevice as a DAG vertex. A Service is
 // a leaf in the DAG.
 type Service struct {
 	object *v1.Service
 
 	*v1.ServicePort
+	Weight int
 
 	// Protocol is the layer 7 protocol of this service
 	Protocol string
