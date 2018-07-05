@@ -3467,7 +3467,6 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 	}
 
 	// ir5 is invalid because its service weight is less than zero
-	w := -10
 	ir5 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
@@ -3482,7 +3481,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				Services: []ingressroutev1.Service{{
 					Name:   "home",
 					Port:   8080,
-					Weight: &w,
+					Weight: -10,
 				}},
 			}},
 		},
