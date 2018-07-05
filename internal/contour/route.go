@@ -137,9 +137,7 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 					rr := route.Route{
 						Match: prefixmatch(r.Prefix()),
 						Action: actionroute(
-							svcs[0].Namespace(),
-							svcs[0].Name(),
-							int(svcs[0].Port), // TODO(dfc) support more than one weighted service
+							svcs,
 							r.Websocket,
 							r.Timeout),
 					}
@@ -185,9 +183,7 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 					vhost.Routes = append(vhost.Routes, route.Route{
 						Match: prefixmatch(r.Prefix()),
 						Action: actionroute(
-							svcs[0].Namespace(),
-							svcs[0].Name(),
-							int(svcs[0].Port),
+							svcs,
 							r.Websocket,
 							r.Timeout),
 					})
@@ -234,12 +230,42 @@ func prefixmatch(prefix string) route.RouteMatch {
 
 // action computes the cluster route action, a *route.Route_route for the
 // supplied ingress and backend.
-func actionroute(namespace, name string, port int, ws bool, timeout time.Duration) *route.Route_Route {
-	cluster := hashname(60, namespace, name, strconv.Itoa(port))
+func actionroute(services []*dag.Service, ws bool, timeout time.Duration) *route.Route_Route {
+	totalWeight := 0
+	upstreams := []*route.WeightedCluster_ClusterWeight{}
+
+	// Loop over all the upstreams and add to slice
+	for _, svc := range services {
+
+		// Create the upstream
+		upstreams = append(upstreams, &route.WeightedCluster_ClusterWeight{
+			Name:   hashname(60, svc.Namespace(), svc.Name(), strconv.Itoa(int(svc.Port))),
+			Weight: &types.UInt32Value{Value: uint32(svc.Weight)},
+		})
+
+		totalWeight += svc.Weight
+	}
+
+	// sort upstreams by name to keep the list stable
+	sort.Stable(clusterWeightByName(upstreams))
+
+	// Check if no weights were defined, if not default to even distribution
+	if totalWeight == 0 {
+		for _, u := range upstreams {
+			u.Weight.Value = 1
+		}
+		totalWeight = len(services)
+	}
+
 	rr := route.Route_Route{
 		Route: &route.RouteAction{
-			ClusterSpecifier: &route.RouteAction_Cluster{
-				Cluster: cluster,
+			ClusterSpecifier: &route.RouteAction_WeightedClusters{
+				WeightedClusters: &route.WeightedCluster{
+					Clusters: upstreams,
+					TotalWeight: &types.UInt32Value{
+						Value: uint32(totalWeight),
+					},
+				},
 			},
 		},
 	}
@@ -260,6 +286,12 @@ func actionroute(namespace, name string, port int, ws bool, timeout time.Duratio
 
 	return &rr
 }
+
+type clusterWeightByName []*route.WeightedCluster_ClusterWeight
+
+func (c clusterWeightByName) Len() int           { return len(c) }
+func (c clusterWeightByName) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
+func (c clusterWeightByName) Less(i, j int) bool { return c[i].Name < c[j].Name }
 
 // hashname takes a lenth l and a varargs of strings s and returns a string whose length
 // which does not exceed l. Internally s is joined with strings.Join(s, "/"). If the

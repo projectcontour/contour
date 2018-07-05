@@ -66,7 +66,7 @@ type Service struct {
 	// Port (defined as Integer) to proxy traffic to since a service can have multiple defined
 	Port int `json:"port"`
 	// Weight defines percentage of traffic to balance traffic
-	Weight *int `json:"weight"`
+	Weight int `json:"weight"`
 	// HealthCheck defines optional healthchecks on the upstream service
 	HealthCheck *HealthCheck `json:"lbHealthCheck"`
 	// LB Algorithm to apply (see https://github.com/heptio/contour/blob/master/design/ingressroute-design.md#load-balancing)

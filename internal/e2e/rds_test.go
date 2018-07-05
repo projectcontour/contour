@@ -1411,8 +1411,16 @@ func prefixmatch(prefix string) route.RouteMatch {
 func routecluster(cluster string) *route.Route_Route {
 	return &route.Route_Route{
 		Route: &route.RouteAction{
-			ClusterSpecifier: &route.RouteAction_Cluster{
-				Cluster: cluster,
+			ClusterSpecifier: &route.RouteAction_WeightedClusters{
+				WeightedClusters: &route.WeightedCluster{
+					Clusters: []*route.WeightedCluster_ClusterWeight{{
+						Name:   cluster,
+						Weight: &types.UInt32Value{Value: uint32(1)},
+					}},
+					TotalWeight: &types.UInt32Value{
+						Value: uint32(1),
+					},
+				},
 			},
 		},
 	}
