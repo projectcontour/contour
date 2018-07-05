@@ -68,7 +68,7 @@ type Service struct {
 	// Weight defines percentage of traffic to balance traffic
 	Weight int `json:"weight"`
 	// HealthCheck defines optional healthchecks on the upstream service
-	HealthCheck *HealthCheck `json:"lbHealthCheck"`
+	HealthCheck *HealthCheck `json:"healthCheck"`
 	// LB Algorithm to apply (see https://github.com/heptio/contour/blob/master/design/ingressroute-design.md#load-balancing)
 	Strategy string `json:"strategy"`
 }
