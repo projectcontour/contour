@@ -16,6 +16,7 @@ package e2e
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -615,6 +616,61 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 		TypeUrl: listenerType,
 		Nonce:   "0",
 	}, streamLDS(t, cc))
+}
+
+func TestLargeNumberOfIngressRoutes(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	stop := make(chan struct{})
+
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(s1)
+
+	go func() {
+		for i := 0; i < 10000; i++ {
+			rh.OnAdd(&ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      fmt.Sprintf("simple-%d", i),
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: &ingressroutev1.VirtualHost{Fqdn: fmt.Sprintf("example-%d.com", i)},
+					Routes: []ingressroutev1.Route{{
+						Match: "/",
+						Services: []ingressroutev1.Service{{
+							Name: "kuard",
+							Port: 80,
+						}},
+					}},
+				},
+			})
+		}
+		close(stop)
+	}()
+
+	for {
+		select {
+		case <-stop:
+			return
+		default:
+			streamRDS(t, cc)
+		}
+	}
+
 }
 
 func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
