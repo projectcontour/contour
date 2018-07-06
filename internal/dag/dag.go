@@ -16,6 +16,7 @@
 package dag
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -144,7 +145,8 @@ func (d *DAG) Recompute() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	version := d.dag.version
-	d.dag = d.recompute()
+	// TODO(abrand): Handle status returned by recompute
+	d.dag, _ = d.recompute()
 	d.dag.version = version + 1
 }
 
@@ -208,7 +210,7 @@ func (sm *serviceMap) insert(svc *v1.Service, port *v1.ServicePort) *Service {
 }
 
 // recompute builds a new *dag.dag.
-func (d *DAG) recompute() dag {
+func (d *DAG) recompute() (dag, []ingressrouteStatus) {
 	sm := serviceMap{
 		services: d.services,
 	}
@@ -356,18 +358,28 @@ func (d *DAG) recompute() dag {
 	}
 
 	// process ingressroute documents
+	var status []ingressrouteStatus
+	orphaned := make(map[meta]bool)
 	for _, ir := range d.ingressroutes {
 		if ir.Spec.VirtualHost == nil {
-			// delegate ingressroute, skip it
+			// delegate ingress route. mark as orphaned if we haven't reached it before.
+			if _, ok := orphaned[meta{name: ir.Name, namespace: ir.Namespace}]; !ok {
+				orphaned[meta{name: ir.Name, namespace: ir.Namespace}] = true
+			}
 			continue
 		}
 
 		// ensure root ingressroute lives in allowed namespace
 		if !d.rootAllowed(ir) {
+			status = append(status, ingressrouteStatus{object: ir, status: "invalid", msg: "root IngressRoute cannot be defined in this namespace"})
 			continue
 		}
 
 		host := ir.Spec.VirtualHost.Fqdn
+		if len(strings.TrimSpace(host)) == 0 {
+			status = append(status, ingressrouteStatus{object: ir, status: "invalid", msg: "Spec.VirtualHost.Fqdn must be specified"})
+			continue
+		}
 
 		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
 			// attach secrets to TLS enabled vhosts
@@ -378,9 +390,9 @@ func (d *DAG) recompute() dag {
 			}
 		}
 
-		visited := make(map[meta]bool)
 		prefixMatch := ""
-		d.processIngressRoute(ir, prefixMatch, visited, host, service, vhost)
+		ve := d.processIngressRoute(ir, prefixMatch, nil, host, service, vhost, orphaned)
+		status = append(status, ve...)
 	}
 
 	var _d dag
@@ -391,29 +403,42 @@ func (d *DAG) recompute() dag {
 		_d.roots = append(_d.roots, svh)
 	}
 
-	return _d
+	for meta, orph := range orphaned {
+		if orph {
+			ir, ok := d.ingressroutes[meta]
+			if ok {
+				status = append(status, ingressrouteStatus{object: ir, status: "orphaned", msg: "this IngressRoute is not part of a delegation chain from a root IngressRoute"})
+			}
+		}
+	}
+	return _d, status
 }
 
-func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited map[meta]bool, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost) {
+func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost, orphaned map[meta]bool) []ingressrouteStatus {
+	visited = append(visited, ir)
 
-	// check if we have already visited this ingressroute. if we have, there is a cycle in the dag.
-	if visited[meta{name: ir.Name, namespace: ir.Namespace}] {
-		// TODO(abrand): Handle the cycle. Invalidate IngressRoute and set status?
-		return
-	}
-
+	var status []ingressrouteStatus
 	for _, route := range ir.Spec.Routes {
+		// route cannot both delegate and point to services
+		if len(route.Services) > 0 && route.Delegate.Name != "" {
+			return []ingressrouteStatus{{object: ir, status: "invalid", msg: fmt.Sprintf("route %q: cannot specify services and delegate in the same route", route.Match)}}
+		}
 		// base case: The route points to services, so we add them to the vhost
 		if len(route.Services) > 0 {
 			if !matchesPathPrefix(route.Match, prefixMatch) {
-				// TODO: set status
-				return
+				return []ingressrouteStatus{{object: ir, status: "invalid", msg: fmt.Sprintf("the path prefix %q does not match the parent's path prefix %q", route.Match, prefixMatch)}}
 			}
 			r := &Route{
 				path:   route.Match,
 				object: ir,
 			}
 			for _, s := range route.Services {
+				if s.Port < 1 || s.Port > 65535 {
+					return []ingressrouteStatus{{object: ir, status: "invalid", msg: fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", route.Match, s.Name)}}
+				}
+				if s.Weight < 0 {
+					return []ingressrouteStatus{{object: ir, status: "invalid", msg: fmt.Sprintf("route %q: service %q: weight must be greater than or equal to zero", route.Match, s.Name)}}
+				}
 				m := meta{name: s.Name, namespace: ir.Namespace}
 				if svc := service(m, intstr.FromInt(s.Port)); svc != nil {
 					r.addService(svc, s.HealthCheck, s.Strategy, s.Weight)
@@ -430,14 +455,30 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 				// we are delegating to another IngressRoute in the same namespace
 				namespace = ir.Namespace
 			}
-			dir, ok := d.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]
+			dest, ok := d.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]
 			if ok {
+				// dest is not an orphaned route, as there is an IR that points to it
+				orphaned[meta{name: dest.Name, namespace: dest.Namespace}] = false
+
+				// ensure we are not following an edge that produces a cycle
+				var path []string
+				for _, vir := range visited {
+					path = append(path, fmt.Sprintf("%s/%s", vir.Namespace, vir.Name))
+				}
+				for _, vir := range visited {
+					if dest.Name == vir.Name && dest.Namespace == vir.Namespace {
+						path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
+						msg := fmt.Sprintf("route creates a delegation cycle: %s", strings.Join(path, " -> "))
+						return []ingressrouteStatus{{object: ir, status: "invalid", msg: msg}}
+					}
+				}
+
 				// follow the link and process the target ingress route
-				visited[meta{name: ir.Name, namespace: ir.Namespace}] = true
-				d.processIngressRoute(dir, route.Match, visited, host, service, vhost)
+				status = append(status, d.processIngressRoute(dest, route.Match, visited, host, service, vhost, orphaned)...)
 			}
 		}
 	}
+	return append(status, ingressrouteStatus{object: ir, status: "valid", msg: "valid IngressRoute"})
 }
 
 // matchesPathPrefix checks whether the given path matches the given prefix
@@ -637,4 +678,10 @@ func (s *Secret) toMeta() meta {
 		name:      s.object.Name,
 		namespace: s.object.Namespace,
 	}
+}
+
+type ingressrouteStatus struct {
+	object *ingressroutev1.IngressRoute
+	status string
+	msg    string
 }

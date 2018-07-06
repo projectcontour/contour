@@ -2965,6 +2965,7 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 				Match: "/finance",
 				Services: []ingressroutev1.Service{{
 					Name: "home",
+					Port: 8080,
 				}},
 			}, {
 				Match: "/finance/stocks",
@@ -3377,6 +3378,380 @@ func TestMatchesPathPrefix(t *testing.T) {
 			got := matchesPathPrefix(tc.path, tc.prefix)
 			if got != tc.matches {
 				t.Errorf("expected %v but got %v", tc.matches, got)
+			}
+		})
+	}
+}
+
+func TestDAGIngressRouteStatus(t *testing.T) {
+	// ir1 is a valid ingressroute
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Services: []ingressroutev1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}, {
+				Match: "/prefix",
+				Delegate: ingressroutev1.Delegate{
+					Name: "delegated",
+				}},
+			},
+		},
+	}
+
+	// ir2 is invalid because it contains a service with negative port
+	ir2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Services: []ingressroutev1.Service{{
+					Name: "home",
+					Port: -80,
+				}},
+			}},
+		},
+	}
+
+	// ir3 is invalid because it lives outside the roots namespace
+	ir3 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "finance",
+			Name:      "example",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foobar",
+				Services: []ingressroutev1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// ir4 is invalid because its match prefix does not match its parent's (ir1)
+	ir4 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "delegated",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			Routes: []ingressroutev1.Route{{
+				Match: "/doesnotmatch",
+				Services: []ingressroutev1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// ir5 is invalid because its service weight is less than zero
+	ir5 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "delegated",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Services: []ingressroutev1.Service{{
+					Name:   "home",
+					Port:   8080,
+					Weight: -10,
+				}},
+			}},
+		},
+	}
+
+	// ir6 is invalid because it delegates to itself, producing a cycle
+	ir6 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "self",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Delegate: ingressroutev1.Delegate{
+					Name: "self",
+				},
+			}},
+		},
+	}
+
+	// ir7 delegates to ir8, which is invalid because it delegates back to ir7
+	ir7 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "parent",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Delegate: ingressroutev1.Delegate{
+					Name: "child",
+				},
+			}},
+		},
+	}
+
+	ir8 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "child",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Delegate: ingressroutev1.Delegate{
+					Name: "parent",
+				},
+			}},
+		},
+	}
+
+	// ir9 is invalid because it has a route that both delegates and has a list of services
+	ir9 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "parent",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Delegate: ingressroutev1.Delegate{
+					Name: "child",
+				},
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// ir10 delegates to ir11 and ir 12.
+	ir10 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "parent",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Delegate: ingressroutev1.Delegate{
+					Name: "validChild",
+				},
+			}, {
+				Match: "/bar",
+				Delegate: ingressroutev1.Delegate{
+					Name: "invalidChild",
+				},
+			}},
+		},
+	}
+
+	ir11 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "validChild",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Services: []ingressroutev1.Service{{
+					Name: "foo",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// ir12 is invalid because it contains an invalid port
+	ir12 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "invalidChild",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			Routes: []ingressroutev1.Route{{
+				Match: "/bar",
+				Services: []ingressroutev1.Service{{
+					Name: "foo",
+					Port: 12345678,
+				}},
+			}},
+		},
+	}
+
+	// ir13 is invalid because it does not specify and FQDN
+	ir13 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "parent",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Services: []ingressroutev1.Service{{
+					Name: "foo",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// ir14 delegates tp ir15 but it is invalid because it is missing fqdn
+	ir14 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "invalidParent",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Delegate: ingressroutev1.Delegate{
+					Name: "validChild",
+				},
+			}},
+		},
+	}
+
+	tests := map[string]struct {
+		objs []*ingressroutev1.IngressRoute
+		want []ingressrouteStatus
+	}{
+		"valid ingressroute": {
+			objs: []*ingressroutev1.IngressRoute{ir1},
+			want: []ingressrouteStatus{{object: ir1, status: "valid", msg: "valid IngressRoute"}},
+		},
+		"invalid port in service": {
+			objs: []*ingressroutev1.IngressRoute{ir2},
+			want: []ingressrouteStatus{{object: ir2, status: "invalid", msg: `route "/foo": service "home": port must be in the range 1-65535`}},
+		},
+		"root ingressroute outside of roots namespace": {
+			objs: []*ingressroutev1.IngressRoute{ir3},
+			want: []ingressrouteStatus{{object: ir3, status: "invalid", msg: "root IngressRoute cannot be defined in this namespace"}},
+		},
+		"delegated route's match prefix does not match parent's prefix": {
+			objs: []*ingressroutev1.IngressRoute{ir1, ir4},
+			want: []ingressrouteStatus{
+				{object: ir4, status: "invalid", msg: `the path prefix "/doesnotmatch" does not match the parent's path prefix "/prefix"`},
+				{object: ir1, status: "valid", msg: "valid IngressRoute"},
+			},
+		},
+		"invalid weight in service": {
+			objs: []*ingressroutev1.IngressRoute{ir5},
+			want: []ingressrouteStatus{{object: ir5, status: "invalid", msg: `route "/foo": service "home": weight must be greater than or equal to zero`}},
+		},
+		"root ingressroute does not specify FQDN": {
+			objs: []*ingressroutev1.IngressRoute{ir13},
+			want: []ingressrouteStatus{{object: ir13, status: "invalid", msg: "Spec.VirtualHost.Fqdn must be specified"}},
+		},
+		"self-edge produces a cycle": {
+			objs: []*ingressroutev1.IngressRoute{ir6},
+			want: []ingressrouteStatus{{object: ir6, status: "invalid", msg: "route creates a delegation cycle: roots/self -> roots/self"}},
+		},
+		"child delegates to parent, producing a cycle": {
+			objs: []*ingressroutev1.IngressRoute{ir7, ir8},
+			want: []ingressrouteStatus{
+				{object: ir8, status: "invalid", msg: "route creates a delegation cycle: roots/parent -> roots/child -> roots/parent"},
+				{object: ir7, status: "valid", msg: "valid IngressRoute"},
+			},
+		},
+		"route has a list of services and also delegates": {
+			objs: []*ingressroutev1.IngressRoute{ir9},
+			want: []ingressrouteStatus{{object: ir9, status: "invalid", msg: `route "/foo": cannot specify services and delegate in the same route`}},
+		},
+		"ingressroute is an orphaned route": {
+			objs: []*ingressroutev1.IngressRoute{ir8},
+			want: []ingressrouteStatus{{object: ir8, status: "orphaned", msg: "this IngressRoute is not part of a delegation chain from a root IngressRoute"}},
+		},
+		"ingressroute delegates to multiple ingressroutes, one is invalid": {
+			objs: []*ingressroutev1.IngressRoute{ir10, ir11, ir12},
+			want: []ingressrouteStatus{
+				{object: ir11, status: "valid", msg: "valid IngressRoute"},
+				{object: ir12, status: "invalid", msg: `route "/bar": service "foo": port must be in the range 1-65535`},
+				{object: ir10, status: "valid", msg: "valid IngressRoute"},
+			},
+		},
+		"invalid parent orphans children": {
+			objs: []*ingressroutev1.IngressRoute{ir14, ir11},
+			want: []ingressrouteStatus{
+				{object: ir14, status: "invalid", msg: "Spec.VirtualHost.Fqdn must be specified"},
+				{object: ir11, status: "orphaned", msg: "this IngressRoute is not part of a delegation chain from a root IngressRoute"},
+			},
+		},
+		"multi-parent children is not orphaned when one of the parents is invalid": {
+			objs: []*ingressroutev1.IngressRoute{ir14, ir11, ir10},
+			want: []ingressrouteStatus{
+				{object: ir14, status: "invalid", msg: "Spec.VirtualHost.Fqdn must be specified"},
+				{object: ir11, status: "valid", msg: "valid IngressRoute"},
+				{object: ir10, status: "valid", msg: "valid IngressRoute"},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var d DAG
+			d.IngressRouteRootNamespaces = []string{"roots"}
+			for _, o := range tc.objs {
+				d.Insert(o)
+			}
+			_, got := d.recompute()
+			if len(tc.want) != len(got) {
+				t.Fatalf("expected %d statuses, but got %d", len(tc.want), len(got))
+			}
+			for _, ex := range tc.want {
+				var found bool
+				for _, g := range got {
+					if reflect.DeepEqual(ex, g) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Fatalf("expected to find:\n%v\nbut did not find it in:\n%v", ex, got)
+				}
 			}
 		})
 	}
