@@ -10,6 +10,6 @@ COPY internal internal
 COPY apis apis
 RUN CGO_ENABLED=0 GOOS=linux go install -ldflags="-w -s" -v github.com/heptio/contour/cmd/contour
 
-FROM alpine:latest
+FROM alpine:3.7
 RUN apk --no-cache add ca-certificates
 COPY --from=0 /go/bin/contour /bin/contour
