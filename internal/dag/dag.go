@@ -416,9 +416,6 @@ func (d *DAG) recompute() (dag, []ingressrouteStatus) {
 
 func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost, orphaned map[meta]bool) []ingressrouteStatus {
 	visited = append(visited, ir)
-	defer func() {
-		visited = visited[:len(visited)-1]
-	}()
 
 	var status []ingressrouteStatus
 	for _, route := range ir.Spec.Routes {
