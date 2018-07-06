@@ -36,7 +36,7 @@ const (
 	hcInterval           = 10 * time.Second
 	hcUnhealthyThreshold = 3
 	hcHealthyThreshold   = 2
-	hcHost               = "contour-envoy-heathcheck"
+	hcHost               = "contour-envoy-healthcheck"
 )
 
 // ClusterCache manages the contents of the gRPC CDS cache.

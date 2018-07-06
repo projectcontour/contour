@@ -86,7 +86,7 @@ type HealthCheck struct {
 	// HTTP endpoint used to perform health checks on upstream service
 	Path string `json:"path"`
 	// The value of the host header in the HTTP health check request.
-	// If left empty (default value), the name "contour-envoy-heathcheck"
+	// If left empty (default value), the name "contour-envoy-healthcheck"
 	// will be used.
 	Host string `json:"host"`
 	// The interval (seconds) between health checks

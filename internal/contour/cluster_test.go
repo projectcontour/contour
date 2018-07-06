@@ -293,7 +293,7 @@ func TestClusterVisit(t *testing.T) {
 						HealthChecker: &core.HealthCheck_HttpHealthCheck_{
 							HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
 								Path: "/healthy",
-								Host: "contour-envoy-heathcheck",
+								Host: "contour-envoy-healthcheck",
 							},
 						},
 					}},
@@ -322,7 +322,7 @@ func TestClusterVisit(t *testing.T) {
 									IntervalSeconds:         98,
 									UnhealthyThresholdCount: 97,
 									HealthyThresholdCount:   96,
-									Host: "foo-bar-host",
+									Host:                    "foo-bar-host",
 								},
 							}},
 						}},
