@@ -208,7 +208,7 @@ spec:
           port: 80
 ```
 
-##### TLS
+##### TLS (Not supported in beta.1)
 
 IngressRoutes follow a similar pattern to Ingress for configuring TLS credentials.
 
@@ -322,7 +322,7 @@ spec:
       services: 
         - name: s1
           port: 80
-          weight: 10 # (Optional) Weight distribution across multiple services (If none defined then even distribution is assumed)
+          weight: 10
         - name: s2
           port: 80
           weight: 90
