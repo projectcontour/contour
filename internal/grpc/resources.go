@@ -17,7 +17,6 @@ import (
 	"sort"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 
 	"github.com/gogo/protobuf/proto"
 )
@@ -116,9 +115,6 @@ type RDS struct {
 func (r *RDS) Values(filter func(string) bool) []proto.Message {
 	v := r.Cache.Values(filter)
 	sort.Stable(routeConfigurationsByName(v))
-	for i := range v {
-		sort.Stable(virtualHostsByName(v[i].(*v2.RouteConfiguration).VirtualHosts))
-	}
 	return v
 }
 
@@ -131,9 +127,3 @@ func (r routeConfigurationsByName) Swap(i, j int) { r[i], r[j] = r[j], r[i] }
 func (r routeConfigurationsByName) Less(i, j int) bool {
 	return r[i].(*v2.RouteConfiguration).Name < r[j].(*v2.RouteConfiguration).Name
 }
-
-type virtualHostsByName []route.VirtualHost
-
-func (v virtualHostsByName) Len() int           { return len(v) }
-func (v virtualHostsByName) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
-func (v virtualHostsByName) Less(i, j int) bool { return v[i].Name < v[j].Name }
