@@ -1120,6 +1120,49 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 		},
+		"ingressroute w/ missing fqdn": {
+			objs: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								{
+									Name: "backend",
+									Port: 80,
+								},
+							},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: map[string]*v2.RouteConfiguration{
+				"ingress_http": &v2.RouteConfiguration{
+					Name: "ingress_http", // should be blank, no fqdn defined.
+				},
+				"ingress_https": &v2.RouteConfiguration{
+					Name: "ingress_https",
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
