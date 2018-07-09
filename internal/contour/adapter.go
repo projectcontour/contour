@@ -17,6 +17,8 @@
 package contour
 
 import (
+	"fmt"
+
 	"github.com/heptio/contour/internal/dag"
 	"k8s.io/api/extensions/v1beta1"
 )
@@ -40,7 +42,7 @@ func (d *DAGAdapter) OnAdd(obj interface{}) {
 	if !d.validIngressClass(obj) {
 		return
 	}
-	d.ResourceEventHandler.OnAdd(obj)
+	d.setIngressRouteStatus(d.ResourceEventHandler.OnAdd(obj))
 	d.updateListeners()
 	d.updateRoutes()
 	d.updateClusters()
@@ -57,7 +59,7 @@ func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
 		// to remove the old object and _not_ insert the new object.
 		d.OnDelete(oldObj)
 	default:
-		d.ResourceEventHandler.OnUpdate(oldObj, newObj)
+		d.setIngressRouteStatus(d.ResourceEventHandler.OnUpdate(oldObj, newObj))
 		d.updateListeners()
 		d.updateRoutes()
 		d.updateClusters()
@@ -66,10 +68,16 @@ func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
 
 func (d *DAGAdapter) OnDelete(obj interface{}) {
 	// no need to check ingress class here
-	d.ResourceEventHandler.OnDelete(obj)
+	d.setIngressRouteStatus(d.ResourceEventHandler.OnDelete(obj))
 	d.updateListeners()
 	d.updateRoutes()
 	d.updateClusters()
+}
+
+func (d *DAGAdapter) setIngressRouteStatus(statuses dag.IngressrouteStatus) {
+	for _, s := range statuses.GetStatuses() {
+		fmt.Println(fmt.Sprintf("DAGVer: %d IR: %s Namespace: %s Status: %s Msg: %s", statuses.GetVersion(), s.GetIngressRouteName(), s.GetIngressRouteNamespace(), s.GetStatus(), s.GetMsg()))
+	}
 }
 
 // validIngressClass returns true iff:

@@ -243,6 +243,9 @@ rules:
   - get
   - list
   - watch
+  - put
+  - post
+  - patch
 ---
 apiVersion: v1
 kind: Service

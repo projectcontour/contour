@@ -18,18 +18,18 @@ type ResourceEventHandler struct {
 	DAG
 }
 
-func (r *ResourceEventHandler) OnAdd(obj interface{}) {
+func (r *ResourceEventHandler) OnAdd(obj interface{}) IngressrouteStatus {
 	r.Insert(obj)
-	r.Recompute()
+	return r.Recompute()
 }
 
-func (r *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
+func (r *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) IngressrouteStatus {
 	r.Remove(oldObj)
 	r.Insert(newObj)
-	r.Recompute()
+	return r.Recompute()
 }
 
-func (r *ResourceEventHandler) OnDelete(obj interface{}) {
+func (r *ResourceEventHandler) OnDelete(obj interface{}) IngressrouteStatus {
 	r.Remove(obj)
-	r.Recompute()
+	return r.Recompute()
 }
