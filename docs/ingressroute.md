@@ -348,7 +348,7 @@ In this example, we are sending 10% of the traffic to Service `s1`, while Servic
 
 IngressRoute weighting follows some specific rules:
 
-- If no weights are specified for a given route, it's assumed even distribution across the Services
+- If no weights are specified for a given route, it's assumed even distribution across the Services.
 - Weights are relative and do not need to add up to 100. If all weights for a route are specified, then the "total" weight is the sum of those specified. As an example, if weights are 20, 30, 20 for three upstreams, the total weight would be 70. In this example, a weight of 30 would receive approximately 42.9% of traffic (30/70 = .4285).
 - If some weights are specified but others are not, then it's assumed that upstreams without weights have an implicit weight of zero, and thus will not receive traffic.
 
@@ -357,11 +357,11 @@ IngressRoute weighting follows some specific rules:
 Each upstream service can have a load balancing strategy applied to determine which of its Endpoints is selected for the request.
 The following list are the options available to choose from:
 
-- RoundRobin: Each healthy upstream Endpoint is selected in round robin order (Default strategy if none selected)
-- WeightedLeastRequest: The least request strategy uses an O(1) algorithm which selects two random healthy Endpoints and picks the Endpoint which has fewer active requests. Note: This algorithm is simple and sufficient for load testing. It should not be used where true weighted least request behavior is desired
-- Ring hash: The ring/modulo hash load balancer implements consistent hashing to upstream Endpoints
+- RoundRobin: Each healthy upstream Endpoint is selected in round robin order (Default strategy if none selected).
+- WeightedLeastRequest: The least request strategy uses an O(1) algorithm which selects two random healthy Endpoints and picks the Endpoint which has fewer active requests. Note: This algorithm is simple and sufficient for load testing. It should not be used where true weighted least request behavior is desired.
+- Ring hash: The ring/modulo hash load balancer implements consistent hashing to upstream Endpoints.
 - Maglev: The Maglev strategy implements consistent hashing to upstream Endpoints
-- Random: The random strategy selects a random healthy Endpoints
+- Random: The random strategy selects a random healthy Endpoints.
 
 More information on the load balancing strategy can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/load_balancing.html).
 
@@ -640,11 +640,11 @@ status:
 
 Some examples of invalid configurations that Contour provides statuses for:
 
-- Negative weight provided in the route definition
-- Invalid port number provided for service
-- Prefix in parent does not match route in delegated route
-- Root IngressRoute created in a namespace other than the allowed root namespaces
-- A given Route of an IngressRoute both delegates to another IngressRoute and has a list of services
-- Orphaned route
-- Delegation chain produces a cycle
-- Root IngressRoute does not specify fqdn
+- Negative weight provided in the route definition.
+- Invalid port number provided for service.
+- Prefix in parent does not match route in delegated route.
+- Root IngressRoute created in a namespace other than the allowed root namespaces.
+- A given Route of an IngressRoute both delegates to another IngressRoute and has a list of services.
+- Orphaned route.
+- Delegation chain produces a cycle.
+- Root IngressRoute does not specify fqdn.
