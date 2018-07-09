@@ -8,8 +8,7 @@ RUN dep ensure -v -vendor-only
 COPY cmd cmd
 COPY internal internal
 COPY apis apis
-RUN CGO_ENABLED=0 GOOS=linux go build -o /go/bin/contour -ldflags="-w -s" -v github.com/heptio/contour/cmd/contour
+RUN GOOS=linux go build -race -o /go/bin/contour -ldflags="-w -s" -v github.com/heptio/contour/cmd/contour
 
-FROM alpine:3.7 AS final
-RUN apk --no-cache add ca-certificates
+FROM golang:1.10.3 AS final
 COPY --from=build /go/bin/contour /bin/contour

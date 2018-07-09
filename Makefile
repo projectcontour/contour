@@ -9,10 +9,13 @@ VERSION ?= $(GIT_REF)
 test: install
 	go test ./...
 
+test-race: | test
+	go test -race ./...
+
 vet: | test
 	go vet ./...
 
-check: test vet staticcheck unused
+check: test test-race vet staticcheck unused
 	@echo Checking code is gofmted
 	@bash -c 'if [ -n "$(gofmt -s -l .)" ]; then echo "Go code is not formatted:"; gofmt -s -d -e .; exit 1;fi'
 	@echo Checking rendered files are up to date
