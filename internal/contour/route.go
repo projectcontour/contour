@@ -196,8 +196,18 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 			ingress_https.VirtualHosts = append(ingress_https.VirtualHosts, vhost)
 		}
 	})
+
+	for _, v := range m {
+		sort.Stable(virtualHostsByName(v.VirtualHosts))
+	}
 	return m
 }
+
+type virtualHostsByName []route.VirtualHost
+
+func (v virtualHostsByName) Len() int           { return len(v) }
+func (v virtualHostsByName) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
+func (v virtualHostsByName) Less(i, j int) bool { return v[i].Name < v[j].Name }
 
 type longestRouteFirst []route.Route
 

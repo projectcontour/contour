@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -1363,6 +1364,62 @@ func TestRDSIngressClass(t *testing.T) {
 
 	rh.OnUpdate(i3, i2)
 	assertRDS(t, cc, nil, nil)
+}
+
+// issue 523, check for data races caused by accidentally
+// sorting the contents of an RDS entry's virtualhost list.
+func TestRDSAssertNoDataRaceDuringInsertAndStream(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	stop := make(chan struct{})
+
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(s1)
+
+	go func() {
+		for i := 0; i < 100; i++ {
+			rh.OnAdd(&ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      fmt.Sprintf("simple-%d", i),
+					Namespace: "default",
+				},
+				Spec: ingressroutev1.IngressRouteSpec{
+					VirtualHost: &ingressroutev1.VirtualHost{Fqdn: fmt.Sprintf("example-%d.com", i)},
+					Routes: []ingressroutev1.Route{{
+						Match: "/",
+						Services: []ingressroutev1.Service{{
+							Name: "kuard",
+							Port: 80,
+						}},
+					}},
+				},
+			})
+		}
+		close(stop)
+	}()
+
+	for {
+		select {
+		case <-stop:
+			return
+		default:
+			streamRDS(t, cc)
+		}
+	}
 }
 
 func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []route.VirtualHost) {

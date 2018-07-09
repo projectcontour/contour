@@ -159,6 +159,7 @@ type grpcStream interface {
 }
 
 func stream(t *testing.T, st grpcStream, req *v2.DiscoveryRequest) *v2.DiscoveryResponse {
+	t.Helper()
 	err := st.Send(req)
 	check(t, err)
 	resp, err := st.Recv()
