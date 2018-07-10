@@ -22,6 +22,8 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/heptio/contour/internal/generated/clientset/versioned/fake"
+	"github.com/heptio/contour/internal/k8s"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1168,6 +1170,9 @@ func TestRouteVisit(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			var d DAGAdapter
+			d.IngressRouteStatus = &k8s.IngressRouteStatus{
+				Client: fake.NewSimpleClientset(),
+			}
 			for _, o := range tc.objs {
 				d.OnAdd(o)
 			}

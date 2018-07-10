@@ -84,7 +84,9 @@ func main() {
 	serve.Flag("debug port", "port the /debug/pprof endpoint will bind too").Default("8000").IntVar(&debug.Port)
 
 	// translator and DAGAdapter configuration
-	var da contour.DAGAdapter
+	da := contour.DAGAdapter{
+		FieldLogger: log.WithField("context", "DAGAdapter"),
+	}
 
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&da.HTTPAccessLog)
 	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&da.HTTPSAccessLog)
@@ -133,6 +135,10 @@ func main() {
 		k8s.WatchSecrets(&g, client, wl, &da)
 		k8s.WatchIngressRoutes(&g, contourClient, wl, &da)
 
+		da.IngressRouteStatus = &k8s.IngressRouteStatus{
+			Client: contourClient,
+		}
+
 		// Endpoints updates are handled directly by the EndpointsTranslator
 		// due to their high update rate and their orthogonal nature.
 		et := &contour.EndpointsTranslator{
@@ -169,7 +175,6 @@ func main() {
 			defer log.Println("stopped")
 			return s.Serve(l)
 		})
-
 		g.Run()
 	default:
 		app.Usage(args)

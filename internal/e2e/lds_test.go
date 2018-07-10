@@ -31,6 +31,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/contour"
+	"github.com/heptio/contour/internal/generated/clientset/versioned/fake"
+	"github.com/heptio/contour/internal/k8s"
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -620,6 +622,9 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
 		da.IngressRouteRootNamespaces = []string{"roots"}
+		da.IngressRouteStatus = &k8s.IngressRouteStatus{
+			Client: fake.NewSimpleClientset(),
+		}
 	})
 	defer done()
 
@@ -672,6 +677,9 @@ func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 func TestLDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
 		da.IngressRouteRootNamespaces = []string{"roots"}
+		da.IngressRouteStatus = &k8s.IngressRouteStatus{
+			Client: fake.NewSimpleClientset(),
+		}
 	})
 	defer done()
 

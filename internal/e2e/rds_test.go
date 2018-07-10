@@ -25,6 +25,8 @@ import (
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/contour"
+	"github.com/heptio/contour/internal/generated/clientset/versioned/fake"
+	"github.com/heptio/contour/internal/k8s"
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -1163,6 +1165,9 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
 		da.IngressRouteRootNamespaces = []string{"roots"}
+		da.IngressRouteStatus = &k8s.IngressRouteStatus{
+			Client: fake.NewSimpleClientset(),
+		}
 	})
 	defer done()
 
@@ -1224,6 +1229,9 @@ func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
 func TestRDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
 		da.IngressRouteRootNamespaces = []string{"roots"}
+		da.IngressRouteStatus = &k8s.IngressRouteStatus{
+			Client: fake.NewSimpleClientset(),
+		}
 	})
 	defer done()
 

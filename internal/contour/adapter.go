@@ -17,9 +17,9 @@
 package contour
 
 import (
-	"fmt"
-
 	"github.com/heptio/contour/internal/dag"
+	"github.com/heptio/contour/internal/k8s"
+	"github.com/sirupsen/logrus"
 	"k8s.io/api/extensions/v1beta1"
 )
 
@@ -36,6 +36,9 @@ type DAGAdapter struct {
 	ListenerCache
 	RouteCache
 	ClusterCache
+
+	IngressRouteStatus *k8s.IngressRouteStatus
+	logrus.FieldLogger
 }
 
 func (d *DAGAdapter) OnAdd(obj interface{}) {
@@ -76,7 +79,10 @@ func (d *DAGAdapter) OnDelete(obj interface{}) {
 
 func (d *DAGAdapter) setIngressRouteStatus(statuses dag.IngressrouteStatus) {
 	for _, s := range statuses.GetStatuses() {
-		fmt.Println(fmt.Sprintf("DAGVer: %d IR: %s Namespace: %s Status: %s Msg: %s", statuses.GetVersion(), s.GetIngressRouteName(), s.GetIngressRouteNamespace(), s.GetStatus(), s.GetMsg()))
+		err := d.IngressRouteStatus.SetStatus(s.GetStatus(), s.GetDescription(), s.GetObject())
+		if err != nil {
+			d.FieldLogger.Errorf("Error Setting Status of IngressRoute: ", err)
+		}
 	}
 }
 
