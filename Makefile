@@ -15,7 +15,7 @@ test-race: | test
 vet: | test
 	go vet ./...
 
-check: test test-race vet staticcheck unused
+check: test test-race vet
 	@echo Checking code is gofmted
 	@bash -c 'if [ -n "$(gofmt -s -l .)" ]; then echo "Go code is not formatted:"; gofmt -s -d -e .; exit 1;fi'
 	@echo Checking rendered files are up to date
@@ -38,6 +38,8 @@ push: container
 		docker push $(IMAGE):latest; \
 	fi
 
+# staticcheck and unused are disabled for the moment
+# see heptio/contour#535
 staticcheck:
 	@go get honnef.co/go/tools/cmd/staticcheck
 	staticcheck $(PKGS)
