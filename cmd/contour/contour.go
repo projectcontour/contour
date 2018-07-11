@@ -80,8 +80,8 @@ func main() {
 		FieldLogger: log.WithField("context", "debugsvc"),
 	}
 
-	serve.Flag("debug address", "address the /debug/pprof endpoint will bind too").Default("127.0.0.1").StringVar(&debug.Addr)
-	serve.Flag("debug port", "port the /debug/pprof endpoint will bind too").Default("8000").IntVar(&debug.Port)
+	serve.Flag("http-address", "address the http endpoint will bind too").Default("127.0.0.1").StringVar(&debug.Addr)
+	serve.Flag("http-port", "port the http endpoint will bind too").Default("8000").IntVar(&debug.Port)
 
 	// translator and DAGAdapter configuration
 	da := contour.DAGAdapter{
