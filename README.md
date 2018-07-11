@@ -1,8 +1,8 @@
-# Heptio Contour
+# Heptio Contour [![Build Status][1]][2]
+
+[![Go Report Card][21]][22]
 
 **Maintainers:** [Heptio][0]
-
-[![Build Status][1]][2]
 
 ## Overview
 Contour is an Ingress controller for Kubernetes that works by deploying the [Envoy proxy][13] as a reverse proxy and load balancer. Unlike other Ingress controllers, Contour supports dynamic configuration updates out of the box while maintaining a lightweight profile.
@@ -123,3 +123,5 @@ See [the list of releases][6] to find out about feature changes.
 [18]: /FAQ.md
 [19]: /docs/troubleshooting.md
 [20]: https://kubernetes.slack.com/messages/contour
+[21]: https://goreportcard.com/badge/github.com/heptio/contour
+[22]: https://goreportcard.com/report/github.com/heptio/contour

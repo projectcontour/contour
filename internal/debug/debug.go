@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package debug provides http endpoints for healthcheck, metrics,
+// and pprof debugging.
 package debug
 
 import (
@@ -21,13 +23,11 @@ import (
 	"time"
 
 	"github.com/heptio/contour/internal/dag"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
 
-// contour debugging services
-
-// debugService serves various debugging endpoints including
-// /debug/pprof.
+// Service serves various http endpoints including /debug/pprof.
 type Service struct {
 	Addr string
 	Port int
@@ -48,13 +48,11 @@ func (svc *Service) Start(stop <-chan struct{}) (err error) {
 		}
 	}()
 	mux := http.NewServeMux()
+	registerProfile(mux)
+	registerHealthCheck(mux)
+	registerMetrics(mux)
 
-	// register the /debug/pprof handlers on this mux.
-	mux.HandleFunc("/debug/pprof/", pprof.Index)
-	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	// register DAG dot writer.
 	mux.HandleFunc("/debug/dag", svc.writeDot)
 
 	s := http.Server{
@@ -78,6 +76,29 @@ func (svc *Service) Start(stop <-chan struct{}) (err error) {
 
 	svc.WithField("address", s.Addr).Info("started")
 	return s.ListenAndServe()
+}
+
+func registerProfile(mux *http.ServeMux) {
+	mux.HandleFunc("/debug/pprof/", pprof.Index)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	mux.Handle("/debug/pprof/block", pprof.Handler("block"))
+	mux.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
+	mux.Handle("/debug/pprof/heap", pprof.Handler("heap"))
+	mux.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
+}
+
+func registerHealthCheck(mux *http.ServeMux) {
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintln(w, "OK")
+	})
+}
+
+func registerMetrics(mux *http.ServeMux) {
+	mux.Handle("/metrics", promhttp.Handler())
 }
 
 // Write out a .dot representation of the DAG.
