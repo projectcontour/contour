@@ -208,15 +208,12 @@ func edshealthcheck(hc *ingressroutev1.HealthCheck) []*core.HealthCheck {
 	}}
 }
 
-func secondsOrDefault(seconds int64, def time.Duration) *types.Duration {
+func secondsOrDefault(seconds int64, def time.Duration) *time.Duration {
 	if seconds != 0 {
-		return &types.Duration{
-			Seconds: seconds,
-		}
+		t := time.Duration(seconds) * time.Second
+		return &t
 	}
-	return &types.Duration{
-		Seconds: int64(def / time.Second),
-	}
+	return &def
 }
 
 func countOrDefault(count, def uint32) *types.UInt32Value {
