@@ -2883,7 +2883,7 @@ func TestServiceMapLookup(t *testing.T) {
 		},
 	}
 	services := map[meta]*v1.Service{
-		meta{name: "service1", namespace: "default"}: s1,
+		{name: "service1", namespace: "default"}: s1,
 	}
 
 	tests := map[string]struct {

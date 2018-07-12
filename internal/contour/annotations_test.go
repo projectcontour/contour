@@ -140,7 +140,7 @@ func TestWebsocketRoutes(t *testing.T) {
 				},
 			},
 			want: map[string]*types.BoolValue{
-				"/ws1": &types.BoolValue{Value: true},
+				"/ws1": {Value: true},
 			},
 		},
 		"multiple values": {
@@ -150,8 +150,8 @@ func TestWebsocketRoutes(t *testing.T) {
 				},
 			},
 			want: map[string]*types.BoolValue{
-				"/ws1": &types.BoolValue{Value: true},
-				"/ws2": &types.BoolValue{Value: true},
+				"/ws1": {Value: true},
+				"/ws2": {Value: true},
 			},
 		},
 		"multiple values with spaces and invalid entries": {
@@ -161,8 +161,8 @@ func TestWebsocketRoutes(t *testing.T) {
 				},
 			},
 			want: map[string]*types.BoolValue{
-				"/ws1": &types.BoolValue{Value: true},
-				"/ws2": &types.BoolValue{Value: true},
+				"/ws1": {Value: true},
+				"/ws2": {Value: true},
 			},
 		},
 	}

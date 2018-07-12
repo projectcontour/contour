@@ -56,7 +56,7 @@ func TestListenerVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.Listener{
-				ENVOY_HTTP_LISTENER: &v2.Listener{
+				ENVOY_HTTP_LISTENER: {
 					Name:    ENVOY_HTTP_LISTENER,
 					Address: socketaddress("0.0.0.0", 8080),
 					FilterChains: []listener.FilterChain{
@@ -90,7 +90,7 @@ func TestListenerVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.Listener{
-				ENVOY_HTTP_LISTENER: &v2.Listener{
+				ENVOY_HTTP_LISTENER: {
 					Name:    ENVOY_HTTP_LISTENER,
 					Address: socketaddress("0.0.0.0", 8080),
 					FilterChains: []listener.FilterChain{
@@ -126,14 +126,14 @@ func TestListenerVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.Listener{
-				ENVOY_HTTP_LISTENER: &v2.Listener{
+				ENVOY_HTTP_LISTENER: {
 					Name:    ENVOY_HTTP_LISTENER,
 					Address: socketaddress("0.0.0.0", 8080),
 					FilterChains: []listener.FilterChain{
 						filterchain(false, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
 					},
 				},
-				ENVOY_HTTPS_LISTENER: &v2.Listener{
+				ENVOY_HTTPS_LISTENER: {
 					Name:    ENVOY_HTTPS_LISTENER,
 					Address: socketaddress("0.0.0.0", 8443),
 					FilterChains: []listener.FilterChain{{
@@ -175,7 +175,7 @@ func TestListenerVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.Listener{
-				ENVOY_HTTP_LISTENER: &v2.Listener{
+				ENVOY_HTTP_LISTENER: {
 					Name:    ENVOY_HTTP_LISTENER,
 					Address: socketaddress("0.0.0.0", 8080),
 					FilterChains: []listener.FilterChain{
@@ -219,14 +219,14 @@ func TestListenerVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.Listener{
-				ENVOY_HTTP_LISTENER: &v2.Listener{
+				ENVOY_HTTP_LISTENER: {
 					Name:    ENVOY_HTTP_LISTENER,
 					Address: socketaddress("0.0.0.0", 8080),
 					FilterChains: []listener.FilterChain{
 						filterchain(false, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
 					},
 				},
-				ENVOY_HTTPS_LISTENER: &v2.Listener{
+				ENVOY_HTTPS_LISTENER: {
 					Name:    ENVOY_HTTPS_LISTENER,
 					Address: socketaddress("0.0.0.0", 8443),
 					FilterChains: []listener.FilterChain{{
@@ -291,7 +291,7 @@ func TestListenerVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.Listener{
-				ENVOY_HTTPS_LISTENER: &v2.Listener{
+				ENVOY_HTTPS_LISTENER: {
 					Name:    ENVOY_HTTPS_LISTENER,
 					Address: socketaddress("0.0.0.0", 8443),
 					FilterChains: []listener.FilterChain{{
@@ -339,14 +339,14 @@ func TestListenerVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.Listener{
-				ENVOY_HTTP_LISTENER: &v2.Listener{
+				ENVOY_HTTP_LISTENER: {
 					Name:    ENVOY_HTTP_LISTENER,
 					Address: socketaddress("127.0.0.100", 9100),
 					FilterChains: []listener.FilterChain{
 						filterchain(false, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
 					},
 				},
-				ENVOY_HTTPS_LISTENER: &v2.Listener{
+				ENVOY_HTTPS_LISTENER: {
 					Name:    ENVOY_HTTPS_LISTENER,
 					Address: socketaddress("127.0.0.200", 9200),
 					FilterChains: []listener.FilterChain{{
@@ -391,14 +391,14 @@ func TestListenerVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.Listener{
-				ENVOY_HTTP_LISTENER: &v2.Listener{
+				ENVOY_HTTP_LISTENER: {
 					Name:    ENVOY_HTTP_LISTENER,
 					Address: socketaddress("0.0.0.0", 8080),
 					FilterChains: []listener.FilterChain{
 						filterchain(true, httpfilter(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
 					},
 				},
-				ENVOY_HTTPS_LISTENER: &v2.Listener{
+				ENVOY_HTTPS_LISTENER: {
 					Name:    ENVOY_HTTPS_LISTENER,
 					Address: socketaddress("0.0.0.0", 8443),
 					FilterChains: []listener.FilterChain{{

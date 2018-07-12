@@ -44,10 +44,10 @@ func TestRouteVisit(t *testing.T) {
 		"nothing": {
 			objs: nil,
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 				},
 			},
@@ -81,7 +81,7 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "*",
@@ -92,7 +92,7 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					}},
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 				},
 			},
@@ -134,7 +134,7 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "www.example.com",
@@ -145,7 +145,7 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					}},
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 				},
 			},
@@ -190,7 +190,7 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "*", // default backend
@@ -201,7 +201,7 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					}},
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https", // no https for default backend
 				},
 			},
@@ -256,7 +256,7 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "www.example.com",
@@ -267,7 +267,7 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					}},
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "www.example.com",
@@ -327,7 +327,7 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "www.example.com",
@@ -338,7 +338,7 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					}},
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 					/* TODO(dfc) no support for routes on https for ingressroute, yet
 					VirtualHosts: []route.VirtualHost{{
@@ -405,10 +405,10 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "www.example.com",
@@ -474,7 +474,7 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "www.example.com",
@@ -489,7 +489,7 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					}},
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "www.example.com",
@@ -551,7 +551,7 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "www.example.com",
@@ -565,7 +565,7 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					}},
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 				},
 			},
@@ -602,7 +602,7 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "*",
@@ -613,7 +613,7 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					}},
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 				},
 			},
@@ -650,7 +650,7 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "*",
@@ -661,7 +661,7 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					}},
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 				},
 			},
@@ -698,7 +698,7 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "*",
@@ -709,7 +709,7 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					}},
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 				},
 			},
@@ -754,7 +754,7 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "d31bb322ca62bb395acad00b3cbf45a3aa1010ca28dca7cddb4f7db786fa",
@@ -765,7 +765,7 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					}},
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 				},
 			},
@@ -802,10 +802,10 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http", // expected to be empty, the ingress class is ignored
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https", // expected to be empty, the ingress class is ignored
 				},
 			},
@@ -842,7 +842,7 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "*",
@@ -853,7 +853,7 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					}},
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 				},
 			},
@@ -912,7 +912,7 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "www.example.com",
@@ -940,7 +940,7 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					}},
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 				},
 			},
@@ -1000,7 +1000,7 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "www.example.com",
@@ -1028,7 +1028,7 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					}},
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 				},
 			},
@@ -1089,7 +1089,7 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http",
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "www.example.com",
@@ -1117,7 +1117,7 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					}},
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 				},
 			},
@@ -1157,10 +1157,10 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": &v2.RouteConfiguration{
+				"ingress_http": {
 					Name: "ingress_http", // should be blank, no fqdn defined.
 				},
-				"ingress_https": &v2.RouteConfiguration{
+				"ingress_https": {
 					Name: "ingress_https",
 				},
 			},

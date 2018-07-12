@@ -324,7 +324,7 @@ func TestClusterVisit(t *testing.T) {
 									IntervalSeconds:         98,
 									UnhealthyThresholdCount: 97,
 									HealthyThresholdCount:   96,
-									Host: "foo-bar-host",
+									Host:                    "foo-bar-host",
 								},
 							}},
 						}},
