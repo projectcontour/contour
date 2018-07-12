@@ -2,6 +2,7 @@ PROJECT = contour
 REGISTRY ?= gcr.io/heptio-images
 IMAGE := $(REGISTRY)/$(PROJECT)
 PKGS := $(shell go list ./...)
+SRCDIRS := ./cmd ./internal ./apis
 
 GIT_REF = $(shell git rev-parse --short=8 --verify HEAD)
 VERSION ?= $(GIT_REF)
@@ -15,9 +16,7 @@ test-race: | test
 vet: | test
 	go vet ./...
 
-check: test test-race vet
-	@echo Checking code is gofmted
-	@bash -c 'if [ -n "$(gofmt -s -l .)" ]; then echo "Go code is not formatted:"; gofmt -s -d -e .; exit 1;fi'
+check: test test-race vet gofmt
 	@echo Checking rendered files are up to date
 	@(cd deployment && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 
@@ -55,3 +54,7 @@ render:
 updategenerated:
 	@echo Updating CRD generated code...
 	@(bash hack/update-generated-crd-code.sh)
+
+gofmt:  
+	@echo Checking code is gofmted
+	@test -z "$(shell gofmt -s -l $(SRCDIRS) | tee /dev/stderr)" || gofmt -s -d -e $(SRCDIRS)
