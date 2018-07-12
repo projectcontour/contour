@@ -16,7 +16,7 @@ test-race: | test
 vet: | test
 	go vet ./...
 
-check: test test-race vet gofmt
+check: test test-race vet gofmt staticcheck unused
 	@echo Checking rendered files are up to date
 	@(cd deployment && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 
@@ -37,8 +37,6 @@ push: container
 		docker push $(IMAGE):latest; \
 	fi
 
-# staticcheck and unused are disabled for the moment
-# see heptio/contour#535
 staticcheck:
 	@go get honnef.co/go/tools/cmd/staticcheck
 	staticcheck $(PKGS)
