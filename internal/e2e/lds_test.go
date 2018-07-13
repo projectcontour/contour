@@ -822,10 +822,8 @@ func httpfilter(routename string) listener.Filter {
 				},
 			},
 			AccessLog: []*accesslog.AccessLog{{
-				Name: "envoy.file_access_log",
-				Config: messageToStruct(&accesslog.FileAccessLog{
-					Path: "/dev/stdout",
-				}),
+				Name:   "envoy.file_access_log",
+				Config: messageToStruct(fileAccessLog("/dev/stdout")),
 			}},
 			UseRemoteAddress: &types.BoolValue{Value: true},
 			HttpFilters: []*envoy_config_v2_http_conn_mgr.HttpFilter{
