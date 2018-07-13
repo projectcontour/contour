@@ -319,12 +319,12 @@ func TestClusterVisit(t *testing.T) {
 								Name: "backend",
 								Port: 80,
 								HealthCheck: &ingressroutev1.HealthCheck{
+									Host:                    "foo-bar-host",
 									Path:                    "/healthy",
 									TimeoutSeconds:          99,
 									IntervalSeconds:         98,
 									UnhealthyThresholdCount: 97,
 									HealthyThresholdCount:   96,
-									Host:                    "foo-bar-host",
 								},
 							}},
 						}},
