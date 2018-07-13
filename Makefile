@@ -55,4 +55,4 @@ updategenerated:
 
 gofmt:  
 	@echo Checking code is gofmted
-	@test -z "$(shell gofmt -s -l $(SRCDIRS) | tee /dev/stderr)" || gofmt -s -d -e $(SRCDIRS)
+	@test -z "$(shell gofmt -s -l -d -e $(SRCDIRS) | tee /dev/stderr)"
