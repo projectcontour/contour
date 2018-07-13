@@ -44,13 +44,14 @@
     "envoy/api/v2/endpoint",
     "envoy/api/v2/listener",
     "envoy/api/v2/route",
+    "envoy/config/accesslog/v2",
     "envoy/config/filter/accesslog/v2",
     "envoy/config/filter/network/http_connection_manager/v2",
     "envoy/service/load_stats/v2",
     "envoy/type"
   ]
-  revision = "469a90e97a000f23f2ab0bf494cdc8e1480a3dfa"
-  version = "v0.2"
+  revision = "c14704578b82128fab17743d91f870c406ef8d09"
+  version = "v0.4"
 
 [[projects]]
   name = "github.com/evanphx/json-patch"
@@ -568,6 +569,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d7d4a6d3168a330458db2b55f22e1810e04a461b7af361ede736dc437f50f3bb"
+  inputs-digest = "d5ec28418b2a6f61fd04c03bbd3e5b9d5859b8d0bd2bcc5f6af9d3250bee02ad"
   solver-name = "gps-cdcl"
   solver-version = 1

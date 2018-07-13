@@ -246,7 +246,6 @@ func actionroute(services []*dag.Service, ws bool, timeout time.Duration) *route
 
 	// Loop over all the upstreams and add to slice
 	for _, svc := range services {
-
 		// Create the upstream
 		upstreams = append(upstreams, &route.WeightedCluster_ClusterWeight{
 			Name:   hashname(60, svc.Namespace(), svc.Name(), strconv.Itoa(int(svc.Port))),

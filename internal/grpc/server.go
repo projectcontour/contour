@@ -106,7 +106,15 @@ func (s *grpcServer) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpo
 }
 
 func (s *grpcServer) StreamLoadStats(srv envoy_service_v2.LoadReportingService_StreamLoadStatsServer) error {
-	return status.Errorf(codes.Unimplemented, "StreamLoadStats Unimplemented")
+	return status.Errorf(codes.Unimplemented, "StreamLoadStats unimplemented")
+}
+
+func (s *grpcServer) IncrementalClusters(v2.ClusterDiscoveryService_IncrementalClustersServer) error {
+	return status.Errorf(codes.Unimplemented, "IncrementalClusters unimplemented")
+}
+
+func (s *grpcServer) IncrementalRoutes(v2.RouteDiscoveryService_IncrementalRoutesServer) error {
+	return status.Errorf(codes.Unimplemented, "IncrementalRoutes unimplemented")
 }
 
 func (s *grpcServer) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) error {

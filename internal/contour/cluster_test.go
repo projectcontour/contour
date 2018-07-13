@@ -715,10 +715,8 @@ func clustermap(clusters ...*v2.Cluster) map[string]*v2.Cluster {
 	return m
 }
 
-func duration(d time.Duration) *types.Duration {
-	return &types.Duration{
-		Seconds: int64(d / time.Second),
-	}
+func duration(d time.Duration) *time.Duration {
+	return &d
 }
 
 func TestServiceName(t *testing.T) {
