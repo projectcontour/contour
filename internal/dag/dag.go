@@ -198,7 +198,7 @@ func (sm *serviceMap) insert(svc *v1.Service, port *v1.ServicePort) *Service {
 	}
 
 	s := &Service{
-		object:      svc,
+		Object:      svc,
 		ServicePort: port,
 		Protocol:    protocol,
 
@@ -612,7 +612,7 @@ type Vertex interface {
 // Service represents a K8s Sevice as a DAG vertex. A Service is
 // a leaf in the DAG.
 type Service struct {
-	object *v1.Service
+	Object *v1.Service
 
 	*v1.ServicePort
 	Weight int
@@ -642,8 +642,8 @@ type Service struct {
 	MaxRetries int
 }
 
-func (s *Service) Name() string       { return s.object.Name }
-func (s *Service) Namespace() string  { return s.object.Namespace }
+func (s *Service) Name() string       { return s.Object.Name }
+func (s *Service) Namespace() string  { return s.Object.Namespace }
 func (s *Service) Visit(func(Vertex)) {}
 
 type portmeta struct {
@@ -654,8 +654,8 @@ type portmeta struct {
 
 func (s *Service) toMeta() portmeta {
 	return portmeta{
-		name:      s.object.Name,
-		namespace: s.object.Namespace,
+		name:      s.Object.Name,
+		namespace: s.Object.Namespace,
 		port:      s.Port,
 	}
 }

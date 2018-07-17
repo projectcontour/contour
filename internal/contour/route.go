@@ -241,7 +241,7 @@ func prefixmatch(prefix string) route.RouteMatch {
 // action computes the cluster route action, a *route.Route_route for the
 // supplied ingress and backend.
 func actionroute(services []*dag.Service, ws bool, timeout time.Duration) *route.Route_Route {
-	totalWeight := 0
+	var totalWeight int
 	upstreams := []*route.WeightedCluster_ClusterWeight{}
 
 	// Loop over all the upstreams and add to slice
@@ -251,7 +251,6 @@ func actionroute(services []*dag.Service, ws bool, timeout time.Duration) *route
 			Name:   hashname(60, svc.Namespace(), svc.Name(), strconv.Itoa(int(svc.Port))),
 			Weight: &types.UInt32Value{Value: uint32(svc.Weight)},
 		})
-
 		totalWeight += svc.Weight
 	}
 
