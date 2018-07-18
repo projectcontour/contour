@@ -79,7 +79,7 @@ func (d *DAGAdapter) OnDelete(obj interface{}) {
 
 func (d *DAGAdapter) setIngressRouteStatus(statuses dag.IngressrouteStatus) {
 	for _, s := range statuses.GetStatuses() {
-		err := d.IngressRouteStatus.SetStatus(s.GetStatus(), s.GetDescription(), s.GetObject())
+		err := d.IngressRouteStatus.SetStatus(s.Status, s.Description, s.Object)
 		if err != nil {
 			d.FieldLogger.Errorf("Error Setting Status of IngressRoute: ", err)
 		}

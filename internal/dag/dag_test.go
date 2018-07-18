@@ -3662,81 +3662,86 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 	}{
 		"valid ingressroute": {
 			objs: []*ingressroutev1.IngressRoute{ir1},
-			want: IngressrouteStatus{statuses: []Status{{object: ir1, status: "valid", description: "valid IngressRoute"}}},
+			want: IngressrouteStatus{statuses: []Status{{Object: ir1, Status: "valid", Description: "valid IngressRoute"}}},
 		},
 		"invalid port in service": {
 			objs: []*ingressroutev1.IngressRoute{ir2},
-			want: IngressrouteStatus{statuses: []Status{{object: ir2, status: "invalid", description: `route "/foo": service "home": port must be in the range 1-65535`}}},
+			want: IngressrouteStatus{statuses: []Status{{Object: ir2, Status: "invalid", Description: `route "/foo": service "home": port must be in the range 1-65535`}}},
 		},
 		"root ingressroute outside of roots namespace": {
 			objs: []*ingressroutev1.IngressRoute{ir3},
-			want: IngressrouteStatus{statuses: []Status{{object: ir3, status: "invalid", description: "root IngressRoute cannot be defined in this namespace"}}},
+			want: IngressrouteStatus{statuses: []Status{{Object: ir3, Status: "invalid", Description: "root IngressRoute cannot be defined in this namespace"}}},
 		},
 		"delegated route's match prefix does not match parent's prefix": {
 			objs: []*ingressroutev1.IngressRoute{ir1, ir4},
 			want: IngressrouteStatus{
-				statuses: []Status{{object: ir4, status: "invalid", description: `the path prefix "/doesnotmatch" does not match the parent's path prefix "/prefix"`},
-					{object: ir1, status: "valid", description: "valid IngressRoute"}},
+				statuses: []Status{
+					{Object: ir4, Status: "invalid", Description: `the path prefix "/doesnotmatch" does not match the parent's path prefix "/prefix"`},
+					{Object: ir1, Status: "valid", Description: "valid IngressRoute"},
+				},
 			},
 		},
 		"invalid weight in service": {
 			objs: []*ingressroutev1.IngressRoute{ir5},
-			want: IngressrouteStatus{statuses: []Status{{object: ir5, status: "invalid", description: `route "/foo": service "home": weight must be greater than or equal to zero`}}},
+			want: IngressrouteStatus{statuses: []Status{{Object: ir5, Status: "invalid", Description: `route "/foo": service "home": weight must be greater than or equal to zero`}}},
 		},
 		"root ingressroute does not specify FQDN": {
 			objs: []*ingressroutev1.IngressRoute{ir13},
-			want: IngressrouteStatus{statuses: []Status{{object: ir13, status: "invalid", description: "Spec.VirtualHost.Fqdn must be specified"}}},
+			want: IngressrouteStatus{statuses: []Status{{Object: ir13, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"}}},
 		},
 		"self-edge produces a cycle": {
 			objs: []*ingressroutev1.IngressRoute{ir6},
-			want: IngressrouteStatus{statuses: []Status{{object: ir6, status: "invalid", description: "route creates a delegation cycle: roots/self -> roots/self"}}},
+			want: IngressrouteStatus{statuses: []Status{{Object: ir6, Status: "invalid", Description: "route creates a delegation cycle: roots/self -> roots/self"}}},
 		},
 		"child delegates to parent, producing a cycle": {
 			objs: []*ingressroutev1.IngressRoute{ir7, ir8},
 			want: IngressrouteStatus{
 				statuses: []Status{
-					{object: ir8, status: "invalid", description: "route creates a delegation cycle: roots/parent -> roots/child -> roots/parent"},
-					{object: ir7, status: "valid", description: "valid IngressRoute"}},
+					{Object: ir8, Status: "invalid", Description: "route creates a delegation cycle: roots/parent -> roots/child -> roots/parent"},
+					{Object: ir7, Status: "valid", Description: "valid IngressRoute"},
+				},
 			},
 		},
 		"route has a list of services and also delegates": {
 			objs: []*ingressroutev1.IngressRoute{ir9},
-			want: IngressrouteStatus{statuses: []Status{{object: ir9, status: "invalid", description: `route "/foo": cannot specify services and delegate in the same route`}}},
+			want: IngressrouteStatus{statuses: []Status{{Object: ir9, Status: "invalid", Description: `route "/foo": cannot specify services and delegate in the same route`}}},
 		},
 		"ingressroute is an orphaned route": {
 			objs: []*ingressroutev1.IngressRoute{ir8},
-			want: IngressrouteStatus{statuses: []Status{{object: ir8, status: "orphaned", description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"}}},
+			want: IngressrouteStatus{statuses: []Status{{Object: ir8, Status: "orphaned", Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"}}},
 		},
 		"ingressroute delegates to multiple ingressroutes, one is invalid": {
 			objs: []*ingressroutev1.IngressRoute{ir10, ir11, ir12},
 			want: IngressrouteStatus{
 				statuses: []Status{
-					{object: ir11, status: "valid", description: "valid IngressRoute"},
-					{object: ir12, status: "invalid", description: `route "/bar": service "foo": port must be in the range 1-65535`},
-					{object: ir10, status: "valid", description: "valid IngressRoute"}},
+					{Object: ir11, Status: "valid", Description: "valid IngressRoute"},
+					{Object: ir12, Status: "invalid", Description: `route "/bar": service "foo": port must be in the range 1-65535`},
+					{Object: ir10, Status: "valid", Description: "valid IngressRoute"}},
 			},
 		},
 		"invalid parent orphans children": {
 			objs: []*ingressroutev1.IngressRoute{ir14, ir11},
 			want: IngressrouteStatus{
 				statuses: []Status{
-					{object: ir14, status: "invalid", description: "Spec.VirtualHost.Fqdn must be specified"},
-					{object: ir11, status: "orphaned", description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"}},
+					{Object: ir14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
+					{Object: ir11, Status: "orphaned", Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"},
+				},
 			},
 		},
 		"multi-parent children is not orphaned when one of the parents is invalid": {
 			objs: []*ingressroutev1.IngressRoute{ir14, ir11, ir10},
 			want: IngressrouteStatus{
 				statuses: []Status{
-					{object: ir14, status: "invalid", description: "Spec.VirtualHost.Fqdn must be specified"},
-					{object: ir11, status: "valid", description: "valid IngressRoute"},
-					{object: ir10, status: "valid", description: "valid IngressRoute"}},
+					{Object: ir14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
+					{Object: ir11, Status: "valid", Description: "valid IngressRoute"},
+					{Object: ir10, Status: "valid", Description: "valid IngressRoute"},
+				},
 			},
 		},
 		"dag version": {
 			objs:  []*ingressroutev1.IngressRoute{ir1},
 			objs2: []*ingressroutev1.IngressRoute{ir1},
-			want:  IngressrouteStatus{version: 2, statuses: []Status{{object: ir1, status: "valid", description: "valid IngressRoute"}}},
+			want:  IngressrouteStatus{version: 2, statuses: []Status{{Object: ir1, Status: "valid", Description: "valid IngressRoute"}}},
 		},
 	}
 
