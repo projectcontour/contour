@@ -45,7 +45,8 @@ func (d *DAGAdapter) OnAdd(obj interface{}) {
 	if !d.validIngressClass(obj) {
 		return
 	}
-	d.setIngressRouteStatus(d.ResourceEventHandler.OnAdd(obj))
+	d.ResourceEventHandler.OnAdd(obj)
+	d.setIngressRouteStatus()
 	d.updateListeners()
 	d.updateRoutes()
 	d.updateClusters()
@@ -62,7 +63,8 @@ func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
 		// to remove the old object and _not_ insert the new object.
 		d.OnDelete(oldObj)
 	default:
-		d.setIngressRouteStatus(d.ResourceEventHandler.OnUpdate(oldObj, newObj))
+		d.ResourceEventHandler.OnUpdate(oldObj, newObj)
+		d.setIngressRouteStatus()
 		d.updateListeners()
 		d.updateRoutes()
 		d.updateClusters()
@@ -71,14 +73,15 @@ func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
 
 func (d *DAGAdapter) OnDelete(obj interface{}) {
 	// no need to check ingress class here
-	d.setIngressRouteStatus(d.ResourceEventHandler.OnDelete(obj))
+	d.ResourceEventHandler.OnDelete(obj)
+	d.setIngressRouteStatus()
 	d.updateListeners()
 	d.updateRoutes()
 	d.updateClusters()
 }
 
-func (d *DAGAdapter) setIngressRouteStatus(statuses dag.IngressrouteStatus) {
-	for _, s := range statuses.GetStatuses() {
+func (d *DAGAdapter) setIngressRouteStatus() {
+	for _, s := range d.Statuses() {
 		err := d.IngressRouteStatus.SetStatus(s.Status, s.Description, s.Object)
 		if err != nil {
 			d.FieldLogger.Errorf("Error Setting Status of IngressRoute: ", err)
