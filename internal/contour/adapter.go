@@ -19,6 +19,7 @@ package contour
 import (
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/k8s"
+	"github.com/heptio/contour/internal/metrics"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/extensions/v1beta1"
 )
@@ -39,16 +40,20 @@ type DAGAdapter struct {
 
 	IngressRouteStatus *k8s.IngressRouteStatus
 	logrus.FieldLogger
+	metrics.Metrics
 }
 
 func (d *DAGAdapter) OnAdd(obj interface{}) {
 	if !d.validIngressClass(obj) {
 		return
 	}
-	d.setIngressRouteStatus(d.ResourceEventHandler.OnAdd(obj))
+	irStatus := d.ResourceEventHandler.OnAdd(obj)
+	d.setIngressRouteStatus(irStatus)
 	d.updateListeners()
 	d.updateRoutes()
 	d.updateClusters()
+
+	d.Metrics.SetIngressRouteMetric(d.DAG.CalculateIngressRouteMetric())
 }
 
 func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
@@ -62,23 +67,29 @@ func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
 		// to remove the old object and _not_ insert the new object.
 		d.OnDelete(oldObj)
 	default:
-		d.setIngressRouteStatus(d.ResourceEventHandler.OnUpdate(oldObj, newObj))
+		irStatus := d.ResourceEventHandler.OnUpdate(oldObj, newObj)
+		d.setIngressRouteStatus(irStatus)
 		d.updateListeners()
 		d.updateRoutes()
 		d.updateClusters()
+
+		d.Metrics.SetIngressRouteMetric(d.DAG.CalculateIngressRouteMetric())
 	}
 }
 
 func (d *DAGAdapter) OnDelete(obj interface{}) {
 	// no need to check ingress class here
-	d.setIngressRouteStatus(d.ResourceEventHandler.OnDelete(obj))
+	irStatus := d.ResourceEventHandler.OnDelete(obj)
+	d.setIngressRouteStatus(irStatus)
 	d.updateListeners()
 	d.updateRoutes()
 	d.updateClusters()
+
+	d.Metrics.SetIngressRouteMetric(d.DAG.CalculateIngressRouteMetric())
 }
 
 func (d *DAGAdapter) setIngressRouteStatus(statuses dag.IngressrouteStatus) {
-	for _, s := range statuses.GetStatuses() {
+	for _, s := range statuses.Statuses {
 		err := d.IngressRouteStatus.SetStatus(s.Status, s.Description, s.Object)
 		if err != nil {
 			d.FieldLogger.Errorf("Error Setting Status of IngressRoute: ", err)

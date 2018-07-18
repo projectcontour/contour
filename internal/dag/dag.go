@@ -422,7 +422,7 @@ func (d *DAG) recompute() (dag, IngressrouteStatus) {
 			}
 		}
 	}
-	return _d, IngressrouteStatus{statuses: status, version: nextVersion}
+	return _d, IngressrouteStatus{Statuses: status, Version: nextVersion}
 }
 
 // returns true if the root ingressroute lives in a root namespace
@@ -436,6 +436,30 @@ func (d *DAG) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 		}
 	}
 	return false
+}
+
+func (d *DAG) CalculateIngressRouteMetric() map[string]int {
+	ingressRouteMetric := make(map[string]int)
+
+	d.Visit(func(vh Vertex) {
+		switch vh := vh.(type) {
+		case *VirtualHost:
+			hostname := vh.FQDN()
+
+			vh.Visit(func(r Vertex) {
+				switch r := r.(type) {
+				case *Route:
+					obj := r.object
+					switch rt := obj.(type) {
+					case *ingressroutev1.IngressRoute:
+						ingressRouteMetric[fmt.Sprintf("%s|%s", hostname, rt.ObjectMeta.Namespace)]++
+					}
+				}
+			})
+		}
+	})
+
+	return ingressRouteMetric
 }
 
 type ingressRouteProcessor struct {
@@ -698,16 +722,12 @@ func (s *Secret) toMeta() meta {
 // IngressrouteStatus contains the status for
 // an IngressRoute (valid / invalid / orphan, etc)
 type IngressrouteStatus struct {
-	statuses []Status
-	version  int
+	Statuses []Status
+	Version  int
 }
 
 type Status struct {
 	Object      *ingressroutev1.IngressRoute
 	Status      string
 	Description string
-}
-
-func (irs *IngressrouteStatus) GetStatuses() []Status {
-	return irs.statuses
 }
