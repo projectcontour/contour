@@ -3736,7 +3736,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		"dag version": {
 			objs:  []*ingressroutev1.IngressRoute{ir1},
 			objs2: []*ingressroutev1.IngressRoute{ir1},
-			want:  IngressrouteStatus{version: 1, statuses: []Status{{object: ir1, status: "valid", description: "valid IngressRoute"}}},
+			want:  IngressrouteStatus{version: 2, statuses: []Status{{object: ir1, status: "valid", description: "valid IngressRoute"}}},
 		},
 	}
 

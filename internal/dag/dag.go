@@ -47,6 +47,7 @@ type DAG struct {
 	secrets       map[meta]*v1.Secret
 	services      map[meta]*v1.Service
 
+	// the most recently recomputed dag.
 	dag
 }
 
@@ -145,10 +146,7 @@ func (d *DAG) Recompute() IngressrouteStatus {
 	var statuses IngressrouteStatus
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	version := d.dag.version
-	// TODO(abrand): Handle status returned by recompute
 	d.dag, statuses = d.recompute()
-	d.dag.version = version + 1
 	return statuses
 }
 
@@ -404,7 +402,10 @@ func (d *DAG) recompute() (dag, IngressrouteStatus) {
 		status = append(status, sts...)
 	}
 
-	var _d dag
+	nextVersion := d.version + 1
+	_d := dag{
+		version: nextVersion,
+	}
 	for _, vh := range _vhosts {
 		_d.roots = append(_d.roots, vh)
 	}
@@ -420,7 +421,7 @@ func (d *DAG) recompute() (dag, IngressrouteStatus) {
 			}
 		}
 	}
-	return _d, IngressrouteStatus{statuses: status, version: d.version}
+	return _d, IngressrouteStatus{statuses: status, version: nextVersion}
 }
 
 // returns true if the root ingressroute lives in a root namespace
