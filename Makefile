@@ -1,8 +1,8 @@
 PROJECT = contour
 REGISTRY ?= gcr.io/heptio-images
 IMAGE := $(REGISTRY)/$(PROJECT)
-PKGS := $(shell go list ./...)
 SRCDIRS := ./cmd ./internal ./apis
+PKGS := $(shell go list ./cmd/... ./internal/... | grep -v generated)
 
 GIT_REF = $(shell git rev-parse --short=8 --verify HEAD)
 VERSION ?= $(GIT_REF)
@@ -43,7 +43,7 @@ staticcheck:
 
 unused:
 	@go get honnef.co/go/tools/cmd/unused
-	unused $(PKGS)
+	unused -exported $(PKGS)
 
 render:
 	@echo Rendering deployment files...
