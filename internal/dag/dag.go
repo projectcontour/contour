@@ -393,8 +393,15 @@ func (d *DAG) recompute() (dag, IngressrouteStatus) {
 		}
 
 		prefixMatch := ""
-		ve := d.processIngressRoute(ir, prefixMatch, nil, host, service, vhost, orphaned)
-		status = append(status, ve...)
+		irp := ingressRouteProcessor{
+			host:          host,
+			service:       service,
+			vhost:         vhost,
+			ingressroutes: d.ingressroutes,
+			orphaned:      orphaned,
+		}
+		sts := irp.process(ir, prefixMatch, nil)
+		status = append(status, sts...)
 	}
 
 	var _d dag
@@ -416,7 +423,28 @@ func (d *DAG) recompute() (dag, IngressrouteStatus) {
 	return _d, IngressrouteStatus{statuses: status, version: d.version}
 }
 
-func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, service func(m meta, port intstr.IntOrString) *Service, vhost func(host string, port int) *VirtualHost, orphaned map[meta]bool) []Status {
+// returns true if the root ingressroute lives in a root namespace
+func (d *DAG) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
+	if len(d.IngressRouteRootNamespaces) == 0 {
+		return true
+	}
+	for _, ns := range d.IngressRouteRootNamespaces {
+		if ns == ir.Namespace {
+			return true
+		}
+	}
+	return false
+}
+
+type ingressRouteProcessor struct {
+	host          string
+	service       func(m meta, port intstr.IntOrString) *Service
+	vhost         func(host string, port int) *VirtualHost
+	ingressroutes map[meta]*ingressroutev1.IngressRoute
+	orphaned      map[meta]bool
+}
+
+func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute) []Status {
 	visited = append(visited, ir)
 
 	var status []Status
@@ -442,11 +470,11 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 					return []Status{{object: ir, status: "invalid", description: fmt.Sprintf("route %q: service %q: weight must be greater than or equal to zero", route.Match, s.Name)}}
 				}
 				m := meta{name: s.Name, namespace: ir.Namespace}
-				if svc := service(m, intstr.FromInt(s.Port)); svc != nil {
+				if svc := irp.service(m, intstr.FromInt(s.Port)); svc != nil {
 					r.addService(svc, s.HealthCheck, s.Strategy, s.Weight)
 				}
 			}
-			vhost(host, 80).routes[r.path] = r
+			irp.vhost(irp.host, 80).routes[r.path] = r
 			continue
 		}
 
@@ -457,10 +485,10 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 				// we are delegating to another IngressRoute in the same namespace
 				namespace = ir.Namespace
 			}
-			dest, ok := d.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]
+			dest, ok := irp.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]
 			if ok {
 				// dest is not an orphaned route, as there is an IR that points to it
-				orphaned[meta{name: dest.Name, namespace: dest.Namespace}] = false
+				irp.orphaned[meta{name: dest.Name, namespace: dest.Namespace}] = false
 
 				// ensure we are not following an edge that produces a cycle
 				var path []string
@@ -476,7 +504,7 @@ func (d *DAG) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch s
 				}
 
 				// follow the link and process the target ingress route
-				status = append(status, d.processIngressRoute(dest, route.Match, visited, host, service, vhost, orphaned)...)
+				status = append(status, irp.process(dest, route.Match, visited)...)
 			}
 		}
 	}
@@ -499,19 +527,6 @@ func matchesPathPrefix(path, prefix string) bool {
 		path = path + "/"
 	}
 	return strings.HasPrefix(path, prefix)
-}
-
-// returns true if the root ingressroute lives in a root namespace
-func (d *DAG) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
-	if len(d.IngressRouteRootNamespaces) == 0 {
-		return true
-	}
-	for _, ns := range d.IngressRouteRootNamespaces {
-		if ns == ir.Namespace {
-			return true
-		}
-	}
-	return false
 }
 
 type Root interface {
