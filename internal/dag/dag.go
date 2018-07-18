@@ -531,10 +531,6 @@ func matchesPathPrefix(path, prefix string) bool {
 	return strings.HasPrefix(path, prefix)
 }
 
-type Root interface {
-	Vertex
-}
-
 type Route struct {
 	path     string
 	object   interface{} // one of Ingress or IngressRoute
@@ -714,16 +710,4 @@ type Status struct {
 
 func (irs *IngressrouteStatus) GetStatuses() []Status {
 	return irs.statuses
-}
-
-func (irs *IngressrouteStatus) GetVersion() int {
-	return irs.version
-}
-
-func (s *Status) GetIngressRouteName() string {
-	return s.Object.GetName()
-}
-
-func (s *Status) GetIngressRouteNamespace() string {
-	return s.Object.GetNamespace()
 }
