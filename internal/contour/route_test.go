@@ -22,6 +22,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/generated/clientset/versioned/fake"
 	"github.com/heptio/contour/internal/k8s"
 	"k8s.io/api/core/v1"
@@ -1220,4 +1221,357 @@ func routetimeout(cluster string, timeout *time.Duration) *route.Route_Route {
 	cl := routeroute(cluster)
 	cl.Route.Timeout = timeout
 	return cl
+}
+
+func TestActionRoute(t *testing.T) {
+	tests := map[string]struct {
+		services  []*dag.Service
+		websocket bool
+		timeout   time.Duration
+		want      *route.Route_Route
+	}{
+		"single service": {
+			services: []*dag.Service{
+				{
+					Object: &v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "kuard",
+							Namespace: "default",
+						},
+					},
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
+					},
+				},
+			},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_WeightedClusters{
+						WeightedClusters: &route.WeightedCluster{
+							Clusters: []*route.WeightedCluster_ClusterWeight{{
+								Name: "default/kuard/8080",
+								Weight: &types.UInt32Value{
+									Value: uint32(1),
+								}},
+							},
+							TotalWeight: &types.UInt32Value{
+								Value: uint32(1),
+							},
+						},
+					},
+				},
+			},
+		},
+		"single service with timeout": {
+			timeout: 30 * time.Second,
+			services: []*dag.Service{
+				{
+					Object: &v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "kuard",
+							Namespace: "default",
+						},
+					},
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
+					},
+				},
+			},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_WeightedClusters{
+						WeightedClusters: &route.WeightedCluster{
+							Clusters: []*route.WeightedCluster_ClusterWeight{{
+								Name: "default/kuard/8080",
+								Weight: &types.UInt32Value{
+									Value: uint32(1),
+								}},
+							},
+							TotalWeight: &types.UInt32Value{
+								Value: uint32(1),
+							},
+						},
+					},
+					Timeout: pduration(30 * time.Second),
+				},
+			},
+		},
+		"single service with infinite timeout": {
+			timeout: time.Duration(-1),
+			services: []*dag.Service{
+				{
+					Object: &v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "kuard",
+							Namespace: "default",
+						},
+					},
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
+					},
+				},
+			},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_WeightedClusters{
+						WeightedClusters: &route.WeightedCluster{
+							Clusters: []*route.WeightedCluster_ClusterWeight{{
+								Name: "default/kuard/8080",
+								Weight: &types.UInt32Value{
+									Value: uint32(1),
+								}},
+							},
+							TotalWeight: &types.UInt32Value{
+								Value: uint32(1),
+							},
+						},
+					},
+					Timeout: pduration(time.Duration(0)),
+				},
+			},
+		},
+		"single service with websockets": {
+			websocket: true,
+			services: []*dag.Service{
+				{
+					Object: &v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "kuard",
+							Namespace: "default",
+						},
+					},
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
+					},
+				},
+			},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_WeightedClusters{
+						WeightedClusters: &route.WeightedCluster{
+							Clusters: []*route.WeightedCluster_ClusterWeight{{
+								Name: "default/kuard/8080",
+								Weight: &types.UInt32Value{
+									Value: uint32(1),
+								}},
+							},
+							TotalWeight: &types.UInt32Value{
+								Value: uint32(1),
+							},
+						},
+					},
+					UseWebsocket: &types.BoolValue{Value: true},
+				},
+			},
+		},
+		"single service with websockets and timeout": {
+			websocket: true,
+			timeout:   5 * time.Second,
+			services: []*dag.Service{
+				{
+					Object: &v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "kuard",
+							Namespace: "default",
+						},
+					},
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
+					},
+				},
+			},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_WeightedClusters{
+						WeightedClusters: &route.WeightedCluster{
+							Clusters: []*route.WeightedCluster_ClusterWeight{{
+								Name: "default/kuard/8080",
+								Weight: &types.UInt32Value{
+									Value: uint32(1),
+								}},
+							},
+							TotalWeight: &types.UInt32Value{
+								Value: uint32(1),
+							},
+						},
+					},
+					Timeout:      pduration(5 * time.Second),
+					UseWebsocket: &types.BoolValue{Value: true},
+				},
+			},
+		},
+		"multiple services": {
+			services: []*dag.Service{
+				{
+					Object: &v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "kuard",
+							Namespace: "default",
+						},
+					},
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
+					},
+				},
+				{
+					Object: &v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "nginx",
+							Namespace: "default",
+						},
+					},
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
+					},
+				},
+			},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_WeightedClusters{
+						WeightedClusters: &route.WeightedCluster{
+							Clusters: []*route.WeightedCluster_ClusterWeight{{
+								Name: "default/kuard/8080",
+								Weight: &types.UInt32Value{
+									Value: uint32(1),
+								}}, {
+								Name: "default/nginx/8080",
+								Weight: &types.UInt32Value{
+									Value: uint32(1),
+								}},
+							},
+							TotalWeight: &types.UInt32Value{
+								Value: uint32(2),
+							},
+						},
+					},
+				},
+			},
+		},
+		"multiple weighted services": {
+			services: []*dag.Service{
+				{
+					Object: &v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "kuard",
+							Namespace: "default",
+						},
+					},
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
+					},
+					Weight: 80,
+				},
+				{
+					Object: &v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "nginx",
+							Namespace: "default",
+						},
+					},
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
+					},
+					Weight: 20,
+				},
+			},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_WeightedClusters{
+						WeightedClusters: &route.WeightedCluster{
+							Clusters: []*route.WeightedCluster_ClusterWeight{{
+								Name: "default/kuard/8080",
+								Weight: &types.UInt32Value{
+									Value: uint32(80),
+								}}, {
+								Name: "default/nginx/8080",
+								Weight: &types.UInt32Value{
+									Value: uint32(20),
+								}},
+							},
+							TotalWeight: &types.UInt32Value{
+								Value: uint32(100),
+							},
+						},
+					},
+				},
+			},
+		},
+		"multiple weighted services and one with no weight specified": {
+			services: []*dag.Service{
+				{
+					Object: &v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "kuard",
+							Namespace: "default",
+						},
+					},
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
+					},
+					Weight: 80,
+				},
+				{
+					Object: &v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "nginx",
+							Namespace: "default",
+						},
+					},
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
+					},
+					Weight: 20,
+				},
+				{
+					Object: &v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "notraffic",
+							Namespace: "default",
+						},
+					},
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
+					},
+				},
+			},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_WeightedClusters{
+						WeightedClusters: &route.WeightedCluster{
+							Clusters: []*route.WeightedCluster_ClusterWeight{{
+								Name: "default/kuard/8080",
+								Weight: &types.UInt32Value{
+									Value: uint32(80),
+								}}, {
+								Name: "default/nginx/8080",
+								Weight: &types.UInt32Value{
+									Value: uint32(20),
+								}}, {
+								Name: "default/notraffic/8080",
+								Weight: &types.UInt32Value{
+									Value: uint32(0),
+								}},
+							},
+							TotalWeight: &types.UInt32Value{
+								Value: uint32(100),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := actionroute(tc.services, tc.websocket, tc.timeout)
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Errorf("wanted:\n%v\ngot:\n%v\n", tc.want, got)
+			}
+		})
+	}
+}
+
+func pduration(d time.Duration) *time.Duration {
+	return &d
 }

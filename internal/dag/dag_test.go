@@ -830,7 +830,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i1,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -854,7 +854,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i1,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -968,7 +968,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i4,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -992,7 +992,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i4,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1016,7 +1016,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i5,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1040,7 +1040,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i5,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1178,7 +1178,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i6,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1194,7 +1194,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i6,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1218,7 +1218,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i6,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1234,7 +1234,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i6,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1259,7 +1259,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i6,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1275,7 +1275,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i6,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1291,7 +1291,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i6,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1319,7 +1319,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i6,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1334,7 +1334,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i6,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1350,7 +1350,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i6,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1398,7 +1398,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i7,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1408,7 +1408,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i7,
 							services: servicemap(
 								&Service{
-									object:      s2,
+									Object:      s2,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1431,7 +1431,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i8,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1441,7 +1441,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i8,
 							services: servicemap(
 								&Service{
-									object:      s2,
+									Object:      s2,
 									ServicePort: &s2.Spec.Ports[0],
 								},
 							),
@@ -1473,7 +1473,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i9,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1483,7 +1483,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i9,
 							services: servicemap(
 								&Service{
-									object:      s2,
+									Object:      s2,
 									ServicePort: &s2.Spec.Ports[0],
 								},
 							),
@@ -1528,7 +1528,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i6a,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1554,7 +1554,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i6b,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1572,7 +1572,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i6b,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1615,7 +1615,7 @@ func TestDAGInsert(t *testing.T) {
 							object: ir1,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1637,7 +1637,7 @@ func TestDAGInsert(t *testing.T) {
 							object: ir2,
 							services: servicemap(
 								&Service{
-									object:      s2,
+									Object:      s2,
 									ServicePort: &s2.Spec.Ports[0],
 								},
 							),
@@ -1659,11 +1659,11 @@ func TestDAGInsert(t *testing.T) {
 							object: ir2,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 								&Service{
-									object:      s2,
+									Object:      s2,
 									ServicePort: &s2.Spec.Ports[0],
 								},
 							),
@@ -1687,7 +1687,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i10,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1704,7 +1704,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i10,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1731,7 +1731,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i11,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1741,7 +1741,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i11,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1766,7 +1766,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i12a,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1791,7 +1791,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i12b,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1816,7 +1816,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i12c,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -1840,7 +1840,7 @@ func TestDAGInsert(t *testing.T) {
 							object: ir4,
 							services: servicemap(
 								&Service{
-									object:      s4,
+									Object:      s4,
 									ServicePort: &s4.Spec.Ports[0],
 								},
 							),
@@ -1850,7 +1850,7 @@ func TestDAGInsert(t *testing.T) {
 							object: ir5,
 							services: servicemap(
 								&Service{
-									object:      s5,
+									Object:      s5,
 									ServicePort: &s5.Spec.Ports[0],
 								},
 							),
@@ -1873,7 +1873,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i13a,
 							services: servicemap(
 								&Service{
-									object:      s13a,
+									Object:      s13a,
 									ServicePort: &s13a.Spec.Ports[0],
 								},
 							),
@@ -1884,7 +1884,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i13b,
 							services: servicemap(
 								&Service{
-									object:      s13b,
+									Object:      s13b,
 									ServicePort: &s13b.Spec.Ports[0],
 								},
 							),
@@ -1901,7 +1901,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i13a,
 							services: servicemap(
 								&Service{
-									object:      s13a,
+									Object:      s13a,
 									ServicePort: &s13a.Spec.Ports[0],
 								},
 							),
@@ -1912,7 +1912,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i13b,
 							services: servicemap(
 								&Service{
-									object:      s13b,
+									Object:      s13b,
 									ServicePort: &s13b.Spec.Ports[0],
 								},
 							),
@@ -1938,7 +1938,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i3a,
 							services: servicemap(
 								&Service{
-									object:      s3a,
+									Object:      s3a,
 									Protocol:    "h2c",
 									ServicePort: &s3a.Spec.Ports[0],
 								},
@@ -1962,7 +1962,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i3a,
 							services: servicemap(
 								&Service{
-									object:      s3b,
+									Object:      s3b,
 									Protocol:    "h2",
 									ServicePort: &s3b.Spec.Ports[0],
 								},
@@ -1987,7 +1987,7 @@ func TestDAGInsert(t *testing.T) {
 							object: i1,
 							services: servicemap(
 								&Service{
-									object:             s1b,
+									Object:             s1b,
 									ServicePort:        &s1b.Spec.Ports[0],
 									MaxConnections:     9000,
 									MaxPendingRequests: 4096,
@@ -2506,7 +2506,7 @@ func TestDAGRemove(t *testing.T) {
 							object: i6,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -2521,7 +2521,7 @@ func TestDAGRemove(t *testing.T) {
 							object: i6,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -2593,7 +2593,7 @@ func TestDAGRemove(t *testing.T) {
 							object: i7,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -2731,7 +2731,7 @@ func TestDAGRemove(t *testing.T) {
 							object: ir5,
 							services: servicemap(
 								&Service{
-									object:      s1,
+									Object:      s1,
 									ServicePort: &s1.Spec.Ports[0],
 								},
 							),
@@ -2836,7 +2836,7 @@ func (r *Route) String() string {
 }
 
 func (s *Service) String() string {
-	return fmt.Sprintf("service: %s/%s {serviceport: %v}", s.object.Namespace, s.object.Name, s.ServicePort)
+	return fmt.Sprintf("service: %s/%s {serviceport: %v}", s.Object.Namespace, s.Object.Name, s.ServicePort)
 }
 
 func (s *Secret) String() string {
@@ -2895,7 +2895,7 @@ func TestServiceMapLookup(t *testing.T) {
 			meta: meta{name: "service1", namespace: "default"},
 			port: intstr.FromInt(8080),
 			want: &Service{
-				object:      s1,
+				Object:      s1,
 				ServicePort: &s1.Spec.Ports[0],
 			},
 		},
@@ -2903,7 +2903,7 @@ func TestServiceMapLookup(t *testing.T) {
 			meta: meta{name: "service1", namespace: "default"},
 			port: intstr.FromString("http"),
 			want: &Service{
-				object:      s1,
+				Object:      s1,
 				ServicePort: &s1.Spec.Ports[0],
 			},
 		},
@@ -2911,7 +2911,7 @@ func TestServiceMapLookup(t *testing.T) {
 			meta: meta{name: "service1", namespace: "default"},
 			port: intstr.Parse("8080"),
 			want: &Service{
-				object:      s1,
+				Object:      s1,
 				ServicePort: &s1.Spec.Ports[0],
 			},
 		},
@@ -2919,7 +2919,7 @@ func TestServiceMapLookup(t *testing.T) {
 			meta: meta{name: "service1", namespace: "default"},
 			port: intstr.FromString("8080"),
 			want: &Service{
-				object:      s1,
+				Object:      s1,
 				ServicePort: &s1.Spec.Ports[0],
 			},
 		},
