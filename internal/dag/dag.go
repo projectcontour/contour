@@ -48,10 +48,11 @@ type DAG struct {
 	services      map[meta]*v1.Service
 
 	// the most recently recomputed dag.
-	dag
+	current dag
 }
 
-// dag represents
+// dag holds the results of recomputing a materialised directed acyclic graph
+// from the state stored in a DAG.
 type dag struct {
 	// roots are the roots of this dag
 	roots []Vertex
@@ -67,9 +68,9 @@ type meta struct {
 // Visit calls f for every root of this DAG.
 func (d *DAG) Visit(f func(Vertex)) {
 	d.mu.Lock()
-	dag := d.dag
+	current := d.current
 	d.mu.Unlock()
-	for _, r := range dag.roots {
+	for _, r := range current.roots {
 		f(r)
 	}
 }
@@ -146,7 +147,7 @@ func (d *DAG) Recompute() IngressrouteStatus {
 	var statuses IngressrouteStatus
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	d.dag, statuses = d.recompute()
+	d.current, statuses = d.recompute()
 	return statuses
 }
 
@@ -402,7 +403,7 @@ func (d *DAG) recompute() (dag, IngressrouteStatus) {
 		status = append(status, sts...)
 	}
 
-	nextVersion := d.version + 1
+	nextVersion := d.current.version + 1
 	_d := dag{
 		version: nextVersion,
 	}
