@@ -72,6 +72,7 @@ func main() {
 	serve := app.Command("serve", "Serve xDS API traffic")
 	inCluster := serve.Flag("incluster", "use in cluster configuration.").Bool()
 	kubeconfig := serve.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).String()
+	logLevel := serve.Flag("log-level", "log level").Default(logrus.InfoLevel.String()).String()
 	xdsAddr := serve.Flag("xds-address", "xDS gRPC API address").Default("127.0.0.1").String()
 	xdsPort := serve.Flag("xds-port", "xDS gRPC API port").Default("8001").Int()
 
@@ -115,6 +116,10 @@ func main() {
 		stream := client.RouteStream()
 		watchstream(stream, routeType, resources)
 	case serve.FullCommand():
+		logrusLevel, err := logrus.ParseLevel(*logLevel)
+		check(err)
+		log.SetLevel(logrusLevel)
+
 		log.Infof("args: %v", args)
 		var g workgroup.Group
 
