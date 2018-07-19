@@ -448,6 +448,30 @@ func (d *DAG) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 	return false
 }
 
+func (d *DAG) CalculateIngressRouteMetric() map[string]int {
+	ingressRouteMetric := make(map[string]int)
+
+	d.Visit(func(vh Vertex) {
+		switch vh := vh.(type) {
+		case *VirtualHost:
+			hostname := vh.FQDN()
+
+			vh.Visit(func(r Vertex) {
+				switch r := r.(type) {
+				case *Route:
+					obj := r.object
+					switch rt := obj.(type) {
+					case *ingressroutev1.IngressRoute:
+						ingressRouteMetric[fmt.Sprintf("%s|%s", hostname, rt.ObjectMeta.Namespace)]++
+					}
+				}
+			})
+		}
+	})
+
+	return ingressRouteMetric
+}
+
 type ingressRouteProcessor struct {
 	host          string
 	service       func(m meta, port intstr.IntOrString) *Service

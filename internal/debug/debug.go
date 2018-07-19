@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/heptio/contour/internal/dag"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
@@ -39,7 +40,7 @@ type Service struct {
 
 // Start fulfills the g.Start contract.
 // When stop is closed the http server will shutdown.
-func (svc *Service) Start(stop <-chan struct{}) (err error) {
+func (svc *Service) Start(stop <-chan struct{}, registry *prometheus.Registry) (err error) {
 	defer func() {
 		if err != nil {
 			svc.WithError(err).Error("terminated with error")
@@ -50,7 +51,7 @@ func (svc *Service) Start(stop <-chan struct{}) (err error) {
 	mux := http.NewServeMux()
 	registerProfile(mux)
 	registerHealthCheck(mux)
-	registerMetrics(mux)
+	registerMetrics(mux, registry)
 
 	// register DAG dot writer.
 	mux.HandleFunc("/debug/dag", svc.writeDot)
@@ -97,8 +98,8 @@ func registerHealthCheck(mux *http.ServeMux) {
 	})
 }
 
-func registerMetrics(mux *http.ServeMux) {
-	mux.Handle("/metrics", promhttp.Handler())
+func registerMetrics(mux *http.ServeMux, registry *prometheus.Registry) {
+	mux.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 }
 
 // Write out a .dot representation of the DAG.
