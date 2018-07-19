@@ -57,6 +57,9 @@ type dag struct {
 	// roots are the roots of this dag
 	roots []Vertex
 
+	// status computed while building this dag.
+	statuses []Status
+
 	version int
 }
 
@@ -73,6 +76,14 @@ func (d *DAG) Visit(f func(Vertex)) {
 	for _, r := range current.roots {
 		f(r)
 	}
+}
+
+// Visit calls f for every root of this DAG.
+func (d *DAG) Statuses() []Status {
+	d.mu.Lock()
+	current := d.current
+	d.mu.Unlock()
+	return current.statuses
 }
 
 // Insert inserts obj into the DAG. If an object with a matching type, name, and
@@ -143,12 +154,10 @@ func (d *DAG) remove(obj interface{}) {
 }
 
 // Recompute recomputes the DAG.
-func (d *DAG) Recompute() IngressrouteStatus {
-	var statuses IngressrouteStatus
+func (d *DAG) Recompute() {
 	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.current, statuses = d.recompute()
-	return statuses
+	d.current = d.recompute()
+	d.mu.Unlock()
 }
 
 // serviceMap memoise access to a service map, built
@@ -211,7 +220,7 @@ func (sm *serviceMap) insert(svc *v1.Service, port *v1.ServicePort) *Service {
 }
 
 // recompute builds a new *dag.dag.
-func (d *DAG) recompute() (dag, IngressrouteStatus) {
+func (d *DAG) recompute() dag {
 	sm := serviceMap{
 		services: d.services,
 	}
@@ -422,7 +431,8 @@ func (d *DAG) recompute() (dag, IngressrouteStatus) {
 			}
 		}
 	}
-	return _d, IngressrouteStatus{statuses: status, version: nextVersion}
+	_d.statuses = status
+	return _d
 }
 
 // returns true if the root ingressroute lives in a root namespace
@@ -695,19 +705,9 @@ func (s *Secret) toMeta() meta {
 	}
 }
 
-// IngressrouteStatus contains the status for
-// an IngressRoute (valid / invalid / orphan, etc)
-type IngressrouteStatus struct {
-	statuses []Status
-	version  int
-}
-
+// Status contains the status for an IngressRoute (valid / invalid / orphan, etc)
 type Status struct {
 	Object      *ingressroutev1.IngressRoute
 	Status      string
 	Description string
-}
-
-func (irs *IngressrouteStatus) GetStatuses() []Status {
-	return irs.statuses
 }
