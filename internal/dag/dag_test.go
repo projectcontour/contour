@@ -3656,39 +3656,50 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		objs []*ingressroutev1.IngressRoute
-		want []Status
+		objs         []*ingressroutev1.IngressRoute
+		want         []Status
+		wantIRMetric map[string]int
 	}{
 		"valid ingressroute": {
 			objs: []*ingressroutev1.IngressRoute{ir1},
 			want: []Status{{Object: ir1, Status: "valid", Description: "valid IngressRoute"}},
+			wantIRMetric: map[string]int{
+				"example.com|roots": 1,
+			},
 		},
 		"invalid port in service": {
-			objs: []*ingressroutev1.IngressRoute{ir2},
-			want: []Status{{Object: ir2, Status: "invalid", Description: `route "/foo": service "home": port must be in the range 1-65535`}},
+			objs:         []*ingressroutev1.IngressRoute{ir2},
+			want:         []Status{{Object: ir2, Status: "invalid", Description: `route "/foo": service "home": port must be in the range 1-65535`}},
+			wantIRMetric: map[string]int{},
 		},
 		"root ingressroute outside of roots namespace": {
-			objs: []*ingressroutev1.IngressRoute{ir3},
-			want: []Status{{Object: ir3, Status: "invalid", Description: "root IngressRoute cannot be defined in this namespace"}},
+			objs:         []*ingressroutev1.IngressRoute{ir3},
+			want:         []Status{{Object: ir3, Status: "invalid", Description: "root IngressRoute cannot be defined in this namespace"}},
+			wantIRMetric: map[string]int{},
 		},
 		"delegated route's match prefix does not match parent's prefix": {
 			objs: []*ingressroutev1.IngressRoute{ir1, ir4},
-			want: []Status{
-				{Object: ir4, Status: "invalid", Description: `the path prefix "/doesnotmatch" does not match the parent's path prefix "/prefix"`},
+			want: []Status{{Object: ir4, Status: "invalid", Description: `the path prefix "/doesnotmatch" does not match the parent's path prefix "/prefix"`},
 				{Object: ir1, Status: "valid", Description: "valid IngressRoute"},
+			},
+			wantIRMetric: map[string]int{
+				"example.com|roots": 1,
 			},
 		},
 		"invalid weight in service": {
-			objs: []*ingressroutev1.IngressRoute{ir5},
-			want: []Status{{Object: ir5, Status: "invalid", Description: `route "/foo": service "home": weight must be greater than or equal to zero`}},
+			objs:         []*ingressroutev1.IngressRoute{ir5},
+			want:         []Status{{Object: ir5, Status: "invalid", Description: `route "/foo": service "home": weight must be greater than or equal to zero`}},
+			wantIRMetric: map[string]int{},
 		},
 		"root ingressroute does not specify FQDN": {
-			objs: []*ingressroutev1.IngressRoute{ir13},
-			want: []Status{{Object: ir13, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"}},
+			objs:         []*ingressroutev1.IngressRoute{ir13},
+			want:         []Status{{Object: ir13, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"}},
+			wantIRMetric: map[string]int{},
 		},
 		"self-edge produces a cycle": {
-			objs: []*ingressroutev1.IngressRoute{ir6},
-			want: []Status{{Object: ir6, Status: "invalid", Description: "route creates a delegation cycle: roots/self -> roots/self"}},
+			objs:         []*ingressroutev1.IngressRoute{ir6},
+			want:         []Status{{Object: ir6, Status: "invalid", Description: "route creates a delegation cycle: roots/self -> roots/self"}},
+			wantIRMetric: map[string]int{},
 		},
 		"child delegates to parent, producing a cycle": {
 			objs: []*ingressroutev1.IngressRoute{ir7, ir8},
@@ -3696,14 +3707,17 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{Object: ir8, Status: "invalid", Description: "route creates a delegation cycle: roots/parent -> roots/child -> roots/parent"},
 				{Object: ir7, Status: "valid", Description: "valid IngressRoute"},
 			},
+			wantIRMetric: map[string]int{},
 		},
 		"route has a list of services and also delegates": {
-			objs: []*ingressroutev1.IngressRoute{ir9},
-			want: []Status{{Object: ir9, Status: "invalid", Description: `route "/foo": cannot specify services and delegate in the same route`}},
+			objs:         []*ingressroutev1.IngressRoute{ir9},
+			want:         []Status{{Object: ir9, Status: "invalid", Description: `route "/foo": cannot specify services and delegate in the same route`}},
+			wantIRMetric: map[string]int{},
 		},
 		"ingressroute is an orphaned route": {
-			objs: []*ingressroutev1.IngressRoute{ir8},
-			want: []Status{{Object: ir8, Status: "orphaned", Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"}},
+			objs:         []*ingressroutev1.IngressRoute{ir8},
+			want:         []Status{{Object: ir8, Status: "orphaned", Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"}},
+			wantIRMetric: map[string]int{},
 		},
 		"ingressroute delegates to multiple ingressroutes, one is invalid": {
 			objs: []*ingressroutev1.IngressRoute{ir10, ir11, ir12},
@@ -3712,6 +3726,9 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{Object: ir12, Status: "invalid", Description: `route "/bar": service "foo": port must be in the range 1-65535`},
 				{Object: ir10, Status: "valid", Description: "valid IngressRoute"},
 			},
+			wantIRMetric: map[string]int{
+				"example.com|roots": 1,
+			},
 		},
 		"invalid parent orphans children": {
 			objs: []*ingressroutev1.IngressRoute{ir14, ir11},
@@ -3719,6 +3736,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{Object: ir14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
 				{Object: ir11, Status: "orphaned", Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"},
 			},
+			wantIRMetric: map[string]int{},
 		},
 		"multi-parent children is not orphaned when one of the parents is invalid": {
 			objs: []*ingressroutev1.IngressRoute{ir14, ir11, ir10},
@@ -3726,6 +3744,9 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{Object: ir14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
 				{Object: ir11, Status: "valid", Description: "valid IngressRoute"},
 				{Object: ir10, Status: "valid", Description: "valid IngressRoute"},
+			},
+			wantIRMetric: map[string]int{
+				"example.com|roots": 1,
 			},
 		},
 	}
@@ -3754,6 +3775,11 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				if !found {
 					t.Fatalf("expected to find:\n%v\nbut did not find it in:\n%v", ex, got)
 				}
+			}
+
+			gotMetrics := d.CalculateIngressRouteMetric()
+			if !reflect.DeepEqual(tc.wantIRMetric, gotMetrics) {
+				t.Fatalf("(metrics) expected to find: %v but got: %v", tc.wantIRMetric, gotMetrics)
 			}
 		})
 	}

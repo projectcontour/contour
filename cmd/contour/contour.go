@@ -34,6 +34,7 @@ import (
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/grpc"
 	"github.com/heptio/contour/internal/k8s"
+	"github.com/heptio/contour/internal/metrics"
 
 	"github.com/sirupsen/logrus"
 )
@@ -146,7 +147,14 @@ func main() {
 		}
 		k8s.WatchEndpoints(&g, client, wl, et)
 
-		g.Add(debug.Start)
+		metrics := metrics.NewMetrics(log)
+		metrics.RegisterPrometheus(true)
+		da.Metrics = metrics
+
+		g.Add(func(stop <-chan struct{}) error {
+			debug.Start(stop, metrics.Registry)
+			return nil
+		})
 
 		g.Add(func(stop <-chan struct{}) error {
 			log := log.WithField("context", "grpc")

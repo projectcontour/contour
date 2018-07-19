@@ -19,6 +19,7 @@ package contour
 import (
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/k8s"
+	"github.com/heptio/contour/internal/metrics"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/extensions/v1beta1"
 )
@@ -39,6 +40,7 @@ type DAGAdapter struct {
 
 	IngressRouteStatus *k8s.IngressRouteStatus
 	logrus.FieldLogger
+	metrics.Metrics
 }
 
 func (d *DAGAdapter) OnAdd(obj interface{}) {
@@ -50,6 +52,7 @@ func (d *DAGAdapter) OnAdd(obj interface{}) {
 	d.updateListeners()
 	d.updateRoutes()
 	d.updateClusters()
+	d.Metrics.SetIngressRouteMetric(d.DAG.CalculateIngressRouteMetric())
 }
 
 func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
@@ -68,6 +71,7 @@ func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
 		d.updateListeners()
 		d.updateRoutes()
 		d.updateClusters()
+		d.Metrics.SetIngressRouteMetric(d.DAG.CalculateIngressRouteMetric())
 	}
 }
 
@@ -78,6 +82,7 @@ func (d *DAGAdapter) OnDelete(obj interface{}) {
 	d.updateListeners()
 	d.updateRoutes()
 	d.updateClusters()
+	d.Metrics.SetIngressRouteMetric(d.DAG.CalculateIngressRouteMetric())
 }
 
 func (d *DAGAdapter) setIngressRouteStatus() {
