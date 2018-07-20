@@ -775,7 +775,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i1,
+							Object: i1,
 						},
 					),
 				},
@@ -792,7 +792,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i2,
+							Object: i2,
 						},
 					),
 				},
@@ -809,7 +809,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i3,
+							Object: i3,
 						},
 					),
 				},
@@ -827,7 +827,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i1,
+							Object: i1,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -851,7 +851,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i1,
+							Object: i1,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -875,7 +875,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i1,
+							Object: i1,
 						},
 					),
 				},
@@ -893,7 +893,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i1,
+							Object: i1,
 						},
 					),
 				},
@@ -911,7 +911,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i1,
+							Object: i1,
 						},
 					),
 				},
@@ -929,7 +929,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i2,
+							Object: i2,
 						},
 					),
 				},
@@ -947,7 +947,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i2,
+							Object: i2,
 						},
 					),
 				},
@@ -965,7 +965,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i4,
+							Object: i4,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -989,7 +989,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i4,
+							Object: i4,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1013,7 +1013,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i5,
+							Object: i5,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1037,7 +1037,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i5,
+							Object: i5,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1067,7 +1067,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i1,
+							Object: i1,
 						},
 					),
 				}},
@@ -1084,7 +1084,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i3,
+							Object: i3,
 						},
 					),
 				},
@@ -1095,7 +1095,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i3,
+							Object: i3,
 						},
 					),
 					secret: &Secret{
@@ -1116,7 +1116,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i3,
+							Object: i3,
 						},
 					),
 				},
@@ -1127,7 +1127,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i3,
+							Object: i3,
 						},
 					),
 					secret: &Secret{
@@ -1147,7 +1147,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 						},
 					),
 				},
@@ -1157,7 +1157,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 						},
 					),
 				},
@@ -1175,7 +1175,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1191,7 +1191,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1215,7 +1215,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1231,7 +1231,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1256,7 +1256,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1272,7 +1272,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1288,7 +1288,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1316,7 +1316,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1331,7 +1331,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1347,7 +1347,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1373,11 +1373,11 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i7,
+							Object: i7,
 						},
 						&Route{
 							path:   "/kuarder",
-							object: i7,
+							Object: i7,
 						},
 					),
 				}},
@@ -1395,7 +1395,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i7,
+							Object: i7,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1405,7 +1405,7 @@ func TestDAGInsert(t *testing.T) {
 						},
 						&Route{
 							path:   "/kuarder",
-							object: i7,
+							Object: i7,
 							services: servicemap(
 								&Service{
 									Object:      s2,
@@ -1428,7 +1428,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i8,
+							Object: i8,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1438,7 +1438,7 @@ func TestDAGInsert(t *testing.T) {
 						},
 						&Route{
 							path:   "/kuarder",
-							object: i8,
+							Object: i8,
 							services: servicemap(
 								&Service{
 									Object:      s2,
@@ -1470,7 +1470,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i9,
+							Object: i9,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1480,7 +1480,7 @@ func TestDAGInsert(t *testing.T) {
 						},
 						&Route{
 							path:   "/kuarder",
-							object: i9,
+							Object: i9,
 							services: servicemap(
 								&Service{
 									Object:      s2,
@@ -1525,7 +1525,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6a,
+							Object: i6a,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1551,7 +1551,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6b,
+							Object: i6b,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1569,7 +1569,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6b,
+							Object: i6b,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1596,7 +1596,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: ir1,
+							Object: ir1,
 						},
 					),
 				}},
@@ -1612,7 +1612,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: ir1,
+							Object: ir1,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1634,7 +1634,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: ir2,
+							Object: ir2,
 							services: servicemap(
 								&Service{
 									Object:      s2,
@@ -1656,7 +1656,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: ir2,
+							Object: ir2,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1684,7 +1684,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i10,
+							Object: i10,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1701,7 +1701,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i10,
+							Object: i10,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1728,7 +1728,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i11,
+							Object: i11,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1738,7 +1738,7 @@ func TestDAGInsert(t *testing.T) {
 						},
 						&Route{
 							path:   "/ws1",
-							object: i11,
+							Object: i11,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1763,7 +1763,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i12a,
+							Object: i12a,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1788,7 +1788,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i12b,
+							Object: i12b,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1813,7 +1813,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i12c,
+							Object: i12c,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1837,7 +1837,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/blog",
-							object: ir4,
+							Object: ir4,
 							services: servicemap(
 								&Service{
 									Object:      s4,
@@ -1847,7 +1847,7 @@ func TestDAGInsert(t *testing.T) {
 						},
 						&Route{
 							path:   "/blog/admin",
-							object: ir5,
+							Object: ir5,
 							services: servicemap(
 								&Service{
 									Object:      s5,
@@ -1870,7 +1870,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i13a,
+							Object: i13a,
 							services: servicemap(
 								&Service{
 									Object:      s13a,
@@ -1881,7 +1881,7 @@ func TestDAGInsert(t *testing.T) {
 						},
 						&Route{
 							path:   "/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk",
-							object: i13b,
+							Object: i13b,
 							services: servicemap(
 								&Service{
 									Object:      s13b,
@@ -1898,7 +1898,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i13a,
+							Object: i13a,
 							services: servicemap(
 								&Service{
 									Object:      s13a,
@@ -1909,7 +1909,7 @@ func TestDAGInsert(t *testing.T) {
 						},
 						&Route{
 							path:   "/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk",
-							object: i13b,
+							Object: i13b,
 							services: servicemap(
 								&Service{
 									Object:      s13b,
@@ -1935,7 +1935,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i3a,
+							Object: i3a,
 							services: servicemap(
 								&Service{
 									Object:      s3a,
@@ -1959,7 +1959,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i3a,
+							Object: i3a,
 							services: servicemap(
 								&Service{
 									Object:      s3b,
@@ -1984,7 +1984,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i1,
+							Object: i1,
 							services: servicemap(
 								&Service{
 									Object:             s1b,
@@ -2343,7 +2343,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i3,
+							Object: i3,
 						},
 					),
 				}},
@@ -2373,7 +2373,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i1,
+							Object: i1,
 						},
 					),
 				}},
@@ -2393,7 +2393,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i1,
+							Object: i1,
 						},
 					),
 				}},
@@ -2423,7 +2423,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i5,
+							Object: i5,
 						},
 					),
 				}},
@@ -2443,7 +2443,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i3,
+							Object: i3,
 						},
 					),
 				}},
@@ -2472,7 +2472,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 						},
 					),
 				},
@@ -2482,7 +2482,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 						},
 					),
 				}},
@@ -2503,7 +2503,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -2518,7 +2518,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -2545,7 +2545,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 						},
 					),
 				},
@@ -2555,7 +2555,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 						},
 					),
 				},
@@ -2566,7 +2566,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i6,
+							Object: i6,
 						},
 					),
 					secret: &Secret{
@@ -2590,7 +2590,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: i7,
+							Object: i7,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -2600,7 +2600,7 @@ func TestDAGRemove(t *testing.T) {
 						},
 						&Route{
 							path:   "/kuarder",
-							object: i7,
+							Object: i7,
 						},
 					),
 				}},
@@ -2648,7 +2648,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: ir1,
+							Object: ir1,
 						},
 					),
 				}},
@@ -2668,7 +2668,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: ir1,
+							Object: ir1,
 						},
 					),
 				}},
@@ -2698,7 +2698,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: ir3,
+							Object: ir3,
 						},
 					),
 				}},
@@ -2728,7 +2728,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: ir5,
+							Object: ir5,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -2738,7 +2738,7 @@ func TestDAGRemove(t *testing.T) {
 						},
 						&Route{
 							path:   "/kuarder",
-							object: ir5,
+							Object: ir5,
 						},
 					),
 				}},
@@ -2775,7 +2775,7 @@ func TestDAGRemove(t *testing.T) {
 					routes: routemap(
 						&Route{
 							path:   "/",
-							object: ir7,
+							Object: ir7,
 						},
 					),
 				},
@@ -2832,7 +2832,7 @@ func (s *SecureVirtualHost) String() string {
 }
 
 func (r *Route) String() string {
-	return fmt.Sprintf("route: %q {services: %v, object: %p, upgrade: %v}", r.Prefix(), r.services, r.object, r.HTTPSUpgrade)
+	return fmt.Sprintf("route: %q {services: %v, object: %p, upgrade: %v}", r.Prefix(), r.services, r.Object, r.HTTPSUpgrade)
 }
 
 func (s *Service) String() string {
@@ -2993,7 +2993,7 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 	want[hostport{host: "example.com", port: 80}] = &VirtualHost{
 		Port:   80,
 		host:   "example.com",
-		routes: routemap(&Route{path: "/finance", object: ir2}),
+		routes: routemap(&Route{path: "/finance", Object: ir2}),
 	}
 
 	if !reflect.DeepEqual(want, got) {
@@ -3656,50 +3656,38 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		objs         []*ingressroutev1.IngressRoute
-		want         []Status
-		wantIRMetric map[string]int
+		objs []*ingressroutev1.IngressRoute
+		want []Status
 	}{
 		"valid ingressroute": {
 			objs: []*ingressroutev1.IngressRoute{ir1},
 			want: []Status{{Object: ir1, Status: "valid", Description: "valid IngressRoute"}},
-			wantIRMetric: map[string]int{
-				"example.com|roots": 1,
-			},
 		},
 		"invalid port in service": {
-			objs:         []*ingressroutev1.IngressRoute{ir2},
-			want:         []Status{{Object: ir2, Status: "invalid", Description: `route "/foo": service "home": port must be in the range 1-65535`}},
-			wantIRMetric: map[string]int{},
+			objs: []*ingressroutev1.IngressRoute{ir2},
+			want: []Status{{Object: ir2, Status: "invalid", Description: `route "/foo": service "home": port must be in the range 1-65535`}},
 		},
 		"root ingressroute outside of roots namespace": {
-			objs:         []*ingressroutev1.IngressRoute{ir3},
-			want:         []Status{{Object: ir3, Status: "invalid", Description: "root IngressRoute cannot be defined in this namespace"}},
-			wantIRMetric: map[string]int{},
+			objs: []*ingressroutev1.IngressRoute{ir3},
+			want: []Status{{Object: ir3, Status: "invalid", Description: "root IngressRoute cannot be defined in this namespace"}},
 		},
 		"delegated route's match prefix does not match parent's prefix": {
 			objs: []*ingressroutev1.IngressRoute{ir1, ir4},
 			want: []Status{{Object: ir4, Status: "invalid", Description: `the path prefix "/doesnotmatch" does not match the parent's path prefix "/prefix"`},
 				{Object: ir1, Status: "valid", Description: "valid IngressRoute"},
 			},
-			wantIRMetric: map[string]int{
-				"example.com|roots": 1,
-			},
 		},
 		"invalid weight in service": {
-			objs:         []*ingressroutev1.IngressRoute{ir5},
-			want:         []Status{{Object: ir5, Status: "invalid", Description: `route "/foo": service "home": weight must be greater than or equal to zero`}},
-			wantIRMetric: map[string]int{},
+			objs: []*ingressroutev1.IngressRoute{ir5},
+			want: []Status{{Object: ir5, Status: "invalid", Description: `route "/foo": service "home": weight must be greater than or equal to zero`}},
 		},
 		"root ingressroute does not specify FQDN": {
-			objs:         []*ingressroutev1.IngressRoute{ir13},
-			want:         []Status{{Object: ir13, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"}},
-			wantIRMetric: map[string]int{},
+			objs: []*ingressroutev1.IngressRoute{ir13},
+			want: []Status{{Object: ir13, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"}},
 		},
 		"self-edge produces a cycle": {
-			objs:         []*ingressroutev1.IngressRoute{ir6},
-			want:         []Status{{Object: ir6, Status: "invalid", Description: "route creates a delegation cycle: roots/self -> roots/self"}},
-			wantIRMetric: map[string]int{},
+			objs: []*ingressroutev1.IngressRoute{ir6},
+			want: []Status{{Object: ir6, Status: "invalid", Description: "route creates a delegation cycle: roots/self -> roots/self"}},
 		},
 		"child delegates to parent, producing a cycle": {
 			objs: []*ingressroutev1.IngressRoute{ir7, ir8},
@@ -3707,17 +3695,14 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{Object: ir8, Status: "invalid", Description: "route creates a delegation cycle: roots/parent -> roots/child -> roots/parent"},
 				{Object: ir7, Status: "valid", Description: "valid IngressRoute"},
 			},
-			wantIRMetric: map[string]int{},
 		},
 		"route has a list of services and also delegates": {
-			objs:         []*ingressroutev1.IngressRoute{ir9},
-			want:         []Status{{Object: ir9, Status: "invalid", Description: `route "/foo": cannot specify services and delegate in the same route`}},
-			wantIRMetric: map[string]int{},
+			objs: []*ingressroutev1.IngressRoute{ir9},
+			want: []Status{{Object: ir9, Status: "invalid", Description: `route "/foo": cannot specify services and delegate in the same route`}},
 		},
 		"ingressroute is an orphaned route": {
-			objs:         []*ingressroutev1.IngressRoute{ir8},
-			want:         []Status{{Object: ir8, Status: "orphaned", Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"}},
-			wantIRMetric: map[string]int{},
+			objs: []*ingressroutev1.IngressRoute{ir8},
+			want: []Status{{Object: ir8, Status: "orphaned", Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"}},
 		},
 		"ingressroute delegates to multiple ingressroutes, one is invalid": {
 			objs: []*ingressroutev1.IngressRoute{ir10, ir11, ir12},
@@ -3726,9 +3711,6 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{Object: ir12, Status: "invalid", Description: `route "/bar": service "foo": port must be in the range 1-65535`},
 				{Object: ir10, Status: "valid", Description: "valid IngressRoute"},
 			},
-			wantIRMetric: map[string]int{
-				"example.com|roots": 1,
-			},
 		},
 		"invalid parent orphans children": {
 			objs: []*ingressroutev1.IngressRoute{ir14, ir11},
@@ -3736,7 +3718,6 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{Object: ir14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
 				{Object: ir11, Status: "orphaned", Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"},
 			},
-			wantIRMetric: map[string]int{},
 		},
 		"multi-parent children is not orphaned when one of the parents is invalid": {
 			objs: []*ingressroutev1.IngressRoute{ir14, ir11, ir10},
@@ -3744,9 +3725,6 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{Object: ir14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
 				{Object: ir11, Status: "valid", Description: "valid IngressRoute"},
 				{Object: ir10, Status: "valid", Description: "valid IngressRoute"},
-			},
-			wantIRMetric: map[string]int{
-				"example.com|roots": 1,
 			},
 		},
 	}
@@ -3775,11 +3753,6 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				if !found {
 					t.Fatalf("expected to find:\n%v\nbut did not find it in:\n%v", ex, got)
 				}
-			}
-
-			gotMetrics := d.CalculateIngressRouteMetric()
-			if !reflect.DeepEqual(tc.wantIRMetric, gotMetrics) {
-				t.Fatalf("(metrics) expected to find: %v but got: %v", tc.wantIRMetric, gotMetrics)
 			}
 		})
 	}
