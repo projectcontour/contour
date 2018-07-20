@@ -773,10 +773,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i1,
-						},
+						route("/", i1),
 					),
 				},
 			},
@@ -790,10 +787,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i2,
-						},
+						route("/", i2),
 					),
 				},
 			},
@@ -807,10 +801,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "kuard.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i3,
-						},
+						route("/", i3),
 					),
 				},
 			},
@@ -825,16 +816,12 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i1,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i1, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 			},
@@ -849,16 +836,12 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i1,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i1, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 			},
@@ -873,10 +856,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i1,
-						},
+						route("/", i1),
 					),
 				},
 			},
@@ -891,10 +871,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i1,
-						},
+						route("/", i1),
 					),
 				},
 			},
@@ -909,10 +886,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i1,
-						},
+						route("/", i1),
 					),
 				},
 			},
@@ -927,10 +901,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i2,
-						},
+						route("/", i2),
 					),
 				},
 			},
@@ -945,10 +916,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i2,
-						},
+						route("/", i2),
 					),
 				},
 			},
@@ -963,16 +931,12 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i4,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i4, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 			},
@@ -987,16 +951,12 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i4,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i4, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 			},
@@ -1011,16 +971,12 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i5,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i5, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 			},
@@ -1035,16 +991,12 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i5,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i5, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 			},
@@ -1065,10 +1017,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i1,
-						},
+						route("/", i1),
 					),
 				}},
 		},
@@ -1082,10 +1031,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "kuard.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i3,
-						},
+						route("/", i3),
 					),
 				},
 				&SecureVirtualHost{
@@ -1093,10 +1039,7 @@ func TestDAGInsert(t *testing.T) {
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "kuard.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i3,
-						},
+						route("/", i3),
 					),
 					secret: &Secret{
 						object: sec1,
@@ -1114,10 +1057,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "kuard.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i3,
-						},
+						route("/", i3),
 					),
 				},
 				&SecureVirtualHost{
@@ -1125,10 +1065,7 @@ func TestDAGInsert(t *testing.T) {
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "kuard.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i3,
-						},
+						route("/", i3),
 					),
 					secret: &Secret{
 						object: sec1,
@@ -1145,20 +1082,14 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "a.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-						},
+						route("/", i6),
 					),
 				},
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-						},
+						route("/", i6),
 					),
 				},
 			},
@@ -1173,32 +1104,24 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "a.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i6, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i6, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 			},
@@ -1213,32 +1136,24 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "a.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i6, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i6, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 			},
@@ -1254,48 +1169,36 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "a.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i6, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i6, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				}, &SecureVirtualHost{
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i6, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 					secret: &Secret{
 						object: sec1,
@@ -1314,47 +1217,35 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "a.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i6, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				}, &VirtualHost{
 					Port: 80,
 					host: "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i6, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				}, &SecureVirtualHost{
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i6, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 					secret: &Secret{
 						object: sec1,
@@ -1371,14 +1262,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i7,
-						},
-						&Route{
-							path:   "/kuarder",
-							Object: i7,
-						},
+						route("/", i7),
+						route("/kuarder", i7),
 					),
 				}},
 		},
@@ -1393,26 +1278,18 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i7,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
-						&Route{
-							path:   "/kuarder",
-							Object: i7,
-							services: servicemap(
-								&Service{
-									Object:      s2,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i7, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+						route("/kuarder", i7, servicemap(
+							&Service{
+								Object:      s2,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 			},
@@ -1426,26 +1303,18 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i8,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
-						&Route{
-							path:   "/kuarder",
-							Object: i8,
-							services: servicemap(
-								&Service{
-									Object:      s2,
-									ServicePort: &s2.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i8, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+						route("/kuarder", i8, servicemap(
+							&Service{
+								Object:      s2,
+								ServicePort: &s2.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 			},
@@ -1468,26 +1337,18 @@ func TestDAGInsert(t *testing.T) {
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i9,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
-						&Route{
-							path:   "/kuarder",
-							Object: i9,
-							services: servicemap(
-								&Service{
-									Object:      s2,
-									ServicePort: &s2.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i9, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+						route("/kuarder", i9, servicemap(
+							&Service{
+								Object:      s2,
+								ServicePort: &s2.Spec.Ports[0],
+							},
+						)),
 					),
 					secret: &Secret{
 						object: sec1,
@@ -1523,16 +1384,12 @@ func TestDAGInsert(t *testing.T) {
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6a,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i6a, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 					secret: &Secret{
 						object: sec1,
@@ -1594,10 +1451,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: ir1,
-						},
+						route("/", ir1),
 					),
 				}},
 		},
@@ -1610,16 +1464,12 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: ir1,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", ir1, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				}},
 		},
@@ -1632,16 +1482,12 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: ir2,
-							services: servicemap(
-								&Service{
-									Object:      s2,
-									ServicePort: &s2.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", ir2, servicemap(
+							&Service{
+								Object:      s2,
+								ServicePort: &s2.Spec.Ports[0],
+							},
+						)),
 					),
 				}},
 		},
@@ -1654,20 +1500,16 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: ir2,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-								&Service{
-									Object:      s2,
-									ServicePort: &s2.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", ir2, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+							&Service{
+								Object:      s2,
+								ServicePort: &s2.Spec.Ports[0],
+							},
+						)),
 					),
 				}},
 		},
@@ -1682,16 +1524,12 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i10,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i10, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 				&SecureVirtualHost{
@@ -1699,16 +1537,12 @@ func TestDAGInsert(t *testing.T) {
 					MinProtoVersion: auth.TlsParameters_TLSv1_3,
 					host:            "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i10,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i10, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 					secret: &Secret{
 						object: sec1,
@@ -1726,16 +1560,12 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i11,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i11, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 						&Route{
 							path:   "/ws1",
 							Object: i11,
@@ -1835,26 +1665,18 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "example.com",
 					routes: routemap(
-						&Route{
-							path:   "/blog",
-							Object: ir4,
-							services: servicemap(
-								&Service{
-									Object:      s4,
-									ServicePort: &s4.Spec.Ports[0],
-								},
-							),
-						},
-						&Route{
-							path:   "/blog/admin",
-							Object: ir5,
-							services: servicemap(
-								&Service{
-									Object:      s5,
-									ServicePort: &s5.Spec.Ports[0],
-								},
-							),
-						},
+						route("/blog", ir4, servicemap(
+							&Service{
+								Object:      s4,
+								ServicePort: &s4.Spec.Ports[0],
+							},
+						)),
+						route("/blog/admin", ir5, servicemap(
+							&Service{
+								Object:      s5,
+								ServicePort: &s5.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 			},
@@ -1879,16 +1701,12 @@ func TestDAGInsert(t *testing.T) {
 							),
 							HTTPSUpgrade: true,
 						},
-						&Route{
-							path:   "/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk",
-							Object: i13b,
-							services: servicemap(
-								&Service{
-									Object:      s13b,
-									ServicePort: &s13b.Spec.Ports[0],
-								},
-							),
-						},
+						route("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", i13b, servicemap(
+							&Service{
+								Object:      s13b,
+								ServicePort: &s13b.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 				&SecureVirtualHost{
@@ -1907,16 +1725,12 @@ func TestDAGInsert(t *testing.T) {
 							),
 							HTTPSUpgrade: true,
 						},
-						&Route{
-							path:   "/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk",
-							Object: i13b,
-							services: servicemap(
-								&Service{
-									Object:      s13b,
-									ServicePort: &s13b.Spec.Ports[0],
-								},
-							),
-						},
+						route("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", i13b, servicemap(
+							&Service{
+								Object:      s13b,
+								ServicePort: &s13b.Spec.Ports[0],
+							},
+						)),
 					),
 					secret: &Secret{
 						object: sec13,
@@ -1933,17 +1747,13 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i3a,
-							services: servicemap(
-								&Service{
-									Object:      s3a,
-									Protocol:    "h2c",
-									ServicePort: &s3a.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i3a, servicemap(
+							&Service{
+								Object:      s3a,
+								Protocol:    "h2c",
+								ServicePort: &s3a.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 			},
@@ -1957,17 +1767,13 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i3a,
-							services: servicemap(
-								&Service{
-									Object:      s3b,
-									Protocol:    "h2",
-									ServicePort: &s3b.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i3a, servicemap(
+							&Service{
+								Object:      s3b,
+								Protocol:    "h2",
+								ServicePort: &s3b.Spec.Ports[0],
+							},
+						)),
 					),
 				},
 			},
@@ -1982,20 +1788,16 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i1,
-							services: servicemap(
-								&Service{
-									Object:             s1b,
-									ServicePort:        &s1b.Spec.Ports[0],
-									MaxConnections:     9000,
-									MaxPendingRequests: 4096,
-									MaxRequests:        404,
-									MaxRetries:         7,
-								},
-							),
-						},
+						route("/", i1, servicemap(
+							&Service{
+								Object:             s1b,
+								ServicePort:        &s1b.Spec.Ports[0],
+								MaxConnections:     9000,
+								MaxPendingRequests: 4096,
+								MaxRequests:        404,
+								MaxRetries:         7,
+							},
+						)),
 					),
 				},
 			},
@@ -2341,10 +2143,7 @@ func TestDAGRemove(t *testing.T) {
 					Port: 80,
 					host: "kuard.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i3,
-						},
+						route("/", i3),
 					),
 				}},
 		},
@@ -2371,10 +2170,7 @@ func TestDAGRemove(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i1,
-						},
+						route("/", i1),
 					),
 				}},
 		},
@@ -2391,10 +2187,7 @@ func TestDAGRemove(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i1,
-						},
+						route("/", i1),
 					),
 				}},
 		},
@@ -2421,10 +2214,7 @@ func TestDAGRemove(t *testing.T) {
 					Port: 80,
 					host: "*",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i5,
-						},
+						route("/", i5),
 					),
 				}},
 		},
@@ -2441,10 +2231,7 @@ func TestDAGRemove(t *testing.T) {
 					Port: 80,
 					host: "kuard.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i3,
-						},
+						route("/", i3),
 					),
 				}},
 		},
@@ -2470,20 +2257,14 @@ func TestDAGRemove(t *testing.T) {
 					Port: 80,
 					host: "a.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-						},
+						route("/", i6),
 					),
 				},
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-						},
+						route("/", i6),
 					),
 				}},
 		},
@@ -2501,31 +2282,23 @@ func TestDAGRemove(t *testing.T) {
 					Port: 80,
 					host: "a.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i6, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				}, &VirtualHost{
 					Port: 80,
 					host: "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
+						route("/", i6, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
 					),
 				}},
 		},
@@ -2543,20 +2316,14 @@ func TestDAGRemove(t *testing.T) {
 					Port: 80,
 					host: "a.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-						},
+						route("/", i6),
 					),
 				},
 				&VirtualHost{
 					Port: 80,
 					host: "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-						},
+						route("/", i6),
 					),
 				},
 				&SecureVirtualHost{
@@ -2564,10 +2331,7 @@ func TestDAGRemove(t *testing.T) {
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6,
-						},
+						route("/", i6),
 					),
 					secret: &Secret{
 						object: sec1,
@@ -2588,20 +2352,13 @@ func TestDAGRemove(t *testing.T) {
 					Port: 80,
 					host: "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i7,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
-						&Route{
-							path:   "/kuarder",
-							Object: i7,
-						},
+						route("/", i7, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+						route("/kuarder", i7),
 					),
 				}},
 		},
@@ -2646,10 +2403,7 @@ func TestDAGRemove(t *testing.T) {
 					Port: 80,
 					host: "kuard.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: ir1,
-						},
+						route("/", ir1),
 					),
 				}},
 		},
@@ -2666,10 +2420,7 @@ func TestDAGRemove(t *testing.T) {
 					Port: 80,
 					host: "kuard.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: ir1,
-						},
+						route("/", ir1),
 					),
 				}},
 		},
@@ -2696,10 +2447,7 @@ func TestDAGRemove(t *testing.T) {
 					Port: 80,
 					host: "kuard.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: ir3,
-						},
+						route("/", ir3),
 					),
 				}},
 		},
@@ -2726,20 +2474,13 @@ func TestDAGRemove(t *testing.T) {
 					Port: 80,
 					host: "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: ir5,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
-						&Route{
-							path:   "/kuarder",
-							Object: ir5,
-						},
+						route("/", ir5, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+						route("/kuarder", ir5),
 					),
 				}},
 		},
@@ -2773,10 +2514,7 @@ func TestDAGRemove(t *testing.T) {
 					Port: 80,
 					host: "b.example.com",
 					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: ir7,
-						},
+						route("/", ir7),
 					),
 				},
 			},
@@ -3764,6 +3502,22 @@ func routemap(routes ...*Route) map[string]*Route {
 		m[r.path] = r
 	}
 	return m
+}
+
+func route(path string, obj interface{}, services ...map[portmeta]*Service) *Route {
+	r := Route{
+		path:   path,
+		Object: obj,
+	}
+	switch len(services) {
+	case 0:
+		// nothing to do
+	case 1:
+		r.services = services[0]
+	default:
+		panic("only pass one servicemap to route")
+	}
+	return &r
 }
 
 func servicemap(services ...*Service) map[portmeta]*Service {
