@@ -15,7 +15,6 @@ package metrics
 
 import (
 	"os"
-	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -28,8 +27,26 @@ type Metrics struct {
 	logrus.FieldLogger
 }
 
+// IngressRouteMetric stores various metrics for IngressRoute objects
+type IngressRouteMetric struct {
+	Total    map[Meta]int
+	Valid    map[Meta]int
+	Invalid  map[Meta]int
+	Orphaned map[Meta]int
+	Root     map[Meta]int
+}
+
+// Meta holds the vhost and namespace of a metric object
+type Meta struct {
+	VHost, Namespace string
+}
+
 const (
-	IngressRouteTotalGauge = "contour_ingressroute_total"
+	IngressRouteTotalGauge     = "contour_ingressroute_total"
+	IngressRouteRootTotalGauge = "contour_ingressroute_root_total"
+	IngressRouteInvalidGauge   = "contour_ingressroute_invalid_total"
+	IngressRouteValidGauge     = "contour_ingressroute_valid_total"
+	IngressRouteOrphanedGauge  = "contour_ingressroute_orphaned_total"
 )
 
 // NewMetrics returns a map of Prometheus metrics
@@ -43,7 +60,35 @@ func NewMetrics(logger logrus.FieldLogger) Metrics {
 					Name: IngressRouteTotalGauge,
 					Help: "Total number of IngressRoutes",
 				},
+				[]string{"namespace"},
+			),
+			IngressRouteRootTotalGauge: prometheus.NewGaugeVec(
+				prometheus.GaugeOpts{
+					Name: IngressRouteRootTotalGauge,
+					Help: "Total number of root IngressRoutes",
+				},
+				[]string{"namespace"},
+			),
+			IngressRouteInvalidGauge: prometheus.NewGaugeVec(
+				prometheus.GaugeOpts{
+					Name: IngressRouteInvalidGauge,
+					Help: "Total number of invalid IngressRoutes",
+				},
 				[]string{"namespace", "vhost"},
+			),
+			IngressRouteValidGauge: prometheus.NewGaugeVec(
+				prometheus.GaugeOpts{
+					Name: IngressRouteValidGauge,
+					Help: "Total number of valid IngressRoutes",
+				},
+				[]string{"namespace", "vhost"},
+			),
+			IngressRouteOrphanedGauge: prometheus.NewGaugeVec(
+				prometheus.GaugeOpts{
+					Name: IngressRouteOrphanedGauge,
+					Help: "Total number of orphaned IngressRoutes",
+				},
+				[]string{"namespace"},
 			),
 		},
 	}
@@ -64,19 +109,37 @@ func (m *Metrics) RegisterPrometheus(registerDefault bool) {
 	}
 }
 
-func (m *Metrics) SetIngressRouteMetric(ingressRouteMetric map[string]int) {
-	for k, v := range ingressRouteMetric {
-		values := strings.Split(k, "|")
+// SetIngressRouteMetric takes
+func (m *Metrics) SetIngressRouteMetric(metrics IngressRouteMetric) {
 
-		// Check for valid
-		if len(values) != 2 {
-			m.FieldLogger.Errorf("Expected proper key for IngressRouteMetric. Got: %s", k)
-			continue
-		}
-
+	for meta, value := range metrics.Total {
 		m, ok := m.Metrics[IngressRouteTotalGauge].(*prometheus.GaugeVec)
 		if ok {
-			m.WithLabelValues(values[1], values[0]).Set(float64(v))
+			m.WithLabelValues(meta.Namespace).Set(float64(value))
+		}
+	}
+	for meta, value := range metrics.Invalid {
+		m, ok := m.Metrics[IngressRouteInvalidGauge].(*prometheus.GaugeVec)
+		if ok {
+			m.WithLabelValues(meta.Namespace, meta.VHost).Set(float64(value))
+		}
+	}
+	for meta, value := range metrics.Orphaned {
+		m, ok := m.Metrics[IngressRouteOrphanedGauge].(*prometheus.GaugeVec)
+		if ok {
+			m.WithLabelValues(meta.Namespace).Set(float64(value))
+		}
+	}
+	for meta, value := range metrics.Valid {
+		m, ok := m.Metrics[IngressRouteValidGauge].(*prometheus.GaugeVec)
+		if ok {
+			m.WithLabelValues(meta.Namespace, meta.VHost).Set(float64(value))
+		}
+	}
+	for meta, value := range metrics.Root {
+		m, ok := m.Metrics[IngressRouteRootTotalGauge].(*prometheus.GaugeVec)
+		if ok {
+			m.WithLabelValues(meta.Namespace).Set(float64(value))
 		}
 	}
 }
