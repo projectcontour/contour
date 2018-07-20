@@ -17,6 +17,9 @@
 package contour
 
 import (
+	"fmt"
+
+	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/metrics"
@@ -79,7 +82,7 @@ func (d *DAGAdapter) update() {
 	d.updateListeners()
 	d.updateRoutes()
 	d.updateClusters()
-	d.Metrics.SetIngressRouteMetric(d.DAG.CalculateIngressRouteMetric())
+	d.updateIngressRouteMetric()
 }
 
 func (d *DAGAdapter) setIngressRouteStatus() {
@@ -137,4 +140,30 @@ func (d *DAGAdapter) updateClusters() {
 		DAG:          &d.DAG,
 	}
 	d.clusterCache.Update(v.Visit())
+}
+
+func (d *DAGAdapter) updateIngressRouteMetric() {
+	metrics := d.calculateIngressRouteMetric()
+	d.Metrics.SetIngressRouteMetric(metrics)
+}
+
+func (d *DAGAdapter) calculateIngressRouteMetric() map[string]int {
+	ingressRouteMetric := make(map[string]int)
+
+	d.Visit(func(v dag.Vertex) {
+		switch vh := v.(type) {
+		case *dag.VirtualHost:
+			hostname := vh.FQDN()
+			vh.Visit(func(v dag.Vertex) {
+				switch r := v.(type) {
+				case *dag.Route:
+					switch rt := r.Object.(type) {
+					case *ingressroutev1.IngressRoute:
+						ingressRouteMetric[fmt.Sprintf("%s|%s", hostname, rt.ObjectMeta.Namespace)]++
+					}
+				}
+			})
+		}
+	})
+	return ingressRouteMetric
 }

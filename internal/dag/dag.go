@@ -320,7 +320,7 @@ func (d *DAG) recompute() dag {
 			// handle the annoying default ingress
 			r := &Route{
 				path:         "/",
-				object:       ing,
+				Object:       ing,
 				HTTPSUpgrade: tlsRequired(ing),
 				Websocket:    wr["/"],
 				Timeout:      timeout,
@@ -347,7 +347,7 @@ func (d *DAG) recompute() dag {
 				}
 				r := &Route{
 					path:         path,
-					object:       ing,
+					Object:       ing,
 					HTTPSUpgrade: tlsRequired(ing),
 					Websocket:    wr[path],
 					Timeout:      timeout,
@@ -448,30 +448,6 @@ func (d *DAG) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 	return false
 }
 
-func (d *DAG) CalculateIngressRouteMetric() map[string]int {
-	ingressRouteMetric := make(map[string]int)
-
-	d.Visit(func(vh Vertex) {
-		switch vh := vh.(type) {
-		case *VirtualHost:
-			hostname := vh.FQDN()
-
-			vh.Visit(func(r Vertex) {
-				switch r := r.(type) {
-				case *Route:
-					obj := r.object
-					switch rt := obj.(type) {
-					case *ingressroutev1.IngressRoute:
-						ingressRouteMetric[fmt.Sprintf("%s|%s", hostname, rt.ObjectMeta.Namespace)]++
-					}
-				}
-			})
-		}
-	})
-
-	return ingressRouteMetric
-}
-
 type ingressRouteProcessor struct {
 	host          string
 	service       func(m meta, port intstr.IntOrString) *Service
@@ -496,7 +472,7 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 			}
 			r := &Route{
 				path:   route.Match,
-				object: ir,
+				Object: ir,
 			}
 			for _, s := range route.Services {
 				if s.Port < 1 || s.Port > 65535 {
@@ -567,7 +543,7 @@ func matchesPathPrefix(path, prefix string) bool {
 
 type Route struct {
 	path     string
-	object   interface{} // one of Ingress or IngressRoute
+	Object   interface{} // one of Ingress or IngressRoute
 	services map[portmeta]*Service
 
 	// Should this route generate a 301 upgrade if accessed
