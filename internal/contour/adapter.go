@@ -48,6 +48,7 @@ func (d *DAGAdapter) OnAdd(obj interface{}) {
 		return
 	}
 	d.ResourceEventHandler.OnAdd(obj)
+	d.Recompute()
 	d.setIngressRouteStatus()
 	d.updateListeners()
 	d.updateRoutes()
@@ -67,6 +68,7 @@ func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
 		d.OnDelete(oldObj)
 	default:
 		d.ResourceEventHandler.OnUpdate(oldObj, newObj)
+		d.Recompute()
 		d.setIngressRouteStatus()
 		d.updateListeners()
 		d.updateRoutes()
@@ -78,6 +80,7 @@ func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
 func (d *DAGAdapter) OnDelete(obj interface{}) {
 	// no need to check ingress class here
 	d.ResourceEventHandler.OnDelete(obj)
+	d.Recompute()
 	d.setIngressRouteStatus()
 	d.updateListeners()
 	d.updateRoutes()
