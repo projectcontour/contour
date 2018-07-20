@@ -87,7 +87,7 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 		})
 	}
 
-	dw.DAG.Visit(visit)
+	dw.DAG.Compute().Visit(visit)
 
 	fmt.Fprintln(w, "}")
 }

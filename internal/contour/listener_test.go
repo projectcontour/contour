@@ -425,14 +425,13 @@ func TestListenerVisit(t *testing.T) {
 			for _, o := range tc.objs {
 				d.OnAdd(o)
 			}
-			d.Recompute()
 			lc := tc.ListenerCache
 			if lc == nil {
 				lc = new(ListenerCache)
 			}
 			v := listenerVisitor{
 				ListenerCache: lc,
-				DAG:           &d.DAG,
+				visitable:     d.Compute(),
 			}
 			got := v.Visit()
 			if !reflect.DeepEqual(tc.want, got) {

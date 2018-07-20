@@ -46,9 +46,6 @@ type DAG struct {
 	ingressroutes map[meta]*ingressroutev1.IngressRoute
 	secrets       map[meta]*v1.Secret
 	services      map[meta]*v1.Service
-
-	// the most recently recomputed dag.
-	current dag
 }
 
 // dag holds the results of recomputing a materialised directed acyclic graph
@@ -59,31 +56,21 @@ type dag struct {
 
 	// status computed while building this dag.
 	statuses []Status
+}
 
-	version int
+func (d *dag) Visit(fn func(Vertex)) {
+	for _, r := range d.roots {
+		fn(r)
+	}
+}
+
+func (d *dag) Statuses() []Status {
+	return d.statuses
 }
 
 // meta holds the name and namespace of a Kubernetes object.
 type meta struct {
 	name, namespace string
-}
-
-// Visit calls f for every root of this DAG.
-func (d *DAG) Visit(f func(Vertex)) {
-	d.mu.Lock()
-	current := d.current
-	d.mu.Unlock()
-	for _, r := range current.roots {
-		f(r)
-	}
-}
-
-// Visit calls f for every root of this DAG.
-func (d *DAG) Statuses() []Status {
-	d.mu.Lock()
-	current := d.current
-	d.mu.Unlock()
-	return current.statuses
 }
 
 // Insert inserts obj into the DAG. If an object with a matching type, name, and
@@ -153,11 +140,15 @@ func (d *DAG) remove(obj interface{}) {
 	}
 }
 
-// Recompute recomputes the DAG.
-func (d *DAG) Recompute() {
+// Compute returns an object with responds to Visit and Statuses.
+func (d *DAG) Compute() interface {
+	Visit(func(Vertex))
+	Statuses() []Status
+} {
 	d.mu.Lock()
-	d.current = d.recompute()
+	current := d.compute()
 	d.mu.Unlock()
+	return current
 }
 
 // serviceMap memoise access to a service map, built
@@ -219,8 +210,8 @@ func (sm *serviceMap) insert(svc *v1.Service, port *v1.ServicePort) *Service {
 	return s
 }
 
-// recompute builds a new *dag.dag.
-func (d *DAG) recompute() dag {
+// compute builds a new *dag.dag.
+func (d *DAG) compute() *dag {
 	sm := serviceMap{
 		services: d.services,
 	}
@@ -412,10 +403,7 @@ func (d *DAG) recompute() dag {
 		status = append(status, sts...)
 	}
 
-	nextVersion := d.current.version + 1
-	_d := dag{
-		version: nextVersion,
-	}
+	var _d dag
 	for _, vh := range _vhosts {
 		_d.roots = append(_d.roots, vh)
 	}
@@ -432,7 +420,7 @@ func (d *DAG) recompute() dag {
 		}
 	}
 	_d.statuses = status
-	return _d
+	return &_d
 }
 
 // returns true if the root ingressroute lives in a root namespace
