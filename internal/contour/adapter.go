@@ -26,14 +26,13 @@ import (
 
 const DEFAULT_INGRESS_CLASS = "contour"
 
-// DAGAdapter wraps a dag.ResourceEventHandler to hook post update cache
-// generation.
+// DAGAdapter wraps a dag.DAG to hook post update cache generation.
 type DAGAdapter struct {
 	// Contour's IngressClass.
 	// If not set, defaults to DEFAULT_INGRESS_CLASS.
 	IngressClass string
 
-	dag.ResourceEventHandler // provides a Visit method
+	dag.DAG
 	ListenerCache
 	RouteCache
 	ClusterCache
@@ -47,13 +46,8 @@ func (d *DAGAdapter) OnAdd(obj interface{}) {
 	if !d.validIngressClass(obj) {
 		return
 	}
-	d.ResourceEventHandler.OnAdd(obj)
-	d.Recompute()
-	d.setIngressRouteStatus()
-	d.updateListeners()
-	d.updateRoutes()
-	d.updateClusters()
-	d.Metrics.SetIngressRouteMetric(d.DAG.CalculateIngressRouteMetric())
+	d.Insert(obj)
+	d.update()
 }
 
 func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
@@ -67,19 +61,19 @@ func (d *DAGAdapter) OnUpdate(oldObj, newObj interface{}) {
 		// to remove the old object and _not_ insert the new object.
 		d.OnDelete(oldObj)
 	default:
-		d.ResourceEventHandler.OnUpdate(oldObj, newObj)
-		d.Recompute()
-		d.setIngressRouteStatus()
-		d.updateListeners()
-		d.updateRoutes()
-		d.updateClusters()
-		d.Metrics.SetIngressRouteMetric(d.DAG.CalculateIngressRouteMetric())
+		d.Remove(oldObj)
+		d.Insert(newObj)
+		d.update()
 	}
 }
 
 func (d *DAGAdapter) OnDelete(obj interface{}) {
 	// no need to check ingress class here
-	d.ResourceEventHandler.OnDelete(obj)
+	d.Remove(obj)
+	d.update()
+}
+
+func (d *DAGAdapter) update() {
 	d.Recompute()
 	d.setIngressRouteStatus()
 	d.updateListeners()
