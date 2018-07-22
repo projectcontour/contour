@@ -353,23 +353,18 @@ _TBD_
 
 Metrics are essential to any system. Contour will expose a `/metrics` Prometheus endpoint with the following metrics:
 
-- **contour_ingressroute_total (gauge):** Number of IngressRoutes
+- **contour_ingressroute_total (gauge):** Total number of IngressRoutes objects that exist regardless of status (i.e. Valid / Invalid / Orphaned, etc). This metric should match the sum of `Orphaned` + `Valid` + `Invalid` IngressRoutes.
+  - namespace
+- **contour_ingressroute_orphaned_total (gauge):**  Number of `Orphaned` IngressRoute objects which have no root delegating to them
+  - namespace
+- **contour_ingressroute_root_total (gauge):**  Number of `Root` IngressRoute objects (Note: There will only be a single `Root` IngressRoute per vhost)
+  - namespace
+- **contour_ingressroute_valid_total (gauge):**  Number of `Valid` IngressRoute objects
   - namespace
   - vhost
-- **contour_ingressroute_upstream_total (gauge):** Number of Upstreams per IngressRoute
+- **contour_ingressroute_invalid_total (gauge):**  Number of `Invalid` IngressRoute objects
   - namespace
-  - name
-- **contour_ingressroute_upstream_endpoints_total (gauge):** Number of Endpoints per Upstream
-  - namespace
-  - name
-- **contour_ingressroute_upstream_endpoints_healthy (gauge):** Number of healthy Endpoints per Upstream
-  - namespace
-  - name
-- **contour_ingressroute_upstream_endpoints_change (counter):** Number of changes of Endpoints per Upstream
-  - namespace
-  - name
-- **contour_ingressroute_orphaned_total (gauge):**  Number of Invalid Routes (Routes who have no root delegating to them)
-  - namespace
+  - vhost
 
 ## Envoy Metrics
 
