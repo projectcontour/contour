@@ -68,7 +68,21 @@ If your topology allow it, you may configure Contour to catch `nginx` ingress cl
 Minikube is not recommended for testing or developing Contour because of its network limitations.
 To run Contour on Minikube for exploration only, see [Contour on Minikube][3]
 
+## How can I deploy a contour daemonset directly onto ports 80 or 443?
+
+To set envoy to run on port 80 and port 443, the following additional 
+arguments may be passed into the contour command:
+
+```yaml
+  command: ["contour"]
+  args: ["serve", "--incluster", "--envoy-http-port=80", "--envoy-https-port=443"]
+```
+
+See [Issue #547][4]
+
+
 [0]: https://github.com/jetstack/kube-lego
 [1]: https://github.com/heptio/contour/issues/210
 [2]: https://github.com/envoyproxy/envoy/issues/1269
 [3]: minikube.md
+[4]: https://github.com/heptio/contour/issues/547
