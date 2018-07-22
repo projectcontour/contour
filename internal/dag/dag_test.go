@@ -1810,10 +1810,10 @@ func TestDAGInsert(t *testing.T) {
 			for _, o := range tc.objs {
 				d.Insert(o)
 			}
-			d.Recompute()
+			dag := d.Compute()
 
 			got := make(map[hostport]Vertex)
-			d.Visit(func(v Vertex) {
+			dag.Visit(func(v Vertex) {
 				switch v := v.(type) {
 				case *VirtualHost:
 					got[hostport{host: v.FQDN(), port: v.Port}] = v
@@ -2527,14 +2527,14 @@ func TestDAGRemove(t *testing.T) {
 			for _, o := range tc.insert {
 				d.Insert(o)
 			}
-			d.Recompute()
+			d.Compute()
 			for _, o := range tc.remove {
 				d.Remove(o)
 			}
-			d.Recompute()
+			dag := d.Compute()
 
 			got := make(map[hostport]Vertex)
-			d.Visit(func(v Vertex) {
+			dag.Visit(func(v Vertex) {
 				switch v := v.(type) {
 				case *VirtualHost:
 					got[hostport{host: v.FQDN(), port: v.Port}] = v
@@ -2718,10 +2718,10 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 	var d DAG
 	d.Insert(ir2)
 	d.Insert(ir1)
-	d.Recompute()
+	dag := d.Compute()
 
 	got := make(map[hostport]*VirtualHost)
-	d.Visit(func(v Vertex) {
+	dag.Visit(func(v Vertex) {
 		if v, ok := v.(*VirtualHost); ok {
 			got[hostport{host: v.FQDN(), port: v.Port}] = v
 		}
@@ -2761,10 +2761,10 @@ func TestDAGIngressRouteCycleSelfEdge(t *testing.T) {
 
 	var d DAG
 	d.Insert(ir1)
-	d.Recompute()
+	dag := d.Compute()
 
 	got := make(map[hostport]*VirtualHost)
-	d.Visit(func(v Vertex) {
+	dag.Visit(func(v Vertex) {
 		if v, ok := v.(*VirtualHost); ok {
 			got[hostport{host: v.FQDN(), port: v.Port}] = v
 		}
@@ -2799,10 +2799,10 @@ func TestDAGIngressRouteDelegatesToNonExistent(t *testing.T) {
 
 	var d DAG
 	d.Insert(ir1)
-	d.Recompute()
+	dag := d.Compute()
 
 	got := make(map[hostport]*VirtualHost)
-	d.Visit(func(v Vertex) {
+	dag.Visit(func(v Vertex) {
 		if v, ok := v.(*VirtualHost); ok {
 			got[hostport{host: v.FQDN(), port: v.Port}] = v
 		}
@@ -2852,10 +2852,10 @@ func TestDAGIngressRouteDelegatePrefixDoesntMatch(t *testing.T) {
 	var d DAG
 	d.Insert(ir2)
 	d.Insert(ir1)
-	d.Recompute()
+	dag := d.Compute()
 
 	got := make(map[hostport]*VirtualHost)
-	d.Visit(func(v Vertex) {
+	dag.Visit(func(v Vertex) {
 		if v, ok := v.(*VirtualHost); ok {
 			got[hostport{host: v.FQDN(), port: v.Port}] = v
 		}
@@ -2959,10 +2959,10 @@ func TestDAGRootNamespaces(t *testing.T) {
 			for _, o := range tc.objs {
 				d.Insert(o)
 			}
-			d.Recompute()
+			dag := d.Compute()
 
 			var count int
-			d.Visit(func(v Vertex) {
+			dag.Visit(func(v Vertex) {
 				if _, ok := v.(*VirtualHost); ok {
 					count++
 				}
@@ -3017,10 +3017,10 @@ func TestDAGIngressRouteDelegatePrefixMatchesStringPrefixButNotPathPrefix(t *tes
 	var d DAG
 	d.Insert(ir2)
 	d.Insert(ir1)
-	d.Recompute()
+	dag := d.Compute()
 
 	got := make(map[hostport]*VirtualHost)
-	d.Visit(func(v Vertex) {
+	dag.Visit(func(v Vertex) {
 		if v, ok := v.(*VirtualHost); ok {
 			got[hostport{host: v.FQDN(), port: v.Port}] = v
 		}
@@ -3474,8 +3474,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			for _, o := range tc.objs {
 				d.Insert(o)
 			}
-			d.Recompute()
-			got := d.Statuses()
+			got := d.Compute().Statuses()
 			if len(tc.want) != len(got) {
 				t.Fatalf("expected %d statuses, but got %d", len(tc.want), len(got))
 			}

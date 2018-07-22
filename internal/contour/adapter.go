@@ -76,17 +76,25 @@ func (d *DAGAdapter) OnDelete(obj interface{}) {
 	d.update()
 }
 
-func (d *DAGAdapter) update() {
-	d.Recompute()
-	d.setIngressRouteStatus()
-	d.updateListeners()
-	d.updateRoutes()
-	d.updateClusters()
-	d.updateIngressRouteMetric()
+type visitable interface {
+	Visit(func(dag.Vertex))
 }
 
-func (d *DAGAdapter) setIngressRouteStatus() {
-	for _, s := range d.Statuses() {
+type statusable interface {
+	Statuses() []dag.Status
+}
+
+func (d *DAGAdapter) update() {
+	dag := d.Compute()
+	d.setIngressRouteStatus(dag)
+	d.updateListeners(dag)
+	d.updateRoutes(dag)
+	d.updateClusters(dag)
+	d.updateIngressRouteMetric(dag)
+}
+
+func (d *DAGAdapter) setIngressRouteStatus(st statusable) {
+	for _, s := range st.Statuses() {
 		err := d.IngressRouteStatus.SetStatus(s.Status, s.Description, s.Object)
 		if err != nil {
 			d.FieldLogger.Errorf("Error Setting Status of IngressRoute: ", err)
@@ -117,40 +125,40 @@ func (d *DAGAdapter) ingressClass() string {
 	return DEFAULT_INGRESS_CLASS
 }
 
-func (d *DAGAdapter) updateListeners() {
-	v := listenerVisitor{
+func (d *DAGAdapter) updateListeners(v visitable) {
+	lv := listenerVisitor{
 		ListenerCache: &d.ListenerCache,
-		DAG:           &d.DAG,
+		visitable:     v,
 	}
-	d.ListenerCache.Update(v.Visit())
+	d.ListenerCache.Update(lv.Visit())
 }
 
-func (d *DAGAdapter) updateRoutes() {
-	v := routeVisitor{
+func (d *DAGAdapter) updateRoutes(v visitable) {
+	rv := routeVisitor{
 		RouteCache: &d.RouteCache,
-		DAG:        &d.DAG,
+		visitable:  v,
 	}
-	routes := v.Visit()
+	routes := rv.Visit()
 	d.RouteCache.Update(routes)
 }
 
-func (d *DAGAdapter) updateClusters() {
-	v := clusterVisitor{
+func (d *DAGAdapter) updateClusters(v visitable) {
+	cv := clusterVisitor{
 		ClusterCache: &d.ClusterCache,
-		DAG:          &d.DAG,
+		visitable:    v,
 	}
-	d.clusterCache.Update(v.Visit())
+	d.clusterCache.Update(cv.Visit())
 }
 
-func (d *DAGAdapter) updateIngressRouteMetric() {
-	metrics := d.calculateIngressRouteMetric()
+func (d *DAGAdapter) updateIngressRouteMetric(v visitable) {
+	metrics := d.calculateIngressRouteMetric(v)
 	d.Metrics.SetIngressRouteMetric(metrics)
 }
 
-func (d *DAGAdapter) calculateIngressRouteMetric() map[string]int {
+func (d *DAGAdapter) calculateIngressRouteMetric(v visitable) map[string]int {
 	ingressRouteMetric := make(map[string]int)
 
-	d.Visit(func(v dag.Vertex) {
+	v.Visit(func(v dag.Vertex) {
 		switch vh := v.(type) {
 		case *dag.VirtualHost:
 			hostname := vh.FQDN()
