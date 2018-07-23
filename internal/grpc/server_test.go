@@ -37,7 +37,7 @@ func TestGRPCStreaming(t *testing.T) {
 
 	// tr and et is recreated before the start of each test.
 	var et *contour.EndpointsTranslator
-	var da *contour.DAGAdapter
+	var reh *contour.ResourceEventHandler
 
 	newClient := func(t *testing.T) *grpc.ClientConn {
 		cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
@@ -47,7 +47,7 @@ func TestGRPCStreaming(t *testing.T) {
 
 	tests := map[string]func(*testing.T){
 		"StreamClusters": func(t *testing.T) {
-			da.OnAdd(&v1.Service{
+			reh.OnAdd(&v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "simple",
 					Namespace: "default",
@@ -111,7 +111,7 @@ func TestGRPCStreaming(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			// add an ingress, which will create a non tls listener
-			da.OnAdd(&v1beta1.Ingress{
+			reh.OnAdd(&v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin-org",
 					Namespace: "default",
@@ -139,7 +139,7 @@ func TestGRPCStreaming(t *testing.T) {
 			checktimeout(t, stream)          // check that the second receive times out
 		},
 		"StreamRoutes": func(t *testing.T) {
-			da.OnAdd(&v1beta1.Ingress{
+			reh.OnAdd(&v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin-org",
 					Namespace: "default",
@@ -180,11 +180,11 @@ func TestGRPCStreaming(t *testing.T) {
 			et = &contour.EndpointsTranslator{
 				FieldLogger: log,
 			}
-			da = new(contour.DAGAdapter)
+			reh = new(contour.ResourceEventHandler)
 			srv := NewAPI(log, map[string]Cache{
-				clusterType:  &da.ClusterCache,
-				routeType:    &da.RouteCache,
-				listenerType: &da.ListenerCache,
+				clusterType:  &reh.ClusterCache,
+				routeType:    &reh.RouteCache,
+				listenerType: &reh.ListenerCache,
 				endpointType: et,
 			})
 			var err error
@@ -273,11 +273,11 @@ func TestGRPCFetching(t *testing.T) {
 			et := &contour.EndpointsTranslator{
 				FieldLogger: log,
 			}
-			var da contour.DAGAdapter
+			var reh contour.ResourceEventHandler
 			srv := NewAPI(log, map[string]Cache{
-				clusterType:  &da.ClusterCache,
-				routeType:    &da.RouteCache,
-				listenerType: &da.ListenerCache,
+				clusterType:  &reh.ClusterCache,
+				routeType:    &reh.RouteCache,
+				listenerType: &reh.ListenerCache,
 				endpointType: et,
 			})
 			var err error

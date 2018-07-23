@@ -1163,9 +1163,9 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 }
 
 func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
-	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
-		da.IngressRouteRootNamespaces = []string{"roots"}
-		da.IngressRouteStatus = &k8s.IngressRouteStatus{
+	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+		reh.IngressRouteRootNamespaces = []string{"roots"}
+		reh.IngressRouteStatus = &k8s.IngressRouteStatus{
 			Client: fake.NewSimpleClientset(),
 		}
 	})
@@ -1227,9 +1227,9 @@ func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
 }
 
 func TestRDSIngressRouteOutsideRootNamespaces(t *testing.T) {
-	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
-		da.IngressRouteRootNamespaces = []string{"roots"}
-		da.IngressRouteStatus = &k8s.IngressRouteStatus{
+	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+		reh.IngressRouteRootNamespaces = []string{"roots"}
+		reh.IngressRouteStatus = &k8s.IngressRouteStatus{
 			Client: fake.NewSimpleClientset(),
 		}
 	})
@@ -1286,8 +1286,8 @@ func TestRDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 // in LDS or RDS, or even CDS, but this test mirrors the place it's
 // tested in internal/contour/route_test.go
 func TestRDSIngressClass(t *testing.T) {
-	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
-		da.IngressClass = "linkerd"
+	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+		reh.IngressClass = "linkerd"
 	})
 	defer done()
 
