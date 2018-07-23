@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/heptio/contour/internal/dag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -308,8 +309,10 @@ func TestIngressRouteMetrics(t *testing.T) {
 			wantIRMetric: map[string]int{},
 		},
 		"root ingressroute outside of roots namespace": {
-			objs:         []*ingressroutev1.IngressRoute{ir3},
-			wantIRMetric: map[string]int{},
+			objs: []*ingressroutev1.IngressRoute{ir3},
+			wantIRMetric: map[string]int{
+				"example.com|finance": 1,
+			},
 		},
 		"delegated route's match prefix does not match parent's prefix": {
 			objs: []*ingressroutev1.IngressRoute{ir1, ir4},
@@ -361,12 +364,12 @@ func TestIngressRouteMetrics(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var d DAGAdapter
-			d.IngressRouteRootNamespaces = []string{"roots"}
+			var b dag.Builder
 			for _, o := range tc.objs {
-				d.Insert(o)
+				b.Insert(o)
 			}
-			gotMetrics := calculateIngressRouteMetric(d.Compute())
+			dag := b.Compute()
+			gotMetrics := calculateIngressRouteMetric(dag)
 			if !reflect.DeepEqual(tc.wantIRMetric, gotMetrics) {
 				t.Fatalf("(metrics) expected to find: %v but got: %v", tc.wantIRMetric, gotMetrics)
 			}

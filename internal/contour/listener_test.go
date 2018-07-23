@@ -418,12 +418,15 @@ func TestListenerVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var d DAGAdapter
-			d.IngressRouteStatus = &k8s.IngressRouteStatus{
-				Client: fake.NewSimpleClientset(),
+			reh := ResourceEventHandler{
+				CacheHandler: CacheHandler{
+					IngressRouteStatus: &k8s.IngressRouteStatus{
+						Client: fake.NewSimpleClientset(),
+					},
+				},
 			}
 			for _, o := range tc.objs {
-				d.OnAdd(o)
+				reh.OnAdd(o)
 			}
 			lc := tc.ListenerCache
 			if lc == nil {
@@ -431,7 +434,7 @@ func TestListenerVisit(t *testing.T) {
 			}
 			v := listenerVisitor{
 				ListenerCache: lc,
-				Visitable:     d.Compute(),
+				Visitable:     reh.Compute(),
 			}
 			got := v.Visit()
 			if !reflect.DeepEqual(tc.want, got) {

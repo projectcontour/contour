@@ -84,20 +84,21 @@ func main() {
 	serve.Flag("http-address", "address the http endpoint will bind too").Default("127.0.0.1").StringVar(&debug.Addr)
 	serve.Flag("http-port", "port the http endpoint will bind too").Default("8000").IntVar(&debug.Port)
 
-	// translator and DAGAdapter configuration
-	da := contour.DAGAdapter{
-		FieldLogger: log.WithField("context", "DAGAdapter"),
+	reh := contour.ResourceEventHandler{
+		CacheHandler: contour.CacheHandler{
+			FieldLogger: log.WithField("context", "DAGAdapter"),
+		},
 	}
 
-	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&da.HTTPAccessLog)
-	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&da.HTTPSAccessLog)
-	serve.Flag("envoy-http-address", "Envoy HTTP listener address").StringVar(&da.HTTPAddress)
-	serve.Flag("envoy-https-address", "Envoy HTTPS listener address").StringVar(&da.HTTPSAddress)
-	serve.Flag("envoy-http-port", "Envoy HTTP listener port").IntVar(&da.HTTPPort)
-	serve.Flag("envoy-https-port", "Envoy HTTPS listener port").IntVar(&da.HTTPSPort)
-	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&da.UseProxyProto)
-	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&da.IngressClass)
-	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringsVar(&da.IngressRouteRootNamespaces)
+	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&reh.HTTPAccessLog)
+	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&reh.HTTPSAccessLog)
+	serve.Flag("envoy-http-address", "Envoy HTTP listener address").StringVar(&reh.HTTPAddress)
+	serve.Flag("envoy-https-address", "Envoy HTTPS listener address").StringVar(&reh.HTTPSAddress)
+	serve.Flag("envoy-http-port", "Envoy HTTP listener port").IntVar(&reh.HTTPPort)
+	serve.Flag("envoy-https-port", "Envoy HTTPS listener port").IntVar(&reh.HTTPSPort)
+	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&reh.UseProxyProto)
+	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&reh.IngressClass)
+	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringsVar(&reh.IngressRouteRootNamespaces)
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
@@ -121,7 +122,7 @@ func main() {
 
 		// plumb the DAGAdapter's Builder through
 		// to the debug handler
-		debug.Builder = &da.Builder
+		debug.Builder = &reh.Builder
 
 		// client-go uses glog which requires initialisation as a side effect of calling
 		// flag.Parse (see #118 and https://github.com/golang/glog/blob/master/glog.go#L679)
@@ -132,12 +133,12 @@ func main() {
 		client, contourClient := newClient(*kubeconfig, *inCluster)
 
 		wl := log.WithField("context", "watch")
-		k8s.WatchServices(&g, client, wl, &da)
-		k8s.WatchIngress(&g, client, wl, &da)
-		k8s.WatchSecrets(&g, client, wl, &da)
-		k8s.WatchIngressRoutes(&g, contourClient, wl, &da)
+		k8s.WatchServices(&g, client, wl, &reh)
+		k8s.WatchIngress(&g, client, wl, &reh)
+		k8s.WatchSecrets(&g, client, wl, &reh)
+		k8s.WatchIngressRoutes(&g, contourClient, wl, &reh)
 
-		da.IngressRouteStatus = &k8s.IngressRouteStatus{
+		reh.IngressRouteStatus = &k8s.IngressRouteStatus{
 			Client: contourClient,
 		}
 
@@ -150,7 +151,7 @@ func main() {
 
 		metrics := metrics.NewMetrics(log)
 		metrics.RegisterPrometheus(true)
-		da.Metrics = metrics
+		reh.Metrics = metrics
 
 		g.Add(func(stop <-chan struct{}) error {
 			debug.Start(stop, metrics.Registry)
@@ -175,9 +176,9 @@ func main() {
 				listenerType = typePrefix + "Listener"
 			)
 			s := grpc.NewAPI(log, map[string]grpc.Cache{
-				clusterType:  &da.ClusterCache,
-				routeType:    &da.RouteCache,
-				listenerType: &da.ListenerCache,
+				clusterType:  &reh.ClusterCache,
+				routeType:    &reh.RouteCache,
+				listenerType: &reh.ListenerCache,
 				endpointType: et,
 			})
 			log.Println("started")

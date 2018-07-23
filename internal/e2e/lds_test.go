@@ -426,8 +426,8 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 }
 
 func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
-	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
-		da.UseProxyProto = true
+	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+		reh.UseProxyProto = true
 	})
 	defer done()
 
@@ -471,8 +471,8 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 }
 
 func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
-	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
-		da.UseProxyProto = true
+	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+		reh.UseProxyProto = true
 	})
 	defer done()
 
@@ -544,11 +544,11 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 }
 
 func TestLDSCustomAddressAndPort(t *testing.T) {
-	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
-		da.HTTPAddress = "127.0.0.100"
-		da.HTTPPort = 9100
-		da.HTTPSAddress = "127.0.0.200"
-		da.HTTPSPort = 9200
+	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+		reh.HTTPAddress = "127.0.0.100"
+		reh.HTTPPort = 9100
+		reh.HTTPSAddress = "127.0.0.200"
+		reh.HTTPSPort = 9200
 	})
 	defer done()
 
@@ -620,9 +620,9 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 }
 
 func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
-	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
-		da.IngressRouteRootNamespaces = []string{"roots"}
-		da.IngressRouteStatus = &k8s.IngressRouteStatus{
+	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+		reh.IngressRouteRootNamespaces = []string{"roots"}
+		reh.IngressRouteStatus = &k8s.IngressRouteStatus{
 			Client: fake.NewSimpleClientset(),
 		}
 	})
@@ -675,9 +675,9 @@ func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 }
 
 func TestLDSIngressRouteOutsideRootNamespaces(t *testing.T) {
-	rh, cc, done := setup(t, func(da *contour.DAGAdapter) {
-		da.IngressRouteRootNamespaces = []string{"roots"}
-		da.IngressRouteStatus = &k8s.IngressRouteStatus{
+	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+		reh.IngressRouteRootNamespaces = []string{"roots"}
+		reh.IngressRouteStatus = &k8s.IngressRouteStatus{
 			Client: fake.NewSimpleClientset(),
 		}
 	})

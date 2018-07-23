@@ -818,7 +818,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "incorrect",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"kubernetes.io/ingress.class": new(DAGAdapter).ingressClass(),
+							"kubernetes.io/ingress.class": new(ResourceEventHandler).ingressClass(),
 						},
 					},
 					Spec: v1beta1.IngressSpec{
@@ -1170,12 +1170,15 @@ func TestRouteVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var d DAGAdapter
-			d.IngressRouteStatus = &k8s.IngressRouteStatus{
-				Client: fake.NewSimpleClientset(),
+			reh := ResourceEventHandler{
+				CacheHandler: CacheHandler{
+					IngressRouteStatus: &k8s.IngressRouteStatus{
+						Client: fake.NewSimpleClientset(),
+					},
+				},
 			}
 			for _, o := range tc.objs {
-				d.OnAdd(o)
+				reh.OnAdd(o)
 			}
 			rc := tc.RouteCache
 			if rc == nil {
@@ -1183,7 +1186,7 @@ func TestRouteVisit(t *testing.T) {
 			}
 			v := routeVisitor{
 				RouteCache: rc,
-				Visitable:  d.Compute(),
+				Visitable:  reh.Compute(),
 			}
 			got := v.Visit()
 			if !reflect.DeepEqual(tc.want, got) {

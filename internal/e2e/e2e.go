@@ -59,20 +59,23 @@ func (d *discardWriter) Write(buf []byte) (int, error) {
 	return len(buf), nil
 }
 
-func setup(t *testing.T, opts ...func(*contour.DAGAdapter)) (cache.ResourceEventHandler, *grpc.ClientConn, func()) {
+func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.ResourceEventHandler, *grpc.ClientConn, func()) {
 	log := logrus.New()
 	log.Out = &testWriter{t}
 
 	et := &contour.EndpointsTranslator{
 		FieldLogger: log,
 	}
-	var da contour.DAGAdapter
-	da.IngressRouteStatus = &k8s.IngressRouteStatus{
-		Client: fake.NewSimpleClientset(),
+	reh := contour.ResourceEventHandler{
+		CacheHandler: contour.CacheHandler{
+			IngressRouteStatus: &k8s.IngressRouteStatus{
+				Client: fake.NewSimpleClientset(),
+			},
+		},
 	}
 
 	for _, opt := range opts {
-		opt(&da)
+		opt(&reh)
 	}
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
@@ -81,9 +84,9 @@ func setup(t *testing.T, opts ...func(*contour.DAGAdapter)) (cache.ResourceEvent
 	discard.Out = new(discardWriter)
 	// Resource types in xDS v2.
 	srv := cgrpc.NewAPI(discard, map[string]cgrpc.Cache{
-		clusterType:  &da.ClusterCache,
-		routeType:    &da.RouteCache,
-		listenerType: &da.ListenerCache,
+		clusterType:  &reh.ClusterCache,
+		routeType:    &reh.RouteCache,
+		listenerType: &reh.ListenerCache,
 		endpointType: et,
 	})
 
@@ -96,12 +99,12 @@ func setup(t *testing.T, opts ...func(*contour.DAGAdapter)) (cache.ResourceEvent
 	cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
 	check(t, err)
 
-	reh := &resourceEventHandler{
-		DAGAdapter:          &da,
-		EndpointsTranslator: et,
+	rh := &resourceEventHandler{
+		ResourceEventHandler: &reh,
+		EndpointsTranslator:  et,
 	}
 
-	return reh, cc, func() {
+	return rh, cc, func() {
 		// close client connection
 		cc.Close()
 
@@ -115,8 +118,8 @@ func setup(t *testing.T, opts ...func(*contour.DAGAdapter)) (cache.ResourceEvent
 // resourceEventHandler composes a contour.Translator and a contour.EndpointsTranslator
 // into a single ResourceEventHandler type.
 type resourceEventHandler struct {
+	*contour.ResourceEventHandler
 	*contour.EndpointsTranslator
-	*contour.DAGAdapter
 }
 
 func (r *resourceEventHandler) OnAdd(obj interface{}) {
@@ -124,7 +127,7 @@ func (r *resourceEventHandler) OnAdd(obj interface{}) {
 	case *v1.Endpoints:
 		r.EndpointsTranslator.OnAdd(obj)
 	default:
-		r.DAGAdapter.OnAdd(obj)
+		r.ResourceEventHandler.OnAdd(obj)
 	}
 }
 
@@ -133,7 +136,7 @@ func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 	case *v1.Endpoints:
 		r.EndpointsTranslator.OnUpdate(oldObj, newObj)
 	default:
-		r.DAGAdapter.OnUpdate(oldObj, newObj)
+		r.ResourceEventHandler.OnUpdate(oldObj, newObj)
 	}
 }
 
@@ -142,7 +145,7 @@ func (r *resourceEventHandler) OnDelete(obj interface{}) {
 	case *v1.Endpoints:
 		r.EndpointsTranslator.OnDelete(obj)
 	default:
-		r.DAGAdapter.OnDelete(obj)
+		r.ResourceEventHandler.OnDelete(obj)
 	}
 }
 
