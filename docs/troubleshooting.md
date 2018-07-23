@@ -75,7 +75,11 @@ arguments may be passed into the contour command:
 
 ```yaml
   command: ["contour"]
-  args: ["serve", "--incluster", "--envoy-http-port=80", "--envoy-https-port=443"]
+  args: 
+  - serve
+  - --incluster
+  - --envoy-http-port=80
+  - --envoy-https-port=443
 ```
 
 See [Issue #547][4]

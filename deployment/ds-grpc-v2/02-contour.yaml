@@ -35,7 +35,12 @@ spec:
         - containerPort: 8443
           name: https
         command: ["envoy"]
-        args: ["-c", "/config/contour.yaml", "--service-cluster", "cluster0", "--service-node", "node0", "-l", "info", "--v2-config-only"]
+        args:
+        - --config-path /config/contour.yaml
+        - --service-cluster cluster0
+        - --service-node node0
+        - --log-level info
+        - --v2-config-only
         volumeMounts:
         - name: contour-config
           mountPath: /config
