@@ -35,12 +35,6 @@ type DAG struct {
 	statuses []Status
 }
 
-const (
-	StatusValid    = "valid"
-	StatusInvalid  = "invalid"
-	StatusOrphaned = "orphaned"
-)
-
 // Visit calls fn on each root of this DAG.
 func (d *DAG) Visit(fn func(Vertex)) {
 	for _, r := range d.roots {

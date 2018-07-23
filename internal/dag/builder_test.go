@@ -3410,8 +3410,9 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 		"delegated route's match prefix does not match parent's prefix": {
 			objs: []*ingressroutev1.IngressRoute{ir1, ir4},
-			want: []Status{{Object: ir4, Status: "invalid", Description: `the path prefix "/doesnotmatch" does not match the parent's path prefix "/prefix"`, Vhost: "example.com"},
+			want: []Status{
 				{Object: ir1, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
+				{Object: ir4, Status: "invalid", Description: `the path prefix "/doesnotmatch" does not match the parent's path prefix "/prefix"`, Vhost: "example.com"},
 			},
 		},
 		"invalid weight in service": {
@@ -3429,8 +3430,8 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		"child delegates to parent, producing a cycle": {
 			objs: []*ingressroutev1.IngressRoute{ir7, ir8},
 			want: []Status{
-				{Object: ir8, Status: "invalid", Description: "route creates a delegation cycle: roots/parent -> roots/child -> roots/parent", Vhost: "example.com"},
 				{Object: ir7, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
+				{Object: ir8, Status: "invalid", Description: "route creates a delegation cycle: roots/parent -> roots/child -> roots/parent", Vhost: "example.com"},
 			},
 		},
 		"route has a list of services and also delegates": {
