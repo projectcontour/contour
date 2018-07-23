@@ -17,9 +17,6 @@
 package contour
 
 import (
-	"fmt"
-
-	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/metrics"
@@ -84,28 +81,39 @@ func (ch *CacheHandler) updateClusters(v dag.Visitable) {
 	ch.clusterCache.Update(cv.Visit())
 }
 
-func (ch *CacheHandler) updateIngressRouteMetric(v dag.Visitable) {
-	metrics := calculateIngressRouteMetric(v)
+func (ch *CacheHandler) updateIngressRouteMetric(st statusable) {
+	metrics := calculateIngressRouteMetric(st)
 	ch.Metrics.SetIngressRouteMetric(metrics)
 }
 
-func calculateIngressRouteMetric(v dag.Visitable) map[string]int {
-	ingressRouteMetric := make(map[string]int)
+func calculateIngressRouteMetric(st statusable) metrics.IngressRouteMetric {
+	metricTotal := make(map[metrics.Meta]int)
+	metricValid := make(map[metrics.Meta]int)
+	metricInvalid := make(map[metrics.Meta]int)
+	metricOrphaned := make(map[metrics.Meta]int)
+	metricRoots := make(map[metrics.Meta]int)
 
-	v.Visit(func(v dag.Vertex) {
-		switch vh := v.(type) {
-		case *dag.VirtualHost:
-			hostname := vh.FQDN()
-			vh.Visit(func(v dag.Vertex) {
-				switch r := v.(type) {
-				case *dag.Route:
-					switch rt := r.Object.(type) {
-					case *ingressroutev1.IngressRoute:
-						ingressRouteMetric[fmt.Sprintf("%s|%s", hostname, rt.ObjectMeta.Namespace)]++
-					}
-				}
-			})
+	for _, v := range st.Statuses() {
+		switch v.Status {
+		case dag.StatusValid:
+			metricValid[metrics.Meta{VHost: v.Vhost, Namespace: v.Object.GetNamespace()}]++
+		case dag.StatusInvalid:
+			metricInvalid[metrics.Meta{VHost: v.Vhost, Namespace: v.Object.GetNamespace()}]++
+		case dag.StatusOrphaned:
+			metricOrphaned[metrics.Meta{Namespace: v.Object.GetNamespace()}]++
 		}
-	})
-	return ingressRouteMetric
+		metricTotal[metrics.Meta{Namespace: v.Object.GetNamespace()}]++
+
+		if v.Object.Spec.VirtualHost != nil {
+			metricRoots[metrics.Meta{Namespace: v.Object.GetNamespace()}]++
+		}
+	}
+
+	return metrics.IngressRouteMetric{
+		Invalid:  metricInvalid,
+		Valid:    metricValid,
+		Orphaned: metricOrphaned,
+		Total:    metricTotal,
+		Root:     metricRoots,
+	}
 }
