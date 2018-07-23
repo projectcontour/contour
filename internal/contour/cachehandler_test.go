@@ -305,14 +305,14 @@ func TestIngressRouteMetrics(t *testing.T) {
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{},
 				Valid: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots", VHost: "example.com"}: 1,
+					{Namespace: "roots", VHost: "example.com"}: 1,
 				},
 				Orphaned: map[metrics.Meta]int{},
 				Root: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Total: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 			},
 		},
@@ -320,15 +320,15 @@ func TestIngressRouteMetrics(t *testing.T) {
 			objs: []*ingressroutev1.IngressRoute{ir2},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots", VHost: "example.com"}: 1,
+					{Namespace: "roots", VHost: "example.com"}: 1,
 				},
 				Valid:    map[metrics.Meta]int{},
 				Orphaned: map[metrics.Meta]int{},
 				Root: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Total: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 			},
 		},
@@ -336,15 +336,15 @@ func TestIngressRouteMetrics(t *testing.T) {
 			objs: []*ingressroutev1.IngressRoute{ir3},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "finance"}: 1,
+					{Namespace: "finance"}: 1,
 				},
 				Valid:    map[metrics.Meta]int{},
 				Orphaned: map[metrics.Meta]int{},
 				Root: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "finance"}: 1,
+					{Namespace: "finance"}: 1,
 				},
 				Total: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "finance"}: 1,
+					{Namespace: "finance"}: 1,
 				},
 			},
 			rootNamespaces: []string{"foo"},
@@ -353,17 +353,17 @@ func TestIngressRouteMetrics(t *testing.T) {
 			objs: []*ingressroutev1.IngressRoute{ir1, ir4},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots", VHost: "example.com"}: 1,
+					{Namespace: "roots", VHost: "example.com"}: 1,
 				},
 				Valid: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots", VHost: "example.com"}: 1,
+					{Namespace: "roots", VHost: "example.com"}: 1,
 				},
 				Orphaned: map[metrics.Meta]int{},
 				Root: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Total: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 2,
+					{Namespace: "roots"}: 2,
 				},
 			},
 		},
@@ -371,15 +371,15 @@ func TestIngressRouteMetrics(t *testing.T) {
 			objs: []*ingressroutev1.IngressRoute{ir5},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots", VHost: "example.com"}: 1,
+					{Namespace: "roots", VHost: "example.com"}: 1,
 				},
 				Valid:    map[metrics.Meta]int{},
 				Orphaned: map[metrics.Meta]int{},
 				Root: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Total: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 			},
 		},
@@ -387,15 +387,15 @@ func TestIngressRouteMetrics(t *testing.T) {
 			objs: []*ingressroutev1.IngressRoute{ir13},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Valid:    map[metrics.Meta]int{},
 				Orphaned: map[metrics.Meta]int{},
 				Root: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Total: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 			},
 		},
@@ -403,15 +403,15 @@ func TestIngressRouteMetrics(t *testing.T) {
 			objs: []*ingressroutev1.IngressRoute{ir6},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots", VHost: "example.com"}: 1,
+					{Namespace: "roots", VHost: "example.com"}: 1,
 				},
 				Valid:    map[metrics.Meta]int{},
 				Orphaned: map[metrics.Meta]int{},
 				Root: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Total: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 			},
 		},
@@ -419,17 +419,17 @@ func TestIngressRouteMetrics(t *testing.T) {
 			objs: []*ingressroutev1.IngressRoute{ir7, ir8},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots", VHost: "example.com"}: 1,
+					{Namespace: "roots", VHost: "example.com"}: 1,
 				},
 				Valid: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots", VHost: "example.com"}: 1,
+					{Namespace: "roots", VHost: "example.com"}: 1,
 				},
 				Orphaned: map[metrics.Meta]int{},
 				Root: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Total: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 2,
+					{Namespace: "roots"}: 2,
 				},
 			},
 		},
@@ -437,15 +437,15 @@ func TestIngressRouteMetrics(t *testing.T) {
 			objs: []*ingressroutev1.IngressRoute{ir9},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots", VHost: "example.com"}: 1,
+					{Namespace: "roots", VHost: "example.com"}: 1,
 				},
 				Valid:    map[metrics.Meta]int{},
 				Orphaned: map[metrics.Meta]int{},
 				Root: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Total: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 			},
 		},
@@ -455,11 +455,11 @@ func TestIngressRouteMetrics(t *testing.T) {
 				Invalid: map[metrics.Meta]int{},
 				Valid:   map[metrics.Meta]int{},
 				Orphaned: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Root: map[metrics.Meta]int{},
 				Total: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 			},
 		},
@@ -467,17 +467,17 @@ func TestIngressRouteMetrics(t *testing.T) {
 			objs: []*ingressroutev1.IngressRoute{ir10, ir11, ir12},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots", VHost: "example.com"}: 1,
+					{Namespace: "roots", VHost: "example.com"}: 1,
 				},
 				Valid: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots", VHost: "example.com"}: 2,
+					{Namespace: "roots", VHost: "example.com"}: 2,
 				},
 				Orphaned: map[metrics.Meta]int{},
 				Root: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Total: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 3,
+					{Namespace: "roots"}: 3,
 				},
 			},
 		},
@@ -485,17 +485,17 @@ func TestIngressRouteMetrics(t *testing.T) {
 			objs: []*ingressroutev1.IngressRoute{ir14, ir11},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Valid: map[metrics.Meta]int{},
 				Orphaned: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Root: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Total: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 2,
+					{Namespace: "roots"}: 2,
 				},
 			},
 		},
@@ -503,17 +503,17 @@ func TestIngressRouteMetrics(t *testing.T) {
 			objs: []*ingressroutev1.IngressRoute{ir14, ir11, ir10},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Valid: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots", VHost: "example.com"}: 2,
+					{Namespace: "roots", VHost: "example.com"}: 2,
 				},
 				Orphaned: map[metrics.Meta]int{},
 				Root: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 2,
+					{Namespace: "roots"}: 2,
 				},
 				Total: map[metrics.Meta]int{
-					metrics.Meta{Namespace: "roots"}: 3,
+					{Namespace: "roots"}: 3,
 				},
 			},
 		},
