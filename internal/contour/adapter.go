@@ -35,7 +35,7 @@ type DAGAdapter struct {
 	// If not set, defaults to DEFAULT_INGRESS_CLASS.
 	IngressClass string
 
-	dag.DAG
+	dag.Builder
 	ListenerCache
 	RouteCache
 	ClusterCache
@@ -74,10 +74,6 @@ func (d *DAGAdapter) OnDelete(obj interface{}) {
 	// no need to check ingress class here
 	d.Remove(obj)
 	d.update()
-}
-
-type visitable interface {
-	Visit(func(dag.Vertex))
 }
 
 type statusable interface {
@@ -125,37 +121,37 @@ func (d *DAGAdapter) ingressClass() string {
 	return DEFAULT_INGRESS_CLASS
 }
 
-func (d *DAGAdapter) updateListeners(v visitable) {
+func (d *DAGAdapter) updateListeners(v dag.Visitable) {
 	lv := listenerVisitor{
 		ListenerCache: &d.ListenerCache,
-		visitable:     v,
+		Visitable:     v,
 	}
 	d.ListenerCache.Update(lv.Visit())
 }
 
-func (d *DAGAdapter) updateRoutes(v visitable) {
+func (d *DAGAdapter) updateRoutes(v dag.Visitable) {
 	rv := routeVisitor{
 		RouteCache: &d.RouteCache,
-		visitable:  v,
+		Visitable:  v,
 	}
 	routes := rv.Visit()
 	d.RouteCache.Update(routes)
 }
 
-func (d *DAGAdapter) updateClusters(v visitable) {
+func (d *DAGAdapter) updateClusters(v dag.Visitable) {
 	cv := clusterVisitor{
 		ClusterCache: &d.ClusterCache,
-		visitable:    v,
+		Visitable:    v,
 	}
 	d.clusterCache.Update(cv.Visit())
 }
 
-func (d *DAGAdapter) updateIngressRouteMetric(v visitable) {
-	metrics := d.calculateIngressRouteMetric(v)
+func (d *DAGAdapter) updateIngressRouteMetric(v dag.Visitable) {
+	metrics := calculateIngressRouteMetric(v)
 	d.Metrics.SetIngressRouteMetric(metrics)
 }
 
-func (d *DAGAdapter) calculateIngressRouteMetric(v visitable) map[string]int {
+func calculateIngressRouteMetric(v dag.Visitable) map[string]int {
 	ingressRouteMetric := make(map[string]int)
 
 	v.Visit(func(v dag.Vertex) {

@@ -24,7 +24,7 @@ import (
 // quick and dirty dot debugging package
 
 type dotWriter struct {
-	*dag.DAG
+	*dag.Builder
 	logrus.FieldLogger
 }
 
@@ -87,7 +87,7 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 		})
 	}
 
-	dw.DAG.Compute().Visit(visit)
+	dw.Builder.Compute().Visit(visit)
 
 	fmt.Fprintln(w, "}")
 }

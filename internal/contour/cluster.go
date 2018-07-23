@@ -106,14 +106,14 @@ func (c *clusterCache) Values(filter func(string) bool) []proto.Message {
 // clusterVisitor walks a *dag.DAG and produces a map of *v2.Clusters.
 type clusterVisitor struct {
 	*ClusterCache
-	visitable
+	dag.Visitable
 
 	clusters map[string]*v2.Cluster
 }
 
 func (v *clusterVisitor) Visit() map[string]*v2.Cluster {
 	v.clusters = make(map[string]*v2.Cluster)
-	v.visitable.Visit(v.visit)
+	v.Visitable.Visit(v.visit)
 	return v.clusters
 }
 

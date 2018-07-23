@@ -366,7 +366,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			for _, o := range tc.objs {
 				d.Insert(o)
 			}
-			gotMetrics := d.calculateIngressRouteMetric(d.Compute())
+			gotMetrics := calculateIngressRouteMetric(d.Compute())
 			if !reflect.DeepEqual(tc.wantIRMetric, gotMetrics) {
 				t.Fatalf("(metrics) expected to find: %v but got: %v", tc.wantIRMetric, gotMetrics)
 			}

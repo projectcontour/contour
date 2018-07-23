@@ -1806,11 +1806,11 @@ func TestDAGInsert(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var d DAG
+			var b Builder
 			for _, o := range tc.objs {
-				d.Insert(o)
+				b.Insert(o)
 			}
-			dag := d.Compute()
+			dag := b.Compute()
 
 			got := make(map[hostport]Vertex)
 			dag.Visit(func(v Vertex) {
@@ -2523,15 +2523,14 @@ func TestDAGRemove(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var d DAG
+			var b Builder
 			for _, o := range tc.insert {
-				d.Insert(o)
+				b.Insert(o)
 			}
-			d.Compute()
 			for _, o := range tc.remove {
-				d.Remove(o)
+				b.Remove(o)
 			}
-			dag := d.Compute()
+			dag := b.Compute()
 
 			got := make(map[hostport]Vertex)
 			dag.Visit(func(v Vertex) {
@@ -2715,10 +2714,10 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 		},
 	}
 
-	var d DAG
-	d.Insert(ir2)
-	d.Insert(ir1)
-	dag := d.Compute()
+	var b Builder
+	b.Insert(ir2)
+	b.Insert(ir1)
+	dag := b.Compute()
 
 	got := make(map[hostport]*VirtualHost)
 	dag.Visit(func(v Vertex) {
@@ -2759,9 +2758,9 @@ func TestDAGIngressRouteCycleSelfEdge(t *testing.T) {
 		},
 	}
 
-	var d DAG
-	d.Insert(ir1)
-	dag := d.Compute()
+	var b Builder
+	b.Insert(ir1)
+	dag := b.Compute()
 
 	got := make(map[hostport]*VirtualHost)
 	dag.Visit(func(v Vertex) {
@@ -2797,9 +2796,9 @@ func TestDAGIngressRouteDelegatesToNonExistent(t *testing.T) {
 		},
 	}
 
-	var d DAG
-	d.Insert(ir1)
-	dag := d.Compute()
+	var b Builder
+	b.Insert(ir1)
+	dag := b.Compute()
 
 	got := make(map[hostport]*VirtualHost)
 	dag.Visit(func(v Vertex) {
@@ -2849,10 +2848,10 @@ func TestDAGIngressRouteDelegatePrefixDoesntMatch(t *testing.T) {
 		},
 	}
 
-	var d DAG
-	d.Insert(ir2)
-	d.Insert(ir1)
-	dag := d.Compute()
+	var b Builder
+	b.Insert(ir2)
+	b.Insert(ir1)
+	dag := b.Compute()
 
 	got := make(map[hostport]*VirtualHost)
 	dag.Visit(func(v Vertex) {
@@ -2954,12 +2953,12 @@ func TestDAGRootNamespaces(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var d DAG
-			d.IngressRouteRootNamespaces = tc.rootNamespaces
+			var b Builder
+			b.IngressRouteRootNamespaces = tc.rootNamespaces
 			for _, o := range tc.objs {
-				d.Insert(o)
+				b.Insert(o)
 			}
-			dag := d.Compute()
+			dag := b.Compute()
 
 			var count int
 			dag.Visit(func(v Vertex) {
@@ -3014,10 +3013,10 @@ func TestDAGIngressRouteDelegatePrefixMatchesStringPrefixButNotPathPrefix(t *tes
 		},
 	}
 
-	var d DAG
-	d.Insert(ir2)
-	d.Insert(ir1)
-	dag := d.Compute()
+	var b Builder
+	b.Insert(ir2)
+	b.Insert(ir1)
+	dag := b.Compute()
 
 	got := make(map[hostport]*VirtualHost)
 	dag.Visit(func(v Vertex) {
@@ -3469,12 +3468,12 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var d DAG
-			d.IngressRouteRootNamespaces = []string{"roots"}
+			var b Builder
+			b.IngressRouteRootNamespaces = []string{"roots"}
 			for _, o := range tc.objs {
-				d.Insert(o)
+				b.Insert(o)
 			}
-			got := d.Compute().Statuses()
+			got := b.Compute().Statuses()
 			if len(tc.want) != len(got) {
 				t.Fatalf("expected %d statuses, but got %d", len(tc.want), len(got))
 			}
