@@ -676,7 +676,7 @@ func TestClusterVisit(t *testing.T) {
 			}
 			v := clusterVisitor{
 				ClusterCache: new(ClusterCache),
-				visitable:    d.Compute(),
+				Visitable:    d.Compute(),
 			}
 			got := v.Visit()
 			if !reflect.DeepEqual(tc.want, got) {

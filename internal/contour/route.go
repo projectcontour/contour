@@ -95,7 +95,7 @@ func (c *routeCache) Values(filter func(string) bool) []proto.Message {
 
 type routeVisitor struct {
 	*RouteCache
-	visitable
+	dag.Visitable
 }
 
 func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
@@ -109,7 +109,7 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 		ingress_http.Name:  ingress_http,
 		ingress_https.Name: ingress_https,
 	}
-	v.visitable.Visit(func(vh dag.Vertex) {
+	v.Visitable.Visit(func(vh dag.Vertex) {
 		switch vh := vh.(type) {
 		case *dag.VirtualHost:
 			hostname := vh.FQDN()

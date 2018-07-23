@@ -119,8 +119,9 @@ func main() {
 		log.Infof("args: %v", args)
 		var g workgroup.Group
 
-		// setup DAG Adapter and debug handler
-		debug.DAG = &da.DAG
+		// plumb the DAGAdapter's Builder through
+		// to the debug handler
+		debug.Builder = &da.Builder
 
 		// client-go uses glog which requires initialisation as a side effect of calling
 		// flag.Parse (see #118 and https://github.com/golang/glog/blob/master/glog.go#L679)

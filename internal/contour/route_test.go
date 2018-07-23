@@ -1183,7 +1183,7 @@ func TestRouteVisit(t *testing.T) {
 			}
 			v := routeVisitor{
 				RouteCache: rc,
-				visitable:  d.Compute(),
+				Visitable:  d.Compute(),
 			}
 			got := v.Visit()
 			if !reflect.DeepEqual(tc.want, got) {

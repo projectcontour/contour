@@ -191,7 +191,7 @@ const (
 
 type listenerVisitor struct {
 	*ListenerCache
-	visitable
+	dag.Visitable
 }
 
 func (v *listenerVisitor) Visit() map[string]*v2.Listener {
@@ -204,7 +204,7 @@ func (v *listenerVisitor) Visit() map[string]*v2.Listener {
 	filters := []listener.Filter{
 		httpfilter(ENVOY_HTTPS_LISTENER, v.httpsAccessLog()),
 	}
-	v.visitable.Visit(func(vh dag.Vertex) {
+	v.Visitable.Visit(func(vh dag.Vertex) {
 		switch vh := vh.(type) {
 		case *dag.VirtualHost:
 			// we only create on http listener so record the fact

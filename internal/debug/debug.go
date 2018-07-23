@@ -35,7 +35,7 @@ type Service struct {
 
 	logrus.FieldLogger
 
-	*dag.DAG
+	*dag.Builder
 }
 
 // Start fulfills the g.Start contract.
@@ -105,7 +105,7 @@ func registerMetrics(mux *http.ServeMux, registry *prometheus.Registry) {
 // Write out a .dot representation of the DAG.
 func (svc *Service) writeDot(w http.ResponseWriter, r *http.Request) {
 	dw := &dotWriter{
-		DAG:         svc.DAG,
+		Builder:     svc.Builder,
 		FieldLogger: svc.FieldLogger,
 	}
 	dw.writeDot(w)
