@@ -668,7 +668,7 @@ func TestClusterVisit(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			reh := ResourceEventHandler{
-				CacheHandler: CacheHandler{
+				CacheHandler: &CacheHandler{
 					IngressRouteStatus: &k8s.IngressRouteStatus{
 						Client: fake.NewSimpleClientset(),
 					},

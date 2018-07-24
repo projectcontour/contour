@@ -67,7 +67,7 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 		FieldLogger: log,
 	}
 	reh := contour.ResourceEventHandler{
-		CacheHandler: contour.CacheHandler{
+		CacheHandler: &contour.CacheHandler{
 			IngressRouteStatus: &k8s.IngressRouteStatus{
 				Client: fake.NewSimpleClientset(),
 			},

@@ -34,7 +34,7 @@ type ResourceEventHandler struct {
 
 	dag.Builder
 
-	CacheHandler
+	*CacheHandler
 }
 
 func (reh *ResourceEventHandler) OnAdd(obj interface{}) {

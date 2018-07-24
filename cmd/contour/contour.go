@@ -84,19 +84,21 @@ func main() {
 	serve.Flag("http-address", "address the http endpoint will bind too").Default("127.0.0.1").StringVar(&debug.Addr)
 	serve.Flag("http-port", "port the http endpoint will bind too").Default("8000").IntVar(&debug.Port)
 
-	reh := contour.ResourceEventHandler{
-		CacheHandler: contour.CacheHandler{
-			FieldLogger: log.WithField("context", "DAGAdapter"),
-		},
+	ch := contour.CacheHandler{
+		FieldLogger: log.WithField("context", "DAGAdapter"),
 	}
 
-	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&reh.HTTPAccessLog)
-	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&reh.HTTPSAccessLog)
-	serve.Flag("envoy-http-address", "Envoy HTTP listener address").StringVar(&reh.HTTPAddress)
-	serve.Flag("envoy-https-address", "Envoy HTTPS listener address").StringVar(&reh.HTTPSAddress)
-	serve.Flag("envoy-http-port", "Envoy HTTP listener port").IntVar(&reh.HTTPPort)
-	serve.Flag("envoy-https-port", "Envoy HTTPS listener port").IntVar(&reh.HTTPSPort)
-	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&reh.UseProxyProto)
+	reh := contour.ResourceEventHandler{
+		CacheHandler: &ch,
+	}
+
+	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&ch.HTTPAccessLog)
+	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&ch.HTTPSAccessLog)
+	serve.Flag("envoy-http-address", "Envoy HTTP listener address").StringVar(&ch.HTTPAddress)
+	serve.Flag("envoy-https-address", "Envoy HTTPS listener address").StringVar(&ch.HTTPSAddress)
+	serve.Flag("envoy-http-port", "Envoy HTTP listener port").IntVar(&ch.HTTPPort)
+	serve.Flag("envoy-https-port", "Envoy HTTPS listener port").IntVar(&ch.HTTPSPort)
+	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ch.UseProxyProto)
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&reh.IngressClass)
 	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringsVar(&reh.IngressRouteRootNamespaces)
 
