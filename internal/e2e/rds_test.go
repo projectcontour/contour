@@ -1165,7 +1165,7 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
 		reh.IngressRouteRootNamespaces = []string{"roots"}
-		reh.IngressRouteStatus = &k8s.IngressRouteStatus{
+		reh.Notifier.(*contour.CacheHandler).IngressRouteStatus = &k8s.IngressRouteStatus{
 			Client: fake.NewSimpleClientset(),
 		}
 	})
@@ -1229,7 +1229,7 @@ func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
 func TestRDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
 		reh.IngressRouteRootNamespaces = []string{"roots"}
-		reh.IngressRouteStatus = &k8s.IngressRouteStatus{
+		reh.Notifier.(*contour.CacheHandler).IngressRouteStatus = &k8s.IngressRouteStatus{
 			Client: fake.NewSimpleClientset(),
 		}
 	})

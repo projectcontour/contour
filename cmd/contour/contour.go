@@ -89,7 +89,7 @@ func main() {
 	}
 
 	reh := contour.ResourceEventHandler{
-		CacheHandler: &ch,
+		Notifier: &ch,
 	}
 
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&ch.HTTPAccessLog)
@@ -140,7 +140,7 @@ func main() {
 		k8s.WatchSecrets(&g, client, wl, &reh)
 		k8s.WatchIngressRoutes(&g, contourClient, wl, &reh)
 
-		reh.IngressRouteStatus = &k8s.IngressRouteStatus{
+		ch.IngressRouteStatus = &k8s.IngressRouteStatus{
 			Client: contourClient,
 		}
 
@@ -153,7 +153,7 @@ func main() {
 
 		metrics := metrics.NewMetrics(log)
 		metrics.RegisterPrometheus(true)
-		reh.Metrics = metrics
+		ch.Metrics = metrics
 
 		g.Add(func(stop <-chan struct{}) error {
 			debug.Start(stop, metrics.Registry)
@@ -178,9 +178,9 @@ func main() {
 				listenerType = typePrefix + "Listener"
 			)
 			s := grpc.NewAPI(log, map[string]grpc.Cache{
-				clusterType:  &reh.ClusterCache,
-				routeType:    &reh.RouteCache,
-				listenerType: &reh.ListenerCache,
+				clusterType:  &ch.ClusterCache,
+				routeType:    &ch.RouteCache,
+				listenerType: &ch.ListenerCache,
 				endpointType: et,
 			})
 			log.Println("started")

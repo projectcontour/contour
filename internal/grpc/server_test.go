@@ -180,13 +180,14 @@ func TestGRPCStreaming(t *testing.T) {
 			et = &contour.EndpointsTranslator{
 				FieldLogger: log,
 			}
+			var ch contour.CacheHandler
 			reh = &contour.ResourceEventHandler{
-				CacheHandler: new(contour.CacheHandler),
+				Notifier: &ch,
 			}
 			srv := NewAPI(log, map[string]Cache{
-				clusterType:  &reh.ClusterCache,
-				routeType:    &reh.RouteCache,
-				listenerType: &reh.ListenerCache,
+				clusterType:  &ch.ClusterCache,
+				routeType:    &ch.RouteCache,
+				listenerType: &ch.ListenerCache,
 				endpointType: et,
 			})
 			var err error
@@ -275,13 +276,11 @@ func TestGRPCFetching(t *testing.T) {
 			et := &contour.EndpointsTranslator{
 				FieldLogger: log,
 			}
-			reh := &contour.ResourceEventHandler{
-				CacheHandler: new(contour.CacheHandler),
-			}
+			var ch contour.CacheHandler
 			srv := NewAPI(log, map[string]Cache{
-				clusterType:  &reh.ClusterCache,
-				routeType:    &reh.RouteCache,
-				listenerType: &reh.ListenerCache,
+				clusterType:  &ch.ClusterCache,
+				routeType:    &ch.RouteCache,
+				listenerType: &ch.ListenerCache,
 				endpointType: et,
 			})
 			var err error
