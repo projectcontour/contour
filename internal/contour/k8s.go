@@ -34,7 +34,16 @@ type ResourceEventHandler struct {
 
 	dag.Builder
 
-	CacheHandler
+	Notifier
+}
+
+// Notifier supplies a callback to be called when changes occur
+// to a dag.Builder.
+type Notifier interface {
+
+	// OnChange is called to notify the callee that the
+	// contents of the *dag.Builder have changed.
+	OnChange(*dag.Builder)
 }
 
 func (reh *ResourceEventHandler) OnAdd(obj interface{}) {
@@ -69,7 +78,7 @@ func (reh *ResourceEventHandler) OnDelete(obj interface{}) {
 }
 
 func (reh *ResourceEventHandler) update() {
-	reh.CacheHandler.update(&reh.Builder)
+	reh.OnChange(&reh.Builder)
 }
 
 // validIngressClass returns true iff:

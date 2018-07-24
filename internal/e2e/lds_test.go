@@ -427,7 +427,7 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 
 func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
-		reh.UseProxyProto = true
+		reh.Notifier.(*contour.CacheHandler).UseProxyProto = true
 	})
 	defer done()
 
@@ -472,7 +472,7 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 
 func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
-		reh.UseProxyProto = true
+		reh.Notifier.(*contour.CacheHandler).UseProxyProto = true
 	})
 	defer done()
 
@@ -545,10 +545,10 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 
 func TestLDSCustomAddressAndPort(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
-		reh.HTTPAddress = "127.0.0.100"
-		reh.HTTPPort = 9100
-		reh.HTTPSAddress = "127.0.0.200"
-		reh.HTTPSPort = 9200
+		reh.Notifier.(*contour.CacheHandler).HTTPAddress = "127.0.0.100"
+		reh.Notifier.(*contour.CacheHandler).HTTPPort = 9100
+		reh.Notifier.(*contour.CacheHandler).HTTPSAddress = "127.0.0.200"
+		reh.Notifier.(*contour.CacheHandler).HTTPSPort = 9200
 	})
 	defer done()
 
@@ -622,7 +622,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
 		reh.IngressRouteRootNamespaces = []string{"roots"}
-		reh.IngressRouteStatus = &k8s.IngressRouteStatus{
+		reh.Notifier.(*contour.CacheHandler).IngressRouteStatus = &k8s.IngressRouteStatus{
 			Client: fake.NewSimpleClientset(),
 		}
 	})
@@ -677,7 +677,7 @@ func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 func TestLDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
 		reh.IngressRouteRootNamespaces = []string{"roots"}
-		reh.IngressRouteStatus = &k8s.IngressRouteStatus{
+		reh.Notifier.(*contour.CacheHandler).IngressRouteStatus = &k8s.IngressRouteStatus{
 			Client: fake.NewSimpleClientset(),
 		}
 	})

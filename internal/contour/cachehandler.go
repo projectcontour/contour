@@ -38,7 +38,7 @@ type statusable interface {
 	Statuses() []dag.Status
 }
 
-func (ch *CacheHandler) update(b *dag.Builder) {
+func (ch *CacheHandler) OnChange(b *dag.Builder) {
 	dag := b.Compute()
 	ch.setIngressRouteStatus(dag)
 	ch.updateListeners(dag)

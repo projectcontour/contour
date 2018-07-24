@@ -66,12 +66,14 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 	et := &contour.EndpointsTranslator{
 		FieldLogger: log,
 	}
-	reh := contour.ResourceEventHandler{
-		CacheHandler: contour.CacheHandler{
-			IngressRouteStatus: &k8s.IngressRouteStatus{
-				Client: fake.NewSimpleClientset(),
-			},
+	ch := &contour.CacheHandler{
+		IngressRouteStatus: &k8s.IngressRouteStatus{
+			Client: fake.NewSimpleClientset(),
 		},
+	}
+
+	reh := contour.ResourceEventHandler{
+		Notifier: ch,
 	}
 
 	for _, opt := range opts {
@@ -84,9 +86,9 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 	discard.Out = new(discardWriter)
 	// Resource types in xDS v2.
 	srv := cgrpc.NewAPI(discard, map[string]cgrpc.Cache{
-		clusterType:  &reh.ClusterCache,
-		routeType:    &reh.RouteCache,
-		listenerType: &reh.ListenerCache,
+		clusterType:  &ch.ClusterCache,
+		routeType:    &ch.RouteCache,
+		listenerType: &ch.ListenerCache,
 		endpointType: et,
 	})
 

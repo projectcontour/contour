@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/heptio/contour/internal/dag"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,3 +69,7 @@ func ports(ps ...int32) []v1.EndpointPort {
 	}
 	return ports
 }
+
+type nullNotifier int
+
+func (nn *nullNotifier) OnChange(b *dag.Builder) {}
