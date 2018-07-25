@@ -34,4 +34,4 @@ required = [
   version = "kubernetes-1.10.0"
 [[constraint]]
   name = "github.com/prometheus/client_golang"
-  version = "0.8.0"
+  version = "^0.9.0-pre1"
