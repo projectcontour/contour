@@ -23,6 +23,8 @@ import (
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
+	"github.com/heptio/contour/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1170,6 +1172,7 @@ func TestRouteVisit(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			reh := ResourceEventHandler{
 				Notifier: new(nullNotifier),
+				Metrics:  metrics.NewMetrics(prometheus.NewRegistry()),
 			}
 			for _, o := range tc.objs {
 				reh.OnAdd(o)

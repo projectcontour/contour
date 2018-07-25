@@ -18,6 +18,8 @@ package contour
 
 import (
 	"github.com/heptio/contour/internal/dag"
+	"github.com/heptio/contour/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/api/extensions/v1beta1"
 )
 
@@ -35,18 +37,21 @@ type ResourceEventHandler struct {
 	dag.Builder
 
 	Notifier
+
+	*metrics.Metrics
 }
 
 // Notifier supplies a callback to be called when changes occur
 // to a dag.Builder.
 type Notifier interface {
-
 	// OnChange is called to notify the callee that the
 	// contents of the *dag.Builder have changed.
 	OnChange(*dag.Builder)
 }
 
 func (reh *ResourceEventHandler) OnAdd(obj interface{}) {
+	timer := prometheus.NewTimer(reh.ResourceEventHandlerSummary.With(prometheus.Labels{"op": "OnAdd"}))
+	defer timer.ObserveDuration()
 	if !reh.validIngressClass(obj) {
 		return
 	}
@@ -65,6 +70,8 @@ func (reh *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 		// to remove the old object and _not_ insert the new object.
 		reh.OnDelete(oldObj)
 	default:
+		timer := prometheus.NewTimer(reh.ResourceEventHandlerSummary.With(prometheus.Labels{"op": "OnUpdate"}))
+		defer timer.ObserveDuration()
 		reh.Remove(oldObj)
 		reh.Insert(newObj)
 		reh.update()
@@ -72,6 +79,8 @@ func (reh *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 }
 
 func (reh *ResourceEventHandler) OnDelete(obj interface{}) {
+	timer := prometheus.NewTimer(reh.ResourceEventHandlerSummary.With(prometheus.Labels{"op": "OnDelete"}))
+	defer timer.ObserveDuration()
 	// no need to check ingress class here
 	reh.Remove(obj)
 	reh.update()

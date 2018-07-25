@@ -161,6 +161,7 @@ func main() {
 		// register our custom metrics
 		metrics := metrics.NewMetrics(registry)
 		ch.Metrics = metrics
+		reh.Metrics = metrics
 
 		g.Add(func(stop <-chan struct{}) error {
 			debug.Start(stop, registry)
