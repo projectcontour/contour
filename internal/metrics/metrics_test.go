@@ -20,7 +20,6 @@ import (
 	"github.com/prometheus/client_model/go"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
 )
 
 type testMetric struct {
@@ -147,7 +146,7 @@ func TestWriteMetric(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			r := prometheus.NewRegistry()
-			m := NewMetrics(logrus.New())
+			m := NewMetrics()
 			m.RegisterPrometheus(r)
 			m.SetIngressRouteMetric(tc.irMetrics)
 

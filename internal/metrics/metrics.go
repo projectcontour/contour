@@ -15,13 +15,11 @@ package metrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
 )
 
 // Metrics provide Prometheus metrics for the app
 type Metrics struct {
 	Metrics map[string]prometheus.Collector
-	logrus.FieldLogger
 }
 
 // IngressRouteMetric stores various metrics for IngressRoute objects
@@ -46,10 +44,9 @@ const (
 	IngressRouteOrphanedGauge  = "contour_ingressroute_orphaned_total"
 )
 
-// NewMetrics returns a map of Prometheus metrics
-func NewMetrics(logger logrus.FieldLogger) Metrics {
+// NewMetrics returns a new Metrics value.
+func NewMetrics() Metrics {
 	return Metrics{
-		FieldLogger: logger,
 		Metrics: map[string]prometheus.Collector{
 			IngressRouteTotalGauge: prometheus.NewGaugeVec(
 				prometheus.GaugeOpts{

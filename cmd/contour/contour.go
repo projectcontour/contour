@@ -159,7 +159,7 @@ func main() {
 		registry.MustRegister(prometheus.NewGoCollector())
 
 		// register our custom metrics
-		metrics := metrics.NewMetrics(log)
+		metrics := metrics.NewMetrics()
 		metrics.RegisterPrometheus(registry)
 		ch.Metrics = metrics
 
