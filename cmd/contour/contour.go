@@ -24,6 +24,7 @@ import (
 	"github.com/heptio/contour/internal/debug"
 	clientset "github.com/heptio/contour/internal/generated/clientset/versioned"
 	"github.com/heptio/workgroup"
+	"github.com/prometheus/client_golang/prometheus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"k8s.io/client-go/kubernetes"
@@ -151,12 +152,18 @@ func main() {
 		}
 		k8s.WatchEndpoints(&g, client, wl, et)
 
-		metrics := metrics.NewMetrics(log)
-		metrics.RegisterPrometheus(true)
+		registry := prometheus.NewRegistry()
+
+		// register detault process / go collectors
+		registry.MustRegister(prometheus.NewProcessCollector(os.Getpid(), ""))
+		registry.MustRegister(prometheus.NewGoCollector())
+
+		// register our custom metrics
+		metrics := metrics.NewMetrics(registry)
 		ch.Metrics = metrics
 
 		g.Add(func(stop <-chan struct{}) error {
-			debug.Start(stop, metrics.Registry)
+			debug.Start(stop, registry)
 			return nil
 		})
 
