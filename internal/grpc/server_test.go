@@ -187,6 +187,7 @@ func TestGRPCStreaming(t *testing.T) {
 			}
 			reh = &contour.ResourceEventHandler{
 				Notifier: &ch,
+				Metrics:  ch.Metrics,
 			}
 			srv := NewAPI(log, map[string]Cache{
 				clusterType:  &ch.ClusterCache,
