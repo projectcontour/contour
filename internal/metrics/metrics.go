@@ -14,16 +14,13 @@
 package metrics
 
 import (
-	"os"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
 // Metrics provide Prometheus metrics for the app
 type Metrics struct {
-	Registry *prometheus.Registry
-	Metrics  map[string]prometheus.Collector
+	Metrics map[string]prometheus.Collector
 	logrus.FieldLogger
 }
 
@@ -52,7 +49,6 @@ const (
 // NewMetrics returns a map of Prometheus metrics
 func NewMetrics(logger logrus.FieldLogger) Metrics {
 	return Metrics{
-		Registry:    prometheus.NewRegistry(),
 		FieldLogger: logger,
 		Metrics: map[string]prometheus.Collector{
 			IngressRouteTotalGauge: prometheus.NewGaugeVec(
@@ -95,17 +91,9 @@ func NewMetrics(logger logrus.FieldLogger) Metrics {
 }
 
 // RegisterPrometheus registers the Metrics
-func (m *Metrics) RegisterPrometheus(registerDefault bool) {
-
-	if registerDefault {
-		// Register detault process / go collectors
-		m.Registry.MustRegister(prometheus.NewProcessCollector(os.Getpid(), ""))
-		m.Registry.MustRegister(prometheus.NewGoCollector())
-	}
-
-	// Register with Prometheus's default registry
+func (m *Metrics) RegisterPrometheus(registry *prometheus.Registry) {
 	for _, v := range m.Metrics {
-		m.Registry.MustRegister(v)
+		registry.MustRegister(v)
 	}
 }
 
