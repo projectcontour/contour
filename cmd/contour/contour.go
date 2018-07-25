@@ -237,5 +237,12 @@ func check(err error) {
 }
 
 func parseRootNamespaces(rn string) []string {
-	return strings.Split(rn, ",")
+	if rn == "" {
+		return nil
+	}
+	var ns []string
+	for _, s := range strings.Split(rn, ",") {
+		ns = append(ns, strings.TrimSpace(s))
+	}
+	return ns
 }
