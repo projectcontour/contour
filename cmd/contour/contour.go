@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/heptio/contour/internal/debug"
 	clientset "github.com/heptio/contour/internal/generated/clientset/versioned"
@@ -39,6 +40,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 )
+
+var ingressrouteRootNamespaceFlag string
 
 func main() {
 	log := logrus.StandardLogger()
@@ -101,7 +104,7 @@ func main() {
 	serve.Flag("envoy-https-port", "Envoy HTTPS listener port").IntVar(&ch.HTTPSPort)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ch.UseProxyProto)
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&reh.IngressClass)
-	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringsVar(&reh.IngressRouteRootNamespaces)
+	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringVar(&ingressrouteRootNamespaceFlag)
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
@@ -133,6 +136,9 @@ func main() {
 		// this point to avoid the Go flag package from rejecting flags which are defined
 		// in kingpin. See #371
 		flag.Parse()
+
+		reh.IngressRouteRootNamespaces = parseRootNamespaces(ingressrouteRootNamespaceFlag)
+
 		client, contourClient := newClient(*kubeconfig, *inCluster)
 
 		wl := log.WithField("context", "watch")
@@ -225,4 +231,8 @@ func check(err error) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+func parseRootNamespaces(rn string) []string {
+	return strings.Split(rn, ",")
 }
