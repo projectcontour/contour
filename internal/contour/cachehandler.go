@@ -31,7 +31,7 @@ type CacheHandler struct {
 
 	IngressRouteStatus *k8s.IngressRouteStatus
 	logrus.FieldLogger
-	metrics.Metrics
+	*metrics.Metrics
 }
 
 type statusable interface {

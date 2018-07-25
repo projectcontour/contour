@@ -159,8 +159,7 @@ func main() {
 		registry.MustRegister(prometheus.NewGoCollector())
 
 		// register our custom metrics
-		metrics := metrics.NewMetrics()
-		metrics.RegisterPrometheus(registry)
+		metrics := metrics.NewMetrics(registry)
 		ch.Metrics = metrics
 
 		g.Add(func(stop <-chan struct{}) error {

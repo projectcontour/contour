@@ -44,9 +44,10 @@ const (
 	IngressRouteOrphanedGauge  = "contour_ingressroute_orphaned_total"
 )
 
-// NewMetrics returns a new Metrics value.
-func NewMetrics() Metrics {
-	return Metrics{
+// NewMetrics creates a new set of metrics and registers them with
+// the supplied registry.
+func NewMetrics(registry *prometheus.Registry) *Metrics {
+	m := Metrics{
 		metrics: map[string]prometheus.Collector{
 			IngressRouteTotalGauge: prometheus.NewGaugeVec(
 				prometheus.GaugeOpts{
@@ -85,10 +86,12 @@ func NewMetrics() Metrics {
 			),
 		},
 	}
+	m.register(registry)
+	return &m
 }
 
-// RegisterPrometheus registers the Metrics
-func (m *Metrics) RegisterPrometheus(registry *prometheus.Registry) {
+// register registers the Metrics with the supplied registry.
+func (m *Metrics) register(registry *prometheus.Registry) {
 	for _, v := range m.metrics {
 		registry.MustRegister(v)
 	}

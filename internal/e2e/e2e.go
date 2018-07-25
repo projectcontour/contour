@@ -28,6 +28,8 @@ import (
 	"github.com/heptio/contour/internal/generated/clientset/versioned/fake"
 	cgrpc "github.com/heptio/contour/internal/grpc"
 	"github.com/heptio/contour/internal/k8s"
+	"github.com/heptio/contour/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
@@ -66,10 +68,13 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 	et := &contour.EndpointsTranslator{
 		FieldLogger: log,
 	}
+
+	r := prometheus.NewRegistry()
 	ch := &contour.CacheHandler{
 		IngressRouteStatus: &k8s.IngressRouteStatus{
 			Client: fake.NewSimpleClientset(),
 		},
+		Metrics: metrics.NewMetrics(r),
 	}
 
 	reh := contour.ResourceEventHandler{

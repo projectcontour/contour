@@ -146,8 +146,7 @@ func TestWriteMetric(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			r := prometheus.NewRegistry()
-			m := NewMetrics()
-			m.RegisterPrometheus(r)
+			m := NewMetrics(r)
 			m.SetIngressRouteMetric(tc.irMetrics)
 
 			gatherers := prometheus.Gatherers{
