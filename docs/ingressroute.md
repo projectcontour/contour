@@ -607,7 +607,7 @@ IngressRoute delegation allows for Administrators to limit which users/namespace
 Contour has an enforcing mode which accepts a list of namespaces where root IngressRoutes are valid.
 Only users permitted to operate in those namespaces can therefore create IngressRoutes with the `virtualhost` field.
 
-This restricted mode is enabled in Contour by specifying a command line flag, `--ingressroute-root-namespaces`, which will restrict Contour to only searching the defined namespaces for root IngressRoutes. This CLI flag can be passed multiple times, one per Namespace where root IngressRoutes are valid (e.g. `--ingressroute-root-namespaces=default --ingressroute-root-namespaces=kube-system --ingressroute-root-namespaces=my-admin-namespace`).
+This restricted mode is enabled in Contour by specifying a command line flag, `--ingressroute-root-namespaces`, which will restrict Contour to only searching the defined namespaces for root IngressRoutes. This CLI flag accepts a comma separated list of namespaces where IngressRoutes are valid (e.g. `--ingressroute-root-namespaces=default,kube-system,my-admin-namespace`).
 
 IngressRoutes with a defined `virtualhost` field that are not in one of the allowed root namespaces will be flagged as `invalid` and will be ignored by Contour.
 
