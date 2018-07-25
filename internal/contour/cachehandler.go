@@ -20,6 +20,7 @@ import (
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
@@ -39,6 +40,8 @@ type statusable interface {
 }
 
 func (ch *CacheHandler) OnChange(b *dag.Builder) {
+	timer := prometheus.NewTimer(ch.CacheHandlerOnUpdateSummary)
+	defer timer.ObserveDuration()
 	dag := b.Compute()
 	ch.setIngressRouteStatus(dag)
 	ch.updateListeners(dag)

@@ -24,6 +24,8 @@ type Metrics struct {
 	ingressRouteInvalidGauge   *prometheus.GaugeVec
 	ingressRouteValidGauge     *prometheus.GaugeVec
 	ingressRouteOrphanedGauge  *prometheus.GaugeVec
+
+	CacheHandlerOnUpdateSummary prometheus.Summary
 }
 
 // IngressRouteMetric stores various metrics for IngressRoute objects
@@ -46,6 +48,8 @@ const (
 	IngressRouteInvalidGauge   = "contour_ingressroute_invalid_total"
 	IngressRouteValidGauge     = "contour_ingressroute_valid_total"
 	IngressRouteOrphanedGauge  = "contour_ingressroute_orphaned_total"
+
+	cacheHandlerOnUpdateSummary = "contour_cachehandler_onupdate_duration_seconds"
 )
 
 // NewMetrics creates a new set of metrics and registers them with
@@ -87,6 +91,11 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 			},
 			[]string{"namespace"},
 		),
+		CacheHandlerOnUpdateSummary: prometheus.NewSummary(prometheus.SummaryOpts{
+			Name:       cacheHandlerOnUpdateSummary,
+			Help:       "Histogram for the runtime of xDS cache regeneration",
+			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
+		}),
 	}
 	m.register(registry)
 	return &m
@@ -100,6 +109,7 @@ func (m *Metrics) register(registry *prometheus.Registry) {
 		m.ingressRouteInvalidGauge,
 		m.ingressRouteValidGauge,
 		m.ingressRouteOrphanedGauge,
+		m.CacheHandlerOnUpdateSummary,
 	)
 }
 
