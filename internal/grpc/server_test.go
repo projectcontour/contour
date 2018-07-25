@@ -22,6 +22,8 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/heptio/contour/internal/contour"
+	"github.com/heptio/contour/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -180,7 +182,9 @@ func TestGRPCStreaming(t *testing.T) {
 			et = &contour.EndpointsTranslator{
 				FieldLogger: log,
 			}
-			var ch contour.CacheHandler
+			ch := contour.CacheHandler{
+				Metrics: metrics.NewMetrics(prometheus.NewRegistry()),
+			}
 			reh = &contour.ResourceEventHandler{
 				Notifier: &ch,
 			}
@@ -276,7 +280,9 @@ func TestGRPCFetching(t *testing.T) {
 			et := &contour.EndpointsTranslator{
 				FieldLogger: log,
 			}
-			var ch contour.CacheHandler
+			ch := contour.CacheHandler{
+				Metrics: metrics.NewMetrics(prometheus.NewRegistry()),
+			}
 			srv := NewAPI(log, map[string]Cache{
 				clusterType:  &ch.ClusterCache,
 				routeType:    &ch.RouteCache,
