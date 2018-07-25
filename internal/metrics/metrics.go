@@ -19,7 +19,7 @@ import (
 
 // Metrics provide Prometheus metrics for the app
 type Metrics struct {
-	Metrics map[string]prometheus.Collector
+	metrics map[string]prometheus.Collector
 }
 
 // IngressRouteMetric stores various metrics for IngressRoute objects
@@ -47,7 +47,7 @@ const (
 // NewMetrics returns a new Metrics value.
 func NewMetrics() Metrics {
 	return Metrics{
-		Metrics: map[string]prometheus.Collector{
+		metrics: map[string]prometheus.Collector{
 			IngressRouteTotalGauge: prometheus.NewGaugeVec(
 				prometheus.GaugeOpts{
 					Name: IngressRouteTotalGauge,
@@ -89,7 +89,7 @@ func NewMetrics() Metrics {
 
 // RegisterPrometheus registers the Metrics
 func (m *Metrics) RegisterPrometheus(registry *prometheus.Registry) {
-	for _, v := range m.Metrics {
+	for _, v := range m.metrics {
 		registry.MustRegister(v)
 	}
 }
@@ -98,31 +98,31 @@ func (m *Metrics) RegisterPrometheus(registry *prometheus.Registry) {
 func (m *Metrics) SetIngressRouteMetric(metrics IngressRouteMetric) {
 
 	for meta, value := range metrics.Total {
-		m, ok := m.Metrics[IngressRouteTotalGauge].(*prometheus.GaugeVec)
+		m, ok := m.metrics[IngressRouteTotalGauge].(*prometheus.GaugeVec)
 		if ok {
 			m.WithLabelValues(meta.Namespace).Set(float64(value))
 		}
 	}
 	for meta, value := range metrics.Invalid {
-		m, ok := m.Metrics[IngressRouteInvalidGauge].(*prometheus.GaugeVec)
+		m, ok := m.metrics[IngressRouteInvalidGauge].(*prometheus.GaugeVec)
 		if ok {
 			m.WithLabelValues(meta.Namespace, meta.VHost).Set(float64(value))
 		}
 	}
 	for meta, value := range metrics.Orphaned {
-		m, ok := m.Metrics[IngressRouteOrphanedGauge].(*prometheus.GaugeVec)
+		m, ok := m.metrics[IngressRouteOrphanedGauge].(*prometheus.GaugeVec)
 		if ok {
 			m.WithLabelValues(meta.Namespace).Set(float64(value))
 		}
 	}
 	for meta, value := range metrics.Valid {
-		m, ok := m.Metrics[IngressRouteValidGauge].(*prometheus.GaugeVec)
+		m, ok := m.metrics[IngressRouteValidGauge].(*prometheus.GaugeVec)
 		if ok {
 			m.WithLabelValues(meta.Namespace, meta.VHost).Set(float64(value))
 		}
 	}
 	for meta, value := range metrics.Root {
-		m, ok := m.Metrics[IngressRouteRootTotalGauge].(*prometheus.GaugeVec)
+		m, ok := m.metrics[IngressRouteRootTotalGauge].(*prometheus.GaugeVec)
 		if ok {
 			m.WithLabelValues(meta.Namespace).Set(float64(value))
 		}
