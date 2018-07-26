@@ -21,6 +21,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/gogo/protobuf/types"
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
@@ -526,6 +527,11 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 						MaxRetries:         uint32t(7),
 					}},
 				},
+				CommonLbConfig: &v2.Cluster_CommonLbConfig{
+					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+						Value: 0,
+					},
+				},
 			}),
 		},
 		TypeUrl: clusterType,
@@ -566,6 +572,11 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
 						MaxPendingRequests: uint32t(9999),
 					}},
+				},
+				CommonLbConfig: &v2.Cluster_CommonLbConfig{
+					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+						Value: 0,
+					},
 				},
 			}),
 		},
@@ -617,6 +628,11 @@ func cluster(name, servicename string) *v2.Cluster {
 		},
 		ConnectTimeout: 250 * time.Millisecond,
 		LbPolicy:       v2.Cluster_ROUND_ROBIN,
+		CommonLbConfig: &v2.Cluster_CommonLbConfig{
+			HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+				Value: 0,
+			},
+		},
 	}
 }
 

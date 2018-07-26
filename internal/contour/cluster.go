@@ -24,6 +24,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
@@ -138,6 +139,11 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 		EdsClusterConfig: edsconfig("contour", servicename(svc.Namespace(), svc.Name(), svc.ServicePort.Name)),
 		ConnectTimeout:   250 * time.Millisecond,
 		LbPolicy:         edslbstrategy(svc.LoadBalancerStrategy),
+		CommonLbConfig: &v2.Cluster_CommonLbConfig{
+			HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+				Value: 0,
+			},
+		},
 	}
 
 	// Set HealthCheck if requested
