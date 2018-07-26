@@ -24,6 +24,7 @@ import (
 
 	"github.com/heptio/contour/internal/debug"
 	clientset "github.com/heptio/contour/internal/generated/clientset/versioned"
+	"github.com/heptio/contour/internal/httpsvc"
 	"github.com/heptio/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
@@ -82,7 +83,9 @@ func main() {
 
 	// configuration parameters for debug service
 	debug := debug.Service{
-		FieldLogger: log.WithField("context", "debugsvc"),
+		Service: httpsvc.Service{
+			FieldLogger: log.WithField("context", "debugsvc"),
+		},
 	}
 
 	serve.Flag("http-address", "address the http endpoint will bind too").Default("127.0.0.1").StringVar(&debug.Addr)
