@@ -89,11 +89,14 @@ func main() {
 	serve.Flag("http-port", "port the http endpoint will bind too").Default("8000").IntVar(&debug.Port)
 
 	ch := contour.CacheHandler{
-		FieldLogger: log.WithField("context", "DAGAdapter"),
+		FieldLogger: log.WithField("context", "CacheHandler"),
 	}
 
 	reh := contour.ResourceEventHandler{
-		Notifier: &ch,
+		Notifier: &contour.HoldoffNotifier{
+			Notifier:    &ch,
+			FieldLogger: log.WithField("context", "HoldoffNotifier"),
+		},
 	}
 
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&ch.HTTPAccessLog)
