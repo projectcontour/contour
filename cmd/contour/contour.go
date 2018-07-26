@@ -24,6 +24,7 @@ import (
 
 	"github.com/heptio/contour/internal/debug"
 	clientset "github.com/heptio/contour/internal/generated/clientset/versioned"
+	"github.com/heptio/contour/internal/httpsvc"
 	"github.com/heptio/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
@@ -80,14 +81,6 @@ func main() {
 	xdsAddr := serve.Flag("xds-address", "xDS gRPC API address").Default("127.0.0.1").String()
 	xdsPort := serve.Flag("xds-port", "xDS gRPC API port").Default("8001").Int()
 
-	// configuration parameters for debug service
-	debug := debug.Service{
-		FieldLogger: log.WithField("context", "debugsvc"),
-	}
-
-	serve.Flag("http-address", "address the http endpoint will bind too").Default("127.0.0.1").StringVar(&debug.Addr)
-	serve.Flag("http-port", "port the http endpoint will bind too").Default("8000").IntVar(&debug.Port)
-
 	ch := contour.CacheHandler{
 		FieldLogger: log.WithField("context", "CacheHandler"),
 	}
@@ -98,6 +91,28 @@ func main() {
 			FieldLogger: log.WithField("context", "HoldoffNotifier"),
 		},
 	}
+
+	// configuration parameters for debug service
+	debugsvc := debug.Service{
+		Service: httpsvc.Service{
+			FieldLogger: log.WithField("context", "debugsvc"),
+		},
+		// plumb the DAGAdapter's Builder through
+		// to the debug handler
+		Builder: &reh.Builder,
+	}
+
+	serve.Flag("debug-http-address", "address the debug http endpoint will bind too").Default("127.0.0.1").StringVar(&debugsvc.Addr)
+	serve.Flag("debug-http-port", "port the debug http endpoint will bind too").Default("6060").IntVar(&debugsvc.Port)
+
+	metricsvc := metrics.Service{
+		Service: httpsvc.Service{
+			FieldLogger: log.WithField("context", "metricsvc"),
+		},
+	}
+
+	serve.Flag("http-address", "address the metrics http endpoint will bind too").Default("0.0.0.0").StringVar(&metricsvc.Addr)
+	serve.Flag("http-port", "port the metrics http endpoint will bind too").Default("8000").IntVar(&metricsvc.Port)
 
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&ch.HTTPAccessLog)
 	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&ch.HTTPSAccessLog)
@@ -129,10 +144,6 @@ func main() {
 		log.Infof("args: %v", args)
 		var g workgroup.Group
 
-		// plumb the DAGAdapter's Builder through
-		// to the debug handler
-		debug.Builder = &reh.Builder
-
 		// client-go uses glog which requires initialisation as a side effect of calling
 		// flag.Parse (see #118 and https://github.com/golang/glog/blob/master/glog.go#L679)
 		// However kingpin owns our flag parsing, so we defer calling flag.Parse until
@@ -162,6 +173,7 @@ func main() {
 		k8s.WatchEndpoints(&g, client, wl, et)
 
 		registry := prometheus.NewRegistry()
+		metricsvc.Registry = registry
 
 		// register detault process / go collectors
 		registry.MustRegister(prometheus.NewProcessCollector(os.Getpid(), ""))
@@ -172,10 +184,8 @@ func main() {
 		ch.Metrics = metrics
 		reh.Metrics = metrics
 
-		g.Add(func(stop <-chan struct{}) error {
-			debug.Start(stop, registry)
-			return nil
-		})
+		g.Add(debugsvc.Start)
+		g.Add(metricsvc.Start)
 
 		g.Add(func(stop <-chan struct{}) error {
 			log := log.WithField("context", "grpc")

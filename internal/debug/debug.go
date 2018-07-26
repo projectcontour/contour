@@ -16,67 +16,26 @@
 package debug
 
 import (
-	"context"
-	"fmt"
 	"net/http"
 	"net/http/pprof"
-	"time"
 
 	"github.com/heptio/contour/internal/dag"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
+	"github.com/heptio/contour/internal/httpsvc"
 )
 
 // Service serves various http endpoints including /debug/pprof.
 type Service struct {
-	Addr string
-	Port int
-
-	logrus.FieldLogger
+	httpsvc.Service
 
 	*dag.Builder
 }
 
 // Start fulfills the g.Start contract.
 // When stop is closed the http server will shutdown.
-func (svc *Service) Start(stop <-chan struct{}, registry *prometheus.Registry) (err error) {
-	defer func() {
-		if err != nil {
-			svc.WithError(err).Error("terminated with error")
-		} else {
-			svc.Info("stopped")
-		}
-	}()
-	mux := http.NewServeMux()
-	registerProfile(mux)
-	registerHealthCheck(mux)
-	registerMetrics(mux, registry)
-
-	// register DAG dot writer.
-	mux.HandleFunc("/debug/dag", svc.writeDot)
-
-	s := http.Server{
-		Addr:           fmt.Sprintf("%s:%d", svc.Addr, svc.Port),
-		Handler:        mux,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   5 * time.Minute, // allow for long trace requests
-		MaxHeaderBytes: 1 << 11,         // 8kb should be enough for anyone
-	}
-
-	go func() {
-		// wait for stop signal from group.
-		<-stop
-
-		// shutdown the server with 5 seconds grace.
-		ctx := context.Background()
-		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-		defer cancel()
-		s.Shutdown(ctx)
-	}()
-
-	svc.WithField("address", s.Addr).Info("started")
-	return s.ListenAndServe()
+func (svc *Service) Start(stop <-chan struct{}) error {
+	registerProfile(&svc.ServeMux)
+	registerDotWriter(&svc.ServeMux, svc.Builder)
+	return svc.Service.Start(stop)
 }
 
 func registerProfile(mux *http.ServeMux) {
@@ -91,22 +50,11 @@ func registerProfile(mux *http.ServeMux) {
 	mux.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 }
 
-func registerHealthCheck(mux *http.ServeMux) {
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "OK")
+func registerDotWriter(mux *http.ServeMux, builder *dag.Builder) {
+	mux.HandleFunc("/debug/dag", func(w http.ResponseWriter, r *http.Request) {
+		dw := &dotWriter{
+			Builder: builder,
+		}
+		dw.writeDot(w)
 	})
-}
-
-func registerMetrics(mux *http.ServeMux, registry *prometheus.Registry) {
-	mux.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
-}
-
-// Write out a .dot representation of the DAG.
-func (svc *Service) writeDot(w http.ResponseWriter, r *http.Request) {
-	dw := &dotWriter{
-		Builder:     svc.Builder,
-		FieldLogger: svc.FieldLogger,
-	}
-	dw.writeDot(w)
 }

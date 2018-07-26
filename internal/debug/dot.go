@@ -18,14 +18,12 @@ import (
 	"io"
 
 	"github.com/heptio/contour/internal/dag"
-	"github.com/sirupsen/logrus"
 )
 
 // quick and dirty dot debugging package
 
 type dotWriter struct {
 	*dag.Builder
-	logrus.FieldLogger
 }
 
 type pair struct {
