@@ -493,6 +493,31 @@ spec:
           port: 80
 ```
 
+#### WebSocket Support
+
+WebSocket support can be enabled on specific routes using the `EnableWebsockets` field:
+
+```yaml
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata: 
+  name: chat
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: chat.example.com
+  routes:
+    - match: /
+      services: 
+        - name: chat-app
+          port: 80
+    - match: /websocket
+      enableWebsockets: true # Setting this to true enables websocket for all paths that match /websocket
+      services:
+        - name: chat-app
+          port: 80
+```
+
 ## IngressRoute Delegation
 
 A key feature of the IngressRoute specification is route delegation which follows the working model of DNS:

@@ -998,7 +998,7 @@ func TestRDSFilter(t *testing.T) {
 	}, streamRDS(t, cc, "ingress_https"))
 }
 
-func TestWebsocketRoutes(t *testing.T) {
+func TestWebsocketIngress(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
 
@@ -1048,6 +1048,71 @@ func TestWebsocketRoutes(t *testing.T) {
 		Routes: []route.Route{{
 			Match:  prefixmatch("/"), // match all
 			Action: websocketroute("default/ws/80"),
+		}},
+	}}, nil)
+}
+
+func TestWebsocketIngressRoute(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ws",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	rh.OnAdd(&ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "websocket.hello.world"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "ws",
+					Port: 80,
+				}},
+			}, {
+				Match:            "/ws-1",
+				EnableWebsockets: true,
+				Services: []ingressroutev1.Service{{
+					Name: "ws",
+					Port: 80,
+				}},
+			}, {
+				Match:            "/ws-2",
+				EnableWebsockets: true,
+				Services: []ingressroutev1.Service{{
+					Name: "ws",
+					Port: 80,
+				}},
+			}},
+		},
+	})
+
+	assertRDS(t, cc, []route.VirtualHost{{
+		Name:    "websocket.hello.world",
+		Domains: []string{"websocket.hello.world", "websocket.hello.world:80"},
+		Routes: []route.Route{{
+			Match:  prefixmatch("/ws-2"),
+			Action: websocketroute("default/ws/80"),
+		}, {
+			Match:  prefixmatch("/ws-1"),
+			Action: websocketroute("default/ws/80"),
+		}, {
+			Match:  prefixmatch("/"), // match all
+			Action: routecluster("default/ws/80"),
 		}},
 	}}, nil)
 }
