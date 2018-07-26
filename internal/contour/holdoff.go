@@ -50,7 +50,7 @@ func (hn *HoldoffNotifier) OnChange(builder *dag.Builder) {
 		hn.timer.Stop()
 	}
 	since := time.Since(hn.last)
-	if since > 500*time.Millisecond {
+	if since > holdoffMaxDelay {
 		// update immediately
 		hn.WithField("last update", since).Info("forcing update")
 		hn.Notifier.OnChange(builder)
