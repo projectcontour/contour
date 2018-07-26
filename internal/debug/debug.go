@@ -16,14 +16,11 @@
 package debug
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/pprof"
 
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/httpsvc"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // Service serves various http endpoints including /debug/pprof.
@@ -35,13 +32,9 @@ type Service struct {
 
 // Start fulfills the g.Start contract.
 // When stop is closed the http server will shutdown.
-func (svc *Service) Start(stop <-chan struct{}, registry *prometheus.Registry) error {
+func (svc *Service) Start(stop <-chan struct{}) error {
 	registerProfile(&svc.ServeMux)
-	registerHealthCheck(&svc.ServeMux)
-	registerMetrics(&svc.ServeMux, registry)
-
-	// register DAG dot writer.
-	svc.ServeMux.HandleFunc("/debug/dag", svc.writeDot)
+	registerDotWriter(&svc.ServeMux, svc.Builder)
 	return svc.Service.Start(stop)
 }
 
@@ -57,22 +50,11 @@ func registerProfile(mux *http.ServeMux) {
 	mux.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 }
 
-func registerHealthCheck(mux *http.ServeMux) {
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "OK")
+func registerDotWriter(mux *http.ServeMux, builder *dag.Builder) {
+	mux.HandleFunc("/debug/dag", func(w http.ResponseWriter, r *http.Request) {
+		dw := &dotWriter{
+			Builder: builder,
+		}
+		dw.writeDot(w)
 	})
-}
-
-func registerMetrics(mux *http.ServeMux, registry *prometheus.Registry) {
-	mux.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
-}
-
-// Write out a .dot representation of the DAG.
-func (svc *Service) writeDot(w http.ResponseWriter, r *http.Request) {
-	dw := &dotWriter{
-		Builder:     svc.Builder,
-		FieldLogger: svc.FieldLogger,
-	}
-	dw.writeDot(w)
 }

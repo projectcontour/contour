@@ -14,7 +14,12 @@
 package metrics
 
 import (
+	"fmt"
+	"net/http"
+
+	"github.com/heptio/contour/internal/httpsvc"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // Metrics provide Prometheus metrics for the app
@@ -140,4 +145,30 @@ func (m *Metrics) SetIngressRouteMetric(metrics IngressRouteMetric) {
 	for meta, value := range metrics.Root {
 		m.ingressRouteRootTotalGauge.WithLabelValues(meta.Namespace).Set(float64(value))
 	}
+}
+
+// Service serves various metric and health checking endpoints
+type Service struct {
+	httpsvc.Service
+	*prometheus.Registry
+}
+
+// Start fulfills the g.Start contract.
+// When stop is closed the http server will shutdown.
+func (svc *Service) Start(stop <-chan struct{}) error {
+	registerHealthCheck(&svc.ServeMux)
+	registerMetrics(&svc.ServeMux, svc.Registry)
+
+	return svc.Service.Start(stop)
+}
+
+func registerHealthCheck(mux *http.ServeMux) {
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintln(w, "OK")
+	})
+}
+
+func registerMetrics(mux *http.ServeMux, registry *prometheus.Registry) {
+	mux.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}))
 }
