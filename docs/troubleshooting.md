@@ -29,14 +29,14 @@ Then navigate to [http://127.0.0.1:9001/](http://127.0.0.1:9001/) to access the 
 
 ## Accessing Contour's /debug/pprof service
 
-Contour exposes the [net/http/pprof] handlers for `go tool pprof` and `go tool trace` by default on `127.0.0.1:8000`.
+Contour exposes the [net/http/pprof][5] handlers for `go tool pprof` and `go tool trace` by default on `127.0.0.1:6060`.
 This service is useful for profiling Contour. 
 To access it from your workstation use `kubectl port-forward` like so,
 ```
 # Get one of the pods that matches the deployment/daemonset
 CONTOUR_POD=$(kubectl -n heptio-contour get pod -l app=contour -o jsonpath='{.items[0].metadata.name}')
 # Do the port forward to that pod
-kubectl -n heptio-contour port-forward $CONTOUR_POD 8000
+kubectl -n heptio-contour port-forward $CONTOUR_POD 6060
 ```
 
 ## Interrogate Contour's gRPC API
@@ -90,3 +90,4 @@ See [Issue #547][4]
 [2]: https://github.com/envoyproxy/envoy/issues/1269
 [3]: minikube.md
 [4]: https://github.com/heptio/contour/issues/547
+[5]: https://golang.org/pkg/net/http/pprof/
