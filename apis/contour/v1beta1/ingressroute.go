@@ -39,6 +39,8 @@ type VirtualHost struct {
 	// are described in fqdn and aliases, the tls.secretName secret must contain a
 	// matching certificate
 	TLS *TLS `json:"tls"`
+	// If set to false, this virtual host will only be accessible via HTTPS.
+	AllowHTTP *bool `json:"allowHttp"`
 }
 
 // TLS describes tls properties. The CNI names that will be matched on
