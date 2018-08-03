@@ -819,6 +819,28 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// ir12 disables HTTP access
+	f := false
+	ir12 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "disable-http",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn:      "disable-http.com",
+				AllowHTTP: &f,
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Services: []ingressroutev1.Service{{
+					Name: "kuarder",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	s5 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog-admin",
@@ -2185,6 +2207,48 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 			},
+		},
+		"insert ingressroute that does not allow HTTP": {
+			objs: []interface{}{
+				ir12, s2,
+			},
+			want: []Vertex{},
+		},
+		"insert one ingressroute that allows HTTP, and another one that does not": {
+			objs: []interface{}{
+				ir1, s1, ir12, s2,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "example.com",
+					routes: routemap(
+						route("/", ir1, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+					),
+				}},
+		},
+		"insert one ingressroute that does not allow HTTP, and another one that does": {
+			objs: []interface{}{
+				ir12, s2, ir1, s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "example.com",
+					routes: routemap(
+						route("/", ir1, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+					),
+				}},
 		},
 	}
 
