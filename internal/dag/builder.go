@@ -470,8 +470,8 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 			}
 			irp.vhost(irp.host, 80).routes[r.path] = r
 
-			if ok := irp.svhost(irp.host, 443); ok != nil {
-				if ok.secret != nil {
+			if hst := irp.svhost(irp.host, 443); hst != nil {
+				if hst.secret != nil {
 					irp.svhost(irp.host, 443).routes[r.path] = r
 				}
 			}

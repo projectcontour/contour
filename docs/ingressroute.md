@@ -216,7 +216,7 @@ spec:
           port: 80
 ```
 
-##### TLS (Not supported in beta.1)
+##### TLS
 
 IngressRoutes follow a similar pattern to Ingress for configuring TLS credentials.
 
@@ -260,6 +260,11 @@ spec:
         - name: s1
           port: 80
 ```
+
+The TLS **Minimum Protocol Version** a vhost should negotiate can be specified by setting the spec.virtualhost.tls.minimumProtocolVersion:
+  - 1.3
+  - 1.2
+  - 1.1 (Default)
 
 ### Routing
 
