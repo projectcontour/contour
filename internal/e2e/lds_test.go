@@ -248,6 +248,158 @@ func TestTLSListener(t *testing.T) {
 	}, streamLDS(t, cc))
 }
 
+func TestIngressRouteTLSListener(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	// s1 is a tls secret
+	s1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	}
+
+	// i1 is a tls ingressroute
+	i1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "kuard.example.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName:             "secret",
+					MinimumProtocolVersion: "1.1",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "backend",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	// i2 is a tls ingressroute
+	i2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "kuard.example.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName:             "secret",
+					MinimumProtocolVersion: "1.3",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "backend",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	// add secret
+	rh.OnAdd(s1)
+
+	// assert that there are no active listeners
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   []types.Any{},
+		TypeUrl:     listenerType,
+		Nonce:       "0",
+	}, streamLDS(t, cc))
+
+	l1 := &v2.Listener{
+		Name:    "ingress_https",
+		Address: socketaddress("0.0.0.0", 8443),
+		FilterChains: []listener.FilterChain{
+			filterchaintls([]string{"kuard.example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
+		},
+	}
+
+	l1.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = auth.TlsParameters_TLSv1_1
+
+	// add ingress and assert the existence of ingress_http and ingres_https
+	rh.OnAdd(i1)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.Listener{
+				Name:    "ingress_http",
+				Address: socketaddress("0.0.0.0", 8080),
+				FilterChains: []listener.FilterChain{
+					filterchain(false, httpfilter("ingress_http")),
+				},
+			}),
+			any(t, l1),
+		},
+		TypeUrl: listenerType,
+		Nonce:   "0",
+	}, streamLDS(t, cc))
+
+	// delete secret and assert that ingress_https is removed
+	rh.OnDelete(s1)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.Listener{
+				Name:    "ingress_http",
+				Address: socketaddress("0.0.0.0", 8080),
+				FilterChains: []listener.FilterChain{
+					filterchain(false, httpfilter("ingress_http")),
+				},
+			}),
+		},
+		TypeUrl: listenerType,
+		Nonce:   "0",
+	}, streamLDS(t, cc))
+
+	rh.OnDelete(i1)
+	// add secret
+	rh.OnAdd(s1)
+	l2 := &v2.Listener{
+		Name:    "ingress_https",
+		Address: socketaddress("0.0.0.0", 8443),
+		FilterChains: []listener.FilterChain{
+			filterchaintls([]string{"kuard.example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
+		},
+	}
+
+	l2.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = auth.TlsParameters_TLSv1_3
+
+	// add ingress and assert the existence of ingress_http and ingres_https
+	rh.OnAdd(i2)
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.Listener{
+				Name:    "ingress_http",
+				Address: socketaddress("0.0.0.0", 8080),
+				FilterChains: []listener.FilterChain{
+					filterchain(false, httpfilter("ingress_http")),
+				},
+			}),
+			any(t, l2),
+		},
+		TypeUrl: listenerType,
+		Nonce:   "0",
+	}, streamLDS(t, cc))
+}
+
 func TestLDSFilter(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
