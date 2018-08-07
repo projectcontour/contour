@@ -220,6 +220,42 @@ func TestEndpointFilter(t *testing.T) {
 
 }
 
+// issue 602, test that an update from N endpoints
+// to zero endpoints is handled correctly.
+func TestIssue602(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	e1 := endpoints("default", "simple", v1.EndpointSubset{
+		Addresses: addresses("192.168.183.24"),
+		Ports: []v1.EndpointPort{{
+			Port: 8080,
+		}},
+	})
+	rh.OnAdd(e1)
+
+	// Assert endpoint was added
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, clusterloadassignment("default/simple", lbendpoint("192.168.183.24", 8080))),
+		},
+		TypeUrl: endpointType,
+		Nonce:   "0",
+	}, streamEDS(t, cc))
+
+	// e2 is the same as e1, but without endpoint subsets
+	e2 := endpoints("default", "simple")
+	rh.OnUpdate(e1, e2)
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   []types.Any{},
+		TypeUrl:     endpointType,
+		Nonce:       "0",
+	}, streamEDS(t, cc))
+}
+
 func streamEDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
 	t.Helper()
 	rds := v2.NewEndpointDiscoveryServiceClient(cc)
