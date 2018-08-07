@@ -229,6 +229,36 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 	}
 }
 
+// See #602
+func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
+	var et EndpointsTranslator
+	e1 := endpoints("default", "simple", v1.EndpointSubset{
+		Addresses: addresses("192.168.183.24"),
+		Ports:     ports(8080),
+	})
+	et.OnAdd(e1)
+
+	// Assert endpoint was added
+	want := []proto.Message{
+		clusterloadassignment("default/simple", lbendpoint("192.168.183.24", 8080)),
+	}
+	got := contents(&et)
+	if !reflect.DeepEqual(want, got) {
+		t.Fatalf("expected:\n%v\ngot:\n%v\n", want, got)
+	}
+
+	// e2 is the same as e1, but without endpoint subsets
+	e2 := endpoints("default", "simple")
+	et.OnUpdate(e1, e2)
+
+	// Assert endpoints are removed
+	want = []proto.Message{}
+	got = contents(&et)
+	if !reflect.DeepEqual(want, got) {
+		t.Fatalf("expected:\n%v\ngot:\n%v\n", want, got)
+	}
+}
+
 type clusterLoadAssignmentsByName []proto.Message
 
 func (c clusterLoadAssignmentsByName) Len() int      { return len(c) }
