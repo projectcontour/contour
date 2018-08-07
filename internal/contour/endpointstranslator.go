@@ -69,8 +69,9 @@ func (e *EndpointsTranslator) addEndpoints(ep *v1.Endpoints) {
 }
 
 func (e *EndpointsTranslator) updateEndpoints(oldep, newep *v1.Endpoints) {
-	if len(newep.Subsets) < 1 {
-		// if there are no endpoints in this object, ignore it
+	if len(newep.Subsets) == 0 && len(oldep.Subsets) == 0 {
+		// if there are no endpoints in this object, and the old
+		// object also had zero endpoints, ignore this update
 		// to avoid sending a noop notification to watchers.
 		return
 	}
