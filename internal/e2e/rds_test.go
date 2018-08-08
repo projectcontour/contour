@@ -1227,6 +1227,76 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 	}, streamRDS(t, cc, "ingress_http"))
 }
 
+func TestRDSIngressRouteWithAliases(t *testing.T) {
+	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+		reh.IngressRouteRootNamespaces = []string{"roots"}
+		reh.Notifier.(*contour.CacheHandler).IngressRouteStatus = &k8s.IngressRouteStatus{
+			Client: fake.NewSimpleClientset(),
+		}
+	})
+	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "roots",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	// ir1 is an ingressroute that is in the root namespaces
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "roots",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+				Aliases: []string{
+					"foo.com",
+					"bar.com",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// add ingressroute
+	rh.OnAdd(ir1)
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_http",
+				VirtualHosts: []route.VirtualHost{{
+					Name:    "example.com",
+					Domains: []string{"foo.com", "bar.com", "example.com", "example.com:80", "foo.com:80", "bar.com:80"},
+					Routes: []route.Route{{
+						Match:  prefixmatch("/"),
+						Action: routecluster("roots/kuard/8080"),
+					}},
+				}},
+			}),
+		},
+		TypeUrl: routeType,
+		Nonce:   "0",
+	}, streamRDS(t, cc, "ingress_http"))
+}
+
 func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
 		reh.IngressRouteRootNamespaces = []string{"roots"}

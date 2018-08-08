@@ -224,14 +224,15 @@ func (b *Builder) compute() *DAG {
 
 	// memoise the production of vhost entries as needed.
 	_vhosts := make(map[hostport]*VirtualHost)
-	vhost := func(host string, port int) *VirtualHost {
+	vhost := func(host string, aliases []string, port int) *VirtualHost {
 		hp := hostport{host: host, port: port}
 		vh, ok := _vhosts[hp]
 		if !ok {
 			vh = &VirtualHost{
-				Port:   port,
-				host:   host,
-				routes: make(map[string]*Route),
+				Port:    port,
+				host:    host,
+				aliases: aliases,
+				routes:  make(map[string]*Route),
 			}
 			_vhosts[hp] = vh
 		}
@@ -302,7 +303,7 @@ func (b *Builder) compute() *DAG {
 				r.addService(s, nil, "", 0)
 			}
 			if httpAllowed {
-				vhost("*", 80).routes[r.path] = r
+				vhost("*", []string{}, 80).routes[r.path] = r
 			}
 		}
 
@@ -330,7 +331,7 @@ func (b *Builder) compute() *DAG {
 					r.addService(s, nil, "", s.Weight)
 				}
 				if httpAllowed {
-					vhost(host, 80).routes[r.path] = r
+					vhost(host, []string{}, 80).routes[r.path] = r
 				}
 				if _, ok := _svhosts[hostport{host: host, port: 443}]; ok && host != "*" {
 					svhost(host, 443).routes[r.path] = r
@@ -414,6 +415,7 @@ func (b *Builder) compute() *DAG {
 		prefixMatch := ""
 		irp := ingressRouteProcessor{
 			host:          host,
+			aliases:       ir.Spec.VirtualHost.Aliases,
 			service:       service,
 			vhost:         vhost,
 			svhost:        svhost,
@@ -461,9 +463,10 @@ func (b *Builder) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 
 type ingressRouteProcessor struct {
 	host          string
+	aliases       []string
 	service       func(m meta, port intstr.IntOrString) *Service
-	vhost         func(host string, port int) *VirtualHost
 	svhost        func(host string, port int) *SecureVirtualHost
+	vhost         func(host string, aliases []string, port int) *VirtualHost
 	ingressroutes map[meta]*ingressroutev1.IngressRoute
 	orphaned      map[meta]bool
 }
@@ -499,7 +502,7 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 					r.addService(svc, s.HealthCheck, s.Strategy, s.Weight)
 				}
 			}
-			irp.vhost(irp.host, 80).routes[r.path] = r
+			irp.vhost(irp.host, irp.aliases, 80).routes[r.path] = r
 
 			if hst := irp.svhost(irp.host, 443); hst != nil {
 				if hst.secret != nil {
