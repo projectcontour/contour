@@ -17,6 +17,7 @@ package dag
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -338,10 +339,39 @@ func (b *Builder) compute() *DAG {
 		}
 	}
 
-	// process ingressroute documents
-	var status []Status
-	orphaned := make(map[meta]bool)
+	// ensure that a given fqdn is only referenced in a single ingressroute resource
+	var validirs []*ingressroutev1.IngressRoute
+	fqdnIngressroutes := make(map[string][]*ingressroutev1.IngressRoute)
 	for _, ir := range b.ingressroutes {
+		if ir.Spec.VirtualHost == nil {
+			validirs = append(validirs, ir)
+			continue
+		}
+		fqdnIngressroutes[ir.Spec.VirtualHost.Fqdn] = append(fqdnIngressroutes[ir.Spec.VirtualHost.Fqdn], ir)
+	}
+
+	var status []Status
+	for fqdn, irs := range fqdnIngressroutes {
+		if len(irs) == 1 {
+			validirs = append(validirs, irs[0])
+			continue
+		}
+
+		// multiple irs use the same fqdn. mark them as invalid.
+		var conflicting []string
+		for _, ir := range irs {
+			conflicting = append(conflicting, fmt.Sprintf("%s/%s", ir.Namespace, ir.Name))
+		}
+		sort.Strings(conflicting) // sort for test stability
+		msg := fmt.Sprintf("fqdn %q is used in multiple IngressRoutes: %s", fqdn, strings.Join(conflicting, ", "))
+		for _, ir := range irs {
+			status = append(status, Status{Object: ir, Status: StatusInvalid, Description: msg, Vhost: fqdn})
+		}
+	}
+
+	// process ingressroute documents
+	orphaned := make(map[meta]bool)
+	for _, ir := range validirs {
 		if ir.Spec.VirtualHost == nil {
 			// delegate ingress route. mark as orphaned if we haven't reached it before.
 			if _, ok := orphaned[meta{name: ir.Name, namespace: ir.Namespace}]; !ok {

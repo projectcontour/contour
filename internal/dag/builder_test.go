@@ -16,6 +16,7 @@ package dag
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 
@@ -3495,6 +3496,137 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 	}
 }
 
+func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// ir2 reuses the fqdn used in ir1
+	ir2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "other-example",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	tests := map[string]struct {
+		objs       []interface{}
+		want       []Vertex
+		wantStatus []Status
+	}{
+		"insert ingressroute": {
+			objs: []interface{}{
+				ir1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "example.com",
+					routes: routemap(
+						route("/", ir1),
+					),
+				},
+			},
+			wantStatus: []Status{
+				{
+					Object:      ir1,
+					Status:      StatusValid,
+					Description: "valid IngressRoute",
+					Vhost:       "example.com",
+				},
+			},
+		},
+		"insert conflicting ingressroutes due to fqdn reuse": {
+			objs: []interface{}{
+				ir1, ir2,
+			},
+			want: []Vertex{},
+			wantStatus: []Status{
+				{
+					Object:      ir1,
+					Status:      StatusInvalid,
+					Description: `fqdn "example.com" is used in multiple IngressRoutes: default/example-com, default/other-example`,
+					Vhost:       "example.com",
+				},
+				{
+					Object:      ir2,
+					Status:      StatusInvalid,
+					Description: `fqdn "example.com" is used in multiple IngressRoutes: default/example-com, default/other-example`,
+					Vhost:       "example.com",
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var b Builder
+			for _, o := range tc.objs {
+				b.Insert(o)
+			}
+			dag := b.Compute()
+
+			got := make(map[hostport]Vertex)
+			dag.Visit(func(v Vertex) {
+				switch v := v.(type) {
+				case *VirtualHost:
+					got[hostport{host: v.FQDN(), port: v.Port}] = v
+				case *SecureVirtualHost:
+					got[hostport{host: v.FQDN(), port: v.Port}] = v
+				}
+			})
+
+			want := make(map[hostport]Vertex)
+			for _, v := range tc.want {
+				switch v := v.(type) {
+				case *VirtualHost:
+					want[hostport{host: v.FQDN(), port: v.Port}] = v
+				case *SecureVirtualHost:
+					want[hostport{host: v.FQDN(), port: v.Port}] = v
+				}
+			}
+
+			if !reflect.DeepEqual(want, got) {
+				t.Fatal("expected:\n", want, "\ngot:\n", got)
+			}
+
+			gotStatus := dag.statuses
+			sort.Stable(statusByNamespaceAndName(gotStatus))
+			if !reflect.DeepEqual(tc.wantStatus, gotStatus) {
+				t.Fatal("expected:\n", tc.wantStatus, "\ngot:\n", dag.statuses)
+			}
+		})
+	}
+
+}
+
 func routemap(routes ...*Route) map[string]*Route {
 	m := make(map[string]*Route)
 	for _, r := range routes {
@@ -3525,4 +3657,12 @@ func servicemap(services ...*Service) map[portmeta]*Service {
 		m[s.toMeta()] = s
 	}
 	return m
+}
+
+type statusByNamespaceAndName []Status
+
+func (s statusByNamespaceAndName) Len() int      { return len(s) }
+func (s statusByNamespaceAndName) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s statusByNamespaceAndName) Less(i, j int) bool {
+	return s[i].Object.Namespace+s[i].Object.Name < s[j].Object.Namespace+s[j].Object.Name
 }
