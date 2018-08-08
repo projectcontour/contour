@@ -655,6 +655,101 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// ir6 has TLS and does not specifiy min tls version
+	ir6 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "foo.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName: "secret",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// ir7 has TLS and specifies min tls version of 1.2
+	ir7 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "foo.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName:             "secret",
+					MinimumProtocolVersion: "1.2",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// ir8 has TLS and specifies min tls version of 1.3
+	ir8 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "foo.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName:             "secret",
+					MinimumProtocolVersion: "1.3",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// ir9 has TLS and specifies an invalid min tls version of 0.9999
+	ir9 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "foo.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName:             "secret",
+					MinimumProtocolVersion: "0.9999",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	s5 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog-admin",
@@ -1471,6 +1566,142 @@ func TestDAGInsert(t *testing.T) {
 							},
 						)),
 					),
+				}},
+		},
+		"insert ingressroute without tls version": {
+			objs: []interface{}{
+				ir6, s1, sec1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "foo.com",
+					routes: routemap(
+						route("/", ir6, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+					),
+				},
+				&SecureVirtualHost{
+					Port:            443,
+					MinProtoVersion: auth.TlsParameters_TLSv1_1,
+					host:            "foo.com",
+					routes: routemap(
+						route("/", ir6, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+					),
+					secret: &Secret{
+						object: sec1,
+					},
+				}},
+		},
+		"insert ingressroute with tls version 1.2": {
+			objs: []interface{}{
+				ir7, s1, sec1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "foo.com",
+					routes: routemap(
+						route("/", ir7, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+					),
+				},
+				&SecureVirtualHost{
+					Port:            443,
+					MinProtoVersion: auth.TlsParameters_TLSv1_2,
+					host:            "foo.com",
+					routes: routemap(
+						route("/", ir7, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+					),
+					secret: &Secret{
+						object: sec1,
+					},
+				}},
+		},
+		"insert ingressroute with tls version 1.3": {
+			objs: []interface{}{
+				ir8, s1, sec1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "foo.com",
+					routes: routemap(
+						route("/", ir8, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+					),
+				},
+				&SecureVirtualHost{
+					Port:            443,
+					MinProtoVersion: auth.TlsParameters_TLSv1_3,
+					host:            "foo.com",
+					routes: routemap(
+						route("/", ir8, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+					),
+					secret: &Secret{
+						object: sec1,
+					},
+				}},
+		},
+		"insert ingressroute with invalid tls version": {
+			objs: []interface{}{
+				ir9, s1, sec1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "foo.com",
+					routes: routemap(
+						route("/", ir9, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+					),
+				},
+				&SecureVirtualHost{
+					Port:            443,
+					MinProtoVersion: auth.TlsParameters_TLSv1_1,
+					host:            "foo.com",
+					routes: routemap(
+						route("/", ir9, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+					),
+					secret: &Secret{
+						object: sec1,
+					},
 				}},
 		},
 		"insert ingressroute referencing two backends, one missing": {

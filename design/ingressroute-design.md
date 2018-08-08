@@ -72,6 +72,8 @@ spec:
     tls:
       # required, the name of a secret in the current namespace
       secretName: google-tls
+      # optional: minimum TLS version this vhost should negotiate
+      minimumProtocolVersion: "1.3"
       # other properties like cipher suites may be added later
   strategy: RoundRobin # (Optional) LB Algorithm to apply to all services, defaults for all services
   healthCheck (Optional):
@@ -165,6 +167,13 @@ The following list are the options available to choose from:
 - **Random:** The random load balancer selects a random healthy host
 
 More documentation on Envoy's lb support can be found here: [https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/load_balancing.html](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/load_balancing.html)
+
+### TLS
+
+- **minimumProtocolVersion**: Define the minimum TLS version a vhost should negotiate. Allowed values:
+  - 1.3
+  - 1.2
+  - 1.1 (Default)
 
 ### Healthcheck
 

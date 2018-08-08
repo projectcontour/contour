@@ -341,15 +341,14 @@ func TestRouteVisit(t *testing.T) {
 				},
 				"ingress_https": {
 					Name: "ingress_https",
-					/* TODO(dfc) no support for routes on https for ingressroute, yet
 					VirtualHosts: []route.VirtualHost{{
 						Name:    "www.example.com",
 						Domains: []string{"www.example.com", "www.example.com:443"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routeroute("default/kuard/8080"),
+							Action: routeroute("default/backend/8080"),
 						}},
-					}}, */
+					}},
 				},
 			},
 		},

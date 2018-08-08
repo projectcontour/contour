@@ -367,7 +367,17 @@ func (b *Builder) compute() *DAG {
 			m := meta{name: tls.SecretName, namespace: ir.Namespace}
 			if sec := secret(m); sec != nil {
 				svhost(host, 443).secret = sec
-				svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_1 // TODO(dfc) issue 467
+
+				// process min protocol version
+				switch ir.Spec.VirtualHost.TLS.MinimumProtocolVersion {
+				case "1.3":
+					svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_3
+				case "1.2":
+					svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_2
+				default:
+					// any other value is interpreted as TLS/1.1
+					svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_1
+				}
 			}
 		}
 
@@ -376,6 +386,7 @@ func (b *Builder) compute() *DAG {
 			host:          host,
 			service:       service,
 			vhost:         vhost,
+			svhost:        svhost,
 			ingressroutes: b.ingressroutes,
 			orphaned:      orphaned,
 		}
@@ -388,7 +399,9 @@ func (b *Builder) compute() *DAG {
 		dag.roots = append(dag.roots, vh)
 	}
 	for _, svh := range _svhosts {
-		dag.roots = append(dag.roots, svh)
+		if svh.secret != nil {
+			dag.roots = append(dag.roots, svh)
+		}
 	}
 
 	for meta, orph := range orphaned {
@@ -420,6 +433,7 @@ type ingressRouteProcessor struct {
 	host          string
 	service       func(m meta, port intstr.IntOrString) *Service
 	vhost         func(host string, port int) *VirtualHost
+	svhost        func(host string, port int) *SecureVirtualHost
 	ingressroutes map[meta]*ingressroutev1.IngressRoute
 	orphaned      map[meta]bool
 }
@@ -455,6 +469,12 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 				}
 			}
 			irp.vhost(irp.host, 80).routes[r.path] = r
+
+			if hst := irp.svhost(irp.host, 443); hst != nil {
+				if hst.secret != nil {
+					irp.svhost(irp.host, 443).routes[r.path] = r
+				}
+			}
 			continue
 		}
 
