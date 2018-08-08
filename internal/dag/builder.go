@@ -453,8 +453,9 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 				return []Status{{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("the path prefix %q does not match the parent's path prefix %q", route.Match, prefixMatch), Vhost: host}}
 			}
 			r := &Route{
-				path:   route.Match,
-				Object: ir,
+				path:      route.Match,
+				Object:    ir,
+				Websocket: route.EnableWebsockets,
 			}
 			for _, s := range route.Services {
 				if s.Port < 1 || s.Port > 65535 {

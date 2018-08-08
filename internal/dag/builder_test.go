@@ -750,6 +750,33 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// ir10 has a websocket route
+	ir10 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}, {
+				Match:            "/websocket",
+				EnableWebsockets: true,
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	s5 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog-admin",
@@ -1547,6 +1574,35 @@ func TestDAGInsert(t *testing.T) {
 					host: "example.com",
 					routes: routemap(
 						route("/", ir1),
+					),
+				}},
+		},
+		"insert ingressroute with websocket route": {
+			objs: []interface{}{
+				ir10, s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "example.com",
+					routes: routemap(
+						route("/", ir10, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+						&Route{
+							path:   "/websocket",
+							Object: ir10,
+							services: servicemap(
+								&Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+								},
+							),
+							Websocket: true,
+						},
 					),
 				}},
 		},
