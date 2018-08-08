@@ -47,6 +47,8 @@ type VirtualHost struct {
 type TLS struct {
 	// required, the name of a secret in the current namespace
 	SecretName string `json:"secretName"`
+	// Minimum TLS version this vhost should negotiate
+	MinimumProtocolVersion string `json:"minimumProtocolVersion"`
 }
 
 // Route contains the set of routes for a virtual host
