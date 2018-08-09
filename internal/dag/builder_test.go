@@ -64,6 +64,21 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+
+	// i2a is missing a http key from the spec.rule.
+	// see issue 606
+	i2a := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				Host: "test1.test.com",
+			}},
+		},
+	}
+
 	// i3 is similar to i2 but includes a hostname on the ingress rule
 	i3 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -914,6 +929,12 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 			},
+		},
+		"insert ingress with missing spec.rule.http key": {
+			objs: []interface{}{
+				i2a,
+			},
+			want: []Vertex{},
 		},
 		"insert ingress w/ host name and single backend": {
 			objs: []interface{}{

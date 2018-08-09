@@ -312,6 +312,11 @@ func (b *Builder) compute() *DAG {
 			if host == "" {
 				host = "*"
 			}
+			if rule.IngressRuleValue.HTTP == nil {
+				// HTTP can be nil as rule.IngressRuleValue's zero value contains
+				// a nil HTTP key.
+				continue
+			}
 			for n := range rule.IngressRuleValue.HTTP.Paths {
 				path := rule.IngressRuleValue.HTTP.Paths[n].Path
 				if path == "" {
