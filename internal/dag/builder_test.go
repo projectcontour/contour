@@ -775,10 +775,6 @@ func TestDAGInsert(t *testing.T) {
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
-				Aliases: []string{
-					"foo.com",
-					"bar.com",
-				},
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
@@ -789,6 +785,32 @@ func TestDAGInsert(t *testing.T) {
 			}, {
 				Match:            "/websocket",
 				EnableWebsockets: true,
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	ir11 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+				Aliases: []string{
+					"foo.com",
+					"bar.com",
+				},
+				TLS: &ingressroutev1.TLS{
+					SecretName: "secret",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
 				Services: []ingressroutev1.Service{{
 					Name: "kuard",
 					Port: 8080,
@@ -1202,6 +1224,7 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "kuard.example.com",
+					aliases:         []string{},
 					routes: routemap(
 						route("/", i3),
 					),
@@ -1229,6 +1252,7 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "kuard.example.com",
+					aliases:         []string{},
 					routes: routemap(
 						route("/", i3),
 					),
@@ -1365,6 +1389,7 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
+					aliases:         []string{},
 					routes: routemap(
 						route("/", i6, servicemap(
 							&Service{
@@ -1414,6 +1439,7 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
+					aliases:         []string{},
 					routes: routemap(
 						route("/", i6, servicemap(
 							&Service{
@@ -1514,6 +1540,7 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
+					aliases:         []string{},
 					routes: routemap(
 						route("/", i9, servicemap(
 							&Service{
@@ -1561,6 +1588,7 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
+					aliases:         []string{},
 					routes: routemap(
 						route("/", i6a, servicemap(
 							&Service{
@@ -1602,6 +1630,7 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
+					aliases:         []string{},
 					routes: routemap(
 						&Route{
 							path:   "/",
@@ -1665,7 +1694,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		"insert ingressroute with aliases": {
 			objs: []interface{}{
-				ir6,
+				ir11, sec1, s1,
 			},
 			want: []Vertex{
 				&VirtualHost{
@@ -1676,8 +1705,40 @@ func TestDAGInsert(t *testing.T) {
 						"bar.com",
 					},
 					routes: routemap(
-						route("/", ir6),
+						&Route{
+							path:   "/",
+							Object: ir11,
+							services: servicemap(
+								&Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+								},
+							),
+						},
 					),
+				}, &SecureVirtualHost{
+					Port:            443,
+					MinProtoVersion: auth.TlsParameters_TLSv1_1,
+					host:            "example.com",
+					aliases: []string{
+						"foo.com",
+						"bar.com",
+					},
+					routes: routemap(
+						&Route{
+							path:   "/",
+							Object: ir11,
+							services: servicemap(
+								&Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+								},
+							),
+						},
+					),
+					secret: &Secret{
+						object: sec1,
+					},
 				}},
 		},
 		"insert ingressroute and service": {
@@ -1898,6 +1959,7 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_3,
 					host:            "b.example.com",
+					aliases:         []string{},
 					routes: routemap(
 						route("/", i10, servicemap(
 							&Service{
@@ -2080,6 +2142,7 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "example.com",
+					aliases:         []string{},
 					routes: routemap(
 						&Route{
 							path:   "/",
@@ -2711,6 +2774,7 @@ func TestDAGRemove(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
+					aliases:         []string{},
 					routes: routemap(
 						route("/", i6),
 					),

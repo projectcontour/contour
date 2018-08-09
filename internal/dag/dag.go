@@ -118,9 +118,10 @@ type SecureVirtualHost struct {
 	// TLS minimum protocol version. Defaults to auth.TlsParameters_TLS_AUTO
 	MinProtoVersion auth.TlsParameters_TlsProtocol
 
-	host   string
-	routes map[string]*Route
-	secret *Secret
+	host    string
+	aliases []string
+	routes  map[string]*Route
+	secret  *Secret
 }
 
 func (s *SecureVirtualHost) Data() map[string][]byte {
@@ -131,6 +132,9 @@ func (s *SecureVirtualHost) Data() map[string][]byte {
 }
 
 func (s *SecureVirtualHost) FQDN() string { return s.host }
+
+func (s *SecureVirtualHost) Aliases() []string { return s.aliases }
+
 func (s *SecureVirtualHost) Visit(f func(Vertex)) {
 	for _, r := range s.routes {
 		f(r)

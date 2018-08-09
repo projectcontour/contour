@@ -240,14 +240,15 @@ func (b *Builder) compute() *DAG {
 	}
 
 	_svhosts := make(map[hostport]*SecureVirtualHost)
-	svhost := func(host string, port int) *SecureVirtualHost {
+	svhost := func(host string, aliases []string, port int) *SecureVirtualHost {
 		hp := hostport{host: host, port: port}
 		svh, ok := _svhosts[hp]
 		if !ok {
 			svh = &SecureVirtualHost{
-				Port:   port,
-				host:   host,
-				routes: make(map[string]*Route),
+				Port:    port,
+				host:    host,
+				aliases: aliases,
+				routes:  make(map[string]*Route),
 			}
 			_svhosts[hp] = svh
 		}
@@ -262,16 +263,16 @@ func (b *Builder) compute() *DAG {
 			m := meta{name: tls.SecretName, namespace: ing.Namespace}
 			if sec := secret(m); sec != nil {
 				for _, host := range tls.Hosts {
-					svhost(host, 443).secret = sec
+					svhost(host, []string{}, 443).secret = sec
 					// process annotations
 					switch ing.ObjectMeta.Annotations["contour.heptio.com/tls-minimum-protocol-version"] {
 					case "1.3":
-						svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_3
+						svhost(host, []string{}, 443).MinProtoVersion = auth.TlsParameters_TLSv1_3
 					case "1.2":
-						svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_2
+						svhost(host, []string{}, 443).MinProtoVersion = auth.TlsParameters_TLSv1_2
 					default:
 						// any other value is interpreted as TLS/1.1
-						svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_1
+						svhost(host, []string{}, 443).MinProtoVersion = auth.TlsParameters_TLSv1_1
 					}
 				}
 			}
@@ -334,7 +335,7 @@ func (b *Builder) compute() *DAG {
 					vhost(host, []string{}, 80).routes[r.path] = r
 				}
 				if _, ok := _svhosts[hostport{host: host, port: 443}]; ok && host != "*" {
-					svhost(host, 443).routes[r.path] = r
+					svhost(host, []string{}, 443).routes[r.path] = r
 				}
 			}
 		}
@@ -397,17 +398,17 @@ func (b *Builder) compute() *DAG {
 			// attach secrets to TLS enabled vhosts
 			m := meta{name: tls.SecretName, namespace: ir.Namespace}
 			if sec := secret(m); sec != nil {
-				svhost(host, 443).secret = sec
+				svhost(host, ir.Spec.VirtualHost.Aliases, 443).secret = sec
 
 				// process min protocol version
 				switch ir.Spec.VirtualHost.TLS.MinimumProtocolVersion {
 				case "1.3":
-					svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_3
+					svhost(host, ir.Spec.VirtualHost.Aliases, 443).MinProtoVersion = auth.TlsParameters_TLSv1_3
 				case "1.2":
-					svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_2
+					svhost(host, ir.Spec.VirtualHost.Aliases, 443).MinProtoVersion = auth.TlsParameters_TLSv1_2
 				default:
 					// any other value is interpreted as TLS/1.1
-					svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_1
+					svhost(host, ir.Spec.VirtualHost.Aliases, 443).MinProtoVersion = auth.TlsParameters_TLSv1_1
 				}
 			}
 		}
@@ -465,7 +466,7 @@ type ingressRouteProcessor struct {
 	host          string
 	aliases       []string
 	service       func(m meta, port intstr.IntOrString) *Service
-	svhost        func(host string, port int) *SecureVirtualHost
+	svhost        func(host string, aliases []string, port int) *SecureVirtualHost
 	vhost         func(host string, aliases []string, port int) *VirtualHost
 	ingressroutes map[meta]*ingressroutev1.IngressRoute
 	orphaned      map[meta]bool
@@ -504,9 +505,9 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 			}
 			irp.vhost(irp.host, irp.aliases, 80).routes[r.path] = r
 
-			if hst := irp.svhost(irp.host, 443); hst != nil {
+			if hst := irp.svhost(irp.host, irp.aliases, 443); hst != nil {
 				if hst.secret != nil {
-					irp.svhost(irp.host, 443).routes[r.path] = r
+					irp.svhost(irp.host, irp.aliases, 443).routes[r.path] = r
 				}
 			}
 			continue
