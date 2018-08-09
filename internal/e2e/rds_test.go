@@ -1495,6 +1495,80 @@ func TestRDSAssertNoDataRaceDuringInsertAndStream(t *testing.T) {
 	}
 }
 
+// issue 606: spec.rules.host without a http key causes panic.
+// apiVersion: extensions/v1beta1
+// kind: Ingress
+// metadata:
+//   name: test-ingress3
+// spec:
+//   rules:
+//   - host: test1.test.com
+//   - host: test2.test.com
+//     http:
+//       paths:
+//       - backend:
+//           serviceName: network-test
+//           servicePort: 9001
+//         path: /
+//
+// note: this test caused a panic in dag.Builder, but testing the
+// context of RDS is a good place to start.
+func TestRDSIngressSpecMissingHTTPKey(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-ingress3",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				Host: "test1.test.com",
+			}, {
+				Host: "test2.test.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "network-test",
+								ServicePort: intstr.FromInt(9001),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	rh.OnAdd(i1)
+
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "network-test",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       9001,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(s1)
+
+	assertRDS(t, cc, []route.VirtualHost{{
+		Name:    "test2.test.com",
+		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Routes: []route.Route{{
+			Match:  prefixmatch("/"), // match all
+			Action: routecluster("default/network-test/9001"),
+		}},
+	}}, nil)
+}
+
 func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []route.VirtualHost) {
 	t.Helper()
 	assertEqual(t, &v2.DiscoveryResponse{
