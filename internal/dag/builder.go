@@ -312,13 +312,8 @@ func (b *Builder) compute() *DAG {
 			if host == "" {
 				host = "*"
 			}
-			if rule.IngressRuleValue.HTTP == nil {
-				// HTTP can be nil as rule.IngressRuleValue's zero value contains
-				// a nil HTTP key.
-				continue
-			}
-			for n := range rule.IngressRuleValue.HTTP.Paths {
-				path := rule.IngressRuleValue.HTTP.Paths[n].Path
+			for _, httppath := range httppaths(rule) {
+				path := httppath.Path
 				if path == "" {
 					path = "/"
 				}
@@ -330,8 +325,8 @@ func (b *Builder) compute() *DAG {
 					Timeout:      timeout,
 				}
 
-				m := meta{name: rule.IngressRuleValue.HTTP.Paths[n].Backend.ServiceName, namespace: ing.Namespace}
-				if s := service(m, rule.IngressRuleValue.HTTP.Paths[n].Backend.ServicePort); s != nil {
+				m := meta{name: httppath.Backend.ServiceName, namespace: ing.Namespace}
+				if s := service(m, httppath.Backend.ServicePort); s != nil {
 					r.addService(s, nil, "", s.Weight)
 				}
 				if httpAllowed {
@@ -545,6 +540,17 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 		}
 	}
 	return append(status, Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
+}
+
+// httppaths returns a slice of HTTPIngressPath values for a given IngressRule.
+// In the case that the IngressRule contains no valid HTTPIngressPaths, a
+// nil slice is returned.
+func httppaths(rule v1beta1.IngressRule) []v1beta1.HTTPIngressPath {
+	if rule.IngressRuleValue.HTTP == nil {
+		// rule.IngressRuleValue.HTTP value is optional.
+		return nil
+	}
+	return rule.IngressRuleValue.HTTP.Paths
 }
 
 // matchesPathPrefix checks whether the given path matches the given prefix

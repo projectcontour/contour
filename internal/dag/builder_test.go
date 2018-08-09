@@ -3932,7 +3932,66 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestHttpPaths(t *testing.T) {
+	tests := map[string]struct {
+		rule v1beta1.IngressRule
+		want []v1beta1.HTTPIngressPath
+	}{
+		"zero value": {
+			rule: v1beta1.IngressRule{},
+			want: nil,
+		},
+		"empty paths": {
+			rule: v1beta1.IngressRule{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{},
+				},
+			},
+			want: nil,
+		},
+		"several paths": {
+			rule: v1beta1.IngressRule{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}, {
+							Path: "/kuarder",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuarder",
+								ServicePort: intstr.FromInt(8080),
+							},
+						}},
+					},
+				},
+			},
+			want: []v1beta1.HTTPIngressPath{{
+				Backend: v1beta1.IngressBackend{
+					ServiceName: "kuard",
+					ServicePort: intstr.FromString("http"),
+				},
+			}, {
+				Path: "/kuarder",
+				Backend: v1beta1.IngressBackend{ServiceName: "kuarder",
+					ServicePort: intstr.FromInt(8080),
+				},
+			}},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := httppaths(tc.rule)
+			if !reflect.DeepEqual(tc.want, got) {
+				t.Fatalf("expected:\n%v\ngot:\n%v", tc.want, got)
+			}
+		})
+	}
 }
 
 func routemap(routes ...*Route) map[string]*Route {
