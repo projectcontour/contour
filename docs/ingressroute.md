@@ -216,7 +216,7 @@ spec:
           port: 80
 ```
 
-##### TLS
+#### TLS
 
 IngressRoutes follow a similar pattern to Ingress for configuring TLS credentials.
 
@@ -265,6 +265,28 @@ The TLS **Minimum Protocol Version** a vhost should negotiate can be specified b
   - 1.3
   - 1.2
   - 1.1 (Default)
+
+#### Disable HTTP
+
+IngressRoutes support disabling HTTP at the VHost level, so that the listener is only exposed over HTTPS. This is achieved by setting the `httpAllowed` field to `false`. If not set, this field defaults to `true`.
+
+This functionality is equivalent to the `kubernetes.io/ingress.allow-http: false` annotation supported in the Ingress resource.
+
+```yaml
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata: 
+  name: disableHttp
+spec: 
+  virtualhost:
+    fqdn: foo-basic.bar.com
+    httpAllowed: false
+  routes: 
+    - match: /
+      services: 
+        - name: s1
+          port: 80
+```
 
 ### Routing
 
