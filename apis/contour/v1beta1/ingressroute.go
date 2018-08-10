@@ -40,7 +40,7 @@ type VirtualHost struct {
 	// matching certificate
 	TLS *TLS `json:"tls"`
 	// If set to false, this virtual host will only be accessible via HTTPS.
-	AllowHTTP *bool `json:"allowHttp"`
+	HTTPAllowed *bool `json:"httpAllowed"`
 }
 
 // TLS describes tls properties. The CNI names that will be matched on

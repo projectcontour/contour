@@ -390,7 +390,7 @@ func (b *builder) compute() *DAG {
 			}
 		}
 
-		b.processIngressRoute(ir, "", nil, host, ir.Spec.VirtualHost.Aliases, ir.Spec.VirtualHost.AllowHTTP == nil || *ir.Spec.VirtualHost.AllowHTTP)
+		b.processIngressRoute(ir, "", nil, host, ir.Spec.VirtualHost.Aliases, ir.Spec.VirtualHost.HTTPAllowed == nil || *ir.Spec.VirtualHost.HTTPAllowed)
 	}
 
 	return b.DAG()

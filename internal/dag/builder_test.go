@@ -828,8 +828,8 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn:      "disable-http.com",
-				AllowHTTP: &f,
+				Fqdn:        "disable-http.com",
+				HTTPAllowed: &f,
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",

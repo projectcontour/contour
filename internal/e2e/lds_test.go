@@ -899,8 +899,8 @@ func TestIngressRouteHTTPNotAllowed(t *testing.T) {
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn:      "example.com",
-				AllowHTTP: &f,
+				Fqdn:        "example.com",
+				HTTPAllowed: &f,
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
