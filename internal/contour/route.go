@@ -113,9 +113,13 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 		switch vh := vh.(type) {
 		case *dag.VirtualHost:
 			hostname := vh.FQDN()
-			domains := []string{hostname}
+			aliases := vh.Aliases()
+			domains := append(aliases, hostname)
 			if hostname != "*" {
 				domains = append(domains, hostname+":80")
+				for _, a := range aliases {
+					domains = append(domains, a+":80")
+				}
 			}
 			vhost := route.VirtualHost{
 				Name:    hashname(60, hostname),
@@ -159,9 +163,13 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 			ingress_http.VirtualHosts = append(ingress_http.VirtualHosts, vhost)
 		case *dag.SecureVirtualHost:
 			hostname := vh.FQDN()
-			domains := []string{hostname}
+			aliases := vh.Aliases()
+			domains := append(aliases, hostname)
 			if hostname != "*" {
 				domains = append(domains, hostname+":443")
+				for _, a := range aliases {
+					domains = append(domains, a+":443")
+				}
 			}
 			vhost := route.VirtualHost{
 				Name:    hashname(60, hostname),
