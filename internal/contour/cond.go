@@ -16,7 +16,7 @@ package contour
 import "sync"
 
 // Cond implements a condition variable, a rendezvous point for goroutines
-// waiting for or announcing the occurence of an event.
+// waiting for or announcing the ocurence of an event.
 //
 // Unlike sync.Cond, Cond communciates with waiters via channels registered by
 // the waiters. This permits goroutines to wait on Cond events using select.
@@ -46,7 +46,7 @@ func (c *Cond) Register(ch chan int, last int) {
 	c.waiters = append(c.waiters, ch)
 }
 
-// Notify notifies all registered waiters that an event has occured.
+// Notify notifies all registered waiters that an event has ocured.
 func (c *Cond) Notify() {
 	c.mu.Lock()
 	defer c.mu.Unlock()

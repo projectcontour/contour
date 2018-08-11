@@ -70,7 +70,7 @@ func (c *routeCache) Update(v map[string]*v2.RouteConfiguration) {
 	c.notify()
 }
 
-// notify notifies all registered waiters that an event has occured.
+// notify notifies all registered waiters that an event has occurred.
 func (c *routeCache) notify() {
 	c.last++
 
