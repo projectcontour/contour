@@ -72,7 +72,7 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 	ch := make(chan int, 1)
 
 	// internally all registration values start at zero so sending
-	// a last that is less than zero will guarentee that each stream
+	// a last that is less than zero will guarantee that each stream
 	// will generate a response immediately, then wait.
 	last := -1
 	ctx := st.Context()
@@ -100,7 +100,7 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 		for {
 			log.Info("stream_wait")
 
-			// now we wait for a notification, if this is the first time throught the loop
+			// now we wait for a notification, if this is the first time through the loop
 			// then last will be zero and that will trigger a notification immediately.
 			r.Register(ch, last)
 			select {
@@ -136,7 +136,7 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 	}
 }
 
-// toAny converts the contens of a resourcer's Values to the
+// toAny converts the contents of a resourcer's Values to the
 // respective slice of types.Any.
 func toAny(res resource, filter func(string) bool) ([]types.Any, error) {
 	v := res.Values(filter)

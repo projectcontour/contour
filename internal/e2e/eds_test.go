@@ -149,7 +149,7 @@ func TestAddEndpointComplicated(t *testing.T) {
 			)),
 			any(t, clusterloadassignment(
 				"default/kuard/foo",
-				lbendpoint("10.48.1.77", 9999), // TODO(dfc) order is not guarenteed by endpoint controller
+				lbendpoint("10.48.1.77", 9999), // TODO(dfc) order is not guaranteed by endpoint controller
 				lbendpoint("10.48.1.78", 8080),
 			)),
 		},
@@ -204,7 +204,7 @@ func TestEndpointFilter(t *testing.T) {
 		Resources: []types.Any{
 			any(t, clusterloadassignment(
 				"default/kuard/foo",
-				lbendpoint("10.48.1.77", 9999), // TODO(dfc) order is not guarenteed by endpoint controller
+				lbendpoint("10.48.1.77", 9999), // TODO(dfc) order is not guaranteed by endpoint controller
 				lbendpoint("10.48.1.78", 8080),
 			)),
 		},

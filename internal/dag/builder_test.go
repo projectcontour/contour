@@ -29,8 +29,8 @@ import (
 )
 
 func TestDAGInsert(t *testing.T) {
-	// The DAG is senstive to ordering, adding an ingress, then a service,
-	// should have the same result as adding a sevice, then an ingress.
+	// The DAG is sensitive to ordering, adding an ingress, then a service,
+	// should have the same result as adding a service, then an ingress.
 
 	i1 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -117,7 +117,7 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
-	// i6 contains two named vhosts which point to the same sevice
+	// i6 contains two named vhosts which point to the same service
 	// one of those has TLS
 	i6 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -671,7 +671,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	// ir6 has TLS and does not specifiy min tls version
+	// ir6 has TLS and does not specify min tls version
 	ir6 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -2278,8 +2278,8 @@ type hostport struct {
 }
 
 func TestDAGRemove(t *testing.T) {
-	// The DAG is senstive to ordering, removing an ingress, then a service,
-	// has a different effect than removing a sevice, then an ingress.
+	// The DAG is sensitive to ordering, removing an ingress, then a service,
+	// has a different effect than removing a service, then an ingress.
 
 	i1 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2330,7 +2330,7 @@ func TestDAGRemove(t *testing.T) {
 			}},
 		},
 	}
-	// i6 contains two named vhosts which point to the same sevice
+	// i6 contains two named vhosts which point to the same service
 	// one of those has TLS
 	i6 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -3074,7 +3074,7 @@ func TestServiceMapLookup(t *testing.T) {
 		port intstr.IntOrString
 		want *Service
 	}{
-		"lookup sevice by port number": {
+		"lookup service by port number": {
 			meta: meta{name: "service1", namespace: "default"},
 			port: intstr.FromInt(8080),
 			want: &Service{

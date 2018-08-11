@@ -35,7 +35,7 @@ The identifier presented to SDS is the CDS clusters `service_name`, which we set
 
 ### RDS
 
-RDS is most like a Kubernetes Ingress resource. RDS routes one of prefix, path, or regex to an Envoy Cluster. The name of the Envoy cluster can be synthesised from the backend field in the IngressSpec, something like `namespace/serviceName_servicePort`, which, because it is a selector, matches the CDS object returned from transforming Service objects.
+RDS is most like a Kubernetes Ingress resource. RDS routes one of prefix, path, or regex to an Envoy Cluster. The name of the Envoy cluster can be synthesized from the backend field in the IngressSpec, something like `namespace/serviceName_servicePort`, which, because it is a selector, matches the CDS object returned from transforming Service objects.
 
 ## More about mapping
 

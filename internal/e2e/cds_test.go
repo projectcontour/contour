@@ -115,7 +115,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	}
 	rh.OnAdd(i2)
 
-	// s1 is a simple tcp 80 -> 8080 sevice.
+	// s1 is a simple tcp 80 -> 8080 service.
 	s1 := service("default", "kuard", v1.ServicePort{
 		Protocol:   "TCP",
 		Port:       80,

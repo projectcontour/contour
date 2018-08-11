@@ -42,6 +42,6 @@ Prometheus needs a configuration block that looks like this:
         target_label: kubernetes_pod_name
 ```
 
-The main difference from the [offical Prometheus Kubernetes sample config](https://github.com/prometheus/prometheus/blob/master/documentation/examples/prometheus-kubernetes.yml)
+The main difference from the [official Prometheus Kubernetes sample config](https://github.com/prometheus/prometheus/blob/master/documentation/examples/prometheus-kubernetes.yml)
 is the added interpretation of the `__meta_kubernetes_pod_annotation_prometheus_io_format` label, because Envoy
 currently requires a [`format=prometheus` url parameter to return the stats in Prometheus format.](https://github.com/envoyproxy/envoy/issues/2182)

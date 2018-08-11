@@ -164,7 +164,7 @@ type Service struct {
 	HealthCheck          *ingressroutev1.HealthCheck
 	LoadBalancerStrategy string
 
-	// Curcuit breaking limits
+	// Circuit breaking limits
 
 	// Max connections is maximum number of connections
 	// that Envoy will make to the upstream cluster.

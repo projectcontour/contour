@@ -47,7 +47,11 @@ unused:
 
 misspell:
 	@go get github.com/client9/misspell/cmd/misspell
-	misspell -locale US -error cmd/* internal/*
+	misspell \
+		-i clas \
+		-locale US \
+		-error \
+		cmd/* internal/* docs/* design/* *.md
 
 render:
 	@echo Rendering deployment files...
