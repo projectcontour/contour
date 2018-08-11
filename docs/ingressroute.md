@@ -275,7 +275,7 @@ Each route entry in an IngressRoute must start with a prefix match.
 IngressRoutes must have at least one route defined, but may support more.
 Paths defined are matched using prefix rules.
 In this example, any requests to `multi-path.bar.com/blog` or `multi-path.bar.com/blog/*` will be routed to the Service `s2`.
-All other requests to the host `multi-path.bar.com` will be routed to the Service `s2`.
+All other requests to the host `multi-path.bar.com` will be routed to the Service `s1`.
 
 ```yaml
 # multiple-paths.ingressroute.yaml
