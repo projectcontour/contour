@@ -65,7 +65,7 @@ go build github.com/heptio/contour/cmd/contour
 
 This produces a `contour` binary in your current working directory.
 
-_TIP_: You may prefer to use `go install` rather than `go build` to cache build artefacts and reduce future compile times.
+_TIP_: You may prefer to use `go install` rather than `go build` to cache build artifacts and reduce future compile times.
 In this case the binary is placed in `$GOPATH/bin/contour`.
 
 ### Running the unit tests

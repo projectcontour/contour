@@ -150,7 +150,7 @@ func (c *listenerCache) Update(v map[string]*v2.Listener) {
 	c.notify()
 }
 
-// notify notifies all registered waiters that an event has occured.
+// notify notifies all registered waiters that an event has occurred.
 func (c *listenerCache) notify() {
 	c.last++
 

@@ -341,7 +341,7 @@ The downside of these proposals is that the minimum use case, the http://hello.w
 Restricting who can create this pair of CRD objects further complicates things and moves toward a design with a third and possibly fourth CRD to apply policy to their counterparts.
 
 Overloading, or making the CRD polymorphic, creates a more complex mental model for complicated deployments, but in exchange scales down to a single CRD containing both the vhost details and the route details, because there is no delegation in the hello world example.
-This property makes the proposed design appealing from a usability standpoint, as **most** ingress use cases are simple--publish my web app on this URL--so it feels right to favour a design that does not penalize the default, simple, use case.
+This property makes the proposed design appealing from a usability standpoint, as **most** ingress use cases are simple--publish my web app on this URL--so it feels right to favor a design that does not penalize the default, simple, use case.
 
 - links to other proposals
 

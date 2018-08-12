@@ -81,7 +81,7 @@ func (c *clusterCache) Update(v map[string]*v2.Cluster) {
 	c.notify()
 }
 
-// notify notifies all registered waiters that an event has occured.
+// notify notifies all registered waiters that an event has occurred.
 func (c *clusterCache) notify() {
 	c.last++
 

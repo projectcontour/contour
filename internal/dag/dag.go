@@ -150,7 +150,7 @@ type Vertex interface {
 	Visitable
 }
 
-// Service represents a K8s Sevice as a DAG vertex. A Service is
+// Service represents a K8s Service as a DAG vertex. A Service is
 // a leaf in the DAG.
 type Service struct {
 	Object *v1.Service
@@ -164,7 +164,7 @@ type Service struct {
 	HealthCheck          *ingressroutev1.HealthCheck
 	LoadBalancerStrategy string
 
-	// Curcuit breaking limits
+	// Circuit breaking limits
 
 	// Max connections is maximum number of connections
 	// that Envoy will make to the upstream cluster.

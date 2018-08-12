@@ -108,7 +108,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 				clusterloadassignment("default/simple", lbendpoint("192.168.183.24", 8080)),
 			},
 		},
-		"remove non existant": {
+		"remove non existent": {
 			setup: func(*EndpointsTranslator) {},
 			ep: endpoints("default", "simple", v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),

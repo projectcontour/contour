@@ -16,7 +16,7 @@ test-race: | test
 vet: | test
 	go vet ./...
 
-check: test test-race vet gofmt staticcheck unused
+check: test test-race vet gofmt staticcheck unused misspell
 	@echo Checking rendered files are up to date
 	@(cd deployment && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 
@@ -44,6 +44,14 @@ staticcheck:
 unused:
 	@go get honnef.co/go/tools/cmd/unused
 	unused -exported $(PKGS)
+
+misspell:
+	@go get github.com/client9/misspell/cmd/misspell
+	misspell \
+		-i clas \
+		-locale US \
+		-error \
+		cmd/* internal/* docs/* design/* *.md
 
 render:
 	@echo Rendering deployment files...
