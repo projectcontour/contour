@@ -934,9 +934,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i1),
 					),
@@ -949,9 +948,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i2),
 					),
@@ -970,9 +968,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "kuard.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "kuard.example.com",
 					routes: routemap(
 						route("/", i3),
 					),
@@ -986,9 +983,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i1, servicemap(
 							&Service{
@@ -1007,9 +1003,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i1, servicemap(
 							&Service{
@@ -1028,9 +1023,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i1),
 					),
@@ -1044,9 +1038,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i1),
 					),
@@ -1060,9 +1053,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i1),
 					),
@@ -1076,9 +1068,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i2),
 					),
@@ -1092,9 +1083,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i2),
 					),
@@ -1108,9 +1098,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i4, servicemap(
 							&Service{
@@ -1129,9 +1118,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i4, servicemap(
 							&Service{
@@ -1150,9 +1138,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i5, servicemap(
 							&Service{
@@ -1171,9 +1158,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i5, servicemap(
 							&Service{
@@ -1198,9 +1184,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i1),
 					),
@@ -1213,9 +1198,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "kuard.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "kuard.example.com",
 					routes: routemap(
 						route("/", i3),
 					),
@@ -1224,7 +1208,6 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "kuard.example.com",
-					aliases:         []string{},
 					routes: routemap(
 						route("/", i3),
 					),
@@ -1241,9 +1224,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "kuard.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "kuard.example.com",
 					routes: routemap(
 						route("/", i3),
 					),
@@ -1252,7 +1234,6 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "kuard.example.com",
-					aliases:         []string{},
 					routes: routemap(
 						route("/", i3),
 					),
@@ -1268,17 +1249,15 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "a.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "a.example.com",
 					routes: routemap(
 						route("/", i6),
 					),
 				},
 				&VirtualHost{
-					Port:    80,
-					host:    "b.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "b.example.com",
 					routes: routemap(
 						route("/", i6),
 					),
@@ -1292,9 +1271,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "a.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "a.example.com",
 					routes: routemap(
 						route("/", i6, servicemap(
 							&Service{
@@ -1305,9 +1283,8 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 				&VirtualHost{
-					Port:    80,
-					host:    "b.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "b.example.com",
 					routes: routemap(
 						route("/", i6, servicemap(
 							&Service{
@@ -1326,9 +1303,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "a.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "a.example.com",
 					routes: routemap(
 						route("/", i6, servicemap(
 							&Service{
@@ -1339,9 +1315,8 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 				&VirtualHost{
-					Port:    80,
-					host:    "b.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "b.example.com",
 					routes: routemap(
 						route("/", i6, servicemap(
 							&Service{
@@ -1361,9 +1336,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "a.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "a.example.com",
 					routes: routemap(
 						route("/", i6, servicemap(
 							&Service{
@@ -1374,9 +1348,8 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 				&VirtualHost{
-					Port:    80,
-					host:    "b.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "b.example.com",
 					routes: routemap(
 						route("/", i6, servicemap(
 							&Service{
@@ -1389,7 +1362,6 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
-					aliases:         []string{},
 					routes: routemap(
 						route("/", i6, servicemap(
 							&Service{
@@ -1412,9 +1384,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "a.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "a.example.com",
 					routes: routemap(
 						route("/", i6, servicemap(
 							&Service{
@@ -1424,9 +1395,8 @@ func TestDAGInsert(t *testing.T) {
 						)),
 					),
 				}, &VirtualHost{
-					Port:    80,
-					host:    "b.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "b.example.com",
 					routes: routemap(
 						route("/", i6, servicemap(
 							&Service{
@@ -1439,7 +1409,6 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
-					aliases:         []string{},
 					routes: routemap(
 						route("/", i6, servicemap(
 							&Service{
@@ -1460,9 +1429,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "b.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "b.example.com",
 					routes: routemap(
 						route("/", i7),
 						route("/kuarder", i7),
@@ -1477,9 +1445,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "b.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "b.example.com",
 					routes: routemap(
 						route("/", i7, servicemap(
 							&Service{
@@ -1503,9 +1470,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "b.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "b.example.com",
 					routes: routemap(
 						route("/", i8, servicemap(
 							&Service{
@@ -1540,7 +1506,6 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
-					aliases:         []string{},
 					routes: routemap(
 						route("/", i9, servicemap(
 							&Service{
@@ -1588,7 +1553,6 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
-					aliases:         []string{},
 					routes: routemap(
 						route("/", i6a, servicemap(
 							&Service{
@@ -1609,9 +1573,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "b.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "b.example.com",
 					routes: routemap(
 						&Route{
 							path:   "/",
@@ -1630,7 +1593,6 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
-					aliases:         []string{},
 					routes: routemap(
 						&Route{
 							path:   "/",
@@ -1943,9 +1905,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "b.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "b.example.com",
 					routes: routemap(
 						route("/", i10, servicemap(
 							&Service{
@@ -1959,7 +1920,6 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_3,
 					host:            "b.example.com",
-					aliases:         []string{},
 					routes: routemap(
 						route("/", i10, servicemap(
 							&Service{
@@ -1981,9 +1941,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i11, servicemap(
 							&Service{
@@ -2013,9 +1972,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						&Route{
 							path:   "/",
@@ -2039,9 +1997,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						&Route{
 							path:   "/",
@@ -2065,9 +2022,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						&Route{
 							path:   "/",
@@ -2115,9 +2071,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "example.com",
 					routes: routemap(
 						&Route{
 							path:   "/",
@@ -2142,7 +2097,6 @@ func TestDAGInsert(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "example.com",
-					aliases:         []string{},
 					routes: routemap(
 						&Route{
 							path:   "/",
@@ -2174,9 +2128,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i3a, servicemap(
 							&Service{
@@ -2195,9 +2148,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i3a, servicemap(
 							&Service{
@@ -2217,9 +2169,8 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i1, servicemap(
 							&Service{
@@ -2573,9 +2524,8 @@ func TestDAGRemove(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "kuard.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "kuard.example.com",
 					routes: routemap(
 						route("/", i3),
 					),
@@ -2601,9 +2551,8 @@ func TestDAGRemove(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i1),
 					),
@@ -2619,9 +2568,8 @@ func TestDAGRemove(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i1),
 					),
@@ -2647,9 +2595,8 @@ func TestDAGRemove(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "*",
-					aliases: []string{},
+					Port: 80,
+					host: "*",
 					routes: routemap(
 						route("/", i5),
 					),
@@ -2665,9 +2612,8 @@ func TestDAGRemove(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "kuard.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "kuard.example.com",
 					routes: routemap(
 						route("/", i3),
 					),
@@ -2692,17 +2638,15 @@ func TestDAGRemove(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "a.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "a.example.com",
 					routes: routemap(
 						route("/", i6),
 					),
 				},
 				&VirtualHost{
-					Port:    80,
-					host:    "b.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "b.example.com",
 					routes: routemap(
 						route("/", i6),
 					),
@@ -2719,9 +2663,8 @@ func TestDAGRemove(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "a.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "a.example.com",
 					routes: routemap(
 						route("/", i6, servicemap(
 							&Service{
@@ -2731,9 +2674,8 @@ func TestDAGRemove(t *testing.T) {
 						)),
 					),
 				}, &VirtualHost{
-					Port:    80,
-					host:    "b.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "b.example.com",
 					routes: routemap(
 						route("/", i6, servicemap(
 							&Service{
@@ -2755,17 +2697,15 @@ func TestDAGRemove(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "a.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "a.example.com",
 					routes: routemap(
 						route("/", i6),
 					),
 				},
 				&VirtualHost{
-					Port:    80,
-					host:    "b.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "b.example.com",
 					routes: routemap(
 						route("/", i6),
 					),
@@ -2774,7 +2714,6 @@ func TestDAGRemove(t *testing.T) {
 					Port:            443,
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					host:            "b.example.com",
-					aliases:         []string{},
 					routes: routemap(
 						route("/", i6),
 					),
@@ -2794,9 +2733,8 @@ func TestDAGRemove(t *testing.T) {
 			},
 			want: []Vertex{
 				&VirtualHost{
-					Port:    80,
-					host:    "b.example.com",
-					aliases: []string{},
+					Port: 80,
+					host: "b.example.com",
 					routes: routemap(
 						route("/", i7, servicemap(
 							&Service{
@@ -3007,11 +2945,11 @@ func TestDAGRemove(t *testing.T) {
 }
 
 func (v *VirtualHost) String() string {
-	return fmt.Sprintf("host: %v:%d {routes: %v}", v.FQDN(), v.Port, v.routes)
+	return fmt.Sprintf("host: %v:%d {routes: %v, aliases: %#v}", v.FQDN(), v.Port, v.routes, v.aliases)
 }
 
 func (s *SecureVirtualHost) String() string {
-	return fmt.Sprintf("secure host: %v:%d {routes: %v, secret: %v}", s.FQDN(), s.Port, s.routes, s.secret)
+	return fmt.Sprintf("secure host: %v:%d {routes: %v, secret: %v, aliases: %#v}", s.FQDN(), s.Port, s.routes, s.secret, s.aliases)
 }
 
 func (r *Route) String() string {
