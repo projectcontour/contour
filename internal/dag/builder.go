@@ -143,6 +143,7 @@ type builder struct {
 
 	services map[portmeta]*Service
 	secrets  map[meta]*Secret
+	vhosts   map[hostport]*VirtualHost
 }
 
 // lookupService returns a Service that matches the meta and port supplied.
@@ -211,6 +212,24 @@ func (b *builder) lookupSecret(m meta) *Secret {
 	return s
 }
 
+func (b *builder) lookupVirtualHost(host string, port int, aliases ...string) *VirtualHost {
+	hp := hostport{host: host, port: port}
+	vh, ok := b.vhosts[hp]
+	if !ok {
+		vh = &VirtualHost{
+			Port:    port,
+			host:    host,
+			aliases: aliases,
+			routes:  make(map[string]*Route),
+		}
+		if b.vhosts == nil {
+			b.vhosts = make(map[hostport]*VirtualHost)
+		}
+		b.vhosts[hp] = vh
+	}
+	return vh
+}
+
 type hostport struct {
 	host string
 	port int
@@ -219,23 +238,6 @@ type hostport struct {
 func (b *builder) compute() *DAG {
 	b.source.KubernetesCache.mu.RLock() // blocks mutation of the underlying cache until compute is done.
 	defer b.source.KubernetesCache.mu.RUnlock()
-
-	// memoise the production of vhost entries as needed.
-	_vhosts := make(map[hostport]*VirtualHost)
-	vhost := func(host string, port int, aliases ...string) *VirtualHost {
-		hp := hostport{host: host, port: port}
-		vh, ok := _vhosts[hp]
-		if !ok {
-			vh = &VirtualHost{
-				Port:    port,
-				host:    host,
-				aliases: aliases,
-				routes:  make(map[string]*Route),
-			}
-			_vhosts[hp] = vh
-		}
-		return vh
-	}
 
 	_svhosts := make(map[hostport]*SecureVirtualHost)
 	svhost := func(host string, port int, aliases ...string) *SecureVirtualHost {
@@ -302,7 +304,7 @@ func (b *builder) compute() *DAG {
 				r.addService(s, nil, "", 0)
 			}
 			if httpAllowed {
-				vhost("*", 80).routes[r.path] = r
+				b.lookupVirtualHost("*", 80).routes[r.path] = r
 			}
 		}
 
@@ -330,7 +332,7 @@ func (b *builder) compute() *DAG {
 					r.addService(s, nil, "", s.Weight)
 				}
 				if httpAllowed {
-					vhost(host, 80).routes[r.path] = r
+					b.lookupVirtualHost(host, 80).routes[r.path] = r
 				}
 				if _, ok := _svhosts[hostport{host: host, port: 443}]; ok && host != "*" {
 					svhost(host, 443).routes[r.path] = r
@@ -416,7 +418,6 @@ func (b *builder) compute() *DAG {
 			builder:       b,
 			host:          host,
 			aliases:       ir.Spec.VirtualHost.Aliases,
-			vhost:         vhost,
 			svhost:        svhost,
 			ingressroutes: b.source.ingressroutes,
 			orphaned:      orphaned,
@@ -426,7 +427,7 @@ func (b *builder) compute() *DAG {
 	}
 
 	var dag DAG
-	for _, vh := range _vhosts {
+	for _, vh := range b.vhosts {
 		dag.roots = append(dag.roots, vh)
 	}
 	for _, svh := range _svhosts {
@@ -465,7 +466,6 @@ type ingressRouteProcessor struct {
 	host          string
 	aliases       []string
 	svhost        func(string, int, ...string) *SecureVirtualHost
-	vhost         func(string, int, ...string) *VirtualHost
 	ingressroutes map[meta]*ingressroutev1.IngressRoute
 	orphaned      map[meta]bool
 }
@@ -501,7 +501,7 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 					r.addService(svc, s.HealthCheck, s.Strategy, s.Weight)
 				}
 			}
-			irp.vhost(irp.host, 80, irp.aliases...).routes[r.path] = r
+			irp.lookupVirtualHost(irp.host, 80, irp.aliases...).routes[r.path] = r
 
 			if hst := irp.svhost(irp.host, 443, irp.aliases...); hst != nil {
 				if hst.secret != nil {
