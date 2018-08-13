@@ -141,8 +141,8 @@ func (b *Builder) Build() *DAG {
 type builder struct {
 	source *Builder
 
-	// cached Services.
 	services map[portmeta]*Service
+	secrets  map[meta]*Secret
 }
 
 // lookupService returns a Service that matches the meta and port supplied.
@@ -193,33 +193,32 @@ func (b *builder) addService(svc *v1.Service, port *v1.ServicePort) *Service {
 	return s
 }
 
+func (b *builder) lookupSecret(m meta) *Secret {
+	if s, ok := b.secrets[m]; ok {
+		return s
+	}
+	sec, ok := b.source.secrets[m]
+	if !ok {
+		return nil
+	}
+	s := &Secret{
+		object: sec,
+	}
+	if b.secrets == nil {
+		b.secrets = make(map[meta]*Secret)
+	}
+	b.secrets[s.toMeta()] = s
+	return s
+}
+
+type hostport struct {
+	host string
+	port int
+}
+
 func (b *builder) compute() *DAG {
 	b.source.KubernetesCache.mu.RLock() // blocks mutation of the underlying cache until compute is done.
 	defer b.source.KubernetesCache.mu.RUnlock()
-
-	// memoise access to a secrets map, built
-	// as needed from the list of secrets cached
-	// from k8s.
-	_secrets := make(map[meta]*Secret)
-	secret := func(m meta) *Secret {
-		if s, ok := _secrets[m]; ok {
-			return s
-		}
-		sec, ok := b.source.secrets[m]
-		if !ok {
-			return nil
-		}
-		s := &Secret{
-			object: sec,
-		}
-		_secrets[s.toMeta()] = s
-		return s
-	}
-
-	type hostport struct {
-		host string
-		port int
-	}
 
 	// memoise the production of vhost entries as needed.
 	_vhosts := make(map[hostport]*VirtualHost)
@@ -260,7 +259,7 @@ func (b *builder) compute() *DAG {
 	for _, ing := range b.source.ingresses {
 		for _, tls := range ing.Spec.TLS {
 			m := meta{name: tls.SecretName, namespace: ing.Namespace}
-			if sec := secret(m); sec != nil {
+			if sec := b.lookupSecret(m); sec != nil {
 				for _, host := range tls.Hosts {
 					svhost(host, 443).secret = sec
 					// process annotations
@@ -396,7 +395,7 @@ func (b *builder) compute() *DAG {
 		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
 			// attach secrets to TLS enabled vhosts
 			m := meta{name: tls.SecretName, namespace: ir.Namespace}
-			if sec := secret(m); sec != nil {
+			if sec := b.lookupSecret(m); sec != nil {
 				svhost(host, 443, ir.Spec.VirtualHost.Aliases...).secret = sec
 
 				// process min protocol version
@@ -414,9 +413,9 @@ func (b *builder) compute() *DAG {
 
 		prefixMatch := ""
 		irp := ingressRouteProcessor{
+			builder:       b,
 			host:          host,
 			aliases:       ir.Spec.VirtualHost.Aliases,
-			service:       b.lookupService,
 			vhost:         vhost,
 			svhost:        svhost,
 			ingressroutes: b.source.ingressroutes,
@@ -462,9 +461,9 @@ func (b *builder) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 }
 
 type ingressRouteProcessor struct {
+	*builder
 	host          string
 	aliases       []string
-	service       func(m meta, port intstr.IntOrString) *Service
 	svhost        func(string, int, ...string) *SecureVirtualHost
 	vhost         func(string, int, ...string) *VirtualHost
 	ingressroutes map[meta]*ingressroutev1.IngressRoute
@@ -498,7 +497,7 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 					return []Status{{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: weight must be greater than or equal to zero", route.Match, s.Name), Vhost: host}}
 				}
 				m := meta{name: s.Name, namespace: ir.Namespace}
-				if svc := irp.service(m, intstr.FromInt(s.Port)); svc != nil {
+				if svc := irp.lookupService(m, intstr.FromInt(s.Port)); svc != nil {
 					r.addService(svc, s.HealthCheck, s.Strategy, s.Weight)
 				}
 			}

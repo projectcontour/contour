@@ -2223,11 +2223,6 @@ func TestDAGInsert(t *testing.T) {
 	}
 }
 
-type hostport struct {
-	host string
-	port int
-}
-
 func TestDAGRemove(t *testing.T) {
 	// The DAG is sensitive to ordering, removing an ingress, then a service,
 	// has a different effect than removing a service, then an ingress.
