@@ -3867,7 +3867,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			}
 			got := b.Build().Statuses()
 			if len(tc.want) != len(got) {
-				t.Fatalf("expected %d statuses, but got %d", len(tc.want), len(got))
+				t.Fatalf("expected:\n%v\ngot\n%v", tc.want, got)
 			}
 
 			for _, ex := range tc.want {

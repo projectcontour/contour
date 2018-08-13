@@ -145,6 +145,8 @@ type builder struct {
 	secrets  map[meta]*Secret
 	vhosts   map[hostport]*VirtualHost
 	svhosts  map[hostport]*SecureVirtualHost
+
+	orphaned map[meta]bool
 }
 
 // lookupService returns a Service that matches the meta and port supplied.
@@ -376,12 +378,11 @@ func (b *builder) compute() *DAG {
 	}
 
 	// process ingressroute documents
-	orphaned := make(map[meta]bool)
 	for _, ir := range validirs {
 		if ir.Spec.VirtualHost == nil {
 			// delegate ingress route. mark as orphaned if we haven't reached it before.
-			if _, ok := orphaned[meta{name: ir.Name, namespace: ir.Namespace}]; !ok {
-				orphaned[meta{name: ir.Name, namespace: ir.Namespace}] = true
+			if !b.orphaned[meta{name: ir.Name, namespace: ir.Namespace}] {
+				b.setOrphaned(ir.Name, ir.Namespace)
 			}
 			continue
 		}
@@ -423,7 +424,6 @@ func (b *builder) compute() *DAG {
 			host:          host,
 			aliases:       ir.Spec.VirtualHost.Aliases,
 			ingressroutes: b.source.ingressroutes,
-			orphaned:      orphaned,
 		}
 		sts := irp.process(ir, prefixMatch, nil, host)
 		status = append(status, sts...)
@@ -439,16 +439,22 @@ func (b *builder) compute() *DAG {
 		}
 	}
 
-	for meta, orph := range orphaned {
-		if orph {
-			ir, ok := b.source.ingressroutes[meta]
-			if ok {
-				status = append(status, Status{Object: ir, Status: StatusOrphaned, Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"})
-			}
+	for meta := range b.orphaned {
+		ir, ok := b.source.ingressroutes[meta]
+		if ok {
+			status = append(status, Status{Object: ir, Status: StatusOrphaned, Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"})
 		}
 	}
 	dag.statuses = status
 	return &dag
+}
+
+// setOrphaned marks namespace/name combination as orphaned.
+func (b *builder) setOrphaned(name, namespace string) {
+	if b.orphaned == nil {
+		b.orphaned = make(map[meta]bool)
+	}
+	b.orphaned[meta{name: name, namespace: namespace}] = true
 }
 
 // rootAllowed returns true if the ingressroute lives in a permitted root namespace.
@@ -469,7 +475,6 @@ type ingressRouteProcessor struct {
 	host          string
 	aliases       []string
 	ingressroutes map[meta]*ingressroutev1.IngressRoute
-	orphaned      map[meta]bool
 }
 
 func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string) []Status {
@@ -521,7 +526,7 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 			dest, ok := irp.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]
 			if ok {
 				// dest is not an orphaned route, as there is an IR that points to it
-				irp.orphaned[meta{name: dest.Name, namespace: dest.Namespace}] = false
+				delete(irp.orphaned, meta{name: dest.Name, namespace: dest.Namespace})
 
 				// ensure we are not following an edge that produces a cycle
 				var path []string
