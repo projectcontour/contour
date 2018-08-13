@@ -320,7 +320,7 @@ func (b *builder) compute() *DAG {
 			// handle Spec.Rule declarations
 			host := rule.Host
 			if host == "" {
-				host = "*"
+				host = "default-backend.kirkcloud.com"
 			}
 			for _, httppath := range httppaths(rule) {
 				path := httppath.Path
