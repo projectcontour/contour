@@ -50,10 +50,10 @@ func registerProfile(mux *http.ServeMux) {
 	mux.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 }
 
-func registerDotWriter(mux *http.ServeMux, builder *dag.Builder) {
+func registerDotWriter(mux *http.ServeMux, b *dag.Builder) {
 	mux.HandleFunc("/debug/dag", func(w http.ResponseWriter, r *http.Request) {
 		dw := &dotWriter{
-			Builder: builder,
+			Builder: b,
 		}
 		dw.writeDot(w)
 	})

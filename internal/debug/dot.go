@@ -85,7 +85,7 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 		})
 	}
 
-	dw.Builder.Compute().Visit(visit)
+	dw.Builder.Build().Visit(visit)
 
 	fmt.Fprintln(w, "}")
 }

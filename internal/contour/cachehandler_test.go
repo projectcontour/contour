@@ -521,12 +521,15 @@ func TestIngressRouteMetrics(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var b dag.Builder
-			b.IngressRouteRootNamespaces = tc.rootNamespaces
+			b := dag.Builder{
+				KubernetesCache: dag.KubernetesCache{
+					IngressRouteRootNamespaces: tc.rootNamespaces,
+				},
+			}
 			for _, o := range tc.objs {
 				b.Insert(o)
 			}
-			dag := b.Compute()
+			dag := b.Build()
 			gotMetrics := calculateIngressRouteMetric(dag)
 			if !reflect.DeepEqual(tc.want.Root, gotMetrics.Root) {
 				t.Fatalf("(metrics-Root) expected to find: %v but got: %v", tc.want.Root, gotMetrics.Root)

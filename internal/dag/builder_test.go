@@ -2194,7 +2194,7 @@ func TestDAGInsert(t *testing.T) {
 			for _, o := range tc.objs {
 				b.Insert(o)
 			}
-			dag := b.Compute()
+			dag := b.Build()
 
 			got := make(map[hostport]Vertex)
 			dag.Visit(func(v Vertex) {
@@ -2914,7 +2914,7 @@ func TestDAGRemove(t *testing.T) {
 			for _, o := range tc.remove {
 				b.Remove(o)
 			}
-			dag := b.Compute()
+			dag := b.Build()
 
 			got := make(map[hostport]Vertex)
 			dag.Visit(func(v Vertex) {
@@ -3101,7 +3101,7 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 	var b Builder
 	b.Insert(ir2)
 	b.Insert(ir1)
-	dag := b.Compute()
+	dag := b.Build()
 
 	got := make(map[hostport]*VirtualHost)
 	dag.Visit(func(v Vertex) {
@@ -3144,7 +3144,7 @@ func TestDAGIngressRouteCycleSelfEdge(t *testing.T) {
 
 	var b Builder
 	b.Insert(ir1)
-	dag := b.Compute()
+	dag := b.Build()
 
 	got := make(map[hostport]*VirtualHost)
 	dag.Visit(func(v Vertex) {
@@ -3182,7 +3182,7 @@ func TestDAGIngressRouteDelegatesToNonExistent(t *testing.T) {
 
 	var b Builder
 	b.Insert(ir1)
-	dag := b.Compute()
+	dag := b.Build()
 
 	got := make(map[hostport]*VirtualHost)
 	dag.Visit(func(v Vertex) {
@@ -3235,7 +3235,7 @@ func TestDAGIngressRouteDelegatePrefixDoesntMatch(t *testing.T) {
 	var b Builder
 	b.Insert(ir2)
 	b.Insert(ir1)
-	dag := b.Compute()
+	dag := b.Build()
 
 	got := make(map[hostport]*VirtualHost)
 	dag.Visit(func(v Vertex) {
@@ -3337,12 +3337,15 @@ func TestDAGRootNamespaces(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var b Builder
-			b.IngressRouteRootNamespaces = tc.rootNamespaces
+			b := Builder{
+				KubernetesCache: KubernetesCache{
+					IngressRouteRootNamespaces: tc.rootNamespaces,
+				},
+			}
 			for _, o := range tc.objs {
 				b.Insert(o)
 			}
-			dag := b.Compute()
+			dag := b.Build()
 
 			var count int
 			dag.Visit(func(v Vertex) {
@@ -3400,7 +3403,7 @@ func TestDAGIngressRouteDelegatePrefixMatchesStringPrefixButNotPathPrefix(t *tes
 	var b Builder
 	b.Insert(ir2)
 	b.Insert(ir1)
-	dag := b.Compute()
+	dag := b.Build()
 
 	got := make(map[hostport]*VirtualHost)
 	dag.Visit(func(v Vertex) {
@@ -3853,12 +3856,15 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var b Builder
-			b.IngressRouteRootNamespaces = []string{"roots"}
+			b := Builder{
+				KubernetesCache: KubernetesCache{
+					IngressRouteRootNamespaces: []string{"roots"},
+				},
+			}
 			for _, o := range tc.objs {
 				b.Insert(o)
 			}
-			got := b.Compute().Statuses()
+			got := b.Build().Statuses()
 			if len(tc.want) != len(got) {
 				t.Fatalf("expected %d statuses, but got %d", len(tc.want), len(got))
 			}
@@ -3974,7 +3980,7 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 			for _, o := range tc.objs {
 				b.Insert(o)
 			}
-			dag := b.Compute()
+			dag := b.Build()
 
 			got := make(map[hostport]Vertex)
 			dag.Visit(func(v Vertex) {

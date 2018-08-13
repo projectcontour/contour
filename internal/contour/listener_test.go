@@ -431,7 +431,7 @@ func TestListenerVisit(t *testing.T) {
 			}
 			v := listenerVisitor{
 				ListenerCache: lc,
-				Visitable:     reh.Compute(),
+				Visitable:     reh.Build(),
 			}
 			got := v.Visit()
 			if !reflect.DeepEqual(tc.want, got) {

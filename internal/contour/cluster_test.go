@@ -752,7 +752,7 @@ func TestClusterVisit(t *testing.T) {
 			}
 			v := clusterVisitor{
 				ClusterCache: new(ClusterCache),
-				Visitable:    reh.Compute(),
+				Visitable:    reh.Build(),
 			}
 			got := v.Visit()
 			if !reflect.DeepEqual(tc.want, got) {
