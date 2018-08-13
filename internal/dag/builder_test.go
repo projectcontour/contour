@@ -2223,11 +2223,6 @@ func TestDAGInsert(t *testing.T) {
 	}
 }
 
-type hostport struct {
-	host string
-	port int
-}
-
 func TestDAGRemove(t *testing.T) {
 	// The DAG is sensitive to ordering, removing an ingress, then a service,
 	// has a different effect than removing a service, then an ingress.
@@ -2988,7 +2983,7 @@ func secretdata(cert, key string) map[string][]byte {
 	}
 }
 
-func TestServiceMapLookup(t *testing.T) {
+func TestBuilderLookupService(t *testing.T) {
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -3048,8 +3043,14 @@ func TestServiceMapLookup(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			sm := serviceMap{services: services}
-			got := sm.lookup(tc.meta, tc.port)
+			b := builder{
+				source: &Builder{
+					KubernetesCache: KubernetesCache{
+						services: services,
+					},
+				},
+			}
+			got := b.lookupService(tc.meta, tc.port)
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.want, got)
 			}
@@ -3866,7 +3867,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			}
 			got := b.Build().Statuses()
 			if len(tc.want) != len(got) {
-				t.Fatalf("expected %d statuses, but got %d", len(tc.want), len(got))
+				t.Fatalf("expected:\n%v\ngot\n%v", tc.want, got)
 			}
 
 			for _, ex := range tc.want {
