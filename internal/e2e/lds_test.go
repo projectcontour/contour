@@ -873,6 +873,57 @@ func TestLDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 	}, streamLDS(t, cc))
 }
 
+func TestIngressRouteHTTPNotAllowed(t *testing.T) {
+	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+		reh.IngressRouteRootNamespaces = []string{"roots"}
+		reh.Notifier.(*contour.CacheHandler).IngressRouteStatus = &k8s.IngressRouteStatus{
+			Client: fake.NewSimpleClientset(),
+		}
+	})
+	defer done()
+
+	// assert that there are no active listeners
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   []types.Any{},
+		TypeUrl:     listenerType,
+		Nonce:       "0",
+	}, streamLDS(t, cc))
+
+	// ir1 is an ingressroute that does not allow HTTP access
+	f := false
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn:        "example.com",
+				HTTPAllowed: &f,
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// add ingressroute
+	rh.OnAdd(ir1)
+
+	// assert that there are no active listeners
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   []types.Any{},
+		TypeUrl:     listenerType,
+		Nonce:       "0",
+	}, streamLDS(t, cc))
+}
+
 func streamLDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
 	t.Helper()
 	rds := v2.NewListenerDiscoveryServiceClient(cc)
