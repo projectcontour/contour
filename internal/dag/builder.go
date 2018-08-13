@@ -516,10 +516,7 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 			if httpAllowed {
 				b.lookupVirtualHost(host, 80, aliases...).routes[r.path] = r
 			}
-
-			if hst := b.lookupSecureVirtualHost(host, 443, aliases...); hst.secret != nil {
-				b.lookupSecureVirtualHost(host, 443, aliases...).routes[r.path] = r
-			}
+			b.lookupSecureVirtualHost(host, 443, aliases...).routes[r.path] = r
 			continue
 		}
 
