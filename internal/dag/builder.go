@@ -137,48 +137,41 @@ func (b *Builder) Build() *DAG {
 }
 
 // A builder holds the state of one invocation of Builder.Build.
+// Once used, the builder should be discarded.
 type builder struct {
 	source *Builder
-}
-
-// serviceMap memoise access to a service map, built
-// as needed from the list of services cached
-// from k8s.
-type serviceMap struct {
-	// backing services from k8s api.
-	services map[meta]*v1.Service
 
 	// cached Services.
-	_services map[portmeta]*Service
+	services map[portmeta]*Service
 }
 
-// lookup returns a Service that matches the meta and port supplied.
+// lookupService returns a Service that matches the meta and port supplied.
 // If no matching Service is found lookup returns nil.
-func (sm *serviceMap) lookup(m meta, port intstr.IntOrString) *Service {
+func (b *builder) lookupService(m meta, port intstr.IntOrString) *Service {
 	if port.Type == intstr.Int {
-		if s, ok := sm._services[portmeta{name: m.name, namespace: m.namespace, port: int32(port.IntValue())}]; ok {
+		if s, ok := b.services[portmeta{name: m.name, namespace: m.namespace, port: int32(port.IntValue())}]; ok {
 			return s
 		}
 	}
-	svc, ok := sm.services[m]
+	svc, ok := b.source.services[m]
 	if !ok {
 		return nil
 	}
 	for i := range svc.Spec.Ports {
 		p := &svc.Spec.Ports[i]
 		if int(p.Port) == port.IntValue() {
-			return sm.insert(svc, p)
+			return b.addService(svc, p)
 		}
 		if port.String() == p.Name {
-			return sm.insert(svc, p)
+			return b.addService(svc, p)
 		}
 	}
 	return nil
 }
 
-func (sm *serviceMap) insert(svc *v1.Service, port *v1.ServicePort) *Service {
-	if sm._services == nil {
-		sm._services = make(map[portmeta]*Service)
+func (b *builder) addService(svc *v1.Service, port *v1.ServicePort) *Service {
+	if b.services == nil {
+		b.services = make(map[portmeta]*Service)
 	}
 	up := parseUpstreamProtocols(svc.Annotations, annotationUpstreamProtocol, "h2", "h2c")
 	protocol := up[port.Name]
@@ -196,17 +189,13 @@ func (sm *serviceMap) insert(svc *v1.Service, port *v1.ServicePort) *Service {
 		MaxRequests:        parseAnnotation(svc.Annotations, annotationMaxRequests),
 		MaxRetries:         parseAnnotation(svc.Annotations, annotationMaxRetries),
 	}
-	sm._services[s.toMeta()] = s
+	b.services[s.toMeta()] = s
 	return s
 }
 
 func (b *builder) compute() *DAG {
 	b.source.KubernetesCache.mu.RLock() // blocks mutation of the underlying cache until compute is done.
 	defer b.source.KubernetesCache.mu.RUnlock()
-	sm := serviceMap{
-		services: b.source.services,
-	}
-	service := sm.lookup
 
 	// memoise access to a secrets map, built
 	// as needed from the list of secrets cached
@@ -310,7 +299,7 @@ func (b *builder) compute() *DAG {
 				Timeout:      timeout,
 			}
 			m := meta{name: ing.Spec.Backend.ServiceName, namespace: ing.Namespace}
-			if s := service(m, ing.Spec.Backend.ServicePort); s != nil {
+			if s := b.lookupService(m, ing.Spec.Backend.ServicePort); s != nil {
 				r.addService(s, nil, "", 0)
 			}
 			if httpAllowed {
@@ -338,7 +327,7 @@ func (b *builder) compute() *DAG {
 				}
 
 				m := meta{name: httppath.Backend.ServiceName, namespace: ing.Namespace}
-				if s := service(m, httppath.Backend.ServicePort); s != nil {
+				if s := b.lookupService(m, httppath.Backend.ServicePort); s != nil {
 					r.addService(s, nil, "", s.Weight)
 				}
 				if httpAllowed {
@@ -427,7 +416,7 @@ func (b *builder) compute() *DAG {
 		irp := ingressRouteProcessor{
 			host:          host,
 			aliases:       ir.Spec.VirtualHost.Aliases,
-			service:       service,
+			service:       b.lookupService,
 			vhost:         vhost,
 			svhost:        svhost,
 			ingressroutes: b.source.ingressroutes,

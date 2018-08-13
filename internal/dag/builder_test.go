@@ -2988,7 +2988,7 @@ func secretdata(cert, key string) map[string][]byte {
 	}
 }
 
-func TestServiceMapLookup(t *testing.T) {
+func TestBuilderLookupService(t *testing.T) {
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -3048,8 +3048,14 @@ func TestServiceMapLookup(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			sm := serviceMap{services: services}
-			got := sm.lookup(tc.meta, tc.port)
+			b := builder{
+				source: &Builder{
+					KubernetesCache: KubernetesCache{
+						services: services,
+					},
+				},
+			}
+			got := b.lookupService(tc.meta, tc.port)
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.want, got)
 			}
