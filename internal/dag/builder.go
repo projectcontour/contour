@@ -505,10 +505,8 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 			}
 			irp.lookupVirtualHost(irp.host, 80, irp.aliases...).routes[r.path] = r
 
-			if hst := irp.lookupSecureVirtualHost(irp.host, 443, irp.aliases...); hst != nil { // TODO(dfc) this will never fail
-				if hst.secret != nil {
-					irp.lookupSecureVirtualHost(irp.host, 443, irp.aliases...).routes[r.path] = r
-				}
+			if hst := irp.lookupSecureVirtualHost(irp.host, 443, irp.aliases...); hst.secret != nil {
+				irp.lookupSecureVirtualHost(irp.host, 443, irp.aliases...).routes[r.path] = r
 			}
 			continue
 		}
