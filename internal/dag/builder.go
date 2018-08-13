@@ -421,9 +421,8 @@ func (b *builder) compute() *DAG {
 
 		prefixMatch := ""
 		irp := ingressRouteProcessor{
-			builder:       b,
-			aliases:       ir.Spec.VirtualHost.Aliases,
-			ingressroutes: b.source.ingressroutes,
+			builder: b,
+			aliases: ir.Spec.VirtualHost.Aliases,
 		}
 		irp.process(ir, prefixMatch, nil, host)
 	}
@@ -480,8 +479,7 @@ func (b *builder) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 
 type ingressRouteProcessor struct {
 	*builder
-	aliases       []string
-	ingressroutes map[meta]*ingressroutev1.IngressRoute
+	aliases []string
 }
 
 func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string) {
@@ -538,8 +536,7 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 			namespace = ir.Namespace
 		}
 
-		dest, ok := irp.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]
-		if ok {
+		if dest, ok := irp.source.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]; ok {
 			// dest is not an orphaned route, as there is an IR that points to it
 			delete(irp.orphaned, meta{name: dest.Name, namespace: dest.Namespace})
 
