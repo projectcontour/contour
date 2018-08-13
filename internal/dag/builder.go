@@ -132,7 +132,13 @@ type Builder struct {
 
 // Build builds a new *DAG.
 func (b *Builder) Build() *DAG {
-	return b.compute()
+	builder := &builder{source: b}
+	return builder.compute()
+}
+
+// A builder holds the state of one invocation of Builder.Build.
+type builder struct {
+	source *Builder
 }
 
 // serviceMap memoise access to a service map, built
@@ -194,12 +200,11 @@ func (sm *serviceMap) insert(svc *v1.Service, port *v1.ServicePort) *Service {
 	return s
 }
 
-// compute builds a new *DAG
-func (b *Builder) compute() *DAG {
-	b.KubernetesCache.mu.RLock() // blocks mutation of the underlying cache until compute is done.
-	defer b.KubernetesCache.mu.RUnlock()
+func (b *builder) compute() *DAG {
+	b.source.KubernetesCache.mu.RLock() // blocks mutation of the underlying cache until compute is done.
+	defer b.source.KubernetesCache.mu.RUnlock()
 	sm := serviceMap{
-		services: b.services,
+		services: b.source.services,
 	}
 	service := sm.lookup
 
@@ -211,7 +216,7 @@ func (b *Builder) compute() *DAG {
 		if s, ok := _secrets[m]; ok {
 			return s
 		}
-		sec, ok := b.secrets[m]
+		sec, ok := b.source.secrets[m]
 		if !ok {
 			return nil
 		}
@@ -263,7 +268,7 @@ func (b *Builder) compute() *DAG {
 	// setup secure vhosts if there is a matching secret
 	// we do this first so that the set of active secure vhosts is stable
 	// during the second ingress pass
-	for _, ing := range b.ingresses {
+	for _, ing := range b.source.ingresses {
 		for _, tls := range ing.Spec.TLS {
 			m := meta{name: tls.SecretName, namespace: ing.Namespace}
 			if sec := secret(m); sec != nil {
@@ -285,7 +290,7 @@ func (b *Builder) compute() *DAG {
 	}
 
 	// deconstruct each ingress into routes and virtualhost entries
-	for _, ing := range b.ingresses {
+	for _, ing := range b.source.ingresses {
 		// should we create port 80 routes for this ingress
 		httpAllowed := httpAllowed(ing)
 
@@ -349,7 +354,7 @@ func (b *Builder) compute() *DAG {
 	// ensure that a given fqdn is only referenced in a single ingressroute resource
 	var validirs []*ingressroutev1.IngressRoute
 	fqdnIngressroutes := make(map[string][]*ingressroutev1.IngressRoute)
-	for _, ir := range b.ingressroutes {
+	for _, ir := range b.source.ingressroutes {
 		if ir.Spec.VirtualHost == nil {
 			validirs = append(validirs, ir)
 			continue
@@ -425,7 +430,7 @@ func (b *Builder) compute() *DAG {
 			service:       service,
 			vhost:         vhost,
 			svhost:        svhost,
-			ingressroutes: b.ingressroutes,
+			ingressroutes: b.source.ingressroutes,
 			orphaned:      orphaned,
 		}
 		sts := irp.process(ir, prefixMatch, nil, host)
@@ -444,7 +449,7 @@ func (b *Builder) compute() *DAG {
 
 	for meta, orph := range orphaned {
 		if orph {
-			ir, ok := b.ingressroutes[meta]
+			ir, ok := b.source.ingressroutes[meta]
 			if ok {
 				status = append(status, Status{Object: ir, Status: StatusOrphaned, Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"})
 			}
@@ -454,12 +459,12 @@ func (b *Builder) compute() *DAG {
 	return &dag
 }
 
-// returns true if the root ingressroute lives in a root namespace
-func (b *Builder) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
-	if len(b.IngressRouteRootNamespaces) == 0 {
+// rootAllowed returns true if the ingressroute lives in a permitted root namespace.
+func (b *builder) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
+	if len(b.source.IngressRouteRootNamespaces) == 0 {
 		return true
 	}
-	for _, ns := range b.IngressRouteRootNamespaces {
+	for _, ns := range b.source.IngressRouteRootNamespaces {
 		if ns == ir.Namespace {
 			return true
 		}
