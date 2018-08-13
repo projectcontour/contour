@@ -144,6 +144,7 @@ type builder struct {
 	services map[portmeta]*Service
 	secrets  map[meta]*Secret
 	vhosts   map[hostport]*VirtualHost
+	svhosts  map[hostport]*SecureVirtualHost
 }
 
 // lookupService returns a Service that matches the meta and port supplied.
@@ -230,6 +231,24 @@ func (b *builder) lookupVirtualHost(host string, port int, aliases ...string) *V
 	return vh
 }
 
+func (b *builder) lookupSecureVirtualHost(host string, port int, aliases ...string) *SecureVirtualHost {
+	hp := hostport{host: host, port: port}
+	svh, ok := b.svhosts[hp]
+	if !ok {
+		svh = &SecureVirtualHost{
+			Port:    port,
+			host:    host,
+			aliases: aliases,
+			routes:  make(map[string]*Route),
+		}
+		if b.svhosts == nil {
+			b.svhosts = make(map[hostport]*SecureVirtualHost)
+		}
+		b.svhosts[hp] = svh
+	}
+	return svh
+}
+
 type hostport struct {
 	host string
 	port int
@@ -239,22 +258,6 @@ func (b *builder) compute() *DAG {
 	b.source.KubernetesCache.mu.RLock() // blocks mutation of the underlying cache until compute is done.
 	defer b.source.KubernetesCache.mu.RUnlock()
 
-	_svhosts := make(map[hostport]*SecureVirtualHost)
-	svhost := func(host string, port int, aliases ...string) *SecureVirtualHost {
-		hp := hostport{host: host, port: port}
-		svh, ok := _svhosts[hp]
-		if !ok {
-			svh = &SecureVirtualHost{
-				Port:    port,
-				host:    host,
-				aliases: aliases,
-				routes:  make(map[string]*Route),
-			}
-			_svhosts[hp] = svh
-		}
-		return svh
-	}
-
 	// setup secure vhosts if there is a matching secret
 	// we do this first so that the set of active secure vhosts is stable
 	// during the second ingress pass
@@ -263,16 +266,17 @@ func (b *builder) compute() *DAG {
 			m := meta{name: tls.SecretName, namespace: ing.Namespace}
 			if sec := b.lookupSecret(m); sec != nil {
 				for _, host := range tls.Hosts {
-					svhost(host, 443).secret = sec
+					svhost := b.lookupSecureVirtualHost(host, 443)
+					svhost.secret = sec
 					// process annotations
 					switch ing.ObjectMeta.Annotations["contour.heptio.com/tls-minimum-protocol-version"] {
 					case "1.3":
-						svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_3
+						svhost.MinProtoVersion = auth.TlsParameters_TLSv1_3
 					case "1.2":
-						svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_2
+						svhost.MinProtoVersion = auth.TlsParameters_TLSv1_2
 					default:
 						// any other value is interpreted as TLS/1.1
-						svhost(host, 443).MinProtoVersion = auth.TlsParameters_TLSv1_1
+						svhost.MinProtoVersion = auth.TlsParameters_TLSv1_1
 					}
 				}
 			}
@@ -334,8 +338,8 @@ func (b *builder) compute() *DAG {
 				if httpAllowed {
 					b.lookupVirtualHost(host, 80).routes[r.path] = r
 				}
-				if _, ok := _svhosts[hostport{host: host, port: 443}]; ok && host != "*" {
-					svhost(host, 443).routes[r.path] = r
+				if _, ok := b.svhosts[hostport{host: host, port: 443}]; ok && host != "*" {
+					b.lookupSecureVirtualHost(host, 443).routes[r.path] = r
 				}
 			}
 		}
@@ -398,17 +402,17 @@ func (b *builder) compute() *DAG {
 			// attach secrets to TLS enabled vhosts
 			m := meta{name: tls.SecretName, namespace: ir.Namespace}
 			if sec := b.lookupSecret(m); sec != nil {
-				svhost(host, 443, ir.Spec.VirtualHost.Aliases...).secret = sec
-
+				svhost := b.lookupSecureVirtualHost(host, 443, ir.Spec.VirtualHost.Aliases...)
+				svhost.secret = sec
 				// process min protocol version
 				switch ir.Spec.VirtualHost.TLS.MinimumProtocolVersion {
 				case "1.3":
-					svhost(host, 443, ir.Spec.VirtualHost.Aliases...).MinProtoVersion = auth.TlsParameters_TLSv1_3
+					svhost.MinProtoVersion = auth.TlsParameters_TLSv1_3
 				case "1.2":
-					svhost(host, 443, ir.Spec.VirtualHost.Aliases...).MinProtoVersion = auth.TlsParameters_TLSv1_2
+					svhost.MinProtoVersion = auth.TlsParameters_TLSv1_2
 				default:
 					// any other value is interpreted as TLS/1.1
-					svhost(host, 443, ir.Spec.VirtualHost.Aliases...).MinProtoVersion = auth.TlsParameters_TLSv1_1
+					svhost.MinProtoVersion = auth.TlsParameters_TLSv1_1
 				}
 			}
 		}
@@ -418,7 +422,6 @@ func (b *builder) compute() *DAG {
 			builder:       b,
 			host:          host,
 			aliases:       ir.Spec.VirtualHost.Aliases,
-			svhost:        svhost,
 			ingressroutes: b.source.ingressroutes,
 			orphaned:      orphaned,
 		}
@@ -430,7 +433,7 @@ func (b *builder) compute() *DAG {
 	for _, vh := range b.vhosts {
 		dag.roots = append(dag.roots, vh)
 	}
-	for _, svh := range _svhosts {
+	for _, svh := range b.svhosts {
 		if svh.secret != nil {
 			dag.roots = append(dag.roots, svh)
 		}
@@ -465,7 +468,6 @@ type ingressRouteProcessor struct {
 	*builder
 	host          string
 	aliases       []string
-	svhost        func(string, int, ...string) *SecureVirtualHost
 	ingressroutes map[meta]*ingressroutev1.IngressRoute
 	orphaned      map[meta]bool
 }
@@ -503,9 +505,9 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 			}
 			irp.lookupVirtualHost(irp.host, 80, irp.aliases...).routes[r.path] = r
 
-			if hst := irp.svhost(irp.host, 443, irp.aliases...); hst != nil {
+			if hst := irp.lookupSecureVirtualHost(irp.host, 443, irp.aliases...); hst != nil { // TODO(dfc) this will never fail
 				if hst.secret != nil {
-					irp.svhost(irp.host, 443, irp.aliases...).routes[r.path] = r
+					irp.lookupSecureVirtualHost(irp.host, 443, irp.aliases...).routes[r.path] = r
 				}
 			}
 			continue
