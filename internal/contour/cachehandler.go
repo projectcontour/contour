@@ -42,7 +42,7 @@ type statusable interface {
 func (ch *CacheHandler) OnChange(b *dag.Builder) {
 	timer := prometheus.NewTimer(ch.CacheHandlerOnUpdateSummary)
 	defer timer.ObserveDuration()
-	dag := b.Compute()
+	dag := b.Build()
 	ch.setIngressRouteStatus(dag)
 	ch.updateListeners(dag)
 	ch.updateRoutes(dag)

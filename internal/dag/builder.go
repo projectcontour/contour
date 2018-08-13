@@ -31,15 +31,15 @@ import (
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 )
 
-// A Builder holds Kubernetes objects and associated configuration and produces
+// A KubernetesCache holds Kubernetes objects and associated configuration and produces
 // DAG values.
-type Builder struct {
+type KubernetesCache struct {
 	// IngressRouteRootNamespaces specifies the namespaces where root
 	// IngressRoutes can be defined. If empty, roots can be defined in any
 	// namespace.
 	IngressRouteRootNamespaces []string
 
-	mu sync.Mutex
+	mu sync.RWMutex
 
 	ingresses     map[meta]*v1beta1.Ingress
 	ingressroutes map[meta]*ingressroutev1.IngressRoute
@@ -58,77 +58,80 @@ const (
 	StatusOrphaned = "orphaned"
 )
 
-// Insert inserts obj into the Builder.
+// Insert inserts obj into the KubernetesCache.
 // If an object with a matching type, name, and namespace exists, it will be overwritten.
-func (b *Builder) Insert(obj interface{}) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+func (kc *KubernetesCache) Insert(obj interface{}) {
+	kc.mu.Lock()
+	defer kc.mu.Unlock()
 	switch obj := obj.(type) {
 	case *v1.Secret:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
-		if b.secrets == nil {
-			b.secrets = make(map[meta]*v1.Secret)
+		if kc.secrets == nil {
+			kc.secrets = make(map[meta]*v1.Secret)
 		}
-		b.secrets[m] = obj
+		kc.secrets[m] = obj
 	case *v1.Service:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
-		if b.services == nil {
-			b.services = make(map[meta]*v1.Service)
+		if kc.services == nil {
+			kc.services = make(map[meta]*v1.Service)
 		}
-		b.services[m] = obj
+		kc.services[m] = obj
 	case *v1beta1.Ingress:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
-		if b.ingresses == nil {
-			b.ingresses = make(map[meta]*v1beta1.Ingress)
+		if kc.ingresses == nil {
+			kc.ingresses = make(map[meta]*v1beta1.Ingress)
 		}
-		b.ingresses[m] = obj
+		kc.ingresses[m] = obj
 	case *ingressroutev1.IngressRoute:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
-		if b.ingressroutes == nil {
-			b.ingressroutes = make(map[meta]*ingressroutev1.IngressRoute)
+		if kc.ingressroutes == nil {
+			kc.ingressroutes = make(map[meta]*ingressroutev1.IngressRoute)
 		}
-		b.ingressroutes[m] = obj
+		kc.ingressroutes[m] = obj
 	default:
 		// not an interesting object
 	}
 }
 
-// Remove removes obj from the Builder.
+// Remove removes obj from the KubernetesCache.
 // If no object with a matching type, name, and namespace exists in the DAG, no action is taken.
-func (b *Builder) Remove(obj interface{}) {
+func (kc *KubernetesCache) Remove(obj interface{}) {
 	switch obj := obj.(type) {
 	default:
-		b.remove(obj)
+		kc.remove(obj)
 	case cache.DeletedFinalStateUnknown:
-		b.Remove(obj.Obj) // recurse into ourselves with the tombstoned value
+		kc.Remove(obj.Obj) // recurse into ourselves with the tombstoned value
 	}
 }
 
-func (b *Builder) remove(obj interface{}) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+func (kc *KubernetesCache) remove(obj interface{}) {
+	kc.mu.Lock()
+	defer kc.mu.Unlock()
 	switch obj := obj.(type) {
 	case *v1.Secret:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
-		delete(b.secrets, m)
+		delete(kc.secrets, m)
 	case *v1.Service:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
-		delete(b.services, m)
+		delete(kc.services, m)
 	case *v1beta1.Ingress:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
-		delete(b.ingresses, m)
+		delete(kc.ingresses, m)
 	case *ingressroutev1.IngressRoute:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
-		delete(b.ingressroutes, m)
+		delete(kc.ingressroutes, m)
 	default:
 		// not interesting
 	}
 }
 
-// Compute computes a new DAG value.
-func (b *Builder) Compute() *DAG {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+// A Builder builds a *DAGs
+type Builder struct {
+	KubernetesCache
+}
+
+// Build builds a new *DAG.
+func (b *Builder) Build() *DAG {
 	return b.compute()
 }
 
@@ -193,6 +196,8 @@ func (sm *serviceMap) insert(svc *v1.Service, port *v1.ServicePort) *Service {
 
 // compute builds a new *DAG
 func (b *Builder) compute() *DAG {
+	b.KubernetesCache.mu.RLock() // blocks mutation of the underlying cache until compute is done.
+	defer b.KubernetesCache.mu.RUnlock()
 	sm := serviceMap{
 		services: b.services,
 	}
