@@ -419,12 +419,7 @@ func (b *builder) compute() *DAG {
 			}
 		}
 
-		prefixMatch := ""
-		irp := ingressRouteProcessor{
-			builder: b,
-			aliases: ir.Spec.VirtualHost.Aliases,
-		}
-		irp.process(ir, prefixMatch, nil, host)
+		b.processIngressRoute(ir, "", nil, host, ir.Spec.VirtualHost.Aliases)
 	}
 
 	return b.DAG()
@@ -477,24 +472,19 @@ func (b *builder) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 	return false
 }
 
-type ingressRouteProcessor struct {
-	*builder
-	aliases []string
-}
-
-func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string) {
+func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, aliases []string) {
 	visited = append(visited, ir)
 
 	for _, route := range ir.Spec.Routes {
 		// route cannot both delegate and point to services
 		if len(route.Services) > 0 && route.Delegate.Name != "" {
-			irp.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: cannot specify services and delegate in the same route", route.Match), Vhost: host})
+			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: cannot specify services and delegate in the same route", route.Match), Vhost: host})
 			return
 		}
 		// base case: The route points to services, so we add them to the vhost
 		if len(route.Services) > 0 {
 			if !matchesPathPrefix(route.Match, prefixMatch) {
-				irp.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("the path prefix %q does not match the parent's path prefix %q", route.Match, prefixMatch), Vhost: host})
+				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("the path prefix %q does not match the parent's path prefix %q", route.Match, prefixMatch), Vhost: host})
 				return
 			}
 			r := &Route{
@@ -504,22 +494,22 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 			}
 			for _, s := range route.Services {
 				if s.Port < 1 || s.Port > 65535 {
-					irp.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", route.Match, s.Name), Vhost: host})
+					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", route.Match, s.Name), Vhost: host})
 					return
 				}
 				if s.Weight < 0 {
-					irp.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: weight must be greater than or equal to zero", route.Match, s.Name), Vhost: host})
+					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: weight must be greater than or equal to zero", route.Match, s.Name), Vhost: host})
 					return
 				}
 				m := meta{name: s.Name, namespace: ir.Namespace}
-				if svc := irp.lookupService(m, intstr.FromInt(s.Port)); svc != nil {
+				if svc := b.lookupService(m, intstr.FromInt(s.Port)); svc != nil {
 					r.addService(svc, s.HealthCheck, s.Strategy, s.Weight)
 				}
 			}
-			irp.lookupVirtualHost(host, 80, irp.aliases...).routes[r.path] = r
+			b.lookupVirtualHost(host, 80, aliases...).routes[r.path] = r
 
-			if hst := irp.lookupSecureVirtualHost(host, 443, irp.aliases...); hst.secret != nil {
-				irp.lookupSecureVirtualHost(host, 443, irp.aliases...).routes[r.path] = r
+			if hst := b.lookupSecureVirtualHost(host, 443, aliases...); hst.secret != nil {
+				b.lookupSecureVirtualHost(host, 443, aliases...).routes[r.path] = r
 			}
 			continue
 		}
@@ -536,9 +526,9 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 			namespace = ir.Namespace
 		}
 
-		if dest, ok := irp.source.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]; ok {
+		if dest, ok := b.source.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]; ok {
 			// dest is not an orphaned route, as there is an IR that points to it
-			delete(irp.orphaned, meta{name: dest.Name, namespace: dest.Namespace})
+			delete(b.orphaned, meta{name: dest.Name, namespace: dest.Namespace})
 
 			// ensure we are not following an edge that produces a cycle
 			var path []string
@@ -549,16 +539,16 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 				if dest.Name == vir.Name && dest.Namespace == vir.Namespace {
 					path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
 					description := fmt.Sprintf("route creates a delegation cycle: %s", strings.Join(path, " -> "))
-					irp.setStatus(Status{Object: ir, Status: StatusInvalid, Description: description, Vhost: host})
+					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: description, Vhost: host})
 					return
 				}
 			}
 
 			// follow the link and process the target ingress route
-			irp.process(dest, route.Match, visited, host)
+			b.processIngressRoute(dest, route.Match, visited, host, aliases)
 		}
 	}
-	irp.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
+	b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
 }
 
 // httppaths returns a slice of HTTPIngressPath values for a given IngressRule.
