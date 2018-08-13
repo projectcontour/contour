@@ -422,7 +422,6 @@ func (b *builder) compute() *DAG {
 		prefixMatch := ""
 		irp := ingressRouteProcessor{
 			builder:       b,
-			host:          host,
 			aliases:       ir.Spec.VirtualHost.Aliases,
 			ingressroutes: b.source.ingressroutes,
 		}
@@ -481,7 +480,6 @@ func (b *builder) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 
 type ingressRouteProcessor struct {
 	*builder
-	host          string
 	aliases       []string
 	ingressroutes map[meta]*ingressroutev1.IngressRoute
 }
@@ -520,43 +518,47 @@ func (irp *ingressRouteProcessor) process(ir *ingressroutev1.IngressRoute, prefi
 					r.addService(svc, s.HealthCheck, s.Strategy, s.Weight)
 				}
 			}
-			irp.lookupVirtualHost(irp.host, 80, irp.aliases...).routes[r.path] = r
+			irp.lookupVirtualHost(host, 80, irp.aliases...).routes[r.path] = r
 
-			if hst := irp.lookupSecureVirtualHost(irp.host, 443, irp.aliases...); hst.secret != nil {
-				irp.lookupSecureVirtualHost(irp.host, 443, irp.aliases...).routes[r.path] = r
+			if hst := irp.lookupSecureVirtualHost(host, 443, irp.aliases...); hst.secret != nil {
+				irp.lookupSecureVirtualHost(host, 443, irp.aliases...).routes[r.path] = r
 			}
 			continue
 		}
 
+		if route.Delegate.Name == "" {
+			// not a delegate route
+			continue
+		}
+
 		// otherwise, if the route is delegating to another ingressroute, find it and process it.
-		if route.Delegate.Name != "" {
-			namespace := route.Delegate.Namespace
-			if namespace == "" {
-				// we are delegating to another IngressRoute in the same namespace
-				namespace = ir.Namespace
-			}
-			dest, ok := irp.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]
-			if ok {
-				// dest is not an orphaned route, as there is an IR that points to it
-				delete(irp.orphaned, meta{name: dest.Name, namespace: dest.Namespace})
+		namespace := route.Delegate.Namespace
+		if namespace == "" {
+			// we are delegating to another IngressRoute in the same namespace
+			namespace = ir.Namespace
+		}
 
-				// ensure we are not following an edge that produces a cycle
-				var path []string
-				for _, vir := range visited {
-					path = append(path, fmt.Sprintf("%s/%s", vir.Namespace, vir.Name))
-				}
-				for _, vir := range visited {
-					if dest.Name == vir.Name && dest.Namespace == vir.Namespace {
-						path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
-						description := fmt.Sprintf("route creates a delegation cycle: %s", strings.Join(path, " -> "))
-						irp.setStatus(Status{Object: ir, Status: StatusInvalid, Description: description, Vhost: host})
-						return
-					}
-				}
+		dest, ok := irp.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]
+		if ok {
+			// dest is not an orphaned route, as there is an IR that points to it
+			delete(irp.orphaned, meta{name: dest.Name, namespace: dest.Namespace})
 
-				// follow the link and process the target ingress route
-				irp.process(dest, route.Match, visited, host)
+			// ensure we are not following an edge that produces a cycle
+			var path []string
+			for _, vir := range visited {
+				path = append(path, fmt.Sprintf("%s/%s", vir.Namespace, vir.Name))
 			}
+			for _, vir := range visited {
+				if dest.Name == vir.Name && dest.Namespace == vir.Namespace {
+					path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
+					description := fmt.Sprintf("route creates a delegation cycle: %s", strings.Join(path, " -> "))
+					irp.setStatus(Status{Object: ir, Status: StatusInvalid, Description: description, Vhost: host})
+					return
+				}
+			}
+
+			// follow the link and process the target ingress route
+			irp.process(dest, route.Match, visited, host)
 		}
 	}
 	irp.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
