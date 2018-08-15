@@ -22,6 +22,31 @@ spec:
   names:
     plural: ingressroutes
     kind: IngressRoute
+  additionalPrinterColumns:
+    - name: FQDN
+      type: string
+      description: Fully qualified domain name
+      JSONPath: .spec.virtualhost.fqdn
+    - name: Aliases
+      type: string
+      description: Fully qualified domain name
+      JSONPath: .spec.virtualhost.aliases
+    - name: TLS Secret
+      type: string
+      description: Secret with TLS credentials
+      JSONPath: .spec.virtualhost.tls.secretName
+    - name: First route
+      type: string
+      description: First routes defined
+      JSONPath: .spec.routes[0].match
+    - name: Status
+      type: string
+      description: The current status of the IngressRoute
+      JSONPath: .status.currentStatus
+    - name: Status Description
+      type: string
+      description: Description of the current status
+      JSONPath: .status.description
   validation:
     openAPIV3Schema:
       properties:
