@@ -348,12 +348,8 @@ func (b *builder) compute() *DAG {
 	// process ingressroute documents
 	for _, ir := range b.validIngressRoutes() {
 		if ir.Spec.VirtualHost == nil {
-			// delegate ingress route. mark as orphaned if we haven't reached it before.
-			// TODO(dfc) this check is redundant, the name and namespace of the ingressroute
-			// is globally unique.
-			if !b.orphaned[meta{name: ir.Name, namespace: ir.Namespace}] {
-				b.setOrphaned(ir.Name, ir.Namespace)
-			}
+			// mark delegate ingressroute orphaned.
+			b.setOrphaned(ir)
 			continue
 		}
 
@@ -463,12 +459,13 @@ func (b *builder) setStatus(st Status) {
 	b.statuses = append(b.statuses, st)
 }
 
-// setOrphaned marks namespace/name combination as orphaned.
-func (b *builder) setOrphaned(name, namespace string) {
+// setOrphaned records an ingressroute as orphaned.
+func (b *builder) setOrphaned(ir *ingressroutev1.IngressRoute) {
 	if b.orphaned == nil {
 		b.orphaned = make(map[meta]bool)
 	}
-	b.orphaned[meta{name: name, namespace: namespace}] = true
+	m := meta{name: ir.Name, namespace: ir.Namespace}
+	b.orphaned[m] = true
 }
 
 // rootAllowed returns true if the ingressroute lives in a permitted root namespace.
