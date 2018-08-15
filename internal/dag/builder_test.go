@@ -820,7 +820,6 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// ir12 disables HTTP access
-	f := false
 	ir12 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "disable-http",
@@ -828,8 +827,8 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn:        "disable-http.com",
-				HTTPAllowed: &f,
+				Fqdn:      "disable-http.com",
+				HTTPSOnly: true,
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",

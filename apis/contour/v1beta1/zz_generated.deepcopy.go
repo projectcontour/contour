@@ -247,15 +247,6 @@ func (in *VirtualHost) DeepCopyInto(out *VirtualHost) {
 			**out = **in
 		}
 	}
-	if in.HTTPAllowed != nil {
-		in, out := &in.HTTPAllowed, &out.HTTPAllowed
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(bool)
-			**out = **in
-		}
-	}
 	return
 }
 

@@ -268,7 +268,7 @@ The TLS **Minimum Protocol Version** a vhost should negotiate can be specified b
 
 #### Disable HTTP
 
-IngressRoutes support disabling HTTP at the VHost level, so that the listener is only exposed over HTTPS. This is achieved by setting the `httpAllowed` field to `false`. If not set, this field defaults to `true`.
+IngressRoutes support disabling HTTP at the VHost level, so that the listener is only exposed over HTTPS. This is achieved by setting the `httpsOnly` field to `true`.
 
 This functionality is equivalent to the `kubernetes.io/ingress.allow-http: false` annotation supported in the Ingress resource.
 
@@ -280,7 +280,7 @@ metadata:
 spec: 
   virtualhost:
     fqdn: foo-basic.bar.com
-    httpAllowed: false
+    httpsOnly: true
   routes: 
     - match: /
       services: 
