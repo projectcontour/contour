@@ -196,3 +196,475 @@ func TestWriteMetric(t *testing.T) {
 		})
 	}
 }
+func TestRemoveMetric(t *testing.T) {
+
+	total := testMetric{
+		metric: IngressRouteTotalGauge,
+		want: []*io_prometheus_client.Metric{
+			{
+				Label: []*io_prometheus_client.LabelPair{{
+					Name:  func() *string { i := "namespace"; return &i }(),
+					Value: func() *string { i := "foons"; return &i }(),
+				}},
+				Gauge: &io_prometheus_client.Gauge{
+					Value: func() *float64 { i := float64(3); return &i }(),
+				},
+			},
+			{
+				Label: []*io_prometheus_client.LabelPair{{
+					Name:  func() *string { i := "namespace"; return &i }(),
+					Value: func() *string { i := "testns"; return &i }(),
+				}},
+				Gauge: &io_prometheus_client.Gauge{
+					Value: func() *float64 { i := float64(6); return &i }(),
+				},
+			},
+		},
+	}
+
+	orphaned := testMetric{
+		metric: IngressRouteOrphanedGauge,
+		want: []*io_prometheus_client.Metric{
+			{
+				Label: []*io_prometheus_client.LabelPair{{
+					Name:  func() *string { i := "namespace"; return &i }(),
+					Value: func() *string { i := "testns"; return &i }(),
+				}},
+				Gauge: &io_prometheus_client.Gauge{
+					Value: func() *float64 { i := float64(1); return &i }(),
+				},
+			},
+		},
+	}
+
+	valid := testMetric{
+		metric: IngressRouteValidGauge,
+		want: []*io_prometheus_client.Metric{
+			{
+				Label: []*io_prometheus_client.LabelPair{{
+					Name:  func() *string { i := "namespace"; return &i }(),
+					Value: func() *string { i := "testns"; return &i }(),
+				}, {
+					Name:  func() *string { i := "vhost"; return &i }(),
+					Value: func() *string { i := "foo.com"; return &i }(),
+				}},
+				Gauge: &io_prometheus_client.Gauge{
+					Value: func() *float64 { i := float64(3); return &i }(),
+				},
+			},
+		},
+	}
+
+	invalid := testMetric{
+		metric: IngressRouteInvalidGauge,
+		want: []*io_prometheus_client.Metric{
+			{
+				Label: []*io_prometheus_client.LabelPair{{
+					Name:  func() *string { i := "namespace"; return &i }(),
+					Value: func() *string { i := "testns"; return &i }(),
+				}, {
+					Name:  func() *string { i := "vhost"; return &i }(),
+					Value: func() *string { i := "foo.com"; return &i }(),
+				}},
+				Gauge: &io_prometheus_client.Gauge{
+					Value: func() *float64 { i := float64(2); return &i }(),
+				},
+			},
+		},
+	}
+
+	root := testMetric{
+		metric: IngressRouteRootTotalGauge,
+		want: []*io_prometheus_client.Metric{
+			{
+				Label: []*io_prometheus_client.LabelPair{{
+					Name:  func() *string { i := "namespace"; return &i }(),
+					Value: func() *string { i := "testns"; return &i }(),
+				}},
+				Gauge: &io_prometheus_client.Gauge{
+					Value: func() *float64 { i := float64(4); return &i }(),
+				},
+			},
+		},
+	}
+
+	tests := map[string]struct {
+		irMetrics        IngressRouteMetric
+		irMetricsUpdated IngressRouteMetric
+		totalWant        []*io_prometheus_client.Metric
+		validWant        []*io_prometheus_client.Metric
+		invalidWant      []*io_prometheus_client.Metric
+		orphanedWant     []*io_prometheus_client.Metric
+		rootWant         []*io_prometheus_client.Metric
+	}{
+		"orphan is resolved": {
+			irMetrics: IngressRouteMetric{
+				Total: map[Meta]int{
+					{Namespace: "testns"}: 6,
+					{Namespace: "foons"}:  3,
+				},
+				Valid: map[Meta]int{
+					{Namespace: "testns", VHost: "foo.com"}: 3,
+				},
+				Invalid: map[Meta]int{
+					{Namespace: "testns", VHost: "foo.com"}: 2,
+				},
+				Orphaned: map[Meta]int{
+					{Namespace: "testns"}: 1,
+				},
+				Root: map[Meta]int{
+					{Namespace: "testns"}: 4,
+				},
+			},
+			irMetricsUpdated: IngressRouteMetric{
+				Total: map[Meta]int{
+					{Namespace: "testns"}: 6,
+					{Namespace: "foons"}:  3,
+				},
+				Valid: map[Meta]int{
+					{Namespace: "testns", VHost: "foo.com"}: 3,
+				},
+				Invalid: map[Meta]int{
+					{Namespace: "testns", VHost: "foo.com"}: 2,
+				},
+				Orphaned: map[Meta]int{},
+				Root: map[Meta]int{
+					{Namespace: "testns"}: 4,
+				},
+			},
+			totalWant: []*io_prometheus_client.Metric{
+				{
+					Label: []*io_prometheus_client.LabelPair{{
+						Name:  func() *string { i := "namespace"; return &i }(),
+						Value: func() *string { i := "foons"; return &i }(),
+					}},
+					Gauge: &io_prometheus_client.Gauge{
+						Value: func() *float64 { i := float64(3); return &i }(),
+					},
+				},
+				{
+					Label: []*io_prometheus_client.LabelPair{{
+						Name:  func() *string { i := "namespace"; return &i }(),
+						Value: func() *string { i := "testns"; return &i }(),
+					}},
+					Gauge: &io_prometheus_client.Gauge{
+						Value: func() *float64 { i := float64(6); return &i }(),
+					},
+				},
+			},
+			orphanedWant: []*io_prometheus_client.Metric{},
+			validWant: []*io_prometheus_client.Metric{
+				{
+					Label: []*io_prometheus_client.LabelPair{{
+						Name:  func() *string { i := "namespace"; return &i }(),
+						Value: func() *string { i := "testns"; return &i }(),
+					}, {
+						Name:  func() *string { i := "vhost"; return &i }(),
+						Value: func() *string { i := "foo.com"; return &i }(),
+					}},
+					Gauge: &io_prometheus_client.Gauge{
+						Value: func() *float64 { i := float64(3); return &i }(),
+					},
+				},
+			},
+			invalidWant: []*io_prometheus_client.Metric{
+				{
+					Label: []*io_prometheus_client.LabelPair{{
+						Name:  func() *string { i := "namespace"; return &i }(),
+						Value: func() *string { i := "testns"; return &i }(),
+					}, {
+						Name:  func() *string { i := "vhost"; return &i }(),
+						Value: func() *string { i := "foo.com"; return &i }(),
+					}},
+					Gauge: &io_prometheus_client.Gauge{
+						Value: func() *float64 { i := float64(2); return &i }(),
+					},
+				},
+			},
+			rootWant: []*io_prometheus_client.Metric{
+				{
+					Label: []*io_prometheus_client.LabelPair{{
+						Name:  func() *string { i := "namespace"; return &i }(),
+						Value: func() *string { i := "testns"; return &i }(),
+					}},
+					Gauge: &io_prometheus_client.Gauge{
+						Value: func() *float64 { i := float64(4); return &i }(),
+					},
+				},
+			},
+		},
+		"root IngressRoute is deleted": {
+			irMetrics: IngressRouteMetric{
+				Total: map[Meta]int{
+					{Namespace: "testns"}: 6,
+					{Namespace: "foons"}:  3,
+				},
+				Valid: map[Meta]int{
+					{Namespace: "testns", VHost: "foo.com"}: 3,
+				},
+				Invalid: map[Meta]int{
+					{Namespace: "testns", VHost: "foo.com"}: 2,
+				},
+				Orphaned: map[Meta]int{
+					{Namespace: "testns"}: 1,
+				},
+				Root: map[Meta]int{
+					{Namespace: "testns"}: 4,
+				},
+			},
+			irMetricsUpdated: IngressRouteMetric{
+				Total: map[Meta]int{
+					{Namespace: "testns"}: 6,
+				},
+				Valid: map[Meta]int{
+					{Namespace: "testns", VHost: "foo.com"}: 3,
+				},
+				Invalid: map[Meta]int{
+					{Namespace: "testns", VHost: "foo.com"}: 2,
+				},
+				Orphaned: map[Meta]int{},
+				Root: map[Meta]int{
+					{Namespace: "testns"}: 4,
+				},
+			},
+			totalWant: []*io_prometheus_client.Metric{
+				{
+					Label: []*io_prometheus_client.LabelPair{{
+						Name:  func() *string { i := "namespace"; return &i }(),
+						Value: func() *string { i := "testns"; return &i }(),
+					}},
+					Gauge: &io_prometheus_client.Gauge{
+						Value: func() *float64 { i := float64(6); return &i }(),
+					},
+				},
+			},
+			orphanedWant: []*io_prometheus_client.Metric{},
+			validWant: []*io_prometheus_client.Metric{
+				{
+					Label: []*io_prometheus_client.LabelPair{{
+						Name:  func() *string { i := "namespace"; return &i }(),
+						Value: func() *string { i := "testns"; return &i }(),
+					}, {
+						Name:  func() *string { i := "vhost"; return &i }(),
+						Value: func() *string { i := "foo.com"; return &i }(),
+					}},
+					Gauge: &io_prometheus_client.Gauge{
+						Value: func() *float64 { i := float64(3); return &i }(),
+					},
+				},
+			},
+			invalidWant: []*io_prometheus_client.Metric{
+				{
+					Label: []*io_prometheus_client.LabelPair{{
+						Name:  func() *string { i := "namespace"; return &i }(),
+						Value: func() *string { i := "testns"; return &i }(),
+					}, {
+						Name:  func() *string { i := "vhost"; return &i }(),
+						Value: func() *string { i := "foo.com"; return &i }(),
+					}},
+					Gauge: &io_prometheus_client.Gauge{
+						Value: func() *float64 { i := float64(2); return &i }(),
+					},
+				},
+			},
+			rootWant: []*io_prometheus_client.Metric{
+				{
+					Label: []*io_prometheus_client.LabelPair{{
+						Name:  func() *string { i := "namespace"; return &i }(),
+						Value: func() *string { i := "testns"; return &i }(),
+					}},
+					Gauge: &io_prometheus_client.Gauge{
+						Value: func() *float64 { i := float64(4); return &i }(),
+					},
+				},
+			},
+		},
+		"valid is deleted from namespace": {
+			irMetrics: IngressRouteMetric{
+				Total: map[Meta]int{
+					{Namespace: "testns"}: 6,
+					{Namespace: "foons"}:  3,
+				},
+				Valid: map[Meta]int{
+					{Namespace: "testns", VHost: "foo.com"}: 3,
+				},
+				Invalid: map[Meta]int{
+					{Namespace: "testns", VHost: "foo.com"}: 2,
+				},
+				Orphaned: map[Meta]int{
+					{Namespace: "testns"}: 1,
+				},
+				Root: map[Meta]int{
+					{Namespace: "testns"}: 4,
+				},
+			},
+			irMetricsUpdated: IngressRouteMetric{
+				Total: map[Meta]int{
+					{Namespace: "testns"}: 6,
+				},
+				Valid: map[Meta]int{
+					{Namespace: "testns", VHost: "foo.com"}: 3,
+				},
+				Invalid: map[Meta]int{
+					{Namespace: "testns", VHost: "foo.com"}: 2,
+				},
+				Orphaned: map[Meta]int{},
+				Root: map[Meta]int{
+					{Namespace: "testns"}: 4,
+				},
+			},
+			totalWant: []*io_prometheus_client.Metric{
+				{
+					Label: []*io_prometheus_client.LabelPair{{
+						Name:  func() *string { i := "namespace"; return &i }(),
+						Value: func() *string { i := "testns"; return &i }(),
+					}},
+					Gauge: &io_prometheus_client.Gauge{
+						Value: func() *float64 { i := float64(6); return &i }(),
+					},
+				},
+			},
+			orphanedWant: []*io_prometheus_client.Metric{},
+			validWant: []*io_prometheus_client.Metric{
+				{
+					Label: []*io_prometheus_client.LabelPair{{
+						Name:  func() *string { i := "namespace"; return &i }(),
+						Value: func() *string { i := "testns"; return &i }(),
+					}, {
+						Name:  func() *string { i := "vhost"; return &i }(),
+						Value: func() *string { i := "foo.com"; return &i }(),
+					}},
+					Gauge: &io_prometheus_client.Gauge{
+						Value: func() *float64 { i := float64(3); return &i }(),
+					},
+				},
+			},
+			invalidWant: []*io_prometheus_client.Metric{
+				{
+					Label: []*io_prometheus_client.LabelPair{{
+						Name:  func() *string { i := "namespace"; return &i }(),
+						Value: func() *string { i := "testns"; return &i }(),
+					}, {
+						Name:  func() *string { i := "vhost"; return &i }(),
+						Value: func() *string { i := "foo.com"; return &i }(),
+					}},
+					Gauge: &io_prometheus_client.Gauge{
+						Value: func() *float64 { i := float64(2); return &i }(),
+					},
+				},
+			},
+			rootWant: []*io_prometheus_client.Metric{
+				{
+					Label: []*io_prometheus_client.LabelPair{{
+						Name:  func() *string { i := "namespace"; return &i }(),
+						Value: func() *string { i := "testns"; return &i }(),
+					}},
+					Gauge: &io_prometheus_client.Gauge{
+						Value: func() *float64 { i := float64(4); return &i }(),
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			r := prometheus.NewRegistry()
+			m := NewMetrics(r)
+			m.SetIngressRouteMetric(tc.irMetrics)
+
+			gatherers := prometheus.Gatherers{
+				r,
+				prometheus.DefaultGatherer,
+			}
+
+			gathering, err := gatherers.Gather()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			gotTotal := []*io_prometheus_client.Metric{}
+			gotValid := []*io_prometheus_client.Metric{}
+			gotInvalid := []*io_prometheus_client.Metric{}
+			gotOrphaned := []*io_prometheus_client.Metric{}
+			gotRoot := []*io_prometheus_client.Metric{}
+			for _, mf := range gathering {
+				if mf.GetName() == total.metric {
+					gotTotal = mf.Metric
+				} else if mf.GetName() == valid.metric {
+					gotValid = mf.Metric
+				} else if mf.GetName() == invalid.metric {
+					gotInvalid = mf.Metric
+				} else if mf.GetName() == orphaned.metric {
+					gotOrphaned = mf.Metric
+				} else if mf.GetName() == root.metric {
+					gotRoot = mf.Metric
+				}
+			}
+
+			if !reflect.DeepEqual(gotTotal, total.want) {
+				t.Fatalf("write metric total metric failed, want: %v got: %v", total.want, gotTotal)
+			}
+			if !reflect.DeepEqual(gotValid, valid.want) {
+				t.Fatalf("write metric valid metric failed, want: %v got: %v", valid.want, gotValid)
+			}
+			if !reflect.DeepEqual(gotInvalid, invalid.want) {
+				t.Fatalf("write metric invalid metric failed, want: %v got: %v", invalid.want, gotInvalid)
+			}
+			if !reflect.DeepEqual(gotOrphaned, orphaned.want) {
+				t.Fatalf("write metric orphaned metric failed, want: %v got: %v", orphaned.want, gotOrphaned)
+			}
+			if !reflect.DeepEqual(gotRoot, root.want) {
+				t.Fatalf("write metric orphaned metric failed, want: %v got: %v", root.want, gotRoot)
+			}
+
+			m.SetIngressRouteMetric(tc.irMetricsUpdated)
+
+			// Now validate that metrics got removed
+			gatherers = prometheus.Gatherers{
+				r,
+				prometheus.DefaultGatherer,
+			}
+
+			gathering, err = gatherers.Gather()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			gotTotal = []*io_prometheus_client.Metric{}
+			gotValid = []*io_prometheus_client.Metric{}
+			gotInvalid = []*io_prometheus_client.Metric{}
+			gotOrphaned = []*io_prometheus_client.Metric{}
+			gotRoot = []*io_prometheus_client.Metric{}
+			for _, mf := range gathering {
+				if mf.GetName() == total.metric {
+					gotTotal = mf.Metric
+				} else if mf.GetName() == valid.metric {
+					gotValid = mf.Metric
+				} else if mf.GetName() == invalid.metric {
+					gotInvalid = mf.Metric
+				} else if mf.GetName() == orphaned.metric {
+					gotOrphaned = mf.Metric
+				} else if mf.GetName() == root.metric {
+					gotRoot = mf.Metric
+				}
+			}
+
+			if !reflect.DeepEqual(gotTotal, tc.totalWant) {
+				t.Fatalf("write metric total metric failed, want: %v got: %v", tc.totalWant, gotTotal)
+			}
+			if !reflect.DeepEqual(gotValid, tc.validWant) {
+				t.Fatalf("write metric valid metric failed, want: %v got: %v", tc.validWant, gotValid)
+			}
+			if !reflect.DeepEqual(gotInvalid, tc.invalidWant) {
+				t.Fatalf("write metric invalid metric failed, want: %v got: %v", tc.invalidWant, gotInvalid)
+			}
+			if !reflect.DeepEqual(gotOrphaned, tc.orphanedWant) {
+				t.Fatalf("write metric orphaned metric failed, want: %v got: %v", tc.orphanedWant, gotOrphaned)
+			}
+			if !reflect.DeepEqual(gotRoot, tc.rootWant) {
+				t.Fatalf("write metric orphaned metric failed, want: %v got: %v", tc.rootWant, gotRoot)
+			}
+		})
+	}
+}

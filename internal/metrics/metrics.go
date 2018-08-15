@@ -32,6 +32,9 @@ type Metrics struct {
 
 	CacheHandlerOnUpdateSummary prometheus.Summary
 	ResourceEventHandlerSummary *prometheus.SummaryVec
+
+	// Keep a local cache of metrics for comparison on updates
+	metricCache *IngressRouteMetric
 }
 
 // IngressRouteMetric stores various metrics for IngressRoute objects
@@ -63,6 +66,7 @@ const (
 // the supplied registry.
 func NewMetrics(registry *prometheus.Registry) *Metrics {
 	m := Metrics{
+		metricCache: &IngressRouteMetric{},
 		ingressRouteTotalGauge: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: IngressRouteTotalGauge,
@@ -128,22 +132,65 @@ func (m *Metrics) register(registry *prometheus.Registry) {
 	)
 }
 
-// SetIngressRouteMetric takes
+// SetIngressRouteMetric sets metric values for a set of IngressRoutes
 func (m *Metrics) SetIngressRouteMetric(metrics IngressRouteMetric) {
+
+	// Process metrics
 	for meta, value := range metrics.Total {
 		m.ingressRouteTotalGauge.WithLabelValues(meta.Namespace).Set(float64(value))
+		if _, ok := m.metricCache.Total[meta]; ok {
+			delete(m.metricCache.Total, meta)
+		}
 	}
 	for meta, value := range metrics.Invalid {
 		m.ingressRouteInvalidGauge.WithLabelValues(meta.Namespace, meta.VHost).Set(float64(value))
+		if _, ok := m.metricCache.Invalid[meta]; ok {
+			delete(m.metricCache.Invalid, meta)
+		}
 	}
 	for meta, value := range metrics.Orphaned {
 		m.ingressRouteOrphanedGauge.WithLabelValues(meta.Namespace).Set(float64(value))
+		if _, ok := m.metricCache.Orphaned[meta]; ok {
+			delete(m.metricCache.Orphaned, meta)
+		}
 	}
 	for meta, value := range metrics.Valid {
 		m.ingressRouteValidGauge.WithLabelValues(meta.Namespace, meta.VHost).Set(float64(value))
+		if _, ok := m.metricCache.Valid[meta]; ok {
+			delete(m.metricCache.Valid, meta)
+		}
 	}
 	for meta, value := range metrics.Root {
 		m.ingressRouteRootTotalGauge.WithLabelValues(meta.Namespace).Set(float64(value))
+		if _, ok := m.metricCache.Root[meta]; ok {
+			delete(m.metricCache.Root, meta)
+		}
+	}
+
+	// All metrics processed, now remove what's left as they are not needed
+	for meta := range m.metricCache.Total {
+		m.ingressRouteTotalGauge.DeleteLabelValues(meta.Namespace)
+	}
+	for meta := range m.metricCache.Invalid {
+		m.ingressRouteInvalidGauge.DeleteLabelValues(meta.Namespace, meta.VHost)
+	}
+	for meta := range m.metricCache.Orphaned {
+		m.ingressRouteOrphanedGauge.DeleteLabelValues(meta.Namespace)
+	}
+	for meta := range m.metricCache.Valid {
+		m.ingressRouteValidGauge.DeleteLabelValues(meta.Namespace, meta.VHost)
+	}
+	for meta := range m.metricCache.Root {
+		m.ingressRouteRootTotalGauge.DeleteLabelValues(meta.Namespace)
+	}
+
+	// copier.Copy(&m.metricCache, metrics)
+	m.metricCache = &IngressRouteMetric{
+		Total:    metrics.Total,
+		Invalid:  metrics.Invalid,
+		Valid:    metrics.Valid,
+		Orphaned: metrics.Orphaned,
+		Root:     metrics.Root,
 	}
 }
 
