@@ -225,7 +225,6 @@ func (b *builder) lookupVirtualHost(host string, port int, aliases ...string) *V
 			Port:    port,
 			host:    host,
 			aliases: aliases,
-			routes:  make(map[string]*Route),
 		}
 		if b.vhosts == nil {
 			b.vhosts = make(map[hostport]*VirtualHost)
@@ -243,7 +242,6 @@ func (b *builder) lookupSecureVirtualHost(host string, port int, aliases ...stri
 			Port:    port,
 			host:    host,
 			aliases: aliases,
-			routes:  make(map[string]*Route),
 		}
 		if b.svhosts == nil {
 			b.svhosts = make(map[hostport]*SecureVirtualHost)
@@ -312,7 +310,7 @@ func (b *builder) compute() *DAG {
 				r.addService(s, nil, "", 0)
 			}
 			if httpAllowed {
-				b.lookupVirtualHost("*", 80).routes[r.path] = r
+				b.lookupVirtualHost("*", 80).addRoute(r)
 			}
 		}
 
@@ -340,10 +338,10 @@ func (b *builder) compute() *DAG {
 					r.addService(s, nil, "", s.Weight)
 				}
 				if httpAllowed {
-					b.lookupVirtualHost(host, 80).routes[r.path] = r
+					b.lookupVirtualHost(host, 80).addRoute(r)
 				}
 				if _, ok := b.svhosts[hostport{host: host, port: 443}]; ok && host != "*" {
-					b.lookupSecureVirtualHost(host, 443).routes[r.path] = r
+					b.lookupSecureVirtualHost(host, 443).addRoute(r)
 				}
 			}
 		}
@@ -514,9 +512,9 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 			}
 
 			if httpAllowed {
-				b.lookupVirtualHost(host, 80, aliases...).routes[r.path] = r
+				b.lookupVirtualHost(host, 80, aliases...).addRoute(r)
 			}
-			b.lookupSecureVirtualHost(host, 443, aliases...).routes[r.path] = r
+			b.lookupSecureVirtualHost(host, 443, aliases...).addRoute(r)
 			continue
 		}
 

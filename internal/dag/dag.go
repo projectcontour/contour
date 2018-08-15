@@ -98,6 +98,13 @@ type VirtualHost struct {
 	routes  map[string]*Route
 }
 
+func (v *VirtualHost) addRoute(route *Route) {
+	if v.routes == nil {
+		v.routes = make(map[string]*Route)
+	}
+	v.routes[route.path] = route
+}
+
 func (v *VirtualHost) FQDN() string { return v.host }
 
 func (v *VirtualHost) Aliases() []string { return v.aliases }
@@ -122,6 +129,13 @@ type SecureVirtualHost struct {
 	aliases []string
 	routes  map[string]*Route
 	secret  *Secret
+}
+
+func (s *SecureVirtualHost) addRoute(route *Route) {
+	if s.routes == nil {
+		s.routes = make(map[string]*Route)
+	}
+	s.routes[route.path] = route
 }
 
 func (s *SecureVirtualHost) Data() map[string][]byte {
