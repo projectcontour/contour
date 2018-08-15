@@ -217,14 +217,13 @@ func (b *builder) lookupSecret(m meta) *Secret {
 	return s
 }
 
-func (b *builder) lookupVirtualHost(host string, port int, aliases ...string) *VirtualHost {
+func (b *builder) lookupVirtualHost(host string, port int) *VirtualHost {
 	hp := hostport{host: host, port: port}
 	vh, ok := b.vhosts[hp]
 	if !ok {
 		vh = &VirtualHost{
-			Port:    port,
-			host:    host,
-			aliases: aliases,
+			Port: port,
+			host: host,
 		}
 		if b.vhosts == nil {
 			b.vhosts = make(map[hostport]*VirtualHost)
@@ -234,14 +233,13 @@ func (b *builder) lookupVirtualHost(host string, port int, aliases ...string) *V
 	return vh
 }
 
-func (b *builder) lookupSecureVirtualHost(host string, port int, aliases ...string) *SecureVirtualHost {
+func (b *builder) lookupSecureVirtualHost(host string, port int) *SecureVirtualHost {
 	hp := hostport{host: host, port: port}
 	svh, ok := b.svhosts[hp]
 	if !ok {
 		svh = &SecureVirtualHost{
-			Port:    port,
-			host:    host,
-			aliases: aliases,
+			Port: port,
+			host: host,
 		}
 		if b.svhosts == nil {
 			b.svhosts = make(map[hostport]*SecureVirtualHost)
@@ -351,6 +349,8 @@ func (b *builder) compute() *DAG {
 	for _, ir := range b.validIngressRoutes() {
 		if ir.Spec.VirtualHost == nil {
 			// delegate ingress route. mark as orphaned if we haven't reached it before.
+			// TODO(dfc) this check is redundant, the name and namespace of the ingressroute
+			// is globally unique.
 			if !b.orphaned[meta{name: ir.Name, namespace: ir.Namespace}] {
 				b.setOrphaned(ir.Name, ir.Namespace)
 			}
@@ -369,12 +369,17 @@ func (b *builder) compute() *DAG {
 			continue
 		}
 
+		// lookup vhost to populate its aliases
+		vhost := b.lookupVirtualHost(host, 80)
+		vhost.aliases = ir.Spec.VirtualHost.Aliases
+
 		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
 			// attach secrets to TLS enabled vhosts
 			m := meta{name: tls.SecretName, namespace: ir.Namespace}
 			if sec := b.lookupSecret(m); sec != nil {
-				svhost := b.lookupSecureVirtualHost(host, 443, ir.Spec.VirtualHost.Aliases...)
+				svhost := b.lookupSecureVirtualHost(host, 443)
 				svhost.secret = sec
+				svhost.aliases = ir.Spec.VirtualHost.Aliases
 				// process min protocol version
 				switch ir.Spec.VirtualHost.TLS.MinimumProtocolVersion {
 				case "1.3":
@@ -388,7 +393,7 @@ func (b *builder) compute() *DAG {
 			}
 		}
 
-		b.processIngressRoute(ir, "", nil, host, ir.Spec.VirtualHost.Aliases, ir.Spec.VirtualHost.HTTPAllowed == nil || *ir.Spec.VirtualHost.HTTPAllowed)
+		b.processIngressRoute(ir, "", nil, host, ir.Spec.VirtualHost.HTTPAllowed == nil || *ir.Spec.VirtualHost.HTTPAllowed)
 	}
 
 	return b.DAG()
@@ -433,7 +438,10 @@ func (b *builder) validIngressRoutes() []*ingressroutev1.IngressRoute {
 func (b *builder) DAG() *DAG {
 	var dag DAG
 	for _, vh := range b.vhosts {
-		dag.roots = append(dag.roots, vh)
+		// suppress virtual hosts without routes.
+		if len(vh.routes) > 0 {
+			dag.roots = append(dag.roots, vh)
+		}
 	}
 	for _, svh := range b.svhosts {
 		if svh.secret != nil {
@@ -476,7 +484,7 @@ func (b *builder) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 	return false
 }
 
-func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, aliases []string, httpAllowed bool) {
+func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, httpAllowed bool) {
 	visited = append(visited, ir)
 
 	for _, route := range ir.Spec.Routes {
@@ -512,9 +520,9 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 			}
 
 			if httpAllowed {
-				b.lookupVirtualHost(host, 80, aliases...).addRoute(r)
+				b.lookupVirtualHost(host, 80).addRoute(r)
 			}
-			b.lookupSecureVirtualHost(host, 443, aliases...).addRoute(r)
+			b.lookupSecureVirtualHost(host, 443).addRoute(r)
 			continue
 		}
 
@@ -549,7 +557,7 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 			}
 
 			// follow the link and process the target ingress route
-			b.processIngressRoute(dest, route.Match, visited, host, aliases, httpAllowed)
+			b.processIngressRoute(dest, route.Match, visited, host, httpAllowed)
 		}
 	}
 	b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
