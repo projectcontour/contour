@@ -891,7 +891,6 @@ func TestIngressRouteHTTPNotAllowed(t *testing.T) {
 	}, streamLDS(t, cc))
 
 	// ir1 is an ingressroute that does not allow HTTP access
-	f := false
 	ir1 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
@@ -899,8 +898,8 @@ func TestIngressRouteHTTPNotAllowed(t *testing.T) {
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn:        "example.com",
-				HTTPAllowed: &f,
+				Fqdn:      "example.com",
+				HTTPSOnly: true,
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
