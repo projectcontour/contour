@@ -141,7 +141,7 @@ func (b *Builder) Build() *DAG {
 type builder struct {
 	source *Builder
 
-	services map[portmeta]*Service
+	services map[servicemeta]*Service
 	secrets  map[meta]*Secret
 	vhosts   map[hostport]*VirtualHost
 	svhosts  map[hostport]*SecureVirtualHost
@@ -153,9 +153,9 @@ type builder struct {
 
 // lookupService returns a Service that matches the meta and port supplied.
 // If no matching Service is found lookup returns nil.
-func (b *builder) lookupService(m meta, port intstr.IntOrString) *Service {
+func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int) *Service {
 	if port.Type == intstr.Int {
-		if s, ok := b.services[portmeta{name: m.name, namespace: m.namespace, port: int32(port.IntValue())}]; ok {
+		if s, ok := b.services[servicemeta{name: m.name, namespace: m.namespace, port: int32(port.IntValue()), weight: weight}]; ok {
 			return s
 		}
 	}
@@ -166,18 +166,18 @@ func (b *builder) lookupService(m meta, port intstr.IntOrString) *Service {
 	for i := range svc.Spec.Ports {
 		p := &svc.Spec.Ports[i]
 		if int(p.Port) == port.IntValue() {
-			return b.addService(svc, p)
+			return b.addService(svc, p, weight)
 		}
 		if port.String() == p.Name {
-			return b.addService(svc, p)
+			return b.addService(svc, p, weight)
 		}
 	}
 	return nil
 }
 
-func (b *builder) addService(svc *v1.Service, port *v1.ServicePort) *Service {
+func (b *builder) addService(svc *v1.Service, port *v1.ServicePort, weight int) *Service {
 	if b.services == nil {
-		b.services = make(map[portmeta]*Service)
+		b.services = make(map[servicemeta]*Service)
 	}
 	up := parseUpstreamProtocols(svc.Annotations, annotationUpstreamProtocol, "h2", "h2c")
 	protocol := up[port.Name]
@@ -189,6 +189,7 @@ func (b *builder) addService(svc *v1.Service, port *v1.ServicePort) *Service {
 		Object:      svc,
 		ServicePort: port,
 		Protocol:    protocol,
+		Weight:      weight,
 
 		MaxConnections:     parseAnnotation(svc.Annotations, annotationMaxConnections),
 		MaxPendingRequests: parseAnnotation(svc.Annotations, annotationMaxPendingRequests),
@@ -304,8 +305,8 @@ func (b *builder) compute() *DAG {
 				Timeout:      timeout,
 			}
 			m := meta{name: ing.Spec.Backend.ServiceName, namespace: ing.Namespace}
-			if s := b.lookupService(m, ing.Spec.Backend.ServicePort); s != nil {
-				r.addService(s, nil, "", 0)
+			if s := b.lookupService(m, ing.Spec.Backend.ServicePort, 0); s != nil {
+				r.addService(s, nil, "")
 			}
 			if httpAllowed {
 				b.lookupVirtualHost("*", 80).addRoute(r)
@@ -332,8 +333,8 @@ func (b *builder) compute() *DAG {
 				}
 
 				m := meta{name: httppath.Backend.ServiceName, namespace: ing.Namespace}
-				if s := b.lookupService(m, httppath.Backend.ServicePort); s != nil {
-					r.addService(s, nil, "", s.Weight)
+				if s := b.lookupService(m, httppath.Backend.ServicePort, 0); s != nil {
+					r.addService(s, nil, "")
 				}
 				if httpAllowed {
 					b.lookupVirtualHost(host, 80).addRoute(r)
@@ -511,8 +512,8 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 					return
 				}
 				m := meta{name: s.Name, namespace: ir.Namespace}
-				if svc := b.lookupService(m, intstr.FromInt(s.Port)); svc != nil {
-					r.addService(svc, s.HealthCheck, s.Strategy, s.Weight)
+				if svc := b.lookupService(m, intstr.FromInt(s.Port), s.Weight); svc != nil {
+					r.addService(svc, s.HealthCheck, s.Strategy)
 				}
 			}
 
