@@ -587,7 +587,7 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 }
 
 // issue 581, different service parameters should generate
-// separate cds entries.
+// a single CDS entry if they differ only in weight.
 func TestClusterPerServiceParameters(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()

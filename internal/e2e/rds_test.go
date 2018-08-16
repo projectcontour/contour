@@ -1639,6 +1639,87 @@ func TestRDSIngressSpecMissingHTTPKey(t *testing.T) {
 	}}, nil)
 }
 
+func TestRouteWithAServiceWeight(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/a",
+				Services: []ingressroutev1.Service{{
+					Name:   "kuard",
+					Port:   80,
+					Weight: 90,
+				}},
+			}},
+		},
+	}
+
+	rh.OnAdd(ir1)
+	assertRDS(t, cc, []route.VirtualHost{{
+		Name:    "test2.test.com",
+		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Routes: []route.Route{{
+			Match:  prefixmatch("/a"), // match all
+			Action: routeweightedcluster(weightedcluster{"default/kuard/80", 90}),
+		}},
+	}}, nil)
+
+	ir2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/a",
+				Services: []ingressroutev1.Service{{
+					Name:   "kuard",
+					Port:   80,
+					Weight: 90,
+				}, {
+					Name: "kuard",
+					Port: 80, Weight: 60,
+				}},
+			}},
+		},
+	}
+
+	rh.OnUpdate(ir1, ir2)
+	assertRDS(t, cc, []route.VirtualHost{{
+		Name:    "test2.test.com",
+		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Routes: []route.Route{{
+			Match: prefixmatch("/a"), // match all
+			Action: routeweightedcluster(
+				weightedcluster{"default/kuard/80", 90},
+				weightedcluster{"default/kuard/80", 60},
+			),
+		}},
+	}}, nil)
+}
+
 func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []route.VirtualHost) {
 	t.Helper()
 	assertEqual(t, &v2.DiscoveryResponse{
@@ -1682,22 +1763,39 @@ func prefixmatch(prefix string) route.RouteMatch {
 	}
 }
 
+type weightedcluster struct {
+	name   string
+	weight uint32
+}
+
 func routecluster(cluster string) *route.Route_Route {
+	return routeweightedcluster(weightedcluster{cluster, 1})
+}
+
+func routeweightedcluster(first weightedcluster, rest ...weightedcluster) *route.Route_Route {
 	return &route.Route_Route{
 		Route: &route.RouteAction{
 			ClusterSpecifier: &route.RouteAction_WeightedClusters{
-				WeightedClusters: &route.WeightedCluster{
-					Clusters: []*route.WeightedCluster_ClusterWeight{{
-						Name:   cluster,
-						Weight: &types.UInt32Value{Value: uint32(1)},
-					}},
-					TotalWeight: &types.UInt32Value{
-						Value: uint32(1),
-					},
-				},
+				WeightedClusters: weightedclusters(append([]weightedcluster{first}, rest...)),
 			},
 		},
 	}
+}
+
+func weightedclusters(clusters []weightedcluster) *route.WeightedCluster {
+	var wc route.WeightedCluster
+	total := uint32(0)
+	for _, c := range clusters {
+		total += c.weight
+		wc.Clusters = append(wc.Clusters, &route.WeightedCluster_ClusterWeight{
+			Name:   c.name,
+			Weight: &types.UInt32Value{Value: c.weight},
+		})
+	}
+	wc.TotalWeight = &types.UInt32Value{
+		Value: total,
+	}
+	return &wc
 }
 
 func websocketroute(c string) *route.Route_Route {
