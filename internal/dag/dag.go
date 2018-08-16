@@ -51,7 +51,7 @@ func (d *DAG) Statuses() []Status {
 type Route struct {
 	path     string
 	Object   interface{} // one of Ingress or IngressRoute
-	services map[portmeta]*Service
+	services map[servicemeta]*Service
 
 	// Should this route generate a 301 upgrade if accessed
 	// over HTTP?
@@ -70,13 +70,12 @@ type Route struct {
 
 func (r *Route) Prefix() string { return r.path }
 
-func (r *Route) addService(s *Service, hc *ingressroutev1.HealthCheck, lbStrat string, weight int) {
+func (r *Route) addService(s *Service, hc *ingressroutev1.HealthCheck, lbStrat string) {
 	if r.services == nil {
-		r.services = make(map[portmeta]*Service)
+		r.services = make(map[servicemeta]*Service)
 	}
 	s.HealthCheck = hc
 	s.LoadBalancerStrategy = lbStrat
-	s.Weight = weight
 	r.services[s.toMeta()] = s
 }
 
@@ -201,17 +200,19 @@ func (s *Service) Name() string       { return s.Object.Name }
 func (s *Service) Namespace() string  { return s.Object.Namespace }
 func (s *Service) Visit(func(Vertex)) {}
 
-type portmeta struct {
+type servicemeta struct {
 	name      string
 	namespace string
 	port      int32
+	weight    int
 }
 
-func (s *Service) toMeta() portmeta {
-	return portmeta{
+func (s *Service) toMeta() servicemeta {
+	return servicemeta{
 		name:      s.Object.Name,
 		namespace: s.Object.Namespace,
 		port:      s.Port,
+		weight:    s.Weight,
 	}
 }
 

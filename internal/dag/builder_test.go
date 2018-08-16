@@ -840,6 +840,58 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// ir13 has two routes to the same service with different
+	// weights
+	ir13 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/a",
+				Services: []ingressroutev1.Service{{
+					Name:   "kuard",
+					Port:   8080,
+					Weight: 90,
+				}},
+			}, {
+				Match: "/b",
+				Services: []ingressroutev1.Service{{Name: "kuard",
+					Port:   8080,
+					Weight: 60,
+				}},
+			}},
+		},
+	}
+	// ir13a has one route to the same service with two different weights
+	ir13a := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/a",
+				Services: []ingressroutev1.Service{{
+					Name:   "kuard",
+					Port:   8080,
+					Weight: 90,
+				}, {
+					Name:   "kuard",
+					Port:   8080,
+					Weight: 60,
+				}},
+			}},
+		},
+	}
+
 	s5 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog-admin",
@@ -2249,6 +2301,58 @@ func TestDAGInsert(t *testing.T) {
 					),
 				}},
 		},
+		"insert ingressroute with two routes to the same service": {
+			objs: []interface{}{
+				ir13, s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "example.com",
+					routes: routemap(
+						route("/a", ir13, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+								Weight:      90,
+							}),
+						),
+						route("/b", ir13, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+								Weight:      60,
+							}),
+						),
+					),
+				},
+			},
+		},
+		"insert ingressroute with one routes to the same service with two different weights": {
+			objs: []interface{}{
+				ir13a, s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Port: 80,
+					host: "example.com",
+					routes: routemap(
+						route("/a", ir13a, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+								Weight:      90,
+							},
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+								Weight:      60,
+							}),
+						),
+					),
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -3015,7 +3119,7 @@ func (r *Route) String() string {
 }
 
 func (s *Service) String() string {
-	return fmt.Sprintf("service: %s/%s {serviceport: %v}", s.Object.Namespace, s.Object.Name, s.ServicePort)
+	return fmt.Sprintf("service: %s/%s {serviceport: %v, weight: %v}", s.Object.Namespace, s.Object.Name, s.ServicePort, s.Weight)
 }
 
 func (s *Secret) String() string {
@@ -3067,8 +3171,9 @@ func TestBuilderLookupService(t *testing.T) {
 
 	tests := map[string]struct {
 		meta
-		port intstr.IntOrString
-		want *Service
+		port   intstr.IntOrString
+		weight int
+		want   *Service
 	}{
 		"lookup service by port number": {
 			meta: meta{name: "service1", namespace: "default"},
@@ -3113,7 +3218,7 @@ func TestBuilderLookupService(t *testing.T) {
 					},
 				},
 			}
-			got := b.lookupService(tc.meta, tc.port)
+			got := b.lookupService(tc.meta, tc.port, tc.weight)
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.want, got)
 			}
@@ -4147,7 +4252,7 @@ func routemap(routes ...*Route) map[string]*Route {
 	return m
 }
 
-func route(path string, obj interface{}, services ...map[portmeta]*Service) *Route {
+func route(path string, obj interface{}, services ...map[servicemeta]*Service) *Route {
 	r := Route{
 		path:   path,
 		Object: obj,
@@ -4163,8 +4268,8 @@ func route(path string, obj interface{}, services ...map[portmeta]*Service) *Rou
 	return &r
 }
 
-func servicemap(services ...*Service) map[portmeta]*Service {
-	m := make(map[portmeta]*Service)
+func servicemap(services ...*Service) map[servicemeta]*Service {
+	m := make(map[servicemeta]*Service)
 	for _, s := range services {
 		m[s.toMeta()] = s
 	}
