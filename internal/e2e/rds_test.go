@@ -1699,8 +1699,9 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 					Port:   80,
 					Weight: 90,
 				}, {
-					Name: "kuard",
-					Port: 80, Weight: 60,
+					Name:   "kuard",
+					Port:   80,
+					Weight: 60,
 				}},
 			}},
 		},
@@ -1713,8 +1714,8 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 		Routes: []route.Route{{
 			Match: prefixmatch("/a"), // match all
 			Action: routeweightedcluster(
-				weightedcluster{"default/kuard/80", 90},
 				weightedcluster{"default/kuard/80", 60},
+				weightedcluster{"default/kuard/80", 90},
 			),
 		}},
 	}}, nil)
