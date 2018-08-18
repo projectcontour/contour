@@ -368,12 +368,15 @@ func (b *builder) compute() *DAG {
 			continue
 		}
 
+		enforceTLS := false
 		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
 			// attach secrets to TLS enabled vhosts
 			m := meta{name: tls.SecretName, namespace: ir.Namespace}
 			if sec := b.lookupSecret(m); sec != nil {
 				svhost := b.lookupSecureVirtualHost(host, 443)
 				svhost.secret = sec
+				enforceTLS = true
+
 				// process min protocol version
 				switch ir.Spec.VirtualHost.TLS.MinimumProtocolVersion {
 				case "1.3":
@@ -387,7 +390,7 @@ func (b *builder) compute() *DAG {
 			}
 		}
 
-		b.processIngressRoute(ir, "", nil, host, ir.Spec.VirtualHost.HTTPSOnly)
+		b.processIngressRoute(ir, "", nil, host, enforceTLS)
 	}
 
 	return b.DAG()
@@ -479,7 +482,7 @@ func (b *builder) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 	return false
 }
 
-func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, httpsOnly bool) {
+func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, enforceTLS bool) {
 	visited = append(visited, ir)
 
 	for _, route := range ir.Spec.Routes {
@@ -494,10 +497,15 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("the path prefix %q does not match the parent's path prefix %q", route.Match, prefixMatch), Vhost: host})
 				return
 			}
+
+			// Determine if the route should enforce TLS
+			enforceTLSRoute := routeEnforceTLS(enforceTLS, route.PermitInsecure)
+
 			r := &Route{
-				path:      route.Match,
-				Object:    ir,
-				Websocket: route.EnableWebsockets,
+				path:         route.Match,
+				Object:       ir,
+				Websocket:    route.EnableWebsockets,
+				HTTPSUpgrade: enforceTLSRoute,
 			}
 			for _, s := range route.Services {
 				if s.Port < 1 || s.Port > 65535 {
@@ -514,9 +522,7 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 				}
 			}
 
-			if !httpsOnly {
-				b.lookupVirtualHost(host, 80).addRoute(r)
-			}
+			b.lookupVirtualHost(host, 80).addRoute(r)
 			b.lookupSecureVirtualHost(host, 443).addRoute(r)
 			continue
 		}
@@ -552,10 +558,21 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 			}
 
 			// follow the link and process the target ingress route
-			b.processIngressRoute(dest, route.Match, visited, host, httpsOnly)
+			b.processIngressRoute(dest, route.Match, visited, host, enforceTLS)
 		}
 	}
 	b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
+}
+
+// routeEnforceTLS determines if the route should redirect the user to a secure TLS listener
+func routeEnforceTLS(enforceTLS, permitInsecure bool) bool {
+	if enforceTLS {
+		if permitInsecure {
+			return false
+		}
+		return true
+	}
+	return false
 }
 
 // httppaths returns a slice of HTTPIngressPath values for a given IngressRule.

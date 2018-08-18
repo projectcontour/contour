@@ -334,8 +334,12 @@ func TestRouteVisit(t *testing.T) {
 						Name:    "www.example.com",
 						Domains: []string{"www.example.com", "www.example.com:80"},
 						Routes: []route.Route{{
-							Match:  prefixmatch("/"),
-							Action: routeroute("default/backend/8080"),
+							Match: prefixmatch("/"),
+							Action: &route.Route_Redirect{
+								Redirect: &route.RedirectAction{
+									HttpsRedirect: true,
+								},
+							},
 						}},
 					}},
 				},

@@ -1650,6 +1650,201 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 		}},
 	}}, nil)
 }
+func TestRouteWithTLS(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	rh.OnAdd(&v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-tls",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	})
+
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "test2.test.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName: "example-tls",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/a",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	rh.OnAdd(ir1)
+
+	// check that ingress_http has been updated.
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_http",
+				VirtualHosts: []route.VirtualHost{{
+					Name:    "test2.test.com",
+					Domains: []string{"test2.test.com", "test2.test.com:80"},
+					Routes: []route.Route{{
+						Match:  prefixmatch("/a"),
+						Action: redirecthttps(),
+					}},
+				}}}),
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_https",
+				VirtualHosts: []route.VirtualHost{{
+					Name:    "test2.test.com",
+					Domains: []string{"test2.test.com", "test2.test.com:443"},
+					Routes: []route.Route{{
+						Match:  prefixmatch("/a"),
+						Action: routecluster("default/kuard/80"),
+					}},
+				}}}),
+		},
+		TypeUrl: routeType,
+		Nonce:   "0",
+	}, streamRDS(t, cc))
+}
+func TestRouteWithTLS_InsecurePaths(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "svc2",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	rh.OnAdd(&v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-tls",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	})
+
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "test2.test.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName: "example-tls",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match:          "/insecure",
+				PermitInsecure: true,
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 80,
+				}},
+			}, {
+				Match: "/secure",
+				Services: []ingressroutev1.Service{{
+					Name: "svc2",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	rh.OnAdd(ir1)
+
+	// check that ingress_http has been updated.
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_http",
+				VirtualHosts: []route.VirtualHost{{
+					Name:    "test2.test.com",
+					Domains: []string{"test2.test.com", "test2.test.com:80"},
+					Routes: []route.Route{
+						{
+							Match:  prefixmatch("/secure"),
+							Action: redirecthttps(),
+						}, {
+							Match:  prefixmatch("/insecure"),
+							Action: routecluster("default/kuard/80"),
+						},
+					},
+				}}}),
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_https",
+				VirtualHosts: []route.VirtualHost{{
+					Name:    "test2.test.com",
+					Domains: []string{"test2.test.com", "test2.test.com:443"},
+					Routes: []route.Route{
+						{
+							Match:  prefixmatch("/secure"),
+							Action: routecluster("default/svc2/80"),
+						}, {
+							Match:  prefixmatch("/insecure"),
+							Action: routecluster("default/kuard/80"),
+						},
+					},
+				}}}),
+		},
+		TypeUrl: routeType,
+		Nonce:   "0",
+	}, streamRDS(t, cc))
+}
 
 func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []route.VirtualHost) {
 	t.Helper()
