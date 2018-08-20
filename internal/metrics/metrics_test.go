@@ -16,6 +16,7 @@ package metrics
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/prometheus/client_model/go"
 
@@ -27,7 +28,57 @@ type testMetric struct {
 	want   []*io_prometheus_client.Metric
 }
 
-func TestWriteMetric(t *testing.T) {
+func TestWriteDAGTimestampMetric(t *testing.T) {
+	tests := map[string]struct {
+		timestampMetric testMetric
+		value           int64
+	}{
+		"simple": {
+			value: time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC).Unix(),
+			timestampMetric: testMetric{
+				metric: IngressRouteDAGRebuildGauge,
+				want: []*io_prometheus_client.Metric{
+					{
+						Gauge: &io_prometheus_client.Gauge{
+							Value: func() *float64 { i := float64(1.258490098e+09); return &i }(),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			r := prometheus.NewRegistry()
+			m := NewMetrics(r)
+			m.SetDAGRebuiltMetric(tc.value)
+
+			gatherers := prometheus.Gatherers{
+				r,
+				prometheus.DefaultGatherer,
+			}
+
+			gathering, err := gatherers.Gather()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			gotTimestamp := []*io_prometheus_client.Metric{}
+			for _, mf := range gathering {
+				if mf.GetName() == tc.timestampMetric.metric {
+					gotTimestamp = mf.Metric
+				}
+			}
+
+			if !reflect.DeepEqual(gotTimestamp, tc.timestampMetric.want) {
+				t.Fatalf("write metric timestamp metric failed, want: %v got: %v", tc.timestampMetric.want, gotTimestamp)
+			}
+		})
+	}
+}
+
+func TestWriteIngressRouteMetric(t *testing.T) {
 	tests := map[string]struct {
 		irMetrics IngressRouteMetric
 		total     testMetric

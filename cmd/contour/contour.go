@@ -85,10 +85,27 @@ func main() {
 		FieldLogger: log.WithField("context", "CacheHandler"),
 	}
 
+	metricsvc := metrics.Service{
+		Service: httpsvc.Service{
+			FieldLogger: log.WithField("context", "metricsvc"),
+		},
+	}
+
+	registry := prometheus.NewRegistry()
+	metricsvc.Registry = registry
+
+	// register detault process / go collectors
+	registry.MustRegister(prometheus.NewProcessCollector(os.Getpid(), ""))
+	registry.MustRegister(prometheus.NewGoCollector())
+
+	// register our custom metrics
+	metrics := metrics.NewMetrics(registry)
+
 	reh := contour.ResourceEventHandler{
 		Notifier: &contour.HoldoffNotifier{
 			Notifier:    &ch,
 			FieldLogger: log.WithField("context", "HoldoffNotifier"),
+			Metrics:     metrics,
 		},
 	}
 
@@ -104,12 +121,6 @@ func main() {
 
 	serve.Flag("debug-http-address", "address the debug http endpoint will bind too").Default("127.0.0.1").StringVar(&debugsvc.Addr)
 	serve.Flag("debug-http-port", "port the debug http endpoint will bind too").Default("6060").IntVar(&debugsvc.Port)
-
-	metricsvc := metrics.Service{
-		Service: httpsvc.Service{
-			FieldLogger: log.WithField("context", "metricsvc"),
-		},
-	}
 
 	serve.Flag("http-address", "address the metrics http endpoint will bind too").Default("0.0.0.0").StringVar(&metricsvc.Addr)
 	serve.Flag("http-port", "port the metrics http endpoint will bind too").Default("8000").IntVar(&metricsvc.Port)
@@ -172,15 +183,6 @@ func main() {
 		}
 		k8s.WatchEndpoints(&g, client, wl, et)
 
-		registry := prometheus.NewRegistry()
-		metricsvc.Registry = registry
-
-		// register detault process / go collectors
-		registry.MustRegister(prometheus.NewProcessCollector(os.Getpid(), ""))
-		registry.MustRegister(prometheus.NewGoCollector())
-
-		// register our custom metrics
-		metrics := metrics.NewMetrics(registry)
 		ch.Metrics = metrics
 		reh.Metrics = metrics
 

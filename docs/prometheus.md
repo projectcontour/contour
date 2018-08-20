@@ -45,3 +45,21 @@ Prometheus needs a configuration block that looks like this:
 The main difference from the [official Prometheus Kubernetes sample config](https://github.com/prometheus/prometheus/blob/master/documentation/examples/prometheus-kubernetes.yml)
 is the added interpretation of the `__meta_kubernetes_pod_annotation_prometheus_io_format` label, because Envoy
 currently requires a [`format=prometheus` url parameter to return the stats in Prometheus format.](https://github.com/envoyproxy/envoy/issues/2182)
+
+## Metrics
+
+Metrics are essential to any system. Contour will expose a `/metrics` Prometheus endpoint with the following metrics:
+
+- **contour_ingressroute_total (gauge):** Total number of IngressRoutes objects that exist regardless of status (i.e. Valid / Invalid / Orphaned, etc). This metric should match the sum of `Orphaned` + `Valid` + `Invalid` IngressRoutes.
+  - namespace
+- **contour_ingressroute_orphaned_total (gauge):**  Number of `Orphaned` IngressRoute objects which have no root delegating to them
+  - namespace
+- **contour_ingressroute_root_total (gauge):**  Number of `Root` IngressRoute objects (Note: There will only be a single `Root` IngressRoute per vhost)
+  - namespace
+- **contour_ingressroute_valid_total (gauge):**  Number of `Valid` IngressRoute objects
+  - namespace
+  - vhost
+- **contour_ingressroute_invalid_total (gauge):**  Number of `Invalid` IngressRoute objects
+  - namespace
+  - vhost
+- **contour_ingressroute_dagrebuild_timestamp (gauge):** Timestamp of the last DAG rebuild
