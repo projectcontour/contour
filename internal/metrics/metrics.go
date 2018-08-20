@@ -24,11 +24,12 @@ import (
 
 // Metrics provide Prometheus metrics for the app
 type Metrics struct {
-	ingressRouteTotalGauge     *prometheus.GaugeVec
-	ingressRouteRootTotalGauge *prometheus.GaugeVec
-	ingressRouteInvalidGauge   *prometheus.GaugeVec
-	ingressRouteValidGauge     *prometheus.GaugeVec
-	ingressRouteOrphanedGauge  *prometheus.GaugeVec
+	ingressRouteTotalGauge      *prometheus.GaugeVec
+	ingressRouteRootTotalGauge  *prometheus.GaugeVec
+	ingressRouteInvalidGauge    *prometheus.GaugeVec
+	ingressRouteValidGauge      *prometheus.GaugeVec
+	ingressRouteOrphanedGauge   *prometheus.GaugeVec
+	ingressRouteDAGRebuildGauge *prometheus.GaugeVec
 
 	CacheHandlerOnUpdateSummary prometheus.Summary
 	ResourceEventHandlerSummary *prometheus.SummaryVec
@@ -52,11 +53,12 @@ type Meta struct {
 }
 
 const (
-	IngressRouteTotalGauge     = "contour_ingressroute_total"
-	IngressRouteRootTotalGauge = "contour_ingressroute_root_total"
-	IngressRouteInvalidGauge   = "contour_ingressroute_invalid_total"
-	IngressRouteValidGauge     = "contour_ingressroute_valid_total"
-	IngressRouteOrphanedGauge  = "contour_ingressroute_orphaned_total"
+	IngressRouteTotalGauge      = "contour_ingressroute_total"
+	IngressRouteRootTotalGauge  = "contour_ingressroute_root_total"
+	IngressRouteInvalidGauge    = "contour_ingressroute_invalid_total"
+	IngressRouteValidGauge      = "contour_ingressroute_valid_total"
+	IngressRouteOrphanedGauge   = "contour_ingressroute_orphaned_total"
+	IngressRouteDAGRebuildGauge = "contour_ingressroute_dagrebuild_timestamp"
 
 	cacheHandlerOnUpdateSummary = "contour_cachehandler_onupdate_duration_seconds"
 	resourceEventHandlerSummary = "contour_resourceeventhandler_duration_seconds"
@@ -102,6 +104,13 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 			},
 			[]string{"namespace"},
 		),
+		ingressRouteDAGRebuildGauge: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: IngressRouteDAGRebuildGauge,
+				Help: "Timestamp of the last DAG rebuild",
+			},
+			[]string{},
+		),
 		CacheHandlerOnUpdateSummary: prometheus.NewSummary(prometheus.SummaryOpts{
 			Name:       cacheHandlerOnUpdateSummary,
 			Help:       "Histogram for the runtime of xDS cache regeneration",
@@ -127,9 +136,15 @@ func (m *Metrics) register(registry *prometheus.Registry) {
 		m.ingressRouteInvalidGauge,
 		m.ingressRouteValidGauge,
 		m.ingressRouteOrphanedGauge,
+		m.ingressRouteDAGRebuildGauge,
 		m.CacheHandlerOnUpdateSummary,
 		m.ResourceEventHandlerSummary,
 	)
+}
+
+// SetDAGRebuiltMetric records the last time the DAG was rebuilt
+func (m *Metrics) SetDAGRebuiltMetric(timestamp int64) {
+	m.ingressRouteDAGRebuildGauge.WithLabelValues().Set(float64(timestamp))
 }
 
 // SetIngressRouteMetric sets metric values for a set of IngressRoutes

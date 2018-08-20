@@ -374,6 +374,7 @@ Metrics are essential to any system. Contour will expose a `/metrics` Prometheus
 - **contour_ingressroute_invalid_total (gauge):**  Number of `Invalid` IngressRoute objects
   - namespace
   - vhost
+- **contour_ingressroute_dagrebuild_timestamp (gauge):** Timestamp of the last DAG rebuild
 
 ## Envoy Metrics
 
