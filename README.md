@@ -15,6 +15,8 @@ And see [the launch blog post][17] for our vision of how Contour fits into the l
 
 Contour is tested with Kubernetes clusters running version 1.7 and later, but should work with earlier versions.
 
+RBAC must be enabled on your cluster.
+
 ## Get started
 
 You can try out Contour by creating a deployment from a hosted manifest -- no clone or local install necessary.
@@ -32,12 +34,6 @@ Run:
 
 ```
 $ kubectl apply -f https://j.hept.io/contour-deployment-rbac
-```
-
-If RBAC isn't enabled on your cluster (for example, if you're on GKE with legacy authorization), run:
-
-```
-$ kubectl apply -f https://j.hept.io/contour-deployment-norbac
 ```
 
 This command creates:
