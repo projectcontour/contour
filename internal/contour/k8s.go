@@ -17,6 +17,8 @@
 package contour
 
 import (
+	"reflect"
+
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
@@ -70,11 +72,14 @@ func (reh *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 		// to remove the old object and _not_ insert the new object.
 		reh.OnDelete(oldObj)
 	default:
-		timer := prometheus.NewTimer(reh.ResourceEventHandlerSummary.With(prometheus.Labels{"op": "OnUpdate"}))
-		defer timer.ObserveDuration()
-		reh.Remove(oldObj)
-		reh.Insert(newObj)
-		reh.update()
+		// Only update if the old and new are different
+		if !reflect.DeepEqual(oldObj, newObj) {
+			timer := prometheus.NewTimer(reh.ResourceEventHandlerSummary.With(prometheus.Labels{"op": "OnUpdate"}))
+			defer timer.ObserveDuration()
+			reh.Remove(oldObj)
+			reh.Insert(newObj)
+			reh.update()
+		}
 	}
 }
 
