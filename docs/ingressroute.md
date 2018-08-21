@@ -192,30 +192,6 @@ spec:
           port: 80
 ```
 
-#### Domain Aliases (Not supported in beta.1)
-
-A single IngressRoute can define the routing configuration for a root domain and zero or more domain aliases.
-This allows for sharing of configuration across multiple domains (e.g. `foo.com`, `www.foo.com`, and `bar.com`).
-
-```yaml
-# domain-aliases.ingressroute.yaml
-apiVersion: contour.heptio.com/v1beta1
-kind: IngressRoute
-metadata: 
-  name: domain-aliases
-  namespace: default
-spec: 
-  virtualhost:
-    fqdn: bar.com
-    aliases:
-      - www.bar.com
-  routes: 
-    - match: /
-      services: 
-        - name: s1
-          port: 80
-```
-
 #### TLS
 
 IngressRoutes follow a similar pattern to Ingress for configuring TLS credentials.
@@ -604,6 +580,54 @@ spec:
       services:
         - name: blog
           port: 80
+```
+
+### Virtualhost aliases
+
+To present the same set of routes under multiple dns entries, for example www.example.com and example.com, delegation of the root route, `/` can be used.
+
+```yaml
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata:
+  name: www-example-com
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: www.example.com
+  routes:
+    - match: /
+      delegate:
+        name: example-root
+---
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata:
+  name: example-com
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: example.com
+  routes:
+    - match: /
+      delegate:
+        name: example-root
+---
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata:
+  name: example-root
+  namespace: default
+spec:
+  routes:
+    - match: /
+      services:
+        - name: example-service
+          port: 8080
+    - match: /static
+      services:
+        - name: example-static
+          port: 8080
 ```
 
 ### Across namespaces

@@ -366,17 +366,12 @@ func (b *builder) compute() *DAG {
 			continue
 		}
 
-		// lookup vhost to populate its aliases
-		vhost := b.lookupVirtualHost(host, 80)
-		vhost.aliases = ir.Spec.VirtualHost.Aliases
-
 		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
 			// attach secrets to TLS enabled vhosts
 			m := meta{name: tls.SecretName, namespace: ir.Namespace}
 			if sec := b.lookupSecret(m); sec != nil {
 				svhost := b.lookupSecureVirtualHost(host, 443)
 				svhost.secret = sec
-				svhost.aliases = ir.Spec.VirtualHost.Aliases
 				// process min protocol version
 				switch ir.Spec.VirtualHost.TLS.MinimumProtocolVersion {
 				case "1.3":

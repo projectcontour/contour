@@ -793,32 +793,6 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	ir11 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-com",
-			Namespace: "default",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "example.com",
-				Aliases: []string{
-					"foo.com",
-					"bar.com",
-				},
-				TLS: &ingressroutev1.TLS{
-					SecretName: "secret",
-				},
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: "kuard",
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-
 	// ir12 disables HTTP access
 	ir12 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1727,55 +1701,6 @@ func TestDAGInsert(t *testing.T) {
 					),
 				}},
 		},
-		"insert ingressroute with aliases": {
-			objs: []interface{}{
-				ir11, sec1, s1,
-			},
-			want: []Vertex{
-				&VirtualHost{
-					Port: 80,
-					host: "example.com",
-					aliases: []string{
-						"foo.com",
-						"bar.com",
-					},
-					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: ir11,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
-					),
-				}, &SecureVirtualHost{
-					Port:            443,
-					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					host:            "example.com",
-					aliases: []string{
-						"foo.com",
-						"bar.com",
-					},
-					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: ir11,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-						},
-					),
-					secret: &Secret{
-						object: sec1,
-					},
-				}},
-		},
 		"insert ingressroute and service": {
 			objs: []interface{}{
 				ir1, s1,
@@ -2550,7 +2475,6 @@ func TestDAGRemove(t *testing.T) {
 		},
 	}
 
-	// ir4 contains two vhosts which point to the same service
 	ir4 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "two-vhosts",
@@ -2558,8 +2482,7 @@ func TestDAGRemove(t *testing.T) {
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn:    "b.example.com",
-				Aliases: []string{"a.example.com"},
+				Fqdn: "b.example.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match:    "/",
@@ -3107,11 +3030,11 @@ func TestDAGRemove(t *testing.T) {
 }
 
 func (v *VirtualHost) String() string {
-	return fmt.Sprintf("host: %v:%d {routes: %v, aliases: %#v}", v.FQDN(), v.Port, v.routes, v.aliases)
+	return fmt.Sprintf("host: %v:%d {routes: %v}", v.FQDN(), v.Port, v.routes)
 }
 
 func (s *SecureVirtualHost) String() string {
-	return fmt.Sprintf("secure host: %v:%d {routes: %v, secret: %v, aliases: %#v}", s.FQDN(), s.Port, s.routes, s.secret, s.aliases)
+	return fmt.Sprintf("secure host: %v:%d {routes: %v, secret: %v}", s.FQDN(), s.Port, s.routes, s.secret)
 }
 
 func (r *Route) String() string {
