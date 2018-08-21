@@ -1252,12 +1252,14 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 				&SecureVirtualHost{
-					Port:            443,
+					VirtualHost: VirtualHost{
+						Port: 443,
+						host: "kuard.example.com",
+						routes: routemap(
+							route("/", i3),
+						),
+					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					host:            "kuard.example.com",
-					routes: routemap(
-						route("/", i3),
-					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -1278,12 +1280,14 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 				&SecureVirtualHost{
-					Port:            443,
+					VirtualHost: VirtualHost{
+						Port: 443,
+						host: "kuard.example.com",
+						routes: routemap(
+							route("/", i3),
+						),
+					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					host:            "kuard.example.com",
-					routes: routemap(
-						route("/", i3),
-					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -1406,17 +1410,19 @@ func TestDAGInsert(t *testing.T) {
 						)),
 					),
 				}, &SecureVirtualHost{
-					Port:            443,
+					VirtualHost: VirtualHost{
+						Port: 443,
+						host: "b.example.com",
+						routes: routemap(
+							route("/", i6, servicemap(
+								&Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+								},
+							)),
+						),
+					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					host:            "b.example.com",
-					routes: routemap(
-						route("/", i6, servicemap(
-							&Service{
-								Object:      s1,
-								ServicePort: &s1.Spec.Ports[0],
-							},
-						)),
-					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -1453,17 +1459,19 @@ func TestDAGInsert(t *testing.T) {
 						)),
 					),
 				}, &SecureVirtualHost{
-					Port:            443,
+					VirtualHost: VirtualHost{
+						Port: 443,
+						host: "b.example.com",
+						routes: routemap(
+							route("/", i6, servicemap(
+								&Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+								},
+							)),
+						),
+					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					host:            "b.example.com",
-					routes: routemap(
-						route("/", i6, servicemap(
-							&Service{
-								Object:      s1,
-								ServicePort: &s1.Spec.Ports[0],
-							},
-						)),
-					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -1550,23 +1558,25 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&SecureVirtualHost{
-					Port:            443,
+					VirtualHost: VirtualHost{
+						Port: 443,
+						host: "b.example.com",
+						routes: routemap(
+							route("/", i9, servicemap(
+								&Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+								},
+							)),
+							route("/kuarder", i9, servicemap(
+								&Service{
+									Object:      s2,
+									ServicePort: &s2.Spec.Ports[0],
+								},
+							)),
+						),
+					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					host:            "b.example.com",
-					routes: routemap(
-						route("/", i9, servicemap(
-							&Service{
-								Object:      s1,
-								ServicePort: &s1.Spec.Ports[0],
-							},
-						)),
-						route("/kuarder", i9, servicemap(
-							&Service{
-								Object:      s2,
-								ServicePort: &s2.Spec.Ports[0],
-							},
-						)),
-					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -1597,17 +1607,19 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: []Vertex{
 				&SecureVirtualHost{
-					Port:            443,
+					VirtualHost: VirtualHost{
+						Port: 443,
+						host: "b.example.com",
+						routes: routemap(
+							route("/", i6a, servicemap(
+								&Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+								},
+							)),
+						),
+					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					host:            "b.example.com",
-					routes: routemap(
-						route("/", i6a, servicemap(
-							&Service{
-								Object:      s1,
-								ServicePort: &s1.Spec.Ports[0],
-							},
-						)),
-					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -1637,22 +1649,24 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 				&SecureVirtualHost{
-					Port:            443,
+					VirtualHost: VirtualHost{
+						Port: 443,
+						host: "b.example.com",
+						routes: routemap(
+							&Route{
+								path:   "/",
+								Object: i6b,
+								services: servicemap(
+									&Service{
+										Object:      s1,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								),
+								HTTPSUpgrade: true,
+							},
+						),
+					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					host:            "b.example.com",
-					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i6b,
-							services: servicemap(
-								&Service{
-									Object:      s1,
-									ServicePort: &s1.Spec.Ports[0],
-								},
-							),
-							HTTPSUpgrade: true,
-						},
-					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -1737,17 +1751,19 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 				&SecureVirtualHost{
-					Port:            443,
+					VirtualHost: VirtualHost{
+						Port: 443,
+						host: "foo.com",
+						routes: routemap(
+							route("/", ir6, servicemap(
+								&Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+								},
+							)),
+						),
+					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					host:            "foo.com",
-					routes: routemap(
-						route("/", ir6, servicemap(
-							&Service{
-								Object:      s1,
-								ServicePort: &s1.Spec.Ports[0],
-							},
-						)),
-					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -1771,17 +1787,19 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 				&SecureVirtualHost{
-					Port:            443,
+					VirtualHost: VirtualHost{
+						Port: 443,
+						host: "foo.com",
+						routes: routemap(
+							route("/", ir7, servicemap(
+								&Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+								},
+							)),
+						),
+					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_2,
-					host:            "foo.com",
-					routes: routemap(
-						route("/", ir7, servicemap(
-							&Service{
-								Object:      s1,
-								ServicePort: &s1.Spec.Ports[0],
-							},
-						)),
-					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -1805,17 +1823,19 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 				&SecureVirtualHost{
-					Port:            443,
+					VirtualHost: VirtualHost{
+						Port: 443,
+						host: "foo.com",
+						routes: routemap(
+							route("/", ir8, servicemap(
+								&Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+								},
+							)),
+						),
+					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_3,
-					host:            "foo.com",
-					routes: routemap(
-						route("/", ir8, servicemap(
-							&Service{
-								Object:      s1,
-								ServicePort: &s1.Spec.Ports[0],
-							},
-						)),
-					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -1839,17 +1859,19 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 				&SecureVirtualHost{
-					Port:            443,
+					VirtualHost: VirtualHost{
+						Port: 443,
+						host: "foo.com",
+						routes: routemap(
+							route("/", ir9, servicemap(
+								&Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+								},
+							)),
+						),
+					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					host:            "foo.com",
-					routes: routemap(
-						route("/", ir9, servicemap(
-							&Service{
-								Object:      s1,
-								ServicePort: &s1.Spec.Ports[0],
-							},
-						)),
-					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -1915,17 +1937,19 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 				&SecureVirtualHost{
-					Port:            443,
+					VirtualHost: VirtualHost{
+						Port: 443,
+						host: "b.example.com",
+						routes: routemap(
+							route("/", i10, servicemap(
+								&Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+								},
+							)),
+						),
+					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_3,
-					host:            "b.example.com",
-					routes: routemap(
-						route("/", i10, servicemap(
-							&Service{
-								Object:      s1,
-								ServicePort: &s1.Spec.Ports[0],
-							},
-						)),
-					),
 					secret: &Secret{
 						object: sec1,
 					},
@@ -2092,28 +2116,30 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 				&SecureVirtualHost{
-					Port:            443,
-					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					host:            "example.com",
-					routes: routemap(
-						&Route{
-							path:   "/",
-							Object: i13a,
-							services: servicemap(
-								&Service{
-									Object:      s13a,
-									ServicePort: &s13a.Spec.Ports[0],
-								},
-							),
-							HTTPSUpgrade: true,
-						},
-						route("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", i13b, servicemap(
-							&Service{
-								Object:      s13b,
-								ServicePort: &s13b.Spec.Ports[0],
+					VirtualHost: VirtualHost{
+						Port: 443,
+						host: "example.com",
+						routes: routemap(
+							&Route{
+								path:   "/",
+								Object: i13a,
+								services: servicemap(
+									&Service{
+										Object:      s13a,
+										ServicePort: &s13a.Spec.Ports[0],
+									},
+								),
+								HTTPSUpgrade: true,
 							},
-						)),
-					),
+							route("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", i13b, servicemap(
+								&Service{
+									Object:      s13b,
+									ServicePort: &s13b.Spec.Ports[0],
+								},
+							)),
+						),
+					},
+					MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					secret: &Secret{
 						object: sec13,
 					},
@@ -2796,12 +2822,14 @@ func TestDAGRemove(t *testing.T) {
 					),
 				},
 				&SecureVirtualHost{
-					Port:            443,
+					VirtualHost: VirtualHost{
+						Port: 443,
+						host: "b.example.com",
+						routes: routemap(
+							route("/", i6),
+						),
+					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					host:            "b.example.com",
-					routes: routemap(
-						route("/", i6),
-					),
 					secret: &Secret{
 						object: sec1,
 					},
