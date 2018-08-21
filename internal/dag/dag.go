@@ -92,9 +92,8 @@ type VirtualHost struct {
 	// if the VirtualHost is generated inside Contour.
 	Port int
 
-	host    string
-	aliases []string
-	routes  map[string]*Route
+	host   string
+	routes map[string]*Route
 }
 
 func (v *VirtualHost) addRoute(route *Route) {
@@ -105,8 +104,6 @@ func (v *VirtualHost) addRoute(route *Route) {
 }
 
 func (v *VirtualHost) FQDN() string { return v.host }
-
-func (v *VirtualHost) Aliases() []string { return v.aliases }
 
 func (v *VirtualHost) Visit(f func(Vertex)) {
 	for _, r := range v.routes {
@@ -124,10 +121,9 @@ type SecureVirtualHost struct {
 	// TLS minimum protocol version. Defaults to auth.TlsParameters_TLS_AUTO
 	MinProtoVersion auth.TlsParameters_TlsProtocol
 
-	host    string
-	aliases []string
-	routes  map[string]*Route
-	secret  *Secret
+	host   string
+	routes map[string]*Route
+	secret *Secret
 }
 
 func (s *SecureVirtualHost) addRoute(route *Route) {
@@ -145,8 +141,6 @@ func (s *SecureVirtualHost) Data() map[string][]byte {
 }
 
 func (s *SecureVirtualHost) FQDN() string { return s.host }
-
-func (s *SecureVirtualHost) Aliases() []string { return s.aliases }
 
 func (s *SecureVirtualHost) Visit(f func(Vertex)) {
 	for _, r := range s.routes {
