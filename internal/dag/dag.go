@@ -113,24 +113,12 @@ func (v *VirtualHost) Visit(f func(Vertex)) {
 
 // A SecureVirtualHost represents a HTTP host protected by TLS.
 type SecureVirtualHost struct {
-	// Port is the port that the VirtualHost will listen on.
-	// Expected values are 80 and 443, but others are possible
-	// if the VirtualHost is generated inside Contour.
-	Port int
+	VirtualHost
 
 	// TLS minimum protocol version. Defaults to auth.TlsParameters_TLS_AUTO
 	MinProtoVersion auth.TlsParameters_TlsProtocol
 
-	host   string
-	routes map[string]*Route
 	secret *Secret
-}
-
-func (s *SecureVirtualHost) addRoute(route *Route) {
-	if s.routes == nil {
-		s.routes = make(map[string]*Route)
-	}
-	s.routes[route.path] = route
 }
 
 func (s *SecureVirtualHost) Data() map[string][]byte {
@@ -140,12 +128,8 @@ func (s *SecureVirtualHost) Data() map[string][]byte {
 	return s.secret.Data()
 }
 
-func (s *SecureVirtualHost) FQDN() string { return s.host }
-
 func (s *SecureVirtualHost) Visit(f func(Vertex)) {
-	for _, r := range s.routes {
-		f(r)
-	}
+	s.VirtualHost.Visit(f)
 	f(s.secret)
 }
 
