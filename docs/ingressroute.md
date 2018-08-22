@@ -291,6 +291,7 @@ spec:
         - name: s1
           port: 80
     - match: /blog # matches `multi-path.bar.com/blog` or `multi-path.bar.com/blog/*`
+      services:
         - name: s2
           port: 80
 ```
