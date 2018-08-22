@@ -873,9 +873,9 @@ func TestLDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 	}, streamLDS(t, cc))
 }
 
-func TestIngressRouteHTTPNotAllowed(t *testing.T) {
+func TestIngressRouteHTTPS(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
-		reh.IngressRouteRootNamespaces = []string{"roots"}
+		reh.IngressRouteRootNamespaces = []string{}
 		reh.Notifier.(*contour.CacheHandler).IngressRouteStatus = &k8s.IngressRouteStatus{
 			Client: fake.NewSimpleClientset(),
 		}
@@ -890,7 +890,19 @@ func TestIngressRouteHTTPNotAllowed(t *testing.T) {
 		Nonce:       "0",
 	}, streamLDS(t, cc))
 
-	// ir1 is an ingressroute that does not allow HTTP access
+	// s1 is a tls secret
+	s1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	}
+
+	// ir1 is an ingressroute that has TLS
 	ir1 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
@@ -898,8 +910,10 @@ func TestIngressRouteHTTPNotAllowed(t *testing.T) {
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn:      "example.com",
-				HTTPSOnly: true,
+				Fqdn: "example.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName: "secret",
+				},
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
@@ -911,15 +925,35 @@ func TestIngressRouteHTTPNotAllowed(t *testing.T) {
 		},
 	}
 
+	// add secret
+	rh.OnAdd(s1)
+
 	// add ingressroute
 	rh.OnAdd(ir1)
 
-	// assert that there are no active listeners
+	ingressHTTP := &v2.Listener{
+		Name:    "ingress_http",
+		Address: socketaddress("0.0.0.0", 8080),
+		FilterChains: []listener.FilterChain{
+			filterchain(false, httpfilter("ingress_http")),
+		},
+	}
+
+	ingressHTTPS := &v2.Listener{
+		Name:    "ingress_https",
+		Address: socketaddress("0.0.0.0", 8443),
+		FilterChains: []listener.FilterChain{
+			filterchaintls([]string{"example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
+		},
+	}
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources:   []types.Any{},
-		TypeUrl:     listenerType,
-		Nonce:       "0",
+		Resources: []types.Any{
+			any(t, ingressHTTP),
+			any(t, ingressHTTPS),
+		},
+		TypeUrl: listenerType,
+		Nonce:   "0",
 	}, streamLDS(t, cc))
 }
 
