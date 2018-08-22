@@ -242,28 +242,6 @@ The TLS **Minimum Protocol Version** a vhost should negotiate can be specified b
   - 1.2
   - 1.1 (Default)
 
-#### Disable HTTP
-
-IngressRoutes support disabling HTTP at the VHost level, so that the listener is only exposed over HTTPS. This is achieved by setting the `httpsOnly` field to `true`.
-
-This functionality is equivalent to the `kubernetes.io/ingress.allow-http: false` annotation supported in the Ingress resource.
-
-```yaml
-apiVersion: contour.heptio.com/v1beta1
-kind: IngressRoute
-metadata:
-  name: disableHttp
-spec:
-  virtualhost:
-    fqdn: foo-basic.bar.com
-    httpsOnly: true
-  routes:
-    - match: /
-      services:
-        - name: s1
-          port: 80
-```
-
 ### Routing
 
 Each route entry in an IngressRoute must start with a prefix match.
@@ -519,6 +497,26 @@ spec:
       enableWebsockets: true # Setting this to true enables websocket for all paths that match /websocket
       services:
         - name: chat-app
+          port: 80
+```
+
+#### Permit Insecure
+
+IngressRoutes support allowing HTTP alongside HTTPS. This way, the path responds to insecure requests over HTTP which are normally not permitted when a `virtualhost.tls` block is present.
+
+```yaml
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata:
+  name: permit-insecure
+spec:
+  virtualhost:
+    fqdn: foo-basic.bar.com
+  routes:
+    - match: /
+      permitInsecure: true
+      services:
+        - name: s1
           port: 80
 ```
 
