@@ -1,0 +1,26 @@
+---
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata: 
+  name: multiple-root
+spec:
+  virtualhost:
+    fqdn: bar.com
+  routes: 
+# delegate the subpath, `/` to the IngressRoute object in the marketing namespace with the name `main`
+    - match: /
+      delegate:
+        name: main
+---
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata: 
+  name: multiple-root-www
+spec:
+  virtualhost:
+    fqdn: www.bar.com
+  routes: 
+# delegate the subpath, `/` to the IngressRoute object in the marketing namespace with the name `main`
+    - match: /
+      delegate:
+        name: main
