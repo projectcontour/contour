@@ -33,7 +33,7 @@ spec:
         - node0
         command:
         - envoy
-        image: docker.io/envoyproxy/envoy-alpine:v1.6.0
+        image: docker.io/envoyproxy/envoy-alpine:v1.7.0
         imagePullPolicy: IfNotPresent
         name: envoy
         ports:
@@ -67,7 +67,7 @@ spec:
         volumeMounts:
         - name: contour-config
           mountPath: /config
-      automountServiceAccountToken: false   
+      automountServiceAccountToken: false
       volumes:
         - name: contour-config
           emptyDir: {}
