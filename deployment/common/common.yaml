@@ -27,10 +27,6 @@ spec:
       type: string
       description: Fully qualified domain name
       JSONPath: .spec.virtualhost.fqdn
-    - name: Aliases
-      type: string
-      description: Fully qualified domain name
-      JSONPath: .spec.virtualhost.aliases
     - name: TLS Secret
       type: string
       description: Secret with TLS credentials
