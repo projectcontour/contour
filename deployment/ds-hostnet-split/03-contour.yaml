@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: contour
+  name: contour
+  namespace: heptio-contour
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: contour
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+      labels:
+        app: contour
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: contour
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      containers:
+      - args:
+        - serve
+        - --incluster
+        - --xds-address
+        - 0.0.0.0
+        - --xds-port
+        - $(CONTOUR_SERVICE_PORT)
+        - --envoy-http-port
+        - "80"
+        - --envoy-https-port
+        - "443"
+        command: ["contour"]
+        image: gcr.io/heptio-images/contour:v0.6.0-beta.3
+        imagePullPolicy: Always
+        name: contour
+        ports:
+        - containerPort: 8001
+          name: xds
+          protocol: TCP
+        - containerPort: 8000
+          name: debug
+          protocol: TCP
+      dnsPolicy: ClusterFirst
+      serviceAccountName: contour
