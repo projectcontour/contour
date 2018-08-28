@@ -198,8 +198,11 @@ IngressRoutes follow a similar pattern to Ingress for configuring TLS credential
 
 You can secure an IngressRoute by specifying a secret that contains a TLS private key and certificate.
 Currently, IngressRoutes only support a single TLS port, 443, and assume TLS termination.
-If the `virtualhost` section includes domain aliases, the certificate must include the necessary Subject Authority Name (SAN) for each alias.
+If multiple IngressRoute's utilize the same secret, then the certificate must include the necessary Subject Authority Name (SAN) for each fqdn.
 Contour (via Envoy) uses the SNI TLS extension to handle this behavior.
+
+Contour also follows a "secure first" approach. When TLS is enabled for a virtual host, any request to the insecure port is redirected to the secure interface with a 301 redirect.
+Specific routes can be configured to override this behavior and handle insecure requests by enabling the `spec.routes.permitInsecure` parameter on a Route.
 
 The TLS secret must contain keys named tls.crt and tls.key that contain the certificate and private key to use for TLS, e.g.:
 
@@ -237,10 +240,35 @@ spec:
           port: 80
 ```
 
-The TLS **Minimum Protocol Version** a vhost should negotiate can be specified by setting the spec.virtualhost.tls.minimumProtocolVersion:
+The TLS **Minimum Protocol Version** a vhost should negotiate can be specified by setting the `spec.virtualhost.tls.minimumProtocolVersion`:
   - 1.3
   - 1.2
   - 1.1 (Default)
+
+The IngressRoute can be configured to permit insecure requests to specific Routes. In this example, any request to `foo2.bar.com/blog` will not receive a 301 redirect to HTTPS, but the `/` route will:
+
+```yaml
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata: 
+  name: tls-example-insecure
+  namespace: default
+spec: 
+  virtualhost:
+    fqdn: foo2.bar.com
+    tls:
+      secretName: testsecret
+  routes: 
+    - match: /
+      services: 
+        - name: s1
+          port: 80
+    - match: /blog
+      services: 
+        - name: s2
+          port: 80
+          permitInsecure: true
+```
 
 ### Routing
 
@@ -528,7 +556,7 @@ A key feature of the IngressRoute specification is route delegation which follow
 > Any nameserver can hold a record for `app.heptio.com`, but without the linkage from the parent `heptio.com` nameserver, its information is unreachable and non authoritative.
 
 The "root" IngressRoute is the only entry point for an ingress virtual host and is used as the top level configuration of a cluster's ingress resources.
-Each root IngressRoute defines a `virtualhost` key, which describes properties such as the fully qualified name of the virtual host, any aliases of the virtual host (for example, a www. prefix), TLS configuration, etc.
+Each root IngressRoute defines a `virtualhost` key, which describes properties such as the fully qualified name of the virtual host, TLS configuration, etc.
 
 IngressRoutes that have been delegated to do not contain virtual host information, as they will inherit the properties of the parent IngressRoute.
 This permits the owner of an IngressRoute root to both delegate the authority to publish a service on a portion of the route space inside a virtual host, and to further delegate authority to publish and delegate.
