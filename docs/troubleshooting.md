@@ -39,6 +39,21 @@ CONTOUR_POD=$(kubectl -n heptio-contour get pod -l app=contour -o jsonpath='{.it
 kubectl -n heptio-contour port-forward $CONTOUR_POD 6060
 ```
 
+## Visualizing Contour's internal directed acyclic graph (DAG)
+
+Contour exposes a debug endpoint that outputs the DAG in [DOT](6) format. To visualize the graph, you must have [`graphviz`](7) installed on your system.
+
+To download the graph and save it as a PNG:
+
+```sh
+# Port forward into the contour pod
+CONTOUR_POD=$(kubectl -n heptio-contour get pod -l app=contour -o jsonpath='{.items[0].metadata.name}')
+# Do the port forward to that pod
+kubectl -n heptio-contour port-forward $CONTOUR_POD 6060
+# Download and store the DAG in png format
+curl localhost:6060/debug/dag | dot -T png > contour-dag.png
+```
+
 ## Interrogate Contour's gRPC API
 
 Sometimes it's helpful to be able to interrogate Contour to find out exactly the data it is sending to Envoy.
@@ -91,3 +106,5 @@ See [Issue #547][4]
 [3]: minikube.md
 [4]: https://github.com/heptio/contour/issues/547
 [5]: https://golang.org/pkg/net/http/pprof/
+[6]: https://en.wikipedia.org/wiki/DOT_(graph_description_language)
+[7]: https://graphviz.gitlab.io/
