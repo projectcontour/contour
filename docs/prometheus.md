@@ -1,15 +1,36 @@
 # Prometheus
 
-With Contour you can get metrics from Envoy. To do so you must expose the Envoy
-admin socket and configure the Prometheus service discovery correctly.
+Contour and Envoy expose metrics that can be scraped with Prometheus.
 
-Make the admin socket public:
+## Envoy Metrics
 
+Envoy typically exposes metrics through an endpoint on its admin interface. To
+avoid exposing the entire admin interface to Prometheus (and other workloads in
+the cluster), Contour configures a static listener that sends traffic to the
+stats endpoint and nowhere else.
+
+To enable the static listener, set the `--statsd-enabled` flag on the Contour
+`bootstrap` command that runs as an init container.
+
+### Configuration Prometheus
+
+The Envoy stats endpoint returns the metrics in statsd format by default. To get
+the metrics in Prometheus format, requests to the endpoint must be made with a
+URL parameter: `format=prometheus` ([This requirement will go away in a newer
+version of Envoy](https://github.com/envoyproxy/envoy/issues/2182)).
+
+Because of this Envoy requirement, the Prometheus scraping configuration must be
+tweaked to include the following:
+
+```yaml
+- source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_format]
+  action: replace
+  target_label: __param_format
+  regex: (.+)
 ```
-sed 's#"bootstrap", "/config/contour.yaml"#"bootstrap", "/config/contour.yaml", "--admin-address", "0.0.0.0"#g' <your-contour-deployment>.yaml
-```
 
-Prometheus needs a configuration block that looks like this:
+The following is the official Prometheus Kubernetes example configuration, with
+the addition of the tweak mentioned above:
 
 ```yaml
     - job_name: 'kubernetes-pods'
@@ -42,13 +63,9 @@ Prometheus needs a configuration block that looks like this:
         target_label: kubernetes_pod_name
 ```
 
-The main difference from the [official Prometheus Kubernetes sample config](https://github.com/prometheus/prometheus/blob/master/documentation/examples/prometheus-kubernetes.yml)
-is the added interpretation of the `__meta_kubernetes_pod_annotation_prometheus_io_format` label, because Envoy
-currently requires a [`format=prometheus` url parameter to return the stats in Prometheus format.](https://github.com/envoyproxy/envoy/issues/2182)
+## Contour Metrics
 
-## Metrics
-
-Metrics are essential to any system. Contour will expose a `/metrics` Prometheus endpoint with the following metrics:
+Contour exposes a Prometheus-compatible `/metrics` endpoint with the following metrics:
 
 - **contour_ingressroute_total (gauge):** Total number of IngressRoutes objects that exist regardless of status (i.e. Valid / Invalid / Orphaned, etc). This metric should match the sum of `Orphaned` + `Valid` + `Invalid` IngressRoutes.
   - namespace
