@@ -39,6 +39,27 @@ CONTOUR_POD=$(kubectl -n heptio-contour get pod -l app=contour -o jsonpath='{.it
 kubectl -n heptio-contour port-forward $CONTOUR_POD 6060
 ```
 
+## Visualizing Contour's internal directed acyclic graph (DAG)
+
+Contour models its configuration using a DAG, which can be visualized through a debug endpoint that outputs the DAG in [DOT][6] format. To visualize the graph, you must have [`graphviz`][7] installed on your system.
+
+To download the graph and save it as a PNG:
+
+```sh
+# Port forward into the contour pod
+CONTOUR_POD=$(kubectl -n heptio-contour get pod -l app=contour -o jsonpath='{.items[0].metadata.name}')
+# Do the port forward to that pod
+kubectl -n heptio-contour port-forward $CONTOUR_POD 6060
+# Download and store the DAG in png format
+curl localhost:6060/debug/dag | dot -T png > contour-dag.png
+```
+
+The following is an example of a DAG that maps `http://kuard.local:80/` to the
+`kuard` service in the `default` namespace:
+
+![Sample DAG](./dag-img/kuard-dag.png "Sample DAG")
+
+
 ## Interrogate Contour's gRPC API
 
 Sometimes it's helpful to be able to interrogate Contour to find out exactly the data it is sending to Envoy.
@@ -54,14 +75,6 @@ kubectl -n heptio-contour exec $CONTOUR_POD -c contour contour cli lds
 ```
 Which will stream changes to the LDS api endpoint to your terminal.
 Replace `contour cli lds` with `contour cli rds` for RDS, `contour cli cds` for CDS, and `contour cli eds` for EDS.
-
-## Can't make kube-lego work with Contour
-
-If you use [kube-lego][0] for Let's Encrypt SSL certificates, kube-lego appears to set the ingress class on the ingress record it uses for the acme-01 challenge to `nginx`.
-This setting causes Contour to ignore the record, and the challenge fails.
-
-The current workaround is to manually edit the ingress object created by kube-lego to remove the `kubernetes.io/ingress.class` annotation. Or you can set the value of the annotation to `contour`.
-If your topology allow it, you may configure Contour to catch `nginx` ingress class by overriding the default value with the `--ingress-class-name=nginx` flag in your Contour deployment.
 
 ## I've deployed on Minikube and nothing seems to work
 
@@ -91,3 +104,6 @@ See [Issue #547][4]
 [3]: minikube.md
 [4]: https://github.com/heptio/contour/issues/547
 [5]: https://golang.org/pkg/net/http/pprof/
+[6]: https://en.wikipedia.org/wiki/DOT_(graph_description_language)
+[7]: https://graphviz.gitlab.io/
+[8]: https://github.com/jetstack/cert-manager
