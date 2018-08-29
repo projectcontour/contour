@@ -7,13 +7,15 @@
 ## Overview
 Contour is an Ingress controller for Kubernetes that works by deploying the [Envoy proxy][13] as a reverse proxy and load balancer. Unlike other Ingress controllers, Contour supports dynamic configuration updates out of the box while maintaining a lightweight profile.
 
-This is an early release so that we can start sharing with the community. Check out [the roadmap][15] to see where we plan to go with the project.
+Contour also introduces a new ingress API ([IngressRoute][23]) which is implemented via a Custom Resource Definition (CRD). Its goal is to expand upon the functionality of the Ingress API to allow for a richer user experience as well as solve shortcomings in the original design.
 
-And see [the launch blog post][17] for our vision of how Contour fits into the larger Kubernetes ecosystem.
+Check out [the roadmap][15] to see where we plan to go with the project.
+
+Also see [the launch blog post][17] for our vision of how Contour fits into the larger Kubernetes ecosystem.
 
 ## Prerequisites
 
-Contour is tested with Kubernetes clusters running version 1.7 and later, but should work with earlier versions.
+Contour is tested with Kubernetes clusters running version 1.10 and later, but should work with earlier versions where Custom Resource Definitions are supported (Kubernetes 1.7+).
 
 RBAC must be enabled on your cluster.
 
@@ -77,7 +79,7 @@ How you configure DNS depends on your platform:
 
 For more deployment options, including uninstalling Contour, see the [deployment documentation][10].
 
-See also the Kubernetes documentation for [Services][11] and [Ingress][12].
+See also the Kubernetes documentation for [Services][11], [Ingress][12], and [IngressRoutes][23].
 
 The [detailed documentation][3] provides additional information, including an introduction to Envoy and an explanation of how Contour maps key Envoy concepts to Kubernetes.
 
@@ -94,6 +96,7 @@ Thanks for taking the time to join our community and start contributing!
 * Please familiarize yourself with the [Code of Conduct][8] before contributing.
 * See [CONTRIBUTING.md][5] for information about setting up your environment, the workflow that we expect, and instructions on the developer certificate of origin that we require.
 * Check out the [issues][4] and [our roadmap][15].
+* Read how [we're using ZenHub][24] for project and roadmap planning
 
 ## Changelog
 
@@ -121,3 +124,5 @@ See [the list of releases][6] to find out about feature changes.
 [20]: https://kubernetes.slack.com/messages/contour
 [21]: https://goreportcard.com/badge/github.com/heptio/contour
 [22]: https://goreportcard.com/report/github.com/heptio/contour
+[23]: /docs/ingressroute.md 
+[24]: /docs/zenhub.md 
