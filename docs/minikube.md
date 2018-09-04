@@ -7,25 +7,18 @@ This should be a preliminary exploration only.
 ## Access your cluster
 
 On Minikube you can retrieve the external address of Contour's load balancer:
-```
+
+```sh
 $ minikube service -n heptio-contour contour --url
 http://192.168.99.100:30588
 ```
 
-## Configuring DNS
+You can use curl to access IngressRoutes or Ingresses that specify a host match.
+For example, if you have configured an ingress point that matches `example.com`, you would use the following command:
 
-Because of known issues with how Minikube manages DNS, we recommend that you run the provided example so that you do not have to modify DNS on your local machine.
-Otherwise, you must fake DNS by editing `/etc/hosts`.
-
-## Deploy KUARD example application.
-
+```sh
+curl --header "Host: example.com" $(minikube service -n heptio-contour contour --url)
 ```
-$ kubectl apply -f https://j.hept.io/contour-kuard-ninikube-example
-```
-
-This example specifies `kuard.192.168.99.100.nip.io` as a specific ingress backend for kuard.
-It uses nip.io and the Minikube IP address so that kuard responds only at http://kuard.192.168.99.100.nip.io.
-Once that is applied you can visit http://kuard.192.168.99.100.nip.io and see the kuard example application.
 
 ## Troubleshooting
 
@@ -36,12 +29,16 @@ This causes Envoy to misroute the request because the domain name in the RDS vir
 The problem is the port Minikube chooses is not easily predictable, so it is not simply a matter of including various permutations of hostname:port in the virtualhost.domains array.
 
 ### Workarounds
+
 You can either force the `Host:` header with something like:
-```
+
+```sh
 curl -H "Host: example.com" -v http://example.com:31847
 ```
+
 Or run curl with an OSX-specific extension:
-```
+
+```sh
 curl -v --connect-to example.com:80:example.com:31847 http://example.com/
 ```
 
