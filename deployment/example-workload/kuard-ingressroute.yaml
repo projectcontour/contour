@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -34,45 +34,11 @@ spec:
   sessionAffinity: None
   type: ClusterIP
 ---
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  labels:
-    app: nginx
-  name: nginx
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: nginx
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - image:  nginx
-        name: nginx
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app: nginx
-  name: nginx
-spec:
-  ports:
-  - port: 80
-    protocol: TCP
-    targetPort: 80
-  selector:
-    app: nginx
-  sessionAffinity: None
-  type: ClusterIP
----
 apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 metadata: 
+  labels:
+    app: kuard
   name: kuard
   namespace: default
 spec: 
@@ -82,6 +48,4 @@ spec:
     - match: /
       services: 
         - name: kuard
-          port: 80
-        - name: nginx
           port: 80

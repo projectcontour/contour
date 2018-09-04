@@ -61,7 +61,7 @@ minikube service -n heptio-contour contour --url
 
 The response is always an IP address, for example `http://192.168.99.100:30588`.
 
-## Test
+## Test with Ingress
 
 The Contour repository contains an example deployment of the Kubernetes Up and Running demo application, [kuard][2].
 To test your Contour deployment, deploy `kuard` with the following command:
@@ -95,6 +95,43 @@ ing/kuard   *         10.0.0.47   80        4m
 
 In your browser, navigate your browser to the IP or DNS address of the Contour Service to interact with the demo application.
 
+## Test with IngressRoute
+
+To test your Contour deployment with [IngressRoutes][4], run the following command:
+
+```sh
+kubectl apply -f deployment/example-workload/kuard-ingressroute.yaml
+```
+
+Then monitor the progress of the deployment with:
+
+```sh
+kubectl get po,svc,ingressroute -l app=kuard
+```
+
+You should see something like:
+
+```sh
+NAME                        READY     STATUS    RESTARTS   AGE
+pod/kuard-bcc7bf7df-9hj8d   1/1       Running   0          1h
+pod/kuard-bcc7bf7df-bkbr5   1/1       Running   0          1h
+pod/kuard-bcc7bf7df-vkbtl   1/1       Running   0          1h
+
+NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+service/kuard   ClusterIP   10.102.239.168   <none>        80/TCP    1h
+
+NAME                                    CREATED AT
+ingressroute.contour.heptio.com/kuard   1h
+```
+
+... showing that there are three Pods, one Service, and one IngressRoute.
+
+In your terminal, use curl with the IP or DNS address of the Contour Service to send a request to the demo application:
+
+```sh
+curl -H 'Host: kuard.local' ${CONTOUR_IP}
+```
+
 ## Running without a Kubernetes LoadBalancer
 
 If you can't or don't want to use a Service of `type: LoadBalancer` there are two alternate ways to run Contour.
@@ -109,7 +146,7 @@ Now you can point your browser at the specified port on any node in your cluster
 
 You can run Contour without a Kubernetes Service at all.
 This is done by having the Contour pod run with host networking.
-Do this with with `hostNetwork: true` on your pod definition.
+Do this with `hostNetwork: true` on your pod definition.
 Envoy will listen directly on port 8080 on each host that it is running.
 This is best paired with a DaemonSet (perhaps paired with Node affinity) to ensure that a single instance of Contour runs on each Node.
 See the [AWS NLB tutorial][3] as an example.
@@ -132,3 +169,4 @@ To remove Contour from your cluster, delete the namespace:
 [1]: architecture.md
 [2]: https://github.com/kubernetes-up-and-running/kuard
 [3]: deploy-aws-nlb.md
+[4]: ingressroute.md
