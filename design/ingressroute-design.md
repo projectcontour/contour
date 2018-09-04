@@ -49,7 +49,7 @@ You can think of it as routing traffic to another ingress route for further proc
 This is an example of a fully populated root ingress route.
 
 ```yaml
-apiVersion: contour.heptio.com/v1alpha1
+apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 metadata:
   name: google
@@ -127,7 +127,7 @@ spec:
 This is an example of the `google-finance` object which has been delegated responsibility for paths starting with `/finance`.
 
 ```yaml
-apiVersion: contour.heptio.com/v1alpha1
+apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 metadata:
   name: google-finance
@@ -274,7 +274,7 @@ To publish a service in another namespace on a domain that you control, you must
 For example, the `kube-system/heptio` IngressRoute holds information about `heptio.com` but delegates the provision of the service to the `heptio-wordpress/wordpress` IngressRoute:
 
 ```yaml
-apiVersion: contour.heptio.com/v1alpha1
+apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 metadata:
   name: heptio 
@@ -291,7 +291,7 @@ spec:
       name: wordpress
       namespace: heptio-wordpress
 ---
-apiVersion: contour.heptio.com/v1alpha1
+apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 metadata:
   name: wordpress 
