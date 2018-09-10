@@ -135,7 +135,7 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 						return
 					}
 					rr := route.Route{
-						Match: prefixmatch(r.Prefix()),
+						Match: prefixmatch(r.Prefix),
 						Action: actionroute(
 							svcs,
 							r.Websocket,
@@ -181,7 +181,7 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 						return
 					}
 					vhost.Routes = append(vhost.Routes, route.Route{
-						Match: prefixmatch(r.Prefix()),
+						Match: prefixmatch(r.Prefix),
 						Action: actionroute(
 							svcs,
 							r.Websocket,

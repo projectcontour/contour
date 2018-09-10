@@ -49,8 +49,8 @@ func (d *DAG) Statuses() []Status {
 }
 
 type Route struct {
-	path     string
-	Object   interface{} // one of Ingress or IngressRoute
+	Prefix   string
+	object   interface{} // one of Ingress or IngressRoute
 	services map[servicemeta]*Service
 
 	// Should this route generate a 301 upgrade if accessed
@@ -67,8 +67,6 @@ type Route struct {
 	// TODO(dfc) should this move to service?
 	Timeout time.Duration
 }
-
-func (r *Route) Prefix() string { return r.path }
 
 func (r *Route) addService(s *Service, hc *ingressroutev1.HealthCheck, lbStrat string) {
 	if r.services == nil {
@@ -100,7 +98,7 @@ func (v *VirtualHost) addRoute(route *Route) {
 	if v.routes == nil {
 		v.routes = make(map[string]*Route)
 	}
-	v.routes[route.path] = route
+	v.routes[route.Prefix] = route
 }
 
 func (v *VirtualHost) Visit(f func(Vertex)) {
