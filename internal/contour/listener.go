@@ -219,7 +219,7 @@ func (v *listenerVisitor) Visit() map[string]*v2.Listener {
 			}
 			fc := listener.FilterChain{
 				FilterChainMatch: &listener.FilterChainMatch{
-					SniDomains: []string{vh.FQDN()},
+					SniDomains: []string{vh.Host},
 				},
 				TlsContext: tlscontext(data, vh.MinProtoVersion, "h2", "http/1.1"),
 				Filters:    filters,

@@ -223,8 +223,8 @@ func (b *builder) lookupVirtualHost(host string, port int) *VirtualHost {
 	vh, ok := b.vhosts[hp]
 	if !ok {
 		vh = &VirtualHost{
+			Host: host,
 			Port: port,
-			host: host,
 		}
 		if b.vhosts == nil {
 			b.vhosts = make(map[hostport]*VirtualHost)
@@ -240,8 +240,8 @@ func (b *builder) lookupSecureVirtualHost(host string, port int) *SecureVirtualH
 	if !ok {
 		svh = &SecureVirtualHost{
 			VirtualHost: VirtualHost{
+				Host: host,
 				Port: port,
-				host: host,
 			},
 		}
 		if b.svhosts == nil {
