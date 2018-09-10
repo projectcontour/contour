@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -297,14 +298,22 @@ func (b *builder) compute() *DAG {
 		// compute timeout for any routes on this ingress
 		timeout := parseAnnotationTimeout(ing.Annotations, annotationRequestTimeout)
 
+		var perTryTimeout time.Duration
+		if val, ok := ing.Annotations[annotationPerTryTimeout]; ok {
+			perTryTimeout, _ = time.ParseDuration(val)
+		}
+
 		if ing.Spec.Backend != nil {
 			// handle the annoying default ingress
 			r := &Route{
-				Prefix:       "/",
-				object:       ing,
-				HTTPSUpgrade: tlsRequired(ing),
-				Websocket:    wr["/"],
-				Timeout:      timeout,
+				Prefix:        "/",
+				object:        ing,
+				HTTPSUpgrade:  tlsRequired(ing),
+				Websocket:     wr["/"],
+				Timeout:       timeout,
+				RetryOn:       ing.Annotations[annotationRetryOn],
+				NumRetries:    parseAnnotation(ing.Annotations, annotationNumRetries),
+				PerTryTimeout: perTryTimeout,
 			}
 			m := meta{name: ing.Spec.Backend.ServiceName, namespace: ing.Namespace}
 			if s := b.lookupService(m, ing.Spec.Backend.ServicePort, 0); s != nil {
@@ -327,11 +336,14 @@ func (b *builder) compute() *DAG {
 					prefix = "/"
 				}
 				r := &Route{
-					Prefix:       prefix,
-					object:       ing,
-					HTTPSUpgrade: tlsRequired(ing),
-					Websocket:    wr[prefix],
-					Timeout:      timeout,
+					Prefix:        prefix,
+					object:        ing,
+					HTTPSUpgrade:  tlsRequired(ing),
+					Websocket:     wr[prefix],
+					Timeout:       timeout,
+					RetryOn:       ing.Annotations[annotationRetryOn],
+					NumRetries:    parseAnnotation(ing.Annotations, annotationNumRetries),
+					PerTryTimeout: perTryTimeout,
 				}
 
 				m := meta{name: httppath.Backend.ServiceName, namespace: ing.Namespace}

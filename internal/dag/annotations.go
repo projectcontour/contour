@@ -34,6 +34,9 @@ const (
 	annotationMaxPendingRequests = "contour.heptio.com/max-pending-requests"
 	annotationMaxRequests        = "contour.heptio.com/max-requests"
 	annotationMaxRetries         = "contour.heptio.com/max-retries"
+	annotationRetryOn            = "contour.heptio.com/retry-on"
+	annotationNumRetries         = "contour.heptio.com/num-retries"
+	annotationPerTryTimeout      = "contour.heptio.com/per-try-timeout"
 
 	// By default envoy applies a 15 second timeout to all backend requests.
 	// The explicit value 0 turns off the timeout, implying "never time out"
@@ -42,11 +45,11 @@ const (
 	noTimeout       = 0
 )
 
-// parseAnnotationTimeout parses the annotations map for a contour.heptio.com/request-timeout
-// value. If the value is present, but malformed, the timeout value is valid, and represents
+// parseAnnotationTimeout parses the annotations map for the supplied key as a timeout.
+// If the value is present, but malformed, the timeout value is valid, and represents
 // infinite timeout.
-func parseAnnotationTimeout(annotations map[string]string, annotation string) time.Duration {
-	timeoutStr := annotations[annotationRequestTimeout]
+func parseAnnotationTimeout(annotations map[string]string, key string) time.Duration {
+	timeoutStr := annotations[key]
 	// Error or unspecified is interpreted as no timeout specified, use envoy defaults
 	if timeoutStr == "" {
 		return noTimeout
