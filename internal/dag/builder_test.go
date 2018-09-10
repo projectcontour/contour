@@ -1639,8 +1639,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					routes: routemap(
 						&Route{
-							path:   "/",
-							Object: i6b,
+							Prefix: "/",
+							object: i6b,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1657,8 +1657,8 @@ func TestDAGInsert(t *testing.T) {
 						Port: 443,
 						routes: routemap(
 							&Route{
-								path:   "/",
-								Object: i6b,
+								Prefix: "/",
+								object: i6b,
 								services: servicemap(
 									&Service{
 										Object:      s1,
@@ -1705,8 +1705,8 @@ func TestDAGInsert(t *testing.T) {
 							},
 						)),
 						&Route{
-							path:   "/websocket",
-							Object: ir10,
+							Prefix: "/websocket",
+							object: ir10,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1746,8 +1746,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					routes: routemap(
 						&Route{
-							path:   "/",
-							Object: ir6,
+							Prefix: "/",
+							object: ir6,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1765,8 +1765,8 @@ func TestDAGInsert(t *testing.T) {
 						Port: 443,
 						routes: routemap(
 							&Route{
-								path:   "/",
-								Object: ir6,
+								Prefix: "/",
+								object: ir6,
 								services: servicemap(
 									&Service{
 										Object:      s1,
@@ -1791,8 +1791,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					routes: routemap(
 						&Route{
-							path:   "/",
-							Object: ir14,
+							Prefix: "/",
+							object: ir14,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1809,8 +1809,8 @@ func TestDAGInsert(t *testing.T) {
 						Port: 443,
 						routes: routemap(
 							&Route{
-								path:   "/",
-								Object: ir14,
+								Prefix: "/",
+								object: ir14,
 								services: servicemap(
 									&Service{
 										Object:      s1,
@@ -1834,8 +1834,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					routes: routemap(
 						&Route{
-							path:   "/",
-							Object: ir7,
+							Prefix: "/",
+							object: ir7,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1852,8 +1852,8 @@ func TestDAGInsert(t *testing.T) {
 						Port: 443,
 						routes: routemap(
 							&Route{
-								path:   "/",
-								Object: ir7,
+								Prefix: "/",
+								object: ir7,
 								services: servicemap(
 									&Service{
 										Object:      s1,
@@ -1879,8 +1879,8 @@ func TestDAGInsert(t *testing.T) {
 					Host: "foo.com",
 					Port: 80,
 					routes: routemap(&Route{
-						path:   "/",
-						Object: ir8,
+						Prefix: "/",
+						object: ir8,
 						services: servicemap(
 							&Service{
 								Object:      s1,
@@ -1896,8 +1896,8 @@ func TestDAGInsert(t *testing.T) {
 						Port: 443,
 						routes: routemap(
 							&Route{
-								path:   "/",
-								Object: ir8,
+								Prefix: "/",
+								object: ir8,
 								services: servicemap(
 									&Service{
 										Object:      s1,
@@ -1924,8 +1924,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					routes: routemap(
 						&Route{
-							path:   "/",
-							Object: ir9,
+							Prefix: "/",
+							object: ir9,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -1941,8 +1941,8 @@ func TestDAGInsert(t *testing.T) {
 						Port: 443,
 						routes: routemap(
 							&Route{
-								path:   "/",
-								Object: ir9,
+								Prefix: "/",
+								object: ir9,
 								services: servicemap(
 									&Service{
 										Object:      s1,
@@ -2054,8 +2054,8 @@ func TestDAGInsert(t *testing.T) {
 							},
 						)),
 						&Route{
-							path:   "/ws1",
-							Object: i11,
+							Prefix: "/ws1",
+							object: i11,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -2079,8 +2079,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					routes: routemap(
 						&Route{
-							path:   "/",
-							Object: i12a,
+							Prefix: "/",
+							object: i12a,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -2104,8 +2104,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					routes: routemap(
 						&Route{
-							path:   "/",
-							Object: i12b,
+							Prefix: "/",
+							object: i12b,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -2129,8 +2129,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					routes: routemap(
 						&Route{
-							path:   "/",
-							Object: i12c,
+							Prefix: "/",
+							object: i12c,
 							services: servicemap(
 								&Service{
 									Object:      s1,
@@ -2178,8 +2178,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					routes: routemap(
 						&Route{
-							path:   "/",
-							Object: i13a,
+							Prefix: "/",
+							object: i13a,
 							services: servicemap(
 								&Service{
 									Object:      s13a,
@@ -2202,8 +2202,8 @@ func TestDAGInsert(t *testing.T) {
 						Port: 443,
 						routes: routemap(
 							&Route{
-								path:   "/",
-								Object: i13a,
+								Prefix: "/",
+								object: i13a,
 								services: servicemap(
 									&Service{
 										Object:      s13a,
@@ -3258,7 +3258,7 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 	want[hostport{host: "example.com", port: 80}] = &VirtualHost{
 		Host:   "example.com",
 		Port:   80,
-		routes: routemap(&Route{path: "/finance", Object: ir2}),
+		routes: routemap(&Route{Prefix: "/finance", object: ir2}),
 	}
 
 	opts := []cmp.Option{
@@ -4273,15 +4273,15 @@ func TestEnforceRoute(t *testing.T) {
 func routemap(routes ...*Route) map[string]*Route {
 	m := make(map[string]*Route)
 	for _, r := range routes {
-		m[r.path] = r
+		m[r.Prefix] = r
 	}
 	return m
 }
 
-func route(path string, obj interface{}, services ...map[servicemeta]*Service) *Route {
+func route(prefix string, obj interface{}, services ...map[servicemeta]*Service) *Route {
 	r := Route{
-		path:   path,
-		Object: obj,
+		Prefix: prefix,
+		object: obj,
 	}
 	switch len(services) {
 	case 0:

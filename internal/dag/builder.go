@@ -300,8 +300,8 @@ func (b *builder) compute() *DAG {
 		if ing.Spec.Backend != nil {
 			// handle the annoying default ingress
 			r := &Route{
-				path:         "/",
-				Object:       ing,
+				Prefix:       "/",
+				object:       ing,
 				HTTPSUpgrade: tlsRequired(ing),
 				Websocket:    wr["/"],
 				Timeout:      timeout,
@@ -322,15 +322,15 @@ func (b *builder) compute() *DAG {
 				host = "*"
 			}
 			for _, httppath := range httppaths(rule) {
-				path := httppath.Path
-				if path == "" {
-					path = "/"
+				prefix := httppath.Path
+				if prefix == "" {
+					prefix = "/"
 				}
 				r := &Route{
-					path:         path,
-					Object:       ing,
+					Prefix:       prefix,
+					object:       ing,
 					HTTPSUpgrade: tlsRequired(ing),
-					Websocket:    wr[path],
+					Websocket:    wr[prefix],
 					Timeout:      timeout,
 				}
 
@@ -502,8 +502,8 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 			enforceTLSRoute := routeEnforceTLS(enforceTLS, route.PermitInsecure)
 
 			r := &Route{
-				path:         route.Match,
-				Object:       ir,
+				Prefix:       route.Match,
+				object:       ir,
 				Websocket:    route.EnableWebsockets,
 				HTTPSUpgrade: enforceTLSRoute,
 			}

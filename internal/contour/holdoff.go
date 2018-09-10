@@ -33,7 +33,6 @@ const (
 // A HoldoffNotifier delays calls to OnChange in the hope of
 // coalescing rapid calls into a single update.
 type HoldoffNotifier struct {
-
 	// Notifier to be called after delay.
 	Notifier
 	*metrics.Metrics

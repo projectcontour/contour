@@ -149,7 +149,6 @@ func (m *Metrics) SetDAGRebuiltMetric(timestamp int64) {
 
 // SetIngressRouteMetric sets metric values for a set of IngressRoutes
 func (m *Metrics) SetIngressRouteMetric(metrics IngressRouteMetric) {
-
 	// Process metrics
 	for meta, value := range metrics.Total {
 		m.ingressRouteTotalGauge.WithLabelValues(meta.Namespace).Set(float64(value))
