@@ -92,7 +92,7 @@ type VirtualHost struct {
 	// if the VirtualHost is generated inside Contour.
 	Port int
 
-	host   string
+	Host   string
 	routes map[string]*Route
 }
 
@@ -102,8 +102,6 @@ func (v *VirtualHost) addRoute(route *Route) {
 	}
 	v.routes[route.path] = route
 }
-
-func (v *VirtualHost) FQDN() string { return v.host }
 
 func (v *VirtualHost) Visit(f func(Vertex)) {
 	for _, r := range v.routes {

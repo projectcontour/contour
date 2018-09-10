@@ -112,7 +112,7 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 	v.Visitable.Visit(func(vh dag.Vertex) {
 		switch vh := vh.(type) {
 		case *dag.VirtualHost:
-			hostname := vh.FQDN()
+			hostname := vh.Host
 			domains := []string{hostname}
 			if hostname != "*" {
 				domains = append(domains, hostname+":80")
@@ -158,7 +158,7 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 			sort.Stable(sort.Reverse(longestRouteFirst(vhost.Routes)))
 			ingress_http.VirtualHosts = append(ingress_http.VirtualHosts, vhost)
 		case *dag.SecureVirtualHost:
-			hostname := vh.FQDN()
+			hostname := vh.Host
 			domains := []string{hostname}
 			if hostname != "*" {
 				domains = append(domains, hostname+":443")
