@@ -14,13 +14,13 @@
 package dag
 
 import (
-	"fmt"
 	"reflect"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -2373,8 +2373,11 @@ func TestDAGInsert(t *testing.T) {
 				}
 			}
 
-			if !reflect.DeepEqual(want, got) {
-				t.Fatal("expected:\n", want, "\ngot:\n", got)
+			opts := []cmp.Option{
+				cmp.AllowUnexported(VirtualHost{}, SecureVirtualHost{}, Route{}, Secret{}),
+			}
+			if diff := cmp.Diff(want, got, opts...); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 	}
@@ -3088,31 +3091,14 @@ func TestDAGRemove(t *testing.T) {
 				}
 			}
 
-			if !reflect.DeepEqual(want, got) {
-				t.Fatal("\nexpected:\n", want, "\ngot:\n", got)
+			opts := []cmp.Option{
+				cmp.AllowUnexported(VirtualHost{}, SecureVirtualHost{}, Route{}, Secret{}),
+			}
+			if diff := cmp.Diff(want, got, opts...); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 	}
-}
-
-func (v *VirtualHost) String() string {
-	return fmt.Sprintf("host: %v:%d {routes: %v}", v.Host, v.Port, v.routes)
-}
-
-func (s *SecureVirtualHost) String() string {
-	return fmt.Sprintf("secure host: %v:%d {routes: %v, secret: %v}", s.Host, s.Port, s.routes, s.secret)
-}
-
-func (r *Route) String() string {
-	return fmt.Sprintf("route: %q {services: %v, object: %p, upgrade: %v}", r.Prefix(), r.services, r.Object, r.HTTPSUpgrade)
-}
-
-func (s *Service) String() string {
-	return fmt.Sprintf("service: %s/%s {serviceport: %v, weight: %v}", s.Object.Namespace, s.Object.Name, s.ServicePort, s.Weight)
-}
-
-func (s *Secret) String() string {
-	return fmt.Sprintf("secret: %s/%s {object: %p}", s.object.Namespace, s.object.Name, s.object)
 }
 
 func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
@@ -3208,8 +3194,8 @@ func TestBuilderLookupService(t *testing.T) {
 				},
 			}
 			got := b.lookupService(tc.meta, tc.port, tc.weight)
-			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.want, got)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 	}
@@ -3275,8 +3261,11 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 		routes: routemap(&Route{path: "/finance", Object: ir2}),
 	}
 
-	if !reflect.DeepEqual(want, got) {
-		t.Fatal("expected:\n", want, "\ngot:\n", got)
+	opts := []cmp.Option{
+		cmp.AllowUnexported(VirtualHost{}, Route{}),
+	}
+	if diff := cmp.Diff(want, got, opts...); diff != "" {
+		t.Fatal(diff)
 	}
 }
 
@@ -3313,8 +3302,11 @@ func TestDAGIngressRouteCycleSelfEdge(t *testing.T) {
 
 	want := make(map[hostport]*VirtualHost)
 
-	if !reflect.DeepEqual(want, got) {
-		t.Fatal("expected:\n", want, "\ngot:\n", got)
+	opts := []cmp.Option{
+		cmp.AllowUnexported(VirtualHost{}, Route{}),
+	}
+	if diff := cmp.Diff(want, got, opts...); diff != "" {
+		t.Fatal(diff)
 	}
 }
 
@@ -3351,8 +3343,11 @@ func TestDAGIngressRouteDelegatesToNonExistent(t *testing.T) {
 
 	want := make(map[hostport]*VirtualHost)
 
-	if !reflect.DeepEqual(want, got) {
-		t.Fatal("expected:\n", want, "\ngot:\n", got)
+	opts := []cmp.Option{
+		cmp.AllowUnexported(VirtualHost{}, Route{}),
+	}
+	if diff := cmp.Diff(want, got, opts...); diff != "" {
+		t.Fatal(diff)
 	}
 }
 
@@ -3403,9 +3398,11 @@ func TestDAGIngressRouteDelegatePrefixDoesntMatch(t *testing.T) {
 	})
 
 	want := make(map[hostport]*VirtualHost)
-
-	if !reflect.DeepEqual(want, got) {
-		t.Fatal("expected:\n", want, "\ngot:\n", got)
+	opts := []cmp.Option{
+		cmp.AllowUnexported(VirtualHost{}, Route{}),
+	}
+	if diff := cmp.Diff(want, got, opts...); diff != "" {
+		t.Fatal(diff)
 	}
 }
 func TestDAGRootNamespaces(t *testing.T) {
@@ -3572,8 +3569,11 @@ func TestDAGIngressRouteDelegatePrefixMatchesStringPrefixButNotPathPrefix(t *tes
 
 	want := make(map[hostport]*VirtualHost)
 
-	if !reflect.DeepEqual(want, got) {
-		t.Fatal("expected:\n", want, "\ngot:\n", got)
+	opts := []cmp.Option{
+		cmp.AllowUnexported(VirtualHost{}, Route{}),
+	}
+	if diff := cmp.Diff(want, got, opts...); diff != "" {
+		t.Fatal(diff)
 	}
 }
 
