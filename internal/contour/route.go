@@ -135,11 +135,8 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 						return
 					}
 					rr := route.Route{
-						Match: prefixmatch(r.Prefix),
-						Action: actionroute(
-							svcs,
-							r.Websocket,
-							r.Timeout),
+						Match:  prefixmatch(r.Prefix),
+						Action: actionroute(r, svcs),
 					}
 
 					if r.HTTPSUpgrade {
@@ -181,11 +178,8 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 						return
 					}
 					vhost.Routes = append(vhost.Routes, route.Route{
-						Match: prefixmatch(r.Prefix),
-						Action: actionroute(
-							svcs,
-							r.Websocket,
-							r.Timeout),
+						Match:  prefixmatch(r.Prefix),
+						Action: actionroute(r, svcs),
 					})
 				}
 			})
@@ -240,7 +234,7 @@ func prefixmatch(prefix string) route.RouteMatch {
 
 // action computes the cluster route action, a *route.Route_route for the
 // supplied ingress and backend.
-func actionroute(services []*dag.Service, ws bool, timeout time.Duration) *route.Route_Route {
+func actionroute(r *dag.Route, services []*dag.Service) *route.Route_Route {
 	rr := route.Route_Route{
 		Route: &route.RouteAction{
 			ClusterSpecifier: &route.RouteAction_WeightedClusters{
@@ -258,11 +252,11 @@ func actionroute(services []*dag.Service, ws bool, timeout time.Duration) *route
 		clusters.TotalWeight.Value = uint32(len(clusters.Clusters))
 	}
 
-	if ws {
-		rr.Route.UseWebsocket = &types.BoolValue{Value: ws}
+	if r.Websocket {
+		rr.Route.UseWebsocket = &types.BoolValue{Value: true}
 	}
 
-	switch timeout {
+	switch timeout := r.Timeout; timeout {
 	case 0:
 		// no timeout specified, do nothing
 	case -1:
