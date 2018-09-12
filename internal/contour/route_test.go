@@ -14,13 +14,13 @@
 package contour
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/types"
+	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/metrics"
@@ -862,6 +862,54 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 		},
+		"ingress retry-on": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"contour.heptio.com/retry-on": "50x,gateway-error",
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromInt(8080),
+						},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       8080,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: map[string]*v2.RouteConfiguration{
+				"ingress_http": {
+					Name: "ingress_http",
+					VirtualHosts: []route.VirtualHost{{
+						Name:    "*",
+						Domains: []string{"*"},
+						Routes: []route.Route{{
+							Match:  prefixmatch("/"),
+							Action: routeretry("default/kuard/8080", "50x,gateway-error", 0, 0),
+						}},
+					}},
+				},
+				"ingress_https": {
+					Name: "ingress_https",
+				},
+			},
+		},
 		"ingressroute no weights defined": {
 			objs: []interface{}{
 				&ingressroutev1.IngressRoute{
@@ -1189,8 +1237,8 @@ func TestRouteVisit(t *testing.T) {
 				Visitable:  reh.Build(),
 			}
 			got := v.Visit()
-			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.want, got)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 	}
@@ -1215,15 +1263,29 @@ func routeroute(cluster string) *route.Route_Route {
 }
 
 func websocketroute(c string) *route.Route_Route {
-	cl := routeroute(c)
-	cl.Route.UseWebsocket = &types.BoolValue{Value: true}
-	return cl
+	r := routeroute(c)
+	r.Route.UseWebsocket = &types.BoolValue{Value: true}
+	return r
 }
 
 func routetimeout(cluster string, timeout *time.Duration) *route.Route_Route {
-	cl := routeroute(cluster)
-	cl.Route.Timeout = timeout
-	return cl
+	r := routeroute(cluster)
+	r.Route.Timeout = timeout
+	return r
+}
+
+func routeretry(cluster string, retryOn string, numRetries uint32, perTryTimeout time.Duration) *route.Route_Route {
+	r := routeroute(cluster)
+	r.Route.RetryPolicy = &route.RouteAction_RetryPolicy{
+		RetryOn: retryOn,
+	}
+	if numRetries > 0 {
+		r.Route.RetryPolicy.NumRetries = &types.UInt32Value{Value: numRetries}
+	}
+	if perTryTimeout > 0 {
+		r.Route.RetryPolicy.PerTryTimeout = &perTryTimeout
+	}
+	return r
 }
 
 func TestActionRoute(t *testing.T) {
@@ -1575,8 +1637,8 @@ func TestActionRoute(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := actionroute(&tc.route, tc.services)
-			if !reflect.DeepEqual(tc.want, got) {
-				t.Errorf("wanted:\n%v\ngot:\n%v\n", tc.want, got)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 	}
