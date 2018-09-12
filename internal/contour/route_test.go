@@ -1228,10 +1228,9 @@ func routetimeout(cluster string, timeout *time.Duration) *route.Route_Route {
 
 func TestActionRoute(t *testing.T) {
 	tests := map[string]struct {
-		services  []*dag.Service
-		websocket bool
-		timeout   time.Duration
-		want      *route.Route_Route
+		route    dag.Route
+		services []*dag.Service
+		want     *route.Route_Route
 	}{
 		"single service": {
 			services: []*dag.Service{
@@ -1266,7 +1265,9 @@ func TestActionRoute(t *testing.T) {
 			},
 		},
 		"single service with timeout": {
-			timeout: 30 * time.Second,
+			route: dag.Route{
+				Timeout: 30 * time.Second,
+			},
 			services: []*dag.Service{
 				{
 					Object: &v1.Service{
@@ -1300,7 +1301,9 @@ func TestActionRoute(t *testing.T) {
 			},
 		},
 		"single service with infinite timeout": {
-			timeout: time.Duration(-1),
+			route: dag.Route{
+				Timeout: -1,
+			},
 			services: []*dag.Service{
 				{
 					Object: &v1.Service{
@@ -1334,7 +1337,9 @@ func TestActionRoute(t *testing.T) {
 			},
 		},
 		"single service with websockets": {
-			websocket: true,
+			route: dag.Route{
+				Websocket: true,
+			},
 			services: []*dag.Service{
 				{
 					Object: &v1.Service{
@@ -1368,8 +1373,10 @@ func TestActionRoute(t *testing.T) {
 			},
 		},
 		"single service with websockets and timeout": {
-			websocket: true,
-			timeout:   5 * time.Second,
+			route: dag.Route{
+				Websocket: true,
+				Timeout:   5 * time.Second,
+			},
 			services: []*dag.Service{
 				{
 					Object: &v1.Service{
@@ -1567,7 +1574,7 @@ func TestActionRoute(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := actionroute(tc.services, tc.websocket, tc.timeout)
+			got := actionroute(&tc.route, tc.services)
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Errorf("wanted:\n%v\ngot:\n%v\n", tc.want, got)
 			}
