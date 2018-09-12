@@ -66,6 +66,18 @@ type Route struct {
 	// A timeout of -1 represents "infinity"
 	// TODO(dfc) should this move to service?
 	Timeout time.Duration
+
+	// RetryOn specifies the conditions under which retry takes place.
+	// If empty, retries will not be performed.
+	RetryOn string
+
+	// NumRetries specifies the allowed number of retries.
+	// Ignored if RetryOn is blank, or defaults to 1 if RetryOn is set.
+	NumRetries int
+
+	// PerTryTimeout specifies the timeout per retry attempt.
+	// Ignored if RetryOn is blank.
+	PerTryTimeout time.Duration
 }
 
 func (r *Route) addService(s *Service, hc *ingressroutev1.HealthCheck, lbStrat string) {

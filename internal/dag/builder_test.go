@@ -491,6 +491,33 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	i14 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/retry-on":        "gateway-error",
+				"contour.heptio.com/num-retries":     "6",
+				"contour.heptio.com/per-try-timeout": "10s",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
 	// s3a and b have http/2 protocol annotations
 	s3a := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2164,6 +2191,33 @@ func TestDAGInsert(t *testing.T) {
 								ServicePort: &s5.Spec.Ports[0],
 							},
 						)),
+					),
+				},
+			},
+		},
+		"insert ingress with retry annotations": {
+			objs: []interface{}{
+				i14,
+				s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Host: "*",
+					Port: 80,
+					routes: routemap(
+						&Route{
+							Prefix: "/",
+							object: i14,
+							services: servicemap(
+								&Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+								},
+							),
+							RetryOn:       "gateway-error",
+							NumRetries:    6,
+							PerTryTimeout: 10 * time.Second,
+						},
 					),
 				},
 			},
@@ -4279,7 +4333,7 @@ func routemap(routes ...*Route) map[string]*Route {
 }
 
 func route(prefix string, obj interface{}, services ...map[servicemeta]*Service) *Route {
-	r := Route{
+	route := Route{
 		Prefix: prefix,
 		object: obj,
 	}
@@ -4287,11 +4341,11 @@ func route(prefix string, obj interface{}, services ...map[servicemeta]*Service)
 	case 0:
 		// nothing to do
 	case 1:
-		r.services = services[0]
+		route.services = services[0]
 	default:
 		panic("only pass one servicemap to route")
 	}
-	return &r
+	return &route
 }
 
 func servicemap(services ...*Service) map[servicemeta]*Service {
