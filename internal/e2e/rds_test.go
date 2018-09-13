@@ -1846,13 +1846,8 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 	}, streamRDS(t, cc))
 }
 
-// issue 665, suport for retry-on, num-retries, and per-try-timeout annotations.
+// issue 665, support for retry-on, num-retries, and per-try-timeout annotations.
 func TestRouteRetryAnnotations(t *testing.T) {
-	const (
-		durationInfinite  = time.Duration(0)
-		duration10Minutes = 10 * time.Minute
-	)
-
 	rh, cc, done := setup(t)
 	defer done()
 
