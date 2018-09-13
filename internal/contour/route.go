@@ -256,6 +256,19 @@ func actionroute(r *dag.Route, services []*dag.Service) *route.Route_Route {
 		rr.Route.UseWebsocket = &types.BoolValue{Value: true}
 	}
 
+	if r.RetryOn != "" {
+		rr.Route.RetryPolicy = &route.RouteAction_RetryPolicy{
+			RetryOn: r.RetryOn,
+		}
+		if r.NumRetries > 0 {
+			rr.Route.RetryPolicy.NumRetries = &types.UInt32Value{Value: uint32(r.NumRetries)}
+		}
+		if r.PerTryTimeout > 0 {
+			timeout := r.PerTryTimeout
+			rr.Route.RetryPolicy.PerTryTimeout = &timeout
+		}
+	}
+
 	switch timeout := r.Timeout; timeout {
 	case 0:
 		// no timeout specified, do nothing

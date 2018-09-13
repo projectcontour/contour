@@ -1846,6 +1846,50 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 	}, streamRDS(t, cc))
 }
 
+// issue 665, support for retry-on, num-retries, and per-try-timeout annotations.
+func TestRouteRetryAnnotations(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(s1)
+
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "hello", Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/retry-on":        "50x,gateway-error",
+				"contour.heptio.com/num-retries":     "7",
+				"contour.heptio.com/per-try-timeout": "120ms",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+		},
+	}
+	rh.OnAdd(i1)
+	assertRDS(t, cc, []route.VirtualHost{{
+		Name:    "*",
+		Domains: []string{"*"},
+		Routes: []route.Route{{
+			Match:  prefixmatch("/"), // match all
+			Action: routeretry("default/backend/80", "50x,gateway-error", 7, 120*time.Millisecond),
+		}},
+	}}, nil)
+}
+
 func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []route.VirtualHost) {
 	t.Helper()
 	assertEqual(t, &v2.DiscoveryResponse{
@@ -1955,4 +1999,18 @@ func redirecthttps() *route.Route_Redirect {
 			HttpsRedirect: true,
 		},
 	}
+}
+
+func routeretry(cluster string, retryOn string, numRetries uint32, perTryTimeout time.Duration) *route.Route_Route {
+	r := routecluster(cluster)
+	r.Route.RetryPolicy = &route.RouteAction_RetryPolicy{
+		RetryOn: retryOn,
+	}
+	if numRetries > 0 {
+		r.Route.RetryPolicy.NumRetries = &types.UInt32Value{Value: numRetries}
+	}
+	if perTryTimeout > 0 {
+		r.Route.RetryPolicy.PerTryTimeout = &perTryTimeout
+	}
+	return r
 }
