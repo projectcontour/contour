@@ -233,12 +233,12 @@ func countOrDefault(count, def uint32) *types.UInt32Value {
 }
 
 // uint32OrNil returns a *types.UInt32Value containing the v or nil if v is zero.
-func uint32OrNil(v int) *types.UInt32Value {
-	switch v {
+func uint32OrNil(i int) *types.UInt32Value {
+	switch i {
 	case 0:
 		return nil
 	default:
-		return &types.UInt32Value{Value: uint32(v)}
+		return &types.UInt32Value{Value: uint32(i)}
 	}
 }
 

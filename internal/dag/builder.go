@@ -289,43 +289,26 @@ func (b *builder) compute() *DAG {
 
 	// deconstruct each ingress into routes and virtualhost entries
 	for _, ing := range b.source.ingresses {
-		// should we create port 80 routes for this ingress
-		httpAllowed := httpAllowed(ing)
 
-		// compute websocket enabled routes
-		wr := websocketRoutes(ing)
-
-		// compute timeout for any routes on this ingress
-		timeout := parseAnnotationTimeout(ing.Annotations, annotationRequestTimeout)
-
-		var perTryTimeout time.Duration
-		if val, ok := ing.Annotations[annotationPerTryTimeout]; ok {
-			perTryTimeout, _ = time.ParseDuration(val)
+		// rewrite the default ingress to a stock ingress rule.
+		rules := ing.Spec.Rules
+		if backend := ing.Spec.Backend; backend != nil {
+			rule := v1beta1.IngressRule{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: backend.ServiceName,
+								ServicePort: backend.ServicePort,
+							},
+						}},
+					},
+				},
+			}
+			rules = append(rules, rule)
 		}
 
-		if ing.Spec.Backend != nil {
-			// handle the annoying default ingress
-			r := &Route{
-				Prefix:        "/",
-				object:        ing,
-				HTTPSUpgrade:  tlsRequired(ing),
-				Websocket:     wr["/"],
-				Timeout:       timeout,
-				RetryOn:       ing.Annotations[annotationRetryOn],
-				NumRetries:    parseAnnotation(ing.Annotations, annotationNumRetries),
-				PerTryTimeout: perTryTimeout,
-			}
-			m := meta{name: ing.Spec.Backend.ServiceName, namespace: ing.Namespace}
-			if s := b.lookupService(m, ing.Spec.Backend.ServicePort, 0); s != nil {
-				r.addService(s, nil, "")
-			}
-			if httpAllowed {
-				b.lookupVirtualHost("*", 80).addRoute(r)
-			}
-		}
-
-		for _, rule := range ing.Spec.Rules {
-			// handle Spec.Rule declarations
+		for _, rule := range rules {
 			host := rule.Host
 			if host == "" {
 				host = "*"
@@ -335,22 +318,15 @@ func (b *builder) compute() *DAG {
 				if prefix == "" {
 					prefix = "/"
 				}
-				r := &Route{
-					Prefix:        prefix,
-					object:        ing,
-					HTTPSUpgrade:  tlsRequired(ing),
-					Websocket:     wr[prefix],
-					Timeout:       timeout,
-					RetryOn:       ing.Annotations[annotationRetryOn],
-					NumRetries:    parseAnnotation(ing.Annotations, annotationNumRetries),
-					PerTryTimeout: perTryTimeout,
-				}
 
+				r := prefixRoute(ing, prefix)
 				m := meta{name: httppath.Backend.ServiceName, namespace: ing.Namespace}
 				if s := b.lookupService(m, httppath.Backend.ServicePort, 0); s != nil {
 					r.addService(s, nil, "")
 				}
-				if httpAllowed {
+
+				// should we create port 80 routes for this ingress
+				if httpAllowed(ing) {
 					b.lookupVirtualHost(host, 80).addRoute(r)
 				}
 				if _, ok := b.svhosts[hostport{host: host, port: 443}]; ok && host != "*" {
@@ -375,7 +351,7 @@ func (b *builder) compute() *DAG {
 		}
 
 		host := ir.Spec.VirtualHost.Fqdn
-		if len(strings.TrimSpace(host)) == 0 {
+		if isBlank(host) {
 			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: "Spec.VirtualHost.Fqdn must be specified"})
 			continue
 		}
@@ -406,6 +382,35 @@ func (b *builder) compute() *DAG {
 	}
 
 	return b.DAG()
+}
+
+// prefixRoute returns a new dag.Route for the (ingress,prefix) tuple.
+func prefixRoute(ingress *v1beta1.Ingress, prefix string) *Route {
+	// compute websocket enabled routes
+	wr := websocketRoutes(ingress)
+
+	// compute timeout for any routes on this ingress
+	timeout := parseAnnotationTimeout(ingress.Annotations, annotationRequestTimeout)
+
+	var perTryTimeout time.Duration
+	if val, ok := ingress.Annotations[annotationPerTryTimeout]; ok {
+		perTryTimeout, _ = time.ParseDuration(val)
+	}
+
+	return &Route{
+		Prefix:        prefix,
+		object:        ingress,
+		HTTPSUpgrade:  tlsRequired(ingress),
+		Websocket:     wr[prefix],
+		Timeout:       timeout,
+		RetryOn:       ingress.Annotations[annotationRetryOn],
+		NumRetries:    parseAnnotation(ingress.Annotations, annotationNumRetries),
+		PerTryTimeout: perTryTimeout,
+	}
+}
+
+func isBlank(s string) bool {
+	return len(strings.TrimSpace(s)) == 0
 }
 
 // validIngressRoutes returns a slice of *ingressroutev1.IngressRoute objects.
@@ -539,7 +544,7 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 			continue
 		}
 
-		if route.Delegate.Name == "" {
+		if isBlank(route.Delegate.Name) {
 			// not a delegate route
 			continue
 		}
