@@ -272,16 +272,7 @@ func (b *builder) compute() *DAG {
 				for _, host := range tls.Hosts {
 					svhost := b.lookupSecureVirtualHost(host, 443)
 					svhost.secret = sec
-					// process annotations
-					switch ing.ObjectMeta.Annotations["contour.heptio.com/tls-minimum-protocol-version"] {
-					case "1.3":
-						svhost.MinProtoVersion = auth.TlsParameters_TLSv1_3
-					case "1.2":
-						svhost.MinProtoVersion = auth.TlsParameters_TLSv1_2
-					default:
-						// any other value is interpreted as TLS/1.1
-						svhost.MinProtoVersion = auth.TlsParameters_TLSv1_1
-					}
+					svhost.MinProtoVersion = minProtoVersion(ing)
 				}
 			}
 		}
@@ -289,7 +280,6 @@ func (b *builder) compute() *DAG {
 
 	// deconstruct each ingress into routes and virtualhost entries
 	for _, ing := range b.source.ingresses {
-
 		// rewrite the default ingress to a stock ingress rule.
 		rules := ing.Spec.Rules
 		if backend := ing.Spec.Backend; backend != nil {
@@ -409,8 +399,23 @@ func prefixRoute(ingress *v1beta1.Ingress, prefix string) *Route {
 	}
 }
 
+// isBlank indicates if a string contains nothing but blank characters.
 func isBlank(s string) bool {
 	return len(strings.TrimSpace(s)) == 0
+}
+
+// minProtoVersion returns the TLS protocol version specified by an ingress annotation
+// or default if non present.
+func minProtoVersion(i *v1beta1.Ingress) auth.TlsParameters_TlsProtocol {
+	switch i.Annotations["contour.heptio.com/tls-minimum-protocol-version"] {
+	case "1.3":
+		return auth.TlsParameters_TLSv1_3
+	case "1.2":
+		return auth.TlsParameters_TLSv1_2
+	default:
+		// any other value is interpreted as TLS/1.1
+		return auth.TlsParameters_TLSv1_1
+	}
 }
 
 // validIngressRoutes returns a slice of *ingressroutev1.IngressRoute objects.
