@@ -14,7 +14,6 @@
 package contour
 
 import (
-	"bytes"
 	"crypto/sha1"
 	"fmt"
 	"sync"
@@ -130,10 +129,7 @@ func (v *clusterVisitor) visit(vertex dag.Vertex) {
 }
 
 func (v *clusterVisitor) edscluster(svc *dag.Service) {
-	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "%s", svc.LoadBalancerStrategy)
-	hash := sha1.Sum(buf.Bytes())
-	name := hashname(60, svc.Namespace(), svc.Name(), strconv.Itoa(int(svc.Port)), fmt.Sprintf("%x", hash[:5]))
+	name := clustername(svc)
 	if _, ok := v.clusters[name]; ok {
 		// already created this cluster via another edge. skip it.
 		return
@@ -142,7 +138,7 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 	c := &v2.Cluster{
 		Name:             name,
 		Type:             v2.Cluster_EDS,
-		EdsClusterConfig: edsconfig("contour", servicename(svc)),
+		EdsClusterConfig: edsconfig("contour", svc),
 		ConnectTimeout:   250 * time.Millisecond,
 		LbPolicy:         edslbstrategy(svc.LoadBalancerStrategy),
 		CommonLbConfig: &v2.Cluster_CommonLbConfig{
@@ -180,6 +176,13 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 		c.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
 	}
 	v.clusters[c.Name] = c
+}
+
+// clustername returns the name of the CDS cluster for this service.
+func clustername(s *dag.Service) string {
+	buf := s.LoadBalancerStrategy
+	hash := sha1.Sum([]byte(buf))
+	return hashname(60, s.Namespace(), s.Name(), strconv.Itoa(int(s.Port)), fmt.Sprintf("%x", hash[:5]))
 }
 
 func edslbstrategy(lbStrategy string) v2.Cluster_LbPolicy {
@@ -248,10 +251,18 @@ func uint32OrNil(i int) *types.UInt32Value {
 	}
 }
 
-func edsconfig(source, name string) *v2.Cluster_EdsClusterConfig {
+func edsconfig(source string, service *dag.Service) *v2.Cluster_EdsClusterConfig {
+	name := []string{
+		service.Namespace(),
+		service.Name(),
+		service.ServicePort.Name,
+	}
+	if name[2] == "" {
+		name = name[:2]
+	}
 	return &v2.Cluster_EdsClusterConfig{
 		EdsConfig:   apiconfigsource(source), // hard coded by initconfig
-		ServiceName: name,
+		ServiceName: strings.Join(name, "/"),
 	}
 }
 
@@ -264,18 +275,4 @@ func apiconfigsource(clusters ...string) *core.ConfigSource {
 			},
 		},
 	}
-}
-
-// servicename returns a fixed name for this *dag.Service that matches
-// the value produced by EDS's clustername helper.
-func servicename(s *dag.Service) string {
-	name := []string{
-		s.Namespace(),
-		s.Name(),
-		s.ServicePort.Name,
-	}
-	if name[2] == "" {
-		name = name[:2]
-	}
-	return strings.Join(name, "/")
 }

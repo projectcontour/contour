@@ -17,7 +17,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -290,7 +289,7 @@ func weightedclusters(services []*dag.Service) *route.WeightedCluster {
 	for _, svc := range services {
 		total += svc.Weight
 		wc.Clusters = append(wc.Clusters, &route.WeightedCluster_ClusterWeight{
-			Name:   hashname(60, svc.Namespace(), svc.Name(), strconv.Itoa(int(svc.Port))),
+			Name:   clustername(svc),
 			Weight: &types.UInt32Value{Value: uint32(svc.Weight)},
 		})
 	}
