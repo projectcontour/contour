@@ -306,7 +306,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "default/backend/80/da39a3ee5e",
+					Name: "default/backend/80/c184349821",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -375,7 +375,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "default/backend/80/da39a3ee5e",
+					Name: "default/backend/80/7f8051653a",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig

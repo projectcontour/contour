@@ -154,14 +154,15 @@ type builder struct {
 
 // lookupService returns a Service that matches the meta and port supplied.
 // If no matching Service is found lookup returns nil.
-func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, strategy string) *Service {
+func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) *Service {
 	if port.Type == intstr.Int {
 		m := servicemeta{
-			name:      m.name,
-			namespace: m.namespace,
-			port:      int32(port.IntValue()),
-			weight:    weight,
-			strategy:  strategy,
+			name:        m.name,
+			namespace:   m.namespace,
+			port:        int32(port.IntValue()),
+			weight:      weight,
+			strategy:    strategy,
+			healthcheck: healthcheckToString(hc),
 		}
 		if s, ok := b.services[m]; ok {
 			return s
@@ -174,16 +175,20 @@ func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, str
 	for i := range svc.Spec.Ports {
 		p := &svc.Spec.Ports[i]
 		if int(p.Port) == port.IntValue() {
-			return b.addService(svc, p, weight, strategy)
+			return b.addService(svc, p, weight, strategy, hc)
 		}
 		if port.String() == p.Name {
-			return b.addService(svc, p, weight, strategy)
+			return b.addService(svc, p, weight, strategy, hc)
 		}
 	}
 	return nil
 }
 
-func (b *builder) addService(svc *v1.Service, port *v1.ServicePort, weight int, strategy string) *Service {
+func healthcheckToString(hc *ingressroutev1.HealthCheck) string {
+	return fmt.Sprintf("%#v", hc)
+}
+
+func (b *builder) addService(svc *v1.Service, port *v1.ServicePort, weight int, strategy string, hc *ingressroutev1.HealthCheck) *Service {
 	if b.services == nil {
 		b.services = make(map[servicemeta]*Service)
 	}
@@ -199,6 +204,7 @@ func (b *builder) addService(svc *v1.Service, port *v1.ServicePort, weight int, 
 		Protocol:             protocol,
 		Weight:               weight,
 		LoadBalancerStrategy: strategy,
+		HealthCheck:          hc,
 
 		MaxConnections:     parseAnnotation(svc.Annotations, annotationMaxConnections),
 		MaxPendingRequests: parseAnnotation(svc.Annotations, annotationMaxPendingRequests),
@@ -319,8 +325,8 @@ func (b *builder) compute() *DAG {
 
 				r := prefixRoute(ing, prefix)
 				m := meta{name: httppath.Backend.ServiceName, namespace: ing.Namespace}
-				if s := b.lookupService(m, httppath.Backend.ServicePort, 0, ""); s != nil {
-					r.addService(s, nil)
+				if s := b.lookupService(m, httppath.Backend.ServicePort, 0, "", nil); s != nil {
+					r.addService(s)
 				}
 
 				// should we create port 80 routes for this ingress
@@ -547,8 +553,8 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 					return
 				}
 				m := meta{name: s.Name, namespace: ir.Namespace}
-				if svc := b.lookupService(m, intstr.FromInt(s.Port), s.Weight, s.Strategy); svc != nil {
-					r.addService(svc, s.HealthCheck)
+				if svc := b.lookupService(m, intstr.FromInt(s.Port), s.Weight, s.Strategy, s.HealthCheck); svc != nil {
+					r.addService(svc)
 				}
 			}
 

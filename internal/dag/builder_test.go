@@ -3200,10 +3200,11 @@ func TestBuilderLookupService(t *testing.T) {
 
 	tests := map[string]struct {
 		meta
-		port     intstr.IntOrString
-		weight   int
-		strategy string
-		want     *Service
+		port        intstr.IntOrString
+		weight      int
+		strategy    string
+		healthcheck *ingressroutev1.HealthCheck
+		want        *Service
 	}{
 		"lookup service by port number": {
 			meta: meta{name: "service1", namespace: "default"},
@@ -3248,7 +3249,7 @@ func TestBuilderLookupService(t *testing.T) {
 					},
 				},
 			}
-			got := b.lookupService(tc.meta, tc.port, tc.weight, tc.strategy)
+			got := b.lookupService(tc.meta, tc.port, tc.weight, tc.strategy, tc.healthcheck)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}
