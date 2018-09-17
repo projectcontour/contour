@@ -65,7 +65,7 @@ func TestClusterLongServiceName(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, cluster("default/kbujbkuhdod66-172bef/8080", "default/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r")),
+			any(t, cluster("default/kbujbkuh-c83ceb/8080/da39a3ee5e", "default/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -127,7 +127,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, cluster("default/kuard/80", "default/kuard")),
+			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -148,7 +148,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, cluster("default/kuard/80", "default/kuard/http")),
+			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard/http")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -179,8 +179,8 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, cluster("default/kuard/443", "default/kuard/https")),
-			any(t, cluster("default/kuard/80", "default/kuard/http")),
+			any(t, cluster("default/kuard/443/da39a3ee5e", "default/kuard/https")),
+			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard/http")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -204,7 +204,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, cluster("default/kuard/443", "default/kuard/https")),
+			any(t, cluster("default/kuard/443/da39a3ee5e", "default/kuard/https")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -264,8 +264,8 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, cluster("default/kuard/443", "default/kuard/https")),
-			any(t, cluster("default/kuard/80", "default/kuard/http")),
+			any(t, cluster("default/kuard/443/da39a3ee5e", "default/kuard/https")),
+			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard/http")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -284,7 +284,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, cluster("default/kuard/443", "default/kuard")),
+			any(t, cluster("default/kuard/443/da39a3ee5e", "default/kuard")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -295,8 +295,8 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, cluster("default/kuard/443", "default/kuard/https")),
-			any(t, cluster("default/kuard/80", "default/kuard/http")),
+			any(t, cluster("default/kuard/443/da39a3ee5e", "default/kuard/https")),
+			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard/http")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -343,7 +343,7 @@ func TestIssue243(t *testing.T) {
 		assertEqual(t, &v2.DiscoveryResponse{
 			VersionInfo: "0",
 			Resources: []types.Any{
-				any(t, cluster("default/kuard/80", "default/kuard")),
+				any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard")),
 			},
 			TypeUrl: clusterType,
 			Nonce:   "0",
@@ -386,7 +386,7 @@ func TestIssue247(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, cluster("default/kuard/80", "default/kuard")),
+			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -446,8 +446,8 @@ func TestCDSResourceFiltering(t *testing.T) {
 		VersionInfo: "0",
 		Resources: []types.Any{
 			// note, resources are sorted by Cluster.Name
-			any(t, cluster("default/httpbin/8080", "default/httpbin")),
-			any(t, cluster("default/kuard/80", "default/kuard")),
+			any(t, cluster("default/httpbin/8080/da39a3ee5e", "default/httpbin")),
+			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
@@ -457,11 +457,11 @@ func TestCDSResourceFiltering(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, cluster("default/kuard/80", "default/kuard")),
+			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
-	}, streamCDS(t, cc, "default/kuard/80"))
+	}, streamCDS(t, cc, "default/kuard/80/da39a3ee5e"))
 
 	// assert a non matching filter returns no results
 	// note: streamCDS would stall at this point.
@@ -512,7 +512,7 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 		VersionInfo: "0",
 		Resources: []types.Any{
 			any(t, &v2.Cluster{
-				Name: "default/kuard/8080",
+				Name: "default/kuard/8080/da39a3ee5e",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -561,7 +561,7 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 		VersionInfo: "0",
 		Resources: []types.Any{
 			any(t, &v2.Cluster{
-				Name: "default/kuard/8080",
+				Name: "default/kuard/8080/da39a3ee5e",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -634,7 +634,91 @@ func TestClusterPerServiceParameters(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, cluster("default/kuard/80", "default/kuard")),
+			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard")),
+		},
+		TypeUrl: clusterType,
+		Nonce:   "0",
+	}, streamCDS(t, cc))
+}
+
+// issue 581, different load balancer parameters should
+// generate multiple cds entries.
+func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	rh.OnAdd(&ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/a",
+				Services: []ingressroutev1.Service{{
+					Name:     "kuard",
+					Port:     80,
+					Strategy: "Random",
+				}},
+			}, {
+				Match: "/b",
+				Services: []ingressroutev1.Service{{
+					Name:     "kuard",
+					Port:     80,
+					Strategy: "Maglev",
+				}},
+			}},
+		},
+	})
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.Cluster{
+				Name: "default/kuard/80/58d888c08a",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+					ServiceName: "default/kuard",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_RANDOM,
+				CommonLbConfig: &v2.Cluster_CommonLbConfig{
+					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+						Value: 0,
+					},
+				},
+			}),
+			any(t, &v2.Cluster{
+				Name: "default/kuard/80/843e4ded8f",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+					ServiceName: "default/kuard",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_MAGLEV,
+				CommonLbConfig: &v2.Cluster_CommonLbConfig{
+					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+						Value: 0,
+					},
+				},
+			}),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "0",
