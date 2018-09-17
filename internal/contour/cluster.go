@@ -181,6 +181,22 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 // clustername returns the name of the CDS cluster for this service.
 func clustername(s *dag.Service) string {
 	buf := s.LoadBalancerStrategy
+	if hc := s.HealthCheck; hc != nil {
+		if hc.TimeoutSeconds > 0 {
+			buf += (time.Duration(hc.TimeoutSeconds) * time.Second).String()
+		}
+		if hc.IntervalSeconds > 0 {
+			buf += (time.Duration(hc.IntervalSeconds) * time.Second).String()
+		}
+		if hc.UnhealthyThresholdCount > 0 {
+			buf += strconv.Itoa(int(hc.UnhealthyThresholdCount))
+		}
+		if hc.HealthyThresholdCount > 0 {
+			buf += strconv.Itoa(int(hc.HealthyThresholdCount))
+		}
+		buf += hc.Path
+	}
+
 	hash := sha1.Sum([]byte(buf))
 	return hashname(60, s.Namespace(), s.Name(), strconv.Itoa(int(s.Port)), fmt.Sprintf("%x", hash[:5]))
 }
