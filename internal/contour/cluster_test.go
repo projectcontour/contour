@@ -24,7 +24,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
-	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/api/core/v1"
@@ -907,62 +906,4 @@ func clustermap(clusters ...*v2.Cluster) map[string]*v2.Cluster {
 
 func duration(d time.Duration) *time.Duration {
 	return &d
-}
-
-func TestServiceName(t *testing.T) {
-	tests := map[string]struct {
-		service *dag.Service
-		want    string
-	}{
-		"named service": {
-			service: &dag.Service{
-				Object: &v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Namespace: "default",
-						Name:      "kuard",
-					},
-				},
-				ServicePort: &v1.ServicePort{
-					Name: "http",
-				},
-			},
-			want: "default/kuard/http",
-		},
-		"named service w/ lb strategy": {
-			service: &dag.Service{
-				Object: &v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Namespace: "default",
-						Name:      "kuard",
-					},
-				},
-				ServicePort: &v1.ServicePort{
-					Name: "http",
-				},
-				LoadBalancerStrategy: "Random", // ignored by servicename
-			},
-			want: "default/kuard/http",
-		},
-		"unnamed service": {
-			service: &dag.Service{
-				Object: &v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Namespace: "default",
-						Name:      "kuard",
-					},
-				},
-				ServicePort: &v1.ServicePort{},
-			},
-			want: "default/kuard",
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := servicename(tc.service)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
-		})
-	}
 }

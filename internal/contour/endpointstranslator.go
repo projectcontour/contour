@@ -122,7 +122,7 @@ func (e *EndpointsTranslator) recomputeClusterLoadAssignment(oldep, newep *v1.En
 			portname := p.Name
 			cla, ok := clas[portname]
 			if !ok {
-				cla = clusterloadassignment(clustername(newep.ObjectMeta, portname))
+				cla = clusterloadassignment(servicename(newep.ObjectMeta, portname))
 				clas[portname] = cla
 			}
 			for _, a := range s.Addresses {
@@ -148,16 +148,16 @@ func (e *EndpointsTranslator) recomputeClusterLoadAssignment(oldep, newep *v1.En
 			portname := p.Name
 			if _, ok := clas[portname]; !ok {
 				// port is not present in the list added / updated, so remove it
-				e.Remove(clustername(oldep.ObjectMeta, portname))
+				e.Remove(servicename(oldep.ObjectMeta, portname))
 			}
 		}
 	}
 }
 
-// clustername returns the name of the cluster this meta and port
+// servicename returns the name of the cluster this meta and port
 // refers to. The CDS name of the cluster may include additional suffixes
 // but these are not known to EDS.
-func clustername(meta metav1.ObjectMeta, portname string) string {
+func servicename(meta metav1.ObjectMeta, portname string) string {
 	name := []string{
 		meta.Namespace,
 		meta.Name,
