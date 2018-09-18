@@ -198,7 +198,9 @@ func clustername(s *dag.Service) string {
 	}
 
 	hash := sha1.Sum([]byte(buf))
-	return hashname(60, s.Namespace(), s.Name(), strconv.Itoa(int(s.Port)), fmt.Sprintf("%x", hash[:5]))
+	ns := s.Namespace()
+	name := s.Name()
+	return hashname(60, ns, name, strconv.Itoa(int(s.Port)), fmt.Sprintf("%x", hash[:5]))
 }
 
 func edslbstrategy(lbStrategy string) v2.Cluster_LbPolicy {
