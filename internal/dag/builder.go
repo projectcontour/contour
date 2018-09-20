@@ -154,9 +154,17 @@ type builder struct {
 
 // lookupService returns a Service that matches the meta and port supplied.
 // If no matching Service is found lookup returns nil.
-func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int) *Service {
+func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) *Service {
 	if port.Type == intstr.Int {
-		if s, ok := b.services[servicemeta{name: m.name, namespace: m.namespace, port: int32(port.IntValue()), weight: weight}]; ok {
+		m := servicemeta{
+			name:        m.name,
+			namespace:   m.namespace,
+			port:        int32(port.IntValue()),
+			weight:      weight,
+			strategy:    strategy,
+			healthcheck: healthcheckToString(hc),
+		}
+		if s, ok := b.services[m]; ok {
 			return s
 		}
 	}
@@ -167,16 +175,20 @@ func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int) *Se
 	for i := range svc.Spec.Ports {
 		p := &svc.Spec.Ports[i]
 		if int(p.Port) == port.IntValue() {
-			return b.addService(svc, p, weight)
+			return b.addService(svc, p, weight, strategy, hc)
 		}
 		if port.String() == p.Name {
-			return b.addService(svc, p, weight)
+			return b.addService(svc, p, weight, strategy, hc)
 		}
 	}
 	return nil
 }
 
-func (b *builder) addService(svc *v1.Service, port *v1.ServicePort, weight int) *Service {
+func healthcheckToString(hc *ingressroutev1.HealthCheck) string {
+	return fmt.Sprintf("%#v", hc)
+}
+
+func (b *builder) addService(svc *v1.Service, port *v1.ServicePort, weight int, strategy string, hc *ingressroutev1.HealthCheck) *Service {
 	if b.services == nil {
 		b.services = make(map[servicemeta]*Service)
 	}
@@ -187,10 +199,12 @@ func (b *builder) addService(svc *v1.Service, port *v1.ServicePort, weight int) 
 	}
 
 	s := &Service{
-		Object:      svc,
-		ServicePort: port,
-		Protocol:    protocol,
-		Weight:      weight,
+		Object:               svc,
+		ServicePort:          port,
+		Protocol:             protocol,
+		Weight:               weight,
+		LoadBalancerStrategy: strategy,
+		HealthCheck:          hc,
 
 		MaxConnections:     parseAnnotation(svc.Annotations, annotationMaxConnections),
 		MaxPendingRequests: parseAnnotation(svc.Annotations, annotationMaxPendingRequests),
@@ -272,16 +286,7 @@ func (b *builder) compute() *DAG {
 				for _, host := range tls.Hosts {
 					svhost := b.lookupSecureVirtualHost(host, 443)
 					svhost.secret = sec
-					// process annotations
-					switch ing.ObjectMeta.Annotations["contour.heptio.com/tls-minimum-protocol-version"] {
-					case "1.3":
-						svhost.MinProtoVersion = auth.TlsParameters_TLSv1_3
-					case "1.2":
-						svhost.MinProtoVersion = auth.TlsParameters_TLSv1_2
-					default:
-						// any other value is interpreted as TLS/1.1
-						svhost.MinProtoVersion = auth.TlsParameters_TLSv1_1
-					}
+					svhost.MinProtoVersion = minProtoVersion(ing)
 				}
 			}
 		}
@@ -289,7 +294,6 @@ func (b *builder) compute() *DAG {
 
 	// deconstruct each ingress into routes and virtualhost entries
 	for _, ing := range b.source.ingresses {
-
 		// rewrite the default ingress to a stock ingress rule.
 		rules := ing.Spec.Rules
 		if backend := ing.Spec.Backend; backend != nil {
@@ -321,8 +325,8 @@ func (b *builder) compute() *DAG {
 
 				r := prefixRoute(ing, prefix)
 				m := meta{name: httppath.Backend.ServiceName, namespace: ing.Namespace}
-				if s := b.lookupService(m, httppath.Backend.ServicePort, 0); s != nil {
-					r.addService(s, nil, "")
+				if s := b.lookupService(m, httppath.Backend.ServicePort, 0, "", nil); s != nil {
+					r.addService(s)
 				}
 
 				// should we create port 80 routes for this ingress
@@ -409,8 +413,23 @@ func prefixRoute(ingress *v1beta1.Ingress, prefix string) *Route {
 	}
 }
 
+// isBlank indicates if a string contains nothing but blank characters.
 func isBlank(s string) bool {
 	return len(strings.TrimSpace(s)) == 0
+}
+
+// minProtoVersion returns the TLS protocol version specified by an ingress annotation
+// or default if non present.
+func minProtoVersion(i *v1beta1.Ingress) auth.TlsParameters_TlsProtocol {
+	switch i.Annotations["contour.heptio.com/tls-minimum-protocol-version"] {
+	case "1.3":
+		return auth.TlsParameters_TLSv1_3
+	case "1.2":
+		return auth.TlsParameters_TLSv1_2
+	default:
+		// any other value is interpreted as TLS/1.1
+		return auth.TlsParameters_TLSv1_1
+	}
 }
 
 // validIngressRoutes returns a slice of *ingressroutev1.IngressRoute objects.
@@ -534,8 +553,8 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 					return
 				}
 				m := meta{name: s.Name, namespace: ir.Namespace}
-				if svc := b.lookupService(m, intstr.FromInt(s.Port), s.Weight); svc != nil {
-					r.addService(svc, s.HealthCheck, s.Strategy)
+				if svc := b.lookupService(m, intstr.FromInt(s.Port), s.Weight, s.Strategy, s.HealthCheck); svc != nil {
+					r.addService(svc)
 				}
 			}
 

@@ -80,12 +80,10 @@ type Route struct {
 	PerTryTimeout time.Duration
 }
 
-func (r *Route) addService(s *Service, hc *ingressroutev1.HealthCheck, lbStrat string) {
+func (r *Route) addService(s *Service) {
 	if r.services == nil {
 		r.services = make(map[servicemeta]*Service)
 	}
-	s.HealthCheck = hc
-	s.LoadBalancerStrategy = lbStrat
 	r.services[s.toMeta()] = s
 }
 
@@ -187,18 +185,22 @@ func (s *Service) Namespace() string  { return s.Object.Namespace }
 func (s *Service) Visit(func(Vertex)) {}
 
 type servicemeta struct {
-	name      string
-	namespace string
-	port      int32
-	weight    int
+	name        string
+	namespace   string
+	port        int32
+	weight      int
+	strategy    string
+	healthcheck string // %#v of *ingressroutev1.HealthCheck
 }
 
 func (s *Service) toMeta() servicemeta {
 	return servicemeta{
-		name:      s.Object.Name,
-		namespace: s.Object.Namespace,
-		port:      s.Port,
-		weight:    s.Weight,
+		name:        s.Object.Name,
+		namespace:   s.Object.Namespace,
+		port:        s.Port,
+		weight:      s.Weight,
+		strategy:    s.LoadBalancerStrategy,
+		healthcheck: healthcheckToString(s.HealthCheck),
 	}
 }
 

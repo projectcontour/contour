@@ -14,6 +14,8 @@
 package contour
 
 import (
+	"crypto/sha1"
+	"fmt"
 	"sync"
 
 	"strconv"
@@ -127,7 +129,7 @@ func (v *clusterVisitor) visit(vertex dag.Vertex) {
 }
 
 func (v *clusterVisitor) edscluster(svc *dag.Service) {
-	name := hashname(60, svc.Namespace(), svc.Name(), strconv.Itoa(int(svc.Port)))
+	name := clustername(svc)
 	if _, ok := v.clusters[name]; ok {
 		// already created this cluster via another edge. skip it.
 		return
@@ -136,7 +138,7 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 	c := &v2.Cluster{
 		Name:             name,
 		Type:             v2.Cluster_EDS,
-		EdsClusterConfig: edsconfig("contour", servicename(svc.Namespace(), svc.Name(), svc.ServicePort.Name)),
+		EdsClusterConfig: edsconfig("contour", svc),
 		ConnectTimeout:   250 * time.Millisecond,
 		LbPolicy:         edslbstrategy(svc.LoadBalancerStrategy),
 		CommonLbConfig: &v2.Cluster_CommonLbConfig{
@@ -174,6 +176,31 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 		c.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
 	}
 	v.clusters[c.Name] = c
+}
+
+// clustername returns the name of the CDS cluster for this service.
+func clustername(s *dag.Service) string {
+	buf := s.LoadBalancerStrategy
+	if hc := s.HealthCheck; hc != nil {
+		if hc.TimeoutSeconds > 0 {
+			buf += (time.Duration(hc.TimeoutSeconds) * time.Second).String()
+		}
+		if hc.IntervalSeconds > 0 {
+			buf += (time.Duration(hc.IntervalSeconds) * time.Second).String()
+		}
+		if hc.UnhealthyThresholdCount > 0 {
+			buf += strconv.Itoa(int(hc.UnhealthyThresholdCount))
+		}
+		if hc.HealthyThresholdCount > 0 {
+			buf += strconv.Itoa(int(hc.HealthyThresholdCount))
+		}
+		buf += hc.Path
+	}
+
+	hash := sha1.Sum([]byte(buf))
+	ns := s.Namespace()
+	name := s.Name()
+	return hashname(60, ns, name, strconv.Itoa(int(s.Port)), fmt.Sprintf("%x", hash[:5]))
 }
 
 func edslbstrategy(lbStrategy string) v2.Cluster_LbPolicy {
@@ -242,10 +269,18 @@ func uint32OrNil(i int) *types.UInt32Value {
 	}
 }
 
-func edsconfig(source, name string) *v2.Cluster_EdsClusterConfig {
+func edsconfig(source string, service *dag.Service) *v2.Cluster_EdsClusterConfig {
+	name := []string{
+		service.Namespace(),
+		service.Name(),
+		service.ServicePort.Name,
+	}
+	if name[2] == "" {
+		name = name[:2]
+	}
 	return &v2.Cluster_EdsClusterConfig{
 		EdsConfig:   apiconfigsource(source), // hard coded by initconfig
-		ServiceName: name,
+		ServiceName: strings.Join(name, "/"),
 	}
 }
 
@@ -258,17 +293,4 @@ func apiconfigsource(clusters ...string) *core.ConfigSource {
 			},
 		},
 	}
-}
-
-// servicename returns a fixed name for this service and portname
-func servicename(namespace, name, portname string) string {
-	sn := []string{
-		namespace,
-		name,
-		portname,
-	}
-	if portname == "" {
-		sn = sn[:2]
-	}
-	return strings.Join(sn, "/")
 }

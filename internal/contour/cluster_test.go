@@ -14,7 +14,6 @@
 package contour
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
@@ -23,7 +22,9 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/gogo/protobuf/types"
+	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/api/core/v1"
@@ -65,7 +66,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "default/kuard/443",
+					Name: "default/kuard/443/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -105,7 +106,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "default/kuard/443",
+					Name: "default/kuard/443/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -149,7 +150,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "default/kuard/80",
+					Name: "default/kuard/80/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -191,7 +192,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "beurocratic-company-test-domain-1/tiny-cog-depa-81582b/443",
+					Name: "beurocra-7fe4b4/tiny-cog-7fe4b4/443/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -243,7 +244,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "default/backend/80",
+					Name: "default/backend/80/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -258,7 +259,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 				},
 				&v2.Cluster{
-					Name: "default/backend/8080",
+					Name: "default/backend/8080/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -306,7 +307,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "default/backend/80",
+					Name: "default/backend/80/c184349821",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -375,7 +376,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "default/backend/80",
+					Name: "default/backend/80/7f8051653a",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -437,7 +438,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "default/backend/80",
+					Name: "default/backend/80/f3b72af6a9",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -483,7 +484,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "default/backend/80",
+					Name: "default/backend/80/8bf87fefba",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -529,7 +530,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "default/backend/80",
+					Name: "default/backend/80/40633a6ca9",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -575,7 +576,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "default/backend/80",
+					Name: "default/backend/80/843e4ded8f",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -621,7 +622,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "default/backend/80",
+					Name: "default/backend/80/58d888c08a",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -637,6 +638,75 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
+		"ingressroute with differing lb algorithms": {
+			objs: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/a",
+							Services: []ingressroutev1.Service{{
+								Name:     "backend",
+								Port:     80,
+								Strategy: "Random",
+							}},
+						}, {
+							Match: "/b",
+							Services: []ingressroutev1.Service{{
+								Name:     "backend",
+								Port:     80,
+								Strategy: "Maglev",
+							}},
+						}},
+					},
+				},
+				service("default", "backend", v1.ServicePort{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(6502),
+				}),
+			},
+			want: clustermap(
+				&v2.Cluster{
+					Name: "default/backend/80/58d888c08a",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/backend/http",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_RANDOM,
+					CommonLbConfig: &v2.Cluster_CommonLbConfig{
+						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+							Value: 0,
+						},
+					},
+				},
+				&v2.Cluster{
+					Name: "default/backend/80/843e4ded8f",
+					Type: v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						ServiceName: "default/backend/http",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_MAGLEV,
+					CommonLbConfig: &v2.Cluster_CommonLbConfig{
+						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+							Value: 0,
+						},
+					},
+				},
+			),
+		},
+
 		"ingressroute with unknown lb algorithm": {
 			objs: []interface{}{
 				&ingressroutev1.IngressRoute{
@@ -667,7 +737,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "default/backend/80",
+					Name: "default/backend/80/86d7a9c129",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -715,7 +785,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "default/kuard/80",
+					Name: "default/kuard/80/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -768,7 +838,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name: "default/kuard/443",
+					Name: "default/kuard/443/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
@@ -799,8 +869,69 @@ func TestClusterVisit(t *testing.T) {
 				Visitable:    reh.Build(),
 			}
 			got := v.Visit()
-			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.want, got)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestClustername(t *testing.T) {
+	tests := map[string]struct {
+		service *dag.Service
+		want    string
+	}{
+		"simple": {
+			service: &dag.Service{
+				Object: service("default", "backend"),
+				ServicePort: &v1.ServicePort{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(6502),
+				},
+			},
+			want: "default/backend/80/da39a3ee5e",
+		},
+		"far too long": {
+			service: &dag.Service{
+				Object: service("it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune", "must-be-in-want-of-a-wife"),
+				ServicePort: &v1.ServicePort{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       9999,
+					TargetPort: intstr.FromString("http-alt"),
+				},
+			},
+			want: "it-is-a--dea8b0/must-be--dea8b0/9999/da39a3ee5e",
+		},
+		"various healthcheck params": {
+			service: &dag.Service{
+				Object: service("default", "backend"),
+				ServicePort: &v1.ServicePort{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(6502),
+				},
+				LoadBalancerStrategy: "Maglev",
+				HealthCheck: &ingressroutev1.HealthCheck{
+					Path:                    "/healthz",
+					IntervalSeconds:         5,
+					TimeoutSeconds:          30,
+					UnhealthyThresholdCount: 3,
+					HealthyThresholdCount:   1,
+				},
+			},
+			want: "default/backend/80/32737eb011",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := clustername(tc.service)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 	}
@@ -837,33 +968,4 @@ func clustermap(clusters ...*v2.Cluster) map[string]*v2.Cluster {
 
 func duration(d time.Duration) *time.Duration {
 	return &d
-}
-
-func TestServiceName(t *testing.T) {
-	tests := map[string]struct {
-		name, namespace string
-		portname        string
-		want            string
-	}{
-		"named service": {
-			namespace: "default",
-			name:      "kuard",
-			portname:  "http",
-			want:      "default/kuard/http",
-		},
-		"unnamed service": {
-			namespace: "default",
-			name:      "kuard",
-			want:      "default/kuard",
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := servicename(tc.namespace, tc.name, tc.portname)
-			if got != tc.want {
-				t.Fatalf("servicename(%s/%s, %q): want %q, got %q", tc.namespace, tc.name, tc.portname, tc.want, got)
-			}
-		})
-	}
 }

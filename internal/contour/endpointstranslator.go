@@ -14,11 +14,14 @@
 package contour
 
 import (
+	"strings"
+
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	_cache "k8s.io/client-go/tools/cache"
 )
 
@@ -119,7 +122,7 @@ func (e *EndpointsTranslator) recomputeClusterLoadAssignment(oldep, newep *v1.En
 			portname := p.Name
 			cla, ok := clas[portname]
 			if !ok {
-				cla = clusterloadassignment(servicename(newep.ObjectMeta.Namespace, newep.ObjectMeta.Name, portname))
+				cla = clusterloadassignment(servicename(newep.ObjectMeta, portname))
 				clas[portname] = cla
 			}
 			for _, a := range s.Addresses {
@@ -145,10 +148,25 @@ func (e *EndpointsTranslator) recomputeClusterLoadAssignment(oldep, newep *v1.En
 			portname := p.Name
 			if _, ok := clas[portname]; !ok {
 				// port is not present in the list added / updated, so remove it
-				e.Remove(servicename(oldep.ObjectMeta.Namespace, oldep.Name, portname))
+				e.Remove(servicename(oldep.ObjectMeta, portname))
 			}
 		}
 	}
+}
+
+// servicename returns the name of the cluster this meta and port
+// refers to. The CDS name of the cluster may include additional suffixes
+// but these are not known to EDS.
+func servicename(meta metav1.ObjectMeta, portname string) string {
+	name := []string{
+		meta.Namespace,
+		meta.Name,
+		portname,
+	}
+	if portname == "" {
+		name = name[:2]
+	}
+	return strings.Join(name, "/")
 }
 
 func clusterloadassignment(name string, lbendpoints ...endpoint.LbEndpoint) *v2.ClusterLoadAssignment {

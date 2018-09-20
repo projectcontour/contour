@@ -1,16 +1,13 @@
 # Contour Roadmap
 
 This document captures open questions and features for Contour.
+
+Upcoming release milestones are tracked via [GitHub Milestones][0].
+
 The ordering of items is unrelated to their priority or order of completion.
 
-- **Support for the v2 GRPC API**. The v1 REST API that Contour currently supports relies on polling from Envoy. Setting this polling rate too high (say 30 seconds or more) means a delay between when an object in the Kubernetes API changes, and when the change is propogated to Envoy. Setting the refresh rate too low (say a second or less) adds load on both Contour (to generate the response), and on Envoy as it merges the returned configuration with its running configuration, which many times will not have changed at all. The solution is to switch to the [v2 gRPC API][1], which will allow Contour to stream changes to Envoy and thereby eliminate polling.
-- **Update Ingress status**. Contour currently does not update the `status` section of the Ingress object. This doesn't appear to be critical if Contour is the single Ingress controller for a cluster, but if multiple Ingress controllers are in play in a cluster, users won't be able to assume that all Ingress traffic is routed through a single IP.
-- **Ingress annotation support**. Contour currently does not consult the annotation field on an Ingress object, with one exception. We do support `kubernetes.io/ingress.class`, to permit Contour to interoperate with other Ingress controllers. We should survey the set of annotations used by other Ingress controllers, and work to support a reasonable subset of standard annotations to permit modifying Ingress behavior.
-- **Surfacing errors or incompatible Ingress documents**.  How to notify on incomplete Ingress/Service/Endpoint documents? At the moment Contour ignores them. How can we separate broken (won't be fixed without manual intervention) from incomplete, because of the uncertainty of watching three different types of object? How do we report translation errors -- that is, cases that can be expressed in Kubernetes, but not in Envoy? For some cases, a downgrade might be possible, but in others it might be the case that no valid translation exists. These failures would cause the service to be excluded from the Envoy configuration, but it seems that there is a higher chance for an _incorrect_ or _impossible_ set of Ingress/Service/Endpoint objects to exist than for them to be missing. How we surface this to the owner of the Ingress/Service objects (not necessarily the owner of Contour) is an open question.
-- **Metric support**. Which Prometheus metrics should Contour gather? Top possibilities include count of requests from Envoy and histogram of request processing time. Number of Ingress objects in the result set is a useful metric as well. Should we record the translations and number of entries translated? Individual translation times are too small to worry about, and too fussy, but a total translation time for a set of `Upstream` values might be useful for administrators with very large numbers of Ingress objects if the translation time (and thus the response time of the poll) exceeds the timeout on the Envoy side.
-- **TLS/SSL SNI support**. As this [becomes available in Envoy][2], we should support this quickly in Contour. This is a critical way that Ingress is used.
+- **Update Ingress status**. Contour does not update the `status` section of the Ingress object. This doesn't appear to be critical if Contour is the single Ingress controller for a cluster, but if multiple Ingress controllers are in play in a cluster, users won't be able to assume that all Ingress traffic is routed through a single IP.  We will also need to handle similar behavior in the new IngressRoute CRD
+- **Expanded IngressRoute Specification**. In v0.6, we shipped an initial implementation of the new IngressRoute Custom Resource Definition.  Over the next several releases, we'll be expanding the API specification to add support (or sane defaults) for common features that are typically managed via annotations.
+- **Envoy Upgrades**.  We need to keep Contour up-to-date with the latest Envoy, envoy-data-plane, and GRPC updates.
 
-
-[0]: ../design/api-design.md
-[1]: https://github.com/envoyproxy/data-plane-api/blob/master/XDS_PROTOCOL.md
-[2]: https://github.com/envoyproxy/envoy/issues/95
+[0]: https://github.com/heptio/contour/milestones
