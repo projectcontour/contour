@@ -23,7 +23,7 @@ spec:
     spec:
       hostNetwork: true
       containers:
-      - image: gcr.io/heptio-images/contour:master
+      - image: gcr.io/heptio-images/contour:v0.6.0
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
@@ -49,7 +49,7 @@ spec:
         - name: contour-config
           mountPath: /config
       initContainers:
-      - image: gcr.io/heptio-images/contour:master
+      - image: gcr.io/heptio-images/contour:v0.6.0
         imagePullPolicy: Always
         name: envoy-initconfig
         command: ["contour"]
