@@ -419,7 +419,7 @@
   revision = "86e600f69ee4704c6efbf6a2a40a5c10700e76c2"
 
 [[projects]]
-  digest = "1:d2dc833c73202298c92b63a7e180e2b007b5a3c3c763e3b9fe1da249b5c7f5b9"
+  digest = "1:15656947b87a6a240e61dcfae9e71a55a8d5677f240d12ab48f02cdbabf1e309"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -431,9 +431,13 @@
     "credentials",
     "encoding",
     "encoding/proto",
-    "grpclb/grpc_lb_v1/messages",
     "grpclog",
     "internal",
+    "internal/backoff",
+    "internal/channelz",
+    "internal/envconfig",
+    "internal/grpcrand",
+    "internal/transport",
     "keepalive",
     "metadata",
     "naming",
@@ -444,11 +448,10 @@
     "stats",
     "status",
     "tap",
-    "transport",
   ]
   pruneopts = ""
-  revision = "8e4536a86ab602859c20df5ebfd0bd4228d08655"
-  version = "v1.10.0"
+  revision = "8dea3dc473e90c8179e519d91302d0597c0ca1d1"
+  version = "v1.15.0"
 
 [[projects]]
   digest = "1:15d017551627c8bb091bde628215b2861bed128855343fdd570c62d08871f6e1"
