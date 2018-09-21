@@ -48,7 +48,7 @@ spec:
         volumeMounts:
           - name: contour-config
             mountPath: /config
-      dnsPolicy: ClusterFirst
+      dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       initContainers:
       - args:
