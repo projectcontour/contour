@@ -20,7 +20,7 @@ package versioned
 
 import (
 	glog "github.com/golang/glog"
-	contourv1beta1 "github.com/heptio/contour/internal/generated/clientset/versioned/typed/contour/v1beta1"
+	contourv1beta1 "github.com/heptio/contour/apis/generated/clientset/versioned/typed/contour/v1beta1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

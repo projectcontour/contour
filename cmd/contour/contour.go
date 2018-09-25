@@ -22,8 +22,8 @@ import (
 	"strconv"
 	"strings"
 
+	clientset "github.com/heptio/contour/apis/generated/clientset/versioned"
 	"github.com/heptio/contour/internal/debug"
-	clientset "github.com/heptio/contour/internal/generated/clientset/versioned"
 	"github.com/heptio/contour/internal/httpsvc"
 	"github.com/heptio/workgroup"
 	"github.com/prometheus/client_golang/prometheus"

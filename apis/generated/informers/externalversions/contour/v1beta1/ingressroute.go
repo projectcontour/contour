@@ -22,9 +22,9 @@ import (
 	time "time"
 
 	contour_v1beta1 "github.com/heptio/contour/apis/contour/v1beta1"
-	versioned "github.com/heptio/contour/internal/generated/clientset/versioned"
-	internalinterfaces "github.com/heptio/contour/internal/generated/informers/externalversions/internalinterfaces"
-	v1beta1 "github.com/heptio/contour/internal/generated/listers/contour/v1beta1"
+	versioned "github.com/heptio/contour/apis/generated/clientset/versioned"
+	internalinterfaces "github.com/heptio/contour/apis/generated/informers/externalversions/internalinterfaces"
+	v1beta1 "github.com/heptio/contour/apis/generated/listers/contour/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
