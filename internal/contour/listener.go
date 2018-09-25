@@ -280,9 +280,6 @@ func httpfilter(routename, accessLogPath string) listener.Filter {
 					"config_source": st(map[string]*types.Value{
 						"api_config_source": st(map[string]*types.Value{
 							"api_type": sv("GRPC"),
-							"cluster_names": lv(
-								sv("contour"),
-							),
 							"grpc_services": lv(
 								st(map[string]*types.Value{
 									"envoy_grpc": st(map[string]*types.Value{

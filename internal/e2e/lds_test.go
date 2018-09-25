@@ -1042,8 +1042,7 @@ func httpfilter(routename string) listener.Filter {
 					ConfigSource: core.ConfigSource{
 						ConfigSourceSpecifier: &core.ConfigSource_ApiConfigSource{
 							ApiConfigSource: &core.ApiConfigSource{
-								ApiType:      core.ApiConfigSource_GRPC,
-								ClusterNames: []string{"contour"},
+								ApiType: core.ApiConfigSource_GRPC,
 								GrpcServices: []*core.GrpcService{{
 									TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
 										EnvoyGrpc: &core.GrpcService_EnvoyGrpc{

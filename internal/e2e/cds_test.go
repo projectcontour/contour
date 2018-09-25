@@ -777,11 +777,21 @@ func cluster(name, servicename string) *v2.Cluster {
 }
 
 func apiconfigsource(clusters ...string) *core.ConfigSource {
+	services := make([]*core.GrpcService, 0, len(clusters))
+	for _, c := range clusters {
+		services = append(services, &core.GrpcService{
+			TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
+				EnvoyGrpc: &core.GrpcService_EnvoyGrpc{
+					ClusterName: c,
+				},
+			},
+		})
+	}
 	return &core.ConfigSource{
 		ConfigSourceSpecifier: &core.ConfigSource_ApiConfigSource{
 			ApiConfigSource: &core.ApiConfigSource{
 				ApiType:      core.ApiConfigSource_GRPC,
-				ClusterNames: clusters,
+				GrpcServices: services,
 			},
 		},
 	}
