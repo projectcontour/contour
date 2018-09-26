@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/heptio/contour/internal/generated/clientset/versioned"
-	contour "github.com/heptio/contour/internal/generated/informers/externalversions/contour"
-	internalinterfaces "github.com/heptio/contour/internal/generated/informers/externalversions/internalinterfaces"
+	versioned "github.com/heptio/contour/apis/generated/clientset/versioned"
+	contour "github.com/heptio/contour/apis/generated/informers/externalversions/contour"
+	internalinterfaces "github.com/heptio/contour/apis/generated/informers/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

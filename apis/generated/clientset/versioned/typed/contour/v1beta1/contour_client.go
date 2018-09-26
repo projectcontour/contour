@@ -20,7 +20,7 @@ package v1beta1
 
 import (
 	v1beta1 "github.com/heptio/contour/apis/contour/v1beta1"
-	"github.com/heptio/contour/internal/generated/clientset/versioned/scheme"
+	"github.com/heptio/contour/apis/generated/clientset/versioned/scheme"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
 )

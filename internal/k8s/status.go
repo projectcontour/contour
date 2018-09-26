@@ -18,7 +18,7 @@ import (
 
 	jsonpatch "github.com/evanphx/json-patch"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
-	clientset "github.com/heptio/contour/internal/generated/clientset/versioned"
+	clientset "github.com/heptio/contour/apis/generated/clientset/versioned"
 	"k8s.io/apimachinery/pkg/types"
 )
 
