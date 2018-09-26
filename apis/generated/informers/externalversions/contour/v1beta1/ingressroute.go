@@ -21,7 +21,7 @@ package v1beta1
 import (
 	time "time"
 
-	contour_v1beta1 "github.com/heptio/contour/apis/contour/v1beta1"
+	contourv1beta1 "github.com/heptio/contour/apis/contour/v1beta1"
 	versioned "github.com/heptio/contour/apis/generated/clientset/versioned"
 	internalinterfaces "github.com/heptio/contour/apis/generated/informers/externalversions/internalinterfaces"
 	v1beta1 "github.com/heptio/contour/apis/generated/listers/contour/v1beta1"
@@ -70,7 +70,7 @@ func NewFilteredIngressRouteInformer(client versioned.Interface, namespace strin
 				return client.ContourV1beta1().IngressRoutes(namespace).Watch(options)
 			},
 		},
-		&contour_v1beta1.IngressRoute{},
+		&contourv1beta1.IngressRoute{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,7 +81,7 @@ func (f *ingressRouteInformer) defaultInformer(client versioned.Interface, resyn
 }
 
 func (f *ingressRouteInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&contour_v1beta1.IngressRoute{}, f.defaultInformer)
+	return f.factory.InformerFor(&contourv1beta1.IngressRoute{}, f.defaultInformer)
 }
 
 func (f *ingressRouteInformer) Lister() v1beta1.IngressRouteLister {
