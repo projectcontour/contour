@@ -29,14 +29,12 @@ func TestConfigWriter_WriteYAML(t *testing.T) {
   lds_config:
     api_config_source:
       api_type: GRPC
-      cluster_names: [contour]
       grpc_services:
       - envoy_grpc:
           cluster_name: contour
   cds_config:
     api_config_source:
       api_type: GRPC
-      cluster_names: [contour]
       grpc_services:
       - envoy_grpc:
           cluster_name: contour
@@ -88,14 +86,12 @@ admin:
   lds_config:
     api_config_source:
       api_type: GRPC
-      cluster_names: [contour]
       grpc_services:
       - envoy_grpc:
           cluster_name: contour
   cds_config:
     api_config_source:
       api_type: GRPC
-      cluster_names: [contour]
       grpc_services:
       - envoy_grpc:
           cluster_name: contour
