@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -98,9 +97,7 @@ func TestParseAnnotationUInt32(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := parseAnnotationUInt32(tc.a, annotationRequestTimeout)
-			full := types.UInt32Value{Value: tc.want}
-
-			if ((got == nil) != tc.isNil) || (got != nil && *got != full) {
+			if ((got == nil) != tc.isNil) || (got != nil && got.Value != tc.want) {
 				t.Fatalf("parseAnnotationUInt32(%q): want: %v, isNil: %v, got: %v", tc.a, tc.want, tc.isNil, got)
 			}
 		})
