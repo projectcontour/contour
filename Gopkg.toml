@@ -9,10 +9,6 @@ required = [
   "k8s.io/code-generator/cmd/informer-gen",
 ]
 
-ignored = [
- 	# "cloud.google.com/go/compute/metadata"
-]
-
 [[constraint]]
   name="k8s.io/client-go"
   version="v7.0.0"
@@ -43,4 +39,4 @@ ignored = [
 
 [[constraint]]
   name = "github.com/gogo/protobuf"
-  version = "=1.0.0"
+  version = "=1.1.1"
