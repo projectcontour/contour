@@ -40,7 +40,3 @@ ignored = [
 [[constraint]]
   name = "github.com/envoyproxy/go-control-plane"
   version = "=v0.4"
-
-[[constraint]]
-  name = "github.com/gogo/protobuf"
-  version = "=1.0.0"
