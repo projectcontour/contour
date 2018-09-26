@@ -92,7 +92,7 @@ spec:
                   pattern: ^\/.*$
                 intervalSeconds:
                   type: integer
-                timeoutSeconds: 
+                timeoutSeconds:
                   type: integer
                 unhealthyThresholdCount:
                   type: integer
@@ -129,7 +129,7 @@ spec:
                         name:
                           type: string
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123
-                        port: 
+                        port:
                           type: integer
                         weight:
                           type: integer
@@ -151,7 +151,7 @@ spec:
                               pattern: ^\/.*$
                             intervalSeconds:
                               type: integer
-                            timeoutSeconds: 
+                            timeoutSeconds:
                               type: integer
                             unhealthyThresholdCount:
                               type: integer
@@ -186,7 +186,7 @@ spec:
         name: contour
         command: ["contour"]
         args: ["serve", "--incluster"]
-      - image: docker.io/envoyproxy/envoy-alpine:v1.6.0
+      - image: docker.io/envoyproxy/envoy-alpine:v1.7.0
         name: envoy
         ports:
         - containerPort: 8080
