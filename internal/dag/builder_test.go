@@ -650,7 +650,7 @@ func TestDAGInsert(t *testing.T) {
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/blog",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name:      "blog",
 					Namespace: "marketing",
 				},
@@ -673,7 +673,7 @@ func TestDAGInsert(t *testing.T) {
 				}},
 			}, {
 				Match: "/blog/admin",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name:      "marketing-admin",
 					Namespace: "operations",
 				},
@@ -2551,7 +2551,7 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/finance",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name:      "finance-root",
 					Namespace: "finance",
 				},
@@ -2572,7 +2572,7 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 				}},
 			}, {
 				Match: "/finance/stocks",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name:      "example-com",
 					Namespace: "default",
 				},
@@ -2619,7 +2619,7 @@ func TestDAGIngressRouteCycleSelfEdge(t *testing.T) {
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/finance",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name:      "example-com",
 					Namespace: "default",
 				},
@@ -2660,7 +2660,7 @@ func TestDAGIngressRouteDelegatesToNonExistent(t *testing.T) {
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/finance",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name:      "non-existent",
 					Namespace: "non-existent",
 				},
@@ -2701,7 +2701,7 @@ func TestDAGIngressRouteDelegatePrefixDoesntMatch(t *testing.T) {
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/finance",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name:      "finance-root",
 					Namespace: "finance",
 				},
@@ -2866,7 +2866,7 @@ func TestDAGIngressRouteDelegatePrefixMatchesStringPrefixButNotPathPrefix(t *tes
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name:      "finance-root",
 					Namespace: "finance",
 				},
@@ -3022,7 +3022,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				}},
 			}, {
 				Match: "/prefix",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name: "delegated",
 				}},
 			},
@@ -3119,7 +3119,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name: "self",
 				},
 			}},
@@ -3138,7 +3138,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name: "child",
 				},
 			}},
@@ -3153,7 +3153,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		Spec: ingressroutev1.IngressRouteSpec{
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name: "parent",
 				},
 			}},
@@ -3172,7 +3172,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name: "child",
 				},
 				Services: []ingressroutev1.Service{{
@@ -3195,12 +3195,12 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name: "validChild",
 				},
 			}, {
 				Match: "/bar",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name: "invalidChild",
 				},
 			}},
@@ -3268,7 +3268,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			VirtualHost: &ingressroutev1.VirtualHost{},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name: "validChild",
 				},
 			}},

@@ -523,7 +523,7 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 
 	for _, route := range ir.Spec.Routes {
 		// route cannot both delegate and point to services
-		if len(route.Services) > 0 && route.Delegate.Name != "" {
+		if len(route.Services) > 0 && route.Delegate != nil {
 			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: cannot specify services and delegate in the same route", route.Match), Vhost: host})
 			return
 		}
@@ -563,7 +563,7 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 			continue
 		}
 
-		if isBlank(route.Delegate.Name) {
+		if route.Delegate == nil {
 			// not a delegate route
 			continue
 		}

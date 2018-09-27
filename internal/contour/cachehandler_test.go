@@ -42,7 +42,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 				}},
 			}, {
 				Match: "/prefix",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name: "delegated",
 				}},
 			},
@@ -139,7 +139,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name: "self",
 				},
 			}},
@@ -158,7 +158,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name: "child",
 				},
 			}},
@@ -173,7 +173,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 		Spec: ingressroutev1.IngressRouteSpec{
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name: "parent",
 				},
 			}},
@@ -192,7 +192,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name: "child",
 				},
 				Services: []ingressroutev1.Service{{
@@ -215,12 +215,12 @@ func TestIngressRouteMetrics(t *testing.T) {
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name: "validChild",
 				},
 			}, {
 				Match: "/bar",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name: "invalidChild",
 				},
 			}},
@@ -288,7 +288,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			VirtualHost: &ingressroutev1.VirtualHost{},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
-				Delegate: ingressroutev1.Delegate{
+				Delegate: &ingressroutev1.Delegate{
 					Name: "validChild",
 				},
 			}},
