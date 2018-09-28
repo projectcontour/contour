@@ -155,7 +155,11 @@ func (in *Route) DeepCopyInto(out *Route) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	out.Delegate = in.Delegate
+	if in.Delegate != nil {
+		in, out := &in.Delegate, &out.Delegate
+		*out = new(Delegate)
+		**out = **in
+	}
 	return
 }
 

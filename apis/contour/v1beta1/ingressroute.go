@@ -21,7 +21,7 @@ import (
 type IngressRouteSpec struct {
 	// Virtualhost appears at most once. If it is present, the object is considered
 	// to be a "root".
-	VirtualHost *VirtualHost `json:"virtualhost"`
+	VirtualHost *VirtualHost `json:"virtualhost,omitempty"`
 	// Routes are the ingress routes
 	Routes []Route `json:"routes"`
 }
@@ -35,7 +35,7 @@ type VirtualHost struct {
 	// If present describes tls properties. The CNI names that will be matched on
 	// are described in fqdn and aliases, the tls.secretName secret must contain a
 	// matching certificate
-	TLS *TLS `json:"tls"`
+	TLS *TLS `json:"tls,omitempty"`
 }
 
 // TLS describes tls properties. The CNI names that will be matched on
@@ -45,7 +45,7 @@ type TLS struct {
 	// required, the name of a secret in the current namespace
 	SecretName string `json:"secretName"`
 	// Minimum TLS version this vhost should negotiate
-	MinimumProtocolVersion string `json:"minimumProtocolVersion"`
+	MinimumProtocolVersion string `json:"minimumProtocolVersion,omitempty"`
 }
 
 // Route contains the set of routes for a virtual host
@@ -53,14 +53,14 @@ type Route struct {
 	// Match defines the prefix match
 	Match string `json:"match"`
 	// Services are the services to proxy traffic
-	Services []Service `json:"services"`
+	Services []Service `json:"services,omitempty"`
 	// Delegate specifies that this route should be delegated to another IngressRoute
-	Delegate `json:"delegate"`
+	Delegate *Delegate `json:"delegate,omitempty"`
 	// Enables websocket support for the route
-	EnableWebsockets bool `json:"enableWebsockets"`
+	EnableWebsockets bool `json:"enableWebsockets,omitempty"`
 	// Allow this path to respond to insecure requests over HTTP which are normally
 	// not permitted when a `virtualhost.tls` block is present.
-	PermitInsecure bool `json:"permitInsecure"`
+	PermitInsecure bool `json:"permitInsecure,omitempty"`
 }
 
 // Service defines an upstream to proxy traffic to
@@ -71,11 +71,11 @@ type Service struct {
 	// Port (defined as Integer) to proxy traffic to since a service can have multiple defined
 	Port int `json:"port"`
 	// Weight defines percentage of traffic to balance traffic
-	Weight int `json:"weight"`
+	Weight int `json:"weight,omitempty"`
 	// HealthCheck defines optional healthchecks on the upstream service
-	HealthCheck *HealthCheck `json:"healthCheck"`
+	HealthCheck *HealthCheck `json:"healthCheck,omitempty"`
 	// LB Algorithm to apply (see https://github.com/heptio/contour/blob/master/design/ingressroute-design.md#load-balancing)
-	Strategy string `json:"strategy"`
+	Strategy string `json:"strategy,omitempty"`
 }
 
 // Delegate allows for delegating VHosts to other IngressRoutes
@@ -83,7 +83,7 @@ type Delegate struct {
 	// Name of the IngressRoute
 	Name string `json:"name"`
 	// Namespace of the IngressRoute
-	Namespace string `json:"namespace"`
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // HealthCheck defines optional healthchecks on the upstream service
@@ -93,7 +93,7 @@ type HealthCheck struct {
 	// The value of the host header in the HTTP health check request.
 	// If left empty (default value), the name "contour-envoy-healthcheck"
 	// will be used.
-	Host string `json:"host"`
+	Host string `json:"host,omitempty"`
 	// The interval (seconds) between health checks
 	IntervalSeconds int64 `json:"intervalSeconds"`
 	// The time to wait (seconds) for a health check response
