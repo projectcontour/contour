@@ -1,29 +1,22 @@
 required = [
   "k8s.io/code-generator/cmd/client-gen",
-  # needed by generated clientsets, but not an explicit dep in client-gen itself
-  "k8s.io/apimachinery/pkg/apimachinery/registered",
-
   "k8s.io/code-generator/cmd/deepcopy-gen",
   "k8s.io/code-generator/cmd/defaulter-gen",
   "k8s.io/code-generator/cmd/lister-gen",
   "k8s.io/code-generator/cmd/informer-gen",
 ]
 
-ignored = [
- 	# "cloud.google.com/go/compute/metadata"
-]
+[[constraint]]
+  name = "k8s.io/client-go"
+  version = "v8.0.0"
 
 [[constraint]]
-  name="k8s.io/client-go"
-  version="v7.0.0"
+  name = "k8s.io/apimachinery"
+  version = "kubernetes-1.11.3"
 
 [[constraint]]
-  name="k8s.io/api"
-  branch="release-1.10"
-
-[[constraint]]
-  name="k8s.io/apimachinery"
-  branch="release-1.10"
+  name = "k8s.io/api"
+  version = "kubernetes-1.11.3"
 
 [[constraint]]
   name = "google.golang.org/grpc"
