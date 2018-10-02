@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
@@ -1072,9 +1073,23 @@ func TestRouteVisit(t *testing.T) {
 											Clusters: []*route.WeightedCluster_ClusterWeight{{
 												Name:   "default/backend/80/da39a3ee5e",
 												Weight: u32(1),
+												RequestHeadersToAdd: []*core.HeaderValueOption{{
+													Header: &core.HeaderValue{
+														Key:   "x-request-start",
+														Value: "t=%START_TIME(%s.%3f)%",
+													},
+													Append: &types.BoolValue{Value: true},
+												}},
 											}, {
 												Name:   "default/backendtwo/80/da39a3ee5e",
 												Weight: u32(1),
+												RequestHeadersToAdd: []*core.HeaderValueOption{{
+													Header: &core.HeaderValue{
+														Key:   "x-request-start",
+														Value: "t=%START_TIME(%s.%3f)%",
+													},
+													Append: &types.BoolValue{Value: true},
+												}},
 											}},
 											TotalWeight: u32(2),
 										},
@@ -1158,9 +1173,23 @@ func TestRouteVisit(t *testing.T) {
 											Clusters: []*route.WeightedCluster_ClusterWeight{{
 												Name:   "default/backend/80/da39a3ee5e",
 												Weight: u32(0),
+												RequestHeadersToAdd: []*core.HeaderValueOption{{
+													Header: &core.HeaderValue{
+														Key:   "x-request-start",
+														Value: "t=%START_TIME(%s.%3f)%",
+													},
+													Append: &types.BoolValue{Value: true},
+												}},
 											}, {
 												Name:   "default/backendtwo/80/da39a3ee5e",
 												Weight: u32(50),
+												RequestHeadersToAdd: []*core.HeaderValueOption{{
+													Header: &core.HeaderValue{
+														Key:   "x-request-start",
+														Value: "t=%START_TIME(%s.%3f)%",
+													},
+													Append: &types.BoolValue{Value: true},
+												}},
 											}},
 											TotalWeight: u32(50),
 										},
@@ -1245,9 +1274,23 @@ func TestRouteVisit(t *testing.T) {
 											Clusters: []*route.WeightedCluster_ClusterWeight{{
 												Name:   "default/backend/80/da39a3ee5e",
 												Weight: u32(22),
+												RequestHeadersToAdd: []*core.HeaderValueOption{{
+													Header: &core.HeaderValue{
+														Key:   "x-request-start",
+														Value: "t=%START_TIME(%s.%3f)%",
+													},
+													Append: &types.BoolValue{Value: true},
+												}},
 											}, {
 												Name:   "default/backendtwo/80/da39a3ee5e",
 												Weight: u32(50),
+												RequestHeadersToAdd: []*core.HeaderValueOption{{
+													Header: &core.HeaderValue{
+														Key:   "x-request-start",
+														Value: "t=%START_TIME(%s.%3f)%",
+													},
+													Append: &types.BoolValue{Value: true},
+												}},
 											}},
 											TotalWeight: u32(72),
 										},
@@ -1338,6 +1381,13 @@ func routecluster(cluster string) *route.Route_Route {
 			ClusterSpecifier: &route.RouteAction_Cluster{
 				Cluster: cluster,
 			},
+			RequestHeadersToAdd: []*core.HeaderValueOption{{
+				Header: &core.HeaderValue{
+					Key:   "x-request-start",
+					Value: "t=%START_TIME(%s.%3f)%",
+				},
+				Append: &types.BoolValue{Value: true},
+			}},
 		},
 	}
 
@@ -1394,6 +1444,13 @@ func TestActionRoute(t *testing.T) {
 					ClusterSpecifier: &route.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
+					RequestHeadersToAdd: []*core.HeaderValueOption{{
+						Header: &core.HeaderValue{
+							Key:   "x-request-start",
+							Value: "t=%START_TIME(%s.%3f)%",
+						},
+						Append: &types.BoolValue{Value: true},
+					}},
 				},
 			},
 		},
@@ -1420,6 +1477,13 @@ func TestActionRoute(t *testing.T) {
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 					Timeout: duration(30 * time.Second),
+					RequestHeadersToAdd: []*core.HeaderValueOption{{
+						Header: &core.HeaderValue{
+							Key:   "x-request-start",
+							Value: "t=%START_TIME(%s.%3f)%",
+						},
+						Append: &types.BoolValue{Value: true},
+					}},
 				},
 			},
 		},
@@ -1446,6 +1510,13 @@ func TestActionRoute(t *testing.T) {
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 					Timeout: duration(0),
+					RequestHeadersToAdd: []*core.HeaderValueOption{{
+						Header: &core.HeaderValue{
+							Key:   "x-request-start",
+							Value: "t=%START_TIME(%s.%3f)%",
+						},
+						Append: &types.BoolValue{Value: true},
+					}},
 				},
 			},
 		},
@@ -1472,6 +1543,13 @@ func TestActionRoute(t *testing.T) {
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 					UseWebsocket: &types.BoolValue{Value: true},
+					RequestHeadersToAdd: []*core.HeaderValueOption{{
+						Header: &core.HeaderValue{
+							Key:   "x-request-start",
+							Value: "t=%START_TIME(%s.%3f)%",
+						},
+						Append: &types.BoolValue{Value: true},
+					}},
 				},
 			},
 		},
@@ -1500,6 +1578,13 @@ func TestActionRoute(t *testing.T) {
 					},
 					Timeout:      duration(5 * time.Second),
 					UseWebsocket: &types.BoolValue{Value: true},
+					RequestHeadersToAdd: []*core.HeaderValueOption{{
+						Header: &core.HeaderValue{
+							Key:   "x-request-start",
+							Value: "t=%START_TIME(%s.%3f)%",
+						},
+						Append: &types.BoolValue{Value: true},
+					}},
 				},
 			},
 		},
@@ -1526,6 +1611,13 @@ func TestActionRoute(t *testing.T) {
 					ClusterSpecifier: &route.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
+					RequestHeadersToAdd: []*core.HeaderValueOption{{
+						Header: &core.HeaderValue{
+							Key:   "x-request-start",
+							Value: "t=%START_TIME(%s.%3f)%",
+						},
+						Append: &types.BoolValue{Value: true},
+					}},
 				},
 			},
 		},
@@ -1558,6 +1650,13 @@ func TestActionRoute(t *testing.T) {
 						NumRetries:    u32(7),
 						PerTryTimeout: duration(10 * time.Second),
 					},
+					RequestHeadersToAdd: []*core.HeaderValueOption{{
+						Header: &core.HeaderValue{
+							Key:   "x-request-start",
+							Value: "t=%START_TIME(%s.%3f)%",
+						},
+						Append: &types.BoolValue{Value: true},
+					}},
 				},
 			},
 		},
@@ -1594,9 +1693,23 @@ func TestActionRoute(t *testing.T) {
 							Clusters: []*route.WeightedCluster_ClusterWeight{{
 								Name:   "default/kuard/8080/da39a3ee5e",
 								Weight: u32(1),
+								RequestHeadersToAdd: []*core.HeaderValueOption{{
+									Header: &core.HeaderValue{
+										Key:   "x-request-start",
+										Value: "t=%START_TIME(%s.%3f)%",
+									},
+									Append: &types.BoolValue{Value: true},
+								}},
 							}, {
 								Name:   "default/nginx/8080/da39a3ee5e",
 								Weight: u32(1),
+								RequestHeadersToAdd: []*core.HeaderValueOption{{
+									Header: &core.HeaderValue{
+										Key:   "x-request-start",
+										Value: "t=%START_TIME(%s.%3f)%",
+									},
+									Append: &types.BoolValue{Value: true},
+								}},
 							}},
 							TotalWeight: u32(2),
 						},
@@ -1636,9 +1749,23 @@ func TestActionRoute(t *testing.T) {
 							Clusters: []*route.WeightedCluster_ClusterWeight{{
 								Name:   "default/kuard/8080/da39a3ee5e",
 								Weight: u32(80),
+								RequestHeadersToAdd: []*core.HeaderValueOption{{
+									Header: &core.HeaderValue{
+										Key:   "x-request-start",
+										Value: "t=%START_TIME(%s.%3f)%",
+									},
+									Append: &types.BoolValue{Value: true},
+								}},
 							}, {
 								Name:   "default/nginx/8080/da39a3ee5e",
 								Weight: u32(20),
+								RequestHeadersToAdd: []*core.HeaderValueOption{{
+									Header: &core.HeaderValue{
+										Key:   "x-request-start",
+										Value: "t=%START_TIME(%s.%3f)%",
+									},
+									Append: &types.BoolValue{Value: true},
+								}},
 							}},
 							TotalWeight: u32(100),
 						},
@@ -1691,12 +1818,33 @@ func TestActionRoute(t *testing.T) {
 							Clusters: []*route.WeightedCluster_ClusterWeight{{
 								Name:   "default/kuard/8080/da39a3ee5e",
 								Weight: u32(80),
+								RequestHeadersToAdd: []*core.HeaderValueOption{{
+									Header: &core.HeaderValue{
+										Key:   "x-request-start",
+										Value: "t=%START_TIME(%s.%3f)%",
+									},
+									Append: &types.BoolValue{Value: true},
+								}},
 							}, {
 								Name:   "default/nginx/8080/da39a3ee5e",
 								Weight: u32(20),
+								RequestHeadersToAdd: []*core.HeaderValueOption{{
+									Header: &core.HeaderValue{
+										Key:   "x-request-start",
+										Value: "t=%START_TIME(%s.%3f)%",
+									},
+									Append: &types.BoolValue{Value: true},
+								}},
 							}, {
 								Name:   "default/notraffic/8080/da39a3ee5e",
 								Weight: u32(0),
+								RequestHeadersToAdd: []*core.HeaderValueOption{{
+									Header: &core.HeaderValue{
+										Key:   "x-request-start",
+										Value: "t=%START_TIME(%s.%3f)%",
+									},
+									Append: &types.BoolValue{Value: true},
+								}},
 							}},
 							TotalWeight: u32(100),
 						},
