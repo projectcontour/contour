@@ -602,13 +602,7 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 
 // routeEnforceTLS determines if the route should redirect the user to a secure TLS listener
 func routeEnforceTLS(enforceTLS, permitInsecure bool) bool {
-	if enforceTLS {
-		if permitInsecure {
-			return false
-		}
-		return true
-	}
-	return false
+	return enforceTLS && !permitInsecure
 }
 
 // httppaths returns a slice of HTTPIngressPath values for a given IngressRule.

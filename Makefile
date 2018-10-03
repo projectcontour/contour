@@ -16,7 +16,7 @@ test-race: | test
 vet: | test
 	go vet ./...
 
-check: test test-race vet gofmt staticcheck unused misspell unconvert
+check: test test-race vet gofmt staticcheck unused misspell unconvert gosimple
 	@echo Checking rendered files are up to date
 	@(cd deployment && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 
@@ -60,6 +60,14 @@ errcheck:
 unconvert:
 	@go get github.com/mdempsky/unconvert
 	unconvert -v $(PKGS)
+
+gosimple:
+	@go get honnef.co/go/tools/cmd/gosimple
+	gosimple $(PKGS)
+
+unparam:
+	@go get mvdan.cc/unparam
+	unparam ./...
 
 render:
 	@echo Rendering deployment files...
