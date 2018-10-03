@@ -1007,7 +1007,7 @@ func filterchain(useproxy bool, filters ...listener.Filter) listener.FilterChain
 func filterchaintls(domains []string, cert, key string, useproxy bool, filters ...listener.Filter) listener.FilterChain {
 	fc := filterchain(useproxy, filters...)
 	fc.FilterChainMatch = &listener.FilterChainMatch{
-		SniDomains: domains,
+		ServerNames: domains,
 	}
 	fc.TlsContext = &auth.DownstreamTlsContext{
 		CommonTlsContext: &auth.CommonTlsContext{

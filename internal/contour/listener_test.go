@@ -138,7 +138,7 @@ func TestListenerVisit(t *testing.T) {
 					Address: socketaddress("0.0.0.0", 8443),
 					FilterChains: []listener.FilterChain{{
 						FilterChainMatch: &listener.FilterChainMatch{
-							SniDomains: []string{"whatever.example.com"},
+							ServerNames: []string{"whatever.example.com"},
 						},
 						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 						Filters: []listener.Filter{
@@ -231,7 +231,7 @@ func TestListenerVisit(t *testing.T) {
 					Address: socketaddress("0.0.0.0", 8443),
 					FilterChains: []listener.FilterChain{{
 						FilterChainMatch: &listener.FilterChainMatch{
-							SniDomains: []string{"www.example.com"},
+							ServerNames: []string{"www.example.com"},
 						},
 						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 						Filters: []listener.Filter{
@@ -296,7 +296,7 @@ func TestListenerVisit(t *testing.T) {
 					Address: socketaddress("0.0.0.0", 8443),
 					FilterChains: []listener.FilterChain{{
 						FilterChainMatch: &listener.FilterChainMatch{
-							SniDomains: []string{"www.example.com"},
+							ServerNames: []string{"www.example.com"},
 						},
 						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 						Filters: []listener.Filter{
@@ -351,7 +351,7 @@ func TestListenerVisit(t *testing.T) {
 					Address: socketaddress("127.0.0.200", 9200),
 					FilterChains: []listener.FilterChain{{
 						FilterChainMatch: &listener.FilterChainMatch{
-							SniDomains: []string{"whatever.example.com"},
+							ServerNames: []string{"whatever.example.com"},
 						},
 						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 						Filters: []listener.Filter{
@@ -403,7 +403,7 @@ func TestListenerVisit(t *testing.T) {
 					Address: socketaddress("0.0.0.0", 8443),
 					FilterChains: []listener.FilterChain{{
 						FilterChainMatch: &listener.FilterChainMatch{
-							SniDomains: []string{"whatever.example.com"},
+							ServerNames: []string{"whatever.example.com"},
 						},
 						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 						Filters: []listener.Filter{
