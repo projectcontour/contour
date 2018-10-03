@@ -22,6 +22,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/api/core/v1"
@@ -138,13 +139,16 @@ func TestListenerVisit(t *testing.T) {
 					Address: socketaddress("0.0.0.0", 8443),
 					FilterChains: []listener.FilterChain{{
 						FilterChainMatch: &listener.FilterChainMatch{
-							SniDomains: []string{"whatever.example.com"},
+							ServerNames: []string{"whatever.example.com"},
 						},
 						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 						Filters: []listener.Filter{
 							httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
 						},
 					}},
+					ListenerFilters: []listener.ListenerFilter{
+						envoy.TLSInspector(),
+					},
 				},
 			},
 		},
@@ -231,13 +235,16 @@ func TestListenerVisit(t *testing.T) {
 					Address: socketaddress("0.0.0.0", 8443),
 					FilterChains: []listener.FilterChain{{
 						FilterChainMatch: &listener.FilterChainMatch{
-							SniDomains: []string{"www.example.com"},
+							ServerNames: []string{"www.example.com"},
 						},
 						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 						Filters: []listener.Filter{
 							httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
 						},
 					}},
+					ListenerFilters: []listener.ListenerFilter{
+						envoy.TLSInspector(),
+					},
 				},
 			},
 		},
@@ -296,13 +303,16 @@ func TestListenerVisit(t *testing.T) {
 					Address: socketaddress("0.0.0.0", 8443),
 					FilterChains: []listener.FilterChain{{
 						FilterChainMatch: &listener.FilterChainMatch{
-							SniDomains: []string{"www.example.com"},
+							ServerNames: []string{"www.example.com"},
 						},
 						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 						Filters: []listener.Filter{
 							httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
 						},
 					}},
+					ListenerFilters: []listener.ListenerFilter{
+						envoy.TLSInspector(),
+					},
 				},
 			},
 		},
@@ -351,13 +361,16 @@ func TestListenerVisit(t *testing.T) {
 					Address: socketaddress("127.0.0.200", 9200),
 					FilterChains: []listener.FilterChain{{
 						FilterChainMatch: &listener.FilterChainMatch{
-							SniDomains: []string{"whatever.example.com"},
+							ServerNames: []string{"whatever.example.com"},
 						},
 						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 						Filters: []listener.Filter{
 							httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
 						},
 					}},
+					ListenerFilters: []listener.ListenerFilter{
+						envoy.TLSInspector(),
+					},
 				},
 			},
 		},
@@ -403,7 +416,7 @@ func TestListenerVisit(t *testing.T) {
 					Address: socketaddress("0.0.0.0", 8443),
 					FilterChains: []listener.FilterChain{{
 						FilterChainMatch: &listener.FilterChainMatch{
-							SniDomains: []string{"whatever.example.com"},
+							ServerNames: []string{"whatever.example.com"},
 						},
 						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 						Filters: []listener.Filter{
@@ -411,6 +424,9 @@ func TestListenerVisit(t *testing.T) {
 						},
 						UseProxyProto: &types.BoolValue{Value: true},
 					}},
+					ListenerFilters: []listener.ListenerFilter{
+						envoy.TLSInspector(),
+					},
 				},
 			},
 		},

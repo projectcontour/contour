@@ -45,7 +45,7 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:7da71496e1c143cb5b690621a19e0b33558a28a46a4341070768d70803dfcee6"
+  digest = "1:64b562211e676aa8179dd0b221ffc357b6248335469609e6f2ab690faa8ed6e4"
   name = "github.com/envoyproxy/go-control-plane"
   packages = [
     "envoy/api/v2",
@@ -62,8 +62,8 @@
     "envoy/type",
   ]
   pruneopts = ""
-  revision = "c14704578b82128fab17743d91f870c406ef8d09"
-  version = "v0.4"
+  revision = "1f13d29c5def25a02b9149909472c6a9e6839551"
+  version = "v0.6.0"
 
 [[projects]]
   digest = "1:4216202f4088a73e2982df875e2f0d1401137bbc248e57391e70547af167a18a"
@@ -736,7 +736,6 @@
     "github.com/gogo/protobuf/jsonpb",
     "github.com/gogo/protobuf/proto",
     "github.com/gogo/protobuf/types",
-    "github.com/golang/glog",
     "github.com/google/go-cmp/cmp",
     "github.com/heptio/workgroup",
     "github.com/prometheus/client_golang/prometheus",
