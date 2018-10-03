@@ -27,15 +27,14 @@ type configWriter interface {
 // writeBootstrapConfig writes a bootstrap configuration to the supplied path.
 // If the path ends in .yaml, the configuration file will be in v2 YAML format.
 func writeBootstrapConfig(config configWriter, path string) {
-	f, err := os.Create(path)
-	check(err)
 	switch filepath.Ext(path) {
 	case ".yaml":
+		f, err := os.Create(path)
+		check(err)
 		err = config.WriteYAML(f)
 		check(err)
+		check(f.Close())
 	default:
-		f.Close()
 		check(fmt.Errorf("path %s must end in .yaml", path))
 	}
-	check(f.Close())
 }

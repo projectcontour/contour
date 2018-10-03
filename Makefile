@@ -53,6 +53,10 @@ misspell:
 		-error \
 		cmd/* internal/* docs/* design/* *.md
 
+errcheck:
+	@go get github.com/kisielk/errcheck
+	errcheck $(PKGS)
+
 render:
 	@echo Rendering deployment files...
 	@(cd deployment && bash render.sh)
