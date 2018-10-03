@@ -17,7 +17,6 @@ package e2e
 
 import (
 	"net"
-	"sync"
 	"testing"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -98,11 +97,9 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 		endpointType: et,
 	})
 
-	var wg sync.WaitGroup
-	wg.Add(1)
+	done := make(chan error, 1)
 	go func() {
-		defer wg.Done()
-		srv.Serve(l)
+		done <- srv.Serve(l) // srv now owns l and will close l before returning
 	}()
 	cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
 	check(t, err)
@@ -116,10 +113,10 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 		// close client connection
 		cc.Close()
 
-		// shut down listener, stop server and wait for it to stop
-		l.Close()
+		// stop server and wait for it to stop
 		srv.Stop()
-		wg.Wait()
+
+		<-done
 	}
 }
 
