@@ -22,6 +22,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/api/core/v1"
@@ -145,6 +146,9 @@ func TestListenerVisit(t *testing.T) {
 							httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
 						},
 					}},
+					ListenerFilters: []listener.ListenerFilter{
+						envoy.TLSInspector(),
+					},
 				},
 			},
 		},
@@ -238,6 +242,9 @@ func TestListenerVisit(t *testing.T) {
 							httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
 						},
 					}},
+					ListenerFilters: []listener.ListenerFilter{
+						envoy.TLSInspector(),
+					},
 				},
 			},
 		},
@@ -303,6 +310,9 @@ func TestListenerVisit(t *testing.T) {
 							httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
 						},
 					}},
+					ListenerFilters: []listener.ListenerFilter{
+						envoy.TLSInspector(),
+					},
 				},
 			},
 		},
@@ -358,6 +368,9 @@ func TestListenerVisit(t *testing.T) {
 							httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
 						},
 					}},
+					ListenerFilters: []listener.ListenerFilter{
+						envoy.TLSInspector(),
+					},
 				},
 			},
 		},
@@ -411,6 +424,9 @@ func TestListenerVisit(t *testing.T) {
 						},
 						UseProxyProto: &types.BoolValue{Value: true},
 					}},
+					ListenerFilters: []listener.ListenerFilter{
+						envoy.TLSInspector(),
+					},
 				},
 			},
 		},

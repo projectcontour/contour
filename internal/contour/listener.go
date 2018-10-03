@@ -23,6 +23,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
+	"github.com/heptio/contour/internal/envoy"
 	"k8s.io/api/core/v1"
 )
 
@@ -200,6 +201,9 @@ func (v *listenerVisitor) Visit() map[string]*v2.Listener {
 	ingress_https := v2.Listener{
 		Name:    ENVOY_HTTPS_LISTENER,
 		Address: socketaddress(v.httpsAddress(), v.httpsPort()),
+		ListenerFilters: []listener.ListenerFilter{
+			envoy.TLSInspector(),
+		},
 	}
 	filters := []listener.Filter{
 		httpfilter(ENVOY_HTTPS_LISTENER, v.httpsAccessLog()),
