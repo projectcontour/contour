@@ -2,7 +2,7 @@ PROJECT = contour
 REGISTRY ?= gcr.io/heptio-images
 IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
-PKGS := $(shell go list ./cmd/... ./internal/... | grep -v generated)
+PKGS := $(shell go list ./cmd/... ./internal/...)
 
 GIT_REF = $(shell git rev-parse --short=8 --verify HEAD)
 VERSION ?= $(GIT_REF)
@@ -16,7 +16,7 @@ test-race: | test
 vet: | test
 	go vet ./...
 
-check: test test-race vet gofmt staticcheck unused misspell
+check: test test-race vet gofmt staticcheck unused misspell unconvert
 	@echo Checking rendered files are up to date
 	@(cd deployment && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 
@@ -56,6 +56,10 @@ misspell:
 errcheck:
 	@go get github.com/kisielk/errcheck
 	errcheck $(PKGS)
+
+unconvert:
+	@go get github.com/mdempsky/unconvert
+	unconvert -v $(PKGS)
 
 render:
 	@echo Rendering deployment files...

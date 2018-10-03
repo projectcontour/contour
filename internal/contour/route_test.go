@@ -32,10 +32,7 @@ import (
 )
 
 func TestRouteVisit(t *testing.T) {
-	var (
-		infinity     = time.Duration(0)
-		nintyseconds = time.Duration(90 * time.Second)
-	)
+	var infinity = pduration(0)
 
 	tests := map[string]struct {
 		*RouteCache
@@ -613,7 +610,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"*"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routetimeout("default/kuard/8080/da39a3ee5e", &infinity),
+							Action: routetimeout("default/kuard/8080/da39a3ee5e", infinity),
 						}},
 					}},
 				},
@@ -661,7 +658,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"*"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routetimeout("default/kuard/8080/da39a3ee5e", &infinity),
+							Action: routetimeout("default/kuard/8080/da39a3ee5e", infinity),
 						}},
 					}},
 				},
@@ -709,7 +706,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"*"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routetimeout("default/kuard/8080/da39a3ee5e", &nintyseconds),
+							Action: routetimeout("default/kuard/8080/da39a3ee5e", pduration(90*time.Second)),
 						}},
 					}},
 				},
