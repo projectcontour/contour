@@ -124,7 +124,7 @@ cd cert-manager
 Then deploy cert-manager:
 
 ```
-kubectl -n cert-manager apply -f docs/deploy/rbac/
+kubectl apply -f contrib/manifests/cert-manager/with-rbac.yaml
 ```
 
 When cert-manager is up and running you should see something like:
@@ -163,7 +163,7 @@ spec:
     http01: {}
     privateKeySecretRef:
       name: letsencrypt-staging
-    server: https://acme-staging.api.letsencrypt.org/directory
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
 ```
 
 replacing `user@example.com` with your email address.
@@ -373,7 +373,7 @@ You can watch the progress of the certificate as it's issued:
 Wait for the certificate to be issued:
 
 ```
-% kubectl describe certificate httpbin | grep -C3 CertIssueSuccess
+% kubectl describe certificate httpbin | grep -C3 CertIssued
   Conditions:
     Last Transition Time:  2018-02-26T01:26:30Z
     Message:               Certificate issued successfully
@@ -424,7 +424,7 @@ spec:
     http01: {}
     privateKeySecretRef:
       name: letsencrypt-prod
-    server: https://acme-v01.api.letsencrypt.org/directory
+    server: https://acme-v02.api.letsencrypt.org/directory
 ```
 
 again replacing user@example.com with your email address.
