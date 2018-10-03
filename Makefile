@@ -16,7 +16,7 @@ test-race: | test
 vet: | test
 	go vet ./...
 
-check: test test-race vet gofmt staticcheck unused misspell unconvert gosimple
+check: test test-race vet gofmt staticcheck unused misspell unconvert gosimple ineffassign
 	@echo Checking rendered files are up to date
 	@(cd deployment && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 
@@ -68,6 +68,10 @@ gosimple:
 unparam:
 	@go get mvdan.cc/unparam
 	unparam ./...
+
+ineffassign:
+	@go get github.com/gordonklaus/ineffassign
+	find $(SRCDIRS) -name '*.go' | xargs ineffassign
 
 render:
 	@echo Rendering deployment files...
