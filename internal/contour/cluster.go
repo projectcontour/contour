@@ -14,11 +14,8 @@
 package contour
 
 import (
-	"crypto/sha1"
-	"fmt"
 	"sync"
 
-	"strconv"
 	"strings"
 	"time"
 
@@ -31,6 +28,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
+	"github.com/heptio/contour/internal/envoy"
 )
 
 const (
@@ -129,7 +127,7 @@ func (v *clusterVisitor) visit(vertex dag.Vertex) {
 }
 
 func (v *clusterVisitor) edscluster(svc *dag.Service) {
-	name := clustername(svc)
+	name := envoy.Clustername(svc)
 	if _, ok := v.clusters[name]; ok {
 		// already created this cluster via another edge. skip it.
 		return
@@ -176,31 +174,6 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 		c.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
 	}
 	v.clusters[c.Name] = c
-}
-
-// clustername returns the name of the CDS cluster for this service.
-func clustername(s *dag.Service) string {
-	buf := s.LoadBalancerStrategy
-	if hc := s.HealthCheck; hc != nil {
-		if hc.TimeoutSeconds > 0 {
-			buf += (time.Duration(hc.TimeoutSeconds) * time.Second).String()
-		}
-		if hc.IntervalSeconds > 0 {
-			buf += (time.Duration(hc.IntervalSeconds) * time.Second).String()
-		}
-		if hc.UnhealthyThresholdCount > 0 {
-			buf += strconv.Itoa(int(hc.UnhealthyThresholdCount))
-		}
-		if hc.HealthyThresholdCount > 0 {
-			buf += strconv.Itoa(int(hc.HealthyThresholdCount))
-		}
-		buf += hc.Path
-	}
-
-	hash := sha1.Sum([]byte(buf))
-	ns := s.Namespace()
-	name := s.Name()
-	return hashname(60, ns, name, strconv.Itoa(int(s.Port)), fmt.Sprintf("%x", hash[:5]))
 }
 
 func edslbstrategy(lbStrategy string) v2.Cluster_LbPolicy {
