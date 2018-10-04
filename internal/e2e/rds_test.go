@@ -1599,7 +1599,7 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 				Services: []ingressroutev1.Service{{
 					Name:   "kuard",
 					Port:   80,
-					Weight: 90,
+					Weight: 90, // ignored
 				}},
 			}},
 		},
@@ -1611,7 +1611,7 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 		Domains: []string{"test2.test.com", "test2.test.com:80"},
 		Routes: []route.Route{{
 			Match:  prefixmatch("/a"), // match all
-			Action: routeweightedcluster(weightedcluster{"default/kuard/80/da39a3ee5e", 90}),
+			Action: routecluster("default/kuard/80/da39a3ee5e"),
 		}},
 	}}, nil)
 
@@ -1939,7 +1939,13 @@ type weightedcluster struct {
 }
 
 func routecluster(cluster string) *route.Route_Route {
-	return routeweightedcluster(weightedcluster{cluster, 1})
+	return &route.Route_Route{
+		Route: &route.RouteAction{
+			ClusterSpecifier: &route.RouteAction_Cluster{
+				Cluster: cluster,
+			},
+		},
+	}
 }
 
 func routeweightedcluster(first weightedcluster, rest ...weightedcluster) *route.Route_Route {
