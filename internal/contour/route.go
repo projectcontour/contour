@@ -234,22 +234,7 @@ func prefixmatch(prefix string) route.RouteMatch {
 // action computes the cluster route action, a *route.Route_route for the
 // supplied ingress and backend.
 func actionroute(r *dag.Route, services []*dag.Service) *route.Route_Route {
-	rr := route.Route_Route{
-		Route: &route.RouteAction{
-			ClusterSpecifier: &route.RouteAction_WeightedClusters{
-				WeightedClusters: weightedclusters(services),
-			},
-		},
-	}
-
-	// Check if no weights were defined, if not default to even distribution
-	clusters := rr.Route.ClusterSpecifier.(*route.RouteAction_WeightedClusters).WeightedClusters
-	if clusters.TotalWeight.Value == 0 {
-		for _, c := range clusters.Clusters {
-			c.Weight.Value = 1
-		}
-		clusters.TotalWeight.Value = uint32(len(clusters.Clusters))
-	}
+	rr := clusterrouteaction(services)
 
 	if r.Websocket {
 		rr.Route.UseWebsocket = &types.BoolValue{Value: true}
@@ -283,6 +268,27 @@ func actionroute(r *dag.Route, services []*dag.Service) *route.Route_Route {
 	return &rr
 }
 
+func clusterrouteaction(services []*dag.Service) route.Route_Route {
+	switch len(services) {
+	case 1:
+		return route.Route_Route{
+			Route: &route.RouteAction{
+				ClusterSpecifier: &route.RouteAction_Cluster{
+					Cluster: clustername(services[0]),
+				},
+			},
+		}
+	default:
+		return route.Route_Route{
+			Route: &route.RouteAction{
+				ClusterSpecifier: &route.RouteAction_WeightedClusters{
+					WeightedClusters: weightedclusters(services),
+				},
+			},
+		}
+	}
+}
+
 func weightedclusters(services []*dag.Service) *route.WeightedCluster {
 	var wc route.WeightedCluster
 	var total int
@@ -293,9 +299,17 @@ func weightedclusters(services []*dag.Service) *route.WeightedCluster {
 			Weight: &types.UInt32Value{Value: uint32(svc.Weight)},
 		})
 	}
+	// Check if no weights were defined, if not default to even distribution
+	if total == 0 {
+		for _, c := range wc.Clusters {
+			c.Weight.Value = 1
+		}
+		total = len(services)
+	}
 	wc.TotalWeight = &types.UInt32Value{
 		Value: uint32(total),
 	}
+
 	sort.Stable(clusterWeightByName(wc.Clusters))
 	return &wc
 }
