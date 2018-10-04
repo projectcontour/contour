@@ -89,7 +89,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"*"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routeroute("default/kuard/8080/da39a3ee5e"),
+							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						}},
 					}},
 				},
@@ -142,7 +142,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"www.example.com", "www.example.com:80"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routeroute("default/backend/80/da39a3ee5e"),
+							Action: routecluster("default/backend/80/da39a3ee5e"),
 						}},
 					}},
 				},
@@ -198,7 +198,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"*"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routeroute("default/kuard/8080/da39a3ee5e"),
+							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						}},
 					}},
 				},
@@ -264,7 +264,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"www.example.com", "www.example.com:80"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routeroute("default/kuard/8080/da39a3ee5e"),
+							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						}},
 					}},
 				},
@@ -275,7 +275,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"www.example.com", "www.example.com:443"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routeroute("default/kuard/8080/da39a3ee5e"),
+							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						}},
 					}},
 				},
@@ -350,7 +350,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"www.example.com", "www.example.com:443"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routeroute("default/backend/8080/da39a3ee5e"),
+							Action: routecluster("default/backend/8080/da39a3ee5e"),
 						}},
 					}},
 				},
@@ -419,7 +419,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"www.example.com", "www.example.com:443"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routeroute("default/kuard/8080/da39a3ee5e"),
+							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						}},
 					}},
 				},
@@ -500,7 +500,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"www.example.com", "www.example.com:443"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routeroute("default/kuard/8080/da39a3ee5e"),
+							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						}},
 					}},
 				},
@@ -565,7 +565,7 @@ func TestRouteVisit(t *testing.T) {
 							Action: websocketroute("default/kuard/8080/da39a3ee5e"),
 						}, {
 							Match:  prefixmatch("/"),
-							Action: routeroute("default/kuard/8080/da39a3ee5e"),
+							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						}},
 					}},
 				},
@@ -765,7 +765,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"my-very-very-long-service-host-name.subdomain.boring-dept.my.company", "my-very-very-long-service-host-name.subdomain.boring-dept.my.company:80"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routeroute("default/kuard/80/da39a3ee5e"),
+							Action: routecluster("default/kuard/80/da39a3ee5e"),
 						}},
 					}},
 				},
@@ -853,7 +853,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"*"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routeroute("default/kuard/8080/da39a3ee5e"),
+							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						}},
 					}},
 				},
@@ -1337,36 +1337,31 @@ func TestRouteVisit(t *testing.T) {
 	}
 }
 
-func routeroute(cluster string) *route.Route_Route {
+func routecluster(cluster string) *route.Route_Route {
 	return &route.Route_Route{
 		Route: &route.RouteAction{
-			ClusterSpecifier: &route.RouteAction_WeightedClusters{
-				WeightedClusters: &route.WeightedCluster{
-					Clusters: []*route.WeightedCluster_ClusterWeight{{
-						Name:   cluster,
-						Weight: u32(1),
-					}},
-					TotalWeight: u32(1),
-				},
+			ClusterSpecifier: &route.RouteAction_Cluster{
+				Cluster: cluster,
 			},
 		},
 	}
+
 }
 
 func websocketroute(c string) *route.Route_Route {
-	r := routeroute(c)
+	r := routecluster(c)
 	r.Route.UseWebsocket = &types.BoolValue{Value: true}
 	return r
 }
 
 func routetimeout(cluster string, timeout *time.Duration) *route.Route_Route {
-	r := routeroute(cluster)
+	r := routecluster(cluster)
 	r.Route.Timeout = timeout
 	return r
 }
 
-func routeretry(cluster string, retryOn string, numRetries uint32, perTryTimeout time.Duration) *route.Route_Route {
-	r := routeroute(cluster)
+func routeretry(cluster string, retryOn string, numRetries int, perTryTimeout time.Duration) *route.Route_Route {
+	r := routecluster(cluster)
 	r.Route.RetryPolicy = &route.RouteAction_RetryPolicy{
 		RetryOn: retryOn,
 	}
@@ -1401,14 +1396,8 @@ func TestActionRoute(t *testing.T) {
 			},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
-					ClusterSpecifier: &route.RouteAction_WeightedClusters{
-						WeightedClusters: &route.WeightedCluster{
-							Clusters: []*route.WeightedCluster_ClusterWeight{{
-								Name:   "default/kuard/8080/da39a3ee5e",
-								Weight: u32(1),
-							}},
-							TotalWeight: u32(1),
-						},
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 				},
 			},
@@ -1432,14 +1421,8 @@ func TestActionRoute(t *testing.T) {
 			},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
-					ClusterSpecifier: &route.RouteAction_WeightedClusters{
-						WeightedClusters: &route.WeightedCluster{
-							Clusters: []*route.WeightedCluster_ClusterWeight{{
-								Name:   "default/kuard/8080/da39a3ee5e",
-								Weight: u32(1),
-							}},
-							TotalWeight: u32(1),
-						},
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 					Timeout: pduration(30 * time.Second),
 				},
@@ -1464,14 +1447,8 @@ func TestActionRoute(t *testing.T) {
 			},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
-					ClusterSpecifier: &route.RouteAction_WeightedClusters{
-						WeightedClusters: &route.WeightedCluster{
-							Clusters: []*route.WeightedCluster_ClusterWeight{{
-								Name:   "default/kuard/8080/da39a3ee5e",
-								Weight: u32(1),
-							}},
-							TotalWeight: u32(1),
-						},
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 					Timeout: pduration(0),
 				},
@@ -1496,14 +1473,8 @@ func TestActionRoute(t *testing.T) {
 			},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
-					ClusterSpecifier: &route.RouteAction_WeightedClusters{
-						WeightedClusters: &route.WeightedCluster{
-							Clusters: []*route.WeightedCluster_ClusterWeight{{
-								Name:   "default/kuard/8080/da39a3ee5e",
-								Weight: u32(1),
-							}},
-							TotalWeight: u32(1),
-						},
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 					UseWebsocket: &types.BoolValue{Value: true},
 				},
@@ -1529,14 +1500,8 @@ func TestActionRoute(t *testing.T) {
 			},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
-					ClusterSpecifier: &route.RouteAction_WeightedClusters{
-						WeightedClusters: &route.WeightedCluster{
-							Clusters: []*route.WeightedCluster_ClusterWeight{{
-								Name:   "default/kuard/8080/da39a3ee5e",
-								Weight: u32(1),
-							}},
-							TotalWeight: u32(1),
-						},
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 					Timeout:      pduration(5 * time.Second),
 					UseWebsocket: &types.BoolValue{Value: true},
@@ -1563,14 +1528,8 @@ func TestActionRoute(t *testing.T) {
 			},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
-					ClusterSpecifier: &route.RouteAction_WeightedClusters{
-						WeightedClusters: &route.WeightedCluster{
-							Clusters: []*route.WeightedCluster_ClusterWeight{{
-								Name:   "default/kuard/8080/da39a3ee5e",
-								Weight: u32(1),
-							}},
-							TotalWeight: u32(1),
-						},
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 				},
 			},
@@ -1596,14 +1555,8 @@ func TestActionRoute(t *testing.T) {
 			},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
-					ClusterSpecifier: &route.RouteAction_WeightedClusters{
-						WeightedClusters: &route.WeightedCluster{
-							Clusters: []*route.WeightedCluster_ClusterWeight{{
-								Name:   "default/kuard/8080/da39a3ee5e",
-								Weight: u32(1),
-							}},
-							TotalWeight: u32(1),
-						},
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 					RetryPolicy: &route.RouteAction_RetryPolicy{
 						RetryOn:       "50x",
@@ -1772,4 +1725,4 @@ func pduration(d time.Duration) *time.Duration {
 	return &d
 }
 
-func u32(val uint32) *types.UInt32Value { return &types.UInt32Value{Value: val} }
+func u32(val int) *types.UInt32Value { return &types.UInt32Value{Value: uint32(val)} }
