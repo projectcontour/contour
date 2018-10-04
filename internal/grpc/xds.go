@@ -19,10 +19,9 @@ import (
 	"sync/atomic"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/sirupsen/logrus"
-
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
+	"github.com/sirupsen/logrus"
 )
 
 // xdsHandler implements the Envoy xDS gRPC protocol.

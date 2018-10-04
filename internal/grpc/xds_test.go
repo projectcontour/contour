@@ -17,15 +17,18 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"reflect"
 	"testing"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/gogo/protobuf/proto"
+	"github.com/sirupsen/logrus"
 )
 
 func TestXDSHandlerFetch(t *testing.T) {
-	log := testLogger(t)
+	log := logrus.New()
+	log.SetOutput(ioutil.Discard)
 	tests := map[string]struct {
 		xh   xdsHandler
 		req  *v2.DiscoveryRequest
@@ -64,7 +67,8 @@ func TestXDSHandlerFetch(t *testing.T) {
 }
 
 func TestXDSHandlerStream(t *testing.T) {
-	log := testLogger(t)
+	log := logrus.New()
+	log.SetOutput(ioutil.Discard)
 	tests := map[string]struct {
 		xh     xdsHandler
 		stream grpcStream
@@ -171,7 +175,7 @@ func TestXDSHandlerStream(t *testing.T) {
 					return io.EOF
 				},
 			},
-			want: fmt.Errorf("context canceled"),
+			want: context.Canceled,
 		},
 	}
 
