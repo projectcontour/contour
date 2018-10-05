@@ -58,7 +58,7 @@ func WeightedClusters(services []*dag.Service) *route.WeightedCluster {
 		total += svc.Weight
 		wc.Clusters = append(wc.Clusters, &route.WeightedCluster_ClusterWeight{
 			Name:   Clustername(svc),
-			Weight: &types.UInt32Value{Value: uint32(svc.Weight)},
+			Weight: u32(svc.Weight),
 		})
 	}
 	// Check if no weights were defined, if not default to even distribution
@@ -68,9 +68,7 @@ func WeightedClusters(services []*dag.Service) *route.WeightedCluster {
 		}
 		total = len(services)
 	}
-	wc.TotalWeight = &types.UInt32Value{
-		Value: uint32(total),
-	}
+	wc.TotalWeight = u32(total)
 
 	sort.Stable(clusterWeightByName(wc.Clusters))
 	return &wc
@@ -87,3 +85,5 @@ func (c clusterWeightByName) Less(i, j int) bool {
 	return c[i].Name < c[j].Name
 
 }
+
+func u32(val int) *types.UInt32Value { return &types.UInt32Value{Value: uint32(val)} }

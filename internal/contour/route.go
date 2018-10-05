@@ -243,7 +243,7 @@ func actionroute(r *dag.Route, services []*dag.Service) *route.Route_Route {
 			RetryOn: r.RetryOn,
 		}
 		if r.NumRetries > 0 {
-			rr.Route.RetryPolicy.NumRetries = &types.UInt32Value{Value: uint32(r.NumRetries)}
+			rr.Route.RetryPolicy.NumRetries = u32(r.NumRetries)
 		}
 		if r.PerTryTimeout > 0 {
 			timeout := r.PerTryTimeout
@@ -265,3 +265,5 @@ func actionroute(r *dag.Route, services []*dag.Service) *route.Route_Route {
 
 	return &rr
 }
+
+func u32(val int) *types.UInt32Value { return &types.UInt32Value{Value: uint32(val)} }

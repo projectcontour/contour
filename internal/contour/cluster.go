@@ -31,15 +31,6 @@ import (
 	"github.com/heptio/contour/internal/envoy"
 )
 
-const (
-	// Default healthcheck / lb algorithm values
-	hcTimeout            = 2 * time.Second
-	hcInterval           = 10 * time.Second
-	hcUnhealthyThreshold = 3
-	hcHealthyThreshold   = 2
-	hcHost               = "contour-envoy-healthcheck"
-)
-
 // ClusterCache manages the contents of the gRPC CDS cache.
 type ClusterCache struct {
 	clusterCache
@@ -144,11 +135,7 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 				Value: 0,
 			},
 		},
-	}
-
-	// Set HealthCheck if requested
-	if svc.HealthCheck != nil {
-		c.HealthChecks = edshealthcheck(svc.HealthCheck)
+		HealthChecks: edshealthcheck(svc.HealthCheck),
 	}
 
 	if svc.MaxConnections > 0 || svc.MaxPendingRequests > 0 || svc.MaxRequests > 0 || svc.MaxRetries > 0 {
@@ -192,53 +179,21 @@ func edslbstrategy(lbStrategy string) v2.Cluster_LbPolicy {
 }
 
 func edshealthcheck(hc *ingressroutev1.HealthCheck) []*core.HealthCheck {
-	host := hcHost
-	if hc.Host != "" {
-		host = hc.Host
+	if hc == nil {
+		return nil
 	}
-
-	// TODO(dfc) why do we need to specify our own default, what is the default
-	// that envoy applies if these fields are left nil?
-	return []*core.HealthCheck{{
-		Timeout:            secondsOrDefault(hc.TimeoutSeconds, hcTimeout),
-		Interval:           secondsOrDefault(hc.IntervalSeconds, hcInterval),
-		UnhealthyThreshold: countOrDefault(hc.UnhealthyThresholdCount, hcUnhealthyThreshold),
-		HealthyThreshold:   countOrDefault(hc.HealthyThresholdCount, hcHealthyThreshold),
-		HealthChecker: &core.HealthCheck_HttpHealthCheck_{
-			HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
-				Path: hc.Path,
-				Host: host,
-			},
-		},
-	}}
-}
-
-func secondsOrDefault(seconds int64, def time.Duration) *time.Duration {
-	if seconds != 0 {
-		t := time.Duration(seconds) * time.Second
-		return &t
-	}
-	return &def
-}
-
-func countOrDefault(count, def uint32) *types.UInt32Value {
-	if count != 0 {
-		return &types.UInt32Value{
-			Value: count,
-		}
-	}
-	return &types.UInt32Value{
-		Value: def,
+	return []*core.HealthCheck{
+		envoy.HealthCheck(hc),
 	}
 }
 
 // uint32OrNil returns a *types.UInt32Value containing the v or nil if v is zero.
-func uint32OrNil(i int) *types.UInt32Value {
-	switch i {
+func uint32OrNil(val int) *types.UInt32Value {
+	switch val {
 	case 0:
 		return nil
 	default:
-		return &types.UInt32Value{Value: uint32(i)}
+		return u32(val)
 	}
 }
 
