@@ -23,6 +23,7 @@ import (
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/api/core/v1"
@@ -67,7 +68,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/kuard/443/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/kuard",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -107,7 +108,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/kuard/443/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/kuard/https",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -151,7 +152,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/kuard/80/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/kuard/http",
 					},
 					ConnectTimeout:       250 * time.Millisecond,
@@ -193,7 +194,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "beurocra-7fe4b4/tiny-cog-7fe4b4/443/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "beurocratic-company-test-domain-1/tiny-cog-department-test-instance/svc-0",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -245,7 +246,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -260,7 +261,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/8080/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/alt",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -308,7 +309,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/c184349821",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -373,7 +374,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/7f8051653a",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -431,7 +432,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/f3b72af6a9",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -477,7 +478,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/8bf87fefba",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -523,7 +524,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/40633a6ca9",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -569,7 +570,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/843e4ded8f",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -615,7 +616,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/58d888c08a",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -668,7 +669,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/58d888c08a",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -683,7 +684,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/843e4ded8f",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -730,7 +731,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/86d7a9c129",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -778,7 +779,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/kuard/80/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/kuard/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -831,7 +832,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/kuard/443/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/kuard/https",
 					},
 					ConnectTimeout: 250 * time.Millisecond,

@@ -197,7 +197,7 @@ func uint32OrNil(val int) *types.UInt32Value {
 	}
 }
 
-func edsconfig(source string, service *dag.Service) *v2.Cluster_EdsClusterConfig {
+func edsconfig(cluster string, service *dag.Service) *v2.Cluster_EdsClusterConfig {
 	name := []string{
 		service.Namespace(),
 		service.Name(),
@@ -207,28 +207,7 @@ func edsconfig(source string, service *dag.Service) *v2.Cluster_EdsClusterConfig
 		name = name[:2]
 	}
 	return &v2.Cluster_EdsClusterConfig{
-		EdsConfig:   apiconfigsource(source), // hard coded by initconfig
+		EdsConfig:   envoy.ConfigSource(cluster),
 		ServiceName: strings.Join(name, "/"),
-	}
-}
-
-func apiconfigsource(clusters ...string) *core.ConfigSource {
-	services := make([]*core.GrpcService, 0, len(clusters))
-	for _, c := range clusters {
-		services = append(services, &core.GrpcService{
-			TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
-				EnvoyGrpc: &core.GrpcService_EnvoyGrpc{
-					ClusterName: c,
-				},
-			},
-		})
-	}
-	return &core.ConfigSource{
-		ConfigSourceSpecifier: &core.ConfigSource_ApiConfigSource{
-			ApiConfigSource: &core.ApiConfigSource{
-				ApiType:      core.ApiConfigSource_GRPC,
-				GrpcServices: services,
-			},
-		},
 	}
 }
