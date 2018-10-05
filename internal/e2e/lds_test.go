@@ -1095,6 +1095,7 @@ func httpfilter(routename string) listener.Filter {
 			}},
 			UseRemoteAddress: &types.BoolValue{Value: true},
 			HttpFilters: []*envoy_config_v2_http_conn_mgr.HttpFilter{
+				{Name: "envoy.gzip"},
 				{Name: "envoy.grpc_web"},
 				{Name: "envoy.router"},
 			},
