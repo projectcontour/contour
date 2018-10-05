@@ -186,6 +186,7 @@ const (
 
 	router     = "envoy.router"
 	grpcWeb    = "envoy.grpc_web"
+	gzip       = "envoy.gzip"
 	httpFilter = "envoy.http_connection_manager"
 	accessLog  = "envoy.file_access_log"
 )
@@ -295,6 +296,9 @@ func httpfilter(routename, accessLogPath string) listener.Filter {
 					}),
 				}),
 				"http_filters": lv(
+					st(map[string]*types.Value{
+						"name": sv(gzip),
+					}),
 					st(map[string]*types.Value{
 						"name": sv(grpcWeb),
 					}),
