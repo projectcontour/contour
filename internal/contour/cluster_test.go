@@ -24,7 +24,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
-	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/api/core/v1"
@@ -869,67 +868,6 @@ func TestClusterVisit(t *testing.T) {
 				Visitable:    reh.Build(),
 			}
 			got := v.Visit()
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
-		})
-	}
-}
-
-func TestClustername(t *testing.T) {
-	tests := map[string]struct {
-		service *dag.Service
-		want    string
-	}{
-		"simple": {
-			service: &dag.Service{
-				Object: service("default", "backend"),
-				ServicePort: &v1.ServicePort{
-					Name:       "http",
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(6502),
-				},
-			},
-			want: "default/backend/80/da39a3ee5e",
-		},
-		"far too long": {
-			service: &dag.Service{
-				Object: service("it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune", "must-be-in-want-of-a-wife"),
-				ServicePort: &v1.ServicePort{
-					Name:       "http",
-					Protocol:   "TCP",
-					Port:       9999,
-					TargetPort: intstr.FromString("http-alt"),
-				},
-			},
-			want: "it-is-a--dea8b0/must-be--dea8b0/9999/da39a3ee5e",
-		},
-		"various healthcheck params": {
-			service: &dag.Service{
-				Object: service("default", "backend"),
-				ServicePort: &v1.ServicePort{
-					Name:       "http",
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(6502),
-				},
-				LoadBalancerStrategy: "Maglev",
-				HealthCheck: &ingressroutev1.HealthCheck{
-					Path:                    "/healthz",
-					IntervalSeconds:         5,
-					TimeoutSeconds:          30,
-					UnhealthyThresholdCount: 3,
-					HealthyThresholdCount:   1,
-				},
-			},
-			want: "default/backend/80/32737eb011",
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := clustername(tc.service)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}

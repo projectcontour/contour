@@ -14,10 +14,7 @@
 package contour
 
 import (
-	"crypto/sha256"
-	"fmt"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -26,6 +23,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
+	"github.com/heptio/contour/internal/envoy"
 )
 
 // RouteCache manages the contents of the gRPC RDS cache.
@@ -117,7 +115,7 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 				domains = append(domains, hostname+":80")
 			}
 			vhost := route.VirtualHost{
-				Name:    hashname(60, hostname),
+				Name:    envoy.Hashname(60, hostname),
 				Domains: domains,
 			}
 			vh.Visit(func(r dag.Vertex) {
@@ -160,7 +158,7 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 				domains = append(domains, hostname+":443")
 			}
 			vhost := route.VirtualHost{
-				Name:    hashname(60, hostname),
+				Name:    envoy.Hashname(60, hostname),
 				Domains: domains,
 			}
 			vh.Visit(func(r dag.Vertex) {
@@ -234,7 +232,7 @@ func prefixmatch(prefix string) route.RouteMatch {
 // action computes the cluster route action, a *route.Route_route for the
 // supplied ingress and backend.
 func actionroute(r *dag.Route, services []*dag.Service) *route.Route_Route {
-	rr := clusterrouteaction(services)
+	rr := envoy.RouteRoute(services)
 
 	if r.Websocket {
 		rr.Route.UseWebsocket = &types.BoolValue{Value: true}
@@ -266,110 +264,4 @@ func actionroute(r *dag.Route, services []*dag.Service) *route.Route_Route {
 	}
 
 	return &rr
-}
-
-func clusterrouteaction(services []*dag.Service) route.Route_Route {
-	switch len(services) {
-	case 1:
-		return route.Route_Route{
-			Route: &route.RouteAction{
-				ClusterSpecifier: &route.RouteAction_Cluster{
-					Cluster: clustername(services[0]),
-				},
-			},
-		}
-	default:
-		return route.Route_Route{
-			Route: &route.RouteAction{
-				ClusterSpecifier: &route.RouteAction_WeightedClusters{
-					WeightedClusters: weightedclusters(services),
-				},
-			},
-		}
-	}
-}
-
-func weightedclusters(services []*dag.Service) *route.WeightedCluster {
-	var wc route.WeightedCluster
-	var total int
-	for _, svc := range services {
-		total += svc.Weight
-		wc.Clusters = append(wc.Clusters, &route.WeightedCluster_ClusterWeight{
-			Name:   clustername(svc),
-			Weight: &types.UInt32Value{Value: uint32(svc.Weight)},
-		})
-	}
-	// Check if no weights were defined, if not default to even distribution
-	if total == 0 {
-		for _, c := range wc.Clusters {
-			c.Weight.Value = 1
-		}
-		total = len(services)
-	}
-	wc.TotalWeight = &types.UInt32Value{
-		Value: uint32(total),
-	}
-
-	sort.Stable(clusterWeightByName(wc.Clusters))
-	return &wc
-}
-
-type clusterWeightByName []*route.WeightedCluster_ClusterWeight
-
-func (c clusterWeightByName) Len() int      { return len(c) }
-func (c clusterWeightByName) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
-func (c clusterWeightByName) Less(i, j int) bool {
-	if c[i].Name == c[j].Name {
-		return c[i].Weight.Value < c[j].Weight.Value
-	}
-	return c[i].Name < c[j].Name
-
-}
-
-// hashname takes a lenth l and a varargs of strings s and returns a string whose length
-// which does not exceed l. Internally s is joined with strings.Join(s, "/"). If the
-// combined length exceeds l then hashname truncates each element in s, starting from the
-// end using a hash derived from the contents of s (not the current element). This process
-// continues until the length of s does not exceed l, or all elements have been truncated.
-// In which case, the entire string is replaced with a hash not exceeding the length of l.
-func hashname(l int, s ...string) string {
-	const shorthash = 6 // the length of the shorthash
-
-	r := strings.Join(s, "/")
-	if l > len(r) {
-		// we're under the limit, nothing to do
-		return r
-	}
-	hash := fmt.Sprintf("%x", sha256.Sum256([]byte(r)))
-	for n := len(s) - 1; n >= 0; n-- {
-		s[n] = truncate(l/len(s), s[n], hash[:shorthash])
-		r = strings.Join(s, "/")
-		if l > len(r) {
-			return r
-		}
-	}
-	// truncated everything, but we're still too long
-	// just return the hash truncated to l.
-	return hash[:min(len(hash), l)]
-}
-
-// truncate truncates s to l length by replacing the
-// end of s with -suffix.
-func truncate(l int, s, suffix string) string {
-	if l >= len(s) {
-		// under the limit, nothing to do
-		return s
-	}
-	if l <= len(suffix) {
-		// easy case, just return the start of the suffix
-		return suffix[:min(l, len(suffix))]
-	}
-	return s[:l-len(suffix)-1] + "-" + suffix
-}
-
-func min(a, b int) int {
-	if a > b {
-		return b
-	}
-	return a
 }
