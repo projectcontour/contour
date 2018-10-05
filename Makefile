@@ -53,10 +53,6 @@ misspell:
 		-error \
 		cmd/* internal/* docs/* design/* *.md
 
-errcheck:
-	@go get github.com/kisielk/errcheck
-	errcheck $(PKGS)
-
 unconvert:
 	@go get github.com/mdempsky/unconvert
 	unconvert -v $(PKGS)
@@ -65,13 +61,19 @@ gosimple:
 	@go get honnef.co/go/tools/cmd/gosimple
 	gosimple $(PKGS)
 
+ineffassign:
+	@go get github.com/gordonklaus/ineffassign
+	find $(SRCDIRS) -name '*.go' | xargs ineffassign
+
+pedantic: check unparam errcheck
+
 unparam:
 	@go get mvdan.cc/unparam
 	unparam ./...
 
-ineffassign:
-	@go get github.com/gordonklaus/ineffassign
-	find $(SRCDIRS) -name '*.go' | xargs ineffassign
+errcheck:
+	@go get github.com/kisielk/errcheck
+	errcheck $(PKGS)
 
 render:
 	@echo Rendering deployment files...
