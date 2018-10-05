@@ -21,8 +21,68 @@ import (
 	"strings"
 	"time"
 
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
+	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 )
+
+// Cluster returns a *v2.Cluster.
+func Cluster(service *dag.Service) *v2.Cluster {
+	return &v2.Cluster{
+		Name:             Clustername(service),
+		Type:             v2.Cluster_EDS,
+		EdsClusterConfig: edsconfig("contour", service),
+		ConnectTimeout:   250 * time.Millisecond,
+		LbPolicy:         lbPolicy(service.LoadBalancerStrategy),
+		CommonLbConfig: &v2.Cluster_CommonLbConfig{
+			HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+				Value: 0,
+			},
+		},
+		HealthChecks: edshealthcheck(service.HealthCheck),
+	}
+}
+
+func edsconfig(cluster string, service *dag.Service) *v2.Cluster_EdsClusterConfig {
+	name := []string{
+		service.Namespace(),
+		service.Name(),
+		service.ServicePort.Name,
+	}
+	if name[2] == "" {
+		name = name[:2]
+	}
+	return &v2.Cluster_EdsClusterConfig{
+		EdsConfig:   ConfigSource(cluster),
+		ServiceName: strings.Join(name, "/"),
+	}
+}
+
+func lbPolicy(strategy string) v2.Cluster_LbPolicy {
+	switch strategy {
+	case "WeightedLeastRequest":
+		return v2.Cluster_LEAST_REQUEST
+	case "RingHash":
+		return v2.Cluster_RING_HASH
+	case "Maglev":
+		return v2.Cluster_MAGLEV
+	case "Random":
+		return v2.Cluster_RANDOM
+	default:
+		return v2.Cluster_ROUND_ROBIN
+	}
+}
+
+func edshealthcheck(hc *ingressroutev1.HealthCheck) []*core.HealthCheck {
+	if hc == nil {
+		return nil
+	}
+	return []*core.HealthCheck{
+		healthCheck(hc),
+	}
+}
 
 // Clustername returns the name of the CDS cluster for this service.
 func Clustername(service *dag.Service) string {

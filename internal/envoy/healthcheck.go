@@ -30,8 +30,8 @@ const (
 	hcHost               = "contour-envoy-healthcheck"
 )
 
-// HealthCheck returns a *core.HealthCheck value.
-func HealthCheck(hc *ingressroutev1.HealthCheck) *core.HealthCheck {
+// healthCheck returns a *core.HealthCheck value.
+func healthCheck(hc *ingressroutev1.HealthCheck) *core.HealthCheck {
 	host := hcHost
 	if hc.Host != "" {
 		host = hc.Host
