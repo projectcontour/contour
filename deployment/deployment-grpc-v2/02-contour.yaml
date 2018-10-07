@@ -16,7 +16,7 @@ spec:
         app: contour
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9001"
+        prometheus.io/port: "8002"
         prometheus.io/path: "/stats"
         prometheus.io/format: "prometheus"
     spec:
@@ -48,7 +48,14 @@ spec:
         imagePullPolicy: Always
         name: envoy-initconfig
         command: ["contour"]
-        args: ["bootstrap", "/config/contour.yaml"]
+        args:
+        - bootstrap
+        # Uncomment the statsd-enable to enable prometheus metrics
+        #- --statsd-enable
+        # Uncomment to set a custom stats emission address and port
+        #- --stats-address=0.0.0.0
+        #- --stats-port=8002
+        - /config/contour.yaml
         volumeMounts:
         - name: contour-config
           mountPath: /config
