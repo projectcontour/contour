@@ -16,7 +16,6 @@ package e2e
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -259,13 +258,8 @@ func TestIssue602(t *testing.T) {
 func streamEDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
 	t.Helper()
 	rds := v2.NewEndpointDiscoveryServiceClient(cc)
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
-	st, err := rds.StreamEndpoints(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	st, err := rds.StreamEndpoints(context.TODO())
+	check(t, err)
 	return stream(t, st, &v2.DiscoveryRequest{
 		TypeUrl:       endpointType,
 		ResourceNames: rn,

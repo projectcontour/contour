@@ -745,13 +745,8 @@ func serviceWithAnnotations(ns, name string, annotations map[string]string, port
 func streamCDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
 	t.Helper()
 	rds := v2.NewClusterDiscoveryServiceClient(cc)
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
-	st, err := rds.StreamClusters(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	st, err := rds.StreamClusters(context.TODO())
+	check(t, err)
 	return stream(t, st, &v2.DiscoveryRequest{
 		TypeUrl:       clusterType,
 		ResourceNames: rn,

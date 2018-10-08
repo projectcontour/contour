@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"context"
 	"testing"
-	"time"
 
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 
@@ -993,13 +992,8 @@ func TestIngressRouteHTTPS(t *testing.T) {
 func streamLDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
 	t.Helper()
 	rds := v2.NewListenerDiscoveryServiceClient(cc)
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
-	st, err := rds.StreamListeners(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	st, err := rds.StreamListeners(context.TODO())
+	check(t, err)
 	return stream(t, st, &v2.DiscoveryRequest{
 		TypeUrl:       listenerType,
 		ResourceNames: rn,
