@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/google/go-cmp/cmp"
@@ -109,11 +108,7 @@ func TestCluster(t *testing.T) {
 				ConnectTimeout:       250 * time.Millisecond,
 				LbPolicy:             v2.Cluster_ROUND_ROBIN,
 				Http2ProtocolOptions: &core.Http2ProtocolOptions{},
-				TlsContext: &auth.UpstreamTlsContext{
-					CommonTlsContext: &auth.CommonTlsContext{
-						AlpnProtocols: []string{"h2"},
-					},
-				},
+				TlsContext:           UpstreamTLSContext(),
 				CommonLbConfig: &v2.Cluster_CommonLbConfig{
 					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
 						Value: 0,
