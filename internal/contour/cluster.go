@@ -17,9 +17,7 @@ import (
 	"sync"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
@@ -130,18 +128,6 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 				MaxRetries:         uint32OrNil(svc.MaxRetries),
 			}},
 		}
-	}
-
-	switch svc.Protocol {
-	case "h2":
-		c.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
-		c.TlsContext = &auth.UpstreamTlsContext{
-			CommonTlsContext: &auth.CommonTlsContext{
-				AlpnProtocols: []string{"h2"},
-			},
-		}
-	case "h2c":
-		c.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
 	}
 	v.clusters[c.Name] = c
 }
