@@ -32,8 +32,6 @@ import (
 )
 
 func TestRouteVisit(t *testing.T) {
-	var infinity = pduration(0)
-
 	tests := map[string]struct {
 		*RouteCache
 		objs []interface{}
@@ -610,7 +608,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"*"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routetimeout("default/kuard/8080/da39a3ee5e", infinity),
+							Action: routetimeout("default/kuard/8080/da39a3ee5e", duration(0)),
 						}},
 					}},
 				},
@@ -658,7 +656,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"*"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routetimeout("default/kuard/8080/da39a3ee5e", infinity),
+							Action: routetimeout("default/kuard/8080/da39a3ee5e", duration(0)),
 						}},
 					}},
 				},
@@ -706,7 +704,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"*"},
 						Routes: []route.Route{{
 							Match:  prefixmatch("/"),
-							Action: routetimeout("default/kuard/8080/da39a3ee5e", pduration(90*time.Second)),
+							Action: routetimeout("default/kuard/8080/da39a3ee5e", duration(90*time.Second)),
 						}},
 					}},
 				},
@@ -1421,7 +1419,7 @@ func TestActionRoute(t *testing.T) {
 					ClusterSpecifier: &route.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
-					Timeout: pduration(30 * time.Second),
+					Timeout: duration(30 * time.Second),
 				},
 			},
 		},
@@ -1447,7 +1445,7 @@ func TestActionRoute(t *testing.T) {
 					ClusterSpecifier: &route.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
-					Timeout: pduration(0),
+					Timeout: duration(0),
 				},
 			},
 		},
@@ -1500,7 +1498,7 @@ func TestActionRoute(t *testing.T) {
 					ClusterSpecifier: &route.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
-					Timeout:      pduration(5 * time.Second),
+					Timeout:      duration(5 * time.Second),
 					UseWebsocket: &types.BoolValue{Value: true},
 				},
 			},
@@ -1558,7 +1556,7 @@ func TestActionRoute(t *testing.T) {
 					RetryPolicy: &route.RouteAction_RetryPolicy{
 						RetryOn:       "50x",
 						NumRetries:    u32(7),
-						PerTryTimeout: pduration(10 * time.Second),
+						PerTryTimeout: duration(10 * time.Second),
 					},
 				},
 			},
@@ -1717,9 +1715,3 @@ func TestActionRoute(t *testing.T) {
 		})
 	}
 }
-
-func pduration(d time.Duration) *time.Duration {
-	return &d
-}
-
-func u32(val int) *types.UInt32Value { return &types.UInt32Value{Value: uint32(val)} }

@@ -16,28 +16,14 @@ package contour
 import (
 	"sync"
 
-	"strings"
-	"time"
-
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
-)
-
-const (
-	// Default healthcheck / lb algorithm values
-	hcTimeout            = 2 * time.Second
-	hcInterval           = 10 * time.Second
-	hcUnhealthyThreshold = 3
-	hcHealthyThreshold   = 2
-	hcHost               = "contour-envoy-healthcheck"
 )
 
 // ClusterCache manages the contents of the gRPC CDS cache.
@@ -133,23 +119,7 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 		return
 	}
 
-	c := &v2.Cluster{
-		Name:             name,
-		Type:             v2.Cluster_EDS,
-		EdsClusterConfig: edsconfig("contour", svc),
-		ConnectTimeout:   250 * time.Millisecond,
-		LbPolicy:         edslbstrategy(svc.LoadBalancerStrategy),
-		CommonLbConfig: &v2.Cluster_CommonLbConfig{
-			HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-				Value: 0,
-			},
-		},
-	}
-
-	// Set HealthCheck if requested
-	if svc.HealthCheck != nil {
-		c.HealthChecks = edshealthcheck(svc.HealthCheck)
-	}
+	c := envoy.Cluster(svc)
 
 	if svc.MaxConnections > 0 || svc.MaxPendingRequests > 0 || svc.MaxRequests > 0 || svc.MaxRetries > 0 {
 		c.CircuitBreakers = &cluster.CircuitBreakers{
@@ -176,104 +146,12 @@ func (v *clusterVisitor) edscluster(svc *dag.Service) {
 	v.clusters[c.Name] = c
 }
 
-func edslbstrategy(lbStrategy string) v2.Cluster_LbPolicy {
-	switch lbStrategy {
-	case "WeightedLeastRequest":
-		return v2.Cluster_LEAST_REQUEST
-	case "RingHash":
-		return v2.Cluster_RING_HASH
-	case "Maglev":
-		return v2.Cluster_MAGLEV
-	case "Random":
-		return v2.Cluster_RANDOM
-	default:
-		return v2.Cluster_ROUND_ROBIN
-	}
-}
-
-func edshealthcheck(hc *ingressroutev1.HealthCheck) []*core.HealthCheck {
-	host := hcHost
-	if hc.Host != "" {
-		host = hc.Host
-	}
-
-	// TODO(dfc) why do we need to specify our own default, what is the default
-	// that envoy applies if these fields are left nil?
-	return []*core.HealthCheck{{
-		Timeout:            secondsOrDefault(hc.TimeoutSeconds, hcTimeout),
-		Interval:           secondsOrDefault(hc.IntervalSeconds, hcInterval),
-		UnhealthyThreshold: countOrDefault(hc.UnhealthyThresholdCount, hcUnhealthyThreshold),
-		HealthyThreshold:   countOrDefault(hc.HealthyThresholdCount, hcHealthyThreshold),
-		HealthChecker: &core.HealthCheck_HttpHealthCheck_{
-			HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
-				Path: hc.Path,
-				Host: host,
-			},
-		},
-	}}
-}
-
-func secondsOrDefault(seconds int64, def time.Duration) *time.Duration {
-	if seconds != 0 {
-		t := time.Duration(seconds) * time.Second
-		return &t
-	}
-	return &def
-}
-
-func countOrDefault(count, def uint32) *types.UInt32Value {
-	if count != 0 {
-		return &types.UInt32Value{
-			Value: count,
-		}
-	}
-	return &types.UInt32Value{
-		Value: def,
-	}
-}
-
 // uint32OrNil returns a *types.UInt32Value containing the v or nil if v is zero.
-func uint32OrNil(i int) *types.UInt32Value {
-	switch i {
+func uint32OrNil(val int) *types.UInt32Value {
+	switch val {
 	case 0:
 		return nil
 	default:
-		return &types.UInt32Value{Value: uint32(i)}
-	}
-}
-
-func edsconfig(source string, service *dag.Service) *v2.Cluster_EdsClusterConfig {
-	name := []string{
-		service.Namespace(),
-		service.Name(),
-		service.ServicePort.Name,
-	}
-	if name[2] == "" {
-		name = name[:2]
-	}
-	return &v2.Cluster_EdsClusterConfig{
-		EdsConfig:   apiconfigsource(source), // hard coded by initconfig
-		ServiceName: strings.Join(name, "/"),
-	}
-}
-
-func apiconfigsource(clusters ...string) *core.ConfigSource {
-	services := make([]*core.GrpcService, 0, len(clusters))
-	for _, c := range clusters {
-		services = append(services, &core.GrpcService{
-			TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
-				EnvoyGrpc: &core.GrpcService_EnvoyGrpc{
-					ClusterName: c,
-				},
-			},
-		})
-	}
-	return &core.ConfigSource{
-		ConfigSourceSpecifier: &core.ConfigSource_ApiConfigSource{
-			ApiConfigSource: &core.ApiConfigSource{
-				ApiType:      core.ApiConfigSource_GRPC,
-				GrpcServices: services,
-			},
-		},
+		return u32(val)
 	}
 }

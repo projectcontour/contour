@@ -20,10 +20,10 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/heptio/contour/internal/envoy"
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -515,7 +515,7 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 				Name: "default/kuard/8080/da39a3ee5e",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+					EdsConfig:   envoy.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -564,7 +564,7 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 				Name: "default/kuard/8080/da39a3ee5e",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+					EdsConfig:   envoy.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -693,7 +693,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 				Name: "default/kuard/80/58d888c08a",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+					EdsConfig:   envoy.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -708,7 +708,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 				Name: "default/kuard/80/843e4ded8f",
 				Type: v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+					EdsConfig:   envoy.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
@@ -763,7 +763,7 @@ func cluster(name, servicename string) *v2.Cluster {
 		Name: name,
 		Type: v2.Cluster_EDS,
 		EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-			EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+			EdsConfig:   envoy.ConfigSource("contour"),
 			ServiceName: servicename,
 		},
 		ConnectTimeout: 250 * time.Millisecond,
@@ -771,27 +771,6 @@ func cluster(name, servicename string) *v2.Cluster {
 		CommonLbConfig: &v2.Cluster_CommonLbConfig{
 			HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
 				Value: 0,
-			},
-		},
-	}
-}
-
-func apiconfigsource(clusters ...string) *core.ConfigSource {
-	services := make([]*core.GrpcService, 0, len(clusters))
-	for _, c := range clusters {
-		services = append(services, &core.GrpcService{
-			TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
-				EnvoyGrpc: &core.GrpcService_EnvoyGrpc{
-					ClusterName: c,
-				},
-			},
-		})
-	}
-	return &core.ConfigSource{
-		ConfigSourceSpecifier: &core.ConfigSource_ApiConfigSource{
-			ApiConfigSource: &core.ApiConfigSource{
-				ApiType:      core.ApiConfigSource_GRPC,
-				GrpcServices: services,
 			},
 		},
 	}

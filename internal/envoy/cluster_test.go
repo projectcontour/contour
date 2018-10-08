@@ -15,7 +15,10 @@ package envoy
 
 import (
 	"testing"
+	"time"
 
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
@@ -23,6 +26,59 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+func TestCluster(t *testing.T) {
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       443,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	tests := map[string]struct {
+		service *dag.Service
+		want    *v2.Cluster
+	}{
+		"simple service": {
+			service: &dag.Service{
+				Object:      s1,
+				ServicePort: &s1.Spec.Ports[0],
+			},
+			want: &v2.Cluster{
+				Name: "default/kuard/443/da39a3ee5e",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				CommonLbConfig: &v2.Cluster_CommonLbConfig{
+					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+						Value: 0,
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := Cluster(tc.service)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
 
 func TestClustername(t *testing.T) {
 	tests := map[string]struct {
@@ -79,6 +135,26 @@ func TestClustername(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := Clustername(tc.service)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestLBPolicy(t *testing.T) {
+	tests := map[string]v2.Cluster_LbPolicy{
+		"WeightedLeastRequest": v2.Cluster_LEAST_REQUEST,
+		"RingHash":             v2.Cluster_RING_HASH,
+		"Maglev":               v2.Cluster_MAGLEV,
+		"Random":               v2.Cluster_RANDOM,
+		"":                     v2.Cluster_ROUND_ROBIN,
+		"unknown":              v2.Cluster_ROUND_ROBIN,
+	}
+
+	for strategy, want := range tests {
+		t.Run(strategy, func(t *testing.T) {
+			got := lbPolicy(strategy)
+			if diff := cmp.Diff(want, got); diff != "" {
 				t.Fatal(diff)
 			}
 		})

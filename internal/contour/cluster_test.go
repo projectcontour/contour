@@ -21,9 +21,9 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
-	"github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/api/core/v1"
@@ -68,7 +68,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/kuard/443/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/kuard",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -108,7 +108,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/kuard/443/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/kuard/https",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -152,7 +152,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/kuard/80/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/kuard/http",
 					},
 					ConnectTimeout:       250 * time.Millisecond,
@@ -194,7 +194,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "beurocra-7fe4b4/tiny-cog-7fe4b4/443/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "beurocratic-company-test-domain-1/tiny-cog-department-test-instance/svc-0",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -246,7 +246,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -261,7 +261,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/8080/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/alt",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -309,20 +309,16 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/c184349821",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					HealthChecks: []*core.HealthCheck{{
-						Timeout:  duration(hcTimeout),
-						Interval: duration(hcInterval),
-						UnhealthyThreshold: &types.UInt32Value{
-							Value: hcUnhealthyThreshold,
-						},
-						HealthyThreshold: &types.UInt32Value{
-							Value: hcHealthyThreshold,
-						},
+						Timeout:            duration(2 * time.Second),
+						Interval:           duration(10 * time.Second),
+						UnhealthyThreshold: u32(3),
+						HealthyThreshold:   u32(2),
 						HealthChecker: &core.HealthCheck_HttpHealthCheck_{
 							HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
 								Path: "/healthy",
@@ -378,20 +374,16 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/7f8051653a",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					HealthChecks: []*core.HealthCheck{{
-						Timeout:  duration(99 * time.Second),
-						Interval: duration(98 * time.Second),
-						UnhealthyThreshold: &types.UInt32Value{
-							Value: 97,
-						},
-						HealthyThreshold: &types.UInt32Value{
-							Value: 96,
-						},
+						Timeout:            duration(99 * time.Second),
+						Interval:           duration(98 * time.Second),
+						UnhealthyThreshold: u32(97),
+						HealthyThreshold:   u32(96),
 						HealthChecker: &core.HealthCheck_HttpHealthCheck_{
 							HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
 								Path: "/healthy",
@@ -440,7 +432,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/f3b72af6a9",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -486,7 +478,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/8bf87fefba",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -532,7 +524,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/40633a6ca9",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -578,7 +570,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/843e4ded8f",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -624,7 +616,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/58d888c08a",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -677,7 +669,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/58d888c08a",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -692,7 +684,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/843e4ded8f",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -739,7 +731,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/backend/80/86d7a9c129",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -787,17 +779,17 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/kuard/80/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/kuard/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CircuitBreakers: &cluster.CircuitBreakers{
 						Thresholds: []*cluster.CircuitBreakers_Thresholds{{
-							MaxConnections:     uint32t(9000),
-							MaxPendingRequests: uint32t(4096),
-							MaxRequests:        uint32t(404),
-							MaxRetries:         uint32t(7),
+							MaxConnections:     u32(9000),
+							MaxPendingRequests: u32(4096),
+							MaxRequests:        u32(404),
+							MaxRetries:         u32(7),
 						}},
 					},
 					CommonLbConfig: &v2.Cluster_CommonLbConfig{
@@ -840,7 +832,7 @@ func TestClusterVisit(t *testing.T) {
 					Name: "default/kuard/443/da39a3ee5e",
 					Type: v2.Cluster_EDS,
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   apiconfigsource("contour"), // hard coded by initconfig
+						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/kuard/https",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
@@ -875,10 +867,6 @@ func TestClusterVisit(t *testing.T) {
 	}
 }
 
-func uint32t(v int) *types.UInt32Value {
-	return &types.UInt32Value{Value: uint32(v)}
-}
-
 func service(ns, name string, ports ...v1.ServicePort) *v1.Service {
 	return serviceWithAnnotations(ns, name, nil, ports...)
 }
@@ -904,6 +892,4 @@ func clustermap(clusters ...*v2.Cluster) map[string]*v2.Cluster {
 	return m
 }
 
-func duration(d time.Duration) *time.Duration {
-	return &d
-}
+func duration(d time.Duration) *time.Duration { return &d }
