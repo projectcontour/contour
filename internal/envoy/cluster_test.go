@@ -18,8 +18,10 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
+	"github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
@@ -109,6 +111,114 @@ func TestCluster(t *testing.T) {
 				LbPolicy:             v2.Cluster_ROUND_ROBIN,
 				Http2ProtocolOptions: &core.Http2ProtocolOptions{},
 				TlsContext:           UpstreamTLSContext(),
+				CommonLbConfig: &v2.Cluster_CommonLbConfig{
+					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+						Value: 0,
+					},
+				},
+			},
+		},
+		"contour.heptio.com/max-connections": {
+			service: &dag.Service{
+				Object:         s1,
+				ServicePort:    &s1.Spec.Ports[0],
+				MaxConnections: 9000,
+			},
+			want: &v2.Cluster{
+				Name: "default/kuard/443/da39a3ee5e",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				CircuitBreakers: &cluster.CircuitBreakers{
+					Thresholds: []*cluster.CircuitBreakers_Thresholds{{
+						MaxConnections: u32(9000),
+					}},
+				},
+				CommonLbConfig: &v2.Cluster_CommonLbConfig{
+					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+						Value: 0,
+					},
+				},
+			},
+		},
+		"contour.heptio.com/max-pending-requests": {
+			service: &dag.Service{
+				Object:             s1,
+				ServicePort:        &s1.Spec.Ports[0],
+				MaxPendingRequests: 4096,
+			},
+			want: &v2.Cluster{
+				Name: "default/kuard/443/da39a3ee5e",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				CircuitBreakers: &cluster.CircuitBreakers{
+					Thresholds: []*cluster.CircuitBreakers_Thresholds{{
+						MaxPendingRequests: u32(4096),
+					}},
+				},
+				CommonLbConfig: &v2.Cluster_CommonLbConfig{
+					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+						Value: 0,
+					},
+				},
+			},
+		},
+		"contour.heptio.com/max-requests": {
+			service: &dag.Service{
+				Object:      s1,
+				ServicePort: &s1.Spec.Ports[0],
+				MaxRequests: 404,
+			},
+			want: &v2.Cluster{
+				Name: "default/kuard/443/da39a3ee5e",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				CircuitBreakers: &cluster.CircuitBreakers{
+					Thresholds: []*cluster.CircuitBreakers_Thresholds{{
+						MaxRequests: u32(404),
+					}},
+				},
+				CommonLbConfig: &v2.Cluster_CommonLbConfig{
+					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+						Value: 0,
+					},
+				},
+			},
+		},
+		"contour.heptio.com/max-retries": {
+			service: &dag.Service{
+				Object:      s1,
+				ServicePort: &s1.Spec.Ports[0],
+				MaxRetries:  7,
+			},
+			want: &v2.Cluster{
+				Name: "default/kuard/443/da39a3ee5e",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				CircuitBreakers: &cluster.CircuitBreakers{
+					Thresholds: []*cluster.CircuitBreakers_Thresholds{{
+						MaxRetries: u32(7),
+					}},
+				},
 				CommonLbConfig: &v2.Cluster_CommonLbConfig{
 					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
 						Value: 0,
@@ -261,6 +371,36 @@ func TestTruncate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAnyPositive(t *testing.T) {
+	assert := func(want, got bool) {
+		t.Helper()
+		if want != got {
+			t.Fatal("expected", want, "got", got)
+		}
+	}
+
+	assert(false, anyPositive(0))
+	assert(true, anyPositive(1))
+	assert(false, anyPositive(-1))
+	assert(false, anyPositive(0, 0))
+	assert(true, anyPositive(1, 0))
+	assert(true, anyPositive(0, 1))
+	assert(true, anyPositive(-1, 1))
+	assert(true, anyPositive(1, -1))
+}
+
+func TestU32nil(t *testing.T) {
+	assert := func(want, got *types.UInt32Value) {
+		t.Helper()
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatal(diff)
+		}
+	}
+
+	assert(nil, u32nil(0))
+	assert(u32(1), u32nil(1))
 }
 
 func service(ns, name string, ports ...v1.ServicePort) *v1.Service {

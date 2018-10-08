@@ -22,13 +22,15 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
+	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 )
 
-// Cluster returns a *v2.Cluster.
+// Cluster creates new v2.Cluster from service.
 func Cluster(service *dag.Service) *v2.Cluster {
 	cluster := &v2.Cluster{
 		Name:             Clustername(service),
@@ -42,6 +44,16 @@ func Cluster(service *dag.Service) *v2.Cluster {
 			},
 		},
 		HealthChecks: edshealthcheck(service.HealthCheck),
+	}
+	if anyPositive(service.MaxConnections, service.MaxPendingRequests, service.MaxRequests, service.MaxRetries) {
+		cluster.CircuitBreakers = &envoy_cluster.CircuitBreakers{
+			Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
+				MaxConnections:     u32nil(service.MaxConnections),
+				MaxPendingRequests: u32nil(service.MaxPendingRequests),
+				MaxRequests:        u32nil(service.MaxRequests),
+				MaxRetries:         u32nil(service.MaxRetries),
+			}},
+		}
 	}
 	switch service.Protocol {
 	case "h2":
@@ -163,4 +175,28 @@ func min(a, b int) int {
 		return b
 	}
 	return a
+}
+
+// anyPositive indicates if any of the values provided are greater than zero.
+func anyPositive(first int, rest ...int) bool {
+	if first > 0 {
+		return true
+	}
+	for _, v := range rest {
+		if v > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// u32nil creates a *types.UInt32Value containing v.
+// u32nil returns nil if v is zero.
+func u32nil(val int) *types.UInt32Value {
+	switch val {
+	case 0:
+		return nil
+	default:
+		return u32(val)
+	}
 }
