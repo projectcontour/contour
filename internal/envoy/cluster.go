@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
@@ -30,7 +31,7 @@ import (
 
 // Cluster returns a *v2.Cluster.
 func Cluster(service *dag.Service) *v2.Cluster {
-	return &v2.Cluster{
+	cluster := &v2.Cluster{
 		Name:             Clustername(service),
 		Type:             v2.Cluster_EDS,
 		EdsClusterConfig: edsconfig("contour", service),
@@ -43,6 +44,18 @@ func Cluster(service *dag.Service) *v2.Cluster {
 		},
 		HealthChecks: edshealthcheck(service.HealthCheck),
 	}
+	switch service.Protocol {
+	case "h2":
+		cluster.TlsContext = &auth.UpstreamTlsContext{
+			CommonTlsContext: &auth.CommonTlsContext{
+				AlpnProtocols: []string{"h2"},
+			},
+		}
+		fallthrough
+	case "h2c":
+		cluster.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
+	}
+	return cluster
 }
 
 func edsconfig(cluster string, service *dag.Service) *v2.Cluster_EdsClusterConfig {

@@ -18,6 +18,8 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
@@ -61,6 +63,57 @@ func TestCluster(t *testing.T) {
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				CommonLbConfig: &v2.Cluster_CommonLbConfig{
+					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+						Value: 0,
+					},
+				},
+			},
+		},
+		"h2c upstream": {
+			service: &dag.Service{
+				Object:      s1,
+				ServicePort: &s1.Spec.Ports[0],
+				Protocol:    "h2c",
+			},
+			want: &v2.Cluster{
+				Name: "default/kuard/443/da39a3ee5e",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				ConnectTimeout:       250 * time.Millisecond,
+				LbPolicy:             v2.Cluster_ROUND_ROBIN,
+				Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+				CommonLbConfig: &v2.Cluster_CommonLbConfig{
+					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+						Value: 0,
+					},
+				},
+			},
+		},
+		"h2 upstream": {
+			service: &dag.Service{
+				Object:      s1,
+				ServicePort: &s1.Spec.Ports[0],
+				Protocol:    "h2",
+			},
+			want: &v2.Cluster{
+				Name: "default/kuard/443/da39a3ee5e",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				ConnectTimeout:       250 * time.Millisecond,
+				LbPolicy:             v2.Cluster_ROUND_ROBIN,
+				Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+				TlsContext: &auth.UpstreamTlsContext{
+					CommonTlsContext: &auth.CommonTlsContext{
+						AlpnProtocols: []string{"h2"},
+					},
+				},
 				CommonLbConfig: &v2.Cluster_CommonLbConfig{
 					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
 						Value: 0,
