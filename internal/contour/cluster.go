@@ -17,9 +17,7 @@ import (
 	"sync"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
 )
@@ -104,40 +102,13 @@ func (v *clusterVisitor) Visit() map[string]*v2.Cluster {
 
 func (v *clusterVisitor) visit(vertex dag.Vertex) {
 	if service, ok := vertex.(*dag.Service); ok {
-		v.edscluster(service)
-	}
-	// recurse into children of v
-	vertex.Visit(v.visit)
-}
-
-func (v *clusterVisitor) edscluster(svc *dag.Service) {
-	name := envoy.Clustername(svc)
-	if _, ok := v.clusters[name]; ok {
-		// already created this cluster via another edge. skip it.
-		return
-	}
-
-	c := envoy.Cluster(svc)
-
-	if svc.MaxConnections > 0 || svc.MaxPendingRequests > 0 || svc.MaxRequests > 0 || svc.MaxRetries > 0 {
-		c.CircuitBreakers = &cluster.CircuitBreakers{
-			Thresholds: []*cluster.CircuitBreakers_Thresholds{{
-				MaxConnections:     uint32OrNil(svc.MaxConnections),
-				MaxPendingRequests: uint32OrNil(svc.MaxPendingRequests),
-				MaxRequests:        uint32OrNil(svc.MaxRequests),
-				MaxRetries:         uint32OrNil(svc.MaxRetries),
-			}},
+		name := envoy.Clustername(service)
+		if _, ok := v.clusters[name]; !ok {
+			c := envoy.Cluster(service)
+			v.clusters[c.Name] = c
 		}
 	}
-	v.clusters[c.Name] = c
-}
 
-// uint32OrNil returns a *types.UInt32Value containing the v or nil if v is zero.
-func uint32OrNil(val int) *types.UInt32Value {
-	switch val {
-	case 0:
-		return nil
-	default:
-		return u32(val)
-	}
+	// recurse into children of v
+	vertex.Visit(v.visit)
 }
