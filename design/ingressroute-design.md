@@ -34,7 +34,7 @@ The working model for delegation is DNS.
 As the owner of a DNS domain, for example `.com`, I _delegate_ to another nameserver the responsibility for handing the subdomain `heptio.com`.
 Any nameserver can hold a record for `heptio.com`, but without the linkage from the parent `.com` TLD, its information is unreachable and non authoritative.
 
-Each _root_ of a DAG starts at a virtual host, which describes properties such as the fully qualified name of the virtual host, any aliases of the vhost (for example, a `www.` prefix), TLS configuration, and possibly global access list details.
+Each _root_ of a DAG starts at a virtual host, which describes properties such as the fully qualified name of the virtual host, TLS configuration, and possibly global access list details.
 The vertices of a graph do not contain virtual host information.
 Instead they are reachable from a root only by delegation.
 This permits the _owner_ of an ingress root to both delegate the authority to publish a service on a portion of the route space inside a virtual host, and to further delegate authority to publish and delegate.
@@ -59,15 +59,10 @@ spec:
   # to be a "root".
   virtualhost:
     # the fully qualified domain name of the root of the ingress tree
-    # all leaves of the DAG rooted at this object relate to the fqdn (and its aliases)
+    # all leaves of the DAG rooted at this object relate to the fqdn
     fqdn: www.google.com
-    # a set of aliases for the domain, these may be alternative fqdns which are considered
-    # aliases of the primary fqdn
-    aliases:
-      - www.google.com.au
-      - google.com
     # if present describes tls properties. The CNI names that will be matched on
-    # are described in fqdn and aliases, the tls.secretName secret must contain a
+    # are described in fqdn, the tls.secretName secret must contain a
     # matching certificate
     tls:
       # required, the name of a secret in the current namespace
@@ -282,8 +277,6 @@ metadata:
 spec:
   virtualhost:
     fqdn: heptio.com
-    aliases:
-      - www.heptio.com
   routes:
   - match: /
     # delegate everything to heptio-wordpress/wordpress
