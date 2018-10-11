@@ -528,6 +528,31 @@ spec:
           port: 80
 ```
 
+#### Prefix Rewrite Support
+
+Indicates that during forwarding, the matched prefix (or path) should be swapped with this value. This option allows application URLs to be rooted at a different path from those exposed at the reverse proxy layer. TThe original path before rewrite will be placed into the into the `x-envoy-original-path` header.
+
+```yaml
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata:
+  name: app
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: app.example.com
+  routes:
+    - match: /
+      services:
+        - name: app
+          port: 80
+    - match: /service2
+      prefixRewrite: "/" # Setting this rewrites the request from `/service2` to `/`
+      services:
+        - name: app-service
+          port: 80
+```
+
 #### Permit Insecure
 
 IngressRoutes support allowing HTTP alongside HTTPS. This way, the path responds to insecure requests over HTTP which are normally not permitted when a `virtualhost.tls` block is present.
