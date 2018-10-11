@@ -639,5 +639,5 @@ type Status struct {
 	Object      *ingressroutev1.IngressRoute
 	Status      string
 	Description string
-	Vhost       string // SAS: Support `aliases` once merged
+	Vhost       string
 }

@@ -7,8 +7,6 @@ metadata:
 spec: 
   virtualhost:
     fqdn: bar.com
-    aliases:
-      - www.bar.com
   routes: 
     - match: /
       services: 
