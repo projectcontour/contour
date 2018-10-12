@@ -38,12 +38,8 @@ func Cluster(service *dag.Service) *v2.Cluster {
 		EdsClusterConfig: edsconfig("contour", service),
 		ConnectTimeout:   250 * time.Millisecond,
 		LbPolicy:         lbPolicy(service.LoadBalancerStrategy),
-		CommonLbConfig: &v2.Cluster_CommonLbConfig{
-			HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-				Value: 0,
-			},
-		},
-		HealthChecks: edshealthcheck(service.HealthCheck),
+		CommonLbConfig:   clusterCommonLBConfig(),
+		HealthChecks:     edshealthcheck(service.HealthCheck),
 	}
 	if anyPositive(service.MaxConnections, service.MaxPendingRequests, service.MaxRequests, service.MaxRetries) {
 		cluster.CircuitBreakers = &envoy_cluster.CircuitBreakers{
@@ -198,5 +194,13 @@ func u32nil(val int) *types.UInt32Value {
 		return nil
 	default:
 		return u32(val)
+	}
+}
+
+func clusterCommonLBConfig() *v2.Cluster_CommonLbConfig {
+	return &v2.Cluster_CommonLbConfig{
+		HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+			Value: 0,
+		},
 	}
 }

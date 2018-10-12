@@ -30,16 +30,16 @@ type IngressRouteSpec struct {
 // to be a "root".
 type VirtualHost struct {
 	// The fully qualified domain name of the root of the ingress tree
-	// all leaves of the DAG rooted at this object relate to the fqdn (and its aliases)
+	// all leaves of the DAG rooted at this object relate to the fqdn
 	Fqdn string `json:"fqdn"`
 	// If present describes tls properties. The CNI names that will be matched on
-	// are described in fqdn and aliases, the tls.secretName secret must contain a
+	// are described in fqdn, the tls.secretName secret must contain a
 	// matching certificate
 	TLS *TLS `json:"tls,omitempty"`
 }
 
 // TLS describes tls properties. The CNI names that will be matched on
-// are described in fqdn and aliases, the tls.secretName secret must contain a
+// are described in fqdn, the tls.secretName secret must contain a
 // matching certificate
 type TLS struct {
 	// required, the name of a secret in the current namespace

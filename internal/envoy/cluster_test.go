@@ -20,7 +20,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
@@ -64,11 +63,7 @@ func TestCluster(t *testing.T) {
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-				CommonLbConfig: &v2.Cluster_CommonLbConfig{
-					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-						Value: 0,
-					},
-				},
+				CommonLbConfig: clusterCommonLBConfig(),
 			},
 		},
 		"h2c upstream": {
@@ -87,11 +82,7 @@ func TestCluster(t *testing.T) {
 				ConnectTimeout:       250 * time.Millisecond,
 				LbPolicy:             v2.Cluster_ROUND_ROBIN,
 				Http2ProtocolOptions: &core.Http2ProtocolOptions{},
-				CommonLbConfig: &v2.Cluster_CommonLbConfig{
-					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-						Value: 0,
-					},
-				},
+				CommonLbConfig:       clusterCommonLBConfig(),
 			},
 		},
 		"h2 upstream": {
@@ -111,11 +102,7 @@ func TestCluster(t *testing.T) {
 				LbPolicy:             v2.Cluster_ROUND_ROBIN,
 				Http2ProtocolOptions: &core.Http2ProtocolOptions{},
 				TlsContext:           UpstreamTLSContext(),
-				CommonLbConfig: &v2.Cluster_CommonLbConfig{
-					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-						Value: 0,
-					},
-				},
+				CommonLbConfig:       clusterCommonLBConfig(),
 			},
 		},
 		"contour.heptio.com/max-connections": {
@@ -138,11 +125,7 @@ func TestCluster(t *testing.T) {
 						MaxConnections: u32(9000),
 					}},
 				},
-				CommonLbConfig: &v2.Cluster_CommonLbConfig{
-					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-						Value: 0,
-					},
-				},
+				CommonLbConfig: clusterCommonLBConfig(),
 			},
 		},
 		"contour.heptio.com/max-pending-requests": {
@@ -165,11 +148,7 @@ func TestCluster(t *testing.T) {
 						MaxPendingRequests: u32(4096),
 					}},
 				},
-				CommonLbConfig: &v2.Cluster_CommonLbConfig{
-					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-						Value: 0,
-					},
-				},
+				CommonLbConfig: clusterCommonLBConfig(),
 			},
 		},
 		"contour.heptio.com/max-requests": {
@@ -192,11 +171,7 @@ func TestCluster(t *testing.T) {
 						MaxRequests: u32(404),
 					}},
 				},
-				CommonLbConfig: &v2.Cluster_CommonLbConfig{
-					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-						Value: 0,
-					},
-				},
+				CommonLbConfig: clusterCommonLBConfig(),
 			},
 		},
 		"contour.heptio.com/max-retries": {
@@ -219,11 +194,7 @@ func TestCluster(t *testing.T) {
 						MaxRetries: u32(7),
 					}},
 				},
-				CommonLbConfig: &v2.Cluster_CommonLbConfig{
-					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-						Value: 0,
-					},
-				},
+				CommonLbConfig: clusterCommonLBConfig(),
 			},
 		},
 	}
