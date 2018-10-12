@@ -318,6 +318,7 @@ func tlscontext(data map[string][]byte, tlsMinProtoVersion auth.TlsParameters_Tl
 		CommonTlsContext: &auth.CommonTlsContext{
 			TlsParams: &auth.TlsParameters{
 				TlsMinimumProtocolVersion: tlsMinProtoVersion,
+				TlsMaximumProtocolVersion: auth.TlsParameters_TLSv1_3,
 			},
 			TlsCertificates: []*auth.TlsCertificate{{
 				CertificateChain: &core.DataSource{
