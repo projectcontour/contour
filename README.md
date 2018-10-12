@@ -1,3 +1,5 @@
+this is a test of the sign-off checker
+
 # Heptio Contour [![Build Status][1]][2]
 
 [![Go Report Card][21]][22]
