@@ -1040,6 +1040,7 @@ func filterchaintls(domains []string, cert, key string, useproxy bool, filters .
 		CommonTlsContext: &auth.CommonTlsContext{
 			TlsParams: &auth.TlsParameters{
 				TlsMinimumProtocolVersion: auth.TlsParameters_TLSv1_1,
+				TlsMaximumProtocolVersion: auth.TlsParameters_TLSv1_3,
 			},
 			TlsCertificates: []*auth.TlsCertificate{{
 				CertificateChain: &core.DataSource{
