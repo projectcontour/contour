@@ -39,7 +39,7 @@ type ConfigWriter struct {
 
 	// StatsAddress is the address that the /stats path will listen on.
 	// Defaults to 0.0.0.0 and is only enabled if StatsdEnabled is true.
-	StatsAddress int
+	StatsAddress string
 
 	// StatsPort is the port that the /stats path will listen on.
 	// Defaults to 8002 and is only enabled if StatsdEnabled is true.
