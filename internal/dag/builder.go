@@ -538,10 +538,11 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 			enforceTLSRoute := routeEnforceTLS(enforceTLS, route.PermitInsecure)
 
 			r := &Route{
-				Prefix:       route.Match,
-				object:       ir,
-				Websocket:    route.EnableWebsockets,
-				HTTPSUpgrade: enforceTLSRoute,
+				Prefix:        route.Match,
+				object:        ir,
+				Websocket:     route.EnableWebsockets,
+				HTTPSUpgrade:  enforceTLSRoute,
+				PrefixRewrite: route.PrefixRewrite,
 			}
 			for _, s := range route.Services {
 				if s.Port < 1 || s.Port > 65535 {

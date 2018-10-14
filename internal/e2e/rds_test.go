@@ -1116,6 +1116,70 @@ func TestWebsocketIngressRoute(t *testing.T) {
 		}},
 	}}, nil)
 }
+func TestPrefixRewriteIngressRoute(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ws",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	rh.OnAdd(&ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "prefixrewrite.hello.world"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "ws",
+					Port: 80,
+				}},
+			}, {
+				Match:         "/ws-1",
+				PrefixRewrite: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "ws",
+					Port: 80,
+				}},
+			}, {
+				Match:         "/ws-2",
+				PrefixRewrite: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "ws",
+					Port: 80,
+				}},
+			}},
+		},
+	})
+
+	assertRDS(t, cc, []route.VirtualHost{{
+		Name:    "prefixrewrite.hello.world",
+		Domains: []string{"prefixrewrite.hello.world", "prefixrewrite.hello.world:80"},
+		Routes: []route.Route{{
+			Match:  prefixmatch("/ws-2"),
+			Action: prefixrewriteroute("default/ws/80/da39a3ee5e"),
+		}, {
+			Match:  prefixmatch("/ws-1"),
+			Action: prefixrewriteroute("default/ws/80/da39a3ee5e"),
+		}, {
+			Match:  prefixmatch("/"), // match all
+			Action: routecluster("default/ws/80/da39a3ee5e"),
+		}},
+	}}, nil)
+}
 
 // issue 404
 func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
@@ -1972,6 +2036,12 @@ func weightedclusters(clusters []weightedcluster) *route.WeightedCluster {
 func websocketroute(c string) *route.Route_Route {
 	cl := routecluster(c)
 	cl.Route.UseWebsocket = &types.BoolValue{Value: true}
+	return cl
+}
+
+func prefixrewriteroute(c string) *route.Route_Route {
+	cl := routecluster(c)
+	cl.Route.PrefixRewrite = "/"
 	return cl
 }
 

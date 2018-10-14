@@ -78,6 +78,9 @@ type Route struct {
 	// PerTryTimeout specifies the timeout per retry attempt.
 	// Ignored if RetryOn is blank.
 	PerTryTimeout time.Duration
+
+	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
+	PrefixRewrite string
 }
 
 func (r *Route) addService(s *Service) {

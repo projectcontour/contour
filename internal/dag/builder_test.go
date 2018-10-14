@@ -820,6 +820,33 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// ir11 has a prefix-rewrite route
+	ir11 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}, {
+				Match:         "/websocket",
+				PrefixRewrite: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	// ir13 has two routes to the same service with different
 	// weights
 	ir13 := &ingressroutev1.IngressRoute{
@@ -1717,6 +1744,35 @@ func TestDAGInsert(t *testing.T) {
 				}},
 		},
 		"insert ingressroute with websocket route": {
+			objs: []interface{}{
+				ir11, s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Host: "example.com",
+					Port: 80,
+					routes: routemap(
+						route("/", ir11, servicemap(
+							&Service{
+								Object:      s1,
+								ServicePort: &s1.Spec.Ports[0],
+							},
+						)),
+						&Route{
+							Prefix: "/websocket",
+							object: ir11,
+							services: servicemap(
+								&Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+								},
+							),
+							PrefixRewrite: "/",
+						},
+					),
+				}},
+		},
+		"insert ingressroute with prefix rewrite route": {
 			objs: []interface{}{
 				ir10, s1,
 			},

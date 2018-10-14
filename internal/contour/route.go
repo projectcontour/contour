@@ -263,6 +263,10 @@ func actionroute(r *dag.Route, services []*dag.Service) *route.Route_Route {
 		rr.Route.Timeout = &timeout
 	}
 
+	if len(r.PrefixRewrite) > 0 {
+		rr.Route.PrefixRewrite = r.PrefixRewrite
+	}
+
 	return &rr
 }
 

@@ -61,6 +61,8 @@ type Route struct {
 	// Allow this path to respond to insecure requests over HTTP which are normally
 	// not permitted when a `virtualhost.tls` block is present.
 	PermitInsecure bool `json:"permitInsecure,omitempty"`
+	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
+	PrefixRewrite string `json:"prefixRewrite,omitempty"`
 }
 
 // Service defines an upstream to proxy traffic to
