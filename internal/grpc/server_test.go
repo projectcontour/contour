@@ -95,9 +95,6 @@ func TestGRPC(t *testing.T) {
 			checktimeout(t, stream)          // check that the second receive times out
 		},
 		"StreamListeners": func(t *testing.T, cc *grpc.ClientConn) {
-			lds := v2.NewListenerDiscoveryServiceClient(cc)
-			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-			defer cancel()
 			// add an ingress, which will create a non tls listener
 			reh.OnAdd(&v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
@@ -120,6 +117,10 @@ func TestGRPC(t *testing.T) {
 					}},
 				},
 			})
+
+			lds := v2.NewListenerDiscoveryServiceClient(cc)
+			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+			defer cancel()
 			stream, err := lds.StreamListeners(ctx)
 			check(t, err)
 			sendreq(t, stream, listenerType) // send initial notification
@@ -275,7 +276,10 @@ func checktimeout(t *testing.T, stream interface {
 	if !ok {
 		t.Fatalf("%T %v", err, err)
 	}
-	if s.Code() != codes.DeadlineExceeded {
+
+	// Work around grpc/grpc-go#1645 which sometimes seems to
+	// set the status code to Unknown, even when the message is derived from context.DeadlineExceeded.
+	if s.Code() != codes.DeadlineExceeded && s.Message() != context.DeadlineExceeded.Error() {
 		t.Fatalf("expected %q, got %q %T %v", codes.DeadlineExceeded, s.Code(), err, err)
 	}
 }
