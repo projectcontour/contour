@@ -230,7 +230,7 @@ func (v *listenerVisitor) Visit() map[string]*v2.Listener {
 				Filters:    filters,
 			}
 			if v.UseProxyProto {
-				fc.UseProxyProto = &types.BoolValue{Value: true}
+				fc.UseProxyProto = bv(true)
 			}
 			ingress_https.FilterChains = append(ingress_https.FilterChains, fc)
 		}
@@ -269,7 +269,7 @@ func filterchain(useproxy bool, filters ...listener.Filter) listener.FilterChain
 		Filters: filters,
 	}
 	if useproxy {
-		fc.UseProxyProto = &types.BoolValue{Value: true}
+		fc.UseProxyProto = bv(true)
 	}
 	return fc
 }
@@ -306,7 +306,7 @@ func httpfilter(routename, accessLogPath string) listener.Filter {
 						"name": sv(router),
 					}),
 				),
-				"use_remote_address": bv(true), // TODO(jbeda) should this ever be false?
+				"use_remote_address": {Kind: &types.Value_BoolValue{BoolValue: true}}, // TODO(jbeda) should this ever be false?
 				"access_log":         accesslog(accessLogPath),
 			},
 		},
@@ -350,10 +350,6 @@ func accesslog(path string) *types.Value {
 
 func sv(s string) *types.Value {
 	return &types.Value{Kind: &types.Value_StringValue{StringValue: s}}
-}
-
-func bv(b bool) *types.Value {
-	return &types.Value{Kind: &types.Value_BoolValue{BoolValue: b}}
 }
 
 func st(m map[string]*types.Value) *types.Value {

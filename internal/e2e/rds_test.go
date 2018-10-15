@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
@@ -1994,7 +1995,7 @@ func prefixmatch(prefix string) route.RouteMatch {
 
 type weightedcluster struct {
 	name   string
-	weight uint32
+	weight int
 }
 
 func routecluster(cluster string) *route.Route_Route {
@@ -2003,6 +2004,13 @@ func routecluster(cluster string) *route.Route_Route {
 			ClusterSpecifier: &route.RouteAction_Cluster{
 				Cluster: cluster,
 			},
+			RequestHeadersToAdd: []*core.HeaderValueOption{{
+				Header: &core.HeaderValue{
+					Key:   "x-request-start",
+					Value: "t=%START_TIME(%s.%3f)%",
+				},
+				Append: bv(true),
+			}},
 		},
 	}
 }
@@ -2019,23 +2027,28 @@ func routeweightedcluster(first weightedcluster, rest ...weightedcluster) *route
 
 func weightedclusters(clusters []weightedcluster) *route.WeightedCluster {
 	var wc route.WeightedCluster
-	total := uint32(0)
+	var total int
 	for _, c := range clusters {
 		total += c.weight
 		wc.Clusters = append(wc.Clusters, &route.WeightedCluster_ClusterWeight{
 			Name:   c.name,
-			Weight: &types.UInt32Value{Value: c.weight},
+			Weight: u32(c.weight),
+			RequestHeadersToAdd: []*core.HeaderValueOption{{
+				Header: &core.HeaderValue{
+					Key:   "x-request-start",
+					Value: "t=%START_TIME(%s.%3f)%",
+				},
+				Append: bv(true),
+			}},
 		})
 	}
-	wc.TotalWeight = &types.UInt32Value{
-		Value: total,
-	}
+	wc.TotalWeight = u32(total)
 	return &wc
 }
 
 func websocketroute(c string) *route.Route_Route {
 	cl := routecluster(c)
-	cl.Route.UseWebsocket = &types.BoolValue{Value: true}
+	cl.Route.UseWebsocket = bv(true)
 	return cl
 }
 
@@ -2072,13 +2085,13 @@ func redirecthttps() *route.Route_Redirect {
 	}
 }
 
-func routeretry(cluster string, retryOn string, numRetries uint32, perTryTimeout time.Duration) *route.Route_Route {
+func routeretry(cluster string, retryOn string, numRetries int, perTryTimeout time.Duration) *route.Route_Route {
 	r := routecluster(cluster)
 	r.Route.RetryPolicy = &route.RouteAction_RetryPolicy{
 		RetryOn: retryOn,
 	}
 	if numRetries > 0 {
-		r.Route.RetryPolicy.NumRetries = &types.UInt32Value{Value: numRetries}
+		r.Route.RetryPolicy.NumRetries = u32(numRetries)
 	}
 	if perTryTimeout > 0 {
 		r.Route.RetryPolicy.PerTryTimeout = &perTryTimeout

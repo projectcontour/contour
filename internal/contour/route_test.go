@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	"github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
@@ -1069,13 +1069,10 @@ func TestRouteVisit(t *testing.T) {
 								Route: &route.RouteAction{
 									ClusterSpecifier: &route.RouteAction_WeightedClusters{
 										WeightedClusters: &route.WeightedCluster{
-											Clusters: []*route.WeightedCluster_ClusterWeight{{
-												Name:   "default/backend/80/da39a3ee5e",
-												Weight: u32(1),
-											}, {
-												Name:   "default/backendtwo/80/da39a3ee5e",
-												Weight: u32(1),
-											}},
+											Clusters: weightedClusters(
+												weightedCluster("default/backend/80/da39a3ee5e", 1),
+												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
+											),
 											TotalWeight: u32(2),
 										},
 									},
@@ -1155,13 +1152,10 @@ func TestRouteVisit(t *testing.T) {
 								Route: &route.RouteAction{
 									ClusterSpecifier: &route.RouteAction_WeightedClusters{
 										WeightedClusters: &route.WeightedCluster{
-											Clusters: []*route.WeightedCluster_ClusterWeight{{
-												Name:   "default/backend/80/da39a3ee5e",
-												Weight: u32(0),
-											}, {
-												Name:   "default/backendtwo/80/da39a3ee5e",
-												Weight: u32(50),
-											}},
+											Clusters: weightedClusters(
+												weightedCluster("default/backend/80/da39a3ee5e", 0),
+												weightedCluster("default/backendtwo/80/da39a3ee5e", 50),
+											),
 											TotalWeight: u32(50),
 										},
 									},
@@ -1242,13 +1236,10 @@ func TestRouteVisit(t *testing.T) {
 								Route: &route.RouteAction{
 									ClusterSpecifier: &route.RouteAction_WeightedClusters{
 										WeightedClusters: &route.WeightedCluster{
-											Clusters: []*route.WeightedCluster_ClusterWeight{{
-												Name:   "default/backend/80/da39a3ee5e",
-												Weight: u32(22),
-											}, {
-												Name:   "default/backendtwo/80/da39a3ee5e",
-												Weight: u32(50),
-											}},
+											Clusters: weightedClusters(
+												weightedCluster("default/backend/80/da39a3ee5e", 22),
+												weightedCluster("default/backendtwo/80/da39a3ee5e", 50),
+											),
 											TotalWeight: u32(72),
 										},
 									},
@@ -1338,6 +1329,7 @@ func routecluster(cluster string) *route.Route_Route {
 			ClusterSpecifier: &route.RouteAction_Cluster{
 				Cluster: cluster,
 			},
+			RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
 		},
 	}
 
@@ -1345,7 +1337,7 @@ func routecluster(cluster string) *route.Route_Route {
 
 func websocketroute(c string) *route.Route_Route {
 	r := routecluster(c)
-	r.Route.UseWebsocket = &types.BoolValue{Value: true}
+	r.Route.UseWebsocket = bv(true)
 	return r
 }
 
@@ -1394,6 +1386,7 @@ func TestActionRoute(t *testing.T) {
 					ClusterSpecifier: &route.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
 				},
 			},
 		},
@@ -1419,7 +1412,8 @@ func TestActionRoute(t *testing.T) {
 					ClusterSpecifier: &route.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
-					Timeout: duration(30 * time.Second),
+					Timeout:             duration(30 * time.Second),
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
 				},
 			},
 		},
@@ -1445,7 +1439,8 @@ func TestActionRoute(t *testing.T) {
 					ClusterSpecifier: &route.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
-					Timeout: duration(0),
+					Timeout:             duration(0),
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
 				},
 			},
 		},
@@ -1471,7 +1466,8 @@ func TestActionRoute(t *testing.T) {
 					ClusterSpecifier: &route.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
-					UseWebsocket: &types.BoolValue{Value: true},
+					UseWebsocket:        bv(true),
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
 				},
 			},
 		},
@@ -1498,8 +1494,9 @@ func TestActionRoute(t *testing.T) {
 					ClusterSpecifier: &route.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
-					Timeout:      duration(5 * time.Second),
-					UseWebsocket: &types.BoolValue{Value: true},
+					Timeout:             duration(5 * time.Second),
+					UseWebsocket:        bv(true),
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
 				},
 			},
 		},
@@ -1526,6 +1523,7 @@ func TestActionRoute(t *testing.T) {
 					ClusterSpecifier: &route.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
 				},
 			},
 		},
@@ -1558,10 +1556,10 @@ func TestActionRoute(t *testing.T) {
 						NumRetries:    u32(7),
 						PerTryTimeout: duration(10 * time.Second),
 					},
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
 				},
 			},
 		},
-
 		"multiple services": {
 			services: []*dag.Service{
 				{
@@ -1591,13 +1589,10 @@ func TestActionRoute(t *testing.T) {
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_WeightedClusters{
 						WeightedClusters: &route.WeightedCluster{
-							Clusters: []*route.WeightedCluster_ClusterWeight{{
-								Name:   "default/kuard/8080/da39a3ee5e",
-								Weight: u32(1),
-							}, {
-								Name:   "default/nginx/8080/da39a3ee5e",
-								Weight: u32(1),
-							}},
+							Clusters: weightedClusters(
+								weightedCluster("default/kuard/8080/da39a3ee5e", 1),
+								weightedCluster("default/nginx/8080/da39a3ee5e", 1),
+							),
 							TotalWeight: u32(2),
 						},
 					},
@@ -1633,13 +1628,10 @@ func TestActionRoute(t *testing.T) {
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_WeightedClusters{
 						WeightedClusters: &route.WeightedCluster{
-							Clusters: []*route.WeightedCluster_ClusterWeight{{
-								Name:   "default/kuard/8080/da39a3ee5e",
-								Weight: u32(80),
-							}, {
-								Name:   "default/nginx/8080/da39a3ee5e",
-								Weight: u32(20),
-							}},
+							Clusters: weightedClusters(
+								weightedCluster("default/kuard/8080/da39a3ee5e", 80),
+								weightedCluster("default/nginx/8080/da39a3ee5e", 20),
+							),
 							TotalWeight: u32(100),
 						},
 					},
@@ -1688,16 +1680,11 @@ func TestActionRoute(t *testing.T) {
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_WeightedClusters{
 						WeightedClusters: &route.WeightedCluster{
-							Clusters: []*route.WeightedCluster_ClusterWeight{{
-								Name:   "default/kuard/8080/da39a3ee5e",
-								Weight: u32(80),
-							}, {
-								Name:   "default/nginx/8080/da39a3ee5e",
-								Weight: u32(20),
-							}, {
-								Name:   "default/notraffic/8080/da39a3ee5e",
-								Weight: u32(0),
-							}},
+							Clusters: weightedClusters(
+								weightedCluster("default/kuard/8080/da39a3ee5e", 80),
+								weightedCluster("default/nginx/8080/da39a3ee5e", 20),
+								weightedCluster("default/notraffic/8080/da39a3ee5e", 0),
+							),
 							TotalWeight: u32(100),
 						},
 					},
@@ -1713,5 +1700,31 @@ func TestActionRoute(t *testing.T) {
 				t.Fatal(diff)
 			}
 		})
+	}
+}
+
+func weightedClusters(first, second *route.WeightedCluster_ClusterWeight, rest ...*route.WeightedCluster_ClusterWeight) []*route.WeightedCluster_ClusterWeight {
+	return append([]*route.WeightedCluster_ClusterWeight{first, second}, rest...)
+}
+
+func weightedCluster(name string, weight int) *route.WeightedCluster_ClusterWeight {
+	return &route.WeightedCluster_ClusterWeight{
+		Name:                name,
+		Weight:              u32(weight),
+		RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
+	}
+}
+
+func headers(first *core.HeaderValueOption, rest ...*core.HeaderValueOption) []*core.HeaderValueOption {
+	return append([]*core.HeaderValueOption{first}, rest...)
+}
+
+func appendHeader(key, value string) *core.HeaderValueOption {
+	return &core.HeaderValueOption{
+		Header: &core.HeaderValue{
+			Key:   key,
+			Value: value,
+		},
+		Append: bv(true),
 	}
 }

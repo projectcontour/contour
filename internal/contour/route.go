@@ -235,7 +235,7 @@ func actionroute(r *dag.Route, services []*dag.Service) *route.Route_Route {
 	rr := envoy.RouteRoute(services)
 
 	if r.Websocket {
-		rr.Route.UseWebsocket = &types.BoolValue{Value: true}
+		rr.Route.UseWebsocket = bv(true)
 	}
 
 	if r.RetryOn != "" {
@@ -271,3 +271,4 @@ func actionroute(r *dag.Route, services []*dag.Service) *route.Route_Route {
 }
 
 func u32(val int) *types.UInt32Value { return &types.UInt32Value{Value: uint32(val)} }
+func bv(val bool) *types.BoolValue   { return &types.BoolValue{Value: val} }

@@ -522,10 +522,10 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
 					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
-						MaxConnections:     uint32t(9000),
-						MaxPendingRequests: uint32t(4096),
-						MaxRequests:        uint32t(404),
-						MaxRetries:         uint32t(7),
+						MaxConnections:     u32(9000),
+						MaxPendingRequests: u32(4096),
+						MaxRequests:        u32(404),
+						MaxRetries:         u32(7),
 					}},
 				},
 				CommonLbConfig: &v2.Cluster_CommonLbConfig{
@@ -571,7 +571,7 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
 					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
-						MaxPendingRequests: uint32t(9999),
+						MaxPendingRequests: u32(9999),
 					}},
 				},
 				CommonLbConfig: &v2.Cluster_CommonLbConfig{
@@ -723,10 +723,6 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 		TypeUrl: clusterType,
 		Nonce:   "0",
 	}, streamCDS(t, cc))
-}
-
-func uint32t(v int) *types.UInt32Value {
-	return &types.UInt32Value{Value: uint32(v)}
 }
 
 func serviceWithAnnotations(ns, name string, annotations map[string]string, ports ...v1.ServicePort) *v1.Service {

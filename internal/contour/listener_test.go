@@ -20,7 +20,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/metrics"
@@ -422,7 +421,7 @@ func TestListenerVisit(t *testing.T) {
 						Filters: []listener.Filter{
 							httpfilter(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
 						},
-						UseProxyProto: &types.BoolValue{Value: true},
+						UseProxyProto: bv(true),
 					}},
 					ListenerFilters: []listener.ListenerFilter{
 						envoy.TLSInspector(),
