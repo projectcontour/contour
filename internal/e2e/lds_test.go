@@ -703,7 +703,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 			envoy.TLSInspector(),
 		},
 	}
-	ingress_https.FilterChains[0].UseProxyProto = &types.BoolValue{Value: true}
+	ingress_https.FilterChains[0].UseProxyProto = bv(true)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
@@ -1026,7 +1026,7 @@ func filterchain(useproxy bool, filters ...listener.Filter) listener.FilterChain
 		Filters: filters,
 	}
 	if useproxy {
-		fc.UseProxyProto = &types.BoolValue{Value: true}
+		fc.UseProxyProto = bv(true)
 	}
 	return fc
 }
@@ -1088,7 +1088,7 @@ func httpfilter(routename string) listener.Filter {
 				Name:   "envoy.file_access_log",
 				Config: messageToStruct(fileAccessLog("/dev/stdout")),
 			}},
-			UseRemoteAddress: &types.BoolValue{Value: true},
+			UseRemoteAddress: bv(true),
 			HttpFilters: []*envoy_config_v2_http_conn_mgr.HttpFilter{
 				{Name: "envoy.gzip"},
 				{Name: "envoy.grpc_web"},

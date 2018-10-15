@@ -306,7 +306,7 @@ func httpfilter(routename, accessLogPath string) listener.Filter {
 						"name": sv(router),
 					}),
 				),
-				"use_remote_address": &types.Value{Kind: &types.Value_BoolValue{BoolValue: true}}, // TODO(jbeda) should this ever be false?
+				"use_remote_address": {Kind: &types.Value_BoolValue{BoolValue: true}}, // TODO(jbeda) should this ever be false?
 				"access_log":         accesslog(accessLogPath),
 			},
 		},
