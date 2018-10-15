@@ -16,6 +16,7 @@ package envoy
 import (
 	"sort"
 
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
@@ -46,6 +47,13 @@ func RouteCluster(service *dag.Service) route.Route_Route {
 			ClusterSpecifier: &route.RouteAction_Cluster{
 				Cluster: Clustername(service),
 			},
+			RequestHeadersToAdd: []*core.HeaderValueOption{{
+				Header: &core.HeaderValue{
+					Key:   "x-request-start",
+					Value: "t=%START_TIME(%s.%3f)%",
+				},
+				Append: &types.BoolValue{Value: true},
+			}},
 		},
 	}
 }
@@ -59,6 +67,13 @@ func WeightedClusters(services []*dag.Service) *route.WeightedCluster {
 		wc.Clusters = append(wc.Clusters, &route.WeightedCluster_ClusterWeight{
 			Name:   Clustername(svc),
 			Weight: u32(svc.Weight),
+			RequestHeadersToAdd: []*core.HeaderValueOption{{
+				Header: &core.HeaderValue{
+					Key:   "x-request-start",
+					Value: "t=%START_TIME(%s.%3f)%",
+				},
+				Append: &types.BoolValue{Value: true},
+			}},
 		})
 	}
 	// Check if no weights were defined, if not default to even distribution
