@@ -47,13 +47,9 @@ func RouteCluster(service *dag.Service) route.Route_Route {
 			ClusterSpecifier: &route.RouteAction_Cluster{
 				Cluster: Clustername(service),
 			},
-			RequestHeadersToAdd: []*core.HeaderValueOption{{
-				Header: &core.HeaderValue{
-					Key:   "x-request-start",
-					Value: "t=%START_TIME(%s.%3f)%",
-				},
-				Append: &types.BoolValue{Value: true},
-			}},
+			RequestHeadersToAdd: headers(
+				appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
+			),
 		},
 	}
 }
@@ -67,13 +63,9 @@ func WeightedClusters(services []*dag.Service) *route.WeightedCluster {
 		wc.Clusters = append(wc.Clusters, &route.WeightedCluster_ClusterWeight{
 			Name:   Clustername(svc),
 			Weight: u32(svc.Weight),
-			RequestHeadersToAdd: []*core.HeaderValueOption{{
-				Header: &core.HeaderValue{
-					Key:   "x-request-start",
-					Value: "t=%START_TIME(%s.%3f)%",
-				},
-				Append: &types.BoolValue{Value: true},
-			}},
+			RequestHeadersToAdd: headers(
+				appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
+			),
 		})
 	}
 	// Check if no weights were defined, if not default to even distribution
@@ -101,4 +93,19 @@ func (c clusterWeightByName) Less(i, j int) bool {
 
 }
 
+func headers(first *core.HeaderValueOption, rest ...*core.HeaderValueOption) []*core.HeaderValueOption {
+	return append([]*core.HeaderValueOption{first}, rest...)
+}
+
+func appendHeader(key, value string) *core.HeaderValueOption {
+	return &core.HeaderValueOption{
+		Header: &core.HeaderValue{
+			Key:   key,
+			Value: value,
+		},
+		Append: bv(true),
+	}
+}
+
 func u32(val int) *types.UInt32Value { return &types.UInt32Value{Value: uint32(val)} }
+func bv(val bool) *types.BoolValue   { return &types.BoolValue{Value: val} }

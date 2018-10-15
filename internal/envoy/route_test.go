@@ -16,9 +16,7 @@ package envoy
 import (
 	"testing"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	"github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
 	"github.com/heptio/contour/internal/dag"
 	"k8s.io/api/core/v1"
@@ -54,25 +52,13 @@ func TestWeightedClusters(t *testing.T) {
 			}},
 			want: &route.WeightedCluster{
 				Clusters: []*route.WeightedCluster_ClusterWeight{{
-					Name:   "default/kuard/8080/da39a3ee5e",
-					Weight: u32(1),
-					RequestHeadersToAdd: []*core.HeaderValueOption{{
-						Header: &core.HeaderValue{
-							Key:   "x-request-start",
-							Value: "t=%START_TIME(%s.%3f)%",
-						},
-						Append: &types.BoolValue{Value: true},
-					}},
+					Name:                "default/kuard/8080/da39a3ee5e",
+					Weight:              u32(1),
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
 				}, {
-					Name:   "default/nginx/8080/da39a3ee5e",
-					Weight: u32(1),
-					RequestHeadersToAdd: []*core.HeaderValueOption{{
-						Header: &core.HeaderValue{
-							Key:   "x-request-start",
-							Value: "t=%START_TIME(%s.%3f)%",
-						},
-						Append: &types.BoolValue{Value: true},
-					}},
+					Name:                "default/nginx/8080/da39a3ee5e",
+					Weight:              u32(1),
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
 				}},
 				TotalWeight: u32(2),
 			},
@@ -103,25 +89,13 @@ func TestWeightedClusters(t *testing.T) {
 			}},
 			want: &route.WeightedCluster{
 				Clusters: []*route.WeightedCluster_ClusterWeight{{
-					Name:   "default/kuard/8080/da39a3ee5e",
-					Weight: u32(80),
-					RequestHeadersToAdd: []*core.HeaderValueOption{{
-						Header: &core.HeaderValue{
-							Key:   "x-request-start",
-							Value: "t=%START_TIME(%s.%3f)%",
-						},
-						Append: &types.BoolValue{Value: true},
-					}},
+					Name:                "default/kuard/8080/da39a3ee5e",
+					Weight:              u32(80),
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
 				}, {
-					Name:   "default/nginx/8080/da39a3ee5e",
-					Weight: u32(20),
-					RequestHeadersToAdd: []*core.HeaderValueOption{{
-						Header: &core.HeaderValue{
-							Key:   "x-request-start",
-							Value: "t=%START_TIME(%s.%3f)%",
-						},
-						Append: &types.BoolValue{Value: true},
-					}},
+					Name:                "default/nginx/8080/da39a3ee5e",
+					Weight:              u32(20),
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
 				}},
 				TotalWeight: u32(100),
 			},
@@ -162,35 +136,17 @@ func TestWeightedClusters(t *testing.T) {
 			}},
 			want: &route.WeightedCluster{
 				Clusters: []*route.WeightedCluster_ClusterWeight{{
-					Name:   "default/kuard/8080/da39a3ee5e",
-					Weight: u32(80),
-					RequestHeadersToAdd: []*core.HeaderValueOption{{
-						Header: &core.HeaderValue{
-							Key:   "x-request-start",
-							Value: "t=%START_TIME(%s.%3f)%",
-						},
-						Append: &types.BoolValue{Value: true},
-					}},
+					Name:                "default/kuard/8080/da39a3ee5e",
+					Weight:              u32(80),
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
 				}, {
-					Name:   "default/nginx/8080/da39a3ee5e",
-					Weight: u32(20),
-					RequestHeadersToAdd: []*core.HeaderValueOption{{
-						Header: &core.HeaderValue{
-							Key:   "x-request-start",
-							Value: "t=%START_TIME(%s.%3f)%",
-						},
-						Append: &types.BoolValue{Value: true},
-					}},
+					Name:                "default/nginx/8080/da39a3ee5e",
+					Weight:              u32(20),
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
 				}, {
-					Name:   "default/notraffic/8080/da39a3ee5e",
-					Weight: u32(0),
-					RequestHeadersToAdd: []*core.HeaderValueOption{{
-						Header: &core.HeaderValue{
-							Key:   "x-request-start",
-							Value: "t=%START_TIME(%s.%3f)%",
-						},
-						Append: &types.BoolValue{Value: true},
-					}},
+					Name:                "default/notraffic/8080/da39a3ee5e",
+					Weight:              u32(0),
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
 				}},
 				TotalWeight: u32(100),
 			},
