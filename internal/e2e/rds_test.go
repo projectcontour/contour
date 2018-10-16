@@ -1415,7 +1415,184 @@ func TestRDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 // Test DAGAdapter.IngressClass setting works, this could be done
 // in LDS or RDS, or even CDS, but this test mirrors the place it's
 // tested in internal/contour/route_test.go
-func TestRDSIngressClass(t *testing.T) {
+func TestRDSIngressRouteClassAnnotation(t *testing.T) {
+	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+		reh.IngressClass = "linkerd"
+	})
+	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard ",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "www.example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{
+					{
+						Name: "kuard",
+						Port: 8080,
+					},
+				},
+			}},
+		},
+	}
+
+	rh.OnAdd(ir1)
+	assertRDS(t, cc, []route.VirtualHost{{
+		Name:    "www.example.com",
+		Domains: []string{"www.example.com", "www.example.com:80"},
+		Routes: []route.Route{{
+			Match:  prefixmatch("/"),
+			Action: routecluster("default/kuard/8080/da39a3ee5e"),
+		}},
+	}}, nil)
+
+	ir2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard ",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "contour",
+			},
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "www.example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{
+					{
+						Name: "kuard",
+						Port: 8080,
+					},
+				},
+			}},
+		},
+	}
+	rh.OnUpdate(ir1, ir2)
+	assertRDS(t, cc, nil, nil)
+
+	ir3 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard ",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/ingress.class": "contour",
+			},
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "www.example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{
+					{
+						Name: "kuard",
+						Port: 8080,
+					},
+				},
+			}},
+		},
+	}
+	rh.OnUpdate(ir2, ir3)
+	assertRDS(t, cc, nil, nil)
+
+	ir4 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard ",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/ingress.class": "linkerd",
+			},
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "www.example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{
+					{
+						Name: "kuard",
+						Port: 8080,
+					},
+				},
+			}},
+		},
+	}
+	rh.OnUpdate(ir3, ir4)
+	assertRDS(t, cc, []route.VirtualHost{{
+		Name:    "www.example.com",
+		Domains: []string{"www.example.com", "www.example.com:80"},
+		Routes: []route.Route{{
+			Match:  prefixmatch("/"),
+			Action: routecluster("default/kuard/8080/da39a3ee5e"),
+		}},
+	}}, nil)
+
+	ir5 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard ",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "linkerd",
+			},
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "www.example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{
+					{
+						Name: "kuard",
+						Port: 8080,
+					},
+				},
+			}},
+		},
+	}
+	rh.OnUpdate(ir4, ir5)
+
+	assertRDS(t, cc, []route.VirtualHost{{
+		Name:    "www.example.com",
+		Domains: []string{"www.example.com", "www.example.com:80"},
+		Routes: []route.Route{{
+			Match:  prefixmatch("/"),
+			Action: routecluster("default/kuard/8080/da39a3ee5e"),
+		}},
+	}}, nil)
+
+	rh.OnUpdate(ir5, ir3)
+	assertRDS(t, cc, nil, nil)
+}
+
+// Test DAGAdapter.IngressClass setting works, this could be done
+// in LDS or RDS, or even CDS, but this test mirrors the place it's
+// tested in internal/contour/route_test.go
+func TestRDSIngressClassAnnotation(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
 		reh.IngressClass = "linkerd"
 	})
@@ -1480,7 +1657,7 @@ func TestRDSIngressClass(t *testing.T) {
 			Name:      "kuard-ing",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"kubernetes.io/ingress.class": "linkerd",
+				"contour.heptio.com/ingress.class": "contour",
 			},
 		},
 		Spec: v1beta1.IngressSpec{
@@ -1491,6 +1668,24 @@ func TestRDSIngressClass(t *testing.T) {
 		},
 	}
 	rh.OnUpdate(i2, i3)
+	assertRDS(t, cc, nil, nil)
+
+	i4 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-ing",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "linkerd",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "kuard",
+				ServicePort: intstr.FromInt(8080),
+			},
+		},
+	}
+	rh.OnUpdate(i3, i4)
 	assertRDS(t, cc, []route.VirtualHost{{
 		Name:    "*",
 		Domains: []string{"*"},
@@ -1500,7 +1695,32 @@ func TestRDSIngressClass(t *testing.T) {
 		}},
 	}}, nil)
 
-	rh.OnUpdate(i3, i2)
+	i5 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-ing",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/ingress.class": "linkerd",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "kuard",
+				ServicePort: intstr.FromInt(8080),
+			},
+		},
+	}
+	rh.OnUpdate(i4, i5)
+	assertRDS(t, cc, []route.VirtualHost{{
+		Name:    "*",
+		Domains: []string{"*"},
+		Routes: []route.Route{{
+			Match:  prefixmatch("/"),
+			Action: routecluster("default/kuard/8080/da39a3ee5e"),
+		}},
+	}}, nil)
+
+	rh.OnUpdate(i5, i3)
 	assertRDS(t, cc, nil, nil)
 }
 
