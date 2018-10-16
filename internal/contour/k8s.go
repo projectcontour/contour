@@ -19,6 +19,7 @@ package contour
 import (
 	"reflect"
 
+	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
@@ -97,16 +98,20 @@ func (reh *ResourceEventHandler) update() {
 
 // validIngressClass returns true iff:
 //
-// 1. obj is not of type *v1beta1.Ingress.
+// 1. obj is not of type *v1beta1.Ingress or ingressroutev1.IngressRoute.
 // 2. obj has no ingress.class annotation.
 // 2. obj's ingress.class annotation matches d.IngressClass.
 func (reh *ResourceEventHandler) validIngressClass(obj interface{}) bool {
-	i, ok := obj.(*v1beta1.Ingress)
-	if !ok {
+	switch i := obj.(type) {
+	case *ingressroutev1.IngressRoute:
+		class, ok := getIngressClassAnnotation(i.Annotations)
+		return !ok || class == reh.ingressClass()
+	case *v1beta1.Ingress:
+		class, ok := getIngressClassAnnotation(i.Annotations)
+		return !ok || class == reh.ingressClass()
+	default:
 		return true
 	}
-	class, ok := i.Annotations["kubernetes.io/ingress.class"]
-	return !ok || class == reh.ingressClass()
 }
 
 // ingressClass returns the IngressClass
@@ -116,4 +121,23 @@ func (reh *ResourceEventHandler) ingressClass() string {
 		return reh.IngressClass
 	}
 	return DEFAULT_INGRESS_CLASS
+}
+
+// getIngressClassAnnotation checks for the acceptable ingress class annotations
+// 1. contour.heptio.com/ingress.class
+// 2. kubernetes.io/ingress.class
+//
+// it returns the first matching ingress annotation (in the above order) with test
+func getIngressClassAnnotation(annotations map[string]string) (string, bool) {
+	class, ok := annotations["contour.heptio.com/ingress.class"]
+	if ok {
+		return class, true
+	}
+
+	class, ok = annotations["kubernetes.io/ingress.class"]
+	if ok {
+		return class, true
+	}
+
+	return "", false
 }
