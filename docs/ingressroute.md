@@ -530,7 +530,7 @@ spec:
 
 #### Prefix Rewrite Support
 
-Indicates that during forwarding, the matched prefix (or path) should be swapped with this value. This option allows application URLs to be rooted at a different path from those exposed at the reverse proxy layer. TThe original path before rewrite will be placed into the into the `x-envoy-original-path` header.
+Indicates that during forwarding, the matched prefix (or path) should be swapped with this value. This option allows application URLs to be rooted at a different path from those exposed at the reverse proxy layer. The original path before rewrite will be placed into the into the `x-envoy-original-path` header.
 
 ```yaml
 apiVersion: contour.heptio.com/v1beta1
