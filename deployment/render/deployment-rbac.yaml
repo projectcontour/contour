@@ -195,6 +195,12 @@ spec:
         - --service-node node0
         - --log-level info
         - --v2-config-only
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8002
+          initialDelaySeconds: 3
+          periodSeconds: 3
         volumeMounts:
         - name: contour-config
           mountPath: /config
@@ -205,7 +211,7 @@ spec:
         command: ["contour"]
         args:
         - bootstrap
-        # Uncomment the statsd-enable to enable prometheus metrics
+        # Uncomment the statsd-enable to enable statsd metrics
         #- --statsd-enable
         # Uncomment to set a custom stats emission address and port
         #- --stats-address=0.0.0.0
