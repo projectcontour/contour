@@ -117,7 +117,7 @@ static_resources:
           protocol: TCP
           address: 127.0.0.1
           port_value: {{ if .AdminPort }}{{ .AdminPort }}{{ else }}9001{{ end }}
-{{ if .StatsdEnabled }}  listeners:
+  listeners:
     - address:
         socket_address:
           protocol: TCP
@@ -140,9 +140,13 @@ static_resources:
                           route:
                             cluster: service_stats
                 http_filters:
+                  - name: envoy.health_check
+                    config:
+                      endpoint: "/healthz"
+                      pass_through_mode: false
                   - name: envoy.router
                     config:
-stats_sinks:
+{{ if .StatsdEnabled }}stats_sinks:
   - name: envoy.statsd
     config:
       address:
@@ -150,8 +154,7 @@ stats_sinks:
           protocol: UDP
           address: {{ if .StatsdAddress }}{{ .StatsdAddress }}{{ else }}127.0.0.1{{ end }}
           port_value: {{ if .StatsdPort }}{{ .StatsdPort }}{{ else }}9125{{ end }}
-{{ end -}}
-admin:
+{{ end -}}admin:
   access_log_path: {{ if .AdminAccessLogPath }}{{ .AdminAccessLogPath }}{{ else }}/dev/null{{ end }}
   address:
     socket_address:

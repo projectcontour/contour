@@ -45,6 +45,12 @@ spec:
           hostPort: 443
           name: https
           protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8002
+          initialDelaySeconds: 3
+          periodSeconds: 3
         volumeMounts:
           - name: contour-config
             mountPath: /config
@@ -58,7 +64,6 @@ spec:
         - $(CONTOUR_SERVICE_HOST)
         - --xds-port
         - $(CONTOUR_SERVICE_PORT)
-        - --statsd-enabled
         command:
         - contour
         image: gcr.io/heptio-images/contour:v0.6.0-beta.3

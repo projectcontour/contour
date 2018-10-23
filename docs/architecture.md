@@ -19,4 +19,7 @@ Contour is a client of the Kubernetes API. Contour watches Ingress, Service, and
 The transfer of information from Kubernetes to Contour is by watching the API with the SharedInformer framework.
 The transfer of information from Contour to Envoy is by polling from the Envoy side.
 
+Kubernetes Readiness Probes are configured to check the status of Envoy.
+These are enabled over the metrics port and are served over http via `/healthz`.
+
 [0]: https://github.com/envoyproxy/data-plane-api#terminology

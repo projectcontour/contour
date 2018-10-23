@@ -9,8 +9,8 @@ avoid exposing the entire admin interface to Prometheus (and other workloads in
 the cluster), Contour configures a static listener that sends traffic to the
 stats endpoint and nowhere else.
 
-To enable the static listener, set the `--statsd-enabled` flag on the Contour
-`bootstrap` command that runs as an init container.
+To enable the static listener, set the `--statsd-enabled` flag.
+By default, Envoy's stats will be exposed over `0.0.0.0:8002` but can be overridden setting the `--stats-address` and `--stats-port` flags in Contour.
 
 ### Configuration Prometheus
 

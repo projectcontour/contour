@@ -23,23 +23,20 @@ import (
 	"strings"
 
 	clientset "github.com/heptio/contour/apis/generated/clientset/versioned"
+	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/debug"
+	"github.com/heptio/contour/internal/envoy"
+	"github.com/heptio/contour/internal/grpc"
 	"github.com/heptio/contour/internal/httpsvc"
+	"github.com/heptio/contour/internal/k8s"
+	"github.com/heptio/contour/internal/metrics"
 	"github.com/heptio/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
-
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-
-	"github.com/heptio/contour/internal/contour"
-	"github.com/heptio/contour/internal/envoy"
-	"github.com/heptio/contour/internal/grpc"
-	"github.com/heptio/contour/internal/k8s"
-	"github.com/heptio/contour/internal/metrics"
-
-	"github.com/sirupsen/logrus"
 )
 
 var ingressrouteRootNamespaceFlag string

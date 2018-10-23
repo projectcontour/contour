@@ -45,6 +45,12 @@ spec:
         - --service-node node0
         - --log-level info
         - --v2-config-only
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8002
+          initialDelaySeconds: 3
+          periodSeconds: 3
         volumeMounts:
         - name: contour-config
           mountPath: /config
