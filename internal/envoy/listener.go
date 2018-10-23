@@ -76,7 +76,7 @@ func accesslog(path, format string) *types.Value {
 			"name": sv("envoy.file_access_log"),
 			"config": st(map[string]*types.Value{
 				"path": sv(path),
-				"format": sv(format),
+				if format != "" { "format": sv(format), }
 			}),
 		}),
 	)
