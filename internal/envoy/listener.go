@@ -14,6 +14,7 @@
 package envoy
 
 import (
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/gogo/protobuf/types"
 )
@@ -65,6 +66,21 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 				}),
 				"access_log":         accesslog(accessLogPath),
 				"use_remote_address": {Kind: &types.Value_BoolValue{BoolValue: true}}, // TODO(jbeda) should this ever be false?
+			},
+		},
+	}
+}
+
+// SocketAddress creates a new TCP core.Address.
+func SocketAddress(address string, port int) core.Address {
+	return core.Address{
+		Address: &core.Address_SocketAddress{
+			SocketAddress: &core.SocketAddress{
+				Protocol: core.TCP,
+				Address:  address,
+				PortSpecifier: &core.SocketAddress_PortValue{
+					PortValue: uint32(port),
+				},
 			},
 		},
 	}

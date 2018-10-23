@@ -233,10 +233,7 @@ func prefixmatch(prefix string) route.RouteMatch {
 // supplied ingress and backend.
 func actionroute(r *dag.Route, services []*dag.Service) *route.Route_Route {
 	rr := envoy.RouteRoute(services)
-
-	if r.Websocket {
-		rr.Route.UseWebsocket = bv(true)
-	}
+	rr.Route.UseWebsocket = bv(r.Websocket)
 
 	if r.RetryOn != "" {
 		rr.Route.RetryPolicy = &route.RouteAction_RetryPolicy{
@@ -271,4 +268,14 @@ func actionroute(r *dag.Route, services []*dag.Service) *route.Route_Route {
 }
 
 func u32(val int) *types.UInt32Value { return &types.UInt32Value{Value: uint32(val)} }
-func bv(val bool) *types.BoolValue   { return &types.BoolValue{Value: val} }
+
+var bvTrue = types.BoolValue{Value: true}
+
+// bv returns a pointer to a true types.BoolValue if val is true,
+// otherwise it returns nil.
+func bv(val bool) *types.BoolValue {
+	if val {
+		return &bvTrue
+	}
+	return nil
+}

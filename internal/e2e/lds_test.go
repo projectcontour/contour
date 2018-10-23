@@ -71,7 +71,7 @@ func TestNonTLSListener(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_http",
-				Address: socketaddress("0.0.0.0", 8080),
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
 					filterchain(false, httpfilter("ingress_http")),
 				},
@@ -126,7 +126,7 @@ func TestNonTLSListener(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_http",
-				Address: socketaddress("0.0.0.0", 8080),
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
 					filterchain(false, httpfilter("ingress_http")),
 				},
@@ -186,14 +186,14 @@ func TestTLSListener(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_http",
-				Address: socketaddress("0.0.0.0", 8080),
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
 					filterchain(false, httpfilter("ingress_http")),
 				},
 			}),
 			any(t, &v2.Listener{
 				Name:    "ingress_https",
-				Address: socketaddress("0.0.0.0", 8443),
+				Address: envoy.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []listener.FilterChain{
 					filterchaintls([]string{"kuard.example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
 				},
@@ -231,7 +231,7 @@ func TestTLSListener(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_https",
-				Address: socketaddress("0.0.0.0", 8443),
+				Address: envoy.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []listener.FilterChain{
 					filterchaintls([]string{"kuard.example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
 				},
@@ -331,7 +331,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 
 	l1 := &v2.Listener{
 		Name:    "ingress_https",
-		Address: socketaddress("0.0.0.0", 8443),
+		Address: envoy.SocketAddress("0.0.0.0", 8443),
 		FilterChains: []listener.FilterChain{
 			filterchaintls([]string{"kuard.example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
 		},
@@ -349,7 +349,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_http",
-				Address: socketaddress("0.0.0.0", 8080),
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
 					filterchain(false, httpfilter("ingress_http")),
 				},
@@ -367,7 +367,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_http",
-				Address: socketaddress("0.0.0.0", 8080),
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
 					filterchain(false, httpfilter("ingress_http")),
 				},
@@ -382,7 +382,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 	rh.OnAdd(s1)
 	l2 := &v2.Listener{
 		Name:    "ingress_https",
-		Address: socketaddress("0.0.0.0", 8443),
+		Address: envoy.SocketAddress("0.0.0.0", 8443),
 		FilterChains: []listener.FilterChain{
 			filterchaintls([]string{"kuard.example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
 		},
@@ -401,7 +401,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_http",
-				Address: socketaddress("0.0.0.0", 8080),
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
 					filterchain(false, httpfilter("ingress_http")),
 				},
@@ -454,7 +454,7 @@ func TestLDSFilter(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_https",
-				Address: socketaddress("0.0.0.0", 8443),
+				Address: envoy.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []listener.FilterChain{
 					filterchaintls([]string{"kuard.example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
 				},
@@ -474,7 +474,7 @@ func TestLDSFilter(t *testing.T) {
 
 			any(t, &v2.Listener{
 				Name:    "ingress_http",
-				Address: socketaddress("0.0.0.0", 8080),
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
 					filterchain(false, httpfilter("ingress_http")),
 				},
@@ -543,7 +543,7 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_https",
-				Address: socketaddress("0.0.0.0", 8443),
+				Address: envoy.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []listener.FilterChain{
 					filterchaintls([]string{"kuard.example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
 				},
@@ -578,7 +578,7 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 
 	l1 := &v2.Listener{
 		Name:    "ingress_https",
-		Address: socketaddress("0.0.0.0", 8443),
+		Address: envoy.SocketAddress("0.0.0.0", 8443),
 		FilterChains: []listener.FilterChain{
 			filterchaintls([]string{"kuard.example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
 		},
@@ -634,7 +634,7 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_http",
-				Address: socketaddress("0.0.0.0", 8080),
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
 					filterchain(true, httpfilter("ingress_http")),
 				},
@@ -695,7 +695,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 
 	ingress_https := &v2.Listener{
 		Name:    "ingress_https",
-		Address: socketaddress("0.0.0.0", 8443),
+		Address: envoy.SocketAddress("0.0.0.0", 8443),
 		FilterChains: []listener.FilterChain{
 			filterchaintls([]string{"kuard.example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
 		},
@@ -709,7 +709,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_http",
-				Address: socketaddress("0.0.0.0", 8080),
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
 					filterchain(true, httpfilter("ingress_http")),
 				},
@@ -774,14 +774,14 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 
 	ingress_http := &v2.Listener{
 		Name:    "ingress_http",
-		Address: socketaddress("127.0.0.100", 9100),
+		Address: envoy.SocketAddress("127.0.0.100", 9100),
 		FilterChains: []listener.FilterChain{
 			filterchain(false, httpfilter("ingress_http")),
 		},
 	}
 	ingress_https := &v2.Listener{
 		Name:    "ingress_https",
-		Address: socketaddress("127.0.0.200", 9200),
+		Address: envoy.SocketAddress("127.0.0.200", 9200),
 		FilterChains: []listener.FilterChain{
 			filterchaintls([]string{"kuard.example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
 		},
@@ -844,7 +844,7 @@ func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_http",
-				Address: socketaddress("0.0.0.0", 8080),
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
 					filterchain(false, httpfilter("ingress_http")),
 				},
@@ -962,7 +962,7 @@ func TestIngressRouteHTTPS(t *testing.T) {
 
 	ingressHTTP := &v2.Listener{
 		Name:    "ingress_http",
-		Address: socketaddress("0.0.0.0", 8080),
+		Address: envoy.SocketAddress("0.0.0.0", 8080),
 		FilterChains: []listener.FilterChain{
 			filterchain(false, httpfilter("ingress_http")),
 		},
@@ -970,7 +970,7 @@ func TestIngressRouteHTTPS(t *testing.T) {
 
 	ingressHTTPS := &v2.Listener{
 		Name:    "ingress_https",
-		Address: socketaddress("0.0.0.0", 8443),
+		Address: envoy.SocketAddress("0.0.0.0", 8443),
 		FilterChains: []listener.FilterChain{
 			filterchaintls([]string{"example.com"}, "certificate", "key", false, httpfilter("ingress_https")),
 		},
@@ -1004,20 +1004,6 @@ func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
 	return &v1beta1.IngressBackend{
 		ServiceName: name,
 		ServicePort: port,
-	}
-}
-
-func socketaddress(address string, port uint32) core.Address {
-	return core.Address{
-		Address: &core.Address_SocketAddress{
-			SocketAddress: &core.SocketAddress{
-				Protocol: core.TCP,
-				Address:  address,
-				PortSpecifier: &core.SocketAddress_PortValue{
-					PortValue: port,
-				},
-			},
-		},
 	}
 }
 
