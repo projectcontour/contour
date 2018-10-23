@@ -60,8 +60,11 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 						"name": sv("envoy.router"),
 					}),
 				),
-				"use_remote_address": {Kind: &types.Value_BoolValue{BoolValue: true}}, // TODO(jbeda) should this ever be false?
+				"http_protocol_options": st(map[string]*types.Value{
+					"accept_http_10": {Kind: &types.Value_BoolValue{BoolValue: true}},
+				}),
 				"access_log":         accesslog(accessLogPath),
+				"use_remote_address": {Kind: &types.Value_BoolValue{BoolValue: true}}, // TODO(jbeda) should this ever be false?
 			},
 		},
 	}

@@ -1084,6 +1084,9 @@ func httpfilter(routename string) listener.Filter {
 					RouteConfigName: routename,
 				},
 			},
+			HttpProtocolOptions: &core.Http1ProtocolOptions{
+				AcceptHttp_10: true,
+			},
 			AccessLog: []*accesslog.AccessLog{{
 				Name:   "envoy.file_access_log",
 				Config: messageToStruct(fileAccessLog("/dev/stdout")),
