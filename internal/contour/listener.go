@@ -35,6 +35,11 @@ const (
 	DEFAULT_HTTPS_ACCESS_LOG       = "/dev/stdout"
 	DEFAULT_HTTPS_LISTENER_ADDRESS = DEFAULT_HTTP_LISTENER_ADDRESS
 	DEFAULT_HTTPS_LISTENER_PORT    = 8443
+// the same as envoy default
+	DEFAULT_ACCESS_LOG_FROMAT      = '[%START_TIME%] "%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%"
+%RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT% %DURATION%
+%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)% "%REQ(X-FORWARDED-FOR)%" "%REQ(USER-AGENT)%"
+"%REQ(X-REQUEST-ID)%" "%REQ(:AUTHORITY)%" "%UPSTREAM_HOST%"\n'
 )
 
 // ListenerCache manages the contents of the gRPC LDS cache.
@@ -62,6 +67,10 @@ type ListenerCache struct {
 	// Envoy's HTTPS (TLS) access log path.
 	// If not set, defaults to DEFAULT_HTTPS_ACCESS_LOG.
 	HTTPSAccessLog string
+
+	// Envoy's HTTP/HTTPS(TLS) access format.
+	// If not set, defaults to envoy DEFAULT_ACCESS_LOG_FROMAT.
+	AccessLogFormat string
 
 	// UseProxyProto configurs all listeners to expect a PROXY protocol
 	// V1 header on new connections.
@@ -123,6 +132,15 @@ func (lc *ListenerCache) httpsAccessLog() string {
 		return lc.HTTPSAccessLog
 	}
 	return DEFAULT_HTTPS_ACCESS_LOG
+}
+
+// httpAccessLogFormat returns the access log format for the HTTP and HTTPS (TLS)
+// listener or DEFAULT_ACCESS_LOG_FROMAT if not configured.
+func (lc *ListenerCache) accessLogFormat() string {
+	if lc.AccessLogFormat != "" {
+		return lc.AccessLogFormat
+	}
+	return DEFAULT_ACCESS_LOG_FROMAT
 }
 
 type listenerCache struct {
@@ -200,7 +218,7 @@ func (v *listenerVisitor) Visit() map[string]*v2.Listener {
 		},
 	}
 	filters := []listener.Filter{
-		envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.httpsAccessLog()),
+		envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.httpsAccessLog(), v.accessLogFormat()),
 	}
 	v.Visitable.Visit(func(vh dag.Vertex) {
 		switch vh := vh.(type) {
@@ -233,7 +251,7 @@ func (v *listenerVisitor) Visit() map[string]*v2.Listener {
 			Name:    ENVOY_HTTP_LISTENER,
 			Address: socketaddress(v.httpAddress(), v.httpPort()),
 			FilterChains: []listener.FilterChain{
-				filterchain(v.UseProxyProto, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, v.httpAccessLog())),
+				filterchain(v.UseProxyProto, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, v.httpAccessLog(), v.accessLogFormat())),
 			},
 		}
 	}

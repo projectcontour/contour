@@ -28,7 +28,7 @@ func TLSInspector() listener.ListenerFilter {
 
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
 // for the supplied route and access log.
-func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
+func HTTPConnectionManager(routename, accessLogPath, accessLogFormat string) listener.Filter {
 	return listener.Filter{
 		Name: "envoy.http_connection_manager",
 		Config: &types.Struct{
@@ -63,19 +63,20 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 				"http_protocol_options": st(map[string]*types.Value{
 					"accept_http_10": {Kind: &types.Value_BoolValue{BoolValue: true}},
 				}),
-				"access_log":         accesslog(accessLogPath),
+				"access_log":         accesslog(accessLogPath, accessLogFormat),
 				"use_remote_address": {Kind: &types.Value_BoolValue{BoolValue: true}}, // TODO(jbeda) should this ever be false?
 			},
 		},
 	}
 }
 
-func accesslog(path string) *types.Value {
+func accesslog(path, format string) *types.Value {
 	return lv(
 		st(map[string]*types.Value{
 			"name": sv("envoy.file_access_log"),
 			"config": st(map[string]*types.Value{
 				"path": sv(path),
+				"format": sv(format),
 			}),
 		}),
 	)
