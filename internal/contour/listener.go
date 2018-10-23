@@ -82,9 +82,9 @@ func (lc *ListenerCache) httpAddress() string {
 
 // httpPort returns the port for the HTTP (non TLS)
 // listener or DEFAULT_HTTP_LISTENER_PORT if not configured.
-func (lc *ListenerCache) httpPort() uint32 {
+func (lc *ListenerCache) httpPort() int {
 	if lc.HTTPPort != 0 {
-		return uint32(lc.HTTPPort)
+		return lc.HTTPPort
 	}
 	return DEFAULT_HTTP_LISTENER_PORT
 }
@@ -109,9 +109,9 @@ func (lc *ListenerCache) httpsAddress() string {
 
 // httpsPort returns the port for the HTTPS (TLS) listener
 // or DEFAULT_HTTPS_LISTENER_PORT if not configured.
-func (lc *ListenerCache) httpsPort() uint32 {
+func (lc *ListenerCache) httpsPort() int {
 	if lc.HTTPSPort != 0 {
-		return uint32(lc.HTTPSPort)
+		return lc.HTTPSPort
 	}
 	return DEFAULT_HTTPS_LISTENER_PORT
 }
@@ -194,7 +194,7 @@ func (v *listenerVisitor) Visit() map[string]*v2.Listener {
 	http := 0
 	ingress_https := v2.Listener{
 		Name:    ENVOY_HTTPS_LISTENER,
-		Address: socketaddress(v.httpsAddress(), v.httpsPort()),
+		Address: envoy.SocketAddress(v.httpsAddress(), v.httpsPort()),
 		ListenerFilters: []listener.ListenerFilter{
 			envoy.TLSInspector(),
 		},
@@ -219,11 +219,9 @@ func (v *listenerVisitor) Visit() map[string]*v2.Listener {
 				FilterChainMatch: &listener.FilterChainMatch{
 					ServerNames: []string{vh.Host},
 				},
-				TlsContext: tlscontext(data, vh.MinProtoVersion, "h2", "http/1.1"),
-				Filters:    filters,
-			}
-			if v.UseProxyProto {
-				fc.UseProxyProto = bv(true)
+				TlsContext:    tlscontext(data, vh.MinProtoVersion, "h2", "http/1.1"),
+				Filters:       filters,
+				UseProxyProto: bv(v.UseProxyProto),
 			}
 			ingress_https.FilterChains = append(ingress_https.FilterChains, fc)
 		}
@@ -231,40 +229,19 @@ func (v *listenerVisitor) Visit() map[string]*v2.Listener {
 	if http > 0 {
 		m[ENVOY_HTTP_LISTENER] = &v2.Listener{
 			Name:    ENVOY_HTTP_LISTENER,
-			Address: socketaddress(v.httpAddress(), v.httpPort()),
-			FilterChains: []listener.FilterChain{
-				filterchain(v.UseProxyProto, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, v.httpAccessLog())),
-			},
+			Address: envoy.SocketAddress(v.httpAddress(), v.httpPort()),
+			FilterChains: []listener.FilterChain{{
+				Filters: []listener.Filter{
+					envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, v.httpAccessLog()),
+				},
+				UseProxyProto: bv(v.UseProxyProto),
+			}},
 		}
 	}
 	if len(ingress_https.FilterChains) > 0 {
 		m[ENVOY_HTTPS_LISTENER] = &ingress_https
 	}
 	return m
-}
-
-func socketaddress(address string, port uint32) core.Address {
-	return core.Address{
-		Address: &core.Address_SocketAddress{
-			SocketAddress: &core.SocketAddress{
-				Protocol: core.TCP,
-				Address:  address,
-				PortSpecifier: &core.SocketAddress_PortValue{
-					PortValue: port,
-				},
-			},
-		},
-	}
-}
-
-func filterchain(useproxy bool, filters ...listener.Filter) listener.FilterChain {
-	fc := listener.FilterChain{
-		Filters: filters,
-	}
-	if useproxy {
-		fc.UseProxyProto = bv(true)
-	}
-	return fc
 }
 
 func tlscontext(data map[string][]byte, tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnprotos ...string) *auth.DownstreamTlsContext {
