@@ -17,7 +17,7 @@ spec:
         app: contour
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9001"
+        prometheus.io/port: "8002"
         prometheus.io/path: "/stats"
         prometheus.io/format: "prometheus"
     spec:
