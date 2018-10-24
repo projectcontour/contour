@@ -109,15 +109,7 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 	v.Visitable.Visit(func(vh dag.Vertex) {
 		switch vh := vh.(type) {
 		case *dag.VirtualHost:
-			hostname := vh.Host
-			domains := []string{hostname}
-			if hostname != "*" {
-				domains = append(domains, hostname+":80")
-			}
-			vhost := route.VirtualHost{
-				Name:    envoy.Hashname(60, hostname),
-				Domains: domains,
-			}
+			vhost := envoy.VirtualHost(vh.Host, 80)
 			vh.Visit(func(r dag.Vertex) {
 				switch r := r.(type) {
 				case *dag.Route:
@@ -132,16 +124,12 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 						return
 					}
 					rr := route.Route{
-						Match:  prefixmatch(r.Prefix),
+						Match:  envoy.PrefixMatch(r.Prefix),
 						Action: actionroute(r, svcs),
 					}
 
 					if r.HTTPSUpgrade {
-						rr.Action = &route.Route_Redirect{
-							Redirect: &route.RedirectAction{
-								HttpsRedirect: true,
-							},
-						}
+						rr.Action = envoy.UpgradeHTTPS()
 					}
 					vhost.Routes = append(vhost.Routes, rr)
 				}
@@ -152,15 +140,7 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 			sort.Stable(sort.Reverse(longestRouteFirst(vhost.Routes)))
 			ingress_http.VirtualHosts = append(ingress_http.VirtualHosts, vhost)
 		case *dag.SecureVirtualHost:
-			hostname := vh.Host
-			domains := []string{hostname}
-			if hostname != "*" {
-				domains = append(domains, hostname+":443")
-			}
-			vhost := route.VirtualHost{
-				Name:    envoy.Hashname(60, hostname),
-				Domains: domains,
-			}
+			vhost := envoy.VirtualHost(vh.Host, 443)
 			vh.Visit(func(r dag.Vertex) {
 				switch r := r.(type) {
 				case *dag.Route:
@@ -175,7 +155,7 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 						return
 					}
 					vhost.Routes = append(vhost.Routes, route.Route{
-						Match:  prefixmatch(r.Prefix),
+						Match:  envoy.PrefixMatch(r.Prefix),
 						Action: actionroute(r, svcs),
 					})
 				}
@@ -218,15 +198,6 @@ func (l longestRouteFirst) Less(i, j int) bool {
 	}
 
 	return a.Prefix < b.Prefix
-}
-
-// prefixmatch returns a RouteMatch for the supplied prefix.
-func prefixmatch(prefix string) route.RouteMatch {
-	return route.RouteMatch{
-		PathSpecifier: &route.RouteMatch_Prefix{
-			Prefix: prefix,
-		},
-	}
 }
 
 // action computes the cluster route action, a *route.Route_route for the

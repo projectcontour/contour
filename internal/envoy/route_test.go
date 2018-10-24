@@ -162,3 +162,63 @@ func TestWeightedClusters(t *testing.T) {
 		})
 	}
 }
+
+func TestVirtualHost(t *testing.T) {
+	tests := map[string]struct {
+		hostname string
+		port     int
+		want     route.VirtualHost
+	}{
+		"default hostname": {
+			hostname: "*",
+			port:     9999,
+			want: route.VirtualHost{
+				Name:    "*",
+				Domains: []string{"*"},
+			},
+		},
+		"www.example.com": {
+			hostname: "www.example.com",
+			port:     9999,
+			want: route.VirtualHost{
+				Name:    "www.example.com",
+				Domains: []string{"www.example.com", "www.example.com:9999"},
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := VirtualHost(tc.hostname, tc.port)
+			if diff := cmp.Diff(got, tc.want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestPrefixMatch(t *testing.T) {
+	const prefix = "/kang"
+	got := PrefixMatch(prefix)
+	want := route.RouteMatch{
+		PathSpecifier: &route.RouteMatch_Prefix{
+			Prefix: prefix,
+		},
+	}
+
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestUpgradeHTTPS(t *testing.T) {
+	got := UpgradeHTTPS()
+	want := &route.Route_Redirect{
+		Redirect: &route.RedirectAction{
+			HttpsRedirect: true,
+		},
+	}
+
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatal(diff)
+	}
+}
