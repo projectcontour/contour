@@ -14,6 +14,7 @@
 package envoy
 
 import (
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/gogo/protobuf/types"
@@ -82,6 +83,31 @@ func SocketAddress(address string, port int) core.Address {
 					PortValue: uint32(port),
 				},
 			},
+		},
+	}
+}
+
+// DownstreamTLSContext creates a new DownstreamTlsContext.
+func DownstreamTLSContext(cert, key []byte, tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnProtos ...string) *auth.DownstreamTlsContext {
+	return &auth.DownstreamTlsContext{
+		CommonTlsContext: &auth.CommonTlsContext{
+			TlsParams: &auth.TlsParameters{
+				TlsMinimumProtocolVersion: tlsMinProtoVersion,
+				TlsMaximumProtocolVersion: auth.TlsParameters_TLSv1_3,
+			},
+			TlsCertificates: []*auth.TlsCertificate{{
+				CertificateChain: &core.DataSource{
+					Specifier: &core.DataSource_InlineBytes{
+						InlineBytes: cert,
+					},
+				},
+				PrivateKey: &core.DataSource{
+					Specifier: &core.DataSource_InlineBytes{
+						InlineBytes: key,
+					},
+				},
+			}},
+			AlpnProtocols: alpnProtos,
 		},
 	}
 }

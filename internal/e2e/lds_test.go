@@ -1022,27 +1022,7 @@ func filterchaintls(domains []string, cert, key string, useproxy bool, filters .
 	fc.FilterChainMatch = &listener.FilterChainMatch{
 		ServerNames: domains,
 	}
-	fc.TlsContext = &auth.DownstreamTlsContext{
-		CommonTlsContext: &auth.CommonTlsContext{
-			TlsParams: &auth.TlsParameters{
-				TlsMinimumProtocolVersion: auth.TlsParameters_TLSv1_1,
-				TlsMaximumProtocolVersion: auth.TlsParameters_TLSv1_3,
-			},
-			TlsCertificates: []*auth.TlsCertificate{{
-				CertificateChain: &core.DataSource{
-					Specifier: &core.DataSource_InlineBytes{
-						InlineBytes: []byte(cert),
-					},
-				},
-				PrivateKey: &core.DataSource{
-					Specifier: &core.DataSource_InlineBytes{
-						InlineBytes: []byte(key),
-					},
-				},
-			}},
-			AlpnProtocols: []string{"h2", "http/1.1"},
-		},
-	}
+	fc.TlsContext = envoy.DownstreamTLSContext([]byte(cert), []byte(key), auth.TlsParameters_TLSv1_1, "h2", "http/1.1")
 	return fc
 }
 

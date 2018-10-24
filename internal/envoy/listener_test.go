@@ -16,6 +16,7 @@ package envoy
 import (
 	"testing"
 
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/google/go-cmp/cmp"
 )
@@ -36,6 +37,38 @@ func TestSocketAddress(t *testing.T) {
 					PortValue: port,
 				},
 			},
+		},
+	}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestDownstreamTLSContext(t *testing.T) {
+	const (
+		cert = "foo"
+		key  = "secret"
+	)
+	got := DownstreamTLSContext([]byte(cert), []byte(key), auth.TlsParameters_TLSv1_1, "h2", "http/1.1")
+	want := &auth.DownstreamTlsContext{
+		CommonTlsContext: &auth.CommonTlsContext{
+			TlsParams: &auth.TlsParameters{
+				TlsMinimumProtocolVersion: auth.TlsParameters_TLSv1_1,
+				TlsMaximumProtocolVersion: auth.TlsParameters_TLSv1_3,
+			},
+			TlsCertificates: []*auth.TlsCertificate{{
+				CertificateChain: &core.DataSource{
+					Specifier: &core.DataSource_InlineBytes{
+						InlineBytes: []byte(cert),
+					},
+				},
+				PrivateKey: &core.DataSource{
+					Specifier: &core.DataSource_InlineBytes{
+						InlineBytes: []byte(key),
+					},
+				},
+			}},
+			AlpnProtocols: []string{"h2", "http/1.1"},
 		},
 	}
 	if diff := cmp.Diff(want, got); diff != "" {
