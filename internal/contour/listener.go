@@ -17,8 +17,6 @@ import (
 	"sync"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/gogo/protobuf/proto"
 	"github.com/heptio/contour/internal/dag"
@@ -219,7 +217,7 @@ func (v *listenerVisitor) Visit() map[string]*v2.Listener {
 				FilterChainMatch: &listener.FilterChainMatch{
 					ServerNames: []string{vh.Host},
 				},
-				TlsContext:    tlscontext(data, vh.MinProtoVersion, "h2", "http/1.1"),
+				TlsContext:    envoy.DownstreamTLSContext(data[v1.TLSCertKey], data[v1.TLSPrivateKeyKey], vh.MinProtoVersion, "h2", "http/1.1"),
 				Filters:       filters,
 				UseProxyProto: bv(v.UseProxyProto),
 			}
@@ -242,28 +240,4 @@ func (v *listenerVisitor) Visit() map[string]*v2.Listener {
 		m[ENVOY_HTTPS_LISTENER] = &ingress_https
 	}
 	return m
-}
-
-func tlscontext(data map[string][]byte, tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnprotos ...string) *auth.DownstreamTlsContext {
-	return &auth.DownstreamTlsContext{
-		CommonTlsContext: &auth.CommonTlsContext{
-			TlsParams: &auth.TlsParameters{
-				TlsMinimumProtocolVersion: tlsMinProtoVersion,
-				TlsMaximumProtocolVersion: auth.TlsParameters_TLSv1_3,
-			},
-			TlsCertificates: []*auth.TlsCertificate{{
-				CertificateChain: &core.DataSource{
-					Specifier: &core.DataSource_InlineBytes{
-						InlineBytes: data[v1.TLSCertKey],
-					},
-				},
-				PrivateKey: &core.DataSource{
-					Specifier: &core.DataSource_InlineBytes{
-						InlineBytes: data[v1.TLSPrivateKeyKey],
-					},
-				},
-			}},
-			AlpnProtocols: alpnprotos,
-		},
-	}
 }

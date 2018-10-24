@@ -140,10 +140,8 @@ func TestListenerVisit(t *testing.T) {
 						FilterChainMatch: &listener.FilterChainMatch{
 							ServerNames: []string{"whatever.example.com"},
 						},
-						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-						Filters: []listener.Filter{
-							envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
-						},
+						TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						Filters:    filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
 					}},
 					ListenerFilters: []listener.ListenerFilter{
 						envoy.TLSInspector(),
@@ -236,10 +234,8 @@ func TestListenerVisit(t *testing.T) {
 						FilterChainMatch: &listener.FilterChainMatch{
 							ServerNames: []string{"www.example.com"},
 						},
-						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-						Filters: []listener.Filter{
-							envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
-						},
+						TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						Filters:    filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
 					}},
 					ListenerFilters: []listener.ListenerFilter{
 						envoy.TLSInspector(),
@@ -304,10 +300,8 @@ func TestListenerVisit(t *testing.T) {
 						FilterChainMatch: &listener.FilterChainMatch{
 							ServerNames: []string{"www.example.com"},
 						},
-						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-						Filters: []listener.Filter{
-							envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
-						},
+						TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						Filters:    filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
 					}},
 					ListenerFilters: []listener.ListenerFilter{
 						envoy.TLSInspector(),
@@ -362,10 +356,8 @@ func TestListenerVisit(t *testing.T) {
 						FilterChainMatch: &listener.FilterChainMatch{
 							ServerNames: []string{"whatever.example.com"},
 						},
-						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-						Filters: []listener.Filter{
-							envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
-						},
+						TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						Filters:    filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
 					}},
 					ListenerFilters: []listener.ListenerFilter{
 						envoy.TLSInspector(),
@@ -417,10 +409,8 @@ func TestListenerVisit(t *testing.T) {
 						FilterChainMatch: &listener.FilterChainMatch{
 							ServerNames: []string{"whatever.example.com"},
 						},
-						TlsContext: tlscontext(secretdata("certificate", "key"), auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-						Filters: []listener.Filter{
-							envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG),
-						},
+						TlsContext:    tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						Filters:       filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
 						UseProxyProto: bv(true),
 					}},
 					ListenerFilters: []listener.ListenerFilter{
@@ -456,12 +446,21 @@ func TestListenerVisit(t *testing.T) {
 	}
 }
 
+func filters(first listener.Filter, rest ...listener.Filter) []listener.Filter {
+	return append([]listener.Filter{first}, rest...)
+}
+
 func filterchain(useproxy bool, filters ...listener.Filter) listener.FilterChain {
 	fc := listener.FilterChain{
 		Filters:       filters,
 		UseProxyProto: bv(useproxy),
 	}
 	return fc
+}
+
+func tlscontext(tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnprotos ...string) *auth.DownstreamTlsContext {
+	data := secretdata("certificate", "key")
+	return envoy.DownstreamTLSContext(data[v1.TLSCertKey], data[v1.TLSPrivateKeyKey], tlsMinProtoVersion, alpnprotos...)
 }
 
 func secretdata(cert, key string) map[string][]byte {
