@@ -17,8 +17,8 @@ import (
 	"strings"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
+	"github.com/heptio/contour/internal/envoy"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -122,11 +122,14 @@ func (e *EndpointsTranslator) recomputeClusterLoadAssignment(oldep, newep *v1.En
 			portname := p.Name
 			cla, ok := clas[portname]
 			if !ok {
-				cla = clusterloadassignment(servicename(newep.ObjectMeta, portname))
+				cla = &v2.ClusterLoadAssignment{
+					ClusterName: servicename(newep.ObjectMeta, portname),
+					Endpoints:   make([]endpoint.LocalityLbEndpoints, 1),
+				}
 				clas[portname] = cla
 			}
 			for _, a := range s.Addresses {
-				cla.Endpoints[0].LbEndpoints = append(cla.Endpoints[0].LbEndpoints, lbendpoint(a.IP, p.Port))
+				cla.Endpoints[0].LbEndpoints = append(cla.Endpoints[0].LbEndpoints, envoy.LBEndpoint(a.IP, int(p.Port)))
 			}
 		}
 	}
@@ -167,31 +170,4 @@ func servicename(meta metav1.ObjectMeta, portname string) string {
 		name = name[:2]
 	}
 	return strings.Join(name, "/")
-}
-
-func clusterloadassignment(name string, lbendpoints ...endpoint.LbEndpoint) *v2.ClusterLoadAssignment {
-	return &v2.ClusterLoadAssignment{
-		ClusterName: name,
-		Endpoints: []endpoint.LocalityLbEndpoints{{
-			LbEndpoints: lbendpoints,
-		}},
-	}
-}
-
-func lbendpoint(addr string, port int32) endpoint.LbEndpoint {
-	return endpoint.LbEndpoint{
-		Endpoint: &endpoint.Endpoint{
-			Address: &core.Address{
-				Address: &core.Address_SocketAddress{
-					SocketAddress: &core.SocketAddress{
-						Protocol: core.TCP,
-						Address:  addr,
-						PortSpecifier: &core.SocketAddress_PortValue{
-							PortValue: uint32(port),
-						},
-					},
-				},
-			},
-		},
-	}
 }
