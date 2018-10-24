@@ -308,7 +308,7 @@ func TestHashname(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got := Hashname(tc.l, append([]string{}, tc.s...)...)
+			got := hashname(tc.l, append([]string{}, tc.s...)...)
 			if got != tc.want {
 				t.Fatalf("hashname(%d, %q): got %q, want %q", tc.l, tc.s, got, tc.want)
 			}

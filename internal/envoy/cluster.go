@@ -122,16 +122,16 @@ func Clustername(service *dag.Service) string {
 	hash := sha1.Sum([]byte(buf))
 	ns := service.Namespace()
 	name := service.Name()
-	return Hashname(60, ns, name, strconv.Itoa(int(service.Port)), fmt.Sprintf("%x", hash[:5]))
+	return hashname(60, ns, name, strconv.Itoa(int(service.Port)), fmt.Sprintf("%x", hash[:5]))
 }
 
-// Hashname takes a lenth l and a varargs of strings s and returns a string whose length
+// hashname takes a lenth l and a varargs of strings s and returns a string whose length
 // which does not exceed l. Internally s is joined with strings.Join(s, "/"). If the
 // combined length exceeds l then hashname truncates each element in s, starting from the
 // end using a hash derived from the contents of s (not the current element). This process
 // continues until the length of s does not exceed l, or all elements have been truncated.
 // In which case, the entire string is replaced with a hash not exceeding the length of l.
-func Hashname(l int, s ...string) string {
+func hashname(l int, s ...string) string {
 	const shorthash = 6 // the length of the shorthash
 
 	r := strings.Join(s, "/")

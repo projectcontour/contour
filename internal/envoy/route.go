@@ -14,6 +14,7 @@
 package envoy
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -54,6 +55,15 @@ func RouteCluster(service *dag.Service) route.Route_Route {
 	}
 }
 
+// UpgradeHTTPS returns a route Action that redirects the request to HTTPS.
+func UpgradeHTTPS() *route.Route_Redirect {
+	return &route.Route_Redirect{
+		Redirect: &route.RedirectAction{
+			HttpsRedirect: true,
+		},
+	}
+}
+
 // WeightedClusters returns a route.WeightedCluster for multiple services.
 func WeightedClusters(services []*dag.Service) *route.WeightedCluster {
 	var wc route.WeightedCluster
@@ -79,6 +89,27 @@ func WeightedClusters(services []*dag.Service) *route.WeightedCluster {
 
 	sort.Stable(clusterWeightByName(wc.Clusters))
 	return &wc
+}
+
+// PrefixMatch creates a RouteMatch for the supplied prefix.
+func PrefixMatch(prefix string) route.RouteMatch {
+	return route.RouteMatch{
+		PathSpecifier: &route.RouteMatch_Prefix{
+			Prefix: prefix,
+		},
+	}
+}
+
+// VirtualHost creates a new route.VirtualHost.
+func VirtualHost(hostname string, port int) route.VirtualHost {
+	domains := []string{hostname}
+	if hostname != "*" {
+		domains = append(domains, fmt.Sprintf("%s:%d", hostname, port))
+	}
+	return route.VirtualHost{
+		Name:    hashname(60, hostname),
+		Domains: domains,
+	}
 }
 
 type clusterWeightByName []*route.WeightedCluster_ClusterWeight
