@@ -19,7 +19,9 @@ import (
 	"testing"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"github.com/gogo/protobuf/proto"
+	"github.com/heptio/contour/internal/envoy"
 	"k8s.io/api/core/v1"
 )
 
@@ -35,7 +37,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 			Ports:     ports(8080),
 		}),
 		want: []proto.Message{
-			clusterloadassignment("default/simple", lbendpoint("192.168.183.24", 8080)),
+			clusterloadassignment("default/simple", envoy.LBEndpoint("192.168.183.24", 8080)),
 		},
 	}, {
 		name: "multiple addresses",
@@ -50,10 +52,10 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 		}),
 		want: []proto.Message{
 			clusterloadassignment("default/httpbin-org",
-				lbendpoint("23.23.247.89", 80),
-				lbendpoint("50.17.192.147", 80),
-				lbendpoint("50.17.206.192", 80),
-				lbendpoint("50.19.99.160", 80),
+				envoy.LBEndpoint("23.23.247.89", 80),
+				envoy.LBEndpoint("50.17.192.147", 80),
+				envoy.LBEndpoint("50.17.206.192", 80),
+				envoy.LBEndpoint("50.19.99.160", 80),
 			),
 		},
 	}}
@@ -105,7 +107,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 				Ports:     ports(8080),
 			}),
 			want: []proto.Message{
-				clusterloadassignment("default/simple", lbendpoint("192.168.183.24", 8080)),
+				clusterloadassignment("default/simple", envoy.LBEndpoint("192.168.183.24", 8080)),
 			},
 		},
 		"remove non existent": {
@@ -174,7 +176,7 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				Ports:     ports(8080),
 			}),
 			want: []proto.Message{
-				clusterloadassignment("default/simple", lbendpoint("192.168.183.24", 8080)),
+				clusterloadassignment("default/simple", envoy.LBEndpoint("192.168.183.24", 8080)),
 			},
 		},
 		"multiple addresses": {
@@ -189,10 +191,10 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 			}),
 			want: []proto.Message{
 				clusterloadassignment("default/httpbin-org",
-					lbendpoint("23.23.247.89", 80),
-					lbendpoint("50.17.192.147", 80),
-					lbendpoint("50.17.206.192", 80),
-					lbendpoint("50.19.99.160", 80),
+					envoy.LBEndpoint("23.23.247.89", 80),
+					envoy.LBEndpoint("50.17.192.147", 80),
+					envoy.LBEndpoint("50.17.206.192", 80),
+					envoy.LBEndpoint("50.19.99.160", 80),
 				),
 			},
 		},
@@ -205,7 +207,7 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				}},
 			}),
 			want: []proto.Message{
-				clusterloadassignment("default/secure/https", lbendpoint("192.168.183.24", 8443)),
+				clusterloadassignment("default/secure/https", envoy.LBEndpoint("192.168.183.24", 8443)),
 			},
 		},
 		"remove existing": {
@@ -240,7 +242,7 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 
 	// Assert endpoint was added
 	want := []proto.Message{
-		clusterloadassignment("default/simple", lbendpoint("192.168.183.24", 8080)),
+		clusterloadassignment("default/simple", envoy.LBEndpoint("192.168.183.24", 8080)),
 	}
 	got := contents(&et)
 	if !reflect.DeepEqual(want, got) {
@@ -256,6 +258,15 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 	got = contents(&et)
 	if !reflect.DeepEqual(want, got) {
 		t.Fatalf("expected:\n%v\ngot:\n%v\n", want, got)
+	}
+}
+
+func clusterloadassignment(name string, lbendpoints ...endpoint.LbEndpoint) *v2.ClusterLoadAssignment {
+	return &v2.ClusterLoadAssignment{
+		ClusterName: name,
+		Endpoints: []endpoint.LocalityLbEndpoints{{
+			LbEndpoints: lbendpoints,
+		}},
 	}
 }
 
