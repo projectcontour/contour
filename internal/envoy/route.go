@@ -23,35 +23,32 @@ import (
 	"github.com/heptio/contour/internal/dag"
 )
 
-// RouteRoute returns a route.Route_Route for the services supplied.
+// RouteRoute creates a route.Route_Route for the services supplied.
 // If len(services) is greater than one, the route's action will be a
 // weighted cluster.
-func RouteRoute(services []*dag.Service) route.Route_Route {
+func RouteRoute(r *dag.Route, services []*dag.Service) route.Route_Route {
 	switch len(services) {
 	case 1:
-		return RouteCluster(services[0])
+		return route.Route_Route{
+			Route: &route.RouteAction{
+				ClusterSpecifier: &route.RouteAction_Cluster{
+					Cluster: Clustername(services[0]),
+				},
+				RequestHeadersToAdd: headers(
+					appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
+				),
+				UseWebsocket: bv(r.Websocket),
+			},
+		}
 	default:
 		return route.Route_Route{
 			Route: &route.RouteAction{
 				ClusterSpecifier: &route.RouteAction_WeightedClusters{
-					WeightedClusters: WeightedClusters(services),
+					WeightedClusters: weightedClusters(services),
 				},
+				UseWebsocket: bv(r.Websocket),
 			},
 		}
-	}
-}
-
-// RouteCluster returns a route.Route_Route for a single service.
-func RouteCluster(service *dag.Service) route.Route_Route {
-	return route.Route_Route{
-		Route: &route.RouteAction{
-			ClusterSpecifier: &route.RouteAction_Cluster{
-				Cluster: Clustername(service),
-			},
-			RequestHeadersToAdd: headers(
-				appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
-			),
-		},
 	}
 }
 
@@ -64,8 +61,8 @@ func UpgradeHTTPS() *route.Route_Redirect {
 	}
 }
 
-// WeightedClusters returns a route.WeightedCluster for multiple services.
-func WeightedClusters(services []*dag.Service) *route.WeightedCluster {
+// weightedClusters returns a route.WeightedCluster for multiple services.
+func weightedClusters(services []*dag.Service) *route.WeightedCluster {
 	var wc route.WeightedCluster
 	var total int
 	for _, svc := range services {
@@ -139,4 +136,14 @@ func appendHeader(key, value string) *core.HeaderValueOption {
 }
 
 func u32(val int) *types.UInt32Value { return &types.UInt32Value{Value: uint32(val)} }
-func bv(val bool) *types.BoolValue   { return &types.BoolValue{Value: val} }
+
+var bvTrue = types.BoolValue{Value: true}
+
+// bv returns a pointer to a true types.BoolValue if val is true,
+// otherwise it returns nil.
+func bv(val bool) *types.BoolValue {
+	if val {
+		return &bvTrue
+	}
+	return nil
+}
