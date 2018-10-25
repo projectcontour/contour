@@ -21,7 +21,7 @@ spec:
         prometheus.io/format: "prometheus"
     spec:
       containers:
-      - image: gcr.io/heptio-images/contour:master
+      - image: gcr.io/heptio-images/contour:v0.7.0
         imagePullPolicy: Always
         name: contour
         command: ["contour"]
@@ -50,7 +50,7 @@ spec:
         - name: contour-config
           mountPath: /config
       initContainers:
-      - image: gcr.io/heptio-images/contour:master
+      - image: gcr.io/heptio-images/contour:v0.7.0
         imagePullPolicy: Always
         name: envoy-initconfig
         command: ["contour"]
