@@ -16,7 +16,6 @@ package contour
 import (
 	"sort"
 	"sync"
-	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
@@ -125,7 +124,7 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 					}
 					rr := route.Route{
 						Match:  envoy.PrefixMatch(r.Prefix),
-						Action: actionroute(r, svcs),
+						Action: envoy.RouteRoute(r, svcs),
 					}
 
 					if r.HTTPSUpgrade {
@@ -156,7 +155,7 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 					}
 					vhost.Routes = append(vhost.Routes, route.Route{
 						Match:  envoy.PrefixMatch(r.Prefix),
-						Action: actionroute(r, svcs),
+						Action: envoy.RouteRoute(r, svcs),
 					})
 				}
 			})
@@ -198,30 +197,6 @@ func (l longestRouteFirst) Less(i, j int) bool {
 	}
 
 	return a.Prefix < b.Prefix
-}
-
-// action computes the cluster route action, a *route.Route_route for the
-// supplied ingress and backend.
-func actionroute(r *dag.Route, services []*dag.Service) *route.Route_Route {
-	rr := envoy.RouteRoute(r, services)
-
-	switch timeout := r.Timeout; timeout {
-	case 0:
-		// no timeout specified, do nothing
-	case -1:
-		// infinite timeout, set timeout value to a pointer to zero which tells
-		// envoy "infinite timeout"
-		infinity := time.Duration(0)
-		rr.Route.Timeout = &infinity
-	default:
-		rr.Route.Timeout = &timeout
-	}
-
-	if len(r.PrefixRewrite) > 0 {
-		rr.Route.PrefixRewrite = r.PrefixRewrite
-	}
-
-	return &rr
 }
 
 func u32(val int) *types.UInt32Value { return &types.UInt32Value{Value: uint32(val)} }

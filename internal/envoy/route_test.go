@@ -44,27 +44,35 @@ func TestRouteRoute(t *testing.T) {
 	tests := map[string]struct {
 		route    *dag.Route
 		services []*dag.Service
-		want     route.Route_Route
+		want     *route.Route_Route
 	}{
-		"simple": {
+		"single service": {
 			route: &dag.Route{
 				Prefix: "/",
 			},
-			services: []*dag.Service{{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
-			}},
-			want: route.Route_Route{
+			services: []*dag.Service{
+				{
+					Object: &v1.Service{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "kuard",
+							Namespace: "default",
+						},
+					},
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
+					},
+				},
+			},
+			want: &route.Route_Route{
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
-					RequestHeadersToAdd: headers(
-						appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
-					),
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
 				},
 			},
 		},
+
 		"websocket": {
 			route: &dag.Route{
 				Prefix:    "/",
@@ -74,7 +82,7 @@ func TestRouteRoute(t *testing.T) {
 				Object:      s1,
 				ServicePort: &s1.Spec.Ports[0],
 			}},
-			want: route.Route_Route{
+			want: &route.Route_Route{
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
@@ -98,7 +106,7 @@ func TestRouteRoute(t *testing.T) {
 				Object:      s1, // it's valid to mention the same service several times per route.
 				ServicePort: &s1.Spec.Ports[0],
 			}},
-			want: route.Route_Route{
+			want: &route.Route_Route{
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_WeightedClusters{
 						WeightedClusters: &route.WeightedCluster{
@@ -130,7 +138,7 @@ func TestRouteRoute(t *testing.T) {
 				Object:      s1, // it's valid to mention the same service several times per route.
 				ServicePort: &s1.Spec.Ports[0],
 			}},
-			want: route.Route_Route{
+			want: &route.Route_Route{
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_WeightedClusters{
 						WeightedClusters: &route.WeightedCluster{
@@ -150,6 +158,24 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"single service without retry-on": {
+			route: &dag.Route{
+				NumRetries:    7,                // ignored
+				PerTryTimeout: 10 * time.Second, // ignored
+			},
+			services: []*dag.Service{{
+				Object:      s1,
+				ServicePort: &s1.Spec.Ports[0],
+			}},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
+				},
+			},
+		},
 		"retry-on: 503": {
 			route: &dag.Route{
 				Prefix:        "/",
@@ -161,7 +187,7 @@ func TestRouteRoute(t *testing.T) {
 				Object:      s1,
 				ServicePort: &s1.Spec.Ports[0],
 			}},
-			want: route.Route_Route{
+			want: &route.Route_Route{
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
@@ -174,6 +200,48 @@ func TestRouteRoute(t *testing.T) {
 						NumRetries:    u32(6),
 						PerTryTimeout: duration(100 * time.Millisecond),
 					},
+				},
+			},
+		},
+		"timeout 90s": {
+			route: &dag.Route{
+				Prefix:  "/",
+				Timeout: 90 * time.Second,
+			},
+			services: []*dag.Service{{
+				Object:      s1,
+				ServicePort: &s1.Spec.Ports[0],
+			}},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					RequestHeadersToAdd: headers(
+						appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
+					),
+					Timeout: duration(90 * time.Second),
+				},
+			},
+		},
+		"timeout infinity": {
+			route: &dag.Route{
+				Prefix:  "/",
+				Timeout: -1,
+			},
+			services: []*dag.Service{{
+				Object:      s1,
+				ServicePort: &s1.Spec.Ports[0],
+			}},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					RequestHeadersToAdd: headers(
+						appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
+					),
+					Timeout: duration(0),
 				},
 			},
 		},
@@ -388,5 +456,3 @@ func TestUpgradeHTTPS(t *testing.T) {
 		t.Fatal(diff)
 	}
 }
-
-func duration(d time.Duration) *time.Duration { return &d }
