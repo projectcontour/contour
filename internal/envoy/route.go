@@ -1,4 +1,3 @@
-// Copyright © 2018 Heptio
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,6 +15,7 @@ package envoy
 import (
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
@@ -26,22 +26,12 @@ import (
 // RouteRoute creates a route.Route_Route for the services supplied.
 // If len(services) is greater than one, the route's action will be a
 // weighted cluster.
-func RouteRoute(r *dag.Route, services []*dag.Service) route.Route_Route {
+func RouteRoute(r *dag.Route, services []*dag.Service) *route.Route_Route {
 	ra := route.RouteAction{
-		UseWebsocket: bv(r.Websocket),
-	}
-
-	if r.RetryOn != "" {
-		ra.RetryPolicy = &route.RouteAction_RetryPolicy{
-			RetryOn: r.RetryOn,
-		}
-		if r.NumRetries > 0 {
-			ra.RetryPolicy.NumRetries = u32(r.NumRetries)
-		}
-		if r.PerTryTimeout > 0 {
-			timeout := r.PerTryTimeout
-			ra.RetryPolicy.PerTryTimeout = &timeout
-		}
+		UseWebsocket:  bv(r.Websocket),
+		RetryPolicy:   retryPolicy(r),
+		Timeout:       timeout(r),
+		PrefixRewrite: r.PrefixRewrite,
 	}
 
 	switch len(services) {
@@ -57,9 +47,40 @@ func RouteRoute(r *dag.Route, services []*dag.Service) route.Route_Route {
 			WeightedClusters: weightedClusters(services),
 		}
 	}
-	return route.Route_Route{
+	return &route.Route_Route{
 		Route: &ra,
 	}
+}
+
+func timeout(r *dag.Route) *time.Duration {
+	switch r.Timeout {
+	case 0:
+		// no timeout specified
+		return nil
+	case -1:
+		// infinite timeout, set timeout value to a pointer to zero which tells
+		// envoy "infinite timeout"
+		return duration(0)
+	default:
+		return duration(r.Timeout)
+	}
+}
+
+func retryPolicy(r *dag.Route) *route.RouteAction_RetryPolicy {
+	if r.RetryOn == "" {
+		return nil
+	}
+	rp := &route.RouteAction_RetryPolicy{
+		RetryOn: r.RetryOn,
+	}
+	if r.NumRetries > 0 {
+		rp.NumRetries = u32(r.NumRetries)
+	}
+	if r.PerTryTimeout > 0 {
+		timeout := r.PerTryTimeout
+		rp.PerTryTimeout = &timeout
+	}
+	return rp
 }
 
 // UpgradeHTTPS returns a route Action that redirects the request to HTTPS.
@@ -157,3 +178,5 @@ func bv(val bool) *types.BoolValue {
 	}
 	return nil
 }
+
+func duration(d time.Duration) *time.Duration { return &d }
