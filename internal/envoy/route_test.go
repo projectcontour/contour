@@ -15,6 +15,7 @@ package envoy
 
 import (
 	"testing"
+	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/types"
@@ -146,6 +147,33 @@ func TestRouteRoute(t *testing.T) {
 						},
 					},
 					UseWebsocket: &types.BoolValue{Value: true},
+				},
+			},
+		},
+		"retry-on: 503": {
+			route: &dag.Route{
+				Prefix:        "/",
+				RetryOn:       "503",
+				NumRetries:    6,
+				PerTryTimeout: 100 * time.Millisecond,
+			},
+			services: []*dag.Service{{
+				Object:      s1,
+				ServicePort: &s1.Spec.Ports[0],
+			}},
+			want: route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					RequestHeadersToAdd: headers(
+						appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
+					),
+					RetryPolicy: &route.RouteAction_RetryPolicy{
+						RetryOn:       "503",
+						NumRetries:    u32(6),
+						PerTryTimeout: duration(100 * time.Millisecond),
+					},
 				},
 			},
 		},
@@ -360,3 +388,5 @@ func TestUpgradeHTTPS(t *testing.T) {
 		t.Fatal(diff)
 	}
 }
+
+func duration(d time.Duration) *time.Duration { return &d }

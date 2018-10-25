@@ -95,5 +95,3 @@ func TestHealthCheck(t *testing.T) {
 		})
 	}
 }
-
-func duration(d time.Duration) *time.Duration { return &d }
