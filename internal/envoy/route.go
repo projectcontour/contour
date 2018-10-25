@@ -27,28 +27,38 @@ import (
 // If len(services) is greater than one, the route's action will be a
 // weighted cluster.
 func RouteRoute(r *dag.Route, services []*dag.Service) route.Route_Route {
+	ra := route.RouteAction{
+		UseWebsocket: bv(r.Websocket),
+	}
+
+	if r.RetryOn != "" {
+		ra.RetryPolicy = &route.RouteAction_RetryPolicy{
+			RetryOn: r.RetryOn,
+		}
+		if r.NumRetries > 0 {
+			ra.RetryPolicy.NumRetries = u32(r.NumRetries)
+		}
+		if r.PerTryTimeout > 0 {
+			timeout := r.PerTryTimeout
+			ra.RetryPolicy.PerTryTimeout = &timeout
+		}
+	}
+
 	switch len(services) {
 	case 1:
-		return route.Route_Route{
-			Route: &route.RouteAction{
-				ClusterSpecifier: &route.RouteAction_Cluster{
-					Cluster: Clustername(services[0]),
-				},
-				RequestHeadersToAdd: headers(
-					appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
-				),
-				UseWebsocket: bv(r.Websocket),
-			},
+		ra.ClusterSpecifier = &route.RouteAction_Cluster{
+			Cluster: Clustername(services[0]),
 		}
+		ra.RequestHeadersToAdd = headers(
+			appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
+		)
 	default:
-		return route.Route_Route{
-			Route: &route.RouteAction{
-				ClusterSpecifier: &route.RouteAction_WeightedClusters{
-					WeightedClusters: weightedClusters(services),
-				},
-				UseWebsocket: bv(r.Websocket),
-			},
+		ra.ClusterSpecifier = &route.RouteAction_WeightedClusters{
+			WeightedClusters: weightedClusters(services),
 		}
+	}
+	return route.Route_Route{
+		Route: &ra,
 	}
 }
 
