@@ -203,8 +203,7 @@ func (l longestRouteFirst) Less(i, j int) bool {
 // action computes the cluster route action, a *route.Route_route for the
 // supplied ingress and backend.
 func actionroute(r *dag.Route, services []*dag.Service) *route.Route_Route {
-	rr := envoy.RouteRoute(services)
-	rr.Route.UseWebsocket = bv(r.Websocket)
+	rr := envoy.RouteRoute(r, services)
 
 	if r.RetryOn != "" {
 		rr.Route.RetryPolicy = &route.RouteAction_RetryPolicy{
