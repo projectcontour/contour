@@ -49,6 +49,10 @@ spec:
         volumeMounts:
         - name: contour-config
           mountPath: /config
+        lifecycle:
+          preStop:
+            exec:
+              command: ["wget", "-qO-", "http://localhost:9001/healthcheck/fail"] 
       initContainers:
       - image: gcr.io/heptio-images/contour:master
         imagePullPolicy: Always
