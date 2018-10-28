@@ -2176,6 +2176,80 @@ func TestRouteRetryAnnotations(t *testing.T) {
 	}}, nil)
 }
 
+// issue 681 Increase the e2e coverage of lb strategies
+func TestLoadBalancingStrategies(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	st := v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "template",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	services := []struct {
+		name       string
+		lbHash     string
+		lbStrategy string
+		lbDesc     string
+	}{
+		{"s1", "f3b72af6a9", "RoundRobin", "RoundRobin lb algorithm"},
+		{"s2", "8bf87fefba", "WeightedLeastRequest", "WeightedLeastRequest lb algorithm"},
+		{"s3", "40633a6ca9", "RingHash", "RingHash lb algorithm"},
+		{"s4", "843e4ded8f", "Maglev", "Maglev lb algorithm"},
+		{"s5", "58d888c08a", "Random", "Random lb algorithm"},
+		{"s6", "da39a3ee5e", "", "Default lb algorithm"},
+	}
+	ss := make([]ingressroutev1.Service, len(services))
+	wc := make([]weightedcluster, len(services))
+	for i, x := range services {
+		s := st
+		s.ObjectMeta.Name = x.name
+		rh.OnAdd(&s)
+		ss[i] = ingressroutev1.Service{
+			Name:     x.name,
+			Port:     80,
+			Strategy: x.lbStrategy,
+		}
+		wc[i] = weightedcluster{fmt.Sprintf("default/%s/80/%s", x.name, x.lbHash), 1}
+	}
+
+	ir := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []ingressroutev1.Route{{
+				Match:    "/a",
+				Services: ss,
+			}},
+		},
+	}
+
+	rh.OnAdd(ir)
+	want := []route.VirtualHost{{
+		Name:    "test2.test.com",
+		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Routes: []route.Route{
+			{
+				Match:  envoy.PrefixMatch("/a"),
+				Action: routeweightedcluster(wc[0], wc[1:]...),
+			},
+		},
+	}}
+	assertRDS(t, cc, want, nil)
+}
+
 func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []route.VirtualHost) {
 	t.Helper()
 	assertEqual(t, &v2.DiscoveryResponse{
