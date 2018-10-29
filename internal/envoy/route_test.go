@@ -43,26 +43,21 @@ func TestRouteRoute(t *testing.T) {
 	}
 	tests := map[string]struct {
 		route    *dag.Route
-		services []*dag.Service
+		services []*dag.HTTPService
 		want     *route.Route_Route
 	}{
 		"single service": {
 			route: &dag.Route{
 				Prefix: "/",
 			},
-			services: []*dag.Service{
-				{
-					Object: &v1.Service{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "kuard",
-							Namespace: "default",
-						},
-					},
+			services: []*dag.HTTPService{{
+				Service: dag.Service{
+					Object: service("default", "kuard"),
 					ServicePort: &v1.ServicePort{
 						Port: 8080,
 					},
 				},
-			},
+			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_Cluster{
@@ -78,9 +73,11 @@ func TestRouteRoute(t *testing.T) {
 				Prefix:    "/",
 				Websocket: true,
 			},
-			services: []*dag.Service{{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
+			services: []*dag.HTTPService{{
+				Service: dag.Service{
+					Object:      s1,
+					ServicePort: &s1.Spec.Ports[0],
+				},
 			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
@@ -98,13 +95,17 @@ func TestRouteRoute(t *testing.T) {
 			route: &dag.Route{
 				Prefix: "/",
 			},
-			services: []*dag.Service{{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
-				Weight:      90,
+			services: []*dag.HTTPService{{
+				Service: dag.Service{
+					Object:      s1,
+					ServicePort: &s1.Spec.Ports[0],
+					Weight:      90,
+				},
 			}, {
-				Object:      s1, // it's valid to mention the same service several times per route.
-				ServicePort: &s1.Spec.Ports[0],
+				Service: dag.Service{
+					Object:      s1, // it's valid to mention the same service several times per route.
+					ServicePort: &s1.Spec.Ports[0],
+				},
 			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
@@ -130,13 +131,17 @@ func TestRouteRoute(t *testing.T) {
 				Prefix:    "/",
 				Websocket: true,
 			},
-			services: []*dag.Service{{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
-				Weight:      90,
+			services: []*dag.HTTPService{{
+				Service: dag.Service{
+					Object:      s1,
+					ServicePort: &s1.Spec.Ports[0],
+					Weight:      90,
+				},
 			}, {
-				Object:      s1, // it's valid to mention the same service several times per route.
-				ServicePort: &s1.Spec.Ports[0],
+				Service: dag.Service{
+					Object:      s1, // it's valid to mention the same service several times per route.
+					ServicePort: &s1.Spec.Ports[0],
+				},
 			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
@@ -163,9 +168,11 @@ func TestRouteRoute(t *testing.T) {
 				NumRetries:    7,                // ignored
 				PerTryTimeout: 10 * time.Second, // ignored
 			},
-			services: []*dag.Service{{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
+			services: []*dag.HTTPService{{
+				Service: dag.Service{
+					Object:      s1,
+					ServicePort: &s1.Spec.Ports[0],
+				},
 			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
@@ -183,9 +190,11 @@ func TestRouteRoute(t *testing.T) {
 				NumRetries:    6,
 				PerTryTimeout: 100 * time.Millisecond,
 			},
-			services: []*dag.Service{{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
+			services: []*dag.HTTPService{{
+				Service: dag.Service{
+					Object:      s1,
+					ServicePort: &s1.Spec.Ports[0],
+				},
 			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
@@ -208,9 +217,11 @@ func TestRouteRoute(t *testing.T) {
 				Prefix:  "/",
 				Timeout: 90 * time.Second,
 			},
-			services: []*dag.Service{{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
+			services: []*dag.HTTPService{{
+				Service: dag.Service{
+					Object:      s1,
+					ServicePort: &s1.Spec.Ports[0],
+				},
 			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
@@ -229,9 +240,11 @@ func TestRouteRoute(t *testing.T) {
 				Prefix:  "/",
 				Timeout: -1,
 			},
-			services: []*dag.Service{{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
+			services: []*dag.HTTPService{{
+				Service: dag.Service{
+					Object:      s1,
+					ServicePort: &s1.Spec.Ports[0],
+				},
 			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
@@ -259,29 +272,23 @@ func TestRouteRoute(t *testing.T) {
 
 func TestWeightedClusters(t *testing.T) {
 	tests := map[string]struct {
-		services []*dag.Service
+		services []*dag.HTTPService
 		want     *route.WeightedCluster
 	}{
 		"multiple services w/o weights": {
-			services: []*dag.Service{{
-				Object: &v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
+			services: []*dag.HTTPService{{
+				Service: dag.Service{
+					Object: service("default", "kuard"),
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
 					},
-				},
-				ServicePort: &v1.ServicePort{
-					Port: 8080,
 				},
 			}, {
-				Object: &v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "nginx",
-						Namespace: "default",
+				Service: dag.Service{
+					Object: service("default", "nginx"),
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
 					},
-				},
-				ServicePort: &v1.ServicePort{
-					Port: 8080,
 				},
 			}},
 			want: &route.WeightedCluster{
@@ -298,28 +305,22 @@ func TestWeightedClusters(t *testing.T) {
 			},
 		},
 		"multiple weighted services": {
-			services: []*dag.Service{{
-				Object: &v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
+			services: []*dag.HTTPService{{
+				Service: dag.Service{
+					Object: service("default", "kuard"),
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
 					},
+					Weight: 80,
 				},
-				ServicePort: &v1.ServicePort{
-					Port: 8080,
-				},
-				Weight: 80,
 			}, {
-				Object: &v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "nginx",
-						Namespace: "default",
+				Service: dag.Service{
+					Object: service("default", "nginx"),
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
 					},
+					Weight: 20,
 				},
-				ServicePort: &v1.ServicePort{
-					Port: 8080,
-				},
-				Weight: 20,
 			}},
 			want: &route.WeightedCluster{
 				Clusters: []*route.WeightedCluster_ClusterWeight{{
@@ -335,37 +336,28 @@ func TestWeightedClusters(t *testing.T) {
 			},
 		},
 		"multiple weighted services and one with no weight specified": {
-			services: []*dag.Service{{
-				Object: &v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
+			services: []*dag.HTTPService{{
+				Service: dag.Service{
+					Object: service("default", "kuard"),
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
 					},
+					Weight: 80,
 				},
-				ServicePort: &v1.ServicePort{
-					Port: 8080,
-				},
-				Weight: 80,
 			}, {
-				Object: &v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "nginx",
-						Namespace: "default",
+				Service: dag.Service{
+					Object: service("default", "nginx"),
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
 					},
+					Weight: 20,
 				},
-				ServicePort: &v1.ServicePort{
-					Port: 8080,
-				},
-				Weight: 20,
 			}, {
-				Object: &v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "notraffic",
-						Namespace: "default",
+				Service: dag.Service{
+					Object: service("default", "notraffic"),
+					ServicePort: &v1.ServicePort{
+						Port: 8080,
 					},
-				},
-				ServicePort: &v1.ServicePort{
-					Port: 8080,
 				},
 			}},
 			want: &route.WeightedCluster{

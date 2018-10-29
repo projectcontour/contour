@@ -1626,7 +1626,7 @@ func TestDAGInsert(t *testing.T) {
 						&Route{
 							Prefix: "/",
 							object: i6b,
-							services: servicemap(
+							httpServices: servicemap(
 								httpService(s1),
 							),
 							HTTPSUpgrade: true,
@@ -1641,7 +1641,7 @@ func TestDAGInsert(t *testing.T) {
 							&Route{
 								Prefix: "/",
 								object: i6b,
-								services: servicemap(
+								httpServices: servicemap(
 									httpService(s1),
 								),
 								HTTPSUpgrade: true,
@@ -1683,7 +1683,7 @@ func TestDAGInsert(t *testing.T) {
 						&Route{
 							Prefix: "/websocket",
 							object: ir11,
-							services: servicemap(
+							httpServices: servicemap(
 								httpService(s1),
 							),
 							PrefixRewrite: "/",
@@ -1706,7 +1706,7 @@ func TestDAGInsert(t *testing.T) {
 						&Route{
 							Prefix: "/websocket",
 							object: ir10,
-							services: servicemap(
+							httpServices: servicemap(
 								httpService(s1),
 							),
 							Websocket: true,
@@ -1741,7 +1741,7 @@ func TestDAGInsert(t *testing.T) {
 						&Route{
 							Prefix: "/",
 							object: ir6,
-							services: servicemap(
+							httpServices: servicemap(
 								httpService(s1),
 							),
 							HTTPSUpgrade: true,
@@ -1757,7 +1757,7 @@ func TestDAGInsert(t *testing.T) {
 							&Route{
 								Prefix: "/",
 								object: ir6,
-								services: servicemap(
+								httpServices: servicemap(
 									httpService(s1),
 								),
 								HTTPSUpgrade: true,
@@ -1780,7 +1780,7 @@ func TestDAGInsert(t *testing.T) {
 						&Route{
 							Prefix: "/",
 							object: ir14,
-							services: servicemap(
+							httpServices: servicemap(
 								httpService(s1),
 							),
 						},
@@ -1795,7 +1795,7 @@ func TestDAGInsert(t *testing.T) {
 							&Route{
 								Prefix: "/",
 								object: ir14,
-								services: servicemap(
+								httpServices: servicemap(
 									httpService(s1),
 								),
 							}),
@@ -1817,7 +1817,7 @@ func TestDAGInsert(t *testing.T) {
 						&Route{
 							Prefix: "/",
 							object: ir7,
-							services: servicemap(
+							httpServices: servicemap(
 								httpService(s1),
 							),
 							HTTPSUpgrade: true,
@@ -1832,7 +1832,7 @@ func TestDAGInsert(t *testing.T) {
 							&Route{
 								Prefix: "/",
 								object: ir7,
-								services: servicemap(
+								httpServices: servicemap(
 									httpService(s1),
 								),
 								HTTPSUpgrade: true,
@@ -1856,7 +1856,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(&Route{
 						Prefix: "/",
 						object: ir8,
-						services: servicemap(
+						httpServices: servicemap(
 							httpService(s1),
 						),
 						HTTPSUpgrade: true,
@@ -1870,7 +1870,7 @@ func TestDAGInsert(t *testing.T) {
 							&Route{
 								Prefix: "/",
 								object: ir8,
-								services: servicemap(
+								httpServices: servicemap(
 									httpService(s1),
 								),
 								HTTPSUpgrade: true,
@@ -1895,7 +1895,7 @@ func TestDAGInsert(t *testing.T) {
 						&Route{
 							Prefix: "/",
 							object: ir9,
-							services: servicemap(
+							httpServices: servicemap(
 								httpService(s1),
 							),
 							HTTPSUpgrade: true,
@@ -1909,7 +1909,7 @@ func TestDAGInsert(t *testing.T) {
 							&Route{
 								Prefix: "/",
 								object: ir9,
-								services: servicemap(
+								httpServices: servicemap(
 									httpService(s1),
 								),
 								HTTPSUpgrade: true,
@@ -2001,7 +2001,7 @@ func TestDAGInsert(t *testing.T) {
 						&Route{
 							Prefix: "/ws1",
 							object: i11,
-							services: servicemap(
+							httpServices: servicemap(
 								httpService(s1),
 							),
 							Websocket: true,
@@ -2023,7 +2023,7 @@ func TestDAGInsert(t *testing.T) {
 						&Route{
 							Prefix: "/",
 							object: i12a,
-							services: servicemap(
+							httpServices: servicemap(
 								httpService(s1),
 							),
 							Timeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
@@ -2045,7 +2045,7 @@ func TestDAGInsert(t *testing.T) {
 						&Route{
 							Prefix: "/",
 							object: i12b,
-							services: servicemap(
+							httpServices: servicemap(
 								httpService(s1),
 							),
 							Timeout: 90 * time.Second,
@@ -2067,7 +2067,7 @@ func TestDAGInsert(t *testing.T) {
 						&Route{
 							Prefix: "/",
 							object: i12c,
-							services: servicemap(
+							httpServices: servicemap(
 								httpService(s1),
 							),
 							Timeout: -1,
@@ -2108,7 +2108,7 @@ func TestDAGInsert(t *testing.T) {
 						&Route{
 							Prefix: "/",
 							object: i14,
-							services: servicemap(
+							httpServices: servicemap(
 								httpService(s1),
 							),
 							RetryOn:       "gateway-error",
@@ -2131,7 +2131,7 @@ func TestDAGInsert(t *testing.T) {
 						&Route{
 							Prefix: "/",
 							object: i13a,
-							services: servicemap(
+							httpServices: servicemap(
 								httpService(s13a),
 							),
 							HTTPSUpgrade: true,
@@ -2149,7 +2149,7 @@ func TestDAGInsert(t *testing.T) {
 							&Route{
 								Prefix: "/",
 								object: i13a,
-								services: servicemap(
+								httpServices: servicemap(
 									httpService(s13a),
 								),
 								HTTPSUpgrade: true,
@@ -2176,10 +2176,12 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					routes: routemap(
 						route("/", i3a, servicemap(
-							&Service{
-								Object:      s3a,
-								Protocol:    "h2c",
-								ServicePort: &s3a.Spec.Ports[0],
+							&HTTPService{
+								Service: Service{
+									Object:      s3a,
+									ServicePort: &s3a.Spec.Ports[0],
+								},
+								Protocol: "h2c",
 							},
 						)),
 					),
@@ -2196,10 +2198,12 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					routes: routemap(
 						route("/", i3a, servicemap(
-							&Service{
-								Object:      s3b,
-								Protocol:    "h2",
-								ServicePort: &s3b.Spec.Ports[0],
+							&HTTPService{
+								Service: Service{
+									Object:      s3b,
+									ServicePort: &s3b.Spec.Ports[0],
+								},
+								Protocol: "h2",
 							},
 						)),
 					),
@@ -2217,13 +2221,15 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					routes: routemap(
 						route("/", i1, servicemap(
-							&Service{
-								Object:             s1b,
-								ServicePort:        &s1b.Spec.Ports[0],
-								MaxConnections:     9000,
-								MaxPendingRequests: 4096,
-								MaxRequests:        404,
-								MaxRetries:         7,
+							&HTTPService{
+								Service: Service{
+									Object:             s1b,
+									ServicePort:        &s1b.Spec.Ports[0],
+									MaxConnections:     9000,
+									MaxPendingRequests: 4096,
+									MaxRequests:        404,
+									MaxRetries:         7,
+								},
 							},
 						)),
 					),
@@ -2240,17 +2246,21 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					routes: routemap(
 						route("/a", ir13, servicemap(
-							&Service{
-								Object:      s1,
-								ServicePort: &s1.Spec.Ports[0],
-								Weight:      90,
+							&HTTPService{
+								Service: Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+									Weight:      90,
+								},
 							}),
 						),
 						route("/b", ir13, servicemap(
-							&Service{
-								Object:      s1,
-								ServicePort: &s1.Spec.Ports[0],
-								Weight:      60,
+							&HTTPService{
+								Service: Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+									Weight:      60,
+								},
 							}),
 						),
 					),
@@ -2267,15 +2277,19 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					routes: routemap(
 						route("/a", ir13a, servicemap(
-							&Service{
-								Object:      s1,
-								ServicePort: &s1.Spec.Ports[0],
-								Weight:      90,
+							&HTTPService{
+								Service: Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+									Weight:      90,
+								},
 							},
-							&Service{
-								Object:      s1,
-								ServicePort: &s1.Spec.Ports[0],
-								Weight:      60,
+							&HTTPService{
+								Service: Service{
+									Object:      s1,
+									ServicePort: &s1.Spec.Ports[0],
+									Weight:      60,
+								},
 							}),
 						),
 					),
@@ -2371,39 +2385,27 @@ func TestBuilderLookupService(t *testing.T) {
 		weight      int
 		strategy    string
 		healthcheck *ingressroutev1.HealthCheck
-		want        *Service
+		want        *HTTPService
 	}{
 		"lookup service by port number": {
 			meta: meta{name: "service1", namespace: "default"},
 			port: intstr.FromInt(8080),
-			want: &Service{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
-			},
+			want: httpService(s1),
 		},
 		"lookup service by port name": {
 			meta: meta{name: "service1", namespace: "default"},
 			port: intstr.FromString("http"),
-			want: &Service{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
-			},
+			want: httpService(s1),
 		},
 		"lookup service by port number (as string)": {
 			meta: meta{name: "service1", namespace: "default"},
 			port: intstr.Parse("8080"),
-			want: &Service{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
-			},
+			want: httpService(s1),
 		},
 		"lookup service by port number (from string)": {
 			meta: meta{name: "service1", namespace: "default"},
 			port: intstr.FromString("8080"),
-			want: &Service{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
-			},
+			want: httpService(s1),
 		},
 	}
 
@@ -3501,28 +3503,30 @@ func routemap(routes ...*Route) map[string]*Route {
 	return m
 }
 
-func route(prefix string, obj interface{}, services ...map[servicemeta]*Service) *Route {
+func route(prefix string, obj interface{}, httpServices ...map[servicemeta]*HTTPService) *Route {
 	route := Route{
 		Prefix: prefix,
 		object: obj,
 	}
-	switch len(services) {
+	switch len(httpServices) {
 	case 0:
 		// nothing to do
 	case 1:
-		route.services = services[0]
+		route.httpServices = httpServices[0]
 	default:
 		panic("only pass one servicemap to route")
 	}
 	return &route
 }
 
-func httpService(s *v1.Service) *Service {
-	return &Service{Object: s, ServicePort: &s.Spec.Ports[0]}
+func httpService(s *v1.Service) *HTTPService {
+	return &HTTPService{
+		Service: Service{Object: s, ServicePort: &s.Spec.Ports[0]},
+	}
 }
 
-func servicemap(services ...*Service) map[servicemeta]*Service {
-	m := make(map[servicemeta]*Service)
+func servicemap(services ...*HTTPService) map[servicemeta]*HTTPService {
+	m := make(map[servicemeta]*HTTPService)
 	for _, s := range services {
 		m[s.toMeta()] = s
 	}

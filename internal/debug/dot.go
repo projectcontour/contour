@@ -44,7 +44,7 @@ func (c *ctx) writeVertex(v dag.Vertex) {
 	switch v := v.(type) {
 	case *dag.Secret:
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{secret|%s/%s}"]`+"\n", v, v.Namespace(), v.Name())
-	case *dag.Service:
+	case *dag.HTTPService:
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{service|%s/%s:%d}"]`+"\n", v, v.Namespace(), v.Name(), v.Port)
 	case *dag.VirtualHost:
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{http://%s:%d}"]`+"\n", v, v.Host, v.Port)

@@ -142,7 +142,7 @@ func (b *Builder) Build() *DAG {
 type builder struct {
 	source *Builder
 
-	services map[servicemeta]*Service
+	services map[servicemeta]*HTTPService
 	secrets  map[meta]*Secret
 	vhosts   map[hostport]*VirtualHost
 	svhosts  map[hostport]*SecureVirtualHost
@@ -154,7 +154,7 @@ type builder struct {
 
 // lookupService returns a Service that matches the meta and port supplied.
 // If no matching Service is found lookup returns nil.
-func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) *Service {
+func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) ServiceVertex {
 	if port.Type == intstr.Int {
 		m := servicemeta{
 			name:        m.name,
@@ -188,9 +188,9 @@ func healthcheckToString(hc *ingressroutev1.HealthCheck) string {
 	return fmt.Sprintf("%#v", hc)
 }
 
-func (b *builder) addService(svc *v1.Service, port *v1.ServicePort, weight int, strategy string, hc *ingressroutev1.HealthCheck) *Service {
+func (b *builder) addService(svc *v1.Service, port *v1.ServicePort, weight int, strategy string, hc *ingressroutev1.HealthCheck) *HTTPService {
 	if b.services == nil {
-		b.services = make(map[servicemeta]*Service)
+		b.services = make(map[servicemeta]*HTTPService)
 	}
 	up := parseUpstreamProtocols(svc.Annotations, annotationUpstreamProtocol, "h2", "h2c")
 	protocol := up[port.Name]
@@ -198,18 +198,20 @@ func (b *builder) addService(svc *v1.Service, port *v1.ServicePort, weight int, 
 		protocol = up[strconv.Itoa(int(port.Port))]
 	}
 
-	s := &Service{
-		Object:               svc,
-		ServicePort:          port,
-		Protocol:             protocol,
-		Weight:               weight,
-		LoadBalancerStrategy: strategy,
-		HealthCheck:          hc,
+	s := &HTTPService{
+		Service: Service{
+			Object:               svc,
+			ServicePort:          port,
+			Weight:               weight,
+			LoadBalancerStrategy: strategy,
 
-		MaxConnections:     parseAnnotation(svc.Annotations, annotationMaxConnections),
-		MaxPendingRequests: parseAnnotation(svc.Annotations, annotationMaxPendingRequests),
-		MaxRequests:        parseAnnotation(svc.Annotations, annotationMaxRequests),
-		MaxRetries:         parseAnnotation(svc.Annotations, annotationMaxRetries),
+			MaxConnections:     parseAnnotation(svc.Annotations, annotationMaxConnections),
+			MaxPendingRequests: parseAnnotation(svc.Annotations, annotationMaxPendingRequests),
+			MaxRequests:        parseAnnotation(svc.Annotations, annotationMaxRequests),
+			MaxRetries:         parseAnnotation(svc.Annotations, annotationMaxRetries),
+		},
+		Protocol:    protocol,
+		HealthCheck: hc,
 	}
 	b.services[s.toMeta()] = s
 	return s

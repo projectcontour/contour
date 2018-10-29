@@ -49,9 +49,9 @@ func (d *DAG) Statuses() []Status {
 }
 
 type Route struct {
-	Prefix   string
-	object   interface{} // one of Ingress or IngressRoute
-	services map[servicemeta]*Service
+	Prefix       string
+	object       interface{} // one of Ingress or IngressRoute
+	httpServices map[servicemeta]*HTTPService
 
 	// Should this route generate a 301 upgrade if accessed
 	// over HTTP?
@@ -83,15 +83,20 @@ type Route struct {
 	PrefixRewrite string
 }
 
-func (r *Route) addService(s *Service) {
-	if r.services == nil {
-		r.services = make(map[servicemeta]*Service)
+type ServiceVertex interface {
+	Vertex
+	toMeta() servicemeta
+}
+
+func (r *Route) addService(sv ServiceVertex) {
+	if r.httpServices == nil {
+		r.httpServices = make(map[servicemeta]*HTTPService)
 	}
-	r.services[s.toMeta()] = s
+	r.httpServices[sv.toMeta()] = sv.(*HTTPService)
 }
 
 func (r *Route) Visit(f func(Vertex)) {
-	for _, c := range r.services {
+	for _, c := range r.httpServices {
 		f(c)
 	}
 }
@@ -150,18 +155,16 @@ type Vertex interface {
 	Visitable
 }
 
-// Service represents a K8s Service as a DAG vertex. A Service is
-// a leaf in the DAG.
+// Service represents a raw Kuberentes Service as a DAG vertex.
+// A Service is a leaf in the DAG.
 type Service struct {
 	Object *v1.Service
 
 	*v1.ServicePort
 	Weight int
 
-	// Protocol is the layer 7 protocol of this service
-	Protocol string
-
-	HealthCheck          *ingressroutev1.HealthCheck
+	// The load balancer type to use when picking a host in the cluster.
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cds.proto#envoy-api-enum-cluster-lbpolicy
 	LoadBalancerStrategy string
 
 	// Circuit breaking limits
@@ -183,9 +186,25 @@ type Service struct {
 	MaxRetries int
 }
 
-func (s *Service) Name() string       { return s.Object.Name }
-func (s *Service) Namespace() string  { return s.Object.Namespace }
-func (s *Service) Visit(func(Vertex)) {}
+func (s *Service) Name() string      { return s.Object.Name }
+func (s *Service) Namespace() string { return s.Object.Namespace }
+
+// HTTPService represents a Kuberneres Service object which speaks
+// HTTP/1.1 or HTTP/2.0.
+type HTTPService struct {
+	Service
+
+	// Protocol is the layer 7 protocol of this service
+	// One of "", "h2", or "h2c".
+	Protocol string
+
+	HealthCheck *ingressroutev1.HealthCheck // TODO(dfc) HealthCheck should be generalised and moved to Service.
+}
+
+func (s *HTTPService) Visit(func(Vertex)) {
+	// Visit is defined on HTTPService, not Service, so the latter
+	// cannot be inserted into the DAG nor interface asserted from a Vertex.
+}
 
 type servicemeta struct {
 	name        string
@@ -196,7 +215,7 @@ type servicemeta struct {
 	healthcheck string // %#v of *ingressroutev1.HealthCheck
 }
 
-func (s *Service) toMeta() servicemeta {
+func (s *HTTPService) toMeta() servicemeta {
 	return servicemeta{
 		name:        s.Object.Name,
 		namespace:   s.Object.Namespace,

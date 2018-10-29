@@ -26,20 +26,28 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/gogo/protobuf/types"
-	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 )
 
 // Cluster creates new v2.Cluster from service.
-func Cluster(service *dag.Service) *v2.Cluster {
+func Cluster(s dag.ServiceVertex) *v2.Cluster {
+	switch s := s.(type) {
+	case *dag.HTTPService:
+		return httpCluster(s)
+	default:
+		panic(fmt.Sprintf("unsupported Service: %T", s))
+	}
+}
+
+func httpCluster(service *dag.HTTPService) *v2.Cluster {
 	cluster := &v2.Cluster{
 		Name:             Clustername(service),
 		Type:             v2.Cluster_EDS,
-		EdsClusterConfig: edsconfig("contour", service),
+		EdsClusterConfig: edsconfig("contour", &service.Service),
 		ConnectTimeout:   250 * time.Millisecond,
 		LbPolicy:         lbPolicy(service.LoadBalancerStrategy),
 		CommonLbConfig:   clusterCommonLBConfig(),
-		HealthChecks:     edshealthcheck(service.HealthCheck),
+		HealthChecks:     edshealthcheck(service),
 	}
 	if anyPositive(service.MaxConnections, service.MaxPendingRequests, service.MaxRequests, service.MaxRetries) {
 		cluster.CircuitBreakers = &envoy_cluster.CircuitBreakers{
@@ -91,17 +99,17 @@ func lbPolicy(strategy string) v2.Cluster_LbPolicy {
 	}
 }
 
-func edshealthcheck(hc *ingressroutev1.HealthCheck) []*core.HealthCheck {
-	if hc == nil {
+func edshealthcheck(s *dag.HTTPService) []*core.HealthCheck {
+	if s.HealthCheck == nil {
 		return nil
 	}
 	return []*core.HealthCheck{
-		healthCheck(hc),
+		healthCheck(s.HealthCheck),
 	}
 }
 
 // Clustername returns the name of the CDS cluster for this service.
-func Clustername(service *dag.Service) string {
+func Clustername(service *dag.HTTPService) string {
 	buf := service.LoadBalancerStrategy
 	if hc := service.HealthCheck; hc != nil {
 		if hc.TimeoutSeconds > 0 {
