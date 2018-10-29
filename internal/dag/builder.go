@@ -327,8 +327,9 @@ func (b *builder) compute() *DAG {
 
 				r := prefixRoute(ing, prefix)
 				m := meta{name: httppath.Backend.ServiceName, namespace: ing.Namespace}
-				if s := b.lookupService(m, httppath.Backend.ServicePort, 0, "", nil); s != nil {
-					r.addService(s)
+				if s, _ := b.lookupService(m, httppath.Backend.ServicePort, 0, "", nil).(*HTTPService); s != nil {
+
+					r.addHTTPService(s)
 				}
 
 				// should we create port 80 routes for this ingress
@@ -546,18 +547,18 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 				HTTPSUpgrade:  enforceTLSRoute,
 				PrefixRewrite: route.PrefixRewrite,
 			}
-			for _, s := range route.Services {
-				if s.Port < 1 || s.Port > 65535 {
-					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", route.Match, s.Name), Vhost: host})
+			for _, service := range route.Services {
+				if service.Port < 1 || service.Port > 65535 {
+					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", route.Match, service.Name), Vhost: host})
 					return
 				}
-				if s.Weight < 0 {
-					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: weight must be greater than or equal to zero", route.Match, s.Name), Vhost: host})
+				if service.Weight < 0 {
+					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: weight must be greater than or equal to zero", route.Match, service.Name), Vhost: host})
 					return
 				}
-				m := meta{name: s.Name, namespace: ir.Namespace}
-				if svc := b.lookupService(m, intstr.FromInt(s.Port), s.Weight, s.Strategy, s.HealthCheck); svc != nil {
-					r.addService(svc)
+				m := meta{name: service.Name, namespace: ir.Namespace}
+				if s, _ := b.lookupService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck).(*HTTPService); s != nil {
+					r.addHTTPService(s)
 				}
 			}
 

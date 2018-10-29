@@ -88,11 +88,11 @@ type ServiceVertex interface {
 	toMeta() servicemeta
 }
 
-func (r *Route) addService(sv ServiceVertex) {
+func (r *Route) addHTTPService(s *HTTPService) {
 	if r.httpServices == nil {
 		r.httpServices = make(map[servicemeta]*HTTPService)
 	}
-	r.httpServices[sv.toMeta()] = sv.(*HTTPService)
+	r.httpServices[s.toMeta()] = s
 }
 
 func (r *Route) Visit(f func(Vertex)) {
