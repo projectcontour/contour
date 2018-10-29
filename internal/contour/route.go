@@ -112,9 +112,9 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 			vh.Visit(func(r dag.Vertex) {
 				switch r := r.(type) {
 				case *dag.Route:
-					var svcs []*dag.Service
+					var svcs []*dag.HTTPService
 					r.Visit(func(s dag.Vertex) {
-						if s, ok := s.(*dag.Service); ok {
+						if s, ok := s.(*dag.HTTPService); ok {
 							svcs = append(svcs, s)
 						}
 					})
@@ -143,9 +143,9 @@ func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
 			vh.Visit(func(r dag.Vertex) {
 				switch r := r.(type) {
 				case *dag.Route:
-					var svcs []*dag.Service
+					var svcs []*dag.HTTPService
 					r.Visit(func(s dag.Vertex) {
-						if s, ok := s.(*dag.Service); ok {
+						if s, ok := s.(*dag.HTTPService); ok {
 							svcs = append(svcs, s)
 						}
 					})

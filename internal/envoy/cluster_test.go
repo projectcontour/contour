@@ -46,13 +46,15 @@ func TestCluster(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		service *dag.Service
+		service *dag.HTTPService
 		want    *v2.Cluster
 	}{
 		"simple service": {
-			service: &dag.Service{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
+			service: &dag.HTTPService{
+				Service: dag.Service{
+					Object:      s1,
+					ServicePort: &s1.Spec.Ports[0],
+				},
 			},
 			want: &v2.Cluster{
 				Name: "default/kuard/443/da39a3ee5e",
@@ -67,10 +69,12 @@ func TestCluster(t *testing.T) {
 			},
 		},
 		"h2c upstream": {
-			service: &dag.Service{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
-				Protocol:    "h2c",
+			service: &dag.HTTPService{
+				Service: dag.Service{
+					Object:      s1,
+					ServicePort: &s1.Spec.Ports[0],
+				},
+				Protocol: "h2c",
 			},
 			want: &v2.Cluster{
 				Name: "default/kuard/443/da39a3ee5e",
@@ -86,10 +90,12 @@ func TestCluster(t *testing.T) {
 			},
 		},
 		"h2 upstream": {
-			service: &dag.Service{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
-				Protocol:    "h2",
+			service: &dag.HTTPService{
+				Service: dag.Service{
+					Object:      s1,
+					ServicePort: &s1.Spec.Ports[0],
+				},
+				Protocol: "h2",
 			},
 			want: &v2.Cluster{
 				Name: "default/kuard/443/da39a3ee5e",
@@ -106,10 +112,12 @@ func TestCluster(t *testing.T) {
 			},
 		},
 		"contour.heptio.com/max-connections": {
-			service: &dag.Service{
-				Object:         s1,
-				ServicePort:    &s1.Spec.Ports[0],
-				MaxConnections: 9000,
+			service: &dag.HTTPService{
+				Service: dag.Service{
+					Object:         s1,
+					ServicePort:    &s1.Spec.Ports[0],
+					MaxConnections: 9000,
+				},
 			},
 			want: &v2.Cluster{
 				Name: "default/kuard/443/da39a3ee5e",
@@ -129,10 +137,12 @@ func TestCluster(t *testing.T) {
 			},
 		},
 		"contour.heptio.com/max-pending-requests": {
-			service: &dag.Service{
-				Object:             s1,
-				ServicePort:        &s1.Spec.Ports[0],
-				MaxPendingRequests: 4096,
+			service: &dag.HTTPService{
+				Service: dag.Service{
+					Object:             s1,
+					ServicePort:        &s1.Spec.Ports[0],
+					MaxPendingRequests: 4096,
+				},
 			},
 			want: &v2.Cluster{
 				Name: "default/kuard/443/da39a3ee5e",
@@ -152,10 +162,12 @@ func TestCluster(t *testing.T) {
 			},
 		},
 		"contour.heptio.com/max-requests": {
-			service: &dag.Service{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
-				MaxRequests: 404,
+			service: &dag.HTTPService{
+				Service: dag.Service{
+					Object:      s1,
+					ServicePort: &s1.Spec.Ports[0],
+					MaxRequests: 404,
+				},
 			},
 			want: &v2.Cluster{
 				Name: "default/kuard/443/da39a3ee5e",
@@ -175,10 +187,12 @@ func TestCluster(t *testing.T) {
 			},
 		},
 		"contour.heptio.com/max-retries": {
-			service: &dag.Service{
-				Object:      s1,
-				ServicePort: &s1.Spec.Ports[0],
-				MaxRetries:  7,
+			service: &dag.HTTPService{
+				Service: dag.Service{
+					Object:      s1,
+					ServicePort: &s1.Spec.Ports[0],
+					MaxRetries:  7,
+				},
 			},
 			want: &v2.Cluster{
 				Name: "default/kuard/443/da39a3ee5e",
@@ -211,43 +225,49 @@ func TestCluster(t *testing.T) {
 
 func TestClustername(t *testing.T) {
 	tests := map[string]struct {
-		service *dag.Service
+		service *dag.HTTPService
 		want    string
 	}{
 		"simple": {
-			service: &dag.Service{
-				Object: service("default", "backend"),
-				ServicePort: &v1.ServicePort{
-					Name:       "http",
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(6502),
+			service: &dag.HTTPService{
+				Service: dag.Service{
+					Object: service("default", "backend"),
+					ServicePort: &v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       80,
+						TargetPort: intstr.FromInt(6502),
+					},
 				},
 			},
 			want: "default/backend/80/da39a3ee5e",
 		},
 		"far too long": {
-			service: &dag.Service{
-				Object: service("it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune", "must-be-in-want-of-a-wife"),
-				ServicePort: &v1.ServicePort{
-					Name:       "http",
-					Protocol:   "TCP",
-					Port:       9999,
-					TargetPort: intstr.FromString("http-alt"),
+			service: &dag.HTTPService{
+				Service: dag.Service{
+					Object: service("it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune", "must-be-in-want-of-a-wife"),
+					ServicePort: &v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       9999,
+						TargetPort: intstr.FromString("http-alt"),
+					},
 				},
 			},
 			want: "it-is-a--dea8b0/must-be--dea8b0/9999/da39a3ee5e",
 		},
 		"various healthcheck params": {
-			service: &dag.Service{
-				Object: service("default", "backend"),
-				ServicePort: &v1.ServicePort{
-					Name:       "http",
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(6502),
+			service: &dag.HTTPService{
+				Service: dag.Service{
+					Object: service("default", "backend"),
+					ServicePort: &v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       80,
+						TargetPort: intstr.FromInt(6502),
+					},
+					LoadBalancerStrategy: "Maglev",
 				},
-				LoadBalancerStrategy: "Maglev",
 				HealthCheck: &ingressroutev1.HealthCheck{
 					Path:                    "/healthz",
 					IntervalSeconds:         5,

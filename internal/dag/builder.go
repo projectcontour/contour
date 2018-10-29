@@ -142,7 +142,7 @@ func (b *Builder) Build() *DAG {
 type builder struct {
 	source *Builder
 
-	services map[servicemeta]*Service
+	services map[servicemeta]*HTTPService
 	secrets  map[meta]*Secret
 	vhosts   map[hostport]*VirtualHost
 	svhosts  map[hostport]*SecureVirtualHost
@@ -154,7 +154,7 @@ type builder struct {
 
 // lookupService returns a Service that matches the meta and port supplied.
 // If no matching Service is found lookup returns nil.
-func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) *Service {
+func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) ServiceVertex {
 	if port.Type == intstr.Int {
 		m := servicemeta{
 			name:        m.name,
@@ -188,9 +188,9 @@ func healthcheckToString(hc *ingressroutev1.HealthCheck) string {
 	return fmt.Sprintf("%#v", hc)
 }
 
-func (b *builder) addService(svc *v1.Service, port *v1.ServicePort, weight int, strategy string, hc *ingressroutev1.HealthCheck) *Service {
+func (b *builder) addService(svc *v1.Service, port *v1.ServicePort, weight int, strategy string, hc *ingressroutev1.HealthCheck) *HTTPService {
 	if b.services == nil {
-		b.services = make(map[servicemeta]*Service)
+		b.services = make(map[servicemeta]*HTTPService)
 	}
 	up := parseUpstreamProtocols(svc.Annotations, annotationUpstreamProtocol, "h2", "h2c")
 	protocol := up[port.Name]
@@ -198,18 +198,20 @@ func (b *builder) addService(svc *v1.Service, port *v1.ServicePort, weight int, 
 		protocol = up[strconv.Itoa(int(port.Port))]
 	}
 
-	s := &Service{
-		Object:               svc,
-		ServicePort:          port,
-		Protocol:             protocol,
-		Weight:               weight,
-		LoadBalancerStrategy: strategy,
-		HealthCheck:          hc,
+	s := &HTTPService{
+		Service: Service{
+			Object:               svc,
+			ServicePort:          port,
+			Weight:               weight,
+			LoadBalancerStrategy: strategy,
 
-		MaxConnections:     parseAnnotation(svc.Annotations, annotationMaxConnections),
-		MaxPendingRequests: parseAnnotation(svc.Annotations, annotationMaxPendingRequests),
-		MaxRequests:        parseAnnotation(svc.Annotations, annotationMaxRequests),
-		MaxRetries:         parseAnnotation(svc.Annotations, annotationMaxRetries),
+			MaxConnections:     parseAnnotation(svc.Annotations, annotationMaxConnections),
+			MaxPendingRequests: parseAnnotation(svc.Annotations, annotationMaxPendingRequests),
+			MaxRequests:        parseAnnotation(svc.Annotations, annotationMaxRequests),
+			MaxRetries:         parseAnnotation(svc.Annotations, annotationMaxRetries),
+		},
+		Protocol:    protocol,
+		HealthCheck: hc,
 	}
 	b.services[s.toMeta()] = s
 	return s
@@ -325,8 +327,9 @@ func (b *builder) compute() *DAG {
 
 				r := prefixRoute(ing, prefix)
 				m := meta{name: httppath.Backend.ServiceName, namespace: ing.Namespace}
-				if s := b.lookupService(m, httppath.Backend.ServicePort, 0, "", nil); s != nil {
-					r.addService(s)
+				if s, _ := b.lookupService(m, httppath.Backend.ServicePort, 0, "", nil).(*HTTPService); s != nil {
+
+					r.addHTTPService(s)
 				}
 
 				// should we create port 80 routes for this ingress
@@ -544,18 +547,18 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 				HTTPSUpgrade:  enforceTLSRoute,
 				PrefixRewrite: route.PrefixRewrite,
 			}
-			for _, s := range route.Services {
-				if s.Port < 1 || s.Port > 65535 {
-					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", route.Match, s.Name), Vhost: host})
+			for _, service := range route.Services {
+				if service.Port < 1 || service.Port > 65535 {
+					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", route.Match, service.Name), Vhost: host})
 					return
 				}
-				if s.Weight < 0 {
-					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: weight must be greater than or equal to zero", route.Match, s.Name), Vhost: host})
+				if service.Weight < 0 {
+					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: weight must be greater than or equal to zero", route.Match, service.Name), Vhost: host})
 					return
 				}
-				m := meta{name: s.Name, namespace: ir.Namespace}
-				if svc := b.lookupService(m, intstr.FromInt(s.Port), s.Weight, s.Strategy, s.HealthCheck); svc != nil {
-					r.addService(svc)
+				m := meta{name: service.Name, namespace: ir.Namespace}
+				if s, _ := b.lookupService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck).(*HTTPService); s != nil {
+					r.addHTTPService(s)
 				}
 			}
 

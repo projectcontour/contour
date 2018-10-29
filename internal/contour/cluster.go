@@ -101,12 +101,15 @@ func (v *clusterVisitor) Visit() map[string]*v2.Cluster {
 }
 
 func (v *clusterVisitor) visit(vertex dag.Vertex) {
-	if service, ok := vertex.(*dag.Service); ok {
+	switch service := vertex.(type) {
+	case *dag.HTTPService:
 		name := envoy.Clustername(service)
 		if _, ok := v.clusters[name]; !ok {
 			c := envoy.Cluster(service)
 			v.clusters[c.Name] = c
 		}
+	default:
+		// nothing
 	}
 
 	// recurse into children of v
