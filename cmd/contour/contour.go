@@ -92,7 +92,7 @@ func main() {
 	metricsvc.Registry = registry
 
 	// register detault process / go collectors
-	registry.MustRegister(prometheus.NewProcessCollector(os.Getpid(), ""))
+	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	registry.MustRegister(prometheus.NewGoCollector())
 
 	// register our custom metrics
