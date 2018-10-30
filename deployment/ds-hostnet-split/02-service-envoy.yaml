@@ -6,6 +6,7 @@ metadata:
  annotations:
    service.beta.kubernetes.io/aws-load-balancer-type: nlb
 spec:
+ externalTrafficPolicy: Local
  ports:
  - port: 80
    name: http
