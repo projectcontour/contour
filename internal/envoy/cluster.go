@@ -40,17 +40,29 @@ func Cluster(s dag.ServiceVertex) *v2.Cluster {
 }
 
 func httpCluster(service *dag.HTTPService) *v2.Cluster {
-	cluster := &v2.Cluster{
+	c := cluster(&service.Service)
+	switch service.Protocol {
+	case "h2":
+		c.TlsContext = UpstreamTLSContext()
+		fallthrough
+	case "h2c":
+		c.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
+	}
+	return c
+}
+
+func cluster(service *dag.Service) *v2.Cluster {
+	c := &v2.Cluster{
 		Name:             Clustername(service),
 		Type:             v2.Cluster_EDS,
-		EdsClusterConfig: edsconfig("contour", &service.Service),
+		EdsClusterConfig: edsconfig("contour", service),
 		ConnectTimeout:   250 * time.Millisecond,
 		LbPolicy:         lbPolicy(service.LoadBalancerStrategy),
 		CommonLbConfig:   clusterCommonLBConfig(),
 		HealthChecks:     edshealthcheck(service),
 	}
 	if anyPositive(service.MaxConnections, service.MaxPendingRequests, service.MaxRequests, service.MaxRetries) {
-		cluster.CircuitBreakers = &envoy_cluster.CircuitBreakers{
+		c.CircuitBreakers = &envoy_cluster.CircuitBreakers{
 			Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
 				MaxConnections:     u32nil(service.MaxConnections),
 				MaxPendingRequests: u32nil(service.MaxPendingRequests),
@@ -59,14 +71,7 @@ func httpCluster(service *dag.HTTPService) *v2.Cluster {
 			}},
 		}
 	}
-	switch service.Protocol {
-	case "h2":
-		cluster.TlsContext = UpstreamTLSContext()
-		fallthrough
-	case "h2c":
-		cluster.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
-	}
-	return cluster
+	return c
 }
 
 func edsconfig(cluster string, service *dag.Service) *v2.Cluster_EdsClusterConfig {
@@ -99,17 +104,17 @@ func lbPolicy(strategy string) v2.Cluster_LbPolicy {
 	}
 }
 
-func edshealthcheck(s *dag.HTTPService) []*core.HealthCheck {
+func edshealthcheck(s *dag.Service) []*core.HealthCheck {
 	if s.HealthCheck == nil {
 		return nil
 	}
 	return []*core.HealthCheck{
-		healthCheck(s.HealthCheck),
+		healthCheck(s),
 	}
 }
 
 // Clustername returns the name of the CDS cluster for this service.
-func Clustername(service *dag.HTTPService) string {
+func Clustername(service *dag.Service) string {
 	buf := service.LoadBalancerStrategy
 	if hc := service.HealthCheck; hc != nil {
 		if hc.TimeoutSeconds > 0 {

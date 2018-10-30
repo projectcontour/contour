@@ -20,17 +20,20 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/heptio/contour/internal/dag"
 )
 
 func TestHealthCheck(t *testing.T) {
 	tests := map[string]struct {
-		hc   *ingressroutev1.HealthCheck
-		want *core.HealthCheck
+		service *dag.Service
+		want    *core.HealthCheck
 	}{
 		// this is an odd case because contour.edshealthcheck will not call envoy.HealthCheck
 		// when hc is nil, so if hc is not nil, at least one of the parameters on it must be set.
 		"blank healthcheck": {
-			hc: new(ingressroutev1.HealthCheck),
+			service: &dag.Service{
+				HealthCheck: new(ingressroutev1.HealthCheck),
+			},
 			want: &core.HealthCheck{
 				Timeout:            duration(hcTimeout),
 				Interval:           duration(hcInterval),
@@ -45,8 +48,10 @@ func TestHealthCheck(t *testing.T) {
 			},
 		},
 		"healthcheck path only": {
-			hc: &ingressroutev1.HealthCheck{
-				Path: "/healthy",
+			service: &dag.Service{
+				HealthCheck: &ingressroutev1.HealthCheck{
+					Path: "/healthy",
+				},
 			},
 			want: &core.HealthCheck{
 				Timeout:            duration(hcTimeout),
@@ -62,13 +67,15 @@ func TestHealthCheck(t *testing.T) {
 			},
 		},
 		"explicit healthcheck": {
-			hc: &ingressroutev1.HealthCheck{
-				Host:                    "foo-bar-host",
-				Path:                    "/healthy",
-				TimeoutSeconds:          99,
-				IntervalSeconds:         98,
-				UnhealthyThresholdCount: 97,
-				HealthyThresholdCount:   96,
+			service: &dag.Service{
+				HealthCheck: &ingressroutev1.HealthCheck{
+					Host:                    "foo-bar-host",
+					Path:                    "/healthy",
+					TimeoutSeconds:          99,
+					IntervalSeconds:         98,
+					UnhealthyThresholdCount: 97,
+					HealthyThresholdCount:   96,
+				},
 			},
 			want: &core.HealthCheck{
 				Timeout:            duration(99 * time.Second),
@@ -87,7 +94,7 @@ func TestHealthCheck(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := healthCheck(tc.hc)
+			got := healthCheck(tc.service)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}

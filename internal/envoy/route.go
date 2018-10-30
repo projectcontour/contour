@@ -37,7 +37,7 @@ func RouteRoute(r *dag.Route, services []*dag.HTTPService) *route.Route_Route {
 	switch len(services) {
 	case 1:
 		ra.ClusterSpecifier = &route.RouteAction_Cluster{
-			Cluster: Clustername(services[0]),
+			Cluster: Clustername(&services[0].Service),
 		}
 		ra.RequestHeadersToAdd = headers(
 			appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
@@ -96,11 +96,11 @@ func UpgradeHTTPS() *route.Route_Redirect {
 func weightedClusters(services []*dag.HTTPService) *route.WeightedCluster {
 	var wc route.WeightedCluster
 	var total int
-	for _, svc := range services {
-		total += svc.Weight
+	for _, service := range services {
+		total += service.Weight
 		wc.Clusters = append(wc.Clusters, &route.WeightedCluster_ClusterWeight{
-			Name:   Clustername(svc),
-			Weight: u32(svc.Weight),
+			Name:   Clustername(&service.Service),
+			Weight: u32(service.Weight),
 			RequestHeadersToAdd: headers(
 				appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
 			),
