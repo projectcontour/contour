@@ -158,7 +158,7 @@ type Vertex interface {
 // Service represents a raw Kuberentes Service as a DAG vertex.
 // A Service is a leaf in the DAG.
 type Service struct {
-	Object *v1.Service
+	Name, Namespace string
 
 	*v1.ServicePort
 	Weight int
@@ -185,9 +185,6 @@ type Service struct {
 	// Envoy will allow to the upstream cluster.
 	MaxRetries int
 }
-
-func (s *Service) Name() string      { return s.Object.Name }
-func (s *Service) Namespace() string { return s.Object.Namespace }
 
 // HTTPService represents a Kuberneres Service object which speaks
 // HTTP/1.1 or HTTP/2.0.
@@ -217,8 +214,8 @@ type servicemeta struct {
 
 func (s *HTTPService) toMeta() servicemeta {
 	return servicemeta{
-		name:        s.Object.Name,
-		namespace:   s.Object.Namespace,
+		name:        s.Name,
+		namespace:   s.Namespace,
 		port:        s.Port,
 		weight:      s.Weight,
 		strategy:    s.LoadBalancerStrategy,

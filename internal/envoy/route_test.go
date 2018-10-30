@@ -52,7 +52,8 @@ func TestRouteRoute(t *testing.T) {
 			},
 			services: []*dag.HTTPService{{
 				Service: dag.Service{
-					Object: service("default", "kuard"),
+					Name:      "kuard",
+					Namespace: "default",
 					ServicePort: &v1.ServicePort{
 						Port: 8080,
 					},
@@ -75,7 +76,7 @@ func TestRouteRoute(t *testing.T) {
 			},
 			services: []*dag.HTTPService{{
 				Service: dag.Service{
-					Object:      s1,
+					Name: s1.Name, Namespace: s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
 				},
 			}},
@@ -97,13 +98,13 @@ func TestRouteRoute(t *testing.T) {
 			},
 			services: []*dag.HTTPService{{
 				Service: dag.Service{
-					Object:      s1,
+					Name: s1.Name, Namespace: s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
 					Weight:      90,
 				},
 			}, {
 				Service: dag.Service{
-					Object:      s1, // it's valid to mention the same service several times per route.
+					Name: s1.Name, Namespace: s1.Namespace, // it's valid to mention the same service several times per route.
 					ServicePort: &s1.Spec.Ports[0],
 				},
 			}},
@@ -133,13 +134,13 @@ func TestRouteRoute(t *testing.T) {
 			},
 			services: []*dag.HTTPService{{
 				Service: dag.Service{
-					Object:      s1,
+					Name: s1.Name, Namespace: s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
 					Weight:      90,
 				},
 			}, {
 				Service: dag.Service{
-					Object:      s1, // it's valid to mention the same service several times per route.
+					Name: s1.Name, Namespace: s1.Namespace, // it's valid to mention the same service several times per route.
 					ServicePort: &s1.Spec.Ports[0],
 				},
 			}},
@@ -170,7 +171,7 @@ func TestRouteRoute(t *testing.T) {
 			},
 			services: []*dag.HTTPService{{
 				Service: dag.Service{
-					Object:      s1,
+					Name: s1.Name, Namespace: s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
 				},
 			}},
@@ -192,7 +193,7 @@ func TestRouteRoute(t *testing.T) {
 			},
 			services: []*dag.HTTPService{{
 				Service: dag.Service{
-					Object:      s1,
+					Name: s1.Name, Namespace: s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
 				},
 			}},
@@ -219,7 +220,7 @@ func TestRouteRoute(t *testing.T) {
 			},
 			services: []*dag.HTTPService{{
 				Service: dag.Service{
-					Object:      s1,
+					Name: s1.Name, Namespace: s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
 				},
 			}},
@@ -242,7 +243,7 @@ func TestRouteRoute(t *testing.T) {
 			},
 			services: []*dag.HTTPService{{
 				Service: dag.Service{
-					Object:      s1,
+					Name: s1.Name, Namespace: s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
 				},
 			}},
@@ -278,14 +279,16 @@ func TestWeightedClusters(t *testing.T) {
 		"multiple services w/o weights": {
 			services: []*dag.HTTPService{{
 				Service: dag.Service{
-					Object: service("default", "kuard"),
+					Name:      "kuard",
+					Namespace: "default",
 					ServicePort: &v1.ServicePort{
 						Port: 8080,
 					},
 				},
 			}, {
 				Service: dag.Service{
-					Object: service("default", "nginx"),
+					Name:      "nginx",
+					Namespace: "default",
 					ServicePort: &v1.ServicePort{
 						Port: 8080,
 					},
@@ -307,7 +310,8 @@ func TestWeightedClusters(t *testing.T) {
 		"multiple weighted services": {
 			services: []*dag.HTTPService{{
 				Service: dag.Service{
-					Object: service("default", "kuard"),
+					Name:      "kuard",
+					Namespace: "default",
 					ServicePort: &v1.ServicePort{
 						Port: 8080,
 					},
@@ -315,7 +319,8 @@ func TestWeightedClusters(t *testing.T) {
 				},
 			}, {
 				Service: dag.Service{
-					Object: service("default", "nginx"),
+					Name:      "nginx",
+					Namespace: "default",
 					ServicePort: &v1.ServicePort{
 						Port: 8080,
 					},
@@ -338,7 +343,8 @@ func TestWeightedClusters(t *testing.T) {
 		"multiple weighted services and one with no weight specified": {
 			services: []*dag.HTTPService{{
 				Service: dag.Service{
-					Object: service("default", "kuard"),
+					Name:      "kuard",
+					Namespace: "default",
 					ServicePort: &v1.ServicePort{
 						Port: 8080,
 					},
@@ -346,7 +352,8 @@ func TestWeightedClusters(t *testing.T) {
 				},
 			}, {
 				Service: dag.Service{
-					Object: service("default", "nginx"),
+					Name:      "nginx",
+					Namespace: "default",
 					ServicePort: &v1.ServicePort{
 						Port: 8080,
 					},
@@ -354,7 +361,8 @@ func TestWeightedClusters(t *testing.T) {
 				},
 			}, {
 				Service: dag.Service{
-					Object: service("default", "notraffic"),
+					Name:      "notraffic",
+					Namespace: "default",
 					ServicePort: &v1.ServicePort{
 						Port: 8080,
 					},

@@ -52,7 +52,8 @@ func TestCluster(t *testing.T) {
 		"simple service": {
 			service: &dag.HTTPService{
 				Service: dag.Service{
-					Object:      s1,
+					Name:        s1.Name,
+					Namespace:   s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
 				},
 			},
@@ -71,7 +72,7 @@ func TestCluster(t *testing.T) {
 		"h2c upstream": {
 			service: &dag.HTTPService{
 				Service: dag.Service{
-					Object:      s1,
+					Name: s1.Name, Namespace: s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
 				},
 				Protocol: "h2c",
@@ -92,7 +93,7 @@ func TestCluster(t *testing.T) {
 		"h2 upstream": {
 			service: &dag.HTTPService{
 				Service: dag.Service{
-					Object:      s1,
+					Name: s1.Name, Namespace: s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
 				},
 				Protocol: "h2",
@@ -114,7 +115,7 @@ func TestCluster(t *testing.T) {
 		"contour.heptio.com/max-connections": {
 			service: &dag.HTTPService{
 				Service: dag.Service{
-					Object:         s1,
+					Name: s1.Name, Namespace: s1.Namespace,
 					ServicePort:    &s1.Spec.Ports[0],
 					MaxConnections: 9000,
 				},
@@ -139,7 +140,7 @@ func TestCluster(t *testing.T) {
 		"contour.heptio.com/max-pending-requests": {
 			service: &dag.HTTPService{
 				Service: dag.Service{
-					Object:             s1,
+					Name: s1.Name, Namespace: s1.Namespace,
 					ServicePort:        &s1.Spec.Ports[0],
 					MaxPendingRequests: 4096,
 				},
@@ -164,7 +165,7 @@ func TestCluster(t *testing.T) {
 		"contour.heptio.com/max-requests": {
 			service: &dag.HTTPService{
 				Service: dag.Service{
-					Object:      s1,
+					Name: s1.Name, Namespace: s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
 					MaxRequests: 404,
 				},
@@ -189,7 +190,7 @@ func TestCluster(t *testing.T) {
 		"contour.heptio.com/max-retries": {
 			service: &dag.HTTPService{
 				Service: dag.Service{
-					Object:      s1,
+					Name: s1.Name, Namespace: s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
 					MaxRetries:  7,
 				},
@@ -231,7 +232,8 @@ func TestClustername(t *testing.T) {
 		"simple": {
 			service: &dag.HTTPService{
 				Service: dag.Service{
-					Object: service("default", "backend"),
+					Name:      "backend",
+					Namespace: "default",
 					ServicePort: &v1.ServicePort{
 						Name:       "http",
 						Protocol:   "TCP",
@@ -245,7 +247,8 @@ func TestClustername(t *testing.T) {
 		"far too long": {
 			service: &dag.HTTPService{
 				Service: dag.Service{
-					Object: service("it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune", "must-be-in-want-of-a-wife"),
+					Name:      "must-be-in-want-of-a-wife",
+					Namespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
 					ServicePort: &v1.ServicePort{
 						Name:       "http",
 						Protocol:   "TCP",
@@ -259,7 +262,8 @@ func TestClustername(t *testing.T) {
 		"various healthcheck params": {
 			service: &dag.HTTPService{
 				Service: dag.Service{
-					Object: service("default", "backend"),
+					Name:      "backend",
+					Namespace: "default",
 					ServicePort: &v1.ServicePort{
 						Name:       "http",
 						Protocol:   "TCP",
@@ -392,21 +396,4 @@ func TestU32nil(t *testing.T) {
 
 	assert(nil, u32nil(0))
 	assert(u32(1), u32nil(1))
-}
-
-func service(ns, name string, ports ...v1.ServicePort) *v1.Service {
-	return serviceWithAnnotations(ns, name, nil, ports...)
-}
-
-func serviceWithAnnotations(ns, name string, annotations map[string]string, ports ...v1.ServicePort) *v1.Service {
-	return &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   ns,
-			Annotations: annotations,
-		},
-		Spec: v1.ServiceSpec{
-			Ports: ports,
-		},
-	}
 }
