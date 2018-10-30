@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
+	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
@@ -125,8 +125,8 @@ func TestCluster(t *testing.T) {
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-				CircuitBreakers: &cluster.CircuitBreakers{
-					Thresholds: []*cluster.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_cluster.CircuitBreakers{
+					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
 						MaxConnections: u32(9000),
 					}},
 				},
@@ -150,8 +150,8 @@ func TestCluster(t *testing.T) {
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-				CircuitBreakers: &cluster.CircuitBreakers{
-					Thresholds: []*cluster.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_cluster.CircuitBreakers{
+					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
 						MaxPendingRequests: u32(4096),
 					}},
 				},
@@ -175,8 +175,8 @@ func TestCluster(t *testing.T) {
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-				CircuitBreakers: &cluster.CircuitBreakers{
-					Thresholds: []*cluster.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_cluster.CircuitBreakers{
+					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
 						MaxRequests: u32(404),
 					}},
 				},
@@ -200,8 +200,8 @@ func TestCluster(t *testing.T) {
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-				CircuitBreakers: &cluster.CircuitBreakers{
-					Thresholds: []*cluster.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_cluster.CircuitBreakers{
+					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
 						MaxRetries: u32(7),
 					}},
 				},
@@ -222,58 +222,52 @@ func TestCluster(t *testing.T) {
 
 func TestClustername(t *testing.T) {
 	tests := map[string]struct {
-		service *dag.HTTPService
+		service *dag.Service
 		want    string
 	}{
 		"simple": {
-			service: &dag.HTTPService{
-				Service: dag.Service{
-					Name:      "backend",
-					Namespace: "default",
-					ServicePort: &v1.ServicePort{
-						Name:       "http",
-						Protocol:   "TCP",
-						Port:       80,
-						TargetPort: intstr.FromInt(6502),
-					},
+			service: &dag.Service{
+				Name:      "backend",
+				Namespace: "default",
+				ServicePort: &v1.ServicePort{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(6502),
 				},
 			},
 			want: "default/backend/80/da39a3ee5e",
 		},
 		"far too long": {
-			service: &dag.HTTPService{
-				Service: dag.Service{
-					Name:      "must-be-in-want-of-a-wife",
-					Namespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
-					ServicePort: &v1.ServicePort{
-						Name:       "http",
-						Protocol:   "TCP",
-						Port:       9999,
-						TargetPort: intstr.FromString("http-alt"),
-					},
+			service: &dag.Service{
+				Name:      "must-be-in-want-of-a-wife",
+				Namespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
+				ServicePort: &v1.ServicePort{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       9999,
+					TargetPort: intstr.FromString("http-alt"),
 				},
 			},
 			want: "it-is-a--dea8b0/must-be--dea8b0/9999/da39a3ee5e",
 		},
 		"various healthcheck params": {
-			service: &dag.HTTPService{
-				Service: dag.Service{
-					Name:      "backend",
-					Namespace: "default",
-					ServicePort: &v1.ServicePort{
-						Name:       "http",
-						Protocol:   "TCP",
-						Port:       80,
-						TargetPort: intstr.FromInt(6502),
-					},
-					LoadBalancerStrategy: "Maglev",
-					HealthCheck: &ingressroutev1.HealthCheck{
-						Path:                    "/healthz",
-						IntervalSeconds:         5,
-						TimeoutSeconds:          30,
-						UnhealthyThresholdCount: 3,
-						HealthyThresholdCount:   1,
-					},
+			service: &dag.Service{
+				Name:      "backend",
+				Namespace: "default",
+				ServicePort: &v1.ServicePort{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(6502),
+				},
+				LoadBalancerStrategy: "Maglev",
+				HealthCheck: &ingressroutev1.HealthCheck{
+					Path:                    "/healthz",
+					IntervalSeconds:         5,
+					TimeoutSeconds:          30,
+					UnhealthyThresholdCount: 3,
+					HealthyThresholdCount:   1,
 				},
 			},
 			want: "default/backend/80/32737eb011",
