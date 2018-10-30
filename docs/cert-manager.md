@@ -6,6 +6,8 @@ This tutorial shows you how to securely deploy an HTTPS web application on a Kub
 - Contour, as the Ingress controller
 - [JetStack's cert-manager][1] to provision TLS certificates from [the Let's Encrypt project][5]
 
+**Please note** that this tutorial currently only works with `Ingress` resources. `IngressRoute` support will land when https://github.com/heptio/contour/issues/509 is fixed.
+
 ## Prerequisites
 
 - A Kubernetes cluster deployed in either a data center or a cloud provider with a Kubernetes as a service offering. This tutorial was developed on a GKE cluster running Kubernetes 1.8.
