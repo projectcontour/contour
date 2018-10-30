@@ -51,13 +51,7 @@ func TestRouteRoute(t *testing.T) {
 				Prefix: "/",
 			},
 			services: []*dag.HTTPService{{
-				Service: dag.Service{
-					Name:      "kuard",
-					Namespace: "default",
-					ServicePort: &v1.ServicePort{
-						Port: 8080,
-					},
-				},
+				Service: service(s1),
 			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
@@ -75,10 +69,7 @@ func TestRouteRoute(t *testing.T) {
 				Websocket: true,
 			},
 			services: []*dag.HTTPService{{
-				Service: dag.Service{
-					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort: &s1.Spec.Ports[0],
-				},
+				Service: service(s1),
 			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
@@ -98,7 +89,8 @@ func TestRouteRoute(t *testing.T) {
 			},
 			services: []*dag.HTTPService{{
 				Service: dag.Service{
-					Name: s1.Name, Namespace: s1.Namespace,
+					Name:        s1.Name,
+					Namespace:   s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
 					Weight:      90,
 				},
@@ -134,15 +126,13 @@ func TestRouteRoute(t *testing.T) {
 			},
 			services: []*dag.HTTPService{{
 				Service: dag.Service{
-					Name: s1.Name, Namespace: s1.Namespace,
+					Name:        s1.Name,
+					Namespace:   s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
 					Weight:      90,
 				},
 			}, {
-				Service: dag.Service{
-					Name: s1.Name, Namespace: s1.Namespace, // it's valid to mention the same service several times per route.
-					ServicePort: &s1.Spec.Ports[0],
-				},
+				Service: service(s1), // it's valid to mention the same service several times per route.
 			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
@@ -170,10 +160,7 @@ func TestRouteRoute(t *testing.T) {
 				PerTryTimeout: 10 * time.Second, // ignored
 			},
 			services: []*dag.HTTPService{{
-				Service: dag.Service{
-					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort: &s1.Spec.Ports[0],
-				},
+				Service: service(s1),
 			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
@@ -192,10 +179,7 @@ func TestRouteRoute(t *testing.T) {
 				PerTryTimeout: 100 * time.Millisecond,
 			},
 			services: []*dag.HTTPService{{
-				Service: dag.Service{
-					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort: &s1.Spec.Ports[0],
-				},
+				Service: service(s1),
 			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
@@ -219,10 +203,7 @@ func TestRouteRoute(t *testing.T) {
 				Timeout: 90 * time.Second,
 			},
 			services: []*dag.HTTPService{{
-				Service: dag.Service{
-					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort: &s1.Spec.Ports[0],
-				},
+				Service: service(s1),
 			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
@@ -242,10 +223,7 @@ func TestRouteRoute(t *testing.T) {
 				Timeout: -1,
 			},
 			services: []*dag.HTTPService{{
-				Service: dag.Service{
-					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort: &s1.Spec.Ports[0],
-				},
+				Service: service(s1),
 			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{

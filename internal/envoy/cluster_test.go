@@ -51,11 +51,7 @@ func TestCluster(t *testing.T) {
 	}{
 		"simple service": {
 			service: &dag.HTTPService{
-				Service: dag.Service{
-					Name:        s1.Name,
-					Namespace:   s1.Namespace,
-					ServicePort: &s1.Spec.Ports[0],
-				},
+				Service: service(s1),
 			},
 			want: &v2.Cluster{
 				Name: "default/kuard/443/da39a3ee5e",
@@ -396,4 +392,12 @@ func TestU32nil(t *testing.T) {
 
 	assert(nil, u32nil(0))
 	assert(u32(1), u32nil(1))
+}
+
+func service(s *v1.Service) dag.Service {
+	return dag.Service{
+		Name:        s.Name,
+		Namespace:   s.Namespace,
+		ServicePort: &s.Spec.Ports[0],
+	}
 }
