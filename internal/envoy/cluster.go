@@ -104,7 +104,7 @@ func edshealthcheck(s *dag.HTTPService) []*core.HealthCheck {
 		return nil
 	}
 	return []*core.HealthCheck{
-		healthCheck(s.HealthCheck),
+		healthCheck(&s.Service),
 	}
 }
 

@@ -184,23 +184,8 @@ type Service struct {
 	// MaxRetries is the maximum number of parallel retries that
 	// Envoy will allow to the upstream cluster.
 	MaxRetries int
-}
 
-// HTTPService represents a Kuberneres Service object which speaks
-// HTTP/1.1 or HTTP/2.0.
-type HTTPService struct {
-	Service
-
-	// Protocol is the layer 7 protocol of this service
-	// One of "", "h2", or "h2c".
-	Protocol string
-
-	HealthCheck *ingressroutev1.HealthCheck // TODO(dfc) HealthCheck should be generalised and moved to Service.
-}
-
-func (s *HTTPService) Visit(func(Vertex)) {
-	// Visit is defined on HTTPService, not Service, so the latter
-	// cannot be inserted into the DAG nor interface asserted from a Vertex.
+	HealthCheck *ingressroutev1.HealthCheck
 }
 
 type servicemeta struct {
@@ -212,7 +197,7 @@ type servicemeta struct {
 	healthcheck string // %#v of *ingressroutev1.HealthCheck
 }
 
-func (s *HTTPService) toMeta() servicemeta {
+func (s *Service) toMeta() servicemeta {
 	return servicemeta{
 		name:        s.Name,
 		namespace:   s.Namespace,
@@ -221,6 +206,21 @@ func (s *HTTPService) toMeta() servicemeta {
 		strategy:    s.LoadBalancerStrategy,
 		healthcheck: healthcheckToString(s.HealthCheck),
 	}
+}
+
+// HTTPService represents a Kuberneres Service object which speaks
+// HTTP/1.1 or HTTP/2.0.
+type HTTPService struct {
+	Service
+
+	// Protocol is the layer 7 protocol of this service
+	// One of "", "h2", or "h2c".
+	Protocol string
+}
+
+func (s *HTTPService) Visit(func(Vertex)) {
+	// Visit is defined on HTTPService, not Service, so the latter
+	// cannot be inserted into the DAG nor interface asserted from a Vertex.
 }
 
 // Secret represents a K8s Secret for TLS usage as a DAG Vertex. A Secret is

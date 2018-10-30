@@ -18,7 +18,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/gogo/protobuf/types"
-	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/heptio/contour/internal/dag"
 )
 
 const (
@@ -31,7 +31,8 @@ const (
 )
 
 // healthCheck returns a *core.HealthCheck value.
-func healthCheck(hc *ingressroutev1.HealthCheck) *core.HealthCheck {
+func healthCheck(service *dag.Service) *core.HealthCheck {
+	hc := service.HealthCheck
 	host := hcHost
 	if hc.Host != "" {
 		host = hc.Host

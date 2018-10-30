@@ -210,9 +210,9 @@ func (b *builder) addService(svc *v1.Service, port *v1.ServicePort, weight int, 
 			MaxPendingRequests: parseAnnotation(svc.Annotations, annotationMaxPendingRequests),
 			MaxRequests:        parseAnnotation(svc.Annotations, annotationMaxRequests),
 			MaxRetries:         parseAnnotation(svc.Annotations, annotationMaxRetries),
+			HealthCheck:        hc,
 		},
-		Protocol:    protocol,
-		HealthCheck: hc,
+		Protocol: protocol,
 	}
 	b.services[s.toMeta()] = s
 	return s
