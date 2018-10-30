@@ -200,7 +200,8 @@ func (b *builder) addService(svc *v1.Service, port *v1.ServicePort, weight int, 
 
 	s := &HTTPService{
 		Service: Service{
-			Object:               svc,
+			Name:                 svc.Name,
+			Namespace:            svc.Namespace,
 			ServicePort:          port,
 			Weight:               weight,
 			LoadBalancerStrategy: strategy,
@@ -396,9 +397,6 @@ func prefixRoute(ingress *v1beta1.Ingress, prefix string) *Route {
 	// compute websocket enabled routes
 	wr := websocketRoutes(ingress)
 
-	// compute timeout for any routes on this ingress
-	timeout := parseAnnotationTimeout(ingress.Annotations, annotationRequestTimeout)
-
 	var perTryTimeout time.Duration
 	if val, ok := ingress.Annotations[annotationPerTryTimeout]; ok {
 		perTryTimeout, _ = time.ParseDuration(val)
@@ -409,7 +407,7 @@ func prefixRoute(ingress *v1beta1.Ingress, prefix string) *Route {
 		object:        ingress,
 		HTTPSUpgrade:  tlsRequired(ingress),
 		Websocket:     wr[prefix],
-		Timeout:       timeout,
+		Timeout:       parseAnnotationTimeout(ingress.Annotations, annotationRequestTimeout),
 		RetryOn:       ingress.Annotations[annotationRetryOn],
 		NumRetries:    parseAnnotation(ingress.Annotations, annotationNumRetries),
 		PerTryTimeout: perTryTimeout,
@@ -530,6 +528,7 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: cannot specify services and delegate in the same route", route.Match), Vhost: host})
 			return
 		}
+
 		// base case: The route points to services, so we add them to the vhost
 		if len(route.Services) > 0 {
 			if !matchesPathPrefix(route.Match, prefixMatch) {
@@ -537,14 +536,11 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 				return
 			}
 
-			// Determine if the route should enforce TLS
-			enforceTLSRoute := routeEnforceTLS(enforceTLS, route.PermitInsecure)
-
 			r := &Route{
 				Prefix:        route.Match,
 				object:        ir,
 				Websocket:     route.EnableWebsockets,
-				HTTPSUpgrade:  enforceTLSRoute,
+				HTTPSUpgrade:  routeEnforceTLS(enforceTLS, route.PermitInsecure),
 				PrefixRewrite: route.PrefixRewrite,
 			}
 			for _, service := range route.Services {

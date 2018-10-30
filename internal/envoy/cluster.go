@@ -71,8 +71,8 @@ func httpCluster(service *dag.HTTPService) *v2.Cluster {
 
 func edsconfig(cluster string, service *dag.Service) *v2.Cluster_EdsClusterConfig {
 	name := []string{
-		service.Namespace(),
-		service.Name(),
+		service.Namespace,
+		service.Name,
 		service.ServicePort.Name,
 	}
 	if name[2] == "" {
@@ -128,8 +128,8 @@ func Clustername(service *dag.HTTPService) string {
 	}
 
 	hash := sha1.Sum([]byte(buf))
-	ns := service.Namespace()
-	name := service.Name()
+	ns := service.Namespace
+	name := service.Name
 	return hashname(60, ns, name, strconv.Itoa(int(service.Port)), fmt.Sprintf("%x", hash[:5]))
 }
 

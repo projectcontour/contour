@@ -1,4 +1,4 @@
-// Copyright © 2018 Heptio
+// Copyright © 2017 Heptio
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -2178,7 +2178,8 @@ func TestDAGInsert(t *testing.T) {
 						route("/", i3a, servicemap(
 							&HTTPService{
 								Service: Service{
-									Object:      s3a,
+									Name:        s3a.Name,
+									Namespace:   s3a.Namespace,
 									ServicePort: &s3a.Spec.Ports[0],
 								},
 								Protocol: "h2c",
@@ -2200,7 +2201,8 @@ func TestDAGInsert(t *testing.T) {
 						route("/", i3a, servicemap(
 							&HTTPService{
 								Service: Service{
-									Object:      s3b,
+									Name:        s3b.Name,
+									Namespace:   s3b.Namespace,
 									ServicePort: &s3b.Spec.Ports[0],
 								},
 								Protocol: "h2",
@@ -2223,7 +2225,8 @@ func TestDAGInsert(t *testing.T) {
 						route("/", i1, servicemap(
 							&HTTPService{
 								Service: Service{
-									Object:             s1b,
+									Name:               s1b.Name,
+									Namespace:          s1b.Namespace,
 									ServicePort:        &s1b.Spec.Ports[0],
 									MaxConnections:     9000,
 									MaxPendingRequests: 4096,
@@ -2248,7 +2251,8 @@ func TestDAGInsert(t *testing.T) {
 						route("/a", ir13, servicemap(
 							&HTTPService{
 								Service: Service{
-									Object:      s1,
+									Name:        s1.Name,
+									Namespace:   s1.Namespace,
 									ServicePort: &s1.Spec.Ports[0],
 									Weight:      90,
 								},
@@ -2257,7 +2261,8 @@ func TestDAGInsert(t *testing.T) {
 						route("/b", ir13, servicemap(
 							&HTTPService{
 								Service: Service{
-									Object:      s1,
+									Name:        s1.Name,
+									Namespace:   s1.Namespace,
 									ServicePort: &s1.Spec.Ports[0],
 									Weight:      60,
 								},
@@ -2279,14 +2284,16 @@ func TestDAGInsert(t *testing.T) {
 						route("/a", ir13a, servicemap(
 							&HTTPService{
 								Service: Service{
-									Object:      s1,
+									Name:        s1.Name,
+									Namespace:   s1.Namespace,
 									ServicePort: &s1.Spec.Ports[0],
 									Weight:      90,
 								},
 							},
 							&HTTPService{
 								Service: Service{
-									Object:      s1,
+									Name:        s1.Name,
+									Namespace:   s1.Namespace,
 									ServicePort: &s1.Spec.Ports[0],
 									Weight:      60,
 								},
@@ -3521,7 +3528,11 @@ func route(prefix string, obj interface{}, httpServices ...map[servicemeta]*HTTP
 
 func httpService(s *v1.Service) *HTTPService {
 	return &HTTPService{
-		Service: Service{Object: s, ServicePort: &s.Spec.Ports[0]},
+		Service: Service{
+			Name:        s.Name,
+			Namespace:   s.Namespace,
+			ServicePort: &s.Spec.Ports[0],
+		},
 	}
 }
 
