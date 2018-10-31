@@ -142,7 +142,7 @@ func (b *Builder) Build() *DAG {
 type builder struct {
 	source *Builder
 
-	services map[servicemeta]*HTTPService
+	services map[servicemeta]ServiceVertex
 	secrets  map[meta]*Secret
 	vhosts   map[hostport]*VirtualHost
 	svhosts  map[hostport]*SecureVirtualHost
@@ -152,45 +152,60 @@ type builder struct {
 	statuses []Status
 }
 
-// lookupService returns a Service that matches the meta and port supplied.
-// If no matching Service is found lookup returns nil.
-func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) ServiceVertex {
-	if port.Type == intstr.Int {
-		m := servicemeta{
-			name:        m.name,
-			namespace:   m.namespace,
-			port:        int32(port.IntValue()),
-			weight:      weight,
-			strategy:    strategy,
-			healthcheck: healthcheckToString(hc),
+// lookupHTTPService returns a HTTPService that matches the meta and port supplied.
+func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) *HTTPService {
+	s := b.lookupService(m, port, weight, strategy, hc)
+	switch s := s.(type) {
+	case *HTTPService:
+		return s
+	case nil:
+		svc, ok := b.source.services[m]
+		if !ok {
+			return nil
 		}
-		if s, ok := b.services[m]; ok {
-			return s
+		for i := range svc.Spec.Ports {
+			p := &svc.Spec.Ports[i]
+			if int(p.Port) == port.IntValue() {
+				return b.addHTTPService(svc, p, weight, strategy, hc)
+			}
+			if port.String() == p.Name {
+				return b.addHTTPService(svc, p, weight, strategy, hc)
+			}
 		}
-	}
-	svc, ok := b.source.services[m]
-	if !ok {
+		return nil
+	default:
+		// some other type
 		return nil
 	}
-	for i := range svc.Spec.Ports {
-		p := &svc.Spec.Ports[i]
-		if int(p.Port) == port.IntValue() {
-			return b.addService(svc, p, weight, strategy, hc)
-		}
-		if port.String() == p.Name {
-			return b.addService(svc, p, weight, strategy, hc)
-		}
+}
+
+func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) ServiceVertex {
+	if port.Type != intstr.Int {
+		// can't handle, give up
+		return nil
 	}
-	return nil
+	sm := servicemeta{
+		name:        m.name,
+		namespace:   m.namespace,
+		port:        int32(port.IntValue()),
+		weight:      weight,
+		strategy:    strategy,
+		healthcheck: healthcheckToString(hc),
+	}
+	s, ok := b.services[sm]
+	if !ok {
+		return nil // avoid typed nil
+	}
+	return s
 }
 
 func healthcheckToString(hc *ingressroutev1.HealthCheck) string {
 	return fmt.Sprintf("%#v", hc)
 }
 
-func (b *builder) addService(svc *v1.Service, port *v1.ServicePort, weight int, strategy string, hc *ingressroutev1.HealthCheck) *HTTPService {
+func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort, weight int, strategy string, hc *ingressroutev1.HealthCheck) *HTTPService {
 	if b.services == nil {
-		b.services = make(map[servicemeta]*HTTPService)
+		b.services = make(map[servicemeta]ServiceVertex)
 	}
 	up := parseUpstreamProtocols(svc.Annotations, annotationUpstreamProtocol, "h2", "h2c")
 	protocol := up[port.Name]
@@ -328,7 +343,7 @@ func (b *builder) compute() *DAG {
 
 				r := prefixRoute(ing, prefix)
 				m := meta{name: httppath.Backend.ServiceName, namespace: ing.Namespace}
-				if s, _ := b.lookupService(m, httppath.Backend.ServicePort, 0, "", nil).(*HTTPService); s != nil {
+				if s := b.lookupHTTPService(m, httppath.Backend.ServicePort, 0, "", nil); s != nil {
 
 					r.addHTTPService(s)
 				}
@@ -553,7 +568,7 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 					return
 				}
 				m := meta{name: service.Name, namespace: ir.Namespace}
-				if s, _ := b.lookupService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck).(*HTTPService); s != nil {
+				if s := b.lookupHTTPService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck); s != nil {
 					r.addHTTPService(s)
 				}
 			}

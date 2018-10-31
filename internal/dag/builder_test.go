@@ -2367,7 +2367,7 @@ func secretdata(cert, key string) map[string][]byte {
 	}
 }
 
-func TestBuilderLookupService(t *testing.T) {
+func TestBuilderLookupHTTPService(t *testing.T) {
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -2425,7 +2425,7 @@ func TestBuilderLookupService(t *testing.T) {
 					},
 				},
 			}
-			got := b.lookupService(tc.meta, tc.port, tc.weight, tc.strategy, tc.healthcheck)
+			got := b.lookupHTTPService(tc.meta, tc.port, tc.weight, tc.strategy, tc.healthcheck)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}

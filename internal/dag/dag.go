@@ -223,6 +223,16 @@ func (s *HTTPService) Visit(func(Vertex)) {
 	// cannot be inserted into the DAG nor interface asserted from a Vertex.
 }
 
+// TCPService represents a Kuberneres Service object which speaks TCP.
+type TCPService struct {
+	Service
+}
+
+func (s *TCPService) Visit(func(Vertex)) {
+	// Visit is defined on TCPService, not Service, so the latter
+	// cannot be inserted into the DAG nor interface asserted from a Vertex.
+}
+
 // Secret represents a K8s Secret for TLS usage as a DAG Vertex. A Secret is
 // a leaf in the DAG.
 type Secret struct {
