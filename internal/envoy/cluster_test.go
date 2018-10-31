@@ -46,7 +46,7 @@ func TestCluster(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		service *dag.HTTPService
+		service dag.ServiceVertex
 		want    *v2.Cluster
 	}{
 		"simple service": {
@@ -205,6 +205,22 @@ func TestCluster(t *testing.T) {
 						MaxRetries: u32(7),
 					}},
 				},
+				CommonLbConfig: clusterCommonLBConfig(),
+			},
+		},
+		"tcp service": {
+			service: &dag.TCPService{
+				Service: service(s1),
+			},
+			want: &v2.Cluster{
+				Name: "default/kuard/443/da39a3ee5e",
+				Type: v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				CommonLbConfig: clusterCommonLBConfig(),
 			},
 		},

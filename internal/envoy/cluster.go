@@ -34,6 +34,8 @@ func Cluster(s dag.ServiceVertex) *v2.Cluster {
 	switch s := s.(type) {
 	case *dag.HTTPService:
 		return httpCluster(s)
+	case *dag.TCPService:
+		return cluster(&s.Service)
 	default:
 		panic(fmt.Sprintf("unsupported Service: %T", s))
 	}
