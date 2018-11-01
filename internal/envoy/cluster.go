@@ -30,19 +30,19 @@ import (
 )
 
 // Cluster creates new v2.Cluster from service.
-func Cluster(s dag.ServiceVertex) *v2.Cluster {
+func Cluster(s dag.Service) *v2.Cluster {
 	switch s := s.(type) {
 	case *dag.HTTPService:
 		return httpCluster(s)
 	case *dag.TCPService:
-		return cluster(&s.Service)
+		return cluster(s)
 	default:
 		panic(fmt.Sprintf("unsupported Service: %T", s))
 	}
 }
 
 func httpCluster(service *dag.HTTPService) *v2.Cluster {
-	c := cluster(&service.Service)
+	c := cluster(&service.TCPService)
 	switch service.Protocol {
 	case "h2":
 		c.TlsContext = UpstreamTLSContext()
@@ -53,7 +53,7 @@ func httpCluster(service *dag.HTTPService) *v2.Cluster {
 	return c
 }
 
-func cluster(service *dag.Service) *v2.Cluster {
+func cluster(service *dag.TCPService) *v2.Cluster {
 	c := &v2.Cluster{
 		Name:             Clustername(service),
 		Type:             v2.Cluster_EDS,
@@ -76,7 +76,7 @@ func cluster(service *dag.Service) *v2.Cluster {
 	return c
 }
 
-func edsconfig(cluster string, service *dag.Service) *v2.Cluster_EdsClusterConfig {
+func edsconfig(cluster string, service *dag.TCPService) *v2.Cluster_EdsClusterConfig {
 	name := []string{
 		service.Namespace,
 		service.Name,
@@ -106,7 +106,7 @@ func lbPolicy(strategy string) v2.Cluster_LbPolicy {
 	}
 }
 
-func edshealthcheck(s *dag.Service) []*core.HealthCheck {
+func edshealthcheck(s *dag.TCPService) []*core.HealthCheck {
 	if s.HealthCheck == nil {
 		return nil
 	}
@@ -116,7 +116,7 @@ func edshealthcheck(s *dag.Service) []*core.HealthCheck {
 }
 
 // Clustername returns the name of the CDS cluster for this service.
-func Clustername(service *dag.Service) string {
+func Clustername(service *dag.TCPService) string {
 	buf := service.LoadBalancerStrategy
 	if hc := service.HealthCheck; hc != nil {
 		if hc.TimeoutSeconds > 0 {

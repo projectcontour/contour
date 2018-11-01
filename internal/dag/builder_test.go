@@ -2177,7 +2177,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						route("/", i3a, servicemap(
 							&HTTPService{
-								Service: Service{
+								TCPService: TCPService{
 									Name:        s3a.Name,
 									Namespace:   s3a.Namespace,
 									ServicePort: &s3a.Spec.Ports[0],
@@ -2200,7 +2200,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						route("/", i3a, servicemap(
 							&HTTPService{
-								Service: Service{
+								TCPService: TCPService{
 									Name:        s3b.Name,
 									Namespace:   s3b.Namespace,
 									ServicePort: &s3b.Spec.Ports[0],
@@ -2224,7 +2224,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						route("/", i1, servicemap(
 							&HTTPService{
-								Service: Service{
+								TCPService: TCPService{
 									Name:               s1b.Name,
 									Namespace:          s1b.Namespace,
 									ServicePort:        &s1b.Spec.Ports[0],
@@ -2250,7 +2250,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						route("/a", ir13, servicemap(
 							&HTTPService{
-								Service: Service{
+								TCPService: TCPService{
 									Name:        s1.Name,
 									Namespace:   s1.Namespace,
 									ServicePort: &s1.Spec.Ports[0],
@@ -2260,7 +2260,7 @@ func TestDAGInsert(t *testing.T) {
 						),
 						route("/b", ir13, servicemap(
 							&HTTPService{
-								Service: Service{
+								TCPService: TCPService{
 									Name:        s1.Name,
 									Namespace:   s1.Namespace,
 									ServicePort: &s1.Spec.Ports[0],
@@ -2283,7 +2283,7 @@ func TestDAGInsert(t *testing.T) {
 					routes: routemap(
 						route("/a", ir13a, servicemap(
 							&HTTPService{
-								Service: Service{
+								TCPService: TCPService{
 									Name:        s1.Name,
 									Namespace:   s1.Namespace,
 									ServicePort: &s1.Spec.Ports[0],
@@ -2291,7 +2291,7 @@ func TestDAGInsert(t *testing.T) {
 								},
 							},
 							&HTTPService{
-								Service: Service{
+								TCPService: TCPService{
 									Name:        s1.Name,
 									Namespace:   s1.Namespace,
 									ServicePort: &s1.Spec.Ports[0],
@@ -3528,7 +3528,7 @@ func route(prefix string, obj interface{}, httpServices ...map[servicemeta]*HTTP
 
 func httpService(s *v1.Service) *HTTPService {
 	return &HTTPService{
-		Service: Service{
+		TCPService: TCPService{
 			Name:        s.Name,
 			Namespace:   s.Namespace,
 			ServicePort: &s.Spec.Ports[0],

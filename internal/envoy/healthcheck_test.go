@@ -25,13 +25,13 @@ import (
 
 func TestHealthCheck(t *testing.T) {
 	tests := map[string]struct {
-		service *dag.Service
+		service *dag.TCPService
 		want    *core.HealthCheck
 	}{
 		// this is an odd case because contour.edshealthcheck will not call envoy.HealthCheck
 		// when hc is nil, so if hc is not nil, at least one of the parameters on it must be set.
 		"blank healthcheck": {
-			service: &dag.Service{
+			service: &dag.TCPService{
 				HealthCheck: new(ingressroutev1.HealthCheck),
 			},
 			want: &core.HealthCheck{
@@ -48,7 +48,7 @@ func TestHealthCheck(t *testing.T) {
 			},
 		},
 		"healthcheck path only": {
-			service: &dag.Service{
+			service: &dag.TCPService{
 				HealthCheck: &ingressroutev1.HealthCheck{
 					Path: "/healthy",
 				},
@@ -67,7 +67,7 @@ func TestHealthCheck(t *testing.T) {
 			},
 		},
 		"explicit healthcheck": {
-			service: &dag.Service{
+			service: &dag.TCPService{
 				HealthCheck: &ingressroutev1.HealthCheck{
 					Host:                    "foo-bar-host",
 					Path:                    "/healthy",
