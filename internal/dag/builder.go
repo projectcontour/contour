@@ -142,7 +142,7 @@ func (b *Builder) Build() *DAG {
 type builder struct {
 	source *Builder
 
-	services map[servicemeta]ServiceVertex
+	services map[servicemeta]Service
 	secrets  map[meta]*Secret
 	vhosts   map[hostport]*VirtualHost
 	svhosts  map[hostport]*SecureVirtualHost
@@ -179,7 +179,7 @@ func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString, weight int,
 	}
 }
 
-func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) ServiceVertex {
+func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) Service {
 	if port.Type != intstr.Int {
 		// can't handle, give up
 		return nil
@@ -205,7 +205,7 @@ func healthcheckToString(hc *ingressroutev1.HealthCheck) string {
 
 func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort, weight int, strategy string, hc *ingressroutev1.HealthCheck) *HTTPService {
 	if b.services == nil {
-		b.services = make(map[servicemeta]ServiceVertex)
+		b.services = make(map[servicemeta]Service)
 	}
 	up := parseUpstreamProtocols(svc.Annotations, annotationUpstreamProtocol, "h2", "h2c")
 	protocol := up[port.Name]
@@ -214,7 +214,7 @@ func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort, weight i
 	}
 
 	s := &HTTPService{
-		Service: Service{
+		TCPService: TCPService{
 			Name:                 svc.Name,
 			Namespace:            svc.Namespace,
 			ServicePort:          port,

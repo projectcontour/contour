@@ -83,11 +83,6 @@ type Route struct {
 	PrefixRewrite string
 }
 
-type ServiceVertex interface {
-	Vertex
-	toMeta() servicemeta
-}
-
 func (r *Route) addHTTPService(s *HTTPService) {
 	if r.httpServices == nil {
 		r.httpServices = make(map[servicemeta]*HTTPService)
@@ -155,9 +150,13 @@ type Vertex interface {
 	Visitable
 }
 
-// Service represents a raw Kuberentes Service as a DAG vertex.
-// A Service is a leaf in the DAG.
-type Service struct {
+type Service interface {
+	Vertex
+	toMeta() servicemeta
+}
+
+// TCPService represents a Kuberentes Service that speaks TCP. That's all we know.
+type TCPService struct {
 	Name, Namespace string
 
 	*v1.ServicePort
@@ -197,7 +196,7 @@ type servicemeta struct {
 	healthcheck string // %#v of *ingressroutev1.HealthCheck
 }
 
-func (s *Service) toMeta() servicemeta {
+func (s *TCPService) toMeta() servicemeta {
 	return servicemeta{
 		name:        s.Name,
 		namespace:   s.Namespace,
@@ -208,29 +207,18 @@ func (s *Service) toMeta() servicemeta {
 	}
 }
 
+func (s *TCPService) Visit(func(Vertex)) {
+	// TCPServices are leaves in the DAG.
+}
+
 // HTTPService represents a Kuberneres Service object which speaks
 // HTTP/1.1 or HTTP/2.0.
 type HTTPService struct {
-	Service
+	TCPService
 
 	// Protocol is the layer 7 protocol of this service
 	// One of "", "h2", or "h2c".
 	Protocol string
-}
-
-func (s *HTTPService) Visit(func(Vertex)) {
-	// Visit is defined on HTTPService, not Service, so the latter
-	// cannot be inserted into the DAG nor interface asserted from a Vertex.
-}
-
-// TCPService represents a Kuberneres Service object which speaks TCP.
-type TCPService struct {
-	Service
-}
-
-func (s *TCPService) Visit(func(Vertex)) {
-	// Visit is defined on TCPService, not Service, so the latter
-	// cannot be inserted into the DAG nor interface asserted from a Vertex.
 }
 
 // Secret represents a K8s Secret for TLS usage as a DAG Vertex. A Secret is
