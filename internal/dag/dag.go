@@ -105,6 +105,8 @@ type VirtualHost struct {
 
 	Host   string
 	routes map[string]*Route
+
+	Proxy *TCPService
 }
 
 func (v *VirtualHost) addRoute(route *Route) {
@@ -118,6 +120,9 @@ func (v *VirtualHost) Visit(f func(Vertex)) {
 	for _, r := range v.routes {
 		f(r)
 	}
+	if v.Proxy != nil {
+		f(v.Proxy)
+	}
 }
 
 // A SecureVirtualHost represents a HTTP host protected by TLS.
@@ -127,19 +132,13 @@ type SecureVirtualHost struct {
 	// TLS minimum protocol version. Defaults to auth.TlsParameters_TLS_AUTO
 	MinProtoVersion auth.TlsParameters_TlsProtocol
 
-	secret *Secret
-}
-
-func (s *SecureVirtualHost) Data() map[string][]byte {
-	if s.secret == nil {
-		return nil
-	}
-	return s.secret.Data()
+	// The cert and key for this host.
+	*Secret
 }
 
 func (s *SecureVirtualHost) Visit(f func(Vertex)) {
 	s.VirtualHost.Visit(f)
-	f(s.secret)
+	f(s.Secret)
 }
 
 type Visitable interface {

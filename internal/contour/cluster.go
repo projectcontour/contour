@@ -108,6 +108,12 @@ func (v *clusterVisitor) visit(vertex dag.Vertex) {
 			c := envoy.Cluster(service)
 			v.clusters[c.Name] = c
 		}
+	case *dag.TCPService:
+		name := envoy.Clustername(service)
+		if _, ok := v.clusters[name]; !ok {
+			c := envoy.Cluster(service)
+			v.clusters[c.Name] = c
+		}
 	default:
 		// nothing
 	}

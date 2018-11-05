@@ -1299,9 +1299,7 @@ func TestDAGInsert(t *testing.T) {
 						),
 					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					secret: &Secret{
-						object: sec1,
-					},
+					Secret:          secret(sec1),
 				},
 			},
 		},
@@ -1327,9 +1325,7 @@ func TestDAGInsert(t *testing.T) {
 						),
 					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					secret: &Secret{
-						object: sec1,
-					},
+					Secret:          secret(sec1),
 				},
 			},
 		},
@@ -1441,9 +1437,7 @@ func TestDAGInsert(t *testing.T) {
 						),
 					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					secret: &Secret{
-						object: sec1,
-					},
+					Secret:          secret(sec1),
 				},
 			},
 		},
@@ -1481,9 +1475,7 @@ func TestDAGInsert(t *testing.T) {
 						),
 					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					secret: &Secret{
-						object: sec1,
-					},
+					Secret:          secret(sec1),
 				},
 			},
 		},
@@ -1568,9 +1560,7 @@ func TestDAGInsert(t *testing.T) {
 						),
 					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					secret: &Secret{
-						object: sec1,
-					},
+					Secret:          secret(sec1),
 				},
 			},
 		},
@@ -1608,9 +1598,7 @@ func TestDAGInsert(t *testing.T) {
 						),
 					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					secret: &Secret{
-						object: sec1,
-					},
+					Secret:          secret(sec1),
 				},
 			},
 		},
@@ -1649,9 +1637,7 @@ func TestDAGInsert(t *testing.T) {
 						),
 					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					secret: &Secret{
-						object: sec1,
-					},
+					Secret:          secret(sec1),
 				}},
 		},
 
@@ -1763,9 +1749,7 @@ func TestDAGInsert(t *testing.T) {
 								HTTPSUpgrade: true,
 							}),
 					},
-					secret: &Secret{
-						object: sec1,
-					},
+					Secret: secret(sec1),
 				}},
 		},
 		"insert ingressroute with TLS one insecure": {
@@ -1800,9 +1784,7 @@ func TestDAGInsert(t *testing.T) {
 								),
 							}),
 					},
-					secret: &Secret{
-						object: sec1,
-					},
+					Secret: secret(sec1),
 				}},
 		},
 		"insert ingressroute with tls version 1.2": {
@@ -1840,9 +1822,7 @@ func TestDAGInsert(t *testing.T) {
 						),
 					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_2,
-					secret: &Secret{
-						object: sec1,
-					},
+					Secret:          secret(sec1),
 				}},
 		},
 		"insert ingressroute with tls version 1.3": {
@@ -1878,9 +1858,7 @@ func TestDAGInsert(t *testing.T) {
 						),
 					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_3,
-					secret: &Secret{
-						object: sec1,
-					},
+					Secret:          secret(sec1),
 				}},
 		},
 		"insert ingressroute with invalid tls version": {
@@ -1916,9 +1894,7 @@ func TestDAGInsert(t *testing.T) {
 							}),
 					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					secret: &Secret{
-						object: sec1,
-					},
+					Secret:          secret(sec1),
 				}},
 		},
 		"insert ingressroute referencing two backends, one missing": {
@@ -1979,9 +1955,7 @@ func TestDAGInsert(t *testing.T) {
 						),
 					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_3,
-					secret: &Secret{
-						object: sec1,
-					},
+					Secret:          secret(sec1),
 				},
 			},
 		},
@@ -2160,9 +2134,7 @@ func TestDAGInsert(t *testing.T) {
 						),
 					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					secret: &Secret{
-						object: sec13,
-					},
+					Secret:          secret(sec13),
 				},
 			},
 		},
@@ -3550,4 +3522,10 @@ func (s statusByNamespaceAndName) Len() int      { return len(s) }
 func (s statusByNamespaceAndName) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 func (s statusByNamespaceAndName) Less(i, j int) bool {
 	return s[i].Object.Namespace+s[i].Object.Name < s[j].Object.Namespace+s[j].Object.Name
+}
+
+func secret(s *v1.Secret) *Secret {
+	return &Secret{
+		object: s,
+	}
 }
