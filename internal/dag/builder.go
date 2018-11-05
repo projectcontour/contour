@@ -303,7 +303,7 @@ func (b *builder) compute() *DAG {
 			if sec := b.lookupSecret(m); sec != nil {
 				for _, host := range tls.Hosts {
 					svhost := b.lookupSecureVirtualHost(host, 443)
-					svhost.secret = sec
+					svhost.Secret = sec
 					svhost.MinProtoVersion = minProtoVersion(ing)
 				}
 			}
@@ -385,7 +385,7 @@ func (b *builder) compute() *DAG {
 			m := meta{name: tls.SecretName, namespace: ir.Namespace}
 			if sec := b.lookupSecret(m); sec != nil {
 				svhost := b.lookupSecureVirtualHost(host, 443)
-				svhost.secret = sec
+				svhost.Secret = sec
 				enforceTLS = true
 
 				// process min protocol version
@@ -493,7 +493,8 @@ func (b *builder) DAG() *DAG {
 		}
 	}
 	for _, svh := range b.svhosts {
-		if svh.secret != nil {
+		// suppress secure virtual hosts without secrets.
+		if svh.Secret != nil {
 			dag.roots = append(dag.roots, svh)
 		}
 	}
