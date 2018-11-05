@@ -20,7 +20,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/envoy"
@@ -73,11 +72,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				}),
 		},
 		"single named service": {
@@ -113,11 +108,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				}),
 		},
 		"h2c upstream": {
@@ -158,11 +149,7 @@ func TestClusterVisit(t *testing.T) {
 					ConnectTimeout:       250 * time.Millisecond,
 					LbPolicy:             v2.Cluster_ROUND_ROBIN,
 					Http2ProtocolOptions: &core.Http2ProtocolOptions{},
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig:       envoy.ClusterCommonLBConfig(),
 				},
 			),
 		},
@@ -199,11 +186,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				}),
 		},
 		"two service ports": {
@@ -251,11 +234,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 				&v2.Cluster{
 					Name: "default/backend/8080/da39a3ee5e",
@@ -266,11 +245,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
 		},
@@ -326,11 +301,7 @@ func TestClusterVisit(t *testing.T) {
 							},
 						},
 					}},
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
 		},
@@ -391,11 +362,7 @@ func TestClusterVisit(t *testing.T) {
 							},
 						},
 					}},
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
 		},
@@ -437,11 +404,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
 		},
@@ -483,11 +446,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_LEAST_REQUEST,
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
 		},
@@ -529,11 +488,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_RING_HASH,
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
 		},
@@ -575,11 +530,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_MAGLEV,
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
 		},
@@ -621,11 +572,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_RANDOM,
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
 		},
@@ -674,11 +621,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_RANDOM,
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 				&v2.Cluster{
 					Name: "default/backend/80/843e4ded8f",
@@ -689,11 +632,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_MAGLEV,
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
 		},
@@ -736,11 +675,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
 		},
@@ -792,11 +727,7 @@ func TestClusterVisit(t *testing.T) {
 							MaxRetries:         u32(7),
 						}},
 					},
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
 		},
@@ -837,11 +768,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 					ConnectTimeout: 250 * time.Millisecond,
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
-					CommonLbConfig: &v2.Cluster_CommonLbConfig{
-						HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-							Value: 0,
-						},
-					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				}),
 		},
 	}

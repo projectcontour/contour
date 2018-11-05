@@ -60,7 +60,7 @@ func cluster(service *dag.TCPService) *v2.Cluster {
 		EdsClusterConfig: edsconfig("contour", service),
 		ConnectTimeout:   250 * time.Millisecond,
 		LbPolicy:         lbPolicy(service.LoadBalancerStrategy),
-		CommonLbConfig:   clusterCommonLBConfig(),
+		CommonLbConfig:   ClusterCommonLBConfig(),
 		HealthChecks:     edshealthcheck(service),
 	}
 	if anyPositive(service.MaxConnections, service.MaxPendingRequests, service.MaxRequests, service.MaxRetries) {
@@ -212,7 +212,7 @@ func u32nil(val int) *types.UInt32Value {
 	}
 }
 
-func clusterCommonLBConfig() *v2.Cluster_CommonLbConfig {
+func ClusterCommonLBConfig() *v2.Cluster_CommonLbConfig {
 	return &v2.Cluster_CommonLbConfig{
 		HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
 			Value: 0,

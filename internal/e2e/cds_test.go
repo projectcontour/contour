@@ -20,7 +20,6 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
-	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/envoy"
@@ -528,11 +527,7 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 						MaxRetries:         u32(7),
 					}},
 				},
-				CommonLbConfig: &v2.Cluster_CommonLbConfig{
-					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-						Value: 0,
-					},
-				},
+				CommonLbConfig: envoy.ClusterCommonLBConfig(),
 			}),
 		},
 		TypeUrl: clusterType,
@@ -574,11 +569,7 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 						MaxPendingRequests: u32(9999),
 					}},
 				},
-				CommonLbConfig: &v2.Cluster_CommonLbConfig{
-					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-						Value: 0,
-					},
-				},
+				CommonLbConfig: envoy.ClusterCommonLBConfig(),
 			}),
 		},
 		TypeUrl: clusterType,
@@ -698,11 +689,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_RANDOM,
-				CommonLbConfig: &v2.Cluster_CommonLbConfig{
-					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-						Value: 0,
-					},
-				},
+				CommonLbConfig: envoy.ClusterCommonLBConfig(),
 			}),
 			any(t, &v2.Cluster{
 				Name: "default/kuard/80/843e4ded8f",
@@ -713,11 +700,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_MAGLEV,
-				CommonLbConfig: &v2.Cluster_CommonLbConfig{
-					HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-						Value: 0,
-					},
-				},
+				CommonLbConfig: envoy.ClusterCommonLBConfig(),
 			}),
 		},
 		TypeUrl: clusterType,
@@ -759,10 +742,6 @@ func cluster(name, servicename string) *v2.Cluster {
 		},
 		ConnectTimeout: 250 * time.Millisecond,
 		LbPolicy:       v2.Cluster_ROUND_ROBIN,
-		CommonLbConfig: &v2.Cluster_CommonLbConfig{
-			HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
-				Value: 0,
-			},
-		},
+		CommonLbConfig: envoy.ClusterCommonLBConfig(),
 	}
 }

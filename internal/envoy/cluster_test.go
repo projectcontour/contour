@@ -20,6 +20,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
@@ -62,7 +63,7 @@ func TestCluster(t *testing.T) {
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-				CommonLbConfig: clusterCommonLBConfig(),
+				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
 		"h2c upstream": {
@@ -80,7 +81,7 @@ func TestCluster(t *testing.T) {
 				ConnectTimeout:       250 * time.Millisecond,
 				LbPolicy:             v2.Cluster_ROUND_ROBIN,
 				Http2ProtocolOptions: &core.Http2ProtocolOptions{},
-				CommonLbConfig:       clusterCommonLBConfig(),
+				CommonLbConfig:       ClusterCommonLBConfig(),
 			},
 		},
 		"h2 upstream": {
@@ -99,7 +100,7 @@ func TestCluster(t *testing.T) {
 				LbPolicy:             v2.Cluster_ROUND_ROBIN,
 				Http2ProtocolOptions: &core.Http2ProtocolOptions{},
 				TlsContext:           UpstreamTLSContext(),
-				CommonLbConfig:       clusterCommonLBConfig(),
+				CommonLbConfig:       ClusterCommonLBConfig(),
 			},
 		},
 		"contour.heptio.com/max-connections": {
@@ -124,7 +125,7 @@ func TestCluster(t *testing.T) {
 						MaxConnections: u32(9000),
 					}},
 				},
-				CommonLbConfig: clusterCommonLBConfig(),
+				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
 		"contour.heptio.com/max-pending-requests": {
@@ -149,7 +150,7 @@ func TestCluster(t *testing.T) {
 						MaxPendingRequests: u32(4096),
 					}},
 				},
-				CommonLbConfig: clusterCommonLBConfig(),
+				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
 		"contour.heptio.com/max-requests": {
@@ -174,7 +175,7 @@ func TestCluster(t *testing.T) {
 						MaxRequests: u32(404),
 					}},
 				},
-				CommonLbConfig: clusterCommonLBConfig(),
+				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
 		"contour.heptio.com/max-retries": {
@@ -199,7 +200,7 @@ func TestCluster(t *testing.T) {
 						MaxRetries: u32(7),
 					}},
 				},
-				CommonLbConfig: clusterCommonLBConfig(),
+				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
 		"tcp service": {
@@ -216,7 +217,7 @@ func TestCluster(t *testing.T) {
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-				CommonLbConfig: clusterCommonLBConfig(),
+				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
 	}
@@ -397,6 +398,18 @@ func TestU32nil(t *testing.T) {
 
 	assert(nil, u32nil(0))
 	assert(u32(1), u32nil(1))
+}
+
+func TestClusterCommonLBConfig(t *testing.T) {
+	got := ClusterCommonLBConfig()
+	want := &v2.Cluster_CommonLbConfig{
+		HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+			Value: 0,
+		},
+	}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatal(diff)
+	}
 }
 
 func service(s *v1.Service) dag.TCPService {
