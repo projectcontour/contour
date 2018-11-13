@@ -17,7 +17,9 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	"github.com/envoyproxy/go-control-plane/pkg/util"
 	"github.com/gogo/protobuf/types"
+	"github.com/heptio/contour/internal/dag"
 )
 
 // TLSInspector returns a new TLS inspector listener filter.
@@ -67,6 +69,20 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 				}),
 				"access_log":         accesslog(accessLogPath),
 				"use_remote_address": {Kind: &types.Value_BoolValue{BoolValue: true}}, // TODO(jbeda) should this ever be false?
+			},
+		},
+	}
+}
+
+// TCPProxy creates a new TCPProxy filter.
+func TCPProxy(statPrefix string, service *dag.TCPService, accessLogPath string) listener.Filter {
+	return listener.Filter{
+		Name: util.TCPProxy,
+		Config: &types.Struct{
+			Fields: map[string]*types.Value{
+				"stat_prefix": sv(statPrefix),
+				"cluster":     sv(Clustername(service)),
+				"access_log":  accesslog(accessLogPath),
 			},
 		},
 	}

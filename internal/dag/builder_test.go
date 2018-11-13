@@ -615,6 +615,35 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// ir1a tcp forwards traffic to default/kuard:8080
+	ir1a := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-tcp",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "kuard.example.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName: "secret",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+			Forward: &ingressroutev1.Forward{
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
 	// ir2 is like ir1 but refers to two backend services
 	ir2 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1677,6 +1706,22 @@ func TestDAGInsert(t *testing.T) {
 					),
 				}},
 		},
+		"insert ingressroute with tcp forward": {
+			objs: []interface{}{
+				ir1a, s1, sec1,
+			},
+			want: []Vertex{
+				&SecureVirtualHost{
+					VirtualHost: VirtualHost{
+						Host:  "kuard.example.com",
+						Port:  443,
+						Proxy: tcpService(s1),
+					},
+					Secret:          secret(sec1),
+					MinProtoVersion: auth.TlsParameters_TLSv1_1,
+				},
+			},
+		},
 		"insert ingressroute with prefix rewrite route": {
 			objs: []interface{}{
 				ir10, s1,
@@ -2306,7 +2351,7 @@ func TestDAGInsert(t *testing.T) {
 			}
 
 			opts := []cmp.Option{
-				cmp.AllowUnexported(VirtualHost{}, SecureVirtualHost{}, Route{}, Secret{}),
+				cmp.AllowUnexported(VirtualHost{}, Route{}),
 			}
 			if diff := cmp.Diff(want, got, opts...); diff != "" {
 				t.Fatal(diff)
@@ -3496,6 +3541,14 @@ func route(prefix string, obj interface{}, httpServices ...map[servicemeta]*HTTP
 		panic("only pass one servicemap to route")
 	}
 	return &route
+}
+
+func tcpService(s *v1.Service) *TCPService {
+	return &TCPService{
+		Name:        s.Name,
+		Namespace:   s.Namespace,
+		ServicePort: &s.Spec.Ports[0],
+	}
 }
 
 func httpService(s *v1.Service) *HTTPService {
