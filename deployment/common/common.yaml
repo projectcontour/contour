@@ -59,7 +59,7 @@ spec:
                   properties:
                     secretName:
                       type: string
-                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ # DNS-1123 subdomain
                     minimumProtocolVersion:
                       type: string
                       enum:
@@ -106,10 +106,10 @@ spec:
                     properties:
                       name:
                         type: string
-                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123
+                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ # DNS-1123 subdomain
                       namespace:
                         type: string
-                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123
+                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123 label
                   services:
                     type: array
                     items:
@@ -120,7 +120,7 @@ spec:
                       properties:
                         name:
                           type: string
-                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123
+                          pattern: ^[a-z]([-a-z0-9]*[a-z0-9])?$ # DNS-1035 label
                         port:
                           type: integer
                         weight:
