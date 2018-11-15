@@ -79,13 +79,15 @@ func TestVisitClusters(t *testing.T) {
 }
 
 func TestVisitListeners(t *testing.T) {
-	s1 := &dag.TCPService{
-		Name:      "example",
-		Namespace: "default",
-		ServicePort: &v1.ServicePort{
-			Protocol:   "TCP",
-			Port:       443,
-			TargetPort: intstr.FromInt(8443),
+	p1 := &dag.TCPProxy{
+		TCPService: &dag.TCPService{
+			Name:      "example",
+			Namespace: "default",
+			ServicePort: &v1.ServicePort{
+				Protocol:   "TCP",
+				Port:       443,
+				TargetPort: intstr.FromInt(8443),
+			},
 		},
 	}
 
@@ -96,11 +98,9 @@ func TestVisitListeners(t *testing.T) {
 		"TCPService forward": {
 			root: &dag.SecureVirtualHost{
 				VirtualHost: dag.VirtualHost{
-					Port: 443,
-					Host: "tcpproxy.example.com",
-					TCPProxy: &dag.TCPProxy{
-						TCPService: s1,
-					},
+					Port:     443,
+					Host:     "tcpproxy.example.com",
+					TCPProxy: p1,
 				},
 				Secret: &dag.Secret{
 					Object: &v1.Secret{
@@ -122,7 +122,7 @@ func TestVisitListeners(t *testing.T) {
 							ServerNames: []string{"tcpproxy.example.com"},
 						},
 						TlsContext: tlscontext(auth.TlsParameters_TLSv1_1),
-						Filters:    filters(envoy.TCPProxy(ENVOY_HTTPS_LISTENER, s1, DEFAULT_HTTPS_ACCESS_LOG)),
+						Filters:    filters(envoy.TCPProxy(ENVOY_HTTPS_LISTENER, p1, DEFAULT_HTTPS_ACCESS_LOG)),
 					}},
 					ListenerFilters: []listener.ListenerFilter{
 						envoy.TLSInspector(),
