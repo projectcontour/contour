@@ -24,10 +24,6 @@ import (
 
 // ClusterCache manages the contents of the gRPC CDS cache.
 type ClusterCache struct {
-	clusterCache
-}
-
-type clusterCache struct {
 	mu      sync.Mutex
 	values  map[string]*v2.Cluster
 	waiters []chan int
@@ -42,7 +38,7 @@ type clusterCache struct {
 //
 // Sends by the broadcaster to ch must not block, therefor ch must have a capacity
 // of at least 1.
-func (c *clusterCache) Register(ch chan int, last int) {
+func (c *ClusterCache) Register(ch chan int, last int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -55,7 +51,7 @@ func (c *clusterCache) Register(ch chan int, last int) {
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *clusterCache) Update(v map[string]*v2.Cluster) {
+func (c *ClusterCache) Update(v map[string]*v2.Cluster) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -64,7 +60,7 @@ func (c *clusterCache) Update(v map[string]*v2.Cluster) {
 }
 
 // notify notifies all registered waiters that an event has occurred.
-func (c *clusterCache) notify() {
+func (c *ClusterCache) notify() {
 	c.last++
 
 	for _, ch := range c.waiters {
@@ -74,7 +70,7 @@ func (c *clusterCache) notify() {
 }
 
 // Values returns a slice of the value stored in the cache.
-func (c *clusterCache) Values(filter func(string) bool) []proto.Message {
+func (c *ClusterCache) Values(filter func(string) bool) []proto.Message {
 	c.mu.Lock()
 	values := make([]proto.Message, 0, len(c.values))
 	for _, v := range c.values {
@@ -86,18 +82,17 @@ func (c *clusterCache) Values(filter func(string) bool) []proto.Message {
 	return values
 }
 
-// clusterVisitor walks a *dag.DAG and produces a map of *v2.Clusters.
 type clusterVisitor struct {
-	*ClusterCache
-	dag.Visitable
-
 	clusters map[string]*v2.Cluster
 }
 
-func (v *clusterVisitor) Visit() map[string]*v2.Cluster {
-	v.clusters = make(map[string]*v2.Cluster)
-	v.Visitable.Visit(v.visit)
-	return v.clusters
+// visitCluster produces a map of *v2.Clusters.
+func visitClusters(root dag.Vertex) map[string]*v2.Cluster {
+	cv := clusterVisitor{
+		clusters: make(map[string]*v2.Cluster),
+	}
+	cv.visit(root)
+	return cv.clusters
 }
 
 func (v *clusterVisitor) visit(vertex dag.Vertex) {

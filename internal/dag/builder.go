@@ -242,7 +242,7 @@ func (b *builder) lookupSecret(m meta) *Secret {
 		return nil
 	}
 	s := &Secret{
-		object: sec,
+		Object: sec,
 	}
 	if b.secrets == nil {
 		b.secrets = make(map[meta]*Secret)

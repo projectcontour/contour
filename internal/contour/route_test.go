@@ -33,7 +33,6 @@ import (
 
 func TestRouteVisit(t *testing.T) {
 	tests := map[string]struct {
-		*RouteCache
 		objs []interface{}
 		want map[string]*v2.RouteConfiguration
 	}{
@@ -1701,15 +1700,8 @@ func TestRouteVisit(t *testing.T) {
 			for _, o := range tc.objs {
 				reh.OnAdd(o)
 			}
-			rc := tc.RouteCache
-			if rc == nil {
-				rc = new(RouteCache)
-			}
-			v := routeVisitor{
-				RouteCache: rc,
-				Visitable:  reh.Build(),
-			}
-			got := v.Visit()
+			root := reh.Build()
+			got := visitRoutes(root)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}

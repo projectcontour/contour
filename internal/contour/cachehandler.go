@@ -26,6 +26,7 @@ import (
 
 // CacheHandler manages the state of xDS caches.
 type CacheHandler struct {
+	ListenerVisitorConfig
 	ListenerCache
 	RouteCache
 	ClusterCache
@@ -59,29 +60,19 @@ func (ch *CacheHandler) setIngressRouteStatus(st statusable) {
 	}
 }
 
-func (ch *CacheHandler) updateListeners(v dag.Visitable) {
-	lv := listenerVisitor{
-		ListenerCache: &ch.ListenerCache,
-		Visitable:     v,
-	}
-	ch.ListenerCache.Update(lv.Visit())
+func (ch *CacheHandler) updateListeners(root dag.Visitable) {
+	listeners := visitListeners(root, &ch.ListenerVisitorConfig)
+	ch.ListenerCache.Update(listeners)
 }
 
-func (ch *CacheHandler) updateRoutes(v dag.Visitable) {
-	rv := routeVisitor{
-		RouteCache: &ch.RouteCache,
-		Visitable:  v,
-	}
-	routes := rv.Visit()
+func (ch *CacheHandler) updateRoutes(root dag.Visitable) {
+	routes := visitRoutes(root)
 	ch.RouteCache.Update(routes)
 }
 
-func (ch *CacheHandler) updateClusters(v dag.Visitable) {
-	cv := clusterVisitor{
-		ClusterCache: &ch.ClusterCache,
-		Visitable:    v,
-	}
-	ch.clusterCache.Update(cv.Visit())
+func (ch *CacheHandler) updateClusters(root dag.Visitable) {
+	clusters := visitClusters(root)
+	ch.ClusterCache.Update(clusters)
 }
 
 func (ch *CacheHandler) updateIngressRouteMetric(st statusable) {

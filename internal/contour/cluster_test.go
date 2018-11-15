@@ -782,11 +782,8 @@ func TestClusterVisit(t *testing.T) {
 			for _, o := range tc.objs {
 				reh.OnAdd(o)
 			}
-			v := clusterVisitor{
-				ClusterCache: new(ClusterCache),
-				Visitable:    reh.Build(),
-			}
-			got := v.Visit()
+			root := reh.Build()
+			got := visitClusters(root)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}

@@ -27,10 +27,6 @@ import (
 
 // RouteCache manages the contents of the gRPC RDS cache.
 type RouteCache struct {
-	routeCache
-}
-
-type routeCache struct {
 	mu      sync.Mutex
 	values  map[string]*v2.RouteConfiguration
 	waiters []chan int
@@ -45,7 +41,7 @@ type routeCache struct {
 //
 // Sends by the broadcaster to ch must not block, therefor ch must have a capacity
 // of at least 1.
-func (c *routeCache) Register(ch chan int, last int) {
+func (c *RouteCache) Register(ch chan int, last int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -58,7 +54,7 @@ func (c *routeCache) Register(ch chan int, last int) {
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *routeCache) Update(v map[string]*v2.RouteConfiguration) {
+func (c *RouteCache) Update(v map[string]*v2.RouteConfiguration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -67,7 +63,7 @@ func (c *routeCache) Update(v map[string]*v2.RouteConfiguration) {
 }
 
 // notify notifies all registered waiters that an event has occurred.
-func (c *routeCache) notify() {
+func (c *RouteCache) notify() {
 	c.last++
 
 	for _, ch := range c.waiters {
@@ -77,7 +73,7 @@ func (c *routeCache) notify() {
 }
 
 // Values returns a slice of the value stored in the cache.
-func (c *routeCache) Values(filter func(string) bool) []proto.Message {
+func (c *RouteCache) Values(filter func(string) bool) []proto.Message {
 	c.mu.Lock()
 	values := make([]proto.Message, 0, len(c.values))
 	for _, v := range c.values {
@@ -90,87 +86,90 @@ func (c *routeCache) Values(filter func(string) bool) []proto.Message {
 }
 
 type routeVisitor struct {
-	*RouteCache
-	dag.Visitable
+	routes map[string]*v2.RouteConfiguration
 }
 
-func (v *routeVisitor) Visit() map[string]*v2.RouteConfiguration {
-	ingress_http := &v2.RouteConfiguration{
-		Name: "ingress_http",
+func visitRoutes(root dag.Vertex) map[string]*v2.RouteConfiguration {
+	rv := routeVisitor{
+		routes: map[string]*v2.RouteConfiguration{
+			"ingress_http": {
+				Name: "ingress_http",
+			},
+			"ingress_https": {
+				Name: "ingress_https",
+			},
+		},
 	}
-	ingress_https := &v2.RouteConfiguration{
-		Name: "ingress_https",
-	}
-	m := map[string]*v2.RouteConfiguration{
-		ingress_http.Name:  ingress_http,
-		ingress_https.Name: ingress_https,
-	}
-	v.Visitable.Visit(func(vh dag.Vertex) {
-		switch vh := vh.(type) {
-		case *dag.VirtualHost:
-			vhost := envoy.VirtualHost(vh.Host, 80)
-			vh.Visit(func(r dag.Vertex) {
-				switch r := r.(type) {
-				case *dag.Route:
-					var svcs []*dag.HTTPService
-					r.Visit(func(s dag.Vertex) {
-						if s, ok := s.(*dag.HTTPService); ok {
-							svcs = append(svcs, s)
-						}
-					})
-					if len(svcs) < 1 {
-						// no services for this route, skip it.
-						return
-					}
-					rr := route.Route{
-						Match:  envoy.PrefixMatch(r.Prefix),
-						Action: envoy.RouteRoute(r, svcs),
-					}
-
-					if r.HTTPSUpgrade {
-						rr.Action = envoy.UpgradeHTTPS()
-					}
-					vhost.Routes = append(vhost.Routes, rr)
-				}
-			})
-			if len(vhost.Routes) < 1 {
-				return
-			}
-			sort.Stable(sort.Reverse(longestRouteFirst(vhost.Routes)))
-			ingress_http.VirtualHosts = append(ingress_http.VirtualHosts, vhost)
-		case *dag.SecureVirtualHost:
-			vhost := envoy.VirtualHost(vh.Host, 443)
-			vh.Visit(func(r dag.Vertex) {
-				switch r := r.(type) {
-				case *dag.Route:
-					var svcs []*dag.HTTPService
-					r.Visit(func(s dag.Vertex) {
-						if s, ok := s.(*dag.HTTPService); ok {
-							svcs = append(svcs, s)
-						}
-					})
-					if len(svcs) < 1 {
-						// no services for this route, skip it.
-						return
-					}
-					vhost.Routes = append(vhost.Routes, route.Route{
-						Match:  envoy.PrefixMatch(r.Prefix),
-						Action: envoy.RouteRoute(r, svcs),
-					})
-				}
-			})
-			if len(vhost.Routes) < 1 {
-				return
-			}
-			sort.Stable(sort.Reverse(longestRouteFirst(vhost.Routes)))
-			ingress_https.VirtualHosts = append(ingress_https.VirtualHosts, vhost)
-		}
-	})
-
-	for _, v := range m {
+	rv.visit(root)
+	for _, v := range rv.routes {
 		sort.Stable(virtualHostsByName(v.VirtualHosts))
 	}
-	return m
+	return rv.routes
+}
+
+func (v *routeVisitor) visit(vertex dag.Vertex) {
+	switch vh := vertex.(type) {
+	case *dag.VirtualHost:
+		vhost := envoy.VirtualHost(vh.Host, 80)
+		vh.Visit(func(r dag.Vertex) {
+			switch r := r.(type) {
+			case *dag.Route:
+				var svcs []*dag.HTTPService
+				r.Visit(func(s dag.Vertex) {
+					if s, ok := s.(*dag.HTTPService); ok {
+						svcs = append(svcs, s)
+					}
+				})
+				if len(svcs) < 1 {
+					// no services for this route, skip it.
+					return
+				}
+				rr := route.Route{
+					Match:  envoy.PrefixMatch(r.Prefix),
+					Action: envoy.RouteRoute(r, svcs),
+				}
+
+				if r.HTTPSUpgrade {
+					rr.Action = envoy.UpgradeHTTPS()
+				}
+				vhost.Routes = append(vhost.Routes, rr)
+			}
+		})
+		if len(vhost.Routes) < 1 {
+			return
+		}
+		sort.Stable(sort.Reverse(longestRouteFirst(vhost.Routes)))
+		v.routes["ingress_http"].VirtualHosts = append(v.routes["ingress_http"].VirtualHosts, vhost)
+	case *dag.SecureVirtualHost:
+		vhost := envoy.VirtualHost(vh.Host, 443)
+		vh.Visit(func(r dag.Vertex) {
+			switch r := r.(type) {
+			case *dag.Route:
+				var svcs []*dag.HTTPService
+				r.Visit(func(s dag.Vertex) {
+					if s, ok := s.(*dag.HTTPService); ok {
+						svcs = append(svcs, s)
+					}
+				})
+				if len(svcs) < 1 {
+					// no services for this route, skip it.
+					return
+				}
+				vhost.Routes = append(vhost.Routes, route.Route{
+					Match:  envoy.PrefixMatch(r.Prefix),
+					Action: envoy.RouteRoute(r, svcs),
+				})
+			}
+		})
+		if len(vhost.Routes) < 1 {
+			return
+		}
+		sort.Stable(sort.Reverse(longestRouteFirst(vhost.Routes)))
+		v.routes["ingress_https"].VirtualHosts = append(v.routes["ingress_https"].VirtualHosts, vhost)
+	default:
+		// recurse
+		vertex.Visit(v.visit)
+	}
 }
 
 type virtualHostsByName []route.VirtualHost
