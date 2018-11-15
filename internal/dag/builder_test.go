@@ -745,6 +745,30 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// ir7b has TLS and specifies min tls version of 1.0
+	ir7b := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "foo.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName:             "secret",
+					MinimumProtocolVersion: "1.0",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	// ir8 has TLS and specifies min tls version of 1.3
 	ir8 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1822,6 +1846,44 @@ func TestDAGInsert(t *testing.T) {
 						),
 					},
 					MinProtoVersion: auth.TlsParameters_TLSv1_2,
+					Secret:          secret(sec1),
+				}},
+		},
+		"insert ingressroute with tls version 1.0": {
+			objs: []interface{}{
+				ir7b, s1, sec1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Host: "foo.com",
+					Port: 80,
+					routes: routemap(
+						&Route{
+							Prefix: "/",
+							object: ir7b,
+							httpServices: servicemap(
+								httpService(s1),
+							),
+							HTTPSUpgrade: true,
+						},
+					),
+				},
+				&SecureVirtualHost{
+					VirtualHost: VirtualHost{
+						Host: "foo.com",
+						Port: 443,
+						routes: routemap(
+							&Route{
+								Prefix: "/",
+								object: ir7b,
+								httpServices: servicemap(
+									httpService(s1),
+								),
+								HTTPSUpgrade: true,
+							},
+						),
+					},
+					MinProtoVersion: auth.TlsParameters_TLSv1_0,
 					Secret:          secret(sec1),
 				}},
 		},

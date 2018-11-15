@@ -394,6 +394,8 @@ func (b *builder) compute() *DAG {
 					svhost.MinProtoVersion = auth.TlsParameters_TLSv1_3
 				case "1.2":
 					svhost.MinProtoVersion = auth.TlsParameters_TLSv1_2
+				case "1.0":
+					svhost.MinProtoVersion = auth.TlsParameters_TLSv1_0
 				default:
 					// any other value is interpreted as TLS/1.1
 					svhost.MinProtoVersion = auth.TlsParameters_TLSv1_1
