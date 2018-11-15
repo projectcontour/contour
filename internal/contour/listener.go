@@ -185,59 +185,74 @@ func (c *listenerCache) Values(filter func(string) bool) []proto.Message {
 type listenerVisitor struct {
 	*ListenerCache
 	dag.Visitable
+
+	listeners map[string]*v2.Listener
+	http      bool // at least one dag.VirtualHost encountered
 }
 
-func (v *listenerVisitor) Visit() map[string]*v2.Listener {
-	m := make(map[string]*v2.Listener)
-	http := 0
-	ingress_https := v2.Listener{
-		Name:    ENVOY_HTTPS_LISTENER,
-		Address: envoy.SocketAddress(v.httpsAddress(), v.httpsPort()),
-		ListenerFilters: []listener.ListenerFilter{
-			envoy.TLSInspector(),
+func visitListeners(root dag.Vertex, lc *ListenerCache) map[string]*v2.Listener {
+	lv := listenerVisitor{
+		ListenerCache: lc,
+		listeners: map[string]*v2.Listener{
+			ENVOY_HTTP_LISTENER: {
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy.SocketAddress(lc.httpAddress(), lc.httpPort()),
+				FilterChains: []listener.FilterChain{{
+					Filters: []listener.Filter{
+						envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, lc.httpAccessLog()),
+					},
+					UseProxyProto: bv(lc.UseProxyProto),
+				}},
+			},
+			ENVOY_HTTPS_LISTENER: {
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: envoy.SocketAddress(lc.httpsAddress(), lc.httpsPort()),
+				ListenerFilters: []listener.ListenerFilter{
+					envoy.TLSInspector(),
+				},
+			},
 		},
 	}
-	filters := []listener.Filter{
-		envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.httpsAccessLog()),
+	lv.visit(root)
+
+	if !lv.http {
+		delete(lv.listeners, ENVOY_HTTP_LISTENER)
 	}
-	v.Visitable.Visit(func(vh dag.Vertex) {
-		switch vh := vh.(type) {
-		case *dag.VirtualHost:
-			// we only create on http listener so record the fact
-			// that we need to then double back at the end and add
-			// the listener properly.
-			http++
-		case *dag.SecureVirtualHost:
-			data := vh.Data()
-			if data == nil {
-				// no secret for this vhost, skip it
-				return
-			}
-			fc := listener.FilterChain{
-				FilterChainMatch: &listener.FilterChainMatch{
-					ServerNames: []string{vh.Host},
-				},
-				TlsContext:    envoy.DownstreamTLSContext(data[v1.TLSCertKey], data[v1.TLSPrivateKeyKey], vh.MinProtoVersion, "h2", "http/1.1"),
-				Filters:       filters,
-				UseProxyProto: bv(v.UseProxyProto),
-			}
-			ingress_https.FilterChains = append(ingress_https.FilterChains, fc)
+	if len(lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains) == 0 {
+		delete(lv.listeners, ENVOY_HTTPS_LISTENER)
+	}
+	return lv.listeners
+}
+
+func (v *listenerVisitor) visit(vertex dag.Vertex) {
+	switch vh := vertex.(type) {
+	case *dag.VirtualHost:
+		// we only create on http listener so record the fact
+		// that we need to then double back at the end and add
+		// the listener properly.
+		v.http = true
+	case *dag.SecureVirtualHost:
+		data := vh.Data()
+		if data == nil {
+			// no secret for this vhost, skip it
+			return
 		}
-	})
-	if http > 0 {
-		m[ENVOY_HTTP_LISTENER] = &v2.Listener{
-			Name:    ENVOY_HTTP_LISTENER,
-			Address: envoy.SocketAddress(v.httpAddress(), v.httpPort()),
-			FilterChains: []listener.FilterChain{{
-				Filters: []listener.Filter{
-					envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, v.httpAccessLog()),
-				},
-				UseProxyProto: bv(v.UseProxyProto),
-			}},
+		filters := []listener.Filter{
+			envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.httpsAccessLog()),
 		}
+		alpnProtos := []string{"h2", "http/1.1"}
+
+		fc := listener.FilterChain{
+			FilterChainMatch: &listener.FilterChainMatch{
+				ServerNames: []string{vh.Host},
+			},
+			TlsContext:    envoy.DownstreamTLSContext(data[v1.TLSCertKey], data[v1.TLSPrivateKeyKey], vh.MinProtoVersion, alpnProtos...),
+			Filters:       filters,
+			UseProxyProto: bv(v.UseProxyProto),
+		}
+		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains, fc)
+	default:
+		// recurse
+		vertex.Visit(v.visit)
 	}
-	if len(ingress_https.FilterChains) > 0 {
-		m[ENVOY_HTTPS_LISTENER] = &ingress_https
-	}
-	return m
 }

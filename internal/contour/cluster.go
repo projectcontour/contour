@@ -86,18 +86,17 @@ func (c *clusterCache) Values(filter func(string) bool) []proto.Message {
 	return values
 }
 
-// clusterVisitor walks a *dag.DAG and produces a map of *v2.Clusters.
 type clusterVisitor struct {
-	*ClusterCache
-	dag.Visitable
-
 	clusters map[string]*v2.Cluster
 }
 
-func (v *clusterVisitor) Visit() map[string]*v2.Cluster {
-	v.clusters = make(map[string]*v2.Cluster)
-	v.Visitable.Visit(v.visit)
-	return v.clusters
+// visitCluster produces a map of *v2.Clusters.
+func visitClusters(root dag.Vertex) map[string]*v2.Cluster {
+	cv := clusterVisitor{
+		clusters: make(map[string]*v2.Cluster),
+	}
+	cv.visit(root)
+	return cv.clusters
 }
 
 func (v *clusterVisitor) visit(vertex dag.Vertex) {

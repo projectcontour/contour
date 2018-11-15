@@ -3526,6 +3526,6 @@ func (s statusByNamespaceAndName) Less(i, j int) bool {
 
 func secret(s *v1.Secret) *Secret {
 	return &Secret{
-		object: s,
+		Object: s,
 	}
 }

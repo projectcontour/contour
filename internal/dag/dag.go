@@ -223,21 +223,21 @@ type HTTPService struct {
 // Secret represents a K8s Secret for TLS usage as a DAG Vertex. A Secret is
 // a leaf in the DAG.
 type Secret struct {
-	object *v1.Secret
+	Object *v1.Secret
 }
 
-func (s *Secret) Name() string       { return s.object.Name }
-func (s *Secret) Namespace() string  { return s.object.Namespace }
+func (s *Secret) Name() string       { return s.Object.Name }
+func (s *Secret) Namespace() string  { return s.Object.Namespace }
 func (s *Secret) Visit(func(Vertex)) {}
 
 // Data returns the contents of the backing secret's map.
 func (s *Secret) Data() map[string][]byte {
-	return s.object.Data
+	return s.Object.Data
 }
 
 func (s *Secret) toMeta() meta {
 	return meta{
-		name:      s.object.Name,
-		namespace: s.object.Namespace,
+		name:      s.Name(),
+		namespace: s.Namespace(),
 	}
 }
