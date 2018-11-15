@@ -596,7 +596,7 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("tcpforward: service %s/%s: not found", ir.Namespace, service.Name), Vhost: host})
 			return
 		}
-		b.lookupSecureVirtualHost(host, 443).VirtualHost.Proxy = s
+		b.lookupSecureVirtualHost(host, 443).VirtualHost.TCPProxy = &TCPProxy{TCPService: s}
 		b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
 		// spec.forward implies spec.routes is ignored
 		return

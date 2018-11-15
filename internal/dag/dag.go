@@ -103,10 +103,12 @@ type VirtualHost struct {
 	// if the VirtualHost is generated inside Contour.
 	Port int
 
+	// Host name
 	Host   string
 	routes map[string]*Route
 
-	Proxy *TCPService
+	// Service to TCP proxy all incoming connections.
+	*TCPProxy
 }
 
 func (v *VirtualHost) addRoute(route *Route) {
@@ -120,8 +122,8 @@ func (v *VirtualHost) Visit(f func(Vertex)) {
 	for _, r := range v.routes {
 		f(r)
 	}
-	if v.Proxy != nil {
-		f(v.Proxy)
+	if v.TCPProxy != nil {
+		f(v.TCPProxy)
 	}
 }
 
@@ -152,6 +154,17 @@ type Vertex interface {
 type Service interface {
 	Vertex
 	toMeta() servicemeta
+}
+
+// TCPProxy represents a cluster of TCP endpoints.
+type TCPProxy struct {
+
+	// Service to proxy decrypted traffic to.
+	*TCPService
+}
+
+func (t *TCPProxy) Visit(f func(Vertex)) {
+	f(t.TCPService)
 }
 
 // TCPService represents a Kuberentes Service that speaks TCP. That's all we know.

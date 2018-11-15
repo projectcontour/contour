@@ -1713,9 +1713,11 @@ func TestDAGInsert(t *testing.T) {
 			want: []Vertex{
 				&SecureVirtualHost{
 					VirtualHost: VirtualHost{
-						Host:  "kuard.example.com",
-						Port:  443,
-						Proxy: tcpService(s1),
+						Host: "kuard.example.com",
+						Port: 443,
+						TCPProxy: &TCPProxy{
+							TCPService: tcpService(s1),
+						},
 					},
 					Secret:          secret(sec1),
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
