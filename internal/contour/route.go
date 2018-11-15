@@ -27,10 +27,6 @@ import (
 
 // RouteCache manages the contents of the gRPC RDS cache.
 type RouteCache struct {
-	routeCache
-}
-
-type routeCache struct {
 	mu      sync.Mutex
 	values  map[string]*v2.RouteConfiguration
 	waiters []chan int
@@ -45,7 +41,7 @@ type routeCache struct {
 //
 // Sends by the broadcaster to ch must not block, therefor ch must have a capacity
 // of at least 1.
-func (c *routeCache) Register(ch chan int, last int) {
+func (c *RouteCache) Register(ch chan int, last int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -58,7 +54,7 @@ func (c *routeCache) Register(ch chan int, last int) {
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *routeCache) Update(v map[string]*v2.RouteConfiguration) {
+func (c *RouteCache) Update(v map[string]*v2.RouteConfiguration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -67,7 +63,7 @@ func (c *routeCache) Update(v map[string]*v2.RouteConfiguration) {
 }
 
 // notify notifies all registered waiters that an event has occurred.
-func (c *routeCache) notify() {
+func (c *RouteCache) notify() {
 	c.last++
 
 	for _, ch := range c.waiters {
@@ -77,7 +73,7 @@ func (c *routeCache) notify() {
 }
 
 // Values returns a slice of the value stored in the cache.
-func (c *routeCache) Values(filter func(string) bool) []proto.Message {
+func (c *RouteCache) Values(filter func(string) bool) []proto.Message {
 	c.mu.Lock()
 	values := make([]proto.Message, 0, len(c.values))
 	for _, v := range c.values {

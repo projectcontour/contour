@@ -35,8 +35,8 @@ const (
 	DEFAULT_HTTPS_LISTENER_PORT    = 8443
 )
 
-// ListenerCache manages the contents of the gRPC LDS cache.
-type ListenerCache struct {
+// ListenerVisitorConfig holds configuration parameters for visitListeners.
+type ListenerVisitorConfig struct {
 	// Envoy's HTTP (non TLS) listener address.
 	// If not set, defaults to DEFAULT_HTTP_LISTENER_ADDRESS.
 	HTTPAddress string
@@ -65,65 +65,64 @@ type ListenerCache struct {
 	// V1 header on new connections.
 	// If not set, defaults to false.
 	UseProxyProto bool
-
-	listenerCache
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
 // listener or DEFAULT_HTTP_LISTENER_ADDRESS if not configured.
-func (lc *ListenerCache) httpAddress() string {
-	if lc.HTTPAddress != "" {
-		return lc.HTTPAddress
+func (lvc *ListenerVisitorConfig) httpAddress() string {
+	if lvc.HTTPAddress != "" {
+		return lvc.HTTPAddress
 	}
 	return DEFAULT_HTTP_LISTENER_ADDRESS
 }
 
 // httpPort returns the port for the HTTP (non TLS)
 // listener or DEFAULT_HTTP_LISTENER_PORT if not configured.
-func (lc *ListenerCache) httpPort() int {
-	if lc.HTTPPort != 0 {
-		return lc.HTTPPort
+func (lvc *ListenerVisitorConfig) httpPort() int {
+	if lvc.HTTPPort != 0 {
+		return lvc.HTTPPort
 	}
 	return DEFAULT_HTTP_LISTENER_PORT
 }
 
 // httpAccessLog returns the access log for the HTTP (non TLS)
 // listener or DEFAULT_HTTP_ACCESS_LOG if not configured.
-func (lc *ListenerCache) httpAccessLog() string {
-	if lc.HTTPAccessLog != "" {
-		return lc.HTTPAccessLog
+func (lvc *ListenerVisitorConfig) httpAccessLog() string {
+	if lvc.HTTPAccessLog != "" {
+		return lvc.HTTPAccessLog
 	}
 	return DEFAULT_HTTP_ACCESS_LOG
 }
 
 // httpsAddress returns the port for the HTTPS (TLS)
 // listener or DEFAULT_HTTPS_LISTENER_ADDRESS if not configured.
-func (lc *ListenerCache) httpsAddress() string {
-	if lc.HTTPSAddress != "" {
-		return lc.HTTPSAddress
+func (lvc *ListenerVisitorConfig) httpsAddress() string {
+	if lvc.HTTPSAddress != "" {
+		return lvc.HTTPSAddress
 	}
 	return DEFAULT_HTTPS_LISTENER_ADDRESS
 }
 
 // httpsPort returns the port for the HTTPS (TLS) listener
 // or DEFAULT_HTTPS_LISTENER_PORT if not configured.
-func (lc *ListenerCache) httpsPort() int {
-	if lc.HTTPSPort != 0 {
-		return lc.HTTPSPort
+func (lvc *ListenerVisitorConfig) httpsPort() int {
+	if lvc.HTTPSPort != 0 {
+		return lvc.HTTPSPort
 	}
 	return DEFAULT_HTTPS_LISTENER_PORT
 }
 
 // httpsAccessLog returns the access log for the HTTPS (TLS)
 // listener or DEFAULT_HTTPS_ACCESS_LOG if not configured.
-func (lc *ListenerCache) httpsAccessLog() string {
-	if lc.HTTPSAccessLog != "" {
-		return lc.HTTPSAccessLog
+func (lvc *ListenerVisitorConfig) httpsAccessLog() string {
+	if lvc.HTTPSAccessLog != "" {
+		return lvc.HTTPSAccessLog
 	}
 	return DEFAULT_HTTPS_ACCESS_LOG
 }
 
-type listenerCache struct {
+// ListenerCache manages the contents of the gRPC LDS cache.
+type ListenerCache struct {
 	mu      sync.Mutex
 	values  map[string]*v2.Listener
 	waiters []chan int
@@ -138,7 +137,7 @@ type listenerCache struct {
 //
 // Sends by the broadcaster to ch must not block, therefor ch must have a capacity
 // of at least 1.
-func (c *listenerCache) Register(ch chan int, last int) {
+func (c *ListenerCache) Register(ch chan int, last int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -151,7 +150,7 @@ func (c *listenerCache) Register(ch chan int, last int) {
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *listenerCache) Update(v map[string]*v2.Listener) {
+func (c *ListenerCache) Update(v map[string]*v2.Listener) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -160,7 +159,7 @@ func (c *listenerCache) Update(v map[string]*v2.Listener) {
 }
 
 // notify notifies all registered waiters that an event has occurred.
-func (c *listenerCache) notify() {
+func (c *ListenerCache) notify() {
 	c.last++
 
 	for _, ch := range c.waiters {
@@ -170,7 +169,7 @@ func (c *listenerCache) notify() {
 }
 
 // Values returns a slice of the value stored in the cache.
-func (c *listenerCache) Values(filter func(string) bool) []proto.Message {
+func (c *ListenerCache) Values(filter func(string) bool) []proto.Message {
 	c.mu.Lock()
 	values := make([]proto.Message, 0, len(c.values))
 	for _, v := range c.values {
@@ -183,30 +182,30 @@ func (c *listenerCache) Values(filter func(string) bool) []proto.Message {
 }
 
 type listenerVisitor struct {
-	*ListenerCache
+	*ListenerVisitorConfig
 	dag.Visitable
 
 	listeners map[string]*v2.Listener
 	http      bool // at least one dag.VirtualHost encountered
 }
 
-func visitListeners(root dag.Vertex, lc *ListenerCache) map[string]*v2.Listener {
+func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.Listener {
 	lv := listenerVisitor{
-		ListenerCache: lc,
+		ListenerVisitorConfig: lvc,
 		listeners: map[string]*v2.Listener{
 			ENVOY_HTTP_LISTENER: {
 				Name:    ENVOY_HTTP_LISTENER,
-				Address: envoy.SocketAddress(lc.httpAddress(), lc.httpPort()),
+				Address: envoy.SocketAddress(lvc.httpAddress(), lvc.httpPort()),
 				FilterChains: []listener.FilterChain{{
 					Filters: []listener.Filter{
-						envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, lc.httpAccessLog()),
+						envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, lvc.httpAccessLog()),
 					},
-					UseProxyProto: bv(lc.UseProxyProto),
+					UseProxyProto: bv(lvc.UseProxyProto),
 				}},
 			},
 			ENVOY_HTTPS_LISTENER: {
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoy.SocketAddress(lc.httpsAddress(), lc.httpsPort()),
+				Address: envoy.SocketAddress(lvc.httpsAddress(), lvc.httpsPort()),
 				ListenerFilters: []listener.ListenerFilter{
 					envoy.TLSInspector(),
 				},

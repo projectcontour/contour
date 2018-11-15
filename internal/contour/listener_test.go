@@ -32,7 +32,7 @@ import (
 
 func TestListenerVisit(t *testing.T) {
 	tests := map[string]struct {
-		*ListenerCache
+		ListenerVisitorConfig
 		objs []interface{}
 		want map[string]*v2.Listener
 	}{
@@ -296,7 +296,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"http listener on non default port": { // issue 72
-			ListenerCache: &ListenerCache{
+			ListenerVisitorConfig: ListenerVisitorConfig{
 				HTTPAddress:  "127.0.0.100",
 				HTTPPort:     9100,
 				HTTPSAddress: "127.0.0.200",
@@ -349,7 +349,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"use proxy proto": {
-			ListenerCache: &ListenerCache{
+			ListenerVisitorConfig: ListenerVisitorConfig{
 				UseProxyProto: true,
 			},
 			objs: []interface{}{
@@ -410,12 +410,8 @@ func TestListenerVisit(t *testing.T) {
 			for _, o := range tc.objs {
 				reh.OnAdd(o)
 			}
-			lc := tc.ListenerCache
-			if lc == nil {
-				lc = new(ListenerCache)
-			}
 			root := reh.Build()
-			got := visitListeners(root, lc)
+			got := visitListeners(root, &tc.ListenerVisitorConfig)
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.want, got)
 			}
