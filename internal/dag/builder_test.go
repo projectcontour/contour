@@ -635,7 +635,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 				}},
 			}},
-			Forward: &ingressroutev1.Forward{
+			TCPProxy: &ingressroutev1.TCPProxy{
 				Services: []ingressroutev1.Service{{
 					Name: "kuard",
 					Port: 8080,

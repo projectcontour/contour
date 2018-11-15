@@ -585,9 +585,11 @@ func (b *builder) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, enforceTLS bool) {
 	visited = append(visited, ir)
 
-	forward := ir.Spec.Forward
-	if forward != nil && enforceTLS && len(forward.Services) > 0 {
-		service := forward.Services[0]
+	proxy := ir.Spec.TCPProxy
+	if proxy != nil && enforceTLS && len(proxy.Services) > 0 {
+
+		// TODO(dfc) support TCPWeightedCluster
+		service := proxy.Services[0]
 		m := meta{name: service.Name, namespace: ir.Namespace}
 		s := b.lookupTCPService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck)
 		if s == nil {

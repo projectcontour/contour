@@ -1002,7 +1002,7 @@ func TestLDSIngressRouteTCPForward(t *testing.T) {
 					Port: 80,
 				}},
 			}},
-			Forward: &ingressroutev1.Forward{
+			TCPProxy: &ingressroutev1.TCPProxy{
 				Services: []ingressroutev1.Service{{
 					Name: "correct-backend",
 					Port: 80,

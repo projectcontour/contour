@@ -24,8 +24,8 @@ type IngressRouteSpec struct {
 	VirtualHost *VirtualHost `json:"virtualhost,omitempty"`
 	// Routes are the ingress routes. If Forward is present, Routes is ignored.
 	Routes []Route `json:"routes"`
-	// Forward holds TCP forwarding information.
-	Forward *Forward `json:"forward,omitempty"`
+	// TCPProxy holds TCP proxy information.
+	TCPProxy *TCPProxy `json:"tcpproxy,omitempty"`
 }
 
 // VirtualHost appears at most once. If it is present, the object is considered
@@ -67,8 +67,8 @@ type Route struct {
 	PrefixRewrite string `json:"prefixRewrite,omitempty"`
 }
 
-// Forward contains the set of services to forward TCP sessions.
-type Forward struct {
+// TCPProxy contains the set of services to proxy TCP connections.
+type TCPProxy struct {
 	// Services are the services to proxy traffic
 	Services []Service `json:"services,omitempty"`
 }

@@ -742,6 +742,47 @@ IngressRoutes with a defined `virtualhost` field that are not in one of the allo
 > **NOTE: The restricted root namespace feature is only supported for IngressRoute CRDs.
 > `--ingressroute-root-namespaces` does not affect the operation of `v1beta1.Ingress` objects**
 
+## TCP Proxying
+
+Ingressroute supports proxying of TLS encapsulated TCP sessions.
+
+The TCP session must be encrupted with TLS.
+This is necessary so that Envoy can use SNI to route the incoming request to the correct service.
+
+```
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata:
+  name: example
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: tcp.example.com
+    tls:
+      secretName: secret
+  tcpproxy:
+    services:
+    - name: tcpservice
+      port: 8080
+  routes:
+  - match: /
+    services:
+    - name: kuard
+      port: 80
+```
+
+The `spec.tcpproxy` key indicates that this _root_ IngressRoute will forward all de-encrypted TCP traffic to the backedn service.
+
+### Limitations
+
+The current limitations are present in Contour 0.8. These will be addressed in later Contour versions.
+
+- `spec.routes` must be present in the `IngressRoute` document to pass validation, however they are ignored when `spec.tcpproxy` is present.
+- TCP Proxy IngressRoutes must be roots and can not delegate to other IngressRoutes.
+- `spec.tcpproxy.services` supports a list of service name/port pairs, however only the first is recognised.
+- TCP Proxying is not available on Kubernetes Ingress objects.
+- `spec.virtualhost.tls` is required for TCP proxying. If not present, `spec.tcpproxy` will be ignored.
+
 ## Status Reporting
 
 There are many misconfigurations that could cause an IngressRoute or delegation to be invalid.
