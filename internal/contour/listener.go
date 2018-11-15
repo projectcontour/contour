@@ -183,7 +183,6 @@ func (c *ListenerCache) Values(filter func(string) bool) []proto.Message {
 
 type listenerVisitor struct {
 	*ListenerVisitorConfig
-	dag.Visitable
 
 	listeners map[string]*v2.Listener
 	http      bool // at least one dag.VirtualHost encountered
@@ -240,6 +239,12 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.httpsAccessLog()),
 		}
 		alpnProtos := []string{"h2", "http/1.1"}
+		if vh.VirtualHost.TCPProxy != nil {
+			filters = []listener.Filter{
+				envoy.TCPProxy(ENVOY_HTTPS_LISTENER, vh.VirtualHost.TCPProxy, v.httpsAccessLog()),
+			}
+			alpnProtos = nil // do not offer ALPN
+		}
 
 		fc := listener.FilterChain{
 			FilterChainMatch: &listener.FilterChainMatch{

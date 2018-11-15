@@ -17,13 +17,15 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	"github.com/envoyproxy/go-control-plane/pkg/util"
 	"github.com/gogo/protobuf/types"
+	"github.com/heptio/contour/internal/dag"
 )
 
 // TLSInspector returns a new TLS inspector listener filter.
 func TLSInspector() listener.ListenerFilter {
 	return listener.ListenerFilter{
-		Name:   "envoy.listener.tls_inspector",
+		Name:   util.TlsInspector,
 		Config: new(types.Struct),
 	}
 }
@@ -32,7 +34,7 @@ func TLSInspector() listener.ListenerFilter {
 // for the supplied route and access log.
 func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 	return listener.Filter{
-		Name: "envoy.http_connection_manager",
+		Name: util.HTTPConnectionManager,
 		Config: &types.Struct{
 			Fields: map[string]*types.Value{
 				"stat_prefix": sv(routename),
@@ -53,13 +55,13 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 				}),
 				"http_filters": lv(
 					st(map[string]*types.Value{
-						"name": sv("envoy.gzip"),
+						"name": sv(util.Gzip),
 					}),
 					st(map[string]*types.Value{
-						"name": sv("envoy.grpc_web"),
+						"name": sv(util.GRPCWeb),
 					}),
 					st(map[string]*types.Value{
-						"name": sv("envoy.router"),
+						"name": sv(util.Router),
 					}),
 				),
 				"http_protocol_options": st(map[string]*types.Value{
@@ -67,6 +69,20 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 				}),
 				"access_log":         accesslog(accessLogPath),
 				"use_remote_address": {Kind: &types.Value_BoolValue{BoolValue: true}}, // TODO(jbeda) should this ever be false?
+			},
+		},
+	}
+}
+
+// TCPProxy creates a new TCPProxy filter.
+func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) listener.Filter {
+	return listener.Filter{
+		Name: util.TCPProxy,
+		Config: &types.Struct{
+			Fields: map[string]*types.Value{
+				"stat_prefix": sv(statPrefix),
+				"cluster":     sv(Clustername(proxy.TCPService)),
+				"access_log":  accesslog(accessLogPath),
 			},
 		},
 	}
@@ -115,7 +131,7 @@ func DownstreamTLSContext(cert, key []byte, tlsMinProtoVersion auth.TlsParameter
 func accesslog(path string) *types.Value {
 	return lv(
 		st(map[string]*types.Value{
-			"name": sv("envoy.file_access_log"),
+			"name": sv(util.FileAccessLog),
 			"config": st(map[string]*types.Value{
 				"path": sv(path),
 			}),

@@ -179,6 +179,32 @@ func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString, weight int,
 	}
 }
 
+// lookupTCPService returns a TCPService that matches the meta and port supplied.
+func (b *builder) lookupTCPService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) *TCPService {
+	s := b.lookupService(m, port, weight, strategy, hc)
+	switch s := s.(type) {
+	case *TCPService:
+		return s
+	case nil:
+		svc, ok := b.source.services[m]
+		if !ok {
+			return nil
+		}
+		for i := range svc.Spec.Ports {
+			p := &svc.Spec.Ports[i]
+			if int(p.Port) == port.IntValue() {
+				return b.addTCPService(svc, p, weight, strategy, hc)
+			}
+			if port.String() == p.Name {
+				return b.addTCPService(svc, p, weight, strategy, hc)
+			}
+		}
+		return nil
+	default:
+		// some other type
+		return nil
+	}
+}
 func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) Service {
 	if port.Type != intstr.Int {
 		// can't handle, give up
@@ -228,6 +254,27 @@ func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort, weight i
 			HealthCheck:        hc,
 		},
 		Protocol: protocol,
+	}
+	b.services[s.toMeta()] = s
+	return s
+}
+
+func (b *builder) addTCPService(svc *v1.Service, port *v1.ServicePort, weight int, strategy string, hc *ingressroutev1.HealthCheck) *TCPService {
+	if b.services == nil {
+		b.services = make(map[servicemeta]Service)
+	}
+	s := &TCPService{
+		Name:                 svc.Name,
+		Namespace:            svc.Namespace,
+		ServicePort:          port,
+		Weight:               weight,
+		LoadBalancerStrategy: strategy,
+
+		MaxConnections:     parseAnnotation(svc.Annotations, annotationMaxConnections),
+		MaxPendingRequests: parseAnnotation(svc.Annotations, annotationMaxPendingRequests),
+		MaxRequests:        parseAnnotation(svc.Annotations, annotationMaxRequests),
+		MaxRetries:         parseAnnotation(svc.Annotations, annotationMaxRetries),
+		HealthCheck:        hc,
 	}
 	b.services[s.toMeta()] = s
 	return s
@@ -464,20 +511,20 @@ func (b *builder) validIngressRoutes() []*ingressroutev1.IngressRoute {
 	}
 
 	for fqdn, irs := range fqdnIngressroutes {
-		if len(irs) == 1 {
+		switch len(irs) {
+		case 1:
 			valid = append(valid, irs[0])
-			continue
-		}
-
-		// multiple irs use the same fqdn. mark them as invalid.
-		var conflicting []string
-		for _, ir := range irs {
-			conflicting = append(conflicting, fmt.Sprintf("%s/%s", ir.Namespace, ir.Name))
-		}
-		sort.Strings(conflicting) // sort for test stability
-		msg := fmt.Sprintf("fqdn %q is used in multiple IngressRoutes: %s", fqdn, strings.Join(conflicting, ", "))
-		for _, ir := range irs {
-			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: msg, Vhost: fqdn})
+		default:
+			// multiple irs use the same fqdn. mark them as invalid.
+			var conflicting []string
+			for _, ir := range irs {
+				conflicting = append(conflicting, fmt.Sprintf("%s/%s", ir.Namespace, ir.Name))
+			}
+			sort.Strings(conflicting) // sort for test stability
+			msg := fmt.Sprintf("fqdn %q is used in multiple IngressRoutes: %s", fqdn, strings.Join(conflicting, ", "))
+			for _, ir := range irs {
+				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: msg, Vhost: fqdn})
+			}
 		}
 	}
 	return valid
@@ -537,6 +584,23 @@ func (b *builder) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 
 func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, enforceTLS bool) {
 	visited = append(visited, ir)
+
+	proxy := ir.Spec.TCPProxy
+	if proxy != nil && enforceTLS && len(proxy.Services) > 0 {
+
+		// TODO(dfc) support TCPWeightedCluster
+		service := proxy.Services[0]
+		m := meta{name: service.Name, namespace: ir.Namespace}
+		s := b.lookupTCPService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck)
+		if s == nil {
+			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("tcpforward: service %s/%s: not found", ir.Namespace, service.Name), Vhost: host})
+			return
+		}
+		b.lookupSecureVirtualHost(host, 443).VirtualHost.TCPProxy = &TCPProxy{TCPService: s}
+		b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
+		// spec.forward implies spec.routes is ignored
+		return
+	}
 
 	for _, route := range ir.Spec.Routes {
 		// route cannot both delegate and point to services

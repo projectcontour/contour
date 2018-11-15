@@ -22,8 +22,10 @@ type IngressRouteSpec struct {
 	// Virtualhost appears at most once. If it is present, the object is considered
 	// to be a "root".
 	VirtualHost *VirtualHost `json:"virtualhost,omitempty"`
-	// Routes are the ingress routes
+	// Routes are the ingress routes. If Forward is present, Routes is ignored.
 	Routes []Route `json:"routes"`
+	// TCPProxy holds TCP proxy information.
+	TCPProxy *TCPProxy `json:"tcpproxy,omitempty"`
 }
 
 // VirtualHost appears at most once. If it is present, the object is considered
@@ -63,6 +65,12 @@ type Route struct {
 	PermitInsecure bool `json:"permitInsecure,omitempty"`
 	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
 	PrefixRewrite string `json:"prefixRewrite,omitempty"`
+}
+
+// TCPProxy contains the set of services to proxy TCP connections.
+type TCPProxy struct {
+	// Services are the services to proxy traffic
+	Services []Service `json:"services,omitempty"`
 }
 
 // Service defines an upstream to proxy traffic to
