@@ -159,12 +159,14 @@ type Service interface {
 // TCPProxy represents a cluster of TCP endpoints.
 type TCPProxy struct {
 
-	// Service to proxy decrypted traffic to.
-	*TCPService
+	// Services to proxy decrypted traffic to.
+	Services []*TCPService
 }
 
 func (t *TCPProxy) Visit(f func(Vertex)) {
-	f(t.TCPService)
+	for _, s := range t.Services {
+		f(s)
+	}
 }
 
 // TCPService represents a Kuberentes Service that speaks TCP. That's all we know.

@@ -39,7 +39,7 @@ func TestVisitClusters(t *testing.T) {
 					Port: 443,
 					Host: "www.example.com",
 					TCPProxy: &dag.TCPProxy{
-						TCPService: &dag.TCPService{
+						Services: []*dag.TCPService{{
 							Name:      "example",
 							Namespace: "default",
 							ServicePort: &v1.ServicePort{
@@ -47,7 +47,7 @@ func TestVisitClusters(t *testing.T) {
 								Port:       443,
 								TargetPort: intstr.FromInt(8443),
 							},
-						},
+						}},
 					},
 				},
 				Secret: new(dag.Secret),
@@ -80,7 +80,7 @@ func TestVisitClusters(t *testing.T) {
 
 func TestVisitListeners(t *testing.T) {
 	p1 := &dag.TCPProxy{
-		TCPService: &dag.TCPService{
+		Services: []*dag.TCPService{{
 			Name:      "example",
 			Namespace: "default",
 			ServicePort: &v1.ServicePort{
@@ -88,7 +88,7 @@ func TestVisitListeners(t *testing.T) {
 				Port:       443,
 				TargetPort: intstr.FromInt(8443),
 			},
-		},
+		}},
 	}
 
 	tests := map[string]struct {
