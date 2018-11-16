@@ -36,7 +36,7 @@ func TLSInspector() listener.ListenerFilter {
 
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
 // for the supplied route and access log.
-func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
+func HTTPConnectionManager(routename, accessLogPath, rateLimitDomain string, rateLimitStage int, rateLimitFailureModeDeny bool) listener.Filter {
 	return listener.Filter{
 		Name: util.HTTPConnectionManager,
 		ConfigType: &listener.Filter_Config{
@@ -64,6 +64,22 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 						}),
 						st(map[string]*types.Value{
 							"name": sv(util.GRPCWeb),
+						}),
+						st(map[string]*types.Value{
+							"name": sv("envoy.rate_limit"),
+							"config": st(map[string]*types.Value{
+								"domain": sv(rateLimitDomain),
+								"stage": {
+									Kind: &types.Value_NumberValue{
+										NumberValue: float64(rateLimitStage),
+									},
+								},
+								"failure_mode_deny": {
+									Kind: &types.Value_BoolValue{
+										BoolValue: rateLimitFailureModeDeny,
+									},
+								},
+							}),
 						}),
 						st(map[string]*types.Value{
 							"name": sv(util.Router),

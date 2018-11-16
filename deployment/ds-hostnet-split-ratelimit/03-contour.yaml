@@ -50,15 +50,5 @@ spec:
         - containerPort: 8000
           name: debug
           protocol: TCP
-      - name: ratelimit
-        image: gcr.io/heptio-images/contour:master
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 8080
-          name: grpc
-          protocol: TCP
-        - containerPort: 6070
-          name: another
-          protocol: TCP
       dnsPolicy: ClusterFirst
       serviceAccountName: contour

@@ -18,7 +18,7 @@ package dag
 import (
 	"time"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
@@ -81,6 +81,9 @@ type Route struct {
 
 	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
 	PrefixRewrite string
+
+	// Defines ratelimiting configuration if specified
+	RateLimitConfiguration map[string]string
 }
 
 func (r *Route) addHTTPService(s *HTTPService) {

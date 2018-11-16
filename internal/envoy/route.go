@@ -15,6 +15,8 @@ package envoy
 import (
 	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -22,6 +24,8 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
 )
+
+const defaultRatelimitStage = 0
 
 // RouteRoute creates a route.Route_Route for the services supplied.
 // If len(services) is greater than one, the route's action will be a
@@ -39,6 +43,14 @@ func RouteRoute(r *dag.Route, services []*dag.HTTPService) *route.Route_Route {
 				UpgradeType: "websocket",
 			},
 		)
+	}
+
+	rlActions := RateLimitActions(r)
+	if rlActions != nil {
+		ra.RateLimits = []*route.RateLimit{{
+			Stage:   &types.UInt32Value{Value: RateLimitStage(r)},
+			Actions: rlActions,
+		}}
 	}
 
 	switch len(services) {
@@ -135,6 +147,53 @@ func PrefixMatch(prefix string) route.RouteMatch {
 			Prefix: prefix,
 		},
 	}
+}
+
+// RateLimitStage returns stage configured for route. If none is provided
+// then the default is used
+func RateLimitStage(r *dag.Route) uint32 {
+	// Determine if ratelimiting is defined
+	if len(r.RateLimitConfiguration) > 0 {
+		if val, ok := r.RateLimitConfiguration["stage"]; ok {
+			i, err := strconv.Atoi(val)
+			if err != nil {
+				return uint32(i)
+			}
+		}
+	}
+	return defaultRatelimitStage
+}
+
+// RateLimitActions returns ratelimiting configuration based upon the Route
+func RateLimitActions(r *dag.Route) []*route.RateLimit_Action {
+	// Determine if ratelimiting is defined
+	if len(r.RateLimitConfiguration) > 0 {
+		rateLimitActions := []*route.RateLimit_Action{}
+		for key, val := range r.RateLimitConfiguration {
+			switch strings.ToLower(key) {
+			case "generic_key":
+				action := &route.RateLimit_Action{
+					ActionSpecifier: &route.RateLimit_Action_GenericKey_{
+						GenericKey: &route.RateLimit_Action_GenericKey{
+							DescriptorValue: val,
+						},
+					},
+				}
+
+				rateLimitActions = append(rateLimitActions, action)
+			case "remote_address":
+				action := &route.RateLimit_Action{
+					ActionSpecifier: &route.RateLimit_Action_RemoteAddress_{
+						RemoteAddress: &route.RateLimit_Action_RemoteAddress{},
+					},
+				}
+
+				rateLimitActions = append(rateLimitActions, action)
+			}
+		}
+		return rateLimitActions
+	}
+	return nil
 }
 
 // VirtualHost creates a new route.VirtualHost.

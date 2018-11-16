@@ -18,9 +18,10 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
 	"github.com/heptio/contour/internal/dag"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -237,6 +238,103 @@ func TestRouteRoute(t *testing.T) {
 						appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
 					),
 					Timeout: duration(0),
+				},
+			},
+		},
+		"rate limit remote_address": {
+			route: &dag.Route{
+				Prefix: "/",
+				RateLimitConfiguration: map[string]string{
+					"remote_address": "true",
+				},
+			},
+			services: []*dag.HTTPService{{
+				TCPService: service(s1),
+			}},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
+					RateLimits: []*route.RateLimit{{
+						Stage: &types.UInt32Value{Value: defaultRatelimitStage},
+						Actions: []*route.RateLimit_Action{
+							{
+								ActionSpecifier: &route.RateLimit_Action_RemoteAddress_{
+									RemoteAddress: &route.RateLimit_Action_RemoteAddress{},
+								},
+							},
+						},
+					}},
+				},
+			},
+		},
+		"rate limit generic_key": {
+			route: &dag.Route{
+				Prefix: "/",
+				RateLimitConfiguration: map[string]string{
+					"generic_key": "foo",
+				},
+			},
+			services: []*dag.HTTPService{{
+				TCPService: service(s1),
+			}},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
+					RateLimits: []*route.RateLimit{{
+						Stage: &types.UInt32Value{Value: defaultRatelimitStage},
+						Actions: []*route.RateLimit_Action{
+							{
+								ActionSpecifier: &route.RateLimit_Action_GenericKey_{
+									GenericKey: &route.RateLimit_Action_GenericKey{
+										DescriptorValue: "foo",
+									},
+								},
+							},
+						},
+					}},
+				},
+			},
+		},
+		"rate limit remote_address & generic_key": {
+			route: &dag.Route{
+				Prefix: "/",
+				RateLimitConfiguration: map[string]string{
+					"generic_key":    "foo",
+					"remote_address": "",
+				},
+			},
+			services: []*dag.HTTPService{{
+				TCPService: service(s1),
+			}},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					RequestHeadersToAdd: headers(appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%")),
+					RateLimits: []*route.RateLimit{{
+						Stage: &types.UInt32Value{Value: defaultRatelimitStage},
+						Actions: []*route.RateLimit_Action{
+							{
+								ActionSpecifier: &route.RateLimit_Action_GenericKey_{
+									GenericKey: &route.RateLimit_Action_GenericKey{
+										DescriptorValue: "foo",
+									},
+								},
+							},
+							{
+								ActionSpecifier: &route.RateLimit_Action_RemoteAddress_{
+									RemoteAddress: &route.RateLimit_Action_RemoteAddress{},
+								},
+							},
+						},
+					}},
 				},
 			},
 		},

@@ -57,6 +57,9 @@ func main() {
 	bootstrap.Flag("statsd-enabled", "enable statsd output").BoolVar(&config.StatsdEnabled)
 	bootstrap.Flag("statsd-address", "statsd address").StringVar(&config.StatsdAddress)
 	bootstrap.Flag("statsd-port", "statsd port").IntVar(&config.StatsdPort)
+	bootstrap.Flag("rate-limit-enabled", "enable rate limit service").BoolVar(&config.RateLimitServiceEnabled)
+	bootstrap.Flag("rate-limit-address", "rate limit service address").StringVar(&config.RateLimitServiceAddress)
+	bootstrap.Flag("rate-limit-port", "rate limit service port").IntVar(&config.RateLimitServicePort)
 
 	cli := app.Command("cli", "A CLI client for the Heptio Contour Kubernetes ingress controller.")
 	var client Client
@@ -132,6 +135,7 @@ func main() {
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ch.UseProxyProto)
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&reh.IngressClass)
 	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringVar(&ingressrouteRootNamespaceFlag)
+	serve.Flag("rate-limit-stage", "Stage used for rate limiting").StringVar(&reh.IngressClass)
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {

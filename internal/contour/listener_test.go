@@ -17,14 +17,14 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -59,7 +59,8 @@ func TestListenerVisit(t *testing.T) {
 				Name:    ENVOY_HTTP_LISTENER,
 				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
-					filterchain(false, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+					filterchain(false, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG,
+						DEFAULT_RATE_LIMIT_SERVICE_DOMAIN, DEFAULT_RATE_LIMIT_SERVICE_STAGE, DEFAULT_RATE_LIMIT_SERVICE_FAILURE_MODE_DENY)),
 				},
 			}),
 		},
@@ -91,7 +92,8 @@ func TestListenerVisit(t *testing.T) {
 				Name:    ENVOY_HTTP_LISTENER,
 				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
-					filterchain(false, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+					filterchain(false, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG,
+						DEFAULT_RATE_LIMIT_SERVICE_DOMAIN, DEFAULT_RATE_LIMIT_SERVICE_STAGE, DEFAULT_RATE_LIMIT_SERVICE_FAILURE_MODE_DENY)),
 				},
 			}),
 		},
@@ -125,7 +127,8 @@ func TestListenerVisit(t *testing.T) {
 				Name:    ENVOY_HTTP_LISTENER,
 				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
-					filterchain(false, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+					filterchain(false, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG,
+						DEFAULT_RATE_LIMIT_SERVICE_DOMAIN, DEFAULT_RATE_LIMIT_SERVICE_STAGE, DEFAULT_RATE_LIMIT_SERVICE_FAILURE_MODE_DENY)),
 				},
 			}, &v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -135,7 +138,8 @@ func TestListenerVisit(t *testing.T) {
 						ServerNames: []string{"whatever.example.com"},
 					},
 					TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:    filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
+					Filters: filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG,
+						DEFAULT_RATE_LIMIT_SERVICE_DOMAIN, DEFAULT_RATE_LIMIT_SERVICE_STAGE, DEFAULT_RATE_LIMIT_SERVICE_FAILURE_MODE_DENY)),
 				}},
 				ListenerFilters: []listener.ListenerFilter{
 					envoy.TLSInspector(),
@@ -172,7 +176,8 @@ func TestListenerVisit(t *testing.T) {
 				Name:    ENVOY_HTTP_LISTENER,
 				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
-					filterchain(false, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+					filterchain(false, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG,
+						DEFAULT_RATE_LIMIT_SERVICE_DOMAIN, DEFAULT_RATE_LIMIT_SERVICE_STAGE, DEFAULT_RATE_LIMIT_SERVICE_FAILURE_MODE_DENY)),
 				},
 			}),
 		},
@@ -214,7 +219,8 @@ func TestListenerVisit(t *testing.T) {
 				Name:    ENVOY_HTTP_LISTENER,
 				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
-					filterchain(false, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+					filterchain(false, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG,
+						DEFAULT_RATE_LIMIT_SERVICE_DOMAIN, DEFAULT_RATE_LIMIT_SERVICE_STAGE, DEFAULT_RATE_LIMIT_SERVICE_FAILURE_MODE_DENY)),
 				},
 			}, &v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -224,7 +230,8 @@ func TestListenerVisit(t *testing.T) {
 						ServerNames: []string{"www.example.com"},
 					},
 					TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:    filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
+					Filters: filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG,
+						DEFAULT_RATE_LIMIT_SERVICE_DOMAIN, DEFAULT_RATE_LIMIT_SERVICE_STAGE, DEFAULT_RATE_LIMIT_SERVICE_FAILURE_MODE_DENY)),
 				}},
 				ListenerFilters: []listener.ListenerFilter{
 					envoy.TLSInspector(),
@@ -288,7 +295,8 @@ func TestListenerVisit(t *testing.T) {
 						ServerNames: []string{"www.example.com"},
 					},
 					TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:    filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
+					Filters: filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG,
+						DEFAULT_RATE_LIMIT_SERVICE_DOMAIN, DEFAULT_RATE_LIMIT_SERVICE_STAGE, DEFAULT_RATE_LIMIT_SERVICE_FAILURE_MODE_DENY)),
 				}},
 				ListenerFilters: []listener.ListenerFilter{
 					envoy.TLSInspector(),
@@ -331,7 +339,8 @@ func TestListenerVisit(t *testing.T) {
 				Name:    ENVOY_HTTP_LISTENER,
 				Address: envoy.SocketAddress("127.0.0.100", 9100),
 				FilterChains: []listener.FilterChain{
-					filterchain(false, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+					filterchain(false, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG,
+						DEFAULT_RATE_LIMIT_SERVICE_DOMAIN, DEFAULT_RATE_LIMIT_SERVICE_STAGE, DEFAULT_RATE_LIMIT_SERVICE_FAILURE_MODE_DENY)),
 				},
 			}, &v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -341,7 +350,8 @@ func TestListenerVisit(t *testing.T) {
 						ServerNames: []string{"whatever.example.com"},
 					},
 					TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:    filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
+					Filters: filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG,
+						DEFAULT_RATE_LIMIT_SERVICE_DOMAIN, DEFAULT_RATE_LIMIT_SERVICE_STAGE, DEFAULT_RATE_LIMIT_SERVICE_FAILURE_MODE_DENY)),
 				}},
 				ListenerFilters: []listener.ListenerFilter{
 					envoy.TLSInspector(),
@@ -381,7 +391,8 @@ func TestListenerVisit(t *testing.T) {
 				Name:    ENVOY_HTTP_LISTENER,
 				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
-					filterchain(true, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+					filterchain(true, envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG,
+						DEFAULT_RATE_LIMIT_SERVICE_DOMAIN, DEFAULT_RATE_LIMIT_SERVICE_STAGE, DEFAULT_RATE_LIMIT_SERVICE_FAILURE_MODE_DENY)),
 				},
 			}, &v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -390,8 +401,9 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TlsContext:    tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:       filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
+					TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					Filters: filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG,
+						DEFAULT_RATE_LIMIT_SERVICE_DOMAIN, DEFAULT_RATE_LIMIT_SERVICE_STAGE, DEFAULT_RATE_LIMIT_SERVICE_FAILURE_MODE_DENY)),
 					UseProxyProto: bv(true),
 				}},
 				ListenerFilters: []listener.ListenerFilter{

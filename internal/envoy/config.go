@@ -70,6 +70,18 @@ type ConfigWriter struct {
 	// StatsdPort is port of the statsd endpoint
 	// Defaults to 9125.
 	StatsdPort int
+
+	// RateLimitServiceEnabled enables ratelimiting filter
+	// Defaults to false.
+	RateLimitServiceEnabled bool
+
+	// RateLimitServiceName is the address of the ratelimiting impl service
+	// Defaults to 127.0.0.1
+	RateLimitServiceAddress string
+
+	// RateLimitServicePort is the port of the ratelimiting impl service
+	// Defaults to 8081.
+	RateLimitServicePort int
 }
 
 const yamlConfig = `dynamic_resources:
@@ -117,7 +129,16 @@ static_resources:
           protocol: TCP
           address: 127.0.0.1
           port_value: {{ if .AdminPort }}{{ .AdminPort }}{{ else }}9001{{ end }}
-  listeners:
+{{ if .RateLimitServiceEnabled }}  - name: rate_limit_cluster
+    type: STATIC
+    connect_timeout: 0.25s
+    lb_policy: round_robin
+    http2_protocol_options: {}
+    hosts:
+    - socket_address:
+        address: {{ if .RateLimitServiceAddress }}{{ .RateLimitServiceAddress }}{{ else }}127.0.0.1{{ end }}
+        port_value: {{ if .RateLimitServicePort }}{{ .RateLimitServicePort }}{{ else }}8081{{ end }} 
+{{ end }}  listeners:
     - address:
         socket_address:
           protocol: TCP
@@ -162,11 +183,18 @@ static_resources:
     socket_address:
       address: {{ if .AdminAddress }}{{ .AdminAddress }}{{ else }}127.0.0.1{{ end }}
       port_value: {{ if .AdminPort }}{{ .AdminPort }}{{ else }}9001{{ end }}
+{{ if .RateLimitServiceEnabled }}rate_limit_service:
+    grpc_service:
+        envoy_grpc:
+            cluster_name: rate_limit_cluster
+        timeout: 0.25s
+{{ end -}}
 `
 
 // WriteYAML writes the configuration to the supplied writer in YAML v2 format.
 // If the supplied io.Writer is a file, it should end with a .yaml extension.
 func (c *ConfigWriter) WriteYAML(w io.Writer) error {
+
 	t, err := template.New("config").Parse(yamlConfig)
 	if err != nil {
 		return err

@@ -69,6 +69,8 @@ type Route struct {
 	PermitInsecure bool `json:"permitInsecure,omitempty"`
 	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
 	PrefixRewrite string `json:"prefixRewrite,omitempty"`
+	// RateLimitConfiguration defunes ratelimiting options which are passed to the rate limiting implementation service
+	RateLimitConfiguration map[string]string `json:"rateLimit,omitempty"`
 }
 
 // TCPProxy contains the set of services to proxy TCP connections.

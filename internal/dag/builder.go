@@ -608,11 +608,12 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 			}
 
 			r := &Route{
-				Prefix:        route.Match,
-				object:        ir,
-				Websocket:     route.EnableWebsockets,
-				HTTPSUpgrade:  routeEnforceTLS(enforceTLS, route.PermitInsecure),
-				PrefixRewrite: route.PrefixRewrite,
+				Prefix:                 route.Match,
+				object:                 ir,
+				Websocket:              route.EnableWebsockets,
+				HTTPSUpgrade:           routeEnforceTLS(enforceTLS, route.PermitInsecure),
+				PrefixRewrite:          route.PrefixRewrite,
+				RateLimitConfiguration: route.RateLimitConfiguration,
 			}
 			for _, service := range route.Services {
 				if service.Port < 1 || service.Port > 65535 {

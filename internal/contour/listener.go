@@ -16,23 +16,26 @@ package contour
 import (
 	"sync"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/gogo/protobuf/proto"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 const (
-	ENVOY_HTTP_LISTENER            = "ingress_http"
-	ENVOY_HTTPS_LISTENER           = "ingress_https"
-	DEFAULT_HTTP_ACCESS_LOG        = "/dev/stdout"
-	DEFAULT_HTTP_LISTENER_ADDRESS  = "0.0.0.0"
-	DEFAULT_HTTP_LISTENER_PORT     = 8080
-	DEFAULT_HTTPS_ACCESS_LOG       = "/dev/stdout"
-	DEFAULT_HTTPS_LISTENER_ADDRESS = DEFAULT_HTTP_LISTENER_ADDRESS
-	DEFAULT_HTTPS_LISTENER_PORT    = 8443
+	ENVOY_HTTP_LISTENER                          = "ingress_http"
+	ENVOY_HTTPS_LISTENER                         = "ingress_https"
+	DEFAULT_HTTP_ACCESS_LOG                      = "/dev/stdout"
+	DEFAULT_HTTP_LISTENER_ADDRESS                = "0.0.0.0"
+	DEFAULT_HTTP_LISTENER_PORT                   = 8080
+	DEFAULT_HTTPS_ACCESS_LOG                     = "/dev/stdout"
+	DEFAULT_HTTPS_LISTENER_ADDRESS               = DEFAULT_HTTP_LISTENER_ADDRESS
+	DEFAULT_HTTPS_LISTENER_PORT                  = 8443
+	DEFAULT_RATE_LIMIT_SERVICE_DOMAIN            = "contour"
+	DEFAULT_RATE_LIMIT_SERVICE_STAGE             = 0
+	DEFAULT_RATE_LIMIT_SERVICE_FAILURE_MODE_DENY = false
 )
 
 // ListenerVisitorConfig holds configuration parameters for visitListeners.
@@ -61,10 +64,23 @@ type ListenerVisitorConfig struct {
 	// If not set, defaults to DEFAULT_HTTPS_ACCESS_LOG.
 	HTTPSAccessLog string
 
-	// UseProxyProto configurs all listeners to expect a PROXY protocol
+	// UseProxyProto configures all listeners to expect a PROXY protocol
 	// V1 header on new connections.
 	// If not set, defaults to false.
 	UseProxyProto bool
+
+	// RateLimitServiceDomain configures the domain for rate limit service
+	// If not set, defaults to "contour"
+	RateLimitServiceDomain string
+
+	// RateLimitServiceStage configures the stage for rate limit service
+	// If not set, defaults to 0
+	RateLimitServiceStage *int
+
+	// RateLimitFailureModeDeny configures if rate limiting should respond with error
+	// given the service cannot be contacted
+	// If not set, defaults to false
+	RateLimitFailureModeDeny *bool
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
@@ -119,6 +135,33 @@ func (lvc *ListenerVisitorConfig) httpsAccessLog() string {
 		return lvc.HTTPSAccessLog
 	}
 	return DEFAULT_HTTPS_ACCESS_LOG
+}
+
+// rateLimitServiceDomain returns the domain used for rate limit
+// service listener or DEFAULT_RATE_LIMIT_SERVICE_DOMAIN if not configured.
+func (lvc *ListenerVisitorConfig) rateLimitServiceDomain() string {
+	if lvc.RateLimitServiceDomain != "" {
+		return lvc.RateLimitServiceDomain
+	}
+	return DEFAULT_RATE_LIMIT_SERVICE_DOMAIN
+}
+
+// rateLimitServiceStage returns the stage used for rate limit
+// service listener or DEFAULT_RATE_LIMIT_SERVICE_STAGE if not configured.
+func (lvc *ListenerVisitorConfig) rateLimitServiceStage() int {
+	if lvc.RateLimitServiceStage != nil {
+		return *lvc.RateLimitServiceStage
+	}
+	return DEFAULT_RATE_LIMIT_SERVICE_STAGE
+}
+
+// rateLimitFailureModeDeny returnss if the rate limit service listener
+// should respond or DEFAULT_RATE_LIMIT_SERVICE_FAILURE_MODE_DENY if not configured.
+func (lvc *ListenerVisitorConfig) rateLimitFailureModeDeny() bool {
+	if lvc.RateLimitFailureModeDeny != nil {
+		return *lvc.RateLimitFailureModeDeny
+	}
+	return DEFAULT_RATE_LIMIT_SERVICE_FAILURE_MODE_DENY
 }
 
 // ListenerCache manages the contents of the gRPC LDS cache.
@@ -197,7 +240,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 				Address: envoy.SocketAddress(lvc.httpAddress(), lvc.httpPort()),
 				FilterChains: []listener.FilterChain{{
 					Filters: []listener.Filter{
-						envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, lvc.httpAccessLog()),
+						envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, lvc.httpAccessLog(), lvc.rateLimitServiceDomain(), lvc.rateLimitServiceStage(), lvc.rateLimitFailureModeDeny()),
 					},
 					UseProxyProto: bv(lvc.UseProxyProto),
 				}},
@@ -231,7 +274,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		v.http = true
 	case *dag.SecureVirtualHost:
 		filters := []listener.Filter{
-			envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.httpsAccessLog()),
+			envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.httpsAccessLog(), v.rateLimitServiceDomain(), v.rateLimitServiceStage(), v.rateLimitFailureModeDeny()),
 		}
 		alpnProtos := []string{"h2", "http/1.1"}
 		if vh.VirtualHost.TCPProxy != nil {
