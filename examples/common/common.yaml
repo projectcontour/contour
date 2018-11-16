@@ -251,6 +251,13 @@ spec:
                       namespace:
                         type: string
                         pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123 label
+                  rateLimit:
+                    type: object
+                    properties:
+                      generic_key:
+                        type: string
+                      remote_address:
+                        type: string
                   services:
                     type: array
                     items:

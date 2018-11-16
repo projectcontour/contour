@@ -21,8 +21,10 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	ratelimit "github.com/envoyproxy/go-control-plane/envoy/config/filter/http/rate_limit/v2"
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
+	ratelimitconfig "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/util"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
@@ -82,7 +84,7 @@ func idleTimeout(d time.Duration) *time.Duration {
 
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
 // for the supplied route and access log.
-func HTTPConnectionManager(routename, accessLogPath string) *listener.Filter {
+func HTTPConnectionManager(routename, accessLogPath, rateLimitService, rateLimitDomain string, rateLimitStage int, rateLimitFailureModeDeny bool) *listener.Filter {
 	return &listener.Filter{
 		Name: util.HTTPConnectionManager,
 		ConfigType: &listener.Filter_TypedConfig{
@@ -111,6 +113,27 @@ func HTTPConnectionManager(routename, accessLogPath string) *listener.Filter {
 					Name: util.Gzip,
 				}, {
 					Name: util.GRPCWeb,
+				}, {
+					Name: util.HTTPRateLimit,
+					ConfigType: &http.HttpFilter_TypedConfig{
+						TypedConfig: any(&ratelimit.RateLimit{
+							Domain:          rateLimitDomain,
+							Stage:           uint32(rateLimitStage),
+							FailureModeDeny: rateLimitFailureModeDeny,
+							RateLimitService: &ratelimitconfig.RateLimitServiceConfig{
+								GrpcService: &core.GrpcService{
+									TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
+										EnvoyGrpc: &core.GrpcService_EnvoyGrpc{
+											ClusterName: rateLimitService,
+										},
+									},
+									Timeout: &types.Duration{
+										Nanos: int32(time.Millisecond * 25),
+									},
+								},
+							},
+						}),
+					},
 				}, {
 					Name: util.Router,
 				}},

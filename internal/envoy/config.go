@@ -103,7 +103,16 @@ static_resources:
           protocol: TCP
           address: 127.0.0.1
           port_value: {{ if .AdminPort }}{{ .AdminPort }}{{ else }}9001{{ end }}
-  listeners:
+{{ if .RateLimitServiceEnabled }}  - name: ratelimit
+    type: STATIC
+    connect_timeout: 0.25s
+    lb_policy: round_robin
+    http2_protocol_options: {}
+    hosts:
+    - socket_address:
+        address: {{ if .RateLimitServiceAddress }}{{ .RateLimitServiceAddress }}{{ else }}127.0.0.1{{ end }}
+        port_value: {{ if .RateLimitServicePort }}{{ .RateLimitServicePort }}{{ else }}8081{{ end }}
+{{ end }}  listeners:
     - address:
         socket_address:
           protocol: TCP

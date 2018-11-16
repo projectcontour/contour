@@ -1,0 +1,15 @@
+apiVersion: v1
+data:
+  config.yaml: |-
+    ---
+    domain: contour
+    descriptors:
+      - key: generic_key
+        value: default
+        rate_limit:
+          unit: minute
+          requests_per_unit: 5
+kind: ConfigMap
+metadata:
+  name: ratelimit-config
+  namespace: heptio-contour

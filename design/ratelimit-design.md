@@ -51,7 +51,7 @@ New arguments to Contour:
 
 #### Example of cluster added for rate limit service configured via args above:
 ```
- - name: rate_limit_cluster
+ - name: ratelimit
     type: strict_dns
     connect_timeout: 0.25s
     lb_policy: round_robin

@@ -36,6 +36,9 @@ func registerBootstrap(app *kingpin.Application) (*kingpin.CmdClause, *bootstrap
 	bootstrap.Flag("envoy-cert-file", "gRPC Client cert filename for Envoy to load").Envar("ENVOY_CERT_FILE").StringVar(&ctx.config.GrpcClientCert)
 	bootstrap.Flag("envoy-key-file", "gRPC Client key filename for Envoy to load").Envar("ENVOY_KEY_FILE").StringVar(&ctx.config.GrpcClientKey)
 	bootstrap.Flag("namespace", "The namespace the Envoy container will run in").Envar("CONTOUR_NAMESPACE").Default("heptio-contour").StringVar(&ctx.config.Namespace)
+	bootstrap.Flag("rate-limit-enabled", "enable rate limit service").BoolVar(&ctx.config.RateLimitServiceEnabled)
+	bootstrap.Flag("rate-limit-address", "rate limit service address").StringVar(&ctx.config.RateLimitServiceAddress)
+	bootstrap.Flag("rate-limit-port", "rate limit service port").IntVar(&ctx.config.RateLimitServicePort)
 	return bootstrap, &ctx
 }
 

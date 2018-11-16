@@ -618,11 +618,12 @@ func (b *Builder) processIngressRoutes(ir *ingressroutev1.IngressRoute, prefixMa
 			r := &PrefixRoute{
 				Prefix: route.Match,
 				Route: Route{
-					Websocket:     route.EnableWebsockets,
-					HTTPSUpgrade:  routeEnforceTLS(enforceTLS, permitInsecure),
-					PrefixRewrite: route.PrefixRewrite,
-					TimeoutPolicy: timeoutPolicy(route.TimeoutPolicy),
-					RetryPolicy:   retryPolicy(route.RetryPolicy),
+					Websocket:              route.EnableWebsockets,
+					HTTPSUpgrade:           routeEnforceTLS(enforceTLS, permitInsecure),
+					PrefixRewrite:          route.PrefixRewrite,
+					TimeoutPolicy:          timeoutPolicy(route.TimeoutPolicy),
+					RetryPolicy:            retryPolicy(route.RetryPolicy),
+					RateLimitConfiguration: route.RateLimitConfiguration,
 				},
 			}
 			for _, service := range route.Services {

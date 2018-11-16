@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ratelimit
+  name: ratelimit
+  namespace: heptio-contour
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ratelimit
+  template:
+    metadata:
+      labels:
+        app: ratelimit
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: ratelimit
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      containers:
+      - name: ratelimit
+        image: gcr.io/heptio-images/ratelimit:459ed655
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 8081
+          name: grpc
+          protocol: TCP
+        - containerPort: 6070
+          name: debug
+          protocol: TCP
+        env:
+        - name: USE_STATSD
+          value: "false"
+        - name: LOG_LEVEL
+          value: debug
+        - name: REDIS_SOCKET_TYPE
+          value: tcp
+        - name: REDIS_URL
+          value: redis:6379
+        - name: RUNTIME_ROOT
+          value: /data
+        - name: RUNTIME_SUBDIRECTORY
+          value: ratelimit
+        command:
+        - ratelimit
+        volumeMounts:
+          - mountPath: /data/ratelimit
+            name: ratelimit-config
+      volumes:
+        - name: ratelimit-config
+          configMap:
+            name: ratelimit-config
+      dnsPolicy: ClusterFirst
+      serviceAccountName: contour

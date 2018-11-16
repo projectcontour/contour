@@ -48,6 +48,8 @@ type Route struct {
 	TimeoutPolicy *projcontour.TimeoutPolicy `json:"timeoutPolicy,omitempty"`
 	// // The retry policy for this route
 	RetryPolicy *projcontour.RetryPolicy `json:"retryPolicy,omitempty"`
+	// RateLimitConfiguration defines ratelimiting options which are passed to the rate limiting implementation service
+	RateLimitConfiguration map[string]string `json:"rateLimit,omitempty"`
 }
 
 // TCPProxy contains the set of services to proxy TCP connections.

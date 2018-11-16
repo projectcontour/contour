@@ -22,6 +22,7 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	"github.com/heptio/contour/internal/contour"
@@ -2968,6 +2969,184 @@ func TestRDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
 
 }
 
+func TestRateLimiting(t *testing.T) {
+
+	rh, cc, done := setup(t)
+	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	// RateLimit with only generic_key
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "test2.test.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/a",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 80,
+				}},
+				RateLimitConfiguration: map[string]string{
+					"generic_key": "testkey",
+				},
+			}},
+		},
+	}
+
+	rh.OnAdd(ir1)
+	assertRDS(t, cc, "1", []*route.VirtualHost{{
+		Name:    "test2.test.com",
+		Domains: []string{"test2.test.com", "test2.test.com:*"},
+		Routes: []*route.Route{{
+			Match: envoy.RoutePrefix("/a"),
+			Action: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/80/da39a3ee5e",
+					},
+					RateLimits: routeclusterRatelimit(map[string]string{"generic_key": "testkey"}),
+				},
+			},
+			RequestHeadersToAdd: envoy.RouteHeaders(),
+		}},
+	}}, nil)
+
+	// RateLimit with only remote_address
+	ir2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "test2.test.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/a",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 80,
+				}},
+				RateLimitConfiguration: map[string]string{
+					"remote_address": "",
+				},
+			}},
+		},
+	}
+
+	rh.OnUpdate(ir1, ir2)
+	assertRDS(t, cc, "2", []*route.VirtualHost{{
+		Name:    "test2.test.com",
+		Domains: []string{"test2.test.com", "test2.test.com:*"},
+		Routes: []*route.Route{{
+			Match: envoy.RoutePrefix("/a"),
+			Action: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/80/da39a3ee5e",
+					},
+					RateLimits: routeclusterRatelimit(map[string]string{"remote_address": ""}),
+				},
+			},
+			RequestHeadersToAdd: envoy.RouteHeaders(),
+		}},
+	}}, nil)
+
+	// RateLimit with both generic_key & remote_address
+	ir3 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "test2.test.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/a",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 80,
+				}},
+				RateLimitConfiguration: map[string]string{
+					"remote_address": "",
+					"generic_key":    "testkeycombined",
+				},
+			}},
+		},
+	}
+
+	rh.OnUpdate(ir2, ir3)
+	assertRDS(t, cc, "3", []*route.VirtualHost{{
+		Name:    "test2.test.com",
+		Domains: []string{"test2.test.com", "test2.test.com:*"},
+		Routes: []*route.Route{{
+			Match: envoy.RoutePrefix("/a"),
+			Action: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/80/da39a3ee5e",
+					},
+					RateLimits: routeclusterRatelimit(map[string]string{
+						"remote_address": "",
+						"generic_key":    "testkeycombined",
+					}),
+				},
+			},
+			RequestHeadersToAdd: envoy.RouteHeaders(),
+		}},
+	}}, nil)
+
+	// No ratelimiting
+	ir4 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "test2.test.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/a",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	rh.OnUpdate(ir3, ir4)
+	assertRDS(t, cc, "4", []*route.VirtualHost{{
+		Name:    "test2.test.com",
+		Domains: []string{"test2.test.com", "test2.test.com:*"},
+		Routes: []*route.Route{{
+			Match:               envoy.RoutePrefix("/a"), // match all
+			Action:              routecluster("default/kuard/80/da39a3ee5e"),
+			RequestHeadersToAdd: envoy.RouteHeaders(),
+		}},
+	}}, nil)
+}
+
 func assertRDS(t *testing.T, cc *grpc.ClientConn, versioninfo string, ingress_http, ingress_https []*route.VirtualHost) {
 	t.Helper()
 	assertEqual(t, &v2.DiscoveryResponse{
@@ -3031,6 +3210,38 @@ func routecluster(cluster string) *route.Route_Route {
 			},
 		},
 	}
+}
+
+func routeclusterRatelimit(config map[string]string) []*route.RateLimit {
+	if len(config) > 0 {
+		actions := []*route.RateLimit_Action{}
+		for key, val := range config {
+			switch key {
+			case "generic_key":
+				a := &route.RateLimit_Action{
+					ActionSpecifier: &route.RateLimit_Action_GenericKey_{
+						GenericKey: &route.RateLimit_Action_GenericKey{
+							DescriptorValue: val,
+						},
+					},
+				}
+				actions = append(actions, a)
+			case "remote_address":
+				a := &route.RateLimit_Action{
+					ActionSpecifier: &route.RateLimit_Action_RemoteAddress_{
+						RemoteAddress: &route.RateLimit_Action_RemoteAddress{},
+					},
+				}
+				actions = append(actions, a)
+			}
+		}
+
+		return []*route.RateLimit{{
+			Stage:   &types.UInt32Value{Value: 0},
+			Actions: actions,
+		}}
+	}
+	return nil
 }
 
 func routeweightedcluster(clusters ...weightedcluster) *route.Route_Route {

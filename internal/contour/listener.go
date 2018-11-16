@@ -28,14 +28,18 @@ import (
 )
 
 const (
-	ENVOY_HTTP_LISTENER            = "ingress_http"
-	ENVOY_HTTPS_LISTENER           = "ingress_https"
-	DEFAULT_HTTP_ACCESS_LOG        = "/dev/stdout"
-	DEFAULT_HTTP_LISTENER_ADDRESS  = "0.0.0.0"
-	DEFAULT_HTTP_LISTENER_PORT     = 8080
-	DEFAULT_HTTPS_ACCESS_LOG       = "/dev/stdout"
-	DEFAULT_HTTPS_LISTENER_ADDRESS = DEFAULT_HTTP_LISTENER_ADDRESS
-	DEFAULT_HTTPS_LISTENER_PORT    = 8443
+	ENVOY_HTTP_LISTENER                  = "ingress_http"
+	ENVOY_HTTPS_LISTENER                 = "ingress_https"
+	DEFAULT_HTTP_ACCESS_LOG              = "/dev/stdout"
+	DEFAULT_HTTP_LISTENER_ADDRESS        = "0.0.0.0"
+	DEFAULT_HTTP_LISTENER_PORT           = 8080
+	DEFAULT_HTTPS_ACCESS_LOG             = "/dev/stdout"
+	DEFAULT_HTTPS_LISTENER_ADDRESS       = DEFAULT_HTTP_LISTENER_ADDRESS
+	DEFAULT_HTTPS_LISTENER_PORT          = 8443
+	DEFAULT_RATE_LIMIT_SERVICE           = "ratelimit"
+	DEFAULT_RATE_LIMIT_DOMAIN            = "contour"
+	DEFAULT_RATE_LIMIT_STAGE             = 0
+	DEFAULT_RATE_LIMIT_FAILURE_MODE_DENY = false
 )
 
 // ListenerVisitorConfig holds configuration parameters for visitListeners.
@@ -68,6 +72,23 @@ type ListenerVisitorConfig struct {
 	// V1 or V2 preamble.
 	// If not set, defaults to false.
 	UseProxyProto bool
+
+	// RateLimitService configures the rate limit service name
+	// If not set, defaults to "ratelimit"
+	RateLimitService string
+
+	// RateLimitDomain configures the domain for the rate limit service
+	// If not set, defaults to "contour"
+	RateLimitDomain string
+
+	// RateLimitStage configures the stage for the rate limit service
+	// If not set, defaults to 0
+	RateLimitStage *int
+
+	// RateLimitFailureModeDeny configures if rate limiting should respond with error
+	// given the service cannot be contacted
+	// If not set, defaults to false
+	RateLimitFailureModeDeny *bool
 
 	// MinimumProtocolVersion defines the min tls protocol version to be used
 	MinimumProtocolVersion auth.TlsParameters_TlsProtocol
@@ -125,6 +146,42 @@ func (lvc *ListenerVisitorConfig) httpsAccessLog() string {
 		return lvc.HTTPSAccessLog
 	}
 	return DEFAULT_HTTPS_ACCESS_LOG
+}
+
+// rateLimitService returns the name used for rate limit
+// service listener or DEFAULT_RATE_LIMIT_SERVICE if not configured.
+func (lvc *ListenerVisitorConfig) rateLimitService() string {
+	if lvc.RateLimitService != "" {
+		return lvc.RateLimitService
+	}
+	return DEFAULT_RATE_LIMIT_SERVICE
+}
+
+// rateLimitDomain returns the domain used for rate limit
+// service listener or DEFAULT_RATE_LIMIT_DOMAIN if not configured.
+func (lvc *ListenerVisitorConfig) rateLimitDomain() string {
+	if lvc.RateLimitDomain != "" {
+		return lvc.RateLimitDomain
+	}
+	return DEFAULT_RATE_LIMIT_DOMAIN
+}
+
+// rateLimitStage returns the stage used for rate limit
+// service listener or DEFAULT_RATE_LIMIT_STAGE if not configured.
+func (lvc *ListenerVisitorConfig) rateLimitStage() int {
+	if lvc.RateLimitStage != nil {
+		return *lvc.RateLimitStage
+	}
+	return DEFAULT_RATE_LIMIT_STAGE
+}
+
+// rateLimitFailureModeDeny returnss if the rate limit service listener
+// should respond or DEFAULT_RATE_LIMIT_FAILURE_MODE_DENY if not configured.
+func (lvc *ListenerVisitorConfig) rateLimitFailureModeDeny() bool {
+	if lvc.RateLimitFailureModeDeny != nil {
+		return *lvc.RateLimitFailureModeDeny
+	}
+	return DEFAULT_RATE_LIMIT_FAILURE_MODE_DENY
 }
 
 // minProtocolVersion returns the requested minimum TLS protocol
@@ -263,7 +320,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 			ENVOY_HTTP_LISTENER,
 			lvc.httpAddress(), lvc.httpPort(),
 			proxyProtocol(lvc.UseProxyProto),
-			envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, lvc.httpAccessLog()),
+			envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, lvc.httpAccessLog(), lvc.rateLimitService(), lvc.rateLimitDomain(), lvc.rateLimitStage(), lvc.rateLimitFailureModeDeny()),
 		)
 
 	}
@@ -315,7 +372,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		v.http = true
 	case *dag.SecureVirtualHost:
 		filters := envoy.Filters(
-			envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.httpsAccessLog()),
+			envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.httpsAccessLog(), v.rateLimitService(), v.rateLimitDomain(), v.rateLimitStage(), v.rateLimitFailureModeDeny()),
 		)
 		alpnProtos := []string{"h2", "http/1.1"}
 		if vh.TCPProxy != nil {

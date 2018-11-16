@@ -99,6 +99,32 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         }
+      },
+      {
+        "name": "ratelimit",
+        "alt_stat_name": "testing-ns_ratelimit_8081",
+        "type": "LOGICAL_DNS",
+        "connect_timeout": "0.025s",
+        "load_assignment": {
+          "cluster_name": "ratelimit",
+          "endpoints": [
+            {
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 8081
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "http2_protocol_options": {}
       }
     ]
   },
@@ -215,6 +241,32 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         }
+      },
+      {
+        "name": "ratelimit",
+        "alt_stat_name": "testing-ns_ratelimit_8081",
+        "type": "LOGICAL_DNS",
+        "connect_timeout": "0.025s",
+        "load_assignment": {
+          "cluster_name": "ratelimit",
+          "endpoints": [
+            {
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 8081
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "http2_protocol_options": {}
       }
     ]
   },
@@ -330,6 +382,32 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         }
+      },
+      {
+        "name": "ratelimit",
+        "alt_stat_name": "testing-ns_ratelimit_8081",
+        "type": "LOGICAL_DNS",
+        "connect_timeout": "0.025s",
+        "load_assignment": {
+          "cluster_name": "ratelimit",
+          "endpoints": [
+            {
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 8081
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "http2_protocol_options": {}
       }
     ]
   },
@@ -446,6 +524,32 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         }
+      },
+      {
+        "name": "ratelimit",
+        "alt_stat_name": "testing-ns_ratelimit_8081",
+        "type": "LOGICAL_DNS",
+        "connect_timeout": "0.025s",
+        "load_assignment": {
+          "cluster_name": "ratelimit",
+          "endpoints": [
+            {
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 8081
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "http2_protocol_options": {}
       }
     ]
   },
@@ -560,6 +664,32 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         }
+      },
+      {
+        "name": "ratelimit",
+        "alt_stat_name": "testing-ns_ratelimit_8081",
+        "type": "LOGICAL_DNS",
+        "connect_timeout": "0.025s",
+        "load_assignment": {
+          "cluster_name": "ratelimit",
+          "endpoints": [
+            {
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 8081
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "http2_protocol_options": {}
       }
     ]
   },
@@ -699,6 +829,32 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         }
+      },
+      {
+        "name": "ratelimit",
+        "alt_stat_name": "testing-ns_ratelimit_8081",
+        "type": "LOGICAL_DNS",
+        "connect_timeout": "0.025s",
+        "load_assignment": {
+          "cluster_name": "ratelimit",
+          "endpoints": [
+            {
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 8081
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "http2_protocol_options": {}
       }
     ]
   },

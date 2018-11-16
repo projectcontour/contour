@@ -181,6 +181,13 @@ func (in *Route) DeepCopyInto(out *Route) {
 		*out = new(v1alpha1.RetryPolicy)
 		**out = **in
 	}
+	if in.RateLimitConfiguration != nil {
+		in, out := &in.RateLimitConfiguration, &out.RateLimitConfiguration
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	return
 }
 

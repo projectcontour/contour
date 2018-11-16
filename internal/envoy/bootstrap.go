@@ -74,6 +74,19 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 						SocketAddress(c.adminAddress(), c.adminPort()),
 					),
 				},
+			}, {
+				Name:                 "ratelimit",
+				AltStatName:          strings.Join([]string{c.Namespace, "ratelimit", strconv.Itoa(intOrDefault(c.RateLimitServicePort, 8081))}, "_"),
+				ConnectTimeout:       duration(25 * time.Millisecond),
+				ClusterDiscoveryType: ClusterDiscoveryType(api.Cluster_LOGICAL_DNS),
+				LbPolicy:             api.Cluster_ROUND_ROBIN,
+				LoadAssignment: &api.ClusterLoadAssignment{
+					ClusterName: "ratelimit",
+					Endpoints: Endpoints(
+						SocketAddress(c.rateLimitServiceAddress(), c.rateLimitServicePort()),
+					),
+				},
+				Http2ProtocolOptions: new(core.Http2ProtocolOptions), // enables http2
 			}},
 		},
 		Admin: &bootstrap.Admin{
@@ -159,6 +172,18 @@ type BootstrapConfig struct {
 
 	// GrpcClientKey is the filename that contains a client key for secure gRPC with TLS.
 	GrpcClientKey string
+
+	// RateLimitServiceEnabled enables ratelimiting filter
+	// Defaults to false.
+	RateLimitServiceEnabled bool
+
+	// RateLimitServiceName is the address of the ratelimiting impl service
+	// Defaults to 127.0.0.1
+	RateLimitServiceAddress string
+
+	// RateLimitServicePort is the port of the ratelimiting impl service
+	// Defaults to 8081.
+	RateLimitServicePort int
 }
 
 func (c *BootstrapConfig) xdsAddress() string   { return stringOrDefault(c.XDSAddress, "127.0.0.1") }
@@ -167,6 +192,12 @@ func (c *BootstrapConfig) adminAddress() string { return stringOrDefault(c.Admin
 func (c *BootstrapConfig) adminPort() int       { return intOrDefault(c.AdminPort, 9001) }
 func (c *BootstrapConfig) adminAccessLogPath() string {
 	return stringOrDefault(c.AdminAccessLogPath, "/dev/null")
+}
+func (c *BootstrapConfig) rateLimitServiceAddress() string {
+	return stringOrDefault(c.RateLimitServiceAddress, "127.0.0.1")
+}
+func (c *BootstrapConfig) rateLimitServicePort() int {
+	return intOrDefault(c.RateLimitServicePort, 8081)
 }
 
 func stringOrDefault(s, def string) string {
