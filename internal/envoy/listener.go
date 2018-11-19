@@ -14,6 +14,8 @@
 package envoy
 
 import (
+	"sort"
+
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
@@ -76,16 +78,59 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 
 // TCPProxy creates a new TCPProxy filter.
 func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) listener.Filter {
-	return listener.Filter{
-		Name: util.TCPProxy,
-		Config: &types.Struct{
-			Fields: map[string]*types.Value{
-				"stat_prefix": sv(statPrefix),
-				"cluster":     sv(Clustername(proxy.TCPService)),
-				"access_log":  accesslog(accessLogPath),
+	switch len(proxy.Services) {
+	case 1:
+		return listener.Filter{
+			Name: util.TCPProxy,
+			Config: &types.Struct{
+				Fields: map[string]*types.Value{
+					"stat_prefix": sv(statPrefix),
+					"cluster":     sv(Clustername(proxy.Services[0])),
+					"access_log":  accesslog(accessLogPath),
+				},
 			},
-		},
+		}
+	default:
+		// its easier to sort the input of the cluster list rather than the
+		// grpc type output. We have to make a copy to avoid mutating the dag.
+		services := make([]*dag.TCPService, len(proxy.Services))
+		copy(services, proxy.Services)
+		sort.Stable(tcpServiceByName(services))
+		var l []*types.Value
+		for _, service := range services {
+			weight := service.Weight
+			if weight == 0 {
+				weight = 1
+			}
+			l = append(l, st(map[string]*types.Value{
+				"name":   sv(Clustername(service)),
+				"weight": nv(float64(weight)),
+			}))
+		}
+		return listener.Filter{
+			Name: util.TCPProxy,
+			Config: &types.Struct{
+				Fields: map[string]*types.Value{
+					"stat_prefix": sv(statPrefix),
+					"weighted_clusters": st(map[string]*types.Value{
+						"clusters": lv(l...),
+					}),
+					"access_log": accesslog(accessLogPath),
+				},
+			},
+		}
 	}
+}
+
+type tcpServiceByName []*dag.TCPService
+
+func (t tcpServiceByName) Len() int      { return len(t) }
+func (t tcpServiceByName) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
+func (t tcpServiceByName) Less(i, j int) bool {
+	if t[i].Name == t[j].Name {
+		return t[i].Weight < t[j].Weight
+	}
+	return t[i].Name < t[j].Name
 }
 
 // SocketAddress creates a new TCP core.Address.
@@ -149,4 +194,8 @@ func st(m map[string]*types.Value) *types.Value {
 
 func lv(v ...*types.Value) *types.Value {
 	return &types.Value{Kind: &types.Value_ListValue{ListValue: &types.ListValue{Values: v}}}
+}
+
+func nv(n float64) *types.Value {
+	return &types.Value{Kind: &types.Value_NumberValue{NumberValue: n}}
 }

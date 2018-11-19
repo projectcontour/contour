@@ -1716,7 +1716,9 @@ func TestDAGInsert(t *testing.T) {
 						Host: "kuard.example.com",
 						Port: 443,
 						TCPProxy: &TCPProxy{
-							TCPService: tcpService(s1),
+							Services: []*TCPService{
+								tcpService(s1),
+							},
 						},
 					},
 					Secret:          secret(sec1),

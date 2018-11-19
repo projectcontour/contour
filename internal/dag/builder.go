@@ -586,17 +586,18 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 	visited = append(visited, ir)
 
 	proxy := ir.Spec.TCPProxy
-	if proxy != nil && enforceTLS && len(proxy.Services) > 0 {
-
-		// TODO(dfc) support TCPWeightedCluster
-		service := proxy.Services[0]
-		m := meta{name: service.Name, namespace: ir.Namespace}
-		s := b.lookupTCPService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck)
-		if s == nil {
-			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("tcpforward: service %s/%s: not found", ir.Namespace, service.Name), Vhost: host})
-			return
+	if proxy != nil && enforceTLS {
+		var ts []*TCPService
+		for _, service := range proxy.Services {
+			m := meta{name: service.Name, namespace: ir.Namespace}
+			s := b.lookupTCPService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck)
+			if s == nil {
+				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("tcpforward: service %s/%s: not found", ir.Namespace, service.Name), Vhost: host})
+				return
+			}
+			ts = append(ts, s)
 		}
-		b.lookupSecureVirtualHost(host, 443).VirtualHost.TCPProxy = &TCPProxy{TCPService: s}
+		b.lookupSecureVirtualHost(host, 443).VirtualHost.TCPProxy = &TCPProxy{Services: ts}
 		b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
 		// spec.forward implies spec.routes is ignored
 		return
