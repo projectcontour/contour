@@ -14,102 +14,14 @@
 package contour
 
 import (
-	"math"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/gogo/protobuf/types"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
-
-func TestParseAnnotationTimeout(t *testing.T) {
-	tests := map[string]struct {
-		a    map[string]string
-		want time.Duration
-		ok   bool
-	}{
-		"nada": {
-			a:    nil,
-			want: 0,
-			ok:   false,
-		},
-		"empty": {
-			a:    map[string]string{annotationRequestTimeout: ""}, // not even sure this is possible via the API
-			want: 0,
-			ok:   false,
-		},
-		"infinity": {
-			a:    map[string]string{annotationRequestTimeout: "infinity"},
-			want: 0,
-			ok:   true,
-		},
-		"10 seconds": {
-			a:    map[string]string{annotationRequestTimeout: "10s"},
-			want: 10 * time.Second,
-			ok:   true,
-		},
-		"invalid": {
-			a:    map[string]string{annotationRequestTimeout: "10"}, // 10 what?
-			want: 0,
-			ok:   true,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got, ok := parseAnnotationTimeout(tc.a, annotationRequestTimeout)
-			if got != tc.want || ok != tc.ok {
-				t.Fatalf("parseAnnotationTimeout(%q): want: %v, %v, got: %v, %v", tc.a, tc.want, tc.ok, got, ok)
-			}
-		})
-	}
-}
-
-func TestParseAnnotationUInt32(t *testing.T) {
-	tests := map[string]struct {
-		a     map[string]string
-		want  uint32
-		isNil bool
-	}{
-		"nada": {
-			a:     nil,
-			isNil: true,
-		},
-		"empty": {
-			a:     map[string]string{annotationRequestTimeout: ""}, // not even sure this is possible via the API
-			isNil: true,
-		},
-		"smallest": {
-			a:    map[string]string{annotationRequestTimeout: "0"},
-			want: 0,
-		},
-		"middle value": {
-			a:    map[string]string{annotationRequestTimeout: "20"},
-			want: 20,
-		},
-		"biggest": {
-			a:    map[string]string{annotationRequestTimeout: "4294967295"},
-			want: math.MaxUint32,
-		},
-		"invalid": {
-			a:     map[string]string{annotationRequestTimeout: "10seconds"}, // not a duration
-			isNil: true,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := parseAnnotationUInt32(tc.a, annotationRequestTimeout)
-
-			if ((got == nil) != tc.isNil) || (got != nil && got.Value != tc.want) {
-				t.Fatalf("parseAnnotationUInt32(%q): want: %v, isNil: %v, got: %v", tc.a, tc.want, tc.isNil, got)
-			}
-		})
-	}
-}
 
 func TestWebsocketRoutes(t *testing.T) {
 	tests := map[string]struct {
