@@ -764,6 +764,9 @@ spec:
     services:
     - name: tcpservice
       port: 8080
+    - name: otherservice
+      port: 9999
+      weight: 20
   routes:
   - match: /
     services:
@@ -779,7 +782,6 @@ The current limitations are present in Contour 0.8. These will be addressed in l
 
 - `spec.routes` must be present in the `IngressRoute` document to pass validation, however they are ignored when `spec.tcpproxy` is present.
 - TCP Proxy IngressRoutes must be roots and can not delegate to other IngressRoutes.
-- `spec.tcpproxy.services` supports a list of service name/port pairs, however only the first is recognized.
 - TCP Proxying is not available on Kubernetes Ingress objects.
 - `spec.virtualhost.tls` is required for TCP proxying. If not present, `spec.tcpproxy` will be ignored.
 
