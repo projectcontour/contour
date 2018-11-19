@@ -78,7 +78,7 @@ func parseAnnotation(annotations map[string]string, annotation string) int {
 	return int(v)
 }
 
-// parseAnnotationUint32 parsers the annotation map for the supplied annotation key.
+// parseAnnotationUint32 parses the annotation map for the supplied annotation key.
 // If the value is not present, or malformed, then nil is returned.
 func parseAnnotationUInt32(annotations map[string]string, annotation string) *types.UInt32Value {
 	v, err := strconv.ParseUint(annotations[annotation], 10, 32)

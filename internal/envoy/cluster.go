@@ -45,7 +45,16 @@ func httpCluster(service *dag.HTTPService) *v2.Cluster {
 	c := cluster(&service.TCPService)
 	switch service.Protocol {
 	case "h2":
-		c.TlsContext = UpstreamTLSContext()
+		if service.CACertificate == nil {
+			c.TlsContext = UpstreamTLSContext()
+		} else {
+			cm := service.CACertificate.Data()
+			if cert := cm["ca.crt"]; cert == "" {
+				c.TlsContext = UpstreamTLSContext()
+			} else {
+				c.TlsContext = UpstreamTLSContextWithVerification([]byte(cert))
+			}
+		}
 		fallthrough
 	case "h2c":
 		c.Http2ProtocolOptions = &core.Http2ProtocolOptions{}

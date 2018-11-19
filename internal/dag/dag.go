@@ -233,6 +233,31 @@ type HTTPService struct {
 	// Protocol is the layer 7 protocol of this service
 	// One of "", "h2", or "h2c".
 	Protocol string
+
+	// ConfigMap that holds the CA certificate used for TLS verification
+	CACertificate *ConfigMap
+}
+
+// ConfigMap represents a K8s ConfigMap as a DAG Vertex. A ConfigMap is
+// a leaf in the DAG.
+type ConfigMap struct {
+	Object *v1.ConfigMap
+}
+
+func (c *ConfigMap) Name() string       { return c.Object.Name }
+func (c *ConfigMap) Namespace() string  { return c.Object.Namespace }
+func (c *ConfigMap) Visit(func(Vertex)) {}
+
+// Data returns the contents of the backing configmap.
+func (c *ConfigMap) Data() map[string]string {
+	return c.Object.Data
+}
+
+func (c *ConfigMap) toMeta() meta {
+	return meta{
+		name:      c.Name(),
+		namespace: c.Namespace(),
+	}
 }
 
 // Secret represents a K8s Secret for TLS usage as a DAG Vertex. A Secret is

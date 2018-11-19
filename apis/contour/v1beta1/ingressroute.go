@@ -86,6 +86,8 @@ type Service struct {
 	HealthCheck *HealthCheck `json:"healthCheck,omitempty"`
 	// LB Algorithm to apply (see https://github.com/heptio/contour/blob/master/design/ingressroute-design.md#load-balancing)
 	Strategy string `json:"strategy,omitempty"`
+	// Optional TLS verification of the service using a CA certificate
+	TLSVerification *TLSVerification `json:"tlsVerification,omitempty"`
 }
 
 // Delegate allows for delegating VHosts to other IngressRoutes
@@ -112,6 +114,12 @@ type HealthCheck struct {
 	UnhealthyThresholdCount uint32 `json:"unhealthyThresholdCount"`
 	// The number of healthy health checks required before a host is marked healthy
 	HealthyThresholdCount uint32 `json:"healthyThresholdCount"`
+}
+
+// TLS verification for the upstream services
+type TLSVerification struct {
+	// required, the name of a configmap in the current namespace
+	ConfigMapName string `json:"configMapName"`
 }
 
 // Status reports the current state of the IngressRoute

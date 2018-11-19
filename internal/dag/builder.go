@@ -42,6 +42,7 @@ type KubernetesCache struct {
 
 	mu sync.RWMutex
 
+	configmaps    map[meta]*v1.ConfigMap
 	ingresses     map[meta]*v1beta1.Ingress
 	ingressroutes map[meta]*ingressroutev1.IngressRoute
 	secrets       map[meta]*v1.Secret
@@ -65,6 +66,12 @@ func (kc *KubernetesCache) Insert(obj interface{}) {
 	kc.mu.Lock()
 	defer kc.mu.Unlock()
 	switch obj := obj.(type) {
+	case *v1.ConfigMap:
+		m := meta{name: obj.Name, namespace: obj.Namespace}
+		if kc.configmaps == nil {
+			kc.configmaps = make(map[meta]*v1.ConfigMap)
+		}
+		kc.configmaps[m] = obj
 	case *v1.Secret:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
 		if kc.secrets == nil {
@@ -109,6 +116,9 @@ func (kc *KubernetesCache) remove(obj interface{}) {
 	kc.mu.Lock()
 	defer kc.mu.Unlock()
 	switch obj := obj.(type) {
+	case *v1.ConfigMap:
+		m := meta{name: obj.Name, namespace: obj.Namespace}
+		delete(kc.configmaps, m)
 	case *v1.Secret:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
 		delete(kc.secrets, m)
@@ -142,10 +152,11 @@ func (b *Builder) Build() *DAG {
 type builder struct {
 	source *Builder
 
-	services map[servicemeta]Service
-	secrets  map[meta]*Secret
-	vhosts   map[hostport]*VirtualHost
-	svhosts  map[hostport]*SecureVirtualHost
+	configmaps map[meta]*ConfigMap
+	services   map[servicemeta]Service
+	secrets    map[meta]*Secret
+	vhosts     map[hostport]*VirtualHost
+	svhosts    map[hostport]*SecureVirtualHost
 
 	orphaned map[meta]bool
 
@@ -280,6 +291,24 @@ func (b *builder) addTCPService(svc *v1.Service, port *v1.ServicePort, weight in
 	return s
 }
 
+func (b *builder) lookupConfigMap(m meta) *ConfigMap {
+	if c, ok := b.configmaps[m]; ok {
+		return c
+	}
+	cm, ok := b.source.configmaps[m]
+	if !ok {
+		return nil
+	}
+	c := &ConfigMap{
+		Object: cm,
+	}
+	if b.configmaps == nil {
+		b.configmaps = make(map[meta]*ConfigMap)
+	}
+	b.configmaps[c.toMeta()] = c
+	return c
+}
+
 func (b *builder) lookupSecret(m meta) *Secret {
 	if s, ok := b.secrets[m]; ok {
 		return s
@@ -391,7 +420,6 @@ func (b *builder) compute() *DAG {
 				r := prefixRoute(ing, prefix)
 				m := meta{name: httppath.Backend.ServiceName, namespace: ing.Namespace}
 				if s := b.lookupHTTPService(m, httppath.Backend.ServicePort, 0, "", nil); s != nil {
-
 					r.addHTTPService(s)
 				}
 
@@ -635,6 +663,20 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 				}
 				m := meta{name: service.Name, namespace: ir.Namespace}
 				if s := b.lookupHTTPService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck); s != nil {
+					if service.TLSVerification != nil {
+						m := meta{name: service.TLSVerification.ConfigMapName, namespace: ir.Namespace}
+						cm := b.lookupConfigMap(m)
+						if cm == nil || cm.Data() == nil {
+							b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: failed to read configmap %s/%s", route.Match, service.Name, ir.Namespace, service.TLSVerification.ConfigMapName), Vhost: host})
+							return
+						} else if cm.Data()["ca.crt"] == "" {
+							b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: configmap %s/%s is missing key \"ca.crt\"", route.Match, service.Name, ir.Namespace, service.TLSVerification.ConfigMapName), Vhost: host})
+							return
+						}
+						s.Protocol = "h2"
+						s.CACertificate = cm
+					}
+
 					r.addHTTPService(s)
 				}
 			}

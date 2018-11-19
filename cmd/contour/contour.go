@@ -166,6 +166,7 @@ func main() {
 		wl := log.WithField("context", "watch")
 		k8s.WatchServices(&g, client, wl, &reh)
 		k8s.WatchIngress(&g, client, wl, &reh)
+		k8s.WatchConfigMaps(&g, client, wl, &reh)
 		k8s.WatchSecrets(&g, client, wl, &reh)
 		k8s.WatchIngressRoutes(&g, contourClient, wl, &reh)
 
