@@ -147,4 +147,12 @@ spec:
                               type: integer
                             healthyThresholdCount:
                               type: integer
+                        tlsVerification:
+                          type: object
+                          required:
+                            - configMapName
+                          properties:
+                            configMapName:
+                              type: string
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ # DNS-1123 subdomain
 ---

@@ -150,6 +150,14 @@ spec:
                               type: integer
                             healthyThresholdCount:
                               type: integer
+                        tlsVerification:
+                          type: object
+                          required:
+                            - configMapName
+                          properties:
+                            configMapName:
+                              type: string
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ # DNS-1123 subdomain
 ---
 apiVersion: extensions/v1beta1
 kind: DaemonSet
@@ -244,7 +252,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - configmaps
   - endpoints
   - nodes
   - pods
@@ -261,6 +268,7 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
   - services
   verbs:
   - get
