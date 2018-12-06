@@ -746,7 +746,7 @@ IngressRoutes with a defined `virtualhost` field that are not in one of the allo
 
 Ingressroute supports proxying of TLS encapsulated TCP sessions.
 
-The TCP session must be encrupted with TLS.
+The TCP session must be encrypted with TLS.
 This is necessary so that Envoy can use SNI to route the incoming request to the correct service.
 
 ```
