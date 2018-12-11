@@ -47,8 +47,6 @@ spec:
     openAPIV3Schema:
       properties:
         spec:
-          required:
-            - routes
           properties:
             virtualhost:
               properties:

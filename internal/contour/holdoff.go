@@ -60,7 +60,6 @@ func (hn *HoldoffNotifier) OnChange(builder *dag.Builder) {
 		return
 	}
 
-	hn.WithField("remaining", holdoffMaxDelay-since).Info("delaying update")
 	hn.timer = time.AfterFunc(holdoffDelay, func() {
 		hn.mu.Lock()
 		defer hn.mu.Unlock()
