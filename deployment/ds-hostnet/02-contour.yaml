@@ -23,7 +23,7 @@ spec:
     spec:
       hostNetwork: true
       containers:
-      - image: gcr.io/heptio-images/contour:v0.8.0
+      - image: gcr.io/heptio-images/contour:v0.8.1
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
@@ -59,7 +59,7 @@ spec:
             exec:
               command: ["wget", "-qO-", "http://localhost:9001/healthcheck/fail"] 
       initContainers:
-      - image: gcr.io/heptio-images/contour:v0.8.0
+      - image: gcr.io/heptio-images/contour:v0.8.1
         imagePullPolicy: Always
         name: envoy-initconfig
         command: ["contour"]
