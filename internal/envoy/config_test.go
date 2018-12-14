@@ -95,8 +95,10 @@ static_resources:
                 http_filters:
                   - name: envoy.health_check
                     config:
-                      endpoint: "/healthz"
                       pass_through_mode: false
+                      headers:
+                      - name: ":path"
+                        exact_match: "/healthz"
                   - name: envoy.router
                     config:
 admin:
@@ -183,8 +185,10 @@ static_resources:
                 http_filters:
                   - name: envoy.health_check
                     config:
-                      endpoint: "/healthz"
                       pass_through_mode: false
+                      headers:
+                      - name: ":path"
+                        exact_match: "/healthz"
                   - name: envoy.router
                     config:
 stats_sinks:
