@@ -57,9 +57,10 @@
     "envoy/api/v2/route",
     "envoy/config/accesslog/v2",
     "envoy/config/filter/accesslog/v2",
-    "envoy/config/filter/network/http_connection_manager/v2",
+    "envoy/config/filter/network/tcp_proxy/v2",
     "envoy/service/load_stats/v2",
     "envoy/type",
+    "pkg/util",
   ]
   pruneopts = ""
   revision = "51b27c23cab9d18a020bf06acb0ddd00d23a2d77"
@@ -93,7 +94,7 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:6e73003ecd35f4487a5e88270d3ca0a81bc80dc88053ac7e4dcfec5fba30d918"
+  digest = "1:527e1e468c5586ef2645d143e9f5fbd50b4fe5abc8b1e25d9f1c416d22d24895"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -104,8 +105,8 @@
     "types",
   ]
   pruneopts = ""
-  revision = "636bf0302bc95575d69441b25a2603156ffdddf1"
-  version = "v1.1.1"
+  revision = "4cbf7e384e768b4e01799441fdf2a706a5635ae7"
+  version = "v1.2.0"
 
 [[projects]]
   branch = "master"
@@ -274,7 +275,7 @@
   version = "v2.0.1"
 
 [[projects]]
-  digest = "1:8b2082f564fe20dbb43a621ee0d57ae2777656ab14111d100d3d92d1b5b958b9"
+  digest = "1:6f218995d6a74636cfcab45ce03005371e682b4b9bee0e5eb0ccfd83ef85364f"
   name = "github.com/prometheus/client_golang"
   packages = [
     "prometheus",
@@ -282,8 +283,8 @@
     "prometheus/promhttp",
   ]
   pruneopts = ""
-  revision = "abad2d1bd44235a26707c172eab6bca5bf2dbad3"
-  version = "v0.9.1"
+  revision = "505eaef017263e299324067d40ca2c48f6a2cf50"
+  version = "v0.9.2"
 
 [[projects]]
   branch = "master"
@@ -456,24 +457,29 @@
   revision = "c830210a61dfaa790e1920f8d0470fc27bc2efbe"
 
 [[projects]]
-  digest = "1:1293087271e314cfa2b3decededba2ecba0ff327e7b7809e00f73f616449191c"
+  digest = "1:d141efe4aaad714e3059c340901aab3147b6253e58c85dafbcca3dd8b0e88ad6"
   name = "google.golang.org/grpc"
   packages = [
     ".",
     "balancer",
     "balancer/base",
     "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
     "codes",
     "connectivity",
     "credentials",
+    "credentials/internal",
     "encoding",
     "encoding/proto",
     "grpclog",
     "internal",
     "internal/backoff",
+    "internal/binarylog",
     "internal/channelz",
     "internal/envconfig",
     "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/syscall",
     "internal/transport",
     "keepalive",
     "metadata",
@@ -487,8 +493,8 @@
     "tap",
   ]
   pruneopts = ""
-  revision = "2e463a05d100327ca47ac218281906921038fd95"
-  version = "v1.16.0"
+  revision = "df014850f6dee74ba2fc94874043a9f3f75fbfd8"
+  version = "v1.17.0"
 
 [[projects]]
   digest = "1:15d017551627c8bb091bde628215b2861bed128855343fdd570c62d08871f6e1"
@@ -739,9 +745,10 @@
     "github.com/envoyproxy/go-control-plane/envoy/api/v2/route",
     "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v2",
     "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2",
-    "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2",
+    "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2",
     "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2",
     "github.com/envoyproxy/go-control-plane/envoy/type",
+    "github.com/envoyproxy/go-control-plane/pkg/util",
     "github.com/evanphx/json-patch",
     "github.com/gogo/protobuf/jsonpb",
     "github.com/gogo/protobuf/proto",

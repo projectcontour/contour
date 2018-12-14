@@ -19,13 +19,10 @@ required = [
   version = "kubernetes-1.11.4"
 
 [[constraint]]
-  name = "google.golang.org/grpc"
-  version = "^1.12.0"
-
-[[constraint]]
   name = "k8s.io/code-generator"
   version = "kubernetes-1.11.4"
 
 [[constraint]]
-  name = "github.com/prometheus/client_golang"
-  version = "^0.9.0-pre1"
+  name = "github.com/envoyproxy/go-control-plane"
+  # 0.6.1 matches Envoy v1.8.0, higher versions are for 1.9-dev
+  version = "=0.6.1"
