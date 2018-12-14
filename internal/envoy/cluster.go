@@ -56,6 +56,7 @@ func httpCluster(service *dag.HTTPService) *v2.Cluster {
 func cluster(service *dag.TCPService) *v2.Cluster {
 	c := &v2.Cluster{
 		Name:             Clustername(service),
+		AltStatName:      altStatName(service),
 		Type:             v2.Cluster_EDS,
 		EdsClusterConfig: edsconfig("contour", service),
 		ConnectTimeout:   250 * time.Millisecond,
@@ -138,6 +139,12 @@ func Clustername(service *dag.TCPService) string {
 	ns := service.Namespace
 	name := service.Name
 	return hashname(60, ns, name, strconv.Itoa(int(service.Port)), fmt.Sprintf("%x", hash[:5]))
+}
+
+// altStatName generates an alternative stat name for the service
+// using format ns_name_port
+func altStatName(service *dag.TCPService) string {
+	return strings.Join([]string{service.Namespace, service.Name, strconv.Itoa(int(service.Port))}, "_")
 }
 
 // hashname takes a lenth l and a varargs of strings s and returns a string whose length

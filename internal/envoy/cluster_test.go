@@ -55,8 +55,9 @@ func TestCluster(t *testing.T) {
 				TCPService: service(s1),
 			},
 			want: &v2.Cluster{
-				Name: "default/kuard/443/da39a3ee5e",
-				Type: v2.Cluster_EDS,
+				Name:        "default/kuard/443/da39a3ee5e",
+				AltStatName: "default_kuard_443",
+				Type:        v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -72,8 +73,9 @@ func TestCluster(t *testing.T) {
 				Protocol:   "h2c",
 			},
 			want: &v2.Cluster{
-				Name: "default/kuard/443/da39a3ee5e",
-				Type: v2.Cluster_EDS,
+				Name:        "default/kuard/443/da39a3ee5e",
+				AltStatName: "default_kuard_443",
+				Type:        v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -90,8 +92,9 @@ func TestCluster(t *testing.T) {
 				Protocol:   "h2",
 			},
 			want: &v2.Cluster{
-				Name: "default/kuard/443/da39a3ee5e",
-				Type: v2.Cluster_EDS,
+				Name:        "default/kuard/443/da39a3ee5e",
+				AltStatName: "default_kuard_443",
+				Type:        v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -112,8 +115,9 @@ func TestCluster(t *testing.T) {
 				},
 			},
 			want: &v2.Cluster{
-				Name: "default/kuard/443/da39a3ee5e",
-				Type: v2.Cluster_EDS,
+				Name:        "default/kuard/443/da39a3ee5e",
+				AltStatName: "default_kuard_443",
+				Type:        v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -137,8 +141,9 @@ func TestCluster(t *testing.T) {
 				},
 			},
 			want: &v2.Cluster{
-				Name: "default/kuard/443/da39a3ee5e",
-				Type: v2.Cluster_EDS,
+				Name:        "default/kuard/443/da39a3ee5e",
+				AltStatName: "default_kuard_443",
+				Type:        v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -162,8 +167,9 @@ func TestCluster(t *testing.T) {
 				},
 			},
 			want: &v2.Cluster{
-				Name: "default/kuard/443/da39a3ee5e",
-				Type: v2.Cluster_EDS,
+				Name:        "default/kuard/443/da39a3ee5e",
+				AltStatName: "default_kuard_443",
+				Type:        v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -187,8 +193,9 @@ func TestCluster(t *testing.T) {
 				},
 			},
 			want: &v2.Cluster{
-				Name: "default/kuard/443/da39a3ee5e",
-				Type: v2.Cluster_EDS,
+				Name:        "default/kuard/443/da39a3ee5e",
+				AltStatName: "default_kuard_443",
+				Type:        v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -209,8 +216,9 @@ func TestCluster(t *testing.T) {
 				ServicePort: &s1.Spec.Ports[0],
 			},
 			want: &v2.Cluster{
-				Name: "default/kuard/443/da39a3ee5e",
-				Type: v2.Cluster_EDS,
+				Name:        "default/kuard/443/da39a3ee5e",
+				AltStatName: "default_kuard_443",
+				Type:        v2.Cluster_EDS,
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
