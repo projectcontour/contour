@@ -126,7 +126,7 @@ cd cert-manager
 Then deploy cert-manager:
 
 ```
-kubectl apply -f contrib/manifests/cert-manager/with-rbac.yaml
+kubectl apply -f deploy/manifests/cert-manager.yaml
 ```
 
 When cert-manager is up and running you should see something like:
