@@ -774,7 +774,7 @@ spec:
       port: 80
 ```
 
-The `spec.tcpproxy` key indicates that this _root_ IngressRoute will forward all de-encrypted TCP traffic to the backedn service.
+The `spec.tcpproxy` key indicates that this _root_ IngressRoute will forward all de-encrypted TCP traffic to the backend service.
 
 ### Limitations
 
