@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package metrics provides Prometheus metrics for Contour.
 package metrics
 
 import (
@@ -152,33 +153,23 @@ func (m *Metrics) SetIngressRouteMetric(metrics IngressRouteMetric) {
 	// Process metrics
 	for meta, value := range metrics.Total {
 		m.ingressRouteTotalGauge.WithLabelValues(meta.Namespace).Set(float64(value))
-		if _, ok := m.metricCache.Total[meta]; ok {
-			delete(m.metricCache.Total, meta)
-		}
+		delete(m.metricCache.Total, meta)
 	}
 	for meta, value := range metrics.Invalid {
 		m.ingressRouteInvalidGauge.WithLabelValues(meta.Namespace, meta.VHost).Set(float64(value))
-		if _, ok := m.metricCache.Invalid[meta]; ok {
-			delete(m.metricCache.Invalid, meta)
-		}
+		delete(m.metricCache.Invalid, meta)
 	}
 	for meta, value := range metrics.Orphaned {
 		m.ingressRouteOrphanedGauge.WithLabelValues(meta.Namespace).Set(float64(value))
-		if _, ok := m.metricCache.Orphaned[meta]; ok {
-			delete(m.metricCache.Orphaned, meta)
-		}
+		delete(m.metricCache.Orphaned, meta)
 	}
 	for meta, value := range metrics.Valid {
 		m.ingressRouteValidGauge.WithLabelValues(meta.Namespace, meta.VHost).Set(float64(value))
-		if _, ok := m.metricCache.Valid[meta]; ok {
-			delete(m.metricCache.Valid, meta)
-		}
+		delete(m.metricCache.Valid, meta)
 	}
 	for meta, value := range metrics.Root {
 		m.ingressRouteRootTotalGauge.WithLabelValues(meta.Namespace).Set(float64(value))
-		if _, ok := m.metricCache.Root[meta]; ok {
-			delete(m.metricCache.Root, meta)
-		}
+		delete(m.metricCache.Root, meta)
 	}
 
 	// All metrics processed, now remove what's left as they are not needed
