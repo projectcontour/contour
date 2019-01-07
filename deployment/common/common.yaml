@@ -52,7 +52,7 @@ spec:
               properties:
                 fqdn:
                   type: string
-                  pattern: ^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\.)+[a-z]{2,}$
+                  pattern: ^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\.)+[a-z0-9]{2,}$
                 tls:
                   properties:
                     secretName:
