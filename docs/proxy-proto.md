@@ -33,14 +33,11 @@ spec:
 ...
 spec:
   containers:
-  - name: contour
-    args:                 
-    - serve            
-    - --incluster                 
-    - --use-proxy-protocol
-    command:             
-    - contour                
-    image: gcr.io/heptio-images/contour:latest
+  - image: gcr.io/heptio-images/contour:master
+    imagePullPolicy: Always
+    name: contour
+    command: ["contour"]
+    args: ["serve", "--incluster", "--use-proxy-protocol"]
 ...
 ```
 

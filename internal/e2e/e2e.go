@@ -11,9 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package e2e provides end-to-end tests.
 package e2e
-
-// grpc helpers
 
 import (
 	"net"
