@@ -226,3 +226,21 @@ func ClusterCommonLBConfig() *v2.Cluster_CommonLbConfig {
 		},
 	}
 }
+
+// ConfigSource returns a *core.ConfigSource for cluster.
+func ConfigSource(cluster string) *core.ConfigSource {
+	return &core.ConfigSource{
+		ConfigSourceSpecifier: &core.ConfigSource_ApiConfigSource{
+			ApiConfigSource: &core.ApiConfigSource{
+				ApiType: core.ApiConfigSource_GRPC,
+				GrpcServices: []*core.GrpcService{{
+					TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
+						EnvoyGrpc: &core.GrpcService_EnvoyGrpc{
+							ClusterName: cluster,
+						},
+					},
+				}},
+			},
+		},
+	}
+}

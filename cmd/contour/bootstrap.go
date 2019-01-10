@@ -14,27 +14,20 @@
 package main
 
 import (
-	"fmt"
-	"io"
 	"os"
-	"path/filepath"
+
+	"github.com/gogo/protobuf/jsonpb"
+	"github.com/heptio/contour/internal/envoy"
 )
 
-type configWriter interface {
-	WriteYAML(io.Writer) error
-}
-
 // writeBootstrapConfig writes a bootstrap configuration to the supplied path.
-// If the path ends in .yaml, the configuration file will be in v2 YAML format.
-func writeBootstrapConfig(config configWriter, path string) {
-	switch filepath.Ext(path) {
-	case ".yaml":
-		f, err := os.Create(path)
-		check(err)
-		err = config.WriteYAML(f)
-		check(err)
-		check(f.Close())
-	default:
-		check(fmt.Errorf("path %s must end in .yaml", path))
-	}
+// in v2 JSON format.
+func writeBootstrapConfig(config *envoy.BootstrapConfig, path string) {
+	f, err := os.Create(path)
+	check(err)
+	bs := envoy.Bootstrap(config)
+	m := &jsonpb.Marshaler{OrigName: true}
+	err = m.Marshal(f, bs)
+	check(err)
+	check(f.Close())
 }

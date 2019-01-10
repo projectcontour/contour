@@ -19,8 +19,6 @@ package envoy
 import (
 	"io"
 	"text/template"
-
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 )
 
 // A ConfigWriter knows how to write a bootstap Envoy configuration in YAML format.
@@ -172,22 +170,4 @@ func (c *ConfigWriter) WriteYAML(w io.Writer) error {
 		return err
 	}
 	return t.Execute(w, c)
-}
-
-// ConfigSource returns a *core.ConfigSource for cluster.
-func ConfigSource(cluster string) *core.ConfigSource {
-	return &core.ConfigSource{
-		ConfigSourceSpecifier: &core.ConfigSource_ApiConfigSource{
-			ApiConfigSource: &core.ApiConfigSource{
-				ApiType: core.ApiConfigSource_GRPC,
-				GrpcServices: []*core.GrpcService{{
-					TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
-						EnvoyGrpc: &core.GrpcService_EnvoyGrpc{
-							ClusterName: cluster,
-						},
-					},
-				}},
-			},
-		},
-	}
 }

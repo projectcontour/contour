@@ -188,7 +188,7 @@ spec:
           name: https
         command: ["envoy"]
         args:
-        - --config-path /config/contour.yaml
+        - --config-path /config/contour.json
         - --service-cluster cluster0
         - --service-node node0
         - --log-level info
@@ -218,7 +218,7 @@ spec:
         # Uncomment to set a custom stats emission address and port
         #- --stats-address=0.0.0.0
         #- --stats-port=8002
-        - /config/contour.yaml
+        - /config/contour.json
         volumeMounts:
         - name: contour-config
           mountPath: /config

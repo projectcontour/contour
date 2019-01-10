@@ -26,7 +26,7 @@ spec:
       containers:
       - args:
         - -c
-        - /config/contour.yaml
+        - /config/contour.json
         - --service-cluster
         - cluster0
         - --service-node
@@ -63,7 +63,7 @@ spec:
       initContainers:
       - args:
         - bootstrap
-        - /config/contour.yaml
+        - /config/contour.json
         - --xds-address
         - $(CONTOUR_SERVICE_HOST)
         - --xds-port
