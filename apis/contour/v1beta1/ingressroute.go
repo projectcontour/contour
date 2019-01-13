@@ -22,7 +22,7 @@ type IngressRouteSpec struct {
 	// Virtualhost appears at most once. If it is present, the object is considered
 	// to be a "root".
 	VirtualHost *VirtualHost `json:"virtualhost,omitempty"`
-	// Routes are the ingress routes. If Forward is present, Routes is ignored.
+	// Routes are the ingress routes. If TCPProxy is present, Routes is ignored.
 	Routes []Route `json:"routes"`
 	// TCPProxy holds TCP proxy information.
 	TCPProxy *TCPProxy `json:"tcpproxy,omitempty"`
@@ -71,6 +71,8 @@ type Route struct {
 type TCPProxy struct {
 	// Services are the services to proxy traffic
 	Services []Service `json:"services,omitempty"`
+	// Delegate specifies that this tcpproxy should be delegated to another IngressRoute
+	Delegate *Delegate `json:"delegate,omitempty"`
 }
 
 // Service defines an upstream to proxy traffic to

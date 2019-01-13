@@ -665,6 +665,43 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// ir1c tcp delegates to another ingress route, concretely to
+	// marketing/kuard-tcp. it.
+	ir1c := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-tcp",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "kuard.example.com",
+			},
+			TCPProxy: &ingressroutev1.TCPProxy{
+				Delegate: &ingressroutev1.Delegate{
+					Name:      "kuard-tcp",
+					Namespace: "marketing",
+				},
+			},
+		},
+	}
+
+	// ir1d tcp forwards traffic to default/kuard:8080 by TLS pass-throughing
+	// it.
+	ir1d := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-tcp",
+			Namespace: "marketing",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			TCPProxy: &ingressroutev1.TCPProxy{
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
 	// ir2 is like ir1 but refers to two backend services
 	ir2 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1058,6 +1095,21 @@ func TestDAGInsert(t *testing.T) {
 	s4 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog",
+			Namespace: "marketing",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	s6 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
 			Namespace: "marketing",
 		},
 		Spec: v1.ServiceSpec{
@@ -1759,6 +1811,24 @@ func TestDAGInsert(t *testing.T) {
 						TCPProxy: &TCPProxy{
 							Services: []*TCPService{
 								tcpService(s1),
+							},
+						},
+					},
+				},
+			},
+		},
+		"insert root ingress route and delegate ingress route for a tcp proxy": {
+			objs: []interface{}{
+				ir1d, s6, ir1c,
+			},
+			want: []Vertex{
+				&SecureVirtualHost{
+					VirtualHost: VirtualHost{
+						Host: "kuard.example.com",
+						Port: 443,
+						TCPProxy: &TCPProxy{
+							Services: []*TCPService{
+								tcpService(s6),
 							},
 						},
 					},
