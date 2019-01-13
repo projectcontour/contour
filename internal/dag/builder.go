@@ -664,17 +664,18 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 				m := meta{name: service.Name, namespace: ir.Namespace}
 				if s := b.lookupHTTPService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck); s != nil {
 					if service.TLSVerification != nil {
-						m := meta{name: service.TLSVerification.ConfigMapName, namespace: ir.Namespace}
+						m := meta{name: service.TLSVerification.CA.ConfigMapName, namespace: ir.Namespace}
 						cm := b.lookupConfigMap(m)
 						if cm == nil || cm.Data() == nil {
-							b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: failed to read configmap %s/%s", route.Match, service.Name, ir.Namespace, service.TLSVerification.ConfigMapName), Vhost: host})
+							b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: failed to read configmap %s/%s", route.Match, service.Name, ir.Namespace, service.TLSVerification.CA.ConfigMapName), Vhost: host})
 							return
 						} else if cm.Data()["ca.crt"] == "" {
-							b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: configmap %s/%s is missing key \"ca.crt\"", route.Match, service.Name, ir.Namespace, service.TLSVerification.ConfigMapName), Vhost: host})
+							b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: configmap %s/%s is missing key \"ca.crt\"", route.Match, service.Name, ir.Namespace, service.TLSVerification.CA.ConfigMapName), Vhost: host})
 							return
 						}
 						s.Protocol = "h2"
 						s.CACertificate = cm
+						s.Hostnames = service.TLSVerification.Hostnames
 					}
 
 					r.addHTTPService(s)

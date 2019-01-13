@@ -118,7 +118,16 @@ type HealthCheck struct {
 
 // TLS verification for the upstream services
 type TLSVerification struct {
-	// required, the name of a configmap in the current namespace
+	// Required, the CA to use for TLS verification
+	CA CA `json:"ca"`
+	// If specified, at least one of the hostnames must be included in the
+	// certificate's Subject Alternative Names field
+	Hostnames []string `json:"hostnames"`
+}
+
+// TLS verification for the upstream services
+type CA struct {
+	// Required, the name of a configmap in the current namespace
 	ConfigMapName string `json:"configMapName"`
 }
 

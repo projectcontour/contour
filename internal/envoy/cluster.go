@@ -52,7 +52,7 @@ func httpCluster(service *dag.HTTPService) *v2.Cluster {
 			if cert := cm["ca.crt"]; cert == "" {
 				c.TlsContext = UpstreamTLSContext()
 			} else {
-				c.TlsContext = UpstreamTLSContextWithVerification([]byte(cert))
+				c.TlsContext = UpstreamTLSContextWithVerification([]byte(cert), service.Hostnames)
 			}
 		}
 		fallthrough

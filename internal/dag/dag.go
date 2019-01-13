@@ -236,6 +236,10 @@ type HTTPService struct {
 
 	// ConfigMap that holds the CA certificate used for TLS verification
 	CACertificate *ConfigMap
+
+	// If specified, at least one of the hostnames must be included in the
+	// certificate's Subject Alternative Names field
+	Hostnames []string
 }
 
 // ConfigMap represents a K8s ConfigMap as a DAG Vertex. A ConfigMap is

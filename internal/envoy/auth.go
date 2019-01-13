@@ -28,7 +28,7 @@ func UpstreamTLSContext() *auth.UpstreamTlsContext {
 }
 
 // UpstreamTLSContext creates an ALPN h2 enabled TLS Context with TLS verification enabled.
-func UpstreamTLSContextWithVerification(cert []byte) *auth.UpstreamTlsContext {
+func UpstreamTLSContextWithVerification(cert []byte, hostnames []string) *auth.UpstreamTlsContext {
 	return &auth.UpstreamTlsContext{
 		CommonTlsContext: &auth.CommonTlsContext{
 			ValidationContextType: &auth.CommonTlsContext_ValidationContext{
@@ -38,6 +38,7 @@ func UpstreamTLSContextWithVerification(cert []byte) *auth.UpstreamTlsContext {
 							InlineBytes: cert,
 						},
 					},
+					VerifySubjectAltName: hostnames,
 				},
 			},
 			AlpnProtocols: []string{"h2"},

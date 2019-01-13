@@ -153,11 +153,20 @@ spec:
                         tlsVerification:
                           type: object
                           required:
-                            - configMapName
+                            - ca
                           properties:
-                            configMapName:
-                              type: string
-                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ # DNS-1123 subdomain
+                            ca:
+                              type: object
+                              required:
+                                - configMapName
+                              properties:
+                                configMapName:
+                                  type: string
+                                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ # DNS-1123 subdomain
+                            hostnames:
+                              type: array
+                              items:
+                                type: string
 ---
 apiVersion: extensions/v1beta1
 kind: DaemonSet
