@@ -16,12 +16,13 @@ package contour
 import (
 	"sync"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/gogo/protobuf/proto"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -230,11 +231,6 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		// the listener properly.
 		v.http = true
 	case *dag.SecureVirtualHost:
-		data := vh.Data()
-		if data == nil {
-			// no secret for this vhost, skip it
-			return
-		}
 		filters := []listener.Filter{
 			envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.httpsAccessLog()),
 		}
@@ -246,11 +242,16 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			alpnProtos = nil // do not offer ALPN
 		}
 
+		var tlsContext *auth.DownstreamTlsContext
+		if vh.Secret != nil && vh.Secret.Data() != nil {
+			data := vh.Secret.Data()
+			tlsContext = envoy.DownstreamTLSContext(data[v1.TLSCertKey], data[v1.TLSPrivateKeyKey], vh.MinProtoVersion, alpnProtos...)
+		}
 		fc := listener.FilterChain{
 			FilterChainMatch: &listener.FilterChainMatch{
 				ServerNames: []string{vh.Host},
 			},
-			TlsContext:    envoy.DownstreamTLSContext(data[v1.TLSCertKey], data[v1.TLSPrivateKeyKey], vh.MinProtoVersion, alpnProtos...),
+			TlsContext:    tlsContext,
 			Filters:       filters,
 			UseProxyProto: bv(v.UseProxyProto),
 		}

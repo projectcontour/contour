@@ -22,7 +22,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -615,7 +615,8 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	// ir1a tcp forwards traffic to default/kuard:8080
+	// ir1a tcp forwards traffic to default/kuard:8080 by TLS terminating it
+	// first.
 	ir1a := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard-tcp",
@@ -635,6 +636,26 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 				}},
 			}},
+			TCPProxy: &ingressroutev1.TCPProxy{
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
+	// ir1b tcp forwards traffic to default/kuard:8080 by TLS pass-throughing
+	// it.
+	ir1b := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-tcp",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "kuard.example.com",
+			},
 			TCPProxy: &ingressroutev1.TCPProxy{
 				Services: []ingressroutev1.Service{{
 					Name: "kuard",
@@ -1706,7 +1727,7 @@ func TestDAGInsert(t *testing.T) {
 					),
 				}},
 		},
-		"insert ingressroute with tcp forward": {
+		"insert ingressroute with tcp forward with TLS termination": {
 			objs: []interface{}{
 				ir1a, s1, sec1,
 			},
@@ -1723,6 +1744,24 @@ func TestDAGInsert(t *testing.T) {
 					},
 					Secret:          secret(sec1),
 					MinProtoVersion: auth.TlsParameters_TLSv1_1,
+				},
+			},
+		},
+		"insert ingressroute with tcp forward without TLS termination": {
+			objs: []interface{}{
+				ir1b, s1,
+			},
+			want: []Vertex{
+				&SecureVirtualHost{
+					VirtualHost: VirtualHost{
+						Host: "kuard.example.com",
+						Port: 443,
+						TCPProxy: &TCPProxy{
+							Services: []*TCPService{
+								tcpService(s1),
+							},
+						},
+					},
 				},
 			},
 		},
