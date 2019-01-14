@@ -789,6 +789,352 @@ func TestClusterVisit(t *testing.T) {
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				}),
 		},
+		"TLS verification of CA only": {
+			objs: []interface{}{
+				&v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ca",
+						Namespace: "default",
+					},
+					Data: map[string]string{
+						"ca.crt": "CA certificate data",
+					},
+				},
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{{
+								Name: "backend",
+								Port: 443,
+								TLSVerification: &ingressroutev1.TLSVerification{
+									CA: ingressroutev1.CA{ConfigMapName: "ca"},
+								},
+							}},
+						}},
+					},
+				},
+				serviceWithAnnotations(
+					"default",
+					"backend",
+					map[string]string{
+						"contour.heptio.com/upstream-protocol.h2": "443,https",
+					},
+					v1.ServicePort{
+						Name:       "https",
+						Protocol:   "TCP",
+						Port:       443,
+						TargetPort: intstr.FromInt(8443),
+					},
+				),
+			},
+			want: clustermap(
+				&v2.Cluster{
+					Name:        "default/backend/443/f717bfc27a",
+					AltStatName: "default_backend_443",
+					Type:        v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/backend/https",
+					},
+					ConnectTimeout:       250 * time.Millisecond,
+					LbPolicy:             v2.Cluster_ROUND_ROBIN,
+					CommonLbConfig:       envoy.ClusterCommonLBConfig(),
+					TlsContext:           envoy.UpstreamTLSContextWithVerification([]byte("CA certificate data"), ""),
+					Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+				},
+			),
+		},
+		"TLS verification of CA and hostname": {
+			objs: []interface{}{
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: secretdata("certificate", "key"),
+				},
+				&v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ca",
+						Namespace: "default",
+					},
+					Data: map[string]string{
+						"ca.crt": "CA certificate data",
+					},
+				},
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &ingressroutev1.TLS{
+								SecretName: "secret",
+							},
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{{
+								Name: "backend",
+								Port: 443,
+								TLSVerification: &ingressroutev1.TLSVerification{
+									CA:       ingressroutev1.CA{ConfigMapName: "ca"},
+									Hostname: "backend.default.svc",
+								},
+							}},
+						}},
+					},
+				},
+				serviceWithAnnotations(
+					"default",
+					"backend",
+					map[string]string{
+						"contour.heptio.com/upstream-protocol.h2": "443,https",
+					},
+					v1.ServicePort{
+						Name:       "https",
+						Protocol:   "TCP",
+						Port:       443,
+						TargetPort: intstr.FromInt(8443),
+					},
+				),
+			},
+			want: clustermap(
+				&v2.Cluster{
+					Name:        "default/backend/443/45c43e101f",
+					AltStatName: "default_backend_443",
+					Type:        v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/backend/https",
+					},
+					ConnectTimeout:       250 * time.Millisecond,
+					LbPolicy:             v2.Cluster_ROUND_ROBIN,
+					CommonLbConfig:       envoy.ClusterCommonLBConfig(),
+					TlsContext:           envoy.UpstreamTLSContextWithVerification([]byte("CA certificate data"), "backend.default.svc"),
+					Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+				},
+			),
+		},
+		"one service verified by two different CA certificates": {
+			objs: []interface{}{
+				&v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ca1",
+						Namespace: "default",
+					},
+					Data: map[string]string{
+						"ca.crt": "CA certificate data 1",
+					},
+				},
+				&v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ca2",
+						Namespace: "default",
+					},
+					Data: map[string]string{
+						"ca.crt": "CA certificate data 2",
+					},
+				},
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple1",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example1.com",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{{
+								Name: "backend",
+								Port: 443,
+								TLSVerification: &ingressroutev1.TLSVerification{
+									CA:       ingressroutev1.CA{ConfigMapName: "ca1"},
+									Hostname: "backend.default.svc",
+								},
+							}},
+						}},
+					},
+				},
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple2",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example2.com",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{{
+								Name: "backend",
+								Port: 443,
+								TLSVerification: &ingressroutev1.TLSVerification{
+									CA:       ingressroutev1.CA{ConfigMapName: "ca2"},
+									Hostname: "backend.default.svc",
+								},
+							}},
+						}},
+					},
+				},
+				serviceWithAnnotations(
+					"default",
+					"backend",
+					map[string]string{
+						"contour.heptio.com/upstream-protocol.h2": "443,https",
+					},
+					v1.ServicePort{
+						Name:       "https",
+						Protocol:   "TCP",
+						Port:       443,
+						TargetPort: intstr.FromInt(8443),
+					},
+				),
+			},
+			want: clustermap(
+				&v2.Cluster{
+					Name:        "default/backend/443/72f5a65e99",
+					AltStatName: "default_backend_443",
+					Type:        v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/backend/https",
+					},
+					ConnectTimeout:       250 * time.Millisecond,
+					LbPolicy:             v2.Cluster_ROUND_ROBIN,
+					CommonLbConfig:       envoy.ClusterCommonLBConfig(),
+					TlsContext:           envoy.UpstreamTLSContextWithVerification([]byte("CA certificate data 1"), "backend.default.svc"),
+					Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+				},
+				&v2.Cluster{
+					Name:        "default/backend/443/2004857f79",
+					AltStatName: "default_backend_443",
+					Type:        v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/backend/https",
+					},
+					ConnectTimeout:       250 * time.Millisecond,
+					LbPolicy:             v2.Cluster_ROUND_ROBIN,
+					CommonLbConfig:       envoy.ClusterCommonLBConfig(),
+					TlsContext:           envoy.UpstreamTLSContextWithVerification([]byte("CA certificate data 2"), "backend.default.svc"),
+					Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+				},
+			),
+		},
+		"one service verified by two different hostnames": {
+			objs: []interface{}{
+				&v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ca",
+						Namespace: "default",
+					},
+					Data: map[string]string{
+						"ca.crt": "CA certificate data",
+					},
+				},
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple1",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example1.com",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{{
+								Name: "backend",
+								Port: 443,
+								TLSVerification: &ingressroutev1.TLSVerification{
+									CA:       ingressroutev1.CA{ConfigMapName: "ca"},
+									Hostname: "backend1.default.svc",
+								},
+							}},
+						}},
+					},
+				},
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple2",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example2.com",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{{
+								Name: "backend",
+								Port: 443,
+								TLSVerification: &ingressroutev1.TLSVerification{
+									CA:       ingressroutev1.CA{ConfigMapName: "ca"},
+									Hostname: "backend2.default.svc",
+								},
+							}},
+						}},
+					},
+				},
+				serviceWithAnnotations(
+					"default",
+					"backend",
+					map[string]string{
+						"contour.heptio.com/upstream-protocol.h2": "443,https",
+					},
+					v1.ServicePort{
+						Name:       "https",
+						Protocol:   "TCP",
+						Port:       443,
+						TargetPort: intstr.FromInt(8443),
+					},
+				),
+			},
+			want: clustermap(
+				&v2.Cluster{
+					Name:        "default/backend/443/d32859742c",
+					AltStatName: "default_backend_443",
+					Type:        v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/backend/https",
+					},
+					ConnectTimeout:       250 * time.Millisecond,
+					LbPolicy:             v2.Cluster_ROUND_ROBIN,
+					CommonLbConfig:       envoy.ClusterCommonLBConfig(),
+					TlsContext:           envoy.UpstreamTLSContextWithVerification([]byte("CA certificate data"), "backend1.default.svc"),
+					Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+				},
+				&v2.Cluster{
+					Name:        "default/backend/443/1bf1802852",
+					AltStatName: "default_backend_443",
+					Type:        v2.Cluster_EDS,
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/backend/https",
+					},
+					ConnectTimeout:       250 * time.Millisecond,
+					LbPolicy:             v2.Cluster_ROUND_ROBIN,
+					CommonLbConfig:       envoy.ClusterCommonLBConfig(),
+					TlsContext:           envoy.UpstreamTLSContextWithVerification([]byte("CA certificate data"), "backend2.default.svc"),
+					Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+				},
+			),
+		},
 	}
 
 	for name, tc := range tests {

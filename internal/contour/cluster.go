@@ -97,13 +97,7 @@ func visitClusters(root dag.Vertex) map[string]*v2.Cluster {
 
 func (v *clusterVisitor) visit(vertex dag.Vertex) {
 	switch service := vertex.(type) {
-	case *dag.HTTPService:
-		name := envoy.Clustername(&service.TCPService)
-		if _, ok := v.clusters[name]; !ok {
-			c := envoy.Cluster(service)
-			v.clusters[c.Name] = c
-		}
-	case *dag.TCPService:
+	case dag.Service:
 		name := envoy.Clustername(service)
 		if _, ok := v.clusters[name]; !ok {
 			c := envoy.Cluster(service)

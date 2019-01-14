@@ -37,7 +37,7 @@ func RouteRoute(r *dag.Route, services []*dag.HTTPService) *route.Route_Route {
 	switch len(services) {
 	case 1:
 		ra.ClusterSpecifier = &route.RouteAction_Cluster{
-			Cluster: Clustername(&services[0].TCPService),
+			Cluster: Clustername(services[0]),
 		}
 		ra.RequestHeadersToAdd = headers(
 			appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
@@ -99,7 +99,7 @@ func weightedClusters(services []*dag.HTTPService) *route.WeightedCluster {
 	for _, service := range services {
 		total += service.Weight
 		wc.Clusters = append(wc.Clusters, &route.WeightedCluster_ClusterWeight{
-			Name:   Clustername(&service.TCPService),
+			Name:   Clustername(service),
 			Weight: u32(service.Weight),
 			RequestHeadersToAdd: headers(
 				appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),

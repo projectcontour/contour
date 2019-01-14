@@ -42,7 +42,7 @@ func Cluster(s dag.Service) *v2.Cluster {
 }
 
 func httpCluster(service *dag.HTTPService) *v2.Cluster {
-	c := cluster(&service.TCPService)
+	c := cluster(service)
 	switch service.Protocol {
 	case "h2":
 		if service.CACertificate == nil {
@@ -52,7 +52,7 @@ func httpCluster(service *dag.HTTPService) *v2.Cluster {
 			if cert := cm["ca.crt"]; cert == "" {
 				c.TlsContext = UpstreamTLSContext()
 			} else {
-				c.TlsContext = UpstreamTLSContextWithVerification([]byte(cert), service.Hostnames)
+				c.TlsContext = UpstreamTLSContextWithVerification([]byte(cert), service.Hostname)
 			}
 		}
 		fallthrough
@@ -62,24 +62,26 @@ func httpCluster(service *dag.HTTPService) *v2.Cluster {
 	return c
 }
 
-func cluster(service *dag.TCPService) *v2.Cluster {
+func cluster(service dag.Service) *v2.Cluster {
+	tcpService := service.GetTCPService()
+
 	c := &v2.Cluster{
 		Name:             Clustername(service),
-		AltStatName:      altStatName(service),
+		AltStatName:      altStatName(tcpService),
 		Type:             v2.Cluster_EDS,
-		EdsClusterConfig: edsconfig("contour", service),
+		EdsClusterConfig: edsconfig("contour", tcpService),
 		ConnectTimeout:   250 * time.Millisecond,
-		LbPolicy:         lbPolicy(service.LoadBalancerStrategy),
+		LbPolicy:         lbPolicy(tcpService.LoadBalancerStrategy),
 		CommonLbConfig:   ClusterCommonLBConfig(),
-		HealthChecks:     edshealthcheck(service),
+		HealthChecks:     edshealthcheck(tcpService),
 	}
-	if anyPositive(service.MaxConnections, service.MaxPendingRequests, service.MaxRequests, service.MaxRetries) {
+	if anyPositive(tcpService.MaxConnections, tcpService.MaxPendingRequests, tcpService.MaxRequests, tcpService.MaxRetries) {
 		c.CircuitBreakers = &envoy_cluster.CircuitBreakers{
 			Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
-				MaxConnections:     u32nil(service.MaxConnections),
-				MaxPendingRequests: u32nil(service.MaxPendingRequests),
-				MaxRequests:        u32nil(service.MaxRequests),
-				MaxRetries:         u32nil(service.MaxRetries),
+				MaxConnections:     u32nil(tcpService.MaxConnections),
+				MaxPendingRequests: u32nil(tcpService.MaxPendingRequests),
+				MaxRequests:        u32nil(tcpService.MaxRequests),
+				MaxRetries:         u32nil(tcpService.MaxRetries),
 			}},
 		}
 	}
@@ -126,9 +128,20 @@ func edshealthcheck(s *dag.TCPService) []*core.HealthCheck {
 }
 
 // Clustername returns the name of the CDS cluster for this service.
-func Clustername(service *dag.TCPService) string {
-	buf := service.LoadBalancerStrategy
-	if hc := service.HealthCheck; hc != nil {
+func Clustername(service dag.Service) string {
+	var buf string
+
+	if httpService, ok := service.(*dag.HTTPService); ok {
+		if httpService.CACertificate != nil {
+			buf += httpService.CACertificate.Name()
+			buf += httpService.CACertificate.Namespace()
+		}
+		buf += httpService.Hostname
+	}
+
+	tcpService := service.GetTCPService()
+	buf += tcpService.LoadBalancerStrategy
+	if hc := tcpService.HealthCheck; hc != nil {
 		if hc.TimeoutSeconds > 0 {
 			buf += (time.Duration(hc.TimeoutSeconds) * time.Second).String()
 		}
@@ -145,9 +158,10 @@ func Clustername(service *dag.TCPService) string {
 	}
 
 	hash := sha1.Sum([]byte(buf))
-	ns := service.Namespace
-	name := service.Name
-	return hashname(60, ns, name, strconv.Itoa(int(service.Port)), fmt.Sprintf("%x", hash[:5]))
+	ns := tcpService.Namespace
+	name := tcpService.Name
+	port := strconv.Itoa(int(tcpService.Port))
+	return hashname(60, ns, name, port, fmt.Sprintf("%x", hash[:5]))
 }
 
 // altStatName generates an alternative stat name for the service

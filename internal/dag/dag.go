@@ -154,6 +154,7 @@ type Vertex interface {
 type Service interface {
 	Vertex
 	toMeta() servicemeta
+	GetTCPService() *TCPService
 }
 
 // TCPProxy represents a cluster of TCP endpoints.
@@ -202,23 +203,50 @@ type TCPService struct {
 }
 
 type servicemeta struct {
-	name        string
-	namespace   string
-	port        int32
-	weight      int
-	strategy    string
-	healthcheck string // %#v of *ingressroutev1.HealthCheck
+	Name        string
+	Namespace   string
+	Port        int32
+	Weight      int
+	Strategy    string
+	Healthcheck string // %#v of *ingressroutev1.HealthCheck
+	CA          meta
+	Hostname    string
+}
+
+func (s *HTTPService) toMeta() servicemeta {
+	var caMeta meta
+	if s.CACertificate != nil {
+		caMeta = s.CACertificate.toMeta()
+	}
+	return servicemeta{
+		Name:        s.Name,
+		Namespace:   s.Namespace,
+		Port:        s.Port,
+		Weight:      s.Weight,
+		Strategy:    s.LoadBalancerStrategy,
+		Healthcheck: healthcheckToString(s.HealthCheck),
+		CA:          caMeta,
+		Hostname:    s.Hostname,
+	}
 }
 
 func (s *TCPService) toMeta() servicemeta {
 	return servicemeta{
-		name:        s.Name,
-		namespace:   s.Namespace,
-		port:        s.Port,
-		weight:      s.Weight,
-		strategy:    s.LoadBalancerStrategy,
-		healthcheck: healthcheckToString(s.HealthCheck),
+		Name:        s.Name,
+		Namespace:   s.Namespace,
+		Port:        s.Port,
+		Weight:      s.Weight,
+		Strategy:    s.LoadBalancerStrategy,
+		Healthcheck: healthcheckToString(s.HealthCheck),
 	}
+}
+
+func (s *HTTPService) GetTCPService() *TCPService {
+	return &s.TCPService
+}
+
+func (s *TCPService) GetTCPService() *TCPService {
+	return s
 }
 
 func (s *TCPService) Visit(func(Vertex)) {
@@ -237,10 +265,13 @@ type HTTPService struct {
 	// ConfigMap that holds the CA certificate used for TLS verification
 	CACertificate *ConfigMap
 
-	// If specified, at least one of the hostnames must be included in the
-	// certificate's Subject Alternative Names field
-	Hostnames []string
+	// If specified, the hostname must included in the certificate's Subject
+	// Alternative Names field
+	Hostname string
 }
+
+// The key used in the ConfigMap to hold the CA certificate
+var CACertKey = "ca.crt"
 
 // ConfigMap represents a K8s ConfigMap as a DAG Vertex. A ConfigMap is
 // a leaf in the DAG.

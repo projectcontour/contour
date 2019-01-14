@@ -164,8 +164,8 @@ type builder struct {
 }
 
 // lookupHTTPService returns a HTTPService that matches the meta and port supplied.
-func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) *HTTPService {
-	s := b.lookupService(m, port, weight, strategy, hc)
+func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck, ca *ConfigMap, hostname string) *HTTPService {
+	s := b.lookupService(m, port, weight, strategy, hc, ca, hostname)
 	switch s := s.(type) {
 	case *HTTPService:
 		return s
@@ -177,10 +177,10 @@ func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString, weight int,
 		for i := range svc.Spec.Ports {
 			p := &svc.Spec.Ports[i]
 			if int(p.Port) == port.IntValue() {
-				return b.addHTTPService(svc, p, weight, strategy, hc)
+				return b.addHTTPService(svc, p, weight, strategy, hc, ca, hostname)
 			}
 			if port.String() == p.Name {
-				return b.addHTTPService(svc, p, weight, strategy, hc)
+				return b.addHTTPService(svc, p, weight, strategy, hc, ca, hostname)
 			}
 		}
 		return nil
@@ -192,7 +192,7 @@ func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString, weight int,
 
 // lookupTCPService returns a TCPService that matches the meta and port supplied.
 func (b *builder) lookupTCPService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) *TCPService {
-	s := b.lookupService(m, port, weight, strategy, hc)
+	s := b.lookupService(m, port, weight, strategy, hc, nil, "")
 	switch s := s.(type) {
 	case *TCPService:
 		return s
@@ -216,18 +216,24 @@ func (b *builder) lookupTCPService(m meta, port intstr.IntOrString, weight int, 
 		return nil
 	}
 }
-func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) Service {
+func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck, ca *ConfigMap, hostname string) Service {
 	if port.Type != intstr.Int {
 		// can't handle, give up
 		return nil
 	}
+	var caMeta meta
+	if ca != nil {
+		caMeta = ca.toMeta()
+	}
 	sm := servicemeta{
-		name:        m.name,
-		namespace:   m.namespace,
-		port:        int32(port.IntValue()),
-		weight:      weight,
-		strategy:    strategy,
-		healthcheck: healthcheckToString(hc),
+		Name:        m.name,
+		Namespace:   m.namespace,
+		Port:        int32(port.IntValue()),
+		Weight:      weight,
+		Strategy:    strategy,
+		Healthcheck: healthcheckToString(hc),
+		CA:          caMeta,
+		Hostname:    hostname,
 	}
 	s, ok := b.services[sm]
 	if !ok {
@@ -240,7 +246,7 @@ func healthcheckToString(hc *ingressroutev1.HealthCheck) string {
 	return fmt.Sprintf("%#v", hc)
 }
 
-func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort, weight int, strategy string, hc *ingressroutev1.HealthCheck) *HTTPService {
+func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort, weight int, strategy string, hc *ingressroutev1.HealthCheck, ca *ConfigMap, hostname string) *HTTPService {
 	if b.services == nil {
 		b.services = make(map[servicemeta]Service)
 	}
@@ -264,7 +270,9 @@ func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort, weight i
 			MaxRetries:         parseAnnotation(svc.Annotations, annotationMaxRetries),
 			HealthCheck:        hc,
 		},
-		Protocol: protocol,
+		Protocol:      protocol,
+		CACertificate: ca,
+		Hostname:      hostname,
 	}
 	b.services[s.toMeta()] = s
 	return s
@@ -419,7 +427,7 @@ func (b *builder) compute() *DAG {
 
 				r := prefixRoute(ing, prefix)
 				m := meta{name: httppath.Backend.ServiceName, namespace: ing.Namespace}
-				if s := b.lookupHTTPService(m, httppath.Backend.ServicePort, 0, "", nil); s != nil {
+				if s := b.lookupHTTPService(m, httppath.Backend.ServicePort, 0, "", nil, nil, ""); s != nil {
 					r.addHTTPService(s)
 				}
 
@@ -661,23 +669,42 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: weight must be greater than or equal to zero", route.Match, service.Name), Vhost: host})
 					return
 				}
+
 				m := meta{name: service.Name, namespace: ir.Namespace}
-				if s := b.lookupHTTPService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck); s != nil {
-					if service.TLSVerification != nil {
-						m := meta{name: service.TLSVerification.CA.ConfigMapName, namespace: ir.Namespace}
-						cm := b.lookupConfigMap(m)
+				var s *HTTPService
+				if service.TLSVerification == nil {
+					s = b.lookupHTTPService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck, nil, "")
+				} else {
+					cmMeta := meta{name: service.TLSVerification.CA.ConfigMapName, namespace: ir.Namespace}
+					cm := b.lookupConfigMap(cmMeta)
+					s = b.lookupHTTPService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck, cm, service.TLSVerification.Hostname)
+					if s != nil {
 						if cm == nil || cm.Data() == nil {
-							b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: failed to read configmap %s/%s", route.Match, service.Name, ir.Namespace, service.TLSVerification.CA.ConfigMapName), Vhost: host})
+							status := Status{
+								Object:      ir,
+								Status:      StatusInvalid,
+								Description: fmt.Sprintf("route %q: service %q: failed to read configmap %s/%s", route.Match, service.Name, ir.Namespace, service.TLSVerification.CA.ConfigMapName),
+								Vhost:       host,
+							}
+							b.setStatus(status)
 							return
-						} else if cm.Data()["ca.crt"] == "" {
-							b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: configmap %s/%s is missing key \"ca.crt\"", route.Match, service.Name, ir.Namespace, service.TLSVerification.CA.ConfigMapName), Vhost: host})
+						} else if cm.Data()[CACertKey] == "" {
+							status := Status{
+								Object:      ir,
+								Status:      StatusInvalid,
+								Description: fmt.Sprintf("route %q: service %q: configmap %s/%s is missing key \"%s\"", route.Match, service.Name, ir.Namespace, service.TLSVerification.CA.ConfigMapName, CACertKey),
+								Vhost:       host,
+							}
+							b.setStatus(status)
 							return
 						}
 						s.Protocol = "h2"
 						s.CACertificate = cm
-						s.Hostnames = service.TLSVerification.Hostnames
+						s.Hostname = service.TLSVerification.Hostname
 					}
+				}
 
+				if s != nil {
 					r.addHTTPService(s)
 				}
 			}

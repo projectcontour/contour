@@ -120,9 +120,9 @@ type HealthCheck struct {
 type TLSVerification struct {
 	// Required, the CA to use for TLS verification
 	CA CA `json:"ca"`
-	// If specified, at least one of the hostnames must be included in the
-	// certificate's Subject Alternative Names field
-	Hostnames []string `json:"hostnames"`
+	// If specified, the hostname must be included in the certificate's Subject
+	// Alternative Names field
+	Hostname string `json:"hostname"`
 }
 
 // TLS verification for the upstream services

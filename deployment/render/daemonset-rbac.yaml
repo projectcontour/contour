@@ -164,9 +164,7 @@ spec:
                                   type: string
                                   pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ # DNS-1123 subdomain
                             hostnames:
-                              type: array
-                              items:
-                                type: string
+                              type: string
 ---
 apiVersion: extensions/v1beta1
 kind: DaemonSet

@@ -242,7 +242,7 @@ func TestCluster(t *testing.T) {
 
 func TestClustername(t *testing.T) {
 	tests := map[string]struct {
-		service *dag.TCPService
+		service dag.Service
 		want    string
 	}{
 		"simple": {
@@ -291,6 +291,29 @@ func TestClustername(t *testing.T) {
 				},
 			},
 			want: "default/backend/80/32737eb011",
+		},
+		"various TLS verification params": {
+			service: &dag.HTTPService{
+				TCPService: dag.TCPService{
+					Name:      "backend",
+					Namespace: "default",
+					ServicePort: &v1.ServicePort{
+						Name:       "https",
+						Protocol:   "TCP",
+						Port:       443,
+						TargetPort: intstr.FromInt(8443),
+					},
+				},
+				CACertificate: &dag.ConfigMap{
+					Object: &v1.ConfigMap{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "ca",
+							Namespace: "default",
+						},
+					},
+				},
+			},
+			want: "default/backend/443/f717bfc27a",
 		},
 	}
 

@@ -1689,6 +1689,233 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 		},
+		"ingressroute with TLS verification": {
+			objs: []interface{}{
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: secretdata("certificate", "key"),
+				},
+				&v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ca",
+						Namespace: "default",
+					},
+					Data: map[string]string{
+						"ca.crt": "CA certificate data",
+					},
+				},
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &ingressroutev1.TLS{
+								SecretName: "secret",
+							},
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								{
+									Name: "backend",
+									Port: 443,
+									TLSVerification: &ingressroutev1.TLSVerification{
+										CA:       ingressroutev1.CA{ConfigMapName: "ca"},
+										Hostname: "backend.default.svc",
+									},
+								},
+							},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"contour.heptio.com/upstream-protocol.h2": "443,https",
+						},
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:       "https",
+							Protocol:   "TCP",
+							Port:       443,
+							TargetPort: intstr.FromInt(8443),
+						}},
+					},
+				},
+			},
+			want: map[string]*v2.RouteConfiguration{
+				"ingress_http": {
+					Name: "ingress_http",
+					VirtualHosts: []route.VirtualHost{{
+						Name:    "www.example.com",
+						Domains: []string{"www.example.com", "www.example.com:80"},
+						Routes: []route.Route{{
+							Match: envoy.PrefixMatch("/"),
+							Action: &route.Route_Redirect{
+								Redirect: &route.RedirectAction{
+									HttpsRedirect: true,
+								},
+							},
+						}},
+					}},
+				},
+				"ingress_https": {
+					Name: "ingress_https",
+					VirtualHosts: []route.VirtualHost{{
+						Name:    "www.example.com",
+						Domains: []string{"www.example.com", "www.example.com:443"},
+						Routes: []route.Route{{
+							Match:  envoy.PrefixMatch("/"),
+							Action: routecluster("default/backend/443/45c43e101f"),
+						}},
+					}},
+				},
+			},
+		},
+		"ingressroute where TLS verification has non-existent configmap": {
+			objs: []interface{}{
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: secretdata("certificate", "key"),
+				},
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &ingressroutev1.TLS{
+								SecretName: "secret",
+							},
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								{
+									Name: "backend",
+									Port: 443,
+									TLSVerification: &ingressroutev1.TLSVerification{
+										CA:       ingressroutev1.CA{ConfigMapName: "ca"},
+										Hostname: "backend.default.svc",
+									},
+								},
+							},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"contour.heptio.com/upstream-protocol.h2": "443,https",
+						},
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:       "https",
+							Protocol:   "TCP",
+							Port:       443,
+							TargetPort: intstr.FromInt(8443),
+						}},
+					},
+				},
+			},
+			want: map[string]*v2.RouteConfiguration{
+				"ingress_http": {
+					Name: "ingress_http", // expected to be empty, configmap was not found
+				},
+				"ingress_https": {
+					Name: "ingress_https", // expected to be empty, configmap was not found
+				},
+			},
+		},
+		"ingressroute where TLS verification has configmap with missing ca.crt key": {
+			objs: []interface{}{
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: secretdata("certificate", "key"),
+				},
+				&v1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ca",
+						Namespace: "default",
+					},
+					Data: map[string]string{
+						"wrong-key": "CA certificate data",
+					},
+				},
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &ingressroutev1.TLS{
+								SecretName: "secret",
+							},
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{
+								{
+									Name: "backend",
+									Port: 443,
+									TLSVerification: &ingressroutev1.TLSVerification{
+										CA:       ingressroutev1.CA{ConfigMapName: "ca"},
+										Hostname: "backend.default.svc",
+									},
+								},
+							},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"contour.heptio.com/upstream-protocol.h2": "443,https",
+						},
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:       "https",
+							Protocol:   "TCP",
+							Port:       443,
+							TargetPort: intstr.FromInt(8443),
+						}},
+					},
+				},
+			},
+			want: map[string]*v2.RouteConfiguration{
+				"ingress_http": {
+					Name: "ingress_http", // expected to be empty, configmap is missing the "ca.crt" key
+				},
+				"ingress_https": {
+					Name: "ingress_https", // expected to be empty, configmap is missing the "ca.crt" key
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
