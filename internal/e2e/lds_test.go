@@ -967,6 +967,72 @@ func TestIngressRouteHTTPS(t *testing.T) {
 	}, streamLDS(t, cc))
 }
 
+// Assert that when a spec.vhost.tls spec is present _without_
+// a cert section but _does_ have a tcpproxy session we configure
+// envoy to forward the TLS session to the cluster after using SNI
+// to determine the target.
+func TestLDSIngressRouteTCPProxyTLSPassthrough(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	i1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "kuard-tcp.example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "wrong-backend",
+					Port: 80,
+				}},
+			}},
+			TCPProxy: &ingressroutev1.TCPProxy{
+				Services: []ingressroutev1.Service{{
+					Name: "correct-backend",
+					Port: 80,
+				}},
+			},
+		},
+	}
+	svc := service("default", "correct-backend", v1.ServicePort{
+		Protocol:   "TCP",
+		Port:       80,
+		TargetPort: intstr.FromInt(8080),
+	})
+	rh.OnAdd(svc)
+	rh.OnAdd(i1)
+
+	ingressHTTPS := &v2.Listener{
+		Name:    "ingress_https",
+		Address: envoy.SocketAddress("0.0.0.0", 8443),
+		FilterChains: []listener.FilterChain{{
+			Filters: []listener.Filter{
+				tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e"),
+			},
+			FilterChainMatch: &listener.FilterChainMatch{
+				ServerNames: []string{"kuard-tcp.example.com"},
+			},
+		}},
+		ListenerFilters: []listener.ListenerFilter{
+			envoy.TLSInspector(),
+		},
+	}
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, ingressHTTPS),
+		},
+		TypeUrl: listenerType,
+		Nonce:   "0",
+	}, streamLDS(t, cc))
+}
+
 func TestLDSIngressRouteTCPForward(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()

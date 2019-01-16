@@ -16,13 +16,12 @@ package contour
 import (
 	"sync"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/gogo/protobuf/proto"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 )
 
 const (
@@ -242,19 +241,20 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			alpnProtos = nil // do not offer ALPN
 		}
 
-		var tlsContext *auth.DownstreamTlsContext
-		if vh.Secret != nil && vh.Secret.Data() != nil {
-			data := vh.Secret.Data()
-			tlsContext = envoy.DownstreamTLSContext(data[v1.TLSCertKey], data[v1.TLSPrivateKeyKey], vh.MinProtoVersion, alpnProtos...)
-		}
 		fc := listener.FilterChain{
 			FilterChainMatch: &listener.FilterChainMatch{
 				ServerNames: []string{vh.Host},
 			},
-			TlsContext:    tlsContext,
 			Filters:       filters,
 			UseProxyProto: bv(v.UseProxyProto),
 		}
+
+		// attach certificate data to this listener if provided.
+		if vh.Secret != nil {
+			data := vh.Secret.Data()
+			fc.TlsContext = envoy.DownstreamTLSContext(data[v1.TLSCertKey], data[v1.TLSPrivateKeyKey], vh.MinProtoVersion, alpnProtos...)
+		}
+
 		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains, fc)
 	default:
 		// recurse
