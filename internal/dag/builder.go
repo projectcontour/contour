@@ -23,7 +23,7 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/cache"
@@ -540,8 +540,8 @@ func (b *builder) DAG() *DAG {
 		}
 	}
 	for _, svh := range b.svhosts {
-		// suppress secure virtual hosts without secrets.
-		if svh.Secret != nil {
+		// suppress secure virtual hosts without secrets or tcpproxy.
+		if svh.Secret != nil || svh.TCPProxy != nil {
 			dag.roots = append(dag.roots, svh)
 		}
 	}
@@ -586,7 +586,7 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 	visited = append(visited, ir)
 
 	proxy := ir.Spec.TCPProxy
-	if proxy != nil && enforceTLS {
+	if proxy != nil {
 		var ts []*TCPService
 		for _, service := range proxy.Services {
 			m := meta{name: service.Name, namespace: ir.Namespace}

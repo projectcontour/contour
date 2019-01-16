@@ -776,6 +776,10 @@ spec:
 
 The `spec.tcpproxy` key indicates that this _root_ IngressRoute will forward all de-encrypted TCP traffic to the backend service.
 
+In case `spec.virtualhost.tls` is not present, TLS is not going to be terminated
+on Envoy and will be forwarded to the specified services, where the termination
+would happen. This is called SSL/TLS Passthrough.
+
 ### Limitations
 
 The current limitations are present in Contour 0.8. These will be addressed in later Contour versions.
@@ -783,7 +787,6 @@ The current limitations are present in Contour 0.8. These will be addressed in l
 - `spec.routes` must be present in the `IngressRoute` document to pass validation, however they are ignored when `spec.tcpproxy` is present.
 - TCP Proxy IngressRoutes must be roots and can not delegate to other IngressRoutes.
 - TCP Proxying is not available on Kubernetes Ingress objects.
-- `spec.virtualhost.tls` is required for TCP proxying. If not present, `spec.tcpproxy` will be ignored.
 
 ## Status Reporting
 

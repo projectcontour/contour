@@ -230,11 +230,6 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		// the listener properly.
 		v.http = true
 	case *dag.SecureVirtualHost:
-		data := vh.Data()
-		if data == nil {
-			// no secret for this vhost, skip it
-			return
-		}
 		filters := []listener.Filter{
 			envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.httpsAccessLog()),
 		}
@@ -250,10 +245,16 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			FilterChainMatch: &listener.FilterChainMatch{
 				ServerNames: []string{vh.Host},
 			},
-			TlsContext:    envoy.DownstreamTLSContext(data[v1.TLSCertKey], data[v1.TLSPrivateKeyKey], vh.MinProtoVersion, alpnProtos...),
 			Filters:       filters,
 			UseProxyProto: bv(v.UseProxyProto),
 		}
+
+		// attach certificate data to this listener if provided.
+		if vh.Secret != nil {
+			data := vh.Secret.Data()
+			fc.TlsContext = envoy.DownstreamTLSContext(data[v1.TLSCertKey], data[v1.TLSPrivateKeyKey], vh.MinProtoVersion, alpnProtos...)
+		}
+
 		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains, fc)
 	default:
 		// recurse
