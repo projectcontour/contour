@@ -448,7 +448,11 @@ func (b *builder) compute() *DAG {
 			}
 		}
 
-		b.processIngressRoute(ir, "", nil, host, enforceTLS)
+		if ir.Spec.TCPProxy != nil {
+			b.processTCPProxy(ir, nil, host)
+		} else if ir.Spec.Routes != nil {
+			b.processRoutes(ir, "", nil, host, enforceTLS)
+		}
 	}
 
 	return b.DAG()
@@ -582,26 +586,8 @@ func (b *builder) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 	return false
 }
 
-func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, enforceTLS bool) {
+func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, enforceTLS bool) {
 	visited = append(visited, ir)
-
-	proxy := ir.Spec.TCPProxy
-	if proxy != nil {
-		var ts []*TCPService
-		for _, service := range proxy.Services {
-			m := meta{name: service.Name, namespace: ir.Namespace}
-			s := b.lookupTCPService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck)
-			if s == nil {
-				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("tcpforward: service %s/%s: not found", ir.Namespace, service.Name), Vhost: host})
-				return
-			}
-			ts = append(ts, s)
-		}
-		b.lookupSecureVirtualHost(host, 443).VirtualHost.TCPProxy = &TCPProxy{Services: ts}
-		b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
-		// spec.forward implies spec.routes is ignored
-		return
-	}
 
 	for _, route := range ir.Spec.Routes {
 		// route cannot both delegate and point to services
@@ -649,7 +635,6 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 			continue
 		}
 
-		// otherwise, if the route is delegating to another ingressroute, find it and process it.
 		namespace := route.Delegate.Namespace
 		if namespace == "" {
 			// we are delegating to another IngressRoute in the same namespace
@@ -657,7 +642,7 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 		}
 
 		if dest, ok := b.source.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]; ok {
-			// dest is not an orphaned route, as there is an IR that points to it
+			// dest is not an orphaned ingress route, as there is an IR that points to it
 			delete(b.orphaned, meta{name: dest.Name, namespace: dest.Namespace})
 
 			// ensure we are not following an edge that produces a cycle
@@ -675,9 +660,73 @@ func (b *builder) processIngressRoute(ir *ingressroutev1.IngressRoute, prefixMat
 			}
 
 			// follow the link and process the target ingress route
-			b.processIngressRoute(dest, route.Match, visited, host, enforceTLS)
+			b.processRoutes(dest, route.Match, visited, host, enforceTLS)
 		}
 	}
+
+	b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
+}
+
+func (b *builder) processTCPProxy(ir *ingressroutev1.IngressRoute, visited []*ingressroutev1.IngressRoute, host string) {
+	visited = append(visited, ir)
+
+	// tcpproxy cannot both delegate and point to services
+	tcpproxy := ir.Spec.TCPProxy
+	if len(tcpproxy.Services) > 0 && tcpproxy.Delegate != nil {
+		b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: "tcpproxy: cannot specify services and delegate in the same tcpproxy", Vhost: host})
+		return
+	}
+
+	// base case: The route points to services, so we add them to the vhost
+	if len(tcpproxy.Services) > 0 {
+		var ts []*TCPService
+		for _, service := range tcpproxy.Services {
+			m := meta{name: service.Name, namespace: ir.Namespace}
+			s := b.lookupTCPService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck)
+			if s == nil {
+				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("tcpproxy: service %s/%s: not found", ir.Namespace, service.Name), Vhost: host})
+				return
+			}
+			ts = append(ts, s)
+		}
+		b.lookupSecureVirtualHost(host, 443).VirtualHost.TCPProxy = &TCPProxy{Services: ts}
+		b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
+		return
+	}
+
+	if tcpproxy.Delegate == nil {
+		// not a delegate tcpproxy
+		return
+	}
+
+	namespace := tcpproxy.Delegate.Namespace
+	if namespace == "" {
+		// we are delegating to another IngressRoute in the same namespace
+		namespace = ir.Namespace
+	}
+
+	if dest, ok := b.source.ingressroutes[meta{name: tcpproxy.Delegate.Name, namespace: namespace}]; ok {
+		// dest is not an orphaned ingress route, as there is an IR that points to it
+		delete(b.orphaned, meta{name: dest.Name, namespace: dest.Namespace})
+
+		// ensure we are not following an edge that produces a cycle
+		var path []string
+		for _, vir := range visited {
+			path = append(path, fmt.Sprintf("%s/%s", vir.Namespace, vir.Name))
+		}
+		for _, vir := range visited {
+			if dest.Name == vir.Name && dest.Namespace == vir.Namespace {
+				path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
+				description := fmt.Sprintf("tcpproxy creates a delegation cycle: %s", strings.Join(path, " -> "))
+				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: description, Vhost: host})
+				return
+			}
+		}
+
+		// follow the link and process the target ingress route
+		b.processTCPProxy(dest, visited, host)
+	}
+
 	b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
 }
 

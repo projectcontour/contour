@@ -784,8 +784,6 @@ would happen. This is called SSL/TLS Passthrough.
 
 The current limitations are present in Contour 0.8. These will be addressed in later Contour versions.
 
-- `spec.routes` must be present in the `IngressRoute` document to pass validation, however they are ignored when `spec.tcpproxy` is present.
-- TCP Proxy IngressRoutes must be roots and can not delegate to other IngressRoutes.
 - TCP Proxying is not available on Kubernetes Ingress objects.
 
 ## Status Reporting
