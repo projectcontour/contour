@@ -111,6 +111,36 @@ spec:
                       namespace:
                         type: string
                         pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123 label
+                  hashPolicy:
+                    type: array
+                    properties:
+                      terminal:
+                        type: boolean
+                      header:
+                        type: object
+                        required:
+                          - headerName
+                        properties:
+                          headerName:
+                            type: string
+                      cookie:
+                        type: object
+                        required:
+                          - name
+                        properties:
+                          name:
+                            type: string
+                          ttl:
+                            type: string
+                          path:
+                            type: string
+                      connectionProperties:
+                        type: object
+                        required:
+                          - sourceIp
+                        properties:
+                          sourceIp:
+                            type: boolean
                   services:
                     type: array
                     items:
