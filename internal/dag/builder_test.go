@@ -1010,6 +1010,44 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// ir15 has three hash policies, the second of which is terminal
+	ir15 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				HashPolicy: []ingressroutev1.HashPolicy{
+					{
+						Header: &ingressroutev1.HashPolicyHeader{
+							HeaderName: "x-some-header",
+						},
+					},
+					{
+						Cookie: &ingressroutev1.HashPolicyCookie{
+							Name: "nom-nom-nom",
+						},
+						Terminal: true,
+					},
+					{
+						ConnectionProperties: &ingressroutev1.HashPolicyConnectionProperties{
+							SourceIp: true,
+						},
+					},
+				},
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	s5 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog-admin",
@@ -1775,6 +1813,43 @@ func TestDAGInsert(t *testing.T) {
 								httpService(s1),
 							),
 							PrefixRewrite: "/",
+						},
+					),
+				}},
+		},
+		"insert ingressroute with hash policies": {
+			objs: []interface{}{
+				ir15, s1,
+			},
+			want: []Vertex{
+				&VirtualHost{
+					Host: "example.com",
+					Port: 80,
+					routes: routemap(
+						&Route{
+							object: ir15,
+							httpServices: servicemap(
+								httpService(s1),
+							),
+							Prefix: "/",
+							HashPolicy: []ingressroutev1.HashPolicy{
+								{
+									Header: &ingressroutev1.HashPolicyHeader{
+										HeaderName: "x-some-header",
+									},
+								},
+								{
+									Cookie: &ingressroutev1.HashPolicyCookie{
+										Name: "nom-nom-nom",
+									},
+									Terminal: true,
+								},
+								{
+									ConnectionProperties: &ingressroutev1.HashPolicyConnectionProperties{
+										SourceIp: true,
+									},
+								},
+							},
 						},
 					),
 				}},

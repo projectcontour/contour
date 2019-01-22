@@ -609,6 +609,7 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 				Websocket:     route.EnableWebsockets,
 				HTTPSUpgrade:  routeEnforceTLS(enforceTLS, route.PermitInsecure),
 				PrefixRewrite: route.PrefixRewrite,
+				HashPolicy:    route.HashPolicy,
 			}
 			for _, service := range route.Services {
 				if service.Port < 1 || service.Port > 65535 {

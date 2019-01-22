@@ -14,6 +14,8 @@
 package v1beta1
 
 import (
+	"time"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -50,6 +52,30 @@ type TLS struct {
 	MinimumProtocolVersion string `json:"minimumProtocolVersion,omitempty"`
 }
 
+type HashPolicyHeader struct {
+	HeaderName string `json:"headerName"`
+}
+
+type HashPolicyCookie struct {
+	Name string         `json:"name"`
+	Ttl  *time.Duration `json:"ttl,omitempty"`
+	Path string         `json:"path,omitempty"`
+}
+
+type HashPolicyConnectionProperties struct {
+	SourceIp bool `json:"sourceIp"`
+}
+
+type HashPolicy struct {
+	Header *HashPolicyHeader `json:"header,omitempty"`
+
+	Cookie *HashPolicyCookie `json:"cookie,omitempty"`
+
+	ConnectionProperties *HashPolicyConnectionProperties `json:"connectionProperties,omitempty"`
+
+	Terminal bool `json:"terminal,omitempty"`
+}
+
 // Route contains the set of routes for a virtual host
 type Route struct {
 	// Match defines the prefix match
@@ -65,6 +91,8 @@ type Route struct {
 	PermitInsecure bool `json:"permitInsecure,omitempty"`
 	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
 	PrefixRewrite string `json:"prefixRewrite,omitempty"`
+
+	HashPolicy []HashPolicy `json:"hashPolicy,omitempty"`
 }
 
 // TCPProxy contains the set of services to proxy TCP connections.

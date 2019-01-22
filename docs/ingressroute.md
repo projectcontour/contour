@@ -553,6 +553,43 @@ spec:
           port: 80
 ```
 
+#### Stick Sessions Support
+
+Route-level HashPolicy combined with Service-level hash-based load balancing is used to support sticky sessions.
+
+```yaml
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata:
+  name: app
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: app.example.com
+  routes:
+    - match: /
+      hashPolicy:
+        # Precisely one of header, cookie, or connectionProperties must be set
+      - connectionProperties:
+          sourceIp: true
+        # Precisely one of header, cookie, or connectionProperties must be set
+        cookie:
+          name: some-cookie
+          path: cookie/path
+          ttl: 60s
+        # Precisely one of header, cookie, or connectionProperties must be set
+        header:
+          headerName: "X-Some-Header-To-Hash-On"
+        # see the envoy docs for how to configure this
+        # https://www.envoyproxy.io/docs/envoy/v1.9.0/api-v2/api/v2/route/route.proto#envoy-api-msg-route-routeaction-hashpolicy
+        terminal: true
+      services:
+        - name: app
+          port: 80
+          # RingHash or Maglev
+          strategy: RingHash
+```
+
 #### Permit Insecure
 
 IngressRoutes support allowing HTTP alongside HTTPS. This way, the path responds to insecure requests over HTTP which are normally not permitted when a `virtualhost.tls` block is present.

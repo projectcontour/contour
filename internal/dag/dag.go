@@ -81,6 +81,8 @@ type Route struct {
 
 	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
 	PrefixRewrite string
+
+	HashPolicy []ingressroutev1.HashPolicy
 }
 
 func (r *Route) addHTTPService(s *HTTPService) {
