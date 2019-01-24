@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/heptio/contour/internal/dag"
+
 	clientset "github.com/heptio/contour/apis/generated/clientset/versioned"
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/debug"
@@ -129,6 +131,8 @@ func main() {
 	serve.Flag("envoy-https-address", "Envoy HTTPS listener address").StringVar(&ch.HTTPSAddress)
 	serve.Flag("envoy-http-port", "Envoy HTTP listener port").IntVar(&ch.HTTPPort)
 	serve.Flag("envoy-https-port", "Envoy HTTPS listener port").IntVar(&ch.HTTPSPort)
+	serve.Flag("envoy-http-virtualhost-port", "Envoy HTTP virtual host listener port").IntVar(&ch.HTTPVHostPort)
+	serve.Flag("envoy-https-virtualhost-port", "Envoy HTTPS virtual host listener port").IntVar(&ch.HTTPSVHostPort)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ch.UseProxyProto)
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&reh.IngressClass)
 	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringVar(&ingressrouteRootNamespaceFlag)
@@ -161,6 +165,10 @@ func main() {
 		flag.Parse()
 
 		reh.IngressRouteRootNamespaces = parseRootNamespaces(ingressrouteRootNamespaceFlag)
+		reh.VHostConfig = &dag.VHostConfig{
+			HTTPVHostPort:  ch.HTTPVHostPort,
+			HTTPSVHostPort: ch.HTTPSVHostPort,
+		}
 
 		client, contourClient := newClient(*kubeconfig, *inCluster)
 

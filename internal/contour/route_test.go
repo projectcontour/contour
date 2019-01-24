@@ -17,15 +17,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -1702,11 +1703,15 @@ func TestRouteVisit(t *testing.T) {
 				Notifier:    new(nullNotifier),
 				Metrics:     metrics.NewMetrics(prometheus.NewRegistry()),
 			}
+			reh.VHostConfig = &dag.VHostConfig{
+				HTTPVHostPort:  80,
+				HTTPSVHostPort: 443,
+			}
 			for _, o := range tc.objs {
 				reh.OnAdd(o)
 			}
 			root := reh.Build()
-			got := visitRoutes(root)
+			got := visitRoutes(root, &RouteVisitorConfig{})
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}

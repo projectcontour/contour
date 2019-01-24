@@ -20,15 +20,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/heptio/contour/internal/contour"
+	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -216,6 +217,11 @@ func TestGRPC(t *testing.T) {
 				Metrics:     ch.Metrics,
 				FieldLogger: log,
 			}
+			reh.VHostConfig = &dag.VHostConfig{
+				HTTPVHostPort:  80,
+				HTTPSVHostPort: 443,
+			}
+
 			srv := NewAPI(log, map[string]Cache{
 				clusterType:  &ch.ClusterCache,
 				routeType:    &ch.RouteCache,

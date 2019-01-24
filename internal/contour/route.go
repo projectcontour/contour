@@ -17,13 +17,47 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
 )
+
+const (
+	DEFAULT_HTTP_VHOST_LISTENER_PORT  = 80
+	DEFAULT_HTTPS_VHOST_LISTENER_PORT = 443
+)
+
+// RouteVisitorConfig holds configuration parameters for visitRoutes.
+type RouteVisitorConfig struct {
+	// Envoy's VHost HTTP listener port.
+	// If not set, defaults to DEFAULT_HTTP_VHOST_LISTENER_PORT.
+	HTTPVHostPort int
+
+	// Envoy's VHost HTTPS (TLS) listener port.
+	// If not set, defaults to DEFAULT_HTTPS_VHOST_LISTENER_PORT.
+	HTTPSVHostPort int
+}
+
+// httpVhostPort returns the port for the VHost HTTPS (TLS) listener
+// or DEFAULT_HTTP_VHOST_LISTENER_PORT if not configured.
+func (rvc *RouteVisitorConfig) httpVhostPort() int {
+	if rvc.HTTPVHostPort != 0 {
+		return rvc.HTTPVHostPort
+	}
+	return DEFAULT_HTTP_VHOST_LISTENER_PORT
+}
+
+// httpsVhostPort returns the port for the VHost HTTPS (TLS) listener
+// or DEFAULT_HTTPS_VHOST_LISTENER_PORT if not configured.
+func (rvc *RouteVisitorConfig) httpsVhostPort() int {
+	if rvc.HTTPSVHostPort != 0 {
+		return rvc.HTTPSVHostPort
+	}
+	return DEFAULT_HTTPS_VHOST_LISTENER_PORT
+}
 
 // RouteCache manages the contents of the gRPC RDS cache.
 type RouteCache struct {
@@ -87,10 +121,12 @@ func (c *RouteCache) Values(filter func(string) bool) []proto.Message {
 
 type routeVisitor struct {
 	routes map[string]*v2.RouteConfiguration
+	rvc    *RouteVisitorConfig
 }
 
-func visitRoutes(root dag.Vertex) map[string]*v2.RouteConfiguration {
+func visitRoutes(root dag.Vertex, rvc *RouteVisitorConfig) map[string]*v2.RouteConfiguration {
 	rv := routeVisitor{
+		rvc: rvc,
 		routes: map[string]*v2.RouteConfiguration{
 			"ingress_http": {
 				Name: "ingress_http",
@@ -110,7 +146,7 @@ func visitRoutes(root dag.Vertex) map[string]*v2.RouteConfiguration {
 func (v *routeVisitor) visit(vertex dag.Vertex) {
 	switch vh := vertex.(type) {
 	case *dag.VirtualHost:
-		vhost := envoy.VirtualHost(vh.Host, 80)
+		vhost := envoy.VirtualHost(vh.Host, v.rvc.httpVhostPort())
 		vh.Visit(func(r dag.Vertex) {
 			switch r := r.(type) {
 			case *dag.Route:
@@ -141,7 +177,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 		sort.Stable(sort.Reverse(longestRouteFirst(vhost.Routes)))
 		v.routes["ingress_http"].VirtualHosts = append(v.routes["ingress_http"].VirtualHosts, vhost)
 	case *dag.SecureVirtualHost:
-		vhost := envoy.VirtualHost(vh.Host, 443)
+		vhost := envoy.VirtualHost(vh.Host, v.rvc.httpsVhostPort())
 		vh.Visit(func(r dag.Vertex) {
 			switch r := r.(type) {
 			case *dag.Route:

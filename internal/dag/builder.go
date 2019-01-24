@@ -40,12 +40,24 @@ type KubernetesCache struct {
 	// namespace.
 	IngressRouteRootNamespaces []string
 
+	VHostConfig *VHostConfig
+
 	mu sync.RWMutex
 
 	ingresses     map[meta]*v1beta1.Ingress
 	ingressroutes map[meta]*ingressroutev1.IngressRoute
 	secrets       map[meta]*v1.Secret
 	services      map[meta]*v1.Service
+}
+
+// VHostConfig hold the configuration for what ports the Vhosts should be configured
+// to utilize when applying to routes
+type VHostConfig struct {
+	// Envoy's VHost HTTP listener port.
+	HTTPVHostPort int
+
+	// Envoy's VHost HTTPS (TLS) listener port.
+	HTTPSVHostPort int
 }
 
 // meta holds the name and namespace of a Kubernetes object.
@@ -349,7 +361,7 @@ func (b *builder) compute() *DAG {
 			m := meta{name: tls.SecretName, namespace: ing.Namespace}
 			if sec := b.lookupSecret(m); sec != nil {
 				for _, host := range tls.Hosts {
-					svhost := b.lookupSecureVirtualHost(host, 443)
+					svhost := b.lookupSecureVirtualHost(host, b.source.KubernetesCache.VHostConfig.HTTPSVHostPort)
 					svhost.Secret = sec
 					svhost.MinProtoVersion = minProtoVersion(ing)
 				}
@@ -397,10 +409,10 @@ func (b *builder) compute() *DAG {
 
 				// should we create port 80 routes for this ingress
 				if httpAllowed(ing) {
-					b.lookupVirtualHost(host, 80).addRoute(r)
+					b.lookupVirtualHost(host, b.source.KubernetesCache.VHostConfig.HTTPVHostPort).addRoute(r)
 				}
-				if _, ok := b.svhosts[hostport{host: host, port: 443}]; ok && host != "*" {
-					b.lookupSecureVirtualHost(host, 443).addRoute(r)
+				if _, ok := b.svhosts[hostport{host: host, port: b.source.KubernetesCache.VHostConfig.HTTPSVHostPort}]; ok && host != "*" {
+					b.lookupSecureVirtualHost(host, b.source.KubernetesCache.VHostConfig.HTTPSVHostPort).addRoute(r)
 				}
 			}
 		}
@@ -431,7 +443,7 @@ func (b *builder) compute() *DAG {
 			// attach secrets to TLS enabled vhosts
 			m := meta{name: tls.SecretName, namespace: ir.Namespace}
 			if sec := b.lookupSecret(m); sec != nil {
-				svhost := b.lookupSecureVirtualHost(host, 443)
+				svhost := b.lookupSecureVirtualHost(host, b.source.KubernetesCache.VHostConfig.HTTPSVHostPort)
 				svhost.Secret = sec
 				enforceTLS = true
 
@@ -629,8 +641,8 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 				}
 			}
 
-			b.lookupVirtualHost(host, 80).addRoute(r)
-			b.lookupSecureVirtualHost(host, 443).addRoute(r)
+			b.lookupVirtualHost(host, b.source.KubernetesCache.VHostConfig.HTTPVHostPort).addRoute(r)
+			b.lookupSecureVirtualHost(host, b.source.KubernetesCache.VHostConfig.HTTPSVHostPort).addRoute(r)
 			continue
 		}
 
@@ -692,7 +704,7 @@ func (b *builder) processTCPProxy(ir *ingressroutev1.IngressRoute, visited []*in
 			}
 			proxy.Services = append(proxy.Services, s)
 		}
-		b.lookupSecureVirtualHost(host, 443).VirtualHost.TCPProxy = &proxy
+		b.lookupSecureVirtualHost(host, b.source.KubernetesCache.VHostConfig.HTTPSVHostPort).VirtualHost.TCPProxy = &proxy
 		b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
 		return
 	}

@@ -524,6 +524,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			b := dag.Builder{
 				KubernetesCache: dag.KubernetesCache{
 					IngressRouteRootNamespaces: tc.rootNamespaces,
+					VHostConfig:                &dag.VHostConfig{HTTPVHostPort: 80, HTTPSVHostPort: 443},
 				},
 			}
 			for _, o := range tc.objs {

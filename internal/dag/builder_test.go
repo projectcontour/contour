@@ -2448,6 +2448,14 @@ func TestDAGInsert(t *testing.T) {
 			for _, o := range tc.objs {
 				b.Insert(o)
 			}
+			b.KubernetesCache.VHostConfig = &VHostConfig{
+				HTTPVHostPort:  80,
+				HTTPSVHostPort: 443,
+			}
+			b.KubernetesCache.VHostConfig = &VHostConfig{
+				HTTPVHostPort:  80,
+				HTTPSVHostPort: 443,
+			}
 			dag := b.Build()
 
 			got := make(map[hostport]Vertex)
@@ -2614,6 +2622,11 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 	var b Builder
 	b.Insert(ir2)
 	b.Insert(ir1)
+
+	b.KubernetesCache.VHostConfig = &VHostConfig{
+		HTTPVHostPort:  80,
+		HTTPSVHostPort: 443,
+	}
 	dag := b.Build()
 
 	got := make(map[hostport]*VirtualHost)
@@ -2660,6 +2673,10 @@ func TestDAGIngressRouteCycleSelfEdge(t *testing.T) {
 
 	var b Builder
 	b.Insert(ir1)
+	b.KubernetesCache.VHostConfig = &VHostConfig{
+		HTTPVHostPort:  80,
+		HTTPSVHostPort: 443,
+	}
 	dag := b.Build()
 
 	got := make(map[hostport]*VirtualHost)
@@ -2701,6 +2718,10 @@ func TestDAGIngressRouteDelegatesToNonExistent(t *testing.T) {
 
 	var b Builder
 	b.Insert(ir1)
+	b.KubernetesCache.VHostConfig = &VHostConfig{
+		HTTPVHostPort:  80,
+		HTTPSVHostPort: 443,
+	}
 	dag := b.Build()
 
 	got := make(map[hostport]*VirtualHost)
@@ -2757,6 +2778,10 @@ func TestDAGIngressRouteDelegatePrefixDoesntMatch(t *testing.T) {
 	var b Builder
 	b.Insert(ir2)
 	b.Insert(ir1)
+	b.KubernetesCache.VHostConfig = &VHostConfig{
+		HTTPVHostPort:  80,
+		HTTPSVHostPort: 443,
+	}
 	dag := b.Build()
 
 	got := make(map[hostport]*VirtualHost)
@@ -2869,6 +2894,10 @@ func TestDAGRootNamespaces(t *testing.T) {
 			for _, o := range tc.objs {
 				b.Insert(o)
 			}
+			b.KubernetesCache.VHostConfig = &VHostConfig{
+				HTTPVHostPort:  80,
+				HTTPSVHostPort: 443,
+			}
 			dag := b.Build()
 
 			var count int
@@ -2927,6 +2956,10 @@ func TestDAGIngressRouteDelegatePrefixMatchesStringPrefixButNotPathPrefix(t *tes
 	var b Builder
 	b.Insert(ir2)
 	b.Insert(ir1)
+	b.KubernetesCache.VHostConfig = &VHostConfig{
+		HTTPVHostPort:  80,
+		HTTPSVHostPort: 443,
+	}
 	dag := b.Build()
 
 	got := make(map[hostport]*VirtualHost)
@@ -3388,6 +3421,10 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					IngressRouteRootNamespaces: []string{"roots"},
 				},
 			}
+			b.KubernetesCache.VHostConfig = &VHostConfig{
+				HTTPVHostPort:  80,
+				HTTPSVHostPort: 443,
+			}
 			for _, o := range tc.objs {
 				b.Insert(o)
 			}
@@ -3506,6 +3543,10 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 			var b Builder
 			for _, o := range tc.objs {
 				b.Insert(o)
+			}
+			b.KubernetesCache.VHostConfig = &VHostConfig{
+				HTTPVHostPort:  80,
+				HTTPSVHostPort: 443,
 			}
 			dag := b.Build()
 

@@ -18,19 +18,20 @@ import (
 	"net"
 	"testing"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v2"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/apis/generated/clientset/versioned/fake"
 	"github.com/heptio/contour/internal/contour"
+	"github.com/heptio/contour/internal/dag"
 	cgrpc "github.com/heptio/contour/internal/grpc"
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -79,6 +80,10 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 		Notifier:    ch,
 		Metrics:     ch.Metrics,
 		FieldLogger: log,
+	}
+	reh.VHostConfig = &dag.VHostConfig{
+		HTTPVHostPort:  80,
+		HTTPSVHostPort: 443,
 	}
 
 	for _, opt := range opts {
