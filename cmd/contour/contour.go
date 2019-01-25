@@ -99,6 +99,7 @@ func main() {
 	metrics := metrics.NewMetrics(registry)
 
 	reh := contour.ResourceEventHandler{
+		FieldLogger: log.WithField("context", "resourceEventHandler"),
 		Notifier: &contour.HoldoffNotifier{
 			Notifier:    &ch,
 			FieldLogger: log.WithField("context", "HoldoffNotifier"),
