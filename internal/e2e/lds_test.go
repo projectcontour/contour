@@ -967,10 +967,9 @@ func TestIngressRouteHTTPS(t *testing.T) {
 	}, streamLDS(t, cc))
 }
 
-// Assert that when a spec.vhost.tls spec is present _without_
-// a cert section but _does_ have a tcpproxy session we configure
-// envoy to forward the TLS session to the cluster after using SNI
-// to determine the target.
+// Assert that when a spec.vhost.tls spec is present with tls.passthrough
+// set to true we configure envoy to forward the TLS session to the cluster
+// after using SNI to determine the target.
 func TestLDSIngressRouteTCPProxyTLSPassthrough(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
@@ -983,6 +982,9 @@ func TestLDSIngressRouteTCPProxyTLSPassthrough(t *testing.T) {
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "kuard-tcp.example.com",
+				TLS: &ingressroutev1.TLS{
+					Passthrough: true,
+				},
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",

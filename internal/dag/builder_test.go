@@ -655,6 +655,9 @@ func TestDAGInsert(t *testing.T) {
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "kuard.example.com",
+				TLS: &ingressroutev1.TLS{
+					Passthrough: true,
+				},
 			},
 			TCPProxy: &ingressroutev1.TCPProxy{
 				Services: []ingressroutev1.Service{{
@@ -675,6 +678,9 @@ func TestDAGInsert(t *testing.T) {
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "kuard.example.com",
+				TLS: &ingressroutev1.TLS{
+					Passthrough: true,
+				},
 			},
 			TCPProxy: &ingressroutev1.TCPProxy{
 				Delegate: &ingressroutev1.Delegate{
@@ -1799,7 +1805,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			},
 		},
-		"insert ingressroute with tcp forward without TLS termination": {
+		"insert ingressroute with tcp forward without TLS termination w/ passthrough": {
 			objs: []interface{}{
 				ir1b, s1,
 			},
@@ -1817,6 +1823,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			},
 		},
+
 		"insert root ingress route and delegate ingress route for a tcp proxy": {
 			objs: []interface{}{
 				ir1d, s6, ir1c,

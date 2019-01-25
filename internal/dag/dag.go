@@ -140,7 +140,9 @@ type SecureVirtualHost struct {
 
 func (s *SecureVirtualHost) Visit(f func(Vertex)) {
 	s.VirtualHost.Visit(f)
-	f(s.Secret)
+	if s.Secret != nil {
+		f(s.Secret) // secret is not required if vhost is using tls passthrough
+	}
 }
 
 type Visitable interface {

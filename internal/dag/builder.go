@@ -426,7 +426,7 @@ func (b *builder) compute() *DAG {
 			continue
 		}
 
-		enforceTLS := false
+		var enforceTLS, passthrough bool
 		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
 			// attach secrets to TLS enabled vhosts
 			m := meta{name: tls.SecretName, namespace: ir.Namespace}
@@ -446,11 +446,15 @@ func (b *builder) compute() *DAG {
 					svhost.MinProtoVersion = auth.TlsParameters_TLSv1_1
 				}
 			}
+			// passthrough is true if tls.secretName is not present, and
+			// tls.passthrough is set to true.
+			passthrough = tls.SecretName == "" && tls.Passthrough
 		}
 
-		if ir.Spec.TCPProxy != nil {
+		switch {
+		case ir.Spec.TCPProxy != nil && (passthrough || enforceTLS):
 			b.processTCPProxy(ir, nil, host)
-		} else if ir.Spec.Routes != nil {
+		case ir.Spec.Routes != nil:
 			b.processRoutes(ir, "", nil, host, enforceTLS)
 		}
 	}
@@ -677,9 +681,8 @@ func (b *builder) processTCPProxy(ir *ingressroutev1.IngressRoute, visited []*in
 		return
 	}
 
-	// base case: The route points to services, so we add them to the vhost
 	if len(tcpproxy.Services) > 0 {
-		var ts []*TCPService
+		var proxy TCPProxy
 		for _, service := range tcpproxy.Services {
 			m := meta{name: service.Name, namespace: ir.Namespace}
 			s := b.lookupTCPService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck)
@@ -687,9 +690,9 @@ func (b *builder) processTCPProxy(ir *ingressroutev1.IngressRoute, visited []*in
 				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("tcpproxy: service %s/%s/%d: not found", ir.Namespace, service.Name, service.Port), Vhost: host})
 				return
 			}
-			ts = append(ts, s)
+			proxy.Services = append(proxy.Services, s)
 		}
-		b.lookupSecureVirtualHost(host, 443).VirtualHost.TCPProxy = &TCPProxy{Services: ts}
+		b.lookupSecureVirtualHost(host, 443).VirtualHost.TCPProxy = &proxy
 		b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
 		return
 	}

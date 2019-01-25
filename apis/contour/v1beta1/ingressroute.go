@@ -42,12 +42,16 @@ type VirtualHost struct {
 
 // TLS describes tls properties. The CNI names that will be matched on
 // are described in fqdn, the tls.secretName secret must contain a
-// matching certificate
+// matching certificate unless tls.passthrough is set to true.
 type TLS struct {
 	// required, the name of a secret in the current namespace
 	SecretName string `json:"secretName"`
 	// Minimum TLS version this vhost should negotiate
 	MinimumProtocolVersion string `json:"minimumProtocolVersion,omitempty"`
+	// If Passthrough is set to true, the SecretName will be ignored
+	// and the encrypted handshake will be passed through to the
+	// backing cluster.
+	Passthrough bool `json:"passthrough,omitempty"`
 }
 
 // Route contains the set of routes for a virtual host
