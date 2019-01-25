@@ -17,13 +17,15 @@
 package contour
 
 import (
-	"reflect"
-
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
 	"k8s.io/api/extensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const DEFAULT_INGRESS_CLASS = "contour"
@@ -42,6 +44,8 @@ type ResourceEventHandler struct {
 	Notifier
 
 	*metrics.Metrics
+
+	logrus.FieldLogger
 }
 
 // Notifier supplies a callback to be called when changes occur
@@ -58,6 +62,7 @@ func (reh *ResourceEventHandler) OnAdd(obj interface{}) {
 	if !reh.validIngressClass(obj) {
 		return
 	}
+	reh.WithField("op", "add").Debugf("%T", obj)
 	reh.Insert(obj)
 	reh.update()
 }
@@ -73,14 +78,19 @@ func (reh *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 		// to remove the old object and _not_ insert the new object.
 		reh.OnDelete(oldObj)
 	default:
-		// Only update if the old and new are different
-		if !reflect.DeepEqual(oldObj, newObj) {
-			timer := prometheus.NewTimer(reh.ResourceEventHandlerSummary.With(prometheus.Labels{"op": "OnUpdate"}))
-			defer timer.ObserveDuration()
-			reh.Remove(oldObj)
-			reh.Insert(newObj)
-			reh.update()
+		if cmp.Equal(oldObj, newObj,
+			cmpopts.IgnoreFields(ingressroutev1.IngressRoute{}, "Status"),
+			cmpopts.IgnoreFields(metav1.ObjectMeta{}, "ResourceVersion")) {
+			reh.WithField("op", "update").Debugf("%T skipping update, only status has changed", newObj)
+			return
 		}
+		timer := prometheus.NewTimer(reh.ResourceEventHandlerSummary.With(prometheus.Labels{"op": "OnUpdate"}))
+		defer timer.ObserveDuration()
+		reh.WithField("op", "update").Debugf("%T", newObj)
+		reh.Remove(oldObj)
+		reh.Insert(newObj)
+		reh.update()
+
 	}
 }
 
@@ -88,6 +98,7 @@ func (reh *ResourceEventHandler) OnDelete(obj interface{}) {
 	timer := prometheus.NewTimer(reh.ResourceEventHandlerSummary.With(prometheus.Labels{"op": "OnDelete"}))
 	defer timer.ObserveDuration()
 	// no need to check ingress class here
+	reh.WithField("op", "delete").Debugf("%T", obj)
 	reh.Remove(obj)
 	reh.update()
 }

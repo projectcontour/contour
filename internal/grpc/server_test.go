@@ -212,8 +212,9 @@ func TestGRPC(t *testing.T) {
 				Metrics: metrics.NewMetrics(prometheus.NewRegistry()),
 			}
 			reh = &contour.ResourceEventHandler{
-				Notifier: &ch,
-				Metrics:  ch.Metrics,
+				Notifier:    &ch,
+				Metrics:     ch.Metrics,
+				FieldLogger: log,
 			}
 			srv := NewAPI(log, map[string]Cache{
 				clusterType:  &ch.ClusterCache,

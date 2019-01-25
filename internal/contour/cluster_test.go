@@ -794,8 +794,9 @@ func TestClusterVisit(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			reh := ResourceEventHandler{
-				Notifier: new(nullNotifier),
-				Metrics:  metrics.NewMetrics(prometheus.NewRegistry()),
+				FieldLogger: testLogger(t),
+				Notifier:    new(nullNotifier),
+				Metrics:     metrics.NewMetrics(prometheus.NewRegistry()),
 			}
 			for _, o := range tc.objs {
 				reh.OnAdd(o)
