@@ -160,7 +160,6 @@ type Service interface {
 
 // TCPProxy represents a cluster of TCP endpoints.
 type TCPProxy struct {
-
 	// Services to proxy decrypted traffic to.
 	Services []*TCPService
 }
