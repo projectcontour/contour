@@ -24,5 +24,4 @@ required = [
 
 [[constraint]]
   name = "github.com/envoyproxy/go-control-plane"
-  # 0.6.1 matches Envoy v1.8.0, higher versions are for 1.9-dev
-  version = "=0.6.1"
+  version = "=0.6.4"
