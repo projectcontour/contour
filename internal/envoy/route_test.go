@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	"github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
 	"github.com/heptio/contour/internal/dag"
 	"k8s.io/api/core/v1"
@@ -79,7 +78,9 @@ func TestRouteRoute(t *testing.T) {
 					RequestHeadersToAdd: headers(
 						appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
 					),
-					UseWebsocket: &types.BoolValue{Value: true},
+					UpgradeConfigs: []*route.RouteAction_UpgradeConfig{{
+						UpgradeType: "websocket",
+					}},
 				},
 			},
 		},
@@ -150,7 +151,9 @@ func TestRouteRoute(t *testing.T) {
 							TotalWeight: u32(90),
 						},
 					},
-					UseWebsocket: &types.BoolValue{Value: true},
+					UpgradeConfigs: []*route.RouteAction_UpgradeConfig{{
+						UpgradeType: "websocket",
+					}},
 				},
 			},
 		},
@@ -426,7 +429,9 @@ func TestUpgradeHTTPS(t *testing.T) {
 	got := UpgradeHTTPS()
 	want := &route.Route_Redirect{
 		Redirect: &route.RedirectAction{
-			HttpsRedirect: true,
+			SchemeRewriteSpecifier: &route.RedirectAction_HttpsRedirect{
+				HttpsRedirect: true,
+			},
 		},
 	}
 

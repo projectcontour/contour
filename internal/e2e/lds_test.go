@@ -1146,16 +1146,20 @@ func filterchaintls(domain string, filter listener.Filter, alpn ...string) []lis
 func tcpproxy(statPrefix, cluster string) listener.Filter {
 	return listener.Filter{
 		Name: util.TCPProxy,
-		Config: messageToStruct(&envoy_config_v2_tcpproxy.TcpProxy{
-			StatPrefix: statPrefix,
-			ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
-				Cluster: cluster,
-			},
-			AccessLog: []*accesslog.AccessLog{{
-				Name:   "envoy.file_access_log",
-				Config: messageToStruct(fileAccessLog("/dev/stdout")),
-			}},
-		}),
+		ConfigType: &listener.Filter_Config{
+			Config: messageToStruct(&envoy_config_v2_tcpproxy.TcpProxy{
+				StatPrefix: statPrefix,
+				ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
+					Cluster: cluster,
+				},
+				AccessLog: []*accesslog.AccessLog{{
+					Name: "envoy.file_access_log",
+					ConfigType: &accesslog.AccessLog_Config{
+						Config: messageToStruct(fileAccessLog("/dev/stdout")),
+					},
+				}},
+			}),
+		},
 	}
 }
 

@@ -126,16 +126,20 @@ func TestTCPProxy(t *testing.T) {
 			},
 			want: listener.Filter{
 				Name: util.TCPProxy,
-				Config: messageToStruct(&envoy_config_v2_tcpproxy.TcpProxy{
-					StatPrefix: statPrefix,
-					ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
-						Cluster: Clustername(s1),
-					},
-					AccessLog: []*envoy_accesslog.AccessLog{{
-						Name:   util.FileAccessLog,
-						Config: messageToStruct(fileAccessLog(accessLogPath)),
-					}},
-				}),
+				ConfigType: &listener.Filter_Config{
+					Config: messageToStruct(&envoy_config_v2_tcpproxy.TcpProxy{
+						StatPrefix: statPrefix,
+						ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
+							Cluster: Clustername(s1),
+						},
+						AccessLog: []*envoy_accesslog.AccessLog{{
+							Name: util.FileAccessLog,
+							ConfigType: &envoy_accesslog.AccessLog_Config{
+								Config: messageToStruct(fileAccessLog(accessLogPath)),
+							},
+						}},
+					}),
+				},
 			},
 		},
 		"multiple cluster": {
@@ -146,24 +150,28 @@ func TestTCPProxy(t *testing.T) {
 			},
 			want: listener.Filter{
 				Name: util.TCPProxy,
-				Config: messageToStruct(&envoy_config_v2_tcpproxy.TcpProxy{
-					StatPrefix: statPrefix,
-					ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_WeightedClusters{
-						WeightedClusters: &envoy_config_v2_tcpproxy.TcpProxy_WeightedCluster{
-							Clusters: []*envoy_config_v2_tcpproxy.TcpProxy_WeightedCluster_ClusterWeight{{
-								Name:   Clustername(s1),
-								Weight: 1,
-							}, {
-								Name:   Clustername(s2),
-								Weight: 20,
-							}},
+				ConfigType: &listener.Filter_Config{
+					Config: messageToStruct(&envoy_config_v2_tcpproxy.TcpProxy{
+						StatPrefix: statPrefix,
+						ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_WeightedClusters{
+							WeightedClusters: &envoy_config_v2_tcpproxy.TcpProxy_WeightedCluster{
+								Clusters: []*envoy_config_v2_tcpproxy.TcpProxy_WeightedCluster_ClusterWeight{{
+									Name:   Clustername(s1),
+									Weight: 1,
+								}, {
+									Name:   Clustername(s2),
+									Weight: 20,
+								}},
+							},
 						},
-					},
-					AccessLog: []*envoy_accesslog.AccessLog{{
-						Name:   util.FileAccessLog,
-						Config: messageToStruct(fileAccessLog(accessLogPath)),
-					}},
-				}),
+						AccessLog: []*envoy_accesslog.AccessLog{{
+							Name: util.FileAccessLog,
+							ConfigType: &envoy_accesslog.AccessLog_Config{
+								Config: messageToStruct(fileAccessLog(accessLogPath)),
+							},
+						}},
+					}),
+				},
 			},
 		},
 	}

@@ -27,8 +27,10 @@ import (
 // TLSInspector returns a new TLS inspector listener filter.
 func TLSInspector() listener.ListenerFilter {
 	return listener.ListenerFilter{
-		Name:   util.TlsInspector,
-		Config: new(types.Struct),
+		Name: util.TlsInspector,
+		ConfigType: &listener.ListenerFilter_Config{
+			Config: new(types.Struct),
+		},
 	}
 }
 
@@ -37,40 +39,42 @@ func TLSInspector() listener.ListenerFilter {
 func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 	return listener.Filter{
 		Name: util.HTTPConnectionManager,
-		Config: &types.Struct{
-			Fields: map[string]*types.Value{
-				"stat_prefix": sv(routename),
-				"rds": st(map[string]*types.Value{
-					"route_config_name": sv(routename),
-					"config_source": st(map[string]*types.Value{
-						"api_config_source": st(map[string]*types.Value{
-							"api_type": sv("GRPC"),
-							"grpc_services": lv(
-								st(map[string]*types.Value{
-									"envoy_grpc": st(map[string]*types.Value{
-										"cluster_name": sv("contour"),
+		ConfigType: &listener.Filter_Config{
+			Config: &types.Struct{
+				Fields: map[string]*types.Value{
+					"stat_prefix": sv(routename),
+					"rds": st(map[string]*types.Value{
+						"route_config_name": sv(routename),
+						"config_source": st(map[string]*types.Value{
+							"api_config_source": st(map[string]*types.Value{
+								"api_type": sv("GRPC"),
+								"grpc_services": lv(
+									st(map[string]*types.Value{
+										"envoy_grpc": st(map[string]*types.Value{
+											"cluster_name": sv("contour"),
+										}),
 									}),
-								}),
-							),
+								),
+							}),
 						}),
 					}),
-				}),
-				"http_filters": lv(
-					st(map[string]*types.Value{
-						"name": sv(util.Gzip),
+					"http_filters": lv(
+						st(map[string]*types.Value{
+							"name": sv(util.Gzip),
+						}),
+						st(map[string]*types.Value{
+							"name": sv(util.GRPCWeb),
+						}),
+						st(map[string]*types.Value{
+							"name": sv(util.Router),
+						}),
+					),
+					"http_protocol_options": st(map[string]*types.Value{
+						"accept_http_10": {Kind: &types.Value_BoolValue{BoolValue: true}},
 					}),
-					st(map[string]*types.Value{
-						"name": sv(util.GRPCWeb),
-					}),
-					st(map[string]*types.Value{
-						"name": sv(util.Router),
-					}),
-				),
-				"http_protocol_options": st(map[string]*types.Value{
-					"accept_http_10": {Kind: &types.Value_BoolValue{BoolValue: true}},
-				}),
-				"access_log":         accesslog(accessLogPath),
-				"use_remote_address": {Kind: &types.Value_BoolValue{BoolValue: true}}, // TODO(jbeda) should this ever be false?
+					"access_log":         accesslog(accessLogPath),
+					"use_remote_address": {Kind: &types.Value_BoolValue{BoolValue: true}}, // TODO(jbeda) should this ever be false?
+				},
 			},
 		},
 	}
@@ -82,11 +86,13 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) list
 	case 1:
 		return listener.Filter{
 			Name: util.TCPProxy,
-			Config: &types.Struct{
-				Fields: map[string]*types.Value{
-					"stat_prefix": sv(statPrefix),
-					"cluster":     sv(Clustername(proxy.Services[0])),
-					"access_log":  accesslog(accessLogPath),
+			ConfigType: &listener.Filter_Config{
+				Config: &types.Struct{
+					Fields: map[string]*types.Value{
+						"stat_prefix": sv(statPrefix),
+						"cluster":     sv(Clustername(proxy.Services[0])),
+						"access_log":  accesslog(accessLogPath),
+					},
 				},
 			},
 		}
@@ -109,13 +115,15 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) list
 		}
 		return listener.Filter{
 			Name: util.TCPProxy,
-			Config: &types.Struct{
-				Fields: map[string]*types.Value{
-					"stat_prefix": sv(statPrefix),
-					"weighted_clusters": st(map[string]*types.Value{
-						"clusters": lv(l...),
-					}),
-					"access_log": accesslog(accessLogPath),
+			ConfigType: &listener.Filter_Config{
+				Config: &types.Struct{
+					Fields: map[string]*types.Value{
+						"stat_prefix": sv(statPrefix),
+						"weighted_clusters": st(map[string]*types.Value{
+							"clusters": lv(l...),
+						}),
+						"access_log": accesslog(accessLogPath),
+					},
 				},
 			},
 		}

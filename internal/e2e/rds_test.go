@@ -2335,7 +2335,11 @@ func weightedclusters(clusters []weightedcluster) *route.WeightedCluster {
 
 func websocketroute(c string) *route.Route_Route {
 	cl := routecluster(c)
-	cl.Route.UseWebsocket = bv(true)
+	cl.Route.UpgradeConfigs = append(cl.Route.UpgradeConfigs,
+		&route.RouteAction_UpgradeConfig{
+			UpgradeType: "websocket",
+		},
+	)
 	return cl
 }
 

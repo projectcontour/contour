@@ -28,10 +28,17 @@ import (
 // weighted cluster.
 func RouteRoute(r *dag.Route, services []*dag.HTTPService) *route.Route_Route {
 	ra := route.RouteAction{
-		UseWebsocket:  bv(r.Websocket),
 		RetryPolicy:   retryPolicy(r),
 		Timeout:       timeout(r),
 		PrefixRewrite: r.PrefixRewrite,
+	}
+
+	if r.Websocket {
+		ra.UpgradeConfigs = append(ra.UpgradeConfigs,
+			&route.RouteAction_UpgradeConfig{
+				UpgradeType: "websocket",
+			},
+		)
 	}
 
 	switch len(services) {
@@ -87,7 +94,9 @@ func retryPolicy(r *dag.Route) *route.RouteAction_RetryPolicy {
 func UpgradeHTTPS() *route.Route_Redirect {
 	return &route.Route_Redirect{
 		Redirect: &route.RedirectAction{
-			HttpsRedirect: true,
+			SchemeRewriteSpecifier: &route.RedirectAction_HttpsRedirect{
+				HttpsRedirect: true,
+			},
 		},
 	}
 }
