@@ -73,11 +73,11 @@ func timeout(r *dag.Route) *time.Duration {
 	}
 }
 
-func retryPolicy(r *dag.Route) *route.RouteAction_RetryPolicy {
+func retryPolicy(r *dag.Route) *route.RetryPolicy {
 	if r.RetryOn == "" {
 		return nil
 	}
-	rp := &route.RouteAction_RetryPolicy{
+	rp := &route.RetryPolicy{
 		RetryOn: r.RetryOn,
 	}
 	if r.NumRetries > 0 {
