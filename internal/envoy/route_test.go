@@ -192,7 +192,7 @@ func TestRouteRoute(t *testing.T) {
 					RequestHeadersToAdd: headers(
 						appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
 					),
-					RetryPolicy: &route.RouteAction_RetryPolicy{
+					RetryPolicy: &route.RetryPolicy{
 						RetryOn:       "503",
 						NumRetries:    u32(6),
 						PerTryTimeout: duration(100 * time.Millisecond),

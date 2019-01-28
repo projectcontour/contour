@@ -1744,7 +1744,7 @@ func routetimeout(cluster string, timeout *time.Duration) *route.Route_Route {
 
 func routeretry(cluster string, retryOn string, numRetries int, perTryTimeout time.Duration) *route.Route_Route {
 	r := routecluster(cluster)
-	r.Route.RetryPolicy = &route.RouteAction_RetryPolicy{
+	r.Route.RetryPolicy = &route.RetryPolicy{
 		RetryOn: retryOn,
 	}
 	if numRetries > 0 {
