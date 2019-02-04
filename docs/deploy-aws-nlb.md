@@ -1,4 +1,4 @@
-# Heptio Contour Deployment on AWS with NLB
+# Contour Deployment on AWS with NLB
 
 This is an advanced deployment guide to configure Contour on AWS with the [Network Load Balancer (NLB)][1].
 This configuration has several advantages:

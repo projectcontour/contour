@@ -1,4 +1,4 @@
-# Heptio Community Code of Conduct
+# Community Code of Conduct
 
 ## Contributor Code of Conduct
 

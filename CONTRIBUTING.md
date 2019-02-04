@@ -36,7 +36,7 @@ dep ensure -vendor-only
 ```
 
 Go is very particular when it comes to the location of the source code in your `$GOPATH`.
-The easiest way to make the `go` tool happy is to rename Heptio's remote location to something else, and substitute your fork for `origin`.
+The easiest way to make the `go` tool happy is to rename Contour's remote location to something else, and substitute your fork for `origin`.
 For example, to set `origin` to your fork, run this command substituting your GitHub username where appropriate.
 
 ```
@@ -134,7 +134,7 @@ project authors".
 To sign your work, just add a line like this at the end of your commit message:
 
 ```
-Signed-off-by: Joe Beda <joe@heptio.com>
+Signed-off-by: David Cheney <cheneyd@vmware.com>
 ```
 
 This can easily be done with the `--signoff` option to `git commit`.

@@ -1,17 +1,13 @@
-# Heptio Contour [![Build Status][1]][2]
+# Contour [![Build Status][1]][2] [![Go Report Card][21]][22]
 
-[![Go Report Card][21]][22]
-
-**Maintainers:** [Heptio][0]
+![Contour is fun at parties!](contour.png)
 
 ## Overview
 Contour is an Ingress controller for Kubernetes that works by deploying the [Envoy proxy][13] as a reverse proxy and load balancer. Unlike other Ingress controllers, Contour supports dynamic configuration updates out of the box while maintaining a lightweight profile.
 
 Contour also introduces a new ingress API ([IngressRoute][23]) which is implemented via a Custom Resource Definition (CRD). Its goal is to expand upon the functionality of the Ingress API to allow for a richer user experience as well as solve shortcomings in the original design.
 
-Check out [the roadmap][15] to see where we plan to go with the project.
-
-Also see [the launch blog post][17] for our vision of how Contour fits into the larger Kubernetes ecosystem.
+See [the launch blog post][17] for our vision of how Contour fits into the larger Kubernetes ecosystem.
 
 ## Prerequisites
 
@@ -95,8 +91,8 @@ Thanks for taking the time to join our community and start contributing!
 
 * Please familiarize yourself with the [Code of Conduct][8] before contributing.
 * See [CONTRIBUTING.md][5] for information about setting up your environment, the workflow that we expect, and instructions on the developer certificate of origin that we require.
-* Check out the [issues][4] and [our roadmap][15].
-* Read how [we're using ZenHub][24] for project and roadmap planning
+* Check out the [open issues][4].
+* Read how [we're using ZenHub][24] for project and roadmap planning.
 
 ## Changelog
 
@@ -116,7 +112,6 @@ See [the list of releases][6] to find out about feature changes.
 [12]: https://kubernetes.io/docs/concepts/services-networking/ingress/
 [13]: https://www.envoyproxy.io/
 [14]: https://github.com/kubernetes-up-and-running/kuard
-[15]: /design/roadmap.md
 [16]: https://github.com/envoyproxy/envoy/issues/95
 [17]: https://blog.heptio.com/making-it-easy-to-use-envoy-as-a-kubernetes-load-balancer-dde82959f171
 [18]: /FAQ.md

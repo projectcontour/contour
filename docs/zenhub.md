@@ -3,7 +3,7 @@
 As an Open Source community, it is necessary for our work, communication, and collaboration to be done in the open.
 GitHub provides a central repository for code, pull requests, issues, and documentation.  When applicable, we will use Google Docs for design reviews, proposals, and other working documents.
 
-While GitHub issues, milestones, and labels generally work pretty well, the Heptio team has found that product planning requires some additional tooling that GitHub projects do not offer.  
+While GitHub issues, milestones, and labels generally work pretty well, the Contour team has found that product planning requires some additional tooling that GitHub projects do not offer.  
 
 In our effort to minimize tooling while enabling product management insights, we have decided to use [ZenHub Open-Source](https://www.zenhub.com/blog/open-source/) to overlay product and project tracking on top of GitHub.
 ZenHub is a GitHub application that provides Kanban visualization, Epic tracking, fine-grained prioritization, and more.  It's primary backing storage system is existing GitHub issues along with additional metadata stored in ZenHub's database.

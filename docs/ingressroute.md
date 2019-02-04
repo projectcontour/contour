@@ -577,8 +577,8 @@ spec:
 
 A key feature of the IngressRoute specification is route delegation which follows the working model of DNS:
 
-> As the owner of a DNS domain, for example `heptio.com`, I delegate to another nameserver the responsibility for handing the subdomain `app.heptio.com`.
-> Any nameserver can hold a record for `app.heptio.com`, but without the linkage from the parent `heptio.com` nameserver, its information is unreachable and non authoritative.
+> As the owner of a DNS domain, for example `whitehouse.gov`, I delegate to another nameserver the responsibility for handing the subdomain `treasury.whitehouse.gov`.
+> Any nameserver can hold a record for `treasury.whitehouse.gov`, but without the linkage from the parent `whitehouse.gov` nameserver, its information is unreachable and non authoritative.
 
 The "root" IngressRoute is the only entry point for an ingress virtual host and is used as the top level configuration of a cluster's ingress resources.
 Each root IngressRoute defines a `virtualhost` key, which describes properties such as the fully qualified name of the virtual host, TLS configuration, etc.
