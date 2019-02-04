@@ -1,4 +1,4 @@
-# Tutorial: Deploy web applications on Kubernetes with Heptio Contour and Let's Encrypt
+# Tutorial: Deploy web applications on Kubernetes with Contour and Let's Encrypt
 
 This tutorial shows you how to securely deploy an HTTPS web application on a Kubernetes cluster, using:
 
@@ -22,7 +22,7 @@ This tutorial shows you how to securely deploy an HTTPS web application on a Kub
 
 This tutorial walks you through deploying:
 
-1. [Heptio Contour][0]
+1. [Contour][0]
 2. [Jetstack cert-manager][1]
 3. A sample web application
 

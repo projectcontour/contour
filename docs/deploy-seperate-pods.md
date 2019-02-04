@@ -1,4 +1,4 @@
-# Heptio Contour Deployment with Split Pods
+# Contour Deployment with Split Pods
 
 This is an advanced deployment guide to configure Contour in a Deployment separate from Envoy which allows for easier scaling of each component.
 This configuration has several advantages:

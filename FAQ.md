@@ -12,24 +12,8 @@ We continue to work with contributors to Istio and Envoy to find common ground; 
 
 ## Q: What are the differences between Ingress and IngressRoute?
 
-Contour supports both the Kubernetes Ingress API and the IngressRoute API, a
-custom resource that enables a richer and more robust experience for configuring
-ingress into your Kubernetes cluster.
+Contour supports both the Kubernetes Ingress API and the IngressRoute API, a custom resource that enables a richer and more robust experience for configuring ingress into your Kubernetes cluster.
 
-The Kubernetes Ingress API was introduced in version 1.2, and has not
-experienced significant progress since then. This is evidenced by the explosion
-of annotations used to express configuration that is otherwise not captured in
-the Ingress resource. Furthermore, as it stands today, the Ingress API is not
-suitable for clusters that are shared across multiple teams, as there is no way
-to enforce isolation to prevent teams from breaking each other's ingress
-configuration.
+The Kubernetes Ingress API was introduced in version 1.2, and has not experienced significant progress since then. This is evidenced by the explosion of annotations used to express configuration that is otherwise not captured in the Ingress resource. Furthermore, as it stands today, the Ingress API is not suitable for clusters that are shared across multiple teams, as there is no way to enforce isolation to prevent teams from breaking each other's ingress configuration.
 
-The IngressRoute custom resource is an attempt to solve these issues with an API
-that focuses on providing first-class support for HTTP(S) routing configuration
-instead of using annotations. More importantly, the IngressRoute API is designed
-with delegation in mind, a feature that enables administrators to configure
-top-level ingress settings (for example, which virtual hosts are available to
-each team), while delegating the lower-level configuration (for example, the
-mapping between paths and backend services) to each development team. More
-information about the IngressRoute API can be found
-[here](docs/ingressroute.md).
+The IngressRoute custom resource is an attempt to solve these issues with an API that focuses on providing first-class support for HTTP(S) routing configuration instead of using annotations. More importantly, the IngressRoute API is designed with delegation in mind, a feature that enables administrators to configure top-level ingress settings (for example, which virtual hosts are available to each team), while delegating the lower-level configuration (for example, the mapping between paths and backend services) to each development team. More information about the IngressRoute API can be found [in the IngressRoute documentation](docs/ingressroute.md).
