@@ -44,9 +44,8 @@ var ingressrouteRootNamespaceFlag string
 func main() {
 	log := logrus.StandardLogger()
 	app := kingpin.New("contour", "Heptio Contour Kubernetes ingress controller.")
+	var config envoy.BootstrapConfig
 	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")
-
-	var config envoy.ConfigWriter
 	path := bootstrap.Arg("path", "Configuration file.").Required().String()
 	bootstrap.Flag("admin-address", "Envoy admin interface address").StringVar(&config.AdminAddress)
 	bootstrap.Flag("admin-port", "Envoy admin interface port").IntVar(&config.AdminPort)
