@@ -216,15 +216,9 @@ type BootstrapConfig struct {
 	// Defaults to 8002 and is only enabled if StatsdEnabled is true.
 	StatsPort int
 
-	// XDSAddress is the TCP address of the XDS management server. For JSON configurations
-	// this is the address of the v1 REST API server. For YAML configurations this is the
-	// address of the v2 gRPC management server.
+	// XDSAddress is the TCP address of the gRPC XDS management server.
 	// Defaults to 127.0.0.1.
 	XDSAddress string
-
-	// XDSRESTPort is the management server port that provides the v1 REST API.
-	// Defaults to 8000.
-	XDSRESTPort int
 
 	// XDSGRPCPort is the management server port that provides the v2 gRPC API.
 	// Defaults to 8001.
