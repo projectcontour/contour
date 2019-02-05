@@ -94,11 +94,9 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 				Hosts: []*core.Address{{
 					Address: &core.Address_SocketAddress{
 						SocketAddress: &core.SocketAddress{
-							Protocol: core.TCP,
-							Address:  "127.0.0.1",
-							PortSpecifier: &core.SocketAddress_PortValue{
-								PortValue: 8001,
-							},
+							Protocol:      core.TCP,
+							Address:       stringOrDefault(c.XDSAddress, "127.0.0.1"),
+							PortSpecifier: portOrDefault(c.XDSGRPCPort, 8001),
 						},
 					},
 				}},
