@@ -14,6 +14,7 @@
 package envoy
 
 import (
+	"fmt"
 	"time"
 
 	api "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -35,7 +36,10 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 		},
 		StaticResources: &bootstrap.Bootstrap_StaticResources{
 			Listeners: []api.Listener{{
-				Address: SocketAddress("0.0.0.0", 8002),
+				Address: SocketAddress(
+					stringOrDefault(c.StatsAddress, "0.0.0.0"),
+					intOrDefault(c.StatsPort, 8002),
+				),
 				FilterChains: []listener.FilterChain{{
 					Filters: []listener.Filter{{
 						Name: util.HTTPConnectionManager,
@@ -93,11 +97,9 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 				Hosts: []*core.Address{{
 					Address: &core.Address_SocketAddress{
 						SocketAddress: &core.SocketAddress{
-							Protocol: core.TCP,
-							Address:  "127.0.0.1",
-							PortSpecifier: &core.SocketAddress_PortValue{
-								PortValue: 8001,
-							},
+							Protocol:      core.TCP,
+							Address:       stringOrDefault(c.XDSAddress, "127.0.0.1"),
+							PortSpecifier: portOrDefault(c.XDSGRPCPort, 8001),
 						},
 					},
 				}},
@@ -125,24 +127,22 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 				Hosts: []*core.Address{{
 					Address: &core.Address_SocketAddress{
 						SocketAddress: &core.SocketAddress{
-							Protocol: core.TCP,
-							Address:  "127.0.0.1",
-							PortSpecifier: &core.SocketAddress_PortValue{
-								PortValue: 9001,
-							},
+							Protocol:      core.TCP,
+							Address:       stringOrDefault(c.AdminAddress, "127.0.0.1"),
+							PortSpecifier: portOrDefault(c.AdminPort, 9001),
 						},
 					},
 				}},
 			}},
 		},
 		Admin: &bootstrap.Admin{
-			AccessLogPath: "/dev/null",
+			AccessLogPath: stringOrDefault(c.AdminAccessLogPath, "/dev/null"),
 			Address: &core.Address{
 				Address: &core.Address_SocketAddress{
 					SocketAddress: &core.SocketAddress{
 						Protocol:      core.TCP,
-						Address:       "127.0.0.1",
-						PortSpecifier: port(9001),
+						Address:       stringOrDefault(c.AdminAddress, "127.0.0.1"),
+						PortSpecifier: portOrDefault(c.AdminPort, 9001),
 					},
 				},
 			},
@@ -158,8 +158,8 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 						"address": st(map[string]*types.Value{
 							"socket_address": st(map[string]*types.Value{
 								"protocol":   sv("UDP"),
-								"address":    sv("127.0.0.1"),
-								"port_value": sv("9125"),
+								"address":    sv(stringOrDefault(c.StatsdAddress, "127.0.0.1")),
+								"port_value": sv(fmt.Sprintf("%d", intOrDefault(c.StatsdPort, 9125))),
 							}),
 						}),
 					},
@@ -170,9 +170,30 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 	return b
 }
 
-func port(p uint32) *core.SocketAddress_PortValue {
+func stringOrDefault(s, def string) string {
+	if s == "" {
+		return def
+	}
+	return s
+}
+
+func intOrDefault(i, def int) int {
+	if i == 0 {
+		return def
+	}
+	return i
+}
+
+func portOrDefault(i, def int) *core.SocketAddress_PortValue {
+	if i == 0 {
+		return port(def)
+	}
+	return port(i)
+}
+
+func port(p int) *core.SocketAddress_PortValue {
 	return &core.SocketAddress_PortValue{
-		PortValue: p,
+		PortValue: uint32(p),
 	}
 }
 
@@ -198,15 +219,9 @@ type BootstrapConfig struct {
 	// Defaults to 8002 and is only enabled if StatsdEnabled is true.
 	StatsPort int
 
-	// XDSAddress is the TCP address of the XDS management server. For JSON configurations
-	// this is the address of the v1 REST API server. For YAML configurations this is the
-	// address of the v2 gRPC management server.
+	// XDSAddress is the TCP address of the gRPC XDS management server.
 	// Defaults to 127.0.0.1.
 	XDSAddress string
-
-	// XDSRESTPort is the management server port that provides the v1 REST API.
-	// Defaults to 8000.
-	XDSRESTPort int
 
 	// XDSGRPCPort is the management server port that provides the v2 gRPC API.
 	// Defaults to 8001.
