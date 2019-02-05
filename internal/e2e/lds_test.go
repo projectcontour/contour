@@ -73,7 +73,7 @@ func TestNonTLSListener(t *testing.T) {
 				Name:    "ingress_http",
 				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
-					filterchain(false, envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
+					filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 				},
 			}),
 		},
@@ -128,7 +128,7 @@ func TestNonTLSListener(t *testing.T) {
 				Name:    "ingress_http",
 				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
-					filterchain(false, envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
+					filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 				},
 			}),
 		},
@@ -188,7 +188,7 @@ func TestTLSListener(t *testing.T) {
 				Name:    "ingress_http",
 				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
-					filterchain(false, envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
+					filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 				},
 			}),
 			any(t, &v2.Listener{
@@ -345,7 +345,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 				Name:    "ingress_http",
 				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
-					filterchain(false, envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
+					filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 				},
 			}),
 			any(t, l1),
@@ -363,7 +363,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 				Name:    "ingress_http",
 				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
-					filterchain(false, envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
+					filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 				},
 			}),
 		},
@@ -394,7 +394,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 				Name:    "ingress_http",
 				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
-					filterchain(false, envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
+					filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 				},
 			}),
 			any(t, l2),
@@ -465,7 +465,7 @@ func TestLDSFilter(t *testing.T) {
 				Name:    "ingress_http",
 				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
-					filterchain(false, envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
+					filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 				},
 			}),
 		},
@@ -619,8 +619,11 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 			any(t, &v2.Listener{
 				Name:    "ingress_http",
 				Address: envoy.SocketAddress("0.0.0.0", 8080),
+				ListenerFilters: []listener.ListenerFilter{
+					envoy.ProxyProtocol(),
+				},
 				FilterChains: []listener.FilterChain{
-					filterchain(true, envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
+					filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 				},
 			}),
 		},
@@ -682,18 +685,21 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 		Address:      envoy.SocketAddress("0.0.0.0", 8443),
 		FilterChains: filterchaintls("kuard.example.com", envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
 		ListenerFilters: []listener.ListenerFilter{
+			envoy.ProxyProtocol(),
 			envoy.TLSInspector(),
 		},
 	}
-	ingress_https.FilterChains[0].UseProxyProto = bv(true)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_http",
 				Address: envoy.SocketAddress("0.0.0.0", 8080),
+				ListenerFilters: []listener.ListenerFilter{
+					envoy.ProxyProtocol(),
+				},
 				FilterChains: []listener.FilterChain{
-					filterchain(true, envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
+					filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 				},
 			}),
 			any(t, ingress_https),
@@ -758,7 +764,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 		Name:    "ingress_http",
 		Address: envoy.SocketAddress("127.0.0.100", 9100),
 		FilterChains: []listener.FilterChain{
-			filterchain(false, envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
+			filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 		},
 	}
 	ingress_https := &v2.Listener{
@@ -826,7 +832,7 @@ func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 				Name:    "ingress_http",
 				Address: envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: []listener.FilterChain{
-					filterchain(false, envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
+					filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 				},
 			}),
 		},
@@ -944,7 +950,7 @@ func TestIngressRouteHTTPS(t *testing.T) {
 		Name:    "ingress_http",
 		Address: envoy.SocketAddress("0.0.0.0", 8080),
 		FilterChains: []listener.FilterChain{
-			filterchain(false, envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
+			filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 		},
 	}
 
@@ -1124,18 +1130,15 @@ func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
 	}
 }
 
-func filterchain(useproxy bool, filters ...listener.Filter) listener.FilterChain {
+func filterchain(filters ...listener.Filter) listener.FilterChain {
 	fc := listener.FilterChain{
 		Filters: filters,
-	}
-	if useproxy {
-		fc.UseProxyProto = bv(true)
 	}
 	return fc
 }
 
 func filterchaintls(domain string, filter listener.Filter, alpn ...string) []listener.FilterChain {
-	fc := filterchain(false, filter)
+	fc := filterchain(filter)
 	fc.FilterChainMatch = &listener.FilterChainMatch{
 		ServerNames: []string{domain},
 	}

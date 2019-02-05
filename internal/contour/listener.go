@@ -61,8 +61,8 @@ type ListenerVisitorConfig struct {
 	// If not set, defaults to DEFAULT_HTTPS_ACCESS_LOG.
 	HTTPSAccessLog string
 
-	// UseProxyProto configurs all listeners to expect a PROXY protocol
-	// V1 header on new connections.
+	// UseProxyProto configurs all listeners to expect a PROXY
+	// V1 or V2 preamble.
 	// If not set, defaults to false.
 	UseProxyProto bool
 }
@@ -189,25 +189,31 @@ type listenerVisitor struct {
 }
 
 func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.Listener {
+	var httpListenerFilters, httpsListenerFilters []listener.ListenerFilter
+	if lvc.UseProxyProto {
+		httpListenerFilters = append(httpListenerFilters, envoy.ProxyProtocol())
+		httpsListenerFilters = append(httpsListenerFilters, envoy.ProxyProtocol(), envoy.TLSInspector())
+	} else {
+		httpsListenerFilters = append(httpsListenerFilters, envoy.TLSInspector())
+	}
+
 	lv := listenerVisitor{
 		ListenerVisitorConfig: lvc,
 		listeners: map[string]*v2.Listener{
 			ENVOY_HTTP_LISTENER: {
-				Name:    ENVOY_HTTP_LISTENER,
-				Address: envoy.SocketAddress(lvc.httpAddress(), lvc.httpPort()),
+				Name:            ENVOY_HTTP_LISTENER,
+				Address:         envoy.SocketAddress(lvc.httpAddress(), lvc.httpPort()),
+				ListenerFilters: httpListenerFilters,
 				FilterChains: []listener.FilterChain{{
 					Filters: []listener.Filter{
 						envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, lvc.httpAccessLog()),
 					},
-					UseProxyProto: bv(lvc.UseProxyProto),
 				}},
 			},
 			ENVOY_HTTPS_LISTENER: {
-				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoy.SocketAddress(lvc.httpsAddress(), lvc.httpsPort()),
-				ListenerFilters: []listener.ListenerFilter{
-					envoy.TLSInspector(),
-				},
+				Name:            ENVOY_HTTPS_LISTENER,
+				Address:         envoy.SocketAddress(lvc.httpsAddress(), lvc.httpsPort()),
+				ListenerFilters: httpsListenerFilters,
 			},
 		},
 	}
@@ -245,8 +251,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			FilterChainMatch: &listener.FilterChainMatch{
 				ServerNames: []string{vh.Host},
 			},
-			Filters:       filters,
-			UseProxyProto: bv(v.UseProxyProto),
+			Filters: filters,
 		}
 
 		// attach certificate data to this listener if provided.

@@ -34,6 +34,16 @@ func TLSInspector() listener.ListenerFilter {
 	}
 }
 
+// ProxyProtocol returns a new Proxy Protocol listener filter.
+func ProxyProtocol() listener.ListenerFilter {
+	return listener.ListenerFilter{
+		Name: util.ProxyProtocol,
+		ConfigType: &listener.ListenerFilter_Config{
+			Config: new(types.Struct),
+		},
+	}
+}
+
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
 // for the supplied route and access log.
 func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
