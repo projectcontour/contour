@@ -36,7 +36,10 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 		},
 		StaticResources: &bootstrap.Bootstrap_StaticResources{
 			Listeners: []api.Listener{{
-				Address: SocketAddress("0.0.0.0", 8002),
+				Address: SocketAddress(
+					stringOrDefault(c.StatsAddress, "0.0.0.0"),
+					intOrDefault(c.StatsPort, 8002),
+				),
 				FilterChains: []listener.FilterChain{{
 					Filters: []listener.Filter{{
 						Name: util.HTTPConnectionManager,
