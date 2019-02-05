@@ -14,6 +14,7 @@
 package envoy
 
 import (
+	"fmt"
 	"time"
 
 	api "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -158,8 +159,8 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 						"address": st(map[string]*types.Value{
 							"socket_address": st(map[string]*types.Value{
 								"protocol":   sv("UDP"),
-								"address":    sv("127.0.0.1"),
-								"port_value": sv("9125"),
+								"address":    sv(stringOrDefault(c.StatsdAddress, "127.0.0.1")),
+								"port_value": sv(fmt.Sprintf("%d", intOrDefault(c.StatsdPort, 9125))),
 							}),
 						}),
 					},
@@ -168,6 +169,20 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 		}}
 	}
 	return b
+}
+
+func stringOrDefault(s, def string) string {
+	if s == "" {
+		return def
+	}
+	return s
+}
+
+func intOrDefault(i, def int) int {
+	if i == 0 {
+		return def
+	}
+	return i
 }
 
 func port(p uint32) *core.SocketAddress_PortValue {
