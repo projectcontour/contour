@@ -135,7 +135,7 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 			}},
 		},
 		Admin: &bootstrap.Admin{
-			AccessLogPath: "/dev/null",
+			AccessLogPath: stringOrDefault(c.AdminAccessLogPath, "/dev/null"),
 			Address: &core.Address{
 				Address: &core.Address_SocketAddress{
 					SocketAddress: &core.SocketAddress{
