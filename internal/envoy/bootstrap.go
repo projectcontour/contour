@@ -126,11 +126,9 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 				Hosts: []*core.Address{{
 					Address: &core.Address_SocketAddress{
 						SocketAddress: &core.SocketAddress{
-							Protocol: core.TCP,
-							Address:  "127.0.0.1",
-							PortSpecifier: &core.SocketAddress_PortValue{
-								PortValue: 9001,
-							},
+							Protocol:      core.TCP,
+							Address:       stringOrDefault(c.AdminAddress, "127.0.0.1"),
+							PortSpecifier: portOrDefault(c.AdminPort, 9001),
 						},
 					},
 				}},
@@ -142,8 +140,8 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 				Address: &core.Address_SocketAddress{
 					SocketAddress: &core.SocketAddress{
 						Protocol:      core.TCP,
-						Address:       "127.0.0.1",
-						PortSpecifier: port(9001),
+						Address:       stringOrDefault(c.AdminAddress, "127.0.0.1"),
+						PortSpecifier: portOrDefault(c.AdminPort, 9001),
 					},
 				},
 			},
@@ -185,9 +183,16 @@ func intOrDefault(i, def int) int {
 	return i
 }
 
-func port(p uint32) *core.SocketAddress_PortValue {
+func portOrDefault(i, def int) *core.SocketAddress_PortValue {
+	if i == 0 {
+		return port(def)
+	}
+	return port(i)
+}
+
+func port(p int) *core.SocketAddress_PortValue {
 	return &core.SocketAddress_PortValue{
-		PortValue: p,
+		PortValue: uint32(p),
 	}
 }
 
