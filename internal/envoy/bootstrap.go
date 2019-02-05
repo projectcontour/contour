@@ -28,7 +28,7 @@ import (
 
 // Bootstrap creates a new v2 Bootstrap configuration.
 func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
-	return &bootstrap.Bootstrap{
+	b := &bootstrap.Bootstrap{
 		DynamicResources: &bootstrap.Bootstrap_DynamicResources{
 			LdsConfig: ConfigSource("contour"),
 			CdsConfig: ConfigSource("contour"),
@@ -135,7 +135,22 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 				}},
 			}},
 		},
-		StatsSinks: []*metrics.StatsSink{{
+		Admin: &bootstrap.Admin{
+			AccessLogPath: "/dev/null",
+			Address: &core.Address{
+				Address: &core.Address_SocketAddress{
+					SocketAddress: &core.SocketAddress{
+						Protocol:      core.TCP,
+						Address:       "127.0.0.1",
+						PortSpecifier: port(9001),
+					},
+				},
+			},
+		},
+	}
+
+	if c.StatsdEnabled {
+		b.StatsSinks = []*metrics.StatsSink{{
 			Name: util.Statsd,
 			ConfigType: &metrics.StatsSink_Config{
 				Config: &types.Struct{
@@ -150,20 +165,9 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 					},
 				},
 			},
-		}},
-		Admin: &bootstrap.Admin{
-			AccessLogPath: "/dev/null",
-			Address: &core.Address{
-				Address: &core.Address_SocketAddress{
-					SocketAddress: &core.SocketAddress{
-						Protocol:      core.TCP,
-						Address:       "127.0.0.1",
-						PortSpecifier: port(9001),
-					},
-				},
-			},
-		},
+		}}
 	}
+	return b
 }
 
 func port(p uint32) *core.SocketAddress_PortValue {
