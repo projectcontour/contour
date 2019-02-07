@@ -117,7 +117,7 @@ func TestVisitListeners(t *testing.T) {
 			want: listenermap(
 				&v2.Listener{
 					Name:    ENVOY_HTTPS_LISTENER,
-					Address: envoy.SocketAddress("0.0.0.0", 8443),
+					Address: *envoy.SocketAddress("0.0.0.0", 8443),
 					FilterChains: []listener.FilterChain{{
 						FilterChainMatch: &listener.FilterChainMatch{
 							ServerNames: []string{"tcpproxy.example.com"},

@@ -14,26 +14,15 @@
 package envoy
 
 import (
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 )
 
-// LBEndpoint creates a new SocketAddress LbEndpoint..
+// LBEndpoint creates a new SocketAddress LbEndpoint.
 func LBEndpoint(addr string, port int) endpoint.LbEndpoint {
 	return endpoint.LbEndpoint{
 		HostIdentifier: &endpoint.LbEndpoint_Endpoint{
 			Endpoint: &endpoint.Endpoint{
-				Address: &core.Address{
-					Address: &core.Address_SocketAddress{
-						SocketAddress: &core.SocketAddress{
-							Protocol: core.TCP,
-							Address:  addr,
-							PortSpecifier: &core.SocketAddress_PortValue{
-								PortValue: uint32(port),
-							},
-						},
-					},
-				},
+				Address: SocketAddress(addr, port),
 			},
 		},
 	}

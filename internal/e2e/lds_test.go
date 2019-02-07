@@ -71,7 +71,7 @@ func TestNonTLSListener(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
-				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
 		},
@@ -124,7 +124,7 @@ func TestNonTLSListener(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
-				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
 		},
@@ -182,12 +182,12 @@ func TestTLSListener(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
-				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
 			any(t, &v2.Listener{
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				Address: *envoy.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: []listener.ListenerFilter{
 					envoy.TLSInspector(),
 				},
@@ -223,7 +223,7 @@ func TestTLSListener(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				Address: *envoy.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: []listener.ListenerFilter{
 					envoy.TLSInspector(),
 				},
@@ -321,7 +321,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 
 	l1 := &v2.Listener{
 		Name:    "ingress_https",
-		Address: envoy.SocketAddress("0.0.0.0", 8443),
+		Address: *envoy.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: []listener.ListenerFilter{
 			envoy.TLSInspector(),
 		},
@@ -337,7 +337,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
-				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
 			any(t, l1),
@@ -353,7 +353,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
-				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
 		},
@@ -366,7 +366,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 	rh.OnAdd(s1)
 	l2 := &v2.Listener{
 		Name:    "ingress_https",
-		Address: envoy.SocketAddress("0.0.0.0", 8443),
+		Address: *envoy.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: []listener.ListenerFilter{
 			envoy.TLSInspector(),
 		},
@@ -382,7 +382,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
-				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
 			any(t, l2),
@@ -433,7 +433,7 @@ func TestLDSFilter(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				Address: *envoy.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: []listener.ListenerFilter{
 					envoy.TLSInspector(),
 				},
@@ -451,7 +451,7 @@ func TestLDSFilter(t *testing.T) {
 
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
-				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
 		},
@@ -518,7 +518,7 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				Address: *envoy.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: []listener.ListenerFilter{
 					envoy.TLSInspector(),
 				},
@@ -551,7 +551,7 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 
 	l1 := &v2.Listener{
 		Name:    "ingress_https",
-		Address: envoy.SocketAddress("0.0.0.0", 8443),
+		Address: *envoy.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: []listener.ListenerFilter{
 			envoy.TLSInspector(),
 		},
@@ -604,7 +604,7 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_http",
-				Address: envoy.SocketAddress("0.0.0.0", 8080),
+				Address: *envoy.SocketAddress("0.0.0.0", 8080),
 				ListenerFilters: []listener.ListenerFilter{
 					envoy.ProxyProtocol(),
 				},
@@ -666,7 +666,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 
 	ingress_https := &v2.Listener{
 		Name:    "ingress_https",
-		Address: envoy.SocketAddress("0.0.0.0", 8443),
+		Address: *envoy.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: []listener.ListenerFilter{
 			envoy.ProxyProtocol(),
 			envoy.TLSInspector(),
@@ -678,7 +678,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:    "ingress_http",
-				Address: envoy.SocketAddress("0.0.0.0", 8080),
+				Address: *envoy.SocketAddress("0.0.0.0", 8080),
 				ListenerFilters: []listener.ListenerFilter{
 					envoy.ProxyProtocol(),
 				},
@@ -744,12 +744,12 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 
 	ingress_http := &v2.Listener{
 		Name:         "ingress_http",
-		Address:      envoy.SocketAddress("127.0.0.100", 9100),
+		Address:      *envoy.SocketAddress("127.0.0.100", 9100),
 		FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 	}
 	ingress_https := &v2.Listener{
 		Name:    "ingress_https",
-		Address: envoy.SocketAddress("127.0.0.200", 9200),
+		Address: *envoy.SocketAddress("127.0.0.200", 9200),
 		ListenerFilters: []listener.ListenerFilter{
 			envoy.TLSInspector(),
 		},
@@ -810,7 +810,7 @@ func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
-				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
 		},
@@ -926,13 +926,13 @@ func TestIngressRouteHTTPS(t *testing.T) {
 
 	ingressHTTP := &v2.Listener{
 		Name:         "ingress_http",
-		Address:      envoy.SocketAddress("0.0.0.0", 8080),
+		Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 		FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 	}
 
 	ingressHTTPS := &v2.Listener{
 		Name:    "ingress_https",
-		Address: envoy.SocketAddress("0.0.0.0", 8443),
+		Address: *envoy.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: []listener.ListenerFilter{
 			envoy.TLSInspector(),
 		},
@@ -993,7 +993,7 @@ func TestLDSIngressRouteTCPProxyTLSPassthrough(t *testing.T) {
 
 	ingressHTTPS := &v2.Listener{
 		Name:    "ingress_https",
-		Address: envoy.SocketAddress("0.0.0.0", 8443),
+		Address: *envoy.SocketAddress("0.0.0.0", 8443),
 		FilterChains: []listener.FilterChain{{
 			Filters: []listener.Filter{
 				tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e"),
@@ -1071,7 +1071,7 @@ func TestLDSIngressRouteTCPForward(t *testing.T) {
 
 	ingressHTTPS := &v2.Listener{
 		Name:         "ingress_https",
-		Address:      envoy.SocketAddress("0.0.0.0", 8443),
+		Address:      *envoy.SocketAddress("0.0.0.0", 8443),
 		FilterChains: filterchaintls("kuard-tcp.example.com", tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e")),
 		ListenerFilters: []listener.ListenerFilter{
 			envoy.TLSInspector(),
