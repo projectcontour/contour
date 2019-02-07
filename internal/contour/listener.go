@@ -202,7 +202,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 		listeners: map[string]*v2.Listener{
 			ENVOY_HTTP_LISTENER: {
 				Name:            ENVOY_HTTP_LISTENER,
-				Address:         envoy.SocketAddress(lvc.httpAddress(), lvc.httpPort()),
+				Address:         *envoy.SocketAddress(lvc.httpAddress(), lvc.httpPort()),
 				ListenerFilters: httpListenerFilters,
 				FilterChains: []listener.FilterChain{{
 					Filters: []listener.Filter{
@@ -212,7 +212,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 			},
 			ENVOY_HTTPS_LISTENER: {
 				Name:            ENVOY_HTTPS_LISTENER,
-				Address:         envoy.SocketAddress(lvc.httpsAddress(), lvc.httpsPort()),
+				Address:         *envoy.SocketAddress(lvc.httpsAddress(), lvc.httpsPort()),
 				ListenerFilters: httpsListenerFilters,
 			},
 		},

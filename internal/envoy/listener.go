@@ -152,8 +152,8 @@ func (t tcpServiceByName) Less(i, j int) bool {
 }
 
 // SocketAddress creates a new TCP core.Address.
-func SocketAddress(address string, port int) core.Address {
-	return core.Address{
+func SocketAddress(address string, port int) *core.Address {
+	return &core.Address{
 		Address: &core.Address_SocketAddress{
 			SocketAddress: &core.SocketAddress{
 				Protocol: core.TCP,

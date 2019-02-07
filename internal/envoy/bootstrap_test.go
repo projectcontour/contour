@@ -94,14 +94,25 @@ func TestBootstrap(t *testing.T) {
         "name": "contour",
         "type": "STRICT_DNS",
         "connect_timeout": "5s",
-        "hosts": [
-          {
-            "socket_address": {
-              "address": "127.0.0.1",
-              "port_value": 8001
+        "load_assignment": {
+          "cluster_name": "contour",
+          "endpoints": [
+            {
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 8001
+                      }
+                    }
+                  }
+                }
+              ]
             }
-          }
-        ],
+          ]
+        },
         "circuit_breakers": {
           "thresholds": [
             {
@@ -125,14 +136,25 @@ func TestBootstrap(t *testing.T) {
         "name": "service_stats",
         "type": "LOGICAL_DNS",
         "connect_timeout": "0.250s",
-        "hosts": [
-          {
-            "socket_address": {
-              "address": "127.0.0.1",
-              "port_value": 9001
+        "load_assignment": {
+          "cluster_name": "service_stats",
+          "endpoints": [   
+            {                          
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 9001
+                      }    
+                    }     
+                  }
+                }          
+              ]                        
             }
-          }
-        ]
+          ]
+        }
       }
     ]
   },
@@ -242,14 +264,25 @@ func TestBootstrap(t *testing.T) {
         "name": "contour",
         "type": "STRICT_DNS",
         "connect_timeout": "5s",
-        "hosts": [
-          {
-            "socket_address": {
-              "address": "127.0.0.1",
-              "port_value": 8001
+        "load_assignment": {
+          "cluster_name": "contour",
+          "endpoints": [
+            {
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 8001
+                      }
+                    }
+                  }
+                }
+              ]
             }
-          }
-        ],
+          ]
+        },
         "circuit_breakers": {
           "thresholds": [
             {
@@ -273,14 +306,25 @@ func TestBootstrap(t *testing.T) {
         "name": "service_stats",
         "type": "LOGICAL_DNS",
         "connect_timeout": "0.250s",
-        "hosts": [
-          {
-            "socket_address": {
-              "address": "127.0.0.1",
-              "port_value": 9001
+        "load_assignment": {
+          "cluster_name": "service_stats",
+          "endpoints": [   
+            {                          
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 9001
+                      }    
+                    }     
+                  }
+                }          
+              ]                        
             }
-          }
-        ]
+          ]
+        }
       }
     ]
   },
@@ -406,14 +450,25 @@ func TestBootstrap(t *testing.T) {
         "name": "contour",
         "type": "STRICT_DNS",
         "connect_timeout": "5s",
-        "hosts": [
-          {
-            "socket_address": {
-              "address": "127.0.0.1",
-              "port_value": 8001
+        "load_assignment": {
+          "cluster_name": "contour",
+          "endpoints": [
+            {
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 8001
+                      }
+                    }
+                  }
+                }
+              ]
             }
-          }
-        ],
+          ]
+        },
         "circuit_breakers": {
           "thresholds": [
             {
@@ -437,14 +492,25 @@ func TestBootstrap(t *testing.T) {
         "name": "service_stats",
         "type": "LOGICAL_DNS",
         "connect_timeout": "0.250s",
-        "hosts": [
-          {
-            "socket_address": {
-              "address": "127.0.0.1",
-              "port_value": 9001
+        "load_assignment": {
+          "cluster_name": "service_stats",
+          "endpoints": [   
+            {                          
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 9001
+                      }    
+                    }     
+                  }
+                }          
+              ]                        
             }
-          }
-        ]
+          ]
+        }
       }
     ]
   },
@@ -569,14 +635,25 @@ func TestBootstrap(t *testing.T) {
         "name": "contour",
         "type": "STRICT_DNS",
         "connect_timeout": "5s",
-        "hosts": [
-          {
-            "socket_address": {
-              "address": "127.0.0.1",
-              "port_value": 8001
+        "load_assignment": {
+          "cluster_name": "contour",
+          "endpoints": [
+            {
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 8001
+                      }
+                    }
+                  }
+                }
+              ]
             }
-          }
-        ],
+          ]
+        },
         "circuit_breakers": {
           "thresholds": [
             {
@@ -600,14 +677,25 @@ func TestBootstrap(t *testing.T) {
         "name": "service_stats",
         "type": "LOGICAL_DNS",
         "connect_timeout": "0.250s",
-        "hosts": [
-          {
-            "socket_address": {
-              "address": "8.8.8.8",
-              "port_value": 9200
+        "load_assignment": {
+          "cluster_name": "service_stats",
+          "endpoints": [   
+            {                          
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "8.8.8.8",
+                        "port_value": 9200
+                      }    
+                    }     
+                  }
+                }          
+              ]                        
             }
-          }
-        ]
+          ]
+        }
       }
     ]
   },
@@ -717,14 +805,25 @@ func TestBootstrap(t *testing.T) {
         "name": "contour",
         "type": "STRICT_DNS",
         "connect_timeout": "5s",
-        "hosts": [
-          {
-            "socket_address": {
-              "address": "127.0.0.1",
-              "port_value": 8001
+        "load_assignment": {
+          "cluster_name": "contour",
+          "endpoints": [
+            {
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 8001
+                      }
+                    }
+                  }
+                }
+              ]
             }
-          }
-        ],
+          ]
+        },
         "circuit_breakers": {
           "thresholds": [
             {
@@ -748,14 +847,25 @@ func TestBootstrap(t *testing.T) {
         "name": "service_stats",
         "type": "LOGICAL_DNS",
         "connect_timeout": "0.250s",
-        "hosts": [
-          {
-            "socket_address": {
-              "address": "127.0.0.1",
-              "port_value": 9001
+        "load_assignment": {
+          "cluster_name": "service_stats",
+          "endpoints": [   
+            {                          
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 9001
+                      }    
+                    }     
+                  }
+                }          
+              ]                        
             }
-          }
-        ]
+          ]
+        }
       }
     ]
   },
@@ -866,14 +976,25 @@ func TestBootstrap(t *testing.T) {
         "name": "contour",
         "type": "STRICT_DNS",
         "connect_timeout": "5s",
-        "hosts": [
-          {
-            "socket_address": {
-              "address": "8.8.8.8",
-              "port_value": 9200
+        "load_assignment": {
+          "cluster_name": "contour",
+          "endpoints": [
+            {
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "8.8.8.8",
+                        "port_value": 9200
+                      }
+                    }
+                  }
+                }
+              ]
             }
-          }
-        ],
+          ]
+        },
         "circuit_breakers": {
           "thresholds": [
             {
@@ -897,14 +1018,25 @@ func TestBootstrap(t *testing.T) {
         "name": "service_stats",
         "type": "LOGICAL_DNS",
         "connect_timeout": "0.250s",
-        "hosts": [
-          {
-            "socket_address": {
-              "address": "127.0.0.1",
-              "port_value": 9001
+        "load_assignment": {
+          "cluster_name": "service_stats",
+          "endpoints": [   
+            {                          
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 9001
+                      }    
+                    }     
+                  }
+                }          
+              ]                        
             }
-          }
-        ]
+          ]
+        }
       }
     ]
   },
@@ -1015,14 +1147,25 @@ func TestBootstrap(t *testing.T) {
         "name": "contour",
         "type": "STRICT_DNS",
         "connect_timeout": "5s",
-        "hosts": [
-          {
-            "socket_address": {
-              "address": "127.0.0.1",
-              "port_value": 8001
+        "load_assignment": {
+          "cluster_name": "contour",
+          "endpoints": [
+            {
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 8001
+                      }
+                    }
+                  }
+                }
+              ]
             }
-          }
-        ],
+          ]
+        },
         "circuit_breakers": {
           "thresholds": [
             {
@@ -1046,14 +1189,25 @@ func TestBootstrap(t *testing.T) {
         "name": "service_stats",
         "type": "LOGICAL_DNS",
         "connect_timeout": "0.250s",
-        "hosts": [
-          {
-            "socket_address": {
-              "address": "127.0.0.1",
-              "port_value": 9001
+        "load_assignment": {
+          "cluster_name": "service_stats",
+          "endpoints": [   
+            {                          
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 9001
+                      }    
+                    }     
+                  }
+                }          
+              ]                        
             }
-          }
-        ]
+          ]
+        }
       }
     ]
   },

@@ -40,7 +40,7 @@ func TestSocketAddress(t *testing.T) {
 	)
 
 	got := SocketAddress(addr, port)
-	want := core.Address{
+	want := &core.Address{
 		Address: &core.Address_SocketAddress{
 			SocketAddress: &core.SocketAddress{
 				Protocol: core.TCP,

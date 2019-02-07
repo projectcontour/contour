@@ -20,6 +20,7 @@ import (
 	api "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	clusterv2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	bootstrap "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
 	metrics "github.com/envoyproxy/go-control-plane/envoy/config/metrics/v2"
@@ -36,7 +37,7 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 		},
 		StaticResources: &bootstrap.Bootstrap_StaticResources{
 			Listeners: []api.Listener{{
-				Address: SocketAddress(
+				Address: *SocketAddress(
 					stringOrDefault(c.StatsAddress, "0.0.0.0"),
 					intOrDefault(c.StatsPort, 8002),
 				),
@@ -92,17 +93,14 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 				ConnectTimeout: 5 * time.Second,
 				Type:           api.Cluster_STRICT_DNS,
 				LbPolicy:       api.Cluster_ROUND_ROBIN,
-
-				// TODO(dfc) hosts is deprecated, use loadassignments
-				Hosts: []*core.Address{{
-					Address: &core.Address_SocketAddress{
-						SocketAddress: &core.SocketAddress{
-							Protocol:      core.TCP,
-							Address:       stringOrDefault(c.XDSAddress, "127.0.0.1"),
-							PortSpecifier: portOrDefault(c.XDSGRPCPort, 8001),
+				LoadAssignment: &api.ClusterLoadAssignment{
+					ClusterName: "contour",
+					Endpoints: []endpoint.LocalityLbEndpoints{{
+						LbEndpoints: []endpoint.LbEndpoint{
+							LBEndpoint(stringOrDefault(c.XDSAddress, "127.0.0.1"), intOrDefault(c.XDSGRPCPort, 8001)),
 						},
-					},
-				}},
+					}},
+				},
 				Http2ProtocolOptions: new(core.Http2ProtocolOptions), // enables http2
 				CircuitBreakers: &clusterv2.CircuitBreakers{
 					Thresholds: []*clusterv2.CircuitBreakers_Thresholds{{
@@ -124,28 +122,19 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 				ConnectTimeout: 250 * time.Millisecond,
 				Type:           api.Cluster_LOGICAL_DNS,
 				LbPolicy:       api.Cluster_ROUND_ROBIN,
-				Hosts: []*core.Address{{
-					Address: &core.Address_SocketAddress{
-						SocketAddress: &core.SocketAddress{
-							Protocol:      core.TCP,
-							Address:       stringOrDefault(c.AdminAddress, "127.0.0.1"),
-							PortSpecifier: portOrDefault(c.AdminPort, 9001),
+				LoadAssignment: &api.ClusterLoadAssignment{
+					ClusterName: "service_stats",
+					Endpoints: []endpoint.LocalityLbEndpoints{{
+						LbEndpoints: []endpoint.LbEndpoint{
+							LBEndpoint(stringOrDefault(c.AdminAddress, "127.0.0.1"), intOrDefault(c.AdminPort, 9001)),
 						},
-					},
-				}},
+					}},
+				},
 			}},
 		},
 		Admin: &bootstrap.Admin{
 			AccessLogPath: stringOrDefault(c.AdminAccessLogPath, "/dev/null"),
-			Address: &core.Address{
-				Address: &core.Address_SocketAddress{
-					SocketAddress: &core.SocketAddress{
-						Protocol:      core.TCP,
-						Address:       stringOrDefault(c.AdminAddress, "127.0.0.1"),
-						PortSpecifier: portOrDefault(c.AdminPort, 9001),
-					},
-				},
-			},
+			Address:       SocketAddress(stringOrDefault(c.AdminAddress, "127.0.0.1"), intOrDefault(c.AdminPort, 9001)),
 		},
 	}
 
@@ -182,19 +171,6 @@ func intOrDefault(i, def int) int {
 		return def
 	}
 	return i
-}
-
-func portOrDefault(i, def int) *core.SocketAddress_PortValue {
-	if i == 0 {
-		return port(def)
-	}
-	return port(i)
-}
-
-func port(p int) *core.SocketAddress_PortValue {
-	return &core.SocketAddress_PortValue{
-		PortValue: uint32(p),
-	}
 }
 
 // BootstrapConfig holds configuration values for a v2.Bootstrap.

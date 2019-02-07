@@ -57,7 +57,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&v2.Listener{
 				Name:         ENVOY_HTTP_LISTENER,
-				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
 			}),
 		},
@@ -87,7 +87,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&v2.Listener{
 				Name:         ENVOY_HTTP_LISTENER,
-				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
 			}),
 		},
@@ -119,11 +119,11 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&v2.Listener{
 				Name:         ENVOY_HTTP_LISTENER,
-				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
 			}, &v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				Address: *envoy.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: []listener.ListenerFilter{
 					envoy.TLSInspector(),
 				},
@@ -164,7 +164,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&v2.Listener{
 				Name:         ENVOY_HTTP_LISTENER,
-				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
 			}),
 		},
@@ -204,11 +204,11 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&v2.Listener{
 				Name:         ENVOY_HTTP_LISTENER,
-				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
 			}, &v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				Address: *envoy.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []listener.FilterChain{{
 					FilterChainMatch: &listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
@@ -272,7 +272,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				Address: *envoy.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []listener.FilterChain{{
 					FilterChainMatch: &listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
@@ -319,11 +319,11 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&v2.Listener{
 				Name:         ENVOY_HTTP_LISTENER,
-				Address:      envoy.SocketAddress("127.0.0.100", 9100),
+				Address:      *envoy.SocketAddress("127.0.0.100", 9100),
 				FilterChains: filterchain(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
 			}, &v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoy.SocketAddress("127.0.0.200", 9200),
+				Address: *envoy.SocketAddress("127.0.0.200", 9200),
 				ListenerFilters: []listener.ListenerFilter{
 					envoy.TLSInspector(),
 				},
@@ -367,14 +367,14 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&v2.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
-				Address: envoy.SocketAddress("0.0.0.0", 8080),
+				Address: *envoy.SocketAddress("0.0.0.0", 8080),
 				ListenerFilters: []listener.ListenerFilter{
 					envoy.ProxyProtocol(),
 				},
 				FilterChains: filterchain(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
 			}, &v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				Address: *envoy.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: []listener.ListenerFilter{
 					envoy.ProxyProtocol(),
 					envoy.TLSInspector(),
