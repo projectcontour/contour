@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
@@ -32,6 +33,96 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+func TestListener(t *testing.T) {
+	tests := map[string]struct {
+		name, address string
+		port          int
+		lf            []listener.ListenerFilter
+		f             []listener.Filter
+		want          *v2.Listener
+	}{
+		"insecure listener": {
+			name:    "http",
+			address: "0.0.0.0",
+			port:    9000,
+			f:       []listener.Filter{HTTPConnectionManager("http", "/dev/null")},
+			want: &v2.Listener{
+				Name:    "http",
+				Address: *SocketAddress("0.0.0.0", 9000),
+				FilterChains: []listener.FilterChain{{
+					Filters: []listener.Filter{
+						HTTPConnectionManager("http", "/dev/null"),
+					},
+				}},
+			},
+		},
+		"insecure listener w/ proxy": {
+			name:    "http-proxy",
+			address: "0.0.0.0",
+			port:    9000,
+			lf: []listener.ListenerFilter{
+				ProxyProtocol(),
+			},
+			f: []listener.Filter{
+				HTTPConnectionManager("http-proxy", "/dev/null"),
+			},
+			want: &v2.Listener{
+				Name:    "http-proxy",
+				Address: *SocketAddress("0.0.0.0", 9000),
+				ListenerFilters: []listener.ListenerFilter{
+					ProxyProtocol(),
+				},
+				FilterChains: []listener.FilterChain{{
+					Filters: []listener.Filter{
+						HTTPConnectionManager("http-proxy", "/dev/null"),
+					},
+				}},
+			},
+		},
+		"secure listener": {
+			name:    "https",
+			address: "0.0.0.0",
+			port:    9000,
+			lf: []listener.ListenerFilter{
+				TLSInspector(),
+			},
+			want: &v2.Listener{
+				Name:    "https",
+				Address: *SocketAddress("0.0.0.0", 9000),
+				ListenerFilters: []listener.ListenerFilter{
+					TLSInspector(),
+				},
+			},
+		},
+		"secure listener w/ proxy": {
+			name:    "https-proxy",
+			address: "0.0.0.0",
+			port:    9000,
+			lf: []listener.ListenerFilter{
+				ProxyProtocol(),
+				TLSInspector(),
+			},
+			want: &v2.Listener{
+				Name:    "https-proxy",
+				Address: *SocketAddress("0.0.0.0", 9000),
+				ListenerFilters: []listener.ListenerFilter{
+					ProxyProtocol(),
+					TLSInspector(),
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := Listener(tc.name, tc.address, tc.port, tc.lf, tc.f...)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
 
 func TestSocketAddress(t *testing.T) {
 	const (
