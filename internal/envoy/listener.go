@@ -16,6 +16,7 @@ package envoy
 import (
 	"sort"
 
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
@@ -42,6 +43,24 @@ func ProxyProtocol() listener.ListenerFilter {
 			Config: new(types.Struct),
 		},
 	}
+}
+
+// Listener returns a new v2.Listener for the supplied address, port, and filters.
+func Listener(name, address string, port int, lf []listener.ListenerFilter, filters ...listener.Filter) *v2.Listener {
+	l := &v2.Listener{
+		Name:            name,
+		Address:         *SocketAddress(address, port),
+		ListenerFilters: lf,
+	}
+	if len(filters) > 0 {
+		l.FilterChains = append(
+			l.FilterChains,
+			listener.FilterChain{
+				Filters: filters,
+			},
+		)
+	}
+	return l
 }
 
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
