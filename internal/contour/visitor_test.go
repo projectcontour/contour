@@ -34,23 +34,27 @@ func TestVisitClusters(t *testing.T) {
 		want map[string]*v2.Cluster
 	}{
 		"TCPService forward": {
-			root: &dag.SecureVirtualHost{
-				VirtualHost: dag.VirtualHost{
-					Name: "www.example.com",
-					Port: 443,
-					TCPProxy: &dag.TCPProxy{
-						Services: []*dag.TCPService{{
-							Name:      "example",
-							Namespace: "default",
-							ServicePort: &v1.ServicePort{
-								Protocol:   "TCP",
-								Port:       443,
-								TargetPort: intstr.FromInt(8443),
+			root: &dag.Listener{
+				Port: 443,
+				VirtualHosts: virtualhosts(
+					&dag.SecureVirtualHost{
+						VirtualHost: dag.VirtualHost{
+							Name: "www.example.com",
+							TCPProxy: &dag.TCPProxy{
+								Services: []*dag.TCPService{{
+									Name:      "example",
+									Namespace: "default",
+									ServicePort: &v1.ServicePort{
+										Protocol:   "TCP",
+										Port:       443,
+										TargetPort: intstr.FromInt(8443),
+									},
+								}},
 							},
-						}},
+						},
+						Secret: new(dag.Secret),
 					},
-				},
-				Secret: new(dag.Secret),
+				),
 			},
 			want: clustermap(
 				&v2.Cluster{
@@ -97,22 +101,26 @@ func TestVisitListeners(t *testing.T) {
 		want map[string]*v2.Listener
 	}{
 		"TCPService forward": {
-			root: &dag.SecureVirtualHost{
-				VirtualHost: dag.VirtualHost{
-					Name:     "tcpproxy.example.com",
-					Port:     443,
-					TCPProxy: p1,
-				},
-				Secret: &dag.Secret{
-					Object: &v1.Secret{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "secret",
-							Namespace: "default",
+			root: &dag.Listener{
+				Port: 443,
+				VirtualHosts: virtualhosts(
+					&dag.SecureVirtualHost{
+						VirtualHost: dag.VirtualHost{
+							Name:     "tcpproxy.example.com",
+							TCPProxy: p1,
 						},
-						Data: secretdata("certificate", "key"),
+						Secret: &dag.Secret{
+							Object: &v1.Secret{
+								ObjectMeta: metav1.ObjectMeta{
+									Name:      "secret",
+									Namespace: "default",
+								},
+								Data: secretdata("certificate", "key"),
+							},
+						},
+						MinProtoVersion: auth.TlsParameters_TLSv1_1,
 					},
-				},
-				MinProtoVersion: auth.TlsParameters_TLSv1_1,
+				),
 			},
 			want: listenermap(
 				&v2.Listener{
@@ -141,4 +149,17 @@ func TestVisitListeners(t *testing.T) {
 			}
 		})
 	}
+}
+
+func virtualhosts(vx ...dag.Vertex) map[string]dag.Vertex {
+	m := make(map[string]dag.Vertex)
+	for _, v := range vx {
+		switch v := v.(type) {
+		case *dag.VirtualHost:
+			m[v.Name] = v
+		case *dag.SecureVirtualHost:
+			m[v.VirtualHost.Name] = v
+		}
+	}
+	return m
 }
