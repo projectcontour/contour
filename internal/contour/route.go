@@ -110,7 +110,7 @@ func visitRoutes(root dag.Vertex) map[string]*v2.RouteConfiguration {
 func (v *routeVisitor) visit(vertex dag.Vertex) {
 	switch vh := vertex.(type) {
 	case *dag.VirtualHost:
-		vhost := envoy.VirtualHost(vh.Host, 80)
+		vhost := envoy.VirtualHost(vh.Name, 80)
 		vh.Visit(func(r dag.Vertex) {
 			switch r := r.(type) {
 			case *dag.Route:
@@ -141,7 +141,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 		sort.Stable(sort.Reverse(longestRouteFirst(vhost.Routes)))
 		v.routes["ingress_http"].VirtualHosts = append(v.routes["ingress_http"].VirtualHosts, vhost)
 	case *dag.SecureVirtualHost:
-		vhost := envoy.VirtualHost(vh.Host, 443)
+		vhost := envoy.VirtualHost(vh.VirtualHost.Name, 443)
 		vh.Visit(func(r dag.Vertex) {
 			switch r := r.(type) {
 			case *dag.Route:

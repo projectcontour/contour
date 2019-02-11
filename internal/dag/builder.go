@@ -298,34 +298,34 @@ func (b *builder) lookupSecret(m meta) *Secret {
 	return s
 }
 
-func (b *builder) lookupVirtualHost(host string) *VirtualHost {
-	vh, ok := b.vhosts[host]
+func (b *builder) lookupVirtualHost(name string) *VirtualHost {
+	vh, ok := b.vhosts[name]
 	if !ok {
 		vh = &VirtualHost{
-			Host: host,
+			Name: name,
 			Port: 80,
 		}
 		if b.vhosts == nil {
 			b.vhosts = make(map[string]*VirtualHost)
 		}
-		b.vhosts[vh.Host] = vh
+		b.vhosts[vh.Name] = vh
 	}
 	return vh
 }
 
-func (b *builder) lookupSecureVirtualHost(host string) *SecureVirtualHost {
-	svh, ok := b.svhosts[host]
+func (b *builder) lookupSecureVirtualHost(name string) *SecureVirtualHost {
+	svh, ok := b.svhosts[name]
 	if !ok {
 		svh = &SecureVirtualHost{
 			VirtualHost: VirtualHost{
-				Host: host,
+				Name: name,
 				Port: 443,
 			},
 		}
 		if b.svhosts == nil {
 			b.svhosts = make(map[string]*SecureVirtualHost)
 		}
-		b.svhosts[svh.Host] = svh
+		b.svhosts[svh.VirtualHost.Name] = svh
 	}
 	return svh
 }
