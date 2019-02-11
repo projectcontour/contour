@@ -144,8 +144,8 @@ type builder struct {
 
 	services map[servicemeta]Service
 	secrets  map[meta]*Secret
-	vhosts   map[hostport]*VirtualHost
-	svhosts  map[hostport]*SecureVirtualHost
+	vhosts   map[string]*VirtualHost
+	svhosts  map[string]*SecureVirtualHost
 
 	orphaned map[meta]bool
 
@@ -298,36 +298,34 @@ func (b *builder) lookupSecret(m meta) *Secret {
 	return s
 }
 
-func (b *builder) lookupVirtualHost(host string, port int) *VirtualHost {
-	hp := hostport{host: host, port: port}
-	vh, ok := b.vhosts[hp]
+func (b *builder) lookupVirtualHost(host string) *VirtualHost {
+	vh, ok := b.vhosts[host]
 	if !ok {
 		vh = &VirtualHost{
 			Host: host,
-			Port: port,
+			Port: 80,
 		}
 		if b.vhosts == nil {
-			b.vhosts = make(map[hostport]*VirtualHost)
+			b.vhosts = make(map[string]*VirtualHost)
 		}
-		b.vhosts[hp] = vh
+		b.vhosts[vh.Host] = vh
 	}
 	return vh
 }
 
-func (b *builder) lookupSecureVirtualHost(host string, port int) *SecureVirtualHost {
-	hp := hostport{host: host, port: port}
-	svh, ok := b.svhosts[hp]
+func (b *builder) lookupSecureVirtualHost(host string) *SecureVirtualHost {
+	svh, ok := b.svhosts[host]
 	if !ok {
 		svh = &SecureVirtualHost{
 			VirtualHost: VirtualHost{
 				Host: host,
-				Port: port,
+				Port: 443,
 			},
 		}
 		if b.svhosts == nil {
-			b.svhosts = make(map[hostport]*SecureVirtualHost)
+			b.svhosts = make(map[string]*SecureVirtualHost)
 		}
-		b.svhosts[hp] = svh
+		b.svhosts[svh.Host] = svh
 	}
 	return svh
 }
@@ -349,7 +347,7 @@ func (b *builder) compute() *DAG {
 			m := meta{name: tls.SecretName, namespace: ing.Namespace}
 			if sec := b.lookupSecret(m); sec != nil {
 				for _, host := range tls.Hosts {
-					svhost := b.lookupSecureVirtualHost(host, 443)
+					svhost := b.lookupSecureVirtualHost(host)
 					svhost.Secret = sec
 					svhost.MinProtoVersion = minProtoVersion(ing)
 				}
@@ -397,10 +395,10 @@ func (b *builder) compute() *DAG {
 
 				// should we create port 80 routes for this ingress
 				if httpAllowed(ing) {
-					b.lookupVirtualHost(host, 80).addRoute(r)
+					b.lookupVirtualHost(host).addRoute(r)
 				}
-				if _, ok := b.svhosts[hostport{host: host, port: 443}]; ok && host != "*" {
-					b.lookupSecureVirtualHost(host, 443).addRoute(r)
+				if _, ok := b.svhosts[host]; ok && host != "*" {
+					b.lookupSecureVirtualHost(host).addRoute(r)
 				}
 			}
 		}
@@ -431,7 +429,7 @@ func (b *builder) compute() *DAG {
 			// attach secrets to TLS enabled vhosts
 			m := meta{name: tls.SecretName, namespace: ir.Namespace}
 			if sec := b.lookupSecret(m); sec != nil {
-				svhost := b.lookupSecureVirtualHost(host, 443)
+				svhost := b.lookupSecureVirtualHost(host)
 				svhost.Secret = sec
 				enforceTLS = true
 
@@ -629,8 +627,8 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 				}
 			}
 
-			b.lookupVirtualHost(host, 80).addRoute(r)
-			b.lookupSecureVirtualHost(host, 443).addRoute(r)
+			b.lookupVirtualHost(host).addRoute(r)
+			b.lookupSecureVirtualHost(host).addRoute(r)
 			continue
 		}
 
@@ -692,7 +690,7 @@ func (b *builder) processTCPProxy(ir *ingressroutev1.IngressRoute, visited []*in
 			}
 			proxy.Services = append(proxy.Services, s)
 		}
-		b.lookupSecureVirtualHost(host, 443).VirtualHost.TCPProxy = &proxy
+		b.lookupSecureVirtualHost(host).VirtualHost.TCPProxy = &proxy
 		b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
 		return
 	}
