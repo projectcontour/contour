@@ -129,6 +129,18 @@ func (kc *KubernetesCache) remove(obj interface{}) {
 // A Builder builds a *DAGs
 type Builder struct {
 	KubernetesCache
+
+	// ExternalInsecurePort is the port that HTTP
+	// requests will arrive at the ELB or NAT that
+	// presents Envoy at the edge network.
+	// If not supplied, defaults to 80.
+	ExternalInsecurePort int
+
+	// ExternalSecurePort is the port that HTTPS
+	// requests will arrive at the ELB or NAT that
+	// presents Envoy at the edge network.
+	// If not supplied, defaults to 443.
+	ExternalSecurePort int
 }
 
 // Build builds a new *DAG.
@@ -298,7 +310,7 @@ func (b *builder) lookupSecret(m meta) *Secret {
 }
 
 func (b *builder) lookupVirtualHost(name string) *VirtualHost {
-	l := b.listener(80)
+	l := b.listener(b.externalInsecurePort())
 	vh, ok := l.VirtualHosts[name]
 	if !ok {
 		vh := &VirtualHost{
@@ -311,7 +323,7 @@ func (b *builder) lookupVirtualHost(name string) *VirtualHost {
 }
 
 func (b *builder) lookupSecureVirtualHost(name string) *SecureVirtualHost {
-	l := b.listener(443)
+	l := b.listener(b.externalSecurePort())
 	svh, ok := l.VirtualHosts[name]
 	if !ok {
 		svh := &SecureVirtualHost{
@@ -339,6 +351,20 @@ func (b *builder) listener(port int) *Listener {
 		b.listeners[l.Port] = l
 	}
 	return l
+}
+
+func (b *builder) externalInsecurePort() int {
+	if b.source.ExternalInsecurePort == 0 {
+		return 80
+	}
+	return b.source.ExternalInsecurePort
+}
+
+func (b *builder) externalSecurePort() int {
+	if b.source.ExternalSecurePort == 0 {
+		return 443
+	}
+	return b.source.ExternalSecurePort
 }
 
 func (b *builder) compute() *DAG {
