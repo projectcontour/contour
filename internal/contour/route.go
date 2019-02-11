@@ -108,64 +108,72 @@ func visitRoutes(root dag.Vertex) map[string]*v2.RouteConfiguration {
 }
 
 func (v *routeVisitor) visit(vertex dag.Vertex) {
-	switch vh := vertex.(type) {
-	case *dag.VirtualHost:
-		vhost := envoy.VirtualHost(vh.Name, 80)
-		vh.Visit(func(r dag.Vertex) {
-			switch r := r.(type) {
-			case *dag.Route:
-				var svcs []*dag.HTTPService
-				r.Visit(func(s dag.Vertex) {
-					if s, ok := s.(*dag.HTTPService); ok {
-						svcs = append(svcs, s)
-					}
-				})
-				if len(svcs) < 1 {
-					// no services for this route, skip it.
-					return
-				}
-				rr := route.Route{
-					Match:  envoy.PrefixMatch(r.Prefix),
-					Action: envoy.RouteRoute(r, svcs),
-				}
+	switch l := vertex.(type) {
+	case *dag.Listener:
+		l.Visit(func(vertex dag.Vertex) {
+			switch vh := vertex.(type) {
+			case *dag.VirtualHost:
+				vhost := envoy.VirtualHost(vh.Name, l.Port)
+				vh.Visit(func(r dag.Vertex) {
+					switch r := r.(type) {
+					case *dag.Route:
+						var svcs []*dag.HTTPService
+						r.Visit(func(s dag.Vertex) {
+							if s, ok := s.(*dag.HTTPService); ok {
+								svcs = append(svcs, s)
+							}
+						})
+						if len(svcs) < 1 {
+							// no services for this route, skip it.
+							return
+						}
+						rr := route.Route{
+							Match:  envoy.PrefixMatch(r.Prefix),
+							Action: envoy.RouteRoute(r, svcs),
+						}
 
-				if r.HTTPSUpgrade {
-					rr.Action = envoy.UpgradeHTTPS()
-				}
-				vhost.Routes = append(vhost.Routes, rr)
-			}
-		})
-		if len(vhost.Routes) < 1 {
-			return
-		}
-		sort.Stable(sort.Reverse(longestRouteFirst(vhost.Routes)))
-		v.routes["ingress_http"].VirtualHosts = append(v.routes["ingress_http"].VirtualHosts, vhost)
-	case *dag.SecureVirtualHost:
-		vhost := envoy.VirtualHost(vh.VirtualHost.Name, 443)
-		vh.Visit(func(r dag.Vertex) {
-			switch r := r.(type) {
-			case *dag.Route:
-				var svcs []*dag.HTTPService
-				r.Visit(func(s dag.Vertex) {
-					if s, ok := s.(*dag.HTTPService); ok {
-						svcs = append(svcs, s)
+						if r.HTTPSUpgrade {
+							rr.Action = envoy.UpgradeHTTPS()
+						}
+						vhost.Routes = append(vhost.Routes, rr)
 					}
 				})
-				if len(svcs) < 1 {
-					// no services for this route, skip it.
+				if len(vhost.Routes) < 1 {
 					return
 				}
-				vhost.Routes = append(vhost.Routes, route.Route{
-					Match:  envoy.PrefixMatch(r.Prefix),
-					Action: envoy.RouteRoute(r, svcs),
+				sort.Stable(sort.Reverse(longestRouteFirst(vhost.Routes)))
+				v.routes["ingress_http"].VirtualHosts = append(v.routes["ingress_http"].VirtualHosts, vhost)
+			case *dag.SecureVirtualHost:
+				vhost := envoy.VirtualHost(vh.VirtualHost.Name, l.Port)
+				vh.Visit(func(r dag.Vertex) {
+					switch r := r.(type) {
+					case *dag.Route:
+						var svcs []*dag.HTTPService
+						r.Visit(func(s dag.Vertex) {
+							if s, ok := s.(*dag.HTTPService); ok {
+								svcs = append(svcs, s)
+							}
+						})
+						if len(svcs) < 1 {
+							// no services for this route, skip it.
+							return
+						}
+						vhost.Routes = append(vhost.Routes, route.Route{
+							Match:  envoy.PrefixMatch(r.Prefix),
+							Action: envoy.RouteRoute(r, svcs),
+						})
+					}
 				})
+				if len(vhost.Routes) < 1 {
+					return
+				}
+				sort.Stable(sort.Reverse(longestRouteFirst(vhost.Routes)))
+				v.routes["ingress_https"].VirtualHosts = append(v.routes["ingress_https"].VirtualHosts, vhost)
+			default:
+				// recurse
+				vertex.Visit(v.visit)
 			}
 		})
-		if len(vhost.Routes) < 1 {
-			return
-		}
-		sort.Stable(sort.Reverse(longestRouteFirst(vhost.Routes)))
-		v.routes["ingress_https"].VirtualHosts = append(v.routes["ingress_https"].VirtualHosts, vhost)
 	default:
 		// recurse
 		vertex.Visit(v.visit)

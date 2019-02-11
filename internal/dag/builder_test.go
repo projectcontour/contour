@@ -3739,7 +3739,7 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Port: 80,
+					Port: 10080,
 					VirtualHosts: virtualhosts(
 						&VirtualHost{
 							Name: "example.com",
@@ -3783,7 +3783,10 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var b Builder
+			b := Builder{
+				ExternalInsecurePort: 10080,
+				ExternalSecurePort:   10443,
+			}
 			for _, o := range tc.objs {
 				b.Insert(o)
 			}

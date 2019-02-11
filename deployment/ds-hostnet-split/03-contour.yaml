@@ -35,10 +35,10 @@ spec:
         - 0.0.0.0
         - --xds-port
         - $(CONTOUR_SERVICE_PORT)
-        - --envoy-http-port
-        - "80"
-        - --envoy-https-port
-        - "443"
+        - --envoy-service-http-port
+        - 80
+        - --envoy-service-https-port
+        - 443
         command: ["contour"]
         image: gcr.io/heptio-images/contour:master
         imagePullPolicy: Always
