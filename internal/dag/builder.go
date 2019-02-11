@@ -142,10 +142,9 @@ func (b *Builder) Build() *DAG {
 type builder struct {
 	source *Builder
 
-	services map[servicemeta]Service
-	secrets  map[meta]*Secret
-	vhosts   map[string]*VirtualHost
-	svhosts  map[string]*SecureVirtualHost
+	services  map[servicemeta]Service
+	secrets   map[meta]*Secret
+	listeners map[int]*Listener
 
 	orphaned map[meta]bool
 
@@ -299,40 +298,47 @@ func (b *builder) lookupSecret(m meta) *Secret {
 }
 
 func (b *builder) lookupVirtualHost(name string) *VirtualHost {
-	vh, ok := b.vhosts[name]
+	l := b.listener(80)
+	vh, ok := l.VirtualHosts[name]
 	if !ok {
-		vh = &VirtualHost{
+		vh := &VirtualHost{
 			Name: name,
-			Port: 80,
 		}
-		if b.vhosts == nil {
-			b.vhosts = make(map[string]*VirtualHost)
-		}
-		b.vhosts[vh.Name] = vh
+		l.VirtualHosts[vh.Name] = vh
+		return vh
 	}
-	return vh
+	return vh.(*VirtualHost)
 }
 
 func (b *builder) lookupSecureVirtualHost(name string) *SecureVirtualHost {
-	svh, ok := b.svhosts[name]
+	l := b.listener(443)
+	svh, ok := l.VirtualHosts[name]
 	if !ok {
-		svh = &SecureVirtualHost{
+		svh := &SecureVirtualHost{
 			VirtualHost: VirtualHost{
 				Name: name,
-				Port: 443,
 			},
 		}
-		if b.svhosts == nil {
-			b.svhosts = make(map[string]*SecureVirtualHost)
-		}
-		b.svhosts[svh.VirtualHost.Name] = svh
+		l.VirtualHosts[svh.VirtualHost.Name] = svh
+		return svh
 	}
-	return svh
+	return svh.(*SecureVirtualHost)
 }
 
-type hostport struct {
-	host string
-	port int
+// listener returns a listener for the supplied port.
+func (b *builder) listener(port int) *Listener {
+	l, ok := b.listeners[port]
+	if !ok {
+		l = &Listener{
+			Port:         port,
+			VirtualHosts: make(map[string]Vertex),
+		}
+		if b.listeners == nil {
+			b.listeners = make(map[int]*Listener)
+		}
+		b.listeners[l.Port] = l
+	}
+	return l
 }
 
 func (b *builder) compute() *DAG {
@@ -397,7 +403,7 @@ func (b *builder) compute() *DAG {
 				if httpAllowed(ing) {
 					b.lookupVirtualHost(host).addRoute(r)
 				}
-				if _, ok := b.svhosts[host]; ok && host != "*" {
+				if _, ok := b.listener(443).VirtualHosts[host]; ok && host != "*" {
 					b.lookupSecureVirtualHost(host).addRoute(r)
 				}
 			}
@@ -539,16 +545,24 @@ func (b *builder) validIngressRoutes() []*ingressroutev1.IngressRoute {
 // DAG returns a *DAG representing the current state of this builder.
 func (b *builder) DAG() *DAG {
 	var dag DAG
-	for _, vh := range b.vhosts {
-		// suppress virtual hosts without routes.
-		if len(vh.routes) > 0 {
-			dag.roots = append(dag.roots, vh)
+	for _, l := range b.listeners {
+		for k, vh := range l.VirtualHosts {
+			switch vh := vh.(type) {
+			case *VirtualHost:
+				// suppress virtual hosts without routes.
+				if len(vh.routes) < 1 {
+					delete(l.VirtualHosts, k)
+				}
+			case *SecureVirtualHost:
+				// suppress secure virtual hosts without secrets or tcpproxy.
+				if vh.Secret == nil && vh.TCPProxy == nil {
+					delete(l.VirtualHosts, k)
+				}
+			}
 		}
-	}
-	for _, svh := range b.svhosts {
-		// suppress secure virtual hosts without secrets or tcpproxy.
-		if svh.Secret != nil || svh.TCPProxy != nil {
-			dag.roots = append(dag.roots, svh)
+		// suppress empty listeners
+		if len(l.VirtualHosts) > 0 {
+			dag.roots = append(dag.roots, l)
 		}
 	}
 	for meta := range b.orphaned {

@@ -96,13 +96,8 @@ func (r *Route) Visit(f func(Vertex)) {
 	}
 }
 
-// A VirtualHost represents an insecure HTTP host.
+// A VirtualHost represents a named L4/L7 service.
 type VirtualHost struct {
-	// Port is the port that the VirtualHost will listen on.
-	// Expected values are 80 and 443, but others are possible
-	// if the VirtualHost is generated inside Contour.
-	Port int
-
 	// Name is the fully qualified domain name of a network host,
 	// as defined by RFC 3986.
 	Name string
@@ -171,11 +166,11 @@ type Listener struct {
 	// Port is the TCP port to listen on.
 	Port int
 
-	virtualhosts []Vertex
+	VirtualHosts map[string]Vertex
 }
 
 func (l *Listener) Visit(f func(Vertex)) {
-	for _, vh := range l.virtualhosts {
+	for _, vh := range l.VirtualHosts {
 		f(vh)
 	}
 }

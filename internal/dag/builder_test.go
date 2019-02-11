@@ -1144,226 +1144,282 @@ func TestDAGInsert(t *testing.T) {
 			objs: []interface{}{
 				i1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i1),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert ingress w/ single unnamed backend": {
 			objs: []interface{}{
 				i2,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i2),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i2),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert ingress with missing spec.rule.http key": {
 			objs: []interface{}{
 				i2a,
 			},
-			want: []Vertex{},
+			want: listeners(),
 		},
 		"insert ingress w/ host name and single backend": {
 			objs: []interface{}{
 				i3,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "kuard.example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i3),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "kuard.example.com",
+							routes: routemap(
+								route("/", i3),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert ingress w/ default backend then matching service": {
 			objs: []interface{}{
 				i1,
 				s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i1, servicemap(
-							httpService(s1),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i1, servicemap(
+									httpService(s1),
+								)),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert service then ingress w/ default backend": {
 			objs: []interface{}{
 				s1,
 				i1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i1, servicemap(
-							httpService(s1),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i1, servicemap(
+									httpService(s1),
+								)),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert ingress w/ default backend then non-matching service": {
 			objs: []interface{}{
 				i1,
 				s2,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i1),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert non matching service then ingress w/ default backend": {
 			objs: []interface{}{
 				s2,
 				i1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i1),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert ingress w/ default backend then matching service with wrong port": {
 			objs: []interface{}{
 				i1,
 				s3,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i1),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert unnamed ingress w/ single backend then matching service with wrong port": {
 			objs: []interface{}{
 				i2,
 				s3,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i2),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i2),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert service then matching unnamed ingress w/ single backend but wrong port": {
 			objs: []interface{}{
 				s3,
 				i2,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i2),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i2),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert ingress w/ default backend then matching service w/ named port": {
 			objs: []interface{}{
 				i4,
 				s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i4, servicemap(
-							httpService(s1),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i4, servicemap(
+									httpService(s1),
+								)),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert service w/ named port then ingress w/ default backend": {
 			objs: []interface{}{
 				s1,
 				i4,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i4, servicemap(
-							httpService(s1),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i4, servicemap(
+									httpService(s1),
+								)),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert ingress w/ single unnamed backend w/ named service port then service": {
 			objs: []interface{}{
 				i5,
 				s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i5, servicemap(
-							httpService(s1),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i5, servicemap(
+									httpService(s1),
+								)),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert service then ingress w/ single unnamed backend w/ named service port": {
 			objs: []interface{}{
 				s1,
 				i5,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i5, servicemap(
-							httpService(s1),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i5, servicemap(
+									httpService(s1),
+								)),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert secret": {
 			objs: []interface{}{
@@ -1376,139 +1432,169 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				i1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i1),
+							),
+						},
 					),
-				}},
+				},
+			),
 		},
 		"insert secret then ingress w/ tls": {
 			objs: []interface{}{
 				sec1,
 				i3,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "kuard.example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i3),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "kuard.example.com",
+							routes: routemap(
+								route("/", i3),
+							),
+						},
 					),
 				},
-				&SecureVirtualHost{
-					VirtualHost: VirtualHost{
-						Name: "kuard.example.com",
-						Port: 443,
-						routes: routemap(
-							route("/", i3),
-						),
-					},
-					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					Secret:          secret(sec1),
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "kuard.example.com",
+								routes: routemap(
+									route("/", i3),
+								),
+							},
+							MinProtoVersion: auth.TlsParameters_TLSv1_1,
+							Secret:          secret(sec1),
+						},
+					),
 				},
-			},
+			),
 		},
 		"insert ingress w/ tls then secret": {
 			objs: []interface{}{
 				i3,
 				sec1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "kuard.example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i3),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "kuard.example.com",
+							routes: routemap(
+								route("/", i3),
+							),
+						},
 					),
 				},
-				&SecureVirtualHost{
-					VirtualHost: VirtualHost{
-						Name: "kuard.example.com",
-						Port: 443,
-						routes: routemap(
-							route("/", i3),
-						),
-					},
-					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					Secret:          secret(sec1),
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "kuard.example.com",
+								routes: routemap(
+									route("/", i3),
+								),
+							},
+							MinProtoVersion: auth.TlsParameters_TLSv1_1,
+							Secret:          secret(sec1),
+						},
+					),
 				},
-			},
+			),
 		},
 		"insert ingress w/ two vhosts": {
 			objs: []interface{}{
 				i6,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "a.example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i6),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "a.example.com",
+							routes: routemap(
+								route("/", i6),
+							),
+						},
+						&VirtualHost{
+							Name: "b.example.com",
+							routes: routemap(
+								route("/", i6),
+							),
+						},
 					),
 				},
-				&VirtualHost{
-					Name: "b.example.com",
-					Port: 80,
-					routes: routemap(
-						route("/", i6),
-					),
-				},
-			},
+			),
 		},
 		"insert ingress w/ two vhosts then matching service": {
 			objs: []interface{}{
 				i6,
 				s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "a.example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i6, servicemap(
-							httpService(s1),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "a.example.com",
+							routes: routemap(
+								route("/", i6, servicemap(
+									httpService(s1),
+								)),
+							),
+						},
+						&VirtualHost{
+							Name: "b.example.com",
+							routes: routemap(
+								route("/", i6, servicemap(
+									httpService(s1),
+								)),
+							),
+						},
 					),
 				},
-				&VirtualHost{
-					Name: "b.example.com",
-					Port: 80,
-					routes: routemap(
-						route("/", i6, servicemap(
-							httpService(s1),
-						)),
-					),
-				},
-			},
+			),
 		},
 		"insert service then ingress w/ two vhosts": {
 			objs: []interface{}{
 				s1,
 				i6,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "a.example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i6, servicemap(
-							httpService(s1),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "a.example.com",
+							routes: routemap(
+								route("/", i6, servicemap(
+									httpService(s1),
+								)),
+							),
+						},
+						&VirtualHost{
+							Name: "b.example.com",
+							routes: routemap(
+								route("/", i6, servicemap(
+									httpService(s1),
+								)),
+							),
+						},
 					),
 				},
-				&VirtualHost{
-					Name: "b.example.com",
-					Port: 80,
-					routes: routemap(
-						route("/", i6, servicemap(
-							httpService(s1),
-						)),
-					),
-				},
-			},
+			),
 		},
 		"insert ingress w/ two vhosts then service then secret": {
 			objs: []interface{}{
@@ -1516,38 +1602,45 @@ func TestDAGInsert(t *testing.T) {
 				s1,
 				sec1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "a.example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i6, servicemap(
-							httpService(s1),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "a.example.com",
+							routes: routemap(
+								route("/", i6, servicemap(
+									httpService(s1),
+								)),
+							),
+						},
+						&VirtualHost{
+							Name: "b.example.com",
+							routes: routemap(
+								route("/", i6, servicemap(
+									httpService(s1),
+								)),
+							),
+						},
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "b.example.com",
+								routes: routemap(
+									route("/", i6, servicemap(
+										httpService(s1),
+									)),
+								),
+							},
+							MinProtoVersion: auth.TlsParameters_TLSv1_1,
+							Secret:          secret(sec1),
+						},
 					),
 				},
-				&VirtualHost{
-					Name: "b.example.com",
-					Port: 80,
-					routes: routemap(
-						route("/", i6, servicemap(
-							httpService(s1),
-						)),
-					),
-				}, &SecureVirtualHost{
-					VirtualHost: VirtualHost{
-						Name: "b.example.com",
-						Port: 443,
-						routes: routemap(
-							route("/", i6, servicemap(
-								httpService(s1),
-							)),
-						),
-					},
-					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					Secret:          secret(sec1),
-				},
-			},
+			),
 		},
 		"insert service then secret then ingress w/ two vhosts": {
 			objs: []interface{}{
@@ -1555,51 +1648,63 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				i6,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "a.example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i6, servicemap(
-							httpService(s1),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "a.example.com",
+							routes: routemap(
+								route("/", i6, servicemap(
+									httpService(s1),
+								)),
+							),
+						}, &VirtualHost{
+							Name: "b.example.com",
+							routes: routemap(
+								route("/", i6, servicemap(
+									httpService(s1),
+								)),
+							),
+						},
 					),
-				}, &VirtualHost{
-					Name: "b.example.com",
-					Port: 80,
-					routes: routemap(
-						route("/", i6, servicemap(
-							httpService(s1),
-						)),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "b.example.com",
+								routes: routemap(
+									route("/", i6, servicemap(
+										httpService(s1),
+									)),
+								),
+							},
+							MinProtoVersion: auth.TlsParameters_TLSv1_1,
+							Secret:          secret(sec1),
+						},
 					),
-				}, &SecureVirtualHost{
-					VirtualHost: VirtualHost{
-						Name: "b.example.com",
-						Port: 443,
-						routes: routemap(
-							route("/", i6, servicemap(
-								httpService(s1),
-							)),
-						),
-					},
-					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					Secret:          secret(sec1),
 				},
-			},
+			),
 		},
 		"insert ingress w/ two paths": {
 			objs: []interface{}{
 				i7,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "b.example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i7),
-						route("/kuarder", i7),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "b.example.com",
+							routes: routemap(
+								route("/", i7),
+								route("/kuarder", i7),
+							),
+						},
 					),
-				}},
+				},
+			),
 		},
 		"insert ingress w/ two paths then services": {
 			objs: []interface{}{
@@ -1607,39 +1712,47 @@ func TestDAGInsert(t *testing.T) {
 				s2,
 				s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "b.example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i7, servicemap(
-							httpService(s1),
-						)),
-						route("/kuarder", i7, servicemap(
-							httpService(s2),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "b.example.com",
+							routes: routemap(
+								route("/", i7, servicemap(
+									httpService(s1),
+								)),
+								route("/kuarder", i7, servicemap(
+									httpService(s2),
+								)),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert two services then ingress w/ two ingress rules": {
 			objs: []interface{}{
 				s1, s2, i8,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "b.example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i8, servicemap(
-							httpService(s1),
-						)),
-						route("/kuarder", i8, servicemap(
-							httpService(s2),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "b.example.com",
+							routes: routemap(
+								route("/", i8, servicemap(
+									httpService(s1),
+								)),
+								route("/kuarder", i8, servicemap(
+									httpService(s2),
+								)),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert ingress w/ two paths httpAllowed: false": {
 			objs: []interface{}{
@@ -1653,24 +1766,28 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				s1, s2,
 			},
-			want: []Vertex{
-				&SecureVirtualHost{
-					VirtualHost: VirtualHost{
-						Name: "b.example.com",
-						Port: 443,
-						routes: routemap(
-							route("/", i9, servicemap(
-								httpService(s1),
-							)),
-							route("/kuarder", i9, servicemap(
-								httpService(s2),
-							)),
-						),
-					},
-					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					Secret:          secret(sec1),
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "b.example.com",
+								routes: routemap(
+									route("/", i9, servicemap(
+										httpService(s1),
+									)),
+									route("/kuarder", i9, servicemap(
+										httpService(s2),
+									)),
+								),
+							},
+							MinProtoVersion: auth.TlsParameters_TLSv1_1,
+							Secret:          secret(sec1),
+						},
+					),
 				},
-			},
+			),
 		},
 		"insert default ingress httpAllowed: false": {
 			objs: []interface{}{
@@ -1694,404 +1811,498 @@ func TestDAGInsert(t *testing.T) {
 			objs: []interface{}{
 				i6a, sec1, s1,
 			},
-			want: []Vertex{
-				&SecureVirtualHost{
-					VirtualHost: VirtualHost{
-						Name: "b.example.com",
-						Port: 443,
-						routes: routemap(
-							route("/", i6a, servicemap(
-								httpService(s1),
-							)),
-						),
-					},
-					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					Secret:          secret(sec1),
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "b.example.com",
+								routes: routemap(
+									route("/", i6a, servicemap(
+										httpService(s1),
+									)),
+								),
+							},
+							MinProtoVersion: auth.TlsParameters_TLSv1_1,
+							Secret:          secret(sec1),
+						},
+					),
 				},
-			},
+			),
 		},
 		"insert ingress w/ force-ssl-redirect: true": {
 			objs: []interface{}{
 				i6b, sec1, s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "b.example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						&Route{
-							Prefix: "/",
-							object: i6b,
-							httpServices: servicemap(
-								httpService(s1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "b.example.com",
+							routes: routemap(
+								&Route{
+									Prefix: "/",
+									object: i6b,
+									httpServices: servicemap(
+										httpService(s1),
+									),
+									HTTPSUpgrade: true,
+								},
 							),
-							HTTPSUpgrade: true,
+						},
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "b.example.com",
+								routes: routemap(
+									&Route{
+										Prefix: "/",
+										object: i6b,
+										httpServices: servicemap(
+											httpService(s1),
+										),
+										HTTPSUpgrade: true,
+									},
+								),
+							},
+							MinProtoVersion: auth.TlsParameters_TLSv1_1,
+							Secret:          secret(sec1),
 						},
 					),
 				},
-				&SecureVirtualHost{
-					VirtualHost: VirtualHost{
-						Name: "b.example.com",
-						Port: 443,
-						routes: routemap(
-							&Route{
-								Prefix: "/",
-								object: i6b,
-								httpServices: servicemap(
-									httpService(s1),
-								),
-								HTTPSUpgrade: true,
-							},
-						),
-					},
-					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					Secret:          secret(sec1),
-				}},
+			),
 		},
 
 		"insert ingressroute": {
 			objs: []interface{}{
 				ir1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", ir1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "example.com",
+							routes: routemap(
+								route("/", ir1),
+							),
+						},
 					),
-				}},
+				},
+			),
 		},
 		"insert ingressroute with websocket route": {
 			objs: []interface{}{
 				ir11, s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", ir11, servicemap(
-							httpService(s1),
-						)),
-						&Route{
-							Prefix: "/websocket",
-							object: ir11,
-							httpServices: servicemap(
-								httpService(s1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "example.com",
+							routes: routemap(
+								route("/", ir11, servicemap(
+									httpService(s1),
+								)),
+								&Route{
+									Prefix: "/websocket",
+									object: ir11,
+									httpServices: servicemap(
+										httpService(s1),
+									),
+									PrefixRewrite: "/",
+								},
 							),
-							PrefixRewrite: "/",
 						},
 					),
-				}},
+				},
+			),
 		},
 		"insert ingressroute with tcp forward with TLS termination": {
 			objs: []interface{}{
 				ir1a, s1, sec1,
 			},
-			want: []Vertex{
-				&SecureVirtualHost{
-					VirtualHost: VirtualHost{
-						Name: "kuard.example.com",
-						Port: 443,
-						TCPProxy: &TCPProxy{
-							Services: []*TCPService{
-								tcpService(s1),
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "kuard.example.com",
+								TCPProxy: &TCPProxy{
+									Services: []*TCPService{
+										tcpService(s1),
+									},
+								},
 							},
+							Secret:          secret(sec1),
+							MinProtoVersion: auth.TlsParameters_TLSv1_1,
 						},
-					},
-					Secret:          secret(sec1),
-					MinProtoVersion: auth.TlsParameters_TLSv1_1,
+					),
 				},
-			},
+			),
 		},
 		"insert ingressroute with tcp forward without TLS termination w/ passthrough": {
 			objs: []interface{}{
 				ir1b, s1,
 			},
-			want: []Vertex{
-				&SecureVirtualHost{
-					VirtualHost: VirtualHost{
-						Name: "kuard.example.com",
-						Port: 443,
-						TCPProxy: &TCPProxy{
-							Services: []*TCPService{
-								tcpService(s1),
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "kuard.example.com",
+								TCPProxy: &TCPProxy{
+									Services: []*TCPService{
+										tcpService(s1),
+									},
+								},
 							},
 						},
-					},
+					),
 				},
-			},
+			),
 		},
 
 		"insert root ingress route and delegate ingress route for a tcp proxy": {
 			objs: []interface{}{
 				ir1d, s6, ir1c,
 			},
-			want: []Vertex{
-				&SecureVirtualHost{
-					VirtualHost: VirtualHost{
-						Name: "kuard.example.com",
-						Port: 443,
-						TCPProxy: &TCPProxy{
-							Services: []*TCPService{
-								tcpService(s6),
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "kuard.example.com",
+								TCPProxy: &TCPProxy{
+									Services: []*TCPService{
+										tcpService(s6),
+									},
+								},
 							},
 						},
-					},
+					),
 				},
-			},
+			),
 		},
 		"insert ingressroute with prefix rewrite route": {
 			objs: []interface{}{
 				ir10, s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", ir10, servicemap(
-							httpService(s1),
-						)),
-						&Route{
-							Prefix: "/websocket",
-							object: ir10,
-							httpServices: servicemap(
-								httpService(s1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "example.com",
+							routes: routemap(
+								route("/", ir10, servicemap(
+									httpService(s1),
+								)),
+								&Route{
+									Prefix: "/websocket",
+									object: ir10,
+									httpServices: servicemap(
+										httpService(s1),
+									),
+									Websocket: true,
+								},
 							),
-							Websocket: true,
 						},
 					),
-				}},
+				},
+			),
 		},
 		"insert ingressroute and service": {
 			objs: []interface{}{
 				ir1, s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", ir1, servicemap(
-							httpService(s1),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "example.com",
+							routes: routemap(
+								route("/", ir1, servicemap(
+									httpService(s1),
+								)),
+							),
+						},
 					),
-				}},
+				},
+			),
 		},
 		"insert ingressroute without tls version": {
 			objs: []interface{}{
 				ir6, s1, sec1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "foo.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						&Route{
-							Prefix: "/",
-							object: ir6,
-							httpServices: servicemap(
-								httpService(s1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "foo.com",
+							routes: routemap(
+								&Route{
+									Prefix: "/",
+									object: ir6,
+									httpServices: servicemap(
+										httpService(s1),
+									),
+									HTTPSUpgrade: true,
+								},
 							),
-							HTTPSUpgrade: true,
+						},
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							MinProtoVersion: auth.TlsParameters_TLSv1_1,
+							VirtualHost: VirtualHost{
+								Name: "foo.com",
+								routes: routemap(
+									&Route{
+										Prefix: "/",
+										object: ir6,
+										httpServices: servicemap(
+											httpService(s1),
+										),
+										HTTPSUpgrade: true,
+									}),
+							},
+							Secret: secret(sec1),
 						},
 					),
 				},
-				&SecureVirtualHost{
-					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					VirtualHost: VirtualHost{
-						Name: "foo.com",
-						Port: 443,
-						routes: routemap(
-							&Route{
-								Prefix: "/",
-								object: ir6,
-								httpServices: servicemap(
-									httpService(s1),
-								),
-								HTTPSUpgrade: true,
-							}),
-					},
-					Secret: secret(sec1),
-				}},
+			),
 		},
 		"insert ingressroute with TLS one insecure": {
 			objs: []interface{}{
 				ir14, s1, sec1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "foo.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						&Route{
-							Prefix: "/",
-							object: ir14,
-							httpServices: servicemap(
-								httpService(s1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "foo.com",
+							routes: routemap(
+								&Route{
+									Prefix: "/",
+									object: ir14,
+									httpServices: servicemap(
+										httpService(s1),
+									),
+								},
 							),
 						},
 					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							MinProtoVersion: auth.TlsParameters_TLSv1_1,
+							VirtualHost: VirtualHost{
+								Name: "foo.com",
+								routes: routemap(
+									&Route{
+										Prefix: "/",
+										object: ir14,
+										httpServices: servicemap(
+											httpService(s1),
+										),
+									}),
+							},
+							Secret: secret(sec1),
+						},
+					),
 				},
-				&SecureVirtualHost{
-					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					VirtualHost: VirtualHost{
-						Name: "foo.com",
-						Port: 443,
-						routes: routemap(
-							&Route{
-								Prefix: "/",
-								object: ir14,
-								httpServices: servicemap(
-									httpService(s1),
-								),
-							}),
-					},
-					Secret: secret(sec1),
-				}},
+			),
 		},
 		"insert ingressroute with tls version 1.2": {
 			objs: []interface{}{
 				ir7, s1, sec1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "foo.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						&Route{
-							Prefix: "/",
-							object: ir7,
-							httpServices: servicemap(
-								httpService(s1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "foo.com",
+							routes: routemap(
+								&Route{
+									Prefix: "/",
+									object: ir7,
+									httpServices: servicemap(
+										httpService(s1),
+									),
+									HTTPSUpgrade: true,
+								},
 							),
-							HTTPSUpgrade: true,
+						},
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "foo.com",
+								routes: routemap(
+									&Route{
+										Prefix: "/",
+										object: ir7,
+										httpServices: servicemap(
+											httpService(s1),
+										),
+										HTTPSUpgrade: true,
+									},
+								),
+							},
+							MinProtoVersion: auth.TlsParameters_TLSv1_2,
+							Secret:          secret(sec1),
 						},
 					),
 				},
-				&SecureVirtualHost{
-					VirtualHost: VirtualHost{
-						Name: "foo.com",
-						Port: 443,
-						routes: routemap(
-							&Route{
-								Prefix: "/",
-								object: ir7,
-								httpServices: servicemap(
-									httpService(s1),
-								),
-								HTTPSUpgrade: true,
-							},
-						),
-					},
-					MinProtoVersion: auth.TlsParameters_TLSv1_2,
-					Secret:          secret(sec1),
-				}},
+			),
 		},
 		"insert ingressroute with tls version 1.3": {
 			objs: []interface{}{
 				ir8, s1, sec1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "foo.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(&Route{
-						Prefix: "/",
-						object: ir8,
-						httpServices: servicemap(
-							httpService(s1),
-						),
-						HTTPSUpgrade: true,
-					}),
-				},
-				&SecureVirtualHost{
-					VirtualHost: VirtualHost{
-						Name: "foo.com",
-						Port: 443,
-						routes: routemap(
-							&Route{
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "foo.com",
+							routes: routemap(&Route{
 								Prefix: "/",
 								object: ir8,
 								httpServices: servicemap(
 									httpService(s1),
 								),
 								HTTPSUpgrade: true,
+							}),
+						},
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "foo.com",
+								routes: routemap(
+									&Route{
+										Prefix: "/",
+										object: ir8,
+										httpServices: servicemap(
+											httpService(s1),
+										),
+										HTTPSUpgrade: true,
+									},
+								),
 							},
-						),
-					},
-					MinProtoVersion: auth.TlsParameters_TLSv1_3,
-					Secret:          secret(sec1),
-				}},
+							MinProtoVersion: auth.TlsParameters_TLSv1_3,
+							Secret:          secret(sec1),
+						},
+					),
+				},
+			),
 		},
 		"insert ingressroute with invalid tls version": {
 			objs: []interface{}{
 				ir9, s1, sec1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "foo.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						&Route{
-							Prefix: "/",
-							object: ir9,
-							httpServices: servicemap(
-								httpService(s1),
-							),
-							HTTPSUpgrade: true,
-						}),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "foo.com",
+							routes: routemap(
+								&Route{
+									Prefix: "/",
+									object: ir9,
+									httpServices: servicemap(
+										httpService(s1),
+									),
+									HTTPSUpgrade: true,
+								}),
+						},
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "foo.com",
+								routes: routemap(
+									&Route{
+										Prefix: "/",
+										object: ir9,
+										httpServices: servicemap(
+											httpService(s1),
+										),
+										HTTPSUpgrade: true,
+									}),
+							},
+							MinProtoVersion: auth.TlsParameters_TLSv1_1,
+							Secret:          secret(sec1),
+						},
+					),
 				},
-				&SecureVirtualHost{
-					VirtualHost: VirtualHost{
-						Name: "foo.com",
-						Port: 443,
-						routes: routemap(
-							&Route{
-								Prefix: "/",
-								object: ir9,
-								httpServices: servicemap(
-									httpService(s1),
-								),
-								HTTPSUpgrade: true,
-							}),
-					},
-					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					Secret:          secret(sec1),
-				}},
+			),
 		},
 		"insert ingressroute referencing two backends, one missing": {
 			objs: []interface{}{
 				ir2, s2,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", ir2, servicemap(
-							httpService(s2),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "example.com",
+							routes: routemap(
+								route("/", ir2, servicemap(
+									httpService(s2),
+								)),
+							),
+						},
 					),
-				}},
+				},
+			),
 		},
 		"insert ingressroute referencing two backends": {
 			objs: []interface{}{
 				ir2, s1, s2,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", ir2, servicemap(
-							httpService(s1),
-							httpService(s2),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "example.com",
+							routes: routemap(
+								route("/", ir2, servicemap(
+									httpService(s1),
+									httpService(s2),
+								)),
+							),
+						},
 					),
-				}},
+				},
+			),
 		},
 		"insert ingress w/ tls min proto annotation": {
 			objs: []interface{}{
@@ -2099,346 +2310,404 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "b.example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i10, servicemap(
-							httpService(s1),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "b.example.com",
+							routes: routemap(
+								route("/", i10, servicemap(
+									httpService(s1),
+								)),
+							),
+						},
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "b.example.com",
+								routes: routemap(
+									route("/", i10, servicemap(
+										httpService(s1),
+									)),
+								),
+							},
+							MinProtoVersion: auth.TlsParameters_TLSv1_3,
+							Secret:          secret(sec1),
+						},
 					),
 				},
-				&SecureVirtualHost{
-					VirtualHost: VirtualHost{
-						Name: "b.example.com",
-						Port: 443,
-						routes: routemap(
-							route("/", i10, servicemap(
-								httpService(s1),
-							)),
-						),
-					},
-					MinProtoVersion: auth.TlsParameters_TLSv1_3,
-					Secret:          secret(sec1),
-				},
-			},
+			),
 		},
 		"insert ingress w/ websocket route annotation": {
 			objs: []interface{}{
 				i11,
 				s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i11, servicemap(
-							httpService(s1),
-						)),
-						&Route{
-							Prefix: "/ws1",
-							object: i11,
-							httpServices: servicemap(
-								httpService(s1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i11, servicemap(
+									httpService(s1),
+								)),
+								&Route{
+									Prefix: "/ws1",
+									object: i11,
+									httpServices: servicemap(
+										httpService(s1),
+									),
+									Websocket: true,
+								},
 							),
-							Websocket: true,
 						},
 					),
 				},
-			},
+			),
 		},
 		"insert ingress w/ invalid timeout annotation": {
 			objs: []interface{}{
 				i12a,
 				s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						&Route{
-							Prefix: "/",
-							object: i12a,
-							httpServices: servicemap(
-								httpService(s1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								&Route{
+									Prefix: "/",
+									object: i12a,
+									httpServices: servicemap(
+										httpService(s1),
+									),
+									Timeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
+								},
 							),
-							Timeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
 						},
 					),
 				},
-			},
+			),
 		},
 		"insert ingress w/ valid timeout annotation": {
 			objs: []interface{}{
 				i12b,
 				s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						&Route{
-							Prefix: "/",
-							object: i12b,
-							httpServices: servicemap(
-								httpService(s1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								&Route{
+									Prefix: "/",
+									object: i12b,
+									httpServices: servicemap(
+										httpService(s1),
+									),
+									Timeout: 90 * time.Second,
+								},
 							),
-							Timeout: 90 * time.Second,
 						},
 					),
 				},
-			},
+			),
 		},
 		"insert ingress w/ infinite timeout annotation": {
 			objs: []interface{}{
 				i12c,
 				s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						&Route{
-							Prefix: "/",
-							object: i12c,
-							httpServices: servicemap(
-								httpService(s1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								&Route{
+									Prefix: "/",
+									object: i12c,
+									httpServices: servicemap(
+										httpService(s1),
+									),
+									Timeout: -1,
+								},
 							),
-							Timeout: -1,
 						},
 					),
 				},
-			},
+			),
 		},
 		"insert root ingress route and delegate ingress route": {
 			objs: []interface{}{
 				ir5, s4, ir4, s5, ir3,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/blog", ir4, servicemap(
-							httpService(s4),
-						)),
-						route("/blog/admin", ir5, servicemap(
-							httpService(s5),
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "example.com",
+							routes: routemap(
+								route("/blog", ir4, servicemap(
+									httpService(s4),
+								)),
+								route("/blog/admin", ir5, servicemap(
+									httpService(s5),
+								)),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert ingress with retry annotations": {
 			objs: []interface{}{
 				i14,
 				s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						&Route{
-							Prefix: "/",
-							object: i14,
-							httpServices: servicemap(
-								httpService(s1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								&Route{
+									Prefix: "/",
+									object: i14,
+									httpServices: servicemap(
+										httpService(s1),
+									),
+									RetryOn:       "gateway-error",
+									NumRetries:    6,
+									PerTryTimeout: 10 * time.Second,
+								},
 							),
-							RetryOn:       "gateway-error",
-							NumRetries:    6,
-							PerTryTimeout: 10 * time.Second,
 						},
 					),
 				},
-			},
+			),
 		},
 		"insert ingress overlay": {
 			objs: []interface{}{
 				i13a, i13b, sec13, s13a, s13b,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						&Route{
-							Prefix: "/",
-							object: i13a,
-							httpServices: servicemap(
-								httpService(s13a),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "example.com",
+							routes: routemap(
+								&Route{
+									Prefix: "/",
+									object: i13a,
+									httpServices: servicemap(
+										httpService(s13a),
+									),
+									HTTPSUpgrade: true,
+								},
+								route("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", i13b, servicemap(
+									httpService(s13b),
+								)),
 							),
-							HTTPSUpgrade: true,
 						},
-						route("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", i13b, servicemap(
-							httpService(s13b),
-						)),
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "example.com",
+								routes: routemap(
+									&Route{
+										Prefix: "/",
+										object: i13a,
+										httpServices: servicemap(
+											httpService(s13a),
+										),
+										HTTPSUpgrade: true,
+									},
+									route("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", i13b, servicemap(
+										httpService(s13b),
+									)),
+								),
+							},
+							MinProtoVersion: auth.TlsParameters_TLSv1_1,
+							Secret:          secret(sec13),
+						},
 					),
 				},
-				&SecureVirtualHost{
-					VirtualHost: VirtualHost{
-						Name: "example.com",
-						Port: 443,
-						routes: routemap(
-							&Route{
-								Prefix: "/",
-								object: i13a,
-								httpServices: servicemap(
-									httpService(s13a),
-								),
-								HTTPSUpgrade: true,
-							},
-							route("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", i13b, servicemap(
-								httpService(s13b),
-							)),
-						),
-					},
-					MinProtoVersion: auth.TlsParameters_TLSv1_1,
-					Secret:          secret(sec13),
-				},
-			},
+			),
 		},
 		"h2c service annotation": {
 			objs: []interface{}{
 				i3a, s3a,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i3a, servicemap(
-							&HTTPService{
-								TCPService: TCPService{
-									Name:        s3a.Name,
-									Namespace:   s3a.Namespace,
-									ServicePort: &s3a.Spec.Ports[0],
-								},
-								Protocol: "h2c",
-							},
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i3a, servicemap(
+									&HTTPService{
+										TCPService: TCPService{
+											Name:        s3a.Name,
+											Namespace:   s3a.Namespace,
+											ServicePort: &s3a.Spec.Ports[0],
+										},
+										Protocol: "h2c",
+									},
+								)),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"h2 service annotation": {
 			objs: []interface{}{
 				i3a, s3b,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i3a, servicemap(
-							&HTTPService{
-								TCPService: TCPService{
-									Name:        s3b.Name,
-									Namespace:   s3b.Namespace,
-									ServicePort: &s3b.Spec.Ports[0],
-								},
-								Protocol: "h2",
-							},
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i3a, servicemap(
+									&HTTPService{
+										TCPService: TCPService{
+											Name:        s3b.Name,
+											Namespace:   s3b.Namespace,
+											ServicePort: &s3b.Spec.Ports[0],
+										},
+										Protocol: "h2",
+									},
+								)),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert ingress then service w/ upstream annotations": {
 			objs: []interface{}{
 				i1,
 				s1b,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "*",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", i1, servicemap(
-							&HTTPService{
-								TCPService: TCPService{
-									Name:               s1b.Name,
-									Namespace:          s1b.Namespace,
-									ServicePort:        &s1b.Spec.Ports[0],
-									MaxConnections:     9000,
-									MaxPendingRequests: 4096,
-									MaxRequests:        404,
-									MaxRetries:         7,
-								},
-							},
-						)),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i1, servicemap(
+									&HTTPService{
+										TCPService: TCPService{
+											Name:               s1b.Name,
+											Namespace:          s1b.Namespace,
+											ServicePort:        &s1b.Spec.Ports[0],
+											MaxConnections:     9000,
+											MaxPendingRequests: 4096,
+											MaxRequests:        404,
+											MaxRetries:         7,
+										},
+									},
+								)),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert ingressroute with two routes to the same service": {
 			objs: []interface{}{
 				ir13, s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/a", ir13, servicemap(
-							&HTTPService{
-								TCPService: TCPService{
-									Name:        s1.Name,
-									Namespace:   s1.Namespace,
-									ServicePort: &s1.Spec.Ports[0],
-									Weight:      90,
-								},
-							}),
-						),
-						route("/b", ir13, servicemap(
-							&HTTPService{
-								TCPService: TCPService{
-									Name:        s1.Name,
-									Namespace:   s1.Namespace,
-									ServicePort: &s1.Spec.Ports[0],
-									Weight:      60,
-								},
-							}),
-						),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "example.com",
+							routes: routemap(
+								route("/a", ir13, servicemap(
+									&HTTPService{
+										TCPService: TCPService{
+											Name:        s1.Name,
+											Namespace:   s1.Namespace,
+											ServicePort: &s1.Spec.Ports[0],
+											Weight:      90,
+										},
+									}),
+								),
+								route("/b", ir13, servicemap(
+									&HTTPService{
+										TCPService: TCPService{
+											Name:        s1.Name,
+											Namespace:   s1.Namespace,
+											ServicePort: &s1.Spec.Ports[0],
+											Weight:      60,
+										},
+									}),
+								),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 		"insert ingressroute with one routes to the same service with two different weights": {
 			objs: []interface{}{
 				ir13a, s1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/a", ir13a, servicemap(
-							&HTTPService{
-								TCPService: TCPService{
-									Name:        s1.Name,
-									Namespace:   s1.Namespace,
-									ServicePort: &s1.Spec.Ports[0],
-									Weight:      90,
-								},
-							},
-							&HTTPService{
-								TCPService: TCPService{
-									Name:        s1.Name,
-									Namespace:   s1.Namespace,
-									ServicePort: &s1.Spec.Ports[0],
-									Weight:      60,
-								},
-							}),
-						),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "example.com",
+							routes: routemap(
+								route("/a", ir13a, servicemap(
+									&HTTPService{
+										TCPService: TCPService{
+											Name:        s1.Name,
+											Namespace:   s1.Namespace,
+											ServicePort: &s1.Spec.Ports[0],
+											Weight:      90,
+										},
+									},
+									&HTTPService{
+										TCPService: TCPService{
+											Name:        s1.Name,
+											Namespace:   s1.Namespace,
+											ServicePort: &s1.Spec.Ports[0],
+											Weight:      60,
+										},
+									}),
+								),
+							),
+						},
 					),
 				},
-			},
+			),
 		},
 	}
 
@@ -2450,28 +2719,24 @@ func TestDAGInsert(t *testing.T) {
 			}
 			dag := b.Build()
 
-			got := make(map[hostport]Vertex)
+			got := make(map[int]*Listener)
 			dag.Visit(func(v Vertex) {
 				switch v := v.(type) {
-				case *VirtualHost:
-					got[hostport{host: v.Name, port: v.Port}] = v
-				case *SecureVirtualHost:
-					got[hostport{host: v.VirtualHost.Name, port: v.Port}] = v
+				case *Listener:
+					got[v.Port] = v
 				}
 			})
 
-			want := make(map[hostport]Vertex)
+			want := make(map[int]*Listener)
 			for _, v := range tc.want {
 				switch v := v.(type) {
-				case *VirtualHost:
-					want[hostport{host: v.Name, port: v.Port}] = v
-				case *SecureVirtualHost:
-					want[hostport{host: v.VirtualHost.Name, port: v.Port}] = v
+				case *Listener:
+					want[v.Port] = v
 				}
 			}
 
 			opts := []cmp.Option{
-				cmp.AllowUnexported(VirtualHost{}, Route{}),
+				cmp.AllowUnexported(Listener{}, VirtualHost{}, Route{}),
 			}
 			if diff := cmp.Diff(want, got, opts...); diff != "" {
 				t.Fatal(diff)
@@ -2616,22 +2881,27 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 	b.Insert(ir1)
 	dag := b.Build()
 
-	got := make(map[hostport]*VirtualHost)
+	got := make(map[int]*Listener)
 	dag.Visit(func(v Vertex) {
-		if v, ok := v.(*VirtualHost); ok {
-			got[hostport{host: v.Name, port: v.Port}] = v
+		switch v := v.(type) {
+		case *Listener:
+			got[v.Port] = v
 		}
 	})
 
-	want := make(map[hostport]*VirtualHost)
-	want[hostport{host: "example.com", port: 80}] = &VirtualHost{
-		Name:   "example.com",
-		Port:   80,
-		routes: routemap(&Route{Prefix: "/finance", object: ir2}),
+	want := make(map[int]*Listener)
+	want[80] = &Listener{
+		Port: 80,
+		VirtualHosts: virtualhosts(
+			&VirtualHost{
+				Name:   "example.com",
+				routes: routemap(&Route{Prefix: "/finance", object: ir2}),
+			},
+		),
 	}
 
 	opts := []cmp.Option{
-		cmp.AllowUnexported(VirtualHost{}, Route{}),
+		cmp.AllowUnexported(Listener{}, VirtualHost{}, Route{}),
 	}
 	if diff := cmp.Diff(want, got, opts...); diff != "" {
 		t.Fatal(diff)
@@ -2662,15 +2932,15 @@ func TestDAGIngressRouteCycleSelfEdge(t *testing.T) {
 	b.Insert(ir1)
 	dag := b.Build()
 
-	got := make(map[hostport]*VirtualHost)
+	got := make(map[int]*Listener)
 	dag.Visit(func(v Vertex) {
-		if v, ok := v.(*VirtualHost); ok {
-			got[hostport{host: v.Name, port: v.Port}] = v
+		switch v := v.(type) {
+		case *Listener:
+			got[v.Port] = v
 		}
 	})
 
-	want := make(map[hostport]*VirtualHost)
-
+	want := make(map[int]*Listener)
 	opts := []cmp.Option{
 		cmp.AllowUnexported(VirtualHost{}, Route{}),
 	}
@@ -2703,15 +2973,15 @@ func TestDAGIngressRouteDelegatesToNonExistent(t *testing.T) {
 	b.Insert(ir1)
 	dag := b.Build()
 
-	got := make(map[hostport]*VirtualHost)
+	got := make(map[int]*Listener)
 	dag.Visit(func(v Vertex) {
-		if v, ok := v.(*VirtualHost); ok {
-			got[hostport{host: v.Name, port: v.Port}] = v
+		switch v := v.(type) {
+		case *Listener:
+			got[v.Port] = v
 		}
 	})
 
-	want := make(map[hostport]*VirtualHost)
-
+	want := make(map[int]*Listener)
 	opts := []cmp.Option{
 		cmp.AllowUnexported(VirtualHost{}, Route{}),
 	}
@@ -2759,14 +3029,15 @@ func TestDAGIngressRouteDelegatePrefixDoesntMatch(t *testing.T) {
 	b.Insert(ir1)
 	dag := b.Build()
 
-	got := make(map[hostport]*VirtualHost)
+	got := make(map[int]*Listener)
 	dag.Visit(func(v Vertex) {
-		if v, ok := v.(*VirtualHost); ok {
-			got[hostport{host: v.Name, port: v.Port}] = v
+		switch v := v.(type) {
+		case *Listener:
+			got[v.Port] = v
 		}
 	})
 
-	want := make(map[hostport]*VirtualHost)
+	want := make(map[int]*Listener)
 	opts := []cmp.Option{
 		cmp.AllowUnexported(VirtualHost{}, Route{}),
 	}
@@ -2873,8 +3144,13 @@ func TestDAGRootNamespaces(t *testing.T) {
 
 			var count int
 			dag.Visit(func(v Vertex) {
-				if _, ok := v.(*VirtualHost); ok {
-					count++
+				switch v := v.(type) {
+				case *Listener:
+					v.Visit(func(v Vertex) {
+						if _, ok := v.(*VirtualHost); ok {
+							count++
+						}
+					})
 				}
 			})
 
@@ -2929,15 +3205,15 @@ func TestDAGIngressRouteDelegatePrefixMatchesStringPrefixButNotPathPrefix(t *tes
 	b.Insert(ir1)
 	dag := b.Build()
 
-	got := make(map[hostport]*VirtualHost)
+	got := make(map[int]*Listener)
 	dag.Visit(func(v Vertex) {
-		if v, ok := v.(*VirtualHost); ok {
-			got[hostport{host: v.Name, port: v.Port}] = v
+		switch v := v.(type) {
+		case *Listener:
+			got[v.Port] = v
 		}
 	})
 
-	want := make(map[hostport]*VirtualHost)
-
+	want := make(map[int]*Listener)
 	opts := []cmp.Option{
 		cmp.AllowUnexported(VirtualHost{}, Route{}),
 	}
@@ -3461,15 +3737,19 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 			objs: []interface{}{
 				ir1,
 			},
-			want: []Vertex{
-				&VirtualHost{
-					Name: "example.com",
+			want: listeners(
+				&Listener{
 					Port: 80,
-					routes: routemap(
-						route("/", ir1),
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "example.com",
+							routes: routemap(
+								route("/", ir1),
+							),
+						},
 					),
 				},
-			},
+			),
 			wantStatus: []Status{
 				{
 					Object:      ir1,
@@ -3508,29 +3788,27 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 				b.Insert(o)
 			}
 			dag := b.Build()
-
-			got := make(map[hostport]Vertex)
+			got := make(map[int]*Listener)
 			dag.Visit(func(v Vertex) {
 				switch v := v.(type) {
-				case *VirtualHost:
-					got[hostport{host: v.Name, port: v.Port}] = v
-				case *SecureVirtualHost:
-					got[hostport{host: v.VirtualHost.Name, port: v.Port}] = v
+				case *Listener:
+					got[v.Port] = v
 				}
 			})
 
-			want := make(map[hostport]Vertex)
+			want := make(map[int]*Listener)
 			for _, v := range tc.want {
 				switch v := v.(type) {
-				case *VirtualHost:
-					want[hostport{host: v.Name, port: v.Port}] = v
-				case *SecureVirtualHost:
-					want[hostport{host: v.VirtualHost.Name, port: v.Port}] = v
+				case *Listener:
+					want[v.Port] = v
 				}
 			}
 
-			if !reflect.DeepEqual(want, got) {
-				t.Fatal("expected:\n", want, "\ngot:\n", got)
+			opts := []cmp.Option{
+				cmp.AllowUnexported(Listener{}, VirtualHost{}, Route{}),
+			}
+			if diff := cmp.Diff(want, got, opts...); diff != "" {
+				t.Fatal(diff)
 			}
 
 			gotStatus := dag.statuses
@@ -3701,4 +3979,25 @@ func secret(s *v1.Secret) *Secret {
 	return &Secret{
 		Object: s,
 	}
+}
+
+func virtualhosts(vx ...Vertex) map[string]Vertex {
+	m := make(map[string]Vertex)
+	for _, v := range vx {
+		switch v := v.(type) {
+		case *VirtualHost:
+			m[v.Name] = v
+		case *SecureVirtualHost:
+			m[v.VirtualHost.Name] = v
+		}
+	}
+	return m
+}
+
+func listeners(ls ...*Listener) []Vertex {
+	var v []Vertex
+	for _, l := range ls {
+		v = append(v, l)
+	}
+	return v
 }
