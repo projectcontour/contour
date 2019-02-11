@@ -254,7 +254,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 
 		fc := listener.FilterChain{
 			FilterChainMatch: &listener.FilterChainMatch{
-				ServerNames: []string{vh.Host},
+				ServerNames: []string{vh.VirtualHost.Name},
 			},
 			Filters: filters,
 		}

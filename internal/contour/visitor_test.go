@@ -36,8 +36,8 @@ func TestVisitClusters(t *testing.T) {
 		"TCPService forward": {
 			root: &dag.SecureVirtualHost{
 				VirtualHost: dag.VirtualHost{
+					Name: "www.example.com",
 					Port: 443,
-					Host: "www.example.com",
 					TCPProxy: &dag.TCPProxy{
 						Services: []*dag.TCPService{{
 							Name:      "example",
@@ -99,8 +99,8 @@ func TestVisitListeners(t *testing.T) {
 		"TCPService forward": {
 			root: &dag.SecureVirtualHost{
 				VirtualHost: dag.VirtualHost{
+					Name:     "tcpproxy.example.com",
 					Port:     443,
-					Host:     "tcpproxy.example.com",
 					TCPProxy: p1,
 				},
 				Secret: &dag.Secret{

@@ -103,8 +103,10 @@ type VirtualHost struct {
 	// if the VirtualHost is generated inside Contour.
 	Port int
 
-	// Host name
-	Host   string
+	// Name is the fully qualified domain name of a network host,
+	// as defined by RFC 3986.
+	Name string
+
 	routes map[string]*Route
 
 	// Service to TCP proxy all incoming connections.
@@ -156,6 +158,26 @@ type Vertex interface {
 type Service interface {
 	Vertex
 	toMeta() servicemeta
+}
+
+// A Listener represents a TCP socket that accepts
+// incoming connections.
+type Listener struct {
+
+	// Address is the TCP address to listen on.
+	// If blank 0.0.0.0, or ::/0 for IPv6, is assumed.
+	Address string
+
+	// Port is the TCP port to listen on.
+	Port int
+
+	virtualhosts []Vertex
+}
+
+func (l *Listener) Visit(f func(Vertex)) {
+	for _, vh := range l.virtualhosts {
+		f(vh)
+	}
 }
 
 // TCPProxy represents a cluster of TCP endpoints.
