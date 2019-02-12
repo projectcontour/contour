@@ -429,7 +429,7 @@ func (b *builder) compute() *DAG {
 				if httpAllowed(ing) {
 					b.lookupVirtualHost(host).addRoute(r)
 				}
-				if _, ok := b.listener(443).VirtualHosts[host]; ok && host != "*" {
+				if _, ok := b.listener(b.externalSecurePort()).VirtualHosts[host]; ok && host != "*" {
 					b.lookupSecureVirtualHost(host).addRoute(r)
 				}
 			}
