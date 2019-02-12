@@ -2250,6 +2250,103 @@ func TestLoadBalancingStrategies(t *testing.T) {
 	assertRDS(t, cc, want, nil)
 }
 
+// issue#887 rds generates the correct routing tables when
+// External{Insecure,Secure}Port is supplied.
+func TestBuilderExternalPort(t *testing.T) {
+	const (
+		insecurePort = 8080
+		securePort   = 8443
+	)
+
+	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+		reh.Builder.ExternalInsecurePort = insecurePort
+		reh.Builder.ExternalSecurePort = securePort
+	})
+	defer done()
+
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(s1)
+
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{Name: "kuard", Namespace: "default"},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"kuard.io"},
+				SecretName: "tls",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "kuard.io",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromInt(80),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	rh.OnAdd(i1)
+
+	rh.OnAdd(&v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tls",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	})
+
+	// check that it's been translated correctly.
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_http",
+				VirtualHosts: []route.VirtualHost{{
+					Name:    "kuard.io",
+					Domains: []string{"kuard.io", fmt.Sprintf("kuard.io:%d", insecurePort)},
+					Routes: []route.Route{{
+						Match:  envoy.PrefixMatch("/"),
+						Action: routecluster("default/kuard/80/da39a3ee5e"),
+					}},
+				}},
+			}),
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_https",
+				VirtualHosts: []route.VirtualHost{{
+					Name:    "kuard.io",
+					Domains: []string{"kuard.io", fmt.Sprintf("kuard.io:%d", securePort)},
+					Routes: []route.Route{{
+						Match:  envoy.PrefixMatch("/"),
+						Action: routecluster("default/kuard/80/da39a3ee5e"),
+					}},
+				}},
+			}),
+		},
+		TypeUrl: routeType,
+		Nonce:   "0",
+	}, streamRDS(t, cc))
+}
+
 func assertRDS(t *testing.T, cc *grpc.ClientConn, ingress_http, ingress_https []route.VirtualHost) {
 	t.Helper()
 	assertEqual(t, &v2.DiscoveryResponse{
