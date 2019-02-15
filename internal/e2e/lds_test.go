@@ -766,6 +766,77 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 	}, streamLDS(t, cc))
 }
 
+func TestLDSCustomAccessLogPaths(t *testing.T) {
+	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+		reh.Notifier.(*contour.CacheHandler).HTTPAccessLog = "/tmp/http_access.log"
+		reh.Notifier.(*contour.CacheHandler).HTTPSAccessLog = "/tmp/https_access.log"
+	})
+	defer done()
+
+	// s1 is a tls secret
+	s1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	}
+
+	// i1 is a tls ingress
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"kuard.example.com"},
+				SecretName: "secret",
+			}},
+		},
+	}
+
+	// add secret
+	rh.OnAdd(s1)
+
+	// assert that there are no active listeners
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources:   []types.Any{},
+		TypeUrl:     listenerType,
+		Nonce:       "0",
+	}, streamLDS(t, cc))
+
+	rh.OnAdd(i1)
+
+	ingress_http := &v2.Listener{
+		Name:         "ingress_http",
+		Address:      *envoy.SocketAddress("0.0.0.0", 8080),
+		FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/tmp/http_access.log")),
+	}
+	ingress_https := &v2.Listener{
+		Name:    "ingress_https",
+		Address: *envoy.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: []listener.ListenerFilter{
+			envoy.TLSInspector(),
+		},
+		FilterChains: filterchaintls("kuard.example.com", envoy.HTTPConnectionManager("ingress_https", "/tmp/https_access.log"), "h2", "http/1.1"),
+	}
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, ingress_http),
+			any(t, ingress_https),
+		},
+		TypeUrl: listenerType,
+		Nonce:   "0",
+	}, streamLDS(t, cc))
+}
+
 func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
 		reh.IngressRouteRootNamespaces = []string{"roots"}
