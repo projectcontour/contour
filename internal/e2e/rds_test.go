@@ -29,6 +29,7 @@ import (
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/k8s"
+	"github.com/heptio/workgroup"
 	"google.golang.org/grpc"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -1731,8 +1732,6 @@ func TestRDSAssertNoDataRaceDuringInsertAndStream(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
 
-	stop := make(chan struct{})
-
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -1749,7 +1748,9 @@ func TestRDSAssertNoDataRaceDuringInsertAndStream(t *testing.T) {
 	}
 	rh.OnAdd(s1)
 
-	go func() {
+	var g workgroup.Group
+
+	w := func(stop <-chan struct{}) error {
 		for i := 0; i < 100; i++ {
 			rh.OnAdd(&ingressroutev1.IngressRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1768,17 +1769,23 @@ func TestRDSAssertNoDataRaceDuringInsertAndStream(t *testing.T) {
 				},
 			})
 		}
-		close(stop)
-	}()
+		return nil
+	}
+	g.Add(w)
 
-	for {
-		select {
-		case <-stop:
-			return
-		default:
-			streamRDS(t, cc)
+	r := func(stop <-chan struct{}) error {
+		for {
+			select {
+			case <-stop:
+				return nil
+			default:
+				streamRDS(t, cc)
+			}
 		}
 	}
+	g.Add(r)
+
+	g.Run()
 }
 
 // issue 606: spec.rules.host without a http key causes panic.
