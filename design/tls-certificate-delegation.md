@@ -1,42 +1,44 @@
-# Secret delegation specficiation
+# TLS Certificate Delegation
 
 _Status_: Draft, in review.
 
-This document outlines a specification for delegating of permission to use the contents of a k8s Secret object from the owner's namespace to another namespace.
+This document outlines a specification to allow an Ingress Controller to reference a TLS certificate stored in one namespace from an Ingress or IngressRoute document stored in another namespace.
 
 ## Goals
 
-- Permit wildcard certificates to be referenced across namespaces.
+- Permit wildcard TLS certificates to be referenced by Ingress/IngressRoute objects in other namespaces.
 
 ## Non-goals
 
 - To implement a notion of a default, or fallback, TLS certificate available to all Ingress/IngressRoute objects.
-- To permit other classes of kubernetes objects to be referenced across namespaces.
+- To permit Secrets to be referenced from any Kubernetes object.
+- To permit other classes of Kubernetes objects to be referenced across namespaces.
 
 ## Background
 
-Currently the Secret containing the TLS certificate must be co-located with the Ingress or root IngressRoute object referencing the secret.
-This requirement complicates deployment patterns where wildcard TLS certificates are used, specifically the use of a wildcard certificate to secure a number of subdomains.
-e.g. presenting foo.example.com using the certifiate for \*.example.com when the Ingress/IngressRoute object for foo.example.com does not share the same namespace as the Secret containing \*.example.com.
+Currently the Secret containing the TLS certificate must be co-located in the same namespace as the Ingress or root IngressRoute object referencing that secret.
+This requirement complicates deployment patterns where wildcard TLS certificates are used, specifically the use of a wildcard certificate to secure a number of subdomains where the Ingress/IngressRoute records for those subdomains do not share the same namespace as the wildcard TLS certificate.
+For example, presenting foo.example.com using the certifiate for \*.example.com when the Ingress/IngressRoute object for foo.example.com does not share the same namespace as the Secret containing \*.example.com.
 
-This proposal introduces a specification, in the form of a simple CRD, whereby the permission to access a secret is delegated from the owning namespace to one or more other namespaces.
+This proposal introduces a specification, in the form of a simple CRD, whereby the permission to access the contents of a secret containing a TLS certificate is delegated from the owning namespace to one or more other namespaces.
 
 ## High-Level Design
 
 - The definition of a Secret's name is extended to recognize a namespace prefix, ie. `secretName: kube-system/wildcard-tls` means the secret `wildcard-tls` in the `kube-system` namespace.
-- A SecretDelegation CRD creates a mapping between a Secret in the owners namespace and the permission to reference that secret from a different namespace.
+- A `TLSCertificateDelegation` CRD grants the permission to reference the contents of a Secret in the owner's namespace to an Ingress controller operating in the context of an Ingress or IngressRoute object from a different namespace for the purpose of retrieving the TLS certicate.
 
 ## Detailed Design
 
-The implementation of this design is in three parts; the addition of a SecretDelegation CRD, and the modifications to the interpretation the tls stanza in Ingress and IngressRoute objects.
+The implementation of this design is in three parts; the addition of a TLSCertificateDelegation CRD, and the modifications to the interpretation the tls stanza in Ingress and IngressRoute objects.
 
-### SecretDelegation object
+### TLSCertificateDelegation CRD
 
-The SecretDelegation object provides a mapping of Secret objects from the SecretDelegation's namespace to the supplied target namespaces.
+The TLSCertificateDelegation object records the permission to reference a Secret object from the namespace of the  TLSCertificateDelegation object to Ingress or IngressRoute objects in the target namespaces.
+This permission is managed by the Ingress controller which has the RBAC permissions to read all the relevant Secrets but currently only allows an Ingress or IngressRoute object to reference secrets from its own namespace.
 
 ```
-apiVersion: vmware.com/v1
-kind: SecretDelegation
+apiVersion: contour.vmware.com/v1
+kind: TLSCertificateDelegation
 metadata:
   name: wildcards
   namespace: kube-system
@@ -49,7 +51,7 @@ spec:
   - secretName: google-com
     targetNamespaces: ["finance"]
   - secretName: dev-wildcard
-    targetNamespaces: "*"
+    targetNamespaces: ["*"]
 ```
 
 In this example permission to reference `kube-system/example-com-wildcard` is delegated to Ingress/IngressRoute objects in the `dev-example` and `www-example` namespaces, `kube-system/google-com` is delegated to Ingress/IngressRoute's in the `finance` namespace, and `kube-system/dev-wildcard` is delegated to _all_ namespaces.  
@@ -61,7 +63,7 @@ If the `spec.tls.secretName` field contains a value with a forward slash, ie `na
 
 If the appropriate secret delegation is in place Contour will use the fully qualified secret name as if it were in the same namespace as the Ingress object.
 
-_Note_: `kubectl` currently permits `spec.tlc.secretName` to contain a forward slash (`/`) but it is currently interpreted by Contour as part of the Secret object's name, not a separator.
+_Note_: `kubectl` currently permits `spec.tls.secretName` to contain a forward slash (`/`) but it is currently interpreted by Contour as part of the Secret object's name, not a separator.
 
 ### IngressRoute extensions
 
@@ -81,4 +83,4 @@ In the case of a wildcard certificate this is benficial--it's actually what we w
 Delegation is a necessary security measure because it allows namespace owners to explicitly delegate the permission to reference secrets in their namespace without granting permission to actually _read_ the contents of the certificate.
 
 Permission to use secret delegation is restricted via RBAC and by default is not enabled.
-To create a secret delegation CRD the author must have permission to create the secret delegation object in the souce Namespace.
+To create a secret delegation CRD the author must have permission to create the secret delegation object in the source Namespace.
