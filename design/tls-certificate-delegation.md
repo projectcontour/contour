@@ -1,6 +1,6 @@
 # TLS Certificate Delegation
 
-_Status_: Draft, in review.
+_Status_: Accepted
 
 This document outlines a specification to allow an Ingress Controller to reference a TLS certificate stored in one namespace from an Ingress or IngressRoute document stored in another namespace.
 
