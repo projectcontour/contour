@@ -91,6 +91,26 @@ spec:
       port: 9000
     # If enforceTLS is specified, allows any request to this path to serve insecure requests
     permitInsecure: true
+    # if present describes the CORS policy.
+    cors:
+      # Specifies the origins that will be allowed to do CORS requests.
+      allowOrigin:
+        - www.google.com
+        - google.com
+      # Specifies the content for the *access-control-allow-methods* header.
+      allowMethods:
+        - GET
+        - POST
+      # Specifies the content for the *access-control-allow-headers* header.
+      allowHeaders:
+        - Content-Type
+      # Specifies the content for the *access-control-expose-headers* header.
+      exposeHeaders:
+        - Content-Type
+      # Specifies the content for the *access-control-max-age* header.
+      maxAge: 86400
+      # Specifies whether the resource allows credentials.
+      allowCredentials: true
   - match: /finance
     # delegate delegates the matching route to another IngressRoute object.
     # This delegates the responsibility for /finance to the IngressRoute matching the delegate parameters
@@ -175,6 +195,12 @@ The upstream host can return 503 if it wants to immediately notify downstream ho
 It is also important to note these are health checks that Envoy is implementing and are separate from any other system such as those that exist in Kubernetes.
 
 _Note: Passive health checking is implemented via Outlier detection and is used to dynamically determine whether some number of hosts in an upstream cluster are performing unlike others and removing them from the healthy load balancing set. Passive checking is not included yet but will be in a future release._
+
+## CORS
+
+Cross-Origin Resource Sharing (CORS) is a mechanism that uses additional HTTP headers to tell a browser to let a web application running at a domain have permission to access selected resources from a different domain. 
+
+This can be configured on a per route basis by using the [CorsPolicy](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto?highlight=shadow#envoy-api-msg-route-corspolicy) struct defined by Envoy.
 
 ## Delegation rules
 
