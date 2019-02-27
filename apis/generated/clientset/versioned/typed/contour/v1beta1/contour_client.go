@@ -28,6 +28,7 @@ import (
 type ContourV1beta1Interface interface {
 	RESTClient() rest.Interface
 	IngressRoutesGetter
+	TLSCertificateDelegationsGetter
 }
 
 // ContourV1beta1Client is used to interact with features provided by the contour.heptio.com group.
@@ -37,6 +38,10 @@ type ContourV1beta1Client struct {
 
 func (c *ContourV1beta1Client) IngressRoutes(namespace string) IngressRouteInterface {
 	return newIngressRoutes(c, namespace)
+}
+
+func (c *ContourV1beta1Client) TLSCertificateDelegations(namespace string) TLSCertificateDelegationInterface {
+	return newTLSCertificateDelegations(c, namespace)
 }
 
 // NewForConfig creates a new ContourV1beta1Client for the given config.

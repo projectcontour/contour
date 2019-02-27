@@ -26,6 +26,8 @@ import (
 type Interface interface {
 	// IngressRoutes returns a IngressRouteInformer.
 	IngressRoutes() IngressRouteInformer
+	// TLSCertificateDelegations returns a TLSCertificateDelegationInformer.
+	TLSCertificateDelegations() TLSCertificateDelegationInformer
 }
 
 type version struct {
@@ -42,4 +44,9 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // IngressRoutes returns a IngressRouteInformer.
 func (v *version) IngressRoutes() IngressRouteInformer {
 	return &ingressRouteInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// TLSCertificateDelegations returns a TLSCertificateDelegationInformer.
+func (v *version) TLSCertificateDelegations() TLSCertificateDelegationInformer {
+	return &tLSCertificateDelegationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

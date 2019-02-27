@@ -151,6 +151,20 @@ spec:
                             healthyThresholdCount:
                               type: integer
 ---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: tlscertificatedelegations.contour.vmware.com
+  labels:
+    component: tlscertificatedelegation
+spec:
+  group: contour.vmware.com
+  version: v1beta1
+  scope: Namespaced
+  names:
+    plural: tlscertificatedelegations
+    kind: TLSCertificateDelegation
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
