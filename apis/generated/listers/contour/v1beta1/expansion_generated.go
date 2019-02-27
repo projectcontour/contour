@@ -25,3 +25,11 @@ type IngressRouteListerExpansion interface{}
 // IngressRouteNamespaceListerExpansion allows custom methods to be added to
 // IngressRouteNamespaceLister.
 type IngressRouteNamespaceListerExpansion interface{}
+
+// TLSCertificateDelegationListerExpansion allows custom methods to be added to
+// TLSCertificateDelegationLister.
+type TLSCertificateDelegationListerExpansion interface{}
+
+// TLSCertificateDelegationNamespaceListerExpansion allows custom methods to be added to
+// TLSCertificateDelegationNamespaceLister.
+type TLSCertificateDelegationNamespaceListerExpansion interface{}
