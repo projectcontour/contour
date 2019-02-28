@@ -19,21 +19,17 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+const (
+	// GroupName is the group name for the Contour API
+	GroupName = "contour.heptio.com"
+)
+
 var (
 	// SchemeBuilder collects the scheme builder functions for the Contour API
 	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 
 	// AddToScheme applies the SchemeBuilder functions to a specified scheme
 	AddToScheme = SchemeBuilder.AddToScheme
-)
-
-const (
-	// GroupName is the group name for the Contour API
-	GroupName = "contour.heptio.com"
-	// ResourceKind is the CRD Kind
-	ResourceKind = "IngressRoute"
-	// ResourcePlural is the CRD Kind pluralized
-	ResourcePlural = "ingressroutes"
 )
 
 // SchemeGroupVersion is the GroupVersion for the Contour API
@@ -48,6 +44,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&IngressRoute{},
 		&IngressRouteList{},
+		&TLSCertificateDelegation{},
+		&TLSCertificateDelegationList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

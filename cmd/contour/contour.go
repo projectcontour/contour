@@ -170,6 +170,7 @@ func main() {
 		k8s.WatchIngress(&g, client, wl, &reh)
 		k8s.WatchSecrets(&g, client, wl, &reh)
 		k8s.WatchIngressRoutes(&g, contourClient, wl, &reh)
+		k8s.WatchTLSCertificateDelegations(&g, contourClient, wl, &reh)
 
 		ch.IngressRouteStatus = &k8s.IngressRouteStatus{
 			Client: contourClient,

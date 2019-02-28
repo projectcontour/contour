@@ -45,6 +45,7 @@ type KubernetesCache struct {
 	ingresses     map[meta]*v1beta1.Ingress
 	ingressroutes map[meta]*ingressroutev1.IngressRoute
 	secrets       map[meta]*v1.Secret
+	delegations   map[meta]*ingressroutev1.TLSCertificateDelegation
 	services      map[meta]*v1.Service
 }
 
@@ -89,6 +90,13 @@ func (kc *KubernetesCache) Insert(obj interface{}) {
 			kc.ingressroutes = make(map[meta]*ingressroutev1.IngressRoute)
 		}
 		kc.ingressroutes[m] = obj
+	case *ingressroutev1.TLSCertificateDelegation:
+		m := meta{name: obj.Name, namespace: obj.Namespace}
+		if kc.delegations == nil {
+			kc.delegations = make(map[meta]*ingressroutev1.TLSCertificateDelegation)
+		}
+		kc.delegations[m] = obj
+
 	default:
 		// not an interesting object
 	}
@@ -121,6 +129,9 @@ func (kc *KubernetesCache) remove(obj interface{}) {
 	case *ingressroutev1.IngressRoute:
 		m := meta{name: obj.Name, namespace: obj.Namespace}
 		delete(kc.ingressroutes, m)
+	case *ingressroutev1.TLSCertificateDelegation:
+		m := meta{name: obj.Name, namespace: obj.Namespace}
+		delete(kc.delegations, m)
 	default:
 		// not interesting
 	}
