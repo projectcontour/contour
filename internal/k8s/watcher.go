@@ -52,7 +52,12 @@ func WatchSecrets(g *workgroup.Group, client *kubernetes.Clientset, log logrus.F
 
 // WatchIngressRoutes creates a SharedInformer for contour.heptio.com/v1.IngressRoutes and registers it with g.
 func WatchIngressRoutes(g *workgroup.Group, client *clientset.Clientset, log logrus.FieldLogger, rs ...cache.ResourceEventHandler) {
-	watch(g, client.ContourV1beta1().RESTClient(), log, ingressroutev1.ResourcePlural, new(ingressroutev1.IngressRoute), rs...)
+	watch(g, client.ContourV1beta1().RESTClient(), log, "ingressroutes", new(ingressroutev1.IngressRoute), rs...)
+}
+
+// WatchTLSCertificateDelegations creates a SharedInformer for contour.vmware.com/v1.TLSCertificateDelegation and registers it with g.
+func WatchTLSCertificateDelegations(g *workgroup.Group, client *clientset.Clientset, log logrus.FieldLogger, rs ...cache.ResourceEventHandler) {
+	watch(g, client.ContourV1beta1().RESTClient(), log, "tlscertificatedelegations", new(ingressroutev1.TLSCertificateDelegation), rs...)
 }
 
 func watch(g *workgroup.Group, c cache.Getter, log logrus.FieldLogger, resource string, objType runtime.Object, rs ...cache.ResourceEventHandler) {

@@ -55,6 +55,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	// Group=contour.heptio.com, Version=v1beta1
 	case v1beta1.SchemeGroupVersion.WithResource("ingressroutes"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Contour().V1beta1().IngressRoutes().Informer()}, nil
+	case v1beta1.SchemeGroupVersion.WithResource("tlscertificatedelegations"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Contour().V1beta1().TLSCertificateDelegations().Informer()}, nil
 
 	}
 
