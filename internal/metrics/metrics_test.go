@@ -216,15 +216,16 @@ func TestWriteIngressRouteMetric(t *testing.T) {
 			gotOrphaned := []*io_prometheus_client.Metric{}
 			gotRoot := []*io_prometheus_client.Metric{}
 			for _, mf := range gathering {
-				if mf.GetName() == tc.total.metric {
+				switch mf.GetName() {
+				case tc.total.metric:
 					gotTotal = mf.Metric
-				} else if mf.GetName() == tc.valid.metric {
+				case tc.valid.metric:
 					gotValid = mf.Metric
-				} else if mf.GetName() == tc.invalid.metric {
+				case tc.invalid.metric:
 					gotInvalid = mf.Metric
-				} else if mf.GetName() == tc.orphaned.metric {
+				case tc.orphaned.metric:
 					gotOrphaned = mf.Metric
-				} else if mf.GetName() == tc.root.metric {
+				case tc.root.metric:
 					gotRoot = mf.Metric
 				}
 			}
@@ -640,15 +641,16 @@ func TestRemoveMetric(t *testing.T) {
 			gotOrphaned := []*io_prometheus_client.Metric{}
 			gotRoot := []*io_prometheus_client.Metric{}
 			for _, mf := range gathering {
-				if mf.GetName() == total.metric {
+				switch mf.GetName() {
+				case total.metric:
 					gotTotal = mf.Metric
-				} else if mf.GetName() == valid.metric {
+				case valid.metric:
 					gotValid = mf.Metric
-				} else if mf.GetName() == invalid.metric {
+				case invalid.metric:
 					gotInvalid = mf.Metric
-				} else if mf.GetName() == orphaned.metric {
+				case orphaned.metric:
 					gotOrphaned = mf.Metric
-				} else if mf.GetName() == root.metric {
+				case root.metric:
 					gotRoot = mf.Metric
 				}
 			}
@@ -688,15 +690,16 @@ func TestRemoveMetric(t *testing.T) {
 			gotOrphaned = []*io_prometheus_client.Metric{}
 			gotRoot = []*io_prometheus_client.Metric{}
 			for _, mf := range gathering {
-				if mf.GetName() == total.metric {
+				switch mf.GetName() {
+				case total.metric:
 					gotTotal = mf.Metric
-				} else if mf.GetName() == valid.metric {
+				case valid.metric:
 					gotValid = mf.Metric
-				} else if mf.GetName() == invalid.metric {
+				case invalid.metric:
 					gotInvalid = mf.Metric
-				} else if mf.GetName() == orphaned.metric {
+				case orphaned.metric:
 					gotOrphaned = mf.Metric
-				} else if mf.GetName() == root.metric {
+				case root.metric:
 					gotRoot = mf.Metric
 				}
 			}
