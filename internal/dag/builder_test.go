@@ -3930,6 +3930,58 @@ func TestEnforceRoute(t *testing.T) {
 	}
 }
 
+func TestSplitSecret(t *testing.T) {
+	tests := map[string]struct {
+		secret, defns string
+		want          meta
+	}{
+		"no namespace": {
+			secret: "secret",
+			defns:  "default",
+			want: meta{
+				name:      "secret",
+				namespace: "default",
+			},
+		},
+		"with namespace": {
+			secret: "ns1/secret",
+			defns:  "default",
+			want: meta{
+				name:      "secret",
+				namespace: "ns1",
+			},
+		},
+		"missing namespace": {
+			secret: "/secret",
+			defns:  "default",
+			want: meta{
+				name:      "secret",
+				namespace: "default",
+			},
+		},
+		"missing secret name": {
+			secret: "secret/",
+			defns:  "default",
+			want: meta{
+				name:      "",
+				namespace: "secret",
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := splitSecret(tc.secret, tc.defns)
+			opts := []cmp.Option{
+				cmp.AllowUnexported(meta{}),
+			}
+			if diff := cmp.Diff(tc.want, got, opts...); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
 func routemap(routes ...*Route) map[string]*Route {
 	m := make(map[string]*Route)
 	for _, r := range routes {

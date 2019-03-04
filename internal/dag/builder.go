@@ -384,121 +384,12 @@ func (b *builder) compute() *DAG {
 
 	// setup secure vhosts if there is a matching secret
 	// we do this first so that the set of active secure vhosts is stable
-	// during the second ingress pass
-	for _, ing := range b.source.ingresses {
-		for _, tls := range ing.Spec.TLS {
-			m := meta{name: tls.SecretName, namespace: ing.Namespace}
-			if sec := b.lookupSecret(m); sec != nil {
-				for _, host := range tls.Hosts {
-					svhost := b.lookupSecureVirtualHost(host)
-					svhost.Secret = sec
-					svhost.MinProtoVersion = minProtoVersion(ing)
-				}
-			}
-		}
-	}
+	// during computeIngresses.
+	b.computeSecureVirtualhosts()
 
-	// deconstruct each ingress into routes and virtualhost entries
-	for _, ing := range b.source.ingresses {
-		// rewrite the default ingress to a stock ingress rule.
-		rules := ing.Spec.Rules
-		if backend := ing.Spec.Backend; backend != nil {
-			rule := v1beta1.IngressRule{
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: backend.ServiceName,
-								ServicePort: backend.ServicePort,
-							},
-						}},
-					},
-				},
-			}
-			rules = append(rules, rule)
-		}
+	b.computeIngresses()
 
-		for _, rule := range rules {
-			host := rule.Host
-			if host == "" {
-				host = "*"
-			}
-			for _, httppath := range httppaths(rule) {
-				prefix := httppath.Path
-				if prefix == "" {
-					prefix = "/"
-				}
-
-				r := prefixRoute(ing, prefix)
-				m := meta{name: httppath.Backend.ServiceName, namespace: ing.Namespace}
-				if s := b.lookupHTTPService(m, httppath.Backend.ServicePort, 0, "", nil); s != nil {
-
-					r.addHTTPService(s)
-				}
-
-				// should we create port 80 routes for this ingress
-				if httpAllowed(ing) {
-					b.lookupVirtualHost(host).addRoute(r)
-				}
-				if _, ok := b.listener(b.externalSecurePort()).VirtualHosts[host]; ok && host != "*" {
-					b.lookupSecureVirtualHost(host).addRoute(r)
-				}
-			}
-		}
-	}
-
-	// process ingressroute documents
-	for _, ir := range b.validIngressRoutes() {
-		if ir.Spec.VirtualHost == nil {
-			// mark delegate ingressroute orphaned.
-			b.setOrphaned(ir)
-			continue
-		}
-
-		// ensure root ingressroute lives in allowed namespace
-		if !b.rootAllowed(ir) {
-			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: "root IngressRoute cannot be defined in this namespace"})
-			continue
-		}
-
-		host := ir.Spec.VirtualHost.Fqdn
-		if isBlank(host) {
-			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: "Spec.VirtualHost.Fqdn must be specified"})
-			continue
-		}
-
-		var enforceTLS, passthrough bool
-		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
-			// attach secrets to TLS enabled vhosts
-			m := meta{name: tls.SecretName, namespace: ir.Namespace}
-			if sec := b.lookupSecret(m); sec != nil {
-				svhost := b.lookupSecureVirtualHost(host)
-				svhost.Secret = sec
-				enforceTLS = true
-
-				// process min protocol version
-				switch ir.Spec.VirtualHost.TLS.MinimumProtocolVersion {
-				case "1.3":
-					svhost.MinProtoVersion = auth.TlsParameters_TLSv1_3
-				case "1.2":
-					svhost.MinProtoVersion = auth.TlsParameters_TLSv1_2
-				default:
-					// any other value is interpreted as TLS/1.1
-					svhost.MinProtoVersion = auth.TlsParameters_TLSv1_1
-				}
-			}
-			// passthrough is true if tls.secretName is not present, and
-			// tls.passthrough is set to true.
-			passthrough = tls.SecretName == "" && tls.Passthrough
-		}
-
-		switch {
-		case ir.Spec.TCPProxy != nil && (passthrough || enforceTLS):
-			b.processTCPProxy(ir, nil, host)
-		case ir.Spec.Routes != nil:
-			b.processRoutes(ir, "", nil, host, enforceTLS)
-		}
-	}
+	b.computeIngressRoutes()
 
 	return b.DAG()
 }
@@ -532,8 +423,8 @@ func isBlank(s string) bool {
 
 // minProtoVersion returns the TLS protocol version specified by an ingress annotation
 // or default if non present.
-func minProtoVersion(i *v1beta1.Ingress) auth.TlsParameters_TlsProtocol {
-	switch i.Annotations["contour.heptio.com/tls-minimum-protocol-version"] {
+func minProtoVersion(version string) auth.TlsParameters_TlsProtocol {
+	switch version {
 	case "1.3":
 		return auth.TlsParameters_TLSv1_3
 	case "1.2":
@@ -577,6 +468,190 @@ func (b *builder) validIngressRoutes() []*ingressroutev1.IngressRoute {
 		}
 	}
 	return valid
+}
+
+// computeSecureVirtualhosts populates tls parameters of
+// secure virtual hosts.
+func (b *builder) computeSecureVirtualhosts() {
+	for _, ing := range b.source.ingresses {
+		for _, tls := range ing.Spec.TLS {
+			m := splitSecret(tls.SecretName, ing.Namespace)
+			if sec := b.lookupSecret(m); sec != nil && b.delegationPermitted(m, ing.Namespace) {
+				for _, host := range tls.Hosts {
+					svhost := b.lookupSecureVirtualHost(host)
+					svhost.Secret = sec
+					version := ing.Annotations["contour.heptio.com/tls-minimum-protocol-version"]
+					svhost.MinProtoVersion = minProtoVersion(version)
+				}
+			}
+		}
+	}
+}
+
+// splitSecret splits a secretName into its namespace and name components.
+// If there is no namespace prefix, the default namespace is returned.
+func splitSecret(secret, defns string) meta {
+	v := strings.SplitN(secret, "/", 2)
+	switch len(v) {
+	case 1:
+		// no prefix
+		return meta{
+			name:      v[0],
+			namespace: defns,
+		}
+	default:
+		return meta{
+			name:      v[1],
+			namespace: stringOrDefault(v[0], defns),
+		}
+	}
+}
+
+func (b *builder) delegationPermitted(secret meta, to string) bool {
+	contains := func(haystack []string, needle string) bool {
+		if len(haystack) == 1 && haystack[0] == "*" {
+			return true
+		}
+		for _, h := range haystack {
+			if h == needle {
+				return true
+			}
+		}
+		return false
+	}
+
+	if secret.namespace == to {
+		// secret is in the same namespace as target
+		return true
+	}
+	for _, d := range b.source.delegations {
+		if d.Namespace != secret.namespace {
+			continue
+		}
+		for _, d := range d.Spec.Delegations {
+			if contains(d.TargetNamespaces, to) {
+				if secret.name == d.SecretName {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func (b *builder) computeIngresses() {
+	// deconstruct each ingress into routes and virtualhost entries
+	for _, ing := range b.source.ingresses {
+
+		// rewrite the default ingress to a stock ingress rule.
+		rules := rulesFromSpec(ing.Spec)
+
+		for _, rule := range rules {
+			host := stringOrDefault(rule.Host, "*")
+			for _, httppath := range httppaths(rule) {
+				prefix := stringOrDefault(httppath.Path, "/")
+				r := prefixRoute(ing, prefix)
+				be := httppath.Backend
+				m := meta{name: be.ServiceName, namespace: ing.Namespace}
+				if s := b.lookupHTTPService(m, be.ServicePort, 0, "", nil); s != nil {
+
+					r.addHTTPService(s)
+				}
+
+				// should we create port 80 routes for this ingress
+				if httpAllowed(ing) {
+					b.lookupVirtualHost(host).addRoute(r)
+				}
+
+				if b.secureVirtualhostExists(host) && host != "*" {
+					b.lookupSecureVirtualHost(host).addRoute(r)
+				}
+			}
+		}
+	}
+}
+
+func stringOrDefault(s, def string) string {
+	if s == "" {
+		return def
+	}
+	return s
+}
+
+func (b *builder) computeIngressRoutes() {
+	for _, ir := range b.validIngressRoutes() {
+		if ir.Spec.VirtualHost == nil {
+			// mark delegate ingressroute orphaned.
+			b.setOrphaned(ir)
+			continue
+		}
+
+		// ensure root ingressroute lives in allowed namespace
+		if !b.rootAllowed(ir) {
+			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: "root IngressRoute cannot be defined in this namespace"})
+			continue
+		}
+
+		host := ir.Spec.VirtualHost.Fqdn
+		if isBlank(host) {
+			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: "Spec.VirtualHost.Fqdn must be specified"})
+			continue
+		}
+
+		var enforceTLS, passthrough bool
+		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
+			// attach secrets to TLS enabled vhosts
+			m := splitSecret(tls.SecretName, ir.Namespace)
+			if sec := b.lookupSecret(m); sec != nil && b.delegationPermitted(m, ir.Namespace) {
+				svhost := b.lookupSecureVirtualHost(host)
+				svhost.Secret = sec
+				svhost.MinProtoVersion = minProtoVersion(ir.Spec.VirtualHost.TLS.MinimumProtocolVersion)
+				enforceTLS = true
+			}
+			// passthrough is true if tls.secretName is not present, and
+			// tls.passthrough is set to true.
+			passthrough = tls.SecretName == "" && tls.Passthrough
+		}
+
+		switch {
+		case ir.Spec.TCPProxy != nil && (passthrough || enforceTLS):
+			b.processTCPProxy(ir, nil, host)
+		case ir.Spec.Routes != nil:
+			b.processRoutes(ir, "", nil, host, enforceTLS)
+		}
+	}
+}
+
+func (b *builder) secureVirtualhostExists(host string) bool {
+	_, ok := b.listener(b.externalSecurePort()).VirtualHosts[host]
+	return ok
+}
+
+// rulesFromSpec merges the IngressSpec's Rules with a synthetic
+// rule representing the default backend.
+func rulesFromSpec(spec v1beta1.IngressSpec) []v1beta1.IngressRule {
+	rules := spec.Rules
+	if backend := spec.Backend; backend != nil {
+		rule := defaultBackendRule(backend)
+		rules = append(rules, rule)
+	}
+	return rules
+}
+
+// defaultBackendRule returns an IngressRule that represents the IngressBackend.
+func defaultBackendRule(be *v1beta1.IngressBackend) v1beta1.IngressRule {
+	return v1beta1.IngressRule{
+		IngressRuleValue: v1beta1.IngressRuleValue{
+			HTTP: &v1beta1.HTTPIngressRuleValue{
+				Paths: []v1beta1.HTTPIngressPath{{
+					Backend: v1beta1.IngressBackend{
+						ServiceName: be.ServiceName,
+						ServicePort: be.ServicePort,
+					},
+				}},
+			},
+		},
+	}
 }
 
 // DAG returns a *DAG representing the current state of this builder.
