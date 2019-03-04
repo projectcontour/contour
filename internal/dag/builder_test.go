@@ -2762,11 +2762,7 @@ func TestDAGInsert(t *testing.T) {
 			dag := b.Build()
 
 			got := make(map[int]*Listener)
-			dag.Visit(func(v Vertex) {
-				if l, ok := v.(*Listener); ok {
-					got[l.Port] = l
-				}
-			})
+			dag.Visit(listenerMap(got).Visit)
 
 			want := make(map[int]*Listener)
 			for _, v := range tc.want {
@@ -2782,6 +2778,14 @@ func TestDAGInsert(t *testing.T) {
 				t.Fatal(diff)
 			}
 		})
+	}
+}
+
+type listenerMap map[int]*Listener
+
+func (lm listenerMap) Visit(v Vertex) {
+	if l, ok := v.(*Listener); ok {
+		lm[l.Port] = l
 	}
 }
 
@@ -2922,11 +2926,7 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 	dag := b.Build()
 
 	got := make(map[int]*Listener)
-	dag.Visit(func(v Vertex) {
-		if l, ok := v.(*Listener); ok {
-			got[l.Port] = l
-		}
-	})
+	dag.Visit(listenerMap(got).Visit)
 
 	want := make(map[int]*Listener)
 	want[80] = &Listener{
@@ -2972,11 +2972,7 @@ func TestDAGIngressRouteCycleSelfEdge(t *testing.T) {
 	dag := b.Build()
 
 	got := make(map[int]*Listener)
-	dag.Visit(func(v Vertex) {
-		if l, ok := v.(*Listener); ok {
-			got[l.Port] = l
-		}
-	})
+	dag.Visit(listenerMap(got).Visit)
 
 	want := make(map[int]*Listener)
 	opts := []cmp.Option{
@@ -3012,11 +3008,7 @@ func TestDAGIngressRouteDelegatesToNonExistent(t *testing.T) {
 	dag := b.Build()
 
 	got := make(map[int]*Listener)
-	dag.Visit(func(v Vertex) {
-		if l, ok := v.(*Listener); ok {
-			got[l.Port] = l
-		}
-	})
+	dag.Visit(listenerMap(got).Visit)
 
 	want := make(map[int]*Listener)
 	opts := []cmp.Option{
@@ -3067,11 +3059,7 @@ func TestDAGIngressRouteDelegatePrefixDoesntMatch(t *testing.T) {
 	dag := b.Build()
 
 	got := make(map[int]*Listener)
-	dag.Visit(func(v Vertex) {
-		if l, ok := v.(*Listener); ok {
-			got[l.Port] = l
-		}
-	})
+	dag.Visit(listenerMap(got).Visit)
 
 	want := make(map[int]*Listener)
 	opts := []cmp.Option{
@@ -3239,11 +3227,7 @@ func TestDAGIngressRouteDelegatePrefixMatchesStringPrefixButNotPathPrefix(t *tes
 	dag := b.Build()
 
 	got := make(map[int]*Listener)
-	dag.Visit(func(v Vertex) {
-		if l, ok := v.(*Listener); ok {
-			got[l.Port] = l
-		}
-	})
+	dag.Visit(listenerMap(got).Visit)
 
 	want := make(map[int]*Listener)
 	opts := []cmp.Option{
@@ -3824,11 +3808,7 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 			}
 			dag := b.Build()
 			got := make(map[int]*Listener)
-			dag.Visit(func(v Vertex) {
-				if l, ok := v.(*Listener); ok {
-					got[l.Port] = l
-				}
-			})
+			dag.Visit(listenerMap(got).Visit)
 
 			want := make(map[int]*Listener)
 			for _, v := range tc.want {
