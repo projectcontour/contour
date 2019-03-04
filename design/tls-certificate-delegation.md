@@ -33,7 +33,7 @@ The implementation of this design is in three parts; the addition of a TLSCertif
 
 ### TLSCertificateDelegation CRD
 
-The TLSCertificateDelegation object records the permission to reference a Secret object from the namespace of the  TLSCertificateDelegation object to Ingress or IngressRoute objects in the target namespaces.
+The TLSCertificateDelegation object records the permission to reference a Secret object from the namespace of the TLSCertificateDelegation object to Ingress or IngressRoute objects in the target namespaces.
 This permission is managed by the Ingress controller which has the RBAC permissions to read all the relevant Secrets but currently only allows an Ingress or IngressRoute object to reference secrets from its own namespace.
 
 ```
