@@ -114,9 +114,8 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 			switch vh := vertex.(type) {
 			case *dag.VirtualHost:
 				vhost := envoy.VirtualHost(vh.Name, l.Port)
-				vh.Visit(func(r dag.Vertex) {
-					switch r := r.(type) {
-					case *dag.Route:
+				vh.Visit(func(v dag.Vertex) {
+					if r, ok := v.(*dag.Route); ok {
 						var svcs []*dag.HTTPService
 						r.Visit(func(s dag.Vertex) {
 							if s, ok := s.(*dag.HTTPService); ok {
@@ -145,9 +144,8 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				v.routes["ingress_http"].VirtualHosts = append(v.routes["ingress_http"].VirtualHosts, vhost)
 			case *dag.SecureVirtualHost:
 				vhost := envoy.VirtualHost(vh.VirtualHost.Name, l.Port)
-				vh.Visit(func(r dag.Vertex) {
-					switch r := r.(type) {
-					case *dag.Route:
+				vh.Visit(func(v dag.Vertex) {
+					if r, ok := v.(*dag.Route); ok {
 						var svcs []*dag.HTTPService
 						r.Visit(func(s dag.Vertex) {
 							if s, ok := s.(*dag.HTTPService); ok {

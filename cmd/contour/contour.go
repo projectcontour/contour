@@ -216,7 +216,7 @@ func main() {
 			defer log.Println("stopped")
 			return s.Serve(l)
 		})
-		g.Run()
+		_ = g.Run()
 	default:
 		app.Usage(args)
 		os.Exit(2)

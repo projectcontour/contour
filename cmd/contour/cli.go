@@ -84,6 +84,7 @@ func watchstream(st stream, typeURL string, resources []string) {
 		check(err)
 		resp, err := st.Recv()
 		check(err)
-		m.Marshal(os.Stdout, resp)
+		err = m.Marshal(os.Stdout, resp)
+		check(err)
 	}
 }

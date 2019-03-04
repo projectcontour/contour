@@ -2763,17 +2763,15 @@ func TestDAGInsert(t *testing.T) {
 
 			got := make(map[int]*Listener)
 			dag.Visit(func(v Vertex) {
-				switch v := v.(type) {
-				case *Listener:
-					got[v.Port] = v
+				if l, ok := v.(*Listener); ok {
+					got[l.Port] = l
 				}
 			})
 
 			want := make(map[int]*Listener)
 			for _, v := range tc.want {
-				switch v := v.(type) {
-				case *Listener:
-					want[v.Port] = v
+				if l, ok := v.(*Listener); ok {
+					want[l.Port] = l
 				}
 			}
 
@@ -2925,9 +2923,8 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 
 	got := make(map[int]*Listener)
 	dag.Visit(func(v Vertex) {
-		switch v := v.(type) {
-		case *Listener:
-			got[v.Port] = v
+		if l, ok := v.(*Listener); ok {
+			got[l.Port] = l
 		}
 	})
 
@@ -2976,9 +2973,8 @@ func TestDAGIngressRouteCycleSelfEdge(t *testing.T) {
 
 	got := make(map[int]*Listener)
 	dag.Visit(func(v Vertex) {
-		switch v := v.(type) {
-		case *Listener:
-			got[v.Port] = v
+		if l, ok := v.(*Listener); ok {
+			got[l.Port] = l
 		}
 	})
 
@@ -3017,9 +3013,8 @@ func TestDAGIngressRouteDelegatesToNonExistent(t *testing.T) {
 
 	got := make(map[int]*Listener)
 	dag.Visit(func(v Vertex) {
-		switch v := v.(type) {
-		case *Listener:
-			got[v.Port] = v
+		if l, ok := v.(*Listener); ok {
+			got[l.Port] = l
 		}
 	})
 
@@ -3073,9 +3068,8 @@ func TestDAGIngressRouteDelegatePrefixDoesntMatch(t *testing.T) {
 
 	got := make(map[int]*Listener)
 	dag.Visit(func(v Vertex) {
-		switch v := v.(type) {
-		case *Listener:
-			got[v.Port] = v
+		if l, ok := v.(*Listener); ok {
+			got[l.Port] = l
 		}
 	})
 
@@ -3186,14 +3180,11 @@ func TestDAGRootNamespaces(t *testing.T) {
 
 			var count int
 			dag.Visit(func(v Vertex) {
-				switch v := v.(type) {
-				case *Listener:
-					v.Visit(func(v Vertex) {
-						if _, ok := v.(*VirtualHost); ok {
-							count++
-						}
-					})
-				}
+				v.Visit(func(v Vertex) {
+					if _, ok := v.(*VirtualHost); ok {
+						count++
+					}
+				})
 			})
 
 			if tc.want != count {
@@ -3249,9 +3240,8 @@ func TestDAGIngressRouteDelegatePrefixMatchesStringPrefixButNotPathPrefix(t *tes
 
 	got := make(map[int]*Listener)
 	dag.Visit(func(v Vertex) {
-		switch v := v.(type) {
-		case *Listener:
-			got[v.Port] = v
+		if l, ok := v.(*Listener); ok {
+			got[l.Port] = l
 		}
 	})
 
@@ -3835,17 +3825,15 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 			dag := b.Build()
 			got := make(map[int]*Listener)
 			dag.Visit(func(v Vertex) {
-				switch v := v.(type) {
-				case *Listener:
-					got[v.Port] = v
+				if l, ok := v.(*Listener); ok {
+					got[l.Port] = l
 				}
 			})
 
 			want := make(map[int]*Listener)
 			for _, v := range tc.want {
-				switch v := v.(type) {
-				case *Listener:
-					want[v.Port] = v
+				if l, ok := v.(*Listener); ok {
+					want[l.Port] = l
 				}
 			}
 

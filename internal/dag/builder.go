@@ -808,10 +808,10 @@ func matchesPathPrefix(path, prefix string) bool {
 		return false
 	}
 	if prefix[len(prefix)-1] != '/' {
-		prefix = prefix + "/"
+		prefix += "/"
 	}
 	if path[len(path)-1] != '/' {
-		path = path + "/"
+		path += "/"
 	}
 	return strings.HasPrefix(path, prefix)
 }
