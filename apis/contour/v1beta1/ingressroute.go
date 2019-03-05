@@ -45,7 +45,7 @@ type VirtualHost struct {
 // matching certificate unless tls.passthrough is set to true.
 type TLS struct {
 	// required, the name of a secret in the current namespace
-	SecretName string `json:"secretName"`
+	SecretName string `json:"secretName,omitempty"`
 	// Minimum TLS version this vhost should negotiate
 	MinimumProtocolVersion string `json:"minimumProtocolVersion,omitempty"`
 	// If Passthrough is set to true, the SecretName will be ignored
