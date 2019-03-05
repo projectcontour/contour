@@ -4,6 +4,7 @@ IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 PKGS := $(shell go list ./cmd/... ./internal/...)
 LOCAL_BOOTSTRAP_CONFIG = config.yaml
+TAG_LATEST ?= false
 
 GIT_REF = $(shell git rev-parse --short=8 --verify HEAD)
 VERSION ?= $(GIT_REF)
@@ -32,11 +33,10 @@ container:
 
 push: container
 	docker push $(IMAGE):$(VERSION)
-	@if git describe --tags --exact-match >/dev/null 2>&1; \
-	then \
-		docker tag $(IMAGE):$(VERSION) $(IMAGE):latest; \
-		docker push $(IMAGE):latest; \
-	fi
+ifeq ($(TAG_LATEST), true)
+	docker tag $(IMAGE):$(VERSION) $(IMAGE):latest
+	docker push $(IMAGE):latest
+endif
 
 $(LOCAL_BOOTSTRAP_CONFIG): install
 	contour bootstrap $@
