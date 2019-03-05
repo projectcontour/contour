@@ -193,7 +193,7 @@ spec:
         name: contour
         command: ["contour"]
         args: ["serve", "--incluster"]
-      - image: docker.io/envoyproxy/envoy-alpine:v1.9.0
+      - image: docker.io/envoyproxy/envoy:v1.9.0
         name: envoy
         ports:
         - containerPort: 8080
