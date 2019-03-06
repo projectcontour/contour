@@ -204,7 +204,7 @@ Let's consider the following topology for communication
               -1 for "infinity"
               Any other positive number is the actual time in milliseconds.
 
-- `Response` : The idle timeout for the route, ie, no request events have occured in the route. The Request Timeout error code returns
+- `Response` : The idle timeout for the route, ie, no request events have occurred in the route. The Request Timeout error code returns
                with HTTP error code 408.
                Unspecified will not use any timeout for this route, besides the proxy's connection manager default (if present) will apply.
                0 no timeout for this route and also the proxy's connection manager default (if present) will be not applicable.

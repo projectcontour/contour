@@ -2762,18 +2762,12 @@ func TestDAGInsert(t *testing.T) {
 			dag := b.Build()
 
 			got := make(map[int]*Listener)
-			dag.Visit(func(v Vertex) {
-				switch v := v.(type) {
-				case *Listener:
-					got[v.Port] = v
-				}
-			})
+			dag.Visit(listenerMap(got).Visit)
 
 			want := make(map[int]*Listener)
 			for _, v := range tc.want {
-				switch v := v.(type) {
-				case *Listener:
-					want[v.Port] = v
+				if l, ok := v.(*Listener); ok {
+					want[l.Port] = l
 				}
 			}
 
@@ -2784,6 +2778,14 @@ func TestDAGInsert(t *testing.T) {
 				t.Fatal(diff)
 			}
 		})
+	}
+}
+
+type listenerMap map[int]*Listener
+
+func (lm listenerMap) Visit(v Vertex) {
+	if l, ok := v.(*Listener); ok {
+		lm[l.Port] = l
 	}
 }
 
@@ -2924,12 +2926,7 @@ func TestDAGIngressRouteCycle(t *testing.T) {
 	dag := b.Build()
 
 	got := make(map[int]*Listener)
-	dag.Visit(func(v Vertex) {
-		switch v := v.(type) {
-		case *Listener:
-			got[v.Port] = v
-		}
-	})
+	dag.Visit(listenerMap(got).Visit)
 
 	want := make(map[int]*Listener)
 	want[80] = &Listener{
@@ -2975,12 +2972,7 @@ func TestDAGIngressRouteCycleSelfEdge(t *testing.T) {
 	dag := b.Build()
 
 	got := make(map[int]*Listener)
-	dag.Visit(func(v Vertex) {
-		switch v := v.(type) {
-		case *Listener:
-			got[v.Port] = v
-		}
-	})
+	dag.Visit(listenerMap(got).Visit)
 
 	want := make(map[int]*Listener)
 	opts := []cmp.Option{
@@ -3016,12 +3008,7 @@ func TestDAGIngressRouteDelegatesToNonExistent(t *testing.T) {
 	dag := b.Build()
 
 	got := make(map[int]*Listener)
-	dag.Visit(func(v Vertex) {
-		switch v := v.(type) {
-		case *Listener:
-			got[v.Port] = v
-		}
-	})
+	dag.Visit(listenerMap(got).Visit)
 
 	want := make(map[int]*Listener)
 	opts := []cmp.Option{
@@ -3072,12 +3059,7 @@ func TestDAGIngressRouteDelegatePrefixDoesntMatch(t *testing.T) {
 	dag := b.Build()
 
 	got := make(map[int]*Listener)
-	dag.Visit(func(v Vertex) {
-		switch v := v.(type) {
-		case *Listener:
-			got[v.Port] = v
-		}
-	})
+	dag.Visit(listenerMap(got).Visit)
 
 	want := make(map[int]*Listener)
 	opts := []cmp.Option{
@@ -3186,14 +3168,11 @@ func TestDAGRootNamespaces(t *testing.T) {
 
 			var count int
 			dag.Visit(func(v Vertex) {
-				switch v := v.(type) {
-				case *Listener:
-					v.Visit(func(v Vertex) {
-						if _, ok := v.(*VirtualHost); ok {
-							count++
-						}
-					})
-				}
+				v.Visit(func(v Vertex) {
+					if _, ok := v.(*VirtualHost); ok {
+						count++
+					}
+				})
 			})
 
 			if tc.want != count {
@@ -3248,12 +3227,7 @@ func TestDAGIngressRouteDelegatePrefixMatchesStringPrefixButNotPathPrefix(t *tes
 	dag := b.Build()
 
 	got := make(map[int]*Listener)
-	dag.Visit(func(v Vertex) {
-		switch v := v.(type) {
-		case *Listener:
-			got[v.Port] = v
-		}
-	})
+	dag.Visit(listenerMap(got).Visit)
 
 	want := make(map[int]*Listener)
 	opts := []cmp.Option{
@@ -3834,18 +3808,12 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 			}
 			dag := b.Build()
 			got := make(map[int]*Listener)
-			dag.Visit(func(v Vertex) {
-				switch v := v.(type) {
-				case *Listener:
-					got[v.Port] = v
-				}
-			})
+			dag.Visit(listenerMap(got).Visit)
 
 			want := make(map[int]*Listener)
 			for _, v := range tc.want {
-				switch v := v.(type) {
-				case *Listener:
-					want[v.Port] = v
+				if l, ok := v.(*Listener); ok {
+					want[l.Port] = l
 				}
 			}
 
@@ -3957,6 +3925,58 @@ func TestEnforceRoute(t *testing.T) {
 			got := routeEnforceTLS(tc.tlsEnabled, tc.permitInsecure)
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("expected:\n%v\ngot:\n%v", tc.want, got)
+			}
+		})
+	}
+}
+
+func TestSplitSecret(t *testing.T) {
+	tests := map[string]struct {
+		secret, defns string
+		want          meta
+	}{
+		"no namespace": {
+			secret: "secret",
+			defns:  "default",
+			want: meta{
+				name:      "secret",
+				namespace: "default",
+			},
+		},
+		"with namespace": {
+			secret: "ns1/secret",
+			defns:  "default",
+			want: meta{
+				name:      "secret",
+				namespace: "ns1",
+			},
+		},
+		"missing namespace": {
+			secret: "/secret",
+			defns:  "default",
+			want: meta{
+				name:      "secret",
+				namespace: "default",
+			},
+		},
+		"missing secret name": {
+			secret: "secret/",
+			defns:  "default",
+			want: meta{
+				name:      "",
+				namespace: "secret",
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := splitSecret(tc.secret, tc.defns)
+			opts := []cmp.Option{
+				cmp.AllowUnexported(meta{}),
+			}
+			if diff := cmp.Diff(tc.want, got, opts...); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 	}

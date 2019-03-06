@@ -66,11 +66,7 @@ func (c *ctx) writeEdge(parent, child dag.Vertex) {
 		return
 	}
 	c.edges[pair{parent, child}] = true
-	switch child := child.(type) {
-	default:
-		fmt.Fprintf(c.w, `"%p" -> "%p"`+"\n", parent, child)
-	}
-
+	fmt.Fprintf(c.w, `"%p" -> "%p"`+"\n", parent, child)
 }
 
 func (dw *dotWriter) writeDot(w io.Writer) {
