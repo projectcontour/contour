@@ -792,7 +792,7 @@ This is necessary so that Envoy can use SNI to route the incoming request to the
 
 If `spec.virtualhost.tls.secretName` is present then that secret will be used to decrypt the TCP traffic at the edge.
 
-```
+```yaml
 apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 metadata:
@@ -823,7 +823,7 @@ The `spec.tcpproxy` key indicates that this _root_ IngressRoute will forward the
 
 If you wish to handle the TLS handshake at the backend service set `spec.virtualhost.tls.passthrough: true` indicates that once SNI demuxing is performed, the encrypted connection will be forwarded to the backend service. The backend service is expected to have a key which matches the SNI header received at the edge, and be capable of completing the TLS handshake. This is called SSL/TLS Passthrough.
 
-```
+```yaml
 apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 metadata:
