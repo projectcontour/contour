@@ -188,7 +188,7 @@ spec:
         prometheus.io/format: "prometheus"
     spec:
       containers:
-      - image: gcr.io/heptio-images/contour:master
+      - image: gcr.io/heptio-images/contour:v0.10.0
         imagePullPolicy: Always
         name: contour
         command: ["contour"]
@@ -221,7 +221,7 @@ spec:
             exec:
               command: ["wget", "-qO-", "http://localhost:9001/healthcheck/fail"] 
       initContainers:
-      - image: gcr.io/heptio-images/contour:master
+      - image: gcr.io/heptio-images/contour:v0.10.0
         imagePullPolicy: Always
         name: envoy-initconfig
         command: ["contour"]

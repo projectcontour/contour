@@ -40,7 +40,7 @@ spec:
         - --envoy-service-https-port
         - 443
         command: ["contour"]
-        image: gcr.io/heptio-images/contour:master
+        image: gcr.io/heptio-images/contour:v0.10.0
         imagePullPolicy: Always
         name: contour
         ports:
