@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/google/go-cmp/cmp"
@@ -25,7 +25,7 @@ import (
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -308,7 +308,8 @@ func TestClusterVisit(t *testing.T) {
 							},
 						},
 					}},
-					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+					CommonLbConfig:                envoy.ClusterCommonLBConfig(),
+					DrainConnectionsOnHostRemoval: true,
 				},
 			),
 		},
@@ -370,7 +371,8 @@ func TestClusterVisit(t *testing.T) {
 							},
 						},
 					}},
-					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+					CommonLbConfig:                envoy.ClusterCommonLBConfig(),
+					DrainConnectionsOnHostRemoval: true,
 				},
 			),
 		},

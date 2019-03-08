@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
@@ -64,6 +64,12 @@ func cluster(service *dag.TCPService) *v2.Cluster {
 		CommonLbConfig:   ClusterCommonLBConfig(),
 		HealthChecks:     edshealthcheck(service),
 	}
+
+	// Drain connections immediately if using healthchecks and the endpoint is known to be removed
+	if service.HealthCheck != nil {
+		c.DrainConnectionsOnHostRemoval = true
+	}
+
 	if anyPositive(service.MaxConnections, service.MaxPendingRequests, service.MaxRequests, service.MaxRetries) {
 		c.CircuitBreakers = &envoy_cluster.CircuitBreakers{
 			Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
