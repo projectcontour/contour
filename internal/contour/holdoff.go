@@ -26,8 +26,8 @@ import (
 )
 
 const (
-	holdoffDelay    = 100 * time.Millisecond
-	holdoffMaxDelay = 500 * time.Millisecond
+	defaultHoldoffDelay    = 100 * time.Millisecond
+	defaultHoldoffMaxDelay = 500 * time.Millisecond
 )
 
 // A HoldoffNotifier delays calls to OnChange in the hope of
@@ -42,16 +42,36 @@ type HoldoffNotifier struct {
 	mu    sync.Mutex
 	timer *time.Timer
 	last  time.Time
+
+	holdoffDelay    time.Duration
+	holdoffMaxDelay time.Duration
+}
+
+func (hn *HoldoffNotifier) SetHoldoffDelay(t time.Duration) {
+	hn.holdoffDelay = t
+}
+
+func (hn *HoldoffNotifier) SetHoldoffMaxDelay(t time.Duration) {
+	hn.holdoffMaxDelay = t
 }
 
 func (hn *HoldoffNotifier) OnChange(builder *dag.Builder) {
 	hn.mu.Lock()
 	defer hn.mu.Unlock()
+
+	if hn.holdoffDelay == 0 {
+		hn.holdoffDelay = defaultHoldoffDelay
+	}
+
+	if hn.holdoffMaxDelay == 0 {
+		hn.holdoffMaxDelay = defaultHoldoffMaxDelay
+	}
+
 	if hn.timer != nil {
 		hn.timer.Stop()
 	}
 	since := time.Since(hn.last)
-	if since > holdoffMaxDelay {
+	if since > hn.holdoffMaxDelay {
 		// update immediately
 		hn.WithField("last update", since).Info("forcing update")
 		hn.Notifier.OnChange(builder)
@@ -60,7 +80,7 @@ func (hn *HoldoffNotifier) OnChange(builder *dag.Builder) {
 		return
 	}
 
-	hn.timer = time.AfterFunc(holdoffDelay, func() {
+	hn.timer = time.AfterFunc(hn.holdoffDelay, func() {
 		hn.mu.Lock()
 		defer hn.mu.Unlock()
 		hn.WithField("last update", time.Since(hn.last)).Info("performing delayed update")
