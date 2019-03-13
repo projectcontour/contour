@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package k8s contains helpers for setting the IngressRoute status
 package k8s
 
 import (
