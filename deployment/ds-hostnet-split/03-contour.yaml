@@ -31,14 +31,10 @@ spec:
       - args:
         - serve
         - --incluster
-        - --xds-address
-        - 0.0.0.0
-        - --xds-port
-        - $(CONTOUR_SERVICE_PORT)
-        - --envoy-service-http-port
-        - 80
-        - --envoy-service-https-port
-        - 443
+        - --xds-address=0.0.0.0
+        - --xds-port=$(CONTOUR_SERVICE_PORT)
+        - --envoy-service-http-port=80
+        - --envoy-service-https-port=443
         command: ["contour"]
         image: gcr.io/heptio-images/contour:master
         imagePullPolicy: Always
