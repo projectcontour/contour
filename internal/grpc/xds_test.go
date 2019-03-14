@@ -59,7 +59,7 @@ func TestXDSHandlerFetch(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			_, got := tc.xh.fetch(tc.req)
-			if !reflect.DeepEqual(tc.want, got) {
+			if !equalError(tc.want, got) {
 				t.Fatalf("expected: %v, got: %v", tc.want, got)
 			}
 		})
@@ -182,7 +182,7 @@ func TestXDSHandlerStream(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := tc.xh.stream(tc.stream)
-			if !reflect.DeepEqual(tc.want, got) {
+			if !equalError(tc.want, got) {
 				t.Fatalf("expected: %v, got: %v", tc.want, got)
 			}
 		})
@@ -281,4 +281,14 @@ func TestCounterNext(t *testing.T) {
 			t.Fatalf("expected %d, got %d", tc.want, got)
 		}
 	}
+}
+
+func equalError(a, b error) bool {
+	if a == nil {
+		return b == nil
+	}
+	if b == nil {
+		return a == nil
+	}
+	return a.Error() == b.Error()
 }
