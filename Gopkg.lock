@@ -45,7 +45,7 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:2042b0f0950a2b628ebb914c43fb56d151bf53a72594e7d4f09d9dd5272aec3e"
+  digest = "1:daa37880817014c19501a836bf3d4acd9a0c94835a7d9983f90f4cd70b0e4148"
   name = "github.com/envoyproxy/go-control-plane"
   packages = [
     "envoy/api/v2",
@@ -69,8 +69,8 @@
     "pkg/util",
   ]
   pruneopts = ""
-  revision = "eb553e72ac8724721a99ed85fcb116467c7a2bac"
-  version = "v0.6.7"
+  revision = "d5aea55877e2c627131f0d08634a0408f197417a"
+  version = "v0.6.8"
 
 [[projects]]
   digest = "1:4216202f4088a73e2982df875e2f0d1401137bbc248e57391e70547af167a18a"
