@@ -9,24 +9,26 @@ TAG_LATEST ?= false
 GIT_REF = $(shell git rev-parse --short=8 --verify HEAD)
 VERSION ?= $(GIT_REF)
 
+export GO111MODULE=on
+
 test: install
-	go test ./...
+	go test -mod=vendor ./...
 
 test-race: | test
-	go test -race ./...
+	go test -race -mod=vendor ./...
 
 vet: | test
-	go vet ./...
+	go vet -mod=vendor ./...
 
 check: test test-race vet gofmt staticcheck misspell unconvert ineffassign
 	@echo Checking rendered files are up to date
 	@(cd deployment && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 
 install:
-	go install -v -tags "oidc gcp" ./...
+	go install -mod=vendor -v -tags "oidc gcp" ./...
 
-dep:
-	dep ensure -vendor-only -v
+vendor:
+	go mod vendor
 
 container:
 	docker build . -t $(IMAGE):$(VERSION)
@@ -93,6 +95,6 @@ updategenerated:
 	@echo Updating CRD generated code...
 	@(bash hack/update-generated-crd-code.sh)
 
-gofmt:  
+gofmt:
 	@echo Checking code is gofmted
 	@test -z "$(shell gofmt -s -l -d -e $(SRCDIRS) | tee /dev/stderr)"
