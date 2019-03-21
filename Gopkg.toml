@@ -8,7 +8,7 @@ required = [
 
 [[constraint]]
   name = "k8s.io/client-go"
-  version = "v9.0.0"
+  version = "kubernetes-1.12.6"
 
 [[constraint]]
   name = "k8s.io/apimachinery"
