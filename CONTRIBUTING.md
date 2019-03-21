@@ -12,27 +12,17 @@ This section describes how to build Contour from source.
 
 1. *Install Go*
 
-    Contour requires [Go 1.9][1] or later.
+    Contour requires [Go 1.12][1] or later.
     We also assume that you're familiar with Go's [`GOPATH` workspace][3] convention, and have the appropriate environment variables set.
-
-2. *Install `dep`*
-
-    Contour uses [`dep`][2] for dependency management.
-   `dep` is a fast moving project so even if you have installed it previously, it's a good idea to update to the latest version using the `go get -u` flag.
-
-    ```
-    go get -u github.com/golang/dep/cmd/dep
-    ```
 
 ### Fetch the source
 
-Contour uses [`dep`][2] for dependency management, but to reduce the size of the repository, does not include a copy of its dependencies.
-This might change in the future, but for now use the following command to fetch the source for Contour and its dependencies.
+Contour uses [`go modules`][2] for dependency management, but to reduce the size of the repository, does not include a copy of its dependencies.
 
 ```
 go get -d github.com/heptio/contour
 cd $GOPATH/src/github.com/heptio/contour
-dep ensure -vendor-only
+go mod vendor
 ```
 
 Go is very particular when it comes to the location of the source code in your `$GOPATH`.
@@ -53,16 +43,10 @@ The remainder of this document assumes your terminal's working directory is `$GO
 To build Contour, run:
 
 ```
-go build ./cmd/contour
+go build -mod=vendor ./cmd/contour
 ```
 
 This assumes your working directory is set to `$GOPATH/src/github.com/heptio/contour`.
-If you're somewhere else in the file system you can instead run:
-
-```
-go build github.com/heptio/contour/cmd/contour
-```
-
 This produces a `contour` binary in your current working directory.
 
 _TIP_: You may prefer to use `go install` rather than `go build` to cache build artifacts and reduce future compile times.
@@ -73,15 +57,10 @@ In this case the binary is placed in `$GOPATH/bin/contour`.
 Once you have Contour building, you can run all the unit tests for the project:
 
 ```
-go test ./...
+go test -mod=vendor ./...
 ```
 
 This assumes your working directory is set to `$GOPATH/src/github.com/heptio/contour`. 
-If you're working from a different directory, you can instead run:
-
-```
-go test github.com/heptio/contour/...
-```
 
 To run the tests for a single package, change to package directory and run:
 
@@ -182,7 +161,7 @@ By making a contribution to this project, I certify that:
 ```
 
 [1]: https://golang.org/dl/
-[2]: https://github.com/golang/dep
+[2]: https://github.com/golang/go/wiki/Modules
 [3]: https://golang.org/doc/code.html
 [4]: https://golang.org/pkg/testing/
 [5]: https://developercertificate.org/

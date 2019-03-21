@@ -4,3 +4,4 @@ vendor/
 .vs/
 .idea/
 .DS_Store
+go.sum
