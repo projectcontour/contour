@@ -12,23 +12,20 @@ VERSION ?= $(GIT_REF)
 export GO111MODULE=on
 
 test: install
-	go test -mod=vendor ./...
+	go test ./...
 
 test-race: | test
-	go test -race -mod=vendor ./...
+	go test -race ./...
 
 vet: | test
-	go vet -mod=vendor ./...
+	go vet ./...
 
-check: test test-race vet gofmt staticcheck misspell unconvert ineffassign
+check: test test-race vet gofmt misspell unconvert ineffassign
 	@echo Checking rendered files are up to date
 	@(cd deployment && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 
 install:
-	go install -mod=vendor -v -tags "oidc gcp" ./...
-
-vendor:
-	go mod vendor
+	go install -v -tags "oidc gcp" ./...
 
 container:
 	docker build . -t $(IMAGE):$(VERSION)
