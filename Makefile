@@ -27,6 +27,9 @@ check: test test-race vet gofmt misspell unconvert ineffassign
 install:
 	go install -v -tags "oidc gcp" ./...
 
+download:
+	go mod download
+
 container:
 	docker build . -t $(IMAGE):$(VERSION)
 
