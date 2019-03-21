@@ -17,12 +17,10 @@ This section describes how to build Contour from source.
 
 ### Fetch the source
 
-Contour uses [`go modules`][2] for dependency management, but to reduce the size of the repository, does not include a copy of its dependencies.
+Contour uses [`go modules`][2] for dependency management.
 
 ```
-go get -d github.com/heptio/contour
-cd $GOPATH/src/github.com/heptio/contour
-go mod vendor
+go github.com/heptio/contour
 ```
 
 Go is very particular when it comes to the location of the source code in your `$GOPATH`.
@@ -43,10 +41,9 @@ The remainder of this document assumes your terminal's working directory is `$GO
 To build Contour, run:
 
 ```
-go build -mod=vendor ./cmd/contour
+make
 ```
 
-This assumes your working directory is set to `$GOPATH/src/github.com/heptio/contour`.
 This produces a `contour` binary in your current working directory.
 
 _TIP_: You may prefer to use `go install` rather than `go build` to cache build artifacts and reduce future compile times.
@@ -57,7 +54,7 @@ In this case the binary is placed in `$GOPATH/bin/contour`.
 Once you have Contour building, you can run all the unit tests for the project:
 
 ```
-go test -mod=vendor ./...
+make check
 ```
 
 This assumes your working directory is set to `$GOPATH/src/github.com/heptio/contour`. 
@@ -67,8 +64,6 @@ To run the tests for a single package, change to package directory and run:
 ```
 go test .
 ```
-
-_TIP_: If you are running the tests often, you can run `go test -i github.com/heptio/contour/...` occasionally to reduce test compilation times.
 
 ## Contribution workflow
 
