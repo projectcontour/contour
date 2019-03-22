@@ -350,16 +350,11 @@ func TestIngressRouteTLSListener(t *testing.T) {
 	rh.OnDelete(s1)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []types.Any{
-			any(t, &v2.Listener{
-				Name:         "ingress_http",
-				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
-				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
-			}),
-		},
-		TypeUrl: listenerType,
-		Nonce:   "0",
+		Resources:   []types.Any{},
+		TypeUrl:     listenerType,
+		Nonce:       "0",
 	}, streamLDS(t, cc))
+	streamLDS(t, cc)
 
 	rh.OnDelete(i1)
 	// add secret

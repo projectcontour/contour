@@ -3598,6 +3598,30 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	// ir15 is a tls ingressroute without a TLS secret
+	ir15 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "roots",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "simple.example.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName:             "secret",
+					MinimumProtocolVersion: "1.1",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "backend",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []*ingressroutev1.IngressRoute
 		want []Status
@@ -3670,6 +3694,10 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{Object: ir11, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
 				{Object: ir10, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
 			},
+		},
+		"ingressroute does not have secret": {
+			objs: []*ingressroutev1.IngressRoute{ir15},
+			want: []Status{{Object: ir15, Status: "invalid", Description: "TLS secret not found"}},
 		},
 	}
 

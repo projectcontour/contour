@@ -600,17 +600,25 @@ func (b *builder) computeIngressRoutes() {
 
 		var enforceTLS, passthrough bool
 		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
-			// attach secrets to TLS enabled vhosts
-			m := splitSecret(tls.SecretName, ir.Namespace)
-			if sec := b.lookupSecret(m); sec != nil && b.delegationPermitted(m, ir.Namespace) {
-				svhost := b.lookupSecureVirtualHost(host)
-				svhost.Secret = sec
-				svhost.MinProtoVersion = minProtoVersion(ir.Spec.VirtualHost.TLS.MinimumProtocolVersion)
-				enforceTLS = true
-			}
 			// passthrough is true if tls.secretName is not present, and
 			// tls.passthrough is set to true.
-			passthrough = tls.SecretName == "" && tls.Passthrough
+			if tls.SecretName == "" {
+				passthrough = tls.Passthrough
+			} else {
+				// attach secrets to TLS enabled vhosts
+				m := splitSecret(tls.SecretName, ir.Namespace)
+				if b.delegationPermitted(m, ir.Namespace) {
+					sec := b.lookupSecret(m)
+					if sec == nil {
+						b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: "TLS secret not found"})
+						continue
+					}
+					svhost := b.lookupSecureVirtualHost(host)
+					svhost.Secret = sec
+					svhost.MinProtoVersion = minProtoVersion(ir.Spec.VirtualHost.TLS.MinimumProtocolVersion)
+					enforceTLS = true
+				}
+			}
 		}
 
 		switch {
