@@ -12,56 +12,7 @@ stats endpoint and nowhere else.
 To enable the static listener, set the `--statsd-enabled` flag.
 By default, Envoy's stats will be exposed over `0.0.0.0:8002` but can be overridden setting the `--stats-address` and `--stats-port` flags in Contour.
 
-### Configuration Prometheus
-
-The Envoy stats endpoint returns the metrics in statsd format by default. To get
-the metrics in Prometheus format, requests to the endpoint must be made with a
-URL parameter: `format=prometheus` ([This requirement will go away in a newer
-version of Envoy](https://github.com/envoyproxy/envoy/issues/2182)).
-
-Because of this Envoy requirement, the Prometheus scraping configuration must be
-tweaked to include the following:
-
-```yaml
-- source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_format]
-  action: replace
-  target_label: __param_format
-  regex: (.+)
-```
-
-The following is the official Prometheus Kubernetes example configuration, with
-the addition of the tweak mentioned above:
-
-```yaml
-    - job_name: 'kubernetes-pods'
-      kubernetes_sd_configs:
-      - role: pod
-      relabel_configs:
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-        action: keep
-        regex: true
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
-        action: replace
-        target_label: __metrics_path__
-        regex: (.+)
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_format]
-        action: replace
-        target_label: __param_format
-        regex: (.+)
-      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-        action: replace
-        regex: ([^:]+)(?::\d+)?;(\d+)
-        replacement: $1:$2
-        target_label: __address__
-      - action: labelmap
-        regex: __meta_kubernetes_pod_label_(.+)
-      - source_labels: [__meta_kubernetes_namespace]
-        action: replace
-        target_label: kubernetes_namespace
-      - source_labels: [__meta_kubernetes_pod_name]
-        action: replace
-        target_label: kubernetes_pod_name
-```
+Envoy supports Prometheus-compatible `/stats/prometheus` endpoint for metrics. 
 
 ## Contour Metrics
 
