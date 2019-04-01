@@ -1,0 +1,125 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: prometheus
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - nodes/proxy
+  - services
+  - endpoints
+  - pods
+  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs: ["get", "list", "watch"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: contour-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+- kind: ServiceAccount
+  name: prometheus
+  namespace: contour-monitoring
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/scrape: 'true'
+  name: prometheus
+  namespace: contour-monitoring
+spec:
+  ports:
+  - protocol: TCP
+    name: prometheus
+    port: 9090
+  selector:
+    app: prometheus
+    component: server
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: contour-monitoring
+  labels:
+    app: prometheus
+    component: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+      component: server
+  template:
+    metadata:
+      name: prometheus
+      labels:
+        app: prometheus
+        component: server
+    spec:
+      serviceAccountName: prometheus
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v2.2.1
+        imagePullPolicy: Always
+        args:
+          - '--storage.tsdb.retention=24h'
+          - '--config.file=/etc/prometheus/prometheus.yml'
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/prometheus
+        - name: config-volume-alert-rules
+          mountPath: /etc/prometheus-rules
+        - name: cert-file
+          mountPath: /etc/ssl/etcd.pem
+        - name: key-file
+          mountPath: /etc/ssl/etcd-key.pem
+
+      # blackbox exporter
+      # - name: blackbox
+      #   image: quay.io/prometheus/blackbox-exporter:v0.11.0
+      #   args:
+      #     - --config.file=/config/blackbox.yml
+      #   ports:
+      #   - containerPort: 9115
+      #   volumeMounts:
+      #   - name: blackbox-config
+      #     mountPath: /config
+
+      volumes:
+      - name: config-volume
+        configMap:
+          name: prometheus
+      - name: cert-file
+        hostPath:
+          path: /etc/kubernetes/ssl/etcd.pem
+      - name: key-file
+        hostPath:
+          path: /etc/kubernetes/ssl/etcd-key.pem
+      - name: config-volume-alert-rules
+        configMap:
+          name: prometheus-alert-rules
+      #black box exporter
+      # - name: blackbox-config
+      #   configMap:
+      #     name: prometheus-blackbox
