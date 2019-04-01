@@ -57,7 +57,7 @@ spec:
                   properties:
                     secretName:
                       type: string
-                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ # DNS-1123 subdomain
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?([\.\/][a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                     minimumProtocolVersion:
                       type: string
                       enum:
