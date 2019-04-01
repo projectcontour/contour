@@ -40,7 +40,6 @@ spec:
         - --service-cluster cluster0
         - --service-node node0
         - --log-level info
-        - --v2-config-only
         readinessProbe:
           httpGet:
             path: /healthz
