@@ -554,7 +554,6 @@ func (b *builder) computeIngresses() {
 				be := httppath.Backend
 				m := meta{name: be.ServiceName, namespace: ing.Namespace}
 				if s := b.lookupHTTPService(m, be.ServicePort, 0, "", nil); s != nil {
-
 					r.addHTTPService(s)
 				}
 
