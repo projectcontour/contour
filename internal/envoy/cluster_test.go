@@ -102,8 +102,27 @@ func TestCluster(t *testing.T) {
 				ConnectTimeout:       250 * time.Millisecond,
 				LbPolicy:             v2.Cluster_ROUND_ROBIN,
 				Http2ProtocolOptions: &core.Http2ProtocolOptions{},
-				TlsContext:           UpstreamTLSContext(),
+				TlsContext:           UpstreamTLSContext("h2"),
 				CommonLbConfig:       ClusterCommonLBConfig(),
+			},
+		},
+		"tls upstream": {
+			service: &dag.HTTPService{
+				TCPService: service(s1),
+				Protocol:   "tls",
+			},
+			want: &v2.Cluster{
+				Name:        "default/kuard/443/da39a3ee5e",
+				AltStatName: "default_kuard_443",
+				Type:        v2.Cluster_EDS,
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				TlsContext:     UpstreamTLSContext("tls"),
+				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
 		"contour.heptio.com/max-connections": {

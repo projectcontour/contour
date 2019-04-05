@@ -255,7 +255,7 @@ func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort, weight i
 	if b.services == nil {
 		b.services = make(map[servicemeta]Service)
 	}
-	up := parseUpstreamProtocols(svc.Annotations, annotationUpstreamProtocol, "h2", "h2c")
+	up := parseUpstreamProtocols(svc.Annotations, annotationUpstreamProtocol, "h2", "h2c", "tls")
 	protocol := up[port.Name]
 	if protocol == "" {
 		protocol = up[strconv.Itoa(int(port.Port))]

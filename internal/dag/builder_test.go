@@ -554,6 +554,24 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	s3c := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/upstream-protocol.tls": "80,http",
+			},
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8888),
+			}},
+		},
+	}
+
 	sec13 := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-tls",
@@ -2635,6 +2653,33 @@ func TestDAGInsert(t *testing.T) {
 											ServicePort: &s3b.Spec.Ports[0],
 										},
 										Protocol: "h2",
+									},
+								)),
+							),
+						},
+					),
+				},
+			),
+		},
+		"tls service annotation": {
+			objs: []interface{}{
+				i3a, s3c,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								route("/", i3a, servicemap(
+									&HTTPService{
+										TCPService: TCPService{
+											Name:        s3c.Name,
+											Namespace:   s3c.Namespace,
+											ServicePort: &s3c.Spec.Ports[0],
+										},
+										Protocol: "tls",
 									},
 								)),
 							),

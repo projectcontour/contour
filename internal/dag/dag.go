@@ -249,7 +249,7 @@ type HTTPService struct {
 	TCPService
 
 	// Protocol is the layer 7 protocol of this service
-	// One of "", "h2", or "h2c".
+	// One of "", "h2", "h2c", or "tls".
 	Protocol string
 }
 
