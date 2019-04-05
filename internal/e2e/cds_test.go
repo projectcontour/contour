@@ -762,6 +762,57 @@ func TestClusterWithHealthChecks(t *testing.T) {
 	}, streamCDS(t, cc))
 }
 
+// Test that contour correctly recognises the "contour.heptio.com/upstream-protocol.tls"
+// service annotation.
+func TestClusterServiceTLSBackend(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "kuard",
+				ServicePort: intstr.FromInt(443),
+			},
+		},
+	}
+	rh.OnAdd(i1)
+
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/upstream-protocol.tls": "securebackend",
+			},
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "securebackend",
+				Protocol:   "TCP",
+				Port:       443,
+				TargetPort: intstr.FromInt(8888),
+			}},
+		},
+	}
+	rh.OnAdd(s1)
+
+	want := tlscluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443")
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "0",
+		Resources: []types.Any{
+			any(t, want),
+		},
+		TypeUrl: clusterType,
+		Nonce:   "0",
+	}, streamCDS(t, cc))
+}
+
 func serviceWithAnnotations(ns, name string, annotations map[string]string, ports ...v1.ServicePort) *v1.Service {
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -801,26 +852,30 @@ func cluster(name, servicename, statName string) *v2.Cluster {
 	}
 }
 
+func tlscluster(name, servicename, statsName string) *v2.Cluster {
+	c := cluster(name, servicename, statsName)
+	c.TlsContext = envoy.UpstreamTLSContext()
+	return c
+}
+
 func clusterWithHealthCheck(name, servicename, statName, healthCheckPath string, drainConnOnHostRemoval bool) *v2.Cluster {
 	c := cluster(name, servicename, statName)
 	timeout := 2 * time.Second
 	interval := 10 * time.Second
 	unhealthyThreshold := types.UInt32Value{Value: 3}
 	healthyThreshold := types.UInt32Value{Value: 2}
-	c.HealthChecks = []*core.HealthCheck{
-		{
-			Timeout:            &timeout,
-			Interval:           &interval,
-			UnhealthyThreshold: &unhealthyThreshold,
-			HealthyThreshold:   &healthyThreshold,
-			HealthChecker: &core.HealthCheck_HttpHealthCheck_{
-				HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
-					Host: "contour-envoy-healthcheck",
-					Path: healthCheckPath,
-				},
+	c.HealthChecks = []*core.HealthCheck{{
+		Timeout:            &timeout,
+		Interval:           &interval,
+		UnhealthyThreshold: &unhealthyThreshold,
+		HealthyThreshold:   &healthyThreshold,
+		HealthChecker: &core.HealthCheck_HttpHealthCheck_{
+			HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
+				Host: "contour-envoy-healthcheck",
+				Path: healthCheckPath,
 			},
 		},
-	}
+	}}
 	c.DrainConnectionsOnHostRemoval = drainConnOnHostRemoval
 	return c
 }
