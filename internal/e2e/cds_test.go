@@ -762,7 +762,7 @@ func TestClusterWithHealthChecks(t *testing.T) {
 	}, streamCDS(t, cc))
 }
 
-// Test that contour correctly recognises the "contour.heptio.com/upstream-protocol.tls"
+// Test that contour correctly recognizes the "contour.heptio.com/upstream-protocol.tls"
 // service annotation.
 func TestClusterServiceTLSBackend(t *testing.T) {
 	rh, cc, done := setup(t)
