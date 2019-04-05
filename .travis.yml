@@ -5,6 +5,9 @@ go:
 
 sudo: false
 
+env:
+  - GOPROXY=https://gocenter.io
+
 install:
   - make download
 
