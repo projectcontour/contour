@@ -49,7 +49,7 @@ local: $(LOCAL_BOOTSTRAP_CONFIG)
 		--mount type=bind,source=$(CURDIR),target=/config \
 		-p 9001:9001 \
 		-p 8002:8002 \
-		docker.io/envoyproxy/envoy-alpine:v1.9.0 \
+		docker.io/envoyproxy/envoy-alpine:v1.9.1 \
 		envoy \
 		--config-path /config/$< \
 		--service-node node0 \
