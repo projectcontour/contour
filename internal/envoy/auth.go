@@ -15,18 +15,13 @@ package envoy
 
 import "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 
-// UpstreamTLSContext creates an ALPN h2 enabled TLS Context.
-func UpstreamTLSContext(protocol string) *auth.UpstreamTlsContext {
+// UpstreamTLSContext creates an auth.UpstreamTlsContext. By default
+// UpstreamTLSContext returns a HTTP/1.1 TLS enabled context. A list of
+// additional ALPN protocols can be provided.
+func UpstreamTLSContext(alpnProtocols ...string) *auth.UpstreamTlsContext {
 	return &auth.UpstreamTlsContext{
 		CommonTlsContext: &auth.CommonTlsContext{
-			AlpnProtocols: alpnProtocols(protocol),
+			AlpnProtocols: alpnProtocols,
 		},
 	}
-}
-
-func alpnProtocols(protocol string) []string {
-	if protocol == "tls" {
-		return nil
-	}
-	return []string{"h2"}
 }

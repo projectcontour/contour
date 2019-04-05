@@ -46,9 +46,9 @@ func httpCluster(service *dag.HTTPService) *v2.Cluster {
 
 	switch service.Protocol {
 	case "tls":
-		c.TlsContext = UpstreamTLSContext(service.Protocol)
+		c.TlsContext = UpstreamTLSContext()
 	case "h2":
-		c.TlsContext = UpstreamTLSContext(service.Protocol)
+		c.TlsContext = UpstreamTLSContext("h2")
 		fallthrough
 	case "h2c":
 		c.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
