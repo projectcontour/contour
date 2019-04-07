@@ -286,9 +286,9 @@ metadata:
   namespace: www-admin
 spec:
   delegations:
-    secretName: example-com-wildcard
-    targetNamespaces:
-    - example-com
+    - secretName: example-com-wildcard
+      targetNamespaces:
+      - example-com
 ---
 apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute

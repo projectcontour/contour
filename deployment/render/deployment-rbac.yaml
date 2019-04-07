@@ -164,6 +164,23 @@ spec:
   names:
     plural: tlscertificatedelegations
     kind: TLSCertificateDelegation
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            delegations:
+              type: array
+              items:
+                type: object
+                required:
+                  - secretName
+                  - targetNamespaces
+                properties:
+                  match:
+                    type: string
+                  targetNamespaces:
+                    type: array
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
