@@ -89,10 +89,10 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 				}},
 			}},
 			Clusters: []api.Cluster{{
-				Name:           "contour",
-				ConnectTimeout: 5 * time.Second,
-				Type:           api.Cluster_STRICT_DNS,
-				LbPolicy:       api.Cluster_ROUND_ROBIN,
+				Name:                 "contour",
+				ConnectTimeout:       5 * time.Second,
+				ClusterDiscoveryType: ClusterDiscoveryType(api.Cluster_STRICT_DNS),
+				LbPolicy:             api.Cluster_ROUND_ROBIN,
 				LoadAssignment: &api.ClusterLoadAssignment{
 					ClusterName: "contour",
 					Endpoints: []endpoint.LocalityLbEndpoints{{
@@ -118,10 +118,10 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 					}},
 				},
 			}, {
-				Name:           "service_stats",
-				ConnectTimeout: 250 * time.Millisecond,
-				Type:           api.Cluster_LOGICAL_DNS,
-				LbPolicy:       api.Cluster_ROUND_ROBIN,
+				Name:                 "service_stats",
+				ConnectTimeout:       250 * time.Millisecond,
+				ClusterDiscoveryType: ClusterDiscoveryType(api.Cluster_LOGICAL_DNS),
+				LbPolicy:             api.Cluster_ROUND_ROBIN,
 				LoadAssignment: &api.ClusterLoadAssignment{
 					ClusterName: "service_stats",
 					Endpoints: []endpoint.LocalityLbEndpoints{{

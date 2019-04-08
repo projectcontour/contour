@@ -512,9 +512,9 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 		VersionInfo: "0",
 		Resources: []types.Any{
 			any(t, &v2.Cluster{
-				Name:        "default/kuard/8080/da39a3ee5e",
-				AltStatName: "default_kuard_8080",
-				Type:        v2.Cluster_EDS,
+				Name:                 "default/kuard/8080/da39a3ee5e",
+				AltStatName:          "default_kuard_8080",
+				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   envoy.ConfigSource("contour"),
 					ServiceName: "default/kuard",
@@ -558,9 +558,9 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 		VersionInfo: "0",
 		Resources: []types.Any{
 			any(t, &v2.Cluster{
-				Name:        "default/kuard/8080/da39a3ee5e",
-				AltStatName: "default_kuard_8080",
-				Type:        v2.Cluster_EDS,
+				Name:                 "default/kuard/8080/da39a3ee5e",
+				AltStatName:          "default_kuard_8080",
+				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   envoy.ConfigSource("contour"),
 					ServiceName: "default/kuard",
@@ -684,9 +684,9 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 		VersionInfo: "0",
 		Resources: []types.Any{
 			any(t, &v2.Cluster{
-				Name:        "default/kuard/80/58d888c08a",
-				AltStatName: "default_kuard_80",
-				Type:        v2.Cluster_EDS,
+				Name:                 "default/kuard/80/58d888c08a",
+				AltStatName:          "default_kuard_80",
+				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   envoy.ConfigSource("contour"),
 					ServiceName: "default/kuard",
@@ -696,9 +696,9 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 				CommonLbConfig: envoy.ClusterCommonLBConfig(),
 			}),
 			any(t, &v2.Cluster{
-				Name:        "default/kuard/80/843e4ded8f",
-				AltStatName: "default_kuard_80",
-				Type:        v2.Cluster_EDS,
+				Name:                 "default/kuard/80/843e4ded8f",
+				AltStatName:          "default_kuard_80",
+				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   envoy.ConfigSource("contour"),
 					ServiceName: "default/kuard",
@@ -839,9 +839,9 @@ func streamCDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryRes
 
 func cluster(name, servicename, statName string) *v2.Cluster {
 	return &v2.Cluster{
-		Name:        name,
-		Type:        v2.Cluster_EDS,
-		AltStatName: statName,
+		Name:                 name,
+		ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+		AltStatName:          statName,
 		EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 			EdsConfig:   envoy.ConfigSource("contour"),
 			ServiceName: servicename,

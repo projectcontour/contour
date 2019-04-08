@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.35.1 // indirect
-	github.com/envoyproxy/go-control-plane v0.6.8
+	github.com/envoyproxy/go-control-plane v0.6.9
 	github.com/evanphx/json-patch v4.1.0+incompatible
 	github.com/gogo/googleapis v1.1.0 // indirect
 	github.com/gogo/protobuf v1.2.0
