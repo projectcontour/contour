@@ -82,6 +82,7 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 											"name": sv(util.Router),
 										}),
 									),
+									"normalize_path": {Kind: &types.Value_BoolValue{BoolValue: true}},
 								},
 							},
 						},

@@ -81,7 +81,8 @@ func TestBootstrap(t *testing.T) {
                       ]
                     }
                   },
-                  "stat_prefix": "stats"
+                  "stat_prefix": "stats",
+                  "normalize_path": true
                 }
               }
             ]
@@ -251,7 +252,8 @@ func TestBootstrap(t *testing.T) {
                       ]
                     }
                   },
-                  "stat_prefix": "stats"
+                  "stat_prefix": "stats",
+                  "normalize_path": true
                 }
               }
             ]
@@ -437,7 +439,8 @@ func TestBootstrap(t *testing.T) {
                       ]
                     }
                   },
-                  "stat_prefix": "stats"
+                  "stat_prefix": "stats",
+                  "normalize_path": true
                 }
               }
             ]
@@ -622,7 +625,8 @@ func TestBootstrap(t *testing.T) {
                       ]
                     }
                   },
-                  "stat_prefix": "stats"
+                  "stat_prefix": "stats",
+                  "normalize_path": true
                 }
               }
             ]
@@ -792,7 +796,8 @@ func TestBootstrap(t *testing.T) {
                       ]
                     }
                   },
-                  "stat_prefix": "stats"
+                  "stat_prefix": "stats",
+                  "normalize_path": true
                 }
               }
             ]
@@ -963,7 +968,8 @@ func TestBootstrap(t *testing.T) {
                       ]
                     }
                   },
-                  "stat_prefix": "stats"
+                  "stat_prefix": "stats",
+                  "normalize_path": true
                 }
               }
             ]
@@ -1134,7 +1140,8 @@ func TestBootstrap(t *testing.T) {
                       ]
                     }
                   },
-                  "stat_prefix": "stats"
+                  "stat_prefix": "stats",
+                  "normalize_path": true
                 }
               }
             ]
