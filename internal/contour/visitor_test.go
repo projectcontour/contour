@@ -58,9 +58,9 @@ func TestVisitClusters(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "default/example/443/da39a3ee5e",
-					AltStatName: "default_example_443",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/example/443/da39a3ee5e",
+					AltStatName:          "default_example_443",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/example",

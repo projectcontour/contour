@@ -109,11 +109,11 @@ func (s *grpcServer) StreamLoadStats(srv envoy_service_v2.LoadReportingService_S
 	return status.Errorf(codes.Unimplemented, "StreamLoadStats unimplemented")
 }
 
-func (s *grpcServer) IncrementalClusters(v2.ClusterDiscoveryService_IncrementalClustersServer) error {
+func (s *grpcServer) DeltaClusters(v2.ClusterDiscoveryService_DeltaClustersServer) error {
 	return status.Errorf(codes.Unimplemented, "IncrementalClusters unimplemented")
 }
 
-func (s *grpcServer) IncrementalRoutes(v2.RouteDiscoveryService_IncrementalRoutesServer) error {
+func (s *grpcServer) DeltaRoutes(v2.RouteDiscoveryService_DeltaRoutesServer) error {
 	return status.Errorf(codes.Unimplemented, "IncrementalRoutes unimplemented")
 }
 

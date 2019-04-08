@@ -64,9 +64,9 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "default/kuard/443/da39a3ee5e",
-					AltStatName: "default_kuard_443",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/kuard/443/da39a3ee5e",
+					AltStatName:          "default_kuard_443",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/kuard",
@@ -101,9 +101,9 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "default/kuard/443/da39a3ee5e",
-					AltStatName: "default_kuard_443",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/kuard/443/da39a3ee5e",
+					AltStatName:          "default_kuard_443",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/kuard/https",
@@ -142,9 +142,9 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "default/kuard/80/da39a3ee5e",
-					AltStatName: "default_kuard_80",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/kuard/80/da39a3ee5e",
+					AltStatName:          "default_kuard_80",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/kuard/http",
@@ -181,9 +181,9 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "beurocra-7fe4b4/tiny-cog-7fe4b4/443/da39a3ee5e",
-					AltStatName: "beurocratic-company-test-domain-1_tiny-cog-department-test-instance_443",
-					Type:        v2.Cluster_EDS,
+					Name:                 "beurocra-7fe4b4/tiny-cog-7fe4b4/443/da39a3ee5e",
+					AltStatName:          "beurocratic-company-test-domain-1_tiny-cog-department-test-instance_443",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "beurocratic-company-test-domain-1/tiny-cog-department-test-instance/svc-0",
@@ -230,9 +230,9 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "default/backend/80/da39a3ee5e",
-					AltStatName: "default_backend_80",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/backend/80/da39a3ee5e",
+					AltStatName:          "default_backend_80",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
@@ -242,9 +242,9 @@ func TestClusterVisit(t *testing.T) {
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 				&v2.Cluster{
-					Name:        "default/backend/8080/da39a3ee5e",
-					AltStatName: "default_backend_8080",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/backend/8080/da39a3ee5e",
+					AltStatName:          "default_backend_8080",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/alt",
@@ -287,9 +287,9 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "default/backend/80/c184349821",
-					AltStatName: "default_backend_80",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/backend/80/c184349821",
+					AltStatName:          "default_backend_80",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
@@ -350,9 +350,9 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "default/backend/80/7f8051653a",
-					AltStatName: "default_backend_80",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/backend/80/7f8051653a",
+					AltStatName:          "default_backend_80",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
@@ -406,9 +406,9 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "default/backend/80/f3b72af6a9",
-					AltStatName: "default_backend_80",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/backend/80/f3b72af6a9",
+					AltStatName:          "default_backend_80",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
@@ -449,9 +449,9 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "default/backend/80/8bf87fefba",
-					AltStatName: "default_backend_80",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/backend/80/8bf87fefba",
+					AltStatName:          "default_backend_80",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
@@ -492,9 +492,9 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "default/backend/80/40633a6ca9",
-					AltStatName: "default_backend_80",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/backend/80/40633a6ca9",
+					AltStatName:          "default_backend_80",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
@@ -535,9 +535,9 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "default/backend/80/843e4ded8f",
-					AltStatName: "default_backend_80",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/backend/80/843e4ded8f",
+					AltStatName:          "default_backend_80",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
@@ -578,9 +578,9 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "default/backend/80/58d888c08a",
-					AltStatName: "default_backend_80",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/backend/80/58d888c08a",
+					AltStatName:          "default_backend_80",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
@@ -628,9 +628,9 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "default/backend/80/58d888c08a",
-					AltStatName: "default_backend_80",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/backend/80/58d888c08a",
+					AltStatName:          "default_backend_80",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
@@ -640,9 +640,9 @@ func TestClusterVisit(t *testing.T) {
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 				&v2.Cluster{
-					Name:        "default/backend/80/843e4ded8f",
-					AltStatName: "default_backend_80",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/backend/80/843e4ded8f",
+					AltStatName:          "default_backend_80",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
@@ -684,9 +684,9 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "default/backend/80/86d7a9c129",
-					AltStatName: "default_backend_80",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/backend/80/86d7a9c129",
+					AltStatName:          "default_backend_80",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
@@ -729,9 +729,9 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "default/kuard/80/da39a3ee5e",
-					AltStatName: "default_kuard_80",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/kuard/80/da39a3ee5e",
+					AltStatName:          "default_kuard_80",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/kuard/http",
@@ -779,9 +779,9 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:        "default/kuard/443/da39a3ee5e",
-					AltStatName: "default_kuard_443",
-					Type:        v2.Cluster_EDS,
+					Name:                 "default/kuard/443/da39a3ee5e",
+					AltStatName:          "default_kuard_443",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/kuard/https",
