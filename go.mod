@@ -29,10 +29,10 @@ require (
 	github.com/prometheus/procfs v0.0.0-20190117184657-bf6a532e95b1 // indirect
 	github.com/sirupsen/logrus v1.3.0
 	github.com/spf13/pflag v1.0.3 // indirect
-	golang.org/x/crypto v0.0.0-20190128193316-c7b33c32a30b // indirect
-	golang.org/x/net v0.0.0-20190125091013-d26f9f9a57f3 // indirect
+	golang.org/x/crypto v0.0.0-20190404164418-38d8ce5564a5 // indirect
+	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3 // indirect
 	golang.org/x/oauth2 v0.0.0-20190115181402-5dab4167f31c // indirect
-	golang.org/x/sys v0.0.0-20190124100055-b90733256f2e // indirect
+	golang.org/x/sys v0.0.0-20190405154228-4b34438f7a67 // indirect
 	google.golang.org/genproto v0.0.0-20190128161407-8ac453e89fca // indirect
 	google.golang.org/grpc v1.18.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
