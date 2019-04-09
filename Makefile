@@ -91,9 +91,15 @@ render:
 	@echo Rendering deployment files...
 	@(cd deployment && bash render.sh)
 
-updategenerated:
+pwd := $(shell pwd)
+repo_dir := /go/src/github.com/heptio/contour
+crd_gen := docker run --rm -v $(pwd)/apis:$(repo_dir)/apis -w $(repo_dir) crd_gen_container:latest hack/update-generated-crd-code.sh
+updategenerated: crd_gen_container
 	@echo Updating CRD generated code...
-	@(bash hack/update-generated-crd-code.sh)
+	@$(crd_gen) 2>/dev/null
+
+crd_gen_container:
+	docker build . -f ./hack/crd-gen-dockerfile -t crd_gen_container:latest
 
 gofmt:
 	@echo Checking code is gofmted

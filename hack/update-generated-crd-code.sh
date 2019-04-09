@@ -1,4 +1,3 @@
-
 #!/bin/bash -e
 #
 # Copyright © 2018 Heptio
@@ -15,10 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-HACK_DIR=$(dirname "${BASH_SOURCE}")
-REPO_ROOT=${HACK_DIR}/..
+CODE_GENERATOR_DIR=$(go env GOPATH)/src/k8s.io/code-generator
 
-${REPO_ROOT}/vendor/k8s.io/code-generator/generate-groups.sh \
+GO111MODULE=on ${CODE_GENERATOR_DIR}/generate-groups.sh \
   all \
   github.com/heptio/contour/apis/generated \
   github.com/heptio/contour/apis \

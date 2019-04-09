@@ -1,0 +1,19 @@
+FROM golang:1.12.1 AS build
+
+ENV CODE_GEN_VER 1.12.6
+ENV CODE_GEN_PATH $GOPATH/src/k8s.io/code-generator
+RUN mkdir -p ${CODE_GEN_PATH} && \
+    curl -sSLO https://github.com/kubernetes/code-generator/archive/kubernetes-${CODE_GEN_VER}.tar.gz && \
+    tar xzf kubernetes-${CODE_GEN_VER}.tar.gz -C ${CODE_GEN_PATH} --strip-components=1
+
+WORKDIR ${CODE_GEN_PATH}
+ENV GOFLAGS -mod=vendor
+RUN bash -c "go install ./cmd/{defaulter-gen,client-gen,lister-gen,informer-gen,deepcopy-gen}"
+
+WORKDIR /go/src/github.com/heptio/contour
+ENV GOPROXY=https://gocenter.io
+COPY go.mod ./
+
+COPY apis apis
+COPY hack hack
+RUN GO111MODULE=on go mod vendor
