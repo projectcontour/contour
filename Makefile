@@ -2,7 +2,7 @@ PROJECT = contour
 REGISTRY ?= gcr.io/heptio-images
 IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
-PKGS := $(shell go list ./cmd/... ./internal/...)
+PKGS := $(shell go list -mod=readonly ./cmd/... ./internal/...)
 LOCAL_BOOTSTRAP_CONFIG = config.yaml
 TAG_LATEST ?= false
 
@@ -12,10 +12,10 @@ VERSION ?= $(GIT_REF)
 export GO111MODULE=on
 
 test: install
-	go test ./...
+	go test -mod=readonly ./...
 
 test-race: | test
-	go test -race ./...
+	go test -race -mod=readonly ./...
 
 vet: | test
 	go vet ./...
@@ -25,7 +25,7 @@ check: test test-race vet gofmt misspell unconvert ineffassign
 	@(cd deployment && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 
 install:
-	go install -v -tags "oidc gcp" ./...
+	go install -mod=readonly -v -tags "oidc gcp" ./...
 
 download:
 	go mod download
