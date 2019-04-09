@@ -163,6 +163,11 @@ func main() {
 		// this point to avoid the Go flag package from rejecting flags which are defined
 		// in kingpin. See #371
 		flag.Parse()
+		// Always let glog logs to stderr rather than files. Otherwise,
+		// once it attempts to log to files under /tmp, will crash the
+		// whole process since the path may not be accessible in
+		// container environment. See #959
+		flag.Lookup("logtostderr").Value.Set("true")
 
 		reh.IngressRouteRootNamespaces = parseRootNamespaces(ingressrouteRootNamespaceFlag)
 
