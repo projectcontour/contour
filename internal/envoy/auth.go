@@ -18,6 +18,32 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 )
 
+var (
+	// This is the list of default ciphers used by contour 1.9.1. A handful are
+	// commented out, as they're arguably less secure. They're also unnecessary
+	// - most of the clients that might need to use the commented ciphers are
+	// unable to connect without TLS 1.0, which contour never enables.
+	//
+	// This list is ignored if the client and server negotiate TLS 1.3.
+	//
+	// The commented ciphers are left in place to simplify updating this list for future
+	// versions of envoy.
+	ciphers = []string{
+		"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
+		"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+		"ECDHE-ECDSA-AES128-SHA",
+		"ECDHE-RSA-AES128-SHA",
+		//"AES128-GCM-SHA256",
+		//"AES128-SHA",
+		"ECDHE-ECDSA-AES256-GCM-SHA384",
+		"ECDHE-RSA-AES256-GCM-SHA384",
+		"ECDHE-ECDSA-AES256-SHA",
+		"ECDHE-RSA-AES256-SHA",
+		//"AES256-GCM-SHA384",
+		//"AES256-SHA",
+	}
+)
+
 // UpstreamTLSContext creates an auth.UpstreamTlsContext. By default
 // UpstreamTLSContext returns a HTTP/1.1 TLS enabled context. A list of
 // additional ALPN protocols can be provided.
@@ -36,6 +62,7 @@ func DownstreamTLSContext(cert, key []byte, tlsMinProtoVersion auth.TlsParameter
 			TlsParams: &auth.TlsParameters{
 				TlsMinimumProtocolVersion: tlsMinProtoVersion,
 				TlsMaximumProtocolVersion: auth.TlsParameters_TLSv1_3,
+				CipherSuites:              ciphers,
 			},
 			TlsCertificates: []*auth.TlsCertificate{{
 				CertificateChain: &core.DataSource{
