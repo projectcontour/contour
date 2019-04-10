@@ -18,7 +18,7 @@ Envoy's support of RateLimiting requires a rate limiting service to be exposed a
 
 ## High-level Design
 
-RateLimiting will be disabled by default and will will be required to be enabled.
+RateLimiting will be disabled by default and will be required to be enabled.
 The RateLimiting implementation will determine if the request sent to Envoy should be serviced or not.
 Contour will require configuration to enable the rate limiting HTTP filter as well as pointing Envoy to the rate limit implementation service.
 The reference implementation from Lyft relies on an instance of Redis to be available. 
