@@ -18,10 +18,9 @@ package dag
 import (
 	"time"
 
-	"k8s.io/api/core/v1"
-
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // A DAG represents a directed acylic graph of objects representing the relationship
@@ -61,12 +60,27 @@ type Route struct {
 	// TODO(dfc) this should go on the service
 	Websocket bool
 
+	// TimeoutPolicy defines the timeout request/idle
+	TimeoutPolicy *TimeoutPolicy
+
+	// RetryPolicy defines the retry / number / timeout options for a route
+	RetryPolicy *RetryPolicy
+
+	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
+	PrefixRewrite string
+}
+
+// TimeoutPolicy defines the timeout request/idle
+type TimeoutPolicy struct {
 	// A timeout applied to requests on this route.
 	// A timeout of zero implies "use envoy's default"
 	// A timeout of -1 represents "infinity"
 	// TODO(dfc) should this move to service?
 	Timeout time.Duration
+}
 
+// RetryPolicy defines the retry / number / timeout options
+type RetryPolicy struct {
 	// RetryOn specifies the conditions under which retry takes place.
 	// If empty, retries will not be performed.
 	RetryOn string
@@ -78,9 +92,6 @@ type Route struct {
 	// PerTryTimeout specifies the timeout per retry attempt.
 	// Ignored if RetryOn is blank.
 	PerTryTimeout time.Duration
-
-	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
-	PrefixRewrite string
 }
 
 func (r *Route) addHTTPService(s *HTTPService) {
