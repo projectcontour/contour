@@ -40,10 +40,10 @@ func (xh *xdsHandler) fetch(req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, er
 	}
 	resources, err := toAny(r, toFilter(req.ResourceNames))
 	return &v2.DiscoveryResponse{
-		VersionInfo: "0",
+		VersionInfo: req.VersionInfo,
 		Resources:   resources,
 		TypeUrl:     r.TypeURL(),
-		Nonce:       "0",
+		Nonce:       req.ResponseNonce,
 	}, err
 }
 
@@ -117,10 +117,10 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 				}
 
 				resp := &v2.DiscoveryResponse{
-					VersionInfo: "0",
+					VersionInfo: req.VersionInfo,
 					Resources:   resources,
 					TypeUrl:     r.TypeURL(),
-					Nonce:       "0",
+					Nonce:       req.ResponseNonce,
 				}
 				if err := st.Send(resp); err != nil {
 					return err

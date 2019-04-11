@@ -57,7 +57,6 @@ func TestAddRemoveEndpoints(t *testing.T) {
 
 	// check that it's been translated correctly.
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "0",
 		Resources: []types.Any{
 			any(t, clusterloadassignment(
 				"super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http",
@@ -71,17 +70,14 @@ func TestAddRemoveEndpoints(t *testing.T) {
 			)),
 		},
 		TypeUrl: endpointType,
-		Nonce:   "0",
 	}, streamEDS(t, cc))
 
 	// remove e1 and check that the EDS cache is now empty.
 	rh.OnDelete(e1)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "0",
-		Resources:   []types.Any{},
-		TypeUrl:     endpointType,
-		Nonce:       "0",
+		Resources: []types.Any{},
+		TypeUrl:   endpointType,
 	}, streamEDS(t, cc))
 }
 
@@ -139,7 +135,6 @@ func TestAddEndpointComplicated(t *testing.T) {
 	rh.OnAdd(e1)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "0",
 		Resources: []types.Any{
 			any(t, clusterloadassignment(
 				"default/kuard/admin",
@@ -153,7 +148,6 @@ func TestAddEndpointComplicated(t *testing.T) {
 			)),
 		},
 		TypeUrl: endpointType,
-		Nonce:   "0",
 	}, streamEDS(t, cc))
 }
 
@@ -199,7 +193,6 @@ func TestEndpointFilter(t *testing.T) {
 	rh.OnAdd(e1)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "0",
 		Resources: []types.Any{
 			any(t, clusterloadassignment(
 				"default/kuard/foo",
@@ -208,13 +201,10 @@ func TestEndpointFilter(t *testing.T) {
 			)),
 		},
 		TypeUrl: endpointType,
-		Nonce:   "0",
 	}, streamEDS(t, cc, "default/kuard/foo"))
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "0",
-		TypeUrl:     endpointType,
-		Nonce:       "0",
+		TypeUrl: endpointType,
 	}, streamEDS(t, cc, "default/kuard/bar"))
 
 }
@@ -235,12 +225,10 @@ func TestIssue602(t *testing.T) {
 
 	// Assert endpoint was added
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "0",
 		Resources: []types.Any{
 			any(t, clusterloadassignment("default/simple", envoy.LBEndpoint("192.168.183.24", 8080))),
 		},
 		TypeUrl: endpointType,
-		Nonce:   "0",
 	}, streamEDS(t, cc))
 
 	// e2 is the same as e1, but without endpoint subsets
@@ -248,10 +236,8 @@ func TestIssue602(t *testing.T) {
 	rh.OnUpdate(e1, e2)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "0",
-		Resources:   []types.Any{},
-		TypeUrl:     endpointType,
-		Nonce:       "0",
+		Resources: []types.Any{},
+		TypeUrl:   endpointType,
 	}, streamEDS(t, cc))
 }
 
