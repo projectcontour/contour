@@ -15,10 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-HACK_DIR=$(dirname "${BASH_SOURCE}")
-REPO_ROOT=${HACK_DIR}/..
-
-${REPO_ROOT}/vendor/k8s.io/code-generator/generate-groups.sh \
+VERSION=$(go list -m all | grep k8s.io/code-generator | rev | cut -d"-" -f1 | cut -d" " -f1 | rev)
+TMP_DIR=$(mktemp -d)
+git clone https://github.com/kubernetes/code-generator.git ${TMP_DIR}
+(cd ${TMP_DIR} && git reset --hard ${VERSION} && go mod init)
+${TMP_DIR}/generate-groups.sh \
   all \
   github.com/heptio/contour/apis/generated \
   github.com/heptio/contour/apis \
