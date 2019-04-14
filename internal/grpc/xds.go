@@ -16,6 +16,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync/atomic"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -100,7 +101,7 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 			log.Info("stream_wait")
 
 			// now we wait for a notification, if this is the first time through the loop
-			// then last will be zero and that will trigger a notification immediately.
+			// then last will be less than zero and that will trigger a notification immediately.
 			r.Register(ch, last)
 			select {
 			case last = <-ch:
@@ -117,10 +118,10 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 				}
 
 				resp := &v2.DiscoveryResponse{
-					VersionInfo: "0",
+					VersionInfo: strconv.Itoa(last),
 					Resources:   resources,
 					TypeUrl:     r.TypeURL(),
-					Nonce:       "0",
+					Nonce:       strconv.Itoa(last),
 				}
 				if err := st.Send(resp); err != nil {
 					return err
