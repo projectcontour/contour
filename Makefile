@@ -56,13 +56,13 @@ local: $(LOCAL_BOOTSTRAP_CONFIG)
 		--service-cluster cluster0
 
 staticcheck:
-	@go get honnef.co/go/tools/cmd/staticcheck
+	go install honnef.co/go/tools/cmd/staticcheck
 	staticcheck \
 		-checks all,-ST1003 \
 		$(PKGS)
 
 misspell:
-	@go get github.com/client9/misspell/cmd/misspell
+	go install github.com/client9/misspell/cmd/misspell
 	misspell \
 		-i clas \
 		-locale US \
@@ -70,21 +70,21 @@ misspell:
 		cmd/* internal/* docs/* design/* *.md
 
 unconvert:
-	@go get github.com/mdempsky/unconvert
+	go install github.com/mdempsky/unconvert
 	unconvert -v $(PKGS)
 
 ineffassign:
-	@go get github.com/gordonklaus/ineffassign
+	go install github.com/gordonklaus/ineffassign
 	find $(SRCDIRS) -name '*.go' | xargs ineffassign
 
 pedantic: check unparam errcheck
 
 unparam:
-	@go get mvdan.cc/unparam
+	go install mvdan.cc/unparam
 	unparam ./...
 
 errcheck:
-	@go get github.com/kisielk/errcheck
+	go install github.com/kisielk/errcheck
 	errcheck $(PKGS)
 
 render:
