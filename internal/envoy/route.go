@@ -60,40 +60,42 @@ func RouteRoute(r *dag.Route, services []*dag.HTTPService) *route.Route_Route {
 }
 
 func timeout(r *dag.Route) *time.Duration {
-	if r.TimeoutPolicy != nil {
-		switch r.TimeoutPolicy.Timeout {
-		case 0:
-			// no timeout specified
-			return nil
-		case -1:
-			// infinite timeout, set timeout value to a pointer to zero which tells
-			// envoy "infinite timeout"
-			return duration(0)
-		default:
-			return duration(r.TimeoutPolicy.Timeout)
-		}
+	if r.TimeoutPolicy == nil {
+		return nil
 	}
-	return nil
+
+	switch r.TimeoutPolicy.Timeout {
+	case 0:
+		// no timeout specified
+		return nil
+	case -1:
+		// infinite timeout, set timeout value to a pointer to zero which tells
+		// envoy "infinite timeout"
+		return duration(0)
+	default:
+		return duration(r.TimeoutPolicy.Timeout)
+	}
 }
 
 func retryPolicy(r *dag.Route) *route.RetryPolicy {
-	if r.RetryPolicy != nil {
-		if r.RetryPolicy.RetryOn == "" {
-			return nil
-		}
-		rp := &route.RetryPolicy{
-			RetryOn: r.RetryPolicy.RetryOn,
-		}
-		if r.RetryPolicy.NumRetries > 0 {
-			rp.NumRetries = u32(r.RetryPolicy.NumRetries)
-		}
-		if r.RetryPolicy.PerTryTimeout > 0 {
-			timeout := r.RetryPolicy.PerTryTimeout
-			rp.PerTryTimeout = &timeout
-		}
-		return rp
+	if r.RetryPolicy == nil {
+		return nil
 	}
-	return nil
+	if r.RetryPolicy.RetryOn == "" {
+		return nil
+	}
+
+	rp := &route.RetryPolicy{
+		RetryOn: r.RetryPolicy.RetryOn,
+	}
+	if r.RetryPolicy.NumRetries > 0 {
+		rp.NumRetries = u32(r.RetryPolicy.NumRetries)
+	}
+	if r.RetryPolicy.PerTryTimeout > 0 {
+		timeout := r.RetryPolicy.PerTryTimeout
+		rp.PerTryTimeout = &timeout
+	}
+	return rp
 }
 
 // UpgradeHTTPS returns a route Action that redirects the request to HTTPS.
