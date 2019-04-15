@@ -27,8 +27,9 @@ import (
 )
 
 const (
-	holdoffDelay    = 100 * time.Millisecond
-	holdoffMaxDelay = 500 * time.Millisecond
+	holdoffDelay      = 100 * time.Millisecond
+	holdoffMaxDelay   = 500 * time.Millisecond
+	holdoffMaxPending = 500
 )
 
 // A HoldoffNotifier delays calls to OnChange in the hope of
@@ -53,32 +54,41 @@ func (hn *HoldoffNotifier) OnChange(builder *dag.Builder) {
 	if hn.timer != nil {
 		hn.timer.Stop()
 	}
-	since := time.Since(hn.last)
-	if since > holdoffMaxDelay {
-		// update immediately
-		hn.WithField("last_update", since).WithField("pending", hn.pending.reset()).Info("forcing update")
-		hn.Notifier.OnChange(builder)
-		hn.last = time.Now()
-		hn.Metrics.SetDAGRebuiltMetric(hn.last.Unix())
-		return
+	if pending := hn.pending.get(); pending > 0 {
+		since := time.Since(hn.last)
+		if since > holdoffMaxDelay || pending > holdoffMaxPending {
+			// update immediately
+			hn.pending.reset()
+			hn.WithField("last_update", since).WithField("pending", pending).Info("forcing update")
+			hn.Notifier.OnChange(builder)
+			hn.last = time.Now()
+			hn.Metrics.SetDAGRebuiltMetric(hn.last.Unix())
+			return
+		}
 	}
 
 	hn.timer = time.AfterFunc(holdoffDelay, func() {
 		hn.mu.Lock()
 		defer hn.mu.Unlock()
-		hn.WithField("last_update", time.Since(hn.last)).WithField("pending", hn.pending.reset()).Info("performing delayed update")
-		hn.Notifier.OnChange(builder)
-		hn.last = time.Now()
-		hn.Metrics.SetDAGRebuiltMetric(hn.last.Unix())
+		if pending := hn.pending.get(); pending > 0 {
+			hn.pending.reset()
+			hn.WithField("last_update", time.Since(hn.last)).WithField("pending", pending).Info("performing delayed update")
+			hn.Notifier.OnChange(builder)
+			hn.last = time.Now()
+			hn.Metrics.SetDAGRebuiltMetric(hn.last.Unix())
+		}
 	})
 }
 
 // counter holds an atomically incrementing counter.
 type counter uint64
 
+func (c *counter) get() uint64 {
+	return atomic.LoadUint64((*uint64)(c))
+}
 func (c *counter) inc() uint64 {
 	return atomic.AddUint64((*uint64)(c), 1)
 }
-func (c *counter) reset() uint64 {
-	return atomic.SwapUint64((*uint64)(c), 0)
+func (c *counter) reset() {
+	atomic.StoreUint64((*uint64)(c), 0)
 }
