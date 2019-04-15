@@ -69,6 +69,10 @@ type Route struct {
 	PermitInsecure bool `json:"permitInsecure,omitempty"`
 	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
 	PrefixRewrite string `json:"prefixRewrite,omitempty"`
+	// The timeout policy for this route
+	TimeoutPolicy *TimeoutPolicy `json:"timeoutPolicy,omitempty"`
+	// // The retry policy for this route
+	RetryPolicy *RetryPolicy `json:"retryPolicy,omitempty"`
 }
 
 // TCPProxy contains the set of services to proxy TCP connections.
@@ -118,6 +122,26 @@ type HealthCheck struct {
 	UnhealthyThresholdCount uint32 `json:"unhealthyThresholdCount"`
 	// The number of healthy health checks required before a host is marked healthy
 	HealthyThresholdCount uint32 `json:"healthyThresholdCount"`
+}
+
+// TimeoutPolicy define the attributes associated with timeout
+type TimeoutPolicy struct {
+	// Timeout for receiving a response from the server after processing a request from client.
+	// If not supplied the timeout duration is undefined.
+	Request string `json:"request"`
+}
+
+// RetryPolicy define the attributes associated with retrying policy
+type RetryPolicy struct {
+	// NumRetries is maximum allowed number of retries.
+	// If not supplied, the number of retries is zero.
+	NumRetries int `json:"count"`
+	// PerTryTimeout specifies the timeout per retry attempt.
+	// Ignored if NumRetries is not supplied.
+	PerTryTimeout string `json:"perTryTimeout,omitempty"`
+	// Define what status codes to apply the retry policy
+	// Defaults to 5xx
+	Codes []string `json:"onStatusCodes,omitempty"`
 }
 
 // Status reports the current state of the IngressRoute

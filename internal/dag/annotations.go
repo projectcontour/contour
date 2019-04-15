@@ -49,26 +49,30 @@ const (
 // If the value is present, but malformed, the timeout value is valid, and represents
 // infinite timeout.
 func parseAnnotationTimeout(annotations map[string]string, key string) time.Duration {
-	timeoutStr := annotations[key]
+	timeout := annotations[key]
+	return parseTimeout(timeout)
+}
+
+func parseTimeout(timeout string) time.Duration {
 	// Error or unspecified is interpreted as no timeout specified, use envoy defaults
-	if timeoutStr == "" {
+	if timeout == "" {
 		return noTimeout
 	}
 	// Interpret "infinity" explicitly as an infinite timeout, which envoy config
 	// expects as a timeout of 0. This could be specified with the duration string
 	// "0s" but want to give an explicit out for operators.
-	if timeoutStr == "infinity" {
+	if timeout == "infinity" {
 		return infiniteTimeout
 	}
 
-	timeoutParsed, err := time.ParseDuration(timeoutStr)
+	d, err := time.ParseDuration(timeout)
 	if err != nil {
 		// TODO(cmalonty) plumb a logger in here so we can log this error.
 		// Assuming infinite duration is going to surprise people less for
 		// a not-parseable duration than a implicit 15 second one.
 		return infiniteTimeout
 	}
-	return timeoutParsed
+	return d
 }
 
 // parseAnnotation parses the annotation map for the supplied key.

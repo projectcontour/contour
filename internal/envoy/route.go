@@ -60,7 +60,11 @@ func RouteRoute(r *dag.Route, services []*dag.HTTPService) *route.Route_Route {
 }
 
 func timeout(r *dag.Route) *time.Duration {
-	switch r.Timeout {
+	if r.TimeoutPolicy == nil {
+		return nil
+	}
+
+	switch r.TimeoutPolicy.Timeout {
 	case 0:
 		// no timeout specified
 		return nil
@@ -69,22 +73,26 @@ func timeout(r *dag.Route) *time.Duration {
 		// envoy "infinite timeout"
 		return duration(0)
 	default:
-		return duration(r.Timeout)
+		return duration(r.TimeoutPolicy.Timeout)
 	}
 }
 
 func retryPolicy(r *dag.Route) *route.RetryPolicy {
-	if r.RetryOn == "" {
+	if r.RetryPolicy == nil {
 		return nil
 	}
+	if r.RetryPolicy.RetryOn == "" {
+		return nil
+	}
+
 	rp := &route.RetryPolicy{
-		RetryOn: r.RetryOn,
+		RetryOn: r.RetryPolicy.RetryOn,
 	}
-	if r.NumRetries > 0 {
-		rp.NumRetries = u32(r.NumRetries)
+	if r.RetryPolicy.NumRetries > 0 {
+		rp.NumRetries = u32(r.RetryPolicy.NumRetries)
 	}
-	if r.PerTryTimeout > 0 {
-		timeout := r.PerTryTimeout
+	if r.RetryPolicy.PerTryTimeout > 0 {
+		timeout := r.RetryPolicy.PerTryTimeout
 		rp.PerTryTimeout = &timeout
 	}
 	return rp

@@ -2176,6 +2176,200 @@ func TestRouteRetryAnnotations(t *testing.T) {
 	}}, nil)
 }
 
+// issue 815, support for retry-on, num-retries, and per-try-timeout in IngressRoute
+func TestRouteRetryIngressRoute(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(s1)
+
+	i1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				RetryPolicy: &ingressroutev1.RetryPolicy{
+					NumRetries:    7,
+					PerTryTimeout: "120ms",
+					Codes:         []string{"50x", "gateway-error"},
+				},
+				Services: []ingressroutev1.Service{{
+					Name: "backend",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	rh.OnAdd(i1)
+	assertRDS(t, cc, "2", []route.VirtualHost{{
+		Name:    "test2.test.com",
+		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Routes: []route.Route{{
+			Match:  envoy.PrefixMatch("/"), // match all
+			Action: routeretry("default/backend/80/da39a3ee5e", "50x,gateway-error", 7, 120*time.Millisecond),
+		}},
+	}}, nil)
+}
+
+// issue 815, support for timeoutpolicy in IngressRoute
+func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
+	const (
+		durationInfinite  = time.Duration(0)
+		duration10Minutes = 10 * time.Minute
+	)
+
+	rh, cc, done := setup(t)
+	defer done()
+
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(s1)
+
+	// i1 is an _invalid_ timeout, which we interpret as _infinite_.
+	i1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "backend",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnAdd(i1)
+	assertRDS(t, cc, "2", []route.VirtualHost{{
+		Name:    "test2.test.com",
+		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Routes: []route.Route{{
+			Match:  envoy.PrefixMatch("/"), // match all
+			Action: routecluster("default/backend/80/da39a3ee5e"),
+		}},
+	}}, nil)
+
+	// i2 adds an _invalid_ timeout, which we interpret as _infinite_.
+	i2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
+					Request: "600",
+				},
+				Services: []ingressroutev1.Service{{
+					Name: "backend",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(i1, i2)
+	assertRDS(t, cc, "3", []route.VirtualHost{{
+		Name:    "test2.test.com",
+		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Routes: []route.Route{{
+			Match:  envoy.PrefixMatch("/"), // match all
+			Action: clustertimeout("default/backend/80/da39a3ee5e", durationInfinite),
+		}},
+	}}, nil)
+	// i3 corrects i2 to use a proper duration
+	i3 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
+					Request: "600s", // 10 * time.Minute
+				},
+				Services: []ingressroutev1.Service{{
+					Name: "backend",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(i2, i3)
+	assertRDS(t, cc, "4", []route.VirtualHost{{
+		Name:    "test2.test.com",
+		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Routes: []route.Route{{
+			Match:  envoy.PrefixMatch("/"), // match all
+			Action: clustertimeout("default/backend/80/da39a3ee5e", duration10Minutes),
+		}},
+	}}, nil)
+	// i4 updates i3 to explicitly request infinite timeout
+	i4 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
+					Request: "infinity",
+				},
+				Services: []ingressroutev1.Service{{
+					Name: "backend",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(i3, i4)
+	assertRDS(t, cc, "5", []route.VirtualHost{{
+		Name:    "test2.test.com",
+		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Routes: []route.Route{{
+			Match:  envoy.PrefixMatch("/"), // match all
+			Action: clustertimeout("default/backend/80/da39a3ee5e", durationInfinite),
+		}},
+	}}, nil)
+}
+
 // issue 681 Increase the e2e coverage of lb strategies
 func TestLoadBalancingStrategies(t *testing.T) {
 	rh, cc, done := setup(t)
