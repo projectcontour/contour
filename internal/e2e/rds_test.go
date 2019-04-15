@@ -2219,7 +2219,7 @@ func TestRouteRetryIngressRoute(t *testing.T) {
 	}
 
 	rh.OnAdd(i1)
-	assertRDS(t, cc, []route.VirtualHost{{
+	assertRDS(t, cc, "2", []route.VirtualHost{{
 		Name:    "test2.test.com",
 		Domains: []string{"test2.test.com", "test2.test.com:80"},
 		Routes: []route.Route{{
@@ -2272,7 +2272,7 @@ func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
 		},
 	}
 	rh.OnAdd(i1)
-	assertRDS(t, cc, []route.VirtualHost{{
+	assertRDS(t, cc, "2", []route.VirtualHost{{
 		Name:    "test2.test.com",
 		Domains: []string{"test2.test.com", "test2.test.com:80"},
 		Routes: []route.Route{{
@@ -2302,7 +2302,7 @@ func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
 		},
 	}
 	rh.OnUpdate(i1, i2)
-	assertRDS(t, cc, []route.VirtualHost{{
+	assertRDS(t, cc, "3", []route.VirtualHost{{
 		Name:    "test2.test.com",
 		Domains: []string{"test2.test.com", "test2.test.com:80"},
 		Routes: []route.Route{{
@@ -2331,7 +2331,7 @@ func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
 		},
 	}
 	rh.OnUpdate(i2, i3)
-	assertRDS(t, cc, []route.VirtualHost{{
+	assertRDS(t, cc, "4", []route.VirtualHost{{
 		Name:    "test2.test.com",
 		Domains: []string{"test2.test.com", "test2.test.com:80"},
 		Routes: []route.Route{{
@@ -2360,7 +2360,7 @@ func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
 		},
 	}
 	rh.OnUpdate(i3, i4)
-	assertRDS(t, cc, []route.VirtualHost{{
+	assertRDS(t, cc, "5", []route.VirtualHost{{
 		Name:    "test2.test.com",
 		Domains: []string{"test2.test.com", "test2.test.com:80"},
 		Routes: []route.Route{{
