@@ -409,10 +409,32 @@ func prefixRoute(ingress *v1beta1.Ingress, prefix string) *Route {
 		object:        ingress,
 		HTTPSUpgrade:  tlsRequired(ingress),
 		Websocket:     wr[prefix],
-		Timeout:       parseAnnotationTimeout(ingress.Annotations, annotationRequestTimeout),
-		RetryOn:       ingress.Annotations[annotationRetryOn],
-		NumRetries:    parseAnnotation(ingress.Annotations, annotationNumRetries),
-		PerTryTimeout: perTryTimeout,
+		TimeoutPolicy: timeoutPolicy(parseAnnotationTimeout(ingress.Annotations, annotationRequestTimeout)),
+		RetryPolicy: retryPolicy(
+			ingress.Annotations[annotationRetryOn],
+			parseAnnotation(ingress.Annotations, annotationNumRetries),
+			perTryTimeout),
+	}
+}
+
+func timeoutPolicy(timeout time.Duration) *TimeoutPolicy {
+	if timeout == 0 {
+		return nil
+	}
+
+	return &TimeoutPolicy{
+		Timeout: timeout,
+	}
+}
+
+func retryPolicy(retryon string, numretries int, pertrytimeout time.Duration) *RetryPolicy {
+	if retryon == "" {
+		return nil
+	}
+	return &RetryPolicy{
+		RetryOn:       retryon,
+		NumRetries:    numretries,
+		PerTryTimeout: pertrytimeout,
 	}
 }
 
@@ -736,6 +758,8 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 				Websocket:     route.EnableWebsockets,
 				HTTPSUpgrade:  routeEnforceTLS(enforceTLS, route.PermitInsecure),
 				PrefixRewrite: route.PrefixRewrite,
+				TimeoutPolicy: timeoutPolicyIngressRoute(route.TimeoutPolicy),
+				RetryPolicy:   retryPolicy(retryPolicyIngressRoute(route.RetryPolicy)),
 			}
 			for _, service := range route.Services {
 				if service.Port < 1 || service.Port > 65535 {
@@ -896,4 +920,21 @@ type Status struct {
 	Status      string
 	Description string
 	Vhost       string
+}
+
+func retryPolicyIngressRoute(rp *ingressroutev1.RetryPolicy) (retryOn string, retryCount int, perTryTimeout time.Duration) {
+	if rp != nil {
+		perTryTimeout, _ = time.ParseDuration(rp.PerTryTimeout)
+		retryCount = rp.NumRetries
+		retryOn = strings.Join(rp.Codes[:], ",")
+	}
+	return
+}
+
+func timeoutPolicyIngressRoute(tp *ingressroutev1.TimeoutPolicy) *TimeoutPolicy {
+	timeout := time.Duration(0)
+	if tp != nil {
+		timeout = parseTimeout(tp.Request)
+	}
+	return timeoutPolicy(timeout)
 }
