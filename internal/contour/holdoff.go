@@ -50,6 +50,9 @@ func (hn *HoldoffNotifier) OnChange(builder *dag.Builder) {
 	if hn.timer != nil {
 		hn.timer.Stop()
 	}
+	if !hn.last.IsZero() {
+		hn.last = time.Now()
+	}
 	since := time.Since(hn.last)
 	if since > holdoffMaxDelay {
 		// update immediately
