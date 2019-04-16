@@ -1057,6 +1057,30 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	ir15a := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "*",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				RetryPolicy: &ingressroutev1.RetryPolicy{
+					Codes:         []string{"gateway-error"},
+					NumRetries:    6,
+					PerTryTimeout: "please",
+				},
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	ir16a := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -2737,6 +2761,37 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"insert ingress with invalid perTryTimeout": {
+			objs: []interface{}{
+				ir15a,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						&VirtualHost{
+							Name: "*",
+							routes: routemap(
+								&Route{
+									Prefix: "/",
+									object: ir15a,
+									httpServices: servicemap(
+										httpService(s1),
+									),
+									RetryPolicy: &RetryPolicy{
+										RetryOn:       "gateway-error",
+										NumRetries:    6,
+										PerTryTimeout: 0,
+									},
+								},
+							),
+						},
+					),
+				},
+			),
+		},
+
 		"insert ingressroute with retrypolicy": {
 			objs: []interface{}{
 				i14,
