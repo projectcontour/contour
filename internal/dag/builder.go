@@ -398,11 +398,10 @@ func (b *builder) compute() *DAG {
 func prefixRoute(ingress *v1beta1.Ingress, prefix string) *Route {
 	// compute websocket enabled routes
 	wr := websocketRoutes(ingress)
-
-	var perTryTimeout time.Duration
-	if val, ok := ingress.Annotations[annotationPerTryTimeout]; ok {
-		perTryTimeout, _ = time.ParseDuration(val)
-	}
+	retry := retryPolicy(
+		ingress.Annotations[annotationRetryOn],
+		parseAnnotation(ingress.Annotations, annotationNumRetries),
+		parseTimeout(ingress.Annotations[annotationPerTryTimeout]))
 
 	return &Route{
 		Prefix:        prefix,
@@ -410,10 +409,7 @@ func prefixRoute(ingress *v1beta1.Ingress, prefix string) *Route {
 		HTTPSUpgrade:  tlsRequired(ingress),
 		Websocket:     wr[prefix],
 		TimeoutPolicy: timeoutPolicy(parseAnnotationTimeout(ingress.Annotations, annotationRequestTimeout)),
-		RetryPolicy: retryPolicy(
-			ingress.Annotations[annotationRetryOn],
-			parseAnnotation(ingress.Annotations, annotationNumRetries),
-			perTryTimeout),
+		RetryPolicy:   retry,
 	}
 }
 
