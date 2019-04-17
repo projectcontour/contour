@@ -18,6 +18,7 @@ package contour
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/heptio/contour/internal/dag"
@@ -39,12 +40,14 @@ type HoldoffNotifier struct {
 
 	logrus.FieldLogger
 
-	mu    sync.Mutex
-	timer *time.Timer
-	last  time.Time
+	mu      sync.Mutex
+	timer   *time.Timer
+	last    time.Time
+	pending counter
 }
 
 func (hn *HoldoffNotifier) OnChange(builder *dag.Builder) {
+	hn.pending.inc()
 	hn.mu.Lock()
 	defer hn.mu.Unlock()
 	if hn.timer != nil {
@@ -53,7 +56,7 @@ func (hn *HoldoffNotifier) OnChange(builder *dag.Builder) {
 	since := time.Since(hn.last)
 	if since > holdoffMaxDelay {
 		// update immediately
-		hn.WithField("last update", since).Info("forcing update")
+		hn.WithField("last_update", since).WithField("pending", hn.pending.reset()).Info("forcing update")
 		hn.Notifier.OnChange(builder)
 		hn.last = time.Now()
 		hn.Metrics.SetDAGRebuiltMetric(hn.last.Unix())
@@ -63,9 +66,22 @@ func (hn *HoldoffNotifier) OnChange(builder *dag.Builder) {
 	hn.timer = time.AfterFunc(holdoffDelay, func() {
 		hn.mu.Lock()
 		defer hn.mu.Unlock()
-		hn.WithField("last update", time.Since(hn.last)).Info("performing delayed update")
+		hn.WithField("last_update", time.Since(hn.last)).WithField("pending", hn.pending.reset()).Info("performing delayed update")
 		hn.Notifier.OnChange(builder)
 		hn.last = time.Now()
 		hn.Metrics.SetDAGRebuiltMetric(hn.last.Unix())
 	})
+}
+
+// counter holds an atomically incrementing counter.
+type counter uint64
+
+func (c *counter) get() uint64 {
+	return atomic.LoadUint64((*uint64)(c))
+}
+func (c *counter) inc() uint64 {
+	return atomic.AddUint64((*uint64)(c), 1)
+}
+func (c *counter) reset() uint64 {
+	return atomic.SwapUint64((*uint64)(c), 0)
 }
