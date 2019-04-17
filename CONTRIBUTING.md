@@ -75,6 +75,9 @@ It follows from the previous section, so if you haven't set up your Go workspace
 This project operates according to the _talk, then code_ rule.
 If you plan to submit a pull request for anything more than a typo or obvious bug fix, first you _should_ [raise an issue][6] to discuss your proposal, before submitting any code.
 
+Depending on the size of the feature you may be expected to first write a design proposal.
+A proposal template is [available here](https://github.com/heptio/contour/tree/master/design/design-document-tmpl.md)
+
 ### Pre commit CI
 
 Before a change is submitted it should pass all the pre commit CI jobs.
