@@ -1283,7 +1283,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i1),
+								route("/"),
 							),
 						},
 					),
@@ -1301,7 +1301,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i2),
+								route("/"),
 							),
 						},
 					),
@@ -1325,7 +1325,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "kuard.example.com",
 							routes: routemap(
-								route("/", i3),
+								route("/"),
 							),
 						},
 					),
@@ -1344,7 +1344,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i1, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 							),
@@ -1365,7 +1365,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i1, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 							),
@@ -1386,7 +1386,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i1),
+								route("/"),
 							),
 						},
 					),
@@ -1405,7 +1405,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i1),
+								route("/"),
 							),
 						},
 					),
@@ -1424,7 +1424,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i1),
+								route("/"),
 							),
 						},
 					),
@@ -1443,7 +1443,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i2),
+								route("/"),
 							),
 						},
 					),
@@ -1462,7 +1462,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i2),
+								route("/"),
 							),
 						},
 					),
@@ -1481,7 +1481,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i4, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 							),
@@ -1502,7 +1502,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i4, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 							),
@@ -1523,7 +1523,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i5, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 							),
@@ -1544,7 +1544,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i5, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 							),
@@ -1571,7 +1571,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i1),
+								route("/"),
 							),
 						},
 					),
@@ -1590,7 +1590,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "kuard.example.com",
 							routes: routemap(
-								route("/", i3),
+								route("/"),
 							),
 						},
 					),
@@ -1602,7 +1602,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "kuard.example.com",
 								routes: routemap(
-									route("/", i3),
+									route("/"),
 								),
 							},
 							MinProtoVersion: auth.TlsParameters_TLSv1_1,
@@ -1624,7 +1624,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "kuard.example.com",
 							routes: routemap(
-								route("/", i3),
+								route("/"),
 							),
 						},
 					),
@@ -1636,7 +1636,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "kuard.example.com",
 								routes: routemap(
-									route("/", i3),
+									route("/"),
 								),
 							},
 							MinProtoVersion: auth.TlsParameters_TLSv1_1,
@@ -1661,7 +1661,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "kuard.example.com",
 							routes: routemap(
-								route("/", i3),
+								route("/"),
 							),
 						},
 					),
@@ -1673,7 +1673,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "kuard.example.com",
 								routes: routemap(
-									route("/", i3),
+									route("/"),
 								),
 							},
 							MinProtoVersion: auth.TlsParameters_TLSv1_1,
@@ -1694,13 +1694,13 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "a.example.com",
 							routes: routemap(
-								route("/", i6),
+								route("/"),
 							),
 						},
 						&VirtualHost{
 							Name: "b.example.com",
 							routes: routemap(
-								route("/", i6),
+								route("/"),
 							),
 						},
 					),
@@ -1719,7 +1719,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "a.example.com",
 							routes: routemap(
-								route("/", i6, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 							),
@@ -1727,7 +1727,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "b.example.com",
 							routes: routemap(
-								route("/", i6, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 							),
@@ -1748,7 +1748,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "a.example.com",
 							routes: routemap(
-								route("/", i6, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 							),
@@ -1756,7 +1756,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "b.example.com",
 							routes: routemap(
-								route("/", i6, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 							),
@@ -1778,7 +1778,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "a.example.com",
 							routes: routemap(
-								route("/", i6, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 							),
@@ -1786,7 +1786,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "b.example.com",
 							routes: routemap(
-								route("/", i6, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 							),
@@ -1799,7 +1799,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "b.example.com",
 								routes: routemap(
-									route("/", i6, servicemap(
+									route("/", servicemap(
 										httpService(s1),
 									)),
 								),
@@ -1824,14 +1824,14 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "a.example.com",
 							routes: routemap(
-								route("/", i6, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 							),
 						}, &VirtualHost{
 							Name: "b.example.com",
 							routes: routemap(
-								route("/", i6, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 							),
@@ -1844,7 +1844,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "b.example.com",
 								routes: routemap(
-									route("/", i6, servicemap(
+									route("/", servicemap(
 										httpService(s1),
 									)),
 								),
@@ -1867,8 +1867,8 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "b.example.com",
 							routes: routemap(
-								route("/", i7),
-								route("/kuarder", i7),
+								route("/"),
+								route("/kuarder"),
 							),
 						},
 					),
@@ -1888,10 +1888,10 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "b.example.com",
 							routes: routemap(
-								route("/", i7, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
-								route("/kuarder", i7, servicemap(
+								route("/kuarder", servicemap(
 									httpService(s2),
 								)),
 							),
@@ -1911,10 +1911,10 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "b.example.com",
 							routes: routemap(
-								route("/", i8, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
-								route("/kuarder", i8, servicemap(
+								route("/kuarder", servicemap(
 									httpService(s2),
 								)),
 							),
@@ -1943,10 +1943,10 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "b.example.com",
 								routes: routemap(
-									route("/", i9, servicemap(
+									route("/", servicemap(
 										httpService(s1),
 									)),
-									route("/kuarder", i9, servicemap(
+									route("/kuarder", servicemap(
 										httpService(s2),
 									)),
 								),
@@ -1988,7 +1988,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "b.example.com",
 								routes: routemap(
-									route("/", i6a, servicemap(
+									route("/", servicemap(
 										httpService(s1),
 									)),
 								),
@@ -2013,7 +2013,6 @@ func TestDAGInsert(t *testing.T) {
 							routes: routemap(
 								&Route{
 									Prefix: "/",
-									object: i6b,
 									httpServices: servicemap(
 										httpService(s1),
 									),
@@ -2031,7 +2030,6 @@ func TestDAGInsert(t *testing.T) {
 								routes: routemap(
 									&Route{
 										Prefix: "/",
-										object: i6b,
 										httpServices: servicemap(
 											httpService(s1),
 										),
@@ -2058,7 +2056,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "example.com",
 							routes: routemap(
-								route("/", ir1),
+								route("/"),
 							),
 						},
 					),
@@ -2076,12 +2074,11 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "example.com",
 							routes: routemap(
-								route("/", ir11, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 								&Route{
 									Prefix: "/websocket",
-									object: ir11,
 									httpServices: servicemap(
 										httpService(s1),
 									),
@@ -2173,12 +2170,11 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "example.com",
 							routes: routemap(
-								route("/", ir10, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 								&Route{
 									Prefix: "/websocket",
-									object: ir10,
 									httpServices: servicemap(
 										httpService(s1),
 									),
@@ -2201,7 +2197,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "example.com",
 							routes: routemap(
-								route("/", ir1, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 							),
@@ -2223,7 +2219,6 @@ func TestDAGInsert(t *testing.T) {
 							routes: routemap(
 								&Route{
 									Prefix: "/",
-									object: ir6,
 									httpServices: servicemap(
 										httpService(s1),
 									),
@@ -2242,7 +2237,6 @@ func TestDAGInsert(t *testing.T) {
 								routes: routemap(
 									&Route{
 										Prefix: "/",
-										object: ir6,
 										httpServices: servicemap(
 											httpService(s1),
 										),
@@ -2266,13 +2260,9 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "foo.com",
 							routes: routemap(
-								&Route{
-									Prefix: "/",
-									object: ir14,
-									httpServices: servicemap(
-										httpService(s1),
-									),
-								},
+								route("/", servicemap(
+									httpService(s1),
+								)),
 							),
 						},
 					),
@@ -2284,13 +2274,10 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "foo.com",
 								routes: routemap(
-									&Route{
-										Prefix: "/",
-										object: ir14,
-										httpServices: servicemap(
-											httpService(s1),
-										),
-									}),
+									route("/", servicemap(
+										httpService(s1),
+									)),
+								),
 							},
 							Secret: secret(sec1),
 						},
@@ -2311,7 +2298,6 @@ func TestDAGInsert(t *testing.T) {
 							routes: routemap(
 								&Route{
 									Prefix: "/",
-									object: ir7,
 									httpServices: servicemap(
 										httpService(s1),
 									),
@@ -2329,7 +2315,6 @@ func TestDAGInsert(t *testing.T) {
 								routes: routemap(
 									&Route{
 										Prefix: "/",
-										object: ir7,
 										httpServices: servicemap(
 											httpService(s1),
 										),
@@ -2354,14 +2339,15 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&VirtualHost{
 							Name: "foo.com",
-							routes: routemap(&Route{
-								Prefix: "/",
-								object: ir8,
-								httpServices: servicemap(
-									httpService(s1),
-								),
-								HTTPSUpgrade: true,
-							}),
+							routes: routemap(
+								&Route{
+									Prefix: "/",
+									httpServices: servicemap(
+										httpService(s1),
+									),
+									HTTPSUpgrade: true,
+								},
+							),
 						},
 					),
 				}, &Listener{
@@ -2373,7 +2359,6 @@ func TestDAGInsert(t *testing.T) {
 								routes: routemap(
 									&Route{
 										Prefix: "/",
-										object: ir8,
 										httpServices: servicemap(
 											httpService(s1),
 										),
@@ -2401,7 +2386,6 @@ func TestDAGInsert(t *testing.T) {
 							routes: routemap(
 								&Route{
 									Prefix: "/",
-									object: ir9,
 									httpServices: servicemap(
 										httpService(s1),
 									),
@@ -2418,7 +2402,6 @@ func TestDAGInsert(t *testing.T) {
 								routes: routemap(
 									&Route{
 										Prefix: "/",
-										object: ir9,
 										httpServices: servicemap(
 											httpService(s1),
 										),
@@ -2443,7 +2426,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "example.com",
 							routes: routemap(
-								route("/", ir2, servicemap(
+								route("/", servicemap(
 									httpService(s2),
 								)),
 							),
@@ -2463,7 +2446,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "example.com",
 							routes: routemap(
-								route("/", ir2, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 									httpService(s2),
 								)),
@@ -2486,7 +2469,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "b.example.com",
 							routes: routemap(
-								route("/", i10, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 							),
@@ -2499,7 +2482,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "b.example.com",
 								routes: routemap(
-									route("/", i10, servicemap(
+									route("/", servicemap(
 										httpService(s1),
 									)),
 								),
@@ -2523,12 +2506,11 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i11, servicemap(
+								route("/", servicemap(
 									httpService(s1),
 								)),
 								&Route{
 									Prefix: "/ws1",
-									object: i11,
 									httpServices: servicemap(
 										httpService(s1),
 									),
@@ -2554,7 +2536,6 @@ func TestDAGInsert(t *testing.T) {
 							routes: routemap(
 								&Route{
 									Prefix: "/",
-									object: i12a,
 									httpServices: servicemap(
 										httpService(s1),
 									),
@@ -2582,7 +2563,6 @@ func TestDAGInsert(t *testing.T) {
 							routes: routemap(
 								&Route{
 									Prefix: "/",
-									object: ir16a,
 									httpServices: servicemap(
 										httpService(s1),
 									),
@@ -2610,7 +2590,6 @@ func TestDAGInsert(t *testing.T) {
 							routes: routemap(
 								&Route{
 									Prefix: "/",
-									object: i12b,
 									httpServices: servicemap(
 										httpService(s1),
 									),
@@ -2638,7 +2617,6 @@ func TestDAGInsert(t *testing.T) {
 							routes: routemap(
 								&Route{
 									Prefix: "/",
-									object: ir16b,
 									httpServices: servicemap(
 										httpService(s1),
 									),
@@ -2666,7 +2644,6 @@ func TestDAGInsert(t *testing.T) {
 							routes: routemap(
 								&Route{
 									Prefix: "/",
-									object: i12c,
 									httpServices: servicemap(
 										httpService(s1),
 									),
@@ -2694,7 +2671,6 @@ func TestDAGInsert(t *testing.T) {
 							routes: routemap(
 								&Route{
 									Prefix: "/",
-									object: ir16c,
 									httpServices: servicemap(
 										httpService(s1),
 									),
@@ -2719,10 +2695,10 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "example.com",
 							routes: routemap(
-								route("/blog", ir4, servicemap(
+								route("/blog", servicemap(
 									httpService(s4),
 								)),
-								route("/blog/admin", ir5, servicemap(
+								route("/blog/admin", servicemap(
 									httpService(s5),
 								)),
 							),
@@ -2745,7 +2721,6 @@ func TestDAGInsert(t *testing.T) {
 							routes: routemap(
 								&Route{
 									Prefix: "/",
-									object: ir15,
 									httpServices: servicemap(
 										httpService(s1),
 									),
@@ -2775,7 +2750,6 @@ func TestDAGInsert(t *testing.T) {
 							routes: routemap(
 								&Route{
 									Prefix: "/",
-									object: ir15a,
 									httpServices: servicemap(
 										httpService(s1),
 									),
@@ -2806,7 +2780,6 @@ func TestDAGInsert(t *testing.T) {
 							routes: routemap(
 								&Route{
 									Prefix: "/",
-									object: i14,
 									httpServices: servicemap(
 										httpService(s1),
 									),
@@ -2835,13 +2808,12 @@ func TestDAGInsert(t *testing.T) {
 							routes: routemap(
 								&Route{
 									Prefix: "/",
-									object: i13a,
 									httpServices: servicemap(
 										httpService(s13a),
 									),
 									HTTPSUpgrade: true,
 								},
-								route("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", i13b, servicemap(
+								route("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", servicemap(
 									httpService(s13b),
 								)),
 							),
@@ -2856,13 +2828,12 @@ func TestDAGInsert(t *testing.T) {
 								routes: routemap(
 									&Route{
 										Prefix: "/",
-										object: i13a,
 										httpServices: servicemap(
 											httpService(s13a),
 										),
 										HTTPSUpgrade: true,
 									},
-									route("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", i13b, servicemap(
+									route("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", servicemap(
 										httpService(s13b),
 									)),
 								),
@@ -2885,7 +2856,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i3a, servicemap(
+								route("/", servicemap(
 									&HTTPService{
 										TCPService: TCPService{
 											Name:        s3a.Name,
@@ -2912,7 +2883,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i3a, servicemap(
+								route("/", servicemap(
 									&HTTPService{
 										TCPService: TCPService{
 											Name:        s3b.Name,
@@ -2939,7 +2910,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i3a, servicemap(
+								route("/", servicemap(
 									&HTTPService{
 										TCPService: TCPService{
 											Name:        s3c.Name,
@@ -2967,7 +2938,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "*",
 							routes: routemap(
-								route("/", i1, servicemap(
+								route("/", servicemap(
 									&HTTPService{
 										TCPService: TCPService{
 											Name:               s1b.Name,
@@ -2997,7 +2968,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "example.com",
 							routes: routemap(
-								route("/a", ir13, servicemap(
+								route("/a", servicemap(
 									&HTTPService{
 										TCPService: TCPService{
 											Name:        s1.Name,
@@ -3007,7 +2978,7 @@ func TestDAGInsert(t *testing.T) {
 										},
 									}),
 								),
-								route("/b", ir13, servicemap(
+								route("/b", servicemap(
 									&HTTPService{
 										TCPService: TCPService{
 											Name:        s1.Name,
@@ -3034,7 +3005,7 @@ func TestDAGInsert(t *testing.T) {
 						&VirtualHost{
 							Name: "example.com",
 							routes: routemap(
-								route("/a", ir13a, servicemap(
+								route("/a", servicemap(
 									&HTTPService{
 										TCPService: TCPService{
 											Name:        s1.Name,
@@ -3231,27 +3202,11 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&VirtualHost{
 							Name: "example.com",
-							routes: routemap(&Route{Prefix: "/finance", object: &ingressroutev1.IngressRoute{
-								ObjectMeta: metav1.ObjectMeta{
-									Namespace: "finance",
-									Name:      "finance-root",
+							routes: routemap(
+								&Route{
+									Prefix: "/finance",
 								},
-								Spec: ingressroutev1.IngressRouteSpec{
-									Routes: []ingressroutev1.Route{{
-										Match: "/finance",
-										Services: []ingressroutev1.Service{{
-											Name: "home",
-											Port: 8080,
-										}},
-									}, {
-										Match: "/finance/stocks",
-										Delegate: &ingressroutev1.Delegate{
-											Name:      "example-com",
-											Namespace: "default",
-										},
-									}},
-								},
-							}}),
+							),
 						},
 					),
 				},
@@ -4024,7 +3979,7 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 						&VirtualHost{
 							Name: "example.com",
 							routes: routemap(
-								route("/", ir1),
+								route("/"),
 							),
 						},
 					),
@@ -4254,10 +4209,9 @@ func routemap(routes ...*Route) map[string]*Route {
 	return m
 }
 
-func route(prefix string, obj interface{}, httpServices ...map[servicemeta]*HTTPService) *Route {
+func route(prefix string, httpServices ...map[servicemeta]*HTTPService) *Route {
 	route := Route{
 		Prefix: prefix,
-		object: obj,
 	}
 	switch len(httpServices) {
 	case 0:

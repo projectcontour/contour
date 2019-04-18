@@ -405,7 +405,6 @@ func prefixRoute(ingress *v1beta1.Ingress, prefix string) *Route {
 
 	return &Route{
 		Prefix:        prefix,
-		object:        ingress,
 		HTTPSUpgrade:  tlsRequired(ingress),
 		Websocket:     wr[prefix],
 		TimeoutPolicy: timeoutPolicy(parseAnnotationTimeout(ingress.Annotations, annotationRequestTimeout)),
@@ -750,7 +749,6 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 
 			r := &Route{
 				Prefix:        route.Match,
-				object:        ir,
 				Websocket:     route.EnableWebsockets,
 				HTTPSUpgrade:  routeEnforceTLS(enforceTLS, route.PermitInsecure),
 				PrefixRewrite: route.PrefixRewrite,

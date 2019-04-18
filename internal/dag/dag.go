@@ -49,7 +49,6 @@ func (d *DAG) Statuses() []Status {
 
 type Route struct {
 	Prefix       string
-	object       interface{} // one of Ingress or IngressRoute
 	httpServices map[servicemeta]*HTTPService
 
 	// Should this route generate a 301 upgrade if accessed
