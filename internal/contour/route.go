@@ -116,9 +116,12 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				vhost := envoy.VirtualHost(vh.Name, l.Port)
 				vh.Visit(func(v dag.Vertex) {
 					if r, ok := v.(*dag.Route); ok {
-						var svcs []*dag.HTTPService
+						var svcs []*dag.TCPService
 						r.Visit(func(s dag.Vertex) {
-							if s, ok := s.(*dag.HTTPService); ok {
+							switch s := s.(type) {
+							case *dag.HTTPService:
+								svcs = append(svcs, &s.TCPService)
+							case *dag.TCPService:
 								svcs = append(svcs, s)
 							}
 						})
@@ -146,9 +149,12 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				vhost := envoy.VirtualHost(vh.VirtualHost.Name, l.Port)
 				vh.Visit(func(v dag.Vertex) {
 					if r, ok := v.(*dag.Route); ok {
-						var svcs []*dag.HTTPService
+						var svcs []*dag.TCPService
 						r.Visit(func(s dag.Vertex) {
-							if s, ok := s.(*dag.HTTPService); ok {
+							switch s := s.(type) {
+							case *dag.HTTPService:
+								svcs = append(svcs, &s.TCPService)
+							case *dag.TCPService:
 								svcs = append(svcs, s)
 							}
 						})
