@@ -221,9 +221,9 @@ func TestTCPProxy(t *testing.T) {
 	}{
 		"single cluster": {
 			proxy: &dag.TCPProxy{
-				Services: []*dag.TCPService{
-					s1,
-				},
+				Clusters: []*dag.Cluster{{
+					Upstream: s1,
+				}},
 			},
 			want: listener.Filter{
 				Name: util.TCPProxy,
@@ -245,9 +245,11 @@ func TestTCPProxy(t *testing.T) {
 		},
 		"multiple cluster": {
 			proxy: &dag.TCPProxy{
-				Services: []*dag.TCPService{
-					s2, s1, // assert that these are sorted
-				},
+				Clusters: []*dag.Cluster{{
+					Upstream: s2,
+				}, {
+					Upstream: s1, // assert that these are sorted
+				}},
 			},
 			want: listener.Filter{
 				Name: util.TCPProxy,

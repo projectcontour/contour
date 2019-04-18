@@ -730,7 +730,9 @@ func (b *builder) processTCPProxy(ir *ingressroutev1.IngressRoute, visited []*in
 				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("tcpproxy: service %s/%s/%d: not found", ir.Namespace, service.Name, service.Port), Vhost: host})
 				return
 			}
-			proxy.Services = append(proxy.Services, s)
+			proxy.Clusters = append(proxy.Clusters, &Cluster{
+				Upstream: s,
+			})
 		}
 		b.lookupSecureVirtualHost(host).VirtualHost.TCPProxy = &proxy
 		b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})

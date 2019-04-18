@@ -1804,9 +1804,9 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "kuard.example.com",
 								TCPProxy: &TCPProxy{
-									Services: []*TCPService{
+									Clusters: clusters(
 										tcpService(s1),
-									},
+									),
 								},
 							},
 							Secret:          secret(sec1),
@@ -1828,9 +1828,9 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "kuard.example.com",
 								TCPProxy: &TCPProxy{
-									Services: []*TCPService{
+									Clusters: clusters(
 										tcpService(s1),
-									},
+									),
 								},
 							},
 						},
@@ -1851,9 +1851,9 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "kuard.example.com",
 								TCPProxy: &TCPProxy{
-									Services: []*TCPService{
+									Clusters: clusters(
 										tcpService(s6),
-									},
+									),
 								},
 							},
 						},
@@ -3649,6 +3649,15 @@ func routeWebsocket(prefix string, services ...*HTTPService) *Route {
 	r := route(prefix, services...)
 	r.Websocket = true
 	return r
+}
+
+func clusters(services ...Service) (c []*Cluster) {
+	for _, s := range services {
+		c = append(c, &Cluster{
+			Upstream: s,
+		})
+	}
+	return c
 }
 
 func tcpService(s *v1.Service) *TCPService {

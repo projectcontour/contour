@@ -111,7 +111,7 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 
 // TCPProxy creates a new TCPProxy filter.
 func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) listener.Filter {
-	switch len(proxy.Services) {
+	switch len(proxy.Clusters) {
 	case 1:
 		return listener.Filter{
 			Name: util.TCPProxy,
@@ -119,7 +119,7 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) list
 				Config: &types.Struct{
 					Fields: map[string]*types.Value{
 						"stat_prefix": sv(statPrefix),
-						"cluster":     sv(Clustername(proxy.Services[0])),
+						"cluster":     sv(Clustername(proxy.Clusters[0].Upstream.(*dag.TCPService))),
 						"access_log":  accesslog(accessLogPath),
 					},
 				},
@@ -128,17 +128,18 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) list
 	default:
 		// its easier to sort the input of the cluster list rather than the
 		// grpc type output. We have to make a copy to avoid mutating the dag.
-		services := make([]*dag.TCPService, len(proxy.Services))
-		copy(services, proxy.Services)
-		sort.Stable(tcpServiceByName(services))
+		clusters := make([]*dag.Cluster, len(proxy.Clusters))
+		copy(clusters, proxy.Clusters)
+		sort.Stable(tcpServiceByName(clusters))
 		var l []*types.Value
-		for _, service := range services {
-			weight := service.Weight
+		for _, cluster := range clusters {
+			upstream := cluster.Upstream.(*dag.TCPService)
+			weight := upstream.Weight
 			if weight == 0 {
 				weight = 1
 			}
 			l = append(l, st(map[string]*types.Value{
-				"name":   sv(Clustername(service)),
+				"name":   sv(Clustername(upstream)),
 				"weight": nv(float64(weight)),
 			}))
 		}
@@ -159,15 +160,16 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) list
 	}
 }
 
-type tcpServiceByName []*dag.TCPService
+type tcpServiceByName []*dag.Cluster
 
 func (t tcpServiceByName) Len() int      { return len(t) }
 func (t tcpServiceByName) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
 func (t tcpServiceByName) Less(i, j int) bool {
-	if t[i].Name == t[j].Name {
-		return t[i].Weight < t[j].Weight
+	a, b := t[i].Upstream.(*dag.TCPService), t[j].Upstream.(*dag.TCPService)
+	if a.Name == b.Name {
+		return a.Weight < b.Weight
 	}
-	return t[i].Name < t[j].Name
+	return a.Name < b.Name
 }
 
 // SocketAddress creates a new TCP core.Address.

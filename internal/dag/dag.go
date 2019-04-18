@@ -187,12 +187,14 @@ func (l *Listener) Visit(f func(Vertex)) {
 
 // TCPProxy represents a cluster of TCP endpoints.
 type TCPProxy struct {
-	// Services to proxy decrypted traffic to.
-	Services []*TCPService
+
+	// Clusters is the, possibly weighted, set
+	// of upstream services to forward decrypted traffic.
+	Clusters []*Cluster
 }
 
 func (t *TCPProxy) Visit(f func(Vertex)) {
-	for _, s := range t.Services {
+	for _, s := range t.Clusters {
 		f(s)
 	}
 }
@@ -251,6 +253,19 @@ func (s *TCPService) toMeta() servicemeta {
 
 func (s *TCPService) Visit(func(Vertex)) {
 	// TCPServices are leaves in the DAG.
+}
+
+// Cluster holds the connetion specific parameters that apply to
+// traffic routed to an upstream service.
+type Cluster struct {
+
+	// Upstream is the backend Kubernetes service traffic arriving
+	// at this Cluster will be forwarded too.
+	Upstream Service
+}
+
+func (c Cluster) Visit(f func(Vertex)) {
+	f(c.Upstream)
 }
 
 // HTTPService represents a Kuberneres Service object which speaks
