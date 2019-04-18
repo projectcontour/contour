@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
@@ -29,31 +29,26 @@ import (
 	"github.com/heptio/contour/internal/dag"
 )
 
-// Cluster creates new v2.Cluster from service.
-func Cluster(s dag.Service) *v2.Cluster {
-	switch s := s.(type) {
+// Cluster creates new v2.Cluster from dag.Cluster.
+func Cluster(c *dag.Cluster) *v2.Cluster {
+	switch upstream := c.Upstream.(type) {
 	case *dag.HTTPService:
-		return httpCluster(s)
+		c := cluster(&upstream.TCPService)
+		switch upstream.Protocol {
+		case "tls":
+			c.TlsContext = UpstreamTLSContext()
+		case "h2":
+			c.TlsContext = UpstreamTLSContext("h2")
+			fallthrough
+		case "h2c":
+			c.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
+		}
+		return c
 	case *dag.TCPService:
-		return cluster(s)
+		return cluster(upstream)
 	default:
-		panic(fmt.Sprintf("unsupported Service: %T", s))
+		panic(fmt.Sprintf("unsupported upstream type: %T", upstream))
 	}
-}
-
-func httpCluster(service *dag.HTTPService) *v2.Cluster {
-	c := cluster(&service.TCPService)
-
-	switch service.Protocol {
-	case "tls":
-		c.TlsContext = UpstreamTLSContext()
-	case "h2":
-		c.TlsContext = UpstreamTLSContext("h2")
-		fallthrough
-	case "h2c":
-		c.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
-	}
-	return c
 }
 
 func cluster(service *dag.TCPService) *v2.Cluster {
