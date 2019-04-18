@@ -2080,8 +2080,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							Prefix:       "/",
-							httpServices: servicemap(httpService(s1)),
+							Prefix:   "/",
+							Clusters: clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								Timeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
 							},
@@ -2100,8 +2100,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							Prefix:       "/",
-							httpServices: servicemap(httpService(s1)),
+							Prefix:   "/",
+							Clusters: clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								Timeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
 							},
@@ -2120,8 +2120,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							Prefix:       "/",
-							httpServices: servicemap(httpService(s1)),
+							Prefix:   "/",
+							Clusters: clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								Timeout: 90 * time.Second,
 							},
@@ -2140,8 +2140,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							Prefix:       "/",
-							httpServices: servicemap(httpService(s1)),
+							Prefix:   "/",
+							Clusters: clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								Timeout: 90 * time.Second,
 							},
@@ -2160,8 +2160,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							Prefix:       "/",
-							httpServices: servicemap(httpService(s1)),
+							Prefix:   "/",
+							Clusters: clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								Timeout: -1,
 							},
@@ -2180,8 +2180,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							Prefix:       "/",
-							httpServices: servicemap(httpService(s1)),
+							Prefix:   "/",
+							Clusters: clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								Timeout: -1,
 							},
@@ -2216,8 +2216,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							Prefix:       "/",
-							httpServices: servicemap(httpService(s1)),
+							Prefix:   "/",
+							Clusters: clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "50x",
 								NumRetries:    6,
@@ -2238,8 +2238,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							Prefix:       "/",
-							httpServices: servicemap(httpService(s1)),
+							Prefix:   "/",
+							Clusters: clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "50x",
 								NumRetries:    6,
@@ -2261,8 +2261,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							Prefix:       "/",
-							httpServices: servicemap(httpService(s1)),
+							Prefix:   "/",
+							Clusters: clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "gateway-error",
 								NumRetries:    6,
@@ -2651,7 +2651,7 @@ func TestDAGInsert(t *testing.T) {
 			}
 
 			opts := []cmp.Option{
-				cmp.AllowUnexported(Listener{}, VirtualHost{}, Route{}),
+				cmp.AllowUnexported(Listener{}, VirtualHost{}),
 			}
 			if diff := cmp.Diff(want, got, opts...); diff != "" {
 				t.Fatal(diff)
@@ -3451,7 +3451,7 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 			}
 
 			opts := []cmp.Option{
-				cmp.AllowUnexported(Listener{}, VirtualHost{}, Route{}),
+				cmp.AllowUnexported(Listener{}, VirtualHost{}),
 			}
 			if diff := cmp.Diff(want, got, opts...); diff != "" {
 				t.Fatal(diff)
@@ -3628,7 +3628,12 @@ func route(prefix string, services ...*HTTPService) *Route {
 		Prefix: prefix,
 	}
 	if len(services) > 0 {
-		route.httpServices = servicemap(services...)
+		route.Clusters = make(map[servicemeta]*Cluster)
+		for _, s := range services {
+			route.Clusters[s.toMeta()] = &Cluster{
+				Upstream: s,
+			}
+		}
 	}
 	return &route
 }
@@ -3678,10 +3683,13 @@ func httpService(s *v1.Service) *HTTPService {
 	}
 }
 
-func servicemap(services ...*HTTPService) map[servicemeta]*HTTPService {
-	m := make(map[servicemeta]*HTTPService)
+func clustermap(services ...*v1.Service) map[servicemeta]*Cluster {
+	m := make(map[servicemeta]*Cluster)
 	for _, s := range services {
-		m[s.toMeta()] = s
+		svc := httpService(s)
+		m[svc.toMeta()] = &Cluster{
+			Upstream: svc,
+		}
 	}
 	return m
 }

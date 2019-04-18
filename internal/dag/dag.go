@@ -48,8 +48,8 @@ func (d *DAG) Statuses() []Status {
 }
 
 type Route struct {
-	Prefix       string
-	httpServices map[servicemeta]*HTTPService
+	Prefix   string
+	Clusters map[servicemeta]*Cluster
 
 	// Should this route generate a 301 upgrade if accessed
 	// over HTTP?
@@ -94,14 +94,16 @@ type RetryPolicy struct {
 }
 
 func (r *Route) addHTTPService(s *HTTPService) {
-	if r.httpServices == nil {
-		r.httpServices = make(map[servicemeta]*HTTPService)
+	if r.Clusters == nil {
+		r.Clusters = make(map[servicemeta]*Cluster)
 	}
-	r.httpServices[s.toMeta()] = s
+	r.Clusters[s.toMeta()] = &Cluster{
+		Upstream: s,
+	}
 }
 
 func (r *Route) Visit(f func(Vertex)) {
-	for _, c := range r.httpServices {
+	for _, c := range r.Clusters {
 		f(c)
 	}
 }

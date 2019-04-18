@@ -117,13 +117,16 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				vh.Visit(func(v dag.Vertex) {
 					if r, ok := v.(*dag.Route); ok {
 						var svcs []*dag.TCPService
-						r.Visit(func(s dag.Vertex) {
-							switch s := s.(type) {
-							case *dag.HTTPService:
-								svcs = append(svcs, &s.TCPService)
-							case *dag.TCPService:
-								svcs = append(svcs, s)
+						r.Visit(func(v dag.Vertex) {
+							cluster, ok := v.(*dag.Cluster)
+							if !ok {
+								return
 							}
+							cluster.Visit(func(v dag.Vertex) {
+								if s, ok := v.(*dag.HTTPService); ok {
+									svcs = append(svcs, &s.TCPService)
+								}
+							})
 						})
 						if len(svcs) < 1 {
 							// no services for this route, skip it.
@@ -150,13 +153,16 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				vh.Visit(func(v dag.Vertex) {
 					if r, ok := v.(*dag.Route); ok {
 						var svcs []*dag.TCPService
-						r.Visit(func(s dag.Vertex) {
-							switch s := s.(type) {
-							case *dag.HTTPService:
-								svcs = append(svcs, &s.TCPService)
-							case *dag.TCPService:
-								svcs = append(svcs, s)
+						r.Visit(func(v dag.Vertex) {
+							cluster, ok := v.(*dag.Cluster)
+							if !ok {
+								return
 							}
+							cluster.Visit(func(v dag.Vertex) {
+								if s, ok := v.(*dag.HTTPService); ok {
+									svcs = append(svcs, &s.TCPService)
+								}
+							})
 						})
 						if len(svcs) < 1 {
 							// no services for this route, skip it.
