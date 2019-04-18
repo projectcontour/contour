@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"fmt"
 	"sort"
 	"testing"
 	"time"
@@ -1280,12 +1281,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/"),
-							),
-						},
+						virtualhost("*", route("/")),
 					),
 				},
 			),
@@ -1298,12 +1294,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/"),
-							),
-						},
+						virtualhost("*", route("/")),
 					),
 				},
 			),
@@ -1322,12 +1313,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "kuard.example.com",
-							routes: routemap(
-								route("/"),
-							),
-						},
+						virtualhost("kuard.example.com", route("/")),
 					),
 				},
 			),
@@ -1341,14 +1327,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						},
+						virtualhost("*", route("/", httpService(s1))),
 					),
 				},
 			),
@@ -1362,14 +1341,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						},
+						virtualhost("*", route("/", httpService(s1))),
 					),
 				},
 			),
@@ -1383,12 +1355,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/"),
-							),
-						},
+						virtualhost("*", route("/")),
 					),
 				},
 			),
@@ -1402,12 +1369,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/"),
-							),
-						},
+						virtualhost("*", route("/")),
 					),
 				},
 			),
@@ -1421,12 +1383,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/"),
-							),
-						},
+						virtualhost("*", route("/")),
 					),
 				},
 			),
@@ -1440,12 +1397,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/"),
-							),
-						},
+						virtualhost("*", route("/")),
 					),
 				},
 			),
@@ -1459,12 +1411,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/"),
-							),
-						},
+						virtualhost("*", route("/")),
 					),
 				},
 			),
@@ -1478,14 +1425,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						},
+						virtualhost("*", route("/", httpService(s1))),
 					),
 				},
 			),
@@ -1499,14 +1439,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						},
+						virtualhost("*", route("/", httpService(s1))),
 					),
 				},
 			),
@@ -1520,14 +1453,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						},
+						virtualhost("*", route("/", httpService(s1))),
 					),
 				},
 			),
@@ -1541,14 +1467,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						},
+						virtualhost("*", route("/", httpService(s1))),
 					),
 				},
 			),
@@ -1568,12 +1487,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/"),
-							),
-						},
+						virtualhost("*", route("/")),
 					),
 				},
 			),
@@ -1587,27 +1501,13 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "kuard.example.com",
-							routes: routemap(
-								route("/"),
-							),
-						},
+						virtualhost("kuard.example.com", route("/")),
 					),
 				},
 				&Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "kuard.example.com",
-								routes: routemap(
-									route("/"),
-								),
-							},
-							MinProtoVersion: auth.TlsParameters_TLSv1_1,
-							Secret:          secret(sec1),
-						},
+						securevirtualhost("kuard.example.com", sec1, route("/")),
 					),
 				},
 			),
@@ -1621,27 +1521,13 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "kuard.example.com",
-							routes: routemap(
-								route("/"),
-							),
-						},
+						virtualhost("kuard.example.com", route("/")),
 					),
 				},
 				&Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "kuard.example.com",
-								routes: routemap(
-									route("/"),
-								),
-							},
-							MinProtoVersion: auth.TlsParameters_TLSv1_1,
-							Secret:          secret(sec1),
-						},
+						securevirtualhost("kuard.example.com", sec1, route("/")),
 					),
 				},
 			),
@@ -1658,27 +1544,13 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "kuard.example.com",
-							routes: routemap(
-								route("/"),
-							),
-						},
+						virtualhost("kuard.example.com", route("/")),
 					),
 				},
 				&Listener{
 					Port: 8443,
 					VirtualHosts: virtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "kuard.example.com",
-								routes: routemap(
-									route("/"),
-								),
-							},
-							MinProtoVersion: auth.TlsParameters_TLSv1_1,
-							Secret:          secret(sec1),
-						},
+						securevirtualhost("kuard.example.com", sec1, route("/")),
 					),
 				},
 			),
@@ -1691,18 +1563,8 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "a.example.com",
-							routes: routemap(
-								route("/"),
-							),
-						},
-						&VirtualHost{
-							Name: "b.example.com",
-							routes: routemap(
-								route("/"),
-							),
-						},
+						virtualhost("a.example.com", route("/")),
+						virtualhost("b.example.com", route("/")),
 					),
 				},
 			),
@@ -1716,22 +1578,8 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "a.example.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						},
-						&VirtualHost{
-							Name: "b.example.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						},
+						virtualhost("a.example.com", route("/", httpService(s1))),
+						virtualhost("b.example.com", route("/", httpService(s1))),
 					),
 				},
 			),
@@ -1745,22 +1593,8 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "a.example.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						},
-						&VirtualHost{
-							Name: "b.example.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						},
+						virtualhost("a.example.com", route("/", httpService(s1))),
+						virtualhost("b.example.com", route("/", httpService(s1))),
 					),
 				},
 			),
@@ -1775,38 +1609,13 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "a.example.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						},
-						&VirtualHost{
-							Name: "b.example.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						},
+						virtualhost("a.example.com", route("/", httpService(s1))),
+						virtualhost("b.example.com", route("/", httpService(s1))),
 					),
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "b.example.com",
-								routes: routemap(
-									route("/", servicemap(
-										httpService(s1),
-									)),
-								),
-							},
-							MinProtoVersion: auth.TlsParameters_TLSv1_1,
-							Secret:          secret(sec1),
-						},
+						securevirtualhost("b.example.com", sec1, route("/", httpService(s1))),
 					),
 				},
 			),
@@ -1821,37 +1630,13 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "a.example.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						}, &VirtualHost{
-							Name: "b.example.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						},
+						virtualhost("a.example.com", route("/", httpService(s1))),
+						virtualhost("b.example.com", route("/", httpService(s1))),
 					),
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "b.example.com",
-								routes: routemap(
-									route("/", servicemap(
-										httpService(s1),
-									)),
-								),
-							},
-							MinProtoVersion: auth.TlsParameters_TLSv1_1,
-							Secret:          secret(sec1),
-						},
+						securevirtualhost("b.example.com", sec1, route("/", httpService(s1))),
 					),
 				},
 			),
@@ -1864,13 +1649,10 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "b.example.com",
-							routes: routemap(
-								route("/"),
-								route("/kuarder"),
-							),
-						},
+						virtualhost("b.example.com",
+							route("/"),
+							route("/kuarder"),
+						),
 					),
 				},
 			),
@@ -1885,17 +1667,10 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "b.example.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-								route("/kuarder", servicemap(
-									httpService(s2),
-								)),
-							),
-						},
+						virtualhost("b.example.com",
+							route("/", httpService(s1)),
+							route("/kuarder", httpService(s2)),
+						),
 					),
 				},
 			),
@@ -1908,17 +1683,10 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "b.example.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-								route("/kuarder", servicemap(
-									httpService(s2),
-								)),
-							),
-						},
+						virtualhost("b.example.com",
+							route("/", httpService(s1)),
+							route("/kuarder", httpService(s2)),
+						),
 					),
 				},
 			),
@@ -1939,21 +1707,10 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "b.example.com",
-								routes: routemap(
-									route("/", servicemap(
-										httpService(s1),
-									)),
-									route("/kuarder", servicemap(
-										httpService(s2),
-									)),
-								),
-							},
-							MinProtoVersion: auth.TlsParameters_TLSv1_1,
-							Secret:          secret(sec1),
-						},
+						securevirtualhost("b.example.com", sec1,
+							route("/", httpService(s1)),
+							route("/kuarder", httpService(s2)),
+						),
 					),
 				},
 			),
@@ -1984,18 +1741,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "b.example.com",
-								routes: routemap(
-									route("/", servicemap(
-										httpService(s1),
-									)),
-								),
-							},
-							MinProtoVersion: auth.TlsParameters_TLSv1_1,
-							Secret:          secret(sec1),
-						},
+						securevirtualhost("b.example.com", sec1, route("/", httpService(s1))),
 					),
 				},
 			),
@@ -2008,38 +1754,12 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "b.example.com",
-							routes: routemap(
-								&Route{
-									Prefix: "/",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									HTTPSUpgrade: true,
-								},
-							),
-						},
+						virtualhost("b.example.com", routeUpgrade("/", httpService(s1))),
 					),
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "b.example.com",
-								routes: routemap(
-									&Route{
-										Prefix: "/",
-										httpServices: servicemap(
-											httpService(s1),
-										),
-										HTTPSUpgrade: true,
-									},
-								),
-							},
-							MinProtoVersion: auth.TlsParameters_TLSv1_1,
-							Secret:          secret(sec1),
-						},
+						securevirtualhost("b.example.com", sec1, routeUpgrade("/", httpService(s1))),
 					),
 				},
 			),
@@ -2053,12 +1773,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "example.com",
-							routes: routemap(
-								route("/"),
-							),
-						},
+						virtualhost("example.com", route("/")),
 					),
 				},
 			),
@@ -2071,21 +1786,10 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "example.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-								&Route{
-									Prefix: "/websocket",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									PrefixRewrite: "/",
-								},
-							),
-						},
+						virtualhost("example.com",
+							route("/", httpService(s1)),
+							routeRewrite("/websocket", "/", httpService(s1)),
+						),
 					),
 				},
 			),
@@ -2167,21 +1871,10 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "example.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-								&Route{
-									Prefix: "/websocket",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									Websocket: true,
-								},
-							),
-						},
+						virtualhost("example.com",
+							route("/", httpService(s1)),
+							routeWebsocket("/websocket", httpService(s1)),
+						),
 					),
 				},
 			),
@@ -2194,14 +1887,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "example.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						},
+						virtualhost("example.com", route("/", httpService(s1))),
 					),
 				},
 			),
@@ -2214,37 +1900,12 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "foo.com",
-							routes: routemap(
-								&Route{
-									Prefix: "/",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									HTTPSUpgrade: true,
-								},
-							),
-						},
+						virtualhost("foo.com", routeUpgrade("/", httpService(s1))),
 					),
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						&SecureVirtualHost{
-							MinProtoVersion: auth.TlsParameters_TLSv1_1,
-							VirtualHost: VirtualHost{
-								Name: "foo.com",
-								routes: routemap(
-									&Route{
-										Prefix: "/",
-										httpServices: servicemap(
-											httpService(s1),
-										),
-										HTTPSUpgrade: true,
-									}),
-							},
-							Secret: secret(sec1),
-						},
+						securevirtualhost("foo.com", sec1, routeUpgrade("/", httpService(s1))),
 					),
 				},
 			),
@@ -2257,30 +1918,12 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "foo.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						},
+						virtualhost("foo.com", route("/", httpService(s1))),
 					),
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						&SecureVirtualHost{
-							MinProtoVersion: auth.TlsParameters_TLSv1_1,
-							VirtualHost: VirtualHost{
-								Name: "foo.com",
-								routes: routemap(
-									route("/", servicemap(
-										httpService(s1),
-									)),
-								),
-							},
-							Secret: secret(sec1),
-						},
+						securevirtualhost("foo.com", sec1, route("/", httpService(s1))),
 					),
 				},
 			),
@@ -2293,18 +1936,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "foo.com",
-							routes: routemap(
-								&Route{
-									Prefix: "/",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									HTTPSUpgrade: true,
-								},
-							),
-						},
+						virtualhost("foo.com", routeUpgrade("/", httpService(s1))),
 					),
 				}, &Listener{
 					Port: 443,
@@ -2313,13 +1945,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "foo.com",
 								routes: routemap(
-									&Route{
-										Prefix: "/",
-										httpServices: servicemap(
-											httpService(s1),
-										),
-										HTTPSUpgrade: true,
-									},
+									routeUpgrade("/", httpService(s1)),
 								),
 							},
 							MinProtoVersion: auth.TlsParameters_TLSv1_2,
@@ -2337,18 +1963,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "foo.com",
-							routes: routemap(
-								&Route{
-									Prefix: "/",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									HTTPSUpgrade: true,
-								},
-							),
-						},
+						virtualhost("foo.com", routeUpgrade("/", httpService(s1))),
 					),
 				}, &Listener{
 					Port: 443,
@@ -2357,13 +1972,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "foo.com",
 								routes: routemap(
-									&Route{
-										Prefix: "/",
-										httpServices: servicemap(
-											httpService(s1),
-										),
-										HTTPSUpgrade: true,
-									},
+									routeUpgrade("/", httpService(s1)),
 								),
 							},
 							MinProtoVersion: auth.TlsParameters_TLSv1_3,
@@ -2381,36 +1990,12 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "foo.com",
-							routes: routemap(
-								&Route{
-									Prefix: "/",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									HTTPSUpgrade: true,
-								}),
-						},
+						virtualhost("foo.com", routeUpgrade("/", httpService(s1))),
 					),
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "foo.com",
-								routes: routemap(
-									&Route{
-										Prefix: "/",
-										httpServices: servicemap(
-											httpService(s1),
-										),
-										HTTPSUpgrade: true,
-									}),
-							},
-							MinProtoVersion: auth.TlsParameters_TLSv1_1,
-							Secret:          secret(sec1),
-						},
+						securevirtualhost("foo.com", sec1, routeUpgrade("/", httpService(s1))),
 					),
 				},
 			),
@@ -2423,14 +2008,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "example.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s2),
-								)),
-							),
-						},
+						virtualhost("example.com", route("/", httpService(s2))),
 					),
 				},
 			),
@@ -2443,15 +2021,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "example.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-									httpService(s2),
-								)),
-							),
-						},
+						virtualhost("example.com", route("/", httpService(s1), httpService(s2))),
 					),
 				},
 			),
@@ -2466,14 +2036,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "b.example.com",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-							),
-						},
+						virtualhost("b.example.com", route("/", httpService(s1))),
 					),
 				}, &Listener{
 					Port: 443,
@@ -2482,9 +2045,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "b.example.com",
 								routes: routemap(
-									route("/", servicemap(
-										httpService(s1),
-									)),
+									route("/", httpService(s1)),
 								),
 							},
 							MinProtoVersion: auth.TlsParameters_TLSv1_3,
@@ -2503,21 +2064,10 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/", servicemap(
-									httpService(s1),
-								)),
-								&Route{
-									Prefix: "/ws1",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									Websocket: true,
-								},
-							),
-						},
+						virtualhost("*",
+							route("/", httpService(s1)),
+							routeWebsocket("/ws1", httpService(s1)),
+						),
 					),
 				},
 			),
@@ -2531,20 +2081,13 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								&Route{
-									Prefix: "/",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									TimeoutPolicy: &TimeoutPolicy{
-										Timeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
-									},
-								},
-							),
-						},
+						virtualhost("*", &Route{
+							Prefix:       "/",
+							httpServices: servicemap(httpService(s1)),
+							TimeoutPolicy: &TimeoutPolicy{
+								Timeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
+							},
+						}),
 					),
 				},
 			),
@@ -2558,20 +2101,13 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								&Route{
-									Prefix: "/",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									TimeoutPolicy: &TimeoutPolicy{
-										Timeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
-									},
-								},
-							),
-						},
+						virtualhost("*", &Route{
+							Prefix:       "/",
+							httpServices: servicemap(httpService(s1)),
+							TimeoutPolicy: &TimeoutPolicy{
+								Timeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
+							},
+						}),
 					),
 				},
 			),
@@ -2585,20 +2121,13 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								&Route{
-									Prefix: "/",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									TimeoutPolicy: &TimeoutPolicy{
-										Timeout: 90 * time.Second,
-									},
-								},
-							),
-						},
+						virtualhost("*", &Route{
+							Prefix:       "/",
+							httpServices: servicemap(httpService(s1)),
+							TimeoutPolicy: &TimeoutPolicy{
+								Timeout: 90 * time.Second,
+							},
+						}),
 					),
 				},
 			),
@@ -2612,20 +2141,13 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								&Route{
-									Prefix: "/",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									TimeoutPolicy: &TimeoutPolicy{
-										Timeout: 90 * time.Second,
-									},
-								},
-							),
-						},
+						virtualhost("*", &Route{
+							Prefix:       "/",
+							httpServices: servicemap(httpService(s1)),
+							TimeoutPolicy: &TimeoutPolicy{
+								Timeout: 90 * time.Second,
+							},
+						}),
 					),
 				},
 			),
@@ -2639,20 +2161,13 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								&Route{
-									Prefix: "/",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									TimeoutPolicy: &TimeoutPolicy{
-										Timeout: -1,
-									},
-								},
-							),
-						},
+						virtualhost("*", &Route{
+							Prefix:       "/",
+							httpServices: servicemap(httpService(s1)),
+							TimeoutPolicy: &TimeoutPolicy{
+								Timeout: -1,
+							},
+						}),
 					),
 				},
 			),
@@ -2666,20 +2181,13 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								&Route{
-									Prefix: "/",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									TimeoutPolicy: &TimeoutPolicy{
-										Timeout: -1,
-									},
-								},
-							),
-						},
+						virtualhost("*", &Route{
+							Prefix:       "/",
+							httpServices: servicemap(httpService(s1)),
+							TimeoutPolicy: &TimeoutPolicy{
+								Timeout: -1,
+							},
+						}),
 					),
 				},
 			),
@@ -2692,17 +2200,10 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "example.com",
-							routes: routemap(
-								route("/blog", servicemap(
-									httpService(s4),
-								)),
-								route("/blog/admin", servicemap(
-									httpService(s5),
-								)),
-							),
-						},
+						virtualhost("example.com",
+							route("/blog", httpService(s4)),
+							route("/blog/admin", httpService(s5)),
+						),
 					),
 				},
 			),
@@ -2716,22 +2217,15 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								&Route{
-									Prefix: "/",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									RetryPolicy: &RetryPolicy{
-										RetryOn:       "gateway-error",
-										NumRetries:    6,
-										PerTryTimeout: 10 * time.Second,
-									},
-								},
-							),
-						},
+						virtualhost("*", &Route{
+							Prefix:       "/",
+							httpServices: servicemap(httpService(s1)),
+							RetryPolicy: &RetryPolicy{
+								RetryOn:       "gateway-error",
+								NumRetries:    6,
+								PerTryTimeout: 10 * time.Second,
+							},
+						}),
 					),
 				},
 			),
@@ -2745,22 +2239,15 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								&Route{
-									Prefix: "/",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									RetryPolicy: &RetryPolicy{
-										RetryOn:       "gateway-error",
-										NumRetries:    6,
-										PerTryTimeout: 0,
-									},
-								},
-							),
-						},
+						virtualhost("*", &Route{
+							Prefix:       "/",
+							httpServices: servicemap(httpService(s1)),
+							RetryPolicy: &RetryPolicy{
+								RetryOn:       "gateway-error",
+								NumRetries:    6,
+								PerTryTimeout: 0,
+							},
+						}),
 					),
 				},
 			),
@@ -2775,22 +2262,15 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								&Route{
-									Prefix: "/",
-									httpServices: servicemap(
-										httpService(s1),
-									),
-									RetryPolicy: &RetryPolicy{
-										RetryOn:       "gateway-error",
-										NumRetries:    6,
-										PerTryTimeout: 10 * time.Second,
-									},
-								},
-							),
-						},
+						virtualhost("*", &Route{
+							Prefix:       "/",
+							httpServices: servicemap(httpService(s1)),
+							RetryPolicy: &RetryPolicy{
+								RetryOn:       "gateway-error",
+								NumRetries:    6,
+								PerTryTimeout: 10 * time.Second,
+							},
+						}),
 					),
 				},
 			),
@@ -2803,44 +2283,18 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "example.com",
-							routes: routemap(
-								&Route{
-									Prefix: "/",
-									httpServices: servicemap(
-										httpService(s13a),
-									),
-									HTTPSUpgrade: true,
-								},
-								route("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", servicemap(
-									httpService(s13b),
-								)),
-							),
-						},
+						virtualhost("example.com",
+							routeUpgrade("/", httpService(s13a)),
+							route("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", httpService(s13b)),
+						),
 					),
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "example.com",
-								routes: routemap(
-									&Route{
-										Prefix: "/",
-										httpServices: servicemap(
-											httpService(s13a),
-										),
-										HTTPSUpgrade: true,
-									},
-									route("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", servicemap(
-										httpService(s13b),
-									)),
-								),
-							},
-							MinProtoVersion: auth.TlsParameters_TLSv1_1,
-							Secret:          secret(sec13),
-						},
+						securevirtualhost("example.com", sec13,
+							routeUpgrade("/", httpService(s13a)),
+							route("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", httpService(s13b)),
+						),
 					),
 				},
 			),
@@ -2853,21 +2307,16 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/", servicemap(
-									&HTTPService{
-										TCPService: TCPService{
-											Name:        s3a.Name,
-											Namespace:   s3a.Namespace,
-											ServicePort: &s3a.Spec.Ports[0],
-										},
-										Protocol: "h2c",
-									},
-								)),
-							),
-						},
+						virtualhost("*",
+							route("/", &HTTPService{
+								TCPService: TCPService{
+									Name:        s3a.Name,
+									Namespace:   s3a.Namespace,
+									ServicePort: &s3a.Spec.Ports[0],
+								},
+								Protocol: "h2c",
+							}),
+						),
 					),
 				},
 			),
@@ -2880,21 +2329,16 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/", servicemap(
-									&HTTPService{
-										TCPService: TCPService{
-											Name:        s3b.Name,
-											Namespace:   s3b.Namespace,
-											ServicePort: &s3b.Spec.Ports[0],
-										},
-										Protocol: "h2",
-									},
-								)),
-							),
-						},
+						virtualhost("*",
+							route("/", &HTTPService{
+								TCPService: TCPService{
+									Name:        s3b.Name,
+									Namespace:   s3b.Namespace,
+									ServicePort: &s3b.Spec.Ports[0],
+								},
+								Protocol: "h2",
+							}),
+						),
 					),
 				},
 			),
@@ -2907,21 +2351,16 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/", servicemap(
-									&HTTPService{
-										TCPService: TCPService{
-											Name:        s3c.Name,
-											Namespace:   s3c.Namespace,
-											ServicePort: &s3c.Spec.Ports[0],
-										},
-										Protocol: "tls",
-									},
-								)),
-							),
-						},
+						virtualhost("*",
+							route("/", &HTTPService{
+								TCPService: TCPService{
+									Name:        s3c.Name,
+									Namespace:   s3c.Namespace,
+									ServicePort: &s3c.Spec.Ports[0],
+								},
+								Protocol: "tls",
+							}),
+						),
 					),
 				},
 			),
@@ -2935,24 +2374,19 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "*",
-							routes: routemap(
-								route("/", servicemap(
-									&HTTPService{
-										TCPService: TCPService{
-											Name:               s1b.Name,
-											Namespace:          s1b.Namespace,
-											ServicePort:        &s1b.Spec.Ports[0],
-											MaxConnections:     9000,
-											MaxPendingRequests: 4096,
-											MaxRequests:        404,
-											MaxRetries:         7,
-										},
-									},
-								)),
-							),
-						},
+						virtualhost("*",
+							route("/", &HTTPService{
+								TCPService: TCPService{
+									Name:               s1b.Name,
+									Namespace:          s1b.Namespace,
+									ServicePort:        &s1b.Spec.Ports[0],
+									MaxConnections:     9000,
+									MaxPendingRequests: 4096,
+									MaxRequests:        404,
+									MaxRetries:         7,
+								},
+							}),
+						),
 					),
 				},
 			),
@@ -2965,31 +2399,24 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "example.com",
-							routes: routemap(
-								route("/a", servicemap(
-									&HTTPService{
-										TCPService: TCPService{
-											Name:        s1.Name,
-											Namespace:   s1.Namespace,
-											ServicePort: &s1.Spec.Ports[0],
-											Weight:      90,
-										},
-									}),
-								),
-								route("/b", servicemap(
-									&HTTPService{
-										TCPService: TCPService{
-											Name:        s1.Name,
-											Namespace:   s1.Namespace,
-											ServicePort: &s1.Spec.Ports[0],
-											Weight:      60,
-										},
-									}),
-								),
-							),
-						},
+						virtualhost("example.com",
+							route("/a", &HTTPService{
+								TCPService: TCPService{
+									Name:        s1.Name,
+									Namespace:   s1.Namespace,
+									ServicePort: &s1.Spec.Ports[0],
+									Weight:      90,
+								},
+							}),
+							route("/b", &HTTPService{
+								TCPService: TCPService{
+									Name:        s1.Name,
+									Namespace:   s1.Namespace,
+									ServicePort: &s1.Spec.Ports[0],
+									Weight:      60,
+								},
+							}),
+						),
 					),
 				},
 			),
@@ -3002,29 +2429,25 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "example.com",
-							routes: routemap(
-								route("/a", servicemap(
-									&HTTPService{
-										TCPService: TCPService{
-											Name:        s1.Name,
-											Namespace:   s1.Namespace,
-											ServicePort: &s1.Spec.Ports[0],
-											Weight:      90,
-										},
+						virtualhost("example.com",
+							route("/a",
+								&HTTPService{
+									TCPService: TCPService{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+										Weight:      90,
 									},
-									&HTTPService{
-										TCPService: TCPService{
-											Name:        s1.Name,
-											Namespace:   s1.Namespace,
-											ServicePort: &s1.Spec.Ports[0],
-											Weight:      60,
-										},
-									}),
-								),
+								}, &HTTPService{
+									TCPService: TCPService{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+										Weight:      60,
+									},
+								},
 							),
-						},
+						),
 					),
 				},
 			),
@@ -3200,14 +2623,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "example.com",
-							routes: routemap(
-								&Route{
-									Prefix: "/finance",
-								},
-							),
-						},
+						virtualhost("example.com", route("/finance")),
 					),
 				},
 			),
@@ -4209,19 +3625,32 @@ func routemap(routes ...*Route) map[string]*Route {
 	return m
 }
 
-func route(prefix string, httpServices ...map[servicemeta]*HTTPService) *Route {
+func route(prefix string, services ...*HTTPService) *Route {
 	route := Route{
 		Prefix: prefix,
 	}
-	switch len(httpServices) {
-	case 0:
-		// nothing to do
-	case 1:
-		route.httpServices = httpServices[0]
-	default:
-		panic("only pass one servicemap to route")
+	if len(services) > 0 {
+		route.httpServices = servicemap(services...)
 	}
 	return &route
+}
+
+func routeUpgrade(prefix string, services ...*HTTPService) *Route {
+	r := route(prefix, services...)
+	r.HTTPSUpgrade = true
+	return r
+}
+
+func routeRewrite(prefix, rewrite string, services ...*HTTPService) *Route {
+	r := route(prefix, services...)
+	r.PrefixRewrite = rewrite
+	return r
+}
+
+func routeWebsocket(prefix string, services ...*HTTPService) *Route {
+	r := route(prefix, services...)
+	r.Websocket = true
+	return r
 }
 
 func tcpService(s *v1.Service) *TCPService {
@@ -4272,9 +3701,29 @@ func virtualhosts(vx ...Vertex) map[string]Vertex {
 			m[v.Name] = v
 		case *SecureVirtualHost:
 			m[v.VirtualHost.Name] = v
+		default:
+			panic(fmt.Sprintf("unable to handle Vertex type %T", v))
 		}
 	}
 	return m
+}
+
+func virtualhost(name string, routes ...*Route) *VirtualHost {
+	return &VirtualHost{
+		Name:   name,
+		routes: routemap(routes...),
+	}
+}
+
+func securevirtualhost(name string, sec *v1.Secret, routes ...*Route) *SecureVirtualHost {
+	return &SecureVirtualHost{
+		VirtualHost: VirtualHost{
+			Name:   name,
+			routes: routemap(routes...),
+		},
+		MinProtoVersion: auth.TlsParameters_TLSv1_1,
+		Secret:          secret(sec),
+	}
 }
 
 func listeners(ls ...*Listener) []Vertex {
