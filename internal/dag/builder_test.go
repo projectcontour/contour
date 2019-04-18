@@ -2398,21 +2398,25 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
-							route("/a", &HTTPService{
-								TCPService: TCPService{
-									Name:        s1.Name,
-									Namespace:   s1.Namespace,
-									ServicePort: &s1.Spec.Ports[0],
-									Weight:      90,
+							routeCluster("/a", &Cluster{
+								Upstream: &HTTPService{
+									TCPService: TCPService{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
 								},
+								Weight: 90,
 							}),
-							route("/b", &HTTPService{
-								TCPService: TCPService{
-									Name:        s1.Name,
-									Namespace:   s1.Namespace,
-									ServicePort: &s1.Spec.Ports[0],
-									Weight:      60,
+							routeCluster("/b", &Cluster{
+								Upstream: &HTTPService{
+									TCPService: TCPService{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
 								},
+								Weight: 60,
 							}),
 						),
 					),
@@ -2428,21 +2432,25 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
-							route("/a",
-								&HTTPService{
-									TCPService: TCPService{
-										Name:        s1.Name,
-										Namespace:   s1.Namespace,
-										ServicePort: &s1.Spec.Ports[0],
-										Weight:      90,
+							routeCluster("/a",
+								&Cluster{
+									Upstream: &HTTPService{
+										TCPService: TCPService{
+											Name:        s1.Name,
+											Namespace:   s1.Namespace,
+											ServicePort: &s1.Spec.Ports[0],
+										},
 									},
-								}, &HTTPService{
-									TCPService: TCPService{
-										Name:        s1.Name,
-										Namespace:   s1.Namespace,
-										ServicePort: &s1.Spec.Ports[0],
-										Weight:      60,
+									Weight: 90,
+								}, &Cluster{
+									Upstream: &HTTPService{
+										TCPService: TCPService{
+											Name:        s1.Name,
+											Namespace:   s1.Namespace,
+											ServicePort: &s1.Spec.Ports[0],
+										},
 									},
+									Weight: 60,
 								},
 							),
 						),
@@ -2714,7 +2722,6 @@ func TestBuilderLookupHTTPService(t *testing.T) {
 	tests := map[string]struct {
 		meta
 		port        intstr.IntOrString
-		weight      int
 		strategy    string
 		healthcheck *ingressroutev1.HealthCheck
 		want        *HTTPService
@@ -2750,7 +2757,7 @@ func TestBuilderLookupHTTPService(t *testing.T) {
 					},
 				},
 			}
-			got := b.lookupHTTPService(tc.meta, tc.port, tc.weight, tc.strategy, tc.healthcheck)
+			got := b.lookupHTTPService(tc.meta, tc.port, tc.strategy, tc.healthcheck)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}
@@ -3627,13 +3634,20 @@ func route(prefix string, services ...*HTTPService) *Route {
 	route := Route{
 		Prefix: prefix,
 	}
-	if len(services) > 0 {
-		route.Clusters = make(map[servicemeta]*Cluster)
-		for _, s := range services {
-			route.Clusters[s.toMeta()] = &Cluster{
-				Upstream: s,
-			}
-		}
+	for _, s := range services {
+		route.Clusters = append(route.Clusters, &Cluster{
+			Upstream: s,
+		})
+	}
+	return &route
+}
+
+func routeCluster(prefix string, clusters ...*Cluster) *Route {
+	route := Route{
+		Prefix: prefix,
+	}
+	for _, c := range clusters {
+		route.Clusters = append(route.Clusters, c)
 	}
 	return &route
 }
@@ -3683,15 +3697,14 @@ func httpService(s *v1.Service) *HTTPService {
 	}
 }
 
-func clustermap(services ...*v1.Service) map[servicemeta]*Cluster {
-	m := make(map[servicemeta]*Cluster)
+func clustermap(services ...*v1.Service) []*Cluster {
+	var c []*Cluster
 	for _, s := range services {
-		svc := httpService(s)
-		m[svc.toMeta()] = &Cluster{
-			Upstream: svc,
-		}
+		c = append(c, &Cluster{
+			Upstream: httpService(s),
+		})
 	}
-	return m
+	return c
 }
 
 type statusByNamespaceAndName []Status

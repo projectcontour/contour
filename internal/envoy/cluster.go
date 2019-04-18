@@ -33,7 +33,7 @@ import (
 func Cluster(c *dag.Cluster) *v2.Cluster {
 	switch upstream := c.Upstream.(type) {
 	case *dag.HTTPService:
-		c := cluster(&upstream.TCPService)
+		c := cluster(c, &upstream.TCPService)
 		switch upstream.Protocol {
 		case "tls":
 			c.TlsContext = UpstreamTLSContext()
@@ -45,15 +45,15 @@ func Cluster(c *dag.Cluster) *v2.Cluster {
 		}
 		return c
 	case *dag.TCPService:
-		return cluster(upstream)
+		return cluster(c, upstream)
 	default:
 		panic(fmt.Sprintf("unsupported upstream type: %T", upstream))
 	}
 }
 
-func cluster(service *dag.TCPService) *v2.Cluster {
+func cluster(cluster *dag.Cluster, service *dag.TCPService) *v2.Cluster {
 	c := &v2.Cluster{
-		Name:                 Clustername(service),
+		Name:                 Clustername(cluster),
 		AltStatName:          altStatName(service),
 		ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
 		EdsClusterConfig:     edsconfig("contour", service),
@@ -121,7 +121,16 @@ func edshealthcheck(s *dag.TCPService) []*core.HealthCheck {
 }
 
 // Clustername returns the name of the CDS cluster for this service.
-func Clustername(service *dag.TCPService) string {
+func Clustername(cluster *dag.Cluster) string {
+	var service *dag.TCPService
+	switch s := cluster.Upstream.(type) {
+	case *dag.HTTPService:
+		service = &s.TCPService
+	case *dag.TCPService:
+		service = s
+	default:
+		panic(fmt.Sprintf("unsupported upstream type: %T", s))
+	}
 	buf := service.LoadBalancerStrategy
 	if hc := service.HealthCheck; hc != nil {
 		if hc.TimeoutSeconds > 0 {

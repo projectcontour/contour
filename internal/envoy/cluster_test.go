@@ -317,52 +317,58 @@ func TestCluster(t *testing.T) {
 
 func TestClustername(t *testing.T) {
 	tests := map[string]struct {
-		service *dag.TCPService
+		cluster *dag.Cluster
 		want    string
 	}{
 		"simple": {
-			service: &dag.TCPService{
-				Name:      "backend",
-				Namespace: "default",
-				ServicePort: &v1.ServicePort{
-					Name:       "http",
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(6502),
+			cluster: &dag.Cluster{
+				Upstream: &dag.TCPService{
+					Name:      "backend",
+					Namespace: "default",
+					ServicePort: &v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       80,
+						TargetPort: intstr.FromInt(6502),
+					},
 				},
 			},
 			want: "default/backend/80/da39a3ee5e",
 		},
 		"far too long": {
-			service: &dag.TCPService{
-				Name:      "must-be-in-want-of-a-wife",
-				Namespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
-				ServicePort: &v1.ServicePort{
-					Name:       "http",
-					Protocol:   "TCP",
-					Port:       9999,
-					TargetPort: intstr.FromString("http-alt"),
+			cluster: &dag.Cluster{
+				Upstream: &dag.TCPService{
+					Name:      "must-be-in-want-of-a-wife",
+					Namespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
+					ServicePort: &v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       9999,
+						TargetPort: intstr.FromString("http-alt"),
+					},
 				},
 			},
 			want: "it-is-a--dea8b0/must-be--dea8b0/9999/da39a3ee5e",
 		},
 		"various healthcheck params": {
-			service: &dag.TCPService{
-				Name:      "backend",
-				Namespace: "default",
-				ServicePort: &v1.ServicePort{
-					Name:       "http",
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(6502),
-				},
-				LoadBalancerStrategy: "Maglev",
-				HealthCheck: &ingressroutev1.HealthCheck{
-					Path:                    "/healthz",
-					IntervalSeconds:         5,
-					TimeoutSeconds:          30,
-					UnhealthyThresholdCount: 3,
-					HealthyThresholdCount:   1,
+			cluster: &dag.Cluster{
+				Upstream: &dag.TCPService{
+					Name:      "backend",
+					Namespace: "default",
+					ServicePort: &v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       80,
+						TargetPort: intstr.FromInt(6502),
+					},
+					LoadBalancerStrategy: "Maglev",
+					HealthCheck: &ingressroutev1.HealthCheck{
+						Path:                    "/healthz",
+						IntervalSeconds:         5,
+						TimeoutSeconds:          30,
+						UnhealthyThresholdCount: 3,
+						HealthyThresholdCount:   1,
+					},
 				},
 			},
 			want: "default/backend/80/32737eb011",
@@ -371,7 +377,7 @@ func TestClustername(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := Clustername(tc.service)
+			got := Clustername(tc.cluster)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}

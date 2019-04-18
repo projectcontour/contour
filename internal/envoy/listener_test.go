@@ -195,22 +195,26 @@ func TestTCPProxy(t *testing.T) {
 		accessLogPath = "/dev/stdout"
 	)
 
-	s1 := &dag.TCPService{
-		Name:      "example",
-		Namespace: "default",
-		ServicePort: &v1.ServicePort{
-			Protocol:   "TCP",
-			Port:       443,
-			TargetPort: intstr.FromInt(8443),
+	c1 := &dag.Cluster{
+		Upstream: &dag.TCPService{
+			Name:      "example",
+			Namespace: "default",
+			ServicePort: &v1.ServicePort{
+				Protocol:   "TCP",
+				Port:       443,
+				TargetPort: intstr.FromInt(8443),
+			},
 		},
 	}
-	s2 := &dag.TCPService{
-		Name:      "example2",
-		Namespace: "default",
-		ServicePort: &v1.ServicePort{
-			Protocol:   "TCP",
-			Port:       443,
-			TargetPort: intstr.FromInt(8443),
+	c2 := &dag.Cluster{
+		Upstream: &dag.TCPService{
+			Name:      "example2",
+			Namespace: "default",
+			ServicePort: &v1.ServicePort{
+				Protocol:   "TCP",
+				Port:       443,
+				TargetPort: intstr.FromInt(8443),
+			},
 		},
 		Weight: 20,
 	}
@@ -221,9 +225,7 @@ func TestTCPProxy(t *testing.T) {
 	}{
 		"single cluster": {
 			proxy: &dag.TCPProxy{
-				Clusters: []*dag.Cluster{{
-					Upstream: s1,
-				}},
+				Clusters: []*dag.Cluster{c1},
 			},
 			want: listener.Filter{
 				Name: util.TCPProxy,
@@ -231,7 +233,7 @@ func TestTCPProxy(t *testing.T) {
 					Config: messageToStruct(&envoy_config_v2_tcpproxy.TcpProxy{
 						StatPrefix: statPrefix,
 						ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
-							Cluster: Clustername(s1),
+							Cluster: Clustername(c1),
 						},
 						AccessLog: []*envoy_accesslog.AccessLog{{
 							Name: util.FileAccessLog,
@@ -245,11 +247,7 @@ func TestTCPProxy(t *testing.T) {
 		},
 		"multiple cluster": {
 			proxy: &dag.TCPProxy{
-				Clusters: []*dag.Cluster{{
-					Upstream: s2,
-				}, {
-					Upstream: s1, // assert that these are sorted
-				}},
+				Clusters: []*dag.Cluster{c2, c1},
 			},
 			want: listener.Filter{
 				Name: util.TCPProxy,
@@ -259,10 +257,10 @@ func TestTCPProxy(t *testing.T) {
 						ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_WeightedClusters{
 							WeightedClusters: &envoy_config_v2_tcpproxy.TcpProxy_WeightedCluster{
 								Clusters: []*envoy_config_v2_tcpproxy.TcpProxy_WeightedCluster_ClusterWeight{{
-									Name:   Clustername(s1),
+									Name:   Clustername(c1),
 									Weight: 1,
 								}, {
-									Name:   Clustername(s2),
+									Name:   Clustername(c2),
 									Weight: 20,
 								}},
 							},

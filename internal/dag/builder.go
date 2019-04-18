@@ -74,8 +74,8 @@ type builder struct {
 }
 
 // lookupHTTPService returns a HTTPService that matches the meta and port supplied.
-func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) *HTTPService {
-	s := b.lookupService(m, port, weight, strategy, hc)
+func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString, strategy string, hc *ingressroutev1.HealthCheck) *HTTPService {
+	s := b.lookupService(m, port, strategy, hc)
 	switch s := s.(type) {
 	case *HTTPService:
 		return s
@@ -87,10 +87,10 @@ func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString, weight int,
 		for i := range svc.Spec.Ports {
 			p := &svc.Spec.Ports[i]
 			if int(p.Port) == port.IntValue() {
-				return b.addHTTPService(svc, p, weight, strategy, hc)
+				return b.addHTTPService(svc, p, strategy, hc)
 			}
 			if port.String() == p.Name {
-				return b.addHTTPService(svc, p, weight, strategy, hc)
+				return b.addHTTPService(svc, p, strategy, hc)
 			}
 		}
 		return nil
@@ -101,8 +101,8 @@ func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString, weight int,
 }
 
 // lookupTCPService returns a TCPService that matches the meta and port supplied.
-func (b *builder) lookupTCPService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) *TCPService {
-	s := b.lookupService(m, port, weight, strategy, hc)
+func (b *builder) lookupTCPService(m meta, port intstr.IntOrString, strategy string, hc *ingressroutev1.HealthCheck) *TCPService {
+	s := b.lookupService(m, port, strategy, hc)
 	switch s := s.(type) {
 	case *TCPService:
 		return s
@@ -114,10 +114,10 @@ func (b *builder) lookupTCPService(m meta, port intstr.IntOrString, weight int, 
 		for i := range svc.Spec.Ports {
 			p := &svc.Spec.Ports[i]
 			if int(p.Port) == port.IntValue() {
-				return b.addTCPService(svc, p, weight, strategy, hc)
+				return b.addTCPService(svc, p, strategy, hc)
 			}
 			if port.String() == p.Name {
-				return b.addTCPService(svc, p, weight, strategy, hc)
+				return b.addTCPService(svc, p, strategy, hc)
 			}
 		}
 		return nil
@@ -126,7 +126,7 @@ func (b *builder) lookupTCPService(m meta, port intstr.IntOrString, weight int, 
 		return nil
 	}
 }
-func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, strategy string, hc *ingressroutev1.HealthCheck) Service {
+func (b *builder) lookupService(m meta, port intstr.IntOrString, strategy string, hc *ingressroutev1.HealthCheck) Service {
 	if port.Type != intstr.Int {
 		// can't handle, give up
 		return nil
@@ -135,7 +135,6 @@ func (b *builder) lookupService(m meta, port intstr.IntOrString, weight int, str
 		name:        m.name,
 		namespace:   m.namespace,
 		port:        int32(port.IntValue()),
-		weight:      weight,
 		strategy:    strategy,
 		healthcheck: healthcheckToString(hc),
 	}
@@ -150,7 +149,7 @@ func healthcheckToString(hc *ingressroutev1.HealthCheck) string {
 	return fmt.Sprintf("%#v", hc)
 }
 
-func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort, weight int, strategy string, hc *ingressroutev1.HealthCheck) *HTTPService {
+func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort, strategy string, hc *ingressroutev1.HealthCheck) *HTTPService {
 	if b.services == nil {
 		b.services = make(map[servicemeta]Service)
 	}
@@ -165,7 +164,6 @@ func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort, weight i
 			Name:                 svc.Name,
 			Namespace:            svc.Namespace,
 			ServicePort:          port,
-			Weight:               weight,
 			LoadBalancerStrategy: strategy,
 
 			MaxConnections:     parseAnnotation(svc.Annotations, annotationMaxConnections),
@@ -180,7 +178,7 @@ func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort, weight i
 	return s
 }
 
-func (b *builder) addTCPService(svc *v1.Service, port *v1.ServicePort, weight int, strategy string, hc *ingressroutev1.HealthCheck) *TCPService {
+func (b *builder) addTCPService(svc *v1.Service, port *v1.ServicePort, strategy string, hc *ingressroutev1.HealthCheck) *TCPService {
 	if b.services == nil {
 		b.services = make(map[servicemeta]Service)
 	}
@@ -188,7 +186,6 @@ func (b *builder) addTCPService(svc *v1.Service, port *v1.ServicePort, weight in
 		Name:                 svc.Name,
 		Namespace:            svc.Namespace,
 		ServicePort:          port,
-		Weight:               weight,
 		LoadBalancerStrategy: strategy,
 
 		MaxConnections:     parseAnnotation(svc.Annotations, annotationMaxConnections),
@@ -469,8 +466,8 @@ func (b *builder) computeIngresses() {
 				r := prefixRoute(ing, prefix)
 				be := httppath.Backend
 				m := meta{name: be.ServiceName, namespace: ing.Namespace}
-				if s := b.lookupHTTPService(m, be.ServicePort, 0, "", nil); s != nil {
-					r.addHTTPService(s)
+				if s := b.lookupHTTPService(m, be.ServicePort, "", nil); s != nil {
+					r.addHTTPService(s, 0)
 				}
 
 				// should we create port 80 routes for this ingress
@@ -664,8 +661,8 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 					return
 				}
 				m := meta{name: service.Name, namespace: ir.Namespace}
-				if s := b.lookupHTTPService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck); s != nil {
-					r.addHTTPService(s)
+				if s := b.lookupHTTPService(m, intstr.FromInt(service.Port), service.Strategy, service.HealthCheck); s != nil {
+					r.addHTTPService(s, service.Weight)
 				}
 			}
 
@@ -725,7 +722,7 @@ func (b *builder) processTCPProxy(ir *ingressroutev1.IngressRoute, visited []*in
 		var proxy TCPProxy
 		for _, service := range tcpproxy.Services {
 			m := meta{name: service.Name, namespace: ir.Namespace}
-			s := b.lookupTCPService(m, intstr.FromInt(service.Port), service.Weight, service.Strategy, service.HealthCheck)
+			s := b.lookupTCPService(m, intstr.FromInt(service.Port), service.Strategy, service.HealthCheck)
 			if s == nil {
 				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("tcpproxy: service %s/%s/%d: not found", ir.Namespace, service.Name, service.Port), Vhost: host})
 				return

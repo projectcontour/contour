@@ -2436,7 +2436,7 @@ func TestLoadBalancingStrategies(t *testing.T) {
 		Routes: []route.Route{
 			{
 				Match:  envoy.PrefixMatch("/a"),
-				Action: routeweightedcluster(wc[0], wc[1:]...),
+				Action: routeweightedcluster(wc...),
 			},
 		},
 	}}
@@ -2592,11 +2592,11 @@ func routecluster(cluster string) *route.Route_Route {
 	}
 }
 
-func routeweightedcluster(first weightedcluster, rest ...weightedcluster) *route.Route_Route {
+func routeweightedcluster(clusters ...weightedcluster) *route.Route_Route {
 	return &route.Route_Route{
 		Route: &route.RouteAction{
 			ClusterSpecifier: &route.RouteAction_WeightedClusters{
-				WeightedClusters: weightedclusters(append([]weightedcluster{first}, rest...)),
+				WeightedClusters: weightedclusters(clusters),
 			},
 		},
 	}

@@ -49,7 +49,7 @@ func (d *DAG) Statuses() []Status {
 
 type Route struct {
 	Prefix   string
-	Clusters map[servicemeta]*Cluster
+	Clusters []*Cluster
 
 	// Should this route generate a 301 upgrade if accessed
 	// over HTTP?
@@ -93,13 +93,11 @@ type RetryPolicy struct {
 	PerTryTimeout time.Duration
 }
 
-func (r *Route) addHTTPService(s *HTTPService) {
-	if r.Clusters == nil {
-		r.Clusters = make(map[servicemeta]*Cluster)
-	}
-	r.Clusters[s.toMeta()] = &Cluster{
+func (r *Route) addHTTPService(s *HTTPService, weight int) {
+	r.Clusters = append(r.Clusters, &Cluster{
 		Upstream: s,
-	}
+		Weight:   weight,
+	})
 }
 
 func (r *Route) Visit(f func(Vertex)) {
@@ -206,7 +204,6 @@ type TCPService struct {
 	Name, Namespace string
 
 	*v1.ServicePort
-	Weight int
 
 	// The load balancer type to use when picking a host in the cluster.
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cds.proto#envoy-api-enum-cluster-lbpolicy
@@ -237,7 +234,6 @@ type servicemeta struct {
 	name        string
 	namespace   string
 	port        int32
-	weight      int
 	strategy    string
 	healthcheck string // %#v of *ingressroutev1.HealthCheck
 }
@@ -247,7 +243,6 @@ func (s *TCPService) toMeta() servicemeta {
 		name:        s.Name,
 		namespace:   s.Namespace,
 		port:        s.Port,
-		weight:      s.Weight,
 		strategy:    s.LoadBalancerStrategy,
 		healthcheck: healthcheckToString(s.HealthCheck),
 	}
@@ -264,6 +259,9 @@ type Cluster struct {
 	// Upstream is the backend Kubernetes service traffic arriving
 	// at this Cluster will be forwarded too.
 	Upstream Service
+
+	// The relative weight of this Cluster compared to its siblings.
+	Weight int
 }
 
 func (c Cluster) Visit(f func(Vertex)) {

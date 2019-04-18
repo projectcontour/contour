@@ -119,7 +119,7 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) list
 				Config: &types.Struct{
 					Fields: map[string]*types.Value{
 						"stat_prefix": sv(statPrefix),
-						"cluster":     sv(Clustername(proxy.Clusters[0].Upstream.(*dag.TCPService))),
+						"cluster":     sv(Clustername(proxy.Clusters[0])),
 						"access_log":  accesslog(accessLogPath),
 					},
 				},
@@ -133,13 +133,12 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) list
 		sort.Stable(tcpServiceByName(clusters))
 		var l []*types.Value
 		for _, cluster := range clusters {
-			upstream := cluster.Upstream.(*dag.TCPService)
-			weight := upstream.Weight
+			weight := cluster.Weight
 			if weight == 0 {
 				weight = 1
 			}
 			l = append(l, st(map[string]*types.Value{
-				"name":   sv(Clustername(upstream)),
+				"name":   sv(Clustername(cluster)),
 				"weight": nv(float64(weight)),
 			}))
 		}
@@ -167,7 +166,7 @@ func (t tcpServiceByName) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
 func (t tcpServiceByName) Less(i, j int) bool {
 	a, b := t[i].Upstream.(*dag.TCPService), t[j].Upstream.(*dag.TCPService)
 	if a.Name == b.Name {
-		return a.Weight < b.Weight
+		return t[i].Weight < t[j].Weight
 	}
 	return a.Name < b.Name
 }

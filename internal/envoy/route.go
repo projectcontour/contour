@@ -26,7 +26,7 @@ import (
 // RouteRoute creates a route.Route_Route for the services supplied.
 // If len(services) is greater than one, the route's action will be a
 // weighted cluster.
-func RouteRoute(r *dag.Route, services []*dag.TCPService) *route.Route_Route {
+func RouteRoute(r *dag.Route, clusters []*dag.Cluster) *route.Route_Route {
 	ra := route.RouteAction{
 		RetryPolicy:   retryPolicy(r),
 		Timeout:       timeout(r),
@@ -41,17 +41,17 @@ func RouteRoute(r *dag.Route, services []*dag.TCPService) *route.Route_Route {
 		)
 	}
 
-	switch len(services) {
+	switch len(clusters) {
 	case 1:
 		ra.ClusterSpecifier = &route.RouteAction_Cluster{
-			Cluster: Clustername(services[0]),
+			Cluster: Clustername(clusters[0]),
 		}
 		ra.RequestHeadersToAdd = headers(
 			appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
 		)
 	default:
 		ra.ClusterSpecifier = &route.RouteAction_WeightedClusters{
-			WeightedClusters: weightedClusters(services),
+			WeightedClusters: weightedClusters(clusters),
 		}
 	}
 	return &route.Route_Route{
@@ -110,14 +110,14 @@ func UpgradeHTTPS() *route.Route_Redirect {
 }
 
 // weightedClusters returns a route.WeightedCluster for multiple services.
-func weightedClusters(services []*dag.TCPService) *route.WeightedCluster {
+func weightedClusters(clusters []*dag.Cluster) *route.WeightedCluster {
 	var wc route.WeightedCluster
 	var total int
-	for _, service := range services {
-		total += service.Weight
+	for _, cluster := range clusters {
+		total += cluster.Weight
 		wc.Clusters = append(wc.Clusters, &route.WeightedCluster_ClusterWeight{
-			Name:   Clustername(service),
-			Weight: u32(service.Weight),
+			Name:   Clustername(cluster),
+			Weight: u32(cluster.Weight),
 			RequestHeadersToAdd: headers(
 				appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
 			),
@@ -128,7 +128,7 @@ func weightedClusters(services []*dag.TCPService) *route.WeightedCluster {
 		for _, c := range wc.Clusters {
 			c.Weight.Value = 1
 		}
-		total = len(services)
+		total = len(clusters)
 	}
 	wc.TotalWeight = u32(total)
 
