@@ -1046,7 +1046,6 @@ func TestDAGInsert(t *testing.T) {
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				RetryPolicy: &ingressroutev1.RetryPolicy{
-					Codes:         []string{"gateway-error"},
 					NumRetries:    6,
 					PerTryTimeout: "10s",
 				},
@@ -1070,7 +1069,6 @@ func TestDAGInsert(t *testing.T) {
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				RetryPolicy: &ingressroutev1.RetryPolicy{
-					Codes:         []string{"gateway-error"},
 					NumRetries:    6,
 					PerTryTimeout: "please",
 				},
@@ -2221,7 +2219,7 @@ func TestDAGInsert(t *testing.T) {
 							Prefix:       "/",
 							httpServices: servicemap(httpService(s1)),
 							RetryPolicy: &RetryPolicy{
-								RetryOn:       "gateway-error",
+								RetryOn:       "50x",
 								NumRetries:    6,
 								PerTryTimeout: 10 * time.Second,
 							},
@@ -2243,7 +2241,7 @@ func TestDAGInsert(t *testing.T) {
 							Prefix:       "/",
 							httpServices: servicemap(httpService(s1)),
 							RetryPolicy: &RetryPolicy{
-								RetryOn:       "gateway-error",
+								RetryOn:       "50x",
 								NumRetries:    6,
 								PerTryTimeout: 0,
 							},
