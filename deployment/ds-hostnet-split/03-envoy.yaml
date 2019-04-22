@@ -20,6 +20,7 @@ spec:
         prometheus.io/port: "8002"
         prometheus.io/statsdport: "9102"
         prometheus.io/path: "/stats/prometheus"
+        steve: "sloka"
       labels:
         app: envoy
     spec:
@@ -57,7 +58,7 @@ spec:
         lifecycle:
           preStop:
             exec:
-              command: ["wget", "-qO-", "http://localhost:9001/healthcheck/fail"]
+              command: ["wget", "-qO-", "--post-data=''", "http://localhost:9001/healthcheck/fail"] 
       - name: statsd-sink
         image: prom/statsd-exporter:v0.6.0
         command: 
