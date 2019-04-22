@@ -60,6 +60,9 @@ func main() {
 	bootstrap.Flag("statsd-address", "statsd address").StringVar(&config.StatsdAddress)
 	bootstrap.Flag("statsd-port", "statsd port").IntVar(&config.StatsdPort)
 
+	// Get the running namespace passed via ENV var from the Kubernetes Downward API
+	config.Namespace = getEnv("CONTOUR_NAMESPACE", "heptio-contour")
+
 	cli := app.Command("cli", "A CLI client for the Heptio Contour Kubernetes ingress controller.")
 	var client Client
 	cli.Flag("contour", "contour host:port.").Default("127.0.0.1:8001").StringVar(&client.ContourAddr)
@@ -289,4 +292,12 @@ func parseRootNamespaces(rn string) []string {
 		ns = append(ns, strings.TrimSpace(s))
 	}
 	return ns
+}
+
+func getEnv(key, fallback string) string {
+	value, exists := os.LookupEnv(key)
+	if !exists {
+		value = fallback
+	}
+	return value
 }
