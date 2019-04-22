@@ -2208,7 +2208,6 @@ func TestRouteRetryIngressRoute(t *testing.T) {
 				RetryPolicy: &ingressroutev1.RetryPolicy{
 					NumRetries:    7,
 					PerTryTimeout: "120ms",
-					Codes:         []string{"50x", "gateway-error"},
 				},
 				Services: []ingressroutev1.Service{{
 					Name: "backend",
@@ -2224,7 +2223,7 @@ func TestRouteRetryIngressRoute(t *testing.T) {
 		Domains: []string{"test2.test.com", "test2.test.com:80"},
 		Routes: []route.Route{{
 			Match:  envoy.PrefixMatch("/"), // match all
-			Action: routeretry("default/backend/80/da39a3ee5e", "50x,gateway-error", 7, 120*time.Millisecond),
+			Action: routeretry("default/backend/80/da39a3ee5e", "50x", 7, 120*time.Millisecond),
 		}},
 	}}, nil)
 }

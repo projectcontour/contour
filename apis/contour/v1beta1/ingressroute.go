@@ -139,9 +139,6 @@ type RetryPolicy struct {
 	// PerTryTimeout specifies the timeout per retry attempt.
 	// Ignored if NumRetries is not supplied.
 	PerTryTimeout string `json:"perTryTimeout,omitempty"`
-	// Define what status codes to apply the retry policy
-	// Defaults to 5xx
-	Codes []string `json:"onStatusCodes,omitempty"`
 }
 
 // Status reports the current state of the IngressRoute

@@ -920,7 +920,7 @@ func retryPolicyIngressRoute(rp *ingressroutev1.RetryPolicy) (retryOn string, re
 	if rp != nil {
 		perTryTimeout, _ = time.ParseDuration(rp.PerTryTimeout)
 		retryCount = rp.NumRetries
-		retryOn = strings.Join(rp.Codes[:], ",")
+		retryOn = "50x"
 	}
 	return
 }
