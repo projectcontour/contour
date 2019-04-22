@@ -41,13 +41,15 @@ func TestVisitClusters(t *testing.T) {
 						VirtualHost: dag.VirtualHost{
 							Name: "www.example.com",
 							TCPProxy: &dag.TCPProxy{
-								Services: []*dag.TCPService{{
-									Name:      "example",
-									Namespace: "default",
-									ServicePort: &v1.ServicePort{
-										Protocol:   "TCP",
-										Port:       443,
-										TargetPort: intstr.FromInt(8443),
+								Clusters: []*dag.Cluster{{
+									Upstream: &dag.TCPService{
+										Name:      "example",
+										Namespace: "default",
+										ServicePort: &v1.ServicePort{
+											Protocol:   "TCP",
+											Port:       443,
+											TargetPort: intstr.FromInt(8443),
+										},
 									},
 								}},
 							},
@@ -85,13 +87,15 @@ func TestVisitClusters(t *testing.T) {
 
 func TestVisitListeners(t *testing.T) {
 	p1 := &dag.TCPProxy{
-		Services: []*dag.TCPService{{
-			Name:      "example",
-			Namespace: "default",
-			ServicePort: &v1.ServicePort{
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(8443),
+		Clusters: []*dag.Cluster{{
+			Upstream: &dag.TCPService{
+				Name:      "example",
+				Namespace: "default",
+				ServicePort: &v1.ServicePort{
+					Protocol:   "TCP",
+					Port:       443,
+					TargetPort: intstr.FromInt(8443),
+				},
 			},
 		}},
 	}

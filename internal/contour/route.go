@@ -116,22 +116,13 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				vhost := envoy.VirtualHost(vh.Name, l.Port)
 				vh.Visit(func(v dag.Vertex) {
 					if r, ok := v.(*dag.Route); ok {
-						var svcs []*dag.TCPService
-						r.Visit(func(s dag.Vertex) {
-							switch s := s.(type) {
-							case *dag.HTTPService:
-								svcs = append(svcs, &s.TCPService)
-							case *dag.TCPService:
-								svcs = append(svcs, s)
-							}
-						})
-						if len(svcs) < 1 {
+						if len(r.Clusters) < 1 {
 							// no services for this route, skip it.
 							return
 						}
 						rr := route.Route{
 							Match:  envoy.PrefixMatch(r.Prefix),
-							Action: envoy.RouteRoute(r, svcs),
+							Action: envoy.RouteRoute(r, r.Clusters),
 						}
 
 						if r.HTTPSUpgrade {
@@ -149,22 +140,13 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				vhost := envoy.VirtualHost(vh.VirtualHost.Name, l.Port)
 				vh.Visit(func(v dag.Vertex) {
 					if r, ok := v.(*dag.Route); ok {
-						var svcs []*dag.TCPService
-						r.Visit(func(s dag.Vertex) {
-							switch s := s.(type) {
-							case *dag.HTTPService:
-								svcs = append(svcs, &s.TCPService)
-							case *dag.TCPService:
-								svcs = append(svcs, s)
-							}
-						})
-						if len(svcs) < 1 {
+						if len(r.Clusters) < 1 {
 							// no services for this route, skip it.
 							return
 						}
 						vhost.Routes = append(vhost.Routes, route.Route{
 							Match:  envoy.PrefixMatch(r.Prefix),
-							Action: envoy.RouteRoute(r, svcs),
+							Action: envoy.RouteRoute(r, r.Clusters),
 						})
 					}
 				})

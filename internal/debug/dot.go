@@ -18,6 +18,7 @@ import (
 	"io"
 
 	"github.com/heptio/contour/internal/dag"
+	"github.com/heptio/contour/internal/envoy"
 )
 
 // quick and dirty dot debugging package
@@ -58,6 +59,8 @@ func (c *ctx) writeVertex(v dag.Vertex) {
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{tcpservice|%s/%s:%d}"]`+"\n", v, v.Namespace, v.Name, v.Port)
 	case *dag.TCPProxy:
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{tcpproxy}"]`+"\n", v)
+	case *dag.Cluster:
+		fmt.Fprintf(c.w, `"%p" [shape=record, label="{cluster|{%s|weight %d}}"]`+"\n", v, envoy.Clustername(v), v.Weight)
 	}
 }
 

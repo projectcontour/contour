@@ -48,8 +48,8 @@ func (d *DAG) Statuses() []Status {
 }
 
 type Route struct {
-	Prefix       string
-	httpServices map[servicemeta]*HTTPService
+	Prefix   string
+	Clusters []*Cluster
 
 	// Should this route generate a 301 upgrade if accessed
 	// over HTTP?
@@ -93,15 +93,15 @@ type RetryPolicy struct {
 	PerTryTimeout time.Duration
 }
 
-func (r *Route) addHTTPService(s *HTTPService) {
-	if r.httpServices == nil {
-		r.httpServices = make(map[servicemeta]*HTTPService)
-	}
-	r.httpServices[s.toMeta()] = s
+func (r *Route) addHTTPService(s *HTTPService, weight int) {
+	r.Clusters = append(r.Clusters, &Cluster{
+		Upstream: s,
+		Weight:   weight,
+	})
 }
 
 func (r *Route) Visit(f func(Vertex)) {
-	for _, c := range r.httpServices {
+	for _, c := range r.Clusters {
 		f(c)
 	}
 }
@@ -187,12 +187,14 @@ func (l *Listener) Visit(f func(Vertex)) {
 
 // TCPProxy represents a cluster of TCP endpoints.
 type TCPProxy struct {
-	// Services to proxy decrypted traffic to.
-	Services []*TCPService
+
+	// Clusters is the, possibly weighted, set
+	// of upstream services to forward decrypted traffic.
+	Clusters []*Cluster
 }
 
 func (t *TCPProxy) Visit(f func(Vertex)) {
-	for _, s := range t.Services {
+	for _, s := range t.Clusters {
 		f(s)
 	}
 }
@@ -202,7 +204,6 @@ type TCPService struct {
 	Name, Namespace string
 
 	*v1.ServicePort
-	Weight int
 
 	// The load balancer type to use when picking a host in the cluster.
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cds.proto#envoy-api-enum-cluster-lbpolicy
@@ -233,7 +234,6 @@ type servicemeta struct {
 	name        string
 	namespace   string
 	port        int32
-	weight      int
 	strategy    string
 	healthcheck string // %#v of *ingressroutev1.HealthCheck
 }
@@ -243,7 +243,6 @@ func (s *TCPService) toMeta() servicemeta {
 		name:        s.Name,
 		namespace:   s.Namespace,
 		port:        s.Port,
-		weight:      s.Weight,
 		strategy:    s.LoadBalancerStrategy,
 		healthcheck: healthcheckToString(s.HealthCheck),
 	}
@@ -251,6 +250,22 @@ func (s *TCPService) toMeta() servicemeta {
 
 func (s *TCPService) Visit(func(Vertex)) {
 	// TCPServices are leaves in the DAG.
+}
+
+// Cluster holds the connetion specific parameters that apply to
+// traffic routed to an upstream service.
+type Cluster struct {
+
+	// Upstream is the backend Kubernetes service traffic arriving
+	// at this Cluster will be forwarded too.
+	Upstream Service
+
+	// The relative weight of this Cluster compared to its siblings.
+	Weight int
+}
+
+func (c Cluster) Visit(f func(Vertex)) {
+	f(c.Upstream)
 }
 
 // HTTPService represents a Kuberneres Service object which speaks

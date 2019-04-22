@@ -96,21 +96,23 @@ func visitClusters(root dag.Vertex) map[string]*v2.Cluster {
 }
 
 func (v *clusterVisitor) visit(vertex dag.Vertex) {
-	switch service := vertex.(type) {
-	case *dag.HTTPService:
-		name := envoy.Clustername(&service.TCPService)
-		if _, ok := v.clusters[name]; !ok {
-			c := envoy.Cluster(service)
-			v.clusters[c.Name] = c
+	if cluster, ok := vertex.(*dag.Cluster); ok {
+		switch cluster.Upstream.(type) {
+		case *dag.HTTPService:
+			name := envoy.Clustername(cluster)
+			if _, ok := v.clusters[name]; !ok {
+				c := envoy.Cluster(cluster)
+				v.clusters[c.Name] = c
+			}
+		case *dag.TCPService:
+			name := envoy.Clustername(cluster)
+			if _, ok := v.clusters[name]; !ok {
+				c := envoy.Cluster(cluster)
+				v.clusters[c.Name] = c
+			}
+		default:
+			// nothing
 		}
-	case *dag.TCPService:
-		name := envoy.Clustername(service)
-		if _, ok := v.clusters[name]; !ok {
-			c := envoy.Cluster(service)
-			v.clusters[c.Name] = c
-		}
-	default:
-		// nothing
 	}
 
 	// recurse into children of v

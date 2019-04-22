@@ -47,12 +47,14 @@ func TestCluster(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		service dag.Service
+		cluster *dag.Cluster
 		want    *v2.Cluster
 	}{
 		"simple service": {
-			service: &dag.HTTPService{
-				TCPService: service(s1),
+			cluster: &dag.Cluster{
+				Upstream: &dag.HTTPService{
+					TCPService: service(s1),
+				},
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -68,9 +70,11 @@ func TestCluster(t *testing.T) {
 			},
 		},
 		"h2c upstream": {
-			service: &dag.HTTPService{
-				TCPService: service(s1),
-				Protocol:   "h2c",
+			cluster: &dag.Cluster{
+				Upstream: &dag.HTTPService{
+					TCPService: service(s1),
+					Protocol:   "h2c",
+				},
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -87,9 +91,11 @@ func TestCluster(t *testing.T) {
 			},
 		},
 		"h2 upstream": {
-			service: &dag.HTTPService{
-				TCPService: service(s1),
-				Protocol:   "h2",
+			cluster: &dag.Cluster{
+				Upstream: &dag.HTTPService{
+					TCPService: service(s1),
+					Protocol:   "h2",
+				},
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -107,9 +113,11 @@ func TestCluster(t *testing.T) {
 			},
 		},
 		"tls upstream": {
-			service: &dag.HTTPService{
-				TCPService: service(s1),
-				Protocol:   "tls",
+			cluster: &dag.Cluster{
+				Upstream: &dag.HTTPService{
+					TCPService: service(s1),
+					Protocol:   "tls",
+				},
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -126,11 +134,13 @@ func TestCluster(t *testing.T) {
 			},
 		},
 		"contour.heptio.com/max-connections": {
-			service: &dag.HTTPService{
-				TCPService: dag.TCPService{
-					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort:    &s1.Spec.Ports[0],
-					MaxConnections: 9000,
+			cluster: &dag.Cluster{
+				Upstream: &dag.HTTPService{
+					TCPService: dag.TCPService{
+						Name: s1.Name, Namespace: s1.Namespace,
+						ServicePort:    &s1.Spec.Ports[0],
+						MaxConnections: 9000,
+					},
 				},
 			},
 			want: &v2.Cluster{
@@ -152,11 +162,13 @@ func TestCluster(t *testing.T) {
 			},
 		},
 		"contour.heptio.com/max-pending-requests": {
-			service: &dag.HTTPService{
-				TCPService: dag.TCPService{
-					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort:        &s1.Spec.Ports[0],
-					MaxPendingRequests: 4096,
+			cluster: &dag.Cluster{
+				Upstream: &dag.HTTPService{
+					TCPService: dag.TCPService{
+						Name: s1.Name, Namespace: s1.Namespace,
+						ServicePort:        &s1.Spec.Ports[0],
+						MaxPendingRequests: 4096,
+					},
 				},
 			},
 			want: &v2.Cluster{
@@ -178,11 +190,13 @@ func TestCluster(t *testing.T) {
 			},
 		},
 		"contour.heptio.com/max-requests": {
-			service: &dag.HTTPService{
-				TCPService: dag.TCPService{
-					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort: &s1.Spec.Ports[0],
-					MaxRequests: 404,
+			cluster: &dag.Cluster{
+				Upstream: &dag.HTTPService{
+					TCPService: dag.TCPService{
+						Name: s1.Name, Namespace: s1.Namespace,
+						ServicePort: &s1.Spec.Ports[0],
+						MaxRequests: 404,
+					},
 				},
 			},
 			want: &v2.Cluster{
@@ -204,11 +218,13 @@ func TestCluster(t *testing.T) {
 			},
 		},
 		"contour.heptio.com/max-retries": {
-			service: &dag.HTTPService{
-				TCPService: dag.TCPService{
-					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort: &s1.Spec.Ports[0],
-					MaxRetries:  7,
+			cluster: &dag.Cluster{
+				Upstream: &dag.HTTPService{
+					TCPService: dag.TCPService{
+						Name: s1.Name, Namespace: s1.Namespace,
+						ServicePort: &s1.Spec.Ports[0],
+						MaxRetries:  7,
+					},
 				},
 			},
 			want: &v2.Cluster{
@@ -230,9 +246,11 @@ func TestCluster(t *testing.T) {
 			},
 		},
 		"tcp service": {
-			service: &dag.TCPService{
-				Name: s1.Name, Namespace: s1.Namespace,
-				ServicePort: &s1.Spec.Ports[0],
+			cluster: &dag.Cluster{
+				Upstream: &dag.TCPService{
+					Name: s1.Name, Namespace: s1.Namespace,
+					ServicePort: &s1.Spec.Ports[0],
+				},
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -248,11 +266,13 @@ func TestCluster(t *testing.T) {
 			},
 		},
 		"tcp service with healthcheck": {
-			service: &dag.TCPService{
-				Name: s1.Name, Namespace: s1.Namespace,
-				ServicePort: &s1.Spec.Ports[0],
-				HealthCheck: &ingressroutev1.HealthCheck{
-					Path: "/healthz",
+			cluster: &dag.Cluster{
+				Upstream: &dag.TCPService{
+					Name: s1.Name, Namespace: s1.Namespace,
+					ServicePort: &s1.Spec.Ports[0],
+					HealthCheck: &ingressroutev1.HealthCheck{
+						Path: "/healthz",
+					},
 				},
 			},
 			want: &v2.Cluster{
@@ -287,7 +307,7 @@ func TestCluster(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := Cluster(tc.service)
+			got := Cluster(tc.cluster)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}
@@ -297,52 +317,58 @@ func TestCluster(t *testing.T) {
 
 func TestClustername(t *testing.T) {
 	tests := map[string]struct {
-		service *dag.TCPService
+		cluster *dag.Cluster
 		want    string
 	}{
 		"simple": {
-			service: &dag.TCPService{
-				Name:      "backend",
-				Namespace: "default",
-				ServicePort: &v1.ServicePort{
-					Name:       "http",
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(6502),
+			cluster: &dag.Cluster{
+				Upstream: &dag.TCPService{
+					Name:      "backend",
+					Namespace: "default",
+					ServicePort: &v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       80,
+						TargetPort: intstr.FromInt(6502),
+					},
 				},
 			},
 			want: "default/backend/80/da39a3ee5e",
 		},
 		"far too long": {
-			service: &dag.TCPService{
-				Name:      "must-be-in-want-of-a-wife",
-				Namespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
-				ServicePort: &v1.ServicePort{
-					Name:       "http",
-					Protocol:   "TCP",
-					Port:       9999,
-					TargetPort: intstr.FromString("http-alt"),
+			cluster: &dag.Cluster{
+				Upstream: &dag.TCPService{
+					Name:      "must-be-in-want-of-a-wife",
+					Namespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
+					ServicePort: &v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       9999,
+						TargetPort: intstr.FromString("http-alt"),
+					},
 				},
 			},
 			want: "it-is-a--dea8b0/must-be--dea8b0/9999/da39a3ee5e",
 		},
 		"various healthcheck params": {
-			service: &dag.TCPService{
-				Name:      "backend",
-				Namespace: "default",
-				ServicePort: &v1.ServicePort{
-					Name:       "http",
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(6502),
-				},
-				LoadBalancerStrategy: "Maglev",
-				HealthCheck: &ingressroutev1.HealthCheck{
-					Path:                    "/healthz",
-					IntervalSeconds:         5,
-					TimeoutSeconds:          30,
-					UnhealthyThresholdCount: 3,
-					HealthyThresholdCount:   1,
+			cluster: &dag.Cluster{
+				Upstream: &dag.TCPService{
+					Name:      "backend",
+					Namespace: "default",
+					ServicePort: &v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       80,
+						TargetPort: intstr.FromInt(6502),
+					},
+					LoadBalancerStrategy: "Maglev",
+					HealthCheck: &ingressroutev1.HealthCheck{
+						Path:                    "/healthz",
+						IntervalSeconds:         5,
+						TimeoutSeconds:          30,
+						UnhealthyThresholdCount: 3,
+						HealthyThresholdCount:   1,
+					},
 				},
 			},
 			want: "default/backend/80/32737eb011",
@@ -351,7 +377,7 @@ func TestClustername(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := Clustername(tc.service)
+			got := Clustername(tc.cluster)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}
