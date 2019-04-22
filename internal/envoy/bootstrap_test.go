@@ -28,7 +28,7 @@ func TestBootstrap(t *testing.T) {
 		want   string
 	}{
 		"default configuration": {
-			config: BootstrapConfig{},
+			config: BootstrapConfig{Namespace: "testing-ns"},
 			want: `{
   "static_resources": {
     "listeners": [
@@ -75,7 +75,7 @@ func TestBootstrap(t *testing.T) {
                             "prefix": "/stats"
                           },
                           "route": {
-                            "cluster": "service_stats"
+                            "cluster": "service-stats"
                           }
                         }
                       ]
@@ -93,6 +93,7 @@ func TestBootstrap(t *testing.T) {
     "clusters": [
       {
         "name": "contour",
+        "alt_stat_name": "testing-ns_contour_8001",
         "type": "STRICT_DNS",
         "connect_timeout": "5s",
         "load_assignment": {
@@ -134,11 +135,12 @@ func TestBootstrap(t *testing.T) {
         "http2_protocol_options": {}
       },
       {
-        "name": "service_stats",
+        "name": "service-stats",
+        "alt_stat_name": "testing-ns_service-stats_9001",
         "type": "LOGICAL_DNS",
         "connect_timeout": "0.250s",
         "load_assignment": {
-          "cluster_name": "service_stats",
+          "cluster_name": "service-stats",
           "endpoints": [   
             {                          
               "lb_endpoints": [
@@ -199,6 +201,7 @@ func TestBootstrap(t *testing.T) {
 		"--statsd-enabled": {
 			config: BootstrapConfig{
 				StatsdEnabled: true,
+				Namespace:     "testing-ns",
 			},
 			want: `{
   "static_resources": {
@@ -246,7 +249,7 @@ func TestBootstrap(t *testing.T) {
                             "prefix": "/stats"
                           },
                           "route": {
-                            "cluster": "service_stats"
+                            "cluster": "service-stats"
                           }
                         }
                       ]
@@ -264,6 +267,7 @@ func TestBootstrap(t *testing.T) {
     "clusters": [
       {
         "name": "contour",
+        "alt_stat_name": "testing-ns_contour_8001",
         "type": "STRICT_DNS",
         "connect_timeout": "5s",
         "load_assignment": {
@@ -305,11 +309,12 @@ func TestBootstrap(t *testing.T) {
         "http2_protocol_options": {}
       },
       {
-        "name": "service_stats",
+        "name": "service-stats",
+        "alt_stat_name": "testing-ns_service-stats_9001",
         "type": "LOGICAL_DNS",
         "connect_timeout": "0.250s",
         "load_assignment": {
-          "cluster_name": "service_stats",
+          "cluster_name": "service-stats",
           "endpoints": [   
             {                          
               "lb_endpoints": [
@@ -386,6 +391,7 @@ func TestBootstrap(t *testing.T) {
 				StatsdEnabled: true,
 				StatsdAddress: "8.8.8.8",
 				StatsdPort:    9200,
+				Namespace:     "testing-ns",
 			},
 			want: `{
   "static_resources": {
@@ -433,7 +439,7 @@ func TestBootstrap(t *testing.T) {
                             "prefix": "/stats"
                           },
                           "route": {
-                            "cluster": "service_stats"
+                            "cluster": "service-stats"
                           }
                         }
                       ]
@@ -451,6 +457,7 @@ func TestBootstrap(t *testing.T) {
     "clusters": [
       {
         "name": "contour",
+        "alt_stat_name": "testing-ns_contour_8001",
         "type": "STRICT_DNS",
         "connect_timeout": "5s",
         "load_assignment": {
@@ -492,11 +499,12 @@ func TestBootstrap(t *testing.T) {
         "http2_protocol_options": {}
       },
       {
-        "name": "service_stats",
+        "name": "service-stats",
+        "alt_stat_name": "testing-ns_service-stats_9001",
         "type": "LOGICAL_DNS",
         "connect_timeout": "0.250s",
         "load_assignment": {
-          "cluster_name": "service_stats",
+          "cluster_name": "service-stats",
           "endpoints": [   
             {                          
               "lb_endpoints": [
@@ -572,6 +580,7 @@ func TestBootstrap(t *testing.T) {
 			config: BootstrapConfig{
 				AdminAddress: "8.8.8.8",
 				AdminPort:    9200,
+				Namespace:    "testing-ns",
 			},
 			want: `{
   "static_resources": {
@@ -619,7 +628,7 @@ func TestBootstrap(t *testing.T) {
                             "prefix": "/stats"
                           },
                           "route": {
-                            "cluster": "service_stats"
+                            "cluster": "service-stats"
                           }
                         }
                       ]
@@ -637,6 +646,7 @@ func TestBootstrap(t *testing.T) {
     "clusters": [
       {
         "name": "contour",
+        "alt_stat_name": "testing-ns_contour_8001",
         "type": "STRICT_DNS",
         "connect_timeout": "5s",
         "load_assignment": {
@@ -678,11 +688,12 @@ func TestBootstrap(t *testing.T) {
         "http2_protocol_options": {}
       },
       {
-        "name": "service_stats",
+        "name": "service-stats",
+        "alt_stat_name": "testing-ns_service-stats_9200",
         "type": "LOGICAL_DNS",
         "connect_timeout": "0.250s",
         "load_assignment": {
-          "cluster_name": "service_stats",
+          "cluster_name": "service-stats",
           "endpoints": [   
             {                          
               "lb_endpoints": [
@@ -743,6 +754,7 @@ func TestBootstrap(t *testing.T) {
 		"AdminAccessLogPath": { // TODO(dfc) doesn't appear to be exposed via contour bootstrap
 			config: BootstrapConfig{
 				AdminAccessLogPath: "/var/log/admin.log",
+				Namespace:          "testing-ns",
 			},
 			want: `{
   "static_resources": {
@@ -790,7 +802,7 @@ func TestBootstrap(t *testing.T) {
                             "prefix": "/stats"
                           },
                           "route": {
-                            "cluster": "service_stats"
+                            "cluster": "service-stats"
                           }
                         }
                       ]
@@ -808,6 +820,7 @@ func TestBootstrap(t *testing.T) {
     "clusters": [
       {
         "name": "contour",
+        "alt_stat_name": "testing-ns_contour_8001",
         "type": "STRICT_DNS",
         "connect_timeout": "5s",
         "load_assignment": {
@@ -849,11 +862,12 @@ func TestBootstrap(t *testing.T) {
         "http2_protocol_options": {}
       },
       {
-        "name": "service_stats",
+        "name": "service-stats",
+        "alt_stat_name": "testing-ns_service-stats_9001",
         "type": "LOGICAL_DNS",
         "connect_timeout": "0.250s",
         "load_assignment": {
-          "cluster_name": "service_stats",
+          "cluster_name": "service-stats",
           "endpoints": [   
             {                          
               "lb_endpoints": [
@@ -915,6 +929,7 @@ func TestBootstrap(t *testing.T) {
 			config: BootstrapConfig{
 				XDSAddress:  "8.8.8.8",
 				XDSGRPCPort: 9200,
+				Namespace:   "testing-ns",
 			},
 			want: `{
   "static_resources": {
@@ -962,7 +977,7 @@ func TestBootstrap(t *testing.T) {
                             "prefix": "/stats"
                           },
                           "route": {
-                            "cluster": "service_stats"
+                            "cluster": "service-stats"
                           }
                         }
                       ]
@@ -980,6 +995,7 @@ func TestBootstrap(t *testing.T) {
     "clusters": [
       {
         "name": "contour",
+        "alt_stat_name": "testing-ns_contour_9200",
         "type": "STRICT_DNS",
         "connect_timeout": "5s",
         "load_assignment": {
@@ -1021,11 +1037,12 @@ func TestBootstrap(t *testing.T) {
         "http2_protocol_options": {}
       },
       {
-        "name": "service_stats",
+        "name": "service-stats",
+        "alt_stat_name": "testing-ns_service-stats_9001",
         "type": "LOGICAL_DNS",
         "connect_timeout": "0.250s",
         "load_assignment": {
-          "cluster_name": "service_stats",
+          "cluster_name": "service-stats",
           "endpoints": [   
             {                          
               "lb_endpoints": [
@@ -1087,6 +1104,7 @@ func TestBootstrap(t *testing.T) {
 			config: BootstrapConfig{
 				StatsAddress: "8.8.8.8",
 				StatsPort:    9200,
+				Namespace:    "testing-ns",
 			},
 			want: `{
   "static_resources": {
@@ -1134,7 +1152,7 @@ func TestBootstrap(t *testing.T) {
                             "prefix": "/stats"
                           },
                           "route": {
-                            "cluster": "service_stats"
+                            "cluster": "service-stats"
                           }
                         }
                       ]
@@ -1152,6 +1170,7 @@ func TestBootstrap(t *testing.T) {
     "clusters": [
       {
         "name": "contour",
+        "alt_stat_name": "testing-ns_contour_8001",
         "type": "STRICT_DNS",
         "connect_timeout": "5s",
         "load_assignment": {
@@ -1193,11 +1212,12 @@ func TestBootstrap(t *testing.T) {
         "http2_protocol_options": {}
       },
       {
-        "name": "service_stats",
+        "name": "service-stats",
+        "alt_stat_name": "testing-ns_service-stats_9001",
         "type": "LOGICAL_DNS",
         "connect_timeout": "0.250s",
         "load_assignment": {
-          "cluster_name": "service_stats",
+          "cluster_name": "service-stats",
           "endpoints": [   
             {                          
               "lb_endpoints": [
@@ -1258,6 +1278,7 @@ func TestBootstrap(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+
 			got := Bootstrap(&tc.config)
 			want := new(bootstrap.Bootstrap)
 			unmarshal(t, tc.want, want)

@@ -15,6 +15,8 @@ package envoy
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	api "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -59,7 +61,7 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 														"prefix": sv("/stats"),
 													}),
 													"route": st(map[string]*types.Value{
-														"cluster": sv("service_stats"),
+														"cluster": sv("service-stats"),
 													}),
 												}),
 											),
@@ -91,6 +93,7 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 			}},
 			Clusters: []api.Cluster{{
 				Name:                 "contour",
+				AltStatName:          strings.Join([]string{c.Namespace, "contour", strconv.Itoa(intOrDefault(c.XDSGRPCPort, 8001))}, "_"),
 				ConnectTimeout:       5 * time.Second,
 				ClusterDiscoveryType: ClusterDiscoveryType(api.Cluster_STRICT_DNS),
 				LbPolicy:             api.Cluster_ROUND_ROBIN,
@@ -119,12 +122,13 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 					}},
 				},
 			}, {
-				Name:                 "service_stats",
+				Name:                 "service-stats",
+				AltStatName:          strings.Join([]string{c.Namespace, "service-stats", strconv.Itoa(intOrDefault(c.AdminPort, 9001))}, "_"),
 				ConnectTimeout:       250 * time.Millisecond,
 				ClusterDiscoveryType: ClusterDiscoveryType(api.Cluster_LOGICAL_DNS),
 				LbPolicy:             api.Cluster_ROUND_ROBIN,
 				LoadAssignment: &api.ClusterLoadAssignment{
-					ClusterName: "service_stats",
+					ClusterName: "service-stats",
 					Endpoints: []endpoint.LocalityLbEndpoints{{
 						LbEndpoints: []endpoint.LbEndpoint{
 							LBEndpoint(stringOrDefault(c.AdminAddress, "127.0.0.1"), intOrDefault(c.AdminPort, 9001)),
@@ -215,4 +219,7 @@ type BootstrapConfig struct {
 	// StatsdPort is port of the statsd endpoint
 	// Defaults to 9125.
 	StatsdPort int
+
+	// Namespace is the namespace where Contour is running
+	Namespace string
 }

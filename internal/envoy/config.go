@@ -106,7 +106,7 @@ static_resources:
           max_pending_requests: 100000
           max_requests: 60000000
           max_retries: 50
-  - name: service_stats
+  - name: service-stats
     connect_timeout: 0.250s
     type: LOGICAL_DNS
     lb_policy: ROUND_ROBIN
@@ -136,7 +136,7 @@ static_resources:
                         - match:
                             prefix: /stats
                           route:
-                            cluster: service_stats
+                            cluster: service-stats
                 http_filters:
                   - name: envoy.health_check
                     config:
