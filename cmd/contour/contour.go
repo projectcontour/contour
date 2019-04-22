@@ -170,7 +170,7 @@ func main() {
 		// once it attempts to log to files under /tmp, will crash the
 		// whole process since the path may not be accessible in
 		// container environment. See #959
-		flag.Lookup("logtostderr").Value.Set("true")
+		_ = flag.Lookup("logtostderr").Value.Set("true")
 
 		reh.IngressRouteRootNamespaces = parseRootNamespaces(ingressrouteRootNamespaceFlag)
 

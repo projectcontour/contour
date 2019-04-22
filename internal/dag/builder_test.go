@@ -3644,10 +3644,8 @@ func route(prefix string, services ...*HTTPService) *Route {
 
 func routeCluster(prefix string, clusters ...*Cluster) *Route {
 	route := Route{
-		Prefix: prefix,
-	}
-	for _, c := range clusters {
-		route.Clusters = append(route.Clusters, c)
+		Prefix:   prefix,
+		Clusters: clusters,
 	}
 	return &route
 }
