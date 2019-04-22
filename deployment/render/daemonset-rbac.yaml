@@ -202,8 +202,7 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8002"
-        prometheus.io/path: "/stats"
-        prometheus.io/format: "prometheus"
+        prometheus.io/path: "/stats/prometheus"
     spec:
       containers:
       - image: gcr.io/heptio-images/contour:master
