@@ -5,6 +5,10 @@ metadata:
  namespace: heptio-contour
  annotations:
    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+   # Scrape metrics for the contour container
+   # The envoy container is scraped by annotations on the pod spec
+   prometheus.io/port: "8000"
+   prometheus.io/scrape: "true"
 spec:
  ports:
  - port: 80
