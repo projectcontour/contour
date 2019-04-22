@@ -448,11 +448,3 @@ func TestUpgradeHTTPS(t *testing.T) {
 		t.Fatal(diff)
 	}
 }
-
-func services(svcs ...*v1.Service) (v []*dag.TCPService) {
-	for _, s := range svcs {
-		x := service(s)
-		v = append(v, &x)
-	}
-	return v
-}
