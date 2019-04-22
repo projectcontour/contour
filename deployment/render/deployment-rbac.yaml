@@ -251,6 +251,11 @@ spec:
         volumeMounts:
         - name: contour-config
           mountPath: /config
+        env:
+        - name: CONTOUR_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
       volumes:
       - name: contour-config
         emptyDir: {}
