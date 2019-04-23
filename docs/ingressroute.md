@@ -401,6 +401,47 @@ IngressRoute weighting follows some specific rules:
 - Weights are relative and do not need to add up to 100. If all weights for a route are specified, then the "total" weight is the sum of those specified. As an example, if weights are 20, 30, 20 for three upstreams, the total weight would be 70. In this example, a weight of 30 would receive approximately 42.9% of traffic (30/70 = .4285).
 - If some weights are specified but others are not, then it's assumed that upstreams without weights have an implicit weight of zero, and thus will not receive traffic.
 
+#### Request Timeout
+
+Each Route can be configured to have a timeout policy and a retry policy as shown:
+
+```yaml
+# request-timeout.ingressroute.yaml
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata:
+  name: request-timeout
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: timeout.bar.com
+  routes:
+  - match: /
+    timeoutPolicy:
+      request: 1s
+    retryPolicy:
+      count: 3
+      perTryTimeout: 150ms
+    services:
+    - name: s1
+      port: 80
+``` 
+
+In this example, requests to `timeout.bar.com/` will have a request timeout policy of 1s. 
+This refers to the time that spans between the point at which complete client request has been processed by the proxy, and when the response from the server has been completely processed. 
+The Request Timeout error code returns with HTTP error code 504. 
+
+- `timeoutPolicy.request` This field can be any positive time period or "infinity". 
+The time period of **0s** will also be treated as infinity. 
+By default, Envoy has a 15 second timeout for a backend service to respond.
+More information can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout).
+
+- `retryPolicy`: A retry will be attempted if the server returns a 50x error code, or if the server takes more than `retryPolicy.perTryTimeout` to process a request. 
+    - `retryPolicy.count` specifies the maximum number of retries allowed. This parameter is optional and defaults to 1.
+    - `retryPolicy.perTryTimeout` specifies the timeout per retry. If this field is greater than the request timeout, it is ignored. This parameter is optional. 
+    If left unspecified, `timeoutPolicy.request` will be used. 
+
+
 #### Load Balancing Strategy
 
 Each upstream service can have a load balancing strategy applied to determine which of its Endpoints is selected for the request.
