@@ -76,9 +76,6 @@ func (hn *HoldoffNotifier) OnChange(builder *dag.Builder) {
 // counter holds an atomically incrementing counter.
 type counter uint64
 
-func (c *counter) get() uint64 {
-	return atomic.LoadUint64((*uint64)(c))
-}
 func (c *counter) inc() uint64 {
 	return atomic.AddUint64((*uint64)(c), 1)
 }

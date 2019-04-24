@@ -2,7 +2,7 @@ PROJECT = contour
 REGISTRY ?= gcr.io/heptio-images
 IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
-PKGS := $(shell go list -mod=readonly ./cmd/... ./internal/...)
+PKGS := $(shell GO111MODULE=on go list -mod=readonly ./cmd/... ./internal/...)
 LOCAL_BOOTSTRAP_CONFIG = config.yaml
 TAG_LATEST ?= false
 
@@ -20,7 +20,7 @@ test-race: | test
 vet: | test
 	go vet ./...
 
-check: test test-race vet gofmt misspell unconvert ineffassign
+check: test test-race vet gofmt staticcheck misspell unconvert ineffassign
 	@echo Checking rendered files are up to date
 	@(cd deployment && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 

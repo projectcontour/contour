@@ -41,7 +41,7 @@ require (
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
-	honnef.co/go/tools v0.0.0-20190315113450-95959eaf5e3c
+	honnef.co/go/tools v0.0.0-20190418001031-e561f6794a2a
 	k8s.io/api v0.0.0-20190226173710-145d52631d00
 	k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc
 	k8s.io/client-go v0.0.0-20190226174127-78295b709ec6
