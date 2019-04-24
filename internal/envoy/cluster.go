@@ -29,26 +29,51 @@ import (
 	"github.com/heptio/contour/internal/dag"
 )
 
+// CACertificateKey stores the key for the TLS validation secret cert
+const CACertificateKey = "ca.crt"
+
 // Cluster creates new v2.Cluster from dag.Cluster.
 func Cluster(c *dag.Cluster) *v2.Cluster {
 	switch upstream := c.Upstream.(type) {
 	case *dag.HTTPService:
-		c := cluster(c, &upstream.TCPService)
+		cl := cluster(c, &upstream.TCPService)
 		switch upstream.Protocol {
 		case "tls":
-			c.TlsContext = UpstreamTLSContext()
+			cl.TlsContext = UpstreamTLSContext(
+				upstreamValidationCACert(c),
+				upstreamValidationSubjectAltName(c),
+			)
 		case "h2":
-			c.TlsContext = UpstreamTLSContext("h2")
+			cl.TlsContext = UpstreamTLSContext(
+				upstreamValidationCACert(c),
+				upstreamValidationSubjectAltName(c),
+				"h2")
 			fallthrough
 		case "h2c":
-			c.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
+			cl.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
 		}
-		return c
+		return cl
 	case *dag.TCPService:
 		return cluster(c, upstream)
 	default:
 		panic(fmt.Sprintf("unsupported upstream type: %T", upstream))
 	}
+}
+
+func upstreamValidationCACert(c *dag.Cluster) []byte {
+	if c.UpstreamValidation == nil {
+		// No validation required
+		return nil
+	}
+	return c.UpstreamValidation.CACertificate.Object.Data[CACertificateKey]
+}
+
+func upstreamValidationSubjectAltName(c *dag.Cluster) []string {
+	if c.UpstreamValidation == nil {
+		// No validation required
+		return nil
+	}
+	return []string{c.UpstreamValidation.SubjectName}
 }
 
 func cluster(cluster *dag.Cluster, service *dag.TCPService) *v2.Cluster {
@@ -146,6 +171,10 @@ func Clustername(cluster *dag.Cluster) string {
 			buf += strconv.Itoa(int(hc.HealthyThresholdCount))
 		}
 		buf += hc.Path
+	}
+	if uv := cluster.UpstreamValidation; uv != nil {
+		buf += uv.CACertificate.Object.ObjectMeta.Name
+		buf += uv.SubjectName
 	}
 
 	hash := sha1.Sum([]byte(buf))

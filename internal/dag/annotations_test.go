@@ -89,6 +89,13 @@ func TestParseUpstreamProtocols(t *testing.T) {
 				"80": "h2",
 			},
 		},
+		"tls": {
+			a: map[string]string{fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "tls"): "https,80"},
+			want: map[string]string{
+				"80":    "tls",
+				"https": "tls",
+			},
+		},
 		"multiple value": {
 			a: map[string]string{fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): "80,http,443,https"},
 			want: map[string]string{
@@ -102,7 +109,7 @@ func TestParseUpstreamProtocols(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := parseUpstreamProtocols(tc.a, annotationUpstreamProtocol, "h2")
+			got := parseUpstreamProtocols(tc.a, annotationUpstreamProtocol, "h2", "tls")
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("parseUpstreamProtocols(%q): want: %v, got: %v", tc.a, tc.want, got)
 			}

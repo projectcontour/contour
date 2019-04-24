@@ -67,6 +67,9 @@ type Route struct {
 
 	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
 	PrefixRewrite string
+
+	// UpstreamValidation defines how to verify the backend service's certificate
+	UpstreamValidation *UpstreamValidation
 }
 
 // TimeoutPolicy defines the timeout request/idle
@@ -93,10 +96,21 @@ type RetryPolicy struct {
 	PerTryTimeout time.Duration
 }
 
-func (r *Route) addHTTPService(s *HTTPService, weight int) {
+// UpstreamValidation defines how to validate the certificate on the upstream service
+type UpstreamValidation struct {
+	// CACertificate holds a reference to the Secret containing the CA to be used to
+	// verify the upstream connection.
+	CACertificate *Secret
+	// SubjectName holds an optional subject name which Envoy will check against the
+	// certificate presented by the upstream.
+	SubjectName string
+}
+
+func (r *Route) addHTTPService(s *HTTPService, weight int, uv *UpstreamValidation) {
 	r.Clusters = append(r.Clusters, &Cluster{
-		Upstream: s,
-		Weight:   weight,
+		Upstream:           s,
+		Weight:             weight,
+		UpstreamValidation: uv,
 	})
 }
 
@@ -262,6 +276,9 @@ type Cluster struct {
 
 	// The relative weight of this Cluster compared to its siblings.
 	Weight int
+
+	// UpstreamValidation defines how to verify the backend service's certificate
+	UpstreamValidation *UpstreamValidation
 }
 
 func (c Cluster) Visit(f func(Vertex)) {

@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -468,7 +468,7 @@ func (b *builder) computeIngresses() {
 				be := httppath.Backend
 				m := meta{name: be.ServiceName, namespace: ing.Namespace}
 				if s := b.lookupHTTPService(m, be.ServicePort, "", nil); s != nil {
-					r.addHTTPService(s, 0)
+					r.addHTTPService(s, 0, nil)
 				}
 
 				// should we create port 80 routes for this ingress
@@ -668,7 +668,20 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 				}
 				m := meta{name: service.Name, namespace: ir.Namespace}
 				if s := b.lookupHTTPService(m, intstr.FromInt(service.Port), service.Strategy, service.HealthCheck); s != nil {
-					r.addHTTPService(s, service.Weight)
+					uv := b.lookupUpstreamValidation(service.UpstreamValidation, ir.Namespace)
+					if service.UpstreamValidation != nil {
+						if uv.CACertificate == nil {
+							// UpstreamValidation is requested, but cert is missing or not configured
+							b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: upstreamValidation requested but secret not found or misconfigured", route.Match, service.Name), Vhost: host})
+							return
+						}
+						if len(uv.SubjectName) == 0 {
+							// UpstreamValidation is requested, but SAN is not provided
+							b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: upstreamValidation requested but subject alt name not found or misconfigured", route.Match, service.Name), Vhost: host})
+							return
+						}
+					}
+					r.addHTTPService(s, service.Weight, uv)
 				}
 			}
 
@@ -712,6 +725,16 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 	}
 
 	b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
+}
+
+func (b *builder) lookupUpstreamValidation(uv *ingressroutev1.UpstreamValidation, namespace string) *UpstreamValidation {
+	if uv == nil {
+		return nil
+	}
+	return &UpstreamValidation{
+		CACertificate: b.lookupSecret(meta{name: uv.CACertificate, namespace: namespace}),
+		SubjectName:   uv.SubjectName,
+	}
 }
 
 func (b *builder) processTCPProxy(ir *ingressroutev1.IngressRoute, visited []*ingressroutev1.IngressRoute, host string) {

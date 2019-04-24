@@ -46,10 +46,33 @@ var (
 // UpstreamTLSContext creates an auth.UpstreamTlsContext. By default
 // UpstreamTLSContext returns a HTTP/1.1 TLS enabled context. A list of
 // additional ALPN protocols can be provided.
-func UpstreamTLSContext(alpnProtocols ...string) *auth.UpstreamTlsContext {
-	return &auth.UpstreamTlsContext{
+func UpstreamTLSContext(ca []byte, subjaltname []string, alpnProtocols ...string) *auth.UpstreamTlsContext {
+	context := &auth.UpstreamTlsContext{
 		CommonTlsContext: &auth.CommonTlsContext{
 			AlpnProtocols: alpnProtocols,
+		},
+	}
+
+	validation := validationContext(ca, subjaltname)
+	if validation != nil {
+		context.CommonTlsContext.ValidationContextType = validation
+	}
+	return context
+}
+
+func validationContext(ca []byte, subjaltname []string) *auth.CommonTlsContext_ValidationContext {
+	if ca == nil {
+		// No validation required
+		return nil
+	}
+	return &auth.CommonTlsContext_ValidationContext{
+		ValidationContext: &auth.CertificateValidationContext{
+			TrustedCa: &core.DataSource{
+				Specifier: &core.DataSource_InlineBytes{
+					InlineBytes: ca,
+				},
+			},
+			VerifySubjectAltName: subjaltname,
 		},
 	}
 }
