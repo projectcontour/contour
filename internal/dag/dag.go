@@ -293,6 +293,16 @@ func (s *Secret) Data() map[string][]byte {
 	return s.Object.Data
 }
 
+// Cert returns the secret's tls certificate
+func (s *Secret) Cert() []byte {
+	return s.Object.Data[v1.TLSCertKey]
+}
+
+// PrivateKey returns the secret's tls private key
+func (s *Secret) PrivateKey() []byte {
+	return s.Object.Data[v1.TLSPrivateKeyKey]
+}
+
 func (s *Secret) toMeta() meta {
 	return meta{
 		name:      s.Name(),

@@ -19,6 +19,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/google/go-cmp/cmp"
 	"github.com/heptio/contour/internal/dag"
@@ -148,6 +149,74 @@ func TestVisitListeners(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := visitListeners(tc.root, new(ListenerVisitorConfig))
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestVisitSecrets(t *testing.T) {
+	tests := map[string]struct {
+		root dag.Visitable
+		want map[string]*auth.Secret
+	}{
+		"TCPService forward": {
+			root: &dag.Listener{
+				Port: 443,
+				VirtualHosts: virtualhosts(
+					&dag.SecureVirtualHost{
+						VirtualHost: dag.VirtualHost{
+							Name: "www.example.com",
+							TCPProxy: &dag.TCPProxy{
+								Clusters: []*dag.Cluster{{
+									Upstream: &dag.TCPService{
+										Name:      "example",
+										Namespace: "default",
+										ServicePort: &v1.ServicePort{
+											Protocol:   "TCP",
+											Port:       443,
+											TargetPort: intstr.FromInt(8443),
+										},
+									},
+								}},
+							},
+						},
+						Secret: &dag.Secret{
+							Object: &v1.Secret{
+								ObjectMeta: metav1.ObjectMeta{
+									Name:      "secret",
+									Namespace: "default",
+								},
+								Data: secretdata("certificate", "key"),
+							},
+						},
+					},
+				),
+			},
+			want: secretmap(&auth.Secret{
+				Name: "default/secret/735ad571c1",
+				Type: &auth.Secret_TlsCertificate{
+					TlsCertificate: &auth.TlsCertificate{
+						PrivateKey: &core.DataSource{
+							Specifier: &core.DataSource_InlineBytes{
+								InlineBytes: []byte("key"),
+							},
+						},
+						CertificateChain: &core.DataSource{
+							Specifier: &core.DataSource_InlineBytes{
+								InlineBytes: []byte("certificate"),
+							},
+						},
+					},
+				},
+			}),
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := visitSecrets(tc.root)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}

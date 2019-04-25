@@ -30,6 +30,7 @@ type CacheHandler struct {
 	ListenerCache
 	RouteCache
 	ClusterCache
+	SecretCache
 
 	IngressRouteStatus *k8s.IngressRouteStatus
 	logrus.FieldLogger
@@ -45,6 +46,7 @@ func (ch *CacheHandler) OnChange(b *dag.Builder) {
 	defer timer.ObserveDuration()
 	dag := b.Build()
 	ch.setIngressRouteStatus(dag)
+	ch.updateSecrets(dag)
 	ch.updateListeners(dag)
 	ch.updateRoutes(dag)
 	ch.updateClusters(dag)
@@ -58,6 +60,11 @@ func (ch *CacheHandler) setIngressRouteStatus(st statusable) {
 			ch.Errorf("Error Setting Status of IngressRoute: ", err)
 		}
 	}
+}
+
+func (ch *CacheHandler) updateSecrets(root dag.Visitable) {
+	secrets := visitSecrets(root)
+	ch.SecretCache.Update(secrets)
 }
 
 func (ch *CacheHandler) updateListeners(root dag.Visitable) {
