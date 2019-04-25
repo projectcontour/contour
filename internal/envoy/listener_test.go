@@ -149,10 +149,10 @@ func TestSocketAddress(t *testing.T) {
 
 func TestDownstreamTLSContext(t *testing.T) {
 	const (
-		cert = "foo"
-		key  = "secret"
+		secret  = "default/tls-cert"
+		cluster = "contour"
 	)
-	got := DownstreamTLSContext([]byte(cert), []byte(key), auth.TlsParameters_TLSv1_1, "h2", "http/1.1")
+	got := DownstreamTLSContext(secret, cluster, auth.TlsParameters_TLSv1_1, "h2", "http/1.1")
 	want := &auth.DownstreamTlsContext{
 		CommonTlsContext: &auth.CommonTlsContext{
 			TlsParams: &auth.TlsParameters{
@@ -169,15 +169,20 @@ func TestDownstreamTLSContext(t *testing.T) {
 					"ECDHE-RSA-AES256-SHA",
 				},
 			},
-			TlsCertificates: []*auth.TlsCertificate{{
-				CertificateChain: &core.DataSource{
-					Specifier: &core.DataSource_InlineBytes{
-						InlineBytes: []byte(cert),
-					},
-				},
-				PrivateKey: &core.DataSource{
-					Specifier: &core.DataSource_InlineBytes{
-						InlineBytes: []byte(key),
+			TlsCertificateSdsSecretConfigs: []*auth.SdsSecretConfig{{
+				Name: secret,
+				SdsConfig: &core.ConfigSource{
+					ConfigSourceSpecifier: &core.ConfigSource_ApiConfigSource{
+						ApiConfigSource: &core.ApiConfigSource{
+							ApiType: core.ApiConfigSource_GRPC,
+							GrpcServices: []*core.GrpcService{{
+								TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &core.GrpcService_EnvoyGrpc{
+										ClusterName: cluster,
+									},
+								},
+							}},
+						},
 					},
 				},
 			}},
