@@ -76,6 +76,8 @@ func main() {
 	lds.Arg("resources", "LDS resource filter").StringsVar(&resources)
 	rds := cli.Command("rds", "watch routes.")
 	rds.Arg("resources", "RDS resource filter").StringsVar(&resources)
+	sds := cli.Command("sds", "watch secrets.")
+	sds.Arg("resources", "SDS resource filter").StringsVar(&resources)
 
 	serve := app.Command("serve", "Serve xDS API traffic")
 	inCluster := serve.Flag("incluster", "use in cluster configuration.").Bool()
@@ -156,6 +158,9 @@ func main() {
 	case rds.FullCommand():
 		stream := client.RouteStream()
 		watchstream(stream, routeType, resources)
+	case sds.FullCommand():
+		stream := client.RouteStream()
+		watchstream(stream, secretType, resources)
 	case serve.FullCommand():
 		log.Infof("args: %v", args)
 		var g workgroup.Group
