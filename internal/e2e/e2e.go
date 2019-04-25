@@ -208,4 +208,3 @@ func fileAccessLog(path string) *accesslog.FileAccessLog {
 }
 
 func u32(val int) *types.UInt32Value { return &types.UInt32Value{Value: uint32(val)} }
-func bv(val bool) *types.BoolValue   { return &types.BoolValue{Value: val} }

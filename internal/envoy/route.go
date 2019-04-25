@@ -14,10 +14,10 @@ package envoy
 
 import (
 	"fmt"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"sort"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
@@ -46,9 +46,6 @@ func RouteRoute(r *dag.Route, clusters []*dag.Cluster) *route.Route_Route {
 		ra.ClusterSpecifier = &route.RouteAction_Cluster{
 			Cluster: Clustername(clusters[0]),
 		}
-		ra.RequestHeadersToAdd = headers(
-			appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
-		)
 	default:
 		ra.ClusterSpecifier = &route.RouteAction_WeightedClusters{
 			WeightedClusters: weightedClusters(clusters),
@@ -109,6 +106,13 @@ func UpgradeHTTPS() *route.Route_Redirect {
 	}
 }
 
+// RouteHeaders returns a list of headers to be applied at the Route level on envoy
+func RouteHeaders() []*core.HeaderValueOption {
+	return headers(
+		appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
+	)
+}
+
 // weightedClusters returns a route.WeightedCluster for multiple services.
 func weightedClusters(clusters []*dag.Cluster) *route.WeightedCluster {
 	var wc route.WeightedCluster
@@ -118,9 +122,6 @@ func weightedClusters(clusters []*dag.Cluster) *route.WeightedCluster {
 		wc.Clusters = append(wc.Clusters, &route.WeightedCluster_ClusterWeight{
 			Name:   Clustername(cluster),
 			Weight: u32(cluster.Weight),
-			RequestHeadersToAdd: headers(
-				appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
-			),
 		})
 	}
 	// Check if no weights were defined, if not default to even distribution
