@@ -204,7 +204,36 @@ func assertEqual(t *testing.T, want, got *v2.DiscoveryResponse) {
 func fileAccessLog(path string) *accesslog.FileAccessLog {
 	return &accesslog.FileAccessLog{
 		Path: path,
+		AccessLogFormat: &accesslog.FileAccessLog_JsonFormat{
+			JsonFormat: &types.Struct{Fields: map[string]*types.Value{
+				"@timestamp":                sv("%START_TIME%"),
+				"downstream_remote_address": sv("%DOWNSTREAM_REMOTE_ADDRESS%"),
+				"path":                      sv("%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"),
+				"authority":                 sv("%REQ(:AUTHORITY)%"),
+				"protocol":                  sv("%PROTOCOL%"),
+				"upstream_service_time":     sv("%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%"),
+				"upstream_local_address":    sv("%UPSTREAM_LOCAL_ADDRESS%"),
+				"duration":                  sv("%DURATION%"),
+				"downstream_local_address":  sv("%DOWNSTREAM_LOCAL_ADDRESS%"),
+				"user_agent":                sv("%REQ(USER-AGENT)%"),
+				"response_code":             sv("%RESPONSE_CODE%"),
+				"response_flags":            sv("%RESPONSE_FLAGS%"),
+				"method":                    sv("%REQ(:METHOD)%"),
+				"request_id":                sv("%REQ(X-REQUEST-ID)%"),
+				"upstream_host":             sv("%UPSTREAM_HOST%"),
+				"x_forwarded_for":           sv("%REQ(X-FORWARDED-FOR)%"),
+				"requested_server_name":     sv("%REQUESTED_SERVER_NAME%"),
+				"bytes_received":            sv("%BYTES_RECEIVED%"),
+				"bytes_sent":                sv("%BYTES_SENT%"),
+				"upstream_cluster":          sv("%UPSTREAM_CLUSTER%"),
+				"uber_trace_id":             sv("%REQ(UBER-TRACE-ID)%"),
+			}},
+		},
 	}
+}
+
+func sv(s string) *types.Value {
+	return &types.Value{Kind: &types.Value_StringValue{StringValue: s}}
 }
 
 func u32(val int) *types.UInt32Value { return &types.UInt32Value{Value: uint32(val)} }

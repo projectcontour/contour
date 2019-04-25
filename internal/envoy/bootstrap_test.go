@@ -45,6 +45,37 @@ func TestBootstrap(t *testing.T) {
               {
                 "name": "envoy.http_connection_manager",
                 "config": {
+                  "access_log": [
+                    {
+                      "config": {
+                        "json_format": {
+                          "@timestamp": "%START_TIME%",
+                          "authority": "%REQ(:AUTHORITY)%",
+                          "bytes_received": "%BYTES_RECEIVED%",
+                          "bytes_sent": "%BYTES_SENT%",
+                          "downstream_local_address": "%DOWNSTREAM_LOCAL_ADDRESS%",
+                          "downstream_remote_address": "%DOWNSTREAM_REMOTE_ADDRESS%",
+                          "duration": "%DURATION%",
+                          "method": "%REQ(:METHOD)%",
+                          "path": "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%",
+                          "protocol": "%PROTOCOL%",
+                          "request_id": "%REQ(X-REQUEST-ID)%",
+                          "requested_server_name": "%REQUESTED_SERVER_NAME%",
+                          "response_code": "%RESPONSE_CODE%",
+                          "response_flags": "%RESPONSE_FLAGS%",
+                          "uber_trace_id": "%REQ(UBER-TRACE-ID)%",
+                          "upstream_cluster": "%UPSTREAM_CLUSTER%",
+                          "upstream_host": "%UPSTREAM_HOST%",
+                          "upstream_local_address": "%UPSTREAM_LOCAL_ADDRESS%",
+                          "upstream_service_time": "%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%",
+                          "user_agent": "%REQ(USER-AGENT)%",
+                          "x_forwarded_for": "%REQ(X-FORWARDED-FOR)%"
+                        },
+                        "path": "/dev/stdout"
+                      },
+                      "name": "envoy.file_access_log"
+                    }
+                  ],
                   "codec_type": "AUTO",
                   "http_filters": [
                     {
@@ -219,6 +250,37 @@ func TestBootstrap(t *testing.T) {
               {
                 "name": "envoy.http_connection_manager",
                 "config": {
+                  "access_log": [
+                    {
+                      "config": {
+                        "json_format": {
+                          "@timestamp": "%START_TIME%",
+                          "authority": "%REQ(:AUTHORITY)%",
+                          "bytes_received": "%BYTES_RECEIVED%",
+                          "bytes_sent": "%BYTES_SENT%",
+                          "downstream_local_address": "%DOWNSTREAM_LOCAL_ADDRESS%",
+                          "downstream_remote_address": "%DOWNSTREAM_REMOTE_ADDRESS%",
+                          "duration": "%DURATION%",
+                          "method": "%REQ(:METHOD)%",
+                          "path": "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%",
+                          "protocol": "%PROTOCOL%",
+                          "request_id": "%REQ(X-REQUEST-ID)%",
+                          "requested_server_name": "%REQUESTED_SERVER_NAME%",
+                          "response_code": "%RESPONSE_CODE%",
+                          "response_flags": "%RESPONSE_FLAGS%",
+                          "uber_trace_id": "%REQ(UBER-TRACE-ID)%",
+                          "upstream_cluster": "%UPSTREAM_CLUSTER%",
+                          "upstream_host": "%UPSTREAM_HOST%",
+                          "upstream_local_address": "%UPSTREAM_LOCAL_ADDRESS%",
+                          "upstream_service_time": "%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%",
+                          "user_agent": "%REQ(USER-AGENT)%",
+                          "x_forwarded_for": "%REQ(X-FORWARDED-FOR)%"
+                        },
+                        "path": "/dev/stdout"
+                      },
+                      "name": "envoy.file_access_log"
+                    }
+                  ],
                   "codec_type": "AUTO",
                   "http_filters": [
                     {
@@ -409,6 +471,37 @@ func TestBootstrap(t *testing.T) {
               {
                 "name": "envoy.http_connection_manager",
                 "config": {
+                  "access_log": [
+                    {
+                      "config": {
+                        "json_format": {
+                          "@timestamp": "%START_TIME%",
+                          "authority": "%REQ(:AUTHORITY)%",
+                          "bytes_received": "%BYTES_RECEIVED%",
+                          "bytes_sent": "%BYTES_SENT%",
+                          "downstream_local_address": "%DOWNSTREAM_LOCAL_ADDRESS%",
+                          "downstream_remote_address": "%DOWNSTREAM_REMOTE_ADDRESS%",
+                          "duration": "%DURATION%",
+                          "method": "%REQ(:METHOD)%",
+                          "path": "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%",
+                          "protocol": "%PROTOCOL%",
+                          "request_id": "%REQ(X-REQUEST-ID)%",
+                          "requested_server_name": "%REQUESTED_SERVER_NAME%",
+                          "response_code": "%RESPONSE_CODE%",
+                          "response_flags": "%RESPONSE_FLAGS%",
+                          "uber_trace_id": "%REQ(UBER-TRACE-ID)%",
+                          "upstream_cluster": "%UPSTREAM_CLUSTER%",
+                          "upstream_host": "%UPSTREAM_HOST%",
+                          "upstream_local_address": "%UPSTREAM_LOCAL_ADDRESS%",
+                          "upstream_service_time": "%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%",
+                          "user_agent": "%REQ(USER-AGENT)%",
+                          "x_forwarded_for": "%REQ(X-FORWARDED-FOR)%"
+                        },
+                        "path": "/dev/stdout"
+                      },
+                      "name": "envoy.file_access_log"
+                    }
+                  ],
                   "codec_type": "AUTO",
                   "http_filters": [
                     {
@@ -598,6 +691,37 @@ func TestBootstrap(t *testing.T) {
               {
                 "name": "envoy.http_connection_manager",
                 "config": {
+                  "access_log": [
+                    {
+                      "config": {
+                        "json_format": {
+                          "@timestamp": "%START_TIME%",
+                          "authority": "%REQ(:AUTHORITY)%",
+                          "bytes_received": "%BYTES_RECEIVED%",
+                          "bytes_sent": "%BYTES_SENT%",
+                          "downstream_local_address": "%DOWNSTREAM_LOCAL_ADDRESS%",
+                          "downstream_remote_address": "%DOWNSTREAM_REMOTE_ADDRESS%",
+                          "duration": "%DURATION%",
+                          "method": "%REQ(:METHOD)%",
+                          "path": "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%",
+                          "protocol": "%PROTOCOL%",
+                          "request_id": "%REQ(X-REQUEST-ID)%",
+                          "requested_server_name": "%REQUESTED_SERVER_NAME%",
+                          "response_code": "%RESPONSE_CODE%",
+                          "response_flags": "%RESPONSE_FLAGS%",
+                          "uber_trace_id": "%REQ(UBER-TRACE-ID)%",
+                          "upstream_cluster": "%UPSTREAM_CLUSTER%",
+                          "upstream_host": "%UPSTREAM_HOST%",
+                          "upstream_local_address": "%UPSTREAM_LOCAL_ADDRESS%",
+                          "upstream_service_time": "%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%",
+                          "user_agent": "%REQ(USER-AGENT)%",
+                          "x_forwarded_for": "%REQ(X-FORWARDED-FOR)%"
+                        },
+                        "path": "/dev/stdout"
+                      },
+                      "name": "envoy.file_access_log"
+                    }
+                  ],
                   "codec_type": "AUTO",
                   "http_filters": [
                     {
@@ -772,6 +896,37 @@ func TestBootstrap(t *testing.T) {
               {
                 "name": "envoy.http_connection_manager",
                 "config": {
+                  "access_log": [
+                    {
+                      "config": {
+                        "json_format": {
+                          "@timestamp": "%START_TIME%",
+                          "authority": "%REQ(:AUTHORITY)%",
+                          "bytes_received": "%BYTES_RECEIVED%",
+                          "bytes_sent": "%BYTES_SENT%",
+                          "downstream_local_address": "%DOWNSTREAM_LOCAL_ADDRESS%",
+                          "downstream_remote_address": "%DOWNSTREAM_REMOTE_ADDRESS%",
+                          "duration": "%DURATION%",
+                          "method": "%REQ(:METHOD)%",
+                          "path": "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%",
+                          "protocol": "%PROTOCOL%",
+                          "request_id": "%REQ(X-REQUEST-ID)%",
+                          "requested_server_name": "%REQUESTED_SERVER_NAME%",
+                          "response_code": "%RESPONSE_CODE%",
+                          "response_flags": "%RESPONSE_FLAGS%",
+                          "uber_trace_id": "%REQ(UBER-TRACE-ID)%",
+                          "upstream_cluster": "%UPSTREAM_CLUSTER%",
+                          "upstream_host": "%UPSTREAM_HOST%",
+                          "upstream_local_address": "%UPSTREAM_LOCAL_ADDRESS%",
+                          "upstream_service_time": "%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%",
+                          "user_agent": "%REQ(USER-AGENT)%",
+                          "x_forwarded_for": "%REQ(X-FORWARDED-FOR)%"
+                        },
+                        "path": "/dev/stdout"
+                      },
+                      "name": "envoy.file_access_log"
+                    }
+                  ],
                   "codec_type": "AUTO",
                   "http_filters": [
                     {
@@ -947,6 +1102,37 @@ func TestBootstrap(t *testing.T) {
               {
                 "name": "envoy.http_connection_manager",
                 "config": {
+                  "access_log": [
+                    {
+                      "config": {
+                        "json_format": {
+                          "@timestamp": "%START_TIME%",
+                          "authority": "%REQ(:AUTHORITY)%",
+                          "bytes_received": "%BYTES_RECEIVED%",
+                          "bytes_sent": "%BYTES_SENT%",
+                          "downstream_local_address": "%DOWNSTREAM_LOCAL_ADDRESS%",
+                          "downstream_remote_address": "%DOWNSTREAM_REMOTE_ADDRESS%",
+                          "duration": "%DURATION%",
+                          "method": "%REQ(:METHOD)%",
+                          "path": "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%",
+                          "protocol": "%PROTOCOL%",
+                          "request_id": "%REQ(X-REQUEST-ID)%",
+                          "requested_server_name": "%REQUESTED_SERVER_NAME%",
+                          "response_code": "%RESPONSE_CODE%",
+                          "response_flags": "%RESPONSE_FLAGS%",
+                          "uber_trace_id": "%REQ(UBER-TRACE-ID)%",
+                          "upstream_cluster": "%UPSTREAM_CLUSTER%",
+                          "upstream_host": "%UPSTREAM_HOST%",
+                          "upstream_local_address": "%UPSTREAM_LOCAL_ADDRESS%",
+                          "upstream_service_time": "%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%",
+                          "user_agent": "%REQ(USER-AGENT)%",
+                          "x_forwarded_for": "%REQ(X-FORWARDED-FOR)%"
+                        },
+                        "path": "/dev/stdout"
+                      },
+                      "name": "envoy.file_access_log"
+                    }
+                  ],
                   "codec_type": "AUTO",
                   "http_filters": [
                     {
@@ -1122,6 +1308,37 @@ func TestBootstrap(t *testing.T) {
               {
                 "name": "envoy.http_connection_manager",
                 "config": {
+                  "access_log": [
+                    {
+                      "config": {
+                        "json_format": {
+                          "@timestamp": "%START_TIME%",
+                          "authority": "%REQ(:AUTHORITY)%",
+                          "bytes_received": "%BYTES_RECEIVED%",
+                          "bytes_sent": "%BYTES_SENT%",
+                          "downstream_local_address": "%DOWNSTREAM_LOCAL_ADDRESS%",
+                          "downstream_remote_address": "%DOWNSTREAM_REMOTE_ADDRESS%",
+                          "duration": "%DURATION%",
+                          "method": "%REQ(:METHOD)%",
+                          "path": "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%",
+                          "protocol": "%PROTOCOL%",
+                          "request_id": "%REQ(X-REQUEST-ID)%",
+                          "requested_server_name": "%REQUESTED_SERVER_NAME%",
+                          "response_code": "%RESPONSE_CODE%",
+                          "response_flags": "%RESPONSE_FLAGS%",
+                          "uber_trace_id": "%REQ(UBER-TRACE-ID)%",
+                          "upstream_cluster": "%UPSTREAM_CLUSTER%",
+                          "upstream_host": "%UPSTREAM_HOST%",
+                          "upstream_local_address": "%UPSTREAM_LOCAL_ADDRESS%",
+                          "upstream_service_time": "%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%",
+                          "user_agent": "%REQ(USER-AGENT)%",
+                          "x_forwarded_for": "%REQ(X-FORWARDED-FOR)%"
+                        },
+                        "path": "/dev/stdout"
+                      },
+                      "name": "envoy.file_access_log"
+                    }
+                  ],
                   "codec_type": "AUTO",
                   "http_filters": [
                     {

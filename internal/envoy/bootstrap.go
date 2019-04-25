@@ -49,6 +49,7 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 						ConfigType: &listener.Filter_Config{
 							Config: &types.Struct{
 								Fields: map[string]*types.Value{
+									"access_log":  accesslog("/dev/stdout"),
 									"codec_type":  sv("AUTO"),
 									"stat_prefix": sv("stats"),
 									"route_config": st(map[string]*types.Value{

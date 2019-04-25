@@ -23,7 +23,7 @@ require (
 	github.com/json-iterator/go v1.1.5 // indirect
 	github.com/kisielk/errcheck v1.2.0
 	github.com/lyft/protoc-gen-validate v0.0.12 // indirect
-	github.com/mdempsky/unconvert v0.0.0-20190325185700-2f5dc3378ed3
+	github.com/mdempsky/unconvert v0.0.0-20190325185700-2f5dc3378ed3 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
