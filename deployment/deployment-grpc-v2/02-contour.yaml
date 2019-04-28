@@ -58,8 +58,8 @@ spec:
         command: ["contour"]
         args:
         - bootstrap
-        # Uncomment the statsd-enable to enable statsd metrics
-        #- --statsd-enable
+        # Uncomment statsd-enabled to enable statsd metrics
+        #- --statsd-enabled
         # Uncomment to set a custom stats emission address and port
         #- --stats-address=0.0.0.0
         #- --stats-port=8002
