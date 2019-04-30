@@ -29,6 +29,7 @@ const (
 	clusterType  = typePrefix + "Cluster"
 	routeType    = typePrefix + "RouteConfiguration"
 	listenerType = typePrefix + "Listener"
+	secretType   = typePrefix + "auth.Secret"
 )
 
 type Client struct {
