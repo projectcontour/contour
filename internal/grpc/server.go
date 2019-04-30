@@ -20,7 +20,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoy_service_v2 "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
+	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
+	loadstats "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
 	"github.com/sirupsen/logrus"
 )
 
@@ -65,6 +66,7 @@ func NewAPI(log logrus.FieldLogger, cacheMap map[string]Cache) *grpc.Server {
 	v2.RegisterEndpointDiscoveryServiceServer(g, s)
 	v2.RegisterListenerDiscoveryServiceServer(g, s)
 	v2.RegisterRouteDiscoveryServiceServer(g, s)
+	discovery.RegisterSecretDiscoveryServiceServer(g, s)
 	return g
 }
 
@@ -97,6 +99,10 @@ func (s *grpcServer) FetchRoutes(_ context.Context, req *v2.DiscoveryRequest) (*
 	return s.fetch(req)
 }
 
+func (s *grpcServer) FetchSecrets(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
+	return s.fetch(req)
+}
+
 func (s *grpcServer) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) error {
 	return s.stream(srv)
 }
@@ -105,7 +111,7 @@ func (s *grpcServer) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpo
 	return s.stream(srv)
 }
 
-func (s *grpcServer) StreamLoadStats(srv envoy_service_v2.LoadReportingService_StreamLoadStatsServer) error {
+func (s *grpcServer) StreamLoadStats(srv loadstats.LoadReportingService_StreamLoadStatsServer) error {
 	return status.Errorf(codes.Unimplemented, "StreamLoadStats unimplemented")
 }
 
@@ -122,5 +128,9 @@ func (s *grpcServer) StreamListeners(srv v2.ListenerDiscoveryService_StreamListe
 }
 
 func (s *grpcServer) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) error {
+	return s.stream(srv)
+}
+
+func (s *grpcServer) StreamSecrets(srv discovery.SecretDiscoveryService_StreamSecretsServer) error {
 	return s.stream(srv)
 }

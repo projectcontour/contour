@@ -17,6 +17,7 @@ import (
 	"sort"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 
 	"github.com/gogo/protobuf/proto"
 )
@@ -29,6 +30,7 @@ const (
 	clusterType  = typePrefix + "Cluster"
 	routeType    = typePrefix + "RouteConfiguration"
 	listenerType = typePrefix + "Listener"
+	secretType   = typePrefix + "auth.Secret"
 )
 
 // cache represents a source of proto.Message valus that can be registered
@@ -126,4 +128,26 @@ func (r routeConfigurationsByName) Len() int      { return len(r) }
 func (r routeConfigurationsByName) Swap(i, j int) { r[i], r[j] = r[j], r[i] }
 func (r routeConfigurationsByName) Less(i, j int) bool {
 	return r[i].(*v2.RouteConfiguration).Name < r[j].(*v2.RouteConfiguration).Name
+}
+
+// SDS implements the RDS v2 gRPC API.
+type SDS struct {
+	Cache
+}
+
+// Values returns a sorted list of RouteConfigurations.
+func (s *SDS) Values(filter func(string) bool) []proto.Message {
+	v := s.Cache.Values(filter)
+	sort.Stable(secretsByName(v))
+	return v
+}
+
+func (s *SDS) TypeURL() string { return secretType }
+
+type secretsByName []proto.Message
+
+func (s secretsByName) Len() int      { return len(s) }
+func (s secretsByName) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s secretsByName) Less(i, j int) bool {
+	return s[i].(*auth.Secret).Name < s[j].(*auth.Secret).Name
 }
