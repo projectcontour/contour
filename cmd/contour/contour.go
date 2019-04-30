@@ -222,12 +222,14 @@ func main() {
 				clusterType  = typePrefix + "Cluster"
 				routeType    = typePrefix + "RouteConfiguration"
 				listenerType = typePrefix + "Listener"
+				secretType   = typePrefix + "auth.Secret"
 			)
 			s := grpc.NewAPI(log, map[string]grpc.Cache{
 				clusterType:  &ch.ClusterCache,
 				routeType:    &ch.RouteCache,
 				listenerType: &ch.ListenerCache,
 				endpointType: et,
+				secretType:   &ch.SecretCache,
 			})
 			log.Println("started")
 			defer log.Println("stopped")

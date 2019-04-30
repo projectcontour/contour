@@ -58,6 +58,9 @@ func NewAPI(log logrus.FieldLogger, cacheMap map[string]Cache) *grpc.Server {
 				routeType: &RDS{
 					Cache: cacheMap[routeType],
 				},
+				secretType: &SDS{
+					Cache: cacheMap[secretType],
+				},
 			},
 		},
 	}
