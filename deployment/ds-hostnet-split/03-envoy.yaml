@@ -20,7 +20,6 @@ spec:
         prometheus.io/port: "8002"
         prometheus.io/statsdport: "9102"
         prometheus.io/path: "/stats/prometheus"
-        steve: "sloka"
       labels:
         app: envoy
     spec:
