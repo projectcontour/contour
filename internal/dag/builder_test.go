@@ -1266,6 +1266,15 @@ func TestDAGInsert(t *testing.T) {
 		Data: secretdata("certificate", "key"),
 	}
 
+	// Invalid cert in the secret
+	sec2 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Data: secretdata("", ""),
+	}
+
 	tests := map[string]struct {
 		*Builder
 		objs []interface{}
@@ -1506,6 +1515,34 @@ func TestDAGInsert(t *testing.T) {
 					Port: 443,
 					VirtualHosts: virtualhosts(
 						securevirtualhost("kuard.example.com", sec1, route("/")),
+					),
+				},
+			),
+		},
+		"insert invalid secret then ingress w/o tls": {
+			objs: []interface{}{
+				sec2,
+				i1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", route("/")),
+					),
+				},
+			),
+		},
+		"insert invalid secret then ingress w/ tls": {
+			objs: []interface{}{
+				sec2,
+				i3,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.example.com", route("/")),
 					),
 				},
 			),

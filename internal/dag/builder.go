@@ -206,6 +206,9 @@ func (b *builder) lookupSecret(m meta) *Secret {
 	if !ok {
 		return nil
 	}
+	if !validSecret(sec) {
+		return nil
+	}
 	s := &Secret{
 		Object: sec,
 	}
@@ -624,6 +627,11 @@ func (b *builder) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 		}
 	}
 	return false
+}
+
+// validSecret returns true if the Secret contains certificate and private key material.
+func validSecret(s *v1.Secret) bool {
+	return len(s.Data[v1.TLSCertKey]) > 0 && len(s.Data[v1.TLSPrivateKeyKey]) > 0
 }
 
 func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, enforceTLS bool) {

@@ -755,6 +755,103 @@ func TestSSLRedirectOverlay(t *testing.T) {
 	}})
 }
 
+func TestInvalidCertInIngress(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	// Create an invalid TLS secret
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-tls",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			v1.TLSCertKey:       nil,
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	}
+	rh.OnAdd(secret)
+
+	// Create a service
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	// Create an ingress that uses the invalid secret
+	rh.OnAdd(&v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{Name: "kuard-ing", Namespace: "default"},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"kuard.io"},
+				SecretName: "example-tls",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "kuard.io",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromInt(80),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	})
+
+	assertRDS(t, cc, "3", []route.VirtualHost{{ // ingress_http
+		Name:    "kuard.io",
+		Domains: []string{"kuard.io", "kuard.io:80"},
+		Routes: []route.Route{{
+			Match:               envoy.PrefixMatch("/"),
+			Action:              routecluster("default/kuard/80/da39a3ee5e"),
+			RequestHeadersToAdd: envoy.RouteHeaders(),
+		}},
+	}}, nil)
+
+	// Correct the secret
+	rh.OnUpdate(secret, &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-tls",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("cert"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	})
+
+	assertRDS(t, cc, "4", []route.VirtualHost{{ // ingress_http
+		Name:    "kuard.io",
+		Domains: []string{"kuard.io", "kuard.io:80"},
+		Routes: []route.Route{{
+			Match:               envoy.PrefixMatch("/"),
+			Action:              routecluster("default/kuard/80/da39a3ee5e"),
+			RequestHeadersToAdd: envoy.RouteHeaders(),
+		}},
+	}}, []route.VirtualHost{{ // ingress_https
+		Name:    "kuard.io",
+		Domains: []string{"kuard.io", "kuard.io:443"},
+		Routes: []route.Route{{
+			Match:               envoy.PrefixMatch("/"),
+			Action:              routecluster("default/kuard/80/da39a3ee5e"),
+			RequestHeadersToAdd: envoy.RouteHeaders(),
+		}},
+	}})
+}
+
 // issue #257: editing default ingress did not remove original default route
 func TestIssue257(t *testing.T) {
 	rh, cc, done := setup(t)
