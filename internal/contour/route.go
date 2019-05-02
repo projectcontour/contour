@@ -121,12 +121,14 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 							return
 						}
 						rr := route.Route{
-							Match:  envoy.PrefixMatch(r.Prefix),
-							Action: envoy.RouteRoute(r, r.Clusters),
+							Match:               envoy.PrefixMatch(r.Prefix),
+							Action:              envoy.RouteRoute(r, r.Clusters),
+							RequestHeadersToAdd: envoy.RouteHeaders(),
 						}
 
 						if r.HTTPSUpgrade {
 							rr.Action = envoy.UpgradeHTTPS()
+							rr.RequestHeadersToAdd = nil
 						}
 						vhost.Routes = append(vhost.Routes, rr)
 					}
@@ -145,8 +147,9 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 							return
 						}
 						vhost.Routes = append(vhost.Routes, route.Route{
-							Match:  envoy.PrefixMatch(r.Prefix),
-							Action: envoy.RouteRoute(r, r.Clusters),
+							Match:               envoy.PrefixMatch(r.Prefix),
+							Action:              envoy.RouteRoute(r, r.Clusters),
+							RequestHeadersToAdd: envoy.RouteHeaders(),
 						})
 					}
 				})
@@ -193,14 +196,3 @@ func (l longestRouteFirst) Less(i, j int) bool {
 }
 
 func u32(val int) *types.UInt32Value { return &types.UInt32Value{Value: uint32(val)} }
-
-var bvTrue = types.BoolValue{Value: true}
-
-// bv returns a pointer to a true types.BoolValue if val is true,
-// otherwise it returns nil.
-func bv(val bool) *types.BoolValue {
-	if val {
-		return &bvTrue
-	}
-	return nil
-}
