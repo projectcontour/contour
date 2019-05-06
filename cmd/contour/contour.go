@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	clientset "github.com/heptio/contour/apis/generated/clientset/versioned"
 	contourinformers "github.com/heptio/contour/apis/generated/informers/externalversions"
 	"github.com/heptio/contour/internal/contour"
@@ -148,19 +149,19 @@ func main() {
 		writeBootstrapConfig(&config, *path)
 	case cds.FullCommand():
 		stream := client.ClusterStream()
-		watchstream(stream, clusterType, resources)
+		watchstream(stream, cache.ClusterType, resources)
 	case eds.FullCommand():
 		stream := client.EndpointStream()
-		watchstream(stream, endpointType, resources)
+		watchstream(stream, cache.EndpointType, resources)
 	case lds.FullCommand():
 		stream := client.ListenerStream()
-		watchstream(stream, listenerType, resources)
+		watchstream(stream, cache.ListenerType, resources)
 	case rds.FullCommand():
 		stream := client.RouteStream()
-		watchstream(stream, routeType, resources)
+		watchstream(stream, cache.RouteType, resources)
 	case sds.FullCommand():
 		stream := client.RouteStream()
-		watchstream(stream, secretType, resources)
+		watchstream(stream, cache.SecretType, resources)
 	case serve.FullCommand():
 		log.Infof("args: %v", args)
 		var g workgroup.Group

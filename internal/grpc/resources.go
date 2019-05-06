@@ -18,19 +18,17 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	"github.com/envoyproxy/go-control-plane/pkg/cache"
 
 	"github.com/gogo/protobuf/proto"
 )
 
-// Resource types in xDS v2.
 const (
-	googleApis   = "type.googleapis.com/"
-	typePrefix   = googleApis + "envoy.api.v2."
-	endpointType = typePrefix + "ClusterLoadAssignment"
-	clusterType  = typePrefix + "Cluster"
-	routeType    = typePrefix + "RouteConfiguration"
-	listenerType = typePrefix + "Listener"
-	secretType   = typePrefix + "auth.Secret"
+	endpointType = cache.EndpointType
+	clusterType  = cache.ClusterType
+	routeType    = cache.RouteType
+	listenerType = cache.ListenerType
+	secretType   = cache.SecretType
 )
 
 // cache represents a source of proto.Message valus that can be registered

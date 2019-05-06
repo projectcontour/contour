@@ -22,16 +22,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	googleApis   = "type.googleapis.com/"
-	typePrefix   = googleApis + "envoy.api.v2."
-	endpointType = typePrefix + "ClusterLoadAssignment"
-	clusterType  = typePrefix + "Cluster"
-	routeType    = typePrefix + "RouteConfiguration"
-	listenerType = typePrefix + "Listener"
-	secretType   = typePrefix + "auth.Secret"
-)
-
 type Client struct {
 	ContourAddr string
 }
