@@ -470,7 +470,7 @@ func filterchain(filters ...listener.Filter) []listener.FilterChain {
 }
 
 func tlscontext(tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnprotos ...string) *auth.DownstreamTlsContext {
-	return envoy.DownstreamTLSContext("default/secret/735ad571c1", DEFAULT_XDS_CLUSTER_NAME, tlsMinProtoVersion, alpnprotos...)
+	return envoy.DownstreamTLSContext("default/secret/735ad571c1", tlsMinProtoVersion, alpnprotos...)
 }
 
 func secretdata(cert, key string) map[string][]byte {

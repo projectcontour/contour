@@ -148,11 +148,9 @@ func TestSocketAddress(t *testing.T) {
 }
 
 func TestDownstreamTLSContext(t *testing.T) {
-	const (
-		secret  = "default/tls-cert"
-		cluster = "contour"
-	)
-	got := DownstreamTLSContext(secret, cluster, auth.TlsParameters_TLSv1_1, "h2", "http/1.1")
+	const secretName = "default/tls-cert"
+
+	got := DownstreamTLSContext(secretName, auth.TlsParameters_TLSv1_1, "h2", "http/1.1")
 	want := &auth.DownstreamTlsContext{
 		CommonTlsContext: &auth.CommonTlsContext{
 			TlsParams: &auth.TlsParameters{
@@ -170,7 +168,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 				},
 			},
 			TlsCertificateSdsSecretConfigs: []*auth.SdsSecretConfig{{
-				Name: secret,
+				Name: secretName,
 				SdsConfig: &core.ConfigSource{
 					ConfigSourceSpecifier: &core.ConfigSource_ApiConfigSource{
 						ApiConfigSource: &core.ApiConfigSource{
@@ -178,7 +176,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 							GrpcServices: []*core.GrpcService{{
 								TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
 									EnvoyGrpc: &core.GrpcService_EnvoyGrpc{
-										ClusterName: cluster,
+										ClusterName: "contour",
 									},
 								},
 							}},

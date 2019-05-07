@@ -55,7 +55,7 @@ func UpstreamTLSContext(alpnProtocols ...string) *auth.UpstreamTlsContext {
 }
 
 // DownstreamTLSContext creates a new DownstreamTlsContext.
-func DownstreamTLSContext(secretName, clusterName string, tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnProtos ...string) *auth.DownstreamTlsContext {
+func DownstreamTLSContext(secretName string, tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnProtos ...string) *auth.DownstreamTlsContext {
 	return &auth.DownstreamTlsContext{
 		CommonTlsContext: &auth.CommonTlsContext{
 			TlsParams: &auth.TlsParameters{
@@ -65,7 +65,7 @@ func DownstreamTLSContext(secretName, clusterName string, tlsMinProtoVersion aut
 			},
 			TlsCertificateSdsSecretConfigs: []*auth.SdsSecretConfig{{
 				Name:      secretName,
-				SdsConfig: ConfigSource(clusterName),
+				SdsConfig: ConfigSource("contour"),
 			}},
 			AlpnProtocols: alpnProtos,
 		},

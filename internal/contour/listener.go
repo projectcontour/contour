@@ -32,7 +32,6 @@ const (
 	DEFAULT_HTTPS_ACCESS_LOG       = "/dev/stdout"
 	DEFAULT_HTTPS_LISTENER_ADDRESS = DEFAULT_HTTP_LISTENER_ADDRESS
 	DEFAULT_HTTPS_LISTENER_PORT    = 8443
-	DEFAULT_XDS_CLUSTER_NAME       = "contour"
 )
 
 // ListenerVisitorConfig holds configuration parameters for visitListeners.
@@ -65,10 +64,6 @@ type ListenerVisitorConfig struct {
 	// V1 or V2 preamble.
 	// If not set, defaults to false.
 	UseProxyProto bool
-
-	// Envoy's XDS gRPC API cluster name references.
-	// If not set, defaults to DEFAULT_XDS_CLUSTER_NAME.
-	XDSClusterName string
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
@@ -123,15 +118,6 @@ func (lvc *ListenerVisitorConfig) httpsAccessLog() string {
 		return lvc.HTTPSAccessLog
 	}
 	return DEFAULT_HTTPS_ACCESS_LOG
-}
-
-// xdsClusterName returns the cluster name for Envoy's XDS gRPC API
-// or DEFAULT_XDS_CLUSTER_NAME if not configured.
-func (lvc *ListenerVisitorConfig) xdsClusterName() string {
-	if lvc.XDSClusterName != "" {
-		return lvc.XDSClusterName
-	}
-	return DEFAULT_XDS_CLUSTER_NAME
 }
 
 // ListenerCache manages the contents of the gRPC LDS cache.
@@ -274,7 +260,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 
 		// attach certificate data to this listener if provided.
 		if vh.Secret != nil {
-			fc.TlsContext = envoy.DownstreamTLSContext(envoy.Secretname(vh.Secret), v.xdsClusterName(), vh.MinProtoVersion, alpnProtos...)
+			fc.TlsContext = envoy.DownstreamTLSContext(envoy.Secretname(vh.Secret), vh.MinProtoVersion, alpnProtos...)
 		}
 
 		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains, fc)

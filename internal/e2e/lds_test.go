@@ -1378,7 +1378,8 @@ func filterchaintls(domain string, secret *v1.Secret, filter listener.Filter, al
 	fc.FilterChainMatch = &listener.FilterChainMatch{
 		ServerNames: []string{domain},
 	}
-	fc.TlsContext = envoy.DownstreamTLSContext(envoy.Secretname(&dag.Secret{Object: secret}), "contour", auth.TlsParameters_TLSv1_1, alpn...)
+	secretName := envoy.Secretname(&dag.Secret{Object: secret})
+	fc.TlsContext = envoy.DownstreamTLSContext(secretName, auth.TlsParameters_TLSv1_1, alpn...)
 	return []listener.FilterChain{fc}
 }
 
