@@ -19,7 +19,7 @@ import (
 	"github.com/heptio/contour/apis/contour/v1beta1"
 )
 
-func retryPolicyIngressRoute(rp *v1beta1.RetryPolicy) *RetryPolicy {
+func retryPolicy(rp *v1beta1.RetryPolicy) *RetryPolicy {
 	if rp == nil {
 		return nil
 	}
@@ -31,7 +31,7 @@ func retryPolicyIngressRoute(rp *v1beta1.RetryPolicy) *RetryPolicy {
 	}
 }
 
-func timeoutPolicyIngressRoute(tp *v1beta1.TimeoutPolicy) *TimeoutPolicy {
+func timeoutPolicy(tp *v1beta1.TimeoutPolicy) *TimeoutPolicy {
 	if tp == nil {
 		return nil
 	}

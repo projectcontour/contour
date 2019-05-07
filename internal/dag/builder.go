@@ -20,7 +20,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -297,38 +296,37 @@ func (b *builder) compute() *DAG {
 func prefixRoute(ingress *v1beta1.Ingress, prefix string) *Route {
 	// compute websocket enabled routes
 	wr := websocketRoutes(ingress)
-	retry := retryPolicy(
-		ingress.Annotations[annotationRetryOn],
-		parseAnnotation(ingress.Annotations, annotationNumRetries),
-		parseTimeout(ingress.Annotations[annotationPerTryTimeout]))
+
+	var retry *RetryPolicy
+	if retryOn, ok := ingress.Annotations[annotationRetryOn]; ok && len(retryOn) > 0 {
+		// if there is a non empty retry-on annotation, build a RetryPolicy manually.
+		retry = &RetryPolicy{
+			RetryOn: retryOn,
+			// TODO(dfc) NumRetries may parse as 0, which is inconsistent with
+			// retryPolicy()'s default value of 1.
+			NumRetries: parseAnnotation(ingress.Annotations, annotationNumRetries),
+			// TODO(dfc) PerTryTimeout will parse to -1, infinite, in the case of
+			// invalid data, this is inconsistent with retryPolicy()'s default value
+			// of 0 duration.
+			PerTryTimeout: parseTimeout(ingress.Annotations[annotationPerTryTimeout]),
+		}
+	}
+
+	var timeout *TimeoutPolicy
+	if request, ok := ingress.Annotations[annotationRequestTimeout]; ok {
+		// if the request timeout annotation is present on this ingress
+		// construct and use the ingressroute timeout policy logic.
+		timeout = timeoutPolicy(&ingressroutev1.TimeoutPolicy{
+			Request: request,
+		})
+	}
 
 	return &Route{
 		Prefix:        prefix,
 		HTTPSUpgrade:  tlsRequired(ingress),
 		Websocket:     wr[prefix],
-		TimeoutPolicy: timeoutPolicy(parseAnnotationTimeout(ingress.Annotations, annotationRequestTimeout)),
+		TimeoutPolicy: timeout,
 		RetryPolicy:   retry,
-	}
-}
-
-func timeoutPolicy(timeout time.Duration) *TimeoutPolicy {
-	if timeout == 0 {
-		return nil
-	}
-
-	return &TimeoutPolicy{
-		Timeout: timeout,
-	}
-}
-
-func retryPolicy(retryon string, numretries int, pertrytimeout time.Duration) *RetryPolicy {
-	if retryon == "" {
-		return nil
-	}
-	return &RetryPolicy{
-		RetryOn:       retryon,
-		NumRetries:    numretries,
-		PerTryTimeout: pertrytimeout,
 	}
 }
 
@@ -656,8 +654,8 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 				Websocket:     route.EnableWebsockets,
 				HTTPSUpgrade:  routeEnforceTLS(enforceTLS, route.PermitInsecure),
 				PrefixRewrite: route.PrefixRewrite,
-				TimeoutPolicy: timeoutPolicyIngressRoute(route.TimeoutPolicy),
-				RetryPolicy:   retryPolicyIngressRoute(route.RetryPolicy),
+				TimeoutPolicy: timeoutPolicy(route.TimeoutPolicy),
+				RetryPolicy:   retryPolicy(route.RetryPolicy),
 			}
 			for _, service := range route.Services {
 				if service.Port < 1 || service.Port > 65535 {

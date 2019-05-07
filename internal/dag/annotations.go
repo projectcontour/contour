@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gogo/protobuf/types"
 	"k8s.io/api/extensions/v1beta1"
@@ -38,14 +37,6 @@ const (
 	annotationNumRetries         = "contour.heptio.com/num-retries"
 	annotationPerTryTimeout      = "contour.heptio.com/per-try-timeout"
 )
-
-// parseAnnotationTimeout parses the annotations map for the supplied key as a timeout.
-// If the value is present, but malformed, the timeout value is valid, and represents
-// infinite timeout.
-func parseAnnotationTimeout(annotations map[string]string, key string) time.Duration {
-	timeout := annotations[key]
-	return parseTimeout(timeout)
-}
 
 // parseAnnotation parses the annotation map for the supplied key.
 // If the value is not present, or malformed, then zero is returned.
