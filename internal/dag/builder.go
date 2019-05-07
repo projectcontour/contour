@@ -657,7 +657,7 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 				HTTPSUpgrade:  routeEnforceTLS(enforceTLS, route.PermitInsecure),
 				PrefixRewrite: route.PrefixRewrite,
 				TimeoutPolicy: timeoutPolicyIngressRoute(route.TimeoutPolicy),
-				RetryPolicy:   retryPolicy(retryPolicyIngressRoute(route.RetryPolicy)),
+				RetryPolicy:   retryPolicyIngressRoute(route.RetryPolicy),
 			}
 			for _, service := range route.Services {
 				if service.Port < 1 || service.Port > 65535 {
@@ -820,15 +820,6 @@ type Status struct {
 	Status      string
 	Description string
 	Vhost       string
-}
-
-func retryPolicyIngressRoute(rp *ingressroutev1.RetryPolicy) (retryOn string, retryCount int, perTryTimeout time.Duration) {
-	if rp != nil {
-		perTryTimeout, _ = time.ParseDuration(rp.PerTryTimeout)
-		retryCount = rp.NumRetries
-		retryOn = "5xx"
-	}
-	return
 }
 
 func timeoutPolicyIngressRoute(tp *ingressroutev1.TimeoutPolicy) *TimeoutPolicy {
