@@ -34,8 +34,8 @@ import (
 func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 	b := &bootstrap.Bootstrap{
 		DynamicResources: &bootstrap.Bootstrap_DynamicResources{
-			LdsConfig: ConfigSource("contour"),
-			CdsConfig: ConfigSource("contour"),
+			LdsConfig: ConfigSource(stringOrDefault(c.XDSClusterName, "contour")),
+			CdsConfig: ConfigSource(stringOrDefault(c.XDSClusterName, "contour")),
 		},
 		StaticResources: &bootstrap.Bootstrap_StaticResources{
 			Listeners: []api.Listener{{
@@ -203,6 +203,10 @@ type BootstrapConfig struct {
 	// XDSAddress is the TCP address of the gRPC XDS management server.
 	// Defaults to 127.0.0.1.
 	XDSAddress string
+
+	// XDSClusterName is the name reference for the gROC XDS management server.
+	// Defaults to contour.
+	XDSClusterName string
 
 	// XDSGRPCPort is the management server port that provides the v2 gRPC API.
 	// Defaults to 8001.

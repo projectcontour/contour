@@ -15,7 +15,6 @@ package envoy
 
 import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 )
 
 var (
@@ -56,7 +55,7 @@ func UpstreamTLSContext(alpnProtocols ...string) *auth.UpstreamTlsContext {
 }
 
 // DownstreamTLSContext creates a new DownstreamTlsContext.
-func DownstreamTLSContext(cert, key []byte, tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnProtos ...string) *auth.DownstreamTlsContext {
+func DownstreamTLSContext(secretName, clusterName string, tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnProtos ...string) *auth.DownstreamTlsContext {
 	return &auth.DownstreamTlsContext{
 		CommonTlsContext: &auth.CommonTlsContext{
 			TlsParams: &auth.TlsParameters{
@@ -64,17 +63,9 @@ func DownstreamTLSContext(cert, key []byte, tlsMinProtoVersion auth.TlsParameter
 				TlsMaximumProtocolVersion: auth.TlsParameters_TLSv1_3,
 				CipherSuites:              ciphers,
 			},
-			TlsCertificates: []*auth.TlsCertificate{{
-				CertificateChain: &core.DataSource{
-					Specifier: &core.DataSource_InlineBytes{
-						InlineBytes: cert,
-					},
-				},
-				PrivateKey: &core.DataSource{
-					Specifier: &core.DataSource_InlineBytes{
-						InlineBytes: key,
-					},
-				},
+			TlsCertificateSdsSecretConfigs: []*auth.SdsSecretConfig{{
+				Name:      secretName,
+				SdsConfig: ConfigSource(clusterName),
 			}},
 			AlpnProtocols: alpnProtos,
 		},
