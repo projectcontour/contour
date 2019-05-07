@@ -21,7 +21,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
-	"k8s.io/api/core/v1"
 )
 
 const (
@@ -261,8 +260,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 
 		// attach certificate data to this listener if provided.
 		if vh.Secret != nil {
-			data := vh.Secret.Data()
-			fc.TlsContext = envoy.DownstreamTLSContext(data[v1.TLSCertKey], data[v1.TLSPrivateKeyKey], vh.MinProtoVersion, alpnProtos...)
+			fc.TlsContext = envoy.DownstreamTLSContext(envoy.Secretname(vh.Secret), vh.MinProtoVersion, alpnProtos...)
 		}
 
 		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains, fc)
