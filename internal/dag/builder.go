@@ -821,11 +821,3 @@ type Status struct {
 	Description string
 	Vhost       string
 }
-
-func timeoutPolicyIngressRoute(tp *ingressroutev1.TimeoutPolicy) *TimeoutPolicy {
-	timeout := time.Duration(0)
-	if tp != nil {
-		timeout = parseTimeout(tp.Request)
-	}
-	return timeoutPolicy(timeout)
-}

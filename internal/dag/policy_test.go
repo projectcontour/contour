@@ -77,3 +77,91 @@ func TestRetryPolicyIngressRoute(t *testing.T) {
 		})
 	}
 }
+
+func TestTimeoutPolicyIngressRoute(t *testing.T) {
+	tests := map[string]struct {
+		tp   *v1beta1.TimeoutPolicy
+		want *TimeoutPolicy
+	}{
+		"nil timeout policy": {
+			tp:   nil,
+			want: nil,
+		},
+		"empty timeout policy": {
+			tp: &v1beta1.TimeoutPolicy{},
+			want: &TimeoutPolicy{
+				Timeout: 0 * time.Second,
+			},
+		},
+		"valid request timeout": {
+			tp: &v1beta1.TimeoutPolicy{
+				Request: "1m30s",
+			},
+			want: &TimeoutPolicy{
+				Timeout: 90 * time.Second,
+			},
+		},
+		"invalid request timeout": {
+			tp: &v1beta1.TimeoutPolicy{
+				Request: "90", // 90 what?
+			},
+			want: &TimeoutPolicy{
+				// the documentation for an invalid timeout says the duration will
+				// be undefined. In practice we take the spec from the
+				// contour.heptio.com/request-timeout annotation, which is defined
+				// to choose infinite when its valid cannot be parsed.
+				Timeout: -1,
+			},
+		},
+		"infinite request timeout": {
+			tp: &v1beta1.TimeoutPolicy{
+				Request: "infinite",
+			},
+			want: &TimeoutPolicy{
+				Timeout: -1,
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := timeoutPolicyIngressRoute(tc.tp)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestParseTimeout(t *testing.T) {
+	tests := map[string]struct {
+		duration string
+		want     time.Duration
+	}{
+		"empty": {
+			duration: "",
+			want:     0,
+		},
+		"infinity": {
+			duration: "infinity",
+			want:     -1,
+		},
+		"10 seconds": {
+			duration: "10s",
+			want:     10 * time.Second,
+		},
+		"invalid": {
+			duration: "10", // 10 what?
+			want:     -1,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := parseTimeout(tc.duration)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
