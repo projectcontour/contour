@@ -18,49 +18,11 @@ import (
 	"math"
 	"reflect"
 	"testing"
-	"time"
 
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
-
-func TestParseAnnotationTimeout(t *testing.T) {
-	tests := map[string]struct {
-		a    map[string]string
-		want time.Duration
-	}{
-		"nada": {
-			a:    nil,
-			want: 0,
-		},
-		"empty": {
-			a:    map[string]string{annotationRequestTimeout: ""}, // not even sure this is possible via the API
-			want: 0,
-		},
-		"infinity": {
-			a:    map[string]string{annotationRequestTimeout: "infinity"},
-			want: -1,
-		},
-		"10 seconds": {
-			a:    map[string]string{annotationRequestTimeout: "10s"},
-			want: 10 * time.Second,
-		},
-		"invalid": {
-			a:    map[string]string{annotationRequestTimeout: "10"}, // 10 what?
-			want: -1,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := parseAnnotationTimeout(tc.a, annotationRequestTimeout)
-			if got != tc.want {
-				t.Fatalf("parseAnnotationTimeout(%q): want: %v, got: %v", tc.a, tc.want, got)
-			}
-		})
-	}
-}
 
 func TestParseAnnotationUInt32(t *testing.T) {
 	tests := map[string]struct {
