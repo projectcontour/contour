@@ -429,14 +429,13 @@ spec:
 
 In this example, requests to `timeout.bar.com/` will have a request timeout policy of 1s. 
 This refers to the time that spans between the point at which complete client request has been processed by the proxy, and when the response from the server has been completely processed. 
-The Request Timeout error code returns with HTTP error code 504. 
 
 - `timeoutPolicy.request` This field can be any positive time period or "infinity". 
 The time period of **0s** will also be treated as infinity. 
 By default, Envoy has a 15 second timeout for a backend service to respond.
 More information can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout).
 
-- `retryPolicy`: A retry will be attempted if the server returns a 50x error code, or if the server takes more than `retryPolicy.perTryTimeout` to process a request. 
+- `retryPolicy`: A retry will be attempted if the server returns an error code in the 5xx range, or if the server takes more than `retryPolicy.perTryTimeout` to process a request. 
     - `retryPolicy.count` specifies the maximum number of retries allowed. This parameter is optional and defaults to 1.
     - `retryPolicy.perTryTimeout` specifies the timeout per retry. If this field is greater than the request timeout, it is ignored. This parameter is optional. 
     If left unspecified, `timeoutPolicy.request` will be used. 
