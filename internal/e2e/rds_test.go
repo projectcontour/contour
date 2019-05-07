@@ -2296,7 +2296,7 @@ func TestRouteRetryAnnotations(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "hello", Namespace: "default",
 			Annotations: map[string]string{
-				"contour.heptio.com/retry-on":        "50x,gateway-error",
+				"contour.heptio.com/retry-on":        "5xx,gateway-error",
 				"contour.heptio.com/num-retries":     "7",
 				"contour.heptio.com/per-try-timeout": "120ms",
 			},
@@ -2311,7 +2311,7 @@ func TestRouteRetryAnnotations(t *testing.T) {
 		Domains: []string{"*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/"), // match all
-			Action:              routeretry("default/backend/80/da39a3ee5e", "50x,gateway-error", 7, 120*time.Millisecond),
+			Action:              routeretry("default/backend/80/da39a3ee5e", "5xx,gateway-error", 7, 120*time.Millisecond),
 			RequestHeadersToAdd: envoy.RouteHeaders(),
 		}},
 	}}, nil)
@@ -2364,7 +2364,7 @@ func TestRouteRetryIngressRoute(t *testing.T) {
 		Domains: []string{"test2.test.com", "test2.test.com:80"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/"), // match all
-			Action:              routeretry("default/backend/80/da39a3ee5e", "50x", 7, 120*time.Millisecond),
+			Action:              routeretry("default/backend/80/da39a3ee5e", "5xx", 7, 120*time.Millisecond),
 			RequestHeadersToAdd: envoy.RouteHeaders(),
 		}},
 	}}, nil)

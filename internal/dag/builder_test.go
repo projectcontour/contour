@@ -2256,7 +2256,7 @@ func TestDAGInsert(t *testing.T) {
 							Prefix:   "/",
 							Clusters: clustermap(s1),
 							RetryPolicy: &RetryPolicy{
-								RetryOn:       "50x",
+								RetryOn:       "5xx",
 								NumRetries:    6,
 								PerTryTimeout: 10 * time.Second,
 							},
@@ -2278,7 +2278,7 @@ func TestDAGInsert(t *testing.T) {
 							Prefix:   "/",
 							Clusters: clustermap(s1),
 							RetryPolicy: &RetryPolicy{
-								RetryOn:       "50x",
+								RetryOn:       "5xx",
 								NumRetries:    6,
 								PerTryTimeout: 0,
 							},

@@ -61,9 +61,7 @@ spec:
               idle: 1s
           # retry for this route is independent of "/contour" retryPolicy.
           retryPolicy:
-          	count: "2"
-          	onStatusCodes:
-          	- 50x
+          	count: 2
 ```
 
 The naming conventions of the proposed YAML fields are inspired from [HTTP Timeouts](https://tools.ietf.org/id/draft-thomson-hybi-http-timeout-00.html#rfc.section.4).
@@ -209,7 +207,7 @@ We would use the following to map value from DAG's route to protobuf
 
 ### RetryPolicy for Route - Envoy
 - [Specifies the conditions under which retry takes place](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#route-retrypolicy-retry-on)
-- RetryOn is hard coded to ["50x"](https://www.envoyproxy.io/docs/envoy/latest/configuration/http_filters/router_filter#config-http-filters-router-x-envoy-retry-on)
+- RetryOn is hard coded to ["5xx"](https://www.envoyproxy.io/docs/envoy/latest/configuration/http_filters/router_filter#config-http-filters-router-x-envoy-retry-on)
 
         // for route
         RouteAction.RetryPolicy.RetryOn = "5xx"
@@ -222,12 +220,12 @@ We would use the following to map value from DAG's route to protobuf
 
         RouteAction.RetryPolicy.PerTryTimeout = Route.Retry.PerTryTimeout
 
-### Why only `50x` Status Codes?
+### Why only `5xx` Status Codes?
 
 `4xx` are user based errors and `5xx` are server based.
 Status codes of type `4xx` will continue to cause error unless the user corrects it.
 Whereas `5xx` errors on the server can occur due to a fault in the server side which may have been caused by unusual circumstances like network packet becoming corrupted while being transmitted or due to intermittent failure in the application that's unlikely to be repeated.
-The intent with this feature is to start small by supporting 50x status codes, and then adding more status codes on need basis.
+The intent with this feature is to start small by supporting 5xx status codes, and then adding more status codes on need basis.
 
 Citing the Retry Pattern described in [Azure Architecture - Retry Pattern](https://docs.microsoft.com/en-us/azure/architecture/patterns/retry), if the fault indicates that the failure isn't transient or is unlikely to be successful if repeated, the application should cancel the operation and report exception.
 If the specific fault reported is unusual or rare, it could be considered as an intermittent failure and the application could retry the failing request, which could probably be successful.
@@ -315,8 +313,6 @@ spec:
           port: 8080
       retryPolicy:
         maxRetries: "10"
-        onStatusCodes:
-          - "50x"
         perTryTimeout: 200ms
 ```
 

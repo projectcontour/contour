@@ -1280,7 +1280,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"contour.heptio.com/retry-on": "50x,gateway-error",
+							"contour.heptio.com/retry-on": "5xx,gateway-error",
 						},
 					},
 					Spec: v1beta1.IngressSpec{
@@ -1312,7 +1312,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"*"},
 						Routes: []route.Route{{
 							Match:               envoy.PrefixMatch("/"),
-							Action:              routeretry("default/kuard/8080/da39a3ee5e", "50x,gateway-error", 0, 0),
+							Action:              routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 0),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
 						}},
 					}},
@@ -1329,7 +1329,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"contour.heptio.com/retry-on":    "50x,gateway-error",
+							"contour.heptio.com/retry-on":    "5xx,gateway-error",
 							"contour.heptio.com/num-retries": "7", // not five or six or eight, but seven.
 						},
 					},
@@ -1362,7 +1362,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"*"},
 						Routes: []route.Route{{
 							Match:               envoy.PrefixMatch("/"),
-							Action:              routeretry("default/kuard/8080/da39a3ee5e", "50x,gateway-error", 7, 0),
+							Action:              routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 7, 0),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
 						}},
 					}},
@@ -1379,7 +1379,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"contour.heptio.com/retry-on":        "50x,gateway-error",
+							"contour.heptio.com/retry-on":        "5xx,gateway-error",
 							"contour.heptio.com/per-try-timeout": "150ms",
 						},
 					},
@@ -1412,7 +1412,7 @@ func TestRouteVisit(t *testing.T) {
 						Domains: []string{"*"},
 						Routes: []route.Route{{
 							Match:               envoy.PrefixMatch("/"),
-							Action:              routeretry("default/kuard/8080/da39a3ee5e", "50x,gateway-error", 0, 150*time.Millisecond),
+							Action:              routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 150*time.Millisecond),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
 						}},
 					}},
