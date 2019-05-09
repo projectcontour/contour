@@ -197,7 +197,7 @@ func (b *builder) addTCPService(svc *v1.Service, port *v1.ServicePort, strategy 
 	return s
 }
 
-func (b *builder) lookupSecret(m meta) *Secret {
+func (b *builder) lookupSecret(m meta, validate func(*v1.Secret) bool) *Secret {
 	if s, ok := b.secrets[m]; ok {
 		return s
 	}
@@ -205,7 +205,7 @@ func (b *builder) lookupSecret(m meta) *Secret {
 	if !ok {
 		return nil
 	}
-	if !validSecret(sec) {
+	if !validate(sec) {
 		return nil
 	}
 	s := &Secret{
@@ -390,7 +390,7 @@ func (b *builder) computeSecureVirtualhosts() {
 	for _, ing := range b.source.ingresses {
 		for _, tls := range ing.Spec.TLS {
 			m := splitSecret(tls.SecretName, ing.Namespace)
-			if sec := b.lookupSecret(m); sec != nil && b.delegationPermitted(m, ing.Namespace) {
+			if sec := b.lookupSecret(m, validSecret); sec != nil && b.delegationPermitted(m, ing.Namespace) {
 				for _, host := range tls.Hosts {
 					svhost := b.lookupSecureVirtualHost(host)
 					svhost.Secret = sec
@@ -515,7 +515,7 @@ func (b *builder) computeIngressRoutes() {
 		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
 			// attach secrets to TLS enabled vhosts
 			m := splitSecret(tls.SecretName, ir.Namespace)
-			if sec := b.lookupSecret(m); sec != nil && b.delegationPermitted(m, ir.Namespace) {
+			if sec := b.lookupSecret(m, validSecret); sec != nil && b.delegationPermitted(m, ir.Namespace) {
 				svhost := b.lookupSecureVirtualHost(host)
 				svhost.Secret = sec
 				svhost.MinProtoVersion = minProtoVersion(ir.Spec.VirtualHost.TLS.MinimumProtocolVersion)
@@ -632,6 +632,10 @@ func validSecret(s *v1.Secret) bool {
 	return len(s.Data[v1.TLSCertKey]) > 0 && len(s.Data[v1.TLSPrivateKeyKey]) > 0
 }
 
+func validCA(s *v1.Secret) bool {
+	return len(s.Data["ca.crt"]) > 0
+}
+
 func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, enforceTLS bool) {
 	visited = append(visited, ir)
 
@@ -729,7 +733,7 @@ func (b *builder) lookupUpstreamValidation(ir *ingressroutev1.IngressRoute, host
 		return nil
 	}
 
-	cacert := b.lookupSecret(meta{name: uv.CACertificate, namespace: namespace})
+	cacert := b.lookupSecret(meta{name: uv.CACertificate, namespace: namespace}, validCA)
 	if cacert == nil {
 		// UpstreamValidation is requested, but cert is missing or not configured
 		b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: upstreamValidation requested but secret not found or misconfigured", route.Match, service.Name), Vhost: host})

@@ -801,7 +801,7 @@ func TestClusterServiceTLSBackend(t *testing.T) {
 	}
 	rh.OnAdd(s1)
 
-	want := tlscluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443", nil, nil)
+	want := tlscluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443", nil, "")
 
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
@@ -813,8 +813,6 @@ func TestClusterServiceTLSBackend(t *testing.T) {
 	}, streamCDS(t, cc))
 }
 
-// Test that contour correctly recognizes the "contour.heptio.com/upstream-protocol.tls"
-// service annotation.
 func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
@@ -842,7 +840,9 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 			Name:      "foo",
 			Namespace: "default",
 		},
-		Data: secretdata(envoy.CACertificateKey, "key"),
+		Data: map[string][]byte{
+			envoy.CACertificateKey: []byte("ca"),
+		},
 	}
 
 	rh.OnAdd(secret)
@@ -874,7 +874,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 				"default/kuard/securebackend",
 				"default_kuard_443",
 				nil,
-				nil)),
+				"")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "3",
@@ -910,18 +910,12 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 				"default/kuard/443/98c0f31c72",
 				"default/kuard/securebackend",
 				"default_kuard_443",
-				[]byte("key"),
-				[]string{"subjname"})),
+				[]byte("ca"),
+				"subjname")),
 		},
 		TypeUrl: clusterType,
 		Nonce:   "4",
 	}, streamCDS(t, cc))
-}
-
-func secretdata(key, cert string) map[string][]byte {
-	return map[string][]byte{
-		key: []byte(cert),
-	}
 }
 
 func serviceWithAnnotations(ns, name string, annotations map[string]string, ports ...v1.ServicePort) *v1.Service {
@@ -963,9 +957,9 @@ func cluster(name, servicename, statName string) *v2.Cluster {
 	}
 }
 
-func tlscluster(name, servicename, statsName string, cert []byte, subjalt []string) *v2.Cluster {
+func tlscluster(name, servicename, statsName string, ca []byte, subjectName string) *v2.Cluster {
 	c := cluster(name, servicename, statsName)
-	c.TlsContext = envoy.UpstreamTLSContext(cert, subjalt)
+	c.TlsContext = envoy.UpstreamTLSContext(ca, subjectName)
 	return c
 }
 

@@ -1346,7 +1346,9 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "ca",
 			Namespace: "default",
 		},
-		Data: secretdata("ca.crt", "ca"),
+		Data: map[string][]byte{
+			"ca.crt": []byte("ca"),
+		},
 	}
 
 	tests := map[string]struct {
