@@ -68,12 +68,12 @@ func upstreamValidationCACert(c *dag.Cluster) []byte {
 	return c.UpstreamValidation.CACertificate.Object.Data[CACertificateKey]
 }
 
-func upstreamValidationSubjectAltName(c *dag.Cluster) []string {
+func upstreamValidationSubjectAltName(c *dag.Cluster) string {
 	if c.UpstreamValidation == nil {
 		// No validation required
-		return nil
+		return ""
 	}
-	return []string{c.UpstreamValidation.SubjectName}
+	return c.UpstreamValidation.SubjectName
 }
 
 func cluster(cluster *dag.Cluster, service *dag.TCPService) *v2.Cluster {

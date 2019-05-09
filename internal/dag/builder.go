@@ -668,18 +668,10 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 				}
 				m := meta{name: service.Name, namespace: ir.Namespace}
 				if s := b.lookupHTTPService(m, intstr.FromInt(service.Port), service.Strategy, service.HealthCheck); s != nil {
-					uv := b.lookupUpstreamValidation(service.UpstreamValidation, ir.Namespace)
-					if service.UpstreamValidation != nil {
-						if uv.CACertificate == nil {
-							// UpstreamValidation is requested, but cert is missing or not configured
-							b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: upstreamValidation requested but secret not found or misconfigured", route.Match, service.Name), Vhost: host})
-							return
-						}
-						if len(uv.SubjectName) == 0 {
-							// UpstreamValidation is requested, but SAN is not provided
-							b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: upstreamValidation requested but subject alt name not found or misconfigured", route.Match, service.Name), Vhost: host})
-							return
-						}
+					var uv *UpstreamValidation
+					if s.Protocol == "tls" {
+						// we can only varlidate TLS connections to services that talk TLS
+						uv = b.lookupUpstreamValidation(ir, host, route, service, ir.Namespace)
 					}
 					r.addHTTPService(s, service.Weight, uv)
 				}
@@ -727,12 +719,31 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 	b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
 }
 
-func (b *builder) lookupUpstreamValidation(uv *ingressroutev1.UpstreamValidation, namespace string) *UpstreamValidation {
+// TODO(dfc) needs unit tests; we should pass in some kind of context object that encasulates all the properties we need for reporting
+// status here, the ir, the host, the route, etc. I'm thinking something like logrus' WithField.
+
+func (b *builder) lookupUpstreamValidation(ir *ingressroutev1.IngressRoute, host string, route ingressroutev1.Route, service ingressroutev1.Service, namespace string) *UpstreamValidation {
+	uv := service.UpstreamValidation
 	if uv == nil {
+		// no upstream validation requested, nothing to do
 		return nil
 	}
+
+	cacert := b.lookupSecret(meta{name: uv.CACertificate, namespace: namespace})
+	if cacert == nil {
+		// UpstreamValidation is requested, but cert is missing or not configured
+		b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: upstreamValidation requested but secret not found or misconfigured", route.Match, service.Name), Vhost: host})
+		return nil
+	}
+
+	if uv.SubjectName == "" {
+		// UpstreamValidation is requested, but SAN is not provided
+		b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: upstreamValidation requested but subject alt name not found or misconfigured", route.Match, service.Name), Vhost: host})
+		return nil
+	}
+
 	return &UpstreamValidation{
-		CACertificate: b.lookupSecret(meta{name: uv.CACertificate, namespace: namespace}),
+		CACertificate: cacert,
 		SubjectName:   uv.SubjectName,
 	}
 }

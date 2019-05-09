@@ -47,33 +47,46 @@ var (
 // UpstreamTLSContext creates an auth.UpstreamTlsContext. By default
 // UpstreamTLSContext returns a HTTP/1.1 TLS enabled context. A list of
 // additional ALPN protocols can be provided.
-func UpstreamTLSContext(ca []byte, subjaltname []string, alpnProtocols ...string) *auth.UpstreamTlsContext {
+func UpstreamTLSContext(ca []byte, subjectName string, alpnProtocols ...string) *auth.UpstreamTlsContext {
 	context := &auth.UpstreamTlsContext{
 		CommonTlsContext: &auth.CommonTlsContext{
 			AlpnProtocols: alpnProtocols,
 		},
 	}
 
-	validation := validationContext(ca, subjaltname)
-	if validation != nil {
-		context.CommonTlsContext.ValidationContextType = validation
+	// we have to do explicitly assign the value from validationContext
+	// to context.CommonTlsContext.ValidationContextType because the latter
+	// is an interface, returning nil from validationContext directly into
+	// this field boxes the nil into the unexported type of this grpc OneOf field
+	// which causes proto marshalling to explode later on. Not happy Jan.
+	vc := validationContext(ca, subjectName)
+	if vc != nil {
+		context.CommonTlsContext.ValidationContextType = vc
 	}
+
 	return context
 }
 
-func validationContext(ca []byte, subjaltname []string) *auth.CommonTlsContext_ValidationContext {
-	if ca == nil {
-		// No validation required
+func validationContext(ca []byte, subjectName string) *auth.CommonTlsContext_ValidationContext {
+	if len(ca) < 1 {
+		// no ca provided, nothing to do
 		return nil
 	}
+
+	if len(subjectName) < 1 {
+		// no subject name provided, nothing to do
+		return nil
+	}
+
 	return &auth.CommonTlsContext_ValidationContext{
 		ValidationContext: &auth.CertificateValidationContext{
 			TrustedCa: &core.DataSource{
+				// TODO(dfc) update this for SDS
 				Specifier: &core.DataSource_InlineBytes{
 					InlineBytes: ca,
 				},
 			},
-			VerifySubjectAltName: subjaltname,
+			VerifySubjectAltName: []string{subjectName},
 		},
 	}
 }
