@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -197,7 +197,7 @@ func (b *builder) addTCPService(svc *v1.Service, port *v1.ServicePort, strategy 
 	return s
 }
 
-func (b *builder) lookupSecret(m meta) *Secret {
+func (b *builder) lookupSecret(m meta, validate func(*v1.Secret) bool) *Secret {
 	if s, ok := b.secrets[m]; ok {
 		return s
 	}
@@ -205,7 +205,7 @@ func (b *builder) lookupSecret(m meta) *Secret {
 	if !ok {
 		return nil
 	}
-	if !validSecret(sec) {
+	if !validate(sec) {
 		return nil
 	}
 	s := &Secret{
@@ -390,7 +390,7 @@ func (b *builder) computeSecureVirtualhosts() {
 	for _, ing := range b.source.ingresses {
 		for _, tls := range ing.Spec.TLS {
 			m := splitSecret(tls.SecretName, ing.Namespace)
-			if sec := b.lookupSecret(m); sec != nil && b.delegationPermitted(m, ing.Namespace) {
+			if sec := b.lookupSecret(m, validSecret); sec != nil && b.delegationPermitted(m, ing.Namespace) {
 				for _, host := range tls.Hosts {
 					svhost := b.lookupSecureVirtualHost(host)
 					svhost.Secret = sec
@@ -468,7 +468,7 @@ func (b *builder) computeIngresses() {
 				be := httppath.Backend
 				m := meta{name: be.ServiceName, namespace: ing.Namespace}
 				if s := b.lookupHTTPService(m, be.ServicePort, "", nil); s != nil {
-					r.addHTTPService(s, 0)
+					r.addHTTPService(s, 0, nil)
 				}
 
 				// should we create port 80 routes for this ingress
@@ -515,7 +515,7 @@ func (b *builder) computeIngressRoutes() {
 		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
 			// attach secrets to TLS enabled vhosts
 			m := splitSecret(tls.SecretName, ir.Namespace)
-			if sec := b.lookupSecret(m); sec != nil && b.delegationPermitted(m, ir.Namespace) {
+			if sec := b.lookupSecret(m, validSecret); sec != nil && b.delegationPermitted(m, ir.Namespace) {
 				svhost := b.lookupSecureVirtualHost(host)
 				svhost.Secret = sec
 				svhost.MinProtoVersion = minProtoVersion(ir.Spec.VirtualHost.TLS.MinimumProtocolVersion)
@@ -632,6 +632,10 @@ func validSecret(s *v1.Secret) bool {
 	return len(s.Data[v1.TLSCertKey]) > 0 && len(s.Data[v1.TLSPrivateKeyKey]) > 0
 }
 
+func validCA(s *v1.Secret) bool {
+	return len(s.Data["ca.crt"]) > 0
+}
+
 func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch string, visited []*ingressroutev1.IngressRoute, host string, enforceTLS bool) {
 	visited = append(visited, ir)
 
@@ -668,7 +672,12 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 				}
 				m := meta{name: service.Name, namespace: ir.Namespace}
 				if s := b.lookupHTTPService(m, intstr.FromInt(service.Port), service.Strategy, service.HealthCheck); s != nil {
-					r.addHTTPService(s, service.Weight)
+					var uv *UpstreamValidation
+					if s.Protocol == "tls" {
+						// we can only varlidate TLS connections to services that talk TLS
+						uv = b.lookupUpstreamValidation(ir, host, route, service, ir.Namespace)
+					}
+					r.addHTTPService(s, service.Weight, uv)
 				}
 			}
 
@@ -712,6 +721,35 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 	}
 
 	b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
+}
+
+// TODO(dfc) needs unit tests; we should pass in some kind of context object that encasulates all the properties we need for reporting
+// status here, the ir, the host, the route, etc. I'm thinking something like logrus' WithField.
+
+func (b *builder) lookupUpstreamValidation(ir *ingressroutev1.IngressRoute, host string, route ingressroutev1.Route, service ingressroutev1.Service, namespace string) *UpstreamValidation {
+	uv := service.UpstreamValidation
+	if uv == nil {
+		// no upstream validation requested, nothing to do
+		return nil
+	}
+
+	cacert := b.lookupSecret(meta{name: uv.CACertificate, namespace: namespace}, validCA)
+	if cacert == nil {
+		// UpstreamValidation is requested, but cert is missing or not configured
+		b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: upstreamValidation requested but secret not found or misconfigured", route.Match, service.Name), Vhost: host})
+		return nil
+	}
+
+	if uv.SubjectName == "" {
+		// UpstreamValidation is requested, but SAN is not provided
+		b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: upstreamValidation requested but subject alt name not found or misconfigured", route.Match, service.Name), Vhost: host})
+		return nil
+	}
+
+	return &UpstreamValidation{
+		CACertificate: cacert,
+		SubjectName:   uv.SubjectName,
+	}
 }
 
 func (b *builder) processTCPProxy(ir *ingressroutev1.IngressRoute, visited []*ingressroutev1.IngressRoute, host string) {

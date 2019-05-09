@@ -653,7 +653,6 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
-
 		"ingressroute with unknown lb algorithm": {
 			objs: []interface{}{
 				&ingressroutev1.IngressRoute{

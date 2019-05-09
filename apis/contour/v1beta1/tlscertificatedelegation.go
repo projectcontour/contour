@@ -40,7 +40,7 @@ type CertificateDelegation struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// TLSCertificateDelefgation is an TLS Certificate Delegation CRD specificiation.
+// TLSCertificateDelegation is an TLS Certificate Delegation CRD specificiation.
 // See design/tls-certificate-delegation.md for details.
 type TLSCertificateDelegation struct {
 	metav1.TypeMeta   `json:",inline"`

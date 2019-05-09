@@ -1169,6 +1169,29 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	ir17 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+					UpstreamValidation: &ingressroutev1.UpstreamValidation{
+						CACertificate: "ca",
+						SubjectName:   "example.com",
+					},
+				}},
+			}},
+		},
+	}
+
 	s5 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog-admin",
@@ -1198,6 +1221,26 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+
+	// s1a carries the tls annotation
+	s1a := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/upstream-protocol.tls": "8080",
+			},
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
 	// s1b carries all four ingress annotations{
 	s1b := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1296,6 +1339,16 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Data: secretdata("", ""),
+	}
+
+	cert1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ca",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"ca.crt": []byte("ca"),
+		},
 	}
 
 	tests := map[string]struct {
@@ -2250,6 +2303,78 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"insert ingressroute w/ missing tls annotation": {
+			objs: []interface{}{
+				cert1, ir17, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							route("/", httpService(s1)),
+						),
+					),
+				},
+			),
+		},
+		"insert ingressroute w/ missing certificate": {
+			objs: []interface{}{
+				ir17, s1a,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &HTTPService{
+										TCPService: TCPService{
+											Name:        s1a.Name,
+											Namespace:   s1a.Namespace,
+											ServicePort: &s1a.Spec.Ports[0],
+										},
+										Protocol: "tls",
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert ingressroute expecting verification": {
+			objs: []interface{}{
+				cert1, ir17, s1a,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &HTTPService{
+										TCPService: TCPService{
+											Name:        s1a.Name,
+											Namespace:   s1a.Namespace,
+											ServicePort: &s1a.Spec.Ports[0],
+										},
+										Protocol: "tls",
+									},
+									UpstreamValidation: &UpstreamValidation{
+										CACertificate: secret(cert1),
+										SubjectName:   "example.com",
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+
 		"insert root ingress route and delegate ingress route": {
 			objs: []interface{}{
 				ir5, s4, ir4, s5, ir3,

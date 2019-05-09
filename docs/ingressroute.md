@@ -273,6 +273,47 @@ spec:
           permitInsecure: true
 ```
 
+#### Upstream TLS
+
+An IngressRoute route can proxy to an upstream TLS connection by first annotating the upstream Kubernetes service with: `contour.heptio.com/upstream-protocol.tls: "443,https"`.
+This annoation tells Contour which port should be used for the TLS connection.
+In this example, the upstream service is named `https` and uses port `443`.
+Additionally, it is possible for Envoy to verify the backend service's certificate.
+The service of an `IngressRoute` can optionally specify a `validation` struct which has a manditory `caSecret` key as well as an manditory `subjectName`.
+
+Note: If spec.routes.services[].validation is present, spec.routes.services[].{name,port} must point to a service with a matching contour.heptio.com/upstream-protocol.tls Service annotation.
+
+##### Sample YAML
+
+```yaml
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata:
+  name: secure-backend
+spec:
+  virtualhost:
+    fqdn: www.example.com  
+  routes:
+    - match: /
+      services:
+        - name: service
+          port: 8443
+          validation:
+            caSecret: my-certificate-authority
+            subjectName: backend.example.com
+```
+
+##### Error conditions
+
+If the `validation` spec is defined on a service, but the secret which it references does not exist, Contour will rejct the update and set the status of the `IngressRoute` object accordingly.
+This is to help prevent the case of proxying to an upstream where validation is requested, but not yet available.
+
+```yaml
+Status:
+  Current Status:  invalid
+  Description:     route "/": service "tls-nginx": upstreamValidation requested but secret not found or misconfigured
+```
+
 #### TLS Certificate Delegation
 
 In order to support wildcard certificates, TLS certificates for a `*.somedomain.com`, which are stored in a namespace controlled by the cluster administrator, Contour supports a facility known as TLS Certificate Delegation.

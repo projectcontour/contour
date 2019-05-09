@@ -96,6 +96,8 @@ type Service struct {
 	HealthCheck *HealthCheck `json:"healthCheck,omitempty"`
 	// LB Algorithm to apply (see https://github.com/heptio/contour/blob/master/design/ingressroute-design.md#load-balancing)
 	Strategy string `json:"strategy,omitempty"`
+	// UpstreamValidation defines how to verify the backend service's certificate
+	UpstreamValidation *UpstreamValidation `json:"validation,omitempty"`
 }
 
 // Delegate allows for delegating VHosts to other IngressRoutes
@@ -139,6 +141,14 @@ type RetryPolicy struct {
 	// PerTryTimeout specifies the timeout per retry attempt.
 	// Ignored if NumRetries is not supplied.
 	PerTryTimeout string `json:"perTryTimeout,omitempty"`
+}
+
+// UpstreamValidation defines how to verify the backend service's certificate
+type UpstreamValidation struct {
+	// Name of the Kubernetes secret be used to validate the certificate presented by the backend
+	CACertificate string `json:"caSecret"`
+	// Key which is expected to be present in the 'subjectAltName' of the presented certificate
+	SubjectName string `json:"subjectName"`
 }
 
 // Status reports the current state of the IngressRoute

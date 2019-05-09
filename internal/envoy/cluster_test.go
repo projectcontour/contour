@@ -107,7 +107,7 @@ func TestCluster(t *testing.T) {
 				},
 				ConnectTimeout:       250 * time.Millisecond,
 				LbPolicy:             v2.Cluster_ROUND_ROBIN,
-				TlsContext:           UpstreamTLSContext("h2"),
+				TlsContext:           UpstreamTLSContext(nil, "", "h2"),
 				Http2ProtocolOptions: &core.Http2ProtocolOptions{},
 				CommonLbConfig:       ClusterCommonLBConfig(),
 			},
@@ -129,7 +129,42 @@ func TestCluster(t *testing.T) {
 				},
 				ConnectTimeout: 250 * time.Millisecond,
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-				TlsContext:     UpstreamTLSContext(),
+				TlsContext:     UpstreamTLSContext(nil, ""),
+				CommonLbConfig: ClusterCommonLBConfig(),
+			},
+		},
+		"verify tls upstream with san": {
+			cluster: &dag.Cluster{
+				Upstream: &dag.HTTPService{
+					TCPService: tlsservice(s1, "cacert", "foo.bar.io"),
+					Protocol:   "tls",
+				},
+				UpstreamValidation: &dag.UpstreamValidation{
+					CACertificate: &dag.Secret{
+						Object: &v1.Secret{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "secret",
+								Namespace: "default",
+							},
+							Data: map[string][]byte{
+								"ca.crt": []byte("cacert"),
+							},
+						},
+					},
+					SubjectName: "foo.bar.io",
+				},
+			},
+			want: &v2.Cluster{
+				Name:                 "default/kuard/443/3ac4e90987",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_ROUND_ROBIN,
+				TlsContext:     UpstreamTLSContext([]byte("cacert"), "foo.bar.io"),
 				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
@@ -373,6 +408,36 @@ func TestClustername(t *testing.T) {
 			},
 			want: "default/backend/80/32737eb011",
 		},
+		"upstream tls validation with subject alt name": {
+			cluster: &dag.Cluster{
+				Upstream: &dag.TCPService{
+					Name:      "backend",
+					Namespace: "default",
+					ServicePort: &v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       80,
+						TargetPort: intstr.FromInt(6502),
+					},
+					LoadBalancerStrategy: "Maglev",
+				},
+				UpstreamValidation: &dag.UpstreamValidation{
+					CACertificate: &dag.Secret{
+						Object: &v1.Secret{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "secret",
+								Namespace: "default",
+							},
+							Data: map[string][]byte{
+								"ca.crt": []byte("somethingsecret"),
+							},
+						},
+					},
+					SubjectName: "foo.com",
+				},
+			},
+			want: "default/backend/80/a18ebaa0d6",
+		},
 	}
 
 	for name, tc := range tests {
@@ -502,6 +567,14 @@ func TestClusterCommonLBConfig(t *testing.T) {
 }
 
 func service(s *v1.Service) dag.TCPService {
+	return dag.TCPService{
+		Name:        s.Name,
+		Namespace:   s.Namespace,
+		ServicePort: &s.Spec.Ports[0],
+	}
+}
+
+func tlsservice(s *v1.Service, cert, subjectaltname string) dag.TCPService {
 	return dag.TCPService{
 		Name:        s.Name,
 		Namespace:   s.Namespace,

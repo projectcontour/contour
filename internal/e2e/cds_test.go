@@ -801,7 +801,7 @@ func TestClusterServiceTLSBackend(t *testing.T) {
 	}
 	rh.OnAdd(s1)
 
-	want := tlscluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443")
+	want := tlscluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443", nil, "")
 
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
@@ -810,6 +810,111 @@ func TestClusterServiceTLSBackend(t *testing.T) {
 		},
 		TypeUrl: clusterType,
 		Nonce:   "2",
+	}, streamCDS(t, cc))
+}
+
+func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/upstream-protocol.tls": "securebackend,443",
+			},
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "securebackend",
+				Protocol:   "TCP",
+				Port:       443,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			envoy.CACertificateKey: []byte("ca"),
+		},
+	}
+
+	rh.OnAdd(secret)
+
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/a",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 443,
+				}},
+			}},
+		},
+	}
+
+	rh.OnAdd(ir1)
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "3",
+		Resources: []types.Any{
+			any(t, tlscluster(
+				"default/kuard/443/da39a3ee5e",
+				"default/kuard/securebackend",
+				"default_kuard_443",
+				nil,
+				"")),
+		},
+		TypeUrl: clusterType,
+		Nonce:   "3",
+	}, streamCDS(t, cc))
+
+	ir2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/a",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 443,
+					UpstreamValidation: &ingressroutev1.UpstreamValidation{
+						CACertificate: "foo",
+						SubjectName:   "subjname",
+					},
+				}},
+			}},
+		},
+	}
+
+	rh.OnUpdate(ir1, ir2)
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "4",
+		Resources: []types.Any{
+			any(t, tlscluster(
+				"default/kuard/443/98c0f31c72",
+				"default/kuard/securebackend",
+				"default_kuard_443",
+				[]byte("ca"),
+				"subjname")),
+		},
+		TypeUrl: clusterType,
+		Nonce:   "4",
 	}, streamCDS(t, cc))
 }
 
@@ -852,9 +957,9 @@ func cluster(name, servicename, statName string) *v2.Cluster {
 	}
 }
 
-func tlscluster(name, servicename, statsName string) *v2.Cluster {
+func tlscluster(name, servicename, statsName string, ca []byte, subjectName string) *v2.Cluster {
 	c := cluster(name, servicename, statsName)
-	c.TlsContext = envoy.UpstreamTLSContext()
+	c.TlsContext = envoy.UpstreamTLSContext(ca, subjectName)
 	return c
 }
 
