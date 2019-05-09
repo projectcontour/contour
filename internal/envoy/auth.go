@@ -58,7 +58,7 @@ func UpstreamTLSContext(ca []byte, subjectName string, alpnProtocols ...string) 
 	// to context.CommonTlsContext.ValidationContextType because the latter
 	// is an interface, returning nil from validationContext directly into
 	// this field boxes the nil into the unexported type of this grpc OneOf field
-	// which causes proto marshalling to explode later on. Not happy Jan.
+	// which causes proto marshaling to explode later on. Not happy Jan.
 	vc := validationContext(ca, subjectName)
 	if vc != nil {
 		context.CommonTlsContext.ValidationContextType = vc
