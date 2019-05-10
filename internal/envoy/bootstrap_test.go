@@ -31,65 +31,6 @@ func TestBootstrap(t *testing.T) {
 			config: BootstrapConfig{Namespace: "testing-ns"},
 			want: `{
   "static_resources": {
-    "listeners": [
-      {
-        "address": {
-          "socket_address": {
-            "address": "0.0.0.0",
-            "port_value": 8002
-          }
-        },
-        "filter_chains": [
-          {
-            "filters": [
-              {
-                "name": "envoy.http_connection_manager",
-                "config": {
-                  "codec_type": "AUTO",
-                  "http_filters": [
-                    {
-                      "config": {
-                        "headers": [
-                          {
-                            "exact_match": "/healthz",
-                            "name": ":path"
-                          }
-                        ],
-                        "pass_through_mode": "false"
-                      },
-                      "name": "envoy.health_check"
-                    },
-                    {
-                      "name": "envoy.router"
-                    }
-                  ],
-                  "route_config": {
-                    "virtual_hosts": {
-                      "domains": [
-                        "*"
-                      ],
-                      "name": "backend",
-                      "routes": [
-                        {
-                          "match": {
-                            "prefix": "/stats"
-                          },
-                          "route": {
-                            "cluster": "service-stats"
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  "stat_prefix": "stats",
-                  "normalize_path": true
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ],
     "clusters": [
       {
         "name": "contour",
@@ -205,65 +146,6 @@ func TestBootstrap(t *testing.T) {
 			},
 			want: `{
   "static_resources": {
-    "listeners": [
-      {
-        "address": {
-          "socket_address": {
-            "address": "0.0.0.0",
-            "port_value": 8002
-          }
-        },
-        "filter_chains": [
-          {
-            "filters": [
-              {
-                "name": "envoy.http_connection_manager",
-                "config": {
-                  "codec_type": "AUTO",
-                  "http_filters": [
-                    {
-                      "config": {
-                        "headers": [
-                          {
-                            "exact_match": "/healthz",
-                            "name": ":path"
-                          }
-                        ],
-                        "pass_through_mode": "false"
-                      },
-                      "name": "envoy.health_check"
-                    },
-                    {
-                      "name": "envoy.router"
-                    }
-                  ],
-                  "route_config": {
-                    "virtual_hosts": {
-                      "domains": [
-                        "*"
-                      ],
-                      "name": "backend",
-                      "routes": [
-                        {
-                          "match": {
-                            "prefix": "/stats"
-                          },
-                          "route": {
-                            "cluster": "service-stats"
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  "stat_prefix": "stats",
-                  "normalize_path": true
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ],
     "clusters": [
       {
         "name": "contour",
@@ -395,65 +277,6 @@ func TestBootstrap(t *testing.T) {
 			},
 			want: `{
   "static_resources": {
-    "listeners": [
-      {
-        "address": {
-          "socket_address": {
-            "address": "0.0.0.0",
-            "port_value": 8002
-          }
-        },
-        "filter_chains": [
-          {
-            "filters": [
-              {
-                "name": "envoy.http_connection_manager",
-                "config": {
-                  "codec_type": "AUTO",
-                  "http_filters": [
-                    {
-                      "config": {
-                        "headers": [
-                          {
-                            "exact_match": "/healthz",
-                            "name": ":path"
-                          }
-                        ],
-                        "pass_through_mode": "false"
-                      },
-                      "name": "envoy.health_check"
-                    },
-                    {
-                      "name": "envoy.router"
-                    }
-                  ],
-                  "route_config": {
-                    "virtual_hosts": {
-                      "domains": [
-                        "*"
-                      ],
-                      "name": "backend",
-                      "routes": [
-                        {
-                          "match": {
-                            "prefix": "/stats"
-                          },
-                          "route": {
-                            "cluster": "service-stats"
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  "stat_prefix": "stats",
-                  "normalize_path": true
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ],
     "clusters": [
       {
         "name": "contour",
@@ -584,65 +407,6 @@ func TestBootstrap(t *testing.T) {
 			},
 			want: `{
   "static_resources": {
-    "listeners": [
-      {
-        "address": {
-          "socket_address": {
-            "address": "0.0.0.0",
-            "port_value": 8002
-          }
-        },
-        "filter_chains": [
-          {
-            "filters": [
-              {
-                "name": "envoy.http_connection_manager",
-                "config": {
-                  "codec_type": "AUTO",
-                  "http_filters": [
-                    {
-                      "config": {
-                        "headers": [
-                          {
-                            "exact_match": "/healthz",
-                            "name": ":path"
-                          }
-                        ],
-                        "pass_through_mode": "false"
-                      },
-                      "name": "envoy.health_check"
-                    },
-                    {
-                      "name": "envoy.router"
-                    }
-                  ],
-                  "route_config": {
-                    "virtual_hosts": {
-                      "domains": [
-                        "*"
-                      ],
-                      "name": "backend",
-                      "routes": [
-                        {
-                          "match": {
-                            "prefix": "/stats"
-                          },
-                          "route": {
-                            "cluster": "service-stats"
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  "stat_prefix": "stats",
-                  "normalize_path": true
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ],
     "clusters": [
       {
         "name": "contour",
@@ -758,65 +522,6 @@ func TestBootstrap(t *testing.T) {
 			},
 			want: `{
   "static_resources": {
-    "listeners": [
-      {
-        "address": {
-          "socket_address": {
-            "address": "0.0.0.0",
-            "port_value": 8002
-          }
-        },
-        "filter_chains": [
-          {
-            "filters": [
-              {
-                "name": "envoy.http_connection_manager",
-                "config": {
-                  "codec_type": "AUTO",
-                  "http_filters": [
-                    {
-                      "config": {
-                        "headers": [
-                          {
-                            "exact_match": "/healthz",
-                            "name": ":path"
-                          }
-                        ],
-                        "pass_through_mode": "false"
-                      },
-                      "name": "envoy.health_check"
-                    },
-                    {
-                      "name": "envoy.router"
-                    }
-                  ],
-                  "route_config": {
-                    "virtual_hosts": {
-                      "domains": [
-                        "*"
-                      ],
-                      "name": "backend",
-                      "routes": [
-                        {
-                          "match": {
-                            "prefix": "/stats"
-                          },
-                          "route": {
-                            "cluster": "service-stats"
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  "stat_prefix": "stats",
-                  "normalize_path": true
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ],
     "clusters": [
       {
         "name": "contour",
@@ -933,65 +638,6 @@ func TestBootstrap(t *testing.T) {
 			},
 			want: `{
   "static_resources": {
-    "listeners": [
-      {
-        "address": {
-          "socket_address": {
-            "address": "0.0.0.0",
-            "port_value": 8002
-          }
-        },
-        "filter_chains": [
-          {
-            "filters": [
-              {
-                "name": "envoy.http_connection_manager",
-                "config": {
-                  "codec_type": "AUTO",
-                  "http_filters": [
-                    {
-                      "config": {
-                        "headers": [
-                          {
-                            "exact_match": "/healthz",
-                            "name": ":path"
-                          }
-                        ],
-                        "pass_through_mode": "false"
-                      },
-                      "name": "envoy.health_check"
-                    },
-                    {
-                      "name": "envoy.router"
-                    }
-                  ],
-                  "route_config": {
-                    "virtual_hosts": {
-                      "domains": [
-                        "*"
-                      ],
-                      "name": "backend",
-                      "routes": [
-                        {
-                          "match": {
-                            "prefix": "/stats"
-                          },
-                          "route": {
-                            "cluster": "service-stats"
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  "stat_prefix": "stats",
-                  "normalize_path": true
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ],
     "clusters": [
       {
         "name": "contour",
@@ -1102,71 +748,10 @@ func TestBootstrap(t *testing.T) {
 		},
 		"--stats-address=8.8.8.8 --stats-port=9200": {
 			config: BootstrapConfig{
-				StatsAddress: "8.8.8.8",
-				StatsPort:    9200,
-				Namespace:    "testing-ns",
+				Namespace: "testing-ns",
 			},
 			want: `{
   "static_resources": {
-    "listeners": [
-      {
-        "address": {
-          "socket_address": {
-            "address": "8.8.8.8",
-            "port_value": 9200
-          }
-        },
-        "filter_chains": [
-          {
-            "filters": [
-              {
-                "name": "envoy.http_connection_manager",
-                "config": {
-                  "codec_type": "AUTO",
-                  "http_filters": [
-                    {
-                      "config": {
-                        "headers": [
-                          {
-                            "exact_match": "/healthz",
-                            "name": ":path"
-                          }
-                        ],
-                        "pass_through_mode": "false"
-                      },
-                      "name": "envoy.health_check"
-                    },
-                    {
-                      "name": "envoy.router"
-                    }
-                  ],
-                  "route_config": {
-                    "virtual_hosts": {
-                      "domains": [
-                        "*"
-                      ],
-                      "name": "backend",
-                      "routes": [
-                        {
-                          "match": {
-                            "prefix": "/stats"
-                          },
-                          "route": {
-                            "cluster": "service-stats"
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  "stat_prefix": "stats",
-                  "normalize_path": true
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ],
     "clusters": [
       {
         "name": "contour",

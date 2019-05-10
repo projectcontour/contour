@@ -53,8 +53,6 @@ func main() {
 	path := bootstrap.Arg("path", "Configuration file.").Required().String()
 	bootstrap.Flag("admin-address", "Envoy admin interface address").StringVar(&config.AdminAddress)
 	bootstrap.Flag("admin-port", "Envoy admin interface port").IntVar(&config.AdminPort)
-	bootstrap.Flag("stats-address", "Envoy /stats interface address").StringVar(&config.StatsAddress)
-	bootstrap.Flag("stats-port", "Envoy /stats interface port").IntVar(&config.StatsPort)
 	bootstrap.Flag("xds-address", "xDS gRPC API address").StringVar(&config.XDSAddress)
 	bootstrap.Flag("xds-port", "xDS gRPC API port").IntVar(&config.XDSGRPCPort)
 	bootstrap.Flag("statsd-enabled", "enable statsd output").BoolVar(&config.StatsdEnabled)
@@ -85,6 +83,8 @@ func main() {
 	kubeconfig := serve.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).String()
 	xdsAddr := serve.Flag("xds-address", "xDS gRPC API address").Default("127.0.0.1").String()
 	xdsPort := serve.Flag("xds-port", "xDS gRPC API port").Default("8001").Int()
+	statsAddress := serve.Flag("stats-address", "Envoy /stats interface address").Default("0.0.0.0").String()
+	statsPort := serve.Flag("stats-port", "Envoy /stats interface port").Default("8002").Uint32()
 
 	ch := contour.CacheHandler{
 		FieldLogger: log.WithField("context", "CacheHandler"),
@@ -178,6 +178,7 @@ func main() {
 		// container environment. See #959
 		_ = flag.Lookup("logtostderr").Value.Set("true")
 
+		ch.ListenerCache = contour.NewListenerCache(*statsAddress, *statsPort)
 		reh.IngressRouteRootNamespaces = parseRootNamespaces(ingressrouteRootNamespaceFlag)
 
 		client, contourClient := newClient(*kubeconfig, *inCluster)
