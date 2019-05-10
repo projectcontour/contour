@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -197,6 +197,7 @@ func (b *builder) addTCPService(svc *v1.Service, port *v1.ServicePort, strategy 
 	return s
 }
 
+// lookupSecret returns a kuberntes secret if found or nil if not
 func (b *builder) lookupSecret(m meta, validate func(*v1.Secret) bool) *Secret {
 	if s, ok := b.secrets[m]; ok {
 		return s
@@ -515,7 +516,9 @@ func (b *builder) computeIngressRoutes() {
 		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
 			// attach secrets to TLS enabled vhosts
 			m := splitSecret(tls.SecretName, ir.Namespace)
-			if sec := b.lookupSecret(m, validSecret); sec != nil && b.delegationPermitted(m, ir.Namespace) {
+			sec := b.lookupSecret(m, validSecret)
+			secretInvalidOrNotFound := sec == nil
+			if sec != nil && b.delegationPermitted(m, ir.Namespace) {
 				svhost := b.lookupSecureVirtualHost(host)
 				svhost.Secret = sec
 				svhost.MinProtoVersion = minProtoVersion(ir.Spec.VirtualHost.TLS.MinimumProtocolVersion)
@@ -523,7 +526,12 @@ func (b *builder) computeIngressRoutes() {
 			}
 			// passthrough is true if tls.secretName is not present, and
 			// tls.passthrough is set to true.
-			passthrough = tls.SecretName == "" && tls.Passthrough
+			passthrough = isBlank(tls.SecretName) && tls.Passthrough
+
+			// If not passthrough and secret is invalid, then set status
+			if secretInvalidOrNotFound && !passthrough {
+				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: "TLS Secret not found or is malformed"})
+			}
 		}
 
 		switch {
