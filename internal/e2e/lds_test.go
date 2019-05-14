@@ -14,7 +14,6 @@
 package e2e
 
 import (
-	"bytes"
 	"context"
 	"testing"
 
@@ -23,10 +22,8 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
 	envoy_config_v2_tcpproxy "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/util"
-	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/apis/generated/clientset/versioned/fake"
@@ -1069,7 +1066,7 @@ func TestLDSIngressRouteTCPProxyTLSPassthrough(t *testing.T) {
 		Address: *envoy.SocketAddress("0.0.0.0", 8443),
 		FilterChains: []listener.FilterChain{{
 			Filters: []listener.Filter{
-				tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e"),
+				tcpproxy(t, "ingress_https", "default/correct-backend/80/da39a3ee5e"),
 			},
 			FilterChainMatch: &listener.FilterChainMatch{
 				ServerNames: []string{"kuard-tcp.example.com"},
@@ -1145,7 +1142,7 @@ func TestLDSIngressRouteTCPForward(t *testing.T) {
 	ingressHTTPS := &v2.Listener{
 		Name:         "ingress_https",
 		Address:      *envoy.SocketAddress("0.0.0.0", 8443),
-		FilterChains: filterchaintls("kuard-tcp.example.com", s1, tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e")),
+		FilterChains: filterchaintls("kuard-tcp.example.com", s1, tcpproxy(t, "ingress_https", "default/correct-backend/80/da39a3ee5e")),
 		ListenerFilters: []listener.ListenerFilter{
 			envoy.TLSInspector(),
 		},
@@ -1383,39 +1380,27 @@ func filterchaintls(domain string, secret *v1.Secret, filter listener.Filter, al
 	return []listener.FilterChain{fc}
 }
 
-func tcpproxy(statPrefix, cluster string) listener.Filter {
+func tcpproxy(t *testing.T, statPrefix, cluster string) listener.Filter {
+	// shadow the package level any function as TypedConfig needs a
+	// *types.Any whereas the other callers of e2e.any require a value
+	// type.
+	// TODO(dfc) unify the callers to any.
+	any := func(t *testing.T, pb proto.Message) *types.Any {
+		t.Helper()
+		any, err := types.MarshalAny(pb)
+		check(t, err)
+		return any
+	}
 	return listener.Filter{
 		Name: util.TCPProxy,
-		ConfigType: &listener.Filter_Config{
-			Config: messageToStruct(&envoy_config_v2_tcpproxy.TcpProxy{
+		ConfigType: &listener.Filter_TypedConfig{
+			TypedConfig: any(t, &envoy_config_v2_tcpproxy.TcpProxy{
 				StatPrefix: statPrefix,
 				ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
 					Cluster: cluster,
 				},
-				AccessLog: []*accesslog.AccessLog{{
-					Name: "envoy.file_access_log",
-					ConfigType: &accesslog.AccessLog_Config{
-						Config: messageToStruct(fileAccessLog("/dev/stdout")),
-					},
-				}},
+				AccessLog: envoy.FileAccessLog("/dev/stdout"),
 			}),
 		},
 	}
-}
-
-// messageToStruct encodes a protobuf Message into a Struct.
-// Hilariously, it uses JSON as the intermediary.
-// author:glen@turbinelabs.io
-func messageToStruct(msg proto.Message) *types.Struct {
-	buf := &bytes.Buffer{}
-	if err := (&jsonpb.Marshaler{OrigName: true}).Marshal(buf, msg); err != nil {
-		panic(err)
-	}
-
-	pbs := &types.Struct{}
-	if err := jsonpb.Unmarshal(buf, pbs); err != nil {
-		panic(err)
-	}
-
-	return pbs
 }

@@ -14,19 +14,16 @@
 package envoy
 
 import (
-	"bytes"
 	"testing"
+	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-	accesslog_v2 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v2"
-	envoy_accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
+	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	envoy_config_v2_tcpproxy "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/util"
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
 	"github.com/heptio/contour/internal/dag"
@@ -192,6 +189,73 @@ func TestDownstreamTLSContext(t *testing.T) {
 	}
 }
 
+func TestHTTPConnectionManager(t *testing.T) {
+	duration := func(d time.Duration) *time.Duration {
+		return &d
+	}
+	tests := map[string]struct {
+		routename string
+		accesslog string
+		want      listener.Filter
+	}{
+		"default": {
+			routename: "default/kuard",
+			accesslog: "/dev/stdout",
+			want: listener.Filter{
+				Name: util.HTTPConnectionManager,
+				ConfigType: &listener.Filter_TypedConfig{
+					TypedConfig: any(&http.HttpConnectionManager{
+						StatPrefix: "default/kuard",
+						RouteSpecifier: &http.HttpConnectionManager_Rds{
+							Rds: &http.Rds{
+								RouteConfigName: "default/kuard",
+								ConfigSource: core.ConfigSource{
+									ConfigSourceSpecifier: &core.ConfigSource_ApiConfigSource{
+										ApiConfigSource: &core.ApiConfigSource{
+											ApiType: core.ApiConfigSource_GRPC,
+											GrpcServices: []*core.GrpcService{{
+												TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
+													EnvoyGrpc: &core.GrpcService_EnvoyGrpc{
+														ClusterName: "contour",
+													},
+												},
+											}},
+										},
+									},
+								},
+							},
+						},
+						HttpFilters: []*http.HttpFilter{{
+							Name: util.Gzip,
+						}, {
+							Name: util.GRPCWeb,
+						}, {
+							Name: util.Router,
+						}},
+						HttpProtocolOptions: &core.Http1ProtocolOptions{
+							// Enable support for HTTP/1.0 requests that carry
+							// a Host: header. See #537.
+							AcceptHttp_10: true,
+						},
+						AccessLog:        FileAccessLog("/dev/stdout"),
+						UseRemoteAddress: &types.BoolValue{Value: true},
+						NormalizePath:    &types.BoolValue{Value: true},
+						IdleTimeout:      duration(60 * time.Second),
+					}),
+				},
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := HTTPConnectionManager(tc.routename, tc.accesslog)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
 func TestTCPProxy(t *testing.T) {
 	const (
 		statPrefix    = "ingress_https"
@@ -232,18 +296,13 @@ func TestTCPProxy(t *testing.T) {
 			},
 			want: listener.Filter{
 				Name: util.TCPProxy,
-				ConfigType: &listener.Filter_Config{
-					Config: messageToStruct(&envoy_config_v2_tcpproxy.TcpProxy{
+				ConfigType: &listener.Filter_TypedConfig{
+					TypedConfig: any(&envoy_config_v2_tcpproxy.TcpProxy{
 						StatPrefix: statPrefix,
 						ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
 							Cluster: Clustername(c1),
 						},
-						AccessLog: []*envoy_accesslog.AccessLog{{
-							Name: util.FileAccessLog,
-							ConfigType: &envoy_accesslog.AccessLog_Config{
-								Config: messageToStruct(fileAccessLog(accessLogPath)),
-							},
-						}},
+						AccessLog: FileAccessLog(accessLogPath),
 					}),
 				},
 			},
@@ -254,8 +313,8 @@ func TestTCPProxy(t *testing.T) {
 			},
 			want: listener.Filter{
 				Name: util.TCPProxy,
-				ConfigType: &listener.Filter_Config{
-					Config: messageToStruct(&envoy_config_v2_tcpproxy.TcpProxy{
+				ConfigType: &listener.Filter_TypedConfig{
+					TypedConfig: any(&envoy_config_v2_tcpproxy.TcpProxy{
 						StatPrefix: statPrefix,
 						ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_WeightedClusters{
 							WeightedClusters: &envoy_config_v2_tcpproxy.TcpProxy_WeightedCluster{
@@ -268,12 +327,7 @@ func TestTCPProxy(t *testing.T) {
 								}},
 							},
 						},
-						AccessLog: []*envoy_accesslog.AccessLog{{
-							Name: util.FileAccessLog,
-							ConfigType: &envoy_accesslog.AccessLog_Config{
-								Config: messageToStruct(fileAccessLog(accessLogPath)),
-							},
-						}},
+						AccessLog: FileAccessLog(accessLogPath),
 					}),
 				},
 			},
@@ -287,28 +341,5 @@ func TestTCPProxy(t *testing.T) {
 				t.Fatal(diff)
 			}
 		})
-	}
-}
-
-// messageToStruct encodes a protobuf Message into a Struct.
-// Hilariously, it uses JSON as the intermediary.
-// author:glen@turbinelabs.io
-func messageToStruct(msg proto.Message) *types.Struct {
-	buf := &bytes.Buffer{}
-	if err := (&jsonpb.Marshaler{OrigName: true}).Marshal(buf, msg); err != nil {
-		panic(err)
-	}
-
-	pbs := &types.Struct{}
-	if err := jsonpb.Unmarshal(buf, pbs); err != nil {
-		panic(err)
-	}
-
-	return pbs
-}
-
-func fileAccessLog(path string) *accesslog_v2.FileAccessLog {
-	return &accesslog_v2.FileAccessLog{
-		Path: path,
 	}
 }
