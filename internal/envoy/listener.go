@@ -20,8 +20,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-	accesslogv2 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v2"
-	accesslogfilter "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/util"
 	"github.com/gogo/protobuf/proto"
@@ -105,17 +103,11 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 					Name: util.Router,
 				}},
 				HttpProtocolOptions: &core.Http1ProtocolOptions{
+					// Enable support for HTTP/1.0 requests that carry
+					// a Host: header. See #537.
 					AcceptHttp_10: true,
 				},
-				AccessLog: []*accesslogfilter.AccessLog{{
-					Name: util.FileAccessLog,
-					ConfigType: &accesslogfilter.AccessLog_TypedConfig{
-						TypedConfig: any(&accesslogv2.FileAccessLog{
-							Path: accessLogPath,
-							// TODO(dfc) FileAccessLog_Format elided.
-						}),
-					},
-				}},
+				AccessLog:        FileAccessLog(accessLogPath),
 				UseRemoteAddress: &types.BoolValue{Value: true}, // TODO(jbeda) should this ever be false?
 				NormalizePath:    &types.BoolValue{Value: true},
 				IdleTimeout:      duration(60 * time.Second),
@@ -135,7 +127,14 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) list
 					Fields: map[string]*types.Value{
 						"stat_prefix": sv(statPrefix),
 						"cluster":     sv(Clustername(proxy.Clusters[0])),
-						"access_log":  accesslog(accessLogPath),
+						"access_log": lv(
+							st(map[string]*types.Value{
+								"name": sv(util.FileAccessLog),
+								"config": st(map[string]*types.Value{
+									"path": sv(accessLogPath),
+								}),
+							}),
+						),
 					},
 				},
 			},
@@ -166,7 +165,14 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) list
 						"weighted_clusters": st(map[string]*types.Value{
 							"clusters": lv(l...),
 						}),
-						"access_log": accesslog(accessLogPath),
+						"access_log": lv(
+							st(map[string]*types.Value{
+								"name": sv(util.FileAccessLog),
+								"config": st(map[string]*types.Value{
+									"path": sv(accessLogPath),
+								}),
+							}),
+						),
 					},
 				},
 			},
@@ -199,17 +205,6 @@ func SocketAddress(address string, port int) *core.Address {
 			},
 		},
 	}
-}
-
-func accesslog(path string) *types.Value {
-	return lv(
-		st(map[string]*types.Value{
-			"name": sv(util.FileAccessLog),
-			"config": st(map[string]*types.Value{
-				"path": sv(path),
-			}),
-		}),
-	)
 }
 
 func sv(s string) *types.Value {
