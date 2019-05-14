@@ -15,11 +15,16 @@ package envoy
 
 import (
 	"sort"
+	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	accesslogv2 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v2"
+	accesslogfilter "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
+	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/util"
+	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
 )
@@ -65,47 +70,56 @@ func Listener(name, address string, port int, lf []listener.ListenerFilter, filt
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
 // for the supplied route and access log.
 func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
+	duration := func(d time.Duration) *time.Duration {
+		return &d
+	}
 	return listener.Filter{
 		Name: util.HTTPConnectionManager,
-		ConfigType: &listener.Filter_Config{
-			Config: &types.Struct{
-				Fields: map[string]*types.Value{
-					"stat_prefix": sv(routename),
-					"rds": st(map[string]*types.Value{
-						"route_config_name": sv(routename),
-						"config_source": st(map[string]*types.Value{
-							"api_config_source": st(map[string]*types.Value{
-								"api_type": sv("GRPC"),
-								"grpc_services": lv(
-									st(map[string]*types.Value{
-										"envoy_grpc": st(map[string]*types.Value{
-											"cluster_name": sv("contour"),
-										}),
-									}),
-								),
-							}),
-						}),
-					}),
-					"http_filters": lv(
-						st(map[string]*types.Value{
-							"name": sv(util.Gzip),
-						}),
-						st(map[string]*types.Value{
-							"name": sv(util.GRPCWeb),
-						}),
-						st(map[string]*types.Value{
-							"name": sv(util.Router),
-						}),
-					),
-					"http_protocol_options": st(map[string]*types.Value{
-						"accept_http_10": {Kind: &types.Value_BoolValue{BoolValue: true}},
-					}),
-					"access_log":         accesslog(accessLogPath),
-					"use_remote_address": {Kind: &types.Value_BoolValue{BoolValue: true}}, // TODO(jbeda) should this ever be false?
-					"normalize_path":     {Kind: &types.Value_BoolValue{BoolValue: true}},
-					"idle_timeout":       sv("60s"),
+		ConfigType: &listener.Filter_TypedConfig{
+			TypedConfig: any(&http.HttpConnectionManager{
+				StatPrefix: routename,
+				RouteSpecifier: &http.HttpConnectionManager_Rds{
+					Rds: &http.Rds{
+						RouteConfigName: routename,
+						ConfigSource: core.ConfigSource{
+							ConfigSourceSpecifier: &core.ConfigSource_ApiConfigSource{
+								ApiConfigSource: &core.ApiConfigSource{
+									ApiType: core.ApiConfigSource_GRPC,
+									GrpcServices: []*core.GrpcService{{
+										TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
+											EnvoyGrpc: &core.GrpcService_EnvoyGrpc{
+												ClusterName: "contour",
+											},
+										},
+									}},
+								},
+							},
+						},
+					},
 				},
-			},
+				HttpFilters: []*http.HttpFilter{{
+					Name: util.Gzip,
+				}, {
+					Name: util.GRPCWeb,
+				}, {
+					Name: util.Router,
+				}},
+				HttpProtocolOptions: &core.Http1ProtocolOptions{
+					AcceptHttp_10: true,
+				},
+				AccessLog: []*accesslogfilter.AccessLog{{
+					Name: util.FileAccessLog,
+					ConfigType: &accesslogfilter.AccessLog_TypedConfig{
+						TypedConfig: any(&accesslogv2.FileAccessLog{
+							Path: accessLogPath,
+							// TODO(dfc) FileAccessLog_Format elided.
+						}),
+					},
+				}},
+				UseRemoteAddress: &types.BoolValue{Value: true}, // TODO(jbeda) should this ever be false?
+				NormalizePath:    &types.BoolValue{Value: true},
+				IdleTimeout:      duration(60 * time.Second),
+			}),
 		},
 	}
 }
@@ -212,4 +226,12 @@ func lv(v ...*types.Value) *types.Value {
 
 func nv(n float64) *types.Value {
 	return &types.Value{Kind: &types.Value_NumberValue{NumberValue: n}}
+}
+
+func any(pb proto.Message) *types.Any {
+	any, err := types.MarshalAny(pb)
+	if err != nil {
+		panic(err.Error())
+	}
+	return any
 }
