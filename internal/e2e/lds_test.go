@@ -21,8 +21,10 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	health_check "github.com/envoyproxy/go-control-plane/envoy/config/filter/http/health_check/v2"
+	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	envoy_config_v2_tcpproxy "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/util"
 	"github.com/gogo/protobuf/proto"
@@ -48,7 +50,7 @@ func TestNonTLSListener(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "0",
@@ -75,7 +77,7 @@ func TestNonTLSListener(t *testing.T) {
 				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "1",
@@ -100,7 +102,7 @@ func TestNonTLSListener(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: []types.Any{
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "2",
@@ -131,7 +133,7 @@ func TestNonTLSListener(t *testing.T) {
 				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "3",
@@ -176,7 +178,7 @@ func TestTLSListener(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: []types.Any{
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "1",
@@ -200,7 +202,7 @@ func TestTLSListener(t *testing.T) {
 				},
 				FilterChains: filterchaintls("kuard.example.com", s1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
 			}),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "2",
@@ -237,7 +239,7 @@ func TestTLSListener(t *testing.T) {
 				},
 				FilterChains: filterchaintls("kuard.example.com", s1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
 			}),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "3",
@@ -248,7 +250,7 @@ func TestTLSListener(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "4",
 		Resources: []types.Any{
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "4",
@@ -326,7 +328,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: []types.Any{
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "1",
@@ -354,7 +356,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
 			any(t, l1),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "2",
@@ -370,7 +372,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "3",
@@ -401,7 +403,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
 			any(t, l2),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "6",
@@ -455,7 +457,7 @@ func TestLDSFilter(t *testing.T) {
 				},
 				FilterChains: filterchaintls("kuard.example.com", s1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
 			}),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "2",
@@ -470,7 +472,7 @@ func TestLDSFilter(t *testing.T) {
 				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "2",
@@ -480,7 +482,7 @@ func TestLDSFilter(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: []types.Any{
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "2",
@@ -495,7 +497,7 @@ func TestLDSStreamEmpty(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType, Nonce: "0",
 	}, streamLDS(t, cc, "HTTP"))
@@ -548,7 +550,7 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 				},
 				FilterChains: filterchaintls("kuard.example.com", s1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
 			}),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "3",
@@ -589,7 +591,7 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 		VersionInfo: "4",
 		Resources: []types.Any{
 			any(t, l1),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "4",
@@ -607,7 +609,7 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "0",
@@ -638,7 +640,7 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 				},
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "1",
@@ -685,7 +687,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: []types.Any{
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "1",
@@ -716,7 +718,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
 			any(t, ingress_https),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "2",
@@ -766,7 +768,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: []types.Any{
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "1",
@@ -794,7 +796,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 		Resources: []types.Any{
 			any(t, ingress_http),
 			any(t, ingress_https),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "2",
@@ -842,7 +844,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: []types.Any{
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "1",
@@ -868,7 +870,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 		Resources: []types.Any{
 			any(t, ingress_http),
 			any(t, ingress_https),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "2",
@@ -888,7 +890,7 @@ func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "0",
@@ -924,7 +926,7 @@ func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "1",
@@ -944,7 +946,7 @@ func TestLDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "0",
@@ -975,7 +977,7 @@ func TestLDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: []types.Any{
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "1",
@@ -995,7 +997,7 @@ func TestIngressRouteHTTPS(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "0",
@@ -1061,7 +1063,7 @@ func TestIngressRouteHTTPS(t *testing.T) {
 		Resources: []types.Any{
 			any(t, ingressHTTP),
 			any(t, ingressHTTPS),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "2",
@@ -1130,7 +1132,7 @@ func TestLDSIngressRouteTCPProxyTLSPassthrough(t *testing.T) {
 		VersionInfo: "2",
 		Resources: []types.Any{
 			any(t, ingressHTTPS),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "2",
@@ -1202,7 +1204,7 @@ func TestLDSIngressRouteTCPForward(t *testing.T) {
 		VersionInfo: "3",
 		Resources: []types.Any{
 			any(t, ingressHTTPS),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "3",
@@ -1218,7 +1220,7 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: []types.Any{
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "0",
@@ -1272,7 +1274,7 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 		VersionInfo: "2",
 		Resources: []types.Any{
 			any(t, ingress_http),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "2",
@@ -1309,7 +1311,7 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 		Resources: []types.Any{
 			any(t, ingress_http),
 			any(t, ingress_https),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "3",
@@ -1337,7 +1339,7 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 		Resources: []types.Any{
 			any(t, ingress_http),
 			any(t, ingress_https),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "4",
@@ -1364,7 +1366,7 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 		VersionInfo: "5",
 		Resources: []types.Any{
 			any(t, ingress_http),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "5",
@@ -1391,7 +1393,7 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 		VersionInfo: "6",
 		Resources: []types.Any{
 			any(t, ingress_http),
-			any(t, staticListener()),
+			any(t, staticListener(t)),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "6",
@@ -1463,77 +1465,69 @@ func tcpproxy(t *testing.T, statPrefix, cluster string) listener.Filter {
 	}
 }
 
-func staticListener() *v2.Listener {
+func staticListener(t *testing.T) *v2.Listener {
+	// shadow the package level any function as TypedConfig needs a
+	// *types.Any whereas the other callers of e2e.any require a value
+	// type.
+	// TODO(dfc) unify the callers to any.
+	any := func(t *testing.T, pb proto.Message) *types.Any {
+		t.Helper()
+		any, err := types.MarshalAny(pb)
+		check(t, err)
+		return any
+	}
 	return &v2.Listener{
-		Name: "stats-health",
-		Address: core.Address{
-			Address: &core.Address_SocketAddress{
-				SocketAddress: &core.SocketAddress{
-					Address: statsAddress,
-					PortSpecifier: &core.SocketAddress_PortValue{
-						PortValue: statsPort,
-					},
-				},
-			},
-		},
+		Name:    "stats-health",
+		Address: *envoy.SocketAddress(statsAddress, statsPort),
 		FilterChains: []listener.FilterChain{{
 			Filters: []listener.Filter{{
 				Name: util.HTTPConnectionManager,
-				ConfigType: &listener.Filter_Config{
-					Config: &types.Struct{
-						Fields: map[string]*types.Value{
-							"codec_type":  sv("AUTO"),
-							"stat_prefix": sv("stats"),
-							"route_config": st(map[string]*types.Value{
-								"virtual_hosts": st(map[string]*types.Value{
-									"name":    sv("backend"),
-									"domains": lv(sv("*")),
-									"routes": lv(
-										st(map[string]*types.Value{
-											"match": st(map[string]*types.Value{
-												"prefix": sv("/stats"),
-											}),
-											"route": st(map[string]*types.Value{
-												"cluster": sv("service-stats"),
-											}),
-										}),
-									),
-								}),
-							}),
-							"http_filters": lv(
-								st(map[string]*types.Value{
-									"name": sv(util.HealthCheck),
-									"config": st(map[string]*types.Value{
-										"pass_through_mode": sv("false"), // not sure about this
-										"headers": lv(
-											st(map[string]*types.Value{
-												"name":        sv(":path"),
-												"exact_match": sv("/healthz"),
-											}),
-										),
-									}),
-								}),
-								st(map[string]*types.Value{
-									"name": sv(util.Router),
-								}),
-							),
-							"normalize_path": {Kind: &types.Value_BoolValue{BoolValue: true}},
+				ConfigType: &listener.Filter_TypedConfig{
+					TypedConfig: any(t, &http.HttpConnectionManager{
+						// TODO(dfc) should the stats listener expose stats? is that likely to collapse the multiverse?
+						StatPrefix: "stats",
+						RouteSpecifier: &http.HttpConnectionManager_RouteConfig{
+							RouteConfig: &v2.RouteConfiguration{
+								VirtualHosts: []route.VirtualHost{{
+									Name:    "backend",
+									Domains: []string{"*"},
+									Routes: []route.Route{{
+										Match: route.RouteMatch{
+											PathSpecifier: &route.RouteMatch_Prefix{
+												Prefix: "/stats",
+											},
+										},
+										Action: &route.Route_Route{
+											Route: &route.RouteAction{
+												ClusterSpecifier: &route.RouteAction_Cluster{
+													Cluster: "service-stats",
+												},
+											},
+										},
+									}},
+								}},
+							},
 						},
-					},
+						HttpFilters: []*http.HttpFilter{{
+							Name: util.HealthCheck,
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: any(t, &health_check.HealthCheck{
+									PassThroughMode: &types.BoolValue{Value: false},
+									Headers: []*route.HeaderMatcher{{
+										Name: ":path",
+										HeaderMatchSpecifier: &route.HeaderMatcher_ExactMatch{
+											ExactMatch: "/healthz",
+										},
+									}},
+								}),
+							},
+						}, {
+							Name: util.Router,
+						}},
+						NormalizePath: &types.BoolValue{Value: true},
+					}),
 				},
 			}},
 		}},
 	}
-}
-
-func sv(s string) *types.Value {
-	return &types.Value{Kind: &types.Value_StringValue{StringValue: s}}
-}
-
-func st(m map[string]*types.Value) *types.Value {
-	return &types.Value{Kind: &types.Value_StructValue{StructValue: &types.Struct{Fields: m}}}
-}
-
-func lv(v ...*types.Value) *types.Value {
-	return &types.Value{Kind: &types.Value_ListValue{ListValue: &types.ListValue{Values: v}}}
 }

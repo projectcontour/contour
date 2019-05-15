@@ -19,8 +19,10 @@ import (
 	"github.com/gogo/protobuf/types"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	health_check "github.com/envoyproxy/go-control-plane/envoy/config/filter/http/health_check/v2"
+	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/util"
 	"github.com/gogo/protobuf/proto"
 	"github.com/heptio/contour/internal/dag"
@@ -134,65 +136,59 @@ type ListenerCache struct {
 }
 
 // NewListenerCache returns an instance of a ListenerCache
-func NewListenerCache(address string, port uint32) ListenerCache {
+func NewListenerCache(address string, port int) ListenerCache {
 	return ListenerCache{
 		staticValues: map[string]*v2.Listener{
 			"stats-health": {
-				Name: "stats-health",
-				Address: core.Address{
-					Address: &core.Address_SocketAddress{
-						SocketAddress: &core.SocketAddress{
-							Address: address,
-							PortSpecifier: &core.SocketAddress_PortValue{
-								PortValue: port,
-							},
-						},
-					},
-				},
+				Name:    "stats-health",
+				Address: *envoy.SocketAddress(address, port),
 				FilterChains: []listener.FilterChain{{
 					Filters: []listener.Filter{{
 						Name: util.HTTPConnectionManager,
-						ConfigType: &listener.Filter_Config{
-							Config: &types.Struct{
-								Fields: map[string]*types.Value{
-									"codec_type":  sv("AUTO"),
-									"stat_prefix": sv("stats"),
-									"route_config": st(map[string]*types.Value{
-										"virtual_hosts": st(map[string]*types.Value{
-											"name":    sv("backend"),
-											"domains": lv(sv("*")),
-											"routes": lv(
-												st(map[string]*types.Value{
-													"match": st(map[string]*types.Value{
-														"prefix": sv("/stats"),
-													}),
-													"route": st(map[string]*types.Value{
-														"cluster": sv("service-stats"),
-													}),
-												}),
-											),
-										}),
-									}),
-									"http_filters": lv(
-										st(map[string]*types.Value{
-											"name": sv(util.HealthCheck),
-											"config": st(map[string]*types.Value{
-												"pass_through_mode": sv("false"), // not sure about this
-												"headers": lv(
-													st(map[string]*types.Value{
-														"name":        sv(":path"),
-														"exact_match": sv("/healthz"),
-													}),
-												),
-											}),
-										}),
-										st(map[string]*types.Value{
-											"name": sv(util.Router),
-										}),
-									),
-									"normalize_path": {Kind: &types.Value_BoolValue{BoolValue: true}},
+						ConfigType: &listener.Filter_TypedConfig{
+							TypedConfig: any(&http.HttpConnectionManager{
+								// TODO(dfc) should the stats listener expose stats? is that likely to collapse the multiverse?
+								StatPrefix: "stats",
+								RouteSpecifier: &http.HttpConnectionManager_RouteConfig{
+									RouteConfig: &v2.RouteConfiguration{
+										VirtualHosts: []route.VirtualHost{{
+											Name:    "backend",
+											Domains: []string{"*"},
+											Routes: []route.Route{{
+												Match: route.RouteMatch{
+													PathSpecifier: &route.RouteMatch_Prefix{
+														Prefix: "/stats",
+													},
+												},
+												Action: &route.Route_Route{
+													Route: &route.RouteAction{
+														ClusterSpecifier: &route.RouteAction_Cluster{
+															Cluster: "service-stats",
+														},
+													},
+												},
+											}},
+										}},
+									},
 								},
-							},
+								HttpFilters: []*http.HttpFilter{{
+									Name: util.HealthCheck,
+									ConfigType: &http.HttpFilter_TypedConfig{
+										TypedConfig: any(&health_check.HealthCheck{
+											PassThroughMode: &types.BoolValue{Value: false},
+											Headers: []*route.HeaderMatcher{{
+												Name: ":path",
+												HeaderMatchSpecifier: &route.HeaderMatcher_ExactMatch{
+													ExactMatch: "/healthz",
+												},
+											}},
+										}),
+									},
+								}, {
+									Name: util.Router,
+								}},
+								NormalizePath: &types.BoolValue{Value: true},
+							}),
 						},
 					}},
 				}},
@@ -347,14 +343,10 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 	}
 }
 
-func sv(s string) *types.Value {
-	return &types.Value{Kind: &types.Value_StringValue{StringValue: s}}
-}
-
-func st(m map[string]*types.Value) *types.Value {
-	return &types.Value{Kind: &types.Value_StructValue{StructValue: &types.Struct{Fields: m}}}
-}
-
-func lv(v ...*types.Value) *types.Value {
-	return &types.Value{Kind: &types.Value_ListValue{ListValue: &types.ListValue{Values: v}}}
+func any(pb proto.Message) *types.Any {
+	any, err := types.MarshalAny(pb)
+	if err != nil {
+		panic(err.Error())
+	}
+	return any
 }

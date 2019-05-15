@@ -84,7 +84,7 @@ func main() {
 	xdsAddr := serve.Flag("xds-address", "xDS gRPC API address").Default("127.0.0.1").String()
 	xdsPort := serve.Flag("xds-port", "xDS gRPC API port").Default("8001").Int()
 	statsAddress := serve.Flag("stats-address", "Envoy /stats interface address").Default("0.0.0.0").String()
-	statsPort := serve.Flag("stats-port", "Envoy /stats interface port").Default("8002").Uint32()
+	statsPort := serve.Flag("stats-port", "Envoy /stats interface port").Default("8002").Int()
 
 	ch := contour.CacheHandler{
 		FieldLogger: log.WithField("context", "CacheHandler"),
