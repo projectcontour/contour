@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v2"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/apis/generated/clientset/versioned/fake"
@@ -193,17 +192,6 @@ func assertEqual(t *testing.T, want, got *v2.DiscoveryResponse) {
 			ExpandAny: true,
 		}
 		t.Fatalf("\nexpected:\n%v\ngot:\n%v", m.Text(want), m.Text(got))
-	}
-}
-
-// fileAccessLog is defined here to avoid the conflict between the package that defines the
-// accesslog.AccessLog interface, "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
-// and the package the defines the FileAccessLog implement,
-// "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v2"
-
-func fileAccessLog(path string) *accesslog.FileAccessLog {
-	return &accesslog.FileAccessLog{
-		Path: path,
 	}
 }
 

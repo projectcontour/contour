@@ -21,6 +21,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
+	tcp "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/util"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
@@ -122,74 +123,55 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) list
 	case 1:
 		return listener.Filter{
 			Name: util.TCPProxy,
-			ConfigType: &listener.Filter_Config{
-				Config: &types.Struct{
-					Fields: map[string]*types.Value{
-						"stat_prefix": sv(statPrefix),
-						"cluster":     sv(Clustername(proxy.Clusters[0])),
-						"access_log": lv(
-							st(map[string]*types.Value{
-								"name": sv(util.FileAccessLog),
-								"config": st(map[string]*types.Value{
-									"path": sv(accessLogPath),
-								}),
-							}),
-						),
+			ConfigType: &listener.Filter_TypedConfig{
+				TypedConfig: any(&tcp.TcpProxy{
+					StatPrefix: statPrefix,
+					ClusterSpecifier: &tcp.TcpProxy_Cluster{
+						Cluster: Clustername(proxy.Clusters[0]),
 					},
-				},
+					AccessLog: FileAccessLog(accessLogPath),
+				}),
 			},
 		}
 	default:
-		// its easier to sort the input of the cluster list rather than the
-		// grpc type output. We have to make a copy to avoid mutating the dag.
-		clusters := make([]*dag.Cluster, len(proxy.Clusters))
-		copy(clusters, proxy.Clusters)
-		sort.Stable(tcpServiceByName(clusters))
-		var l []*types.Value
-		for _, cluster := range clusters {
-			weight := cluster.Weight
+		var clusters []*tcp.TcpProxy_WeightedCluster_ClusterWeight
+		for _, c := range proxy.Clusters {
+			weight := uint32(c.Weight)
 			if weight == 0 {
 				weight = 1
 			}
-			l = append(l, st(map[string]*types.Value{
-				"name":   sv(Clustername(cluster)),
-				"weight": nv(float64(weight)),
-			}))
+			clusters = append(clusters, &tcp.TcpProxy_WeightedCluster_ClusterWeight{
+				Name:   Clustername(c),
+				Weight: weight,
+			})
 		}
+		sort.Stable(clustersByNameAndWeight(clusters))
 		return listener.Filter{
 			Name: util.TCPProxy,
-			ConfigType: &listener.Filter_Config{
-				Config: &types.Struct{
-					Fields: map[string]*types.Value{
-						"stat_prefix": sv(statPrefix),
-						"weighted_clusters": st(map[string]*types.Value{
-							"clusters": lv(l...),
-						}),
-						"access_log": lv(
-							st(map[string]*types.Value{
-								"name": sv(util.FileAccessLog),
-								"config": st(map[string]*types.Value{
-									"path": sv(accessLogPath),
-								}),
-							}),
-						),
+			ConfigType: &listener.Filter_TypedConfig{
+				TypedConfig: any(&tcp.TcpProxy{
+					StatPrefix: statPrefix,
+					ClusterSpecifier: &tcp.TcpProxy_WeightedClusters{
+						WeightedClusters: &tcp.TcpProxy_WeightedCluster{
+							Clusters: clusters,
+						},
 					},
-				},
+					AccessLog: FileAccessLog(accessLogPath),
+				}),
 			},
 		}
 	}
 }
 
-type tcpServiceByName []*dag.Cluster
+type clustersByNameAndWeight []*tcp.TcpProxy_WeightedCluster_ClusterWeight
 
-func (t tcpServiceByName) Len() int      { return len(t) }
-func (t tcpServiceByName) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
-func (t tcpServiceByName) Less(i, j int) bool {
-	a, b := t[i].Upstream.(*dag.TCPService), t[j].Upstream.(*dag.TCPService)
-	if a.Name == b.Name {
-		return t[i].Weight < t[j].Weight
+func (c clustersByNameAndWeight) Len() int      { return len(c) }
+func (c clustersByNameAndWeight) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
+func (c clustersByNameAndWeight) Less(i, j int) bool {
+	if c[i].Name == c[j].Name {
+		return c[i].Weight < c[j].Weight
 	}
-	return a.Name < b.Name
+	return c[i].Name < c[j].Name
 }
 
 // SocketAddress creates a new TCP core.Address.
@@ -217,10 +199,6 @@ func st(m map[string]*types.Value) *types.Value {
 
 func lv(v ...*types.Value) *types.Value {
 	return &types.Value{Kind: &types.Value_ListValue{ListValue: &types.ListValue{Values: v}}}
-}
-
-func nv(n float64) *types.Value {
-	return &types.Value{Kind: &types.Value_NumberValue{NumberValue: n}}
 }
 
 func any(pb proto.Message) *types.Any {
