@@ -16,8 +16,12 @@ package contour
 import (
 	"sync"
 
+	"github.com/gogo/protobuf/types"
+
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	"github.com/envoyproxy/go-control-plane/pkg/util"
 	"github.com/gogo/protobuf/proto"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
@@ -122,10 +126,79 @@ func (lvc *ListenerVisitorConfig) httpsAccessLog() string {
 
 // ListenerCache manages the contents of the gRPC LDS cache.
 type ListenerCache struct {
-	mu      sync.Mutex
-	values  map[string]*v2.Listener
-	waiters []chan int
-	last    int
+	mu           sync.Mutex
+	values       map[string]*v2.Listener
+	staticValues map[string]*v2.Listener
+	waiters      []chan int
+	last         int
+}
+
+// NewListenerCache returns an instance of a ListenerCache
+func NewListenerCache(address string, port uint32) ListenerCache {
+	return ListenerCache{
+		staticValues: map[string]*v2.Listener{
+			"stats-health": {
+				Name: "stats-health",
+				Address: core.Address{
+					Address: &core.Address_SocketAddress{
+						SocketAddress: &core.SocketAddress{
+							Address: address,
+							PortSpecifier: &core.SocketAddress_PortValue{
+								PortValue: port,
+							},
+						},
+					},
+				},
+				FilterChains: []listener.FilterChain{{
+					Filters: []listener.Filter{{
+						Name: util.HTTPConnectionManager,
+						ConfigType: &listener.Filter_Config{
+							Config: &types.Struct{
+								Fields: map[string]*types.Value{
+									"codec_type":  sv("AUTO"),
+									"stat_prefix": sv("stats"),
+									"route_config": st(map[string]*types.Value{
+										"virtual_hosts": st(map[string]*types.Value{
+											"name":    sv("backend"),
+											"domains": lv(sv("*")),
+											"routes": lv(
+												st(map[string]*types.Value{
+													"match": st(map[string]*types.Value{
+														"prefix": sv("/stats"),
+													}),
+													"route": st(map[string]*types.Value{
+														"cluster": sv("service-stats"),
+													}),
+												}),
+											),
+										}),
+									}),
+									"http_filters": lv(
+										st(map[string]*types.Value{
+											"name": sv(util.HealthCheck),
+											"config": st(map[string]*types.Value{
+												"pass_through_mode": sv("false"), // not sure about this
+												"headers": lv(
+													st(map[string]*types.Value{
+														"name":        sv(":path"),
+														"exact_match": sv("/healthz"),
+													}),
+												),
+											}),
+										}),
+										st(map[string]*types.Value{
+											"name": sv(util.Router),
+										}),
+									),
+									"normalize_path": {Kind: &types.Value_BoolValue{BoolValue: true}},
+								},
+							},
+						},
+					}},
+				}},
+			},
+		},
+	}
 }
 
 // Register registers ch to receive a value when Notify is called.
@@ -176,6 +249,10 @@ func (c *ListenerCache) Values(filter func(string) bool) []proto.Message {
 			values = append(values, v)
 		}
 	}
+	for _, v := range c.staticValues {
+		values = append(values, v)
+	}
+
 	c.mu.Unlock()
 	return values
 }
@@ -268,4 +345,16 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		// recurse
 		vertex.Visit(v.visit)
 	}
+}
+
+func sv(s string) *types.Value {
+	return &types.Value{Kind: &types.Value_StringValue{StringValue: s}}
+}
+
+func st(m map[string]*types.Value) *types.Value {
+	return &types.Value{Kind: &types.Value_StructValue{StructValue: &types.Struct{Fields: m}}}
+}
+
+func lv(v ...*types.Value) *types.Value {
+	return &types.Value{Kind: &types.Value_ListValue{ListValue: &types.ListValue{Values: v}}}
 }

@@ -197,10 +197,6 @@ func st(m map[string]*types.Value) *types.Value {
 	return &types.Value{Kind: &types.Value_StructValue{StructValue: &types.Struct{Fields: m}}}
 }
 
-func lv(v ...*types.Value) *types.Value {
-	return &types.Value{Kind: &types.Value_ListValue{ListValue: &types.ListValue{Values: v}}}
-}
-
 func any(pb proto.Message) *types.Any {
 	any, err := types.MarshalAny(pb)
 	if err != nil {

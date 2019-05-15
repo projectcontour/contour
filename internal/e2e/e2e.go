@@ -40,6 +40,8 @@ const (
 	clusterType  = typePrefix + "Cluster"
 	routeType    = typePrefix + "RouteConfiguration"
 	listenerType = typePrefix + "Listener"
+	statsAddress = "0.0.0.0"
+	statsPort    = 8002
 )
 
 type testWriter struct {
@@ -71,7 +73,8 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 		IngressRouteStatus: &k8s.IngressRouteStatus{
 			Client: fake.NewSimpleClientset(),
 		},
-		Metrics: metrics.NewMetrics(r),
+		Metrics:       metrics.NewMetrics(r),
+		ListenerCache: contour.NewListenerCache(statsAddress, statsPort),
 	}
 
 	reh := contour.ResourceEventHandler{

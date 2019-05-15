@@ -23,7 +23,6 @@ import (
 	clusterv2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	bootstrap "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
 	metrics "github.com/envoyproxy/go-control-plane/envoy/config/metrics/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/util"
@@ -38,59 +37,6 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 			CdsConfig: ConfigSource("contour"),
 		},
 		StaticResources: &bootstrap.Bootstrap_StaticResources{
-			Listeners: []api.Listener{{
-				Address: *SocketAddress(
-					stringOrDefault(c.StatsAddress, "0.0.0.0"),
-					intOrDefault(c.StatsPort, 8002),
-				),
-				FilterChains: []listener.FilterChain{{
-					Filters: []listener.Filter{{
-						Name: util.HTTPConnectionManager,
-						ConfigType: &listener.Filter_Config{
-							Config: &types.Struct{
-								Fields: map[string]*types.Value{
-									"codec_type":  sv("AUTO"),
-									"stat_prefix": sv("stats"),
-									"route_config": st(map[string]*types.Value{
-										"virtual_hosts": st(map[string]*types.Value{
-											"name":    sv("backend"),
-											"domains": lv(sv("*")),
-											"routes": lv(
-												st(map[string]*types.Value{
-													"match": st(map[string]*types.Value{
-														"prefix": sv("/stats"),
-													}),
-													"route": st(map[string]*types.Value{
-														"cluster": sv("service-stats"),
-													}),
-												}),
-											),
-										}),
-									}),
-									"http_filters": lv(
-										st(map[string]*types.Value{
-											"name": sv(util.HealthCheck),
-											"config": st(map[string]*types.Value{
-												"pass_through_mode": sv("false"), // not sure about this
-												"headers": lv(
-													st(map[string]*types.Value{
-														"name":        sv(":path"),
-														"exact_match": sv("/healthz"),
-													}),
-												),
-											}),
-										}),
-										st(map[string]*types.Value{
-											"name": sv(util.Router),
-										}),
-									),
-									"normalize_path": {Kind: &types.Value_BoolValue{BoolValue: true}},
-								},
-							},
-						},
-					}},
-				}},
-			}},
 			Clusters: []api.Cluster{{
 				Name:                 "contour",
 				AltStatName:          strings.Join([]string{c.Namespace, "contour", strconv.Itoa(intOrDefault(c.XDSGRPCPort, 8001))}, "_"),
@@ -191,14 +137,6 @@ type BootstrapConfig struct {
 	// AdminPort is the port that the administration server will listen on.
 	// Defaults to 9001.
 	AdminPort int
-
-	// StatsAddress is the address that the /stats path will listen on.
-	// Defaults to 0.0.0.0 and is only enabled if StatsdEnabled is true.
-	StatsAddress string
-
-	// StatsPort is the port that the /stats path will listen on.
-	// Defaults to 8002 and is only enabled if StatsdEnabled is true.
-	StatsPort int
 
 	// XDSAddress is the TCP address of the gRPC XDS management server.
 	// Defaults to 127.0.0.1.
