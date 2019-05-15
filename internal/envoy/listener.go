@@ -189,14 +189,6 @@ func SocketAddress(address string, port int) *core.Address {
 	}
 }
 
-func sv(s string) *types.Value {
-	return &types.Value{Kind: &types.Value_StringValue{StringValue: s}}
-}
-
-func st(m map[string]*types.Value) *types.Value {
-	return &types.Value{Kind: &types.Value_StructValue{StructValue: &types.Struct{Fields: m}}}
-}
-
 func any(pb proto.Message) *types.Any {
 	any, err := types.MarshalAny(pb)
 	if err != nil {

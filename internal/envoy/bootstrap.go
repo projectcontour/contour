@@ -14,7 +14,6 @@
 package envoy
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -24,9 +23,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	bootstrap "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
-	metrics "github.com/envoyproxy/go-control-plane/envoy/config/metrics/v2"
-	"github.com/envoyproxy/go-control-plane/pkg/util"
-	"github.com/gogo/protobuf/types"
 )
 
 // Bootstrap creates a new v2 Bootstrap configuration.
@@ -89,24 +85,6 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 		},
 	}
 
-	if c.StatsdEnabled {
-		b.StatsSinks = []*metrics.StatsSink{{
-			Name: util.Statsd,
-			ConfigType: &metrics.StatsSink_Config{
-				Config: &types.Struct{
-					Fields: map[string]*types.Value{
-						"address": st(map[string]*types.Value{
-							"socket_address": st(map[string]*types.Value{
-								"protocol":   sv("UDP"),
-								"address":    sv(stringOrDefault(c.StatsdAddress, "127.0.0.1")),
-								"port_value": sv(fmt.Sprintf("%d", intOrDefault(c.StatsdPort, 9125))),
-							}),
-						}),
-					},
-				},
-			},
-		}}
-	}
 	return b
 }
 
@@ -145,18 +123,6 @@ type BootstrapConfig struct {
 	// XDSGRPCPort is the management server port that provides the v2 gRPC API.
 	// Defaults to 8001.
 	XDSGRPCPort int
-
-	// StatsdEnabled enables metrics output via statsd
-	// Defaults to false.
-	StatsdEnabled bool
-
-	// StatsdAddress is the UDP address of the statsd endpoint
-	// Defaults to 127.0.0.1.
-	StatsdAddress string
-
-	// StatsdPort is port of the statsd endpoint
-	// Defaults to 9125.
-	StatsdPort int
 
 	// Namespace is the namespace where Contour is running
 	Namespace string

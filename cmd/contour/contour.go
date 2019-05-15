@@ -55,9 +55,6 @@ func main() {
 	bootstrap.Flag("admin-port", "Envoy admin interface port").IntVar(&config.AdminPort)
 	bootstrap.Flag("xds-address", "xDS gRPC API address").StringVar(&config.XDSAddress)
 	bootstrap.Flag("xds-port", "xDS gRPC API port").IntVar(&config.XDSGRPCPort)
-	bootstrap.Flag("statsd-enabled", "enable statsd output").BoolVar(&config.StatsdEnabled)
-	bootstrap.Flag("statsd-address", "statsd address").StringVar(&config.StatsdAddress)
-	bootstrap.Flag("statsd-port", "statsd port").IntVar(&config.StatsdPort)
 
 	// Get the running namespace passed via ENV var from the Kubernetes Downward API
 	config.Namespace = getEnv("CONTOUR_NAMESPACE", "heptio-contour")
