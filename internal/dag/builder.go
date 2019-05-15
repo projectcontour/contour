@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -197,7 +197,8 @@ func (b *builder) addTCPService(svc *v1.Service, port *v1.ServicePort, strategy 
 	return s
 }
 
-// lookupSecret returns a kuberntes secret if found or nil if not
+// lookupSecret returns a Secret if present or nil if the underlying kubernetes
+// secret fails validation or is missing.
 func (b *builder) lookupSecret(m meta, validate func(*v1.Secret) bool) *Secret {
 	if s, ok := b.secrets[m]; ok {
 		return s
