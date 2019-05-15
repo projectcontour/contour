@@ -1,6 +1,8 @@
 # Prometheus
 
-Contour and Envoy expose metrics that can be scraped with Prometheus.
+Contour and Envoy expose metrics that can be scraped with Prometheus. By
+default, annotations to gather them are in all the `deployment` yamls and they
+should work out of the box with most configurations.
 
 ## Envoy Metrics
 
@@ -9,14 +11,13 @@ avoid exposing the entire admin interface to Prometheus (and other workloads in
 the cluster), Contour configures a static listener that sends traffic to the
 stats endpoint and nowhere else.
 
-To enable the static listener, set the `--statsd-enabled` flag.
-By default, Envoy's stats will be exposed over `0.0.0.0:8002` but can be overridden setting the `--stats-address` and `--stats-port` flags in Contour.
-
-Envoy supports Prometheus-compatible `/stats/prometheus` endpoint for metrics.
+Envoy supports Prometheus-compatible `/stats/prometheus` endpoint for metrics on
+port `8002`.
 
 ## Contour Metrics
 
-Contour exposes a Prometheus-compatible `/metrics` endpoint with the following metrics:
+Contour exposes a Prometheus-compatible `/metrics` endpoint on port `8000` with
+the following metrics:
 
 - **contour_ingressroute_total (gauge):** Total number of IngressRoutes objects that exist regardless of status (i.e. Valid / Invalid / Orphaned, etc). This metric should match the sum of `Orphaned` + `Valid` + `Invalid` IngressRoutes.
   - namespace
@@ -35,7 +36,7 @@ Contour exposes a Prometheus-compatible `/metrics` endpoint with the following m
 ## Sample Deployment
 
 In the `/deployment` directory there are example deployment files that can be used to spin up an example environment.
-The `ds-hostnet-split` is configured to utilize the following quickstart example instructions.
+All deployments there are configured with annotations for prometheus to scrape by default, so it should be possible to utilize any of them with the following quickstart example instructions.
 
 ### Deploy Prometheus
 

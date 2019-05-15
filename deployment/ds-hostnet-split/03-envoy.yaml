@@ -18,7 +18,6 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8002"
-        prometheus.io/statsdport: "9102"
         prometheus.io/path: "/stats/prometheus"
       labels:
         app: envoy
@@ -58,19 +57,6 @@ spec:
           preStop:
             exec:
               command: ["wget", "-qO-", "--post-data=''", "http://localhost:9001/healthcheck/fail"] 
-      - name: statsd-sink
-        image: prom/statsd-exporter:v0.6.0
-        command: 
-            - "/bin/statsd_exporter"
-        args:
-            - "-statsd.mapping-config=/etc/statsd/statsd.yaml"
-        ports:
-        - containerPort: 9102
-          protocol: TCP
-          name: metrics
-        volumeMounts:
-        - name: statsd
-          mountPath: /etc/statsd
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       initContainers:
@@ -81,7 +67,6 @@ spec:
         - $(CONTOUR_SERVICE_HOST)
         - --xds-port
         - $(CONTOUR_SERVICE_PORT)
-        - --statsd-enabled
         command:
         - contour
         image: gcr.io/heptio-images/contour:master
@@ -99,7 +84,4 @@ spec:
       volumes:
         - name: contour-config
           emptyDir: {}
-        - name: statsd
-          configMap:
-            name: envoy-statsd
       restartPolicy: Always
