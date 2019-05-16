@@ -170,11 +170,19 @@ func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort, strategy
 			MaxRequests:        parseAnnotation(svc.Annotations, annotationMaxRequests),
 			MaxRetries:         parseAnnotation(svc.Annotations, annotationMaxRetries),
 			HealthCheck:        hc,
+			ExternalName:       externalName(svc),
 		},
 		Protocol: protocol,
 	}
 	b.services[s.toMeta()] = s
 	return s
+}
+
+func externalName(svc *v1.Service) string {
+	if svc.Spec.Type != v1.ServiceTypeExternalName {
+		return ""
+	}
+	return svc.Spec.ExternalName
 }
 
 func (b *builder) addTCPService(svc *v1.Service, port *v1.ServicePort, strategy string, hc *ingressroutev1.HealthCheck) *TCPService {

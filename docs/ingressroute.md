@@ -693,6 +693,33 @@ spec:
           port: 80
 ```
 
+#### ExternalName
+
+IngressRoute supports routing traffic to service types `ExternalName`.
+Contour looks at the `spec.externalName` field of the service and configures the route to use that DNS name instead of utilizing EDS.
+
+There's nothing specific in the `IngressRoute` object that needs configured other than referencing a service of type `ExternalName`.
+
+NOTE: The ports are required to be specified.
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    run: externaldns
+  name: externaldns
+  namespace: default
+spec:
+  externalName: foo-basic.bar.com
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  type: ExternalName
+```
+
 ## IngressRoute Delegation
 
 A key feature of the IngressRoute specification is route delegation which follows the working model of DNS:

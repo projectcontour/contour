@@ -242,6 +242,9 @@ type TCPService struct {
 	MaxRetries int
 
 	HealthCheck *ingressroutev1.HealthCheck
+
+	// ExternalName is an optional field referencing a dns entry for Service type "ExternalName"
+	ExternalName string
 }
 
 type servicemeta struct {

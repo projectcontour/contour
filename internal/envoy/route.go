@@ -14,9 +14,10 @@ package envoy
 
 import (
 	"fmt"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"sort"
 	"time"
+
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/types"

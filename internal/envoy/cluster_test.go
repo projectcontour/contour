@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
@@ -25,7 +25,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -37,6 +37,22 @@ func TestCluster(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       443,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	s2 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			ExternalName: "foo.io",
 			Ports: []v1.ServicePort{{
 				Name:       "http",
 				Protocol:   "TCP",
@@ -109,6 +125,22 @@ func TestCluster(t *testing.T) {
 				LbPolicy:             v2.Cluster_ROUND_ROBIN,
 				TlsContext:           UpstreamTLSContext(nil, "", "h2"),
 				Http2ProtocolOptions: &core.Http2ProtocolOptions{},
+				CommonLbConfig:       ClusterCommonLBConfig(),
+			},
+		},
+		"externalName service": {
+			cluster: &dag.Cluster{
+				Upstream: &dag.HTTPService{
+					TCPService: *externalnameservice(s2),
+				},
+			},
+			want: &v2.Cluster{
+				Name:                 "default/kuard/443/da39a3ee5e",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
+				LoadAssignment:       StaticClusterLoadAssignment(externalnameservice(s2)),
+				ConnectTimeout:       250 * time.Millisecond,
+				LbPolicy:             v2.Cluster_ROUND_ROBIN,
 				CommonLbConfig:       ClusterCommonLBConfig(),
 			},
 		},
@@ -571,6 +603,14 @@ func service(s *v1.Service) dag.TCPService {
 		Name:        s.Name,
 		Namespace:   s.Namespace,
 		ServicePort: &s.Spec.Ports[0],
+	}
+}
+func externalnameservice(s *v1.Service) *dag.TCPService {
+	return &dag.TCPService{
+		Name:         s.Name,
+		Namespace:    s.Namespace,
+		ServicePort:  &s.Spec.Ports[0],
+		ExternalName: s.Spec.ExternalName,
 	}
 }
 
