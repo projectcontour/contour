@@ -131,9 +131,10 @@ type ListenerCache struct {
 
 // NewListenerCache returns an instance of a ListenerCache
 func NewListenerCache(address string, port int) ListenerCache {
+	stats := envoy.StatsListener(address, port)
 	return ListenerCache{
 		staticValues: map[string]*v2.Listener{
-			"stats-health": envoy.StatsListener("stats-health", address, port),
+			stats.Name: stats,
 		},
 	}
 }

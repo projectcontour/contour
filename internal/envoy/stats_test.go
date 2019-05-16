@@ -28,12 +28,11 @@ import (
 
 func TestStatsListener(t *testing.T) {
 	tests := map[string]struct {
-		name, address string
-		port          int
-		want          *v2.Listener
+		address string
+		port    int
+		want    *v2.Listener
 	}{
 		"stats-health": {
-			name:    "stats-health",
 			address: "127.0.0.127",
 			port:    8123,
 			want: &v2.Listener{
@@ -93,7 +92,7 @@ func TestStatsListener(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := StatsListener(tc.name, tc.address, tc.port)
+			got := StatsListener(tc.address, tc.port)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}

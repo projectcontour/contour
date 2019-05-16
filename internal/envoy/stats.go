@@ -25,7 +25,7 @@ import (
 
 // StatsListener returns a *v2.Listener configured to serve prometheus
 // metrics on /stats.
-func StatsListener(name, address string, port int) *v2.Listener {
+func StatsListener(address string, port int) *v2.Listener {
 	return &v2.Listener{
 		Name:    "stats-health",
 		Address: *SocketAddress(address, port),

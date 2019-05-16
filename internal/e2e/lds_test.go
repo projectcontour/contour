@@ -1463,5 +1463,5 @@ func tcpproxy(t *testing.T, statPrefix, cluster string) listener.Filter {
 }
 
 func staticListener() *v2.Listener {
-	return envoy.StatsListener("stats-health", statsAddress, statsPort)
+	return envoy.StatsListener(statsAddress, statsPort)
 }
