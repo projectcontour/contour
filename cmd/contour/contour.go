@@ -33,7 +33,7 @@ import (
 	"github.com/heptio/contour/internal/httpsvc"
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/metrics"
-	"github.com/heptio/workgroup"
+	"github.com/heptio/contour/internal/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
