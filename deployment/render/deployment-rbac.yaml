@@ -242,11 +242,6 @@ spec:
         command: ["contour"]
         args:
         - bootstrap
-        # Uncomment statsd-enabled to enable statsd metrics
-        #- --statsd-enabled
-        # Uncomment to set a custom stats emission address and port
-        #- --stats-address=0.0.0.0
-        #- --stats-port=8002
         - /config/contour.json
         volumeMounts:
         - name: contour-config
