@@ -26,5 +26,5 @@ GitHub review tools suck for extended debate, if you find you’re taking past y
 
 - Before you add a feature, write a test so someone else doesn’t break your feature by accident. 
 
-- You are permitted to refactor as much as you like to achieve the two previous goals.
-As Kent beck says ["make the change easy, then make the easy change."](https://twitter.com/kentbeck/status/250733358307500032?lang=en)
+- You are permitted to refactor as much as you like to achieve these goals.
+As Kent beck said, ["make the change easy, then make the easy change."](https://twitter.com/kentbeck/status/250733358307500032?lang=en)
