@@ -1,6 +1,6 @@
 # External Names Service
 
-_Status_: Draft
+_Status_: Accepted
 
 This document looks to allow Contour to process Kubernetes service types `ExternalName` so that traffic can be proxied to dns hosts rather than only pod endpoints.
 
