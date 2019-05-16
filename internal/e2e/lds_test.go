@@ -22,9 +22,6 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	health_check "github.com/envoyproxy/go-control-plane/envoy/config/filter/http/health_check/v2"
-	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	envoy_config_v2_tcpproxy "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/util"
 	"github.com/gogo/protobuf/proto"
@@ -1466,68 +1463,5 @@ func tcpproxy(t *testing.T, statPrefix, cluster string) listener.Filter {
 }
 
 func staticListener(t *testing.T) *v2.Listener {
-	// shadow the package level any function as TypedConfig needs a
-	// *types.Any whereas the other callers of e2e.any require a value
-	// type.
-	// TODO(dfc) unify the callers to any.
-	any := func(t *testing.T, pb proto.Message) *types.Any {
-		t.Helper()
-		any, err := types.MarshalAny(pb)
-		check(t, err)
-		return any
-	}
-	return &v2.Listener{
-		Name:    "stats-health",
-		Address: *envoy.SocketAddress(statsAddress, statsPort),
-		FilterChains: []listener.FilterChain{{
-			Filters: []listener.Filter{{
-				Name: util.HTTPConnectionManager,
-				ConfigType: &listener.Filter_TypedConfig{
-					TypedConfig: any(t, &http.HttpConnectionManager{
-						// TODO(dfc) should the stats listener expose stats? is that likely to collapse the multiverse?
-						StatPrefix: "stats",
-						RouteSpecifier: &http.HttpConnectionManager_RouteConfig{
-							RouteConfig: &v2.RouteConfiguration{
-								VirtualHosts: []route.VirtualHost{{
-									Name:    "backend",
-									Domains: []string{"*"},
-									Routes: []route.Route{{
-										Match: route.RouteMatch{
-											PathSpecifier: &route.RouteMatch_Prefix{
-												Prefix: "/stats",
-											},
-										},
-										Action: &route.Route_Route{
-											Route: &route.RouteAction{
-												ClusterSpecifier: &route.RouteAction_Cluster{
-													Cluster: "service-stats",
-												},
-											},
-										},
-									}},
-								}},
-							},
-						},
-						HttpFilters: []*http.HttpFilter{{
-							Name: util.HealthCheck,
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: any(t, &health_check.HealthCheck{
-									PassThroughMode: &types.BoolValue{Value: false},
-									Headers: []*route.HeaderMatcher{{
-										Name: ":path",
-										HeaderMatchSpecifier: &route.HeaderMatcher_ExactMatch{
-											ExactMatch: "/healthz",
-										},
-									}},
-								}),
-							},
-						}, {
-							Name: util.Router,
-						}},
-						NormalizePath: &types.BoolValue{Value: true},
-					}),
-				},
-			}},
-		}},
-	}
+	return envoy.StatsListener("stats-health", statsAddress, statsPort)
 }
