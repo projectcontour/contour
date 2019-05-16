@@ -35,12 +35,12 @@ type ConfigWriter struct {
 	// Defaults to 9001.
 	AdminPort int
 
-	// StatsAddress is the address that the /stats path will listen on.
-	// Defaults to 0.0.0.0 and is only enabled if StatsdEnabled is true.
+	// StatsAddress is the address that Envoy will listen on which serves the /stats path
+	// Defaults to 0.0.0.0
 	StatsAddress string
 
-	// StatsPort is the port that the /stats path will listen on.
-	// Defaults to 8002 and is only enabled if StatsdEnabled is true.
+	// StatsPort is the port that Envoy will listen on which serves the /stats path
+	// Defaults to 8002
 	StatsPort int
 
 	// XDSAddress is the TCP address of the XDS management server. For JSON configurations
@@ -56,18 +56,6 @@ type ConfigWriter struct {
 	// XDSGRPCPort is the management server port that provides the v2 gRPC API.
 	// Defaults to 8001.
 	XDSGRPCPort int
-
-	// StatsdEnabled enables metrics output via statsd
-	// Defaults to false.
-	StatsdEnabled bool
-
-	// StatsdAddress is the UDP address of the statsd endpoint
-	// Defaults to 127.0.0.1.
-	StatsdAddress string
-
-	// StatsdPort is port of the statsd endpoint
-	// Defaults to 9125.
-	StatsdPort int
 }
 
 const yamlConfig = `dynamic_resources:
@@ -146,15 +134,7 @@ static_resources:
                         exact_match: "/healthz"
                   - name: envoy.router
                     config:
-{{ if .StatsdEnabled }}stats_sinks:
-  - name: envoy.statsd
-    config:
-      address:
-        socket_address:
-          protocol: UDP
-          address: {{ if .StatsdAddress }}{{ .StatsdAddress }}{{ else }}127.0.0.1{{ end }}
-          port_value: {{ if .StatsdPort }}{{ .StatsdPort }}{{ else }}9125{{ end }}
-{{ end -}}admin:
+admin:
   access_log_path: {{ if .AdminAccessLogPath }}{{ .AdminAccessLogPath }}{{ else }}/dev/null{{ end }}
   address:
     socket_address:
