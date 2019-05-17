@@ -1459,7 +1459,7 @@ func tcpproxy(t *testing.T, statPrefix, cluster string) listener.Filter {
 					Cluster: cluster,
 				},
 				AccessLog:   envoy.FileAccessLog("/dev/stdout"),
-				IdleTimeout: idleTimeout(envoy.TCPDefaultIdleTimeout * time.Second),
+				IdleTimeout: idleTimeout(envoy.TCPDefaultIdleTimeout),
 			}),
 		},
 	}

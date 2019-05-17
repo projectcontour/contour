@@ -29,8 +29,11 @@ import (
 )
 
 // HTTPDefaultIdleTimeout sets the idle timeout for HTTP connections
-// here and in the e2e tests.
-const HTTPDefaultIdleTimeout = 60
+// to 60 seconds. This is chosen as a rough default to stop idle connections
+// wasting resources, without stopping slow connections from being terminated
+// too quickly.
+// Exported so the same value can be used here and in e2e tests.
+const HTTPDefaultIdleTimeout = 60 * time.Second
 
 // TCPDefaultIdleTimeout sets the idle timeout in seconds for
 // connections through a TCP Proxy type filter.
@@ -38,7 +41,7 @@ const HTTPDefaultIdleTimeout = 60
 // https://github.com/heptio/contour/issues/1074
 // Set to 9001 because now it's OVER NINE THOUSAND.
 // Exported so the same value can be used here and in e2e tests.
-const TCPDefaultIdleTimeout = 9001
+const TCPDefaultIdleTimeout = 9001 * time.Second
 
 // TLSInspector returns a new TLS inspector listener filter.
 func TLSInspector() listener.ListenerFilter {
@@ -118,7 +121,7 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 				AccessLog:        FileAccessLog(accessLogPath),
 				UseRemoteAddress: &types.BoolValue{Value: true}, // TODO(jbeda) should this ever be false?
 				NormalizePath:    &types.BoolValue{Value: true},
-				IdleTimeout:      idleTimeout(HTTPDefaultIdleTimeout * time.Second),
+				IdleTimeout:      idleTimeout(HTTPDefaultIdleTimeout),
 			}),
 		},
 	}
@@ -126,7 +129,7 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 
 // TCPProxy creates a new TCPProxy filter.
 func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) listener.Filter {
-	tcpIdleTimeout := idleTimeout(TCPDefaultIdleTimeout * time.Second)
+	tcpIdleTimeout := idleTimeout(TCPDefaultIdleTimeout)
 	switch len(proxy.Clusters) {
 	case 1:
 		return listener.Filter{
