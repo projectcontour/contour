@@ -32,9 +32,6 @@ import (
 func TLSInspector() listener.ListenerFilter {
 	return listener.ListenerFilter{
 		Name: util.TlsInspector,
-		ConfigType: &listener.ListenerFilter_Config{
-			Config: new(types.Struct),
-		},
 	}
 }
 
@@ -42,9 +39,6 @@ func TLSInspector() listener.ListenerFilter {
 func ProxyProtocol() listener.ListenerFilter {
 	return listener.ListenerFilter{
 		Name: util.ProxyProtocol,
-		ConfigType: &listener.ListenerFilter_Config{
-			Config: new(types.Struct),
-		},
 	}
 }
 
