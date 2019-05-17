@@ -261,8 +261,7 @@ func u32nil(val int) *types.UInt32Value {
 	}
 }
 
-// ClusterCommonLBConfig is a helper to return Cluster_CommonLbConfig
-// with the HealthyPanicThreshold disabled.
+// ClusterCommonLBConfig creates a *v2.Cluster_CommonLbConfig with HealthyPanicThreshold disabled.
 func ClusterCommonLBConfig() *v2.Cluster_CommonLbConfig {
 	return &v2.Cluster_CommonLbConfig{
 		HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
