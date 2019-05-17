@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
@@ -27,7 +27,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
 	"github.com/heptio/contour/internal/dag"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -240,7 +240,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						AccessLog:        FileAccessLog("/dev/stdout"),
 						UseRemoteAddress: &types.BoolValue{Value: true},
 						NormalizePath:    &types.BoolValue{Value: true},
-						IdleTimeout:      duration(60 * time.Second),
+						IdleTimeout:      duration(HTTPDefaultIdleTimeout * time.Second),
 					}),
 				},
 			},
@@ -302,7 +302,8 @@ func TestTCPProxy(t *testing.T) {
 						ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
 							Cluster: Clustername(c1),
 						},
-						AccessLog: FileAccessLog(accessLogPath),
+						AccessLog:   FileAccessLog(accessLogPath),
+						IdleTimeout: idleTimeout(TCPDefaultIdleTimeout * time.Second),
 					}),
 				},
 			},
@@ -327,7 +328,8 @@ func TestTCPProxy(t *testing.T) {
 								}},
 							},
 						},
-						AccessLog: FileAccessLog(accessLogPath),
+						AccessLog:   FileAccessLog(accessLogPath),
+						IdleTimeout: idleTimeout(TCPDefaultIdleTimeout * time.Second),
 					}),
 				},
 			},
