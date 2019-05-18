@@ -1,0 +1,18 @@
+
+<div class="alert alert-primary" role="alert">
+  {% if page.version == site.latest' %}
+    <p>
+    <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+    This is the documentation for the latest development version of Contour. Both code and docs may be
+    unstable, and these docs are not guaranteed to be up to date or correct. See the
+    <a href="{{latest_url}}">latest version</a>.
+    </p>
+  {% else %}
+    <p>
+    <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+    Documentation for version {{ page.version }} is no longer actively maintained.
+    The version you are currently viewing is a static snapshot.
+    For up-to-date documentation, see the <a href="{{latest_url}}">latest version</a>.
+    </p>
+  {% endif %}
+</div>
