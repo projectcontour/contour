@@ -16,6 +16,7 @@ package e2e
 import (
 	"context"
 	"testing"
+	"time"
 
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 
@@ -1448,6 +1449,7 @@ func tcpproxy(t *testing.T, statPrefix, cluster string) listener.Filter {
 		check(t, err)
 		return any
 	}
+
 	return listener.Filter{
 		Name: util.TCPProxy,
 		ConfigType: &listener.Filter_TypedConfig{
@@ -1456,7 +1458,8 @@ func tcpproxy(t *testing.T, statPrefix, cluster string) listener.Filter {
 				ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
 					Cluster: cluster,
 				},
-				AccessLog: envoy.FileAccessLog("/dev/stdout"),
+				AccessLog:   envoy.FileAccessLog("/dev/stdout"),
+				IdleTimeout: idleTimeout(envoy.TCPDefaultIdleTimeout),
 			}),
 		},
 	}
@@ -1464,4 +1467,8 @@ func tcpproxy(t *testing.T, statPrefix, cluster string) listener.Filter {
 
 func staticListener() *v2.Listener {
 	return envoy.StatsListener(statsAddress, statsPort)
+}
+
+func idleTimeout(d time.Duration) *time.Duration {
+	return &d
 }

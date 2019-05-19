@@ -17,7 +17,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
@@ -27,6 +27,21 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
 )
+
+// HTTPDefaultIdleTimeout sets the idle timeout for HTTP connections
+// to 60 seconds. This is chosen as a rough default to stop idle connections
+// wasting resources, without stopping slow connections from being terminated
+// too quickly.
+// Exported so the same value can be used here and in e2e tests.
+const HTTPDefaultIdleTimeout = 60 * time.Second
+
+// TCPDefaultIdleTimeout sets the idle timeout in seconds for
+// connections through a TCP Proxy type filter.
+// It's defaulted to two and a half hours for reasons documented at
+// https://github.com/heptio/contour/issues/1074
+// Set to 9001 because now it's OVER NINE THOUSAND.
+// Exported so the same value can be used here and in e2e tests.
+const TCPDefaultIdleTimeout = 9001 * time.Second
 
 // TLSInspector returns a new TLS inspector listener filter.
 func TLSInspector() listener.ListenerFilter {
@@ -60,12 +75,13 @@ func Listener(name, address string, port int, lf []listener.ListenerFilter, filt
 	return l
 }
 
+func idleTimeout(d time.Duration) *time.Duration {
+	return &d
+}
+
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
 // for the supplied route and access log.
 func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
-	duration := func(d time.Duration) *time.Duration {
-		return &d
-	}
 	return listener.Filter{
 		Name: util.HTTPConnectionManager,
 		ConfigType: &listener.Filter_TypedConfig{
@@ -105,7 +121,7 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 				AccessLog:        FileAccessLog(accessLogPath),
 				UseRemoteAddress: &types.BoolValue{Value: true}, // TODO(jbeda) should this ever be false?
 				NormalizePath:    &types.BoolValue{Value: true},
-				IdleTimeout:      duration(60 * time.Second),
+				IdleTimeout:      idleTimeout(HTTPDefaultIdleTimeout),
 			}),
 		},
 	}
@@ -113,6 +129,7 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 
 // TCPProxy creates a new TCPProxy filter.
 func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) listener.Filter {
+	tcpIdleTimeout := idleTimeout(TCPDefaultIdleTimeout)
 	switch len(proxy.Clusters) {
 	case 1:
 		return listener.Filter{
@@ -123,7 +140,8 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) list
 					ClusterSpecifier: &tcp.TcpProxy_Cluster{
 						Cluster: Clustername(proxy.Clusters[0]),
 					},
-					AccessLog: FileAccessLog(accessLogPath),
+					AccessLog:   FileAccessLog(accessLogPath),
+					IdleTimeout: tcpIdleTimeout,
 				}),
 			},
 		}
@@ -150,7 +168,8 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) list
 							Clusters: clusters,
 						},
 					},
-					AccessLog: FileAccessLog(accessLogPath),
+					AccessLog:   FileAccessLog(accessLogPath),
+					IdleTimeout: tcpIdleTimeout,
 				}),
 			},
 		}
