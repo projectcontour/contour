@@ -87,23 +87,23 @@ type resource interface {
 }
 
 func (s *grpcServer) FetchClusters(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return s.fetch(req)
+	return nil, status.Errorf(codes.Unimplemented, "FetchClusters unimplemented")
 }
 
 func (s *grpcServer) FetchEndpoints(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return s.fetch(req)
+	return nil, status.Errorf(codes.Unimplemented, "FetchEndpoints unimplemented")
 }
 
 func (s *grpcServer) FetchListeners(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return s.fetch(req)
+	return nil, status.Errorf(codes.Unimplemented, "FetchListeners unimplemented")
 }
 
 func (s *grpcServer) FetchRoutes(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return s.fetch(req)
+	return nil, status.Errorf(codes.Unimplemented, "FetchRoutes unimplemented")
 }
 
 func (s *grpcServer) FetchSecrets(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return s.fetch(req)
+	return nil, status.Errorf(codes.Unimplemented, "FetchSecrets unimplemented")
 }
 
 func (s *grpcServer) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) error {

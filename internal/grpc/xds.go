@@ -32,22 +32,6 @@ type xdsHandler struct {
 	resources   map[string]resource // registered resource types
 }
 
-// fetch handles a single DiscoveryRequest.
-func (xh *xdsHandler) fetch(req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	xh.WithField("connection", xh.connections.next()).WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail).Info("fetch")
-	r, ok := xh.resources[req.TypeUrl]
-	if !ok {
-		return nil, fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl)
-	}
-	resources, err := toAny(r, toFilter(req.ResourceNames))
-	return &v2.DiscoveryResponse{
-		VersionInfo: "0",
-		Resources:   resources,
-		TypeUrl:     r.TypeURL(),
-		Nonce:       "0",
-	}, err
-}
-
 type grpcStream interface {
 	Context() context.Context
 	Send(*v2.DiscoveryResponse) error

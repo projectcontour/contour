@@ -159,46 +159,6 @@ func TestGRPC(t *testing.T) {
 			checkrecv(t, stream)          // check we receive one notification
 			checktimeout(t, stream)       // check that the second receive times out
 		},
-		"FetchClusters": func(t *testing.T, cc *grpc.ClientConn) {
-			sds := v2.NewClusterDiscoveryServiceClient(cc)
-			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-			defer cancel()
-			req := &v2.DiscoveryRequest{
-				TypeUrl: clusterType,
-			}
-			_, err := sds.FetchClusters(ctx, req)
-			check(t, err)
-		},
-		"FetchEndpoints": func(t *testing.T, cc *grpc.ClientConn) {
-			eds := v2.NewEndpointDiscoveryServiceClient(cc)
-			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-			defer cancel()
-			req := &v2.DiscoveryRequest{
-				TypeUrl: endpointType,
-			}
-			_, err := eds.FetchEndpoints(ctx, req)
-			check(t, err)
-		},
-		"FetchListeners": func(t *testing.T, cc *grpc.ClientConn) {
-			lds := v2.NewListenerDiscoveryServiceClient(cc)
-			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-			defer cancel()
-			req := &v2.DiscoveryRequest{
-				TypeUrl: listenerType,
-			}
-			_, err := lds.FetchListeners(ctx, req)
-			check(t, err)
-		},
-		"FetchRoutes": func(t *testing.T, cc *grpc.ClientConn) {
-			rds := v2.NewRouteDiscoveryServiceClient(cc)
-			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-			defer cancel()
-			req := &v2.DiscoveryRequest{
-				TypeUrl: routeType,
-			}
-			_, err := rds.FetchRoutes(ctx, req)
-			check(t, err)
-		},
 	}
 
 	log := logrus.New()
