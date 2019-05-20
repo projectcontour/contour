@@ -18,6 +18,7 @@ import (
 	"sync"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/gogo/protobuf/proto"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
@@ -92,7 +93,7 @@ func (s secretsByName) Less(i, j int) bool {
 	return s[i].(*auth.Secret).Name < s[j].(*auth.Secret).Name
 }
 
-func (*SecretCache) TypeURL() string { return secretType }
+func (*SecretCache) TypeURL() string { return cache.SecretType }
 
 type secretVisitor struct {
 	secrets map[string]*auth.Secret
