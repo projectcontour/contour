@@ -5,11 +5,9 @@ go 1.12
 require (
 	cloud.google.com/go v0.37.4 // indirect
 	github.com/client9/misspell v0.3.4
-	github.com/envoyproxy/go-control-plane v0.7.1
-	github.com/envoyproxy/protoc-gen-validate v0.0.14 // indirect
+	github.com/envoyproxy/go-control-plane v0.8.0
 	github.com/evanphx/json-patch v4.1.0+incompatible
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/gogo/googleapis v1.1.0 // indirect
 	github.com/gogo/protobuf v1.2.1
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/google/go-cmp v0.2.0
@@ -31,9 +29,7 @@ require (
 	github.com/sirupsen/logrus v1.4.1
 	github.com/spf13/pflag v1.0.3 // indirect
 	golang.org/x/crypto v0.0.0-20190404164418-38d8ce5564a5 // indirect
-	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3 // indirect
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a // indirect
-	golang.org/x/sys v0.0.0-20190405154228-4b34438f7a67 // indirect
 	golang.org/x/tools v0.0.0-20190328211700-ab21143f2384 // indirect
 	google.golang.org/grpc v1.19.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
