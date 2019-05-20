@@ -32,7 +32,7 @@ const (
 )
 
 // NewAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
-func NewAPI(log logrus.FieldLogger, cacheMap map[string]Cache) *grpc.Server {
+func NewAPI(log logrus.FieldLogger, resources map[string]Resource) *grpc.Server {
 	opts := []grpc.ServerOption{
 		// By default the Go grpc library defaults to a value of ~100 streams per
 		// connection. This number is likely derived from the HTTP/2 spec:
@@ -46,21 +46,21 @@ func NewAPI(log logrus.FieldLogger, cacheMap map[string]Cache) *grpc.Server {
 	s := &grpcServer{
 		xdsHandler{
 			FieldLogger: log,
-			resources: map[string]Cache{
+			resources: map[string]Resource{
 				cache.ClusterType: &CDS{
-					Cache: cacheMap[cache.ClusterType],
+					Resource: resources[cache.ClusterType],
 				},
 				cache.EndpointType: &EDS{
-					Cache: cacheMap[cache.EndpointType],
+					Resource: resources[cache.EndpointType],
 				},
 				cache.ListenerType: &LDS{
-					Cache: cacheMap[cache.ListenerType],
+					Resource: resources[cache.ListenerType],
 				},
 				cache.RouteType: &RDS{
-					Cache: cacheMap[cache.RouteType],
+					Resource: resources[cache.RouteType],
 				},
 				cache.SecretType: &SDS{
-					Cache: cacheMap[cache.SecretType],
+					Resource: resources[cache.SecretType],
 				},
 			},
 		},

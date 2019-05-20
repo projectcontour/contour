@@ -199,7 +199,7 @@ func TestGRPC(t *testing.T) {
 				Metrics:     ch.Metrics,
 				FieldLogger: log,
 			}
-			srv := NewAPI(log, map[string]Cache{
+			srv := NewAPI(log, map[string]Resource{
 				ch.ClusterCache.TypeURL():  &ch.ClusterCache,
 				ch.RouteCache.TypeURL():    &ch.RouteCache,
 				ch.ListenerCache.TypeURL(): &ch.ListenerCache,
