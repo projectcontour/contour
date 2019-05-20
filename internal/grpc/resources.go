@@ -22,11 +22,11 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
-// cache represents a source of proto.Message valus that can be registered
+// Resource represents a source of proto.Messages that can be registered
 // for interest.
-type Cache interface {
+type Resource interface {
 	// Values returns a slice of proto.Message implementations that match
-	// the provided filter.
+	// the filter function.
 	Values(func(string) bool) []proto.Message
 
 	// Register registers ch to receive a value when Notify is called.
@@ -38,12 +38,12 @@ type Cache interface {
 
 // CDS implements the CDS v2 gRPC API.
 type CDS struct {
-	Cache
+	Resource
 }
 
 // Values returns a sorted list of Clusters.
 func (c *CDS) Values(filter func(string) bool) []proto.Message {
-	v := c.Cache.Values(filter)
+	v := c.Resource.Values(filter)
 	sort.Stable(clusterByName(v))
 	return v
 }
@@ -56,12 +56,12 @@ func (c clusterByName) Less(i, j int) bool { return c[i].(*v2.Cluster).Name < c[
 
 // EDS implements the EDS v2 gRPC API.
 type EDS struct {
-	Cache
+	Resource
 }
 
 // Values returns a sorted list of ClusterLoadAssignments.
 func (e *EDS) Values(filter func(string) bool) []proto.Message {
-	v := e.Cache.Values(filter)
+	v := e.Resource.Values(filter)
 	sort.Stable(clusterLoadAssignmentsByName(v))
 	return v
 }
@@ -76,12 +76,12 @@ func (c clusterLoadAssignmentsByName) Less(i, j int) bool {
 
 // LDS implements the LDS v2 gRPC API.
 type LDS struct {
-	Cache
+	Resource
 }
 
 // Values returns a sorted list of Listeners.
 func (l *LDS) Values(filter func(string) bool) []proto.Message {
-	v := l.Cache.Values(filter)
+	v := l.Resource.Values(filter)
 	sort.Stable(listenersByName(v))
 	return v
 }
@@ -96,12 +96,12 @@ func (l listenersByName) Less(i, j int) bool {
 
 // RDS implements the RDS v2 gRPC API.
 type RDS struct {
-	Cache
+	Resource
 }
 
 // Values returns a sorted list of RouteConfigurations.
 func (r *RDS) Values(filter func(string) bool) []proto.Message {
-	v := r.Cache.Values(filter)
+	v := r.Resource.Values(filter)
 	sort.Stable(routeConfigurationsByName(v))
 	return v
 }
@@ -114,14 +114,14 @@ func (r routeConfigurationsByName) Less(i, j int) bool {
 	return r[i].(*v2.RouteConfiguration).Name < r[j].(*v2.RouteConfiguration).Name
 }
 
-// SDS implements the RDS v2 gRPC API.
+// SDS implements the SDS v2 gRPC API.
 type SDS struct {
-	Cache
+	Resource
 }
 
 // Values returns a sorted list of RouteConfigurations.
 func (s *SDS) Values(filter func(string) bool) []proto.Message {
-	v := s.Cache.Values(filter)
+	v := s.Resource.Values(filter)
 	sort.Stable(secretsByName(v))
 	return v
 }

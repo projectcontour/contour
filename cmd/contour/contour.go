@@ -220,22 +220,12 @@ func main() {
 				return err
 			}
 
-			// Resource types in xDS v2.
-			const (
-				googleApis   = "type.googleapis.com/"
-				typePrefix   = googleApis + "envoy.api.v2."
-				endpointType = typePrefix + "ClusterLoadAssignment"
-				clusterType  = typePrefix + "Cluster"
-				routeType    = typePrefix + "RouteConfiguration"
-				listenerType = typePrefix + "Listener"
-				secretType   = typePrefix + "auth.Secret"
-			)
-			s := grpc.NewAPI(log, map[string]grpc.Cache{
-				clusterType:  &ch.ClusterCache,
-				routeType:    &ch.RouteCache,
-				listenerType: &ch.ListenerCache,
-				endpointType: et,
-				secretType:   &ch.SecretCache,
+			s := grpc.NewAPI(log, map[string]grpc.Resource{
+				ch.ClusterCache.TypeURL():  &ch.ClusterCache,
+				ch.RouteCache.TypeURL():    &ch.RouteCache,
+				ch.ListenerCache.TypeURL(): &ch.ListenerCache,
+				et.TypeURL():               et,
+				ch.SecretCache.TypeURL():   &ch.SecretCache,
 			})
 			log.Println("started")
 			defer log.Println("stopped")
