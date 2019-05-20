@@ -26,46 +26,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func TestXDSHandlerFetch(t *testing.T) {
-	log := logrus.New()
-	log.SetOutput(ioutil.Discard)
-	tests := map[string]struct {
-		xh   xdsHandler
-		req  *v2.DiscoveryRequest
-		want error
-	}{
-		"no registered typeURL": {
-			xh:   xdsHandler{FieldLogger: log},
-			req:  &v2.DiscoveryRequest{TypeUrl: "com.heptio.potato"},
-			want: fmt.Errorf("no resource registered for typeURL %q", "com.heptio.potato"),
-		},
-		"failed to convert values to any": {
-			xh: xdsHandler{
-				FieldLogger: log,
-				resources: map[string]resource{
-					"com.heptio.potato": &mockResource{
-						values: func(fn func(string) bool) []proto.Message {
-							return []proto.Message{nil}
-						},
-						typeurl: func() string { return "com.heptio.potato" },
-					},
-				},
-			},
-			req:  &v2.DiscoveryRequest{TypeUrl: "com.heptio.potato"},
-			want: fmt.Errorf("proto: Marshal called with nil"),
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			_, got := tc.xh.fetch(tc.req)
-			if !equalError(tc.want, got) {
-				t.Fatalf("expected: %v, got: %v", tc.want, got)
-			}
-		})
-	}
-}
-
 func TestXDSHandlerStream(t *testing.T) {
 	log := logrus.New()
 	log.SetOutput(ioutil.Discard)
