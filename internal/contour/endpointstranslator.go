@@ -14,10 +14,12 @@
 package contour
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
+	"github.com/gogo/protobuf/proto"
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
@@ -65,6 +67,20 @@ func (e *EndpointsTranslator) OnDelete(obj interface{}) {
 	default:
 		e.Errorf("OnDelete unexpected type %T: %#v", obj, obj)
 	}
+}
+
+func (e *EndpointsTranslator) Values(filter func(string) bool) []proto.Message {
+	values := e.clusterLoadAssignmentCache.Values(filter)
+	sort.Stable(clusterLoadAssignmentsByName(values))
+	return values
+}
+
+type clusterLoadAssignmentsByName []proto.Message
+
+func (c clusterLoadAssignmentsByName) Len() int      { return len(c) }
+func (c clusterLoadAssignmentsByName) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
+func (c clusterLoadAssignmentsByName) Less(i, j int) bool {
+	return c[i].(*v2.ClusterLoadAssignment).ClusterName < c[j].(*v2.ClusterLoadAssignment).ClusterName
 }
 
 func (*EndpointsTranslator) TypeURL() string { return endpointType }

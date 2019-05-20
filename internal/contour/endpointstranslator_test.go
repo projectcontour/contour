@@ -15,7 +15,6 @@ package contour
 
 import (
 	"reflect"
-	"sort"
 	"testing"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -68,7 +67,6 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 			}
 			et.OnAdd(tc.ep)
 			got := contents(et)
-			sort.Stable(clusterLoadAssignmentsByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("got: %v, want: %v", got, tc.want)
 			}
@@ -157,7 +155,6 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 			tc.setup(et)
 			et.OnDelete(tc.ep)
 			got := contents(et)
-			sort.Stable(clusterLoadAssignmentsByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("\nwant: %v\n got: %v", tc.want, got)
 			}
@@ -223,7 +220,6 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 			var et EndpointsTranslator
 			et.recomputeClusterLoadAssignment(tc.oldep, tc.newep)
 			got := contents(&et)
-			sort.Stable(clusterLoadAssignmentsByName(got))
 			if !reflect.DeepEqual(tc.want, got) {
 				t.Fatalf("expected:\n%v\ngot:\n%v", tc.want, got)
 			}
@@ -268,12 +264,4 @@ func clusterloadassignment(name string, lbendpoints ...endpoint.LbEndpoint) *v2.
 			LbEndpoints: lbendpoints,
 		}},
 	}
-}
-
-type clusterLoadAssignmentsByName []proto.Message
-
-func (c clusterLoadAssignmentsByName) Len() int      { return len(c) }
-func (c clusterLoadAssignmentsByName) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
-func (c clusterLoadAssignmentsByName) Less(i, j int) bool {
-	return c[i].(*v2.ClusterLoadAssignment).ClusterName < c[j].(*v2.ClusterLoadAssignment).ClusterName
 }
