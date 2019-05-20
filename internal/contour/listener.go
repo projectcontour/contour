@@ -17,8 +17,9 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/gogo/protobuf/proto"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
@@ -205,7 +206,7 @@ func (l listenersByName) Less(i, j int) bool {
 	return l[i].(*v2.Listener).Name < l[j].(*v2.Listener).Name
 }
 
-func (*ListenerCache) TypeURL() string { return listenerType }
+func (*ListenerCache) TypeURL() string { return cache.ListenerType }
 
 type listenerVisitor struct {
 	*ListenerVisitorConfig
