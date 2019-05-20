@@ -82,7 +82,16 @@ func (c *RouteCache) Values(filter func(string) bool) []proto.Message {
 		}
 	}
 	c.mu.Unlock()
+	sort.Stable(routeConfigurationsByName(values))
 	return values
+}
+
+type routeConfigurationsByName []proto.Message
+
+func (r routeConfigurationsByName) Len() int      { return len(r) }
+func (r routeConfigurationsByName) Swap(i, j int) { r[i], r[j] = r[j], r[i] }
+func (r routeConfigurationsByName) Less(i, j int) bool {
+	return r[i].(*v2.RouteConfiguration).Name < r[j].(*v2.RouteConfiguration).Name
 }
 
 func (*RouteCache) TypeURL() string { return routeType }

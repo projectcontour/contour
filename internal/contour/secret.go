@@ -14,6 +14,7 @@
 package contour
 
 import (
+	"sort"
 	"sync"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
@@ -79,7 +80,16 @@ func (c *SecretCache) Values(filter func(string) bool) []proto.Message {
 		}
 	}
 	c.mu.Unlock()
+	sort.Stable(secretsByName(values))
 	return values
+}
+
+type secretsByName []proto.Message
+
+func (s secretsByName) Len() int      { return len(s) }
+func (s secretsByName) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s secretsByName) Less(i, j int) bool {
+	return s[i].(*auth.Secret).Name < s[j].(*auth.Secret).Name
 }
 
 func (*SecretCache) TypeURL() string { return secretType }
