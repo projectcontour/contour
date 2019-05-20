@@ -14,6 +14,7 @@
 package contour
 
 import (
+	"sort"
 	"sync"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -177,7 +178,16 @@ func (c *ListenerCache) Values(filter func(string) bool) []proto.Message {
 		}
 	}
 	c.mu.Unlock()
+	sort.Stable(listenersByName(values))
 	return values
+}
+
+type listenersByName []proto.Message
+
+func (l listenersByName) Len() int      { return len(l) }
+func (l listenersByName) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
+func (l listenersByName) Less(i, j int) bool {
+	return l[i].(*v2.Listener).Name < l[j].(*v2.Listener).Name
 }
 
 func (*ListenerCache) TypeURL() string { return listenerType }

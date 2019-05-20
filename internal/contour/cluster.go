@@ -14,6 +14,7 @@
 package contour
 
 import (
+	"sort"
 	"sync"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -79,8 +80,15 @@ func (c *ClusterCache) Values(filter func(string) bool) []proto.Message {
 		}
 	}
 	c.mu.Unlock()
+	sort.Stable(clusterByName(values))
 	return values
 }
+
+type clusterByName []proto.Message
+
+func (c clusterByName) Len() int           { return len(c) }
+func (c clusterByName) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
+func (c clusterByName) Less(i, j int) bool { return c[i].(*v2.Cluster).Name < c[j].(*v2.Cluster).Name }
 
 func (*ClusterCache) TypeURL() string { return clusterType }
 

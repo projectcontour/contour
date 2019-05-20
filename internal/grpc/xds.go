@@ -25,6 +25,20 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Resource represents a source of proto.Messages that can be registered
+// for interest.
+type Resource interface {
+	// Values returns a slice of proto.Message implementations that match
+	// the filter function.
+	Values(func(string) bool) []proto.Message
+
+	// Register registers ch to receive a value when Notify is called.
+	Register(chan int, int)
+
+	// TypeURL returns the typeURL of messages returned from Values.
+	TypeURL() string
+}
+
 // xdsHandler implements the Envoy xDS gRPC protocol.
 type xdsHandler struct {
 	logrus.FieldLogger

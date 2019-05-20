@@ -22,7 +22,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	loadstats "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
-	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/sirupsen/logrus"
 )
 
@@ -46,23 +45,7 @@ func NewAPI(log logrus.FieldLogger, resources map[string]Resource) *grpc.Server 
 	s := &grpcServer{
 		xdsHandler{
 			FieldLogger: log,
-			resources: map[string]Resource{
-				cache.ClusterType: &CDS{
-					Resource: resources[cache.ClusterType],
-				},
-				cache.EndpointType: &EDS{
-					Resource: resources[cache.EndpointType],
-				},
-				cache.ListenerType: &LDS{
-					Resource: resources[cache.ListenerType],
-				},
-				cache.RouteType: &RDS{
-					Resource: resources[cache.RouteType],
-				},
-				cache.SecretType: &SDS{
-					Resource: resources[cache.SecretType],
-				},
-			},
+			resources:   resources,
 		},
 	}
 
