@@ -59,7 +59,7 @@ func TestXDSHandlerStream(t *testing.T) {
 		"failed to convert values to any": {
 			xh: xdsHandler{
 				FieldLogger: log,
-				resources: map[string]resource{
+				resources: map[string]Cache{
 					"com.heptio.potato": &mockResource{
 						register: func(ch chan int, i int) {
 							ch <- i + 1
@@ -83,7 +83,7 @@ func TestXDSHandlerStream(t *testing.T) {
 		"failed to send": {
 			xh: xdsHandler{
 				FieldLogger: log,
-				resources: map[string]resource{
+				resources: map[string]Cache{
 					"com.heptio.potato": &mockResource{
 						register: func(ch chan int, i int) {
 							ch <- i + 1
@@ -111,7 +111,7 @@ func TestXDSHandlerStream(t *testing.T) {
 		"context canceled": {
 			xh: xdsHandler{
 				FieldLogger: log,
-				resources: map[string]resource{
+				resources: map[string]Cache{
 					"com.heptio.potato": &mockResource{
 						register: func(ch chan int, i int) {
 							// do nothing

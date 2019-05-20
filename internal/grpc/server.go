@@ -46,7 +46,7 @@ func NewAPI(log logrus.FieldLogger, cacheMap map[string]Cache) *grpc.Server {
 	s := &grpcServer{
 		xdsHandler{
 			FieldLogger: log,
-			resources: map[string]resource{
+			resources: map[string]Cache{
 				cache.ClusterType: &CDS{
 					Cache: cacheMap[cache.ClusterType],
 				},
@@ -77,11 +77,6 @@ func NewAPI(log logrus.FieldLogger, cacheMap map[string]Cache) *grpc.Server {
 // grpcServer implements the LDS, RDS, CDS, and EDS, gRPC endpoints.
 type grpcServer struct {
 	xdsHandler
-}
-
-// A resource provides resources formatted as []types.Any.
-type resource interface {
-	Cache
 }
 
 func (s *grpcServer) FetchClusters(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
