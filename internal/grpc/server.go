@@ -22,6 +22,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	loadstats "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
+	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/sirupsen/logrus"
 )
 
@@ -46,20 +47,20 @@ func NewAPI(log logrus.FieldLogger, cacheMap map[string]Cache) *grpc.Server {
 		xdsHandler{
 			FieldLogger: log,
 			resources: map[string]resource{
-				clusterType: &CDS{
-					Cache: cacheMap[clusterType],
+				cache.ClusterType: &CDS{
+					Cache: cacheMap[cache.ClusterType],
 				},
-				endpointType: &EDS{
-					Cache: cacheMap[endpointType],
+				cache.EndpointType: &EDS{
+					Cache: cacheMap[cache.EndpointType],
 				},
-				listenerType: &LDS{
-					Cache: cacheMap[listenerType],
+				cache.ListenerType: &LDS{
+					Cache: cacheMap[cache.ListenerType],
 				},
-				routeType: &RDS{
-					Cache: cacheMap[routeType],
+				cache.RouteType: &RDS{
+					Cache: cacheMap[cache.RouteType],
 				},
-				secretType: &SDS{
-					Cache: cacheMap[secretType],
+				cache.SecretType: &SDS{
+					Cache: cacheMap[cache.SecretType],
 				},
 			},
 		},
@@ -81,9 +82,6 @@ type grpcServer struct {
 // A resource provides resources formatted as []types.Any.
 type resource interface {
 	Cache
-
-	// TypeURL returns the typeURL of messages returned from Values.
-	TypeURL() string
 }
 
 func (s *grpcServer) FetchClusters(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {

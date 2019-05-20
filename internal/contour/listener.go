@@ -180,6 +180,8 @@ func (c *ListenerCache) Values(filter func(string) bool) []proto.Message {
 	return values
 }
 
+func (*ListenerCache) TypeURL() string { return listenerType }
+
 type listenerVisitor struct {
 	*ListenerVisitorConfig
 
