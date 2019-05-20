@@ -67,6 +67,8 @@ func (e *EndpointsTranslator) OnDelete(obj interface{}) {
 	}
 }
 
+func (*EndpointsTranslator) TypeURL() string { return endpointType }
+
 func (e *EndpointsTranslator) addEndpoints(ep *v1.Endpoints) {
 	e.recomputeClusterLoadAssignment(nil, ep)
 }

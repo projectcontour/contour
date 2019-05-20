@@ -29,7 +29,7 @@ import (
 type xdsHandler struct {
 	logrus.FieldLogger
 	connections counter
-	resources   map[string]resource // registered resource types
+	resources   map[string]Resource // registered resource types
 }
 
 type grpcStream interface {
@@ -122,7 +122,7 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 
 // toAny converts the contents of a resourcer's Values to the
 // respective slice of types.Any.
-func toAny(res resource, filter func(string) bool) ([]types.Any, error) {
+func toAny(res Resource, filter func(string) bool) ([]types.Any, error) {
 	v := res.Values(filter)
 	resources := make([]types.Any, len(v))
 	for i := range v {

@@ -82,6 +82,8 @@ func (c *SecretCache) Values(filter func(string) bool) []proto.Message {
 	return values
 }
 
+func (*SecretCache) TypeURL() string { return secretType }
+
 type secretVisitor struct {
 	secrets map[string]*auth.Secret
 }

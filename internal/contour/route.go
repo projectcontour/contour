@@ -85,6 +85,8 @@ func (c *RouteCache) Values(filter func(string) bool) []proto.Message {
 	return values
 }
 
+func (*RouteCache) TypeURL() string { return routeType }
+
 type routeVisitor struct {
 	routes map[string]*v2.RouteConfiguration
 }

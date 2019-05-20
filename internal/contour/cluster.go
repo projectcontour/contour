@@ -82,6 +82,8 @@ func (c *ClusterCache) Values(filter func(string) bool) []proto.Message {
 	return values
 }
 
+func (*ClusterCache) TypeURL() string { return clusterType }
+
 type clusterVisitor struct {
 	clusters map[string]*v2.Cluster
 }
