@@ -18,17 +18,8 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	"github.com/envoyproxy/go-control-plane/pkg/cache"
 
 	"github.com/gogo/protobuf/proto"
-)
-
-const (
-	endpointType = cache.EndpointType
-	clusterType  = cache.ClusterType
-	routeType    = cache.RouteType
-	listenerType = cache.ListenerType
-	secretType   = cache.SecretType
 )
 
 // cache represents a source of proto.Message valus that can be registered
@@ -40,6 +31,9 @@ type Cache interface {
 
 	// Register registers ch to receive a value when Notify is called.
 	Register(chan int, int)
+
+	// TypeURL returns the typeURL of messages returned from Values.
+	TypeURL() string
 }
 
 // CDS implements the CDS v2 gRPC API.
@@ -53,8 +47,6 @@ func (c *CDS) Values(filter func(string) bool) []proto.Message {
 	sort.Stable(clusterByName(v))
 	return v
 }
-
-func (c *CDS) TypeURL() string { return clusterType }
 
 type clusterByName []proto.Message
 
@@ -73,8 +65,6 @@ func (e *EDS) Values(filter func(string) bool) []proto.Message {
 	sort.Stable(clusterLoadAssignmentsByName(v))
 	return v
 }
-
-func (e *EDS) TypeURL() string { return endpointType }
 
 type clusterLoadAssignmentsByName []proto.Message
 
@@ -96,8 +86,6 @@ func (l *LDS) Values(filter func(string) bool) []proto.Message {
 	return v
 }
 
-func (l *LDS) TypeURL() string { return listenerType }
-
 type listenersByName []proto.Message
 
 func (l listenersByName) Len() int      { return len(l) }
@@ -118,8 +106,6 @@ func (r *RDS) Values(filter func(string) bool) []proto.Message {
 	return v
 }
 
-func (r *RDS) TypeURL() string { return routeType }
-
 type routeConfigurationsByName []proto.Message
 
 func (r routeConfigurationsByName) Len() int      { return len(r) }
@@ -139,8 +125,6 @@ func (s *SDS) Values(filter func(string) bool) []proto.Message {
 	sort.Stable(secretsByName(v))
 	return v
 }
-
-func (s *SDS) TypeURL() string { return secretType }
 
 type secretsByName []proto.Message
 
