@@ -20,7 +20,7 @@ test-race: | test
 vet: | test
 	go vet ./...
 
-check: test test-race vet gofmt staticcheck misspell unconvert ineffassign
+check: test test-race vet gofmt staticcheck misspell unconvert unparam ineffassign
 	@echo Checking rendered files are up to date
 	@(cd deployment && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 
@@ -77,11 +77,11 @@ ineffassign:
 	go install github.com/gordonklaus/ineffassign
 	find $(SRCDIRS) -name '*.go' | xargs ineffassign
 
-pedantic: check unparam errcheck
+pedantic: check errcheck
 
 unparam:
 	go install mvdan.cc/unparam
-	unparam ./...
+	unparam -exported $(PKGS)
 
 errcheck:
 	go install github.com/kisielk/errcheck
