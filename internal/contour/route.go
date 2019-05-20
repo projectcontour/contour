@@ -17,8 +17,9 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
@@ -94,7 +95,7 @@ func (r routeConfigurationsByName) Less(i, j int) bool {
 	return r[i].(*v2.RouteConfiguration).Name < r[j].(*v2.RouteConfiguration).Name
 }
 
-func (*RouteCache) TypeURL() string { return routeType }
+func (*RouteCache) TypeURL() string { return cache.RouteType }
 
 type routeVisitor struct {
 	routes map[string]*v2.RouteConfiguration
