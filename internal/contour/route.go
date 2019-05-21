@@ -75,21 +75,28 @@ func (c *RouteCache) notify() {
 
 // Contents returns a copy of the cache's contents.
 func (c *RouteCache) Contents() []proto.Message {
-	return c.contents(func(string) bool { return true })
-}
-
-func (c *RouteCache) Query(names []string) []proto.Message {
-	return c.contents(tofilter(names))
-}
-
-func (c *RouteCache) contents(filter func(string) bool) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	var values []proto.Message
 	for _, v := range c.values {
-		if filter(v.Name) {
-			values = append(values, v)
+		values = append(values, v)
+	}
+	sort.Stable(routeConfigurationsByName(values))
+	return values
+}
+
+func (c *RouteCache) Query(names []string) []proto.Message {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	var values []proto.Message
+	for _, n := range names {
+		v, ok := c.values[n]
+		if !ok {
+			v = &v2.RouteConfiguration{
+				Name: n,
+			}
 		}
+		values = append(values, v)
 	}
 	sort.Stable(routeConfigurationsByName(values))
 	return values
