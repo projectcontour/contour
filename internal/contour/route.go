@@ -92,6 +92,11 @@ func (c *RouteCache) Query(names []string) []proto.Message {
 	for _, n := range names {
 		v, ok := c.values[n]
 		if !ok {
+			// if there is no route registered with the cache
+			// we return a blank route configuration. This is
+			// not the same as returning nil, we're choosing to
+			// say "the configuration you asked for _does exists_,
+			// but it contains no useful information.
 			v = &v2.RouteConfiguration{
 				Name: n,
 			}

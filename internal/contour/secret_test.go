@@ -17,7 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestSecretContents(t *testing.T) {
+func TestSecretCacheContents(t *testing.T) {
 	tests := map[string]struct {
 		contents map[string]*auth.Secret
 		want     []proto.Message
@@ -48,7 +48,7 @@ func TestSecretContents(t *testing.T) {
 	}
 }
 
-func TestSecretQuery(t *testing.T) {
+func TestSecretCacheQuery(t *testing.T) {
 	tests := map[string]struct {
 		contents map[string]*auth.Secret
 		query    []string
