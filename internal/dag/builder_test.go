@@ -179,6 +179,26 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+	i6c := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-vhosts",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"ingress.kubernetes.io/force-ssl-redirect": "true",
+				"kubernetes.io/ingress.allow-http":         "false",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host:             "b.example.com",
+				IngressRuleValue: ingressrulevalue(backend("kuard", intstr.FromString("http"))),
+			}},
+		},
+	}
 
 	// i7 contains a single vhost with two paths
 	i7 := &v1beta1.Ingress{
@@ -1860,6 +1880,25 @@ func TestDAGInsert(t *testing.T) {
 		"insert ingress w/ force-ssl-redirect: true": {
 			objs: []interface{}{
 				i6b, sec1, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("b.example.com", routeUpgrade("/", httpService(s1))),
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("b.example.com", sec1, routeUpgrade("/", httpService(s1))),
+					),
+				},
+			),
+		},
+
+		"insert ingress w/ force-ssl-redirect: true and allow-http: false": {
+			objs: []interface{}{
+				i6c, sec1, s1,
 			},
 			want: listeners(
 				&Listener{

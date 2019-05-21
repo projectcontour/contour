@@ -474,7 +474,7 @@ func (b *builder) computeIngresses() {
 				}
 
 				// should we create port 80 routes for this ingress
-				if httpAllowed(ing) {
+				if tlsRequired(ing) || httpAllowed(ing) {
 					b.lookupVirtualHost(host).addRoute(r)
 				}
 
