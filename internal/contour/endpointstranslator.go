@@ -71,8 +71,25 @@ func (e *EndpointsTranslator) OnDelete(obj interface{}) {
 	}
 }
 
-func (e *EndpointsTranslator) Values(filter func(string) bool) []proto.Message {
-	values := e.clusterLoadAssignmentCache.Values(filter)
+func (e *EndpointsTranslator) Contents() []proto.Message {
+	values := e.clusterLoadAssignmentCache.Contents()
+	sort.Stable(clusterLoadAssignmentsByName(values))
+	return values
+}
+
+func (e *EndpointsTranslator) Query(names []string) []proto.Message {
+	e.clusterLoadAssignmentCache.mu.Lock()
+	defer e.clusterLoadAssignmentCache.mu.Unlock()
+	var values []proto.Message
+	for _, n := range names {
+		v, ok := e.entries[n]
+		if !ok {
+			v = &v2.ClusterLoadAssignment{
+				ClusterName: n,
+			}
+		}
+		values = append(values, v)
+	}
 	sort.Stable(clusterLoadAssignmentsByName(values))
 	return values
 }
@@ -201,16 +218,14 @@ func (c *clusterLoadAssignmentCache) Remove(name string) {
 	delete(c.entries, name)
 }
 
-// Values returns a slice of the value stored in the cache.
-func (c *clusterLoadAssignmentCache) Values(filter func(string) bool) []proto.Message {
+// Contents returns a copy of the contents of the cache.
+func (c *clusterLoadAssignmentCache) Contents() []proto.Message {
 	c.mu.Lock()
-	values := make([]proto.Message, 0, len(c.entries))
-	for n, v := range c.entries {
-		if filter(n) {
-			values = append(values, v)
-		}
+	defer c.mu.Unlock()
+	var values []proto.Message
+	for _, v := range c.entries {
+		values = append(values, v)
 	}
-	c.mu.Unlock()
 	return values
 }
 

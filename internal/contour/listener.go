@@ -180,20 +180,40 @@ func (c *ListenerCache) notify() {
 	c.waiters = c.waiters[:0]
 }
 
-// Values returns a slice of the value stored in the cache.
-func (c *ListenerCache) Values(filter func(string) bool) []proto.Message {
+// Contents returns a copy of the cache's contents.
+func (c *ListenerCache) Contents() []proto.Message {
 	c.mu.Lock()
-	values := make([]proto.Message, 0, len(c.values))
+	defer c.mu.Unlock()
+	var values []proto.Message
 	for _, v := range c.values {
-		if filter(v.Name) {
-			values = append(values, v)
-		}
+		values = append(values, v)
 	}
 	for _, v := range c.staticValues {
 		values = append(values, v)
 	}
+	sort.Stable(listenersByName(values))
+	return values
+}
 
-	c.mu.Unlock()
+func (c *ListenerCache) Query(names []string) []proto.Message {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	var values []proto.Message
+	for _, n := range names {
+		v, ok := c.values[n]
+		if !ok {
+			v, ok = c.staticValues[n]
+			if !ok {
+				// if the listener is not registered in
+				// dynamic or static values then skip it
+				// as there is no way to return a blank
+				// listener because the listener address
+				// field is required.
+				continue
+			}
+		}
+		values = append(values, v)
+	}
 	sort.Stable(listenersByName(values))
 	return values
 }

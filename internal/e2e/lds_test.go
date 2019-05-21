@@ -455,7 +455,6 @@ func TestLDSFilter(t *testing.T) {
 				},
 				FilterChains: filterchaintls("kuard.example.com", s1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
 			}),
-			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "2",
@@ -470,7 +469,6 @@ func TestLDSFilter(t *testing.T) {
 				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: filterchain(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
 			}),
-			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "2",
@@ -479,11 +477,8 @@ func TestLDSFilter(t *testing.T) {
 	// fetch something non existent.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
-		Resources: []types.Any{
-			any(t, staticListener()),
-		},
-		TypeUrl: listenerType,
-		Nonce:   "2",
+		TypeUrl:     listenerType,
+		Nonce:       "2",
 	}, streamLDS(t, cc, "HTTP"))
 }
 
@@ -494,10 +489,8 @@ func TestLDSStreamEmpty(t *testing.T) {
 	// assert that streaming LDS with no ingresses does not stall.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []types.Any{
-			any(t, staticListener()),
-		},
-		TypeUrl: listenerType, Nonce: "0",
+		TypeUrl:     listenerType,
+		Nonce:       "0",
 	}, streamLDS(t, cc, "HTTP"))
 }
 
@@ -548,7 +541,6 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 				},
 				FilterChains: filterchaintls("kuard.example.com", s1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
 			}),
-			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "3",
@@ -589,7 +581,6 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 		VersionInfo: "4",
 		Resources: []types.Any{
 			any(t, l1),
-			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
 		Nonce:   "4",

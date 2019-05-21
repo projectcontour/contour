@@ -17,18 +17,122 @@ import (
 	"testing"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/gogo/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+func TestRouteCacheContents(t *testing.T) {
+	tests := map[string]struct {
+		contents map[string]*v2.RouteConfiguration
+		want     []proto.Message
+	}{
+		"empty": {
+			contents: nil,
+			want:     nil,
+		},
+		"simple": {
+			contents: map[string]*v2.RouteConfiguration{
+				"ingress_http": {
+					Name: "ingress_http",
+				},
+				"ingress_https": {
+					Name: "ingress_https",
+				},
+			},
+			want: []proto.Message{
+				&v2.RouteConfiguration{
+					Name: "ingress_http",
+				},
+				&v2.RouteConfiguration{
+					Name: "ingress_https",
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var rc RouteCache
+			rc.Update(tc.contents)
+			got := rc.Contents()
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestRouteCacheQuery(t *testing.T) {
+	tests := map[string]struct {
+		contents map[string]*v2.RouteConfiguration
+		query    []string
+		want     []proto.Message
+	}{
+		"exact match": {
+			contents: map[string]*v2.RouteConfiguration{
+				"ingress_http": {
+					Name: "ingress_http",
+				},
+			},
+			query: []string{"ingress_http"},
+			want: []proto.Message{
+				&v2.RouteConfiguration{
+					Name: "ingress_http",
+				},
+			},
+		},
+		"partial match": {
+			contents: map[string]*v2.RouteConfiguration{
+				"ingress_http": {
+					Name: "ingress_http",
+				},
+			},
+			query: []string{"stats-handler", "ingress_http"},
+			want: []proto.Message{
+				&v2.RouteConfiguration{
+					Name: "ingress_http",
+				},
+				&v2.RouteConfiguration{
+					Name: "stats-handler",
+				},
+			},
+		},
+		"no match": {
+			contents: map[string]*v2.RouteConfiguration{
+				"ingress_http": {
+					Name: "ingress_http",
+				},
+			},
+			query: []string{"stats-handler"},
+			want: []proto.Message{
+				&v2.RouteConfiguration{
+					Name: "stats-handler",
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var rc RouteCache
+			rc.Update(tc.contents)
+			got := rc.Query(tc.query)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
 
 func TestRouteVisit(t *testing.T) {
 	tests := map[string]struct {

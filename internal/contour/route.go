@@ -73,16 +73,36 @@ func (c *RouteCache) notify() {
 	c.waiters = c.waiters[:0]
 }
 
-// Values returns a slice of the value stored in the cache.
-func (c *RouteCache) Values(filter func(string) bool) []proto.Message {
+// Contents returns a copy of the cache's contents.
+func (c *RouteCache) Contents() []proto.Message {
 	c.mu.Lock()
-	values := make([]proto.Message, 0, len(c.values))
+	defer c.mu.Unlock()
+	var values []proto.Message
 	for _, v := range c.values {
-		if filter(v.Name) {
-			values = append(values, v)
-		}
+		values = append(values, v)
 	}
-	c.mu.Unlock()
+	sort.Stable(routeConfigurationsByName(values))
+	return values
+}
+
+func (c *RouteCache) Query(names []string) []proto.Message {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	var values []proto.Message
+	for _, n := range names {
+		v, ok := c.values[n]
+		if !ok {
+			// if there is no route registered with the cache
+			// we return a blank route configuration. This is
+			// not the same as returning nil, we're choosing to
+			// say "the configuration you asked for _does exists_,
+			// but it contains no useful information.
+			v = &v2.RouteConfiguration{
+				Name: n,
+			}
+		}
+		values = append(values, v)
+	}
 	sort.Stable(routeConfigurationsByName(values))
 	return values
 }

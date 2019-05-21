@@ -71,16 +71,32 @@ func (c *ClusterCache) notify() {
 	c.waiters = c.waiters[:0]
 }
 
-// Values returns a slice of the value stored in the cache.
-func (c *ClusterCache) Values(filter func(string) bool) []proto.Message {
+// Contents returns a copy of the cache's contents.
+func (c *ClusterCache) Contents() []proto.Message {
 	c.mu.Lock()
-	values := make([]proto.Message, 0, len(c.values))
+	defer c.mu.Unlock()
+	var values []proto.Message
 	for _, v := range c.values {
-		if filter(v.Name) {
+		values = append(values, v)
+	}
+	sort.Stable(clusterByName(values))
+	return values
+}
+
+func (c *ClusterCache) Query(names []string) []proto.Message {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	var values []proto.Message
+	for _, n := range names {
+		// if the cluster is not registered we cannot return
+		// a blank cluster because each cluster has a required
+		// discovery type; DNS, EDS, etc. We cannot determine the
+		// correct value for this property from the cluster's name
+		// provided by the query so we must not return a blank cluster.
+		if v, ok := c.values[n]; ok {
 			values = append(values, v)
 		}
 	}
-	c.mu.Unlock()
 	sort.Stable(clusterByName(values))
 	return values
 }
