@@ -88,13 +88,14 @@ func (c *ClusterCache) Query(names []string) []proto.Message {
 	defer c.mu.Unlock()
 	var values []proto.Message
 	for _, n := range names {
-		v, ok := c.values[n]
-		if !ok {
-			v = &v2.Cluster{
-				Name: n,
-			}
+		// if the cluster is not registered we cannot return
+		// a blank cluster because each cluster has a required
+		// discovery type; DNS, EDS, etc. We cannot determine the
+		// correct value for this property from the cluster's name
+		// provided by the query so we must not return a blank cluster.
+		if v, ok := c.values[n]; ok {
+			values = append(values, v)
 		}
-		values = append(values, v)
 	}
 	sort.Stable(clusterByName(values))
 	return values
