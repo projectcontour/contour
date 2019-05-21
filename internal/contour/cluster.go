@@ -71,18 +71,34 @@ func (c *ClusterCache) notify() {
 	c.waiters = c.waiters[:0]
 }
 
-// Values returns a slice of the value stored in the cache.
-func (c *ClusterCache) Values(filter func(string) bool) []proto.Message {
+// Contents returns a copy of the cache's contents.
+func (c *ClusterCache) Contents() []proto.Message {
+	return c.contents(func(string) bool { return true })
+}
+
+func (c *ClusterCache) Query(names []string) []proto.Message {
+	return c.contents(tofilter(names))
+}
+
+func (c *ClusterCache) contents(filter func(string) bool) []proto.Message {
 	c.mu.Lock()
+	defer c.mu.Unlock()
 	values := make([]proto.Message, 0, len(c.values))
 	for _, v := range c.values {
 		if filter(v.Name) {
 			values = append(values, v)
 		}
 	}
-	c.mu.Unlock()
 	sort.Stable(clusterByName(values))
 	return values
+}
+
+func tofilter(names []string) func(string) bool {
+	m := make(map[string]bool)
+	for _, n := range names {
+		m[n] = true
+	}
+	return func(name string) bool { return m[name] }
 }
 
 type clusterByName []proto.Message
