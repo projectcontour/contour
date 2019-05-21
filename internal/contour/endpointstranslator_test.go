@@ -25,6 +25,99 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+func TestEndpointsTranslatorContents(t *testing.T) {
+	tests := map[string]struct {
+		contents map[string]*v2.ClusterLoadAssignment
+		want     []proto.Message
+	}{
+		"empty": {
+			contents: nil,
+			want:     nil,
+		},
+		"simple": {
+			contents: map[string]*v2.ClusterLoadAssignment{
+				"default/httpbin-org": clusterloadassignment("default/httpbin-org",
+					envoy.LBEndpoint("10.10.10.10", 80),
+				),
+			},
+			want: []proto.Message{
+				clusterloadassignment("default/httpbin-org",
+					envoy.LBEndpoint("10.10.10.10", 80),
+				),
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var et EndpointsTranslator
+			et.entries = tc.contents
+			got := et.Contents()
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestEndpointCacheQuery(t *testing.T) {
+	tests := map[string]struct {
+		contents map[string]*v2.ClusterLoadAssignment
+		query    []string
+		want     []proto.Message
+	}{
+		"exact match": {
+			contents: map[string]*v2.ClusterLoadAssignment{
+				"default/httpbin-org": clusterloadassignment("default/httpbin-org",
+					envoy.LBEndpoint("10.10.10.10", 80),
+				),
+			},
+			query: []string{"default/httpbin-org"},
+			want: []proto.Message{
+				clusterloadassignment("default/httpbin-org",
+					envoy.LBEndpoint("10.10.10.10", 80),
+				),
+			},
+		},
+		"partial match": {
+			contents: map[string]*v2.ClusterLoadAssignment{
+				"default/httpbin-org": clusterloadassignment("default/httpbin-org",
+					envoy.LBEndpoint("10.10.10.10", 80),
+				),
+			},
+			query: []string{"default/kuard/8080", "default/httpbin-org"},
+			want: []proto.Message{
+				clusterloadassignment("default/httpbin-org",
+					envoy.LBEndpoint("10.10.10.10", 80),
+				),
+				&v2.ClusterLoadAssignment{ClusterName: "default/kuard/8080"},
+			},
+		},
+		"no match": {
+			contents: map[string]*v2.ClusterLoadAssignment{
+				"default/httpbin-org": clusterloadassignment("default/httpbin-org",
+					envoy.LBEndpoint("10.10.10.10", 80),
+				),
+			},
+			query: []string{"default/kuard/8080"},
+			want: []proto.Message{
+				&v2.ClusterLoadAssignment{ClusterName: "default/kuard/8080"},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var et EndpointsTranslator
+			et.entries = tc.contents
+			got := et.Query(tc.query)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
 func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 	tests := []struct {
 		name string

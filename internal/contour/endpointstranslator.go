@@ -90,6 +90,7 @@ func (e *EndpointsTranslator) Query(names []string) []proto.Message {
 		}
 		values = append(values, v)
 	}
+	sort.Stable(clusterLoadAssignmentsByName(values))
 	return values
 }
 
