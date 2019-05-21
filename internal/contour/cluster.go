@@ -73,32 +73,31 @@ func (c *ClusterCache) notify() {
 
 // Contents returns a copy of the cache's contents.
 func (c *ClusterCache) Contents() []proto.Message {
-	return c.contents(func(string) bool { return true })
-}
-
-func (c *ClusterCache) Query(names []string) []proto.Message {
-	return c.contents(tofilter(names))
-}
-
-func (c *ClusterCache) contents(filter func(string) bool) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	values := make([]proto.Message, 0, len(c.values))
+	var values []proto.Message
 	for _, v := range c.values {
-		if filter(v.Name) {
-			values = append(values, v)
-		}
+		values = append(values, v)
 	}
 	sort.Stable(clusterByName(values))
 	return values
 }
 
-func tofilter(names []string) func(string) bool {
-	m := make(map[string]bool)
+func (c *ClusterCache) Query(names []string) []proto.Message {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	var values []proto.Message
 	for _, n := range names {
-		m[n] = true
+		v, ok := c.values[n]
+		if !ok {
+			v = &v2.Cluster{
+				Name: n,
+			}
+		}
+		values = append(values, v)
 	}
-	return func(name string) bool { return m[name] }
+	sort.Stable(clusterByName(values))
+	return values
 }
 
 type clusterByName []proto.Message

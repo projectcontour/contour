@@ -73,21 +73,28 @@ func (c *SecretCache) notify() {
 
 // Contents returns a copy of the cache's contents.
 func (c *SecretCache) Contents() []proto.Message {
-	return c.contents(func(string) bool { return true })
-}
-
-func (c *SecretCache) Query(names []string) []proto.Message {
-	return c.contents(tofilter(names))
-}
-
-func (c *SecretCache) contents(filter func(string) bool) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	var values []proto.Message
 	for _, v := range c.values {
-		if filter(v.Name) {
-			values = append(values, v)
+		values = append(values, v)
+	}
+	sort.Stable(secretsByName(values))
+	return values
+}
+
+func (c *SecretCache) Query(names []string) []proto.Message {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	var values []proto.Message
+	for _, n := range names {
+		v, ok := c.values[n]
+		if !ok {
+			v = &auth.Secret{
+				Name: n,
+			}
 		}
+		values = append(values, v)
 	}
 	sort.Stable(secretsByName(values))
 	return values
