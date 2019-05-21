@@ -188,9 +188,12 @@ func (c *ListenerCache) Query(names []string) []proto.Message {
 	for _, n := range names {
 		v, ok := c.values[n]
 		if !ok {
-			v = &v2.Listener{
-				Name: n,
-			}
+			// if the listener is not registered in
+			// dynamic or static values then skip it
+			// as there is no way to return a blank
+			// listener because the listener address
+			// field is required.
+			continue
 		}
 		values = append(values, v)
 	}
