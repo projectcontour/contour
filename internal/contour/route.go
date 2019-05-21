@@ -73,16 +73,24 @@ func (c *RouteCache) notify() {
 	c.waiters = c.waiters[:0]
 }
 
-// Values returns a slice of the value stored in the cache.
-func (c *RouteCache) Values(filter func(string) bool) []proto.Message {
+// Contents returns a copy of the cache's contents.
+func (c *RouteCache) Contents() []proto.Message {
+	return c.contents(func(string) bool { return true })
+}
+
+func (c *RouteCache) Query(names []string) []proto.Message {
+	return c.contents(tofilter(names))
+}
+
+func (c *RouteCache) contents(filter func(string) bool) []proto.Message {
 	c.mu.Lock()
-	values := make([]proto.Message, 0, len(c.values))
+	defer c.mu.Unlock()
+	var values []proto.Message
 	for _, v := range c.values {
 		if filter(v.Name) {
 			values = append(values, v)
 		}
 	}
-	c.mu.Unlock()
 	sort.Stable(routeConfigurationsByName(values))
 	return values
 }

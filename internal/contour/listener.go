@@ -180,20 +180,29 @@ func (c *ListenerCache) notify() {
 	c.waiters = c.waiters[:0]
 }
 
-// Values returns a slice of the value stored in the cache.
-func (c *ListenerCache) Values(filter func(string) bool) []proto.Message {
+// Contents returns a copy of the cache's contents.
+func (c *ListenerCache) Contents() []proto.Message {
+	return c.contents(func(string) bool { return true })
+}
+
+func (c *ListenerCache) Query(names []string) []proto.Message {
+	return c.contents(tofilter(names))
+}
+
+func (c *ListenerCache) contents(filter func(string) bool) []proto.Message {
 	c.mu.Lock()
-	values := make([]proto.Message, 0, len(c.values))
+	defer c.mu.Unlock()
+	var values []proto.Message
 	for _, v := range c.values {
 		if filter(v.Name) {
 			values = append(values, v)
 		}
 	}
 	for _, v := range c.staticValues {
-		values = append(values, v)
+		if filter(v.Name) {
+			values = append(values, v)
+		}
 	}
-
-	c.mu.Unlock()
 	sort.Stable(listenersByName(values))
 	return values
 }
