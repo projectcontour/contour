@@ -467,12 +467,7 @@ func TestCDSResourceFiltering(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
 		TypeUrl:     clusterType,
-		Resources: []types.Any{
-			any(t, &v2.Cluster{
-				Name: "default/httpbin/9000",
-			}),
-		},
-		Nonce: "3",
+		Nonce:       "3",
 	}, streamCDS(t, cc, "default/httpbin/9000"))
 }
 
