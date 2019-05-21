@@ -88,13 +88,12 @@ func (c *SecretCache) Query(names []string) []proto.Message {
 	defer c.mu.Unlock()
 	var values []proto.Message
 	for _, n := range names {
-		v, ok := c.values[n]
-		if !ok {
-			v = &auth.Secret{
-				Name: n,
-			}
+		// we can only return secrets where their value is
+		// known. if the secret is not registered in the cache
+		// we return nothing.
+		if v, ok := c.values[n]; ok {
+			values = append(values, v)
 		}
-		values = append(values, v)
 	}
 	sort.Stable(secretsByName(values))
 	return values
