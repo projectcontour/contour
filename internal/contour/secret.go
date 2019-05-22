@@ -14,9 +14,11 @@
 package contour
 
 import (
+	"sort"
 	"sync"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/gogo/protobuf/proto"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
@@ -69,18 +71,43 @@ func (c *SecretCache) notify() {
 	c.waiters = c.waiters[:0]
 }
 
-// Values returns a slice of the value stored in the cache.
-func (c *SecretCache) Values(filter func(string) bool) []proto.Message {
+// Contents returns a copy of the cache's contents.
+func (c *SecretCache) Contents() []proto.Message {
 	c.mu.Lock()
-	values := make([]proto.Message, 0, len(c.values))
+	defer c.mu.Unlock()
+	var values []proto.Message
 	for _, v := range c.values {
-		if filter(v.Name) {
+		values = append(values, v)
+	}
+	sort.Stable(secretsByName(values))
+	return values
+}
+
+func (c *SecretCache) Query(names []string) []proto.Message {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	var values []proto.Message
+	for _, n := range names {
+		// we can only return secrets where their value is
+		// known. if the secret is not registered in the cache
+		// we return nothing.
+		if v, ok := c.values[n]; ok {
 			values = append(values, v)
 		}
 	}
-	c.mu.Unlock()
+	sort.Stable(secretsByName(values))
 	return values
 }
+
+type secretsByName []proto.Message
+
+func (s secretsByName) Len() int      { return len(s) }
+func (s secretsByName) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s secretsByName) Less(i, j int) bool {
+	return s[i].(*auth.Secret).Name < s[j].(*auth.Secret).Name
+}
+
+func (*SecretCache) TypeURL() string { return cache.SecretType }
 
 type secretVisitor struct {
 	secrets map[string]*auth.Secret

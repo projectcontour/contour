@@ -14,15 +14,19 @@
 package contour
 
 import (
+	"sort"
 	"strings"
+	"sync"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
+	"github.com/envoyproxy/go-control-plane/pkg/cache"
+	"github.com/gogo/protobuf/proto"
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	_cache "k8s.io/client-go/tools/cache"
+	k8scache "k8s.io/client-go/tools/cache"
 )
 
 // A EndpointsTranslator translates Kubernetes Endpoints objects into Envoy
@@ -60,12 +64,45 @@ func (e *EndpointsTranslator) OnDelete(obj interface{}) {
 	switch obj := obj.(type) {
 	case *v1.Endpoints:
 		e.removeEndpoints(obj)
-	case _cache.DeletedFinalStateUnknown:
+	case k8scache.DeletedFinalStateUnknown:
 		e.OnDelete(obj.Obj) // recurse into ourselves with the tombstoned value
 	default:
 		e.Errorf("OnDelete unexpected type %T: %#v", obj, obj)
 	}
 }
+
+func (e *EndpointsTranslator) Contents() []proto.Message {
+	values := e.clusterLoadAssignmentCache.Contents()
+	sort.Stable(clusterLoadAssignmentsByName(values))
+	return values
+}
+
+func (e *EndpointsTranslator) Query(names []string) []proto.Message {
+	e.clusterLoadAssignmentCache.mu.Lock()
+	defer e.clusterLoadAssignmentCache.mu.Unlock()
+	var values []proto.Message
+	for _, n := range names {
+		v, ok := e.entries[n]
+		if !ok {
+			v = &v2.ClusterLoadAssignment{
+				ClusterName: n,
+			}
+		}
+		values = append(values, v)
+	}
+	sort.Stable(clusterLoadAssignmentsByName(values))
+	return values
+}
+
+type clusterLoadAssignmentsByName []proto.Message
+
+func (c clusterLoadAssignmentsByName) Len() int      { return len(c) }
+func (c clusterLoadAssignmentsByName) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
+func (c clusterLoadAssignmentsByName) Less(i, j int) bool {
+	return c[i].(*v2.ClusterLoadAssignment).ClusterName < c[j].(*v2.ClusterLoadAssignment).ClusterName
+}
+
+func (*EndpointsTranslator) TypeURL() string { return cache.EndpointType }
 
 func (e *EndpointsTranslator) addEndpoints(ep *v1.Endpoints) {
 	e.recomputeClusterLoadAssignment(nil, ep)
@@ -135,8 +172,8 @@ func (e *EndpointsTranslator) recomputeClusterLoadAssignment(oldep, newep *v1.En
 	}
 
 	// iterate all the defined clusters and add or update them.
-	for _, c := range clas {
-		e.Add(c)
+	for _, a := range clas {
+		e.Add(a)
 	}
 
 	// iterate over the ports in the old spec, remove any that are not
@@ -155,6 +192,41 @@ func (e *EndpointsTranslator) recomputeClusterLoadAssignment(oldep, newep *v1.En
 			}
 		}
 	}
+}
+
+type clusterLoadAssignmentCache struct {
+	mu      sync.Mutex
+	entries map[string]*v2.ClusterLoadAssignment
+}
+
+// Add adds an entry to the cache. If a ClusterLoadAssignment with the same
+// name exists, it is replaced.
+func (c *clusterLoadAssignmentCache) Add(a *v2.ClusterLoadAssignment) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.entries == nil {
+		c.entries = make(map[string]*v2.ClusterLoadAssignment)
+	}
+	c.entries[a.ClusterName] = a
+}
+
+// Remove removes the named entry from the cache. If the entry
+// is not present in the cache, the operation is a no-op.
+func (c *clusterLoadAssignmentCache) Remove(name string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	delete(c.entries, name)
+}
+
+// Contents returns a copy of the contents of the cache.
+func (c *clusterLoadAssignmentCache) Contents() []proto.Message {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	var values []proto.Message
+	for _, v := range c.entries {
+		values = append(values, v)
+	}
+	return values
 }
 
 // servicename returns the name of the cluster this meta and port

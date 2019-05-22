@@ -475,7 +475,8 @@ func TestLDSStreamEmpty(t *testing.T) {
 	// assert that streaming LDS with no ingresses does not stall.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		TypeUrl:     listenerType, Nonce: "0",
+		TypeUrl:     listenerType,
+		Nonce:       "0",
 	}, streamLDS(t, cc, "HTTP"))
 }
 

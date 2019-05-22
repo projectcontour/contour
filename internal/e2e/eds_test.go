@@ -214,7 +214,13 @@ func TestEndpointFilter(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		TypeUrl:     endpointType,
-		Nonce:       "1",
+		Resources: []types.Any{
+			any(t, clusterloadassignment(
+				"default/kuard/bar",
+			)),
+		},
+
+		Nonce: "1",
 	}, streamEDS(t, cc, "default/kuard/bar"))
 
 }
@@ -285,6 +291,9 @@ func addresses(ips ...string) []v1.EndpointAddress {
 }
 
 func clusterloadassignment(name string, lbendpoints ...endpoint.LbEndpoint) *v2.ClusterLoadAssignment {
+	if len(lbendpoints) == 0 {
+		return &v2.ClusterLoadAssignment{ClusterName: name}
+	}
 	return &v2.ClusterLoadAssignment{
 		ClusterName: name,
 		Endpoints: []endpoint.LocalityLbEndpoints{{

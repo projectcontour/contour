@@ -6,14 +6,93 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/gogo/protobuf/proto"
+	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+func TestSecretCacheContents(t *testing.T) {
+	tests := map[string]struct {
+		contents map[string]*auth.Secret
+		want     []proto.Message
+	}{
+		"empty": {
+			contents: nil,
+			want:     nil,
+		},
+		"simple": {
+			contents: secretmap(
+				secret("default/secret/cd1b506996", "cert", "key"),
+			),
+			want: []proto.Message{
+				secret("default/secret/cd1b506996", "cert", "key"),
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var sc SecretCache
+			sc.Update(tc.contents)
+			got := sc.Contents()
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestSecretCacheQuery(t *testing.T) {
+	tests := map[string]struct {
+		contents map[string]*auth.Secret
+		query    []string
+		want     []proto.Message
+	}{
+		"exact match": {
+			contents: secretmap(
+				secret("default/secret/cd1b506996", "cert", "key"),
+			),
+			query: []string{"default/secret/cd1b506996"},
+			want: []proto.Message{
+				secret("default/secret/cd1b506996", "cert", "key"),
+			},
+		},
+		"partial match": {
+			contents: secretmap(
+				secret("default/secret-a/ff2a9f58ca", "cert-a", "key-a"),
+				secret("default/secret-b/0a068be4ba", "cert-b", "key-b"),
+			),
+			query: []string{"default/secret/cd1b506996", "default/secret-b/0a068be4ba"},
+			want: []proto.Message{
+				secret("default/secret-b/0a068be4ba", "cert-b", "key-b"),
+			},
+		},
+		"no match": {
+			contents: secretmap(
+				secret("default/secret/cd1b506996", "cert", "key"),
+			),
+			query: []string{"default/secret-b/0a068be4ba"},
+			want:  nil,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var sc SecretCache
+			sc.Update(tc.contents)
+			got := sc.Query(tc.query)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
 
 func TestSecretVisit(t *testing.T) {
 	tests := map[string]struct {
@@ -69,23 +148,9 @@ func TestSecretVisit(t *testing.T) {
 					Data: secretdata("cert", "key"),
 				},
 			},
-			want: secretmap(&auth.Secret{
-				Name: "default/secret/cd1b506996",
-				Type: &auth.Secret_TlsCertificate{
-					TlsCertificate: &auth.TlsCertificate{
-						PrivateKey: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
-								InlineBytes: []byte("key"),
-							},
-						},
-						CertificateChain: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
-								InlineBytes: []byte("cert"),
-							},
-						},
-					},
-				},
-			}),
+			want: secretmap(
+				secret("default/secret/cd1b506996", "cert", "key"),
+			),
 		},
 		"multiple ingresses with shared secret": {
 			objs: []interface{}{
@@ -129,23 +194,9 @@ func TestSecretVisit(t *testing.T) {
 					Data: secretdata("cert", "key"),
 				},
 			},
-			want: secretmap(&auth.Secret{
-				Name: "default/secret/cd1b506996",
-				Type: &auth.Secret_TlsCertificate{
-					TlsCertificate: &auth.TlsCertificate{
-						PrivateKey: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
-								InlineBytes: []byte("key"),
-							},
-						},
-						CertificateChain: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
-								InlineBytes: []byte("cert"),
-							},
-						},
-					},
-				},
-			}),
+			want: secretmap(
+				secret("default/secret/cd1b506996", "cert", "key"),
+			),
 		},
 		"multiple ingresses with different secrets": {
 			objs: []interface{}{
@@ -196,39 +247,10 @@ func TestSecretVisit(t *testing.T) {
 					Data: secretdata("cert-b", "key-b"),
 				},
 			},
-			want: secretmap(&auth.Secret{
-				Name: "default/secret-a/ff2a9f58ca",
-				Type: &auth.Secret_TlsCertificate{
-					TlsCertificate: &auth.TlsCertificate{
-						PrivateKey: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
-								InlineBytes: []byte("key-a"),
-							},
-						},
-						CertificateChain: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
-								InlineBytes: []byte("cert-a"),
-							},
-						},
-					},
-				},
-			}, &auth.Secret{
-				Name: "default/secret-b/0a068be4ba",
-				Type: &auth.Secret_TlsCertificate{
-					TlsCertificate: &auth.TlsCertificate{
-						PrivateKey: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
-								InlineBytes: []byte("key-b"),
-							},
-						},
-						CertificateChain: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
-								InlineBytes: []byte("cert-b"),
-							},
-						},
-					},
-				},
-			}),
+			want: secretmap(
+				secret("default/secret-a/ff2a9f58ca", "cert-a", "key-a"),
+				secret("default/secret-b/0a068be4ba", "cert-b", "key-b"),
+			),
 		},
 		"simple ingressroute with secret": {
 			objs: []interface{}{
@@ -264,23 +286,9 @@ func TestSecretVisit(t *testing.T) {
 					Data: secretdata("cert", "key"),
 				},
 			},
-			want: secretmap(&auth.Secret{
-				Name: "default/secret/cd1b506996",
-				Type: &auth.Secret_TlsCertificate{
-					TlsCertificate: &auth.TlsCertificate{
-						PrivateKey: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
-								InlineBytes: []byte("key"),
-							},
-						},
-						CertificateChain: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
-								InlineBytes: []byte("cert"),
-							},
-						},
-					},
-				},
-			}),
+			want: secretmap(
+				secret("default/secret/cd1b506996", "cert", "key"),
+			),
 		},
 		"multiple ingressroutes with shared secret": {
 			objs: []interface{}{
@@ -340,23 +348,9 @@ func TestSecretVisit(t *testing.T) {
 					Data: secretdata("cert", "key"),
 				},
 			},
-			want: secretmap(&auth.Secret{
-				Name: "default/secret/cd1b506996",
-				Type: &auth.Secret_TlsCertificate{
-					TlsCertificate: &auth.TlsCertificate{
-						PrivateKey: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
-								InlineBytes: []byte("key"),
-							},
-						},
-						CertificateChain: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
-								InlineBytes: []byte("cert"),
-							},
-						},
-					},
-				},
-			}),
+			want: secretmap(
+				secret("default/secret/cd1b506996", "cert", "key"),
+			),
 		},
 		"multiple ingressroutes with different secret": {
 			objs: []interface{}{
@@ -423,39 +417,10 @@ func TestSecretVisit(t *testing.T) {
 					Data: secretdata("cert-b", "key-b"),
 				},
 			},
-			want: secretmap(&auth.Secret{
-				Name: "default/secret-a/ff2a9f58ca",
-				Type: &auth.Secret_TlsCertificate{
-					TlsCertificate: &auth.TlsCertificate{
-						PrivateKey: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
-								InlineBytes: []byte("key-a"),
-							},
-						},
-						CertificateChain: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
-								InlineBytes: []byte("cert-a"),
-							},
-						},
-					},
-				},
-			}, &auth.Secret{
-				Name: "default/secret-b/0a068be4ba",
-				Type: &auth.Secret_TlsCertificate{
-					TlsCertificate: &auth.TlsCertificate{
-						PrivateKey: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
-								InlineBytes: []byte("key-b"),
-							},
-						},
-						CertificateChain: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
-								InlineBytes: []byte("cert-b"),
-							},
-						},
-					},
-				},
-			}),
+			want: secretmap(
+				secret("default/secret-a/ff2a9f58ca", "cert-a", "key-a"),
+				secret("default/secret-b/0a068be4ba", "cert-b", "key-b"),
+			),
 		},
 	}
 
@@ -484,4 +449,24 @@ func secretmap(secrets ...*auth.Secret) map[string]*auth.Secret {
 		m[s.Name] = s
 	}
 	return m
+}
+
+func secret(name, cert, key string) *auth.Secret {
+	return &auth.Secret{
+		Name: name,
+		Type: &auth.Secret_TlsCertificate{
+			TlsCertificate: &auth.TlsCertificate{
+				PrivateKey: &core.DataSource{
+					Specifier: &core.DataSource_InlineBytes{
+						InlineBytes: []byte(key),
+					},
+				},
+				CertificateChain: &core.DataSource{
+					Specifier: &core.DataSource_InlineBytes{
+						InlineBytes: []byte(cert),
+					},
+				},
+			},
+		},
+	}
 }

@@ -17,18 +17,116 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	"github.com/gogo/protobuf/proto"
+	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+func TestListenerCacheContents(t *testing.T) {
+	tests := map[string]struct {
+		contents map[string]*v2.Listener
+		want     []proto.Message
+	}{
+		"empty": {
+			contents: nil,
+			want:     nil,
+		},
+		"simple": {
+			contents: listenermap(&v2.Listener{
+				Name:         ENVOY_HTTP_LISTENER,
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: filterchain(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+			}),
+			want: []proto.Message{
+				&v2.Listener{
+					Name:         ENVOY_HTTP_LISTENER,
+					Address:      *envoy.SocketAddress("0.0.0.0", 8080),
+					FilterChains: filterchain(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var lc ListenerCache
+			lc.Update(tc.contents)
+			got := lc.Contents()
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestListenerCacheQuery(t *testing.T) {
+	tests := map[string]struct {
+		contents map[string]*v2.Listener
+		query    []string
+		want     []proto.Message
+	}{
+		"exact match": {
+			contents: listenermap(&v2.Listener{
+				Name:         ENVOY_HTTP_LISTENER,
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: filterchain(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+			}),
+			query: []string{ENVOY_HTTP_LISTENER},
+			want: []proto.Message{
+				&v2.Listener{
+					Name:         ENVOY_HTTP_LISTENER,
+					Address:      *envoy.SocketAddress("0.0.0.0", 8080),
+					FilterChains: filterchain(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+				},
+			},
+		},
+		"partial match": {
+			contents: listenermap(&v2.Listener{
+				Name:         ENVOY_HTTP_LISTENER,
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: filterchain(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+			}),
+			query: []string{ENVOY_HTTP_LISTENER, "stats-listener"},
+			want: []proto.Message{
+				&v2.Listener{
+					Name:         ENVOY_HTTP_LISTENER,
+					Address:      *envoy.SocketAddress("0.0.0.0", 8080),
+					FilterChains: filterchain(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+				},
+			},
+		},
+		"no match": {
+			contents: listenermap(&v2.Listener{
+				Name:         ENVOY_HTTP_LISTENER,
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: filterchain(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+			}),
+			query: []string{"stats-listener"},
+			want:  nil,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var lc ListenerCache
+			lc.Update(tc.contents)
+			got := lc.Query(tc.query)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
 
 func TestListenerVisit(t *testing.T) {
 	tests := map[string]struct {

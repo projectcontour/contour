@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
+	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
@@ -63,9 +65,9 @@ func TestGRPC(t *testing.T) {
 			defer cancel()
 			stream, err := sds.StreamClusters(ctx)
 			check(t, err)
-			sendreq(t, stream, clusterType) // send initial notification
-			checkrecv(t, stream)            // check we receive one notification
-			checktimeout(t, stream)         // check that the second receive times out
+			sendreq(t, stream, cache.ClusterType) // send initial notification
+			checkrecv(t, stream)                  // check we receive one notification
+			checktimeout(t, stream)               // check that the second receive times out
 		},
 		"StreamEndpoints": func(t *testing.T, cc *grpc.ClientConn) {
 			et.OnAdd(&v1.Endpoints{
@@ -90,9 +92,9 @@ func TestGRPC(t *testing.T) {
 			defer cancel()
 			stream, err := eds.StreamEndpoints(ctx)
 			check(t, err)
-			sendreq(t, stream, endpointType) // send initial notification
-			checkrecv(t, stream)             // check we receive one notification
-			checktimeout(t, stream)          // check that the second receive times out
+			sendreq(t, stream, cache.EndpointType) // send initial notification
+			checkrecv(t, stream)                   // check we receive one notification
+			checktimeout(t, stream)                // check that the second receive times out
 		},
 		"StreamListeners": func(t *testing.T, cc *grpc.ClientConn) {
 			// add an ingress, which will create a non tls listener
@@ -123,9 +125,9 @@ func TestGRPC(t *testing.T) {
 			defer cancel()
 			stream, err := lds.StreamListeners(ctx)
 			check(t, err)
-			sendreq(t, stream, listenerType) // send initial notification
-			checkrecv(t, stream)             // check we receive one notification
-			checktimeout(t, stream)          // check that the second receive times out
+			sendreq(t, stream, cache.ListenerType) // send initial notification
+			checkrecv(t, stream)                   // check we receive one notification
+			checktimeout(t, stream)                // check that the second receive times out
 		},
 		"StreamRoutes": func(t *testing.T, cc *grpc.ClientConn) {
 			reh.OnAdd(&v1beta1.Ingress{
@@ -155,49 +157,30 @@ func TestGRPC(t *testing.T) {
 			defer cancel()
 			stream, err := rds.StreamRoutes(ctx)
 			check(t, err)
-			sendreq(t, stream, routeType) // send initial notification
-			checkrecv(t, stream)          // check we receive one notification
-			checktimeout(t, stream)       // check that the second receive times out
+			sendreq(t, stream, cache.RouteType) // send initial notification
+			checkrecv(t, stream)                // check we receive one notification
+			checktimeout(t, stream)             // check that the second receive times out
 		},
-		"FetchClusters": func(t *testing.T, cc *grpc.ClientConn) {
-			sds := v2.NewClusterDiscoveryServiceClient(cc)
+		"StreamSecrets": func(t *testing.T, cc *grpc.ClientConn) {
+			reh.OnAdd(&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte("certificate"),
+					v1.TLSPrivateKeyKey: []byte("key"),
+				},
+			})
+
+			sds := discovery.NewSecretDiscoveryServiceClient(cc)
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
-			req := &v2.DiscoveryRequest{
-				TypeUrl: clusterType,
-			}
-			_, err := sds.FetchClusters(ctx, req)
+			stream, err := sds.StreamSecrets(ctx)
 			check(t, err)
-		},
-		"FetchEndpoints": func(t *testing.T, cc *grpc.ClientConn) {
-			eds := v2.NewEndpointDiscoveryServiceClient(cc)
-			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-			defer cancel()
-			req := &v2.DiscoveryRequest{
-				TypeUrl: endpointType,
-			}
-			_, err := eds.FetchEndpoints(ctx, req)
-			check(t, err)
-		},
-		"FetchListeners": func(t *testing.T, cc *grpc.ClientConn) {
-			lds := v2.NewListenerDiscoveryServiceClient(cc)
-			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-			defer cancel()
-			req := &v2.DiscoveryRequest{
-				TypeUrl: listenerType,
-			}
-			_, err := lds.FetchListeners(ctx, req)
-			check(t, err)
-		},
-		"FetchRoutes": func(t *testing.T, cc *grpc.ClientConn) {
-			rds := v2.NewRouteDiscoveryServiceClient(cc)
-			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-			defer cancel()
-			req := &v2.DiscoveryRequest{
-				TypeUrl: routeType,
-			}
-			_, err := rds.FetchRoutes(ctx, req)
-			check(t, err)
+			sendreq(t, stream, cache.SecretType) // send initial notification
+			checkrecv(t, stream)                 // check we receive one notification
+			checktimeout(t, stream)              // check that the second receive times out
 		},
 	}
 
@@ -216,11 +199,12 @@ func TestGRPC(t *testing.T) {
 				Metrics:     ch.Metrics,
 				FieldLogger: log,
 			}
-			srv := NewAPI(log, map[string]Cache{
-				clusterType:  &ch.ClusterCache,
-				routeType:    &ch.RouteCache,
-				listenerType: &ch.ListenerCache,
-				endpointType: et,
+			srv := NewAPI(log, map[string]Resource{
+				ch.ClusterCache.TypeURL():  &ch.ClusterCache,
+				ch.RouteCache.TypeURL():    &ch.RouteCache,
+				ch.ListenerCache.TypeURL(): &ch.ListenerCache,
+				ch.SecretCache.TypeURL():   &ch.SecretCache,
+				et.TypeURL():               et,
 			})
 			l, err := net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)

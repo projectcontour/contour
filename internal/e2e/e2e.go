@@ -90,11 +90,11 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 	discard := logrus.New()
 	discard.Out = new(discardWriter)
 	// Resource types in xDS v2.
-	srv := cgrpc.NewAPI(discard, map[string]cgrpc.Cache{
-		clusterType:  &ch.ClusterCache,
-		routeType:    &ch.RouteCache,
-		listenerType: &ch.ListenerCache,
-		endpointType: et,
+	srv := cgrpc.NewAPI(discard, map[string]cgrpc.Resource{
+		ch.ClusterCache.TypeURL():  &ch.ClusterCache,
+		ch.RouteCache.TypeURL():    &ch.RouteCache,
+		ch.ListenerCache.TypeURL(): &ch.ListenerCache,
+		et.TypeURL():               et,
 	})
 
 	done := make(chan error, 1)

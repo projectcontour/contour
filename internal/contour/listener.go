@@ -14,10 +14,12 @@
 package contour
 
 import (
+	"sort"
 	"sync"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/gogo/protobuf/proto"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
@@ -167,18 +169,47 @@ func (c *ListenerCache) notify() {
 	c.waiters = c.waiters[:0]
 }
 
-// Values returns a slice of the value stored in the cache.
-func (c *ListenerCache) Values(filter func(string) bool) []proto.Message {
+// Contents returns a copy of the cache's contents.
+func (c *ListenerCache) Contents() []proto.Message {
 	c.mu.Lock()
-	values := make([]proto.Message, 0, len(c.values))
+	defer c.mu.Unlock()
+	var values []proto.Message
 	for _, v := range c.values {
-		if filter(v.Name) {
-			values = append(values, v)
-		}
+		values = append(values, v)
 	}
-	c.mu.Unlock()
+	sort.Stable(listenersByName(values))
 	return values
 }
+
+func (c *ListenerCache) Query(names []string) []proto.Message {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	var values []proto.Message
+	for _, n := range names {
+		v, ok := c.values[n]
+		if !ok {
+			// if the listener is not registered in
+			// dynamic or static values then skip it
+			// as there is no way to return a blank
+			// listener because the listener address
+			// field is required.
+			continue
+		}
+		values = append(values, v)
+	}
+	sort.Stable(listenersByName(values))
+	return values
+}
+
+type listenersByName []proto.Message
+
+func (l listenersByName) Len() int      { return len(l) }
+func (l listenersByName) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
+func (l listenersByName) Less(i, j int) bool {
+	return l[i].(*v2.Listener).Name < l[j].(*v2.Listener).Name
+}
+
+func (*ListenerCache) TypeURL() string { return cache.ListenerType }
 
 type listenerVisitor struct {
 	*ListenerVisitorConfig

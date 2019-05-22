@@ -20,6 +20,7 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/gogo/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/envoy"
@@ -30,6 +31,155 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+func TestClusterCacheContents(t *testing.T) {
+	tests := map[string]struct {
+		contents map[string]*v2.Cluster
+		want     []proto.Message
+	}{
+		"empty": {
+			contents: nil,
+			want:     nil,
+		},
+		"simple": {
+			contents: clustermap(
+				&v2.Cluster{
+					Name:                 "default/kuard/443/da39a3ee5e",
+					AltStatName:          "default_kuard_443",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/kuard",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+				}),
+			want: []proto.Message{
+				&v2.Cluster{
+					Name:                 "default/kuard/443/da39a3ee5e",
+					AltStatName:          "default_kuard_443",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/kuard",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var cc ClusterCache
+			cc.Update(tc.contents)
+			got := cc.Contents()
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestClusterCacheQuery(t *testing.T) {
+	tests := map[string]struct {
+		contents map[string]*v2.Cluster
+		query    []string
+		want     []proto.Message
+	}{
+		"exact match": {
+			contents: clustermap(
+				&v2.Cluster{
+					Name:                 "default/kuard/443/da39a3ee5e",
+					AltStatName:          "default_kuard_443",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/kuard",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+				}),
+			query: []string{"default/kuard/443/da39a3ee5e"},
+			want: []proto.Message{
+				&v2.Cluster{
+					Name:                 "default/kuard/443/da39a3ee5e",
+					AltStatName:          "default_kuard_443",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/kuard",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+				},
+			},
+		},
+		"partial match": {
+			contents: clustermap(
+				&v2.Cluster{
+					Name:                 "default/kuard/443/da39a3ee5e",
+					AltStatName:          "default_kuard_443",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/kuard",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+				}),
+			query: []string{"default/kuard/443/da39a3ee5e", "foo/bar/baz"},
+			want: []proto.Message{
+				&v2.Cluster{
+					Name:                 "default/kuard/443/da39a3ee5e",
+					AltStatName:          "default_kuard_443",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/kuard",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+				},
+			},
+		},
+		"no match": {
+			contents: clustermap(
+				&v2.Cluster{
+					Name:                 "default/kuard/443/da39a3ee5e",
+					AltStatName:          "default_kuard_443",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/kuard",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+				}),
+			query: []string{"foo/bar/baz"},
+			want:  nil,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var cc ClusterCache
+			cc.Update(tc.contents)
+			got := cc.Query(tc.query)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
 
 func TestClusterVisit(t *testing.T) {
 	tests := map[string]struct {

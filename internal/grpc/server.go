@@ -31,7 +31,7 @@ const (
 )
 
 // NewAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
-func NewAPI(log logrus.FieldLogger, cacheMap map[string]Cache) *grpc.Server {
+func NewAPI(log logrus.FieldLogger, resources map[string]Resource) *grpc.Server {
 	opts := []grpc.ServerOption{
 		// By default the Go grpc library defaults to a value of ~100 streams per
 		// connection. This number is likely derived from the HTTP/2 spec:
@@ -45,23 +45,7 @@ func NewAPI(log logrus.FieldLogger, cacheMap map[string]Cache) *grpc.Server {
 	s := &grpcServer{
 		xdsHandler{
 			FieldLogger: log,
-			resources: map[string]resource{
-				clusterType: &CDS{
-					Cache: cacheMap[clusterType],
-				},
-				endpointType: &EDS{
-					Cache: cacheMap[endpointType],
-				},
-				listenerType: &LDS{
-					Cache: cacheMap[listenerType],
-				},
-				routeType: &RDS{
-					Cache: cacheMap[routeType],
-				},
-				secretType: &SDS{
-					Cache: cacheMap[secretType],
-				},
-			},
+			resources:   resources,
 		},
 	}
 
@@ -78,32 +62,24 @@ type grpcServer struct {
 	xdsHandler
 }
 
-// A resource provides resources formatted as []types.Any.
-type resource interface {
-	Cache
-
-	// TypeURL returns the typeURL of messages returned from Values.
-	TypeURL() string
-}
-
 func (s *grpcServer) FetchClusters(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return s.fetch(req)
+	return nil, status.Errorf(codes.Unimplemented, "FetchClusters unimplemented")
 }
 
 func (s *grpcServer) FetchEndpoints(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return s.fetch(req)
+	return nil, status.Errorf(codes.Unimplemented, "FetchEndpoints unimplemented")
 }
 
 func (s *grpcServer) FetchListeners(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return s.fetch(req)
+	return nil, status.Errorf(codes.Unimplemented, "FetchListeners unimplemented")
 }
 
 func (s *grpcServer) FetchRoutes(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return s.fetch(req)
+	return nil, status.Errorf(codes.Unimplemented, "FetchRoutes unimplemented")
 }
 
 func (s *grpcServer) FetchSecrets(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
-	return s.fetch(req)
+	return nil, status.Errorf(codes.Unimplemented, "FetchSecrets unimplemented")
 }
 
 func (s *grpcServer) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) error {

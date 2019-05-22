@@ -463,8 +463,7 @@ func TestCDSResourceFiltering(t *testing.T) {
 		Nonce:   "3",
 	}, streamCDS(t, cc, "default/kuard/80/da39a3ee5e"))
 
-	// assert a non matching filter returns no results
-	// note: streamCDS would stall at this point.
+	// assert a non matching filter returns a response with no entries.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
 		TypeUrl:     clusterType,
