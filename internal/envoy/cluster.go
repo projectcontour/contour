@@ -24,6 +24,7 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
@@ -78,14 +79,23 @@ func upstreamValidationSubjectAltName(c *dag.Cluster) string {
 
 func cluster(cluster *dag.Cluster, service *dag.TCPService) *v2.Cluster {
 	c := &v2.Cluster{
-		Name:                 Clustername(cluster),
-		AltStatName:          altStatName(service),
-		ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
-		EdsClusterConfig:     edsconfig("contour", service),
-		ConnectTimeout:       250 * time.Millisecond,
-		LbPolicy:             lbPolicy(service.LoadBalancerStrategy),
-		CommonLbConfig:       ClusterCommonLBConfig(),
-		HealthChecks:         edshealthcheck(service),
+		Name:           Clustername(cluster),
+		AltStatName:    altStatName(service),
+		ConnectTimeout: 250 * time.Millisecond,
+		LbPolicy:       lbPolicy(service.LoadBalancerStrategy),
+		CommonLbConfig: ClusterCommonLBConfig(),
+		HealthChecks:   edshealthcheck(service),
+	}
+
+	switch len(service.ExternalName) {
+	case 0:
+		// external name not set, cluster will be discovered via EDS
+		c.ClusterDiscoveryType = ClusterDiscoveryType(v2.Cluster_EDS)
+		c.EdsClusterConfig = edsconfig("contour", service)
+	default:
+		// external name set, use hard coded DNS name
+		c.ClusterDiscoveryType = ClusterDiscoveryType(v2.Cluster_STRICT_DNS)
+		c.LoadAssignment = StaticClusterLoadAssignment(service)
 	}
 
 	// Drain connections immediately if using healthchecks and the endpoint is known to be removed
@@ -104,6 +114,37 @@ func cluster(cluster *dag.Cluster, service *dag.TCPService) *v2.Cluster {
 		}
 	}
 	return c
+}
+
+// StaticClusterLoadAssignment creates a *v2.ClusterLoadAssignment pointing to the external DNS address of the service
+func StaticClusterLoadAssignment(service *dag.TCPService) *v2.ClusterLoadAssignment {
+	name := []string{
+		service.Namespace,
+		service.Name,
+		service.ServicePort.Name,
+	}
+
+	return &v2.ClusterLoadAssignment{
+		ClusterName: strings.Join(name, "/"),
+		Endpoints: []endpoint.LocalityLbEndpoints{{
+			LbEndpoints: []endpoint.LbEndpoint{{
+				HostIdentifier: &endpoint.LbEndpoint_Endpoint{
+					Endpoint: &endpoint.Endpoint{
+						Address: &core.Address{
+							Address: &core.Address_SocketAddress{
+								SocketAddress: &core.SocketAddress{
+									Address: service.ExternalName,
+									PortSpecifier: &core.SocketAddress_PortValue{
+										PortValue: uint32(service.ServicePort.Port),
+									},
+								},
+							},
+						},
+					},
+				},
+			}},
+		}},
+	}
 }
 
 func edsconfig(cluster string, service *dag.TCPService) *v2.Cluster_EdsClusterConfig {

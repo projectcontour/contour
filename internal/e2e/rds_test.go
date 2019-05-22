@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
@@ -29,7 +29,7 @@ import (
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/k8s"
 	"google.golang.org/grpc"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -2788,6 +2788,20 @@ func service(ns, name string, ports ...v1.ServicePort) *v1.Service {
 		},
 		Spec: v1.ServiceSpec{
 			Ports: ports,
+		},
+	}
+}
+
+func externalnameservice(ns, name, externalname string, ports ...v1.ServicePort) *v1.Service {
+	return &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: v1.ServiceSpec{
+			Ports:        ports,
+			ExternalName: externalname,
+			Type:         v1.ServiceTypeExternalName,
 		},
 	}
 }

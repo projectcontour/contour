@@ -18,14 +18,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/envoy"
 	"google.golang.org/grpc"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -917,6 +918,43 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	}, streamCDS(t, cc))
 }
 
+// Test processing a service type ExternalName
+func TestExternalNameService(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "kuard",
+				ServicePort: intstr.FromInt(80),
+			},
+		},
+	}
+	rh.OnAdd(i1)
+
+	// s1 is a simple tcp 80 -> 8080 service.
+	s1 := externalnameservice("default", "kuard", "foo.io", v1.ServicePort{
+		Protocol:   "TCP",
+		Port:       80,
+		TargetPort: intstr.FromInt(8080),
+	})
+	rh.OnAdd(s1)
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "2",
+		Resources: []types.Any{
+			any(t, externalnamecluster("default/kuard/80/da39a3ee5e", "default/kuard/", "default_kuard_80", "foo.io", 80)),
+		},
+		TypeUrl: clusterType,
+		Nonce:   "2",
+	}, streamCDS(t, cc))
+}
+
 func serviceWithAnnotations(ns, name string, annotations map[string]string, ports ...v1.ServicePort) *v1.Service {
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -953,6 +991,38 @@ func cluster(name, servicename, statName string) *v2.Cluster {
 		ConnectTimeout: 250 * time.Millisecond,
 		LbPolicy:       v2.Cluster_ROUND_ROBIN,
 		CommonLbConfig: envoy.ClusterCommonLBConfig(),
+	}
+}
+
+func externalnamecluster(name, servicename, statName, externalName string, port int) *v2.Cluster {
+	return &v2.Cluster{
+		Name:                 name,
+		ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
+		AltStatName:          statName,
+		ConnectTimeout:       250 * time.Millisecond,
+		LbPolicy:             v2.Cluster_ROUND_ROBIN,
+		CommonLbConfig:       envoy.ClusterCommonLBConfig(),
+		LoadAssignment: &v2.ClusterLoadAssignment{
+			ClusterName: servicename,
+			Endpoints: []endpoint.LocalityLbEndpoints{{
+				LbEndpoints: []endpoint.LbEndpoint{{
+					HostIdentifier: &endpoint.LbEndpoint_Endpoint{
+						Endpoint: &endpoint.Endpoint{
+							Address: &core.Address{
+								Address: &core.Address_SocketAddress{
+									SocketAddress: &core.SocketAddress{
+										Address: externalName,
+										PortSpecifier: &core.SocketAddress_PortValue{
+											PortValue: uint32(port),
+										},
+									},
+								},
+							},
+						},
+					},
+				}},
+			}},
+		},
 	}
 }
 
