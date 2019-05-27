@@ -5,3 +5,4 @@ vendor/
 .idea/
 .DS_Store
 go.sum
+localenvoyconfig.yaml
