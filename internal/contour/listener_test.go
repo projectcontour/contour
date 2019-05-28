@@ -15,7 +15,6 @@ package contour
 
 import (
 	"encoding/json"
-	"reflect"
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -620,11 +619,8 @@ func TestListenerVisit(t *testing.T) {
 			}
 			root := reh.Build()
 			got := visitListeners(root, &tc.ListenerVisitorConfig)
-			if !reflect.DeepEqual(tc.want, got) {
-				weWant := prettyPrint(tc.want)
-				weGot := prettyPrint(got)
-				t.Fatal(cmp.Diff(weWant, weGot))
-				//t.Fatalf("expected:\n%+v\ngot:\n%+v", weWant, weGot)
+			if !cmp.Equal(tc.want, got) {
+				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.want, got)
 			}
 		})
 	}

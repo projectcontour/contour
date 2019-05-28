@@ -21,15 +21,10 @@ test: install
 test-race: | test
 	go test -race -mod=readonly ./...
 
-test-repeated: | test
-	# Added for some tests that can be nondeterministic
-	# (Specifically, TestListenerCacheContents in listener_test.go)
-	go test -mod=readonly ./internal/contour/ -count=10
-
 vet: | test
 	go vet ./...
 
-check: test test-race test-repeated vet gofmt staticcheck misspell unconvert unparam ineffassign
+check: test test-race vet gofmt staticcheck misspell unconvert unparam ineffassign
 	@echo Checking rendered files are up to date
 	@(cd deployment && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 
