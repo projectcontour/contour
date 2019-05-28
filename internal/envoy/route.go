@@ -13,7 +13,6 @@
 package envoy
 
 import (
-	"fmt"
 	"sort"
 	"time"
 
@@ -148,10 +147,11 @@ func PrefixMatch(prefix string) route.RouteMatch {
 }
 
 // VirtualHost creates a new route.VirtualHost.
+// TODO: port is no longer required.
 func VirtualHost(hostname string, port int) route.VirtualHost {
 	domains := []string{hostname}
 	if hostname != "*" {
-		domains = append(domains, fmt.Sprintf("%s:%d", hostname, port))
+		domains = append(domains, hostname+":*")
 	}
 	return route.VirtualHost{
 		Name:    hashname(60, hostname),
