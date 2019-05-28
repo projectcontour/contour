@@ -262,6 +262,16 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 	// remove the https listener if there are no vhosts bound to it.
 	if len(lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains) == 0 {
 		delete(lv.listeners, ENVOY_HTTPS_LISTENER)
+	} else {
+		// there's some https listeners, we need to sort the filter chains
+		// to ensure that the LDS entries are identical.
+		sort.SliceStable(lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains,
+			func(i, j int) bool {
+				// The ServerNames field will only ever have a single entry
+				// in our FilterChain config, so it's okay to only sort
+				// on the first slice entry.
+				return lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains[i].FilterChainMatch.ServerNames[0] < lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains[j].FilterChainMatch.ServerNames[0]
+			})
 	}
 
 	return lv.listeners

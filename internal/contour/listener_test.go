@@ -14,7 +14,6 @@
 package contour
 
 import (
-	"reflect"
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -232,6 +231,76 @@ func TestListenerVisit(t *testing.T) {
 					TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:    filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
 				}},
+			}),
+		},
+		"multiple tls ingress with secrets should be sorted": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "sortedsecond",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							Hosts:      []string{"sortedsecond.example.com"},
+							SecretName: "secret",
+						}},
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromInt(8080),
+						},
+					},
+				},
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "sortedfirst",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							Hosts:      []string{"sortedfirst.example.com"},
+							SecretName: "secret",
+						}},
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromInt(8080),
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: secretdata("certificate", "key"),
+				},
+			},
+			want: listenermap(&v2.Listener{
+				Name:         ENVOY_HTTP_LISTENER,
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: filterchain(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, DEFAULT_HTTP_ACCESS_LOG)),
+			}, &v2.Listener{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: *envoy.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: []listener.ListenerFilter{
+					envoy.TLSInspector(),
+				},
+				FilterChains: []listener.FilterChain{
+					{
+						FilterChainMatch: &listener.FilterChainMatch{
+							ServerNames: []string{"sortedfirst.example.com"},
+						},
+						TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						Filters:    filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
+					},
+					{
+						FilterChainMatch: &listener.FilterChainMatch{
+							ServerNames: []string{"sortedsecond.example.com"},
+						},
+						TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						Filters:    filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
+					},
+				},
 			}),
 		},
 		"simple ingress with missing secret": {
@@ -549,7 +618,7 @@ func TestListenerVisit(t *testing.T) {
 			}
 			root := reh.Build()
 			got := visitListeners(root, &tc.ListenerVisitorConfig)
-			if !reflect.DeepEqual(tc.want, got) {
+			if !cmp.Equal(tc.want, got) {
 				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.want, got)
 			}
 		})
