@@ -14,7 +14,6 @@
 package contour
 
 import (
-	"encoding/json"
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -624,12 +623,6 @@ func TestListenerVisit(t *testing.T) {
 			}
 		})
 	}
-}
-
-// added to make the test output minimally readable.
-func prettyPrint(i interface{}) string {
-	s, _ := json.MarshalIndent(i, "", "\t")
-	return string(s)
 }
 
 func filters(first listener.Filter, rest ...listener.Filter) []listener.Filter {
