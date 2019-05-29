@@ -48,6 +48,7 @@ var ingressrouteRootNamespaceFlag string
 func main() {
 	log := logrus.StandardLogger()
 	app := kingpin.New("contour", "Heptio Contour Kubernetes ingress controller.")
+	logLevel := app.Flag("log-level", "Contour log level.").Default("info").String()
 	var config envoy.BootstrapConfig
 	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")
 	path := bootstrap.Arg("path", "Configuration file.").Required().String()
@@ -141,7 +142,15 @@ func main() {
 	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringVar(&ingressrouteRootNamespaceFlag)
 
 	args := os.Args[1:]
-	switch kingpin.MustParse(app.Parse(args)) {
+	command := kingpin.MustParse(app.Parse(args))
+
+	lvl, err := logrus.ParseLevel(*logLevel)
+	if err != nil {
+		log.Fatalf("invalid log level: %s", err)
+	}
+	log.SetLevel(lvl)
+
+	switch command {
 	case bootstrap.FullCommand():
 		writeBootstrapConfig(&config, *path)
 	case cds.FullCommand():
