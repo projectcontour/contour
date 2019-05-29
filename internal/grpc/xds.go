@@ -93,7 +93,7 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 			return fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl)
 		}
 
-		// stick some debugging details on the logger, not that we redeclare log in this scope
+		// stick some debugging details on the logger, note that we redeclare log in this scope
 		// so the next time around the loop all is forgotten.
 		log := log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail)
 
