@@ -14,8 +14,8 @@ In either case, a Service of `type: LoadBalancer` is set up to forward to the Co
 ## Install
 
 - Clone or fork the repository.
-- To install the DaemonSet, navigate to the `deployment/ds-grpc-v2` directory. OR
-- To install the Deployment, navigate to the `deployment/deployment-grpc-v2`.
+- To install the DaemonSet, navigate to the `examples/ds-grpc-v2` directory. OR
+- To install the Deployment, navigate to the `examples/deployment-grpc-v2`.
 
 Then run:
 
@@ -67,7 +67,7 @@ The Contour repository contains an example deployment of the Kubernetes Up and R
 To test your Contour deployment, deploy `kuard` with the following command:
 
 ```
-kubectl apply -f deployment/example-workload/kuard.yaml
+kubectl apply -f examples/example-workload/kuard.yaml
 ```
 
 Then monitor the progress of the deployment with:
@@ -100,7 +100,7 @@ In your browser, navigate your browser to the IP or DNS address of the Contour S
 To test your Contour deployment with [IngressRoutes][4], run the following command:
 
 ```sh
-kubectl apply -f deployment/example-workload/kuard-ingressroute.yaml
+kubectl apply -f examples/example-workload/kuard-ingressroute.yaml
 ```
 
 Then monitor the progress of the deployment with:

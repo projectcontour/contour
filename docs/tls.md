@@ -10,4 +10,4 @@ Enabling TLS support requires Contour version 0.3 or later. You must also add an
 
 If you deploy behind an AWS Elastic Load Balancer, see [EC2 ELB PROXY protocol support](proxy-proto.md) for special instructions.
 
-[1]: https://github.com/heptio/contour/blob/v0.3.1/deployment/common/service.yaml#L20-L23
+[1]: https://github.com/heptio/contour/blob/master/examples/common/service.yaml#L20-L23

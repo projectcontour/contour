@@ -20,7 +20,7 @@ Getting access to the Envoy admin interface can be useful for diagnosing issues 
 The Envoy admin interface is bound by default to `http://127.0.0.1:9001`. 
 To access it from your workstation use `kubectl port-forward` like so,
 ```
-# Get one of the pods that matches the deployment/daemonset
+# Get one of the pods that matches the examples/daemonset
 CONTOUR_POD=$(kubectl -n heptio-contour get pod -l app=contour -o jsonpath='{.items[0].metadata.name}')
 # Do the port forward to that pod
 kubectl -n heptio-contour port-forward $CONTOUR_POD 9001
@@ -33,7 +33,7 @@ Contour exposes the [net/http/pprof][5] handlers for `go tool pprof` and `go too
 This service is useful for profiling Contour. 
 To access it from your workstation use `kubectl port-forward` like so,
 ```
-# Get one of the pods that matches the deployment/daemonset
+# Get one of the pods that matches the examples/daemonset
 CONTOUR_POD=$(kubectl -n heptio-contour get pod -l app=contour -o jsonpath='{.items[0].metadata.name}')
 # Do the port forward to that pod
 kubectl -n heptio-contour port-forward $CONTOUR_POD 6060
@@ -68,7 +68,7 @@ Contour ships with a `contour cli` subcommand which can be used for this purpose
 Because Contour runs as a sidecar with Envoy, you must run `contour cli` commands _inside_ the pod.
 The easiest way do this is via `kubectl exec`
 ```
-# Get one of the pods that matches the deployment/daemonset
+# Get one of the pods that matches the examples/daemonset
 CONTOUR_POD=$(kubectl -n heptio-contour get pod -l app=contour -o jsonpath='{.items[0].metadata.name}')
 # Do the port forward to that pod
 kubectl -n heptio-contour exec $CONTOUR_POD -c contour contour cli lds
