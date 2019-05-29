@@ -98,7 +98,7 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 		log := log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail)
 
 		for {
-			log.Info("stream_wait")
+			log.Debug("stream_wait")
 
 			// now we wait for a notification, if this is the first time through the loop
 			// then last will be less than zero and that will trigger a notification immediately.
@@ -134,7 +134,7 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 				if err := st.Send(resp); err != nil {
 					return err
 				}
-				log.WithField("count", len(resources)).Info("response")
+				log.WithField("count", len(resources)).Debug("response")
 
 				// ok, the client hung up, return any error stored in the context and we're done.
 			case <-ctx.Done():
