@@ -46,5 +46,13 @@ spec:
         - containerPort: 8000
           name: debug
           protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
       dnsPolicy: ClusterFirst
       serviceAccountName: contour
