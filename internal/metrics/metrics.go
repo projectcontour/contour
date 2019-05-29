@@ -219,7 +219,7 @@ func (svc *Service) Start(stop <-chan struct{}) error {
 }
 
 func registerHealthCheck(mux *http.ServeMux, client *kubernetes.Clientset) {
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	healthCheckHandler := func(w http.ResponseWriter, r *http.Request) {
 		// Try and lookup Kubernetes server version as a quick and dirty check
 		_, err := client.ServerVersion()
 		if err != nil {
@@ -229,7 +229,9 @@ func registerHealthCheck(mux *http.ServeMux, client *kubernetes.Clientset) {
 		}
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, "OK")
-	})
+	}
+	mux.HandleFunc("/health", healthCheckHandler)
+	mux.HandleFunc("/healthz", healthCheckHandler)
 }
 
 func registerMetrics(mux *http.ServeMux, registry *prometheus.Registry) {
