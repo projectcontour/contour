@@ -1664,9 +1664,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 		"insert ingress w/ tls with different secure port": {
-			Builder: &Builder{
-				ExternalSecurePort: 8443,
-			},
+			Builder: &Builder{},
 			objs: []interface{}{
 				i3,
 				sec1,
@@ -3685,10 +3683,7 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			b := Builder{
-				ExternalInsecurePort: 10080,
-				ExternalSecurePort:   10443,
-			}
+			b := Builder{}
 			for _, o := range tc.objs {
 				b.Insert(o)
 			}

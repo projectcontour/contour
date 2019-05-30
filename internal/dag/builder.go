@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -39,17 +39,8 @@ const (
 type Builder struct {
 	KubernetesCache
 
-	// ExternalInsecurePort is the port that HTTP
-	// requests will arrive at the ELB or NAT that
-	// presents Envoy at the edge network.
-	// If not supplied, defaults to 80.
-	ExternalInsecurePort int
+	// TODO: Remove this layer of indirection?
 
-	// ExternalSecurePort is the port that HTTPS
-	// requests will arrive at the ELB or NAT that
-	// presents Envoy at the edge network.
-	// If not supplied, defaults to 443.
-	ExternalSecurePort int
 }
 
 // Build builds a new *DAG.
@@ -229,7 +220,7 @@ func (b *builder) lookupSecret(m meta, validate func(*v1.Secret) bool) *Secret {
 }
 
 func (b *builder) lookupVirtualHost(name string) *VirtualHost {
-	l := b.listener(b.externalInsecurePort())
+	l := b.listener(80)
 	vh, ok := l.VirtualHosts[name]
 	if !ok {
 		vh := &VirtualHost{
@@ -242,7 +233,7 @@ func (b *builder) lookupVirtualHost(name string) *VirtualHost {
 }
 
 func (b *builder) lookupSecureVirtualHost(name string) *SecureVirtualHost {
-	l := b.listener(b.externalSecurePort())
+	l := b.listener(443)
 	svh, ok := l.VirtualHosts[name]
 	if !ok {
 		svh := &SecureVirtualHost{
@@ -257,6 +248,10 @@ func (b *builder) lookupSecureVirtualHost(name string) *SecureVirtualHost {
 }
 
 // listener returns a listener for the supplied port.
+// TODO: the port value is not actually used as a port
+// anywhere. It's only used to choose between
+// 80 (for insecure) or 443 (for secure). This should be
+// fixed, see https://github.com/heptio/contour/issues/1135
 func (b *builder) listener(port int) *Listener {
 	l, ok := b.listeners[port]
 	if !ok {
@@ -270,20 +265,6 @@ func (b *builder) listener(port int) *Listener {
 		b.listeners[l.Port] = l
 	}
 	return l
-}
-
-func (b *builder) externalInsecurePort() int {
-	if b.source.ExternalInsecurePort == 0 {
-		return 80
-	}
-	return b.source.ExternalInsecurePort
-}
-
-func (b *builder) externalSecurePort() int {
-	if b.source.ExternalSecurePort == 0 {
-		return 443
-	}
-	return b.source.ExternalSecurePort
 }
 
 func (b *builder) compute() *DAG {
@@ -553,7 +534,7 @@ func (b *builder) computeIngressRoutes() {
 }
 
 func (b *builder) secureVirtualhostExists(host string) bool {
-	_, ok := b.listener(b.externalSecurePort()).VirtualHosts[host]
+	_, ok := b.listener(443).VirtualHosts[host]
 	return ok
 }
 
