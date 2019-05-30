@@ -309,7 +309,7 @@ func TestEditIngressInPlace(t *testing.T) {
 				Name: "ingress_http",
 				VirtualHosts: []route.VirtualHost{{
 					Name:    "hello.example.com",
-					Domains: []string{"hello.example.com", "hello.example.com:80"},
+					Domains: []string{"hello.example.com", "hello.example.com:*"},
 					Routes: []route.Route{{
 						Match:               envoy.PrefixMatch("/"),
 						Action:              routecluster("default/wowie/80/da39a3ee5e"),
@@ -359,7 +359,7 @@ func TestEditIngressInPlace(t *testing.T) {
 				Name: "ingress_http",
 				VirtualHosts: []route.VirtualHost{{
 					Name:    "hello.example.com",
-					Domains: []string{"hello.example.com", "hello.example.com:80"},
+					Domains: []string{"hello.example.com", "hello.example.com:*"},
 					Routes: []route.Route{{
 						Match:               envoy.PrefixMatch("/whoop"),
 						Action:              routecluster("default/kerpow/9000/da39a3ee5e"),
@@ -418,7 +418,7 @@ func TestEditIngressInPlace(t *testing.T) {
 				Name: "ingress_http",
 				VirtualHosts: []route.VirtualHost{{
 					Name:    "hello.example.com",
-					Domains: []string{"hello.example.com", "hello.example.com:80"},
+					Domains: []string{"hello.example.com", "hello.example.com:*"},
 					Routes: []route.Route{{
 						Match:  envoy.PrefixMatch("/whoop"),
 						Action: envoy.UpgradeHTTPS(),
@@ -488,7 +488,7 @@ func TestEditIngressInPlace(t *testing.T) {
 				Name: "ingress_http",
 				VirtualHosts: []route.VirtualHost{{
 					Name:    "hello.example.com",
-					Domains: []string{"hello.example.com", "hello.example.com:80"},
+					Domains: []string{"hello.example.com", "hello.example.com:*"},
 					Routes: []route.Route{{
 						Match:  envoy.PrefixMatch("/whoop"),
 						Action: envoy.UpgradeHTTPS(),
@@ -501,7 +501,7 @@ func TestEditIngressInPlace(t *testing.T) {
 				Name: "ingress_https",
 				VirtualHosts: []route.VirtualHost{{
 					Name:    "hello.example.com",
-					Domains: []string{"hello.example.com", "hello.example.com:443"},
+					Domains: []string{"hello.example.com", "hello.example.com:*"},
 					Routes: []route.Route{{
 						Match:               envoy.PrefixMatch("/whoop"),
 						Action:              routecluster("default/kerpow/9000/da39a3ee5e"),
@@ -731,7 +731,7 @@ func TestSSLRedirectOverlay(t *testing.T) {
 
 	assertRDS(t, cc, "5", []route.VirtualHost{{ // ingress_http
 		Name:    "example.com",
-		Domains: []string{"example.com", "example.com:80"},
+		Domains: []string{"example.com", "example.com:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 			Action:              routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
@@ -742,7 +742,7 @@ func TestSSLRedirectOverlay(t *testing.T) {
 		}},
 	}}, []route.VirtualHost{{ // ingress_https
 		Name:    "example.com",
-		Domains: []string{"example.com", "example.com:443"},
+		Domains: []string{"example.com", "example.com:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 			Action:              routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
@@ -813,7 +813,7 @@ func TestInvalidCertInIngress(t *testing.T) {
 
 	assertRDS(t, cc, "3", []route.VirtualHost{{ // ingress_http
 		Name:    "kuard.io",
-		Domains: []string{"kuard.io", "kuard.io:80"},
+		Domains: []string{"kuard.io", "kuard.io:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/"),
 			Action:              routecluster("default/kuard/80/da39a3ee5e"),
@@ -835,7 +835,7 @@ func TestInvalidCertInIngress(t *testing.T) {
 
 	assertRDS(t, cc, "4", []route.VirtualHost{{ // ingress_http
 		Name:    "kuard.io",
-		Domains: []string{"kuard.io", "kuard.io:80"},
+		Domains: []string{"kuard.io", "kuard.io:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/"),
 			Action:              routecluster("default/kuard/80/da39a3ee5e"),
@@ -843,7 +843,7 @@ func TestInvalidCertInIngress(t *testing.T) {
 		}},
 	}}, []route.VirtualHost{{ // ingress_https
 		Name:    "kuard.io",
-		Domains: []string{"kuard.io", "kuard.io:443"},
+		Domains: []string{"kuard.io", "kuard.io:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/"),
 			Action:              routecluster("default/kuard/80/da39a3ee5e"),
@@ -958,7 +958,7 @@ func TestIssue257(t *testing.T) {
 
 	assertRDS(t, cc, "3", []route.VirtualHost{{
 		Name:    "kuard.db.gd-ms.com",
-		Domains: []string{"kuard.db.gd-ms.com", "kuard.db.gd-ms.com:80"},
+		Domains: []string{"kuard.db.gd-ms.com", "kuard.db.gd-ms.com:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/"), // match all
 			Action:              routecluster("default/kuard/80/da39a3ee5e"),
@@ -1075,7 +1075,7 @@ func TestRDSFilter(t *testing.T) {
 				Name: "ingress_http",
 				VirtualHosts: []route.VirtualHost{{ // ingress_http
 					Name:    "example.com",
-					Domains: []string{"example.com", "example.com:80"},
+					Domains: []string{"example.com", "example.com:*"},
 					Routes: []route.Route{{
 						Match:               envoy.PrefixMatch("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 						Action:              routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
@@ -1098,7 +1098,7 @@ func TestRDSFilter(t *testing.T) {
 				Name: "ingress_https",
 				VirtualHosts: []route.VirtualHost{{ // ingress_https
 					Name:    "example.com",
-					Domains: []string{"example.com", "example.com:443"},
+					Domains: []string{"example.com", "example.com:*"},
 					Routes: []route.Route{{
 						Match:               envoy.PrefixMatch("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 						Action:              routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
@@ -1162,7 +1162,7 @@ func TestWebsocketIngress(t *testing.T) {
 
 	assertRDS(t, cc, "2", []route.VirtualHost{{
 		Name:    "websocket.hello.world",
-		Domains: []string{"websocket.hello.world", "websocket.hello.world:80"},
+		Domains: []string{"websocket.hello.world", "websocket.hello.world:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/"), // match all
 			Action:              websocketroute("default/ws/80/da39a3ee5e"),
@@ -1222,7 +1222,7 @@ func TestWebsocketIngressRoute(t *testing.T) {
 
 	assertRDS(t, cc, "2", []route.VirtualHost{{
 		Name:    "websocket.hello.world",
-		Domains: []string{"websocket.hello.world", "websocket.hello.world:80"},
+		Domains: []string{"websocket.hello.world", "websocket.hello.world:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/ws-2"),
 			Action:              websocketroute("default/ws/80/da39a3ee5e"),
@@ -1289,7 +1289,7 @@ func TestPrefixRewriteIngressRoute(t *testing.T) {
 
 	assertRDS(t, cc, "2", []route.VirtualHost{{
 		Name:    "prefixrewrite.hello.world",
-		Domains: []string{"prefixrewrite.hello.world", "prefixrewrite.hello.world:80"},
+		Domains: []string{"prefixrewrite.hello.world", "prefixrewrite.hello.world:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/ws-2"),
 			Action:              prefixrewriteroute("default/ws/80/da39a3ee5e"),
@@ -1405,7 +1405,7 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 					}},
 				}, {
 					Name:    "test-gui",
-					Domains: []string{"test-gui", "test-gui:80"},
+					Domains: []string{"test-gui", "test-gui:*"},
 					Routes: []route.Route{{
 						Match:               envoy.PrefixMatch("/"),
 						Action:              routecluster("default/test-gui/80/da39a3ee5e"),
@@ -1470,7 +1470,7 @@ func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
 				Name: "ingress_http",
 				VirtualHosts: []route.VirtualHost{{
 					Name:    "example.com",
-					Domains: []string{"example.com", "example.com:80"},
+					Domains: []string{"example.com", "example.com:*"},
 					Routes: []route.Route{{
 						Match:               envoy.PrefixMatch("/"),
 						Action:              routecluster("roots/kuard/8080/da39a3ee5e"),
@@ -1587,7 +1587,7 @@ func TestRDSIngressRouteClassAnnotation(t *testing.T) {
 	rh.OnAdd(ir1)
 	assertRDS(t, cc, "2", []route.VirtualHost{{
 		Name:    "www.example.com",
-		Domains: []string{"www.example.com", "www.example.com:80"},
+		Domains: []string{"www.example.com", "www.example.com:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/"),
 			Action:              routecluster("default/kuard/8080/da39a3ee5e"),
@@ -1673,7 +1673,7 @@ func TestRDSIngressRouteClassAnnotation(t *testing.T) {
 	rh.OnUpdate(ir3, ir4)
 	assertRDS(t, cc, "4", []route.VirtualHost{{
 		Name:    "www.example.com",
-		Domains: []string{"www.example.com", "www.example.com:80"},
+		Domains: []string{"www.example.com", "www.example.com:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/"),
 			Action:              routecluster("default/kuard/8080/da39a3ee5e"),
@@ -1708,7 +1708,7 @@ func TestRDSIngressRouteClassAnnotation(t *testing.T) {
 
 	assertRDS(t, cc, "5", []route.VirtualHost{{
 		Name:    "www.example.com",
-		Domains: []string{"www.example.com", "www.example.com:80"},
+		Domains: []string{"www.example.com", "www.example.com:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/"),
 			Action:              routecluster("default/kuard/8080/da39a3ee5e"),
@@ -1980,7 +1980,7 @@ func TestRDSIngressSpecMissingHTTPKey(t *testing.T) {
 
 	assertRDS(t, cc, "2", []route.VirtualHost{{
 		Name:    "test2.test.com",
-		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Domains: []string{"test2.test.com", "test2.test.com:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/"), // match all
 			Action:              routecluster("default/network-test/9001/da39a3ee5e"),
@@ -2028,7 +2028,7 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 	rh.OnAdd(ir1)
 	assertRDS(t, cc, "2", []route.VirtualHost{{
 		Name:    "test2.test.com",
-		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Domains: []string{"test2.test.com", "test2.test.com:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/a"), // match all
 			Action:              routecluster("default/kuard/80/da39a3ee5e"),
@@ -2061,7 +2061,7 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 	rh.OnUpdate(ir1, ir2)
 	assertRDS(t, cc, "3", []route.VirtualHost{{
 		Name:    "test2.test.com",
-		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Domains: []string{"test2.test.com", "test2.test.com:*"},
 		Routes: []route.Route{{
 			Match: envoy.PrefixMatch("/a"), // match all
 			Action: routeweightedcluster(
@@ -2133,7 +2133,7 @@ func TestRouteWithTLS(t *testing.T) {
 				Name: "ingress_http",
 				VirtualHosts: []route.VirtualHost{{
 					Name:    "test2.test.com",
-					Domains: []string{"test2.test.com", "test2.test.com:80"},
+					Domains: []string{"test2.test.com", "test2.test.com:*"},
 					Routes: []route.Route{{
 						Match:  envoy.PrefixMatch("/a"),
 						Action: envoy.UpgradeHTTPS(),
@@ -2143,7 +2143,7 @@ func TestRouteWithTLS(t *testing.T) {
 				Name: "ingress_https",
 				VirtualHosts: []route.VirtualHost{{
 					Name:    "test2.test.com",
-					Domains: []string{"test2.test.com", "test2.test.com:443"},
+					Domains: []string{"test2.test.com", "test2.test.com:*"},
 					Routes: []route.Route{{
 						Match:               envoy.PrefixMatch("/a"),
 						Action:              routecluster("default/kuard/80/da39a3ee5e"),
@@ -2237,7 +2237,7 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 				Name: "ingress_http",
 				VirtualHosts: []route.VirtualHost{{
 					Name:    "test2.test.com",
-					Domains: []string{"test2.test.com", "test2.test.com:80"},
+					Domains: []string{"test2.test.com", "test2.test.com:*"},
 					Routes: []route.Route{
 						{
 							Match:  envoy.PrefixMatch("/secure"),
@@ -2253,7 +2253,7 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 				Name: "ingress_https",
 				VirtualHosts: []route.VirtualHost{{
 					Name:    "test2.test.com",
-					Domains: []string{"test2.test.com", "test2.test.com:443"},
+					Domains: []string{"test2.test.com", "test2.test.com:*"},
 					Routes: []route.Route{
 						{
 							Match:               envoy.PrefixMatch("/secure"),
@@ -2361,7 +2361,7 @@ func TestRouteRetryIngressRoute(t *testing.T) {
 	rh.OnAdd(i1)
 	assertRDS(t, cc, "2", []route.VirtualHost{{
 		Name:    "test2.test.com",
-		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Domains: []string{"test2.test.com", "test2.test.com:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/"), // match all
 			Action:              routeretry("default/backend/80/da39a3ee5e", "5xx", 7, 120*time.Millisecond),
@@ -2415,7 +2415,7 @@ func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
 	rh.OnAdd(i1)
 	assertRDS(t, cc, "2", []route.VirtualHost{{
 		Name:    "test2.test.com",
-		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Domains: []string{"test2.test.com", "test2.test.com:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/"), // match all
 			Action:              routecluster("default/backend/80/da39a3ee5e"),
@@ -2446,7 +2446,7 @@ func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
 	rh.OnUpdate(i1, i2)
 	assertRDS(t, cc, "3", []route.VirtualHost{{
 		Name:    "test2.test.com",
-		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Domains: []string{"test2.test.com", "test2.test.com:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/"), // match all
 			Action:              clustertimeout("default/backend/80/da39a3ee5e", durationInfinite),
@@ -2476,7 +2476,7 @@ func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
 	rh.OnUpdate(i2, i3)
 	assertRDS(t, cc, "4", []route.VirtualHost{{
 		Name:    "test2.test.com",
-		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Domains: []string{"test2.test.com", "test2.test.com:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/"), // match all
 			Action:              clustertimeout("default/backend/80/da39a3ee5e", duration10Minutes),
@@ -2506,7 +2506,7 @@ func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
 	rh.OnUpdate(i3, i4)
 	assertRDS(t, cc, "5", []route.VirtualHost{{
 		Name:    "test2.test.com",
-		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Domains: []string{"test2.test.com", "test2.test.com:*"},
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/"), // match all
 			Action:              clustertimeout("default/backend/80/da39a3ee5e", durationInfinite),
@@ -2578,7 +2578,7 @@ func TestLoadBalancingStrategies(t *testing.T) {
 	rh.OnAdd(ir)
 	want := []route.VirtualHost{{
 		Name:    "test2.test.com",
-		Domains: []string{"test2.test.com", "test2.test.com:80"},
+		Domains: []string{"test2.test.com", "test2.test.com:*"},
 		Routes: []route.Route{
 			{
 				Match:               envoy.PrefixMatch("/a"),

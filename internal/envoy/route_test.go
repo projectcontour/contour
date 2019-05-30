@@ -20,7 +20,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/google/go-cmp/cmp"
 	"github.com/heptio/contour/internal/dag"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -381,13 +381,13 @@ func TestVirtualHost(t *testing.T) {
 			port:     9999,
 			want: route.VirtualHost{
 				Name:    "www.example.com",
-				Domains: []string{"www.example.com", "www.example.com:9999"},
+				Domains: []string{"www.example.com", "www.example.com:*"},
 			},
 		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := VirtualHost(tc.hostname, tc.port)
+			got := VirtualHost(tc.hostname)
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Fatal(diff)
 			}

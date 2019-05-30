@@ -147,8 +147,7 @@ func PrefixMatch(prefix string) route.RouteMatch {
 }
 
 // VirtualHost creates a new route.VirtualHost.
-// TODO: port is no longer required.
-func VirtualHost(hostname string, port int) route.VirtualHost {
+func VirtualHost(hostname string) route.VirtualHost {
 	domains := []string{hostname}
 	if hostname != "*" {
 		domains = append(domains, hostname+":*")
