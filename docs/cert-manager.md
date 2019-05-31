@@ -2,7 +2,7 @@
 
 This tutorial shows you how to securely deploy an HTTPS web application on a Kubernetes cluster, using:
 
-- Kubernetes (obviously :))
+- Kubernetes
 - Contour, as the Ingress controller
 - [JetStack's cert-manager][1] to provision TLS certificates from [the Let's Encrypt project][5]
 
@@ -10,10 +10,10 @@ This tutorial shows you how to securely deploy an HTTPS web application on a Kub
 
 ## Prerequisites
 
-- A Kubernetes cluster deployed in either a data center or a cloud provider with a Kubernetes as a service offering. This tutorial was developed on a GKE cluster running Kubernetes 1.8.
-- RBAC enabled on your cluster.
-- Your cluster must be able to request a public IP address from your cloud provider, using a load balancer. If you're on AWS or GKE this is automatic if you deploy a Kubernetes service object of type: LoadBalancer. If you're on your own datacenter you must set it up yourself.
-- A DNS domain that you control, where you host your web application.
+- A Kubernetes cluster deployed in either a data center or a cloud provider with a Kubernetes as a service offering. This tutorial was developed on a GKE cluster running Kubernetes 1.14
+- RBAC enabled on your cluster
+- Your cluster must be able to request a public IP address from your cloud provider, using a load balancer. If you're on AWS or GKE this is automatic if you deploy a Kubernetes service object of type: LoadBalancer. If you're on your own datacenter you must set it up yourself
+- A DNS domain that you control, where you host your web application
 - Administrator permissions for all deployment steps
 
 **NOTE:** A Minikube cluster is not supported because of the complexities of NAT and port forwarding.
@@ -115,34 +115,33 @@ There are plenty of other ways to deploy cert-manager, but they are out of scope
 
 ### Fetch the source manager deployment manifest
 
-To keep things simple, we skip cert-manager's Helm installation, and use the supplied YAML manifests.
-Clone the github.com/jetstack/cert-manager repository:
+To keep things simple, we skip cert-manager's Helm installation, and use the supplied YAML manifests:
 
 ```
-git clone https://github.com/jetstack/cert-manager
-cd cert-manager
-```
-
-Then deploy cert-manager:
-
-```
-kubectl apply -f deploy/manifests/cert-manager.yaml
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v0.8.0/cert-manager.yaml
 ```
 
 When cert-manager is up and running you should see something like:
 
 ```
 % kubectl -n cert-manager get all
-NAME                  DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-deploy/cert-manager   1         1         1            1           1h
-NAME                         DESIRED   CURRENT   READY     AGE
-rs/cert-manager-5886f49b8c   1         1         1         1h
-NAME                  DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-deploy/cert-manager   1         1         1            1           1h
-NAME                         DESIRED   CURRENT   READY     AGE
-rs/cert-manager-5886f49b8c   1         1         1         1h
-NAME                               READY     STATUS    RESTARTS   AGE
-po/cert-manager-5886f49b8c-49tq8   2/2       Running   0          1h
+NAME                                          READY   STATUS    RESTARTS   AGE
+pod/cert-manager-54f645f7d6-fhpx2             1/1     Running   0          40s
+pod/cert-manager-cainjector-79b7fc64f-zt97m   1/1     Running   0          40s
+pod/cert-manager-webhook-6484955794-jf9l8     1/1     Running   0          40s
+
+NAME                           TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/cert-manager-webhook   ClusterIP   10.98.100.245   <none>        443/TCP   41s
+
+NAME                                      READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/cert-manager              1/1     1            1           40s
+deployment.apps/cert-manager-cainjector   1/1     1            1           41s
+deployment.apps/cert-manager-webhook      1/1     1            1           40s
+
+NAME                                                DESIRED   CURRENT   READY   AGE
+replicaset.apps/cert-manager-54f645f7d6             1         1         1       40s
+replicaset.apps/cert-manager-cainjector-79b7fc64f   1         1         1       40s
+replicaset.apps/cert-manager-webhook-6484955794     1         1         1       40s
 ```
 
 ### Deploy the Let's Encrypt cluster issuer
@@ -491,7 +490,7 @@ After the Secret is created, you add a `tls` field to the Ingress object for you
 
 ## Bonus points
 
-For bonus points, it's 2018 and you probably shouldn't be serving traffic over insecure HTTP any more.
+For bonus points, it's 2019 and you probably shouldn't be serving traffic over insecure HTTP any more.
 Now that TLS is configured for your web service, you can use a feature of Contour to automatically upgrade any HTTP request to the corresponding HTTPS site.
 
 To enable the automatic redirect from HTTP to HTTPS, add this annotation to your Ingress object.
