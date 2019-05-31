@@ -1372,7 +1372,6 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		*Builder
 		objs []interface{}
 		want []Vertex
 	}{
@@ -2861,11 +2860,7 @@ func TestDAGInsert(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			b := tc.Builder
-			if b == nil {
-				b = new(Builder)
-			}
-
+			var b Builder
 			for _, o := range tc.objs {
 				b.Insert(o)
 			}
@@ -3662,7 +3657,7 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			b := Builder{}
+			var b Builder
 			for _, o := range tc.objs {
 				b.Insert(o)
 			}
