@@ -1372,7 +1372,6 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		*Builder
 		objs []interface{}
 		want []Vertex
 	}{
@@ -1657,29 +1656,6 @@ func TestDAGInsert(t *testing.T) {
 				},
 				&Listener{
 					Port: 443,
-					VirtualHosts: virtualhosts(
-						securevirtualhost("kuard.example.com", sec1, route("/")),
-					),
-				},
-			),
-		},
-		"insert ingress w/ tls with different secure port": {
-			Builder: &Builder{
-				ExternalSecurePort: 8443,
-			},
-			objs: []interface{}{
-				i3,
-				sec1,
-			},
-			want: listeners(
-				&Listener{
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						virtualhost("kuard.example.com", route("/")),
-					),
-				},
-				&Listener{
-					Port: 8443,
 					VirtualHosts: virtualhosts(
 						securevirtualhost("kuard.example.com", sec1, route("/")),
 					),
@@ -2884,11 +2860,7 @@ func TestDAGInsert(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			b := tc.Builder
-			if b == nil {
-				b = new(Builder)
-			}
-
+			var b Builder
 			for _, o := range tc.objs {
 				b.Insert(o)
 			}
@@ -3641,7 +3613,7 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Port: 10080,
+					Port: 80,
 					VirtualHosts: virtualhosts(
 						&VirtualHost{
 							Name: "example.com",
@@ -3685,10 +3657,7 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			b := Builder{
-				ExternalInsecurePort: 10080,
-				ExternalSecurePort:   10443,
-			}
+			var b Builder
 			for _, o := range tc.objs {
 				b.Insert(o)
 			}

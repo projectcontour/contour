@@ -130,8 +130,6 @@ func main() {
 
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&ch.HTTPAccessLog)
 	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&ch.HTTPSAccessLog)
-	serve.Flag("envoy-external-http-port", "External port for HTTP requests").Default("80").IntVar(&reh.ExternalInsecurePort)
-	serve.Flag("envoy-external-https-port", "External port for HTTPS requests").Default("443").IntVar(&reh.ExternalSecurePort)
 	serve.Flag("envoy-service-http-address", "Kubernetes Service address for HTTP requests").Default("0.0.0.0").StringVar(&ch.HTTPAddress)
 	serve.Flag("envoy-service-https-address", "Kubernetes Service address for HTTPS requests").Default("0.0.0.0").StringVar(&ch.HTTPSAddress)
 	serve.Flag("envoy-service-http-port", "Kubernetes Service port for HTTP requests").Default("8080").IntVar(&ch.HTTPPort)
@@ -139,6 +137,14 @@ func main() {
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ch.UseProxyProto)
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&reh.IngressClass)
 	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringVar(&ingressrouteRootNamespaceFlag)
+
+	// TODO(youngnick) remove these for 0.14, see #1141
+	// The following flags are no-ops, and the variables are used to print a message that they don't do anything
+	// any more.
+	var externalHTTPPort int
+	var externalHTTPSPort int
+	serve.Flag("envoy-external-http-port", "External port for HTTP requests").IntVar(&externalHTTPPort)
+	serve.Flag("envoy-external-https-port", "External port for HTTPS requests").IntVar(&externalHTTPSPort)
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
@@ -162,6 +168,14 @@ func main() {
 	case serve.FullCommand():
 		log.Infof("args: %v", args)
 		var g workgroup.Group
+
+		// Deprecation warnings for deprecated flags.
+		if externalHTTPPort != 0 {
+			log.Warn("--envoy-external-http-port will be removed in 0.14")
+		}
+		if externalHTTPSPort != 0 {
+			log.Warn("--envoy-external-https-port will be removed in 0.14")
+		}
 
 		// client-go uses glog which requires initialisation as a side effect of calling
 		// flag.Parse (see #118 and https://github.com/golang/glog/blob/master/glog.go#L679)
