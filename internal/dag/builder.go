@@ -39,7 +39,7 @@ const (
 type Builder struct {
 	KubernetesCache
 
-	// TODO: Remove this layer of indirection?
+	// TODO(youngnick) merge Builder and Kubernetes cache? See #1142
 
 }
 

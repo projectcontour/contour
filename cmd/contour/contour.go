@@ -138,6 +138,7 @@ func main() {
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&reh.IngressClass)
 	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringVar(&ingressrouteRootNamespaceFlag)
 
+	// TODO(youngnick) remove these for 0.14, see #1141
 	// The following flags are no-ops, and the variables are used to print a message that they don't do anything
 	// any more.
 	var externalHTTPPort int
@@ -168,12 +169,12 @@ func main() {
 		log.Infof("args: %v", args)
 		var g workgroup.Group
 
-		// Functionality warnings for non-functional flags.
+		// Deprecation warnings for deprecated flags.
 		if externalHTTPPort != 0 {
-			log.Infof("Due to changes to upstream Envoy, setting envoy-external-http-port to %d no longer does anything, your Ingress will work without it. This notice will be removed in two releases.", externalHTTPPort)
+			log.Warn("--envoy-external-http-port will be removed in 0.14")
 		}
 		if externalHTTPSPort != 0 {
-			log.Infof("Due to changes to upstream Envoy, setting envoy-external-https-port to %d no longer does anything, your Ingress will work without it. This notice will be removed in two releases.", externalHTTPSPort)
+			log.Warn("--envoy-external-https-port will be removed in 0.14")
 		}
 
 		// client-go uses glog which requires initialisation as a side effect of calling

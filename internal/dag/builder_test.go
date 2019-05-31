@@ -1663,27 +1663,6 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert ingress w/ tls with different secure port": {
-			Builder: &Builder{},
-			objs: []interface{}{
-				i3,
-				sec1,
-			},
-			want: listeners(
-				&Listener{
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						virtualhost("kuard.example.com", route("/")),
-					),
-				},
-				&Listener{
-					Port: 8443,
-					VirtualHosts: virtualhosts(
-						securevirtualhost("kuard.example.com", sec1, route("/")),
-					),
-				},
-			),
-		},
 		"insert ingress w/ two vhosts": {
 			objs: []interface{}{
 				i6,
@@ -3639,7 +3618,7 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
-					Port: 10080,
+					Port: 80,
 					VirtualHosts: virtualhosts(
 						&VirtualHost{
 							Name: "example.com",
