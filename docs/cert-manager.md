@@ -16,7 +16,7 @@ This tutorial shows you how to securely deploy an HTTPS web application on a Kub
 - A DNS domain that you control, where you host your web application
 - Administrator permissions for all deployment steps
 
-**NOTE:** A Minikube cluster is not supported because of the complexities of NAT and port forwarding.
+**NOTE:** To use a local cluster like `minikube` or `kind`, see the instructions in [the deployment docs][7] for getting access.
 
 ## Summary
 
@@ -528,3 +528,4 @@ Now any requests to the insecure HTTP version of your site get an unconditional 
 [httpbin]: cert-manager/httpbin.png
 [5]: https://letsencrypt.org/getting-started/
 [6]: #3-deploy-your-first-HTTPS-site
+[7]: ./deploy-options.md#get-your-hostname-or-ip-address
