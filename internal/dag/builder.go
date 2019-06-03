@@ -64,8 +64,8 @@ type builder struct {
 }
 
 // lookupHTTPService returns a HTTPService that matches the meta and port supplied.
-func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString, strategy string, hc *ingressroutev1.HealthCheck) *HTTPService {
-	s := b.lookupService(m, port, strategy, hc)
+func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString, hc *ingressroutev1.HealthCheck) *HTTPService {
+	s := b.lookupService(m, port, hc)
 	switch s := s.(type) {
 	case *HTTPService:
 		return s
@@ -77,10 +77,10 @@ func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString, strategy st
 		for i := range svc.Spec.Ports {
 			p := &svc.Spec.Ports[i]
 			if int(p.Port) == port.IntValue() {
-				return b.addHTTPService(svc, p, strategy, hc)
+				return b.addHTTPService(svc, p, hc)
 			}
 			if port.String() == p.Name {
-				return b.addHTTPService(svc, p, strategy, hc)
+				return b.addHTTPService(svc, p, hc)
 			}
 		}
 		return nil
@@ -91,8 +91,8 @@ func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString, strategy st
 }
 
 // lookupTCPService returns a TCPService that matches the meta and port supplied.
-func (b *builder) lookupTCPService(m meta, port intstr.IntOrString, strategy string, hc *ingressroutev1.HealthCheck) *TCPService {
-	s := b.lookupService(m, port, strategy, hc)
+func (b *builder) lookupTCPService(m meta, port intstr.IntOrString, hc *ingressroutev1.HealthCheck) *TCPService {
+	s := b.lookupService(m, port, hc)
 	switch s := s.(type) {
 	case *TCPService:
 		return s
@@ -104,10 +104,10 @@ func (b *builder) lookupTCPService(m meta, port intstr.IntOrString, strategy str
 		for i := range svc.Spec.Ports {
 			p := &svc.Spec.Ports[i]
 			if int(p.Port) == port.IntValue() {
-				return b.addTCPService(svc, p, strategy, hc)
+				return b.addTCPService(svc, p, hc)
 			}
 			if port.String() == p.Name {
-				return b.addTCPService(svc, p, strategy, hc)
+				return b.addTCPService(svc, p, hc)
 			}
 		}
 		return nil
@@ -116,7 +116,7 @@ func (b *builder) lookupTCPService(m meta, port intstr.IntOrString, strategy str
 		return nil
 	}
 }
-func (b *builder) lookupService(m meta, port intstr.IntOrString, strategy string, hc *ingressroutev1.HealthCheck) Service {
+func (b *builder) lookupService(m meta, port intstr.IntOrString, hc *ingressroutev1.HealthCheck) Service {
 	if port.Type != intstr.Int {
 		// can't handle, give up
 		return nil
@@ -125,7 +125,6 @@ func (b *builder) lookupService(m meta, port intstr.IntOrString, strategy string
 		name:        m.name,
 		namespace:   m.namespace,
 		port:        int32(port.IntValue()),
-		strategy:    strategy,
 		healthcheck: healthcheckToString(hc),
 	}
 	s, ok := b.services[sm]
@@ -139,7 +138,7 @@ func healthcheckToString(hc *ingressroutev1.HealthCheck) string {
 	return fmt.Sprintf("%#v", hc)
 }
 
-func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort, strategy string, hc *ingressroutev1.HealthCheck) *HTTPService {
+func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort, hc *ingressroutev1.HealthCheck) *HTTPService {
 	if b.services == nil {
 		b.services = make(map[servicemeta]Service)
 	}
@@ -151,10 +150,9 @@ func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort, strategy
 
 	s := &HTTPService{
 		TCPService: TCPService{
-			Name:                 svc.Name,
-			Namespace:            svc.Namespace,
-			ServicePort:          port,
-			LoadBalancerStrategy: strategy,
+			Name:        svc.Name,
+			Namespace:   svc.Namespace,
+			ServicePort: port,
 
 			MaxConnections:     parseAnnotation(svc.Annotations, annotationMaxConnections),
 			MaxPendingRequests: parseAnnotation(svc.Annotations, annotationMaxPendingRequests),
@@ -176,15 +174,14 @@ func externalName(svc *v1.Service) string {
 	return svc.Spec.ExternalName
 }
 
-func (b *builder) addTCPService(svc *v1.Service, port *v1.ServicePort, strategy string, hc *ingressroutev1.HealthCheck) *TCPService {
+func (b *builder) addTCPService(svc *v1.Service, port *v1.ServicePort, hc *ingressroutev1.HealthCheck) *TCPService {
 	if b.services == nil {
 		b.services = make(map[servicemeta]Service)
 	}
 	s := &TCPService{
-		Name:                 svc.Name,
-		Namespace:            svc.Namespace,
-		ServicePort:          port,
-		LoadBalancerStrategy: strategy,
+		Name:        svc.Name,
+		Namespace:   svc.Namespace,
+		ServicePort: port,
 
 		MaxConnections:     parseAnnotation(svc.Annotations, annotationMaxConnections),
 		MaxPendingRequests: parseAnnotation(svc.Annotations, annotationMaxPendingRequests),
@@ -458,8 +455,8 @@ func (b *builder) computeIngresses() {
 				r := prefixRoute(ing, prefix)
 				be := httppath.Backend
 				m := meta{name: be.ServiceName, namespace: ing.Namespace}
-				if s := b.lookupHTTPService(m, be.ServicePort, "", nil); s != nil {
-					r.addHTTPService(s, 0, nil)
+				if s := b.lookupHTTPService(m, be.ServicePort, nil); s != nil {
+					r.addHTTPService(s, "", 0, nil)
 				}
 
 				// should we create port 80 routes for this ingress
@@ -669,13 +666,13 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 					return
 				}
 				m := meta{name: service.Name, namespace: ir.Namespace}
-				if s := b.lookupHTTPService(m, intstr.FromInt(service.Port), service.Strategy, service.HealthCheck); s != nil {
+				if s := b.lookupHTTPService(m, intstr.FromInt(service.Port), service.HealthCheck); s != nil {
 					var uv *UpstreamValidation
 					if s.Protocol == "tls" {
 						// we can only varlidate TLS connections to services that talk TLS
 						uv = b.lookupUpstreamValidation(ir, host, route, service, ir.Namespace)
 					}
-					r.addHTTPService(s, service.Weight, uv)
+					r.addHTTPService(s, service.Strategy, service.Weight, uv)
 				}
 			}
 
@@ -764,13 +761,14 @@ func (b *builder) processTCPProxy(ir *ingressroutev1.IngressRoute, visited []*in
 		var proxy TCPProxy
 		for _, service := range tcpproxy.Services {
 			m := meta{name: service.Name, namespace: ir.Namespace}
-			s := b.lookupTCPService(m, intstr.FromInt(service.Port), service.Strategy, service.HealthCheck)
+			s := b.lookupTCPService(m, intstr.FromInt(service.Port), service.HealthCheck)
 			if s == nil {
 				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("tcpproxy: service %s/%s/%d: not found", ir.Namespace, service.Name, service.Port), Vhost: host})
 				return
 			}
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
-				Upstream: s,
+				Upstream:             s,
+				LoadBalancerStrategy: service.Strategy,
 			})
 		}
 		b.lookupSecureVirtualHost(host).VirtualHost.TCPProxy = &proxy

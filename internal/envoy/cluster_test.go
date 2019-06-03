@@ -428,7 +428,6 @@ func TestClustername(t *testing.T) {
 						Port:       80,
 						TargetPort: intstr.FromInt(6502),
 					},
-					LoadBalancerStrategy: "Random",
 					HealthCheck: &ingressroutev1.HealthCheck{
 						Path:                    "/healthz",
 						IntervalSeconds:         5,
@@ -437,6 +436,7 @@ func TestClustername(t *testing.T) {
 						HealthyThresholdCount:   1,
 					},
 				},
+				LoadBalancerStrategy: "Random",
 			},
 			want: "default/backend/80/5c26077e1d",
 		},
@@ -451,8 +451,8 @@ func TestClustername(t *testing.T) {
 						Port:       80,
 						TargetPort: intstr.FromInt(6502),
 					},
-					LoadBalancerStrategy: "Random",
 				},
+				LoadBalancerStrategy: "Random",
 				UpstreamValidation: &dag.UpstreamValidation{
 					CACertificate: &dag.Secret{
 						Object: &v1.Secret{
