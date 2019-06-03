@@ -15,7 +15,7 @@ This configuration has several advantages:
 ## Deploy Contour
 
 1. [Clone the Contour repository][1] and cd into the repo.
-2. Run `kubectl apply -f deployment/ds-hostnet-split/`
+2. Run `kubectl apply -f examples/ds-hostnet-split/`
 
 **NOTE**: The current configuration exposes the `/stats` path from the Envoy Admin UI so that Prometheus can scrape for metrics.
 

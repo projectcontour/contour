@@ -35,7 +35,7 @@ the following metrics:
 
 ## Sample Deployment
 
-In the `/deployment` directory there are example deployment files that can be used to spin up an example environment.
+In the `/examples` directory there are example deployment files that can be used to spin up an example environment.
 All deployments there are configured with annotations for prometheus to scrape by default, so it should be possible to utilize any of them with the following quickstart example instructions.
 
 ### Deploy Prometheus
@@ -51,7 +51,7 @@ A sample deployment of Prometheus and Alertmanager is provided that uses tempora
 
 ```sh
 # Deploy 
-$ kubectl apply -f deployment/prometheus
+$ kubectl apply -f examples/prometheus
 ```
 
 #### Access the Prometheus web UI
@@ -78,7 +78,7 @@ A sample deployment of Grafana is provided that uses temporary storage.
 
 ```sh
 # Deploy
-$ kubectl apply -f deployment/grafana/
+$ kubectl apply -f examples/grafana/
 
 # Create secret with grafana credentials
 $ kubectl create secret generic grafana -n contour-monitoring \

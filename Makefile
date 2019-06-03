@@ -26,7 +26,7 @@ vet: | test
 
 check: test test-race vet gofmt staticcheck misspell unconvert unparam ineffassign
 	@echo Checking rendered files are up to date
-	@(cd deployment && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
+	@(cd examples && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 
 install:
 	go install -mod=readonly -v -tags "oidc gcp" ./...
@@ -91,8 +91,8 @@ errcheck:
 	errcheck $(PKGS)
 
 render:
-	@echo Rendering deployment files...
-	@(cd deployment && bash render.sh)
+	@echo Rendering example deployment files...
+	@(cd examples && bash render.sh)
 
 updategenerated:
 	@echo Updating CRD generated code...

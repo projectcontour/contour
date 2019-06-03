@@ -17,7 +17,7 @@ This configuration has several advantages:
 ## Deploying Contour
 
 1. [Clone the Contour repository][4] and cd into the repo.
-2. Run `kubectl apply -f deployment/ds-hostnet/`
+2. Run `kubectl apply -f examples/ds-hostnet/`
 
 This creates the `heptio-contour` Namespace along with a ServiceAccount, RBAC rules, and the DaemonSet itself.  It also creates the NLB based loadbalancer for you.
 
