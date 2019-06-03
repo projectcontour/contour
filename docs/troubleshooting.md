@@ -76,10 +76,9 @@ kubectl -n heptio-contour exec $CONTOUR_POD -c contour contour cli lds
 Which will stream changes to the LDS api endpoint to your terminal.
 Replace `contour cli lds` with `contour cli rds` for RDS, `contour cli cds` for CDS, and `contour cli eds` for EDS.
 
-## I've deployed on Minikube and nothing seems to work
+## I've deployed on Minikube or kind and nothing seems to work
 
-Minikube is not recommended for testing or developing Contour because of its network limitations.
-To run Contour on Minikube for exploration only, see [Contour on Minikube][3]
+See [the deployment documentation][3] for some tips on using these two deployment options successfully.
 
 ## How can I deploy a Contour daemonset directly onto ports 80 or 443?
 
@@ -102,7 +101,7 @@ See [Issue #547][4]
 [0]: https://github.com/jetstack/kube-lego
 [1]: https://github.com/heptio/contour/issues/210
 [2]: https://github.com/envoyproxy/envoy/issues/1269
-[3]: minikube.md
+[3]: deploy-options.md
 [4]: https://github.com/heptio/contour/issues/547
 [5]: https://golang.org/pkg/net/http/pprof/
 [6]: https://en.wikipedia.org/wiki/DOT_(graph_description_language)
