@@ -518,37 +518,6 @@ spec:
           strategy: WeightedLeastRequest
 ```
 
-#### IngressRoute Default Load Balancing Strategy (Not supported in beta.1)
-
-In order to reduce the amount of duplicated configuration, the IngressRoute specification supports a default Strategy that will be applied to all Services.
-You may still override this default on a per-Service basis.
-
-In this example, Services `s1-def-strategy` and `s2-def-strategy` will both have requests distributed across their Endpoints using the WeightedLeastRequest strategy.
-Service `s3-def-strategy` will have requests distributed randomly.
-
-```yaml
-# default-lb-strategy.ingressroute.yaml
-apiVersion: contour.heptio.com/v1beta1
-kind: IngressRoute
-metadata:
-  name: default-lb-strategy
-  namespace: default
-spec:
-  virtualhost:
-    fqdn: default-strategy.bar.com
-  strategy: WeightedLeastRequest # Default LB algorithm to be applied to services
-  routes:
-    - match: /
-      services:
-        - name: s1-def-strategy
-          port: 80
-        - name: s2-def-strategy
-          port: 80
-        - name: s3-def-strategy
-          port: 80
-          strategy: Random # Overrides default LB algorithm for only this Service
-```
-
 #### Per-Upstream Active Health Checking
 
 Active health checking can be configured on a per-upstream Service basis.
