@@ -67,9 +67,6 @@ type Route struct {
 
 	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
 	PrefixRewrite string
-
-	// UpstreamValidation defines how to verify the backend service's certificate
-	UpstreamValidation *UpstreamValidation
 }
 
 // TimeoutPolicy defines the timeout request/idle
