@@ -16,7 +16,7 @@ This tutorial shows you how to securely deploy an HTTPS web application on a Kub
 - A DNS domain that you control, where you host your web application
 - Administrator permissions for all deployment steps
 
-**NOTE:** To use a local cluster like `minikube` or `kind`, see the instructions in [the deployment docs][7] for getting access.
+**NOTE:** To use a local cluster like `minikube` or `kind`, see the instructions in [the deployment docs][7].
 
 ## Summary
 
