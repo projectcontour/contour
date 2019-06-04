@@ -82,7 +82,7 @@ func cluster(cluster *dag.Cluster, service *dag.TCPService) *v2.Cluster {
 		Name:           Clustername(cluster),
 		AltStatName:    altStatName(service),
 		ConnectTimeout: 250 * time.Millisecond,
-		LbPolicy:       lbPolicy(service.LoadBalancerStrategy),
+		LbPolicy:       lbPolicy(cluster.LoadBalancerStrategy),
 		CommonLbConfig: ClusterCommonLBConfig(),
 		HealthChecks:   edshealthcheck(service),
 	}
@@ -193,7 +193,7 @@ func Clustername(cluster *dag.Cluster) string {
 	default:
 		panic(fmt.Sprintf("unsupported upstream type: %T", s))
 	}
-	buf := service.LoadBalancerStrategy
+	buf := cluster.LoadBalancerStrategy
 	if hc := service.HealthCheck; hc != nil {
 		if hc.TimeoutSeconds > 0 {
 			buf += (time.Duration(hc.TimeoutSeconds) * time.Second).String()

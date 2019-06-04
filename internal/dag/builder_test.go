@@ -2940,7 +2940,6 @@ func TestBuilderLookupHTTPService(t *testing.T) {
 	tests := map[string]struct {
 		meta
 		port        intstr.IntOrString
-		strategy    string
 		healthcheck *ingressroutev1.HealthCheck
 		want        *HTTPService
 	}{
@@ -2975,7 +2974,7 @@ func TestBuilderLookupHTTPService(t *testing.T) {
 					},
 				},
 			}
-			got := b.lookupHTTPService(tc.meta, tc.port, tc.strategy, tc.healthcheck)
+			got := b.lookupHTTPService(tc.meta, tc.port, tc.healthcheck)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}

@@ -103,11 +103,12 @@ type UpstreamValidation struct {
 	SubjectName string
 }
 
-func (r *Route) addHTTPService(s *HTTPService, weight int, uv *UpstreamValidation) {
+func (r *Route) addHTTPService(s *HTTPService, strategy string, weight int, uv *UpstreamValidation) {
 	r.Clusters = append(r.Clusters, &Cluster{
-		Upstream:           s,
-		Weight:             weight,
-		UpstreamValidation: uv,
+		Upstream:             s,
+		LoadBalancerStrategy: strategy,
+		Weight:               weight,
+		UpstreamValidation:   uv,
 	})
 }
 
@@ -216,10 +217,6 @@ type TCPService struct {
 
 	*v1.ServicePort
 
-	// The load balancer type to use when picking a host in the cluster.
-	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cds.proto#envoy-api-enum-cluster-lbpolicy
-	LoadBalancerStrategy string
-
 	// Circuit breaking limits
 
 	// Max connections is maximum number of connections
@@ -248,7 +245,6 @@ type servicemeta struct {
 	name        string
 	namespace   string
 	port        int32
-	strategy    string
 	healthcheck string // %#v of *ingressroutev1.HealthCheck
 }
 
@@ -257,7 +253,6 @@ func (s *TCPService) toMeta() servicemeta {
 		name:        s.Name,
 		namespace:   s.Namespace,
 		port:        s.Port,
-		strategy:    s.LoadBalancerStrategy,
 		healthcheck: healthcheckToString(s.HealthCheck),
 	}
 }
@@ -279,6 +274,10 @@ type Cluster struct {
 
 	// UpstreamValidation defines how to verify the backend service's certificate
 	UpstreamValidation *UpstreamValidation
+
+	// The load balancer type to use when picking a host in the cluster.
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cds.proto#envoy-api-enum-cluster-lbpolicy
+	LoadBalancerStrategy string
 }
 
 func (c Cluster) Visit(f func(Vertex)) {
