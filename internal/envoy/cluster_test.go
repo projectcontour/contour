@@ -337,9 +337,9 @@ func TestCluster(t *testing.T) {
 				Upstream: &dag.TCPService{
 					Name: s1.Name, Namespace: s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
-					HealthCheck: &ingressroutev1.HealthCheck{
-						Path: "/healthz",
-					},
+				},
+				HealthCheck: &ingressroutev1.HealthCheck{
+					Path: "/healthz",
 				},
 			},
 			want: &v2.Cluster{
@@ -428,15 +428,15 @@ func TestClustername(t *testing.T) {
 						Port:       80,
 						TargetPort: intstr.FromInt(6502),
 					},
-					HealthCheck: &ingressroutev1.HealthCheck{
-						Path:                    "/healthz",
-						IntervalSeconds:         5,
-						TimeoutSeconds:          30,
-						UnhealthyThresholdCount: 3,
-						HealthyThresholdCount:   1,
-					},
 				},
 				LoadBalancerStrategy: "Random",
+				HealthCheck: &ingressroutev1.HealthCheck{
+					Path:                    "/healthz",
+					IntervalSeconds:         5,
+					TimeoutSeconds:          30,
+					UnhealthyThresholdCount: 3,
+					HealthyThresholdCount:   1,
+				},
 			},
 			want: "default/backend/80/5c26077e1d",
 		},

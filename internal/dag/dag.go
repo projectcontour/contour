@@ -103,15 +103,6 @@ type UpstreamValidation struct {
 	SubjectName string
 }
 
-func (r *Route) addHTTPService(s *HTTPService, strategy string, weight int, uv *UpstreamValidation) {
-	r.Clusters = append(r.Clusters, &Cluster{
-		Upstream:             s,
-		LoadBalancerStrategy: strategy,
-		Weight:               weight,
-		UpstreamValidation:   uv,
-	})
-}
-
 func (r *Route) Visit(f func(Vertex)) {
 	for _, c := range r.Clusters {
 		f(c)
@@ -235,25 +226,21 @@ type TCPService struct {
 	// Envoy will allow to the upstream cluster.
 	MaxRetries int
 
-	HealthCheck *ingressroutev1.HealthCheck
-
 	// ExternalName is an optional field referencing a dns entry for Service type "ExternalName"
 	ExternalName string
 }
 
 type servicemeta struct {
-	name        string
-	namespace   string
-	port        int32
-	healthcheck string // %#v of *ingressroutev1.HealthCheck
+	name      string
+	namespace string
+	port      int32
 }
 
 func (s *TCPService) toMeta() servicemeta {
 	return servicemeta{
-		name:        s.Name,
-		namespace:   s.Namespace,
-		port:        s.Port,
-		healthcheck: healthcheckToString(s.HealthCheck),
+		name:      s.Name,
+		namespace: s.Namespace,
+		port:      s.Port,
 	}
 }
 
@@ -278,6 +265,8 @@ type Cluster struct {
 	// The load balancer type to use when picking a host in the cluster.
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cds.proto#envoy-api-enum-cluster-lbpolicy
 	LoadBalancerStrategy string
+
+	HealthCheck *ingressroutev1.HealthCheck
 }
 
 func (c Cluster) Visit(f func(Vertex)) {
