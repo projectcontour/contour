@@ -746,6 +746,28 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	ir1e := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+					HealthCheck: &ingressroutev1.HealthCheck{
+						Path: "/healthz",
+					},
+				}},
+			}},
+		},
+	}
+
 	// ir2 is like ir1 but refers to two backend services
 	ir2 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1890,7 +1912,6 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-
 		"insert ingressroute": {
 			objs: []interface{}{
 				ir1,
@@ -1904,6 +1925,27 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"insert ingressroute w/ healthcheck": {
+			objs: []interface{}{
+				ir1e, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/", &Cluster{
+								Upstream: httpService(s1),
+								HealthCheck: &ingressroutev1.HealthCheck{
+									Path: "/healthz",
+								},
+							}),
+						),
+					),
+				},
+			),
+		},
+
 		"insert ingressroute with websocket route": {
 			objs: []interface{}{
 				ir11, s1,
@@ -2939,9 +2981,8 @@ func TestBuilderLookupHTTPService(t *testing.T) {
 
 	tests := map[string]struct {
 		meta
-		port        intstr.IntOrString
-		healthcheck *ingressroutev1.HealthCheck
-		want        *HTTPService
+		port intstr.IntOrString
+		want *HTTPService
 	}{
 		"lookup service by port number": {
 			meta: meta{name: "service1", namespace: "default"},
@@ -2974,7 +3015,7 @@ func TestBuilderLookupHTTPService(t *testing.T) {
 					},
 				},
 			}
-			got := b.lookupHTTPService(tc.meta, tc.port, tc.healthcheck)
+			got := b.lookupHTTPService(tc.meta, tc.port)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}

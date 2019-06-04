@@ -31,8 +31,8 @@ const (
 )
 
 // healthCheck returns a *core.HealthCheck value.
-func healthCheck(service *dag.TCPService) *core.HealthCheck {
-	hc := service.HealthCheck
+func healthCheck(cluster *dag.Cluster) *core.HealthCheck {
+	hc := cluster.HealthCheck
 	host := hcHost
 	if hc.Host != "" {
 		host = hc.Host
