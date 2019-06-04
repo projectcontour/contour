@@ -428,7 +428,7 @@ func TestClustername(t *testing.T) {
 						Port:       80,
 						TargetPort: intstr.FromInt(6502),
 					},
-					LoadBalancerStrategy: "Maglev",
+					LoadBalancerStrategy: "Random",
 					HealthCheck: &ingressroutev1.HealthCheck{
 						Path:                    "/healthz",
 						IntervalSeconds:         5,
@@ -438,7 +438,7 @@ func TestClustername(t *testing.T) {
 					},
 				},
 			},
-			want: "default/backend/80/32737eb011",
+			want: "default/backend/80/5c26077e1d",
 		},
 		"upstream tls validation with subject alt name": {
 			cluster: &dag.Cluster{
@@ -451,7 +451,7 @@ func TestClustername(t *testing.T) {
 						Port:       80,
 						TargetPort: intstr.FromInt(6502),
 					},
-					LoadBalancerStrategy: "Maglev",
+					LoadBalancerStrategy: "Random",
 				},
 				UpstreamValidation: &dag.UpstreamValidation{
 					CACertificate: &dag.Secret{
@@ -468,7 +468,7 @@ func TestClustername(t *testing.T) {
 					SubjectName: "foo.com",
 				},
 			},
-			want: "default/backend/80/a18ebaa0d6",
+			want: "default/backend/80/6bf46b7b3a",
 		},
 	}
 
@@ -485,11 +485,14 @@ func TestClustername(t *testing.T) {
 func TestLBPolicy(t *testing.T) {
 	tests := map[string]v2.Cluster_LbPolicy{
 		"WeightedLeastRequest": v2.Cluster_LEAST_REQUEST,
-		"RingHash":             v2.Cluster_RING_HASH,
-		"Maglev":               v2.Cluster_MAGLEV,
 		"Random":               v2.Cluster_RANDOM,
 		"":                     v2.Cluster_ROUND_ROBIN,
 		"unknown":              v2.Cluster_ROUND_ROBIN,
+
+		// RingHash and Maglev were removed as options in 0.13.
+		// See #1150
+		"RingHash": v2.Cluster_ROUND_ROBIN,
+		"Maglev":   v2.Cluster_ROUND_ROBIN,
 	}
 
 	for strategy, want := range tests {

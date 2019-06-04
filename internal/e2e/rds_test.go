@@ -2542,8 +2542,6 @@ func TestLoadBalancingStrategies(t *testing.T) {
 	}{
 		{"s1", "f3b72af6a9", "RoundRobin", "RoundRobin lb algorithm"},
 		{"s2", "8bf87fefba", "WeightedLeastRequest", "WeightedLeastRequest lb algorithm"},
-		{"s3", "40633a6ca9", "RingHash", "RingHash lb algorithm"},
-		{"s4", "843e4ded8f", "Maglev", "Maglev lb algorithm"},
 		{"s5", "58d888c08a", "Random", "Random lb algorithm"},
 		{"s6", "da39a3ee5e", "", "Default lb algorithm"},
 	}
@@ -2587,7 +2585,7 @@ func TestLoadBalancingStrategies(t *testing.T) {
 			},
 		},
 	}}
-	assertRDS(t, cc, "7", want, nil)
+	assertRDS(t, cc, "5", want, nil)
 }
 
 func assertRDS(t *testing.T, cc *grpc.ClientConn, versioninfo string, ingress_http, ingress_https []route.VirtualHost) {

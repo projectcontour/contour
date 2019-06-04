@@ -166,10 +166,6 @@ func lbPolicy(strategy string) v2.Cluster_LbPolicy {
 	switch strategy {
 	case "WeightedLeastRequest":
 		return v2.Cluster_LEAST_REQUEST
-	case "RingHash":
-		return v2.Cluster_RING_HASH
-	case "Maglev":
-		return v2.Cluster_MAGLEV
 	case "Random":
 		return v2.Cluster_RANDOM
 	default:

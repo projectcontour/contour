@@ -674,7 +674,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 				Services: []ingressroutev1.Service{{
 					Name:     "kuard",
 					Port:     80,
-					Strategy: "Maglev",
+					Strategy: "WeightedLeastRequest",
 				}},
 			}},
 		},
@@ -696,7 +696,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 				CommonLbConfig: envoy.ClusterCommonLBConfig(),
 			}),
 			any(t, &v2.Cluster{
-				Name:                 "default/kuard/80/843e4ded8f",
+				Name:                 "default/kuard/80/8bf87fefba",
 				AltStatName:          "default_kuard_80",
 				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
@@ -704,7 +704,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 					ServiceName: "default/kuard",
 				},
 				ConnectTimeout: 250 * time.Millisecond,
-				LbPolicy:       v2.Cluster_MAGLEV,
+				LbPolicy:       v2.Cluster_LEAST_REQUEST,
 				CommonLbConfig: envoy.ClusterCommonLBConfig(),
 			}),
 		},
