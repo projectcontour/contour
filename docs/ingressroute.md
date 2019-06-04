@@ -489,8 +489,6 @@ The following list are the options available to choose from:
 
 - `RoundRobin`: Each healthy upstream Endpoint is selected in round robin order (Default strategy if none selected).
 - `WeightedLeastRequest`: The least request strategy uses an O(1) algorithm which selects two random healthy Endpoints and picks the Endpoint which has fewer active requests. Note: This algorithm is simple and sufficient for load testing. It should not be used where true weighted least request behavior is desired.
-- `RingHash`: The ring/modulo hash load balancer implements consistent hashing to upstream Endpoints.
-- `Maglev`: The Maglev strategy implements consistent hashing to upstream Endpoints
 - `Random`: The random strategy selects a random healthy Endpoints.
 
 More information on the load balancing strategy can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/load_balancing.html).

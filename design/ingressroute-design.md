@@ -159,8 +159,6 @@ The following list are the options available to choose from:
 
 - **RoundRobin:** Each healthy upstream host is selected in round robin order
 - **WeightedLeastRequest:** The least request load balancer uses an O(1) algorithm which selects two random healthy hosts and picks the host which has fewer active requests. _Note: This algorithm is simple and sufficient for load testing. It should not be used where true weighted least request behavior is desired_
-- **Ring hash:** The ring/modulo hash load balancer implements consistent hashing to upstream hosts
-- **Maglev:** The Maglev load balancer implements consistent hashing to upstream hosts
 - **Random:** The random load balancer selects a random healthy host
 
 More documentation on Envoy's lb support can be found here: [https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/load_balancing.html](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/load_balancing.html)

@@ -612,92 +612,6 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
-		"ingressroute with RingHash lb algorithm": {
-			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "simple",
-						Namespace: "default",
-					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
-							Fqdn: "www.example.com",
-						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{{
-								Name:     "backend",
-								Port:     80,
-								Strategy: "RingHash",
-							}},
-						}},
-					},
-				},
-				service("default", "backend", v1.ServicePort{
-					Name:       "http",
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(6502),
-				}),
-			},
-			want: clustermap(
-				&v2.Cluster{
-					Name:                 "default/backend/80/40633a6ca9",
-					AltStatName:          "default_backend_80",
-					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoy.ConfigSource("contour"),
-						ServiceName: "default/backend/http",
-					},
-					ConnectTimeout: 250 * time.Millisecond,
-					LbPolicy:       v2.Cluster_RING_HASH,
-					CommonLbConfig: envoy.ClusterCommonLBConfig(),
-				},
-			),
-		},
-		"ingressroute with Maglev lb algorithm": {
-			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "simple",
-						Namespace: "default",
-					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
-							Fqdn: "www.example.com",
-						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{{
-								Name:     "backend",
-								Port:     80,
-								Strategy: "Maglev",
-							}},
-						}},
-					},
-				},
-				service("default", "backend", v1.ServicePort{
-					Name:       "http",
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(6502),
-				}),
-			},
-			want: clustermap(
-				&v2.Cluster{
-					Name:                 "default/backend/80/843e4ded8f",
-					AltStatName:          "default_backend_80",
-					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoy.ConfigSource("contour"),
-						ServiceName: "default/backend/http",
-					},
-					ConnectTimeout: 250 * time.Millisecond,
-					LbPolicy:       v2.Cluster_MAGLEV,
-					CommonLbConfig: envoy.ClusterCommonLBConfig(),
-				},
-			),
-		},
 		"ingressroute with Random lb algorithm": {
 			objs: []interface{}{
 				&ingressroutev1.IngressRoute{
@@ -764,7 +678,7 @@ func TestClusterVisit(t *testing.T) {
 							Services: []ingressroutev1.Service{{
 								Name:     "backend",
 								Port:     80,
-								Strategy: "Maglev",
+								Strategy: "WeightedLeastRequest",
 							}},
 						}},
 					},
@@ -790,7 +704,7 @@ func TestClusterVisit(t *testing.T) {
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 				&v2.Cluster{
-					Name:                 "default/backend/80/843e4ded8f",
+					Name:                 "default/backend/80/8bf87fefba",
 					AltStatName:          "default_backend_80",
 					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
@@ -798,7 +712,7 @@ func TestClusterVisit(t *testing.T) {
 						ServiceName: "default/backend/http",
 					},
 					ConnectTimeout: 250 * time.Millisecond,
-					LbPolicy:       v2.Cluster_MAGLEV,
+					LbPolicy:       v2.Cluster_LEAST_REQUEST,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
