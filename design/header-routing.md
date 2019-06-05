@@ -138,10 +138,16 @@ The `envoy/route` will be updated to specify the headers defined previously in I
 This new feature will utilize a `prefix_match` when defining the [HeaderMatcher](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#route-headermatcher) field, meaning the match will be performed based on the prefix of the header value.
 Contour will need to create different Envoy routes based upon the path+header combination since the header matching is defined on the top level Route object (https://github.com/envoyproxy/go-control-plane/blob/master/envoy/api/v2/route/route.pb.go#L941-L947).
 
+### Flow Diagrams
+
+There are some diagrams showing how network traffic can flow through various scenarios here: https://docs.google.com/drawings/d/1Pxqfki0TkrUPJMVmiq2lUGiXAmqrRATRmJv9qiS1dtM/edit?usp=sharing
+
 ## Alternatives Considered
 
-...
+- Do not allow for Header based delegation, only apply to Path.
+This does not solve all user use-cases
 
 ## Security Considerations
 
-None.
+- If the delegation is not properly implemented, there could be ways that users get access to portions of the host requests which they should not have access.
+This will need to be mitigated with proper testing and validation of the design implementation.
