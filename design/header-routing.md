@@ -19,6 +19,10 @@ Contour was initially developed with prefix based routing and has served us well
   When authenticated, an additional header is added which identifies the user as part of OrgA.
   The request is routed to the appropriate backend matching the user's organization membership.
 
+- API Version Numbers in the header: Using a header to route requests to different backends based upon the header value (e.g. `apiversion: v2.0` vs `apiversion:v2.1-beta`)
+  
+- Does an Auth header exist in the request regardless of the value? 
+
 - Some headers will require a regex style expression for matching. If user wanted to target Chrome browsers, here's a sample header. We'd need to specify the `Chrome` bit out of the header value:
 
   ```
