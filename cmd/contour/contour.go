@@ -193,6 +193,7 @@ func main() {
 		reh.IngressRouteRootNamespaces = parseRootNamespaces(ingressrouteRootNamespaceFlag)
 
 		client, contourClient := newClient(*kubeconfig, *inCluster)
+		metricsvc.Client = client
 
 		// resync timer disabled for Contour
 		coreInformers := coreinformers.NewSharedInformerFactory(client, 0)
