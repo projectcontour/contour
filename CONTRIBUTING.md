@@ -89,8 +89,10 @@ with a colon as delimiter. For example 'docs:', 'internal/(packagename):', 'desi
 tend to squash before opening the PR, then have PR feedback as
 extra commits.
 - If master has moved on, you'll need to rebase before we can merge,
-so merging upstream master or rebasing from upstream before opening your PR will probably save you some time.
-- PRs *must* include a `Fixes #NNNN` or `Updates #NNNN` comment.
+so merging upstream master or rebasing from upstream before opening your
+PR will probably save you some time.
+- PRs *must* include a `Fixes #NNNN` or `Updates #NNNN` comment. Remember that
+`Fixes` will close the associated issue, and `Updates` will link the PR to it.
 
 #### Commit message template
 
