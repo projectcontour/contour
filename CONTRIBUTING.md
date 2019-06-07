@@ -78,6 +78,51 @@ If you plan to submit a pull request for anything more than a typo or obvious bu
 Depending on the size of the feature you may be expected to first write a design proposal.
 A proposal template is [available here](https://github.com/heptio/contour/tree/master/design/design-document-tmpl.md)
 
+### Commit message and PR guidelines
+
+- Have a short subject on the first line and a body. The body can be empty.
+- Use the imperative mood (ie "If applied, this commit will (subject)" should make sense).
+- There must be a DCO line ("Signed-off-by: David Cheney <cheneyd@vmware.com>"), see [DCO Sign Off](#dco-sign-off) below
+- Put a summary of the main area affected by the commit at the start,
+with a colon as delimiter. For example 'docs:', 'internal/(packagename):', 'design:' or something similar.
+- Try to keep your number of commits in a PR low. Generally we
+tend to squash before opening the PR, then have PR feedback as
+extra commits.
+- If master has moved on, you'll need to rebase before we can merge,
+so merging upstream master or rebasing from upstream before opening your
+PR will probably save you some time.
+- PRs *must* include a `Fixes #NNNN` or `Updates #NNNN` comment. Remember that
+`Fixes` will close the associated issue, and `Updates` will link the PR to it.
+
+#### Commit message template
+
+```
+<packagename>: <imperative mood short description>
+
+Updates #NNNN
+Fixes #MMMM
+
+Signed-off-by: Your Name you@youremail.com
+
+<longer change description/justification>
+
+```
+
+#### Sample commit message
+
+```
+internal\contour: Add quux functions
+
+Fixes #xxyyz
+
+Signed-off-by: Your Name you@youremail.com
+
+To implement the quux functions from #xxyyz, we need to
+florble the greep dots, then ensure that the florble is
+warbed.
+```
+
+
 ### Pre commit CI
 
 Before a change is submitted it should pass all the pre commit CI jobs.
