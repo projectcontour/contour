@@ -267,10 +267,10 @@ spec:
         - name: s1
           port: 80
     - match: /blog
+      permitInsecure: true
       services: 
         - name: s2
           port: 80
-          permitInsecure: true
 ```
 
 #### Upstream TLS
