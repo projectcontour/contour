@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"k8s.io/client-go/kubernetes"
+
 	"github.com/heptio/contour/internal/httpsvc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -203,19 +205,28 @@ func (m *Metrics) SetIngressRouteMetric(metrics IngressRouteMetric) {
 type Service struct {
 	httpsvc.Service
 	*prometheus.Registry
+	Client *kubernetes.Clientset
 }
 
 // Start fulfills the g.Start contract.
 // When stop is closed the http server will shutdown.
 func (svc *Service) Start(stop <-chan struct{}) error {
-	registerHealthCheck(&svc.ServeMux)
+
+	registerHealthCheck(&svc.ServeMux, svc.Client)
 	registerMetrics(&svc.ServeMux, svc.Registry)
 
 	return svc.Service.Start(stop)
 }
 
-func registerHealthCheck(mux *http.ServeMux) {
+func registerHealthCheck(mux *http.ServeMux, client *kubernetes.Clientset) {
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		// Try and lookup Kubernetes server version as a quick and dirty check
+		_, err := client.ServerVersion()
+		if err != nil {
+			msg := fmt.Sprintf("Failed Kubernetes Check: %v", err)
+			http.Error(w, msg, http.StatusServiceUnavailable)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, "OK")
 	})
