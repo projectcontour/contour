@@ -206,6 +206,14 @@ spec:
         name: contour
         command: ["contour"]
         args: ["serve", "--incluster", "--envoy-service-http-port", "8080", "--envoy-service-https-port", "8443"]
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
       - image: docker.io/envoyproxy/envoy:v1.10.0
         name: envoy
         ports:
