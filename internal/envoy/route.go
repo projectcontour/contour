@@ -26,12 +26,12 @@ import (
 // RouteRoute creates a route.Route_Route for the services supplied.
 // If len(services) is greater than one, the route's action will be a
 // weighted cluster.
-func RouteRoute(r *dag.Route, clusters []*dag.Cluster) *route.Route_Route {
+func RouteRoute(r *dag.Route) *route.Route_Route {
 	ra := route.RouteAction{
 		RetryPolicy:   retryPolicy(r),
 		Timeout:       timeout(r),
 		PrefixRewrite: r.PrefixRewrite,
-		HashPolicy:    hashPolicy(clusters),
+		HashPolicy:    hashPolicy(r),
 	}
 
 	if r.Websocket {
@@ -42,14 +42,14 @@ func RouteRoute(r *dag.Route, clusters []*dag.Cluster) *route.Route_Route {
 		)
 	}
 
-	switch len(clusters) {
+	switch len(r.Clusters) {
 	case 1:
 		ra.ClusterSpecifier = &route.RouteAction_Cluster{
-			Cluster: Clustername(clusters[0]),
+			Cluster: Clustername(r.Clusters[0]),
 		}
 	default:
 		ra.ClusterSpecifier = &route.RouteAction_WeightedClusters{
-			WeightedClusters: weightedClusters(clusters),
+			WeightedClusters: weightedClusters(r.Clusters),
 		}
 	}
 	return &route.Route_Route{
@@ -57,10 +57,10 @@ func RouteRoute(r *dag.Route, clusters []*dag.Cluster) *route.Route_Route {
 	}
 }
 
-// hashPolicy returns a slice of hash policies iff at least one of the clusters
-// supplied uses the `cookie` load balancing stategy.
-func hashPolicy(clusters []*dag.Cluster) []*route.RouteAction_HashPolicy {
-	for _, c := range clusters {
+// hashPolicy returns a slice of hash policies iff at least one of the route's
+// clusters supplied uses the `cookie` load balancing stategy.
+func hashPolicy(r *dag.Route) []*route.RouteAction_HashPolicy {
+	for _, c := range r.Clusters {
 		if c.LoadBalancerStrategy == "cookie" {
 			return []*route.RouteAction_HashPolicy{{
 				PolicySpecifier: &route.RouteAction_HashPolicy_Cookie_{
