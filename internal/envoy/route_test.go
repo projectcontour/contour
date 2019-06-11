@@ -47,6 +47,14 @@ func TestRouteRoute(t *testing.T) {
 			ServicePort: &s1.Spec.Ports[0],
 		},
 	}
+	c2 := &dag.Cluster{
+		Upstream: &dag.TCPService{
+			Name:        s1.Name,
+			Namespace:   s1.Namespace,
+			ServicePort: &s1.Spec.Ports[0],
+		},
+		LoadBalancerStrategy: "cookie",
+	}
 
 	tests := map[string]struct {
 		route    *dag.Route
@@ -66,7 +74,6 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
-
 		"websocket": {
 			route: &dag.Route{
 				Prefix:    "/",
@@ -228,6 +235,90 @@ func TestRouteRoute(t *testing.T) {
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 					Timeout: duration(0),
+				},
+			},
+		},
+		"single service w/ session affinity": {
+			route: &dag.Route{
+				Prefix: "/cart",
+			},
+			clusters: []*dag.Cluster{c2},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/59c826fc85",
+					},
+					HashPolicy: []*route.RouteAction_HashPolicy{{
+						PolicySpecifier: &route.RouteAction_HashPolicy_Cookie_{
+							Cookie: &route.RouteAction_HashPolicy_Cookie{
+								Name: "X-Contour-Session-Affinity",
+								Ttl:  duration(0),
+								Path: "/",
+							},
+						},
+					}},
+				},
+			},
+		},
+		"multiple service w/ session affinity": {
+			route: &dag.Route{
+				Prefix: "/cart",
+			},
+			clusters: []*dag.Cluster{c2, c2},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_WeightedClusters{
+						WeightedClusters: &route.WeightedCluster{
+							Clusters: []*route.WeightedCluster_ClusterWeight{{
+								Name:   "default/kuard/8080/59c826fc85",
+								Weight: u32(1),
+							}, {
+								Name:   "default/kuard/8080/59c826fc85",
+								Weight: u32(1),
+							}},
+							TotalWeight: u32(2),
+						},
+					},
+					HashPolicy: []*route.RouteAction_HashPolicy{{
+						PolicySpecifier: &route.RouteAction_HashPolicy_Cookie_{
+							Cookie: &route.RouteAction_HashPolicy_Cookie{
+								Name: "X-Contour-Session-Affinity",
+								Ttl:  duration(0),
+								Path: "/",
+							},
+						},
+					}},
+				},
+			},
+		},
+		"mixed service w/ session affinity": {
+			route: &dag.Route{
+				Prefix: "/cart",
+			},
+			clusters: []*dag.Cluster{c2, c1},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_WeightedClusters{
+						WeightedClusters: &route.WeightedCluster{
+							Clusters: []*route.WeightedCluster_ClusterWeight{{
+								Name:   "default/kuard/8080/59c826fc85",
+								Weight: u32(1),
+							}, {
+								Name:   "default/kuard/8080/da39a3ee5e",
+								Weight: u32(1),
+							}},
+							TotalWeight: u32(2),
+						},
+					},
+					HashPolicy: []*route.RouteAction_HashPolicy{{
+						PolicySpecifier: &route.RouteAction_HashPolicy_Cookie_{
+							Cookie: &route.RouteAction_HashPolicy_Cookie{
+								Name: "X-Contour-Session-Affinity",
+								Ttl:  duration(0),
+								Path: "/",
+							},
+						},
+					}},
 				},
 			},
 		},

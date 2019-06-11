@@ -31,6 +31,7 @@ func RouteRoute(r *dag.Route, clusters []*dag.Cluster) *route.Route_Route {
 		RetryPolicy:   retryPolicy(r),
 		Timeout:       timeout(r),
 		PrefixRewrite: r.PrefixRewrite,
+		HashPolicy:    hashPolicy(clusters),
 	}
 
 	if r.Websocket {
@@ -54,6 +55,25 @@ func RouteRoute(r *dag.Route, clusters []*dag.Cluster) *route.Route_Route {
 	return &route.Route_Route{
 		Route: &ra,
 	}
+}
+
+// hashPolicy returns a slice of hash policies iff at least one of the clusters
+// supplied uses the `cookie` load balancing stategy.
+func hashPolicy(clusters []*dag.Cluster) []*route.RouteAction_HashPolicy {
+	for _, c := range clusters {
+		if c.LoadBalancerStrategy == "cookie" {
+			return []*route.RouteAction_HashPolicy{{
+				PolicySpecifier: &route.RouteAction_HashPolicy_Cookie_{
+					Cookie: &route.RouteAction_HashPolicy_Cookie{
+						Name: "X-Contour-Session-Affinity",
+						Ttl:  duration(0),
+						Path: "/",
+					},
+				},
+			}}
+		}
+	}
+	return nil
 }
 
 func timeout(r *dag.Route) *time.Duration {

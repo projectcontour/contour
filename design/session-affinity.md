@@ -1,7 +1,6 @@
 # Session Affinity
 
-Status: _Draft_
-
+Status: _Accepted_
 
 This proposal describes how we will add session affinity support to Contour.
 
