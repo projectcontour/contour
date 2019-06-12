@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy "github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/apis/generated/clientset/versioned/fake"
@@ -34,12 +35,11 @@ import (
 )
 
 const (
-	googleApis   = "type.googleapis.com/"
-	typePrefix   = googleApis + "envoy.api.v2."
-	endpointType = typePrefix + "ClusterLoadAssignment"
-	clusterType  = typePrefix + "Cluster"
-	routeType    = typePrefix + "RouteConfiguration"
-	listenerType = typePrefix + "Listener"
+	endpointType = envoy.EndpointType
+	clusterType  = envoy.ClusterType
+	routeType    = envoy.RouteType
+	listenerType = envoy.ListenerType
+	secretType   = envoy.SecretType
 	statsAddress = "0.0.0.0"
 	statsPort    = 8002
 )
@@ -96,6 +96,7 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 		ch.ClusterCache.TypeURL():  &ch.ClusterCache,
 		ch.RouteCache.TypeURL():    &ch.RouteCache,
 		ch.ListenerCache.TypeURL(): &ch.ListenerCache,
+		ch.SecretCache.TypeURL():   &ch.SecretCache,
 		et.TypeURL():               et,
 	})
 
