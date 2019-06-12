@@ -53,7 +53,7 @@ func TestRouteRoute(t *testing.T) {
 			Namespace:   s1.Namespace,
 			ServicePort: &s1.Spec.Ports[0],
 		},
-		LoadBalancerStrategy: "cookie",
+		LoadBalancerStrategy: "Cookie",
 	}
 
 	tests := map[string]struct {
@@ -245,7 +245,7 @@ func TestRouteRoute(t *testing.T) {
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_Cluster{
-						Cluster: "default/kuard/8080/59c826fc85",
+						Cluster: "default/kuard/8080/e4f81994fe",
 					},
 					HashPolicy: []*route.RouteAction_HashPolicy{{
 						PolicySpecifier: &route.RouteAction_HashPolicy_Cookie_{
@@ -269,10 +269,10 @@ func TestRouteRoute(t *testing.T) {
 					ClusterSpecifier: &route.RouteAction_WeightedClusters{
 						WeightedClusters: &route.WeightedCluster{
 							Clusters: []*route.WeightedCluster_ClusterWeight{{
-								Name:   "default/kuard/8080/59c826fc85",
+								Name:   "default/kuard/8080/e4f81994fe",
 								Weight: u32(1),
 							}, {
-								Name:   "default/kuard/8080/59c826fc85",
+								Name:   "default/kuard/8080/e4f81994fe",
 								Weight: u32(1),
 							}},
 							TotalWeight: u32(2),
@@ -300,10 +300,10 @@ func TestRouteRoute(t *testing.T) {
 					ClusterSpecifier: &route.RouteAction_WeightedClusters{
 						WeightedClusters: &route.WeightedCluster{
 							Clusters: []*route.WeightedCluster_ClusterWeight{{
-								Name:   "default/kuard/8080/59c826fc85",
+								Name:   "default/kuard/8080/da39a3ee5e",
 								Weight: u32(1),
 							}, {
-								Name:   "default/kuard/8080/da39a3ee5e",
+								Name:   "default/kuard/8080/e4f81994fe",
 								Weight: u32(1),
 							}},
 							TotalWeight: u32(2),

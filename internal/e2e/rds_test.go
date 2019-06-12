@@ -2551,7 +2551,7 @@ func TestRouteWithSessionAffinity(t *testing.T) {
 				Services: []ingressroutev1.Service{{
 					Name:     "app",
 					Port:     80,
-					Strategy: "cookie",
+					Strategy: "Cookie",
 				}},
 			}},
 		},
@@ -2563,7 +2563,7 @@ func TestRouteWithSessionAffinity(t *testing.T) {
 		Domains: domains("www.example.com"),
 		Routes: []route.Route{{
 			Match:               envoy.PrefixMatch("/cart"),
-			Action:              withSessionAffinity(routecluster("default/app/80/59c826fc85")),
+			Action:              withSessionAffinity(routecluster("default/app/80/e4f81994fe")),
 			RequestHeadersToAdd: envoy.RouteHeaders(),
 		}},
 	}}, nil)
@@ -2581,11 +2581,11 @@ func TestRouteWithSessionAffinity(t *testing.T) {
 				Services: []ingressroutev1.Service{{
 					Name:     "app",
 					Port:     80,
-					Strategy: "cookie",
+					Strategy: "Cookie",
 				}, {
 					Name:     "app",
 					Port:     8080,
-					Strategy: "cookie",
+					Strategy: "Cookie",
 				}},
 			}},
 		},
@@ -2598,8 +2598,8 @@ func TestRouteWithSessionAffinity(t *testing.T) {
 			Match: envoy.PrefixMatch("/cart"),
 			Action: withSessionAffinity(
 				routeweightedcluster(
-					weightedcluster{"default/app/80/59c826fc85", 1},
-					weightedcluster{"default/app/8080/59c826fc85", 1},
+					weightedcluster{"default/app/80/e4f81994fe", 1},
+					weightedcluster{"default/app/8080/e4f81994fe", 1},
 				),
 			),
 			RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -2619,7 +2619,7 @@ func TestRouteWithSessionAffinity(t *testing.T) {
 				Services: []ingressroutev1.Service{{
 					Name:     "app",
 					Port:     80,
-					Strategy: "cookie",
+					Strategy: "Cookie",
 				}, {
 					Name: "app",
 					Port: 8080,
@@ -2641,7 +2641,7 @@ func TestRouteWithSessionAffinity(t *testing.T) {
 			Match: envoy.PrefixMatch("/cart"),
 			Action: withSessionAffinity(
 				routeweightedcluster(
-					weightedcluster{"default/app/80/59c826fc85", 1},
+					weightedcluster{"default/app/80/e4f81994fe", 1},
 					weightedcluster{"default/app/8080/da39a3ee5e", 1},
 				),
 			),

@@ -73,7 +73,7 @@ spec:
                 - RoundRobin
                 - WeightedLeastRequest
                 - Random
-                - cookie
+                - Cookie
             healthCheck:
               type: object
               required:
@@ -131,7 +131,7 @@ spec:
                             - RoundRobin
                             - WeightedLeastRequest
                             - Random
-                            - cookie
+                            - Cookie
                         healthCheck:
                           type: object
                           required:

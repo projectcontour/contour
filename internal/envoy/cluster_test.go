@@ -337,10 +337,10 @@ func TestCluster(t *testing.T) {
 				Upstream: &dag.HTTPService{
 					TCPService: service(s1),
 				},
-				LoadBalancerStrategy: "cookie",
+				LoadBalancerStrategy: "Cookie",
 			},
 			want: &v2.Cluster{
-				Name:                 "default/kuard/443/59c826fc85",
+				Name:                 "default/kuard/443/e4f81994fe",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
@@ -529,7 +529,7 @@ func TestLBPolicy(t *testing.T) {
 		"Random":               v2.Cluster_RANDOM,
 		"":                     v2.Cluster_ROUND_ROBIN,
 		"unknown":              v2.Cluster_ROUND_ROBIN,
-		"cookie":               v2.Cluster_RING_HASH,
+		"Cookie":               v2.Cluster_RING_HASH,
 
 		// RingHash and Maglev were removed as options in 0.13.
 		// See #1150

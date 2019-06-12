@@ -58,10 +58,10 @@ func RouteRoute(r *dag.Route) *route.Route_Route {
 }
 
 // hashPolicy returns a slice of hash policies iff at least one of the route's
-// clusters supplied uses the `cookie` load balancing stategy.
+// clusters supplied uses the `Cookie` load balancing stategy.
 func hashPolicy(r *dag.Route) []*route.RouteAction_HashPolicy {
 	for _, c := range r.Clusters {
-		if c.LoadBalancerStrategy == "cookie" {
+		if c.LoadBalancerStrategy == "Cookie" {
 			return []*route.RouteAction_HashPolicy{{
 				PolicySpecifier: &route.RouteAction_HashPolicy_Cookie_{
 					Cookie: &route.RouteAction_HashPolicy_Cookie{
