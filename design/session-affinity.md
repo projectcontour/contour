@@ -1,7 +1,6 @@
 # Session Affinity
 
-Status: _Draft_
-
+Status: _Accepted_
 
 This proposal describes how we will add session affinity support to Contour.
 
@@ -27,7 +26,7 @@ Of these three methods, this proposal will only implement cookie based session a
 ### User interface
 
 The user interface for session affinity is the `strategy` key in the IngressRoute spec.
-To specify that cookie based session affinity is to be used the IngressRoute author will specify `strategy: cookie` on a per service basis.
+To specify that cookie based session affinity is to be used the IngressRoute author will specify `strategy: Cookie` on a per service basis.
 
 ```yaml
 apiVersion: contour.heptio.com/v1beta1
@@ -43,9 +42,9 @@ spec:
     services:
     - name: httpbin
       port: 8080
-      strategy: cookie
+      strategy: Cookie
 ```
-As a route can specific multiple weighted backends, providing they choose `strategy: cookie`, they will all be eligible for cookie based session affinity.
+As a route can specific multiple weighted backends, providing they choose `strategy: Cookie`, they will all be eligible for cookie based session affinity.
 Once a request has been served from service-a (or service-b) subsequent requests carrying Contour's session affinity cookie will always return to their nominated server reguardless of weightings.
 ```yaml
 apiVersion: contour.heptio.com/v1beta1
@@ -61,11 +60,11 @@ spec:
     services:
     - name: service-a
       port: 8080
-      strategy: cookie
+      strategy: Cookie
       weight: 50
     - name: service-b
       port: 8080
-      strategy: cookie
+      strategy: Cookie
       weight: 50
 ```
 An interesting situation occurs if multiple weighted backends choose disparate load balancing strategies: 
@@ -83,7 +82,7 @@ spec:
     services:
     - name: service-a
       port: 8080
-      strategy: cookie
+      strategy: Cookie
       weight: 50
     - name: service-b
       port: 8080
@@ -110,10 +109,10 @@ No change is necessary.
 
 ### `internal/envoy`
 
-The `Cluster` helper which converts `dag.Cluster`'s to Envoy `v2.Clusters` should return a value of `v2.Cluster_RING_HASH` when presented with a `LoadBalancerStrategy` of `cookie`.
+The `Cluster` helper which converts `dag.Cluster`'s to Envoy `v2.Clusters` should return a value of `v2.Cluster_RING_HASH` when presented with a `LoadBalancerStrategy` of `Cookie`.
 This is handled inside the `lbPolicy` helper.
 
-The `Route` helper, when presented with a Route that dispatches to one or more Clusters with a `LoadBalancerStrategy` of `cookie` should add a HashPolicy to the Route Action.
+The `Route` helper, when presented with a Route that dispatches to one or more Clusters with a `LoadBalancerStrategy` of `Cookie` should add a HashPolicy to the Route Action.
 ```go
                HashPolicy: []*route.RouteAction_HashPolicy{{
                        PolicySpecifier: &route.RouteAction_HashPolicy_Cookie_{
@@ -143,7 +142,7 @@ If the cookie expires too shortly then sessions will be abruptly lost.
 If the cookie's expiry is too long then we risk imbalancing the backend as sessions will be naturally attracted to the longest living server in the group.
 Making this value configurable simply pushes this insoluble problem to our users. 
 - Path: `/`.
-The cookie applies to all routes on this virtual host in the hope that other `strategy: cookie` backends, assuming they dispatch to the same set of servers will share the same affinity cookie.
+The cookie applies to all routes on this virtual host in the hope that other `strategy: Cookie` backends, assuming they dispatch to the same set of servers will share the same affinity cookie.
 For example consider two routes, `/cart` and `/checkout` are served by the same Kubernetes service.
 ```yaml
   routes:
@@ -155,11 +154,11 @@ For example consider two routes, `/cart` and `/checkout` are served by the same 
     services:
     - name: ecommerce-pro
       port: 8080
-      strategy: cookie
+      strategy: Cookie
   - match: /cheeckout
     - name: ecommerce-pro
       port: 8080
-      strategy: cookie
+      strategy: Cookie
 ```
 Given that both routes represent the same service with `static-content` overlayed to fill in the gaps, a session started on a backend of `ecommerce-pro` via `/cart` should land on the same `ecommerce-pro` backend when the request flow reaches `/checkout`.
 Placing the cookie at the `/` path permits this with few negative side effects.

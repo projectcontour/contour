@@ -515,6 +515,34 @@ spec:
           port: 80
           strategy: WeightedLeastRequest
 ```
+#### Session Affinity
+
+Session affinity, also known as _sticky sessions_, is a load balancing strategy whereby a sequence of requests from a single client are consitently routed to the same application backend.
+Contour supports session affinity with the `strategy: Cookie` key on a per service basis.
+
+```yaml
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata:
+  name: httpbin
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: httpbin.davecheney.com
+  routes:
+  - match: /
+    services:
+    - name: httpbin
+      port: 8080
+      strategy: cookie
+```
+##### Limitations
+
+Session affinity is based on the premise that the backend servers are robust, do not change ordering, or grow and shrink according to load.
+None of these properties are guaranteed by a Kubernetes cluster and will be visible to applications that rely heavily on session affinity.
+
+Any pertibation in the set of pods backing a service risks redistributing backends around the hash ring.
+This is an unavoidable consiquence of Envoy's session affinity implementation and the pods-as-cattle approach of Kubernetes.
 
 #### Per-Upstream Active Health Checking
 

@@ -2072,6 +2072,7 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 		}},
 	}}, nil)
 }
+
 func TestRouteWithTLS(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
@@ -2515,6 +2516,145 @@ func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
 	}}, nil)
 }
 
+func TestRouteWithSessionAffinity(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "app",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}, {
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	// simple single service
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/cart",
+				Services: []ingressroutev1.Service{{
+					Name:     "app",
+					Port:     80,
+					Strategy: "Cookie",
+				}},
+			}},
+		},
+	}
+
+	rh.OnAdd(ir1)
+	assertRDS(t, cc, "2", []route.VirtualHost{{
+		Name:    "www.example.com",
+		Domains: domains("www.example.com"),
+		Routes: []route.Route{{
+			Match:               envoy.PrefixMatch("/cart"),
+			Action:              withSessionAffinity(routecluster("default/app/80/e4f81994fe")),
+			RequestHeadersToAdd: envoy.RouteHeaders(),
+		}},
+	}}, nil)
+
+	// two backends
+	ir2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/cart",
+				Services: []ingressroutev1.Service{{
+					Name:     "app",
+					Port:     80,
+					Strategy: "Cookie",
+				}, {
+					Name:     "app",
+					Port:     8080,
+					Strategy: "Cookie",
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(ir1, ir2)
+	assertRDS(t, cc, "3", []route.VirtualHost{{
+		Name:    "www.example.com",
+		Domains: domains("www.example.com"),
+		Routes: []route.Route{{
+			Match: envoy.PrefixMatch("/cart"),
+			Action: withSessionAffinity(
+				routeweightedcluster(
+					weightedcluster{"default/app/80/e4f81994fe", 1},
+					weightedcluster{"default/app/8080/e4f81994fe", 1},
+				),
+			),
+			RequestHeadersToAdd: envoy.RouteHeaders(),
+		}},
+	}}, nil)
+
+	// two mixed backends
+	ir3 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/cart",
+				Services: []ingressroutev1.Service{{
+					Name:     "app",
+					Port:     80,
+					Strategy: "Cookie",
+				}, {
+					Name: "app",
+					Port: 8080,
+				}},
+			}, {
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "app",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(ir2, ir3)
+	assertRDS(t, cc, "4", []route.VirtualHost{{
+		Name:    "www.example.com",
+		Domains: domains("www.example.com"),
+		Routes: []route.Route{{
+			Match: envoy.PrefixMatch("/cart"),
+			Action: withSessionAffinity(
+				routeweightedcluster(
+					weightedcluster{"default/app/80/e4f81994fe", 1},
+					weightedcluster{"default/app/8080/da39a3ee5e", 1},
+				),
+			),
+			RequestHeadersToAdd: envoy.RouteHeaders(),
+		}, {
+			Match:               envoy.PrefixMatch("/"),
+			Action:              routecluster("default/app/80/da39a3ee5e"),
+			RequestHeadersToAdd: envoy.RouteHeaders(),
+		}},
+	}}, nil)
+
+}
+
 // issue 681 Increase the e2e coverage of lb strategies
 func TestLoadBalancingStrategies(t *testing.T) {
 	rh, cc, done := setup(t)
@@ -2627,6 +2767,19 @@ type weightedcluster struct {
 	weight int
 }
 
+func withSessionAffinity(r *route.Route_Route) *route.Route_Route {
+	r.Route.HashPolicy = append(r.Route.HashPolicy, &route.RouteAction_HashPolicy{
+		PolicySpecifier: &route.RouteAction_HashPolicy_Cookie_{
+			Cookie: &route.RouteAction_HashPolicy_Cookie{
+				Name: "X-Contour-Session-Affinity",
+				Ttl:  duration(0),
+				Path: "/",
+			},
+		},
+	})
+	return r
+}
+
 func routecluster(cluster string) *route.Route_Route {
 	return &route.Route_Route{
 		Route: &route.RouteAction{
@@ -2722,3 +2875,5 @@ func routeretry(cluster string, retryOn string, numRetries int, perTryTimeout ti
 	}
 	return r
 }
+
+func duration(d time.Duration) *time.Duration { return &d }

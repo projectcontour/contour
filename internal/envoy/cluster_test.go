@@ -312,6 +312,47 @@ func TestCluster(t *testing.T) {
 				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
+		"cluster with random load balancer policy": {
+			cluster: &dag.Cluster{
+				Upstream: &dag.HTTPService{
+					TCPService: service(s1),
+				},
+				LoadBalancerStrategy: "Random",
+			},
+			want: &v2.Cluster{
+				Name:                 "default/kuard/443/58d888c08a",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_RANDOM,
+				CommonLbConfig: ClusterCommonLBConfig(),
+			},
+		},
+		"cluster with cookie policy": {
+			cluster: &dag.Cluster{
+				Upstream: &dag.HTTPService{
+					TCPService: service(s1),
+				},
+				LoadBalancerStrategy: "Cookie",
+			},
+			want: &v2.Cluster{
+				Name:                 "default/kuard/443/e4f81994fe",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				ConnectTimeout: 250 * time.Millisecond,
+				LbPolicy:       v2.Cluster_RING_HASH,
+				CommonLbConfig: ClusterCommonLBConfig(),
+			},
+		},
+
 		"tcp service": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.TCPService{
@@ -488,6 +529,7 @@ func TestLBPolicy(t *testing.T) {
 		"Random":               v2.Cluster_RANDOM,
 		"":                     v2.Cluster_ROUND_ROBIN,
 		"unknown":              v2.Cluster_ROUND_ROBIN,
+		"Cookie":               v2.Cluster_RING_HASH,
 
 		// RingHash and Maglev were removed as options in 0.13.
 		// See #1150

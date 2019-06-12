@@ -47,17 +47,24 @@ func TestRouteRoute(t *testing.T) {
 			ServicePort: &s1.Spec.Ports[0],
 		},
 	}
+	c2 := &dag.Cluster{
+		Upstream: &dag.TCPService{
+			Name:        s1.Name,
+			Namespace:   s1.Namespace,
+			ServicePort: &s1.Spec.Ports[0],
+		},
+		LoadBalancerStrategy: "Cookie",
+	}
 
 	tests := map[string]struct {
-		route    *dag.Route
-		clusters []*dag.Cluster
-		want     *route.Route_Route
+		route *dag.Route
+		want  *route.Route_Route
 	}{
 		"single service": {
 			route: &dag.Route{
-				Prefix: "/",
+				Prefix:   "/",
+				Clusters: []*dag.Cluster{c1},
 			},
-			clusters: []*dag.Cluster{c1},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_Cluster{
@@ -66,13 +73,12 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
-
 		"websocket": {
 			route: &dag.Route{
 				Prefix:    "/",
 				Websocket: true,
+				Clusters:  []*dag.Cluster{c1},
 			},
-			clusters: []*dag.Cluster{c1},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_Cluster{
@@ -87,21 +93,21 @@ func TestRouteRoute(t *testing.T) {
 		"multiple": {
 			route: &dag.Route{
 				Prefix: "/",
+				Clusters: []*dag.Cluster{{
+					Upstream: &dag.TCPService{
+						Name:        s1.Name,
+						Namespace:   s1.Namespace,
+						ServicePort: &s1.Spec.Ports[0],
+					},
+					Weight: 90,
+				}, {
+					Upstream: &dag.TCPService{
+						Name:        s1.Name,
+						Namespace:   s1.Namespace, // it's valid to mention the same service several times per route.
+						ServicePort: &s1.Spec.Ports[0],
+					},
+				}},
 			},
-			clusters: []*dag.Cluster{{
-				Upstream: &dag.TCPService{
-					Name:        s1.Name,
-					Namespace:   s1.Namespace,
-					ServicePort: &s1.Spec.Ports[0],
-				},
-				Weight: 90,
-			}, {
-				Upstream: &dag.TCPService{
-					Name:        s1.Name,
-					Namespace:   s1.Namespace, // it's valid to mention the same service several times per route.
-					ServicePort: &s1.Spec.Ports[0],
-				},
-			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_WeightedClusters{
@@ -123,21 +129,21 @@ func TestRouteRoute(t *testing.T) {
 			route: &dag.Route{
 				Prefix:    "/",
 				Websocket: true,
+				Clusters: []*dag.Cluster{{
+					Upstream: &dag.TCPService{
+						Name:        s1.Name,
+						Namespace:   s1.Namespace,
+						ServicePort: &s1.Spec.Ports[0],
+					},
+					Weight: 90,
+				}, {
+					Upstream: &dag.TCPService{
+						Name:        s1.Name,
+						Namespace:   s1.Namespace, // it's valid to mention the same service several times per route.
+						ServicePort: &s1.Spec.Ports[0],
+					},
+				}},
 			},
-			clusters: []*dag.Cluster{{
-				Upstream: &dag.TCPService{
-					Name:        s1.Name,
-					Namespace:   s1.Namespace,
-					ServicePort: &s1.Spec.Ports[0],
-				},
-				Weight: 90,
-			}, {
-				Upstream: &dag.TCPService{
-					Name:        s1.Name,
-					Namespace:   s1.Namespace, // it's valid to mention the same service several times per route.
-					ServicePort: &s1.Spec.Ports[0],
-				},
-			}},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_WeightedClusters{
@@ -164,8 +170,8 @@ func TestRouteRoute(t *testing.T) {
 					NumRetries:    7,                // ignored
 					PerTryTimeout: 10 * time.Second, // ignored
 				},
+				Clusters: []*dag.Cluster{c1},
 			},
-			clusters: []*dag.Cluster{c1},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_Cluster{
@@ -182,8 +188,8 @@ func TestRouteRoute(t *testing.T) {
 					NumRetries:    6,
 					PerTryTimeout: 100 * time.Millisecond,
 				},
+				Clusters: []*dag.Cluster{c1},
 			},
-			clusters: []*dag.Cluster{c1},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_Cluster{
@@ -203,8 +209,8 @@ func TestRouteRoute(t *testing.T) {
 				TimeoutPolicy: &dag.TimeoutPolicy{
 					Timeout: 90 * time.Second,
 				},
+				Clusters: []*dag.Cluster{c1},
 			},
-			clusters: []*dag.Cluster{c1},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_Cluster{
@@ -220,8 +226,8 @@ func TestRouteRoute(t *testing.T) {
 				TimeoutPolicy: &dag.TimeoutPolicy{
 					Timeout: -1,
 				},
+				Clusters: []*dag.Cluster{c1},
 			},
-			clusters: []*dag.Cluster{c1},
 			want: &route.Route_Route{
 				Route: &route.RouteAction{
 					ClusterSpecifier: &route.RouteAction_Cluster{
@@ -231,11 +237,95 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"single service w/ session affinity": {
+			route: &dag.Route{
+				Prefix:   "/cart",
+				Clusters: []*dag.Cluster{c2},
+			},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/e4f81994fe",
+					},
+					HashPolicy: []*route.RouteAction_HashPolicy{{
+						PolicySpecifier: &route.RouteAction_HashPolicy_Cookie_{
+							Cookie: &route.RouteAction_HashPolicy_Cookie{
+								Name: "X-Contour-Session-Affinity",
+								Ttl:  duration(0),
+								Path: "/",
+							},
+						},
+					}},
+				},
+			},
+		},
+		"multiple service w/ session affinity": {
+			route: &dag.Route{
+				Prefix:   "/cart",
+				Clusters: []*dag.Cluster{c2, c2},
+			},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_WeightedClusters{
+						WeightedClusters: &route.WeightedCluster{
+							Clusters: []*route.WeightedCluster_ClusterWeight{{
+								Name:   "default/kuard/8080/e4f81994fe",
+								Weight: u32(1),
+							}, {
+								Name:   "default/kuard/8080/e4f81994fe",
+								Weight: u32(1),
+							}},
+							TotalWeight: u32(2),
+						},
+					},
+					HashPolicy: []*route.RouteAction_HashPolicy{{
+						PolicySpecifier: &route.RouteAction_HashPolicy_Cookie_{
+							Cookie: &route.RouteAction_HashPolicy_Cookie{
+								Name: "X-Contour-Session-Affinity",
+								Ttl:  duration(0),
+								Path: "/",
+							},
+						},
+					}},
+				},
+			},
+		},
+		"mixed service w/ session affinity": {
+			route: &dag.Route{
+				Prefix:   "/cart",
+				Clusters: []*dag.Cluster{c2, c1},
+			},
+			want: &route.Route_Route{
+				Route: &route.RouteAction{
+					ClusterSpecifier: &route.RouteAction_WeightedClusters{
+						WeightedClusters: &route.WeightedCluster{
+							Clusters: []*route.WeightedCluster_ClusterWeight{{
+								Name:   "default/kuard/8080/da39a3ee5e",
+								Weight: u32(1),
+							}, {
+								Name:   "default/kuard/8080/e4f81994fe",
+								Weight: u32(1),
+							}},
+							TotalWeight: u32(2),
+						},
+					},
+					HashPolicy: []*route.RouteAction_HashPolicy{{
+						PolicySpecifier: &route.RouteAction_HashPolicy_Cookie_{
+							Cookie: &route.RouteAction_HashPolicy_Cookie{
+								Name: "X-Contour-Session-Affinity",
+								Ttl:  duration(0),
+								Path: "/",
+							},
+						},
+					}},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := RouteRoute(tc.route, tc.clusters)
+			got := RouteRoute(tc.route)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}
