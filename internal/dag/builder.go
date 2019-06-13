@@ -617,7 +617,7 @@ func (b *builder) rootAllowed(ir *ingressroutev1.IngressRoute) bool {
 
 // validSecret returns true if the Secret contains certificate and private key material.
 func validSecret(s *v1.Secret) bool {
-	return s.Type == "kubernetes.io/tls" && len(s.Data[v1.TLSCertKey]) > 0 && len(s.Data[v1.TLSPrivateKeyKey]) > 0
+	return s.Type == v1.SecretTypeTLS && len(s.Data[v1.TLSCertKey]) > 0 && len(s.Data[v1.TLSPrivateKeyKey]) > 0
 }
 
 func validCA(s *v1.Secret) bool {

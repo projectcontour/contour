@@ -416,7 +416,7 @@ func tlssecret(namespace, name string, data map[string][]byte) *v1.Secret {
 			Name:      name,
 			Namespace: namespace,
 		},
-		Type: "kubernetes.io/tls",
+		Type: v1.SecretTypeTLS,
 		Data: data,
 	}
 }
