@@ -234,9 +234,9 @@ type Response struct {
 	*v2.DiscoveryResponse
 }
 
-func (r *Response) Equals(resp *v2.DiscoveryResponse) {
+func (r *Response) Equals(want *v2.DiscoveryResponse) {
 	r.Helper()
-	assertEqual(r.T, r.DiscoveryResponse, resp)
+	assertEqual(r.T, want, r.DiscoveryResponse)
 }
 
 func assertEqual(t *testing.T, want, got *v2.DiscoveryResponse) {

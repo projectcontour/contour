@@ -173,7 +173,56 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 		TypeUrl: secretType,
 		Nonce:   "2",
 	})
+}
 
+// issue 1169, an invalid certificate should not be
+// presented by SDS even if referenced by an ingress object.
+func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	c := &Contour{
+		T:          t,
+		ClientConn: cc,
+	}
+
+	// s1 is NOT a tls secret
+	s1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "invalid",
+			Namespace: "default",
+		},
+		Type: "kubernetes.io/dockerconfigjson",
+		Data: map[string][]byte{
+			".dockerconfigjson": []byte("ewogICAgImF1dGhzIjogewogICAgICAgICJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOiB7CiAgICAgICAgICAgICJhdXRoIjogImMzUi4uLnpFMiIKICAgICAgICB9CiAgICB9Cn0K"),
+		},
+	}
+	// add secret
+	rh.OnAdd(s1)
+
+	// i1 is a tls ingress
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"kuard.example.com"},
+				SecretName: "invalid",
+			}},
+		},
+	}
+	rh.OnAdd(i1)
+
+	// SDS should be empty
+	c.Request(secretType).Equals(&v2.DiscoveryResponse{
+		VersionInfo: "2",
+		Resources:   []types.Any{},
+		TypeUrl:     secretType,
+		Nonce:       "2",
+	})
 }
 
 func secret(sec *v1.Secret) *auth.Secret {
