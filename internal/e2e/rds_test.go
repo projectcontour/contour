@@ -438,6 +438,7 @@ func TestEditIngressInPlace(t *testing.T) {
 			Name:      "hello-kitty",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -671,6 +672,7 @@ func TestSSLRedirectOverlay(t *testing.T) {
 			Name:      "example-tls",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -765,6 +767,7 @@ func TestInvalidCertInIngress(t *testing.T) {
 			Name:      "example-tls",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       nil,
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -827,6 +830,7 @@ func TestInvalidCertInIngress(t *testing.T) {
 			Name:      "example-tls",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("cert"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -1008,6 +1012,7 @@ func TestRDSFilter(t *testing.T) {
 			Name:      "example-tls",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -2096,6 +2101,7 @@ func TestRouteWithTLS(t *testing.T) {
 			Name:      "example-tls",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -2193,6 +2199,7 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 			Name:      "example-tls",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),

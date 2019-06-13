@@ -42,6 +42,7 @@ func TestSDSVisibility(t *testing.T) {
 			Name:      "secret",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -103,6 +104,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 			Name:      "secret",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -154,6 +156,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 			Name:      "unrelated",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
