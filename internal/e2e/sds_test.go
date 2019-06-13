@@ -14,7 +14,6 @@
 package e2e
 
 import (
-	"context"
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -22,18 +21,20 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
-	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 )
 
 func TestSDSVisibility(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
+
+	c := &Contour{
+		T:          t,
+		ClientConn: cc,
+	}
 
 	// s1 is a tls secret
 	s1 := &v1.Secret{
@@ -51,12 +52,12 @@ func TestSDSVisibility(t *testing.T) {
 
 	// assert that the secret is _not_ visible as it is
 	// not referenced by any ingress/ingressroute
-	assertEqual(t, &v2.DiscoveryResponse{
+	c.Request(secretType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources:   []types.Any{},
 		TypeUrl:     secretType,
 		Nonce:       "1",
-	}, streamSDS(t, cc))
+	})
 
 	// i1 is a tls ingress
 	i1 := &v1beta1.Ingress{
@@ -77,24 +78,13 @@ func TestSDSVisibility(t *testing.T) {
 	// TODO(dfc) #1165: secret should not be present if the ingress does not
 	// have any valid routes.
 	// i1 has a default route to backend:80, but there is no matching service.
-	assertEqual(t, &v2.DiscoveryResponse{
+	c.Request(secretType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: []types.Any{
 			any(t, secret(s1)),
 		},
 		TypeUrl: secretType,
 		Nonce:   "2",
-	}, streamSDS(t, cc))
-}
-
-func streamSDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
-	t.Helper()
-	sds := discovery.NewSecretDiscoveryServiceClient(cc)
-	st, err := sds.StreamSecrets(context.TODO())
-	check(t, err)
-	return stream(t, st, &v2.DiscoveryRequest{
-		TypeUrl:       secretType,
-		ResourceNames: rn,
 	})
 }
 

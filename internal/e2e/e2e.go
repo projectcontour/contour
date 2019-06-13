@@ -15,10 +15,12 @@
 package e2e
 
 import (
+	"context"
 	"net"
 	"testing"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	envoy "github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
@@ -30,7 +32,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -183,6 +185,58 @@ func stream(t *testing.T, st grpcStream, req *v2.DiscoveryRequest) *v2.Discovery
 	resp, err := st.Recv()
 	check(t, err)
 	return resp
+}
+
+type Contour struct {
+	*grpc.ClientConn
+	*testing.T
+}
+
+func (c *Contour) Request(typeurl string, names ...string) *Response {
+	c.Helper()
+	var st grpcStream
+	ctx := context.Background()
+	switch typeurl {
+	case secretType:
+		sds := discovery.NewSecretDiscoveryServiceClient(c.ClientConn)
+		sts, err := sds.StreamSecrets(ctx)
+		c.check(err)
+		st = sts
+	default:
+		c.Fatal("unknown typeURL: " + typeurl)
+	}
+	resp := c.sendRequest(st, &v2.DiscoveryRequest{
+		TypeUrl:       typeurl,
+		ResourceNames: names,
+	})
+	return &Response{
+		Contour:           c,
+		DiscoveryResponse: resp,
+	}
+}
+
+func (c *Contour) sendRequest(stream grpcStream, req *v2.DiscoveryRequest) *v2.DiscoveryResponse {
+	err := stream.Send(req)
+	c.check(err)
+	resp, err := stream.Recv()
+	c.check(err)
+	return resp
+}
+
+func (c *Contour) check(err error) {
+	if err != nil {
+		c.Fatal(err)
+	}
+}
+
+type Response struct {
+	*Contour
+	*v2.DiscoveryResponse
+}
+
+func (r *Response) Equals(resp *v2.DiscoveryResponse) {
+	r.Helper()
+	assertEqual(r.T, r.DiscoveryResponse, resp)
 }
 
 func assertEqual(t *testing.T, want, got *v2.DiscoveryResponse) {
