@@ -273,6 +273,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "secret",
 						Namespace: "default",
 					},
+					Type: "kubernetes.io/tls",
 					Data: secretdata("certificate", "key"),
 				},
 				&v1.Service{
@@ -339,6 +340,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "secret",
 						Namespace: "default",
 					},
+					Type: "kubernetes.io/tls",
 					Data: secretdata("certificate", "key"),
 				},
 				&v1.Service{
@@ -412,6 +414,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "secret",
 						Namespace: "default",
 					},
+					Type: "kubernetes.io/tls",
 					Data: secretdata("certificate", "key"),
 				},
 				&v1.Service{
@@ -496,6 +499,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "secret",
 						Namespace: "default",
 					},
+					Type: "kubernetes.io/tls",
 					Data: secretdata("certificate", "key"),
 				},
 				&v1.Service{
@@ -566,6 +570,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "secret",
 						Namespace: "default",
 					},
+					Type: "kubernetes.io/tls",
 					Data: secretdata("certificate", "key"),
 				},
 				&v1.Service{

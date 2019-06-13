@@ -105,20 +105,8 @@ func TestSecretVisit(t *testing.T) {
 		},
 		"unassociated secrets": {
 			objs: []interface{}{
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret-a",
-						Namespace: "default",
-					},
-					Data: secretdata("cert", "key"),
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret-b",
-						Namespace: "default",
-					},
-					Data: secretdata("cert", "key"),
-				},
+				tlssecret("default", "secret-a", secretdata("cert", "key")),
+				tlssecret("default", "secret-b", secretdata("cert", "key")),
 			},
 			want: map[string]*auth.Secret{},
 		},
@@ -140,13 +128,7 @@ func TestSecretVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Data: secretdata("cert", "key"),
-				},
+				tlssecret("default", "secret", secretdata("cert", "key")),
 			},
 			want: secretmap(
 				secret("default/secret/cd1b506996", "cert", "key"),
@@ -186,13 +168,7 @@ func TestSecretVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Data: secretdata("cert", "key"),
-				},
+				tlssecret("default", "secret", secretdata("cert", "key")),
 			},
 			want: secretmap(
 				secret("default/secret/cd1b506996", "cert", "key"),
@@ -232,20 +208,8 @@ func TestSecretVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret-a",
-						Namespace: "default",
-					},
-					Data: secretdata("cert-a", "key-a"),
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret-b",
-						Namespace: "default",
-					},
-					Data: secretdata("cert-b", "key-b"),
-				},
+				tlssecret("default", "secret-a", secretdata("cert-a", "key-a")),
+				tlssecret("default", "secret-b", secretdata("cert-b", "key-b")),
 			},
 			want: secretmap(
 				secret("default/secret-a/ff2a9f58ca", "cert-a", "key-a"),
@@ -266,25 +230,17 @@ func TestSecretVisit(t *testing.T) {
 								SecretName: "secret",
 							},
 						},
-						Routes: []ingressroutev1.Route{
-							{
-								Services: []ingressroutev1.Service{
-									{
-										Name: "backend",
-										Port: 80,
-									},
+						Routes: []ingressroutev1.Route{{
+							Services: []ingressroutev1.Service{
+								{
+									Name: "backend",
+									Port: 80,
 								},
-							},
+							}},
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Data: secretdata("cert", "key"),
-				},
+				tlssecret("default", "secret", secretdata("cert", "key")),
 			},
 			want: secretmap(
 				secret("default/secret/cd1b506996", "cert", "key"),
@@ -340,13 +296,7 @@ func TestSecretVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Data: secretdata("cert", "key"),
-				},
+				tlssecret("default", "secret", secretdata("cert", "key")),
 			},
 			want: secretmap(
 				secret("default/secret/cd1b506996", "cert", "key"),
@@ -402,20 +352,8 @@ func TestSecretVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret-a",
-						Namespace: "default",
-					},
-					Data: secretdata("cert-a", "key-a"),
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret-b",
-						Namespace: "default",
-					},
-					Data: secretdata("cert-b", "key-b"),
-				},
+				tlssecret("default", "secret-a", secretdata("cert-a", "key-a")),
+				tlssecret("default", "secret-b", secretdata("cert-b", "key-b")),
 			},
 			want: secretmap(
 				secret("default/secret-a/ff2a9f58ca", "cert-a", "key-a"),
@@ -468,5 +406,17 @@ func secret(name, cert, key string) *auth.Secret {
 				},
 			},
 		},
+	}
+}
+
+// tlssecert creates a new v1.Secret object of type kubernetes.io/tls.
+func tlssecret(namespace, name string, data map[string][]byte) *v1.Secret {
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Type: v1.SecretTypeTLS,
+		Data: data,
 	}
 }

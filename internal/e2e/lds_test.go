@@ -148,6 +148,7 @@ func TestTLSListener(t *testing.T) {
 			Name:      "secret",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -265,6 +266,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 			Name:      "secret",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -418,6 +420,7 @@ func TestLDSFilter(t *testing.T) {
 			Name:      "secret",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -504,6 +507,7 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 			Name:      "secret",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -648,6 +652,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 			Name:      "secret",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -729,6 +734,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 			Name:      "secret",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -805,6 +811,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 			Name:      "secret",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -998,6 +1005,7 @@ func TestIngressRouteHTTPS(t *testing.T) {
 			Name:      "secret",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -1138,6 +1146,7 @@ func TestLDSIngressRouteTCPForward(t *testing.T) {
 			Name:      "secret",
 			Namespace: "default",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -1220,6 +1229,7 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 			Name:      "wildcard",
 			Namespace: "secret",
 		},
+		Type: "kubernetes.io/tls",
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),

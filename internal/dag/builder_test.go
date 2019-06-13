@@ -598,6 +598,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "example-tls",
 			Namespace: "default",
 		},
+		Type: v1.SecretTypeTLS,
 		Data: map[string][]byte{
 			v1.TLSCertKey:       []byte("certificate"),
 			v1.TLSPrivateKeyKey: []byte("key"),
@@ -1371,6 +1372,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "secret",
 			Namespace: "default",
 		},
+		Type: v1.SecretTypeTLS,
 		Data: secretdata("certificate", "key"),
 	}
 
@@ -1380,6 +1382,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "secret",
 			Namespace: "default",
 		},
+		Type: v1.SecretTypeTLS,
 		Data: secretdata("", ""),
 	}
 
