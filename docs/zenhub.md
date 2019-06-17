@@ -12,4 +12,4 @@ If you are an Contour user or Contour Developer, you do not _need_ to use ZenHub
 
 ## Using ZenHub
 
-ZenHub can be integrated within the GitHub interface using their [Chrome or FireFox extensions](https://www.zenhub.com/extension).  In addition, you can use their dedicated [web application](app.zenhub.com).
+ZenHub can be integrated within the GitHub interface using their [Chrome or FireFox extensions](https://www.zenhub.com/extension).  In addition, you can use their dedicated [web application](https://app.zenhub.com/).
