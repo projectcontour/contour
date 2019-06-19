@@ -86,6 +86,8 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 			return err
 		}
 
+		// TODO(dfc) issue 1176: handle xDS ACK/NACK
+
 		// from the request we derive the resource to stream which have
 		// been registered according to the typeURL.
 		r, ok := xh.resources[req.TypeUrl]
@@ -97,49 +99,45 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 		// so the next time around the loop all is forgotten.
 		log := log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail)
 
-		for {
-			log.Info("stream_wait")
+		log.Info("stream_wait")
 
-			// now we wait for a notification, if this is the first time through the loop
-			// then last will be less than zero and that will trigger a notification immediately.
-			r.Register(ch, last)
-			select {
-			case last = <-ch:
-				// boom, something in the cache has changed.
-				// TODO(dfc) the thing that has changed may not be in the scope of the filter
-				// so we're going to be sending an update that is a no-op. See #426
+		// now we wait for a notification, if this is the first request received on this
+		// connection last will be less than zero and that will trigger a response immediately.
+		r.Register(ch, last)
+		select {
+		case last = <-ch:
+			// boom, something in the cache has changed.
+			// TODO(dfc) the thing that has changed may not be in the scope of the filter
+			// so we're going to be sending an update that is a no-op. See #426
 
-				var resources []proto.Message
-				switch len(req.ResourceNames) {
-				case 0:
-					// no resource hints supplied, return the full
-					// contents of the resource
-					resources = r.Contents()
-				default:
-					// resource hints supplied, return exactly those
-					resources = r.Query(req.ResourceNames)
-				}
-
-				any, err := toAny(r.TypeURL(), resources)
-				if err != nil {
-					return err
-				}
-
-				resp := &v2.DiscoveryResponse{
-					VersionInfo: strconv.Itoa(last),
-					Resources:   any,
-					TypeUrl:     r.TypeURL(),
-					Nonce:       strconv.Itoa(last),
-				}
-				if err := st.Send(resp); err != nil {
-					return err
-				}
-				log.WithField("count", len(resources)).Info("response")
-
-				// ok, the client hung up, return any error stored in the context and we're done.
-			case <-ctx.Done():
-				return ctx.Err()
+			var resources []proto.Message
+			switch len(req.ResourceNames) {
+			case 0:
+				// no resource hints supplied, return the full
+				// contents of the resource
+				resources = r.Contents()
+			default:
+				// resource hints supplied, return exactly those
+				resources = r.Query(req.ResourceNames)
 			}
+
+			any, err := toAny(r.TypeURL(), resources)
+			if err != nil {
+				return err
+			}
+
+			resp := &v2.DiscoveryResponse{
+				VersionInfo: strconv.Itoa(last),
+				Resources:   any,
+				TypeUrl:     r.TypeURL(),
+				Nonce:       strconv.Itoa(last),
+			}
+			if err := st.Send(resp); err != nil {
+				return err
+			}
+			log.WithField("count", len(resources)).Info("response")
+		case <-ctx.Done():
+			return ctx.Err()
 		}
 	}
 }
