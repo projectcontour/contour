@@ -1,0 +1,71 @@
+---
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata: 
+  name: contour-validname
+  namespace: heptio-contour
+spec: 
+  virtualhost:
+    fqdn: contour.local
+  routes: 
+    - match: /
+      services: 
+        - name: contour
+          port: 8080
+
+---
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata: 
+  name: contour-shortname
+  namespace: heptio-contour
+spec: 
+  virtualhost:
+    fqdn: contour
+  routes: 
+    - match: /
+      services: 
+        - name: contour
+          port: 8080
+---
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata: 
+  name: contour-singlechar
+  namespace: heptio-contour
+spec: 
+  virtualhost:
+    fqdn: c
+  routes: 
+    - match: /
+      services: 
+        - name: contour
+          port: 8080
+---
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata: 
+  name: contour-hyphen
+  namespace: heptio-contour
+spec: 
+  virtualhost:
+    fqdn: contour.heptio-contour
+  routes: 
+    - match: /
+      services: 
+        - name: contour
+          port: 8080
+---
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata: 
+  name: contour-fqdn
+  namespace: heptio-contour
+spec: 
+  virtualhost:
+    fqdn: contour.heptio-contour.svc.cluster.local
+  routes: 
+    - match: /
+      services: 
+        - name: contour
+          port: 8080
