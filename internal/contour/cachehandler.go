@@ -57,7 +57,7 @@ func (ch *CacheHandler) setIngressRouteStatus(st statusable) {
 	for _, s := range st.Statuses() {
 		err := ch.IngressRouteStatus.SetStatus(s.Status, s.Description, s.Object)
 		if err != nil {
-			ch.Errorf("Error Setting Status of IngressRoute: ", err)
+			ch.Errorf("Error Setting Status of IngressRoute: %v", err)
 		}
 	}
 }

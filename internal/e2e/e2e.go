@@ -77,6 +77,7 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 		},
 		Metrics:       metrics.NewMetrics(r),
 		ListenerCache: contour.NewListenerCache(statsAddress, statsPort),
+		FieldLogger:   log,
 	}
 
 	reh := contour.ResourceEventHandler{
