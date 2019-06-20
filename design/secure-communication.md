@@ -2,16 +2,15 @@
 
 Status: Draft
 
-This document outlines a design for securing gRPC communication between Contour and Envoy, including all the xDS endpoints.
+This document outlines a design for securing gRPC communication between Contour and Envoy.
 
 ## Goals
 
-- Achieve secure communication between Contour and Envoy, which will allow a split deployment.
-- Allow use of the SDS service in Contour with authentication.
+- Achieve secure communication between Contour and Envoy, which will allow a secure split deployment.
 
 ## Non Goals
 
-- Certificate management, including creation or rotation. These are left as an exercise for the reader at this time.
+- Certificate management, including creation or rotation. These must be provided by the user. In the future we plan to automated this process to allow split deployments to become the default configuration.
 
 ## Definitions
 
@@ -21,7 +20,7 @@ In this document, we use **mTLS** as shorthand for 'mutual TLS client certificat
 
 ## Background
 
-Currently, the default deployment of Contour includes a Contour and an Envoy container, that connect via the Pod's loopback interface. This uses the pod-level security boundary to provide transport security (no-one can listen in) and authentication (no-one other than Envoy can connect).
+Currently, the default deployment of Contour colocates the Envoy and Contour containers in the same pod communicating over the pod's loopback interface. This uses the pod-level security boundary to provide transport security (no-one can listen in) and authentication (no-one other than Envoy can connect).
 
 In order to be able to split the deployment of Contour and Envoy, we must be able to provide an acceptable level of both transport security and authentication between the different pods.
 
@@ -31,9 +30,9 @@ It's also important to note that the certificates talked about in this document 
 
 ## High-Level Design
 
-We will add configuration to Contour, both for `contour serve` and `contour bootstrap`, to have Contour and Envoy use a shared CA and a keypair each. This will allow a basic split deployment with minimal changes to the current code, using simple Secret mounts into file locations in both a Contour Deployment and Envoy deployment or DaemonSet.
+We will add configuration to Contour, both for `contour serve` and `contour bootstrap`, to have Contour and Envoy use a shared CA and a keypair each. This will allow a basic split deployment, using simple Secret mounts into file locations in both a Contour Deployment and Envoy deployment or DaemonSet.
 
-The generation of the certificates and their placement into Secrets in an operable and maintainable way is not in scope for this change, only a basic illustration in the example deployment YAMLs and Howto. However, see [Future Work](#future-work) for more info.
+The generation of the certificates and their placement into Secrets is not in scope for this change, only a basic illustration in the example deployment YAMLs and Howto. However, see [Future Work](#future-work) for more info.
 
 ## Detailed Design - mTLS
 
@@ -64,14 +63,14 @@ We will update the example deployment manifests for the separate deployment opti
 
 ## Security Considerations
 
-In the current design, these certs require the rolling of the deployment to change, they should be long-lived certs (days, weeks, or months), not short-lived (minutes or hours). The CA Keypair should be very long-lived and very tightly controlled, as Contour/Envoy connection security is only as secure as the CA keypair.
+In the current design, the process must be restarted to pick up a change to these certs. Because of this, they should be long-lived certs (days, weeks, or months), not short-lived (minutes or hours). The CA Keypair should be very long-lived and very tightly controlled, as Contour/Envoy connection security is only as secure as the CA keypair.
 
 As noted above, this is an initial design to *start* the process of being able to run reasonably secure, authenticated, separate deployments of Contour and Envoy. Some things that we *will* address at a later date, but are out of scope for now:
 
 - Certificate generation (apart from a very simple howto to allow users to see how the feature works)
 - Certificate rotation
 
-Implementing this change will, however, improve the security of the split-deployment scenario.
+Implementing this change will, however, enable a secure split-deployment scenario.
 
 ## Future Work
 
@@ -87,7 +86,7 @@ This phase will add additional functionality and/or tools to help with the certi
 
 ### Phase 3: Secure by default
 
-This phase will flip the example deployments to all use a secure mode, make those command line options default, and include an option to restore the current behaviour. Watch [#1185][2] to track this phase.
+This phase will flip the example deployments to all use a secure mode, make those command line options default, and include an option to restore the current behavior. Watch [#1185][2] to track this phase.
 
 
 [1]: https://github.com/heptio/contour/issues/1184
