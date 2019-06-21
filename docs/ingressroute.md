@@ -534,7 +534,7 @@ spec:
     services:
     - name: httpbin
       port: 8080
-      strategy: cookie
+      strategy: Cookie
 ```
 ##### Limitations
 
