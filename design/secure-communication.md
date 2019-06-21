@@ -50,6 +50,8 @@ To `contour serve`, covering the Contour side:
 - `--contour-mtls-cert`: The cert for Contour to use to identify itself. (`serve`)
 - `--contour-mtls-key`: The key for Contour to use for its side of the mTLS pairing. (`serve`)
 
+(Note that these `contour serve` options may also move to a configuration file under [#1130][1])
+
 And to `contour bootstrap`, covering Envoy configuration:
 - `--envoy-cafile`: The CA Bundle for the mutual TLS relationship
 - `--envoy-mtls-cert`: The cert for Envoy to use to identify itself.
@@ -82,12 +84,12 @@ This document - allows a more secure split deployment in a very basic way.
 
 ### Phase 2: User Experience
 
-This phase will add additional functionality and/or tools to help with the certificate generation and rolling process. Watch [#1184][1] to track this phase.
+This phase will add additional functionality and/or tools to help with the certificate generation and rolling process. Watch [#1184][2] to track this phase.
 
 ### Phase 3: Secure by default
 
-This phase will flip the example deployments to all use a secure mode, make those command line options default, and include an option to restore the current behavior. Watch [#1185][2] to track this phase.
+This phase will flip the example deployments to all use a secure mode, make those command line options default, and include an option to restore the current behavior. Watch [#1185][3] to track this phase.
 
-
-[1]: https://github.com/heptio/contour/issues/1184
-[2]: https://github.com/heptio/contour/issues/1185
+[1]: https://github.com/heptio/contour/issues/1130
+[2]: https://github.com/heptio/contour/issues/1184
+[3]: https://github.com/heptio/contour/issues/1185
