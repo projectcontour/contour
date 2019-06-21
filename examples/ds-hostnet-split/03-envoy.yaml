@@ -69,7 +69,7 @@ spec:
         - $(CONTOUR_SERVICE_PORT)
         command:
         - contour
-        image: gcr.io/heptio-images/contour:master
+        image: gcr.io/heptio-images/contour:v0.13.0
         imagePullPolicy: Always
         name: envoy-initconfig
         volumeMounts:
