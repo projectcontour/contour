@@ -189,6 +189,20 @@ func (c clustersByNameAndWeight) Less(i, j int) bool {
 
 // SocketAddress creates a new TCP core.Address.
 func SocketAddress(address string, port int) *core.Address {
+	if address == "::" {
+		return &core.Address{
+			Address: &core.Address_SocketAddress{
+				SocketAddress: &core.SocketAddress{
+					Protocol:   core.TCP,
+					Address:    address,
+					Ipv4Compat: true,
+					PortSpecifier: &core.SocketAddress_PortValue{
+						PortValue: uint32(port),
+					},
+				},
+			},
+		}
+	}
 	return &core.Address{
 		Address: &core.Address_SocketAddress{
 			SocketAddress: &core.SocketAddress{
