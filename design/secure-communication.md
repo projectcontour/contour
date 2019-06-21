@@ -1,6 +1,6 @@
 # Secure Communication for Contour and Envoy
 
-Status: Draft
+Status: Accepted
 
 This document outlines a design for securing gRPC communication between Contour and Envoy.
 
