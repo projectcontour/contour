@@ -1,11 +1,18 @@
-# Header Based Routing
+# v1.IngressRoute Design
 
 _Status_: Draft
 
-The goal of this feature is to allow Contour to route traffic by more than just fqdn or path matching, but by also routing based upon a header which exists on the request.
-The scope of this design doc looks to improve on the IngressRoute.v1beta1 design and incorporate changes to enable not just path based routing, but also header based routing as a first class citizen.
+When IngressRoute was introduced a year ago (July 2018) the design chose to only support prefix matching for routes. This was mostly a time to market decision, but also reflected the fact that it was unknown the other ways customers wanted to match routes on. We knew that Envoy also supported other methods, but without a signal from our userbase, blindly adding support for all of the existing mechanisms felt like throwing the problem over the wall to our users to figure out what worked best.
 
-## Use Cases
+It's clear today that only supporting prefix routing is too limited. Customers want to route not just on prefix, substring, and regex -- the three we identified last year -- but also header matching, source ip, user agent, and many more.
+
+The scope of this design doc looks to improve on the IngressRoute.v1beta1 design and plan how the current design will change to support these additional routing features, yet still preserve the current multi-team capabilities with delegation.
+
+## Header Routing
+
+Routing via Header allows Contour to route traffic by more than just fqdn or path matching, but by also routing based upon a header which exists on the request. The scope of this design doc looks to improve on the IngressRoute.v1beta1 design and incorporate changes to enable not just path based routing, but also header based routing as a first class citizen.
+
+### Use Cases
 
 Contour was initially developed with prefix based routing and has served us well, but soley prefix based routing has shown to be underpowered and we have customers, external and internal, who want more flexible routing options.
 
@@ -29,6 +36,13 @@ Contour was initially developed with prefix based routing and has served us well
   Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36
   ```
 
+- JWT Token routing based upon claims in the token. Difficult currently with Envoy today (https://github.com/envoyproxy/envoy/issues/3763).
+
+## Issues with current v1beta1.IngressRoute Spec
+
+- **Delegate IngressRoute can also "look" like a root IngressRoute** (https://github.com/heptio/contour/issues/865): Currently, if I have an IngressRoute that delegates to another, it's possible that the delegated IngressRoute also references a virtualhost even though that virtualhost will be ignored
+- **Permit Insecure in multi-team environments** (https://github.com/heptio/contour/issues/864): When a TLS cert is defined on an `IngressRoute`, Contour will automatically configure Envoy to return a 301 redirect response to any insecure request. Users can then optionally allow insecure traffic by setting the `permitInsecure` field on a route. This can introduce a security risk since administrators may not want to allow users who have been delegated, to be able to serve insecure routes from a Root delegation.
+
 ## Goals
 
 - Make routing decisions can be made against following criteria:
@@ -40,10 +54,12 @@ Contour was initially developed with prefix based routing and has served us well
   The regex grammar used in the value field is defined [here](https://en.cppreference.com/w/cpp/regex/ecmascript).
 - Allow delegation from fqdn to header or path
   - Sub-delegation to additional header or path
+- Secure Backend: The idea to proxy to a backend service over a TLS connection  (Currently an annoation on the Kubernetes service)
+- Backend Protocol: Proxy to http/2 backend (Currently an annoation on the Kubernetes service)
 
 ## Non Goals
 
-- 
+- Support JWT tokens with header routing
 
 ## High-Level Design
 
@@ -54,6 +70,30 @@ In addition routing via header, delegation will be added such that an IngressRou
 Routes passed to Envoy from Contour will also optionally implement the Envoy `HeaderMatcher` field which is where the Headers defined on the IngressRoute will be passed.
 
 ## Detailed Design
+
+## Routes
+
+Routes in v1beta1 allows for a set of matches on a path as well as a set of upstream Kubernetes services that traffic could be routed. These upstreams assumed an l7 http protocol+port unless [special annotations](https://github.com/heptio/contour/blob/master/docs/annotations.md#contour-specific-service-annotations) were added to the corresponding Kubernetes service. These mappings needed to be tightly coupled and were often overlooked by users.
+
+This design looks to update how services are defined by specifying the protocol in the service reference set. By defining the protocol:service name as well as the port, we can eliminate the need for annotations on the service.
+
+```yaml
+routes: 
+  - match: /
+    services: 
+    - http: kuard
+      port: 80
+    - https: kuard-tls
+      port: 443
+    - http2: kuard-2
+      port: 80
+    - https2: kuard-2-tls
+      port: 443
+```
+
+
+
+## Header Routing
 
 The IngressRoute spec will be updated to allow for a `header` field to be added which will allow for a set of key/value pairs to be applied to the route. Additionally, the path `match` moves to it's own `path` variable.
 
@@ -92,6 +132,15 @@ Following are sample requests and which backends will handle the request:
 - `GET -H "x-header: a" /foo` —> `backend-a`
 - `GET -H "x-header: b" /foo` —> `backend-b`
 - `GET /foo` —>  `backend-default`
+
+### Path Match with Cookie
+
+In the following example, you can defi
+
+```
+cookie:
+          regex: (^|.*; )Istio-NS-Hint=test1($|; .*)
+```
 
 ### Header Delegation
 
