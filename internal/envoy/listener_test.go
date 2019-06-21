@@ -142,6 +142,23 @@ func TestSocketAddress(t *testing.T) {
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatal(diff)
 	}
+
+	got = SocketAddress("::", port)
+	want = &core.Address{
+		Address: &core.Address_SocketAddress{
+			SocketAddress: &core.SocketAddress{
+				Protocol:   core.TCP,
+				Address:    "::",
+				Ipv4Compat: true, // Set only for ipv6-any "::"
+				PortSpecifier: &core.SocketAddress_PortValue{
+					PortValue: port,
+				},
+			},
+		},
+	}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatal(diff)
+	}
 }
 
 func TestDownstreamTLSContext(t *testing.T) {
