@@ -6,3 +6,5 @@ vendor/
 .DS_Store
 go.sum
 localenvoyconfig.yaml
+securelocalenvoyconfig.yaml
+certs/

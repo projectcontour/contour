@@ -15,41 +15,96 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
+	"io/ioutil"
+	"log"
 	"os"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/gogo/protobuf/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
+// Client holds the details for the cli client to connect to.
 type Client struct {
 	ContourAddr string
+	CAFile      string
+	ClientCert  string
+	ClientKey   string
 }
 
 func (c *Client) dial() *grpc.ClientConn {
-	conn, err := grpc.Dial(c.ContourAddr, grpc.WithInsecure())
-	check(err)
+
+	var conn *grpc.ClientConn
+	var err error
+
+	// Check the TLS setup
+	if c.CAFile != "" || c.ClientCert != "" || c.ClientKey != "" {
+		// If one of the three TLS commands is not empty, they all must be not empty
+		if !(c.CAFile != "" && c.ClientCert != "" && c.ClientKey != "") {
+			log.Fatal("You must supply all three TLS parameters - --cafile, --cert-file, --key-file, or none of them.")
+		}
+		// Load the client certificates from disk
+		certificate, err := tls.LoadX509KeyPair(c.ClientCert, c.ClientKey)
+		check(err)
+
+		// Create a certificate pool from the certificate authority
+		certPool := x509.NewCertPool()
+		ca, err := ioutil.ReadFile(c.CAFile)
+		check(err)
+
+		// Append the certificates from the CA
+		if ok := certPool.AppendCertsFromPEM(ca); !ok {
+			// TODO(nyoung) OMG yuck, thanks for this, crypto/tls. Suggestions on alternates welcomed.
+			check(errors.New("failed to append ca certs"))
+		}
+
+		creds := credentials.NewTLS(&tls.Config{
+			// TODO(youngnick): Does this need to be defaulted with a cli flag to
+			// override?
+			// The ServerName here needs to be one of the SANs available in
+			// the serving cert used by contour serve.
+			ServerName:   "contour",
+			Certificates: []tls.Certificate{certificate},
+			RootCAs:      certPool,
+		})
+
+		// Create a connection with the TLS credentials
+		conn, err = grpc.Dial(c.ContourAddr, grpc.WithTransportCredentials(creds))
+		check(err)
+	} else {
+		conn, err = grpc.Dial(c.ContourAddr, grpc.WithInsecure())
+		check(err)
+	}
+
 	return conn
 }
 
+// ClusterStream returns a stream of Clusters using the config in the Client.
 func (c *Client) ClusterStream() v2.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := v2.NewClusterDiscoveryServiceClient(c.dial()).StreamClusters(context.Background())
 	check(err)
 	return stream
 }
 
+// EndpointStream returns a stream of Endpoints using the config in the Client.
 func (c *Client) EndpointStream() v2.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := v2.NewEndpointDiscoveryServiceClient(c.dial()).StreamEndpoints(context.Background())
 	check(err)
 	return stream
 }
 
+// ListenerStream returns a stream of Listeners using the config in the Client.
 func (c *Client) ListenerStream() v2.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := v2.NewListenerDiscoveryServiceClient(c.dial()).StreamListeners(context.Background())
 	check(err)
 	return stream
 }
 
+// RouteStream returns a stream of Routes using the config in the Client.
 func (c *Client) RouteStream() v2.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := v2.NewRouteDiscoveryServiceClient(c.dial()).StreamRoutes(context.Background())
 	check(err)
