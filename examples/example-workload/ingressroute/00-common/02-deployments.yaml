@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kuard
@@ -17,7 +17,7 @@ spec:
       - image: gcr.io/kuar-demo/kuard-amd64:1
         name: kuard
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kuard
