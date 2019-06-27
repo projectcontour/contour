@@ -20,7 +20,7 @@ This section describes how to build Contour from source.
 Contour uses [`go modules`][2] for dependency management.
 
 ```
-go github.com/heptio/contour
+go get github.com/heptio/contour
 ```
 
 Go is very particular when it comes to the location of the source code in your `$GOPATH`.
@@ -44,10 +44,8 @@ To build Contour, run:
 make
 ```
 
-This produces a `contour` binary in your current working directory.
+This uses a `go install` and produces a `contour` binary in your `$GOPATH/bin` directory.
 
-_TIP_: You may prefer to use `go install` rather than `go build` to cache build artifacts and reduce future compile times.
-In this case the binary is placed in `$GOPATH/bin/contour`.
 
 ### Running the unit tests
 
@@ -139,6 +137,13 @@ To build an image of your change using Contour's `Dockerfile`, run these command
 docker build -t docker.io/davecheney/contour:latest .
 docker push docker.io/davecheney/contour:latest
 ```
+or, you can use the make helper, like so:
+
+```
+REGISTRY=docker.io/davecheney VERSION=latest make push
+```
+
+This will push to `:latest` in `docker.io/davecheney` obviously you'll also need to replace the repo host with your own here too. If you don't specify `VERSION`, `make push` will push to a git hash tag (the output of ` git rev-parse --short=8 --verify HEAD`).
 
 ### Verify your change
 
