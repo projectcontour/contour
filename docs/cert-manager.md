@@ -196,7 +196,7 @@ We start with the deployment.
 Copy the following to a file called `deployment.yaml`:
 
 ```
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
