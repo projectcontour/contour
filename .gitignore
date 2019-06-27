@@ -6,4 +6,3 @@ vendor/
 .DS_Store
 go.sum
 localenvoyconfig.yaml
-localdev/
