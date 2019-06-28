@@ -70,8 +70,16 @@ func (s *grpcServer) FetchEndpoints(_ context.Context, req *v2.DiscoveryRequest)
 	return nil, status.Errorf(codes.Unimplemented, "FetchEndpoints unimplemented")
 }
 
+func (s *grpcServer) DeltaEndpoints(v2.EndpointDiscoveryService_DeltaEndpointsServer) error {
+	return status.Errorf(codes.Unimplemented, "DeltaEndpoints unimplemented")
+}
+
 func (s *grpcServer) FetchListeners(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "FetchListeners unimplemented")
+}
+
+func (s *grpcServer) DeltaListeners(v2.ListenerDiscoveryService_DeltaListenersServer) error {
+	return status.Errorf(codes.Unimplemented, "DeltaListeners unimplemented")
 }
 
 func (s *grpcServer) FetchRoutes(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
@@ -80,6 +88,10 @@ func (s *grpcServer) FetchRoutes(_ context.Context, req *v2.DiscoveryRequest) (*
 
 func (s *grpcServer) FetchSecrets(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "FetchSecrets unimplemented")
+}
+
+func (s *grpcServer) DeltaSecrets(discovery.SecretDiscoveryService_DeltaSecretsServer) error {
+	return status.Errorf(codes.Unimplemented, "DeltaSecrets unimplemented")
 }
 
 func (s *grpcServer) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) error {
