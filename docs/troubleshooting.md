@@ -90,8 +90,6 @@ arguments may be passed into the contour command:
   args: 
   - serve
   - --incluster
-  - --envoy-external-http-port=80
-  - --envoy-external-https-port=443
   - --envoy-service-http-port=80
   - --envoy-service-https-port=443
 ```
