@@ -78,11 +78,11 @@ nodes:
     listenAddress: "0.0.0.0"
 ```
 
-Save the previous yaml to a file named `kind.config.yaml`.
-Then run the create cluster command passing the config file as a parameter:
+Then run the create cluster command passing the config file as a parameter.
+This file is in the `examples/kind` directory:
 
 ```bash
-$ kind create cluster --config kind.config.yaml  
+$ kind create cluster --config examples/kind/kind-expose-port.yaml
 ```
 
 Then, your CONTOUR_IP (as used below) will just be `localhost:8080`.
