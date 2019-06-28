@@ -16,9 +16,9 @@ Routing via Header allows Contour to route traffic by more than just fqdn or pat
 
 ### Use Cases
 
-Contour was initially developed with prefix based routing and has served us well, but soley prefix based routing has shown to be underpowered and we have customers, external and internal, who want more flexible routing options.
+Contour was initially developed with prefix based routing and has served us well, but solely prefix based routing has shown to be underpowered and we have customers, external and internal, who want more flexible routing options.
 
-- Allow for routing of platform to different backends. When a request come from an iOS device it should route to "backend-iOS" and requests from an Android device should route to "backend-Android". Each of these backends are managed by different teams and they live in seperate namespaces.
+- Allow for routing of platform to different backends. When a request come from an iOS device it should route to "backend-iOS" and requests from an Android device should route to "backend-Android". Each of these backends are managed by different teams and they live in separate namespaces.
 
 - Requests to a specific path `/weather` are handled by a backend, however, specific users are allowed to opt-in to a beta version.
   When authenticated, an additional header is added which identifies the user as a member of the "beta" program. Requests to the `/weather` path with the appropriate header (e.g. `X-Beta: true`) will route to `backend-beta`, all other requests will route to `backend-prod`.
@@ -98,7 +98,7 @@ Here are some changes that are directly different from the v1beta1 design:
 
 - `services` under the `match` struct are renamed to `backends`
 - `services` struct previously had a `name` parameter, now it has a set of options which define the protocol to implement for that specific backend
-- `match` previously took a string arguement which was the pathPrefix to route on, now this has been moved to a `path` parameter under the `match` struct
+- `match` previously took a string argument which was the pathPrefix to route on, now this has been moved to a `path` parameter under the `match` struct
 - `tcpproxy`: Is removed and replaced by a `supported protoco` defined in the route
 - Annotations on Kubernetes services are removed which previously defined what ports to proxy TLS connections to, etc
 - **TODO**: Investigate moving from `spec.status` to the built-in [status sub resource type](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#status-subresource).
@@ -161,19 +161,19 @@ spec:
       path: /foo
       - header: x-header
         value: a
-    services:
+    backends:
     - http: backend-a
       port: 9999
   - match: 
       path: /foo
       - header: x-header
         value: b
-    services:
+    backends:
     - http: backend-b
       port: 9999
   - match: 
     path: /foo
-    services:
+    backends:
     - http: backend-default
       port: 9999
 ```
@@ -196,7 +196,7 @@ spec:
   - match:
       path: /foo
       - cookie: user=test
-      services:
+      backends:
       - http: cookiebackend
         port: 80    
 ```
@@ -227,7 +227,7 @@ spec:
       namespace: team-b
   - match: 
     path: /foo
-    services:
+    backends:
     - http: backend-default
       port: 9999
 ```
@@ -252,13 +252,13 @@ spec:
   - match:
       - header: x-header
         value: a
-    services:
+    backends:
     - http: backend-a
       port: 9999
   - match: 
       - header: x-header
         value: b
-    services:
+    backends:
     - http: backend-b
       port: 9999
 ```
