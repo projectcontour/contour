@@ -4,6 +4,8 @@ IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 PKGS := $(shell GO111MODULE=on go list -mod=readonly ./cmd/... ./internal/...)
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
+SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
+
 TAG_LATEST ?= false
 # Used to supply a local Envoy docker container an IP to connect to that is running
 # 'contour serve'. On MacOS this will work, but may not on other OSes. Defining
@@ -44,8 +46,23 @@ ifeq ($(TAG_LATEST), true)
 	docker push $(IMAGE):latest
 endif
 
+# TODO(youngnick): Move these local bootstrap config files out of the repo root dir.
 $(LOCAL_BOOTSTRAP_CONFIG): install
 	contour bootstrap --xds-address $(LOCALIP) --xds-port=8001 $@
+
+$(SECURE_LOCAL_BOOTSTRAP_CONFIG): install
+	contour bootstrap --xds-address $(LOCALIP) --xds-port=8001 --envoy-cafile /config/certs/CA.cert --envoy-cert-file /config/certs/client.cert --envoy-key-file /config/certs/client.key $@
+
+secure-local: $(SECURE_LOCAL_BOOTSTRAP_CONFIG)
+	docker run \
+		-it \
+		--mount type=bind,source=$(CURDIR),target=/config \
+		--net bridge \
+		docker.io/envoyproxy/envoy:v1.10.0 \
+		envoy \
+		--config-path /config/$< \
+		--service-node node0 \
+		--service-cluster cluster0
 
 local: $(LOCAL_BOOTSTRAP_CONFIG)
 	docker run \

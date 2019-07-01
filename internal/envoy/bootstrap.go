@@ -14,11 +14,13 @@
 package envoy
 
 import (
+	"log"
 	"strconv"
 	"strings"
 	"time"
 
 	api "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	clusterv2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
@@ -85,7 +87,63 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 		},
 	}
 
+	if c.GrpcClientCert != "" || c.GrpcClientKey != "" || c.GrpcCABundle != "" {
+		// If one of the two TLS options is not empty, they all must be not empty
+		if !(c.GrpcClientCert != "" && c.GrpcClientKey != "" && c.GrpcCABundle != "") {
+			log.Fatal("You must supply all three TLS parameters - --envoy-cafile, --envoy-cert-file, --envoy-key-file, or none of them.")
+		}
+		b.StaticResources.Clusters[0].TlsContext = upstreamFileTLSContext(c.GrpcCABundle, c.GrpcClientCert, c.GrpcClientKey)
+	}
+
 	return b
+}
+
+func upstreamFileTLSContext(cafile, certfile, keyfile string) *auth.UpstreamTlsContext {
+	if certfile == "" {
+		// Nothig to do
+		return nil
+	}
+
+	if certfile == "" {
+		// Nothing to do
+		return nil
+	}
+
+	if cafile == "" {
+		// You currently must supply a CA file, not just use others.
+		return nil
+	}
+	context := &auth.UpstreamTlsContext{
+		CommonTlsContext: &auth.CommonTlsContext{
+			TlsCertificates: []*auth.TlsCertificate{
+				{
+					CertificateChain: &core.DataSource{
+						Specifier: &core.DataSource_Filename{
+							Filename: certfile,
+						},
+					},
+					PrivateKey: &core.DataSource{
+						Specifier: &core.DataSource_Filename{
+							Filename: keyfile,
+						},
+					},
+				},
+			},
+			ValidationContextType: &auth.CommonTlsContext_ValidationContext{
+				ValidationContext: &auth.CertificateValidationContext{
+					TrustedCa: &core.DataSource{
+						Specifier: &core.DataSource_Filename{
+							Filename: cafile,
+						},
+					},
+					// TODO(youngnick): Does there need to be a flag wired down to here?
+					VerifySubjectAltName: []string{"contour"},
+				},
+			},
+		},
+	}
+
+	return context
 }
 
 func stringOrDefault(s, def string) string {
@@ -126,4 +184,15 @@ type BootstrapConfig struct {
 
 	// Namespace is the namespace where Contour is running
 	Namespace string
+
+	//GrpcCABundle is the filename that contains a CA certificate chain that can
+	//verify the client cert.
+	GrpcCABundle string
+
+	// GrpcClientCert is the filename that contains a client certificate. May contain a full bundle if you
+	// don't want to pass a CA Bundle.
+	GrpcClientCert string
+
+	// GrpcClientKey is the filename that contains a client key for secure gRPC with TLS.
+	GrpcClientKey string
 }

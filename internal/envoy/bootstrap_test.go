@@ -600,6 +600,145 @@ func TestBootstrap(t *testing.T) {
   }
 }`,
 		},
+		"--envoy-cafile=CA.cert --envoy-client-cert=client.cert --envoy-client-key=client.key": {
+			config: BootstrapConfig{
+				Namespace:      "testing-ns",
+				GrpcCABundle:   "CA.cert",
+				GrpcClientCert: "client.cert",
+				GrpcClientKey:  "client.key",
+			},
+			want: `{
+  "static_resources": {
+    "clusters": [
+      {
+        "name": "contour",
+        "alt_stat_name": "testing-ns_contour_8001",
+        "type": "STRICT_DNS",
+        "connect_timeout": "5s",
+        "load_assignment": {
+          "cluster_name": "contour",
+          "endpoints": [
+            {
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 8001
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "circuit_breakers": {
+          "thresholds": [
+            {
+              "priority": "HIGH",
+              "max_connections": 100000,
+              "max_pending_requests": 100000,
+              "max_requests": 60000000,
+              "max_retries": 50
+            },
+            {
+              "max_connections": 100000,
+              "max_pending_requests": 100000,
+              "max_requests": 60000000,
+              "max_retries": 50
+            }
+          ]
+        },
+        "http2_protocol_options": {},
+        "tls_context": {
+          "common_tls_context": {
+              "tls_certificates": [
+                {
+                  "certificate_chain": {
+                    "filename": "client.cert"
+                  },
+                  "private_key": {
+                    "filename": "client.key"
+                  }
+                }
+              ],
+              "validation_context": {
+                "trusted_ca": {
+                  "filename": "CA.cert"
+                },
+                "verify_subject_alt_name": [
+                  "contour"
+                ]
+              }
+            }
+        }
+      },
+      {
+        "name": "service-stats",
+        "alt_stat_name": "testing-ns_service-stats_9001",
+        "type": "LOGICAL_DNS",
+        "connect_timeout": "0.250s",
+        "load_assignment": {
+          "cluster_name": "service-stats",
+          "endpoints": [   
+            {                          
+              "lb_endpoints": [
+                {
+                  "endpoint": {
+                    "address": {
+                      "socket_address": {
+                        "address": "127.0.0.1",
+                        "port_value": 9001
+                      }    
+                    }     
+                  }
+                }          
+              ]                        
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "dynamic_resources": {
+    "lds_config": {
+      "api_config_source": {
+        "api_type": "GRPC",
+        "grpc_services": [
+          {
+            "envoy_grpc": {
+              "cluster_name": "contour"
+            }
+          }
+        ]
+      }
+    },
+    "cds_config": {
+      "api_config_source": {
+        "api_type": "GRPC",
+        "grpc_services": [
+          {
+            "envoy_grpc": {
+              "cluster_name": "contour"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "admin": {
+    "access_log_path": "/dev/null",
+    "address": {
+      "socket_address": {
+        "address": "127.0.0.1",
+        "port_value": 9001
+      }
+    }
+  }
+}`,
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {

@@ -14,8 +14,12 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -49,12 +53,20 @@ func main() {
 	log := logrus.StandardLogger()
 	app := kingpin.New("contour", "Heptio Contour Kubernetes ingress controller.")
 	var config envoy.BootstrapConfig
+
+	// Set up a zero-valued tls.Config, we'll use this to tell if we need to do
+	// any TLS setup for the 'serve' command.
+	var tlsconfig tls.Config
+
 	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")
 	path := bootstrap.Arg("path", "Configuration file.").Required().String()
 	bootstrap.Flag("admin-address", "Envoy admin interface address").StringVar(&config.AdminAddress)
 	bootstrap.Flag("admin-port", "Envoy admin interface port").IntVar(&config.AdminPort)
 	bootstrap.Flag("xds-address", "xDS gRPC API address").StringVar(&config.XDSAddress)
 	bootstrap.Flag("xds-port", "xDS gRPC API port").IntVar(&config.XDSGRPCPort)
+	bootstrap.Flag("envoy-cafile", "gRPC CA Filename for Envoy to load").Envar("ENVOY_CAFILE").StringVar(&config.GrpcCABundle)
+	bootstrap.Flag("envoy-cert-file", "gRPC Client cert filename for Envoy to load").Envar("ENVOY_CERT_FILE").StringVar(&config.GrpcClientCert)
+	bootstrap.Flag("envoy-key-file", "gRPC Client key filename for Envoy to load").Envar("ENVOY_KEY_FILE").StringVar(&config.GrpcClientKey)
 
 	// Get the running namespace passed via ENV var from the Kubernetes Downward API
 	config.Namespace = getEnv("CONTOUR_NAMESPACE", "heptio-contour")
@@ -62,6 +74,9 @@ func main() {
 	cli := app.Command("cli", "A CLI client for the Heptio Contour Kubernetes ingress controller.")
 	var client Client
 	cli.Flag("contour", "contour host:port.").Default("127.0.0.1:8001").StringVar(&client.ContourAddr)
+	cli.Flag("cafile", "CA bundle file for connecting to a TLS-secured Contour").Envar("CLI_CAFILE").StringVar(&client.CAFile)
+	cli.Flag("cert-file", "Client certificate file for connecting to a TLS-secured Contour").Envar("CLI_CERT_FILE").StringVar(&client.ClientCert)
+	cli.Flag("key-file", "Client key file for connecting to a TLS-secured Contour").Envar("CLI_KEY_FILE").StringVar(&client.ClientKey)
 
 	var resources []string
 	cds := cli.Command("cds", "watch services.")
@@ -82,6 +97,9 @@ func main() {
 	xdsPort := serve.Flag("xds-port", "xDS gRPC API port").Default("8001").Int()
 	statsAddress := serve.Flag("stats-address", "Envoy /stats interface address").Default("0.0.0.0").String()
 	statsPort := serve.Flag("stats-port", "Envoy /stats interface port").Default("8002").Int()
+	caFile := serve.Flag("contour-cafile", "CA bundle file name for serving gRPC with TLS").Envar("CONTOUR_CAFILE").String()
+	contourCert := serve.Flag("contour-cert-file", "Contour certificate file name for serving gRPC over TLS").Envar("CONTOUR_CERT_FILE").String()
+	contourKey := serve.Flag("contour-key-file", "Contour key file name for serving gRPC over TLS").Envar("CONTOUR_KEY_FILE").String()
 
 	ch := contour.CacheHandler{
 		FieldLogger: log.WithField("context", "CacheHandler"),
@@ -158,6 +176,14 @@ func main() {
 		stream := client.RouteStream()
 		watchstream(stream, cache.SecretType, resources)
 	case serve.FullCommand():
+		if *caFile != "" || *contourCert != "" || *contourKey != "" {
+			// If one of the three TLS commands is not empty, they all must be not empty
+			if !(*caFile != "" && *contourCert != "" && *contourKey != "") {
+				log.Fatal("You must supply all three TLS parameters - --contour-cafile, --contour-cert-file, --contour-key-file, or none of them.")
+			}
+			setupTLSConfig(&tlsconfig, *caFile, *contourCert, *contourKey)
+		}
+
 		log.Infof("args: %v", args)
 		var g workgroup.Group
 
@@ -212,9 +238,20 @@ func main() {
 		g.Add(func(stop <-chan struct{}) error {
 			log := log.WithField("context", "grpc")
 			addr := net.JoinHostPort(*xdsAddr, strconv.Itoa(*xdsPort))
-			l, err := net.Listen("tcp", addr)
-			if err != nil {
-				return err
+
+			var l net.Listener
+			var err error
+			if tlsconfig.ClientAuth != tls.NoClientCert {
+				log.Info("Setting up TLS for gRPC")
+				l, err = tls.Listen("tcp", addr, &tlsconfig)
+				if err != nil {
+					return err
+				}
+			} else {
+				l, err = net.Listen("tcp", addr)
+				if err != nil {
+					return err
+				}
 			}
 
 			s := grpc.NewAPI(log, map[string]grpc.Resource{
@@ -295,4 +332,33 @@ func getEnv(key, fallback string) string {
 		value = fallback
 	}
 	return value
+}
+
+// setupTLSConfig sets up a tls.Config, given cert filenames.
+func setupTLSConfig(config *tls.Config, caFile string, servingCert string, servingKey string) error {
+
+	// First up, load the Contour serving cert and key pair
+
+	cert, err := tls.LoadX509KeyPair(servingCert, servingKey)
+	if err != nil {
+		return err
+	}
+
+	ca, err := ioutil.ReadFile(caFile)
+	if err != nil {
+		return err
+	}
+	certPool := x509.NewCertPool()
+
+	if ok := certPool.AppendCertsFromPEM(ca); !ok {
+		return fmt.Errorf("unable to append certificate in %s to CA pool", caFile)
+	}
+
+	config.Certificates = []tls.Certificate{cert}
+	config.ClientAuth = tls.RequireAndVerifyClientCert
+	config.ClientCAs = certPool
+	config.Rand = rand.Reader
+
+	return nil
+
 }
