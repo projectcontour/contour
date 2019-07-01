@@ -5,6 +5,25 @@ vendor/
 .idea/
 .DS_Store
 go.sum
+# TODO(youngnick): Move these out of the repo root.
 localenvoyconfig.yaml
 securelocalenvoyconfig.yaml
 certs/
+
+# Netlify stuff
+.vagrant
+.DS_Store
+.sass-cache
+_ignore
+node_modules
+_site
+.jekyll
+.jekyll-metadata
+.bundle
+.vscode
+
+*.log
+*.js.map
+*.css.map
+.ruby-version
+

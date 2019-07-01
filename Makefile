@@ -46,8 +46,9 @@ ifeq ($(TAG_LATEST), true)
 	docker push $(IMAGE):latest
 endif
 
+# TODO(youngnick): Move these local bootstrap config files out of the repo root dir.
 $(LOCAL_BOOTSTRAP_CONFIG): install
-	contour bootstrap --xds-address $(LOCALIP) --xds-port=8001
+	contour bootstrap --xds-address $(LOCALIP) --xds-port=8001 $@
 
 $(SECURE_LOCAL_BOOTSTRAP_CONFIG): install
 	contour bootstrap --xds-address $(LOCALIP) --xds-port=8001 --envoy-cafile /config/certs/CA.cert --envoy-cert-file /config/certs/client.cert --envoy-key-file /config/certs/client.key $@

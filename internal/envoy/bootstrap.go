@@ -92,13 +92,13 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 		if !(c.GrpcClientCert != "" && c.GrpcClientKey != "" && c.GrpcCABundle != "") {
 			log.Fatal("You must supply all three TLS parameters - --envoy-cafile, --envoy-cert-file, --envoy-key-file, or none of them.")
 		}
-		b.StaticResources.Clusters[0].TlsContext = grpcUpstreamTLSContext(c.GrpcCABundle, c.GrpcClientCert, c.GrpcClientKey)
+		b.StaticResources.Clusters[0].TlsContext = upstreamFileTLSContext(c.GrpcCABundle, c.GrpcClientCert, c.GrpcClientKey)
 	}
 
 	return b
 }
 
-func grpcUpstreamTLSContext(cafile string, certfile string, keyfile string) *auth.UpstreamTlsContext {
+func upstreamFileTLSContext(cafile, certfile, keyfile string) *auth.UpstreamTlsContext {
 	if certfile == "" {
 		// Nothig to do
 		return nil

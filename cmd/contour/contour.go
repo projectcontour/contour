@@ -56,7 +56,7 @@ func main() {
 
 	// Set up a zero-valued tls.Config, we'll use this to tell if we need to do
 	// any TLS setup for the 'serve' command.
-	tlsconfig := tls.Config{}
+	var tlsconfig tls.Config
 
 	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")
 	path := bootstrap.Arg("path", "Configuration file.").Required().String()
@@ -351,7 +351,7 @@ func setupTLSConfig(config *tls.Config, caFile string, servingCert string, servi
 	certPool := x509.NewCertPool()
 
 	if ok := certPool.AppendCertsFromPEM(ca); !ok {
-		return err
+		return fmt.Errorf("unable to append certificate in %s to CA pool", caFile)
 	}
 
 	config.Certificates = []tls.Certificate{cert}

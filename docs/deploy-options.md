@@ -64,12 +64,30 @@ minikube service -n heptio-contour contour --url
 The response is always an IP address, for example `http://192.168.99.100:30588`. This is used as CONTOUR_IP in the rest of the documentation.
 
 ### kind
-On kind, you will need to port-forward to the exposed Envoy port on one of the contour pods, like so:
+When creating the cluster on Kind, pass a custom configuration to allow Kind to expose port 8080 to your local host:
 
+```yaml
+kind: Cluster
+apiVersion: kind.sigs.k8s.io/v1alpha3
+nodes:
+- role: control-plane
+- role: worker
+  extraPortMappings:
+  - containerPort: 8080
+    hostPort: 8080
+    listenAddress: "0.0.0.0"
 ```
-kubectl port-forward -n heptio-contour $(kubectl get pod -n heptio-contour -l app=contour -o name | head -n1) 8080:8080
+
+Then run the create cluster command passing the config file as a parameter.
+This file is in the `examples/kind` directory:
+
+```bash
+$ kind create cluster --config examples/kind/kind-expose-port.yaml
 ```
+
 Then, your CONTOUR_IP (as used below) will just be `localhost:8080`.
+
+_Note: If you change Envoy's ports to bind to 80/443 then it's possible to add entried to your local `/etc/hosts` file and make requests like `http://kuard.local` which matches how it might work on a production installation._
 
 ## Test with Ingress
 
