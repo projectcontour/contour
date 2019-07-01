@@ -184,12 +184,15 @@ func TestClusterCacheQuery(t *testing.T) {
 
 func TestClusterVisit(t *testing.T) {
 	tests := map[string]struct {
-		objs []interface{}
-		want map[string]*v2.Cluster
+		objs              []interface{}
+		want              map[string]*v2.Cluster
+		wantServicesCache map[dag.Meta]dag.Empty
+		wantSecretsCache  map[dag.Meta]dag.Empty
 	}{
 		"nothing": {
-			objs: nil,
-			want: map[string]*v2.Cluster{},
+			objs:              nil,
+			want:              map[string]*v2.Cluster{},
+			wantServicesCache: nil,
 		},
 		"single unnamed service": {
 			objs: []interface{}{
@@ -226,6 +229,9 @@ func TestClusterVisit(t *testing.T) {
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				}),
+			wantServicesCache: map[dag.Meta]dag.Empty{
+				{Name: "kuard", Namespace: "default"}: {},
+			},
 		},
 		"single named service": {
 			objs: []interface{}{
@@ -263,6 +269,9 @@ func TestClusterVisit(t *testing.T) {
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				}),
+			wantServicesCache: map[dag.Meta]dag.Empty{
+				{Name: "kuard", Namespace: "default"}: {},
+			},
 		},
 		"h2c upstream": {
 			objs: []interface{}{
@@ -306,6 +315,9 @@ func TestClusterVisit(t *testing.T) {
 					CommonLbConfig:       envoy.ClusterCommonLBConfig(),
 				},
 			),
+			wantServicesCache: map[dag.Meta]dag.Empty{
+				{Name: "kuard", Namespace: "default"}: {},
+			},
 		},
 		"long namespace and service name": {
 			objs: []interface{}{
@@ -343,6 +355,9 @@ func TestClusterVisit(t *testing.T) {
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				}),
+			wantServicesCache: map[dag.Meta]dag.Empty{
+				{Name: "tiny-cog-department-test-instance", Namespace: "beurocratic-company-test-domain-1"}: {},
+			},
 		},
 		"two service ports": {
 			objs: []interface{}{
@@ -405,6 +420,9 @@ func TestClusterVisit(t *testing.T) {
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
+			wantServicesCache: map[dag.Meta]dag.Empty{
+				{Name: "backend", Namespace: "default"}: {},
+			},
 		},
 		"ingressroute with simple path healthcheck": {
 			objs: []interface{}{
@@ -463,6 +481,9 @@ func TestClusterVisit(t *testing.T) {
 					DrainConnectionsOnHostRemoval: true,
 				},
 			),
+			wantServicesCache: map[dag.Meta]dag.Empty{
+				{Name: "backend", Namespace: "default"}: {},
+			},
 		},
 		"ingressroute with custom healthcheck": {
 			objs: []interface{}{
@@ -526,6 +547,9 @@ func TestClusterVisit(t *testing.T) {
 					DrainConnectionsOnHostRemoval: true,
 				},
 			),
+			wantServicesCache: map[dag.Meta]dag.Empty{
+				{Name: "backend", Namespace: "default"}: {},
+			},
 		},
 		"ingressroute with RoundRobin lb algorithm": {
 			objs: []interface{}{
@@ -569,6 +593,9 @@ func TestClusterVisit(t *testing.T) {
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
+			wantServicesCache: map[dag.Meta]dag.Empty{
+				{Name: "backend", Namespace: "default"}: {},
+			},
 		},
 		"ingressroute with WeightedLeastRequest lb algorithm": {
 			objs: []interface{}{
@@ -612,6 +639,9 @@ func TestClusterVisit(t *testing.T) {
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
+			wantServicesCache: map[dag.Meta]dag.Empty{
+				{Name: "backend", Namespace: "default"}: {},
+			},
 		},
 		"ingressroute with Random lb algorithm": {
 			objs: []interface{}{
@@ -655,6 +685,9 @@ func TestClusterVisit(t *testing.T) {
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
+			wantServicesCache: map[dag.Meta]dag.Empty{
+				{Name: "backend", Namespace: "default"}: {},
+			},
 		},
 		"ingressroute with differing lb algorithms": {
 			objs: []interface{}{
@@ -717,6 +750,9 @@ func TestClusterVisit(t *testing.T) {
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
+			wantServicesCache: map[dag.Meta]dag.Empty{
+				{Name: "backend", Namespace: "default"}: {},
+			},
 		},
 		"ingressroute with unknown lb algorithm": {
 			objs: []interface{}{
@@ -760,6 +796,9 @@ func TestClusterVisit(t *testing.T) {
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
+			wantServicesCache: map[dag.Meta]dag.Empty{
+				{Name: "backend", Namespace: "default"}: {},
+			},
 		},
 		"circuitbreaker annotations": {
 			objs: []interface{}{
@@ -813,6 +852,9 @@ func TestClusterVisit(t *testing.T) {
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
+			wantServicesCache: map[dag.Meta]dag.Empty{
+				{Name: "kuard", Namespace: "default"}: {},
+			},
 		},
 		"contour.heptio.com/num-retries annotation": {
 			objs: []interface{}{
@@ -854,6 +896,72 @@ func TestClusterVisit(t *testing.T) {
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				}),
+			wantServicesCache: map[dag.Meta]dag.Empty{
+				{Name: "kuard", Namespace: "default"}: {},
+			},
+		},
+		"unreferenced services should not cause update": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							Hosts:      []string{"whatever.example.com"},
+							SecretName: "secret",
+						}},
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromInt(443),
+						},
+					},
+				},
+				service("default", "kuard",
+					v1.ServicePort{
+						Protocol:   "TCP",
+						Port:       443,
+						TargetPort: intstr.FromInt(8443),
+					},
+				),
+				service("default", "kuard-notused01",
+					v1.ServicePort{
+						Protocol:   "TCP",
+						Port:       443,
+						TargetPort: intstr.FromInt(8443),
+					},
+				),
+				service("default", "kuard-notused02",
+					v1.ServicePort{
+						Protocol:   "TCP",
+						Port:       443,
+						TargetPort: intstr.FromInt(8443),
+					},
+				),
+				tlssecret("default", "secret", nil),
+				tlssecret("default", "unused-secret01", nil),
+				tlssecret("default", "unused-secret02", nil),
+			},
+			want: clustermap(
+				&v2.Cluster{
+					Name:                 "default/kuard/443/da39a3ee5e",
+					AltStatName:          "default_kuard_443",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/kuard",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+				}),
+			wantServicesCache: map[dag.Meta]dag.Empty{
+				{Name: "kuard", Namespace: "default"}: {},
+			},
+			wantSecretsCache: map[dag.Meta]dag.Empty{
+				{Name: "secret", Namespace: "default"}: {},
+			},
 		},
 	}
 
@@ -867,9 +975,15 @@ func TestClusterVisit(t *testing.T) {
 			for _, o := range tc.objs {
 				reh.OnAdd(o)
 			}
-			root := dag.BuildDAG(&reh.KubernetesCache)
+			root, cache := dag.BuildDAG(&reh.KubernetesCache)
 			got := visitClusters(root)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+			if diff := cmp.Diff(tc.wantServicesCache, cache.Services); diff != "" {
+				t.Fatal(diff)
+			}
+			if diff := cmp.Diff(tc.wantSecretsCache, cache.Secrets); diff != "" {
 				t.Fatal(diff)
 			}
 		})

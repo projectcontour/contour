@@ -90,7 +90,8 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 		})
 	}
 
-	dag.BuildDAG(dw.kc).Visit(visit)
+	d, _ := dag.BuildDAG(dw.kc)
+	d.Visit(visit)
 
 	fmt.Fprintln(w, "}")
 }

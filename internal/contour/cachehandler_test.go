@@ -14,6 +14,7 @@
 package contour
 
 import (
+	v1 "k8s.io/api/core/v1"
 	"reflect"
 	"testing"
 
@@ -527,7 +528,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			for _, o := range tc.objs {
 				kc.Insert(o)
 			}
-			dag := dag.BuildDAG(kc)
+			dag, _ := dag.BuildDAG(kc)
 			gotMetrics := calculateIngressRouteMetric(dag)
 			if !reflect.DeepEqual(tc.want.Root, gotMetrics.Root) {
 				t.Fatalf("(metrics-Root) expected to find: %v but got: %v", tc.want.Root, gotMetrics.Root)
@@ -543,6 +544,102 @@ func TestIngressRouteMetrics(t *testing.T) {
 			}
 			if !reflect.DeepEqual(tc.want.Total, gotMetrics.Total) {
 				t.Fatalf("(metrics-Total) expected to find: %v but got: %v", tc.want.Total, gotMetrics.Total)
+			}
+		})
+	}
+}
+
+func TestShouldUpdate(t *testing.T) {
+	tests := map[string]struct {
+		services map[dag.Meta]dag.Empty
+		secrets  map[dag.Meta]dag.Empty
+		obj      interface{}
+		want     bool
+	}{
+		"simple secret": {
+			secrets: map[dag.Meta]dag.Empty{
+				{Name: "test", Namespace: "default"}: {},
+			},
+			obj:  &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"}},
+			want: true,
+		},
+		"secret not found": {
+			secrets: map[dag.Meta]dag.Empty{
+				{Name: "foo", Namespace: "default"}: {},
+			},
+			obj:  &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"}},
+			want: false,
+		},
+		"multiple secrets": {
+			secrets: map[dag.Meta]dag.Empty{
+				{Name: "foo", Namespace: "default"}:  {},
+				{Name: "foo1", Namespace: "default"}: {},
+				{Name: "foo2", Namespace: "default"}: {},
+				{Name: "foo3", Namespace: "default"}: {},
+				{Name: "foo4", Namespace: "default"}: {},
+			},
+			obj:  &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "foo4", Namespace: "default"}},
+			want: true,
+		},
+		"multiple secrets not found": {
+			secrets: map[dag.Meta]dag.Empty{
+				{Name: "foo", Namespace: "default"}:  {},
+				{Name: "foo1", Namespace: "default"}: {},
+				{Name: "foo2", Namespace: "default"}: {},
+				{Name: "foo3", Namespace: "default"}: {},
+				{Name: "foo4", Namespace: "default"}: {},
+			},
+			obj:  &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "bar", Namespace: "default"}},
+			want: false,
+		},
+		"simple service": {
+			services: map[dag.Meta]dag.Empty{
+				{Name: "test", Namespace: "default"}: {},
+			},
+			obj:  &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"}},
+			want: true,
+		},
+		"service not found": {
+			services: map[dag.Meta]dag.Empty{
+				{Name: "foo", Namespace: "default"}: {},
+			},
+			obj:  &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"}},
+			want: false,
+		},
+		"multiple services": {
+			services: map[dag.Meta]dag.Empty{
+				{Name: "foo", Namespace: "default"}:  {},
+				{Name: "foo1", Namespace: "default"}: {},
+				{Name: "foo2", Namespace: "default"}: {},
+				{Name: "foo3", Namespace: "default"}: {},
+				{Name: "foo4", Namespace: "default"}: {},
+			},
+			obj:  &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: "foo4", Namespace: "default"}},
+			want: true,
+		},
+		"multiple service not found": {
+			services: map[dag.Meta]dag.Empty{
+				{Name: "foo", Namespace: "default"}:  {},
+				{Name: "foo1", Namespace: "default"}: {},
+				{Name: "foo2", Namespace: "default"}: {},
+				{Name: "foo3", Namespace: "default"}: {},
+				{Name: "foo4", Namespace: "default"}: {},
+			},
+			obj:  &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: "bar", Namespace: "default"}},
+			want: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			ch := CacheHandler{
+				secrets:  tc.secrets,
+				services: tc.services,
+			}
+
+			got := ch.ShouldUpdate(tc.obj)
+			if tc.want != got {
+				t.Fatalf("expected: %v but got: %v", tc.want, got)
 			}
 		})
 	}

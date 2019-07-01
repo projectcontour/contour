@@ -35,16 +35,44 @@ type KubernetesCache struct {
 
 	mu sync.RWMutex
 
-	ingresses     map[meta]*v1beta1.Ingress
-	ingressroutes map[meta]*ingressroutev1.IngressRoute
-	secrets       map[meta]*v1.Secret
-	delegations   map[meta]*ingressroutev1.TLSCertificateDelegation
-	services      map[meta]*v1.Service
+	ingresses     map[Meta]*v1beta1.Ingress
+	ingressroutes map[Meta]*ingressroutev1.IngressRoute
+	secrets       map[Meta]*v1.Secret
+	delegations   map[Meta]*ingressroutev1.TLSCertificateDelegation
+	services      map[Meta]*v1.Service
 }
 
-// meta holds the name and namespace of a Kubernetes object.
-type meta struct {
-	name, namespace string
+// Empty represents a struct with no values
+type Empty struct{}
+
+// A ReferencedCache holds Kubernetes objects and associated configurations
+// that are referenced from an Ingress or IngressRoute object
+type ReferencedCache struct {
+	Secrets  map[Meta]Empty
+	Services map[Meta]Empty
+}
+
+// InsertService inserts a service into the ReferencedCache
+func (rc *ReferencedCache) InsertService(name, namespace string) {
+	m := Meta{Name: name, Namespace: namespace}
+	if rc.Services == nil {
+		rc.Services = make(map[Meta]Empty)
+	}
+	rc.Services[m] = Empty{}
+}
+
+// InsertSecret inserts a secret into the ReferencedCache
+func (rc *ReferencedCache) InsertSecret(name, namespace string) {
+	m := Meta{Name: name, Namespace: namespace}
+	if rc.Secrets == nil {
+		rc.Secrets = make(map[Meta]Empty)
+	}
+	rc.Secrets[m] = Empty{}
+}
+
+// Meta holds the Name and Namespace of a Kubernetes object.
+type Meta struct {
+	Name, Namespace string
 }
 
 // Insert inserts obj into the KubernetesCache.
@@ -54,33 +82,33 @@ func (kc *KubernetesCache) Insert(obj interface{}) {
 	defer kc.mu.Unlock()
 	switch obj := obj.(type) {
 	case *v1.Secret:
-		m := meta{name: obj.Name, namespace: obj.Namespace}
+		m := Meta{Name: obj.Name, Namespace: obj.Namespace}
 		if kc.secrets == nil {
-			kc.secrets = make(map[meta]*v1.Secret)
+			kc.secrets = make(map[Meta]*v1.Secret)
 		}
 		kc.secrets[m] = obj
 	case *v1.Service:
-		m := meta{name: obj.Name, namespace: obj.Namespace}
+		m := Meta{Name: obj.Name, Namespace: obj.Namespace}
 		if kc.services == nil {
-			kc.services = make(map[meta]*v1.Service)
+			kc.services = make(map[Meta]*v1.Service)
 		}
 		kc.services[m] = obj
 	case *v1beta1.Ingress:
-		m := meta{name: obj.Name, namespace: obj.Namespace}
+		m := Meta{Name: obj.Name, Namespace: obj.Namespace}
 		if kc.ingresses == nil {
-			kc.ingresses = make(map[meta]*v1beta1.Ingress)
+			kc.ingresses = make(map[Meta]*v1beta1.Ingress)
 		}
 		kc.ingresses[m] = obj
 	case *ingressroutev1.IngressRoute:
-		m := meta{name: obj.Name, namespace: obj.Namespace}
+		m := Meta{Name: obj.Name, Namespace: obj.Namespace}
 		if kc.ingressroutes == nil {
-			kc.ingressroutes = make(map[meta]*ingressroutev1.IngressRoute)
+			kc.ingressroutes = make(map[Meta]*ingressroutev1.IngressRoute)
 		}
 		kc.ingressroutes[m] = obj
 	case *ingressroutev1.TLSCertificateDelegation:
-		m := meta{name: obj.Name, namespace: obj.Namespace}
+		m := Meta{Name: obj.Name, Namespace: obj.Namespace}
 		if kc.delegations == nil {
-			kc.delegations = make(map[meta]*ingressroutev1.TLSCertificateDelegation)
+			kc.delegations = make(map[Meta]*ingressroutev1.TLSCertificateDelegation)
 		}
 		kc.delegations[m] = obj
 
@@ -105,19 +133,19 @@ func (kc *KubernetesCache) remove(obj interface{}) {
 	defer kc.mu.Unlock()
 	switch obj := obj.(type) {
 	case *v1.Secret:
-		m := meta{name: obj.Name, namespace: obj.Namespace}
+		m := Meta{Name: obj.Name, Namespace: obj.Namespace}
 		delete(kc.secrets, m)
 	case *v1.Service:
-		m := meta{name: obj.Name, namespace: obj.Namespace}
+		m := Meta{Name: obj.Name, Namespace: obj.Namespace}
 		delete(kc.services, m)
 	case *v1beta1.Ingress:
-		m := meta{name: obj.Name, namespace: obj.Namespace}
+		m := Meta{Name: obj.Name, Namespace: obj.Namespace}
 		delete(kc.ingresses, m)
 	case *ingressroutev1.IngressRoute:
-		m := meta{name: obj.Name, namespace: obj.Namespace}
+		m := Meta{Name: obj.Name, Namespace: obj.Namespace}
 		delete(kc.ingressroutes, m)
 	case *ingressroutev1.TLSCertificateDelegation:
-		m := meta{name: obj.Name, namespace: obj.Namespace}
+		m := Meta{Name: obj.Name, Namespace: obj.Namespace}
 		delete(kc.delegations, m)
 	default:
 		// not interesting

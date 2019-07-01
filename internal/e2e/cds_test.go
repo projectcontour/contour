@@ -955,6 +955,84 @@ func TestExternalNameService(t *testing.T) {
 	}, streamCDS(t, cc))
 }
 
+// Test processing a service that exists but is not referenced
+func TestUnreferencedService(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	rh.OnAdd(&ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []ingressroutev1.Route{{
+				Match: "/a",
+				Services: []ingressroutev1.Service{{
+					Name:   "kuard",
+					Port:   80,
+					Weight: 90,
+				}},
+			}, {
+				Match: "/b",
+				Services: []ingressroutev1.Service{{
+					Name:   "kuard",
+					Port:   80,
+					Weight: 60,
+				}},
+			}},
+		},
+	})
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "2",
+		Resources: []types.Any{
+			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80")),
+		},
+		TypeUrl: clusterType,
+		Nonce:   "2",
+	}, streamCDS(t, cc))
+
+	// This service which is added should not cause a DAG rebuild
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-notreferenced",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "2",
+		Resources: []types.Any{
+			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80")),
+		},
+		TypeUrl: clusterType,
+		Nonce:   "2",
+	}, streamCDS(t, cc))
+}
+
 func serviceWithAnnotations(ns, name string, annotations map[string]string, ports ...v1.ServicePort) *v1.Service {
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{

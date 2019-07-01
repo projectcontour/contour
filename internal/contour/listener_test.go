@@ -625,7 +625,7 @@ func TestListenerVisit(t *testing.T) {
 			for _, o := range tc.objs {
 				reh.OnAdd(o)
 			}
-			root := dag.BuildDAG(&reh.KubernetesCache)
+			root, _ := dag.BuildDAG(&reh.KubernetesCache)
 			got := visitListeners(root, &tc.ListenerVisitorConfig)
 			if !cmp.Equal(tc.want, got) {
 				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.want, got)

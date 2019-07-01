@@ -303,7 +303,7 @@ func TestEditIngressInPlace(t *testing.T) {
 	rh.OnAdd(s2)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
+		VersionInfo: "2",
 		Resources: []types.Any{
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_http",
@@ -322,7 +322,7 @@ func TestEditIngressInPlace(t *testing.T) {
 			}),
 		},
 		TypeUrl: routeType,
-		Nonce:   "3",
+		Nonce:   "2",
 	}, streamRDS(t, cc))
 
 	// i2 is like i1 but adds a second route
@@ -353,7 +353,7 @@ func TestEditIngressInPlace(t *testing.T) {
 	}
 	rh.OnUpdate(i1, i2)
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "4",
+		VersionInfo: "3",
 		Resources: []types.Any{
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_http",
@@ -376,7 +376,7 @@ func TestEditIngressInPlace(t *testing.T) {
 			}),
 		},
 		TypeUrl: routeType,
-		Nonce:   "4",
+		Nonce:   "3",
 	}, streamRDS(t, cc))
 
 	// i3 is like i2, but adds the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
@@ -412,7 +412,7 @@ func TestEditIngressInPlace(t *testing.T) {
 	}
 	rh.OnUpdate(i2, i3)
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "5",
+		VersionInfo: "4",
 		Resources: []types.Any{
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_http",
@@ -430,7 +430,7 @@ func TestEditIngressInPlace(t *testing.T) {
 			any(t, &v2.RouteConfiguration{Name: "ingress_https"}),
 		},
 		TypeUrl: routeType,
-		Nonce:   "5",
+		Nonce:   "4",
 	}, streamRDS(t, cc))
 
 	rh.OnAdd(&v1.Secret{
@@ -483,7 +483,7 @@ func TestEditIngressInPlace(t *testing.T) {
 	}
 	rh.OnUpdate(i3, i4)
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "7",
+		VersionInfo: "6",
 		Resources: []types.Any{
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_http",
@@ -515,7 +515,7 @@ func TestEditIngressInPlace(t *testing.T) {
 				}}}),
 		},
 		TypeUrl: routeType,
-		Nonce:   "7",
+		Nonce:   "6",
 	}, streamRDS(t, cc))
 }
 

@@ -54,6 +54,10 @@ type Notifier interface {
 	// OnChange is called to notify the callee that the
 	// contents of the *dag.KubernetesCache have changed.
 	OnChange(*dag.KubernetesCache)
+
+	// ShouldUpdate is called to determine if the object changing
+	// is referenced from an Ingress / IngressRoute object
+	ShouldUpdate(obj interface{}) bool
 }
 
 func (reh *ResourceEventHandler) OnAdd(obj interface{}) {
@@ -64,7 +68,9 @@ func (reh *ResourceEventHandler) OnAdd(obj interface{}) {
 	}
 	reh.WithField("op", "add").Debugf("%T", obj)
 	reh.Insert(obj)
-	reh.update()
+	if reh.Notifier.ShouldUpdate(obj) {
+		reh.update()
+	}
 }
 
 func (reh *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
@@ -89,7 +95,9 @@ func (reh *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 		reh.WithField("op", "update").Debugf("%T", newObj)
 		reh.Remove(oldObj)
 		reh.Insert(newObj)
-		reh.update()
+		if reh.Notifier.ShouldUpdate(newObj) {
+			reh.update()
+		}
 
 	}
 }
@@ -100,7 +108,9 @@ func (reh *ResourceEventHandler) OnDelete(obj interface{}) {
 	// no need to check ingress class here
 	reh.WithField("op", "delete").Debugf("%T", obj)
 	reh.Remove(obj)
-	reh.update()
+	if reh.Notifier.ShouldUpdate(obj) {
+		reh.update()
+	}
 }
 
 func (reh *ResourceEventHandler) update() {

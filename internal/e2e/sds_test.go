@@ -164,10 +164,6 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	}
 	rh.OnAdd(s2)
 
-	t.Skipf("See issue 1166")
-
-	// TODO(dfc) 1166: currently Contour will rebuild all the xDS tables
-	// when an unrelated secret changes.
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: []types.Any{

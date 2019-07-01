@@ -2909,7 +2909,7 @@ func TestDAGInsert(t *testing.T) {
 			for _, o := range tc.objs {
 				kc.Insert(o)
 			}
-			dag := BuildDAG(&kc)
+			dag, _ := BuildDAG(&kc)
 
 			got := make(map[int]*Listener)
 			dag.Visit(listenerMap(got).Visit)
@@ -2978,32 +2978,32 @@ func TestBuilderLookupHTTPService(t *testing.T) {
 			}},
 		},
 	}
-	services := map[meta]*v1.Service{
-		{name: "service1", namespace: "default"}: s1,
+	services := map[Meta]*v1.Service{
+		{Name: "service1", Namespace: "default"}: s1,
 	}
 
 	tests := map[string]struct {
-		meta
+		Meta
 		port intstr.IntOrString
 		want *HTTPService
 	}{
 		"lookup service by port number": {
-			meta: meta{name: "service1", namespace: "default"},
+			Meta: Meta{Name: "service1", Namespace: "default"},
 			port: intstr.FromInt(8080),
 			want: httpService(s1),
 		},
-		"lookup service by port name": {
-			meta: meta{name: "service1", namespace: "default"},
+		"lookup service by port Name": {
+			Meta: Meta{Name: "service1", Namespace: "default"},
 			port: intstr.FromString("http"),
 			want: httpService(s1),
 		},
 		"lookup service by port number (as string)": {
-			meta: meta{name: "service1", namespace: "default"},
+			Meta: Meta{Name: "service1", Namespace: "default"},
 			port: intstr.Parse("8080"),
 			want: httpService(s1),
 		},
 		"lookup service by port number (from string)": {
-			meta: meta{name: "service1", namespace: "default"},
+			Meta: Meta{Name: "service1", Namespace: "default"},
 			port: intstr.FromString("8080"),
 			want: httpService(s1),
 		},
@@ -3016,7 +3016,7 @@ func TestBuilderLookupHTTPService(t *testing.T) {
 					services: services,
 				},
 			}
-			got := b.lookupHTTPService(tc.meta, tc.port)
+			got := b.lookupHTTPService(tc.Meta, tc.port)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}
@@ -3117,7 +3117,7 @@ func TestDAGRootNamespaces(t *testing.T) {
 			for _, o := range tc.objs {
 				kc.Insert(o)
 			}
-			dag := BuildDAG(kc)
+			dag, _ := BuildDAG(kc)
 
 			var count int
 			dag.Visit(func(v Vertex) {
@@ -3578,7 +3578,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			for _, o := range tc.objs {
 				kc.Insert(o)
 			}
-			dag := BuildDAG(kc)
+			dag, _ := BuildDAG(kc)
 			got := dag.Statuses()
 			if len(tc.want) != len(got) {
 				t.Fatalf("expected:\n%v\ngot\n%v", tc.want, got)
@@ -3699,7 +3699,7 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 			for _, o := range tc.objs {
 				kc.Insert(o)
 			}
-			dag := BuildDAG(&kc)
+			dag, _ := BuildDAG(&kc)
 			got := make(map[int]*Listener)
 			dag.Visit(listenerMap(got).Visit)
 
@@ -3826,38 +3826,38 @@ func TestEnforceRoute(t *testing.T) {
 func TestSplitSecret(t *testing.T) {
 	tests := map[string]struct {
 		secret, defns string
-		want          meta
+		want          Meta
 	}{
 		"no namespace": {
 			secret: "secret",
 			defns:  "default",
-			want: meta{
-				name:      "secret",
-				namespace: "default",
+			want: Meta{
+				Name:      "secret",
+				Namespace: "default",
 			},
 		},
 		"with namespace": {
 			secret: "ns1/secret",
 			defns:  "default",
-			want: meta{
-				name:      "secret",
-				namespace: "ns1",
+			want: Meta{
+				Name:      "secret",
+				Namespace: "ns1",
 			},
 		},
 		"missing namespace": {
 			secret: "/secret",
 			defns:  "default",
-			want: meta{
-				name:      "secret",
-				namespace: "default",
+			want: Meta{
+				Name:      "secret",
+				Namespace: "default",
 			},
 		},
 		"missing secret name": {
 			secret: "secret/",
 			defns:  "default",
-			want: meta{
-				name:      "",
-				namespace: "secret",
+			want: Meta{
+				Name:      "",
+				Namespace: "secret",
 			},
 		},
 	}
@@ -3866,7 +3866,7 @@ func TestSplitSecret(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := splitSecret(tc.secret, tc.defns)
 			opts := []cmp.Option{
-				cmp.AllowUnexported(meta{}),
+				cmp.AllowUnexported(Meta{}),
 			}
 			if diff := cmp.Diff(tc.want, got, opts...); diff != "" {
 				t.Fatal(diff)

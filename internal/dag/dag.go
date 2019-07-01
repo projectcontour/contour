@@ -20,7 +20,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // A DAG represents a directed acylic graph of objects representing the relationship
@@ -32,6 +32,10 @@ type DAG struct {
 
 	// status computed while building this dag.
 	statuses []Status
+
+	// Kubernetes objects in the DAG that are referenced
+	Secrets  map[Meta]Empty
+	Services map[Meta]Empty
 }
 
 // Visit calls fn on each root of this DAG.
@@ -308,9 +312,9 @@ func (s *Secret) PrivateKey() []byte {
 	return s.Object.Data[v1.TLSPrivateKeyKey]
 }
 
-func (s *Secret) toMeta() meta {
-	return meta{
-		name:      s.Name(),
-		namespace: s.Namespace(),
+func (s *Secret) toMeta() Meta {
+	return Meta{
+		Name:      s.Name(),
+		Namespace: s.Namespace(),
 	}
 }
