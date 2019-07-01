@@ -53,6 +53,10 @@ spec:
         volumeMounts:
           - name: contour-config
             mountPath: /config
+          - name: envoycerts
+            mountPath: /certs
+          - name: cacert
+            mountPath: /ca
         lifecycle:
           preStop:
             exec:
@@ -64,9 +68,12 @@ spec:
         - bootstrap
         - /config/contour.json
         - --xds-address
-        - $(CONTOUR_SERVICE_HOST)
+        - contour
         - --xds-port
-        - $(CONTOUR_SERVICE_PORT)
+        - "8001"
+        - --envoy-cafile=/ca/CAcert.pem
+        - --envoy-cert-file=/certs/envoycert.pem
+        - --envoy-key-file=/certs/envoykey.pem
         command:
         - contour
         image: gcr.io/heptio-images/contour:master
@@ -75,6 +82,12 @@ spec:
         volumeMounts:
         - name: contour-config
           mountPath: /config
+        - name: envoycerts
+          mountPath: /certs
+          readOnly: true
+        - name: cacert
+          mountPath: /ca
+          readOnly: true
         env:
         - name: CONTOUR_NAMESPACE
           valueFrom:
@@ -84,4 +97,10 @@ spec:
       volumes:
         - name: contour-config
           emptyDir: {}
+        - name: envoycerts
+          secret:
+            secretName: envoycerts
+        - name: cacert
+          secret:
+            secretName:   cacert
       restartPolicy: Always

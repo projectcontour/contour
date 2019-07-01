@@ -32,9 +32,12 @@ spec:
         - serve
         - --incluster
         - --xds-address=0.0.0.0
-        - --xds-port=$(CONTOUR_SERVICE_PORT)
+        - --xds-port=8001
         - --envoy-service-http-port=80
         - --envoy-service-https-port=443
+        - --contour-cafile=/ca/CAcert.pem
+        - --contour-cert-file=/certs/contourcert.pem
+        - --contour-key-file=/certs/contourkey.pem
         command: ["contour"]
         image: gcr.io/heptio-images/contour:master
         imagePullPolicy: Always
@@ -54,5 +57,20 @@ spec:
           httpGet:
             path: /healthz
             port: 8000
+        volumeMounts:
+          - name: contourcerts
+            mountPath: "/certs"
+            readOnly: true
+          - name: cacert
+            mountPath: "/ca"
+            readOnly: true
       dnsPolicy: ClusterFirst
       serviceAccountName: contour
+      volumes:
+        - name: contourcerts
+          secret:
+            secretName: contourcerts
+        - name: cacert
+          secret:
+            secretName:   cacert
+

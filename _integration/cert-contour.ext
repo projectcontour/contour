@@ -1,0 +1,11 @@
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = contour
+DNS.2 = 127.0.0.1
+DNS.4 = contour.heptio-contour
+DNS.5 = contour.heptio-contour.svc
+DNS.5 = contour.heptio-contour.svc.cluster.local
