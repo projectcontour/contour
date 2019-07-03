@@ -119,7 +119,7 @@ func (c *FakeTLSCertificateDelegations) DeleteCollection(options *v1.DeleteOptio
 // Patch applies the patch and returns the patched tLSCertificateDelegation.
 func (c *FakeTLSCertificateDelegations) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.TLSCertificateDelegation, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(tlscertificatedelegationsResource, c.ns, name, data, subresources...), &v1beta1.TLSCertificateDelegation{})
+		Invokes(testing.NewPatchSubresourceAction(tlscertificatedelegationsResource, c.ns, name, pt, data, subresources...), &v1beta1.TLSCertificateDelegation{})
 
 	if obj == nil {
 		return nil, err

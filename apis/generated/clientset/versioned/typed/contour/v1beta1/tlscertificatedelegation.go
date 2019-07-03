@@ -19,6 +19,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"time"
+
 	v1beta1 "github.com/heptio/contour/apis/contour/v1beta1"
 	scheme "github.com/heptio/contour/apis/generated/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -75,11 +77,16 @@ func (c *tLSCertificateDelegations) Get(name string, options v1.GetOptions) (res
 
 // List takes label and field selectors, and returns the list of TLSCertificateDelegations that match those selectors.
 func (c *tLSCertificateDelegations) List(opts v1.ListOptions) (result *v1beta1.TLSCertificateDelegationList, err error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	result = &v1beta1.TLSCertificateDelegationList{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("tlscertificatedelegations").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Do().
 		Into(result)
 	return
@@ -87,11 +94,16 @@ func (c *tLSCertificateDelegations) List(opts v1.ListOptions) (result *v1beta1.T
 
 // Watch returns a watch.Interface that watches the requested tLSCertificateDelegations.
 func (c *tLSCertificateDelegations) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
 		Resource("tlscertificatedelegations").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Watch()
 }
 
@@ -133,10 +145,15 @@ func (c *tLSCertificateDelegations) Delete(name string, options *v1.DeleteOption
 
 // DeleteCollection deletes a collection of objects.
 func (c *tLSCertificateDelegations) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+	var timeout time.Duration
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("tlscertificatedelegations").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
+		Timeout(timeout).
 		Body(options).
 		Do().
 		Error()
