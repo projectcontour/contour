@@ -75,8 +75,3 @@ var _ clientset.Interface = &Clientset{}
 func (c *Clientset) ContourV1beta1() contourv1beta1.ContourV1beta1Interface {
 	return &fakecontourv1beta1.FakeContourV1beta1{Fake: &c.Fake}
 }
-
-// Contour retrieves the ContourV1beta1Client
-func (c *Clientset) Contour() contourv1beta1.ContourV1beta1Interface {
-	return &fakecontourv1beta1.FakeContourV1beta1{Fake: &c.Fake}
-}
