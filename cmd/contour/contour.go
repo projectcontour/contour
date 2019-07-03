@@ -17,7 +17,6 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -186,18 +185,6 @@ func main() {
 
 		log.Infof("args: %v", args)
 		var g workgroup.Group
-
-		// client-go uses glog which requires initialisation as a side effect of calling
-		// flag.Parse (see #118 and https://github.com/golang/glog/blob/master/glog.go#L679)
-		// However kingpin owns our flag parsing, so we defer calling flag.Parse until
-		// this point to avoid the Go flag package from rejecting flags which are defined
-		// in kingpin. See #371
-		flag.Parse()
-		// Always let glog logs to stderr rather than files. Otherwise,
-		// once it attempts to log to files under /tmp, will crash the
-		// whole process since the path may not be accessible in
-		// container environment. See #959
-		_ = flag.Lookup("logtostderr").Value.Set("true")
 
 		ch.ListenerCache = contour.NewListenerCache(*statsAddress, *statsPort)
 		reh.IngressRouteRootNamespaces = parseRootNamespaces(ingressrouteRootNamespaceFlag)
