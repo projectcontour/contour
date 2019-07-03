@@ -131,7 +131,7 @@ func (c *FakeIngressRoutes) DeleteCollection(options *v1.DeleteOptions, listOpti
 // Patch applies the patch and returns the patched ingressRoute.
 func (c *FakeIngressRoutes) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.IngressRoute, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(ingressroutesResource, c.ns, name, data, subresources...), &v1beta1.IngressRoute{})
+		Invokes(testing.NewPatchSubresourceAction(ingressroutesResource, c.ns, name, pt, data, subresources...), &v1beta1.IngressRoute{})
 
 	if obj == nil {
 		return nil, err

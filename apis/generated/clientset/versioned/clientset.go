@@ -28,8 +28,6 @@ import (
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	ContourV1beta1() contourv1beta1.ContourV1beta1Interface
-	// Deprecated: please explicitly pick a version if possible.
-	Contour() contourv1beta1.ContourV1beta1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
@@ -41,12 +39,6 @@ type Clientset struct {
 
 // ContourV1beta1 retrieves the ContourV1beta1Client
 func (c *Clientset) ContourV1beta1() contourv1beta1.ContourV1beta1Interface {
-	return c.contourV1beta1
-}
-
-// Deprecated: Contour retrieves the default version of ContourClient.
-// Please explicitly pick a version.
-func (c *Clientset) Contour() contourv1beta1.ContourV1beta1Interface {
 	return c.contourV1beta1
 }
 
