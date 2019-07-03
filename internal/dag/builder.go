@@ -35,24 +35,16 @@ const (
 	StatusOrphaned = "orphaned"
 )
 
-// A Builder builds a *DAGs
-type Builder struct {
-	KubernetesCache
-
-	// TODO(youngnick) merge Builder and Kubernetes cache? See #1142
-
-}
-
-// Build builds a new *DAG.
-func (b *Builder) Build() *DAG {
-	builder := &builder{source: b}
+// BuildDAG returns a new DAG from the supplied KubernetesCache.
+func BuildDAG(kc *KubernetesCache) *DAG {
+	builder := &builder{source: kc}
 	return builder.compute()
 }
 
 // A builder holds the state of one invocation of Builder.Build.
 // Once used, the builder should be discarded.
 type builder struct {
-	source *Builder
+	source *KubernetesCache
 
 	services  map[servicemeta]Service
 	secrets   map[meta]*Secret
@@ -258,8 +250,8 @@ func (b *builder) listener(port int) *Listener {
 }
 
 func (b *builder) compute() *DAG {
-	b.source.KubernetesCache.mu.RLock() // blocks mutation of the underlying cache until compute is done.
-	defer b.source.KubernetesCache.mu.RUnlock()
+	b.source.mu.RLock() // blocks mutation of the underlying cache until compute is done.
+	defer b.source.mu.RUnlock()
 
 	// setup secure vhosts if there is a matching secret
 	// we do this first so that the set of active secure vhosts is stable

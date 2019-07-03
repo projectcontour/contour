@@ -39,7 +39,7 @@ type ResourceEventHandler struct {
 	// If not set, defaults to DEFAULT_INGRESS_CLASS.
 	IngressClass string
 
-	dag.Builder
+	dag.KubernetesCache
 
 	Notifier
 
@@ -52,8 +52,8 @@ type ResourceEventHandler struct {
 // to a dag.Builder.
 type Notifier interface {
 	// OnChange is called to notify the callee that the
-	// contents of the *dag.Builder have changed.
-	OnChange(*dag.Builder)
+	// contents of the *dag.KubernetesCache have changed.
+	OnChange(*dag.KubernetesCache)
 }
 
 func (reh *ResourceEventHandler) OnAdd(obj interface{}) {
@@ -104,7 +104,7 @@ func (reh *ResourceEventHandler) OnDelete(obj interface{}) {
 }
 
 func (reh *ResourceEventHandler) update() {
-	reh.OnChange(&reh.Builder)
+	reh.OnChange(&reh.KubernetesCache)
 }
 
 // validIngressClass returns true iff:

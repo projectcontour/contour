@@ -24,7 +24,7 @@ import (
 // quick and dirty dot debugging package
 
 type dotWriter struct {
-	*dag.Builder
+	kc *dag.KubernetesCache
 }
 
 type pair struct {
@@ -90,7 +90,7 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 		})
 	}
 
-	dw.Builder.Build().Visit(visit)
+	dag.BuildDAG(dw.kc).Visit(visit)
 
 	fmt.Fprintln(w, "}")
 }

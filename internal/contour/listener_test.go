@@ -22,6 +22,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
@@ -624,7 +625,7 @@ func TestListenerVisit(t *testing.T) {
 			for _, o := range tc.objs {
 				reh.OnAdd(o)
 			}
-			root := reh.Build()
+			root := dag.BuildDAG(&reh.KubernetesCache)
 			got := visitListeners(root, &tc.ListenerVisitorConfig)
 			if !cmp.Equal(tc.want, got) {
 				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.want, got)
