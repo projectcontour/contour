@@ -23,6 +23,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
@@ -866,7 +867,7 @@ func TestClusterVisit(t *testing.T) {
 			for _, o := range tc.objs {
 				reh.OnAdd(o)
 			}
-			root := reh.Build()
+			root := dag.BuildDAG(&reh.KubernetesCache)
 			got := visitClusters(root)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)

@@ -529,7 +529,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			for _, o := range tc.objs {
 				b.Insert(o)
 			}
-			dag := b.Build()
+			dag := dag.BuildDAG(&b.KubernetesCache)
 			gotMetrics := calculateIngressRouteMetric(dag)
 			if !reflect.DeepEqual(tc.want.Root, gotMetrics.Root) {
 				t.Fatalf("(metrics-Root) expected to find: %v but got: %v", tc.want.Root, gotMetrics.Root)

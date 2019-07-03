@@ -90,7 +90,7 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 		})
 	}
 
-	dw.Builder.Build().Visit(visit)
+	dag.BuildDAG(&dw.Builder.KubernetesCache).Visit(visit)
 
 	fmt.Fprintln(w, "}")
 }

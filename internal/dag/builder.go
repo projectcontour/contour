@@ -43,9 +43,9 @@ type Builder struct {
 
 }
 
-// Build builds a new *DAG.
-func (b *Builder) Build() *DAG {
-	builder := &builder{source: b}
+// BuildDAG returns a new DAG from the supplied KubernetesCache.
+func BuildDAG(kc *KubernetesCache) *DAG {
+	builder := &builder{source: &Builder{KubernetesCache: *kc}}
 	return builder.compute()
 }
 
