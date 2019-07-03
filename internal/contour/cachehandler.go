@@ -41,10 +41,10 @@ type statusable interface {
 	Statuses() []dag.Status
 }
 
-func (ch *CacheHandler) OnChange(b *dag.Builder) {
+func (ch *CacheHandler) OnChange(kc *dag.KubernetesCache) {
 	timer := prometheus.NewTimer(ch.CacheHandlerOnUpdateSummary)
 	defer timer.ObserveDuration()
-	dag := dag.BuildDAG(&b.KubernetesCache)
+	dag := dag.BuildDAG(kc)
 	ch.setIngressRouteStatus(dag)
 	ch.updateSecrets(dag)
 	ch.updateListeners(dag)

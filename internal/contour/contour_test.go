@@ -65,4 +65,4 @@ func ports(ps ...int32) []v1.EndpointPort {
 
 type nullNotifier int
 
-func (nn *nullNotifier) OnChange(b *dag.Builder) {}
+func (nn *nullNotifier) OnChange(kc *dag.KubernetesCache) {}

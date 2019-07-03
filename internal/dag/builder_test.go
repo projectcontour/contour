@@ -2905,11 +2905,11 @@ func TestDAGInsert(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var b Builder
+			var kc KubernetesCache
 			for _, o := range tc.objs {
-				b.Insert(o)
+				kc.Insert(o)
 			}
-			dag := BuildDAG(&b.KubernetesCache)
+			dag := BuildDAG(&kc)
 
 			got := make(map[int]*Listener)
 			dag.Visit(listenerMap(got).Visit)
@@ -3012,10 +3012,8 @@ func TestBuilderLookupHTTPService(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			b := builder{
-				source: &Builder{
-					KubernetesCache: KubernetesCache{
-						services: services,
-					},
+				source: &KubernetesCache{
+					services: services,
 				},
 			}
 			got := b.lookupHTTPService(tc.meta, tc.port)
@@ -3113,15 +3111,13 @@ func TestDAGRootNamespaces(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			b := Builder{
-				KubernetesCache: KubernetesCache{
-					IngressRouteRootNamespaces: tc.rootNamespaces,
-				},
+			kc := &KubernetesCache{
+				IngressRouteRootNamespaces: tc.rootNamespaces,
 			}
 			for _, o := range tc.objs {
-				b.Insert(o)
+				kc.Insert(o)
 			}
-			dag := BuildDAG(&b.KubernetesCache)
+			dag := BuildDAG(kc)
 
 			var count int
 			dag.Visit(func(v Vertex) {
@@ -3576,15 +3572,13 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			b := Builder{
-				KubernetesCache: KubernetesCache{
-					IngressRouteRootNamespaces: []string{"roots"},
-				},
+			kc := &KubernetesCache{
+				IngressRouteRootNamespaces: []string{"roots"},
 			}
 			for _, o := range tc.objs {
-				b.Insert(o)
+				kc.Insert(o)
 			}
-			dag := BuildDAG(&b.KubernetesCache)
+			dag := BuildDAG(kc)
 			got := dag.Statuses()
 			if len(tc.want) != len(got) {
 				t.Fatalf("expected:\n%v\ngot\n%v", tc.want, got)
@@ -3701,11 +3695,11 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var b Builder
+			var kc KubernetesCache
 			for _, o := range tc.objs {
-				b.Insert(o)
+				kc.Insert(o)
 			}
-			dag := BuildDAG(&b.KubernetesCache)
+			dag := BuildDAG(&kc)
 			got := make(map[int]*Listener)
 			dag.Visit(listenerMap(got).Visit)
 

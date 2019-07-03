@@ -27,14 +27,14 @@ import (
 type Service struct {
 	httpsvc.Service
 
-	*dag.Builder
+	KubernetesCache *dag.KubernetesCache
 }
 
 // Start fulfills the g.Start contract.
 // When stop is closed the http server will shutdown.
 func (svc *Service) Start(stop <-chan struct{}) error {
 	registerProfile(&svc.ServeMux)
-	registerDotWriter(&svc.ServeMux, svc.Builder)
+	registerDotWriter(&svc.ServeMux, svc.KubernetesCache)
 	return svc.Service.Start(stop)
 }
 
@@ -50,10 +50,10 @@ func registerProfile(mux *http.ServeMux) {
 	mux.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 }
 
-func registerDotWriter(mux *http.ServeMux, b *dag.Builder) {
+func registerDotWriter(mux *http.ServeMux, kc *dag.KubernetesCache) {
 	mux.HandleFunc("/debug/dag", func(w http.ResponseWriter, r *http.Request) {
 		dw := &dotWriter{
-			Builder: b,
+			kc: kc,
 		}
 		dw.writeDot(w)
 	})

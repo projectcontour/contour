@@ -134,9 +134,7 @@ func main() {
 		Service: httpsvc.Service{
 			FieldLogger: log.WithField("context", "debugsvc"),
 		},
-		// plumb the DAGAdapter's Builder through
-		// to the debug handler
-		Builder: &reh.Builder,
+		KubernetesCache: &reh.KubernetesCache,
 	}
 
 	serve.Flag("debug-http-address", "address the debug http endpoint will bind to").Default("127.0.0.1").StringVar(&debugsvc.Addr)
