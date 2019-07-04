@@ -59,7 +59,7 @@ func (hn *HoldoffNotifier) OnChange(kc *dag.KubernetesCache) {
 		hn.WithField("last_update", since).WithField("pending", hn.pending.reset()).Info("forcing update")
 		hn.Notifier.OnChange(kc)
 		hn.last = time.Now()
-		hn.Metrics.SetDAGRebuiltMetric(hn.last.Unix())
+		hn.Metrics.SetDAGLastRebuilt(hn.last)
 		return
 	}
 
@@ -69,7 +69,7 @@ func (hn *HoldoffNotifier) OnChange(kc *dag.KubernetesCache) {
 		hn.WithField("last_update", time.Since(hn.last)).WithField("pending", hn.pending.reset()).Info("performing delayed update")
 		hn.Notifier.OnChange(kc)
 		hn.last = time.Now()
-		hn.Metrics.SetDAGRebuiltMetric(hn.last.Unix())
+		hn.Metrics.SetDAGLastRebuilt(hn.last)
 	})
 }
 
