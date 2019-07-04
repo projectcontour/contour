@@ -357,6 +357,13 @@ spec:
 
 The `kubernetes.io/tls-acme: "true"` annotation tells cert-manager to use the `letsencrypt-staging` cluster-wide issuer we created earlier to request a certificate from Let's Encrypt's staging servers.
 
+Make sure to apply the changes to the ingress:
+
+```
+% kubectl apply -f ingress.yaml
+ingress.extensions/httpbin configured
+```
+
 The certificate is issued in the name of the hosts listed in the `tls:` section, `httpbin.davecheney.com` and stored in the secret `httpbin`.
 Behind the scenes, cert-manager creates a certificate CRD to manage the lifecycle of the certificate.
 You can watch the progress of the certificate as it's issued:
