@@ -53,7 +53,7 @@ spec:
         volumeMounts:
           - name: contour-config
             mountPath: /config
-          - name: envoycerts
+          - name: envoycert
             mountPath: /certs
           - name: cacert
             mountPath: /ca
@@ -72,8 +72,8 @@ spec:
         - --xds-port
         - "8001"
         - --envoy-cafile=/ca/CAcert.pem
-        - --envoy-cert-file=/certs/envoycert.pem
-        - --envoy-key-file=/certs/envoykey.pem
+        - --envoy-cert-file=/certs/tls.crt
+        - --envoy-key-file=/certs/tls.key
         command:
         - contour
         image: gcr.io/heptio-images/contour:master
@@ -82,7 +82,7 @@ spec:
         volumeMounts:
         - name: contour-config
           mountPath: /config
-        - name: envoycerts
+        - name: envoycert
           mountPath: /certs
           readOnly: true
         - name: cacert
@@ -97,9 +97,9 @@ spec:
       volumes:
         - name: contour-config
           emptyDir: {}
-        - name: envoycerts
+        - name: envoycert
           secret:
-            secretName: envoycerts
+            secretName: envoycert
         - name: cacert
           secret:
             secretName:   cacert

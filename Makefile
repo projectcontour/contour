@@ -125,8 +125,11 @@ gencerts: certs/contourcert.pem certs/envoycert.pem
 
 applycerts: gencerts
 	@kubectl create secret -n heptio-contour generic cacert --from-file=./certs/CAcert.pem
-	@kubectl create secret -n heptio-contour generic contourcerts --from-file=./certs/contourkey.pem --from-file=./certs/contourcert.pem
-	@kubectl create secret -n heptio-contour generic envoycerts --from-file=./certs/envoykey.pem --from-file=./certs/envoycert.pem
+	@kubectl create secret -n heptio-contour tls contourcert --key=./certs/contourkey.pem --cert=./certs/contourcert.pem
+	@kubectl create secret -n heptio-contour tls envoycert --key=./certs/envoykey.pem --cert=./certs/envoycert.pem
+
+cleancerts:
+	@kubectl delete secret -n heptio-contour cacert contourcert envoycert
 
 certs/CAkey.pem:
 	@echo No CA keypair present, generating

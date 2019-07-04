@@ -79,11 +79,11 @@ Next, we create the required secrets in the target Kubernetes cluster:
 
 ```
 kubectl create secret -n heptio-contour generic cacert --from-file=./certs/CAcert.pem
-kubectl create secret -n heptio-contour generic contourcerts --from-file=./certs/contourkey.pem --from-file=./certs/contourcert.pem
-kubectl create secret -n heptio-contour generic envoycerts --from-file=./certs/envoykey.pem --from-file=./certs/envoycert.pem
+kubectl create secret -n heptio-contour tls contourcert --key=./certs/contourkey.pem --cert=./certs/contourcert.pem
+kubectl create secret -n heptio-contour generic envoycert --key=./certs/envoykey.pem --cert=./certs/envoycert.pem
 ```
 
-Note that we don't put the CA **key** into the cluster, there's no reason for that to be there, and that would create a security problem.
+Note that we don't put the CA **key** into the cluster, there's no reason for that to be there, and that would create a security problem. That also means that the `cacert` secret can't be a `tls` type secret, as they must be a keypair.
 
 # Conclusion
 

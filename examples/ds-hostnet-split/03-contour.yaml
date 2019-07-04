@@ -36,8 +36,8 @@ spec:
         - --envoy-service-http-port=80
         - --envoy-service-https-port=443
         - --contour-cafile=/ca/CAcert.pem
-        - --contour-cert-file=/certs/contourcert.pem
-        - --contour-key-file=/certs/contourkey.pem
+        - --contour-cert-file=/certs/tls.crt
+        - --contour-key-file=/certs/tls.key
         command: ["contour"]
         image: gcr.io/heptio-images/contour:master
         imagePullPolicy: Always
@@ -58,7 +58,7 @@ spec:
             path: /healthz
             port: 8000
         volumeMounts:
-          - name: contourcerts
+          - name: contourcert
             mountPath: "/certs"
             readOnly: true
           - name: cacert
@@ -67,9 +67,9 @@ spec:
       dnsPolicy: ClusterFirst
       serviceAccountName: contour
       volumes:
-        - name: contourcerts
+        - name: contourcert
           secret:
-            secretName: contourcerts
+            secretName: contourcert
         - name: cacert
           secret:
             secretName:   cacert
