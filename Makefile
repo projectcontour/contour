@@ -5,6 +5,7 @@ SRCDIRS := ./cmd ./internal ./apis
 PKGS := $(shell GO111MODULE=on go list -mod=readonly ./cmd/... ./internal/...)
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
+PHONY = gencerts
 
 TAG_LATEST ?= false
 # Used to supply a local Envoy docker container an IP to connect to that is running
@@ -118,3 +119,54 @@ updategenerated:
 gofmt:
 	@echo Checking code is gofmted
 	@test -z "$(shell gofmt -s -l -d -e $(SRCDIRS) | tee /dev/stderr)"
+
+gencerts: certs/contourcert.pem certs/envoycert.pem
+	@echo "certs are generated."
+
+applycerts: gencerts
+	@kubectl create secret -n heptio-contour generic cacert --from-file=./certs/CAcert.pem
+	@kubectl create secret -n heptio-contour tls contourcert --key=./certs/contourkey.pem --cert=./certs/contourcert.pem
+	@kubectl create secret -n heptio-contour tls envoycert --key=./certs/envoykey.pem --cert=./certs/envoycert.pem
+
+cleancerts:
+	@kubectl delete secret -n heptio-contour cacert contourcert envoycert
+
+certs/CAkey.pem:
+	@echo No CA keypair present, generating
+	openssl req -x509 -new -nodes -keyout certs/CAkey.pem \
+		-sha256 -days 1825 -out certs/CAcert.pem \
+		-subj "/O=Project Contour/CN=Contour CA"
+
+certs/contourkey.pem:
+	@echo Generating new contour key
+	openssl genrsa -out certs/contourkey.pem 2048
+
+certs/contourcert.pem: certs/CAkey.pem certs/contourkey.pem
+	@echo Generating new contour cert
+	openssl req -new -key certs/contourkey.pem \
+		-out certs/contour.csr \
+		-subj "/O=Project Contour/CN=contour"
+	openssl x509 -req -in certs/contour.csr \
+		-CA certs/CAcert.pem \
+		-CAkey certs/CAkey.pem \
+		-CAcreateserial \
+		-out certs/contourcert.pem \
+		-days 1825 -sha256 \
+		-extfile _integration/cert-contour.ext
+
+certs/envoykey.pem:
+	@echo Generating new Envoy key
+	openssl genrsa -out certs/envoykey.pem 2048
+
+certs/envoycert.pem: certs/CAkey.pem certs/envoykey.pem
+	@echo generating new Envoy Cert
+	openssl req -new -key certs/envoykey.pem \
+		-out certs/envoy.csr \
+		-subj "/O=Project Contour/CN=envoy"
+	openssl x509 -req -in certs/envoy.csr \
+		-CA certs/CAcert.pem \
+		-CAkey certs/CAkey.pem \
+		-CAcreateserial \
+		-out certs/envoycert.pem \
+		-days 1825 -sha256 \
+		-extfile _integration/cert-envoy.ext
