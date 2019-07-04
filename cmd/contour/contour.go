@@ -25,6 +25,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	clientset "github.com/heptio/contour/apis/generated/clientset/versioned"
 	contourinformers "github.com/heptio/contour/apis/generated/informers/externalversions"
+	"github.com/heptio/contour/internal/certgen"
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/debug"
 	"github.com/heptio/contour/internal/grpc"
@@ -48,6 +49,8 @@ func main() {
 	app := kingpin.New("contour", "Heptio Contour Kubernetes ingress controller.")
 
 	bootstrap, bootstrapCtx := registerBootstrap(app)
+
+	certgenApp, certgenConfig := registerCertGen(app, log)
 
 	cli := app.Command("cli", "A CLI client for the Heptio Contour Kubernetes ingress controller.")
 	var client Client
@@ -96,6 +99,16 @@ func main() {
 	switch kingpin.MustParse(app.Parse(args)) {
 	case bootstrap.FullCommand():
 		doBootstrap(bootstrapCtx)
+	case certgenApp.FullCommand():
+		generatedCerts, err := certgen.GenerateCerts(certgenConfig)
+		if err != nil {
+			// TODO(youngnick) placeholder, fix this.
+			log.Fatal(err)
+		}
+		err = certgen.OutputCerts(certgenConfig, generatedCerts)
+		if err != nil {
+			log.Fatal(err)
+		}
 	case cds.FullCommand():
 		stream := client.ClusterStream()
 		watchstream(stream, cache.ClusterType, resources)

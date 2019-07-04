@@ -52,7 +52,7 @@ $(LOCAL_BOOTSTRAP_CONFIG): install
 	contour bootstrap --xds-address $(LOCALIP) --xds-port=8001 $@
 
 $(SECURE_LOCAL_BOOTSTRAP_CONFIG): install
-	contour bootstrap --xds-address $(LOCALIP) --xds-port=8001 --envoy-cafile /config/certs/CA.cert --envoy-cert-file /config/certs/client.cert --envoy-key-file /config/certs/client.key $@
+	contour bootstrap --xds-address $(LOCALIP) --xds-port=8001 --envoy-cafile /config/certs/CAcert.pem --envoy-cert-file /config/certs/envoycert.pem --envoy-key-file /config/certs/envoykey.pem $@
 
 secure-local: $(SECURE_LOCAL_BOOTSTRAP_CONFIG)
 	docker run \
@@ -133,6 +133,7 @@ cleancerts:
 
 certs/CAkey.pem:
 	@echo No CA keypair present, generating
+	@mkdir -p certs
 	openssl req -x509 -new -nodes -keyout certs/CAkey.pem \
 		-sha256 -days 1825 -out certs/CAcert.pem \
 		-subj "/O=Project Contour/CN=Contour CA"
