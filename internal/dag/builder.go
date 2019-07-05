@@ -495,6 +495,12 @@ func (b *builder) computeIngressRoutes() {
 				svhost.Secret = sec
 				svhost.MinProtoVersion = minProtoVersion(ir.Spec.VirtualHost.TLS.MinimumProtocolVersion)
 				enforceTLS = true
+				if tls.ClientValidation != nil {
+					svhost.ClientValidation = &ClientValidation{
+						Spkis:  tls.ClientValidation.Spkis,
+						Hashes: tls.ClientValidation.Hashes,
+					}
+				}
 			}
 			// passthrough is true if tls.secretName is not present, and
 			// tls.passthrough is set to true.

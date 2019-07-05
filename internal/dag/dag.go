@@ -146,6 +146,20 @@ type SecureVirtualHost struct {
 
 	// The cert and key for this host.
 	*Secret
+
+	// The client certificate validation for this host (mTLS)
+	*ClientValidation
+}
+
+type ClientValidation struct {
+	// The CA for client validation.
+	*Secret
+	// SPKIs used to validate the client certificate
+	Spkis []string
+	// Hashes used to validate the client certificate
+	Hashes []string
+	// How certificate details shall be forwarded to the backend
+	ForwardClientCertDetails string
 }
 
 func (s *SecureVirtualHost) Visit(f func(Vertex)) {
