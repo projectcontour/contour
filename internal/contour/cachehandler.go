@@ -17,6 +17,8 @@
 package contour
 
 import (
+	"time"
+
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/metrics"
@@ -51,6 +53,7 @@ func (ch *CacheHandler) OnChange(kc *dag.KubernetesCache) {
 	ch.updateRoutes(dag)
 	ch.updateClusters(dag)
 	ch.updateIngressRouteMetric(dag)
+	ch.SetDAGLastRebuilt(time.Now())
 }
 
 func (ch *CacheHandler) setIngressRouteStatus(st statusable) {

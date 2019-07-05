@@ -17,6 +17,7 @@ package metrics
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"k8s.io/client-go/kubernetes"
 
@@ -145,9 +146,9 @@ func (m *Metrics) register(registry *prometheus.Registry) {
 	)
 }
 
-// SetDAGRebuiltMetric records the last time the DAG was rebuilt
-func (m *Metrics) SetDAGRebuiltMetric(timestamp int64) {
-	m.ingressRouteDAGRebuildGauge.WithLabelValues().Set(float64(timestamp))
+// SetDAGLastRebuilt records the last time the DAG was rebuilt.
+func (m *Metrics) SetDAGLastRebuilt(ts time.Time) {
+	m.ingressRouteDAGRebuildGauge.WithLabelValues().Set(float64(ts.Unix()))
 }
 
 // SetIngressRouteMetric sets metric values for a set of IngressRoutes
