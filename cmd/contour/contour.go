@@ -14,11 +14,8 @@
 package main
 
 import (
-	"crypto/rand"
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"reflect"
@@ -49,10 +46,6 @@ var ingressrouteRootNamespaceFlag string
 func main() {
 	log := logrus.StandardLogger()
 	app := kingpin.New("contour", "Heptio Contour Kubernetes ingress controller.")
-
-	// Set up a zero-valued tls.Config, we'll use this to tell if we need to do
-	// any TLS setup for the 'serve' command.
-	var tlsconfig tls.Config
 
 	bootstrap, bootstrapCtx := registerBootstrap(app)
 
@@ -145,14 +138,6 @@ func main() {
 		stream := client.RouteStream()
 		watchstream(stream, cache.SecretType, resources)
 	case serve.FullCommand():
-		if serveCtx.caFile != "" || serveCtx.contourCert != "" || serveCtx.contourKey != "" {
-			// If one of the three TLS commands is not empty, they all must be not empty
-			if !(serveCtx.caFile != "" && serveCtx.contourCert != "" && serveCtx.contourKey != "") {
-				log.Fatal("You must supply all three TLS parameters - --contour-cafile, --contour-cert-file, --contour-key-file, or none of them.")
-			}
-			setupTLSConfig(&tlsconfig, serveCtx.caFile, serveCtx.contourCert, serveCtx.contourKey)
-		}
-
 		log.Infof("args: %v", args)
 		var g workgroup.Group
 
@@ -200,9 +185,10 @@ func main() {
 
 			var l net.Listener
 			var err error
-			if tlsconfig.ClientAuth != tls.NoClientCert {
+			tlsconfig := serveCtx.tlsconfig()
+			if tlsconfig != nil {
 				log.Info("Setting up TLS for gRPC")
-				l, err = tls.Listen("tcp", addr, &tlsconfig)
+				l, err = tls.Listen("tcp", addr, tlsconfig)
 				if err != nil {
 					return err
 				}
@@ -283,33 +269,4 @@ func parseRootNamespaces(rn string) []string {
 		ns = append(ns, strings.TrimSpace(s))
 	}
 	return ns
-}
-
-// setupTLSConfig sets up a tls.Config, given cert filenames.
-func setupTLSConfig(config *tls.Config, caFile string, servingCert string, servingKey string) error {
-
-	// First up, load the Contour serving cert and key pair
-
-	cert, err := tls.LoadX509KeyPair(servingCert, servingKey)
-	if err != nil {
-		return err
-	}
-
-	ca, err := ioutil.ReadFile(caFile)
-	if err != nil {
-		return err
-	}
-	certPool := x509.NewCertPool()
-
-	if ok := certPool.AppendCertsFromPEM(ca); !ok {
-		return fmt.Errorf("unable to append certificate in %s to CA pool", caFile)
-	}
-
-	config.Certificates = []tls.Certificate{cert}
-	config.ClientAuth = tls.RequireAndVerifyClientCert
-	config.ClientCAs = certPool
-	config.Rand = rand.Reader
-
-	return nil
-
 }
