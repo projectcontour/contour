@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_model/go"
+	io_prometheus_client "github.com/prometheus/client_model/go"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -28,13 +28,13 @@ type testMetric struct {
 	want   []*io_prometheus_client.Metric
 }
 
-func TestWriteDAGTimestampMetric(t *testing.T) {
+func TestSetDAGLastRebuilt(t *testing.T) {
 	tests := map[string]struct {
 		timestampMetric testMetric
-		value           int64
+		value           time.Time
 	}{
 		"simple": {
-			value: time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC).Unix(),
+			value: time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC),
 			timestampMetric: testMetric{
 				metric: IngressRouteDAGRebuildGauge,
 				want: []*io_prometheus_client.Metric{
@@ -52,7 +52,7 @@ func TestWriteDAGTimestampMetric(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			r := prometheus.NewRegistry()
 			m := NewMetrics(r)
-			m.SetDAGRebuiltMetric(tc.value)
+			m.SetDAGLastRebuilt(tc.value)
 
 			gatherers := prometheus.Gatherers{
 				r,

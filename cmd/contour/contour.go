@@ -117,15 +117,11 @@ func main() {
 	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	registry.MustRegister(prometheus.NewGoCollector())
 
-	// register our custom metrics
-	metrics := metrics.NewMetrics(registry)
-
 	reh := contour.ResourceEventHandler{
 		FieldLogger: log.WithField("context", "resourceEventHandler"),
 		Notifier: &contour.HoldoffNotifier{
 			Notifier:    &ch,
 			FieldLogger: log.WithField("context", "HoldoffNotifier"),
-			Metrics:     metrics,
 		},
 	}
 
@@ -214,6 +210,8 @@ func main() {
 		g.Add(startInformer(coreInformers, log.WithField("context", "coreinformers")))
 		g.Add(startInformer(contourInformers, log.WithField("context", "contourinformers")))
 
+		// register our custom metrics
+		metrics := metrics.NewMetrics(registry)
 		ch.Metrics = metrics
 		reh.Metrics = metrics
 
