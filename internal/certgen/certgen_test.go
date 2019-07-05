@@ -1,4 +1,4 @@
-// Copyright © 2018 Heptio
+// Copyright © 2019 Heptio
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -17,7 +17,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"testing"
 )
@@ -74,7 +73,7 @@ func verifyCert(certPEM []byte, roots *x509.CertPool, dnsname string) error {
 
 	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return errors.New("Failed to parse an x509 certificate out of the Contour cert")
+		return err
 	}
 
 	opts := x509.VerifyOptions{

@@ -50,7 +50,7 @@ func main() {
 
 	bootstrap, bootstrapCtx := registerBootstrap(app)
 
-	certgenApp, certgenConfig := registerCertGen(app, log)
+	certgenApp, certgenConfig := registerCertGen(app)
 
 	cli := app.Command("cli", "A CLI client for the Heptio Contour Kubernetes ingress controller.")
 	var client Client
@@ -101,14 +101,9 @@ func main() {
 		doBootstrap(bootstrapCtx)
 	case certgenApp.FullCommand():
 		generatedCerts, err := certgen.GenerateCerts(certgenConfig)
-		if err != nil {
-			// TODO(youngnick) placeholder, fix this.
-			log.Fatal(err)
-		}
+		check(err)
 		err = certgen.OutputCerts(certgenConfig, generatedCerts)
-		if err != nil {
-			log.Fatal(err)
-		}
+		check(err)
 	case cds.FullCommand():
 		stream := client.ClusterStream()
 		watchstream(stream, cache.ClusterType, resources)

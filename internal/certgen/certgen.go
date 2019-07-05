@@ -1,4 +1,4 @@
-// Copyright © 2018 Heptio
+// Copyright © 2019 Heptio
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -29,10 +29,10 @@ import (
 	"math/big"
 	"os"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
+// keySize sets the RSA key size to 2048 bits. This is minimum recommended size
+// for RSA keys.
 const keySize = 2048
 
 // Config holds the configuration for the certifcate generation process.
@@ -58,8 +58,6 @@ type Config struct {
 
 	// OutputPEM means that the certs generated will be output as PEM files in the current directory.
 	OutputPEM bool
-
-	logrus.FieldLogger
 }
 
 // ContourCerts holds all three keypairs required, the CA, the Contour, and Envoy keypairs.
@@ -189,7 +187,6 @@ func GenerateCerts(certConfig *Config) (*ContourCerts, error) {
 
 // OutputCerts outputs the certs in certs as directed by config.
 func OutputCerts(certgenConfig *Config, certs *ContourCerts) error {
-	log := certgenConfig.FieldLogger
 
 	if certgenConfig.OutputPEM {
 		// TODO(youngnick): Should we sanitize this value?
@@ -198,7 +195,7 @@ func OutputCerts(certgenConfig *Config, certs *ContourCerts) error {
 			return err
 		}
 
-		log.Infof("Outputting certs to PEM files in %s/", certgenConfig.OutputDir)
+		fmt.Printf("Outputting certs to PEM files in %s/\n", certgenConfig.OutputDir)
 		certs.writeCertPEMs(certgenConfig.OutputDir)
 	}
 
@@ -208,11 +205,11 @@ func OutputCerts(certgenConfig *Config, certs *ContourCerts) error {
 		if err != nil {
 			return err
 		}
-		log.Infof("Would configure Kube secrets here in YAML to '%s/'. Not implemented yet.", certgenConfig.OutputDir)
+		fmt.Printf("Would configure Kube secrets here in YAML to '%s/'. Not implemented yet.\n", certgenConfig.OutputDir)
 	}
 
 	if certgenConfig.OutputKube {
-		log.Info("Would configure Kube secrets here. Not implemented yet.")
+		fmt.Print("Would configure Kube secrets here. Not implemented yet.\n")
 	}
 
 	return nil

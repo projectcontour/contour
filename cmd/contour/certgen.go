@@ -18,13 +18,12 @@ import (
 	"path/filepath"
 
 	"github.com/heptio/contour/internal/certgen"
-	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 // registercertgen registers the certgen subcommand and flags
 // with the Application provided.
-func registerCertGen(app *kingpin.Application, log *logrus.Logger) (*kingpin.CmdClause, *certgen.Config) {
+func registerCertGen(app *kingpin.Application) (*kingpin.CmdClause, *certgen.Config) {
 	var certgenConfig certgen.Config
 	certgenApp := app.Command("certgen", "Generate new TLS certs for bootstrapping gRPC over TLS")
 	certgenApp.Flag("kube", "Apply the generated certs directly to the current Kubernetes cluster").BoolVar(&certgenConfig.OutputKube)
@@ -34,7 +33,6 @@ func registerCertGen(app *kingpin.Application, log *logrus.Logger) (*kingpin.Cmd
 	certgenApp.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).StringVar(&certgenConfig.KubeConfig)
 	certgenApp.Flag("namespace", "Kubernetes namespace, used for Kube objects").Default("heptio-contour").Envar("CONTOUR_NAMESPACE").StringVar(&certgenConfig.Namespace)
 	certgenApp.Arg("outputdir", "Directory to output any files to").Default("certs").StringVar(&certgenConfig.OutputDir)
-	certgenConfig.FieldLogger = log.WithField("context", "certgen")
 
 	return certgenApp, &certgenConfig
 }

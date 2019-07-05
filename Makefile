@@ -131,9 +131,11 @@ applycerts: gencerts
 cleancerts:
 	@kubectl delete secret -n heptio-contour cacert contourcert envoycert
 
-certs/CAkey.pem:
-	@echo No CA keypair present, generating
+certs:
 	@mkdir -p certs
+
+certs/CAkey.pem: | certs
+	@echo No CA keypair present, generating
 	openssl req -x509 -new -nodes -keyout certs/CAkey.pem \
 		-sha256 -days 1825 -out certs/CAcert.pem \
 		-subj "/O=Project Contour/CN=Contour CA"
