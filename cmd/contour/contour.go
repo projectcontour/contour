@@ -21,7 +21,6 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
-	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -76,33 +75,23 @@ func main() {
 	sds := cli.Command("sds", "watch secrets.")
 	sds.Arg("resources", "SDS resource filter").StringsVar(&resources)
 
-	serve := app.Command("serve", "Serve xDS API traffic")
-	inCluster := serve.Flag("incluster", "use in cluster configuration.").Bool()
-	kubeconfig := serve.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).String()
-	xdsAddr := serve.Flag("xds-address", "xDS gRPC API address").Default("127.0.0.1").String()
-	xdsPort := serve.Flag("xds-port", "xDS gRPC API port").Default("8001").Int()
-	statsAddress := serve.Flag("stats-address", "Envoy /stats interface address").Default("0.0.0.0").String()
-	statsPort := serve.Flag("stats-port", "Envoy /stats interface port").Default("8002").Int()
-	caFile := serve.Flag("contour-cafile", "CA bundle file name for serving gRPC with TLS").Envar("CONTOUR_CAFILE").String()
-	contourCert := serve.Flag("contour-cert-file", "Contour certificate file name for serving gRPC over TLS").Envar("CONTOUR_CERT_FILE").String()
-	contourKey := serve.Flag("contour-key-file", "Contour key file name for serving gRPC over TLS").Envar("CONTOUR_KEY_FILE").String()
+	serve, serveCtx := registerServe(app)
 
-	ch := contour.CacheHandler{
-		FieldLogger: log.WithField("context", "CacheHandler"),
-	}
+	registry := prometheus.NewRegistry()
+	// register detault process / go collectors
+	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+	registry.MustRegister(prometheus.NewGoCollector())
 
 	metricsvc := metrics.Service{
 		Service: httpsvc.Service{
 			FieldLogger: log.WithField("context", "metricsvc"),
 		},
+		Registry: registry,
 	}
 
-	registry := prometheus.NewRegistry()
-	metricsvc.Registry = registry
-
-	// register detault process / go collectors
-	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
-	registry.MustRegister(prometheus.NewGoCollector())
+	ch := contour.CacheHandler{
+		FieldLogger: log.WithField("context", "CacheHandler"),
+	}
 
 	reh := contour.ResourceEventHandler{
 		FieldLogger: log.WithField("context", "resourceEventHandler"),
@@ -156,21 +145,21 @@ func main() {
 		stream := client.RouteStream()
 		watchstream(stream, cache.SecretType, resources)
 	case serve.FullCommand():
-		if *caFile != "" || *contourCert != "" || *contourKey != "" {
+		if serveCtx.caFile != "" || serveCtx.contourCert != "" || serveCtx.contourKey != "" {
 			// If one of the three TLS commands is not empty, they all must be not empty
-			if !(*caFile != "" && *contourCert != "" && *contourKey != "") {
+			if !(serveCtx.caFile != "" && serveCtx.contourCert != "" && serveCtx.contourKey != "") {
 				log.Fatal("You must supply all three TLS parameters - --contour-cafile, --contour-cert-file, --contour-key-file, or none of them.")
 			}
-			setupTLSConfig(&tlsconfig, *caFile, *contourCert, *contourKey)
+			setupTLSConfig(&tlsconfig, serveCtx.caFile, serveCtx.contourCert, serveCtx.contourKey)
 		}
 
 		log.Infof("args: %v", args)
 		var g workgroup.Group
 
-		ch.ListenerCache = contour.NewListenerCache(*statsAddress, *statsPort)
+		ch.ListenerCache = contour.NewListenerCache(serveCtx.statsAddr, serveCtx.statsPort)
 		reh.IngressRouteRootNamespaces = parseRootNamespaces(ingressrouteRootNamespaceFlag)
 
-		client, contourClient := newClient(*kubeconfig, *inCluster)
+		client, contourClient := newClient(serveCtx.kubeconfig, serveCtx.inCluster)
 		metricsvc.Client = client
 
 		// resync timer disabled for Contour
@@ -207,7 +196,7 @@ func main() {
 
 		g.Add(func(stop <-chan struct{}) error {
 			log := log.WithField("context", "grpc")
-			addr := net.JoinHostPort(*xdsAddr, strconv.Itoa(*xdsPort))
+			addr := net.JoinHostPort(serveCtx.xdsAddr, strconv.Itoa(serveCtx.xdsPort))
 
 			var l net.Listener
 			var err error
