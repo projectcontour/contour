@@ -42,6 +42,9 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("debug-http-address", "address the debug http endpoint will bind to").Default("127.0.0.1").StringVar(&ctx.debugAddr)
 	serve.Flag("debug-http-port", "port the debug http endpoint will bind to").Default("6060").IntVar(&ctx.debugPort)
 
+	serve.Flag("http-address", "address the metrics http endpoint will bind to").Default("0.0.0.0").StringVar(&ctx.metricsAddr)
+	serve.Flag("http-port", "port the metrics http endpoint will bind to").Default("8000").IntVar(&ctx.metricsPort)
+
 	serve.Flag("contour-cafile", "CA bundle file name for serving gRPC with TLS").Envar("CONTOUR_CAFILE").StringVar(&ctx.caFile)
 	serve.Flag("contour-cert-file", "Contour certificate file name for serving gRPC over TLS").Envar("CONTOUR_CERT_FILE").StringVar(&ctx.contourCert)
 	serve.Flag("contour-key-file", "Contour key file name for serving gRPC over TLS").Envar("CONTOUR_KEY_FILE").StringVar(&ctx.contourKey)
@@ -50,22 +53,26 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 }
 
 type serveContext struct {
-	// kubernetes client parameters
+	// contour's kubernetes client parameters
 	inCluster  bool
 	kubeconfig string
 
-	// xds service parameters
+	// contour's xds service parameters
 	xdsAddr                         string
 	xdsPort                         int
 	caFile, contourCert, contourKey string
 
-	// stats handling parameters
+	// envoy's stats listener parameters
 	statsAddr string
 	statsPort int
 
-	// debug handler parameters
+	// contour's debug handler parameters
 	debugAddr string
 	debugPort int
+
+	// contour's metrics handler parameters
+	metricsAddr string
+	metricsPort int
 }
 
 // tlsconfig returns a new *tls.Config. If the context is not properly configured

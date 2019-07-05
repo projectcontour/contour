@@ -68,18 +68,6 @@ func main() {
 	sds := cli.Command("sds", "watch secrets.")
 	sds.Arg("resources", "SDS resource filter").StringsVar(&resources)
 
-	registry := prometheus.NewRegistry()
-	// register detault process / go collectors
-	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
-	registry.MustRegister(prometheus.NewGoCollector())
-
-	metricsvc := metrics.Service{
-		Service: httpsvc.Service{
-			FieldLogger: log.WithField("context", "metricsvc"),
-		},
-		Registry: registry,
-	}
-
 	ch := contour.CacheHandler{
 		FieldLogger: log.WithField("context", "CacheHandler"),
 	}
@@ -93,9 +81,6 @@ func main() {
 	}
 
 	serve, serveCtx := registerServe(app)
-
-	serve.Flag("http-address", "address the metrics http endpoint will bind to").Default("0.0.0.0").StringVar(&metricsvc.Addr)
-	serve.Flag("http-port", "port the metrics http endpoint will bind to").Default("8000").IntVar(&metricsvc.Port)
 
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&ch.HTTPAccessLog)
 	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&ch.HTTPSAccessLog)
@@ -134,7 +119,6 @@ func main() {
 		reh.IngressRouteRootNamespaces = parseRootNamespaces(ingressrouteRootNamespaceFlag)
 
 		client, contourClient := newClient(serveCtx.kubeconfig, serveCtx.inCluster)
-		metricsvc.Client = client
 
 		// resync timer disabled for Contour
 		coreInformers := coreinformers.NewSharedInformerFactory(client, 0)
@@ -160,10 +144,21 @@ func main() {
 		g.Add(startInformer(coreInformers, log.WithField("context", "coreinformers")))
 		g.Add(startInformer(contourInformers, log.WithField("context", "contourinformers")))
 
-		// register our custom metrics
-		metrics := metrics.NewMetrics(registry)
-		ch.Metrics = metrics
-		reh.Metrics = metrics
+		registry := prometheus.NewRegistry()
+		// register detault process / go collectors
+		registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+		registry.MustRegister(prometheus.NewGoCollector())
+
+		metricsvc := metrics.Service{
+			Service: httpsvc.Service{
+				Addr:        serveCtx.metricsAddr,
+				Port:        serveCtx.metricsPort,
+				FieldLogger: log.WithField("context", "metricsvc"),
+			},
+			Client:   client,
+			Registry: registry,
+		}
+		g.Add(metricsvc.Start)
 
 		debugsvc := debug.Service{
 			Service: httpsvc.Service{
@@ -173,9 +168,12 @@ func main() {
 			},
 			KubernetesCache: &reh.KubernetesCache,
 		}
-
 		g.Add(debugsvc.Start)
-		g.Add(metricsvc.Start)
+
+		// register our custom metrics
+		metrics := metrics.NewMetrics(registry)
+		ch.Metrics = metrics
+		reh.Metrics = metrics
 
 		g.Add(func(stop <-chan struct{}) error {
 			log := log.WithField("context", "grpc")
