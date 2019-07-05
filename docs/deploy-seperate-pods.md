@@ -21,7 +21,7 @@ This configuration has several advantages:
 
 1. [Clone the Contour repository][1] and cd into the repo.
 2. Ensure you have `openssl` installed (or at least something that provides that command.`)
-2. Generate the keypairs required to secure the TLS connection between Contour and Envoy. You can do that using `make gencerts` and then `make applycerts`, assuming that your kubectl will connect to the cluster you want. If not, follow the [detailed generation directions][2]. 
+2. Generate the keypairs required to secure the TLS connection between Contour and Envoy. You can do that using `contour gencerts --pem` and then `make applycerts`, assuming that your kubectl will connect to the cluster you want. If not, follow the [detailed generation directions][2]. 
 3. Run `kubectl apply -f examples/ds-hostnet-split/`
 
 **NOTE**: The current configuration exposes the `/stats` path from the Envoy Admin UI so that Prometheus can scrape for metrics.
