@@ -16,6 +16,7 @@ package envoy
 import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/gogo/protobuf/types"
 )
 
 var (
@@ -91,9 +92,16 @@ func validationContext(ca []byte, subjectName string) *auth.CommonTlsContext_Val
 	}
 }
 
+type ClientValidation struct {
+	Ca                       []byte
+	Spkis                    []string
+	Hashes                   []string
+	ForwardClientCertDetails string
+}
+
 // DownstreamTLSContext creates a new DownstreamTlsContext.
-func DownstreamTLSContext(secretName string, tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnProtos ...string) *auth.DownstreamTlsContext {
-	return &auth.DownstreamTlsContext{
+func DownstreamTLSContext(secretName string, clientValidation *ClientValidation, tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnProtos ...string) *auth.DownstreamTlsContext {
+	context := auth.DownstreamTlsContext{
 		CommonTlsContext: &auth.CommonTlsContext{
 			TlsParams: &auth.TlsParameters{
 				TlsMinimumProtocolVersion: tlsMinProtoVersion,
@@ -107,4 +115,13 @@ func DownstreamTLSContext(secretName string, tlsMinProtoVersion auth.TlsParamete
 			AlpnProtocols: alpnProtos,
 		},
 	}
+	if clientValidation != nil {
+		context.RequireClientCertificate = &types.BoolValue{Value: true}
+		context.CommonTlsContext.ValidationContextType = &auth.CommonTlsContext_ValidationContext{
+			ValidationContext: &auth.CertificateValidationContext{
+				VerifyCertificateSpki: clientValidation.Spkis,
+			},
+		}
+	}
+	return &context
 }
