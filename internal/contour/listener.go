@@ -318,7 +318,15 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 
 		// attach certificate data to this listener if provided.
 		if vh.Secret != nil {
-			fc.TlsContext = envoy.DownstreamTLSContext(envoy.Secretname(vh.Secret), vh.MinProtoVersion, alpnProtos...)
+			if vh.ClientValidation != nil {
+				clientValidation := &envoy.ClientValidation{
+					Spkis:                    vh.ClientValidation.Spkis,
+					ForwardClientCertDetails: vh.ClientValidation.ForwardClientCertDetails,
+				}
+				fc.TlsContext = envoy.DownstreamTLSContext(envoy.Secretname(vh.Secret), clientValidation, vh.MinProtoVersion, alpnProtos...)
+			} else {
+				fc.TlsContext = envoy.DownstreamTLSContext(envoy.Secretname(vh.Secret), nil, vh.MinProtoVersion, alpnProtos...)
+			}
 		}
 
 		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains, fc)
