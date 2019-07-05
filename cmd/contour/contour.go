@@ -68,8 +68,6 @@ func main() {
 	sds := cli.Command("sds", "watch secrets.")
 	sds.Arg("resources", "SDS resource filter").StringsVar(&resources)
 
-	serve, serveCtx := registerServe(app)
-
 	registry := prometheus.NewRegistry()
 	// register detault process / go collectors
 	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
@@ -94,16 +92,7 @@ func main() {
 		},
 	}
 
-	// configuration parameters for debug service
-	debugsvc := debug.Service{
-		Service: httpsvc.Service{
-			FieldLogger: log.WithField("context", "debugsvc"),
-		},
-		KubernetesCache: &reh.KubernetesCache,
-	}
-
-	serve.Flag("debug-http-address", "address the debug http endpoint will bind to").Default("127.0.0.1").StringVar(&debugsvc.Addr)
-	serve.Flag("debug-http-port", "port the debug http endpoint will bind to").Default("6060").IntVar(&debugsvc.Port)
+	serve, serveCtx := registerServe(app)
 
 	serve.Flag("http-address", "address the metrics http endpoint will bind to").Default("0.0.0.0").StringVar(&metricsvc.Addr)
 	serve.Flag("http-port", "port the metrics http endpoint will bind to").Default("8000").IntVar(&metricsvc.Port)
@@ -175,6 +164,15 @@ func main() {
 		metrics := metrics.NewMetrics(registry)
 		ch.Metrics = metrics
 		reh.Metrics = metrics
+
+		debugsvc := debug.Service{
+			Service: httpsvc.Service{
+				Addr:        serveCtx.debugAddr,
+				Port:        serveCtx.debugPort,
+				FieldLogger: log.WithField("context", "debugsvc"),
+			},
+			KubernetesCache: &reh.KubernetesCache,
+		}
 
 		g.Add(debugsvc.Start)
 		g.Add(metricsvc.Start)
