@@ -2,12 +2,12 @@
 
 ## Outcomes
 
-The outcomes of this is that we will have three Secrets available in the `heptio-contour` namespace:
+The outcome of this is that we will have three Secrets available in the `heptio-contour` namespace:
 - cacert: contains the CA's public certificate.
 - contourcerts: contains Contour's keypair, used for serving TLS secured gRPC. This must be a valid certificate for the name `contour` in order for this to work. This is currently hardcoded by Contour.
 - envoycerts: contains Envoy's keypair, used as a client for connecting to Contour.
 
-For the purposes of this documentation, we'll be doing the same thing the `Makefile` does and putting the certs in a `certs/` subdirectory of the downloaded repo.
+For the purposes of this documentation, we'll be doing the same thing the `contour certgen --pem` or the `make gencerts` commands do and putting the certs in a `certs/` subdirectory of the downloaded repo.
 
 ## Caveats and warnings
 
