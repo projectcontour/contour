@@ -18,14 +18,37 @@ import (
 
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/heptio/contour/internal/envoy"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-// writeBootstrapConfig writes a bootstrap configuration to the supplied path.
-// in v2 JSON format.
-func writeBootstrapConfig(config *envoy.BootstrapConfig, path string) {
-	f, err := os.Create(path)
+// registerBootstrap registers the bootstrap subcommand and flags
+// with the Application provided.
+func registerBootstrap(app *kingpin.Application) (*kingpin.CmdClause, *bootstrapContext) {
+	var ctx bootstrapContext
+
+	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")
+	bootstrap.Arg("path", "Configuration file.").Required().StringVar(&ctx.path)
+	bootstrap.Flag("admin-address", "Envoy admin interface address").StringVar(&ctx.config.AdminAddress)
+	bootstrap.Flag("admin-port", "Envoy admin interface port").IntVar(&ctx.config.AdminPort)
+	bootstrap.Flag("xds-address", "xDS gRPC API address").StringVar(&ctx.config.XDSAddress)
+	bootstrap.Flag("xds-port", "xDS gRPC API port").IntVar(&ctx.config.XDSGRPCPort)
+	bootstrap.Flag("envoy-cafile", "gRPC CA Filename for Envoy to load").Envar("ENVOY_CAFILE").StringVar(&ctx.config.GrpcCABundle)
+	bootstrap.Flag("envoy-cert-file", "gRPC Client cert filename for Envoy to load").Envar("ENVOY_CERT_FILE").StringVar(&ctx.config.GrpcClientCert)
+	bootstrap.Flag("envoy-key-file", "gRPC Client key filename for Envoy to load").Envar("ENVOY_KEY_FILE").StringVar(&ctx.config.GrpcClientKey)
+	bootstrap.Flag("namespace", "The namespace the Envoy container will run in").Envar("CONTOUR_NAMESPACE").Default("heptio-contour").StringVar(&ctx.config.Namespace)
+	return bootstrap, &ctx
+}
+
+type bootstrapContext struct {
+	config envoy.BootstrapConfig
+	path   string
+}
+
+// doBootstrap writes an Envoy bootstrap configuration file to the supplied path.
+func doBootstrap(ctx *bootstrapContext) {
+	f, err := os.Create(ctx.path)
 	check(err)
-	bs := envoy.Bootstrap(config)
+	bs := envoy.Bootstrap(&ctx.config)
 	m := &jsonpb.Marshaler{OrigName: true}
 	err = m.Marshal(f, bs)
 	check(err)

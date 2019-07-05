@@ -31,7 +31,6 @@ import (
 	contourinformers "github.com/heptio/contour/apis/generated/informers/externalversions"
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/debug"
-	"github.com/heptio/contour/internal/envoy"
 	"github.com/heptio/contour/internal/grpc"
 	"github.com/heptio/contour/internal/httpsvc"
 	"github.com/heptio/contour/internal/k8s"
@@ -51,24 +50,12 @@ var ingressrouteRootNamespaceFlag string
 func main() {
 	log := logrus.StandardLogger()
 	app := kingpin.New("contour", "Heptio Contour Kubernetes ingress controller.")
-	var config envoy.BootstrapConfig
 
 	// Set up a zero-valued tls.Config, we'll use this to tell if we need to do
 	// any TLS setup for the 'serve' command.
 	var tlsconfig tls.Config
 
-	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")
-	path := bootstrap.Arg("path", "Configuration file.").Required().String()
-	bootstrap.Flag("admin-address", "Envoy admin interface address").StringVar(&config.AdminAddress)
-	bootstrap.Flag("admin-port", "Envoy admin interface port").IntVar(&config.AdminPort)
-	bootstrap.Flag("xds-address", "xDS gRPC API address").StringVar(&config.XDSAddress)
-	bootstrap.Flag("xds-port", "xDS gRPC API port").IntVar(&config.XDSGRPCPort)
-	bootstrap.Flag("envoy-cafile", "gRPC CA Filename for Envoy to load").Envar("ENVOY_CAFILE").StringVar(&config.GrpcCABundle)
-	bootstrap.Flag("envoy-cert-file", "gRPC Client cert filename for Envoy to load").Envar("ENVOY_CERT_FILE").StringVar(&config.GrpcClientCert)
-	bootstrap.Flag("envoy-key-file", "gRPC Client key filename for Envoy to load").Envar("ENVOY_KEY_FILE").StringVar(&config.GrpcClientKey)
-
-	// Get the running namespace passed via ENV var from the Kubernetes Downward API
-	config.Namespace = getEnv("CONTOUR_NAMESPACE", "heptio-contour")
+	bootstrap, bootstrapCtx := registerBootstrap(app)
 
 	cli := app.Command("cli", "A CLI client for the Heptio Contour Kubernetes ingress controller.")
 	var client Client
@@ -152,7 +139,7 @@ func main() {
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
 	case bootstrap.FullCommand():
-		writeBootstrapConfig(&config, *path)
+		doBootstrap(bootstrapCtx)
 	case cds.FullCommand():
 		stream := client.ClusterStream()
 		watchstream(stream, cache.ClusterType, resources)
@@ -307,14 +294,6 @@ func parseRootNamespaces(rn string) []string {
 		ns = append(ns, strings.TrimSpace(s))
 	}
 	return ns
-}
-
-func getEnv(key, fallback string) string {
-	value, exists := os.LookupEnv(key)
-	if !exists {
-		value = fallback
-	}
-	return value
 }
 
 // setupTLSConfig sets up a tls.Config, given cert filenames.
