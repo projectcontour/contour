@@ -21,6 +21,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
@@ -49,6 +50,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("contour-cert-file", "Contour certificate file name for serving gRPC over TLS").Envar("CONTOUR_CERT_FILE").StringVar(&ctx.contourCert)
 	serve.Flag("contour-key-file", "Contour key file name for serving gRPC over TLS").Envar("CONTOUR_KEY_FILE").StringVar(&ctx.contourKey)
 
+	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringVar(&ctx.rootNamespaces)
+
 	return serve, &ctx
 }
 
@@ -73,6 +76,9 @@ type serveContext struct {
 	// contour's metrics handler parameters
 	metricsAddr string
 	metricsPort int
+
+	// ingressroute root namespaces
+	rootNamespaces string
 }
 
 // tlsconfig returns a new *tls.Config. If the context is not properly configured
@@ -104,4 +110,17 @@ func (ctx *serveContext) tlsconfig() *tls.Config {
 		ClientCAs:    certPool,
 		Rand:         rand.Reader,
 	}
+}
+
+// ingressRouteRootNamespaces returns a slice of namespaces restricting where
+// contour should look for ingressroute roots.
+func (ctx *serveContext) ingressRouteRootNamespaces() []string {
+	if strings.TrimSpace(ctx.rootNamespaces) == "" {
+		return nil
+	}
+	var ns []string
+	for _, s := range strings.Split(ctx.rootNamespaces, ",") {
+		ns = append(ns, strings.TrimSpace(s))
+	}
+	return ns
 }

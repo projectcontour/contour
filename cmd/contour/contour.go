@@ -20,7 +20,6 @@ import (
 	"os"
 	"reflect"
 	"strconv"
-	"strings"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	clientset "github.com/heptio/contour/apis/generated/clientset/versioned"
@@ -40,8 +39,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
-
-var ingressrouteRootNamespaceFlag string
 
 func main() {
 	log := logrus.StandardLogger()
@@ -90,7 +87,6 @@ func main() {
 	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests").Default("8443").IntVar(&ch.HTTPSPort)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ch.UseProxyProto)
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&reh.IngressClass)
-	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringVar(&ingressrouteRootNamespaceFlag)
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
@@ -116,7 +112,7 @@ func main() {
 		var g workgroup.Group
 
 		ch.ListenerCache = contour.NewListenerCache(serveCtx.statsAddr, serveCtx.statsPort)
-		reh.IngressRouteRootNamespaces = parseRootNamespaces(ingressrouteRootNamespaceFlag)
+		reh.IngressRouteRootNamespaces = serveCtx.ingressRouteRootNamespaces()
 
 		client, contourClient := newClient(serveCtx.kubeconfig, serveCtx.inCluster)
 
@@ -254,15 +250,4 @@ func check(err error) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-}
-
-func parseRootNamespaces(rn string) []string {
-	if rn == "" {
-		return nil
-	}
-	var ns []string
-	for _, s := range strings.Split(rn, ",") {
-		ns = append(ns, strings.TrimSpace(s))
-	}
-	return ns
 }
