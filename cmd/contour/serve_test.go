@@ -18,32 +18,46 @@ import (
 	"testing"
 )
 
-func TestParseRootNamespaces(t *testing.T) {
+func TestServeContextIngressRouteRootNamespaces(t *testing.T) {
 	tests := map[string]struct {
-		input string
-		want  []string
+		ctx  serveContext
+		want []string
 	}{
 		"empty": {
-			input: "",
-			want:  nil,
+			ctx: serveContext{
+				rootNamespaces: "",
+			},
+			want: nil,
+		},
+		"blank-ish": {
+			ctx: serveContext{
+				rootNamespaces: " \t ",
+			},
+			want: nil,
 		},
 		"one value": {
-			input: "heptio-contour",
-			want:  []string{"heptio-contour"},
+			ctx: serveContext{
+				rootNamespaces: "heptio-contour",
+			},
+			want: []string{"heptio-contour"},
 		},
 		"multiple, easy": {
-			input: "prod1,prod2,prod3",
-			want:  []string{"prod1", "prod2", "prod3"},
+			ctx: serveContext{
+				rootNamespaces: "prod1,prod2,prod3",
+			},
+			want: []string{"prod1", "prod2", "prod3"},
 		},
 		"multiple, hard": {
-			input: "prod1, prod2, prod3 ",
-			want:  []string{"prod1", "prod2", "prod3"},
+			ctx: serveContext{
+				rootNamespaces: "prod1, prod2, prod3 ",
+			},
+			want: []string{"prod1", "prod2", "prod3"},
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := parseRootNamespaces(tc.input)
+			got := tc.ctx.ingressRouteRootNamespaces()
 			if !reflect.DeepEqual(got, tc.want) {
 				t.Fatalf("expected: %q, got: %q", tc.want, got)
 			}
