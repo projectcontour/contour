@@ -43,42 +43,37 @@ func (c *Client) dial() *grpc.ClientConn {
 	// Check the TLS setup
 	switch {
 	case c.CAFile != "" || c.ClientCert != "" || c.ClientKey != "":
-		{
-			// If one of the three TLS commands is not empty, they all must be not empty
-			if !(c.CAFile != "" && c.ClientCert != "" && c.ClientKey != "") {
-				log.Fatal("You must supply all three TLS parameters - --cafile, --cert-file, --key-file, or none of them.")
-			}
-			// Load the client certificates from disk
-			certificate, err := tls.LoadX509KeyPair(c.ClientCert, c.ClientKey)
-			check(err)
-
-			// Create a certificate pool from the certificate authority
-			certPool := x509.NewCertPool()
-			ca, err := ioutil.ReadFile(c.CAFile)
-			check(err)
-
-			// Append the certificates from the CA
-			if ok := certPool.AppendCertsFromPEM(ca); !ok {
-				// TODO(nyoung) OMG yuck, thanks for this, crypto/tls. Suggestions on alternates welcomed.
-				check(errors.New("failed to append ca certs"))
-			}
-
-			creds := credentials.NewTLS(&tls.Config{
-				// TODO(youngnick): Does this need to be defaulted with a cli flag to
-				// override?
-				// The ServerName here needs to be one of the SANs available in
-				// the serving cert used by contour serve.
-				ServerName:   "contour",
-				Certificates: []tls.Certificate{certificate},
-				RootCAs:      certPool,
-			})
-			options = append(options, grpc.WithTransportCredentials(creds))
-
+		// If one of the three TLS commands is not empty, they all must be not empty
+		if !(c.CAFile != "" && c.ClientCert != "" && c.ClientKey != "") {
+			log.Fatal("You must supply all three TLS parameters - --cafile, --cert-file, --key-file, or none of them.")
 		}
+		// Load the client certificates from disk
+		certificate, err := tls.LoadX509KeyPair(c.ClientCert, c.ClientKey)
+		check(err)
+
+		// Create a certificate pool from the certificate authority
+		certPool := x509.NewCertPool()
+		ca, err := ioutil.ReadFile(c.CAFile)
+		check(err)
+
+		// Append the certificates from the CA
+		if ok := certPool.AppendCertsFromPEM(ca); !ok {
+			// TODO(nyoung) OMG yuck, thanks for this, crypto/tls. Suggestions on alternates welcomed.
+			check(errors.New("failed to append ca certs"))
+		}
+
+		creds := credentials.NewTLS(&tls.Config{
+			// TODO(youngnick): Does this need to be defaulted with a cli flag to
+			// override?
+			// The ServerName here needs to be one of the SANs available in
+			// the serving cert used by contour serve.
+			ServerName:   "contour",
+			Certificates: []tls.Certificate{certificate},
+			RootCAs:      certPool,
+		})
+		options = append(options, grpc.WithTransportCredentials(creds))
 	default:
-		{
-			options = append(options, grpc.WithInsecure())
-		}
+		options = append(options, grpc.WithInsecure())
 	}
 
 	conn, err := grpc.Dial(c.ContourAddr, options...)
