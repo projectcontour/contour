@@ -52,6 +52,17 @@ type TLS struct {
 	// and the encrypted handshake will be passed through to the
 	// backing cluster.
 	Passthrough bool `json:"passthrough,omitempty"`
+	// If specified client-certificate is required and validated (mTLS).
+	ClientValidation *ClientValidation `json:"clientValidation,omitempty"`
+}
+
+type ClientValidation struct {
+	// The name of a secret in the current namespace used to validate the client certificate
+	SecretName string `json:"secretName,omitempty"`
+	// SPKIs used to validate the client certificate
+	Spkis []string `json:"spkis,omitempty"`
+	// Hashes used to validate the client certificate
+	Hashes []string `json:"hashes,omitempty"`
 }
 
 // Route contains the set of routes for a virtual host
