@@ -14,6 +14,11 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/tls"
+	"crypto/x509"
+	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -46,4 +51,35 @@ type serveContext struct {
 	statsAddr                       string
 	statsPort                       int
 	caFile, contourCert, contourKey string
+}
+
+// tlsconfig returns a new *tls.Config. If the context is not properly configured
+// for tls communication, tlsconfig returns nil.
+func (ctx *serveContext) tlsconfig() *tls.Config {
+	if ctx.caFile == "" && ctx.contourCert == "" && ctx.contourKey == "" {
+		// tls not enabled
+		return nil
+	}
+	// If one of the three TLS commands is not empty, they all must be not empty
+	if !(ctx.caFile != "" && ctx.contourCert != "" && ctx.contourKey != "") {
+		log.Fatal("You must supply all three TLS parameters - --contour-cafile, --contour-cert-file, --contour-key-file, or none of them.")
+	}
+
+	cert, err := tls.LoadX509KeyPair(ctx.contourCert, ctx.contourKey)
+	check(err)
+
+	ca, err := ioutil.ReadFile(ctx.caFile)
+	check(err)
+
+	certPool := x509.NewCertPool()
+	if ok := certPool.AppendCertsFromPEM(ca); !ok {
+		log.Fatalf("unable to append certificate in %s to CA pool", ctx.caFile)
+	}
+
+	return &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientCAs:    certPool,
+		Rand:         rand.Reader,
+	}
 }
