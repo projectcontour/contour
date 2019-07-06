@@ -320,8 +320,8 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		if vh.Secret != nil {
 			if vh.ClientValidation != nil {
 				clientValidation := &envoy.ClientValidation{
-					Spkis:                    vh.ClientValidation.Spkis,
-					ForwardClientCertDetails: vh.ClientValidation.ForwardClientCertDetails,
+					Spkis:  vh.ClientValidation.Spkis,
+					Hashes: vh.ClientValidation.Hashes,
 				}
 				fc.TlsContext = envoy.DownstreamTLSContext(envoy.Secretname(vh.Secret), clientValidation, vh.MinProtoVersion, alpnProtos...)
 			} else {

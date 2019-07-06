@@ -120,6 +120,7 @@ func DownstreamTLSContext(secretName string, clientValidation *ClientValidation,
 		context.CommonTlsContext.ValidationContextType = &auth.CommonTlsContext_ValidationContext{
 			ValidationContext: &auth.CertificateValidationContext{
 				VerifyCertificateSpki: clientValidation.Spkis,
+				VerifyCertificateHash: clientValidation.Hashes,
 			},
 		}
 	}

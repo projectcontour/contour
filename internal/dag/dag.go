@@ -158,8 +158,6 @@ type ClientValidation struct {
 	Spkis []string
 	// Hashes used to validate the client certificate
 	Hashes []string
-	// How certificate details shall be forwarded to the backend
-	ForwardClientCertDetails string
 }
 
 func (s *SecureVirtualHost) Visit(f func(Vertex)) {
