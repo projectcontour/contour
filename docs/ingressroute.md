@@ -350,6 +350,81 @@ spec:
 
 In this example, the permission for Contour to reference the Secret `example-com-wildcard` in the `admin` namespace has been delegated to IngressRoute objects in the `example-com` namespace.
 
+#### Mutual TLS (client validation)
+
+Mutual TLS (mTLS) means that not only the server but also the client must present a certificate for validation.
+
+```yaml
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata:
+  name: www
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: foo.com
+    tls:
+      secretName: server-secret
+      clientValidation:
+        secretName: client-secret
+  routes:
+    - match: /
+      services:
+        - name: s1
+          port: 80
+```
+
+With this configuration clients accessing `foo.com` must provide a certificate that can be validated by the CA stored in the `client-secret`. If the client validation fails the access will be rejected.
+
+
+##### Other ways of client certificate validation
+
+Envoy allows two other ways for client certificate validation;
+
+* Subject Public Key Information (SPKI)
+* Certificate hash
+
+These can also be specified in `clientValidation`;
+
+```yaml
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata:
+  name: www
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: foo.com
+    tls:
+      secretName: server-secret
+      clientValidation:
+        spkis:
+        - 2IEpPESU/mmC30tPsnOfbGKdwKdQfN/wZw1QWpjGlmk=
+        hashes:
+        - c49c6930b9fbfb72a0d9d07504133d26c87588aa2d32b2919475f647a62f6fec
+  routes:
+    - match: /
+      services:
+        - name: s1
+          port: 80
+```
+
+Please read the [Envoy documentation](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/auth/cert.proto.html#auth-certificatevalidationcontext) for details.
+
+
+##### Forward client certificate details
+
+The backend application may need information of the certificate used (by envoy) to validate the client. Contour forwards client certificate details in the `X-Forwarded-Client-Cert` http header;
+
+```
+X-Forwarded-Client-Cert: [Hash=c49c6930b9fbfb72a0d9d07504133d26c87588aa2d32b2919475f647a62f6fec]
+```
+
+The hash uniquely identifies the used client certificate.
+
+Contour uses the [SANITIZE_SET](https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto#envoy-api-enum-config-filter-network-http-connection-manager-v2-httpconnectionmanager-forwardclientcertdetails) option in `envoy`.
+
+
 ### Routing
 
 Each route entry in an IngressRoute must start with a prefix match.
