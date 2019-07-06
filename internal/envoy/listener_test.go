@@ -164,7 +164,7 @@ func TestSocketAddress(t *testing.T) {
 func TestDownstreamTLSContext(t *testing.T) {
 	const secretName = "default/tls-cert"
 
-	got := DownstreamTLSContext(secretName, auth.TlsParameters_TLSv1_1, "h2", "http/1.1")
+	got := DownstreamTLSContext(secretName, nil, auth.TlsParameters_TLSv1_1, "h2", "http/1.1")
 	want := &auth.DownstreamTlsContext{
 		CommonTlsContext: &auth.CommonTlsContext{
 			TlsParams: &auth.TlsParameters{
@@ -258,6 +258,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						UseRemoteAddress: &types.BoolValue{Value: true},
 						NormalizePath:    &types.BoolValue{Value: true},
 						IdleTimeout:      duration(HTTPDefaultIdleTimeout),
+						ForwardClientCertDetails: http.SANITIZE_SET,
 					}),
 				},
 			},
