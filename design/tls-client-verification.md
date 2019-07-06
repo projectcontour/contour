@@ -88,7 +88,7 @@ type ClientValidation struct {
 ### Changes to internal/envoy
 
 `DownstreamTLSContext()` is extended to take a `clientValidation` this
-is a pointer to a structure and may be `nil`. A structure was prefered
+is a pointer to a structure and may be `nil`. A structure was preferred
 before adding a whole bunch of parameters.
 
 ### Changes to internal/contour
