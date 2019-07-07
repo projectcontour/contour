@@ -484,6 +484,11 @@ func (b *builder) computeIngressRoutes() {
 			continue
 		}
 
+		if strings.Contains(host, "*") {
+			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("Spec.VirtualHost.Fqdn %q cannot use wildcards", host), Vhost: host})
+			continue
+		}
+
 		var enforceTLS, passthrough bool
 		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
 			// attach secrets to TLS enabled vhosts
