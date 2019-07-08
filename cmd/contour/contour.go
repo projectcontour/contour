@@ -26,6 +26,7 @@ import (
 	contourinformers "github.com/heptio/contour/apis/generated/informers/externalversions"
 	"github.com/heptio/contour/internal/certgen"
 	"github.com/heptio/contour/internal/contour"
+	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/debug"
 	"github.com/heptio/contour/internal/grpc"
 	"github.com/heptio/contour/internal/httpsvc"
@@ -72,14 +73,6 @@ func main() {
 		FieldLogger: log.WithField("context", "CacheHandler"),
 	}
 
-	reh := contour.ResourceEventHandler{
-		FieldLogger: log.WithField("context", "resourceEventHandler"),
-		Notifier: &contour.HoldoffNotifier{
-			Notifier:    &ch,
-			FieldLogger: log.WithField("context", "HoldoffNotifier"),
-		},
-	}
-
 	serve, serveCtx := registerServe(app)
 
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&ch.HTTPAccessLog)
@@ -89,7 +82,6 @@ func main() {
 	serve.Flag("envoy-service-http-port", "Kubernetes Service port for HTTP requests").Default("8080").IntVar(&ch.HTTPPort)
 	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests").Default("8443").IntVar(&ch.HTTPSPort)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ch.UseProxyProto)
-	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&reh.IngressClass)
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
@@ -120,7 +112,17 @@ func main() {
 		var g workgroup.Group
 
 		ch.ListenerCache = contour.NewListenerCache(serveCtx.statsAddr, serveCtx.statsPort)
-		reh.IngressRouteRootNamespaces = serveCtx.ingressRouteRootNamespaces()
+		reh := contour.ResourceEventHandler{
+			FieldLogger: log.WithField("context", "resourceEventHandler"),
+			Notifier: &contour.HoldoffNotifier{
+				Notifier:    &ch,
+				FieldLogger: log.WithField("context", "HoldoffNotifier"),
+			},
+			KubernetesCache: dag.KubernetesCache{
+				IngressRouteRootNamespaces: serveCtx.ingressRouteRootNamespaces(),
+			},
+			IngressClass: serveCtx.ingressClass,
+		}
 
 		client, contourClient := newClient(serveCtx.kubeconfig, serveCtx.inCluster)
 

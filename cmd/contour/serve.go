@@ -52,6 +52,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 
 	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringVar(&ctx.rootNamespaces)
 
+	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&ctx.ingressClass)
+
 	return serve, &ctx
 }
 
@@ -79,6 +81,9 @@ type serveContext struct {
 
 	// ingressroute root namespaces
 	rootNamespaces string
+
+	// ingress class
+	ingressClass string
 }
 
 // tlsconfig returns a new *tls.Config. If the context is not properly configured
