@@ -19,12 +19,26 @@ import (
 	"crypto/x509"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strconv"
 	"strings"
 
+	contourinformers "github.com/heptio/contour/apis/generated/informers/externalversions"
 	"github.com/heptio/contour/internal/contour"
+	"github.com/heptio/contour/internal/dag"
+	"github.com/heptio/contour/internal/debug"
+	"github.com/heptio/contour/internal/grpc"
+	"github.com/heptio/contour/internal/httpsvc"
+	"github.com/heptio/contour/internal/k8s"
+	"github.com/heptio/contour/internal/metrics"
+	"github.com/heptio/contour/internal/workgroup"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	coreinformers "k8s.io/client-go/informers"
 )
 
 // registerServe registers the serve subcommand and flags
@@ -150,4 +164,154 @@ func (ctx *serveContext) ingressRouteRootNamespaces() []string {
 		ns = append(ns, strings.TrimSpace(s))
 	}
 	return ns
+}
+
+// doServe runs the contour serve subcommand.
+func doServe(log logrus.FieldLogger, ctx *serveContext) error {
+
+	// step 1. establish k8s client connection
+	client, contourClient := newClient(ctx.kubeconfig, ctx.inCluster)
+
+	// step 2. create informers
+	// note: 0 means resync timers are disabled
+	coreInformers := coreinformers.NewSharedInformerFactory(client, 0)
+	contourInformers := contourinformers.NewSharedInformerFactory(contourClient, 0)
+
+	// step 3. establish our (poorly named) gRPC cache handler.
+	ch := contour.CacheHandler{
+		ListenerVisitorConfig: contour.ListenerVisitorConfig{
+			UseProxyProto:  ctx.useProxyProto,
+			HTTPAddress:    ctx.httpAddr,
+			HTTPPort:       ctx.httpPort,
+			HTTPAccessLog:  ctx.httpAccessLog,
+			HTTPSAddress:   ctx.httpsAddr,
+			HTTPSPort:      ctx.httpsPort,
+			HTTPSAccessLog: ctx.httpsAccessLog,
+		},
+		ListenerCache: contour.NewListenerCache(ctx.statsAddr, ctx.statsPort),
+		FieldLogger:   log.WithField("context", "CacheHandler"),
+		IngressRouteStatus: &k8s.IngressRouteStatus{
+			Client: contourClient,
+		},
+	}
+
+	// step 4. wrap the gRPC cache handler in a k8s resource event handler.
+	reh := contour.ResourceEventHandler{
+		Notifier: &contour.HoldoffNotifier{
+			Notifier:    &ch,
+			FieldLogger: log.WithField("context", "HoldoffNotifier"),
+		},
+		KubernetesCache: dag.KubernetesCache{
+			IngressRouteRootNamespaces: ctx.ingressRouteRootNamespaces(),
+		},
+		IngressClass: ctx.ingressClass,
+		FieldLogger:  log.WithField("context", "resourceEventHandler"),
+	}
+
+	// step 5. register out resource event handler with the k8s informers.
+	coreInformers.Core().V1().Services().Informer().AddEventHandler(&reh)
+	coreInformers.Extensions().V1beta1().Ingresses().Informer().AddEventHandler(&reh)
+	coreInformers.Core().V1().Secrets().Informer().AddEventHandler(&reh)
+	contourInformers.Contour().V1beta1().IngressRoutes().Informer().AddEventHandler(&reh)
+	contourInformers.Contour().V1beta1().TLSCertificateDelegations().Informer().AddEventHandler(&reh)
+
+	// step 6. endpoints updates are handled directly by the EndpointsTranslator
+	// due to their high update rate and their orthogonal nature.
+	et := &contour.EndpointsTranslator{
+		FieldLogger: log.WithField("context", "endpointstranslator"),
+	}
+	coreInformers.Core().V1().Endpoints().Informer().AddEventHandler(et)
+
+	// step 7. setup workgroup runner and register informers.
+	var g workgroup.Group
+	g.Add(startInformer(coreInformers, log.WithField("context", "coreinformers")))
+	g.Add(startInformer(contourInformers, log.WithField("context", "contourinformers")))
+
+	// step 8. setup prometheus registry and register base metrics.
+	registry := prometheus.NewRegistry()
+	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+	registry.MustRegister(prometheus.NewGoCollector())
+
+	// step 9. create metrics service and register with workgroup.
+	metricsvc := metrics.Service{
+		Service: httpsvc.Service{
+			Addr:        ctx.metricsAddr,
+			Port:        ctx.metricsPort,
+			FieldLogger: log.WithField("context", "metricsvc"),
+		},
+		Client:   client,
+		Registry: registry,
+	}
+	g.Add(metricsvc.Start)
+
+	// step 10. create debug service and register with workgroup.
+	debugsvc := debug.Service{
+		Service: httpsvc.Service{
+			Addr:        ctx.debugAddr,
+			Port:        ctx.debugPort,
+			FieldLogger: log.WithField("context", "debugsvc"),
+		},
+		KubernetesCache: &reh.KubernetesCache,
+	}
+	g.Add(debugsvc.Start)
+
+	// step 11. register our custom metrics and plumb into cache handler
+	// and resource event handler.
+	metrics := metrics.NewMetrics(registry)
+	ch.Metrics = metrics
+	reh.Metrics = metrics
+
+	// step 12. create grpc handler and register with workgroup.
+	g.Add(func(stop <-chan struct{}) error {
+		log := log.WithField("context", "grpc")
+		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
+
+		var l net.Listener
+		var err error
+		tlsconfig := ctx.tlsconfig()
+		if tlsconfig != nil {
+			log.Info("Setting up TLS for gRPC")
+			l, err = tls.Listen("tcp", addr, tlsconfig)
+			if err != nil {
+				return err
+			}
+		} else {
+			l, err = net.Listen("tcp", addr)
+			if err != nil {
+				return err
+			}
+		}
+
+		s := grpc.NewAPI(log, map[string]grpc.Resource{
+			ch.ClusterCache.TypeURL():  &ch.ClusterCache,
+			ch.RouteCache.TypeURL():    &ch.RouteCache,
+			ch.ListenerCache.TypeURL(): &ch.ListenerCache,
+			et.TypeURL():               et,
+			ch.SecretCache.TypeURL():   &ch.SecretCache,
+		})
+		log.Println("started")
+		defer log.Println("stopped")
+		return s.Serve(l)
+	})
+
+	// step 13. GO!
+	return g.Run()
+}
+
+type informer interface {
+	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
+	Start(stopCh <-chan struct{})
+}
+
+func startInformer(inf informer, log logrus.FieldLogger) func(stop <-chan struct{}) error {
+	return func(stop <-chan struct{}) error {
+		log.Println("waiting for cache sync")
+		inf.WaitForCacheSync(stop)
+
+		log.Println("started")
+		defer log.Println("stopping")
+		inf.Start(stop)
+		<-stop
+		return nil
+	}
 }
