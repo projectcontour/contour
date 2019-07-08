@@ -98,6 +98,15 @@ func main() {
 	case serve.FullCommand():
 		log.Infof("args: %v", args)
 
+		// step 1. establish k8s client connection
+		client, contourClient := newClient(serveCtx.kubeconfig, serveCtx.inCluster)
+
+		// step 2. create informers
+		// note: 0 means resync timers are disabled
+		coreInformers := coreinformers.NewSharedInformerFactory(client, 0)
+		contourInformers := contourinformers.NewSharedInformerFactory(contourClient, 0)
+
+		// step 3. establish our (poorly named) gRPC cache handler.
 		ch := contour.CacheHandler{
 			ListenerVisitorConfig: contour.ListenerVisitorConfig{
 				UseProxyProto:  serveCtx.useProxyProto,
@@ -110,9 +119,13 @@ func main() {
 			},
 			ListenerCache: contour.NewListenerCache(serveCtx.statsAddr, serveCtx.statsPort),
 			FieldLogger:   log.WithField("context", "CacheHandler"),
+			IngressRouteStatus: &k8s.IngressRouteStatus{
+				Client: contourClient,
+			},
 		}
+
+		// step 4. wrap the gRPC cache handler in a k8s resource event handler.
 		reh := contour.ResourceEventHandler{
-			FieldLogger: log.WithField("context", "resourceEventHandler"),
 			Notifier: &contour.HoldoffNotifier{
 				Notifier:    &ch,
 				FieldLogger: log.WithField("context", "HoldoffNotifier"),
@@ -121,40 +134,34 @@ func main() {
 				IngressRouteRootNamespaces: serveCtx.ingressRouteRootNamespaces(),
 			},
 			IngressClass: serveCtx.ingressClass,
+			FieldLogger:  log.WithField("context", "resourceEventHandler"),
 		}
 
-		client, contourClient := newClient(serveCtx.kubeconfig, serveCtx.inCluster)
-
-		// resync timer disabled for Contour
-		coreInformers := coreinformers.NewSharedInformerFactory(client, 0)
-		contourInformers := contourinformers.NewSharedInformerFactory(contourClient, 0)
-
+		// step 5. register out resource event handler with the k8s informers.
 		coreInformers.Core().V1().Services().Informer().AddEventHandler(&reh)
 		coreInformers.Extensions().V1beta1().Ingresses().Informer().AddEventHandler(&reh)
 		coreInformers.Core().V1().Secrets().Informer().AddEventHandler(&reh)
 		contourInformers.Contour().V1beta1().IngressRoutes().Informer().AddEventHandler(&reh)
 		contourInformers.Contour().V1beta1().TLSCertificateDelegations().Informer().AddEventHandler(&reh)
 
-		ch.IngressRouteStatus = &k8s.IngressRouteStatus{
-			Client: contourClient,
-		}
-
-		// Endpoints updates are handled directly by the EndpointsTranslator
+		// step 6. endpoints updates are handled directly by the EndpointsTranslator
 		// due to their high update rate and their orthogonal nature.
 		et := &contour.EndpointsTranslator{
 			FieldLogger: log.WithField("context", "endpointstranslator"),
 		}
 		coreInformers.Core().V1().Endpoints().Informer().AddEventHandler(et)
 
+		// step 7. setup workgroup runner and register informers.
 		var g workgroup.Group
 		g.Add(startInformer(coreInformers, log.WithField("context", "coreinformers")))
 		g.Add(startInformer(contourInformers, log.WithField("context", "contourinformers")))
 
+		// step 8. setup prometheus registry and register base metrics.
 		registry := prometheus.NewRegistry()
-		// register detault process / go collectors
 		registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 		registry.MustRegister(prometheus.NewGoCollector())
 
+		// step 9. create metrics service and register with workgroup.
 		metricsvc := metrics.Service{
 			Service: httpsvc.Service{
 				Addr:        serveCtx.metricsAddr,
@@ -166,6 +173,7 @@ func main() {
 		}
 		g.Add(metricsvc.Start)
 
+		// step 10. create debug service and register with workgroup.
 		debugsvc := debug.Service{
 			Service: httpsvc.Service{
 				Addr:        serveCtx.debugAddr,
@@ -176,11 +184,13 @@ func main() {
 		}
 		g.Add(debugsvc.Start)
 
-		// register our custom metrics
+		// step 11. register our custom metrics and plumb into cache handler
+		// and resource event handler.
 		metrics := metrics.NewMetrics(registry)
 		ch.Metrics = metrics
 		reh.Metrics = metrics
 
+		// step 12. create grpc handler and register with workgroup.
 		g.Add(func(stop <-chan struct{}) error {
 			log := log.WithField("context", "grpc")
 			addr := net.JoinHostPort(serveCtx.xdsAddr, strconv.Itoa(serveCtx.xdsPort))
@@ -212,6 +222,8 @@ func main() {
 			defer log.Println("stopped")
 			return s.Serve(l)
 		})
+
+		// step 13. GO!
 		_ = g.Run()
 	default:
 		app.Usage(args)
