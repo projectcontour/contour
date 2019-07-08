@@ -204,7 +204,7 @@ Finally a comment from our security expert;
 
 And my reply;
 
-I have choosen the Envoy defaults for XFCC because I don't know
+I have chosen the Envoy defaults for XFCC because I don't know
 anything about the use in applications. My guess is that the
 client-certificate hash will is used something like this;
 
