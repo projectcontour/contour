@@ -93,10 +93,9 @@ func validationContext(ca []byte, subjectName string) *auth.CommonTlsContext_Val
 }
 
 type ClientValidation struct {
-	Ca                       []byte
-	Spkis                    []string
-	Hashes                   []string
-	ForwardClientCertDetails string
+	Secret *auth.Secret
+	Spkis  []string
+	Hashes []string
 }
 
 // DownstreamTLSContext creates a new DownstreamTlsContext.

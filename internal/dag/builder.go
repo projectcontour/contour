@@ -500,6 +500,13 @@ func (b *builder) computeIngressRoutes() {
 						Spkis:  tls.ClientValidation.Spkis,
 						Hashes: tls.ClientValidation.Hashes,
 					}
+					if tls.ClientValidation.SecretName != "" {
+						m := splitSecret(tls.ClientValidation.SecretName, ir.Namespace)
+						sec := b.lookupSecret(m, validSecret)
+						if sec != nil {
+							svhost.ClientValidation.Secret = sec
+						}
+					}
 				}
 			}
 			// passthrough is true if tls.secretName is not present, and
