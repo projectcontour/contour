@@ -161,12 +161,10 @@ func NewContourCerts() *ContourCerts {
 // writeCertPEMs writes out all the PEMs for all the certs, using
 // the stored filenames.
 func (cc *ContourCerts) writeCertPEMs(outputDir string) error {
-	err := cc.CA.writePEMs(outputDir)
-	if err != nil {
+	if err := cc.CA.writePEMs(outputDir); err != nil {
 		return err
 	}
-	err = cc.Contour.writePEMs(outputDir)
-	if err != nil {
+	if err := cc.Contour.writePEMs(outputDir); err != nil {
 		return err
 	}
 	return cc.Envoy.writePEMs(outputDir)
@@ -197,18 +195,15 @@ func (cc *ContourCerts) writeCACertKube(namespace string, client *kubernetes.Cli
 // the generated Secrets into the Kube `namespace`
 func (cc *ContourCerts) writeSecretYAMLs(outputDir, namespace string) error {
 	// First, write out just the CA Cert secret.
-	err := cc.writeCACertYAML(outputDir, namespace)
-	if err != nil {
+	if err := cc.writeCACertYAML(outputDir, namespace); err != nil {
 		return err
 	}
 	// Next, write out the full CA keypair
-	err = cc.CA.writeTLSYAML(outputDir, namespace)
-	if err != nil {
+	if err := cc.CA.writeTLSYAML(outputDir, namespace); err != nil {
 		return err
 	}
 	// Next, Contour's keypair
-	err = cc.Contour.writeTLSYAML(outputDir, namespace)
-	if err != nil {
+	if err := cc.Contour.writeTLSYAML(outputDir, namespace); err != nil {
 		return err
 	}
 	return cc.Envoy.writeTLSYAML(outputDir, namespace)
@@ -218,18 +213,15 @@ func (cc *ContourCerts) writeSecretYAMLs(outputDir, namespace string) error {
 // `namespace`.
 func (cc *ContourCerts) writeToKube(namespace string, client *kubernetes.Clientset) error {
 	// First, write out just the CA Cert secret.
-	err := cc.writeCACertKube(namespace, client)
-	if err != nil {
+	if err := cc.writeCACertKube(namespace, client); err != nil {
 		return err
 	}
 	// Next, write out the full CA keypair
-	err = cc.CA.writeTLSKube(namespace, client)
-	if err != nil {
+	if err := cc.CA.writeTLSKube(namespace, client); err != nil {
 		return err
 	}
 	// Next, Contour's keypair
-	err = cc.Contour.writeTLSKube(namespace, client)
-	if err != nil {
+	if err := cc.Contour.writeTLSKube(namespace, client); err != nil {
 		return err
 	}
 	return cc.Envoy.writeTLSKube(namespace, client)
@@ -282,27 +274,23 @@ func OutputCerts(certgenConfig *Config, certs *ContourCerts) error {
 
 	if certgenConfig.OutputPEM {
 		// TODO(youngnick): Should we sanitize this value?
-		err := os.MkdirAll(certgenConfig.OutputDir, 0755)
-		if err != nil {
+		if err := os.MkdirAll(certgenConfig.OutputDir, 0755); err != nil {
 			return err
 		}
 
 		fmt.Printf("Outputting certs to PEM files in %s/\n", certgenConfig.OutputDir)
-		err = certs.writeCertPEMs(certgenConfig.OutputDir)
-		if err != nil {
+		if err := certs.writeCertPEMs(certgenConfig.OutputDir); err != nil {
 			return err
 		}
 	}
 
 	if certgenConfig.OutputYAML {
 		// TODO(youngnick): Should we sanitize this value?
-		err := os.MkdirAll(certgenConfig.OutputDir, 0755)
-		if err != nil {
+		if err := os.MkdirAll(certgenConfig.OutputDir, 0755); err != nil {
 			return err
 		}
 		fmt.Printf("Outputting certs to YAML files in %s/\n", certgenConfig.OutputDir)
-		err = certs.writeSecretYAMLs(certgenConfig.OutputDir, certgenConfig.Namespace)
-		if err != nil {
+		if err := certs.writeSecretYAMLs(certgenConfig.OutputDir, certgenConfig.Namespace); err != nil {
 			return err
 		}
 	}
@@ -313,8 +301,7 @@ func OutputCerts(certgenConfig *Config, certs *ContourCerts) error {
 		if err != nil {
 			return err
 		}
-		err = certs.writeToKube(certgenConfig.Namespace, client)
-		if err != nil {
+		if err := certs.writeToKube(certgenConfig.Namespace, client); err != nil {
 			return err
 		}
 
