@@ -190,13 +190,14 @@ func OutputCerts(certgenConfig *Config, certs *ContourCerts) error {
 
 	if certgenConfig.OutputPEM {
 		// TODO(youngnick): Should we sanitize this value?
-		err := os.MkdirAll(certgenConfig.OutputDir, 0755)
-		if err != nil {
+		if err := os.MkdirAll(certgenConfig.OutputDir, 0755); err != nil {
 			return err
 		}
 
 		fmt.Printf("Outputting certs to PEM files in %s/\n", certgenConfig.OutputDir)
-		certs.writeCertPEMs(certgenConfig.OutputDir)
+		if err := certs.writeCertPEMs(certgenConfig.OutputDir); err != nil {
+			return err
+		}
 	}
 
 	if certgenConfig.OutputYAML {
