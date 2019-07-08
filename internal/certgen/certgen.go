@@ -28,7 +28,16 @@ import (
 	"io/ioutil"
 	"math/big"
 	"os"
+	"path"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 // keySize sets the RSA key size to 2048 bits. This is minimum recommended size
@@ -60,11 +69,15 @@ type Config struct {
 	OutputPEM bool
 }
 
-// ContourCerts holds all three keypairs required, the CA, the Contour, and Envoy keypairs.
-type ContourCerts struct {
-	CA      *keyPair
-	Contour *keyPair
-	Envoy   *keyPair
+type certData struct {
+	Filename string
+	Data     []byte
+}
+
+// writePEM writes a certificate out to its filename in outputDir.
+func (cd *certData) writePEM(outputDir string) error {
+	return writePEMFile(outputDir+"/"+cd.Filename, cd.Data)
+
 }
 
 type keyPair struct {
@@ -73,9 +86,40 @@ type keyPair struct {
 	Key        *certData
 }
 
-type certData struct {
-	Filename string
-	Data     []byte
+// writeTLSYAML writes out Kubernetes Secret YAML for a keypair
+// in a Secret of type `kubernetes.io/tls`. This prescribes the
+// filenames/keynames for the cert and key.
+func (kp *keyPair) writeTLSYAML(outputDir, namespace string) error {
+	secret := newTLSSecret(kp.SecretName, namespace, kp.Key.Data, kp.Cert.Data)
+	return writeSecret(outputDir+"/"+kp.SecretName+".yaml", secret)
+}
+
+// writeTLSKube writes a TLS Secret of the keypair out to Kubernetes.
+func (kp *keyPair) writeTLSKube(namespace string, client *kubernetes.Clientset) error {
+	secret := newTLSSecret(kp.SecretName, namespace, kp.Key.Data, kp.Cert.Data)
+	_, err := client.CoreV1().Secrets(namespace).Create(secret)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("secret/%s created\n", kp.SecretName)
+	return nil
+}
+
+// writePEMs writes both certificates of a keypair out to outputDir.
+func (kp *keyPair) writePEMs(outputDir string) error {
+	err := kp.Cert.writePEM(outputDir)
+	if err != nil {
+		return err
+	}
+	return kp.Key.writePEM(outputDir)
+}
+
+// ContourCerts holds all three keypairs required, the CA, the Contour, and Envoy keypairs.
+type ContourCerts struct {
+	CA               *keyPair
+	Contour          *keyPair
+	Envoy            *keyPair
+	CACertSecretName string
 }
 
 // NewContourCerts generates a new ContourCerts with default values.
@@ -84,7 +128,7 @@ type certData struct {
 func NewContourCerts() *ContourCerts {
 	return &ContourCerts{
 		CA: &keyPair{
-			SecretName: "cacert",
+			SecretName: "cakeypair",
 			Cert: &certData{
 				Filename: "CAcert.pem",
 			},
@@ -92,6 +136,7 @@ func NewContourCerts() *ContourCerts {
 				Filename: "CAkey.pem",
 			},
 		},
+		CACertSecretName: "cacert",
 		Contour: &keyPair{
 			SecretName: "contourcert",
 			Cert: &certData{
@@ -113,23 +158,8 @@ func NewContourCerts() *ContourCerts {
 	}
 }
 
-func (kp *keyPair) writePEMs(outputDir string) error {
-	err := kp.Cert.writePEM(outputDir)
-	if err != nil {
-		return err
-	}
-	return kp.Key.writePEM(outputDir)
-}
-
-func (cd *certData) writePEM(outputDir string) error {
-	return dumpFile(outputDir+"/"+cd.Filename, cd.Data)
-
-}
-
 // writeCertPEMs writes out all the PEMs for all the certs, using
 // the stored filenames.
-// TODO(youngnick) we should be able to use a similar pattern for the
-// secrets, hopefully.
 func (cc *ContourCerts) writeCertPEMs(outputDir string) error {
 	err := cc.CA.writePEMs(outputDir)
 	if err != nil {
@@ -143,7 +173,69 @@ func (cc *ContourCerts) writeCertPEMs(outputDir string) error {
 
 }
 
-// GenerateCerts performs the actual cert generation steps and then returns the certs for the output functions.
+// writeCACertYAML is a helper function to write out just the CA's certificate
+// as a Kubernetes Secret. Required so that we don't give access to the full
+// keypair to consumers like Contour and Envoy.
+func (cc *ContourCerts) writeCACertYAML(outputDir, namespace string) error {
+	secret := newCertOnlySecret(cc.CACertSecretName, namespace, cc.CA.Cert.Filename, cc.CA.Cert.Data)
+	return writeSecret(outputDir+"/"+cc.CACertSecretName+".yaml", secret)
+}
+
+// writeCACertKube writes out just the CA's certificate as a Kubernetes Secret.
+// Required so that we don't give access to the full keypair to consumers like Contour and Envoy.
+func (cc *ContourCerts) writeCACertKube(namespace string, client *kubernetes.Clientset) error {
+	secret := newCertOnlySecret(cc.CACertSecretName, namespace, cc.CA.Cert.Filename, cc.CA.Cert.Data)
+	_, err := client.CoreV1().Secrets(namespace).Create(secret)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("secret/%s created\n", cc.CACertSecretName)
+	return nil
+}
+
+// writeSecretYAMLs writes out all the secret YAMLs to `outputDir`, putting
+// the generated Secrets into the Kube `namespace`
+func (cc *ContourCerts) writeSecretYAMLs(outputDir, namespace string) error {
+	// First, write out just the CA Cert secret.
+	err := cc.writeCACertYAML(outputDir, namespace)
+	if err != nil {
+		return err
+	}
+	// Next, write out the full CA keypair
+	err = cc.CA.writeTLSYAML(outputDir, namespace)
+	if err != nil {
+		return err
+	}
+	// Next, Contour's keypair
+	err = cc.Contour.writeTLSYAML(outputDir, namespace)
+	if err != nil {
+		return err
+	}
+	return cc.Envoy.writeTLSYAML(outputDir, namespace)
+}
+
+// writeToKube writes all the secrets directly to Kubernetes, in the given
+// `namespace`.
+func (cc *ContourCerts) writeToKube(namespace string, client *kubernetes.Clientset) error {
+	// First, write out just the CA Cert secret.
+	err := cc.writeCACertKube(namespace, client)
+	if err != nil {
+		return err
+	}
+	// Next, write out the full CA keypair
+	err = cc.CA.writeTLSKube(namespace, client)
+	if err != nil {
+		return err
+	}
+	// Next, Contour's keypair
+	err = cc.Contour.writeTLSKube(namespace, client)
+	if err != nil {
+		return err
+	}
+	return cc.Envoy.writeTLSKube(namespace, client)
+}
+
+// GenerateCerts performs the actual cert generation steps and then returns the certs for the output function.
 func GenerateCerts(certConfig *Config) (*ContourCerts, error) {
 
 	now := time.Now()
@@ -196,7 +288,10 @@ func OutputCerts(certgenConfig *Config, certs *ContourCerts) error {
 		}
 
 		fmt.Printf("Outputting certs to PEM files in %s/\n", certgenConfig.OutputDir)
-		certs.writeCertPEMs(certgenConfig.OutputDir)
+		err = certs.writeCertPEMs(certgenConfig.OutputDir)
+		if err != nil {
+			return err
+		}
 	}
 
 	if certgenConfig.OutputYAML {
@@ -205,18 +300,27 @@ func OutputCerts(certgenConfig *Config, certs *ContourCerts) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Would configure Kube secrets here in YAML to '%s/'. Not implemented yet.\n", certgenConfig.OutputDir)
+		fmt.Printf("Outputting certs to YAML files in %s/\n", certgenConfig.OutputDir)
+		err = certs.writeSecretYAMLs(certgenConfig.OutputDir, certgenConfig.Namespace)
+		if err != nil {
+			return err
+		}
 	}
 
 	if certgenConfig.OutputKube {
-		fmt.Print("Would configure Kube secrets here. Not implemented yet.\n")
+		fmt.Printf("Outputting certs to Kubernetes in namespace %s/\n", certgenConfig.Namespace)
+		client, err := newClient(certgenConfig.KubeConfig, certgenConfig.InCluster)
+		if err != nil {
+			return err
+		}
+		err = certs.writeToKube(certgenConfig.Namespace, client)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	return nil
-
-}
-func dumpFile(filename string, data []byte) error {
-	return ioutil.WriteFile(filename, data, 0644)
 
 }
 
@@ -272,15 +376,6 @@ func newCert(r io.Reader, caCertPEM, caKeyPEM []byte, expiry time.Time, service,
 
 }
 
-func serviceNames(service, namespace string) []string {
-	return []string{
-		service,
-		fmt.Sprintf("%s.%s", service, namespace),
-		fmt.Sprintf("%s.%s.svc", service, namespace),
-		fmt.Sprintf("%s.%s.svc.cluster.local", service, namespace),
-	}
-}
-
 func newCA(r io.Reader, cn string, expiry time.Time) ([]byte, []byte, error) {
 	key, err := rsa.GenerateKey(r, keySize)
 	if err != nil {
@@ -317,6 +412,72 @@ func newCA(r io.Reader, cn string, expiry time.Time) ([]byte, []byte, error) {
 	return keyPEMData, certPEMData, nil
 }
 
+func newTLSSecret(secretname, namespace string, keyPEM, certPEM []byte) *corev1.Secret {
+
+	return &corev1.Secret{
+		Type: corev1.SecretTypeTLS,
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretname,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app": "contour",
+			},
+		},
+		Data: map[string][]byte{
+			corev1.TLSCertKey:       certPEM,
+			corev1.TLSPrivateKeyKey: keyPEM,
+		},
+	}
+}
+
+func newCertOnlySecret(secretname, namespace, certfilename string, certPEM []byte) *corev1.Secret {
+
+	return &corev1.Secret{
+		Type: corev1.SecretTypeOpaque,
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretname,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app": "contour",
+			},
+		},
+		Data: map[string][]byte{
+			path.Base(certfilename): certPEM,
+		},
+	}
+}
+
+func newClient(kubeconfig string, inCluster bool) (*kubernetes.Clientset, error) {
+	var err error
+	var config *rest.Config
+	if kubeconfig != "" && !inCluster {
+		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		config, err = rest.InClusterConfig()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	client, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
 func newSerial(now time.Time) *big.Int {
 	return big.NewInt(int64(now.Nanosecond()))
 }
@@ -325,4 +486,49 @@ func bigIntHash(n *big.Int) []byte {
 	h := sha1.New()
 	h.Write(n.Bytes())
 	return h.Sum(nil)
+}
+
+func serviceNames(service, namespace string) []string {
+	return []string{
+		service,
+		fmt.Sprintf("%s.%s", service, namespace),
+		fmt.Sprintf("%s.%s.svc", service, namespace),
+		fmt.Sprintf("%s.%s.svc.cluster.local", service, namespace),
+	}
+}
+
+func writePEMFile(filename string, data []byte) error {
+	_, err := os.Stat(filename)
+	if err != nil {
+		// Can't stat the file, so we'll create it
+		err = ioutil.WriteFile(filename, data, 0644)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Created %s\n", filename)
+		return nil
+	}
+	return fmt.Errorf("can't overwrite %s", filename)
+
+}
+
+func writeSecret(filename string, secret *corev1.Secret) error {
+	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	_, err := os.Stat(filename)
+	if err != nil {
+		// Can't stat the file, we'll create it
+		f, err := os.Create(filename)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		err = s.Encode(secret, f)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Created %s\n", filename)
+		return nil
+	}
+	return fmt.Errorf("can't overwrite %s", filename)
+
 }
