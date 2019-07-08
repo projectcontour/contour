@@ -26,6 +26,7 @@ import (
 	contourinformers "github.com/heptio/contour/apis/generated/informers/externalversions"
 	"github.com/heptio/contour/internal/certgen"
 	"github.com/heptio/contour/internal/contour"
+	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/debug"
 	"github.com/heptio/contour/internal/grpc"
 	"github.com/heptio/contour/internal/httpsvc"
@@ -68,28 +69,7 @@ func main() {
 	sds := cli.Command("sds", "watch secrets.")
 	sds.Arg("resources", "SDS resource filter").StringsVar(&resources)
 
-	ch := contour.CacheHandler{
-		FieldLogger: log.WithField("context", "CacheHandler"),
-	}
-
-	reh := contour.ResourceEventHandler{
-		FieldLogger: log.WithField("context", "resourceEventHandler"),
-		Notifier: &contour.HoldoffNotifier{
-			Notifier:    &ch,
-			FieldLogger: log.WithField("context", "HoldoffNotifier"),
-		},
-	}
-
 	serve, serveCtx := registerServe(app)
-
-	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&ch.HTTPAccessLog)
-	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&ch.HTTPSAccessLog)
-	serve.Flag("envoy-service-http-address", "Kubernetes Service address for HTTP requests").Default("0.0.0.0").StringVar(&ch.HTTPAddress)
-	serve.Flag("envoy-service-https-address", "Kubernetes Service address for HTTPS requests").Default("0.0.0.0").StringVar(&ch.HTTPSAddress)
-	serve.Flag("envoy-service-http-port", "Kubernetes Service port for HTTP requests").Default("8080").IntVar(&ch.HTTPPort)
-	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests").Default("8443").IntVar(&ch.HTTPSPort)
-	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ch.UseProxyProto)
-	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&reh.IngressClass)
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
@@ -117,42 +97,71 @@ func main() {
 		watchstream(stream, cache.SecretType, resources)
 	case serve.FullCommand():
 		log.Infof("args: %v", args)
-		var g workgroup.Group
 
-		ch.ListenerCache = contour.NewListenerCache(serveCtx.statsAddr, serveCtx.statsPort)
-		reh.IngressRouteRootNamespaces = serveCtx.ingressRouteRootNamespaces()
-
+		// step 1. establish k8s client connection
 		client, contourClient := newClient(serveCtx.kubeconfig, serveCtx.inCluster)
 
-		// resync timer disabled for Contour
+		// step 2. create informers
+		// note: 0 means resync timers are disabled
 		coreInformers := coreinformers.NewSharedInformerFactory(client, 0)
 		contourInformers := contourinformers.NewSharedInformerFactory(contourClient, 0)
 
+		// step 3. establish our (poorly named) gRPC cache handler.
+		ch := contour.CacheHandler{
+			ListenerVisitorConfig: contour.ListenerVisitorConfig{
+				UseProxyProto:  serveCtx.useProxyProto,
+				HTTPAddress:    serveCtx.httpAddr,
+				HTTPPort:       serveCtx.httpPort,
+				HTTPAccessLog:  serveCtx.httpAccessLog,
+				HTTPSAddress:   serveCtx.httpsAddr,
+				HTTPSPort:      serveCtx.httpsPort,
+				HTTPSAccessLog: serveCtx.httpsAccessLog,
+			},
+			ListenerCache: contour.NewListenerCache(serveCtx.statsAddr, serveCtx.statsPort),
+			FieldLogger:   log.WithField("context", "CacheHandler"),
+			IngressRouteStatus: &k8s.IngressRouteStatus{
+				Client: contourClient,
+			},
+		}
+
+		// step 4. wrap the gRPC cache handler in a k8s resource event handler.
+		reh := contour.ResourceEventHandler{
+			Notifier: &contour.HoldoffNotifier{
+				Notifier:    &ch,
+				FieldLogger: log.WithField("context", "HoldoffNotifier"),
+			},
+			KubernetesCache: dag.KubernetesCache{
+				IngressRouteRootNamespaces: serveCtx.ingressRouteRootNamespaces(),
+			},
+			IngressClass: serveCtx.ingressClass,
+			FieldLogger:  log.WithField("context", "resourceEventHandler"),
+		}
+
+		// step 5. register out resource event handler with the k8s informers.
 		coreInformers.Core().V1().Services().Informer().AddEventHandler(&reh)
 		coreInformers.Extensions().V1beta1().Ingresses().Informer().AddEventHandler(&reh)
 		coreInformers.Core().V1().Secrets().Informer().AddEventHandler(&reh)
 		contourInformers.Contour().V1beta1().IngressRoutes().Informer().AddEventHandler(&reh)
 		contourInformers.Contour().V1beta1().TLSCertificateDelegations().Informer().AddEventHandler(&reh)
 
-		ch.IngressRouteStatus = &k8s.IngressRouteStatus{
-			Client: contourClient,
-		}
-
-		// Endpoints updates are handled directly by the EndpointsTranslator
+		// step 6. endpoints updates are handled directly by the EndpointsTranslator
 		// due to their high update rate and their orthogonal nature.
 		et := &contour.EndpointsTranslator{
 			FieldLogger: log.WithField("context", "endpointstranslator"),
 		}
 		coreInformers.Core().V1().Endpoints().Informer().AddEventHandler(et)
 
+		// step 7. setup workgroup runner and register informers.
+		var g workgroup.Group
 		g.Add(startInformer(coreInformers, log.WithField("context", "coreinformers")))
 		g.Add(startInformer(contourInformers, log.WithField("context", "contourinformers")))
 
+		// step 8. setup prometheus registry and register base metrics.
 		registry := prometheus.NewRegistry()
-		// register detault process / go collectors
 		registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 		registry.MustRegister(prometheus.NewGoCollector())
 
+		// step 9. create metrics service and register with workgroup.
 		metricsvc := metrics.Service{
 			Service: httpsvc.Service{
 				Addr:        serveCtx.metricsAddr,
@@ -164,6 +173,7 @@ func main() {
 		}
 		g.Add(metricsvc.Start)
 
+		// step 10. create debug service and register with workgroup.
 		debugsvc := debug.Service{
 			Service: httpsvc.Service{
 				Addr:        serveCtx.debugAddr,
@@ -174,11 +184,13 @@ func main() {
 		}
 		g.Add(debugsvc.Start)
 
-		// register our custom metrics
+		// step 11. register our custom metrics and plumb into cache handler
+		// and resource event handler.
 		metrics := metrics.NewMetrics(registry)
 		ch.Metrics = metrics
 		reh.Metrics = metrics
 
+		// step 12. create grpc handler and register with workgroup.
 		g.Add(func(stop <-chan struct{}) error {
 			log := log.WithField("context", "grpc")
 			addr := net.JoinHostPort(serveCtx.xdsAddr, strconv.Itoa(serveCtx.xdsPort))
@@ -210,6 +222,8 @@ func main() {
 			defer log.Println("stopped")
 			return s.Serve(l)
 		})
+
+		// step 13. GO!
 		_ = g.Run()
 	default:
 		app.Usage(args)

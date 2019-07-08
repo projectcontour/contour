@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/heptio/contour/internal/contour"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -52,6 +53,16 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 
 	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringVar(&ctx.rootNamespaces)
 
+	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&ctx.ingressClass)
+
+	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&ctx.httpAccessLog)
+	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&ctx.httpsAccessLog)
+	serve.Flag("envoy-service-http-address", "Kubernetes Service address for HTTP requests").Default("0.0.0.0").StringVar(&ctx.httpAddr)
+	serve.Flag("envoy-service-https-address", "Kubernetes Service address for HTTPS requests").Default("0.0.0.0").StringVar(&ctx.httpsAddr)
+	serve.Flag("envoy-service-http-port", "Kubernetes Service port for HTTP requests").Default("8080").IntVar(&ctx.httpPort)
+	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests").Default("8443").IntVar(&ctx.httpsPort)
+	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ctx.useProxyProto)
+
 	return serve, &ctx
 }
 
@@ -65,10 +76,6 @@ type serveContext struct {
 	xdsPort                         int
 	caFile, contourCert, contourKey string
 
-	// envoy's stats listener parameters
-	statsAddr string
-	statsPort int
-
 	// contour's debug handler parameters
 	debugAddr string
 	debugPort int
@@ -79,6 +86,26 @@ type serveContext struct {
 
 	// ingressroute root namespaces
 	rootNamespaces string
+
+	// ingress class
+	ingressClass string
+
+	// envoy's stats listener parameters
+	statsAddr string
+	statsPort int
+
+	// envoy's listener parameters
+	useProxyProto bool
+
+	// envoy's http listener parameters
+	httpAddr      string
+	httpPort      int
+	httpAccessLog string
+
+	// envoy's https listener parameters
+	httpsAddr      string
+	httpsPort      int
+	httpsAccessLog string
 }
 
 // tlsconfig returns a new *tls.Config. If the context is not properly configured
