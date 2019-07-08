@@ -69,19 +69,7 @@ func main() {
 	sds := cli.Command("sds", "watch secrets.")
 	sds.Arg("resources", "SDS resource filter").StringsVar(&resources)
 
-	ch := contour.CacheHandler{
-		FieldLogger: log.WithField("context", "CacheHandler"),
-	}
-
 	serve, serveCtx := registerServe(app)
-
-	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&ch.HTTPAccessLog)
-	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&ch.HTTPSAccessLog)
-	serve.Flag("envoy-service-http-address", "Kubernetes Service address for HTTP requests").Default("0.0.0.0").StringVar(&ch.HTTPAddress)
-	serve.Flag("envoy-service-https-address", "Kubernetes Service address for HTTPS requests").Default("0.0.0.0").StringVar(&ch.HTTPSAddress)
-	serve.Flag("envoy-service-http-port", "Kubernetes Service port for HTTP requests").Default("8080").IntVar(&ch.HTTPPort)
-	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests").Default("8443").IntVar(&ch.HTTPSPort)
-	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ch.UseProxyProto)
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
@@ -109,9 +97,20 @@ func main() {
 		watchstream(stream, cache.SecretType, resources)
 	case serve.FullCommand():
 		log.Infof("args: %v", args)
-		var g workgroup.Group
 
-		ch.ListenerCache = contour.NewListenerCache(serveCtx.statsAddr, serveCtx.statsPort)
+		ch := contour.CacheHandler{
+			ListenerVisitorConfig: contour.ListenerVisitorConfig{
+				UseProxyProto:  serveCtx.useProxyProto,
+				HTTPAddress:    serveCtx.httpAddr,
+				HTTPPort:       serveCtx.httpPort,
+				HTTPAccessLog:  serveCtx.httpAccessLog,
+				HTTPSAddress:   serveCtx.httpsAddr,
+				HTTPSPort:      serveCtx.httpsPort,
+				HTTPSAccessLog: serveCtx.httpsAccessLog,
+			},
+			ListenerCache: contour.NewListenerCache(serveCtx.statsAddr, serveCtx.statsPort),
+			FieldLogger:   log.WithField("context", "CacheHandler"),
+		}
 		reh := contour.ResourceEventHandler{
 			FieldLogger: log.WithField("context", "resourceEventHandler"),
 			Notifier: &contour.HoldoffNotifier{
@@ -147,6 +146,7 @@ func main() {
 		}
 		coreInformers.Core().V1().Endpoints().Informer().AddEventHandler(et)
 
+		var g workgroup.Group
 		g.Add(startInformer(coreInformers, log.WithField("context", "coreinformers")))
 		g.Add(startInformer(contourInformers, log.WithField("context", "contourinformers")))
 
