@@ -14,22 +14,14 @@
 package main
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/sha1"
-	"crypto/tls"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
 	"fmt"
-	"io"
-	"math/big"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/heptio/contour/internal/certgen"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"k8s.io/client-go/kubernetes"
 )
 
 // registercertgen registers the certgen subcommand and flags
@@ -48,12 +40,7 @@ func registerCertGen(app *kingpin.Application) (*kingpin.CmdClause, *certgenConf
 	return certgenApp, &certgenConfig
 }
 
-// keySize sets the RSA key size to 2048 bits. This is minimum recommended size
-// for RSA keys.
-const keySize = 2048
-
 // certgenConfig holds the configuration for the certifcate generation process.
-
 type certgenConfig struct {
 
 	// KubeConfig is the path to the Kubeconfig file if we're not running in a cluster
@@ -83,13 +70,12 @@ func GenerateCerts(certConfig *certgenConfig) (map[string][]byte, error) {
 
 	now := time.Now()
 	expiry := now.Add(24 * 365 * time.Hour)
-	caKeyPEM, caCertPEM, err := newCA(rand.Reader, "Project Contour", expiry)
+	caKeyPEM, caCertPEM, err := certgen.NewCA("Project Contour", expiry)
 	if err != nil {
 		return nil, err
 	}
 
-	contourKey, contourCert, err := newCert(rand.Reader,
-		caCertPEM,
+	contourCert, contourKey, err := certgen.NewCert(caCertPEM,
 		caKeyPEM,
 		expiry,
 		"contour",
@@ -98,8 +84,7 @@ func GenerateCerts(certConfig *certgenConfig) (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	envoyKey, envoyCert, err := newCert(rand.Reader,
-		caCertPEM,
+	envoyCert, envoyKey, err := certgen.NewCert(caCertPEM,
 		caKeyPEM,
 		expiry,
 		"envoy",
@@ -119,110 +104,24 @@ func GenerateCerts(certConfig *certgenConfig) (map[string][]byte, error) {
 
 }
 
-func newCert(r io.Reader, caCertPEM, caKeyPEM []byte, expiry time.Time, service, namespace string) ([]byte, []byte, error) {
+// OutputCerts outputs the certs in certs as directed by config.
+func OutputCerts(config *certgenConfig,
+	kubeclient *kubernetes.Clientset,
+	certs map[string][]byte) {
 
-	caKeyPair, err := tls.X509KeyPair(caCertPEM, caKeyPEM)
-	if err != nil {
-		return nil, nil, err
-	}
-	caCert, err := x509.ParseCertificate(caKeyPair.Certificate[0])
-	if err != nil {
-		return nil, nil, err
-	}
-	caKey, ok := caKeyPair.PrivateKey.(*rsa.PrivateKey)
-	if !ok {
-		return nil, nil, fmt.Errorf("CA private key has unexpected type %T", caKeyPair.PrivateKey)
+	if config.OutputPEM {
+		fmt.Printf("Outputting certs to PEM files in %s/\n", config.OutputDir)
+		check(certgen.WriteCertsPEM(config.OutputDir, certs))
 	}
 
-	newKey, err := rsa.GenerateKey(r, keySize)
-	if err != nil {
-		return nil, nil, fmt.Errorf("cannot generate key: %v", err)
+	if config.OutputYAML {
+		fmt.Printf("Outputting certs to YAML files in %s/\n", config.OutputDir)
+		check(certgen.WriteSecretsYAML(config.OutputDir, config.Namespace, certs))
 	}
 
-	now := time.Now()
-	template := &x509.Certificate{
-		SerialNumber: newSerial(now),
-		Subject: pkix.Name{
-			CommonName: service,
-		},
-		NotBefore:    now.UTC().AddDate(0, 0, -1),
-		NotAfter:     expiry.UTC(),
-		SubjectKeyId: bigIntHash(newKey.N),
-		KeyUsage: x509.KeyUsageDigitalSignature |
-			x509.KeyUsageDataEncipherment |
-			x509.KeyUsageKeyEncipherment |
-			x509.KeyUsageContentCommitment,
-		DNSNames: serviceNames(service, namespace),
-	}
-	newCert, err := x509.CreateCertificate(rand.Reader, template, caCert, &newKey.PublicKey, caKey)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	newKeyPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(newKey),
-	})
-	newCertPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: newCert,
-	})
-	return newKeyPEM, newCertPEM, nil
-
-}
-
-func newCA(r io.Reader, cn string, expiry time.Time) ([]byte, []byte, error) {
-	key, err := rsa.GenerateKey(r, keySize)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	now := time.Now()
-	serial := newSerial(now)
-	template := &x509.Certificate{
-		SerialNumber: serial,
-		Subject: pkix.Name{
-			CommonName:   cn,
-			SerialNumber: serial.String(),
-		},
-		NotBefore:             now.UTC().AddDate(0, 0, -1),
-		NotAfter:              expiry.UTC(),
-		SubjectKeyId:          bigIntHash(key.N),
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-		IsCA:                  true,
-		BasicConstraintsValid: true,
-	}
-	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
-	if err != nil {
-		return nil, nil, err
-	}
-	certPEMData := pem.EncodeToMemory(&pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: certDER,
-	})
-	keyPEMData := pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(key),
-	})
-	return keyPEMData, certPEMData, nil
-}
-
-func newSerial(now time.Time) *big.Int {
-	return big.NewInt(int64(now.Nanosecond()))
-}
-
-func bigIntHash(n *big.Int) []byte {
-	h := sha1.New()
-	h.Write(n.Bytes())
-	return h.Sum(nil)
-}
-
-func serviceNames(service, namespace string) []string {
-	return []string{
-		service,
-		fmt.Sprintf("%s.%s", service, namespace),
-		fmt.Sprintf("%s.%s.svc", service, namespace),
-		fmt.Sprintf("%s.%s.svc.cluster.local", service, namespace),
+	if config.OutputKube {
+		fmt.Printf("Outputting certs to Kubernetes in namespace %s/\n", config.Namespace)
+		check(certgen.WriteSecretsKube(kubeclient, config.Namespace, certs))
 	}
 }
 
@@ -230,12 +129,5 @@ func doCertgen(config *certgenConfig) {
 	generatedCerts, err := GenerateCerts(config)
 	check(err)
 	kubeclient, _ := newClient(config.KubeConfig, config.InCluster)
-	check(certgen.OutputCerts(config.OutputDir,
-		config.Namespace,
-		config.OutputPEM,
-		config.OutputYAML,
-		config.OutputKube,
-		kubeclient,
-		generatedCerts))
-
+	OutputCerts(config, kubeclient, generatedCerts)
 }

@@ -31,21 +31,19 @@ func writeSecret(f *os.File, secret *corev1.Secret) error {
 
 func createFile(filepath string, force bool) (f *os.File, err error) {
 
-	if !force {
-		_, err := os.Stat(filepath)
-		if err == nil {
-			// File exists, and we don't want to create it.
-			return nil, fmt.Errorf("%s exists, not overwriting", filepath)
-		}
-	}
-
 	err = os.MkdirAll(path.Dir(filepath), 0755)
 	if err != nil {
 		return nil, err
 	}
 
-	f, err = os.Create(filepath)
-	if err != nil {
+	flags := os.O_RDWR | os.O_CREATE | os.O_TRUNC
+	if !force {
+		flags = flags | os.O_EXCL
+	}
+
+	f, err = os.OpenFile(filepath, flags, 0666)
+	if err == nil {
+		// File exists, and we don't want to create it.
 		return nil, err
 	}
 	fmt.Printf("%s created\n", filepath)

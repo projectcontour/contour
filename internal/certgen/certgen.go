@@ -22,39 +22,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// OutputCerts outputs the certs in certs as directed by config.
-func OutputCerts(outputDir, namespace string,
-	outputPEM, outputYAML, outputKube bool,
-	kubeclient *kubernetes.Clientset,
-	certs map[string][]byte) error {
-
-	if outputPEM {
-		fmt.Printf("Outputting certs to PEM files in %s/\n", outputDir)
-		if err := writeCertsPEM(outputDir, certs); err != nil {
-			return err
-		}
-	}
-
-	if outputYAML {
-		fmt.Printf("Outputting certs to YAML files in %s/\n", outputDir)
-		if err := writeSecretsYAML(outputDir, namespace, certs); err != nil {
-			return err
-		}
-	}
-
-	if outputKube {
-		fmt.Printf("Outputting certs to Kubernetes in namespace %s/\n", namespace)
-		if err := writeSecretsKube(kubeclient, namespace, certs); err != nil {
-			return err
-		}
-
-	}
-
-	return nil
-
-}
-
-// writePEM writes a certificate out to its filename in outputDir.
+// WritePEM writes a certificate out to its filename in outputDir.
 func writePEM(outputDir, filename string, data []byte) error {
 	filepath := path.Join(outputDir, filename)
 	f, err := createFile(filepath, false)
@@ -65,23 +33,34 @@ func writePEM(outputDir, filename string, data []byte) error {
 	return checkFile(filepath, err)
 }
 
-func writeCertsPEM(outputDir string, certdata map[string][]byte) error {
+// WriteCertsPEM writes out all the certs in certdata to
+// individual PEM files in outputDir
+func WriteCertsPEM(outputDir string, certdata map[string][]byte) error {
 
-	err := writePEM(outputDir, cacertfilename+".pem", certdata["cacert"])
+	err := writePEM(outputDir, "CAcert.pem", certdata["cacert"])
 	if err != nil {
 		return err
 	}
-	err = writeKeyPairPEMs(outputDir, "contour", certdata["contourcert"], certdata["contourkey"])
+	err = writePEM(outputDir, "contourcert.pem", certdata["contourcert"])
 	if err != nil {
 		return err
 	}
-
-	return writeKeyPairPEMs(outputDir, "envoy", certdata["envoycert"], certdata["envoykey"])
+	err = writePEM(outputDir, "contourkey.pem", certdata["contourkey"])
+	if err != nil {
+		return err
+	}
+	err = writePEM(outputDir, "envoycert.pem", certdata["envoycert"])
+	if err != nil {
+		return err
+	}
+	return writePEM(outputDir, "envoykey.pem", certdata["envoykey"])
 
 }
 
-func writeSecretsYAML(outputDir, namespace string, certdata map[string][]byte) error {
-	err := writeCACertSecret(outputDir, cacertfilename+".pem", certdata["cacert"])
+// WriteSecretsYAML writes all the keypairs out to Kube Secrets in YAML form
+// in outputDir. The CA Secret only contains the cert.
+func WriteSecretsYAML(outputDir, namespace string, certdata map[string][]byte) error {
+	err := writeCACertSecret(outputDir, "CAcert.pem", certdata["cacert"])
 	if err != nil {
 		return err
 	}
@@ -94,7 +73,9 @@ func writeSecretsYAML(outputDir, namespace string, certdata map[string][]byte) e
 
 }
 
-func writeSecretsKube(client *kubernetes.Clientset, namespace string, certdata map[string][]byte) error {
+// WriteSecretsKube writes all the keypairs out to Kube Secrets in the
+// passed Kube context.
+func WriteSecretsKube(client *kubernetes.Clientset, namespace string, certdata map[string][]byte) error {
 	err := writeCACertKube(client, namespace, certdata["cacert"])
 	if err != nil {
 		return err
@@ -131,17 +112,6 @@ func writeCACertKube(client *kubernetes.Clientset, namespace string, cert []byte
 	return nil
 }
 
-func writeKeyPairPEMs(outputDir, service string, cert, key []byte) error {
-	keyfile := service + "key.pem"
-	certfile := service + "cert.pem"
-
-	err := writePEM(outputDir, keyfile, key)
-	if err != nil {
-		return err
-	}
-	return writePEM(outputDir, certfile, cert)
-
-}
 func writeKeyPairSecret(outputDir, service, namespace string, cert, key []byte) error {
 	filename := service + "cert.yaml"
 	secretname := service + "cert"

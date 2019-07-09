@@ -11,28 +11,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package certgen
 
 import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestGeneratedCertsValid(t *testing.T) {
-	genConfig := &certgenConfig{
-		Namespace: "heptio-contour",
-	}
-	generatedCerts, err := GenerateCerts(genConfig)
+
+	now := time.Now()
+	expiry := now.Add(24 * 365 * time.Hour)
+
+	cacert, cakey, err := NewCA("contour", expiry)
 	if err != nil {
-		t.Fatalf("Failed to generate certs: %s", err)
+		t.Fatalf("Failed to generate CA cert: %s", err)
+	}
+
+	contourcert, _, err := NewCert(cacert, cakey, expiry, "contour", "heptio-contour")
+	if err != nil {
+		t.Fatalf("Failed to generate Contour cert: %s", err)
 	}
 
 	roots := x509.NewCertPool()
-	ok := roots.AppendCertsFromPEM(generatedCerts["cacert"])
+	ok := roots.AppendCertsFromPEM(cacert)
 	if !ok {
 		t.Fatal("Failed to set up CA cert for testing, maybe it's an invalid PEM")
+	}
+	envoycert, _, err := NewCert(cacert, cakey, expiry, "envoy", "heptio-contour")
+	if err != nil {
+		t.Fatalf("Failed to generate Envoy cert: %s", err)
 	}
 
 	tests := map[string]struct {
@@ -40,11 +51,11 @@ func TestGeneratedCertsValid(t *testing.T) {
 		dnsname string
 	}{
 		"contour cert": {
-			cert:    generatedCerts["contourcert"],
+			cert:    contourcert,
 			dnsname: "contour",
 		},
 		"envoy cert": {
-			cert:    generatedCerts["envoycert"],
+			cert:    envoycert,
 			dnsname: "envoy",
 		},
 	}
