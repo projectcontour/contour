@@ -79,7 +79,7 @@ type certgenConfig struct {
 }
 
 // GenerateCerts performs the actual cert generation steps and then returns the certs for the output function.
-func GenerateCerts(certConfig *certgenConfig) (*certgen.ContourCerts, error) {
+func GenerateCerts(certConfig *certgenConfig) (map[string][]byte, error) {
 
 	now := time.Now()
 	expiry := now.Add(24 * 365 * time.Hour)
@@ -108,12 +108,12 @@ func GenerateCerts(certConfig *certgenConfig) (*certgen.ContourCerts, error) {
 	if err != nil {
 		return nil, err
 	}
-	newCerts := certgen.NewContourCerts()
-	newCerts.CA.Data = caCertPEM
-	newCerts.Contour.Cert.Data = contourCert
-	newCerts.Contour.Key.Data = contourKey
-	newCerts.Envoy.Cert.Data = envoyCert
-	newCerts.Envoy.Key.Data = envoyKey
+	newCerts := make(map[string][]byte)
+	newCerts["cacert"] = caCertPEM
+	newCerts["contourcert"] = contourCert
+	newCerts["contourkey"] = contourKey
+	newCerts["envoycert"] = envoyCert
+	newCerts["envoykey"] = envoyKey
 
 	return newCerts, nil
 

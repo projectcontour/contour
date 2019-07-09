@@ -30,7 +30,7 @@ func TestGeneratedCertsValid(t *testing.T) {
 	}
 
 	roots := x509.NewCertPool()
-	ok := roots.AppendCertsFromPEM(generatedCerts.CA.Data)
+	ok := roots.AppendCertsFromPEM(generatedCerts["cacert"])
 	if !ok {
 		t.Fatal("Failed to set up CA cert for testing, maybe it's an invalid PEM")
 	}
@@ -40,11 +40,11 @@ func TestGeneratedCertsValid(t *testing.T) {
 		dnsname string
 	}{
 		"contour cert": {
-			cert:    generatedCerts.Contour.Cert.Data,
+			cert:    generatedCerts["contourcert"],
 			dnsname: "contour",
 		},
 		"envoy cert": {
-			cert:    generatedCerts.Envoy.Cert.Data,
+			cert:    generatedCerts["envoycert"],
 			dnsname: "envoy",
 		},
 	}
