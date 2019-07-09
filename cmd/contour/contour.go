@@ -19,7 +19,6 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	clientset "github.com/heptio/contour/apis/generated/clientset/versioned"
-	"github.com/heptio/contour/internal/certgen"
 	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	"k8s.io/client-go/kubernetes"
@@ -61,10 +60,7 @@ func main() {
 	case bootstrap.FullCommand():
 		doBootstrap(bootstrapCtx)
 	case certgenApp.FullCommand():
-		generatedCerts, err := certgen.GenerateCerts(certgenConfig)
-		check(err)
-		err = certgen.OutputCerts(certgenConfig, generatedCerts)
-		check(err)
+		doCertgen(certgenConfig)
 	case cds.FullCommand():
 		stream := client.ClusterStream()
 		watchstream(stream, cache.ClusterType, resources)

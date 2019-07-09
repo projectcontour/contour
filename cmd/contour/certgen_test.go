@@ -11,10 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package certgen
+package main
 
 import (
-	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -22,20 +21,16 @@ import (
 )
 
 func TestGeneratedCertsValid(t *testing.T) {
-	genConfig := &Config{
+	genConfig := &certgenConfig{
 		Namespace: "heptio-contour",
 	}
 	generatedCerts, err := GenerateCerts(genConfig)
 	if err != nil {
 		t.Fatalf("Failed to generate certs: %s", err)
 	}
-	_, err = tls.X509KeyPair(generatedCerts.CA.Cert.Data, generatedCerts.CA.Key.Data)
-	if err != nil {
-		t.Fatalf("Failed to parse generated CA Keypair from PEM: %s", err)
-	}
 
 	roots := x509.NewCertPool()
-	ok := roots.AppendCertsFromPEM(generatedCerts.CA.Cert.Data)
+	ok := roots.AppendCertsFromPEM(generatedCerts.CA.Data)
 	if !ok {
 		t.Fatal("Failed to set up CA cert for testing, maybe it's an invalid PEM")
 	}
