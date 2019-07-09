@@ -6,7 +6,7 @@ Status: Draft
 
 - Allow client certificate validation (mTLS) on contour (performed by Envoy)
 - Allow various ways for client certificate validation; Spki, Hash and CA
-- Document mTLS configuration and client certificate detail forwarding.
+- Document mTLS configuration
 
 ## Non Goals
 
@@ -119,8 +119,7 @@ Test cases will need to be updated.
 
 ### Changes to internal/contour
 
-The `listener.go` will pass ClientValidation data to envoy and
-ForwardClientCertDetails is set to SANITIZE_SET.
+The `listener.go` will pass ClientValidation data to envoy.
 
 
 ## Alternatives Considered
