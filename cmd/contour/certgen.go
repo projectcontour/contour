@@ -70,7 +70,7 @@ func GenerateCerts(certConfig *certgenConfig) (map[string][]byte, error) {
 
 	now := time.Now()
 	expiry := now.Add(24 * 365 * time.Hour)
-	caKeyPEM, caCertPEM, err := certgen.NewCA("Project Contour", expiry)
+	caCertPEM, caKeyPEM, err := certgen.NewCA("Project Contour", expiry)
 	if err != nil {
 		return nil, err
 	}
