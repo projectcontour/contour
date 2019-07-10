@@ -51,7 +51,7 @@ spec:
     spec:
       containers:
       - name: contour
-        image: docker.io/youngnick/contour:latest
+        image: gcr.io/heptio-images/contour:master
         command:
         - contour
         - certgen
