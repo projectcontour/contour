@@ -14,30 +14,36 @@
 package certgen
 
 import (
-	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestGeneratedCertsValid(t *testing.T) {
-	genConfig := &Config{
-		Namespace: "heptio-contour",
-	}
-	generatedCerts, err := GenerateCerts(genConfig)
+
+	now := time.Now()
+	expiry := now.Add(24 * 365 * time.Hour)
+
+	cacert, cakey, err := NewCA("contour", expiry)
 	if err != nil {
-		t.Fatalf("Failed to generate certs: %s", err)
+		t.Fatalf("Failed to generate CA cert: %s", err)
 	}
-	_, err = tls.X509KeyPair(generatedCerts.CA.Cert.Data, generatedCerts.CA.Key.Data)
+
+	contourcert, _, err := NewCert(cacert, cakey, expiry, "contour", "heptio-contour")
 	if err != nil {
-		t.Fatalf("Failed to parse generated CA Keypair from PEM: %s", err)
+		t.Fatalf("Failed to generate Contour cert: %s", err)
 	}
 
 	roots := x509.NewCertPool()
-	ok := roots.AppendCertsFromPEM(generatedCerts.CA.Cert.Data)
+	ok := roots.AppendCertsFromPEM(cacert)
 	if !ok {
 		t.Fatal("Failed to set up CA cert for testing, maybe it's an invalid PEM")
+	}
+	envoycert, _, err := NewCert(cacert, cakey, expiry, "envoy", "heptio-contour")
+	if err != nil {
+		t.Fatalf("Failed to generate Envoy cert: %s", err)
 	}
 
 	tests := map[string]struct {
@@ -45,11 +51,11 @@ func TestGeneratedCertsValid(t *testing.T) {
 		dnsname string
 	}{
 		"contour cert": {
-			cert:    generatedCerts.Contour.Cert.Data,
+			cert:    contourcert,
 			dnsname: "contour",
 		},
 		"envoy cert": {
-			cert:    generatedCerts.Envoy.Cert.Data,
+			cert:    envoycert,
 			dnsname: "envoy",
 		},
 	}

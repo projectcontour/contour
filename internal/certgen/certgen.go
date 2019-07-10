@@ -16,313 +16,120 @@
 package certgen
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/sha1"
-	"crypto/tls"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"math/big"
-	"os"
-	"time"
+	"path"
+
+	"k8s.io/client-go/kubernetes"
 )
 
-// keySize sets the RSA key size to 2048 bits. This is minimum recommended size
-// for RSA keys.
-const keySize = 2048
-
-// Config holds the configuration for the certifcate generation process.
-type Config struct {
-
-	// KubeConfig is the path to the Kubeconfig file if we're not running in a cluster
-	KubeConfig string
-
-	// Incluster means that we should assume we are running in a Kubernetes cluster and work accordingly.
-	InCluster bool
-
-	// Namespace is the namespace to put any generated config into for YAML or Kube outputs.
-	Namespace string
-
-	// OutputDir stores the directory where any requested files will be output.
-	OutputDir string
-
-	// OutputKube means that the certs generated will be output into a Kubernetes cluster as secrets.
-	OutputKube bool
-
-	// OutputYAML means that the certs generated will be output into Kubernetes secrets as YAML in the current directory.
-	OutputYAML bool
-
-	// OutputPEM means that the certs generated will be output as PEM files in the current directory.
-	OutputPEM bool
-}
-
-// ContourCerts holds all three keypairs required, the CA, the Contour, and Envoy keypairs.
-type ContourCerts struct {
-	CA      *keyPair
-	Contour *keyPair
-	Envoy   *keyPair
-}
-
-type keyPair struct {
-	SecretName string
-	Cert       *certData
-	Key        *certData
-}
-
-type certData struct {
-	Filename string
-	Data     []byte
-}
-
-// NewContourCerts generates a new ContourCerts with default values.
-// NOTE(youngnick) This means that there's only one place all these names
-// are hard-coded.
-func NewContourCerts() *ContourCerts {
-	return &ContourCerts{
-		CA: &keyPair{
-			SecretName: "cacert",
-			Cert: &certData{
-				Filename: "CAcert.pem",
-			},
-			Key: &certData{
-				Filename: "CAkey.pem",
-			},
-		},
-		Contour: &keyPair{
-			SecretName: "contourcert",
-			Cert: &certData{
-				Filename: "contourcert.pem",
-			},
-			Key: &certData{
-				Filename: "contourkey.pem",
-			},
-		},
-		Envoy: &keyPair{
-			SecretName: "envoycert",
-			Cert: &certData{
-				Filename: "envoycert.pem",
-			},
-			Key: &certData{
-				Filename: "envoykey.pem",
-			},
-		},
-	}
-}
-
-func (kp *keyPair) writePEMs(outputDir string) error {
-	err := kp.Cert.writePEM(outputDir)
+// WritePEM writes a certificate out to its filename in outputDir.
+func writePEM(outputDir, filename string, data []byte) error {
+	filepath := path.Join(outputDir, filename)
+	f, err := createFile(filepath, false)
 	if err != nil {
 		return err
 	}
-	return kp.Key.writePEM(outputDir)
+	_, err = f.Write(data)
+	return checkFile(filepath, err)
 }
 
-func (cd *certData) writePEM(outputDir string) error {
-	return dumpFile(outputDir+"/"+cd.Filename, cd.Data)
+// WriteCertsPEM writes out all the certs in certdata to
+// individual PEM files in outputDir
+func WriteCertsPEM(outputDir string, certdata map[string][]byte) error {
 
-}
-
-// writeCertPEMs writes out all the PEMs for all the certs, using
-// the stored filenames.
-// TODO(youngnick) we should be able to use a similar pattern for the
-// secrets, hopefully.
-func (cc *ContourCerts) writeCertPEMs(outputDir string) error {
-	err := cc.CA.writePEMs(outputDir)
+	err := writePEM(outputDir, "cacert.pem", certdata["cacert.pem"])
 	if err != nil {
 		return err
 	}
-	err = cc.Contour.writePEMs(outputDir)
+	err = writePEM(outputDir, "contourcert.pem", certdata["contourcert.pem"])
 	if err != nil {
 		return err
 	}
-	return cc.Envoy.writePEMs(outputDir)
+	err = writePEM(outputDir, "contourkey.pem", certdata["contourkey.pem"])
+	if err != nil {
+		return err
+	}
+	err = writePEM(outputDir, "envoycert.pem", certdata["envoycert.pem"])
+	if err != nil {
+		return err
+	}
+	return writePEM(outputDir, "envoykey.pem", certdata["envoykey.pem"])
 
 }
 
-// GenerateCerts performs the actual cert generation steps and then returns the certs for the output functions.
-func GenerateCerts(certConfig *Config) (*ContourCerts, error) {
-
-	now := time.Now()
-	expiry := now.Add(24 * 365 * time.Hour)
-	caKeyPEM, caCertPEM, err := newCA(rand.Reader, "Project Contour", expiry)
+// WriteSecretsYAML writes all the keypairs out to Kube Secrets in YAML form
+// in outputDir. The CA Secret only contains the cert.
+func WriteSecretsYAML(outputDir, namespace string, certdata map[string][]byte) error {
+	err := writeCACertSecret(outputDir, "cacert.pem", certdata["cacert.pem"])
 	if err != nil {
-		return nil, err
+		return err
+	}
+	err = writeKeyPairSecret(outputDir, "contour", namespace, certdata["contourcert.pem"], certdata["contourkey.pem"])
+	if err != nil {
+		return err
 	}
 
-	contourKey, contourCert, err := newCert(rand.Reader,
-		caCertPEM,
-		caKeyPEM,
-		expiry,
-		"contour",
-		certConfig.Namespace,
-	)
-	if err != nil {
-		return nil, err
-	}
-	envoyKey, envoyCert, err := newCert(rand.Reader,
-		caCertPEM,
-		caKeyPEM,
-		expiry,
-		"envoy",
-		certConfig.Namespace,
-	)
-	if err != nil {
-		return nil, err
-	}
-	newCerts := NewContourCerts()
-	newCerts.CA.Cert.Data = caCertPEM
-	newCerts.CA.Key.Data = caKeyPEM
-	newCerts.Contour.Cert.Data = contourCert
-	newCerts.Contour.Key.Data = contourKey
-	newCerts.Envoy.Cert.Data = envoyCert
-	newCerts.Envoy.Key.Data = envoyKey
-
-	return newCerts, nil
+	return writeKeyPairSecret(outputDir, "envoy", namespace, certdata["envoycert.pem"], certdata["envoykey.pem"])
 
 }
 
-// OutputCerts outputs the certs in certs as directed by config.
-func OutputCerts(certgenConfig *Config, certs *ContourCerts) error {
-
-	if certgenConfig.OutputPEM {
-		// TODO(youngnick): Should we sanitize this value?
-		err := os.MkdirAll(certgenConfig.OutputDir, 0755)
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("Outputting certs to PEM files in %s/\n", certgenConfig.OutputDir)
-		certs.writeCertPEMs(certgenConfig.OutputDir)
+// WriteSecretsKube writes all the keypairs out to Kube Secrets in the
+// passed Kube context.
+func WriteSecretsKube(client *kubernetes.Clientset, namespace string, certdata map[string][]byte) error {
+	err := writeCACertKube(client, namespace, certdata["cacert.pem"])
+	if err != nil {
+		return err
+	}
+	err = writeKeyPairKube(client, "contour", namespace, certdata["contourcert.pem"], certdata["contourkey.pem"])
+	if err != nil {
+		return err
 	}
 
-	if certgenConfig.OutputYAML {
-		// TODO(youngnick): Should we sanitize this value?
-		err := os.MkdirAll(certgenConfig.OutputDir, 0755)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("Would configure Kube secrets here in YAML to '%s/'. Not implemented yet.\n", certgenConfig.OutputDir)
-	}
+	return writeKeyPairKube(client, "envoy", namespace, certdata["envoycert.pem"], certdata["envoykey.pem"])
 
-	if certgenConfig.OutputKube {
-		fmt.Print("Would configure Kube secrets here. Not implemented yet.\n")
-	}
+}
 
+func writeCACertSecret(outputDir, namespace string, cert []byte) error {
+	filename := path.Join(outputDir, "cacert.yaml")
+	secret := newCertOnlySecret("cacert", namespace, "cacert.pem", cert)
+	f, err := createFile(filename, false)
+	if err != nil {
+		return err
+	}
+	return checkFile(filename, writeSecret(f, secret))
+}
+
+func writeCACertKube(client *kubernetes.Clientset, namespace string, cert []byte) error {
+	secret := newCertOnlySecret("cacert", namespace, "cacert.pem", cert)
+	_, err := client.CoreV1().Secrets(namespace).Create(secret)
+	if err != nil {
+		return err
+	}
+	fmt.Print("secret/cacert created\n")
 	return nil
-
-}
-func dumpFile(filename string, data []byte) error {
-	return ioutil.WriteFile(filename, data, 0644)
-
 }
 
-func newCert(r io.Reader, caCertPEM, caKeyPEM []byte, expiry time.Time, service, namespace string) ([]byte, []byte, error) {
+func writeKeyPairSecret(outputDir, service, namespace string, cert, key []byte) error {
+	filename := service + "cert.yaml"
+	secretname := service + "cert"
 
-	caKeyPair, err := tls.X509KeyPair(caCertPEM, caKeyPEM)
+	secret := newTLSSecret(secretname, namespace, key, cert)
+	filepath := path.Join(outputDir, filename)
+	f, err := createFile(filepath, false)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
-	caCert, err := x509.ParseCertificate(caKeyPair.Certificate[0])
-	if err != nil {
-		return nil, nil, err
-	}
-	caKey, ok := caKeyPair.PrivateKey.(*rsa.PrivateKey)
-	if !ok {
-		return nil, nil, fmt.Errorf("CA private key has unexpected type %T", caKeyPair.PrivateKey)
-	}
-
-	newKey, err := rsa.GenerateKey(r, keySize)
-	if err != nil {
-		return nil, nil, fmt.Errorf("cannot generate key: %v", err)
-	}
-
-	now := time.Now()
-	template := &x509.Certificate{
-		SerialNumber: newSerial(now),
-		Subject: pkix.Name{
-			CommonName: service,
-		},
-		NotBefore:    now.UTC().AddDate(0, 0, -1),
-		NotAfter:     expiry.UTC(),
-		SubjectKeyId: bigIntHash(newKey.N),
-		KeyUsage: x509.KeyUsageDigitalSignature |
-			x509.KeyUsageDataEncipherment |
-			x509.KeyUsageKeyEncipherment |
-			x509.KeyUsageContentCommitment,
-		DNSNames: serviceNames(service, namespace),
-	}
-	newCert, err := x509.CreateCertificate(rand.Reader, template, caCert, &newKey.PublicKey, caKey)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	newKeyPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(newKey),
-	})
-	newCertPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: newCert,
-	})
-	return newKeyPEM, newCertPEM, nil
-
+	err = writeSecret(f, secret)
+	return checkFile(filepath, err)
 }
 
-func serviceNames(service, namespace string) []string {
-	return []string{
-		service,
-		fmt.Sprintf("%s.%s", service, namespace),
-		fmt.Sprintf("%s.%s.svc", service, namespace),
-		fmt.Sprintf("%s.%s.svc.cluster.local", service, namespace),
-	}
-}
-
-func newCA(r io.Reader, cn string, expiry time.Time) ([]byte, []byte, error) {
-	key, err := rsa.GenerateKey(r, keySize)
+func writeKeyPairKube(client *kubernetes.Clientset, service, namespace string, cert, key []byte) error {
+	secretname := service + "cert"
+	secret := newTLSSecret(secretname, namespace, key, cert)
+	_, err := client.CoreV1().Secrets(namespace).Create(secret)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
-
-	now := time.Now()
-	serial := newSerial(now)
-	template := &x509.Certificate{
-		SerialNumber: serial,
-		Subject: pkix.Name{
-			CommonName:   cn,
-			SerialNumber: serial.String(),
-		},
-		NotBefore:             now.UTC().AddDate(0, 0, -1),
-		NotAfter:              expiry.UTC(),
-		SubjectKeyId:          bigIntHash(key.N),
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-		IsCA:                  true,
-		BasicConstraintsValid: true,
-	}
-	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
-	if err != nil {
-		return nil, nil, err
-	}
-	certPEMData := pem.EncodeToMemory(&pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: certDER,
-	})
-	keyPEMData := pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(key),
-	})
-	return keyPEMData, certPEMData, nil
-}
-
-func newSerial(now time.Time) *big.Int {
-	return big.NewInt(int64(now.Nanosecond()))
-}
-
-func bigIntHash(n *big.Int) []byte {
-	h := sha1.New()
-	h.Write(n.Bytes())
-	return h.Sum(nil)
+	fmt.Printf("secret/%s created\n", secretname)
+	return nil
 }

@@ -71,7 +71,7 @@ spec:
         - contour
         - --xds-port
         - "8001"
-        - --envoy-cafile=/ca/CAcert.pem
+        - --envoy-cafile=/ca/cacert.pem
         - --envoy-cert-file=/certs/tls.crt
         - --envoy-key-file=/certs/tls.key
         command:
