@@ -94,11 +94,11 @@ func GenerateCerts(certConfig *certgenConfig) (map[string][]byte, error) {
 		return nil, err
 	}
 	newCerts := make(map[string][]byte)
-	newCerts["cacert"] = caCertPEM
-	newCerts["contourcert"] = contourCert
-	newCerts["contourkey"] = contourKey
-	newCerts["envoycert"] = envoyCert
-	newCerts["envoykey"] = envoyKey
+	newCerts["cacert.pem"] = caCertPEM
+	newCerts["contourcert.pem"] = contourCert
+	newCerts["contourkey.pem"] = contourKey
+	newCerts["envoycert.pem"] = envoyCert
+	newCerts["envoykey.pem"] = envoyKey
 
 	return newCerts, nil
 

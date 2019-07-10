@@ -37,64 +37,61 @@ func writePEM(outputDir, filename string, data []byte) error {
 // individual PEM files in outputDir
 func WriteCertsPEM(outputDir string, certdata map[string][]byte) error {
 
-	err := writePEM(outputDir, "CAcert.pem", certdata["cacert"])
+	err := writePEM(outputDir, "cacert.pem", certdata["cacert.pem"])
 	if err != nil {
 		return err
 	}
-	err = writePEM(outputDir, "contourcert.pem", certdata["contourcert"])
+	err = writePEM(outputDir, "contourcert.pem", certdata["contourcert.pem"])
 	if err != nil {
 		return err
 	}
-	err = writePEM(outputDir, "contourkey.pem", certdata["contourkey"])
+	err = writePEM(outputDir, "contourkey.pem", certdata["contourkey.pem"])
 	if err != nil {
 		return err
 	}
-	err = writePEM(outputDir, "envoycert.pem", certdata["envoycert"])
+	err = writePEM(outputDir, "envoycert.pem", certdata["envoycert.pem"])
 	if err != nil {
 		return err
 	}
-	return writePEM(outputDir, "envoykey.pem", certdata["envoykey"])
+	return writePEM(outputDir, "envoykey.pem", certdata["envoykey.pem"])
 
 }
 
 // WriteSecretsYAML writes all the keypairs out to Kube Secrets in YAML form
 // in outputDir. The CA Secret only contains the cert.
 func WriteSecretsYAML(outputDir, namespace string, certdata map[string][]byte) error {
-	err := writeCACertSecret(outputDir, "CAcert.pem", certdata["cacert"])
+	err := writeCACertSecret(outputDir, "cacert.pem", certdata["cacert.pem"])
 	if err != nil {
 		return err
 	}
-	err = writeKeyPairSecret(outputDir, "contour", namespace, certdata["contourcert"], certdata["contourkey"])
+	err = writeKeyPairSecret(outputDir, "contour", namespace, certdata["contourcert.pem"], certdata["contourkey.pem"])
 	if err != nil {
 		return err
 	}
 
-	return writeKeyPairSecret(outputDir, "envoy", namespace, certdata["envoycert"], certdata["envoykey"])
+	return writeKeyPairSecret(outputDir, "envoy", namespace, certdata["envoycert.pem"], certdata["envoykey.pem"])
 
 }
 
 // WriteSecretsKube writes all the keypairs out to Kube Secrets in the
 // passed Kube context.
 func WriteSecretsKube(client *kubernetes.Clientset, namespace string, certdata map[string][]byte) error {
-	err := writeCACertKube(client, namespace, certdata["cacert"])
+	err := writeCACertKube(client, namespace, certdata["cacert.pem"])
 	if err != nil {
 		return err
 	}
-	err = writeKeyPairKube(client, "contour", namespace, certdata["contourcert"], certdata["contourkey"])
+	err = writeKeyPairKube(client, "contour", namespace, certdata["contourcert.pem"], certdata["contourkey.pem"])
 	if err != nil {
 		return err
 	}
 
-	return writeKeyPairKube(client, "envoy", namespace, certdata["envoycert"], certdata["envoykey"])
+	return writeKeyPairKube(client, "envoy", namespace, certdata["envoycert.pem"], certdata["envoykey.pem"])
 
 }
 
-const cacertfilename = "CAcert"
-const cacertsecretname = "cacert"
-
 func writeCACertSecret(outputDir, namespace string, cert []byte) error {
-	filename := path.Join(outputDir, cacertfilename+".yaml")
-	secret := newCertOnlySecret(cacertsecretname, namespace, cacertfilename+".pem", cert)
+	filename := path.Join(outputDir, "cacert.yaml")
+	secret := newCertOnlySecret("cacert", namespace, "cacert.pem", cert)
 	f, err := createFile(filename, false)
 	if err != nil {
 		return err
@@ -103,12 +100,12 @@ func writeCACertSecret(outputDir, namespace string, cert []byte) error {
 }
 
 func writeCACertKube(client *kubernetes.Clientset, namespace string, cert []byte) error {
-	secret := newCertOnlySecret(cacertsecretname, namespace, cacertfilename+".pem", cert)
+	secret := newCertOnlySecret("cacert", namespace, "cacert.pem", cert)
 	_, err := client.CoreV1().Secrets(namespace).Create(secret)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("secret/%s created\n", cacertsecretname)
+	fmt.Print("secret/cacert created\n")
 	return nil
 }
 

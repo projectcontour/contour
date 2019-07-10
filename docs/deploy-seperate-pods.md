@@ -17,12 +17,17 @@ This configuration has several advantages:
     - `contourcerts`: must contain `contourcert.pem` and `contourkey.pem` keys that contain a certificate and key for Contour. The certificate must be valid for the name `contour` either via CN or SAN.
     - `envoycerts`: must contain `envoycert.pem` and `envoykey.pem` keys that contain a certificate and key for Envoy.
 
+For detailed instructions on how to configure the required certs manually, see the [step-by-step TLS HOWTO][2].
+
 ## Deploy Contour
 
 1. [Clone the Contour repository][1] and cd into the repo.
-2. Ensure you have `openssl` installed (or at least something that provides that command.`)
-2. Generate the keypairs required to secure the TLS connection between Contour and Envoy. You can do that using `contour gencerts --pem` and then `make applycerts`, assuming that your kubectl will connect to the cluster you want. If not, follow the [detailed generation directions][2]. 
-3. Run `kubectl apply -f examples/ds-hostnet-split/`
+2. Run `kubectl apply -f examples/ds-hostnet-split/`
+
+This will:
+- set up RBAC
+- run a Kubernetes Job that will generate one-year validity certs and put them into `heptio-contour`
+- Install Contour and Envoy in a separate fashion.
 
 **NOTE**: The current configuration exposes the `/stats` path from the Envoy Admin UI so that Prometheus can scrape for metrics.
 
