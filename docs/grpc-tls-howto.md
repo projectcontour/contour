@@ -19,12 +19,12 @@ This is intended as an example to help you get started. For any real deployment,
 First, we need to generate a keypair:
 ```
 openssl req -x509 -new -nodes \
-    -keyout certs/CAkey.pem -sha256 \
-    -days 1825 -out certs/CAcert.pem \
+    -keyout certs/cakey.pem -sha256 \
+    -days 1825 -out certs/cacert.pem \
     -subj "/O=Project Contour/CN=Contour CA"
 ```
 
-Then, the new CA key will be stored in `certs/CAkey.pem` and the cert in `certs/CAcert.pem`.
+Then, the new CA key will be stored in `certs/cakey.pem` and the cert in `certs/cacert.pem`.
 
 ## Generating Contour's keypair
 
@@ -40,8 +40,8 @@ openssl req -new -key certs/contourkey.pem \
 	-out certs/contour.csr \
 	-subj "/O=Project Contour/CN=contour"
 openssl x509 -req -in certs/contour.csr \
-    -CA certs/CAcert.pem \
-    -CAkey certs/CAkey.pem \
+    -CA certs/cacert.pem \
+    -CAkey certs/cakey.pem \
     -CAcreateserial \
     -out certs/contourcert.pem \
     -days 1825 -sha256 \
@@ -63,8 +63,8 @@ openssl req -new -key certs/envoykey.pem \
 	-out certs/envoy.csr \
 	-subj "/O=Project Contour/CN=envoy"
 openssl x509 -req -in certs/envoy.csr \
-    -CA certs/CAcert.pem \
-    -CAkey certs/CAkey.pem \
+    -CA certs/cacert.pem \
+    -CAkey certs/cakey.pem \
     -CAcreateserial \
     -out certs/envoycert.pem \
     -days 1825 -sha256 \
@@ -78,7 +78,7 @@ Like the contour cert, this CSR uses the file [_integration/cert-envoy.ext](./_i
 Next, we create the required secrets in the target Kubernetes cluster:
 
 ```
-kubectl create secret -n heptio-contour generic cacert --from-file=./certs/CAcert.pem
+kubectl create secret -n heptio-contour generic cacert --from-file=./certs/cacert.pem
 kubectl create secret -n heptio-contour tls contourcert --key=./certs/contourkey.pem --cert=./certs/contourcert.pem
 kubectl create secret -n heptio-contour generic envoycert --key=./certs/envoykey.pem --cert=./certs/envoycert.pem
 ```
