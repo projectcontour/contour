@@ -1084,7 +1084,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "*",
+				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
@@ -1107,7 +1107,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "*",
+				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
@@ -1130,7 +1130,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "*",
+				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
@@ -1153,7 +1153,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "*",
+				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
@@ -1175,7 +1175,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "*",
+				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
@@ -1197,7 +1197,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "*",
+				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
@@ -2272,7 +2272,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
+						virtualhost("bar.com", &Route{
 							Prefix:   "/",
 							Clusters: clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
@@ -2312,7 +2312,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
+						virtualhost("bar.com", &Route{
 							Prefix:   "/",
 							Clusters: clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
@@ -2352,7 +2352,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
+						virtualhost("bar.com", &Route{
 							Prefix:   "/",
 							Clusters: clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
@@ -2460,7 +2460,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
+						virtualhost("bar.com", &Route{
 							Prefix:   "/",
 							Clusters: clustermap(s1),
 							RetryPolicy: &RetryPolicy{
@@ -2482,7 +2482,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
+						virtualhost("bar.com", &Route{
 							Prefix:   "/",
 							Clusters: clustermap(s1),
 							RetryPolicy: &RetryPolicy{
@@ -2505,7 +2505,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
+						virtualhost("bar.com", &Route{
 							Prefix:   "/",
 							Clusters: clustermap(s1),
 							RetryPolicy: &RetryPolicy{
@@ -3495,6 +3495,26 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	// ir15 is invalid because it contains a wildcarded fqdn
+	ir15 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.*.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Services: []ingressroutev1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []*ingressroutev1.IngressRoute
 		want []Status
@@ -3567,6 +3587,10 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{Object: ir11, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
 				{Object: ir10, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
 			},
+		},
+		"invalid FQDN contains wildcard": {
+			objs: []*ingressroutev1.IngressRoute{ir15},
+			want: []Status{{Object: ir15, Status: "invalid", Description: `Spec.VirtualHost.Fqdn "example.*.com" cannot use wildcards`, Vhost: "example.*.com"}},
 		},
 	}
 
