@@ -182,6 +182,19 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
 			},
 			want: listenermap(&v2.Listener{
 				Name:         ENVOY_HTTP_LISTENER,
@@ -372,6 +385,19 @@ func TestListenerVisit(t *testing.T) {
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata("certificate", "key"),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
 				},
 			},
 			want: listenermap(&v2.Listener{

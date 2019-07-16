@@ -656,20 +656,25 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 					return
 				}
 				m := meta{name: service.Name, namespace: ir.Namespace}
-				if s := b.lookupHTTPService(m, intstr.FromInt(service.Port)); s != nil {
-					var uv *UpstreamValidation
-					if s.Protocol == "tls" {
-						// we can only varlidate TLS connections to services that talk TLS
-						uv = b.lookupUpstreamValidation(ir, host, route, service, ir.Namespace)
-					}
-					r.Clusters = append(r.Clusters, &Cluster{
-						Upstream:             s,
-						LoadBalancerStrategy: service.Strategy,
-						Weight:               service.Weight,
-						HealthCheck:          service.HealthCheck,
-						UpstreamValidation:   uv,
-					})
+				s := b.lookupHTTPService(m, intstr.FromInt(service.Port))
+
+				if s == nil {
+					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: "Service referenced is invalid or missing"})
+					return
 				}
+
+				var uv *UpstreamValidation
+				if s.Protocol == "tls" {
+					// we can only validate TLS connections to services that talk TLS
+					uv = b.lookupUpstreamValidation(ir, host, route, service, ir.Namespace)
+				}
+				r.Clusters = append(r.Clusters, &Cluster{
+					Upstream:             s,
+					LoadBalancerStrategy: service.Strategy,
+					Weight:               service.Weight,
+					HealthCheck:          service.HealthCheck,
+					UpstreamValidation:   uv,
+				})
 			}
 
 			b.lookupVirtualHost(host).addRoute(r)

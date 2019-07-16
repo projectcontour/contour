@@ -260,8 +260,8 @@ func TestIngressRouteTLSListener(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
 
-	// s1 is a tls secret
-	s1 := &v1.Secret{
+	// secret1 is a tls secret
+	secret1 := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
@@ -321,8 +321,22 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		},
 	}
 
+	svc1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	}
+
 	// add secret
-	rh.OnAdd(s1)
+	rh.OnAdd(secret1)
 
 	// assert that there is only a static listener
 	assertEqual(t, &v2.DiscoveryResponse{
@@ -340,15 +354,19 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		ListenerFilters: []listener.ListenerFilter{
 			envoy.TLSInspector(),
 		},
-		FilterChains: filterchaintls("kuard.example.com", s1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
+		FilterChains: filterchaintls("kuard.example.com", secret1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
 	}
 
 	l1.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = auth.TlsParameters_TLSv1_1
 
+	// add service
+	rh.OnAdd(svc1)
+
 	// add ingress and assert the existence of ingress_http and ingres_https
 	rh.OnAdd(i1)
+
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "3",
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
@@ -359,13 +377,13 @@ func TestIngressRouteTLSListener(t *testing.T) {
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "2",
+		Nonce:   "3",
 	}, streamLDS(t, cc))
 
 	// delete secret and assert that ingress_https is removed
-	rh.OnDelete(s1)
+	rh.OnDelete(secret1)
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
+		VersionInfo: "4",
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
@@ -375,19 +393,19 @@ func TestIngressRouteTLSListener(t *testing.T) {
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "3",
+		Nonce:   "4",
 	}, streamLDS(t, cc))
 
 	rh.OnDelete(i1)
 	// add secret
-	rh.OnAdd(s1)
+	rh.OnAdd(secret1)
 	l2 := &v2.Listener{
 		Name:    "ingress_https",
 		Address: *envoy.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: []listener.ListenerFilter{
 			envoy.TLSInspector(),
 		},
-		FilterChains: filterchaintls("kuard.example.com", s1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
+		FilterChains: filterchaintls("kuard.example.com", secret1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
 	}
 
 	l2.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = auth.TlsParameters_TLSv1_3
@@ -395,7 +413,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 	// add ingress and assert the existence of ingress_http and ingres_https
 	rh.OnAdd(i2)
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "6",
+		VersionInfo: "7",
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
@@ -406,7 +424,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "6",
+		Nonce:   "7",
 	}, streamLDS(t, cc))
 }
 
@@ -910,12 +928,27 @@ func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 		},
 	}
 
-	// add ingressroute
+	svc1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "roots",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     8080,
+			}},
+		},
+	}
+
+	// add ingressroute & service
+	rh.OnAdd(svc1)
 	rh.OnAdd(ir1)
 
 	// assert there is an active listener
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
+		VersionInfo: "2",
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
@@ -925,7 +958,7 @@ func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "1",
+		Nonce:   "2",
 	}, streamLDS(t, cc))
 }
 
@@ -1035,8 +1068,25 @@ func TestIngressRouteHTTPS(t *testing.T) {
 		},
 	}
 
+	svc1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     8080,
+			}},
+		},
+	}
+
 	// add secret
 	rh.OnAdd(s1)
+
+	// add service
+	rh.OnAdd(svc1)
 
 	// add ingressroute
 	rh.OnAdd(ir1)
@@ -1056,14 +1106,14 @@ func TestIngressRouteHTTPS(t *testing.T) {
 		FilterChains: filterchaintls("example.com", s1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
 	}
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "3",
 		Resources: []types.Any{
 			any(t, ingressHTTP),
 			any(t, ingressHTTPS),
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "2",
+		Nonce:   "3",
 	}, streamLDS(t, cc))
 }
 
@@ -1239,6 +1289,20 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 	// add a secret object secret/wildcard.
 	rh.OnAdd(s1)
 
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     8080,
+			}},
+		},
+	})
+
 	// add an ingressroute in a different namespace mentioning secret/wildcard.
 	rh.OnAdd(&ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1270,13 +1334,13 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 
 	// assert there is no ingress_https because there is no matching secret.
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "3",
 		Resources: []types.Any{
 			any(t, ingress_http),
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "2",
+		Nonce:   "3",
 	}, streamLDS(t, cc))
 
 	// t1 is a TLSCertificateDelegation that permits default to access secret/wildcard
@@ -1306,14 +1370,14 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 	}
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
+		VersionInfo: "4",
 		Resources: []types.Any{
 			any(t, ingress_http),
 			any(t, ingress_https),
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "3",
+		Nonce:   "4",
 	}, streamLDS(t, cc))
 
 	// t2 is a TLSCertificateDelegation that permits access to secret/wildcard from all namespaces.
@@ -1334,14 +1398,14 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 	rh.OnUpdate(t1, t2)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "4",
+		VersionInfo: "5",
 		Resources: []types.Any{
 			any(t, ingress_http),
 			any(t, ingress_https),
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "4",
+		Nonce:   "5",
 	}, streamLDS(t, cc))
 
 	// t3 is a TLSCertificateDelegation that permits access to secret/different all namespaces.
@@ -1362,13 +1426,13 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 	rh.OnUpdate(t2, t3)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "5",
+		VersionInfo: "6",
 		Resources: []types.Any{
 			any(t, ingress_http),
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "5",
+		Nonce:   "6",
 	}, streamLDS(t, cc))
 
 	// t4 is a TLSCertificateDelegation that permits access to secret/wildcard from the kube-secret namespace.
@@ -1389,13 +1453,13 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 	rh.OnUpdate(t3, t4)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "6",
+		VersionInfo: "7",
 		Resources: []types.Any{
 			any(t, ingress_http),
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "6",
+		Nonce:   "7",
 	}, streamLDS(t, cc))
 
 }

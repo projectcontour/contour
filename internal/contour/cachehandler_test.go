@@ -20,6 +20,7 @@ import (
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/metrics"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -295,13 +296,55 @@ func TestIngressRouteMetrics(t *testing.T) {
 		},
 	}
 
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "foo",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     12345678,
+			}},
+		},
+	}
+
+	s2 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "foo",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     8080,
+			}},
+		},
+	}
+
+	s3 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "home",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     8080,
+			}},
+		},
+	}
+
 	tests := map[string]struct {
-		objs           []*ingressroutev1.IngressRoute
+		objs           []interface{}
 		want           metrics.IngressRouteMetric
 		rootNamespaces []string
 	}{
 		"valid ingressroute": {
-			objs: []*ingressroutev1.IngressRoute{ir1},
+			objs: []interface{}{ir1, s3},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{},
 				Valid: map[metrics.Meta]int{
@@ -317,7 +360,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			},
 		},
 		"invalid port in service": {
-			objs: []*ingressroutev1.IngressRoute{ir2},
+			objs: []interface{}{ir2},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "roots", VHost: "example.com"}: 1,
@@ -333,7 +376,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			},
 		},
 		"root ingressroute outside of roots namespace": {
-			objs: []*ingressroutev1.IngressRoute{ir3},
+			objs: []interface{}{ir3},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "finance"}: 1,
@@ -350,7 +393,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			rootNamespaces: []string{"foo"},
 		},
 		"delegated route's match prefix does not match parent's prefix": {
-			objs: []*ingressroutev1.IngressRoute{ir1, ir4},
+			objs: []interface{}{ir1, ir4, s3},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "roots", VHost: "example.com"}: 1,
@@ -368,7 +411,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			},
 		},
 		"invalid weight in service": {
-			objs: []*ingressroutev1.IngressRoute{ir5},
+			objs: []interface{}{ir5},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "roots", VHost: "example.com"}: 1,
@@ -384,7 +427,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			},
 		},
 		"root ingressroute does not specify FQDN": {
-			objs: []*ingressroutev1.IngressRoute{ir13},
+			objs: []interface{}{ir13},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "roots"}: 1,
@@ -400,7 +443,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			},
 		},
 		"self-edge produces a cycle": {
-			objs: []*ingressroutev1.IngressRoute{ir6},
+			objs: []interface{}{ir6},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "roots", VHost: "example.com"}: 1,
@@ -416,7 +459,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			},
 		},
 		"child delegates to parent, producing a cycle": {
-			objs: []*ingressroutev1.IngressRoute{ir7, ir8},
+			objs: []interface{}{ir7, ir8},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "roots", VHost: "example.com"}: 1,
@@ -434,7 +477,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			},
 		},
 		"route has a list of services and also delegates": {
-			objs: []*ingressroutev1.IngressRoute{ir9},
+			objs: []interface{}{ir9},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "roots", VHost: "example.com"}: 1,
@@ -450,7 +493,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			},
 		},
 		"ingressroute is an orphaned route": {
-			objs: []*ingressroutev1.IngressRoute{ir8},
+			objs: []interface{}{ir8},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{},
 				Valid:   map[metrics.Meta]int{},
@@ -464,7 +507,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			},
 		},
 		"ingressroute delegates to multiple ingressroutes, one is invalid": {
-			objs: []*ingressroutev1.IngressRoute{ir10, ir11, ir12},
+			objs: []interface{}{ir10, ir11, ir12, s1, s2},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "roots", VHost: "example.com"}: 1,
@@ -482,7 +525,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			},
 		},
 		"invalid parent orphans children": {
-			objs: []*ingressroutev1.IngressRoute{ir14, ir11},
+			objs: []interface{}{ir14, ir11},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "roots"}: 1,
@@ -500,7 +543,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			},
 		},
 		"multi-parent children is not orphaned when one of the parents is invalid": {
-			objs: []*ingressroutev1.IngressRoute{ir14, ir11, ir10},
+			objs: []interface{}{ir14, ir11, ir10, s2},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "roots"}: 1,
