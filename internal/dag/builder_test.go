@@ -3706,7 +3706,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 		"missing service shows invalid status": {
 			objs: []interface{}{ir16},
-			want: []Status{{Object: ir16, Status: "invalid", Description: `Service referenced is invalid or missing`, Vhost: ""}},
+			want: []Status{{Object: ir16, Status: "invalid", Description: `Service [invalid:8080] is invalid or missing`, Vhost: ""}},
 		},
 	}
 

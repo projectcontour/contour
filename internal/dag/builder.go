@@ -659,7 +659,7 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 				s := b.lookupHTTPService(m, intstr.FromInt(service.Port))
 
 				if s == nil {
-					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: "Service referenced is invalid or missing"})
+					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("Service [%s:%d] is invalid or missing", service.Name, service.Port)})
 					return
 				}
 
