@@ -40,7 +40,7 @@ type CacheHandler struct {
 }
 
 type statusable interface {
-	Statuses() []dag.Status
+	Statuses() map[dag.Meta]dag.Status
 }
 
 func (ch *CacheHandler) OnChange(kc *dag.KubernetesCache) {
