@@ -17,6 +17,7 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net"
@@ -44,8 +45,38 @@ import (
 // registerServe registers the serve subcommand and flags
 // with the Application provided.
 func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext) {
-	var ctx serveContext
 	serve := app.Command("serve", "Serve xDS API traffic")
+
+	// The precedence of configuration for contour serve is as follows:
+	// config file, overridden by env vars, overridden by cli flags.
+	// however, as -c is a cli flag, we don't know its valye til cli flags
+	// have been parsed. To correct this ordering we assign a post parse
+	// action to -c, then parse cli flags twice (see main.main). On the second
+	// parse our action will return early, resulting in the precendence order
+	// we want.
+	var (
+		configFile string
+		parsed     bool
+		ctx        serveContext
+	)
+
+	parseConfig := func(_ *kingpin.ParseContext) error {
+		if parsed || configFile == "" {
+			// if there is no config file supplied, or we've
+			// already parsed it, return immediately.
+			return nil
+		}
+		f, err := os.Open(configFile)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		dec := json.NewDecoder(f)
+		parsed = true
+		return dec.Decode(&ctx)
+	}
+	serve.Flag("config-path", "path to base configuration").Short('c').Action(parseConfig).ExistingFileVar(&configFile)
+
 	serve.Flag("incluster", "use in cluster configuration.").BoolVar(&ctx.inCluster)
 	serve.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).StringVar(&ctx.kubeconfig)
 
