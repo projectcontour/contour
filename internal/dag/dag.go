@@ -31,7 +31,7 @@ type DAG struct {
 	roots []Vertex
 
 	// status computed while building this dag.
-	statuses []Status
+	statuses map[Meta]Status
 }
 
 // Visit calls fn on each root of this DAG.
@@ -43,7 +43,7 @@ func (d *DAG) Visit(fn func(Vertex)) {
 
 // Statuses returns a slice of Status objects associated with
 // the computation of this DAG.
-func (d *DAG) Statuses() []Status {
+func (d *DAG) Statuses() map[Meta]Status {
 	return d.statuses
 }
 
@@ -308,8 +308,8 @@ func (s *Secret) PrivateKey() []byte {
 	return s.Object.Data[v1.TLSPrivateKeyKey]
 }
 
-func (s *Secret) toMeta() meta {
-	return meta{
+func (s *Secret) toMeta() Meta {
+	return Meta{
 		name:      s.Name(),
 		namespace: s.Namespace(),
 	}

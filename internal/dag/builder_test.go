@@ -15,7 +15,6 @@ package dag
 
 import (
 	"fmt"
-	"sort"
 	"testing"
 	"time"
 
@@ -2978,32 +2977,32 @@ func TestBuilderLookupHTTPService(t *testing.T) {
 			}},
 		},
 	}
-	services := map[meta]*v1.Service{
+	services := map[Meta]*v1.Service{
 		{name: "service1", namespace: "default"}: s1,
 	}
 
 	tests := map[string]struct {
-		meta
+		Meta
 		port intstr.IntOrString
 		want *HTTPService
 	}{
 		"lookup service by port number": {
-			meta: meta{name: "service1", namespace: "default"},
+			Meta: Meta{name: "service1", namespace: "default"},
 			port: intstr.FromInt(8080),
 			want: httpService(s1),
 		},
 		"lookup service by port name": {
-			meta: meta{name: "service1", namespace: "default"},
+			Meta: Meta{name: "service1", namespace: "default"},
 			port: intstr.FromString("http"),
 			want: httpService(s1),
 		},
 		"lookup service by port number (as string)": {
-			meta: meta{name: "service1", namespace: "default"},
+			Meta: Meta{name: "service1", namespace: "default"},
 			port: intstr.Parse("8080"),
 			want: httpService(s1),
 		},
 		"lookup service by port number (from string)": {
-			meta: meta{name: "service1", namespace: "default"},
+			Meta: Meta{name: "service1", namespace: "default"},
 			port: intstr.FromString("8080"),
 			want: httpService(s1),
 		},
@@ -3016,7 +3015,7 @@ func TestBuilderLookupHTTPService(t *testing.T) {
 					services: services,
 				},
 			}
-			got := b.lookupHTTPService(tc.meta, tc.port)
+			got := b.lookupHTTPService(tc.Meta, tc.port)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}
@@ -3667,7 +3666,7 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 	tests := map[string]struct {
 		objs       []interface{}
 		want       []Vertex
-		wantStatus []Status
+		wantStatus map[Meta]Status
 	}{
 		"insert ingressroute": {
 			objs: []interface{}{
@@ -3686,8 +3685,8 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 					),
 				},
 			),
-			wantStatus: []Status{
-				{
+			wantStatus: map[Meta]Status{
+				{name: ir1.Name, namespace: ir1.Namespace}: {
 					Object:      ir1,
 					Status:      StatusValid,
 					Description: "valid IngressRoute",
@@ -3700,14 +3699,14 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 				ir1, ir2,
 			},
 			want: []Vertex{},
-			wantStatus: []Status{
-				{
+			wantStatus: map[Meta]Status{
+				{name: ir1.Name, namespace: ir1.Namespace}: {
 					Object:      ir1,
 					Status:      StatusInvalid,
 					Description: `fqdn "example.com" is used in multiple IngressRoutes: default/example-com, default/other-example`,
 					Vhost:       "example.com",
 				},
-				{
+				{name: ir2.Name, namespace: ir2.Namespace}: {
 					Object:      ir2,
 					Status:      StatusInvalid,
 					Description: `fqdn "example.com" is used in multiple IngressRoutes: default/example-com, default/other-example`,
@@ -3742,7 +3741,6 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 			}
 
 			gotStatus := dag.statuses
-			sort.Stable(statusByNamespaceAndName(gotStatus))
 			if diff := cmp.Diff(tc.wantStatus, gotStatus); diff != "" {
 				t.Fatal(diff)
 			}
@@ -3850,12 +3848,12 @@ func TestEnforceRoute(t *testing.T) {
 func TestSplitSecret(t *testing.T) {
 	tests := map[string]struct {
 		secret, defns string
-		want          meta
+		want          Meta
 	}{
 		"no namespace": {
 			secret: "secret",
 			defns:  "default",
-			want: meta{
+			want: Meta{
 				name:      "secret",
 				namespace: "default",
 			},
@@ -3863,7 +3861,7 @@ func TestSplitSecret(t *testing.T) {
 		"with namespace": {
 			secret: "ns1/secret",
 			defns:  "default",
-			want: meta{
+			want: Meta{
 				name:      "secret",
 				namespace: "ns1",
 			},
@@ -3871,7 +3869,7 @@ func TestSplitSecret(t *testing.T) {
 		"missing namespace": {
 			secret: "/secret",
 			defns:  "default",
-			want: meta{
+			want: Meta{
 				name:      "secret",
 				namespace: "default",
 			},
@@ -3879,7 +3877,7 @@ func TestSplitSecret(t *testing.T) {
 		"missing secret name": {
 			secret: "secret/",
 			defns:  "default",
-			want: meta{
+			want: Meta{
 				name:      "",
 				namespace: "secret",
 			},
@@ -3890,7 +3888,7 @@ func TestSplitSecret(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := splitSecret(tc.secret, tc.defns)
 			opts := []cmp.Option{
-				cmp.AllowUnexported(meta{}),
+				cmp.AllowUnexported(Meta{}),
 			}
 			if diff := cmp.Diff(tc.want, got, opts...); diff != "" {
 				t.Fatal(diff)
@@ -3980,14 +3978,6 @@ func clustermap(services ...*v1.Service) []*Cluster {
 		})
 	}
 	return c
-}
-
-type statusByNamespaceAndName []Status
-
-func (s statusByNamespaceAndName) Len() int      { return len(s) }
-func (s statusByNamespaceAndName) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-func (s statusByNamespaceAndName) Less(i, j int) bool {
-	return s[i].Object.Namespace+s[i].Object.Name < s[j].Object.Namespace+s[j].Object.Name
 }
 
 func secret(s *v1.Secret) *Secret {

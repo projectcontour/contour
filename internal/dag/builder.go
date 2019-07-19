@@ -47,16 +47,16 @@ type builder struct {
 	source *KubernetesCache
 
 	services  map[servicemeta]Service
-	secrets   map[meta]*Secret
+	secrets   map[Meta]*Secret
 	listeners map[int]*Listener
 
-	orphaned map[meta]bool
+	orphaned map[Meta]bool
 
-	statuses []Status
+	statuses map[Meta]Status
 }
 
-// lookupHTTPService returns a HTTPService that matches the meta and port supplied.
-func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString) *HTTPService {
+// lookupHTTPService returns a HTTPService that matches the Meta and port supplied.
+func (b *builder) lookupHTTPService(m Meta, port intstr.IntOrString) *HTTPService {
 	s := b.lookupService(m, port)
 	switch s := s.(type) {
 	case *HTTPService:
@@ -82,8 +82,8 @@ func (b *builder) lookupHTTPService(m meta, port intstr.IntOrString) *HTTPServic
 	}
 }
 
-// lookupTCPService returns a TCPService that matches the meta and port supplied.
-func (b *builder) lookupTCPService(m meta, port intstr.IntOrString) *TCPService {
+// lookupTCPService returns a TCPService that matches the Meta and port supplied.
+func (b *builder) lookupTCPService(m Meta, port intstr.IntOrString) *TCPService {
 	s := b.lookupService(m, port)
 	switch s := s.(type) {
 	case *TCPService:
@@ -108,7 +108,7 @@ func (b *builder) lookupTCPService(m meta, port intstr.IntOrString) *TCPService 
 		return nil
 	}
 }
-func (b *builder) lookupService(m meta, port intstr.IntOrString) Service {
+func (b *builder) lookupService(m Meta, port intstr.IntOrString) Service {
 	if port.Type != intstr.Int {
 		// can't handle, give up
 		return nil
@@ -180,7 +180,7 @@ func (b *builder) addTCPService(svc *v1.Service, port *v1.ServicePort) *TCPServi
 
 // lookupSecret returns a Secret if present or nil if the underlying kubernetes
 // secret fails validation or is missing.
-func (b *builder) lookupSecret(m meta, validate func(*v1.Secret) bool) *Secret {
+func (b *builder) lookupSecret(m Meta, validate func(*v1.Secret) bool) *Secret {
 	if s, ok := b.secrets[m]; ok {
 		return s
 	}
@@ -195,7 +195,7 @@ func (b *builder) lookupSecret(m meta, validate func(*v1.Secret) bool) *Secret {
 		Object: sec,
 	}
 	if b.secrets == nil {
-		b.secrets = make(map[meta]*Secret)
+		b.secrets = make(map[Meta]*Secret)
 	}
 	b.secrets[s.toMeta()] = s
 	return s
@@ -377,24 +377,24 @@ func (b *builder) computeSecureVirtualhosts() {
 
 // splitSecret splits a secretName into its namespace and name components.
 // If there is no namespace prefix, the default namespace is returned.
-func splitSecret(secret, defns string) meta {
+func splitSecret(secret, defns string) Meta {
 	v := strings.SplitN(secret, "/", 2)
 	switch len(v) {
 	case 1:
 		// no prefix
-		return meta{
+		return Meta{
 			name:      v[0],
 			namespace: defns,
 		}
 	default:
-		return meta{
+		return Meta{
 			name:      v[1],
 			namespace: stringOrDefault(v[0], defns),
 		}
 	}
 }
 
-func (b *builder) delegationPermitted(secret meta, to string) bool {
+func (b *builder) delegationPermitted(secret Meta, to string) bool {
 	contains := func(haystack []string, needle string) bool {
 		if len(haystack) == 1 && haystack[0] == "*" {
 			return true
@@ -439,7 +439,7 @@ func (b *builder) computeIngresses() {
 				prefix := stringOrDefault(httppath.Path, "/")
 				r := prefixRoute(ing, prefix)
 				be := httppath.Backend
-				m := meta{name: be.ServiceName, namespace: ing.Namespace}
+				m := Meta{name: be.ServiceName, namespace: ing.Namespace}
 				if s := b.lookupHTTPService(m, be.ServicePort); s != nil {
 					r.Clusters = append(r.Clusters, &Cluster{Upstream: s})
 				}
@@ -507,7 +507,7 @@ func (b *builder) computeIngressRoutes() {
 
 			// If not passthrough and secret is invalid, then set status
 			if secretInvalidOrNotFound && !passthrough {
-				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: "TLS Secret not found or is malformed"})
+				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("TLS Secret [%s] not found or is malformed", tls.SecretName)})
 			}
 		}
 
@@ -587,15 +587,21 @@ func (b *builder) DAG() *DAG {
 
 // setStatus assigns a status to an object.
 func (b *builder) setStatus(st Status) {
-	b.statuses = append(b.statuses, st)
+	m := Meta{name: st.Object.Name, namespace: st.Object.Namespace}
+	if b.statuses == nil {
+		b.statuses = make(map[Meta]Status)
+	}
+	if _, ok := b.statuses[m]; !ok {
+		b.statuses[m] = st
+	}
 }
 
 // setOrphaned records an ingressroute as orphaned.
 func (b *builder) setOrphaned(ir *ingressroutev1.IngressRoute) {
 	if b.orphaned == nil {
-		b.orphaned = make(map[meta]bool)
+		b.orphaned = make(map[Meta]bool)
 	}
-	m := meta{name: ir.Name, namespace: ir.Namespace}
+	m := Meta{name: ir.Name, namespace: ir.Namespace}
 	b.orphaned[m] = true
 }
 
@@ -655,11 +661,11 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: weight must be greater than or equal to zero", route.Match, service.Name), Vhost: host})
 					return
 				}
-				m := meta{name: service.Name, namespace: ir.Namespace}
+				m := Meta{name: service.Name, namespace: ir.Namespace}
 				if s := b.lookupHTTPService(m, intstr.FromInt(service.Port)); s != nil {
 					var uv *UpstreamValidation
 					if s.Protocol == "tls" {
-						// we can only varlidate TLS connections to services that talk TLS
+						// we can only validate TLS connections to services that talk TLS
 						uv = b.lookupUpstreamValidation(ir, host, route, service, ir.Namespace)
 					}
 					r.Clusters = append(r.Clusters, &Cluster{
@@ -688,9 +694,9 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 			namespace = ir.Namespace
 		}
 
-		if dest, ok := b.source.ingressroutes[meta{name: route.Delegate.Name, namespace: namespace}]; ok {
+		if dest, ok := b.source.ingressroutes[Meta{name: route.Delegate.Name, namespace: namespace}]; ok {
 			// dest is not an orphaned ingress route, as there is an IR that points to it
-			delete(b.orphaned, meta{name: dest.Name, namespace: dest.Namespace})
+			delete(b.orphaned, Meta{name: dest.Name, namespace: dest.Namespace})
 
 			// ensure we are not following an edge that produces a cycle
 			var path []string
@@ -724,7 +730,7 @@ func (b *builder) lookupUpstreamValidation(ir *ingressroutev1.IngressRoute, host
 		return nil
 	}
 
-	cacert := b.lookupSecret(meta{name: uv.CACertificate, namespace: namespace}, validCA)
+	cacert := b.lookupSecret(Meta{name: uv.CACertificate, namespace: namespace}, validCA)
 	if cacert == nil {
 		// UpstreamValidation is requested, but cert is missing or not configured
 		b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: upstreamValidation requested but secret not found or misconfigured", route.Match, service.Name), Vhost: host})
@@ -756,7 +762,7 @@ func (b *builder) processTCPProxy(ir *ingressroutev1.IngressRoute, visited []*in
 	if len(tcpproxy.Services) > 0 {
 		var proxy TCPProxy
 		for _, service := range tcpproxy.Services {
-			m := meta{name: service.Name, namespace: ir.Namespace}
+			m := Meta{name: service.Name, namespace: ir.Namespace}
 			s := b.lookupTCPService(m, intstr.FromInt(service.Port))
 			if s == nil {
 				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("tcpproxy: service %s/%s/%d: not found", ir.Namespace, service.Name, service.Port), Vhost: host})
@@ -783,9 +789,9 @@ func (b *builder) processTCPProxy(ir *ingressroutev1.IngressRoute, visited []*in
 		namespace = ir.Namespace
 	}
 
-	if dest, ok := b.source.ingressroutes[meta{name: tcpproxy.Delegate.Name, namespace: namespace}]; ok {
+	if dest, ok := b.source.ingressroutes[Meta{name: tcpproxy.Delegate.Name, namespace: namespace}]; ok {
 		// dest is not an orphaned ingress route, as there is an IR that points to it
-		delete(b.orphaned, meta{name: dest.Name, namespace: dest.Namespace})
+		delete(b.orphaned, Meta{name: dest.Name, namespace: dest.Namespace})
 
 		// ensure we are not following an edge that produces a cycle
 		var path []string
