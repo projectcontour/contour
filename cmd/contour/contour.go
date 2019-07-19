@@ -77,6 +77,10 @@ func main() {
 		stream := client.RouteStream()
 		watchstream(stream, cache.SecretType, resources)
 	case serve.FullCommand():
+		// parse args a second time so cli flags are applied
+		// on top of any values sourced from -c's config file.
+		_, err := app.Parse(args)
+		check(err)
 		log.Infof("args: %v", args)
 		doServe(log, serveCtx)
 	default:
