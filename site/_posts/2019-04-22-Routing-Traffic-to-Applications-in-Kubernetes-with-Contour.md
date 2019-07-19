@@ -11,11 +11,12 @@ tags: ['Contour Team']
 One of the most critical needs in running workloads at scale with Kubernetes is efficient and smooth traffic ingress management at the [Layer 7](https://en.wikipedia.org/wiki/OSI_model#Layer_7:_Application_Layer) level. Getting an application up and running is not always the entire story; it may still need a way for users to access it. Filling that operational gap is what Contour was designed to do by providing a way to allow users to access applications within a Kubernetes cluster.
 Contour is an Ingress controller for Kubernetes that works by deploying the Envoy proxy as a reverse proxy and load balancer. Contour supports dynamic configuration updates out of the box while maintaining a lightweight profile.
 
-Contour offers the following benefits for users:
-* A simple installation mechanism to quickly deploy and integrate Envoy
-* Safely support ingress in multi-team Kubernetes clusters
-* Clean integration with the Kubernetes object model
-* Dynamic updates to ingress configuration without dropped connections
+Contour offers the following benefits for users:  
+
+ - A simple installation mechanism to quickly deploy and integrate Envoy  
+ - Safely support ingress in multi-team Kubernetes clusters  
+ - Clean integration with the Kubernetes object model  
+ - Dynamic updates to ingress configuration without dropped connections  
 
 ## What is Ingress?
 [Kubernetes Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) is a set of configurations that define how external traffic can be routed to an application inside a Kubernetes cluster. A controller (Contour) watches for changes to objects in the cluster, then wires together the configurations to create a data path for the request to be resolved, implementing the configurations defined. It makes decisions based on the request received (e.g., example.com/blog), provides TLS termination, and performs other functions.
