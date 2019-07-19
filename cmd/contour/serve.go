@@ -52,7 +52,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	// however, as -c is a cli flag, we don't know its valye til cli flags
 	// have been parsed. To correct this ordering we assign a post parse
 	// action to -c, then parse cli flags twice (see main.main). On the second
-	// parse our action will return early, resulting in the precendence order
+	// parse our action will return early, resulting in the precedence order
 	// we want.
 	var (
 		configFile string
@@ -77,8 +77,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	}
 	serve.Flag("config-path", "path to base configuration").Short('c').Action(parseConfig).ExistingFileVar(&configFile)
 
-	serve.Flag("incluster", "use in cluster configuration.").BoolVar(&ctx.inCluster)
-	serve.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).StringVar(&ctx.kubeconfig)
+	serve.Flag("incluster", "use in cluster configuration.").BoolVar(&ctx.InCluster)
+	serve.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).StringVar(&ctx.Kubeconfig)
 
 	serve.Flag("xds-address", "xDS gRPC API address").Default("127.0.0.1").StringVar(&ctx.xdsAddr)
 	serve.Flag("xds-port", "xDS gRPC API port").Default("8001").IntVar(&ctx.xdsPort)
@@ -113,8 +113,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 
 type serveContext struct {
 	// contour's kubernetes client parameters
-	inCluster  bool
-	kubeconfig string
+	InCluster  bool   `json:"incluster"`
+	Kubeconfig string `json:"kubeconfig"`
 
 	// contour's xds service parameters
 	xdsAddr                         string
@@ -201,7 +201,7 @@ func (ctx *serveContext) ingressRouteRootNamespaces() []string {
 func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 1. establish k8s client connection
-	client, contourClient := newClient(ctx.kubeconfig, ctx.inCluster)
+	client, contourClient := newClient(ctx.Kubeconfig, ctx.InCluster)
 
 	// step 2. create informers
 	// note: 0 means resync timers are disabled
