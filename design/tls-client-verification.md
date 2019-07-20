@@ -15,6 +15,19 @@ Status: Draft
 
 ## Background
 
+In TLS (and https) only the server is authenticated with a
+certificate, for instance you as a client can be sure that you speak
+with your bank and not some malicious site. But sometimes also the client
+must be authenticated. As noted in
+[wikipedia](https://en.wikipedia.org/wiki/Mutual_authentication)
+client certification (mTLS) is not very common for end-users but is
+more widespread for business-to-business (B2B) applications (which
+may use gRPC and REST APIs).
+
+I can't give a real-life example but it is easy to imagine cases where
+client validation is necessary, for instance for an admin interface to
+a server that is accesses by automated clients.
+
 Client certificate validation (mTLS) is supported by Envoy. It should
 be possible for `contour` users to utilize this feature.
 
