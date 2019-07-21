@@ -38,7 +38,7 @@ import (
 	"github.com/heptio/contour/internal/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"gopkg.in/alecthomas/kingpin.v2"
 	coreinformers "k8s.io/client-go/informers"
 )
 
@@ -208,6 +208,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	coreInformers := coreinformers.NewSharedInformerFactory(client, 0)
 	contourInformers := contourinformers.NewSharedInformerFactory(contourClient, 0)
 
+	// Create a set of SharedInformerFactories for each root-ingressroute namespace (if defined)
+	var namespacedInformers []coreinformers.SharedInformerFactory
+	for _, namespace := range ctx.ingressRouteRootNamespaces() {
+		inf := coreinformers.NewSharedInformerFactoryWithOptions(client, 0, coreinformers.WithNamespace(namespace))
+		namespacedInformers = append(namespacedInformers, inf)
+	}
+
 	// step 3. establish our (poorly named) gRPC cache handler.
 	ch := contour.CacheHandler{
 		ListenerVisitorConfig: contour.ListenerVisitorConfig{
@@ -242,9 +249,16 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// step 5. register out resource event handler with the k8s informers.
 	coreInformers.Core().V1().Services().Informer().AddEventHandler(&reh)
 	coreInformers.Extensions().V1beta1().Ingresses().Informer().AddEventHandler(&reh)
-	coreInformers.Core().V1().Secrets().Informer().AddEventHandler(&reh)
 	contourInformers.Contour().V1beta1().IngressRoutes().Informer().AddEventHandler(&reh)
 	contourInformers.Contour().V1beta1().TLSCertificateDelegations().Informer().AddEventHandler(&reh)
+	// Add informers for each root-ingressroute namespaces
+	for _, inf := range namespacedInformers {
+		inf.Core().V1().Secrets().Informer().AddEventHandler(&reh)
+	}
+	// If root-ingressroutes are not defined, then add the informer for all namespaces
+	if len(namespacedInformers) == 0 {
+		coreInformers.Core().V1().Secrets().Informer().AddEventHandler(&reh)
+	}
 
 	// step 6. endpoints updates are handled directly by the EndpointsTranslator
 	// due to their high update rate and their orthogonal nature.
@@ -257,6 +271,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	var g workgroup.Group
 	g.Add(startInformer(coreInformers, log.WithField("context", "coreinformers")))
 	g.Add(startInformer(contourInformers, log.WithField("context", "contourinformers")))
+	for _, inf := range namespacedInformers {
+		g.Add(startInformer(inf, log.WithField("context", "corenamespacedinformers")))
+	}
 
 	// step 8. setup prometheus registry and register base metrics.
 	registry := prometheus.NewRegistry()
