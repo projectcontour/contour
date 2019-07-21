@@ -1,0 +1,116 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: contour
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: contour
+subjects:
+  - kind: ServiceAccount
+    name: contour
+    namespace: heptio-contour
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  namespace: root-ingressroute
+  name: contour-secrets-root
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - watch
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  namespace: heptio-contour
+  name: contour-secrets
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - watch
+      - list
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: contour-secrets-root
+  namespace: root-ingressroute
+subjects:
+  - kind: ServiceAccount
+    name: contour
+    namespace: heptio-contour
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: contour-secrets-root
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: contour-secrets
+  namespace: heptio-contour
+subjects:
+  - kind: ServiceAccount
+    name: contour
+    namespace: heptio-contour
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: contour-secrets
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: contour
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - endpoints
+      - nodes
+      - pods
+    verbs:
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups: ["contour.heptio.com"]
+    resources: ["ingressroutes", "tlscertificatedelegations"]
+    verbs:
+      - get
+      - list
+      - watch
+      - put
+      - post
+      - patch
+---
