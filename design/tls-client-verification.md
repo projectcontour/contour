@@ -24,9 +24,22 @@ client certification (mTLS) is not very common for end-users but is
 more widespread for business-to-business (B2B) applications (which
 may use gRPC and REST APIs).
 
-I can't give a real-life example but it is easy to imagine cases where
-client validation is necessary, for instance for an admin interface to
-a server that is accesses by automated clients.
+mTLS is used is to restrict access to sensiteve services to validated
+clients only. Some services do not provide client validation
+themselves then a reversed proxy (envoy/contour) is used, for
+instance;
+
+* Elasticsearch did not support authentication, [until very
+  recently](https://www.elastic.co/blog/tips-to-secure-elasticsearch-clusters-for-free-with-encryption-users-and-more). The
+  common pattern was to put reverse proxy in front of Elasticsearch to
+  handle TLS and authentication
+
+* Prometheus does not support either
+  [TLS](https://prometheus.io/docs/guides/tls-encryption/) or
+  [authentication](https://prometheus.io/docs/guides/basic-auth/). Common
+  pattern is to put reverse proxy in front.
+
+
 
 Client certificate validation (mTLS) is supported by Envoy. It should
 be possible for `contour` users to utilize this feature.
@@ -73,8 +86,8 @@ spec:
 
 ## Detailed Design
 
-Since this design proposal required some "learning-by-doing" most of
-phase 1 is implemented by https://github.com/heptio/contour/pull/1226
+Since this design proposal required some "learning-by-doing" most of this
+is implemented by https://github.com/heptio/contour/pull/1226
 
 Unit-tests must be added on all appropriate places.
 
