@@ -38,7 +38,7 @@ import (
 	"github.com/heptio/contour/internal/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"gopkg.in/alecthomas/kingpin.v2"
 	coreinformers "k8s.io/client-go/informers"
 )
 
@@ -59,6 +59,24 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 		parsed     bool
 		ctx        serveContext
 	)
+	// Set defaults for parameters which are then overridden via flags, ENV, or ConfigFile
+	ctx = serveContext{
+		Kubeconfig:     filepath.Join(os.Getenv("HOME"), ".kube", "config"),
+		xdsAddr:        "127.0.0.1",
+		xdsPort:        8001,
+		statsAddr:      "0.0.0.0",
+		statsPort:      8002,
+		debugAddr:      "127.0.0.1",
+		debugPort:      6060,
+		metricsAddr:    "0.0.0.0",
+		metricsPort:    8000,
+		httpAccessLog:  contour.DEFAULT_HTTP_ACCESS_LOG,
+		httpsAccessLog: contour.DEFAULT_HTTPS_ACCESS_LOG,
+		httpAddr:       "0.0.0.0",
+		httpsAddr:      "0.0.0.0",
+		httpPort:       8080,
+		httpsPort:      8443,
+	}
 
 	parseConfig := func(_ *kingpin.ParseContext) error {
 		if parsed || configFile == "" {
@@ -75,22 +93,23 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 		parsed = true
 		return dec.Decode(&ctx)
 	}
+
 	serve.Flag("config-path", "path to base configuration").Short('c').Action(parseConfig).ExistingFileVar(&configFile)
 
 	serve.Flag("incluster", "use in cluster configuration.").BoolVar(&ctx.InCluster)
-	serve.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).StringVar(&ctx.Kubeconfig)
+	serve.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").StringVar(&ctx.Kubeconfig)
 
-	serve.Flag("xds-address", "xDS gRPC API address").Default("127.0.0.1").StringVar(&ctx.xdsAddr)
-	serve.Flag("xds-port", "xDS gRPC API port").Default("8001").IntVar(&ctx.xdsPort)
+	serve.Flag("xds-address", "xDS gRPC API address").StringVar(&ctx.xdsAddr)
+	serve.Flag("xds-port", "xDS gRPC API port").IntVar(&ctx.xdsPort)
 
-	serve.Flag("stats-address", "Envoy /stats interface address").Default("0.0.0.0").StringVar(&ctx.statsAddr)
-	serve.Flag("stats-port", "Envoy /stats interface port").Default("8002").IntVar(&ctx.statsPort)
+	serve.Flag("stats-address", "Envoy /stats interface address").StringVar(&ctx.statsAddr)
+	serve.Flag("stats-port", "Envoy /stats interface port").IntVar(&ctx.statsPort)
 
-	serve.Flag("debug-http-address", "address the debug http endpoint will bind to").Default("127.0.0.1").StringVar(&ctx.debugAddr)
-	serve.Flag("debug-http-port", "port the debug http endpoint will bind to").Default("6060").IntVar(&ctx.debugPort)
+	serve.Flag("debug-http-address", "address the debug http endpoint will bind to").StringVar(&ctx.debugAddr)
+	serve.Flag("debug-http-port", "port the debug http endpoint will bind to").IntVar(&ctx.debugPort)
 
-	serve.Flag("http-address", "address the metrics http endpoint will bind to").Default("0.0.0.0").StringVar(&ctx.metricsAddr)
-	serve.Flag("http-port", "port the metrics http endpoint will bind to").Default("8000").IntVar(&ctx.metricsPort)
+	serve.Flag("http-address", "address the metrics http endpoint will bind to").StringVar(&ctx.metricsAddr)
+	serve.Flag("http-port", "port the metrics http endpoint will bind to").IntVar(&ctx.metricsPort)
 
 	serve.Flag("contour-cafile", "CA bundle file name for serving gRPC with TLS").Envar("CONTOUR_CAFILE").StringVar(&ctx.caFile)
 	serve.Flag("contour-cert-file", "Contour certificate file name for serving gRPC over TLS").Envar("CONTOUR_CERT_FILE").StringVar(&ctx.contourCert)
@@ -100,12 +119,12 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&ctx.ingressClass)
 
-	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").Default(contour.DEFAULT_HTTP_ACCESS_LOG).StringVar(&ctx.httpAccessLog)
-	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").Default(contour.DEFAULT_HTTPS_ACCESS_LOG).StringVar(&ctx.httpsAccessLog)
-	serve.Flag("envoy-service-http-address", "Kubernetes Service address for HTTP requests").Default("0.0.0.0").StringVar(&ctx.httpAddr)
-	serve.Flag("envoy-service-https-address", "Kubernetes Service address for HTTPS requests").Default("0.0.0.0").StringVar(&ctx.httpsAddr)
-	serve.Flag("envoy-service-http-port", "Kubernetes Service port for HTTP requests").Default("8080").IntVar(&ctx.httpPort)
-	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests").Default("8443").IntVar(&ctx.httpsPort)
+	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").StringVar(&ctx.httpAccessLog)
+	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").StringVar(&ctx.httpsAccessLog)
+	serve.Flag("envoy-service-http-address", "Kubernetes Service address for HTTP requests").StringVar(&ctx.httpAddr)
+	serve.Flag("envoy-service-https-address", "Kubernetes Service address for HTTPS requests").StringVar(&ctx.httpsAddr)
+	serve.Flag("envoy-service-http-port", "Kubernetes Service port for HTTP requests").IntVar(&ctx.httpPort)
+	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests").IntVar(&ctx.httpsPort)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ctx.useProxyProto)
 
 	return serve, &ctx
