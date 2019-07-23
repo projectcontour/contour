@@ -81,7 +81,19 @@ Unit-tests must be added on all appropriate places.
 
 ### CAs in Secrets
 
-Same as for [TLS backend verification](tls-backend-verification.md).
+
+The store of CA information is an opaque kubernetes secret.
+The secret will be stored in the same namespace as the corresponding IngressRoute.
+TLS certificate delegation is not in scope for this proposal.
+
+The secret object should contain one entry named `ca.key`, the constents will be the CA public key material.
+
+Example:
+```
+% kubectl create secret generic my-certificate-authority --from-file=./ca.key
+```
+
+Contour already subscribes to Secrets in all namespaces so Secrets will be piped through to the `dag.KubernetsCache` automatically.
 
 
 ### Changes in APIs
