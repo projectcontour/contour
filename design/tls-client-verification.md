@@ -61,6 +61,8 @@ spec:
         secretName: clientsecret
         spkis:
           - 2IEpPESU/mmC30tPsnOfbGKdwKdQfN/wZw1QWpjGlmk=
+        subjectAltNames:
+          - Joe
   routes:
     - match: /
       services:
@@ -103,6 +105,8 @@ type ClientValidation struct {
 	Spkis []string
 	// Hashes used to validate the client certificate
 	Hashes []string
+	// Alternative subject names
+	SubjectAltNames []string
 }
 ```
 
@@ -117,6 +121,7 @@ type ClientValidation struct {
 	Secret *auth.Secret
 	Spkis  []string
 	Hashes []string
+	SubjectAltNames []string
 }
 
 func DownstreamTLSContext(secretName string, clientValidation *ClientValidation, tlsMinProtoVersion
