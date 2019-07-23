@@ -62,7 +62,7 @@ spec:
         spkis:
           - 2IEpPESU/mmC30tPsnOfbGKdwKdQfN/wZw1QWpjGlmk=
         subjectAltNames:
-          - Joe
+          - server.example.com
   routes:
     - match: /
       services:
