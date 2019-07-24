@@ -31,8 +31,9 @@ import (
 
 func TestVisitClusters(t *testing.T) {
 	tests := map[string]struct {
-		root dag.Visitable
-		want map[string]*v2.Cluster
+		root   dag.Visitable
+		config *ClusterVistorConfig
+		want   map[string]*v2.Cluster
 	}{
 		"TCPService forward": {
 			root: &dag.Listener{
@@ -59,6 +60,7 @@ func TestVisitClusters(t *testing.T) {
 					},
 				),
 			},
+			config: &ClusterVistorConfig{},
 			want: clustermap(
 				&v2.Cluster{
 					Name:                 "default/example/443/da39a3ee5e",
@@ -78,7 +80,7 @@ func TestVisitClusters(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := visitClusters(tc.root)
+			got := visitClusters(tc.root, tc.config)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}

@@ -32,6 +32,14 @@ type ClusterCache struct {
 	last    int
 }
 
+// ClusterVistorConfig manages config options for clusters
+type ClusterVistorConfig struct {
+	MaxConnections     int
+	MaxPendingRequests int
+	MaxRequests        int
+	MaxRetries         int
+}
+
 // Register registers ch to receive a value when Notify is called.
 // The value of last is the count of the times Notify has been called on this Cache.
 // It functions of a sequence counter, if the value of last supplied to Register
@@ -110,13 +118,16 @@ func (c clusterByName) Less(i, j int) bool { return c[i].(*v2.Cluster).Name < c[
 func (*ClusterCache) TypeURL() string { return cache.ClusterType }
 
 type clusterVisitor struct {
+	*ClusterVistorConfig
+
 	clusters map[string]*v2.Cluster
 }
 
 // visitCluster produces a map of *v2.Clusters.
-func visitClusters(root dag.Vertex) map[string]*v2.Cluster {
+func visitClusters(root dag.Vertex, cvc *ClusterVistorConfig) map[string]*v2.Cluster {
 	cv := clusterVisitor{
-		clusters: make(map[string]*v2.Cluster),
+		clusters:            make(map[string]*v2.Cluster),
+		ClusterVistorConfig: cvc,
 	}
 	cv.visit(root)
 	return cv.clusters
@@ -128,13 +139,13 @@ func (v *clusterVisitor) visit(vertex dag.Vertex) {
 		case *dag.HTTPService:
 			name := envoy.Clustername(cluster)
 			if _, ok := v.clusters[name]; !ok {
-				c := envoy.Cluster(cluster)
+				c := envoy.Cluster(setConfigDefaults(cluster, v.ClusterVistorConfig))
 				v.clusters[c.Name] = c
 			}
 		case *dag.TCPService:
 			name := envoy.Clustername(cluster)
 			if _, ok := v.clusters[name]; !ok {
-				c := envoy.Cluster(cluster)
+				c := envoy.Cluster(setConfigDefaults(cluster, v.ClusterVistorConfig))
 				v.clusters[c.Name] = c
 			}
 		default:
@@ -144,4 +155,29 @@ func (v *clusterVisitor) visit(vertex dag.Vertex) {
 
 	// recurse into children of v
 	vertex.Visit(v.visit)
+}
+
+// setConfigDefaults applies values specified in Contour configuration unless overridden by users
+func setConfigDefaults(c *dag.Cluster, cvc *ClusterVistorConfig) *dag.Cluster {
+	switch c := c.Upstream.(type) {
+	case *dag.HTTPService:
+		c.TCPService.MaxConnections = userValueOrConfigValue(c.TCPService.MaxConnections, cvc.MaxConnections)
+		c.TCPService.MaxPendingRequests = userValueOrConfigValue(c.TCPService.MaxPendingRequests, cvc.MaxPendingRequests)
+		c.TCPService.MaxRequests = userValueOrConfigValue(c.TCPService.MaxRequests, cvc.MaxRequests)
+		c.TCPService.MaxRetries = userValueOrConfigValue(c.TCPService.MaxRetries, cvc.MaxRetries)
+	case *dag.TCPService:
+		c.MaxConnections = userValueOrConfigValue(c.MaxConnections, cvc.MaxConnections)
+		c.MaxPendingRequests = userValueOrConfigValue(c.MaxPendingRequests, cvc.MaxPendingRequests)
+		c.MaxRequests = userValueOrConfigValue(c.MaxRequests, cvc.MaxRequests)
+		c.MaxRetries = userValueOrConfigValue(c.MaxRetries, cvc.MaxRetries)
+	}
+	return c
+}
+
+// userValueOrConfigValue returns a user defined or a default int
+func userValueOrConfigValue(userVal, configVal int) int {
+	if userVal != 0 {
+		return userVal
+	}
+	return configVal
 }

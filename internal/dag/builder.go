@@ -149,6 +149,7 @@ func (b *builder) addHTTPService(svc *v1.Service, port *v1.ServicePort) *HTTPSer
 		},
 		Protocol: protocol,
 	}
+
 	b.services[s.toMeta()] = s
 	return s
 }

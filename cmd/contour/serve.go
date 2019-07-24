@@ -38,7 +38,7 @@ import (
 	"github.com/heptio/contour/internal/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"gopkg.in/alecthomas/kingpin.v2"
 	coreinformers "k8s.io/client-go/informers"
 )
 
@@ -151,6 +151,12 @@ type serveContext struct {
 	httpsAddr      string
 	httpsPort      int
 	httpsAccessLog string
+
+	// cluster config parameters
+	MaxConnections     int `json:"max-connections"`
+	MaxPendingRequests int `json:"max-pending-requests"`
+	MaxRequests        int `json:"max-requests"`
+	MaxRetries         int `json:"max-retries"`
 }
 
 // tlsconfig returns a new *tls.Config. If the context is not properly configured
@@ -218,6 +224,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			HTTPSAddress:   ctx.httpsAddr,
 			HTTPSPort:      ctx.httpsPort,
 			HTTPSAccessLog: ctx.httpsAccessLog,
+		},
+		ClusterVistorConfig: contour.ClusterVistorConfig{
+			MaxConnections:     ctx.MaxConnections,
+			MaxPendingRequests: ctx.MaxPendingRequests,
+			MaxRequests:        ctx.MaxRequests,
+			MaxRetries:         ctx.MaxRetries,
 		},
 		ListenerCache: contour.NewListenerCache(ctx.statsAddr, ctx.statsPort),
 		FieldLogger:   log.WithField("context", "CacheHandler"),

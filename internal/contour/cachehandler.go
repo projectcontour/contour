@@ -29,6 +29,7 @@ import (
 // CacheHandler manages the state of xDS caches.
 type CacheHandler struct {
 	ListenerVisitorConfig
+	ClusterVistorConfig
 	ListenerCache
 	RouteCache
 	ClusterCache
@@ -81,7 +82,7 @@ func (ch *CacheHandler) updateRoutes(root dag.Visitable) {
 }
 
 func (ch *CacheHandler) updateClusters(root dag.Visitable) {
-	clusters := visitClusters(root)
+	clusters := visitClusters(root, &ch.ClusterVistorConfig)
 	ch.ClusterCache.Update(clusters)
 }
 

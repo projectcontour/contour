@@ -184,8 +184,9 @@ func TestClusterCacheQuery(t *testing.T) {
 
 func TestClusterVisit(t *testing.T) {
 	tests := map[string]struct {
-		objs []interface{}
-		want map[string]*v2.Cluster
+		objs   []interface{}
+		config *ClusterVistorConfig
+		want   map[string]*v2.Cluster
 	}{
 		"nothing": {
 			objs: nil,
@@ -213,6 +214,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 				),
 			},
+			config: &ClusterVistorConfig{},
 			want: clustermap(
 				&v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
@@ -250,6 +252,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 				),
 			},
+			config: &ClusterVistorConfig{},
 			want: clustermap(
 				&v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
@@ -291,6 +294,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 				),
 			},
+			config: &ClusterVistorConfig{},
 			want: clustermap(
 				&v2.Cluster{
 					Name:                 "default/kuard/80/da39a3ee5e",
@@ -330,6 +334,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 				),
 			},
+			config: &ClusterVistorConfig{},
 			want: clustermap(
 				&v2.Cluster{
 					Name:                 "beurocra-7fe4b4/tiny-cog-7fe4b4/443/da39a3ee5e",
@@ -379,6 +384,7 @@ func TestClusterVisit(t *testing.T) {
 					TargetPort: intstr.FromString("9001"),
 				}),
 			},
+			config: &ClusterVistorConfig{},
 			want: clustermap(
 				&v2.Cluster{
 					Name:                 "default/backend/80/da39a3ee5e",
@@ -436,6 +442,7 @@ func TestClusterVisit(t *testing.T) {
 					TargetPort: intstr.FromInt(6502),
 				}),
 			},
+			config: &ClusterVistorConfig{},
 			want: clustermap(
 				&v2.Cluster{
 					Name:                 "default/backend/80/c184349821",
@@ -499,6 +506,7 @@ func TestClusterVisit(t *testing.T) {
 					TargetPort: intstr.FromInt(6502),
 				}),
 			},
+			config: &ClusterVistorConfig{},
 			want: clustermap(
 				&v2.Cluster{
 					Name:                 "default/backend/80/7f8051653a",
@@ -555,6 +563,7 @@ func TestClusterVisit(t *testing.T) {
 					TargetPort: intstr.FromInt(6502),
 				}),
 			},
+			config: &ClusterVistorConfig{},
 			want: clustermap(
 				&v2.Cluster{
 					Name:                 "default/backend/80/f3b72af6a9",
@@ -598,6 +607,7 @@ func TestClusterVisit(t *testing.T) {
 					TargetPort: intstr.FromInt(6502),
 				}),
 			},
+			config: &ClusterVistorConfig{},
 			want: clustermap(
 				&v2.Cluster{
 					Name:                 "default/backend/80/8bf87fefba",
@@ -641,6 +651,7 @@ func TestClusterVisit(t *testing.T) {
 					TargetPort: intstr.FromInt(6502),
 				}),
 			},
+			config: &ClusterVistorConfig{},
 			want: clustermap(
 				&v2.Cluster{
 					Name:                 "default/backend/80/58d888c08a",
@@ -691,6 +702,7 @@ func TestClusterVisit(t *testing.T) {
 					TargetPort: intstr.FromInt(6502),
 				}),
 			},
+			config: &ClusterVistorConfig{},
 			want: clustermap(
 				&v2.Cluster{
 					Name:                 "default/backend/80/58d888c08a",
@@ -746,6 +758,7 @@ func TestClusterVisit(t *testing.T) {
 					TargetPort: intstr.FromInt(6502),
 				}),
 			},
+			config: &ClusterVistorConfig{},
 			want: clustermap(
 				&v2.Cluster{
 					Name:                 "default/backend/80/86d7a9c129",
@@ -791,6 +804,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 				),
 			},
+			config: &ClusterVistorConfig{},
 			want: clustermap(
 				&v2.Cluster{
 					Name:                 "default/kuard/80/da39a3ee5e",
@@ -808,6 +822,119 @@ func TestClusterVisit(t *testing.T) {
 							MaxPendingRequests: u32(4096),
 							MaxRequests:        u32(404),
 							MaxRetries:         u32(7),
+						}},
+					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+				},
+			),
+		},
+		"circuitbreaker annotations overwrite defaults from config file": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromString("http"),
+						},
+					},
+				},
+				serviceWithAnnotations(
+					"default",
+					"kuard",
+					map[string]string{
+						"contour.heptio.com/max-connections":      "9000",
+						"contour.heptio.com/max-pending-requests": "4096",
+						"contour.heptio.com/max-requests":         "404",
+						"contour.heptio.com/max-retries":          "7",
+					},
+					v1.ServicePort{
+						Protocol: "TCP",
+						Name:     "http",
+						Port:     80,
+					},
+				),
+			},
+			config: &ClusterVistorConfig{
+				MaxConnections:     1234,
+				MaxPendingRequests: 1235,
+				MaxRequests:        1236,
+				MaxRetries:         1237,
+			},
+			want: clustermap(
+				&v2.Cluster{
+					Name:                 "default/kuard/80/da39a3ee5e",
+					AltStatName:          "default_kuard_80",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/kuard/http",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					CircuitBreakers: &cluster.CircuitBreakers{
+						Thresholds: []*cluster.CircuitBreakers_Thresholds{{
+							MaxConnections:     u32(9000),
+							MaxPendingRequests: u32(4096),
+							MaxRequests:        u32(404),
+							MaxRetries:         u32(7),
+						}},
+					},
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+				},
+			),
+		},
+		"circuitbreaker values from config file": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromString("http"),
+						},
+					},
+				},
+				serviceWithAnnotations(
+					"default",
+					"kuard",
+					map[string]string{},
+					v1.ServicePort{
+						Protocol: "TCP",
+						Name:     "http",
+						Port:     80,
+					},
+				),
+			},
+			config: &ClusterVistorConfig{
+				MaxConnections:     1234,
+				MaxPendingRequests: 1235,
+				MaxRequests:        1236,
+				MaxRetries:         1237,
+			},
+			want: clustermap(
+				&v2.Cluster{
+					Name:                 "default/kuard/80/da39a3ee5e",
+					AltStatName:          "default_kuard_80",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/kuard/http",
+					},
+					ConnectTimeout: 250 * time.Millisecond,
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					CircuitBreakers: &cluster.CircuitBreakers{
+						Thresholds: []*cluster.CircuitBreakers_Thresholds{{
+							MaxConnections:     u32(1234),
+							MaxPendingRequests: u32(1235),
+							MaxRequests:        u32(1236),
+							MaxRetries:         u32(1237),
 						}},
 					},
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
@@ -841,6 +968,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 				),
 			},
+			config: &ClusterVistorConfig{},
 			want: clustermap(
 				&v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
@@ -868,7 +996,7 @@ func TestClusterVisit(t *testing.T) {
 				reh.OnAdd(o)
 			}
 			root := dag.BuildDAG(&reh.KubernetesCache)
-			got := visitClusters(root)
+			got := visitClusters(root, tc.config)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}
