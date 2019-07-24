@@ -14,8 +14,8 @@ This configuration has several advantages:
 - Envoy runs on ports 80 & 443
 - In our example deployment, the following certificates must be present as Secrets in the `heptio-contour` namespace for the example YAMLs to apply:
     - `cacert`: must contain a ` cacert.pem` key that contains a CA certificate that signs the other certificates.
-    - `contourcerts`: be a Secret of type `kubernetes.io/tls` and must contain `tls.crt` and `tls.key` keys that contain a certificate and key for Contour. The certificate must be valid for the name `contour` either via CN or SAN.
-    - `envoycerts`: be a Secret of type `kubernetes.io/tls` and must contain `tls.crt` and `tls.key` keys that contain a certificate and key for Envoy.
+    - `contourcert`: be a Secret of type `kubernetes.io/tls` and must contain `tls.crt` and `tls.key` keys that contain a certificate and key for Contour. The certificate must be valid for the name `contour` either via CN or SAN.
+    - `envoycert`: be a Secret of type `kubernetes.io/tls` and must contain `tls.crt` and `tls.key` keys that contain a certificate and key for Envoy.
 
 For detailed instructions on how to configure the required certs manually, see the [step-by-step TLS HOWTO][2].
 
