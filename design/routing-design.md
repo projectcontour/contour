@@ -98,13 +98,10 @@ The delegation concept is a key component to enable multi-team clusters as well 
 
 The IngressRoute spec will be updated to allow for a `header` field to be added which will allow for a set of key/value pairs to be applied to the route. Additionally, the path `match` moves to it's own `path` variable.
 
-**NOTE**: *Routing on a `header` value* still requires a path prefix to be specified. If pure header delegation is requested, then Contour will configure a wildcard path to match all paths resulting in a header match only across any path.
+- **header:** Key used to match a specific header in the request
+- **value**: The value of the header matching the key specified
 
-#### Header Values
-
-IngressRoute/v1 will support routing from various headers. It will implement commonly used headers such as user-agent & cookie since those will require a regex style implementation. By implementing them as speific types, we can apply those regex's automatically.
-
-- **header:** This is a generic header type and allows for matching headers
+**NOTE**: *Routing on a `header` value* still requires a path prefix to be specified.
 
 ### Path Match with Headers
 
@@ -168,7 +165,7 @@ spec:
 
 ### Header Delegation
 
-Currently with IngressRoute, path prefixes of a request can be delegated to teams, users, namespaces, within a single Kubernetes cluster. Additionally, this design looks to add headers as a mechanism to pass authority off to teams, users or namespaces.
+Currently with IngressRoute, path prefixes of a request can be delegated to teams, users, namespaces, within a single Kubernetes cluster. This design looks to add headers as a mechanism to pass authority off to teams, users or namespaces.
 
 The following example shows how requests to a specific path with a specific header can be delegated to a team in another namespace as well as how requests that don't match the headers specified previously will be handled in the current namespace.
 
@@ -237,45 +234,13 @@ Following are sample requests and which backends will handle the request:
 - `GET -H "x-header: b" /foo` —> `backend-b.team-b`
 - `GET /foo` —>  `backend-default`
 
-### Path Match with Headers (no path)
-
-The following example demonstrates how to send traffic to different services for any path but which contain different headers. This example shows how to have 2 routes match specific headers. Since the wildcard path is being inserted automatically via Contour, any further delegations will need to have this path appended such that a further delegation does not overwrite the intended logic.
-
-**Note:** *The missing `path` match defined here. Since we're only defining the header piece of the route match, Contour will insert a wildcard path match to satisfy the reverse proxy system.* 
-
-```yaml
-apiVersion: projectcontour.io/v1
-kind: IngressRoute
-metadata: 
-  name: example
-spec:
-  routes:
-  - match:
-      - header: x-header
-        value: a
-    services:
-    - name: backend-a
-      port: 9999
-  - match: 
-      - header: x-header
-        value: b
-    services:
-    - name: backend-b
-      port: 9999
-```
-
-#### Requests
-
-Following are sample requests and which backends will handle the request:
-
-- `GET -H "x-header: a" /****` —> `backend-a`
-- `GET -H "x-header: b" /****` —> `backend-b`
-
 ### Exact Path
 
 Contour has support for a prefix-based match which means a request will route if the first part of the defined path matches. Sometimes this is not desired as it allows requests to be routed which may not be desired. 
 
-To enable an exact path match, just leave the trailing slash (`/`) off of the defined path. To enable a prefix-based path match, add a trailing slash (`/`) on the defined path. 
+To enable an exact path match, just leave the trailing slash (`/`) off of the defined path. To enable a prefix-based path match, add a trailing slash (`/`) on the defined path.
+
+*Note: The convention of the trailing slash is subtle, but allows the spec to be cleaner. A more clear approach might be to have a field for the type of match (e.g. `exact` or `prefix`)*
 
 ##### Exact-Match:
 
