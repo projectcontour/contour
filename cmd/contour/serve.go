@@ -153,6 +153,10 @@ type serveContext struct {
 	httpsAccessLog string
 
 	// cluster config parameters
+	circuitBreakerOptions `json:"circuitbreaker"`
+}
+
+type circuitBreakerOptions struct {
 	MaxConnections     int `json:"max-connections"`
 	MaxPendingRequests int `json:"max-pending-requests"`
 	MaxRequests        int `json:"max-requests"`
