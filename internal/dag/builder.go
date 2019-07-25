@@ -308,17 +308,18 @@ func isBlank(s string) bool {
 	return len(strings.TrimSpace(s)) == 0
 }
 
-// minProtoVersion returns the TLS protocol version specified by an ingress annotation
+// MinProtoVersion returns the TLS protocol version specified by an ingress annotation
 // or default if non present.
-func minProtoVersion(version string) auth.TlsParameters_TlsProtocol {
+func MinProtoVersion(version string) auth.TlsParameters_TlsProtocol {
 	switch version {
 	case "1.3":
 		return auth.TlsParameters_TLSv1_3
 	case "1.2":
 		return auth.TlsParameters_TLSv1_2
-	default:
-		// any other value is interpreted as TLS/1.1
+	case "1.1":
 		return auth.TlsParameters_TLSv1_1
+	default:
+		return -1
 	}
 }
 
@@ -368,7 +369,7 @@ func (b *builder) computeSecureVirtualhosts() {
 					svhost := b.lookupSecureVirtualHost(host)
 					svhost.Secret = sec
 					version := ing.Annotations["contour.heptio.com/tls-minimum-protocol-version"]
-					svhost.MinProtoVersion = minProtoVersion(version)
+					svhost.MinProtoVersion = MinProtoVersion(version)
 				}
 			}
 		}
@@ -498,7 +499,7 @@ func (b *builder) computeIngressRoutes() {
 			if sec != nil && b.delegationPermitted(m, ir.Namespace) {
 				svhost := b.lookupSecureVirtualHost(host)
 				svhost.Secret = sec
-				svhost.MinProtoVersion = minProtoVersion(ir.Spec.VirtualHost.TLS.MinimumProtocolVersion)
+				svhost.MinProtoVersion = MinProtoVersion(ir.Spec.VirtualHost.TLS.MinimumProtocolVersion)
 				enforceTLS = true
 			}
 			// passthrough is true if tls.secretName is not present, and

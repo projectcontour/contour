@@ -17,6 +17,8 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
@@ -62,10 +64,13 @@ type ListenerVisitorConfig struct {
 	// If not set, defaults to DEFAULT_HTTPS_ACCESS_LOG.
 	HTTPSAccessLog string
 
-	// UseProxyProto configurs all listeners to expect a PROXY
+	// UseProxyProto configures all listeners to expect a PROXY
 	// V1 or V2 preamble.
 	// If not set, defaults to false.
 	UseProxyProto bool
+
+	// MinimumProtocolVersion defines the min tls protocol version to be used
+	MinimumProtocolVersion auth.TlsParameters_TlsProtocol
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
@@ -120,6 +125,22 @@ func (lvc *ListenerVisitorConfig) httpsAccessLog() string {
 		return lvc.HTTPSAccessLog
 	}
 	return DEFAULT_HTTPS_ACCESS_LOG
+}
+
+// minProtocolVersion returns min protocol version if specified via annotation first
+// otherwise it attempts to return one set in the config file
+func (lvc *ListenerVisitorConfig) minProtocolVersion(ingressVersion auth.TlsParameters_TlsProtocol) auth.TlsParameters_TlsProtocol {
+	// If version is defined on an ingress resource, return that
+	if ingressVersion > 0 {
+		return ingressVersion
+	}
+	// If version is not defined then return it, otherwise return the config version
+	switch lvc.MinimumProtocolVersion {
+	case -1, 0:
+		return auth.TlsParameters_TLSv1_1
+	default:
+		return lvc.MinimumProtocolVersion
+	}
 }
 
 // ListenerCache manages the contents of the gRPC LDS cache.
@@ -318,7 +339,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 
 		// attach certificate data to this listener if provided.
 		if vh.Secret != nil {
-			fc.TlsContext = envoy.DownstreamTLSContext(envoy.Secretname(vh.Secret), vh.MinProtoVersion, alpnProtos...)
+			fc.TlsContext = envoy.DownstreamTLSContext(envoy.Secretname(vh.Secret), v.ListenerVisitorConfig.minProtocolVersion(vh.MinProtoVersion), alpnProtos...)
 		}
 
 		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains, fc)

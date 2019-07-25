@@ -75,9 +75,10 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 		IngressRouteStatus: &k8s.IngressRouteStatus{
 			Client: fake.NewSimpleClientset(),
 		},
-		Metrics:       metrics.NewMetrics(r),
-		ListenerCache: contour.NewListenerCache(statsAddress, statsPort),
-		FieldLogger:   log,
+		Metrics:               metrics.NewMetrics(r),
+		ListenerCache:         contour.NewListenerCache(statsAddress, statsPort),
+		FieldLogger:           log,
+		ListenerVisitorConfig: contour.ListenerVisitorConfig{},
 	}
 
 	reh := contour.ResourceEventHandler{
