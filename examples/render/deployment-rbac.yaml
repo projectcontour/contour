@@ -233,9 +233,20 @@ spec:
         command: ["envoy"]
         args:
         - --config-path /config/contour.json
-        - --service-cluster cluster0
-        - --service-node node0
+        - --service-cluster $(CONTOUR_NAMESPACE)
+        - --service-node $(ENVOY_POD_NAME)
         - --log-level info
+        env:
+        - name: CONTOUR_NAMESPACE
+          valueFrom:
+             fieldRef:
+               apiVersion: v1
+               fieldPath: metadata.namespace
+        - name: ENVOY_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
         readinessProbe:
           httpGet:
             path: /healthz
