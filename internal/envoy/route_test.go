@@ -487,10 +487,24 @@ func TestVirtualHost(t *testing.T) {
 
 func TestPrefixMatch(t *testing.T) {
 	const prefix = "/kang"
-	got := PrefixMatch(prefix)
+	got := RouteMatch(prefix)
 	want := route.RouteMatch{
 		PathSpecifier: &route.RouteMatch_Prefix{
 			Prefix: prefix,
+		},
+	}
+
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestRegexMatch(t *testing.T) {
+	const prefix = "/[^/]+/media(/.*|/?)"
+	got := RouteMatch(prefix)
+	want := route.RouteMatch{
+		PathSpecifier: &route.RouteMatch_Regex{
+			Regex: prefix,
 		},
 	}
 
