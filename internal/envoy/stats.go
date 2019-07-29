@@ -40,20 +40,36 @@ func StatsListener(address string, port int) *v2.Listener {
 								VirtualHosts: []*route.VirtualHost{{
 									Name:    "backend",
 									Domains: []string{"*"},
-									Routes: []*route.Route{{
-										Match: &route.RouteMatch{
-											PathSpecifier: &route.RouteMatch_Prefix{
-												Prefix: "/stats",
+									Routes: []*route.Route{
+										{
+											Match: &route.RouteMatch{
+												PathSpecifier: &route.RouteMatch_Prefix{
+													Prefix: "/ready",
+												},
 											},
-										},
-										Action: &route.Route_Route{
-											Route: &route.RouteAction{
-												ClusterSpecifier: &route.RouteAction_Cluster{
-													Cluster: "service-stats",
+											Action: &route.Route_Route{
+												Route: &route.RouteAction{
+													ClusterSpecifier: &route.RouteAction_Cluster{
+														Cluster: "service-stats",
+													},
 												},
 											},
 										},
-									}},
+										{
+											Match: &route.RouteMatch{
+												PathSpecifier: &route.RouteMatch_Prefix{
+													Prefix: "/stats",
+												},
+											},
+											Action: &route.Route_Route{
+												Route: &route.RouteAction{
+													ClusterSpecifier: &route.RouteAction_Cluster{
+														Cluster: "service-stats",
+													},
+												},
+											},
+										},
+									},
 								}},
 							},
 						},
