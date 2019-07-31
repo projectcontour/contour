@@ -485,31 +485,36 @@ func TestVirtualHost(t *testing.T) {
 	}
 }
 
-func TestPrefixMatch(t *testing.T) {
-	const prefix = "/kang"
-	got := RouteMatch(prefix)
-	want := route.RouteMatch{
-		PathSpecifier: &route.RouteMatch_Prefix{
-			Prefix: prefix,
+func TestRouteMatch(t *testing.T) {
+	tests := map[string]struct {
+		prefix string
+		want   route.RouteMatch
+	}{
+		"prefix match": {
+			prefix: "/kang",
+			want: route.RouteMatch{
+				PathSpecifier: &route.RouteMatch_Prefix{
+					Prefix: "/kang",
+				},
+			},
+		},
+		"regex match": {
+			prefix: "/[^/]+/media(/.*|/?)",
+			want: route.RouteMatch{
+				PathSpecifier: &route.RouteMatch_Regex{
+					Regex: "/[^/]+/media(/.*|/?)",
+				},
+			},
 		},
 	}
 
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatal(diff)
-	}
-}
-
-func TestRegexMatch(t *testing.T) {
-	const prefix = "/[^/]+/media(/.*|/?)"
-	got := RouteMatch(prefix)
-	want := route.RouteMatch{
-		PathSpecifier: &route.RouteMatch_Regex{
-			Regex: prefix,
-		},
-	}
-
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatal(diff)
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := RouteMatch(tc.prefix)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
 	}
 }
 
