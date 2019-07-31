@@ -168,7 +168,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				if len(vhost.Routes) < 1 {
 					return
 				}
-				sort.Stable(sort.Reverse(longestRouteFirst(vhost.Routes)))
+				sort.Stable(longestRouteFirst(vhost.Routes))
 				v.routes["ingress_http"].VirtualHosts = append(v.routes["ingress_http"].VirtualHosts, vhost)
 			case *dag.SecureVirtualHost:
 				vhost := envoy.VirtualHost(vh.VirtualHost.Name)
@@ -188,7 +188,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				if len(vhost.Routes) < 1 {
 					return
 				}
-				sort.Stable(sort.Reverse(longestRouteFirst(vhost.Routes)))
+				sort.Stable(longestRouteFirst(vhost.Routes))
 				v.routes["ingress_https"].VirtualHosts = append(v.routes["ingress_https"].VirtualHosts, vhost)
 			default:
 				// recurse
@@ -212,19 +212,21 @@ type longestRouteFirst []route.Route
 func (l longestRouteFirst) Len() int      { return len(l) }
 func (l longestRouteFirst) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
 func (l longestRouteFirst) Less(i, j int) bool {
-	a, ok := l[i].Match.PathSpecifier.(*route.RouteMatch_Prefix)
-	if !ok {
-		// ignore non prefix matches
-		return false
+	switch a := l[i].Match.PathSpecifier.(type) {
+	case *route.RouteMatch_Prefix:
+		switch b := l[j].Match.PathSpecifier.(type) {
+		case *route.RouteMatch_Prefix:
+			return a.Prefix > b.Prefix
+		}
+	case *route.RouteMatch_Regex:
+		switch b := l[j].Match.PathSpecifier.(type) {
+		case *route.RouteMatch_Regex:
+			return a.Regex > b.Regex
+		case *route.RouteMatch_Prefix:
+			return true
+		}
 	}
-
-	b, ok := l[j].Match.PathSpecifier.(*route.RouteMatch_Prefix)
-	if !ok {
-		// ignore non prefix matches
-		return false
-	}
-
-	return a.Prefix < b.Prefix
+	return false
 }
 
 func u32(val int) *types.UInt32Value { return &types.UInt32Value{Value: uint32(val)} }
