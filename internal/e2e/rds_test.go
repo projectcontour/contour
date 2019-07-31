@@ -2793,8 +2793,7 @@ func TestRoutePrefixRouteRegex(t *testing.T) {
 					Name:    "*",
 					Domains: []string{"*"},
 					Routes: []route.Route{{
-						Match: envoy.RouteRegex("/[^/]+/invoices(/.*|/?)"),
-
+						Match:               envoy.RouteRegex("/[^/]+/invoices(/.*|/?)"),
 						Action:              routecluster("default/kuard/80/da39a3ee5e"),
 						RequestHeadersToAdd: envoy.RouteHeaders(),
 					}, {
