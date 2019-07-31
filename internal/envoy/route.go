@@ -160,17 +160,30 @@ func weightedClusters(clusters []*dag.Cluster) *route.WeightedCluster {
 
 // RouteMatch creates a RouteMatch for the supplied prefix/regex.
 func RouteMatch(path string) route.RouteMatch {
-	// Check if path contains a regex
-	if strings.ContainsAny(path, "^+*[]%") {
-		return route.RouteMatch{
-			PathSpecifier: &route.RouteMatch_Regex{
-				Regex: path,
-			},
-		}
+	switch {
+	case strings.ContainsAny(path, "^+*[]%"):
+		// path smells like a regex
+		return RouteRegex(path)
+	default:
+		// else treat it as a prefix
+		return RoutePrefix(path)
 	}
+}
+
+// RouteRegex returns a regex matcher.
+func RouteRegex(regex string) route.RouteMatch {
+	return route.RouteMatch{
+		PathSpecifier: &route.RouteMatch_Regex{
+			Regex: regex,
+		},
+	}
+}
+
+// RoutePrefix returns a prefix matcher.
+func RoutePrefix(prefix string) route.RouteMatch {
 	return route.RouteMatch{
 		PathSpecifier: &route.RouteMatch_Prefix{
-			Prefix: path,
+			Prefix: prefix,
 		},
 	}
 }
