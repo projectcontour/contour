@@ -14,6 +14,7 @@ package envoy
 
 import (
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -157,8 +158,29 @@ func weightedClusters(clusters []*dag.Cluster) *route.WeightedCluster {
 	return &wc
 }
 
-// PrefixMatch creates a RouteMatch for the supplied prefix.
-func PrefixMatch(prefix string) route.RouteMatch {
+// RouteMatch creates a RouteMatch for the supplied prefix/regex.
+func RouteMatch(path string) route.RouteMatch {
+	switch {
+	case strings.ContainsAny(path, "^+*[]%"):
+		// path smells like a regex
+		return RouteRegex(path)
+	default:
+		// else treat it as a prefix
+		return RoutePrefix(path)
+	}
+}
+
+// RouteRegex returns a regex matcher.
+func RouteRegex(regex string) route.RouteMatch {
+	return route.RouteMatch{
+		PathSpecifier: &route.RouteMatch_Regex{
+			Regex: regex,
+		},
+	}
+}
+
+// RoutePrefix returns a prefix matcher.
+func RoutePrefix(prefix string) route.RouteMatch {
 	return route.RouteMatch{
 		PathSpecifier: &route.RouteMatch_Prefix{
 			Prefix: prefix,
