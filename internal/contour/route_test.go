@@ -14,6 +14,7 @@
 package contour
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -1897,6 +1898,64 @@ func TestRouteVisit(t *testing.T) {
 			}
 			root := dag.BuildDAG(&reh.KubernetesCache)
 			got := visitRoutes(root)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestSortLongestRouteFirst(t *testing.T) {
+	tests := map[string]struct {
+		routes []route.Route
+		want   []route.Route
+	}{
+		"two prefixes": {
+			routes: []route.Route{{
+				Match: envoy.RoutePrefix("/"),
+			}, {
+				Match: envoy.RoutePrefix("/longer"),
+			}},
+			want: []route.Route{{
+				Match: envoy.RoutePrefix("/longer"),
+			}, {
+				Match: envoy.RoutePrefix("/"),
+			}},
+		},
+		"two regexes": {
+			routes: []route.Route{{
+				Match: envoy.RouteRegex("/v2"),
+			}, {
+				Match: envoy.RouteRegex("/v1/.+"),
+			}},
+			want: []route.Route{{
+				Match: envoy.RouteRegex("/v2"),
+			}, {
+				Match: envoy.RouteRegex("/v1/.+"),
+			}},
+		},
+		"regex sorts before prefix": {
+			routes: []route.Route{{
+				Match: envoy.RouteRegex("/api/v?"),
+			}, {
+				Match: envoy.RoutePrefix("/"),
+			}, {
+				Match: envoy.RouteRegex(".*"),
+			}},
+			want: []route.Route{{
+				Match: envoy.RouteRegex("/api/v?"),
+			}, {
+				Match: envoy.RouteRegex(".*"),
+			}, {
+				Match: envoy.RoutePrefix("/"),
+			}},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := append([]route.Route{}, tc.routes...) // shallow copy
+			sort.Stable(longestRouteFirst(got))
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}
