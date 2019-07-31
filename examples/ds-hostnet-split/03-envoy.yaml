@@ -31,7 +31,7 @@ spec:
         - --log-level info
         command:
         - envoy
-        image: docker.io/envoyproxy/envoy:v1.10.0
+        image: docker.io/envoyproxy/envoy:v1.11.0
         imagePullPolicy: IfNotPresent
         name: envoy
         env:

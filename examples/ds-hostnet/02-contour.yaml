@@ -38,7 +38,7 @@ spec:
           httpGet:
             path: /healthz
             port: 8000
-      - image: docker.io/envoyproxy/envoy:v1.10.0
+      - image: docker.io/envoyproxy/envoy:v1.11.0
         name: envoy
         ports:
         - containerPort: 8080
