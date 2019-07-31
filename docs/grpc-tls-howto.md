@@ -4,8 +4,8 @@
 
 The outcome of this is that we will have three Secrets available in the `heptio-contour` namespace:
 - cacert: contains the CA's public certificate.
-- contourcerts: contains Contour's keypair, used for serving TLS secured gRPC. This must be a valid certificate for the name `contour` in order for this to work. This is currently hardcoded by Contour.
-- envoycerts: contains Envoy's keypair, used as a client for connecting to Contour.
+- contourcert: contains Contour's keypair, used for serving TLS secured gRPC. This must be a valid certificate for the name `contour` in order for this to work. This is currently hardcoded by Contour.
+- envoycert: contains Envoy's keypair, used as a client for connecting to Contour.
 
 For the purposes of this documentation, we'll be doing the same thing the `contour certgen --pem` or the `make gencerts` commands do and putting the certs in a `certs/` subdirectory of the downloaded repo.
 
@@ -80,7 +80,7 @@ Next, we create the required secrets in the target Kubernetes cluster:
 ```
 kubectl create secret -n heptio-contour generic cacert --from-file=./certs/cacert.pem
 kubectl create secret -n heptio-contour tls contourcert --key=./certs/contourkey.pem --cert=./certs/contourcert.pem
-kubectl create secret -n heptio-contour generic envoycert --key=./certs/envoykey.pem --cert=./certs/envoycert.pem
+kubectl create secret -n heptio-contour tls envoycert --key=./certs/envoykey.pem --cert=./certs/envoycert.pem
 ```
 
 Note that we don't put the CA **key** into the cluster, there's no reason for that to be there, and that would create a security problem. That also means that the `cacert` secret can't be a `tls` type secret, as they must be a keypair.

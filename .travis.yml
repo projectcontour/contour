@@ -5,6 +5,11 @@ go:
 
 sudo: false
 
+cache:
+  directories:
+  - $HOME/.cache/go-build
+  - $HOME/gopath/pkg/mod
+
 env:
   - GOPROXY=https://gocenter.io
 
