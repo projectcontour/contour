@@ -16,11 +16,12 @@
 package dag
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // A DAG represents a directed acylic graph of objects representing the relationship
@@ -47,8 +48,24 @@ func (d *DAG) Statuses() map[Meta]Status {
 	return d.statuses
 }
 
+// PrefixRoute defines a Route that matches a path prefix.
+type PrefixRoute struct {
+
+	// Prefix to match.
+	Prefix string
+	Route
+}
+
+// RegexRoute defines a Route that matches a regular expression.
+type RegexRoute struct {
+
+	// Regex to match.
+	Regex string
+	Route
+}
+
+// Route defines the properties of a route to a Cluster.
 type Route struct {
-	Prefix   string
 	Clusters []*Cluster
 
 	// Should this route generate a 301 upgrade if accessed
@@ -115,17 +132,24 @@ type VirtualHost struct {
 	// as defined by RFC 3986.
 	Name string
 
-	routes map[string]*Route
+	routes map[string]Vertex
 
 	// Service to TCP proxy all incoming connections.
 	*TCPProxy
 }
 
-func (v *VirtualHost) addRoute(route *Route) {
+func (v *VirtualHost) addRoute(route Vertex) {
 	if v.routes == nil {
-		v.routes = make(map[string]*Route)
+		v.routes = make(map[string]Vertex)
 	}
-	v.routes[route.Prefix] = route
+	switch r := route.(type) {
+	case *PrefixRoute:
+		v.routes[r.Prefix] = r
+	case *RegexRoute:
+		v.routes[r.Regex] = r
+	default:
+		panic(fmt.Sprintf("unexpected route type: %T %#v", r, r))
+	}
 }
 
 func (v *VirtualHost) Visit(f func(Vertex)) {

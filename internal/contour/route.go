@@ -147,14 +147,31 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 			case *dag.VirtualHost:
 				vhost := envoy.VirtualHost(vh.Name)
 				vh.Visit(func(v dag.Vertex) {
-					if r, ok := v.(*dag.Route); ok {
+					switch r := v.(type) {
+					case *dag.PrefixRoute:
 						if len(r.Clusters) < 1 {
 							// no services for this route, skip it.
 							return
 						}
 						rr := route.Route{
-							Match:               envoy.RouteMatch(r.Prefix),
-							Action:              envoy.RouteRoute(r),
+							Match:               envoy.RoutePrefix(r.Prefix),
+							Action:              envoy.RouteRoute(&r.Route),
+							RequestHeadersToAdd: envoy.RouteHeaders(),
+						}
+
+						if r.HTTPSUpgrade {
+							rr.Action = envoy.UpgradeHTTPS()
+							rr.RequestHeadersToAdd = nil
+						}
+						vhost.Routes = append(vhost.Routes, rr)
+					case *dag.RegexRoute:
+						if len(r.Clusters) < 1 {
+							// no services for this route, skip it.
+							return
+						}
+						rr := route.Route{
+							Match:               envoy.RouteRegex(r.Regex),
+							Action:              envoy.RouteRoute(&r.Route),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
 						}
 
@@ -173,16 +190,28 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 			case *dag.SecureVirtualHost:
 				vhost := envoy.VirtualHost(vh.VirtualHost.Name)
 				vh.Visit(func(v dag.Vertex) {
-					if r, ok := v.(*dag.Route); ok {
+					switch r := v.(type) {
+					case *dag.PrefixRoute:
 						if len(r.Clusters) < 1 {
 							// no services for this route, skip it.
 							return
 						}
 						vhost.Routes = append(vhost.Routes, route.Route{
-							Match:               envoy.RouteMatch(r.Prefix),
-							Action:              envoy.RouteRoute(r),
+							Match:               envoy.RoutePrefix(r.Prefix),
+							Action:              envoy.RouteRoute(&r.Route),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
 						})
+					case *dag.RegexRoute:
+						if len(r.Clusters) < 1 {
+							// no services for this route, skip it.
+							return
+						}
+						vhost.Routes = append(vhost.Routes, route.Route{
+							Match:               envoy.RouteRegex(r.Regex),
+							Action:              envoy.RouteRoute(&r.Route),
+							RequestHeadersToAdd: envoy.RouteHeaders(),
+						})
+
 					}
 				})
 				if len(vhost.Routes) < 1 {
