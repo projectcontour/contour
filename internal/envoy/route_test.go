@@ -62,7 +62,6 @@ func TestRouteRoute(t *testing.T) {
 	}{
 		"single service": {
 			route: &dag.Route{
-				Prefix:   "/",
 				Clusters: []*dag.Cluster{c1},
 			},
 			want: &route.Route_Route{
@@ -75,7 +74,6 @@ func TestRouteRoute(t *testing.T) {
 		},
 		"websocket": {
 			route: &dag.Route{
-				Prefix:    "/",
 				Websocket: true,
 				Clusters:  []*dag.Cluster{c1},
 			},
@@ -92,7 +90,6 @@ func TestRouteRoute(t *testing.T) {
 		},
 		"multiple": {
 			route: &dag.Route{
-				Prefix: "/",
 				Clusters: []*dag.Cluster{{
 					Upstream: &dag.TCPService{
 						Name:        s1.Name,
@@ -127,7 +124,6 @@ func TestRouteRoute(t *testing.T) {
 		},
 		"multiple websocket": {
 			route: &dag.Route{
-				Prefix:    "/",
 				Websocket: true,
 				Clusters: []*dag.Cluster{{
 					Upstream: &dag.TCPService{
@@ -182,7 +178,6 @@ func TestRouteRoute(t *testing.T) {
 		},
 		"retry-on: 503": {
 			route: &dag.Route{
-				Prefix: "/",
 				RetryPolicy: &dag.RetryPolicy{
 					RetryOn:       "503",
 					NumRetries:    6,
@@ -205,7 +200,6 @@ func TestRouteRoute(t *testing.T) {
 		},
 		"timeout 90s": {
 			route: &dag.Route{
-				Prefix: "/",
 				TimeoutPolicy: &dag.TimeoutPolicy{
 					Timeout: 90 * time.Second,
 				},
@@ -222,7 +216,6 @@ func TestRouteRoute(t *testing.T) {
 		},
 		"timeout infinity": {
 			route: &dag.Route{
-				Prefix: "/",
 				TimeoutPolicy: &dag.TimeoutPolicy{
 					Timeout: -1,
 				},
@@ -239,7 +232,6 @@ func TestRouteRoute(t *testing.T) {
 		},
 		"single service w/ session affinity": {
 			route: &dag.Route{
-				Prefix:   "/cart",
 				Clusters: []*dag.Cluster{c2},
 			},
 			want: &route.Route_Route{
@@ -261,7 +253,6 @@ func TestRouteRoute(t *testing.T) {
 		},
 		"multiple service w/ session affinity": {
 			route: &dag.Route{
-				Prefix:   "/cart",
 				Clusters: []*dag.Cluster{c2, c2},
 			},
 			want: &route.Route_Route{
@@ -292,7 +283,6 @@ func TestRouteRoute(t *testing.T) {
 		},
 		"mixed service w/ session affinity": {
 			route: &dag.Route{
-				Prefix:   "/cart",
 				Clusters: []*dag.Cluster{c2, c1},
 			},
 			want: &route.Route_Route{
@@ -479,39 +469,6 @@ func TestVirtualHost(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := VirtualHost(tc.hostname)
 			if diff := cmp.Diff(got, tc.want); diff != "" {
-				t.Fatal(diff)
-			}
-		})
-	}
-}
-
-func TestRouteMatch(t *testing.T) {
-	tests := map[string]struct {
-		prefix string
-		want   route.RouteMatch
-	}{
-		"prefix match": {
-			prefix: "/kang",
-			want: route.RouteMatch{
-				PathSpecifier: &route.RouteMatch_Prefix{
-					Prefix: "/kang",
-				},
-			},
-		},
-		"regex match": {
-			prefix: "/[^/]+/media(/.*|/?)",
-			want: route.RouteMatch{
-				PathSpecifier: &route.RouteMatch_Regex{
-					Regex: "/[^/]+/media(/.*|/?)",
-				},
-			},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := RouteMatch(tc.prefix)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}
 		})

@@ -265,11 +265,8 @@ func (b *builder) compute() *DAG {
 	return b.DAG()
 }
 
-// prefixRoute returns a new dag.Route for the (ingress,prefix) tuple.
-func prefixRoute(ingress *v1beta1.Ingress, prefix string) *Route {
-	// compute websocket enabled routes
-	wr := websocketRoutes(ingress)
-
+// route returns a dag.Route for the supplied Ingress.
+func route(ingress *v1beta1.Ingress, path string) Route {
 	var retry *RetryPolicy
 	if retryOn, ok := ingress.Annotations[annotationRetryOn]; ok && len(retryOn) > 0 {
 		// if there is a non empty retry-on annotation, build a RetryPolicy manually.
@@ -294,10 +291,10 @@ func prefixRoute(ingress *v1beta1.Ingress, prefix string) *Route {
 		})
 	}
 
-	return &Route{
-		Prefix:        prefix,
+	wr := websocketRoutes(ingress)
+	return Route{
 		HTTPSUpgrade:  tlsRequired(ingress),
-		Websocket:     wr[prefix],
+		Websocket:     wr[path],
 		TimeoutPolicy: timeout,
 		RetryPolicy:   retry,
 	}
@@ -436,21 +433,33 @@ func (b *builder) computeIngresses() {
 		for _, rule := range rules {
 			host := stringOrDefault(rule.Host, "*")
 			for _, httppath := range httppaths(rule) {
-				prefix := stringOrDefault(httppath.Path, "/")
-				r := prefixRoute(ing, prefix)
+				path := stringOrDefault(httppath.Path, "/")
+				r := route(ing, path)
 				be := httppath.Backend
 				m := Meta{name: be.ServiceName, namespace: ing.Namespace}
 				if s := b.lookupHTTPService(m, be.ServicePort); s != nil {
 					r.Clusters = append(r.Clusters, &Cluster{Upstream: s})
 				}
 
+				var v Vertex = &PrefixRoute{
+					Prefix: path,
+					Route:  r,
+				}
+				if strings.ContainsAny(path, "^+*[]%") {
+					// path smells like a regex
+					v = &RegexRoute{
+						Regex: path,
+						Route: r,
+					}
+				}
+
 				// should we create port 80 routes for this ingress
 				if tlsRequired(ing) || httpAllowed(ing) {
-					b.lookupVirtualHost(host).addRoute(r)
+					b.lookupVirtualHost(host).addRoute(v)
 				}
 
 				if b.secureVirtualhostExists(host) && host != "*" {
-					b.lookupSecureVirtualHost(host).addRoute(r)
+					b.lookupSecureVirtualHost(host).addRoute(v)
 				}
 			}
 		}
@@ -644,13 +653,15 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 				return
 			}
 
-			r := &Route{
-				Prefix:        route.Match,
-				Websocket:     route.EnableWebsockets,
-				HTTPSUpgrade:  routeEnforceTLS(enforceTLS, route.PermitInsecure),
-				PrefixRewrite: route.PrefixRewrite,
-				TimeoutPolicy: timeoutPolicy(route.TimeoutPolicy),
-				RetryPolicy:   retryPolicy(route.RetryPolicy),
+			r := &PrefixRoute{
+				Prefix: route.Match,
+				Route: Route{
+					Websocket:     route.EnableWebsockets,
+					HTTPSUpgrade:  routeEnforceTLS(enforceTLS, route.PermitInsecure),
+					PrefixRewrite: route.PrefixRewrite,
+					TimeoutPolicy: timeoutPolicy(route.TimeoutPolicy),
+					RetryPolicy:   retryPolicy(route.RetryPolicy),
+				},
 			}
 			for _, service := range route.Services {
 				if service.Port < 1 || service.Port > 65535 {
