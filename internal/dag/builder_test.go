@@ -537,6 +537,28 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	i15 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "regex",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/[^/]+/invoices(/.*|/?)", // issue 1243
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
 	// s3a and b have http/2 protocol annotations
 	s3a := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2560,6 +2582,25 @@ func TestDAGInsert(t *testing.T) {
 									NumRetries:    6,
 									PerTryTimeout: 10 * time.Second,
 								},
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert ingressroute with regex route": {
+			objs: []interface{}{
+				i15,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", &RegexRoute{
+							Regex: "/[^/]+/invoices(/.*|/?)",
+							Route: Route{
+								Clusters: clustermap(s1),
 							},
 						}),
 					),
