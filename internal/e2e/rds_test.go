@@ -2816,16 +2816,16 @@ func assertRDS(t *testing.T, cc *grpc.ClientConn, versioninfo string, ingress_ht
 	t.Helper()
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: versioninfo,
-		Resources: []types.Any{
-			any(t, &v2.RouteConfiguration{
+		Resources: resources(t,
+			&v2.RouteConfiguration{
 				Name:         "ingress_http",
 				VirtualHosts: ingress_http,
-			}),
-			any(t, &v2.RouteConfiguration{
+			},
+			&v2.RouteConfiguration{
 				Name:         "ingress_https",
 				VirtualHosts: ingress_https,
-			}),
-		},
+			},
+		),
 		TypeUrl: routeType,
 		Nonce:   versioninfo,
 	}, streamRDS(t, cc))
