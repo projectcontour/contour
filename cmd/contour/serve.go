@@ -170,6 +170,12 @@ type serveContext struct {
 	httpsAddr      string
 	httpsPort      int
 	httpsAccessLog string
+
+	tlsConfig `json:"tls"`
+}
+
+type tlsConfig struct {
+	MinimumProtocolVersion string `json:"minimum-protocol-version"`
 }
 
 // tlsconfig returns a new *tls.Config. If the context is not properly configured
@@ -237,13 +243,14 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// step 3. establish our (poorly named) gRPC cache handler.
 	ch := contour.CacheHandler{
 		ListenerVisitorConfig: contour.ListenerVisitorConfig{
-			UseProxyProto:  ctx.useProxyProto,
-			HTTPAddress:    ctx.httpAddr,
-			HTTPPort:       ctx.httpPort,
-			HTTPAccessLog:  ctx.httpAccessLog,
-			HTTPSAddress:   ctx.httpsAddr,
-			HTTPSPort:      ctx.httpsPort,
-			HTTPSAccessLog: ctx.httpsAccessLog,
+			UseProxyProto:          ctx.useProxyProto,
+			HTTPAddress:            ctx.httpAddr,
+			HTTPPort:               ctx.httpPort,
+			HTTPAccessLog:          ctx.httpAccessLog,
+			HTTPSAddress:           ctx.httpsAddr,
+			HTTPSPort:              ctx.httpsPort,
+			HTTPSAccessLog:         ctx.httpsAccessLog,
+			MinimumProtocolVersion: dag.MinProtoVersion(ctx.tlsConfig.MinimumProtocolVersion),
 		},
 		ListenerCache: contour.NewListenerCache(ctx.statsAddr, ctx.statsPort),
 		FieldLogger:   log.WithField("context", "CacheHandler"),
