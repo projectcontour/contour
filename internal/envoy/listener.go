@@ -18,6 +18,7 @@ import (
 	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
@@ -214,6 +215,39 @@ func SocketAddress(address string, port int) *core.Address {
 			},
 		},
 	}
+}
+
+// Filters returns a []listener.Filter for the supplied filters.
+func Filters(filters ...listener.Filter) []listener.Filter {
+	if len(filters) == 0 {
+		return nil
+	}
+	return filters
+}
+
+// FilterChains returns a []listener.FilterChain for the supplied filters.
+func FilterChains(filters ...listener.Filter) []listener.FilterChain {
+	if len(filters) == 0 {
+		return nil
+	}
+	return []listener.FilterChain{{
+		Filters: filters,
+	}}
+}
+
+// FilterChainTLS returns a TLS enabled listener.FilterChain,
+func FilterChainTLS(domain string, secret *dag.Secret, filters []listener.Filter, tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnProtos ...string) listener.FilterChain {
+	fc := listener.FilterChain{
+		Filters: filters,
+	}
+	fc.FilterChainMatch = &listener.FilterChainMatch{
+		ServerNames: []string{domain},
+	}
+	// attach certificate data to this listener if provided.
+	if secret != nil {
+		fc.TlsContext = DownstreamTLSContext(Secretname(secret), tlsMinProtoVersion, alpnProtos...)
+	}
+	return fc
 }
 
 func any(pb proto.Message) *types.Any {
