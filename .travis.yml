@@ -7,14 +7,11 @@ sudo: false
 
 cache:
   directories:
-  - $HOME/.cache/go-build
-  - $HOME/gopath/pkg/mod
+  - /home/travis/.cache/go-build
+  - /home/travis/gopath/pkg/mod
 
 env:
-  - GOPROXY=https://gocenter.io
-
-install:
-  - make download
+  - GOPROXY=HTTPS://gocenter.io
 
 script:
   - make check
