@@ -309,17 +309,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			alpnProtos = nil // do not offer ALPN
 		}
 
-		fc := listener.FilterChain{
-			FilterChainMatch: &listener.FilterChainMatch{
-				ServerNames: []string{vh.VirtualHost.Name},
-			},
-			Filters: filters,
-		}
-
-		// attach certificate data to this listener if provided.
-		if vh.Secret != nil {
-			fc.TlsContext = envoy.DownstreamTLSContext(envoy.Secretname(vh.Secret), vh.MinProtoVersion, alpnProtos...)
-		}
+		fc := envoy.FilterChainTLS(vh.VirtualHost.Name, vh.Secret, filters, vh.MinProtoVersion, alpnProtos...)
 
 		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains, fc)
 	default:

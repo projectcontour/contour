@@ -136,7 +136,7 @@ func TestVisitListeners(t *testing.T) {
 							ServerNames: []string{"tcpproxy.example.com"},
 						},
 						TlsContext: tlscontext(auth.TlsParameters_TLSv1_1),
-						Filters:    filters(envoy.TCPProxy(ENVOY_HTTPS_LISTENER, p1, DEFAULT_HTTPS_ACCESS_LOG)),
+						Filters:    envoy.Filters(envoy.TCPProxy(ENVOY_HTTPS_LISTENER, p1, DEFAULT_HTTPS_ACCESS_LOG)),
 					}},
 					ListenerFilters: []listener.ListenerFilter{
 						envoy.TLSInspector(),
