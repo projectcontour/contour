@@ -65,9 +65,9 @@ func TestClusterLongServiceName(t *testing.T) {
 	// check that it's been translated correctly.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
-		Resources: []types.Any{
-			any(t, cluster("default/kbujbkuh-c83ceb/8080/da39a3ee5e", "default/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r", "default_kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r_8080")),
-		},
+		Resources: resources(t,
+			cluster("default/kbujbkuh-c83ceb/8080/da39a3ee5e", "default/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r", "default_kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r_8080"),
+		),
 		TypeUrl: clusterType,
 		Nonce:   "2",
 	}, streamCDS(t, cc))
@@ -127,9 +127,9 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
-		Resources: []types.Any{
-			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80")),
-		},
+		Resources: resources(t,
+			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
+		),
 		TypeUrl: clusterType,
 		Nonce:   "3",
 	}, streamCDS(t, cc))
@@ -148,9 +148,9 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	// check that we get two CDS records because the port is now named.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "4",
-		Resources: []types.Any{
-			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80")),
-		},
+		Resources: resources(t,
+			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
+		),
 		TypeUrl: clusterType,
 		Nonce:   "4",
 	}, streamCDS(t, cc))
@@ -179,10 +179,10 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	// because the CDS cache is sorted.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "5",
-		Resources: []types.Any{
-			any(t, cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443")),
-			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80")),
-		},
+		Resources: resources(t,
+			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
+			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
+		),
 		TypeUrl: clusterType,
 		Nonce:   "5",
 	}, streamCDS(t, cc))
@@ -204,9 +204,9 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	// records have been removed even though the service object remains.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "6",
-		Resources: []types.Any{
-			any(t, cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443")),
-		},
+		Resources: resources(t,
+			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
+		),
 		TypeUrl: clusterType,
 		Nonce:   "6",
 	}, streamCDS(t, cc))
@@ -264,10 +264,10 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	rh.OnAdd(s1)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
-		Resources: []types.Any{
-			any(t, cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443")),
-			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80")),
-		},
+		Resources: resources(t,
+			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
+			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
+		),
 		TypeUrl: clusterType,
 		Nonce:   "2",
 	}, streamCDS(t, cc))
@@ -284,9 +284,9 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	rh.OnUpdate(s1, s2)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
-		Resources: []types.Any{
-			any(t, cluster("default/kuard/443/da39a3ee5e", "default/kuard", "default_kuard_443")),
-		},
+		Resources: resources(t,
+			cluster("default/kuard/443/da39a3ee5e", "default/kuard", "default_kuard_443"),
+		),
 		TypeUrl: clusterType,
 		Nonce:   "3",
 	}, streamCDS(t, cc))
@@ -295,10 +295,10 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	rh.OnUpdate(s2, s1)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "4",
-		Resources: []types.Any{
-			any(t, cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443")),
-			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80")),
-		},
+		Resources: resources(t,
+			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
+			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
+		),
 		TypeUrl: clusterType,
 		Nonce:   "4",
 	}, streamCDS(t, cc))

@@ -47,9 +47,9 @@ func TestNonTLSListener(t *testing.T) {
 	// there are no active listeners
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources: []types.Any{
-			any(t, staticListener()),
-		},
+		Resources: resources(t,
+			staticListener(),
+		),
 		TypeUrl: listenerType,
 		Nonce:   "0",
 	}, streamLDS(t, cc))
@@ -69,14 +69,14 @@ func TestNonTLSListener(t *testing.T) {
 	rh.OnAdd(i1)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources: []types.Any{
-			any(t, &v2.Listener{
+		Resources: resources(t,
+			&v2.Listener{
 				Name:         "ingress_http",
 				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy.FilterChains(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
-			}),
-			any(t, staticListener()),
-		},
+			},
+			staticListener(),
+		),
 		TypeUrl: listenerType,
 		Nonce:   "1",
 	}, streamLDS(t, cc))
@@ -99,9 +99,9 @@ func TestNonTLSListener(t *testing.T) {
 	rh.OnUpdate(i1, i2)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
-		Resources: []types.Any{
-			any(t, staticListener()),
-		},
+		Resources: resources(t,
+			staticListener(),
+		),
 		TypeUrl: listenerType,
 		Nonce:   "2",
 	}, streamLDS(t, cc))
@@ -125,14 +125,14 @@ func TestNonTLSListener(t *testing.T) {
 	rh.OnUpdate(i2, i3)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
-		Resources: []types.Any{
-			any(t, &v2.Listener{
+		Resources: resources(t,
+			&v2.Listener{
 				Name:         "ingress_http",
 				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy.FilterChains(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
-			}),
-			any(t, staticListener()),
-		},
+			},
+			staticListener(),
+		),
 		TypeUrl: listenerType,
 		Nonce:   "3",
 	}, streamLDS(t, cc))

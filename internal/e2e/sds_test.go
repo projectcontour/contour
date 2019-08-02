@@ -81,11 +81,9 @@ func TestSDSVisibility(t *testing.T) {
 	// i1 has a default route to backend:80, but there is no matching service.
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "2",
-		Resources: []types.Any{
-			any(t, secret(s1)),
-		},
-		TypeUrl: secretType,
-		Nonce:   "2",
+		Resources:   resources(t, secret(s1)),
+		TypeUrl:     secretType,
+		Nonce:       "2",
 	})
 }
 
@@ -131,11 +129,9 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "2",
-		Resources: []types.Any{
-			any(t, secret(s1)),
-		},
-		TypeUrl: secretType,
-		Nonce:   "2",
+		Resources:   resources(t, secret(s1)),
+		TypeUrl:     secretType,
+		Nonce:       "2",
 	})
 
 	// verify that requesting the same resource without change
@@ -143,11 +139,9 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "2",
-		Resources: []types.Any{
-			any(t, secret(s1)),
-		},
-		TypeUrl: secretType,
-		Nonce:   "2",
+		Resources:   resources(t, secret(s1)),
+		TypeUrl:     secretType,
+		Nonce:       "2",
 	})
 
 	// s2 is not referenced by any active ingress object.
@@ -170,11 +164,9 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	// when an unrelated secret changes.
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "2",
-		Resources: []types.Any{
-			any(t, secret(s1)),
-		},
-		TypeUrl: secretType,
-		Nonce:   "2",
+		Resources:   resources(t, secret(s1)),
+		TypeUrl:     secretType,
+		Nonce:       "2",
 	})
 }
 

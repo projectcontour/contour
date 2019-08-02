@@ -58,18 +58,18 @@ func TestAddRemoveEndpoints(t *testing.T) {
 	// check that it's been translated correctly.
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources: []types.Any{
-			any(t, clusterloadassignment(
+		Resources: resources(t,
+			clusterloadassignment(
 				"super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http",
 				envoy.LBEndpoint("172.16.0.1", 8000),
 				envoy.LBEndpoint("172.16.0.2", 8000),
-			)),
-			any(t, clusterloadassignment(
+			),
+			clusterloadassignment(
 				"super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https",
 				envoy.LBEndpoint("172.16.0.1", 8443),
 				envoy.LBEndpoint("172.16.0.2", 8443),
-			)),
-		},
+			),
+		),
 		TypeUrl: endpointType,
 		Nonce:   "1",
 	}, streamEDS(t, cc))
@@ -140,18 +140,18 @@ func TestAddEndpointComplicated(t *testing.T) {
 
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources: []types.Any{
-			any(t, clusterloadassignment(
+		Resources: resources(t,
+			clusterloadassignment(
 				"default/kuard/admin",
 				envoy.LBEndpoint("10.48.1.77", 9000),
 				envoy.LBEndpoint("10.48.1.78", 9000),
-			)),
-			any(t, clusterloadassignment(
+			),
+			clusterloadassignment(
 				"default/kuard/foo",
 				envoy.LBEndpoint("10.48.1.77", 9999), // TODO(dfc) order is not guaranteed by endpoint controller
 				envoy.LBEndpoint("10.48.1.78", 8080),
-			)),
-		},
+			),
+		),
 		TypeUrl: endpointType,
 		Nonce:   "1",
 	}, streamEDS(t, cc))
@@ -200,13 +200,13 @@ func TestEndpointFilter(t *testing.T) {
 
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources: []types.Any{
-			any(t, clusterloadassignment(
+		Resources: resources(t,
+			clusterloadassignment(
 				"default/kuard/foo",
 				envoy.LBEndpoint("10.48.1.77", 9999), // TODO(dfc) order is not guaranteed by endpoint controller
 				envoy.LBEndpoint("10.48.1.78", 8080),
-			)),
-		},
+			),
+		),
 		TypeUrl: endpointType,
 		Nonce:   "1",
 	}, streamEDS(t, cc, "default/kuard/foo"))
@@ -214,12 +214,9 @@ func TestEndpointFilter(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		TypeUrl:     endpointType,
-		Resources: []types.Any{
-			any(t, clusterloadassignment(
-				"default/kuard/bar",
-			)),
-		},
-
+		Resources: resources(t,
+			clusterloadassignment("default/kuard/bar"),
+		),
 		Nonce: "1",
 	}, streamEDS(t, cc, "default/kuard/bar"))
 
@@ -242,9 +239,9 @@ func TestIssue602(t *testing.T) {
 	// Assert endpoint was added
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources: []types.Any{
-			any(t, clusterloadassignment("default/simple", envoy.LBEndpoint("192.168.183.24", 8080))),
-		},
+		Resources: resources(t,
+			clusterloadassignment("default/simple", envoy.LBEndpoint("192.168.183.24", 8080)),
+		),
 		TypeUrl: endpointType,
 		Nonce:   "1",
 	}, streamEDS(t, cc))
