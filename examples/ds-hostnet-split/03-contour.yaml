@@ -39,7 +39,7 @@ spec:
         - --contour-cert-file=/certs/tls.crt
         - --contour-key-file=/certs/tls.key
         command: ["contour"]
-        image: gcr.io/heptio-images/contour:v0.14.0
+        image: gcr.io/heptio-images/contour:v0.14.1
         imagePullPolicy: Always
         name: contour
         ports:
