@@ -11,10 +11,7 @@ cache:
   - /home/travis/gopath/pkg/mod
 
 env:
-  - GOPROXY=HTTPS://gocenter.io
-
-install:
-  - make download
+  - GOPROXY=https://proxy.golang.org/
 
 script:
   - make check
