@@ -23,19 +23,19 @@ require (
 	github.com/prometheus/procfs v0.0.0-20190403104016-ea9eea638872 // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/pflag v1.0.3 // indirect
-	golang.org/x/crypto v0.0.0-20190404164418-38d8ce5564a5 // indirect
 	golang.org/x/sys v0.0.0-20190629205408-04f50cda93cb // indirect
+	golang.org/x/tools v0.0.0-20190802221608-1d1727260058 // indirect
 	google.golang.org/genproto v0.0.0-20190611190200-a7e196e89fd3 // indirect
 	google.golang.org/grpc v1.22.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
-	honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc
+	honnef.co/go/tools v0.0.1-2019.2.2
 	k8s.io/api v0.0.0-20190620084959-7cf5895f2711
 	k8s.io/apimachinery v0.0.0-20190612205821-1799e75a0719
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/code-generator v0.0.0-20190311093542-50b561225d70
 	k8s.io/gengo v0.0.0-20190116091435-f8a0810f38af // indirect
 	k8s.io/utils v0.0.0-20190607212802-c55fbcfc754a // indirect
-	mvdan.cc/unparam v0.0.0-20190310220240-1b9ccfa71afe
+	mvdan.cc/unparam v0.0.0-20190720180237-d51796306d8f
 )

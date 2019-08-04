@@ -13,5 +13,8 @@ cache:
 env:
   - GOPROXY=HTTPS://gocenter.io
 
+install:
+  - make download
+
 script:
   - make check
