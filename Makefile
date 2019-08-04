@@ -2,7 +2,6 @@ PROJECT = contour
 REGISTRY ?= gcr.io/heptio-images
 IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
-PKGS := $(shell GO111MODULE=on go list -mod=readonly ./cmd/... ./internal/...)
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
 PHONY = gencerts
@@ -80,7 +79,7 @@ staticcheck:
 	go install honnef.co/go/tools/cmd/staticcheck
 	staticcheck \
 		-checks all,-ST1003 \
-		$(PKGS)
+		./cmd/... ./internal/...
 
 misspell:
 	go install github.com/client9/misspell/cmd/misspell
@@ -92,7 +91,7 @@ misspell:
 
 unconvert:
 	go install github.com/mdempsky/unconvert
-	unconvert -v $(PKGS)
+	unconvert -v ./cmd/... ./internal/...
 
 ineffassign:
 	go install github.com/gordonklaus/ineffassign
@@ -102,11 +101,11 @@ pedantic: check errcheck
 
 unparam:
 	go install mvdan.cc/unparam
-	unparam -exported $(PKGS)
+	unparam -exported ./cmd/... ./internal/...
 
 errcheck:
 	go install github.com/kisielk/errcheck
-	errcheck $(PKGS)
+	errcheck ./...
 
 render:
 	@echo Rendering example deployment files...
