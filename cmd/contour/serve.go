@@ -267,9 +267,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		},
 		KubernetesCache: dag.KubernetesCache{
 			IngressRouteRootNamespaces: ctx.ingressRouteRootNamespaces(),
+			IngressClass:               ctx.ingressClass,
 		},
-		IngressClass: ctx.ingressClass,
-		FieldLogger:  log.WithField("context", "resourceEventHandler"),
+		FieldLogger: log.WithField("context", "resourceEventHandler"),
 	}
 
 	// step 5. register out resource event handler with the k8s informers.
