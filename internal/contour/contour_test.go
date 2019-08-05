@@ -16,7 +16,6 @@ package contour
 import (
 	"testing"
 
-	"github.com/heptio/contour/internal/dag"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,7 +61,3 @@ func ports(ps ...int32) []v1.EndpointPort {
 	}
 	return ports
 }
-
-type nullNotifier int
-
-func (nn *nullNotifier) OnChange(kc *dag.KubernetesCache) {}

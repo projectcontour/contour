@@ -23,10 +23,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
-	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
-	"github.com/heptio/contour/internal/metrics"
-	"github.com/prometheus/client_golang/prometheus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -253,7 +250,6 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 		},
-
 		"one http only ingressroute": {
 			objs: []interface{}{
 				&ingressroutev1.IngressRoute{
@@ -952,494 +948,6 @@ func TestRouteVisit(t *testing.T) {
 				},
 			},
 		},
-		"Ingress: empty ingress class": {
-			objs: []interface{}{
-				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "incorrect",
-						Namespace: "default",
-					},
-					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
-					},
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Protocol:   "TCP",
-							Port:       8080,
-							TargetPort: intstr.FromInt(8080),
-						}},
-					},
-				},
-			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
-						Name:    "*",
-						Domains: []string{"*"},
-						Routes: []route.Route{{
-							Match:               envoy.RoutePrefix("/"),
-							Action:              routecluster("default/kuard/8080/da39a3ee5e"),
-							RequestHeadersToAdd: envoy.RouteHeaders(),
-						}},
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
-		},
-		"Ingress: incorrect kubernetes.io/ingress.class": {
-			objs: []interface{}{
-				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "incorrect",
-						Namespace: "default",
-						Annotations: map[string]string{
-							"kubernetes.io/ingress.class": "nginx",
-						},
-					},
-					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
-					},
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Protocol:   "TCP",
-							Port:       8080,
-							TargetPort: intstr.FromInt(8080),
-						}},
-					},
-				},
-			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http", // expected to be empty, the ingress class is ignored
-				},
-				"ingress_https": {
-					Name: "ingress_https", // expected to be empty, the ingress class is ignored
-				},
-			},
-		},
-		"Ingress: incorrect contour.heptio.com/ingress.class": {
-			objs: []interface{}{
-				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "incorrect",
-						Namespace: "default",
-						Annotations: map[string]string{
-							"contour.heptio.com/ingress.class": "nginx",
-						},
-					},
-					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
-					},
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Protocol:   "TCP",
-							Port:       8080,
-							TargetPort: intstr.FromInt(8080),
-						}},
-					},
-				},
-			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http", // expected to be empty, the ingress class is ignored
-				},
-				"ingress_https": {
-					Name: "ingress_https", // expected to be empty, the ingress class is ignored
-				},
-			},
-		},
-		"Ingress: explicit kubernetes.io/ingress.class": {
-			objs: []interface{}{
-				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "incorrect",
-						Namespace: "default",
-						Annotations: map[string]string{
-							"kubernetes.io/ingress.class": new(ResourceEventHandler).ingressClass(),
-						},
-					},
-					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
-					},
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Protocol:   "TCP",
-							Port:       8080,
-							TargetPort: intstr.FromInt(8080),
-						}},
-					},
-				},
-			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
-						Name:    "*",
-						Domains: []string{"*"},
-						Routes: []route.Route{{
-							Match:               envoy.RoutePrefix("/"),
-							Action:              routecluster("default/kuard/8080/da39a3ee5e"),
-							RequestHeadersToAdd: envoy.RouteHeaders(),
-						}},
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
-		},
-		"Ingress: explicit contour.heptio.com/ingress.class": {
-			objs: []interface{}{
-				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "incorrect",
-						Namespace: "default",
-						Annotations: map[string]string{
-							"contour.heptio.com/ingress.class": new(ResourceEventHandler).ingressClass(),
-						},
-					},
-					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
-					},
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Protocol:   "TCP",
-							Port:       8080,
-							TargetPort: intstr.FromInt(8080),
-						}},
-					},
-				},
-			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
-						Name:    "*",
-						Domains: []string{"*"},
-						Routes: []route.Route{{
-							Match:               envoy.RoutePrefix("/"),
-							Action:              routecluster("default/kuard/8080/da39a3ee5e"),
-							RequestHeadersToAdd: envoy.RouteHeaders(),
-						}},
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
-		},
-		"IngressRoute: empty ingress annotation": {
-			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
-							Fqdn: "www.example.com",
-						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{
-								{
-									Name: "kuard",
-									Port: 8080,
-								},
-							},
-						}},
-					},
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Protocol:   "TCP",
-							Port:       8080,
-							TargetPort: intstr.FromInt(8080),
-						}},
-					},
-				},
-			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
-						Name:    "www.example.com",
-						Domains: domains("www.example.com"),
-						Routes: []route.Route{{
-							Match:               envoy.RoutePrefix("/"),
-							Action:              routecluster("default/kuard/8080/da39a3ee5e"),
-							RequestHeadersToAdd: envoy.RouteHeaders(),
-						}},
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
-		},
-		"IngressRoute: incorrect contour.heptio.com/ingress.class": {
-			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "simple",
-						Namespace: "default",
-						Annotations: map[string]string{
-							"contour.heptio.com/ingress.class": "nginx",
-						},
-					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
-							Fqdn: "www.example.com",
-						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{
-								{
-									Name: "backend",
-									Port: 80,
-								},
-							},
-						}},
-					},
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Protocol:   "TCP",
-							Port:       8080,
-							TargetPort: intstr.FromInt(8080),
-						}},
-					},
-				},
-			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http", // expected to be empty, the ingress class is ignored
-				},
-				"ingress_https": {
-					Name: "ingress_https", // expected to be empty, the ingress class is ignored
-				},
-			},
-		},
-		"IngressRoute: incorrect kubernetes.io/ingress.class": {
-			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "simple",
-						Namespace: "default",
-						Annotations: map[string]string{
-							"kubernetes.io/ingress.class": "nginx",
-						},
-					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
-							Fqdn: "www.example.com",
-						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{
-								{
-									Name: "backend",
-									Port: 80,
-								},
-							},
-						}},
-					},
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Protocol:   "TCP",
-							Port:       8080,
-							TargetPort: intstr.FromInt(8080),
-						}},
-					},
-				},
-			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http", // expected to be empty, the ingress class is ignored
-				},
-				"ingress_https": {
-					Name: "ingress_https", // expected to be empty, the ingress class is ignored
-				},
-			},
-		},
-		"IngressRoute: explicit contour.heptio.com/ingress.class": {
-			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-						Annotations: map[string]string{
-							"contour.heptio.com/ingress.class": new(ResourceEventHandler).ingressClass(),
-						},
-					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
-							Fqdn: "www.example.com",
-						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{
-								{
-									Name: "kuard",
-									Port: 8080,
-								},
-							},
-						}},
-					},
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Protocol:   "TCP",
-							Port:       8080,
-							TargetPort: intstr.FromInt(8080),
-						}},
-					},
-				},
-			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
-						Name:    "www.example.com",
-						Domains: domains("www.example.com"),
-						Routes: []route.Route{{
-							Match:               envoy.RoutePrefix("/"),
-							Action:              routecluster("default/kuard/8080/da39a3ee5e"),
-							RequestHeadersToAdd: envoy.RouteHeaders(),
-						}},
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
-		},
-		"IngressRoute: explicit kubernetes.io/ingress.class": {
-			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-						Annotations: map[string]string{
-							"kubernetes.io/ingress.class": new(ResourceEventHandler).ingressClass(),
-						},
-					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
-							Fqdn: "www.example.com",
-						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{
-								{
-									Name: "kuard",
-									Port: 8080,
-								},
-							},
-						}},
-					},
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Protocol:   "TCP",
-							Port:       8080,
-							TargetPort: intstr.FromInt(8080),
-						}},
-					},
-				},
-			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
-						Name:    "www.example.com",
-						Domains: domains("www.example.com"),
-						Routes: []route.Route{{
-							Match:               envoy.RoutePrefix("/"),
-							Action:              routecluster("default/kuard/8080/da39a3ee5e"),
-							RequestHeadersToAdd: envoy.RouteHeaders(),
-						}},
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
-		},
 		"ingress retry-on": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
@@ -1602,16 +1110,13 @@ func TestRouteVisit(t *testing.T) {
 						},
 						Routes: []ingressroutev1.Route{{
 							Match: "/",
-							Services: []ingressroutev1.Service{
-								{
-									Name: "backend",
-									Port: 80,
-								},
-								{
-									Name: "backendtwo",
-									Port: 80,
-								},
-							},
+							Services: []ingressroutev1.Service{{
+								Name: "backend",
+								Port: 80,
+							}, {
+								Name: "backendtwo",
+								Port: 80,
+							}},
 						}},
 					},
 				},
@@ -1685,17 +1190,14 @@ func TestRouteVisit(t *testing.T) {
 						},
 						Routes: []ingressroutev1.Route{{
 							Match: "/",
-							Services: []ingressroutev1.Service{
-								{
-									Name: "backend",
-									Port: 80,
-								},
-								{
-									Name:   "backendtwo",
-									Port:   80,
-									Weight: 50,
-								},
-							},
+							Services: []ingressroutev1.Service{{
+								Name: "backend",
+								Port: 80,
+							}, {
+								Name:   "backendtwo",
+								Port:   80,
+								Weight: 50,
+							}},
 						}},
 					},
 				},
@@ -1769,18 +1271,15 @@ func TestRouteVisit(t *testing.T) {
 						},
 						Routes: []ingressroutev1.Route{{
 							Match: "/",
-							Services: []ingressroutev1.Service{
-								{
-									Name:   "backend",
-									Port:   80,
-									Weight: 22,
-								},
-								{
-									Name:   "backendtwo",
-									Port:   80,
-									Weight: 50,
-								},
-							},
+							Services: []ingressroutev1.Service{{
+								Name:   "backend",
+								Port:   80,
+								Weight: 22,
+							}, {
+								Name:   "backendtwo",
+								Port:   80,
+								Weight: 50,
+							}},
 						}},
 					},
 				},
@@ -1888,15 +1387,7 @@ func TestRouteVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			reh := ResourceEventHandler{
-				FieldLogger: testLogger(t),
-				Notifier:    new(nullNotifier),
-				Metrics:     metrics.NewMetrics(prometheus.NewRegistry()),
-			}
-			for _, o := range tc.objs {
-				reh.OnAdd(o)
-			}
-			root := dag.BuildDAG(&reh.KubernetesCache)
+			root := buildDAG(tc.objs...)
 			got := visitRoutes(root)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
