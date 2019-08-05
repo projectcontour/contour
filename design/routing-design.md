@@ -12,32 +12,14 @@ The scope of this design doc looks to improve on the IngressRoute.v1beta1 design
 
 There are many different ways to apply routing to L7 HTTP ingress controllers. The first few sections of this design outlines what might be possible with HTTP routing. So that it's clear, not all aspects of the available routing options will be implemented. Later on in the implementation sections, we'll walk through which pieces that this design doc looks to implement.
 
-## Virtual Host Mechanisms
-
-This is the top level element in the routing configuration. Once a virtual host decision is made, then any routing mechanisms applied to that are taken into consideration. Contour has previously only suppported an `exact domain` match, meaning the domain specified *must* match exactly, however, there are some other types of vhost mapping that can be applied:
-
-- **Suffix domain wildcards**: `*.foo.com` or `*-bar.foo.com`
-
-- **Prefix domain wildcards**: `foo.*` or `foo-*`
-
-- **Special wildcard**: `*` matching any domain
-
-#### Use Cases
-
-- **User or customer application subdomains:** Allowing a domain per specific customer (e.g. customera.foo.com & customerb.foo.com)
-- **Default backend:** If any request for an existing vhost doesn't have a match, Envoy will return a HTTP 404 status code which isn't very user friendly, but allows for a way to have any request that doens't map to a k8s configured Ingress resource to be shown a user friendly backend
-- **Feature branch deployments:** When developing applications, enable custom feature branches to have unique URLs for easy testing
-
 ## Routing Mechanisms
 
-As noted previously, there are various ways to make routing decisions. Contour was originally designed to support prefix path based routing; however, there are many other mechanisms that Contour could support. It's important to note that these routing mechanisms are taking into consideration ***after*** the virtual host routing decision is made:
+As noted previously, there are various ways to make routing decisions. Contour was originally designed to support prefix path based routing; however, there are many other mechanisms that Contour could support. It's important to note that these routing mechanisms are taking into consideration  ***after*** the virtual host routing decision is made:
 
 - **Header:** Routing on an HTTP header that exists in the request (e.g. custom header, clientIP, HTTP method)
   - *Note: Still requires a path to match against*
 - **Exact Path:** The route is an exact path rule meaning that the path must exactly match the *:path* header once the query string is removed
 - **Regex Path:** The route is a regular expression rule meaning that the regex must match the *:path* header once the query string is removed. The entire path (without the query string) must match the regex
-- ~~**Query Parameters**: Specify a set of URL query parameters on which the route should match~~
-  - **Note:** *Query parameters could be supported, but are not a goal of this design document*
 
 ### Header Routing
 
@@ -47,14 +29,10 @@ Routing via Header allows Contour to route traffic by more than just fqdn or pat
 
 - Allow for routing of platform to different backends. When a request come from an iOS device it should route to "backend-iOS" and requests from an Android device should route to "backend-Android". Each of these backends are managed by different teams and live in separate namespaces.
 
-- Requests to a specific path `/weather` are handled by a backend, however, specific users are allowed to opt-in to a beta version.
-  When authenticated, an additional header is added which identifies the user as a member of the "beta" program. Requests to the `/weather` path with the appropriate header (e.g. `X-Beta: true`) will route to `backend-beta`, all other requests will route to `backend-prod`.
-
-- Similar to a opt-in beta version previously described, another header routing option is to route specific tenants to different backends.
-  This may be to allows users to have a high tier of compute or run in segregated sections to limit where the data lives.
-  When authenticated, an additional header is added which identifies the user as part of OrgA.
-  The request is routed to the appropriate backend matching the user's organization membership.
-
+- Requests to a specific path `/weather` are handled by a backend, however, specific users are allowed to opt-in to a beta version. When authenticated, an additional header is added which identifies the user as a member of the "beta" program. Requests to the `/weather` path with the appropriate header (e.g. `X-Beta: true`) will route to `backend-beta`, all other requests will route to `backend-prod`.
+  
+- Similar to a opt-in beta version previously described, another header routing option is to route specific tenants to different backends. This may be to allows users to have a high tier of compute or run in segregated sections to limit where the data lives. When authenticated, an additional header is added which identifies the user as part of OrgA. The request is routed to the appropriate backend matching the user's organization membership.
+  
 - API Version Numbers in the header: Using a header to route requests to different backends based upon the header value (e.g. `apiversion: v2.0` vs `apiversion:v2.1-beta`)
   
 - Does an Auth header exist in the request regardless of the value?
@@ -65,16 +43,13 @@ Routing via Header allows Contour to route traffic by more than just fqdn or pat
   Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36
   ```
 
-- JWT Token routing based upon claims in the token. Difficult with Envoy today (https://github.com/envoyproxy/envoy/issues/3763).
-
 ### Exact Path / Regex Path Routing
 
-Exact Path based routing makes decisions based upon the path of the request (e.g. `/path`), where the path defined must match explicitly. Regex path routing allows for a regex query to define how the path match is defined.
+Exact Path based routing makes decisions based upon the path of the request (e.g. `/path`), where the path defined must match explicitly. 
 
 #### Use Cases
 
 - Match only specific paths (i.e. `/path` should match but `/pathfoo` should ***not***), ensuring that only specified paths are served
-- Allow a path to match a dynamic request that is not statically specified (e.g. A path that starts with "a" and has four digits)
 - Match a wildcard in the middle of a path. Example: `/app2/*/foo`
 
 ## High-Level Design
@@ -345,7 +320,7 @@ spec:
 
 Today Contour only supports exact domain name matching when defining the `fqdn` in an IngressRoute. However, supporting additional types is possible since the virtual host level doesn't require the same level of detail in regards to delegation. 
 
-Contour wil support the same [domain search order](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#route-virtualhost) as Envoy. Given this order, IngressRoutes that are defined will follow this logic. Contour should also review this and mark the status of IngressRoutes accordingly:
+Contour will support the same [domain search order](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#route-virtualhost) as Envoy. Given this order, IngressRoutes that are defined will follow this logic. Contour should also review this and mark the status of IngressRoutes accordingly:
 
 1. Exact domain names: `www.foo.com`.
 2. Suffix domain wildcards: `*.foo.com` or `*-bar.foo.com`.
