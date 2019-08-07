@@ -10,16 +10,53 @@ The scope of this design doc looks to improve on the IngressRoute.v1beta1 design
 
 # Background
 
-There are many different ways to apply routing to L7 HTTP ingress controllers. The first few sections of this design outlines what might be possible with HTTP routing. So that it's clear, not all aspects of the available routing options will be implemented. Later on in the implementation sections, we'll walk through which pieces that this design doc looks to implement.
+There are many different ways to apply routing to L7 HTTP ingress controllers. The first few sections of this design outlines what might be possible with HTTP routing. So that it's clear, not all aspects of the available routing options will be implemented. Later on in the implementation sections, we'll walk through which pieces that this design doc looks to implement as well as types of routing that won't be addressed in this design document.
+
+## Delegation
+
+The working model for delegation is DNS. As the owner of a DNS domain, for example `.com`, I _delegate_ to another nameserver the responsibility for handing the subdomain `vmware.com`. Any nameserver can hold a record for `heptio.com`, but without the linkage from the parent `.com` TLD, its information is unreachable and non authoritative.
+
+Each _root_ of a DAG starts at a virtual host, which describes properties such as the fully qualified name of the virtual host, TLS configuration, and possibly global access list details. The vertices of a graph do not contain virtual host information. Instead they are reachable from a root only by delegation. This permits the _owner_ of an ingress root to both delegate the authority to publish a service on a portion of the route space inside a virtual host, and to further delegate authority to publish and delegate.
+
+In practice the linkage, or delegation, from root to vertex, is performed with a specific type of route action. You can think of it as routing traffic to another ingress route for further processing, instead of routing traffic directly to a service. How routing decisions are made is based upon the configuration for the route action. Detailed information regarding how Delegation functions can be found later on in the document in the "detailed design" sections.
+
+### Delegation within Kubernetes
+
+The delegation concept is a key component to enable teams within a single Kubernetes cluster as well as provide security for ingress limiting what users can specify within the cluster. Delegation allows for portions of a HTTP request to be delegated to a Kubernetes namespace. This allows teams to self-manage in a safe way portions of the http request. Users that do not have authority (or have not be delegated), cannot affect the routing configuration; their requests will be dropped. 
+
+##### Root IngressRoutes
+
+From the top, delegation is enforced through the use of `root ingressroute namespaces` which allow a cluster admin to carve off a set of namespaces where Contour's IngressRoutes will live. Any root IngressRoute found outside of these configured namespaces will be deemed invalid. 
+
+Another design decision is that now TLS certificates, typically referenced via Kubernetes secrets, are placed inside these root ingressroute namespaces limiting the access required for Contour itself as well as not requiring these certs to exist in each team namespace. 
+
+##### Delegated IngressRoutes
+
+A delegated IngressRoute lives in each team namespace. Teams can self-manage their own resources based upon what has been delegated to them. Users can also create their own delegations to support their application infrastructure as they see fit. 
+
+### Use Cases
+
+Some use-cases for IngressRoute delegation:
+
+- Restrict where TLS secrets exist in the cluster and who can access private keys
+- Allow for a predictable routing decisions to eliminiate path conflicts
+- Teams should be able to self-manage their own resources safely in a shared cluster without requiring administrative involvelement
+
+### Example
+
+The following example shows a root IngressRoute that manages the host `projectcontour.io`. It references a Kubernetes secret named `tls-cert` to allow for TLS termination. It delegates two paths to a set of teams in different namespaces. The path `/blog` is delegated to the IngressRoute named `procon-teama` in the namespace `team-a`. The path `/community` is delegated to the IngressRoute named `procon-teamb` in the namespace `team-b`. The IngressRoute named `procon-invalid` in the namespace `team-invalid` references the path `/community`, but no traffic is routed to it since a root IngressRoute doesn't delegate.
+
+![ingressroute-delegation](images/ingressroute-delegation.png)
 
 ## Routing Mechanisms
 
-As noted previously, there are various ways to make routing decisions. Contour was originally designed to support prefix path based routing; however, there are many other mechanisms that Contour could support. It's important to note that these routing mechanisms are taking into consideration  ***after*** the virtual host routing decision is made:
+As noted previously, there are various ways to make routing decisions. Contour was originally designed to support prefix path based routing; however, there are many other mechanisms that Contour could support. It's important to note that these routing mechanisms are taking into consideration ***after*** the virtual host routing decision is made:
 
-- **Header:** Routing on an HTTP header that exists in the request (e.g. custom header, clientIP, HTTP method)
+- **Header:** Routing on an HTTP header that exists in the request (e.g. custom header, clientIP via header, HTTP method)
   - *Note: Still requires a path to match against*
+- **Prefix Path:** The route matches the start of the :path header once the query string is removed
 - **Exact Path:** The route is an exact path rule meaning that the path must exactly match the *:path* header once the query string is removed
-- **Regex Path:** The route is a regular expression rule meaning that the regex must match the *:path* header once the query string is removed. The entire path (without the query string) must match the regex
+- **Wildcard Path:** The route allows for a wildcard to be present in between two paths meaning that a portion of the path must match the *:path* header once the query string is removed.
 
 ### Header Routing
 
@@ -43,33 +80,28 @@ Routing via Header allows Contour to route traffic by more than just fqdn or pat
   Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36
   ```
 
-### Exact Path / Regex Path Routing
+### Exact Path Routing
 
-Exact Path based routing makes decisions based upon the path of the request (e.g. `/path`), where the path defined must match explicitly. 
+Exact Path based routing makes decisions based upon the path of the request (e.g. `/path`), where the path defined must match explicitly.
 
 #### Use Cases
 
-- Match only specific paths (i.e. `/path` should match but `/pathfoo` should ***not***), ensuring that only specified paths are served
-- Match a wildcard in the middle of a path. Example: `/app2/*/foo`
+- Match only specific paths (i.e. `/path` should match but `/pathfoo` should ***not***), ensuring that only specified paths are served`
+
+### Wilcard Path Routing
+
+Wildcard path based routing allows for a portion of the path to be dynamic (e.g. /path/*/foo). This is useful to allow for many types of request paths to be routed to the same backed without specifying them explicitly up front.
+
+#### Use Cases
+
+- Match a wildcard in the middle of a path (e.g. `/app2/*/foo`)
+- Allow for client id's to be placed into the request path for application use (e.g. `/app/<clientid>/foo`), where `clientid` is a specific id assigned by the application
 
 ## High-Level Design
 
-Contour will add the ability to route via headers by allowing an IngressRoute to define a set of key/value pairs to match against. Contour allows for path prefix based routing and will add the ability to add regex path based routing. Additional rules & constraints will be added to enable this style of routing since it had a direct impact on how delegation can be implemented. Additionally, Contour will add suffix domain wild card matching for virtual hosts.
-
-### Delegation
-
-The delegation concept is a key component to enable multi-team clusters as well as provide security for ingress limiting what users can specify within the cluster.
-
-- **Path Prefix (Exists today)**: Path prefix delegation remains unchanged from how it functions in v1beta1
-- **Headers:** Delegation with headers is a new option which allows a delegation path matching a key/value header pair
-- **Regex Path** delegation is not permitted, but supported from a delegate
-  - *The exception to this rule is the use of "glob" style paths*
-
-## Detailed Design
-
 ### Header Routing
 
-The IngressRoute spec will be updated to allow for a `header` field to be added which will allow for a set of key/value pairs to be applied to the route. Additionally, the path `match` moves to its own `path` variable.
+The IngressRoute spec will be updated to allow for a `header` field to be added which will allow for a set of key/value pairs to be applied to the route. Additionally, the path `match` moves to its own `path` variable. All the header key/values supplied will be taken into account when routing decisions are made.
 
 - **header:** Key used to match a specific header in the request
 - **value**: The value of the header matching the key specified
@@ -207,15 +239,21 @@ Following are sample requests and which backends will handle the request:
 - `GET -H "x-header: b" /foo` —> `backend-b.team-b`
 - `GET /foo` —>  `backend-default`
 
-### Exact Path
+### Path Matching
 
-Contour has support for a prefix-based match which means a request will route if the first part of the defined path matches. Sometimes this is not desired as the user intends an exact match.
+Matching requests off of the HTTP request path is a core component of Contour. Path matching allows for applications to respond to specific portions of the request space. The following sections will outline the different path matching styles that Contour will support in IngressRoute/v1.
 
-To enable an exact path match, just leave the trailing slash (`/`) off of the defined path. To enable a prefix-based path match, add a trailing slash (`/`) on the defined path.
+#### Path Prefix
 
-*Note: The convention of the trailing slash is subtle, but allows the spec to be cleaner. A clearer approach might be to have a field for the type of match (e.g. `exact` or `prefix`)*
+A prefix-based match means a request will route if the first part of the defined path matches the first portion of the request. For example, if a path prefix `/foo` is specified, it will match `/foo`, `/foo/bar`, as well as `/foobar`. Basically, anything after `/foo` unless additional routes are further defined.
 
-##### Exact-Match:
+Users can specify a prefix match by utilizing the `prefix` attribute in the match spec of a route definition. 
+
+Route delegation is possible with prefix matching.
+
+*Note: This is a breaking change from IngressRoute/v1beta1*
+
+##### Example:
 
 ```yaml
 apiVersion: projectcontour.io/v1
@@ -225,13 +263,19 @@ metadata:
 spec:
   routes:
   - match:
-    path: /app   # <---- Note: NO trailing slash
+    prefix: /foo
     services:
     - name: prefix-service
       port: 80
 ```
 
-##### Prefix-Match:
+#### Exact Match
+
+Matching on a path prefix is not always desired if the application owner intends that only predefined paths will match. For example, if a exact path `/app` is specified, it will only match `/app`, all other paths will not match this route. Users can specify an exact match by utilizing the `path` attribute in the match spec of a route definition. 
+
+Route delegation is still possible with an exact match since the path is still delegated, only the matching logic is changes between prefix or exact path matching. 
+
+##### Example:
 
 ```yaml
 apiVersion: projectcontour.io/v1
@@ -241,48 +285,19 @@ metadata:
 spec:
   routes:
   - match:
-    path: /app/  # <---- Note: trailing slash
+    path: /app
     services:
-    - name: prefix-service
+    - name: exactmatch-service
       port: 80
 ```
 
-### Regex Path
+#### Path Wildcard:
 
-Regex path routing allows for a regex query to define how the path match is defined. This is useful since it can be very dynamic and allows for path matches that aren't static. However, due to this flexibility, it makes some aspects of security/routing more difficult since the behavior cannot be predicted easily. Due to this, *delegation of a path will not be supported* in IngressRoute/v1.
+Another style of path matching is a wildcard style which allows for a portion of the path to be wildcarded. A wildcard match allows for a portion of a path to be dynamic.
 
-Regex paths can be defined and used, but they must be in a child delegate when used. Given this requirement, if a user wants to define a regex path, they cannot allow for delegation past the regext expression. 
+For example, we could define a wildcard style path: `/app2/*/foo`, but not `/app2/*`. Wildcard paths are be able to delegated without issue as long as the `*` is bounded by paths. The previous example ending with `*` has too large of a match to allow for delegation. If this is encountered, Contour will set the status to be error for the corresponding IngressRoute.
 
-For example, if a user has `/app2` delegated to them in their namespace. They are free to define further paths (e.g. `/app2/blog`) to satisfy their requirements, however, if they define a regex in their delegated path, then they can no longer define paths after that regex if the new paths match the regex paths. Contour will take the paths and verify if they collide. If a collision is detected, then the corresponding IngressRoute objects status' will be updated.
-
-##### Example:
-
-1. User is delegated: `/app2`
-2. User can define a regex in the path: `/app2/bl[a-z]{2}`
-3. User defines: `/app2/foo`. Contour checks this is valid!
-4. User defines: `/app2/blog`. Conect checks and determines this collides and IngressRoute is disallowed
-
-*Note: Since it's difficult to determine which IngressRoute should be the winner in the decision, Contour should use the most explicit path as the path that gets traffic. So in the previous example, the regex path would be marked as invalid.*
-
-**Note2:** **This also requires a bit of discussion around implementation since there will be a lot tests to validate the logic. Additionally, there will be overhead since the regex's will need to be evaluated.**
-
-##### Example:
-
-```yaml
-spec:
-  routes:
-  - match:
-    path: /app2/bl[a-z]{2}  
-    services:
-    - name: regex-service
-      port: 80
-```
-
-#### Glob-Style Regex:
-
-A smaller sub-category of regex paths are a "glob" style, meaning `*`. This is simpler to manage since Contour can accurately predict what matches this regex (e.g. everything!). Given so, glob-style should be able to delegate without issue as long as the `*` is bounded by paths. 
-
-For example, we could define a glob style path: `/app2/*/foo`, but not `/app2/*`. The second example ending with `*` has too large of a match to allow for delegation. If this is encountered, Contour will set the status to be error for the corresponding IngressRoute.
+*Note: The type of route match will still need to be specified (e.g. prefix, or path). The examples below show a `prefix` match, but a `path` match would work as well.*
 
 ##### Root IngressRoute:
 
@@ -294,9 +309,9 @@ metadata:
 spec:
   routes:
   - match:
-    path: /app/*/foo  
+    prefix: /app/*/foo  
     delegate:
-      name: glob
+      name: wildcard
       namespace: prefix
 ```
 
@@ -310,28 +325,19 @@ metadata:
 spec:
   routes:
   - match:
-    path: /app/*/foo  
+    prefix: /app/*/foo  
     services:
-    - name: glob-service
+    - name: wildcard-service
       port: 80
 ```
 
-### Virtual Host:
+##### Requests
 
-Today Contour only supports exact domain name matching when defining the `fqdn` in an IngressRoute. However, supporting additional types is possible since the virtual host level doesn't require the same level of detail in regards to delegation. 
+Following are sample requests and which backends will handle the request:
 
-Contour will support the same [domain search order](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#route-virtualhost) as Envoy. Given this order, IngressRoutes that are defined will follow this logic. Contour should also review this and mark the status of IngressRoutes accordingly:
-
-1. Exact domain names: `www.foo.com`.
-2. Suffix domain wildcards: `*.foo.com` or `*-bar.foo.com`.
-3. Prefix domain wildcards: `foo.*` or `foo-*`.
-4. Special wildcard `*` matching any domain.
-
-**Note:** The wildcard will not match the empty string. e.g. `-bar.foo.com` will match `baz-bar.foo.com` but not `-bar.foo.com`. The longest wildcards match first. Only a single virtual host in the entire route configuration can match on `*`. A domain must be unique across all virtual hosts or the config will fail to load.
-
-#### Delegation Security
-
-Since delegation doesn't rely on the virtual host directly, Contour will add some options to disable specific types of vhost matching. For example, an Administrator might want to only enable "exact" domain names and disable the other types. 
+- `GET /app/bar/foo` —> `wildcard-service`
+- `GET /app/zed/foo` —> `wildcard-service`
+- `GET /app/bar/foo/something` —> `wildcard-service`
 
 ## Security Considerations
 
