@@ -39,6 +39,7 @@ require (
 	k8s.io/client-go v11.0.0+incompatible
 	k8s.io/code-generator v0.0.0-20190311093542-50b561225d70
 	k8s.io/gengo v0.0.0-20190116091435-f8a0810f38af // indirect
+	k8s.io/klog v0.3.0
 	k8s.io/kube-openapi v0.0.0-20190115222348-ced9eb3070a5 // indirect
 	k8s.io/utils v0.0.0-20190607212802-c55fbcfc754a // indirect
 	mvdan.cc/unparam v0.0.0-20190310220240-1b9ccfa71afe
