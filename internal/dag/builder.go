@@ -36,8 +36,8 @@ const (
 )
 
 // BuildDAG returns a new DAG from the supplied KubernetesCache.
-func BuildDAG(kc *KubernetesCache) *DAG {
-	builder := &builder{source: kc}
+func BuildDAG(kc *KubernetesCache, disablePermitInsecure bool) *DAG {
+	builder := &builder{source: kc, disablePermitInsecure: disablePermitInsecure}
 	return builder.compute()
 }
 
@@ -45,6 +45,8 @@ func BuildDAG(kc *KubernetesCache) *DAG {
 // Once used, the builder should be discarded.
 type builder struct {
 	source *KubernetesCache
+
+	disablePermitInsecure bool
 
 	services  map[servicemeta]Service
 	secrets   map[Meta]*Secret
@@ -657,7 +659,7 @@ func (b *builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 				Prefix: route.Match,
 				Route: Route{
 					Websocket:     route.EnableWebsockets,
-					HTTPSUpgrade:  routeEnforceTLS(enforceTLS, route.PermitInsecure),
+					HTTPSUpgrade:  routeEnforceTLS(enforceTLS, permitInsecure(route.PermitInsecure, b.disablePermitInsecure)),
 					PrefixRewrite: route.PrefixRewrite,
 					TimeoutPolicy: timeoutPolicy(route.TimeoutPolicy),
 					RetryPolicy:   retryPolicy(route.RetryPolicy),
@@ -833,6 +835,16 @@ func (b *builder) processTCPProxy(ir *ingressroutev1.IngressRoute, visited []*in
 // routeEnforceTLS determines if the route should redirect the user to a secure TLS listener
 func routeEnforceTLS(enforceTLS, permitInsecure bool) bool {
 	return enforceTLS && !permitInsecure
+}
+
+// permitInsecure determines if permitInsecure is allowed to be configured
+func permitInsecure(permitInsecure, disablePermitInsecure bool) bool {
+	// If disablePermitInsecure is enabled, then return `false`, meaning permitInsecure will be disabled
+	// otherwise, return the configured value
+	if disablePermitInsecure {
+		return false
+	}
+	return permitInsecure
 }
 
 // httppaths returns a slice of HTTPIngressPath values for a given IngressRule.

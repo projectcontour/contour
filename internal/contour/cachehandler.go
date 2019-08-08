@@ -34,6 +34,8 @@ type CacheHandler struct {
 	ClusterCache
 	SecretCache
 
+	DisablePermitInsecure bool
+
 	IngressRouteStatus *k8s.IngressRouteStatus
 	logrus.FieldLogger
 	*metrics.Metrics
@@ -42,7 +44,7 @@ type CacheHandler struct {
 func (ch *CacheHandler) OnChange(kc *dag.KubernetesCache) {
 	timer := prometheus.NewTimer(ch.CacheHandlerOnUpdateSummary)
 	defer timer.ObserveDuration()
-	dag := dag.BuildDAG(kc)
+	dag := dag.BuildDAG(kc, ch.DisablePermitInsecure)
 	ch.updateSecrets(dag)
 	ch.updateListeners(dag)
 	ch.updateRoutes(dag)
