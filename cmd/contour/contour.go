@@ -27,8 +27,15 @@ import (
 	"k8s.io/klog"
 )
 
-func main() {
+func init() {
+	// even thought we don't use it directly, some of our dependencies use klog
+	// so we must initialize it here to ensure that klog is set to log to stderr
+	// and not to a file.
+	// yes, this is gross, the klog authors are monsters.
 	klog.InitFlags(nil)
+}
+
+func main() {
 	log := logrus.StandardLogger()
 	app := kingpin.New("contour", "Heptio Contour Kubernetes ingress controller.")
 
