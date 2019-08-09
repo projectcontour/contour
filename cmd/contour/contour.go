@@ -24,7 +24,16 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog"
 )
+
+func init() {
+	// even thought we don't use it directly, some of our dependencies use klog
+	// so we must initialize it here to ensure that klog is set to log to stderr
+	// and not to a file.
+	// yes, this is gross, the klog authors are monsters.
+	klog.InitFlags(nil)
+}
 
 func main() {
 	log := logrus.StandardLogger()
