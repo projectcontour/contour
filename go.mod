@@ -33,7 +33,7 @@ require (
 	honnef.co/go/tools v0.0.1-2019.2.2
 	k8s.io/api v0.0.0-20190620084959-7cf5895f2711
 	k8s.io/apimachinery v0.0.0-20190612205821-1799e75a0719
-	k8s.io/client-go v12.0.0+incompatible
+	k8s.io/client-go v0.0.0-20190620085101-78d2af792bab
 	k8s.io/code-generator v0.0.0-20190311093542-50b561225d70
 	k8s.io/gengo v0.0.0-20190116091435-f8a0810f38af // indirect
 	k8s.io/utils v0.0.0-20190607212802-c55fbcfc754a // indirect
