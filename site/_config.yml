@@ -2,9 +2,12 @@
 title: Contour
 email:
 author: Contour Authors
-description:
-url:
+description: High performance ingress controller for Kubernetes
+url: projectcontour.io
 logo: Contour.svg
+twitter:
+  username: projectcontour
+  card: summary
 vm_logo: vm-logo.png
 gh_repo: https://github.com/heptio/contour
 markdown: redcarpet
@@ -66,6 +69,7 @@ plugins:
   - jekyll-titles-from-headings # pull the page title from the first Markdown heading when none is specified.
   - jekyll-paginate # pagination object for collections (e.g. posts)
   - jekyll-github-metadata
+  - jekyll-seo-tag  
 
 # Include these subdirectories
 include:

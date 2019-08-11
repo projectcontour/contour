@@ -1,6 +1,7 @@
 ---
 layout: page
 title: Community
+description: Contour Community
 id: community
 ---
 Do you want to help build Contour?

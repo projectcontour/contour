@@ -1,6 +1,7 @@
 ---
 layout: page
 title: Contour Documentation
+description: Contour Documentation / Contour Docs
 id: docs
 ---
 

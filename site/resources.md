@@ -1,6 +1,7 @@
 ---
 layout: page
 title: Resources
+description: Contour Resources
 id: resources
 ---
 Here you will find external resources about Contour, such as videos, podcasts, and community articles.
