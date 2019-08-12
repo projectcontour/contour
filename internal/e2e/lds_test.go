@@ -609,7 +609,7 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 
 func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
-		reh.Notifier.(*contour.CacheHandler).UseProxyProto = true
+		reh.CacheHandler.UseProxyProto = true
 	})
 	defer done()
 
@@ -658,7 +658,7 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 
 func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
-		reh.Notifier.(*contour.CacheHandler).UseProxyProto = true
+		reh.CacheHandler.UseProxyProto = true
 	})
 	defer done()
 
@@ -737,10 +737,10 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 
 func TestLDSCustomAddressAndPort(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
-		reh.Notifier.(*contour.CacheHandler).HTTPAddress = "127.0.0.100"
-		reh.Notifier.(*contour.CacheHandler).HTTPPort = 9100
-		reh.Notifier.(*contour.CacheHandler).HTTPSAddress = "127.0.0.200"
-		reh.Notifier.(*contour.CacheHandler).HTTPSPort = 9200
+		reh.CacheHandler.HTTPAddress = "127.0.0.100"
+		reh.CacheHandler.HTTPPort = 9100
+		reh.CacheHandler.HTTPSAddress = "127.0.0.200"
+		reh.CacheHandler.HTTPSPort = 9200
 	})
 	defer done()
 
@@ -816,8 +816,8 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 
 func TestLDSCustomAccessLogPaths(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
-		reh.Notifier.(*contour.CacheHandler).HTTPAccessLog = "/tmp/http_access.log"
-		reh.Notifier.(*contour.CacheHandler).HTTPSAccessLog = "/tmp/https_access.log"
+		reh.CacheHandler.HTTPAccessLog = "/tmp/http_access.log"
+		reh.CacheHandler.HTTPSAccessLog = "/tmp/https_access.log"
 	})
 	defer done()
 

@@ -81,9 +81,9 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 	}
 
 	reh := contour.ResourceEventHandler{
-		Notifier:    ch,
-		Metrics:     ch.Metrics,
-		FieldLogger: log,
+		CacheHandler: ch,
+		Metrics:      ch.Metrics,
+		FieldLogger:  log,
 	}
 
 	for _, opt := range opts {
