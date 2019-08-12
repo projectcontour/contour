@@ -39,7 +39,7 @@ type KubernetesCache struct {
 	// If not set, defaults to DEFAULT_INGRESS_CLASS.
 	IngressClass string
 
-	mu sync.RWMutex
+	sync.RWMutex
 
 	ingresses     map[Meta]*v1beta1.Ingress
 	ingressroutes map[Meta]*ingressroutev1.IngressRoute
@@ -58,8 +58,6 @@ type Meta struct {
 // is not interesting to the cache. If an object with a matching type, name,
 // and namespace exists, it will be overwritten.
 func (kc *KubernetesCache) Insert(obj interface{}) bool {
-	kc.mu.Lock()
-	defer kc.mu.Unlock()
 	switch obj := obj.(type) {
 	case *v1.Secret:
 		m := Meta{name: obj.Name, namespace: obj.Namespace}
@@ -128,8 +126,6 @@ func (kc *KubernetesCache) Remove(obj interface{}) bool {
 }
 
 func (kc *KubernetesCache) remove(obj interface{}) bool {
-	kc.mu.Lock()
-	defer kc.mu.Unlock()
 	switch obj := obj.(type) {
 	case *v1.Secret:
 		m := Meta{name: obj.Name, namespace: obj.Namespace}

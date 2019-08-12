@@ -250,8 +250,6 @@ func (b *builder) listener(port int) *Listener {
 }
 
 func (b *builder) compute() *DAG {
-	b.source.mu.RLock() // blocks mutation of the underlying cache until compute is done.
-	defer b.source.mu.RUnlock()
 
 	// setup secure vhosts if there is a matching secret
 	// we do this first so that the set of active secure vhosts is stable
