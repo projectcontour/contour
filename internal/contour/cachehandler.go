@@ -42,7 +42,11 @@ type CacheHandler struct {
 func (ch *CacheHandler) OnChange(kc *dag.KubernetesCache) {
 	timer := prometheus.NewTimer(ch.CacheHandlerOnUpdateSummary)
 	defer timer.ObserveDuration()
+
+	kc.RLock()
 	dag := dag.BuildDAG(kc)
+	kc.RUnlock()
+
 	ch.updateSecrets(dag)
 	ch.updateListeners(dag)
 	ch.updateRoutes(dag)

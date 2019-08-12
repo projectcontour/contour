@@ -53,23 +53,33 @@ func (reh *ResourceEventHandler) OnAdd(obj interface{}) {
 	timer := prometheus.NewTimer(reh.ResourceEventHandlerSummary.With(prometheus.Labels{"op": "OnAdd"}))
 	defer timer.ObserveDuration()
 	reh.WithField("op", "add").Debugf("%T", obj)
-	if reh.Insert(obj) {
+
+	reh.KubernetesCache.Lock()
+	insert := reh.Insert(obj)
+	reh.KubernetesCache.Unlock()
+
+	if insert {
 		reh.update()
 	}
 }
 
 func (reh *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
+	timer := prometheus.NewTimer(reh.ResourceEventHandlerSummary.With(prometheus.Labels{"op": "OnUpdate"}))
+	defer timer.ObserveDuration()
+	reh.WithField("op", "update").Debugf("%T", newObj)
+
+	reh.KubernetesCache.Lock()
+	remove := reh.Remove(oldObj)
+	insert := reh.Insert(newObj)
+	reh.KubernetesCache.Unlock()
+
 	if cmp.Equal(oldObj, newObj,
 		cmpopts.IgnoreFields(ingressroutev1.IngressRoute{}, "Status"),
 		cmpopts.IgnoreFields(metav1.ObjectMeta{}, "ResourceVersion")) {
 		reh.WithField("op", "update").Debugf("%T skipping update, only status has changed", newObj)
 		return
 	}
-	timer := prometheus.NewTimer(reh.ResourceEventHandlerSummary.With(prometheus.Labels{"op": "OnUpdate"}))
-	defer timer.ObserveDuration()
-	reh.WithField("op", "update").Debugf("%T", newObj)
-	remove := reh.Remove(oldObj)
-	insert := reh.Insert(newObj)
+
 	if insert || remove {
 		reh.update()
 	}
@@ -80,7 +90,12 @@ func (reh *ResourceEventHandler) OnDelete(obj interface{}) {
 	defer timer.ObserveDuration()
 	// no need to check ingress class here
 	reh.WithField("op", "delete").Debugf("%T", obj)
-	if reh.Remove(obj) {
+
+	reh.KubernetesCache.Lock()
+	remove := reh.Remove(obj)
+	reh.KubernetesCache.Unlock()
+
+	if remove {
 		reh.update()
 	}
 }
