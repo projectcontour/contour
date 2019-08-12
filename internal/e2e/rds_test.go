@@ -2280,6 +2280,124 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 	}, streamRDS(t, cc))
 }
 
+func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
+	disablePermitInsecure = true
+	rh, cc, done := setup(t)
+	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "svc2",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	rh.OnAdd(&v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-tls",
+			Namespace: "default",
+		},
+		Type: "kubernetes.io/tls",
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	})
+
+	ir1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "test2.test.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName: "example-tls",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match:          "/insecure",
+				PermitInsecure: true,
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 80,
+				}},
+			}, {
+				Match: "/secure",
+				Services: []ingressroutev1.Service{{
+					Name: "svc2",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	rh.OnAdd(ir1)
+
+	// check that ingress_http has been updated.
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "4",
+		Resources: []types.Any{
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_http",
+				VirtualHosts: []route.VirtualHost{{
+					Name:    "test2.test.com",
+					Domains: domains("test2.test.com"),
+					Routes: []route.Route{
+						{
+							Match:  envoy.RoutePrefix("/secure"),
+							Action: envoy.UpgradeHTTPS(),
+						}, {
+							Match:  envoy.RoutePrefix("/insecure"),
+							Action: envoy.UpgradeHTTPS(),
+						},
+					},
+				}}}),
+			any(t, &v2.RouteConfiguration{
+				Name: "ingress_https",
+				VirtualHosts: []route.VirtualHost{{
+					Name:    "test2.test.com",
+					Domains: domains("test2.test.com"),
+					Routes: []route.Route{
+						{
+							Match:               envoy.RoutePrefix("/secure"),
+							Action:              routecluster("default/svc2/80/da39a3ee5e"),
+							RequestHeadersToAdd: envoy.RouteHeaders(),
+						}, {
+							Match:               envoy.RoutePrefix("/insecure"),
+							Action:              routecluster("default/kuard/80/da39a3ee5e"),
+							RequestHeadersToAdd: envoy.RouteHeaders(),
+						},
+					},
+				}}}),
+		},
+		TypeUrl: routeType,
+		Nonce:   "4",
+	}, streamRDS(t, cc))
+}
+
 // issue 665, support for retry-on, num-retries, and per-try-timeout annotations.
 func TestRouteRetryAnnotations(t *testing.T) {
 	rh, cc, done := setup(t)

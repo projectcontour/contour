@@ -61,21 +61,22 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	)
 	// Set defaults for parameters which are then overridden via flags, ENV, or ConfigFile
 	ctx = serveContext{
-		Kubeconfig:     filepath.Join(os.Getenv("HOME"), ".kube", "config"),
-		xdsAddr:        "127.0.0.1",
-		xdsPort:        8001,
-		statsAddr:      "0.0.0.0",
-		statsPort:      8002,
-		debugAddr:      "127.0.0.1",
-		debugPort:      6060,
-		metricsAddr:    "0.0.0.0",
-		metricsPort:    8000,
-		httpAccessLog:  contour.DEFAULT_HTTP_ACCESS_LOG,
-		httpsAccessLog: contour.DEFAULT_HTTPS_ACCESS_LOG,
-		httpAddr:       "0.0.0.0",
-		httpsAddr:      "0.0.0.0",
-		httpPort:       8080,
-		httpsPort:      8443,
+		Kubeconfig:            filepath.Join(os.Getenv("HOME"), ".kube", "config"),
+		xdsAddr:               "127.0.0.1",
+		xdsPort:               8001,
+		statsAddr:             "0.0.0.0",
+		statsPort:             8002,
+		debugAddr:             "127.0.0.1",
+		debugPort:             6060,
+		metricsAddr:           "0.0.0.0",
+		metricsPort:           8000,
+		httpAccessLog:         contour.DEFAULT_HTTP_ACCESS_LOG,
+		httpsAccessLog:        contour.DEFAULT_HTTPS_ACCESS_LOG,
+		httpAddr:              "0.0.0.0",
+		httpsAddr:             "0.0.0.0",
+		httpPort:              8080,
+		httpsPort:             8443,
+		DisablePermitInsecure: false,
 	}
 
 	parseConfig := func(_ *kingpin.ParseContext) error {
@@ -172,6 +173,8 @@ type serveContext struct {
 	httpsAccessLog string
 
 	tlsConfig `json:"tls"`
+
+	DisablePermitInsecure bool `json:"disablePermitInsecure"`
 }
 
 type tlsConfig struct {
@@ -257,6 +260,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		IngressRouteStatus: &k8s.IngressRouteStatus{
 			Client: contourClient,
 		},
+		DisablePermitInsecure: ctx.DisablePermitInsecure,
 	}
 
 	// step 4. wrap the gRPC cache handler in a k8s resource event handler.

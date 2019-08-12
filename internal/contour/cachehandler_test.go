@@ -570,7 +570,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			for _, o := range tc.objs {
 				kc.Insert(o)
 			}
-			dag := dag.BuildDAG(kc)
+			dag := dag.BuildDAG(kc, false)
 			got := calculateIngressRouteMetric(dag.Statuses())
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)

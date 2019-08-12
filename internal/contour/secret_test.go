@@ -360,7 +360,7 @@ func buildDAG(objs ...interface{}) *dag.DAG {
 	for _, o := range objs {
 		cache.Insert(o)
 	}
-	return dag.BuildDAG(&cache)
+	return dag.BuildDAG(&cache, false)
 }
 
 func secretmap(secrets ...*auth.Secret) map[string]*auth.Secret {
