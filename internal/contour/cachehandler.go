@@ -34,6 +34,8 @@ type CacheHandler struct {
 	ClusterCache
 	SecretCache
 
+	DisablePermitInsecure bool
+
 	IngressRouteStatus *k8s.IngressRouteStatus
 	logrus.FieldLogger
 	*metrics.Metrics
@@ -44,7 +46,7 @@ func (ch *CacheHandler) OnChange(kc *dag.KubernetesCache) {
 	defer timer.ObserveDuration()
 
 	kc.RLock()
-	dag := dag.BuildDAG(kc)
+	dag := dag.BuildDAG(kc, ch.DisablePermitInsecure)
 	kc.RUnlock()
 
 	ch.updateSecrets(dag)

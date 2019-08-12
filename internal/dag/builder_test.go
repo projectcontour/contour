@@ -1432,8 +1432,9 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		objs []interface{}
-		want []Vertex
+		objs                  []interface{}
+		disablePermitInsecure bool
+		want                  []Vertex
 	}{
 		"insert ingress w/ default backend": {
 			objs: []interface{}{
@@ -2120,6 +2121,7 @@ func TestDAGInsert(t *testing.T) {
 			objs: []interface{}{
 				ir14, s1, sec1,
 			},
+			disablePermitInsecure: false,
 			want: listeners(
 				&Listener{
 					Port: 80,
@@ -2130,6 +2132,25 @@ func TestDAGInsert(t *testing.T) {
 					Port: 443,
 					VirtualHosts: virtualhosts(
 						securevirtualhost("foo.com", sec1, prefixroute("/", httpService(s1))),
+					),
+				},
+			),
+		},
+		"insert ingressroute with TLS one insecure - disablePermitInsecure=true": {
+			objs: []interface{}{
+				ir14, s1, sec1,
+			},
+			disablePermitInsecure: true,
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("foo.com", routeUpgrade("/", httpService(s1))),
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("foo.com", sec1, routeUpgrade("/", httpService(s1))),
 					),
 				},
 			),
@@ -2977,7 +2998,7 @@ func TestDAGInsert(t *testing.T) {
 			for _, o := range tc.objs {
 				kc.Insert(o)
 			}
-			dag := BuildDAG(&kc)
+			dag := BuildDAG(&kc, tc.disablePermitInsecure)
 
 			got := make(map[int]*Listener)
 			dag.Visit(listenerMap(got).Visit)
@@ -3213,7 +3234,7 @@ func TestDAGRootNamespaces(t *testing.T) {
 			for _, o := range tc.objs {
 				kc.Insert(o)
 			}
-			dag := BuildDAG(kc)
+			dag := BuildDAG(kc, false)
 
 			var count int
 			dag.Visit(func(v Vertex) {
@@ -3778,7 +3799,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			for _, o := range tc.objs {
 				kc.Insert(o)
 			}
-			dag := BuildDAG(kc)
+			dag := BuildDAG(kc, false)
 			got := dag.Statuses()
 			if len(tc.want) != len(got) {
 				t.Fatalf("expected:\n%v\ngot\n%v", tc.want, got)
@@ -3914,7 +3935,7 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 			for _, o := range tc.objs {
 				kc.Insert(o)
 			}
-			dag := BuildDAG(&kc)
+			dag := BuildDAG(&kc, false)
 			got := make(map[int]*Listener)
 			dag.Visit(listenerMap(got).Visit)
 
@@ -4001,35 +4022,46 @@ func TestHttpPaths(t *testing.T) {
 }
 func TestEnforceRoute(t *testing.T) {
 	tests := map[string]struct {
-		tlsEnabled     bool
-		permitInsecure bool
-		want           bool
+		tlsEnabled            bool
+		permitInsecure        bool
+		disablePermitInsecure bool
+		want                  bool
 	}{
 		"tls not enabled": {
-			tlsEnabled:     false,
-			permitInsecure: false,
-			want:           false,
+			tlsEnabled:            false,
+			permitInsecure:        false,
+			disablePermitInsecure: false,
+			want:                  false,
 		},
 		"tls enabled": {
-			tlsEnabled:     true,
-			permitInsecure: false,
-			want:           true,
+			tlsEnabled:            true,
+			permitInsecure:        false,
+			disablePermitInsecure: false,
+			want:                  true,
 		},
 		"tls enabled but insecure requested": {
-			tlsEnabled:     true,
-			permitInsecure: true,
-			want:           false,
+			tlsEnabled:            true,
+			permitInsecure:        true,
+			disablePermitInsecure: false,
+			want:                  false,
 		},
 		"tls not enabled but insecure requested": {
-			tlsEnabled:     false,
-			permitInsecure: true,
-			want:           false,
+			tlsEnabled:            false,
+			permitInsecure:        true,
+			disablePermitInsecure: false,
+			want:                  false,
+		},
+		"tls enabled but disablePermitInsecure=true": {
+			tlsEnabled:            true,
+			permitInsecure:        true,
+			disablePermitInsecure: true,
+			want:                  true,
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := routeEnforceTLS(tc.tlsEnabled, tc.permitInsecure)
+			got := routeEnforceTLS(tc.tlsEnabled, permitInsecure(tc.permitInsecure, tc.disablePermitInsecure))
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatalf(diff)
 			}
