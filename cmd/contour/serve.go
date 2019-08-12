@@ -26,6 +26,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	contourinformers "github.com/heptio/contour/apis/generated/informers/externalversions"
 	"github.com/heptio/contour/internal/contour"
@@ -265,10 +266,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 4. wrap the gRPC cache handler in a k8s resource event handler.
 	reh := contour.ResourceEventHandler{
-		Notifier: &contour.HoldoffNotifier{
-			Notifier:    &ch,
-			FieldLogger: log.WithField("context", "HoldoffNotifier"),
-		},
+		CacheHandler:    &ch,
+		HoldoffDelay:    100 * time.Millisecond,
+		HoldoffMaxDelay: 500 * time.Millisecond,
 		KubernetesCache: dag.KubernetesCache{
 			IngressRouteRootNamespaces: ctx.ingressRouteRootNamespaces(),
 			IngressClass:               ctx.ingressClass,

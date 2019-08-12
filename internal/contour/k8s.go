@@ -17,6 +17,10 @@
 package contour
 
 import (
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
@@ -34,19 +38,19 @@ import (
 type ResourceEventHandler struct {
 	dag.KubernetesCache
 
-	Notifier
+	*CacheHandler
+
+	HoldoffDelay, HoldoffMaxDelay time.Duration
 
 	*metrics.Metrics
 
 	logrus.FieldLogger
-}
 
-// Notifier supplies a callback to be called when changes occur
-// to a dag.Builder.
-type Notifier interface {
-	// OnChange is called to notify the callee that the
-	// contents of the *dag.KubernetesCache have changed.
-	OnChange(*dag.KubernetesCache)
+	pending counter
+
+	mu    sync.Mutex
+	timer *time.Timer
+	last  time.Time
 }
 
 func (reh *ResourceEventHandler) OnAdd(obj interface{}) {
@@ -101,5 +105,39 @@ func (reh *ResourceEventHandler) OnDelete(obj interface{}) {
 }
 
 func (reh *ResourceEventHandler) update() {
-	reh.OnChange(&reh.KubernetesCache)
+	reh.pending.inc()
+	reh.mu.Lock()
+	defer reh.mu.Unlock()
+	if reh.timer != nil {
+		reh.timer.Stop()
+	}
+	since := time.Since(reh.last)
+	if since > reh.HoldoffMaxDelay {
+		// update immediately
+		reh.WithField("last_update", since).WithField("pending", reh.pending.reset()).Info("forcing update")
+		reh.notify()
+		return
+	}
+
+	reh.timer = time.AfterFunc(reh.HoldoffDelay, func() {
+		reh.mu.Lock()
+		defer reh.mu.Unlock()
+		reh.WithField("last_update", time.Since(reh.last)).WithField("pending", reh.pending.reset()).Info("performing delayed update")
+		reh.notify()
+	})
+}
+
+func (reh *ResourceEventHandler) notify() {
+	reh.CacheHandler.OnChange(&reh.KubernetesCache)
+	reh.last = time.Now()
+}
+
+// counter holds an atomically incrementing counter.
+type counter uint64
+
+func (c *counter) inc() uint64 {
+	return atomic.AddUint64((*uint64)(c), 1)
+}
+func (c *counter) reset() uint64 {
+	return atomic.SwapUint64((*uint64)(c), 0)
 }
