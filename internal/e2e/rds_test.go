@@ -2281,8 +2281,10 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 }
 
 func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
-	disablePermitInsecure = true
-	rh, cc, done := setup(t)
+	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+		reh.Notifier.(*contour.CacheHandler).DisablePermitInsecure = true
+	})
+
 	defer done()
 
 	rh.OnAdd(&v1.Service{

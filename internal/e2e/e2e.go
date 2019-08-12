@@ -46,8 +46,6 @@ const (
 	statsPort    = 8002
 )
 
-var disablePermitInsecure = false
-
 type testWriter struct {
 	*testing.T
 }
@@ -77,10 +75,9 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 		IngressRouteStatus: &k8s.IngressRouteStatus{
 			Client: fake.NewSimpleClientset(),
 		},
-		Metrics:               metrics.NewMetrics(r),
-		ListenerCache:         contour.NewListenerCache(statsAddress, statsPort),
-		FieldLogger:           log,
-		DisablePermitInsecure: disablePermitInsecure,
+		Metrics:       metrics.NewMetrics(r),
+		ListenerCache: contour.NewListenerCache(statsAddress, statsPort),
+		FieldLogger:   log,
 	}
 
 	reh := contour.ResourceEventHandler{
