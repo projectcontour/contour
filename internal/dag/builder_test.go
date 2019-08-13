@@ -995,6 +995,36 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// ir10 has a websocket route w/multiple upstreams
+	ir10b := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}, {
+				Match:            "/websocket",
+				EnableWebsockets: true,
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}, {
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	// ir11 has a prefix-rewrite route
 	ir11 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2081,6 +2111,21 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("example.com",
 							prefixroute("/", httpService(s1)),
 							routeWebsocket("/websocket", httpService(s1)),
+						),
+					),
+				},
+			),
+		},
+		"insert ingressroute with multiple upstreams prefix rewrite route, websocket routes are dropped": {
+			objs: []interface{}{
+				ir10b, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							prefixroute("/", httpService(s1)),
 						),
 					),
 				},
