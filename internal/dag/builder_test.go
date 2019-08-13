@@ -2998,7 +2998,11 @@ func TestDAGInsert(t *testing.T) {
 			for _, o := range tc.objs {
 				kc.Insert(o)
 			}
-			dag := BuildDAG(&kc, tc.disablePermitInsecure)
+			builder := Builder{
+				Source:                &kc,
+				DisablePermitInsecure: tc.disablePermitInsecure,
+			}
+			dag := builder.Build()
 
 			got := make(map[int]*Listener)
 			dag.Visit(listenerMap(got).Visit)
@@ -3100,11 +3104,12 @@ func TestBuilderLookupHTTPService(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			b := builder{
-				source: &KubernetesCache{
+			b := Builder{
+				Source: &KubernetesCache{
 					services: services,
 				},
 			}
+			b.reset()
 			got := b.lookupHTTPService(tc.Meta, tc.port)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
@@ -3234,7 +3239,10 @@ func TestDAGRootNamespaces(t *testing.T) {
 			for _, o := range tc.objs {
 				kc.Insert(o)
 			}
-			dag := BuildDAG(kc, false)
+			builder := Builder{
+				Source: kc,
+			}
+			dag := builder.Build()
 
 			var count int
 			dag.Visit(func(v Vertex) {
@@ -3799,7 +3807,11 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			for _, o := range tc.objs {
 				kc.Insert(o)
 			}
-			dag := BuildDAG(kc, false)
+			builder := Builder{
+				Source: kc,
+			}
+			dag := builder.Build()
+
 			got := dag.Statuses()
 			if len(tc.want) != len(got) {
 				t.Fatalf("expected:\n%v\ngot\n%v", tc.want, got)
@@ -3935,7 +3947,11 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 			for _, o := range tc.objs {
 				kc.Insert(o)
 			}
-			dag := BuildDAG(&kc, false)
+			builder := Builder{
+				Source: &kc,
+			}
+			dag := builder.Build()
+
 			got := make(map[int]*Listener)
 			dag.Visit(listenerMap(got).Visit)
 
@@ -4022,46 +4038,35 @@ func TestHttpPaths(t *testing.T) {
 }
 func TestEnforceRoute(t *testing.T) {
 	tests := map[string]struct {
-		tlsEnabled            bool
-		permitInsecure        bool
-		disablePermitInsecure bool
-		want                  bool
+		tlsEnabled     bool
+		permitInsecure bool
+		want           bool
 	}{
 		"tls not enabled": {
-			tlsEnabled:            false,
-			permitInsecure:        false,
-			disablePermitInsecure: false,
-			want:                  false,
+			tlsEnabled:     false,
+			permitInsecure: false,
+			want:           false,
 		},
 		"tls enabled": {
-			tlsEnabled:            true,
-			permitInsecure:        false,
-			disablePermitInsecure: false,
-			want:                  true,
+			tlsEnabled:     true,
+			permitInsecure: false,
+			want:           true,
 		},
 		"tls enabled but insecure requested": {
-			tlsEnabled:            true,
-			permitInsecure:        true,
-			disablePermitInsecure: false,
-			want:                  false,
+			tlsEnabled:     true,
+			permitInsecure: true,
+			want:           false,
 		},
 		"tls not enabled but insecure requested": {
-			tlsEnabled:            false,
-			permitInsecure:        true,
-			disablePermitInsecure: false,
-			want:                  false,
-		},
-		"tls enabled but disablePermitInsecure=true": {
-			tlsEnabled:            true,
-			permitInsecure:        true,
-			disablePermitInsecure: true,
-			want:                  true,
+			tlsEnabled:     false,
+			permitInsecure: true,
+			want:           false,
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := routeEnforceTLS(tc.tlsEnabled, permitInsecure(tc.permitInsecure, tc.disablePermitInsecure))
+			got := routeEnforceTLS(tc.tlsEnabled, tc.permitInsecure)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatalf(diff)
 			}
