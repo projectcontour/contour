@@ -261,14 +261,14 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		IngressRouteStatus: &k8s.IngressRouteStatus{
 			Client: contourClient,
 		},
-		DisablePermitInsecure: ctx.DisablePermitInsecure,
 	}
 
 	// step 4. wrap the gRPC cache handler in a k8s resource event handler.
 	reh := contour.ResourceEventHandler{
-		CacheHandler:    &ch,
-		HoldoffDelay:    100 * time.Millisecond,
-		HoldoffMaxDelay: 500 * time.Millisecond,
+		CacheHandler:          &ch,
+		HoldoffDelay:          100 * time.Millisecond,
+		HoldoffMaxDelay:       500 * time.Millisecond,
+		DisablePermitInsecure: ctx.DisablePermitInsecure,
 		KubernetesCache: dag.KubernetesCache{
 			IngressRouteRootNamespaces: ctx.ingressRouteRootNamespaces(),
 			IngressClass:               ctx.ingressClass,
