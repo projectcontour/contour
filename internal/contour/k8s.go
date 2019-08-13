@@ -131,7 +131,11 @@ func (reh *ResourceEventHandler) update() {
 
 func (reh *ResourceEventHandler) notify() {
 	reh.KubernetesCache.RLock()
-	dag := dag.BuildDAG(&reh.KubernetesCache, reh.DisablePermitInsecure)
+	builder := &dag.Builder{
+		Source:                &reh.KubernetesCache,
+		DisablePermitInsecure: reh.DisablePermitInsecure,
+	}
+	dag := builder.Build()
 	reh.KubernetesCache.RUnlock()
 
 	reh.CacheHandler.OnChange(dag)

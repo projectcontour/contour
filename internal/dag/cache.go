@@ -11,8 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package dag provides a data model, in the form of a directed acyclic graph,
-// of the relationship between Kubernetes Ingress, Service, and Secret objects.
 package dag
 
 import (

@@ -93,7 +93,11 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 		})
 	}
 
-	dag.BuildDAG(dw.kc, dw.disablePermitInsecure).Visit(visit)
+	builder := &dag.Builder{
+		Source:                dw.kc,
+		DisablePermitInsecure: dw.disablePermitInsecure,
+	}
+	builder.Build().Visit(visit)
 
 	fmt.Fprintln(w, "}")
 }
