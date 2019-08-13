@@ -62,7 +62,7 @@ secure-local: $(SECURE_LOCAL_BOOTSTRAP_CONFIG)
 		-it \
 		--mount type=bind,source=$(CURDIR),target=/config \
 		--net bridge \
-		docker.io/envoyproxy/envoy:v1.10.0 \
+		docker.io/envoyproxy/envoy:v1.11.1 \
 		envoy \
 		--config-path /config/$< \
 		--service-node node0 \
@@ -73,7 +73,7 @@ local: $(LOCAL_BOOTSTRAP_CONFIG)
 		-it \
 		--mount type=bind,source=$(CURDIR),target=/config \
 		--net bridge \
-		docker.io/envoyproxy/envoy:v1.10.0 \
+		docker.io/envoyproxy/envoy:v1.11.1 \
 		envoy \
 		--config-path /config/$< \
 		--service-node node0 \
