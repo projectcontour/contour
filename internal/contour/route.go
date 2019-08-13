@@ -59,13 +59,8 @@ func (c *RouteCache) Update(v map[string]*v2.RouteConfiguration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.values = v
-	c.notify()
-}
-
-// notify notifies all registered waiters that an event has occurred.
-func (c *RouteCache) notify() {
 	c.last++
+	c.values = v
 
 	for _, ch := range c.waiters {
 		ch <- c.last
