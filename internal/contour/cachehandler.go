@@ -85,35 +85,3 @@ func (ch *CacheHandler) updateClusters(root dag.Visitable) {
 	clusters := visitClusters(root)
 	ch.ClusterCache.Update(clusters)
 }
-
-func calculateIngressRouteMetric(statuses map[dag.Meta]dag.Status) metrics.IngressRouteMetric {
-	metricTotal := make(map[metrics.Meta]int)
-	metricValid := make(map[metrics.Meta]int)
-	metricInvalid := make(map[metrics.Meta]int)
-	metricOrphaned := make(map[metrics.Meta]int)
-	metricRoots := make(map[metrics.Meta]int)
-
-	for _, v := range statuses {
-		switch v.Status {
-		case dag.StatusValid:
-			metricValid[metrics.Meta{VHost: v.Vhost, Namespace: v.Object.GetNamespace()}]++
-		case dag.StatusInvalid:
-			metricInvalid[metrics.Meta{VHost: v.Vhost, Namespace: v.Object.GetNamespace()}]++
-		case dag.StatusOrphaned:
-			metricOrphaned[metrics.Meta{Namespace: v.Object.GetNamespace()}]++
-		}
-		metricTotal[metrics.Meta{Namespace: v.Object.GetNamespace()}]++
-
-		if v.Object.Spec.VirtualHost != nil {
-			metricRoots[metrics.Meta{Namespace: v.Object.GetNamespace()}]++
-		}
-	}
-
-	return metrics.IngressRouteMetric{
-		Invalid:  metricInvalid,
-		Valid:    metricValid,
-		Orphaned: metricOrphaned,
-		Total:    metricTotal,
-		Root:     metricRoots,
-	}
-}
