@@ -32,7 +32,7 @@ spec:
         - node0
         command:
         - envoy
-        image: docker.io/envoyproxy/envoy:v1.10.0
+        image: docker.io/envoyproxy/envoy:v1.11.1
         imagePullPolicy: IfNotPresent
         name: envoy
         ports:
