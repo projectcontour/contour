@@ -608,7 +608,7 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 }
 
 func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
 		reh.CacheHandler.UseProxyProto = true
 	})
 	defer done()
@@ -657,7 +657,7 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 }
 
 func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
 		reh.CacheHandler.UseProxyProto = true
 	})
 	defer done()
@@ -736,7 +736,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 }
 
 func TestLDSCustomAddressAndPort(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
 		reh.CacheHandler.HTTPAddress = "127.0.0.100"
 		reh.CacheHandler.HTTPPort = 9100
 		reh.CacheHandler.HTTPSAddress = "127.0.0.200"
@@ -815,7 +815,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 }
 
 func TestLDSCustomAccessLogPaths(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
 		reh.CacheHandler.HTTPAccessLog = "/tmp/http_access.log"
 		reh.CacheHandler.HTTPSAccessLog = "/tmp/https_access.log"
 	})
@@ -890,7 +890,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 }
 
 func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
 		reh.IngressRouteRootNamespaces = []string{"roots"}
 	})
 	defer done()
@@ -958,7 +958,7 @@ func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 }
 
 func TestLDSIngressRouteOutsideRootNamespaces(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
 		reh.IngressRouteRootNamespaces = []string{"roots"}
 	})
 	defer done()
@@ -1006,7 +1006,7 @@ func TestLDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 }
 
 func TestIngressRouteHTTPS(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
 		reh.IngressRouteRootNamespaces = []string{}
 	})
 	defer done()

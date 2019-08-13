@@ -1423,7 +1423,7 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 }
 
 func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
 		reh.IngressRouteRootNamespaces = []string{"roots"}
 	})
 	defer done()
@@ -1485,7 +1485,7 @@ func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
 }
 
 func TestRDSIngressRouteOutsideRootNamespaces(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
 		reh.IngressRouteRootNamespaces = []string{"roots"}
 	})
 	defer done()
@@ -1541,7 +1541,7 @@ func TestRDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 // in LDS or RDS, or even CDS, but this test mirrors the place it's
 // tested in internal/contour/route_test.go
 func TestRDSIngressRouteClassAnnotation(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
 		reh.IngressClass = "linkerd"
 	})
 	defer done()
@@ -1721,7 +1721,7 @@ func TestRDSIngressRouteClassAnnotation(t *testing.T) {
 // in LDS or RDS, or even CDS, but this test mirrors the place it's
 // tested in internal/contour/route_test.go
 func TestRDSIngressClassAnnotation(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
 		reh.IngressClass = "linkerd"
 	})
 	defer done()
@@ -2273,7 +2273,7 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 }
 
 func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.ResourceEventHandler) {
+	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
 		reh.DisablePermitInsecure = true
 	})
 

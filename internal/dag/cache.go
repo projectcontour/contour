@@ -14,8 +14,6 @@
 package dag
 
 import (
-	"sync"
-
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/client-go/tools/cache"
@@ -36,8 +34,6 @@ type KubernetesCache struct {
 	// Contour's IngressClass.
 	// If not set, defaults to DEFAULT_INGRESS_CLASS.
 	IngressClass string
-
-	sync.RWMutex
 
 	ingresses     map[Meta]*v1beta1.Ingress
 	ingressroutes map[Meta]*ingressroutev1.IngressRoute

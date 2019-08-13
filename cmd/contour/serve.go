@@ -263,8 +263,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		},
 	}
 
-	// step 4. wrap the gRPC cache handler in a k8s resource event handler.
-	reh := contour.ResourceEventHandler{
+	// step 4. wrap the cache handler in a k8s event handler.
+	eh := &contour.EventHandler{
 		CacheHandler:          &ch,
 		HoldoffDelay:          100 * time.Millisecond,
 		HoldoffMaxDelay:       500 * time.Millisecond,
@@ -273,21 +273,21 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			IngressRouteRootNamespaces: ctx.ingressRouteRootNamespaces(),
 			IngressClass:               ctx.ingressClass,
 		},
-		FieldLogger: log.WithField("context", "resourceEventHandler"),
+		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}
 
-	// step 5. register out resource event handler with the k8s informers.
-	coreInformers.Core().V1().Services().Informer().AddEventHandler(&reh)
-	coreInformers.Extensions().V1beta1().Ingresses().Informer().AddEventHandler(&reh)
-	contourInformers.Contour().V1beta1().IngressRoutes().Informer().AddEventHandler(&reh)
-	contourInformers.Contour().V1beta1().TLSCertificateDelegations().Informer().AddEventHandler(&reh)
+	// step 5. register our resource event handler with the k8s informers.
+	coreInformers.Core().V1().Services().Informer().AddEventHandler(eh)
+	coreInformers.Extensions().V1beta1().Ingresses().Informer().AddEventHandler(eh)
+	contourInformers.Contour().V1beta1().IngressRoutes().Informer().AddEventHandler(eh)
+	contourInformers.Contour().V1beta1().TLSCertificateDelegations().Informer().AddEventHandler(eh)
 	// Add informers for each root-ingressroute namespaces
 	for _, inf := range namespacedInformers {
-		inf.Core().V1().Secrets().Informer().AddEventHandler(&reh)
+		inf.Core().V1().Secrets().Informer().AddEventHandler(eh)
 	}
 	// If root-ingressroutes are not defined, then add the informer for all namespaces
 	if len(namespacedInformers) == 0 {
-		coreInformers.Core().V1().Secrets().Informer().AddEventHandler(&reh)
+		coreInformers.Core().V1().Secrets().Informer().AddEventHandler(eh)
 	}
 
 	// step 6. endpoints updates are handled directly by the EndpointsTranslator
@@ -305,12 +305,15 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		g.Add(startInformer(inf, log.WithField("context", "corenamespacedinformers")))
 	}
 
-	// step 8. setup prometheus registry and register base metrics.
+	// step 8. register our event handler with the workgroup
+	g.Add(eh.Start())
+
+	// step 9. setup prometheus registry and register base metrics.
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	registry.MustRegister(prometheus.NewGoCollector())
 
-	// step 9. create metrics service and register with workgroup.
+	// step 10. create metrics service and register with workgroup.
 	metricsvc := metrics.Service{
 		Service: httpsvc.Service{
 			Addr:        ctx.metricsAddr,
@@ -322,24 +325,24 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 	g.Add(metricsvc.Start)
 
-	// step 10. create debug service and register with workgroup.
+	// step 11. create debug service and register with workgroup.
 	debugsvc := debug.Service{
 		Service: httpsvc.Service{
 			Addr:        ctx.debugAddr,
 			Port:        ctx.debugPort,
 			FieldLogger: log.WithField("context", "debugsvc"),
 		},
-		KubernetesCache: &reh.KubernetesCache,
+		KubernetesCache: &eh.KubernetesCache,
 	}
 	g.Add(debugsvc.Start)
 
-	// step 11. register our custom metrics and plumb into cache handler
+	// step 12. register our custom metrics and plumb into cache handler
 	// and resource event handler.
 	metrics := metrics.NewMetrics(registry)
 	ch.Metrics = metrics
-	reh.Metrics = metrics
+	eh.Metrics = metrics
 
-	// step 12. create grpc handler and register with workgroup.
+	// step 13. create grpc handler and register with workgroup.
 	g.Add(func(stop <-chan struct{}) error {
 		log := log.WithField("context", "grpc")
 		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
@@ -372,7 +375,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return s.Serve(l)
 	})
 
-	// step 13. GO!
+	// step 14. GO!
 	return g.Run()
 }
 
