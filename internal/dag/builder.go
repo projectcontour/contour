@@ -511,6 +511,12 @@ func (b *Builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 			return
 		}
 
+		// Cannot support multiple services with websockets (See: https://github.com/heptio/contour/issues/732)
+		if len(route.Services) > 1 && route.EnableWebsockets {
+			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: cannot specify multiple services and enable websockets", route.Match), Vhost: host})
+			return
+		}
+
 		// base case: The route points to services, so we add them to the vhost
 		if len(route.Services) > 0 {
 			if !matchesPathPrefix(route.Match, prefixMatch) {
