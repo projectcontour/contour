@@ -269,7 +269,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		Builder: dag.Builder{
-			Source: &dag.KubernetesCache{
+			Source: dag.KubernetesCache{
 				IngressRouteRootNamespaces: ctx.ingressRouteRootNamespaces(),
 				IngressClass:               ctx.ingressClass,
 			},
@@ -334,7 +334,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			Port:        ctx.debugPort,
 			FieldLogger: log.WithField("context", "debugsvc"),
 		},
-		KubernetesCache: eh.Builder.Source,
+		Builder: &eh.Builder,
 	}
 	g.Add(debugsvc.Start)
 

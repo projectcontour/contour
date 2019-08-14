@@ -24,7 +24,6 @@ import (
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/heptio/contour/internal/contour"
-	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -196,9 +195,6 @@ func TestGRPC(t *testing.T) {
 				Metrics: metrics.NewMetrics(prometheus.NewRegistry()),
 			}
 			eh = &contour.EventHandler{
-				Builder: dag.Builder{
-					Source: new(dag.KubernetesCache),
-				},
 				CacheHandler: &ch,
 				Metrics:      ch.Metrics,
 				FieldLogger:  log,
