@@ -356,12 +356,9 @@ func TestSecretVisit(t *testing.T) {
 
 // buildDAG produces a dag.DAG from the supplied objects.
 func buildDAG(objs ...interface{}) *dag.DAG {
-	var cache dag.KubernetesCache
+	var builder dag.Builder
 	for _, o := range objs {
-		cache.Insert(o)
-	}
-	builder := dag.Builder{
-		Source: &cache,
+		builder.Source.Insert(o)
 	}
 	return builder.Build()
 }
