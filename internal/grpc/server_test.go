@@ -20,17 +20,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/heptio/contour/internal/contour"
+	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -195,6 +196,9 @@ func TestGRPC(t *testing.T) {
 				Metrics: metrics.NewMetrics(prometheus.NewRegistry()),
 			}
 			eh = &contour.EventHandler{
+				Builder: dag.Builder{
+					Source: new(dag.KubernetesCache),
+				},
 				CacheHandler: &ch,
 				Metrics:      ch.Metrics,
 				FieldLogger:  log,

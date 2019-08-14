@@ -32,11 +32,7 @@ import (
 // a dag.Builder and calls through to the CacheHandler to notify it that a new DAG
 // is available.
 type EventHandler struct {
-	dag.KubernetesCache
-
-	// DisablePermitInsecure disables processing of IngressRoute
-	// permitInsecure routes.
-	DisablePermitInsecure bool
+	dag.Builder
 
 	*CacheHandler
 
@@ -182,7 +178,7 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 func (e *EventHandler) onUpdate(op interface{}) bool {
 	switch op := op.(type) {
 	case opAdd:
-		return e.KubernetesCache.Insert(op.obj)
+		return e.Builder.Source.Insert(op.obj)
 	case opUpdate:
 		if cmp.Equal(op.oldObj, op.newObj,
 			cmpopts.IgnoreFields(ingressroutev1.IngressRoute{}, "Status"),
@@ -190,11 +186,11 @@ func (e *EventHandler) onUpdate(op interface{}) bool {
 			e.WithField("op", "update").Debugf("%T skipping update, only status has changed", op.newObj)
 			return false
 		}
-		remove := e.Remove(op.oldObj)
-		insert := e.Insert(op.newObj)
+		remove := e.Builder.Source.Remove(op.oldObj)
+		insert := e.Builder.Source.Insert(op.newObj)
 		return remove || insert
 	case opDelete:
-		return e.Remove(op.obj)
+		return e.Builder.Source.Remove(op.obj)
 	default:
 		return false
 	}
@@ -213,11 +209,7 @@ func (e *EventHandler) incSequence() {
 
 // updateDAG builds a new DAG and sends it to the CacheHandler.
 func (e *EventHandler) updateDAG() {
-	builder := &dag.Builder{
-		Source:                &e.KubernetesCache,
-		DisablePermitInsecure: e.DisablePermitInsecure,
-	}
-	dag := builder.Build()
+	dag := e.Builder.Build()
 	e.CacheHandler.OnChange(dag)
 	e.last = time.Now()
 }

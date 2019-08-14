@@ -265,13 +265,15 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 4. wrap the cache handler in a k8s event handler.
 	eh := &contour.EventHandler{
-		CacheHandler:          &ch,
-		HoldoffDelay:          100 * time.Millisecond,
-		HoldoffMaxDelay:       500 * time.Millisecond,
-		DisablePermitInsecure: ctx.DisablePermitInsecure,
-		KubernetesCache: dag.KubernetesCache{
-			IngressRouteRootNamespaces: ctx.ingressRouteRootNamespaces(),
-			IngressClass:               ctx.ingressClass,
+		CacheHandler:    &ch,
+		HoldoffDelay:    100 * time.Millisecond,
+		HoldoffMaxDelay: 500 * time.Millisecond,
+		Builder: dag.Builder{
+			Source: &dag.KubernetesCache{
+				IngressRouteRootNamespaces: ctx.ingressRouteRootNamespaces(),
+				IngressClass:               ctx.ingressClass,
+			},
+			DisablePermitInsecure: ctx.DisablePermitInsecure,
 		},
 		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}
@@ -332,7 +334,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			Port:        ctx.debugPort,
 			FieldLogger: log.WithField("context", "debugsvc"),
 		},
-		KubernetesCache: &eh.KubernetesCache,
+		KubernetesCache: eh.Builder.Source,
 	}
 	g.Add(debugsvc.Start)
 

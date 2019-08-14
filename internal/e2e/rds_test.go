@@ -1424,7 +1424,7 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 
 func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
-		reh.IngressRouteRootNamespaces = []string{"roots"}
+		reh.Builder.Source.IngressRouteRootNamespaces = []string{"roots"}
 	})
 	defer done()
 
@@ -1486,7 +1486,7 @@ func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
 
 func TestRDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
-		reh.IngressRouteRootNamespaces = []string{"roots"}
+		reh.Builder.Source.IngressRouteRootNamespaces = []string{"roots"}
 	})
 	defer done()
 
@@ -1542,7 +1542,7 @@ func TestRDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 // tested in internal/contour/route_test.go
 func TestRDSIngressRouteClassAnnotation(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
-		reh.IngressClass = "linkerd"
+		reh.Builder.Source.IngressClass = "linkerd"
 	})
 	defer done()
 
@@ -1722,7 +1722,7 @@ func TestRDSIngressRouteClassAnnotation(t *testing.T) {
 // tested in internal/contour/route_test.go
 func TestRDSIngressClassAnnotation(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
-		reh.IngressClass = "linkerd"
+		reh.Builder.Source.IngressClass = "linkerd"
 	})
 	defer done()
 
