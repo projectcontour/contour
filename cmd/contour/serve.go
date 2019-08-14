@@ -18,6 +18,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"net"
@@ -77,6 +78,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 		httpsAddr:             "0.0.0.0",
 		httpPort:              8080,
 		httpsPort:             8443,
+		PermitInsecureGRPC:    false,
 		DisablePermitInsecure: false,
 	}
 
@@ -116,7 +118,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("contour-cafile", "CA bundle file name for serving gRPC with TLS").Envar("CONTOUR_CAFILE").StringVar(&ctx.caFile)
 	serve.Flag("contour-cert-file", "Contour certificate file name for serving gRPC over TLS").Envar("CONTOUR_CERT_FILE").StringVar(&ctx.contourCert)
 	serve.Flag("contour-key-file", "Contour key file name for serving gRPC over TLS").Envar("CONTOUR_KEY_FILE").StringVar(&ctx.contourKey)
-
+	serve.Flag("insecure", "Allow serving without TLS secured gRPC.").BoolVar(&ctx.PermitInsecureGRPC)
 	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringVar(&ctx.rootNamespaces)
 
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&ctx.ingressClass)
@@ -173,8 +175,12 @@ type serveContext struct {
 	httpsPort      int
 	httpsAccessLog string
 
+	PermitInsecureGRPC bool
+
 	tlsConfig `json:"tls"`
 
+	// DisablePermitInsecure disables the use of the
+	// permitInsecure field in IngressRoute.
 	DisablePermitInsecure bool `json:"disablePermitInsecure"`
 }
 
@@ -185,14 +191,9 @@ type tlsConfig struct {
 // tlsconfig returns a new *tls.Config. If the context is not properly configured
 // for tls communication, tlsconfig returns nil.
 func (ctx *serveContext) tlsconfig() *tls.Config {
-	if ctx.caFile == "" && ctx.contourCert == "" && ctx.contourKey == "" {
-		// tls not enabled
-		return nil
-	}
-	// If one of the three TLS commands is not empty, they all must be not empty
-	if !(ctx.caFile != "" && ctx.contourCert != "" && ctx.contourKey != "") {
-		log.Fatal("You must supply all three TLS parameters - --contour-cafile, --contour-cert-file, --contour-key-file, or none of them.")
-	}
+
+	err := ctx.verifyTLSFlags()
+	check(err)
 
 	cert, err := tls.LoadX509KeyPair(ctx.contourCert, ctx.contourKey)
 	check(err)
@@ -211,6 +212,20 @@ func (ctx *serveContext) tlsconfig() *tls.Config {
 		ClientCAs:    certPool,
 		Rand:         rand.Reader,
 	}
+}
+
+// verifyTLSFlags indicates if the TLS flags are set up correctly.
+func (ctx *serveContext) verifyTLSFlags() error {
+	if ctx.caFile == "" && ctx.contourCert == "" && ctx.contourKey == "" {
+		return errors.New("no TLS parameters and --insecure not supplied. You must supply one or the other")
+	}
+	// If one of the three TLS commands is not empty, they all must be not empty
+	if !(ctx.caFile != "" && ctx.contourCert != "" && ctx.contourKey != "") {
+		return errors.New("you must supply all three TLS parameters - --contour-cafile, --contour-cert-file, --contour-key-file, or none of them")
+	}
+
+	return nil
+
 }
 
 // ingressRouteRootNamespaces returns a slice of namespaces restricting where
@@ -349,20 +364,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		log := log.WithField("context", "grpc")
 		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
 
-		var l net.Listener
-		var err error
-		tlsconfig := ctx.tlsconfig()
-		if tlsconfig != nil {
-			log.Info("Setting up TLS for gRPC")
-			l, err = tls.Listen("tcp", addr, tlsconfig)
-			if err != nil {
-				return err
-			}
-		} else {
-			l, err = net.Listen("tcp", addr)
-			if err != nil {
-				return err
-			}
+		l, err := net.Listen("tcp", addr)
+		if err != nil {
+			return err
+		}
+		if !ctx.PermitInsecureGRPC {
+			tlsconfig := ctx.tlsconfig()
+			l = tls.NewListener(l, tlsconfig)
 		}
 
 		s := grpc.NewAPI(log, map[string]grpc.Resource{
