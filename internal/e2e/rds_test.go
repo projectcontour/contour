@@ -419,10 +419,10 @@ func TestEditIngressInPlace(t *testing.T) {
 					Domains: domains("hello.example.com"),
 					Routes: []route.Route{{
 						Match:  envoy.RoutePrefix("/whoop"),
-						Action: envoy.UpgradeHTTPS(),
+						Action: envoy.UpgradeHTTPS(contour.GetHttpsHostPort()),
 					}, {
 						Match:  envoy.RoutePrefix("/"),
-						Action: envoy.UpgradeHTTPS(),
+						Action: envoy.UpgradeHTTPS(contour.GetHttpsHostPort()),
 					}},
 				}}}),
 			any(t, &v2.RouteConfiguration{Name: "ingress_https"}),
@@ -490,10 +490,10 @@ func TestEditIngressInPlace(t *testing.T) {
 					Domains: domains("hello.example.com"),
 					Routes: []route.Route{{
 						Match:  envoy.RoutePrefix("/whoop"),
-						Action: envoy.UpgradeHTTPS(),
+						Action: envoy.UpgradeHTTPS(contour.GetHttpsHostPort()),
 					}, {
 						Match:  envoy.RoutePrefix("/"),
-						Action: envoy.UpgradeHTTPS(),
+						Action: envoy.UpgradeHTTPS(contour.GetHttpsHostPort()),
 					}},
 				}}}),
 			any(t, &v2.RouteConfiguration{
@@ -738,7 +738,7 @@ func TestSSLRedirectOverlay(t *testing.T) {
 			RequestHeadersToAdd: envoy.RouteHeaders(),
 		}, {
 			Match:  envoy.RoutePrefix("/"), // match all
-			Action: envoy.UpgradeHTTPS(),
+			Action: envoy.UpgradeHTTPS(contour.GetHttpsHostPort()),
 		}},
 	}}, []route.VirtualHost{{ // ingress_https
 		Name:    "example.com",
@@ -748,6 +748,92 @@ func TestSSLRedirectOverlay(t *testing.T) {
 			Action:              routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
 			RequestHeadersToAdd: envoy.RouteHeaders(),
 		}, {
+			Match:               envoy.RoutePrefix("/"), // match all
+			Action:              routecluster("default/app-service/8080/da39a3ee5e"),
+			RequestHeadersToAdd: envoy.RouteHeaders(),
+		}},
+	}})
+}
+
+// ingress.kubernetes.io/force-ssl-redirect: "true" on non standard hostPort
+func TestSSLRedirectOnNonStdPort(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	hostPort := uint32(8443)
+	contour.SetHttpsHostPort(hostPort)
+	defer contour.SetHttpsHostPort(0)
+
+	// i1 is a stock ingress with force-ssl-redirect on the / route
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "app",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"ingress.kubernetes.io/force-ssl-redirect": "true",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"example.com"},
+				SecretName: "example-tls",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "app-service",
+								ServicePort: intstr.FromInt(8080),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	rh.OnAdd(i1)
+
+	rh.OnAdd(&v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-tls",
+			Namespace: "default",
+		},
+		Type: "kubernetes.io/tls",
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	})
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "app-service",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	assertRDS(t, cc, "3", []route.VirtualHost{{ // ingress_http
+		Name:    "example.com",
+		Domains: domains("example.com"),
+		Routes: []route.Route{{
+			Match:  envoy.RoutePrefix("/"), // match all
+			Action: envoy.UpgradeHTTPS(hostPort),
+		}},
+	}}, []route.VirtualHost{{ // ingress_https
+		Name:    "example.com",
+		Domains: domains("example.com"),
+		Routes: []route.Route{{
 			Match:               envoy.RoutePrefix("/"), // match all
 			Action:              routecluster("default/app-service/8080/da39a3ee5e"),
 			RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -1085,7 +1171,7 @@ func TestRDSFilter(t *testing.T) {
 						RequestHeadersToAdd: envoy.RouteHeaders(),
 					}, {
 						Match:  envoy.RoutePrefix("/"), // match all
-						Action: envoy.UpgradeHTTPS(),
+						Action: envoy.UpgradeHTTPS(contour.GetHttpsHostPort()),
 					}},
 				}},
 			}),
@@ -2135,7 +2221,7 @@ func TestRouteWithTLS(t *testing.T) {
 					Domains: domains("test2.test.com"),
 					Routes: []route.Route{{
 						Match:  envoy.RoutePrefix("/a"),
-						Action: envoy.UpgradeHTTPS(),
+						Action: envoy.UpgradeHTTPS(contour.GetHttpsHostPort()),
 					}},
 				}}}),
 			any(t, &v2.RouteConfiguration{
@@ -2241,7 +2327,7 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 					Routes: []route.Route{
 						{
 							Match:  envoy.RoutePrefix("/secure"),
-							Action: envoy.UpgradeHTTPS(),
+							Action: envoy.UpgradeHTTPS(contour.GetHttpsHostPort()),
 						}, {
 							Match:               envoy.RoutePrefix("/insecure"),
 							Action:              routecluster("default/kuard/80/da39a3ee5e"),
@@ -2362,10 +2448,10 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 					Routes: []route.Route{
 						{
 							Match:  envoy.RoutePrefix("/secure"),
-							Action: envoy.UpgradeHTTPS(),
+							Action: envoy.UpgradeHTTPS(contour.GetHttpsHostPort()),
 						}, {
 							Match:  envoy.RoutePrefix("/insecure"),
-							Action: envoy.UpgradeHTTPS(),
+							Action: envoy.UpgradeHTTPS(contour.GetHttpsHostPort()),
 						},
 					},
 				}}}),

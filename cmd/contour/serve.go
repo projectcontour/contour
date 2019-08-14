@@ -77,6 +77,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 		httpsAddr:             "0.0.0.0",
 		httpPort:              8080,
 		httpsPort:             8443,
+		HttpsHostPort:         0,
 		DisablePermitInsecure: false,
 	}
 
@@ -172,6 +173,7 @@ type serveContext struct {
 	httpsAddr      string
 	httpsPort      int
 	httpsAccessLog string
+	HttpsHostPort  uint32 `json:"httpsHostPort"`
 
 	tlsConfig `json:"tls"`
 
@@ -262,6 +264,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			Client: contourClient,
 		},
 	}
+	contour.SetHttpsHostPort(ctx.HttpsHostPort)
 
 	// step 4. wrap the gRPC cache handler in a k8s resource event handler.
 	reh := contour.ResourceEventHandler{

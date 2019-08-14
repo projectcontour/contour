@@ -116,12 +116,13 @@ func retryPolicy(r *dag.Route) *route.RetryPolicy {
 }
 
 // UpgradeHTTPS returns a route Action that redirects the request to HTTPS.
-func UpgradeHTTPS() *route.Route_Redirect {
+func UpgradeHTTPS(hostPort uint32) *route.Route_Redirect {
 	return &route.Route_Redirect{
 		Redirect: &route.RedirectAction{
 			SchemeRewriteSpecifier: &route.RedirectAction_HttpsRedirect{
 				HttpsRedirect: true,
 			},
+			PortRedirect: hostPort,
 		},
 	}
 }

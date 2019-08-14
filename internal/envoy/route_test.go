@@ -476,12 +476,14 @@ func TestVirtualHost(t *testing.T) {
 }
 
 func TestUpgradeHTTPS(t *testing.T) {
-	got := UpgradeHTTPS()
+	port := uint32(8443)
+	got := UpgradeHTTPS(port)
 	want := &route.Route_Redirect{
 		Redirect: &route.RedirectAction{
 			SchemeRewriteSpecifier: &route.RedirectAction_HttpsRedirect{
 				HttpsRedirect: true,
 			},
+			PortRedirect: port,
 		},
 	}
 

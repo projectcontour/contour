@@ -26,6 +26,15 @@ import (
 	"github.com/heptio/contour/internal/envoy"
 )
 
+var httpsHostPort uint32
+
+func SetHttpsHostPort(port uint32) {
+	httpsHostPort = port
+}
+func GetHttpsHostPort() uint32 {
+	return httpsHostPort
+}
+
 // RouteCache manages the contents of the gRPC RDS cache.
 type RouteCache struct {
 	mu      sync.Mutex
@@ -160,7 +169,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 						}
 
 						if r.HTTPSUpgrade {
-							rr.Action = envoy.UpgradeHTTPS()
+							rr.Action = envoy.UpgradeHTTPS(GetHttpsHostPort())
 							rr.RequestHeadersToAdd = nil
 						}
 						vhost.Routes = append(vhost.Routes, rr)
@@ -176,7 +185,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 						}
 
 						if r.HTTPSUpgrade {
-							rr.Action = envoy.UpgradeHTTPS()
+							rr.Action = envoy.UpgradeHTTPS(GetHttpsHostPort())
 							rr.RequestHeadersToAdd = nil
 						}
 						vhost.Routes = append(vhost.Routes, rr)
