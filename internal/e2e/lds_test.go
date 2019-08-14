@@ -891,7 +891,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 
 func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
-		reh.IngressRouteRootNamespaces = []string{"roots"}
+		reh.Builder.Source.IngressRouteRootNamespaces = []string{"roots"}
 	})
 	defer done()
 
@@ -959,7 +959,7 @@ func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 
 func TestLDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
-		reh.IngressRouteRootNamespaces = []string{"roots"}
+		reh.Builder.Source.IngressRouteRootNamespaces = []string{"roots"}
 	})
 	defer done()
 
@@ -1006,9 +1006,7 @@ func TestLDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 }
 
 func TestIngressRouteHTTPS(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
-		reh.IngressRouteRootNamespaces = []string{}
-	})
+	rh, cc, done := setup(t)
 	defer done()
 
 	// assert that there is only a static listener
