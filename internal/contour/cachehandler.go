@@ -61,7 +61,12 @@ func (ch *CacheHandler) setIngressRouteStatus(statuses map[dag.Meta]dag.Status) 
 	for _, st := range statuses {
 		err := ch.IngressRouteStatus.SetStatus(st.Status, st.Description, st.Object)
 		if err != nil {
-			ch.Errorf("Error Setting Status of IngressRoute: %v", err)
+			ch.WithError(err).
+				WithField("status", st.Status).
+				WithField("desc", st.Description).
+				WithField("name", st.Object.Name).
+				WithField("namespace", st.Object.Namespace).
+				Error("failed to set status")
 		}
 	}
 }
