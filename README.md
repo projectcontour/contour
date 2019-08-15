@@ -1,4 +1,4 @@
-# Contour [![Build Status][1]][2] [![Go Report Card][21]][22]
+# Contour [![Build Status][1]][2] [![Go Report Card][21]][22] ![GitHub release](https://img.shields.io/github/release/heptio/contour.svg) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ![Contour is fun at parties!](contour.png)
 
