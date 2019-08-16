@@ -38,7 +38,7 @@ spec:
         - --contour-cafile=/ca/cacert.pem
         - --contour-cert-file=/certs/tls.crt
         - --contour-key-file=/certs/tls.key
-        - --config-path=/config/contour.json
+        - --config-path=/config/contour.yaml
         command: ["contour"]
         image: gcr.io/heptio-images/contour:master
         imagePullPolicy: Always
@@ -82,5 +82,5 @@ spec:
             name: contour
             defaultMode: 0644
             items:
-            - key: contour.json
-              path: contour.json
+            - key: contour.yaml
+              path: contour.yaml
