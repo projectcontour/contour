@@ -61,7 +61,7 @@ spec:
           initialDelaySeconds: 3
           periodSeconds: 3
         volumeMounts:
-          - name: contour-config
+          - name: envoy-config
             mountPath: /config
           - name: envoycert
             mountPath: /certs
@@ -97,7 +97,7 @@ spec:
         imagePullPolicy: Always
         name: envoy-initconfig
         volumeMounts:
-        - name: contour-config
+        - name: envoy-config
           mountPath: /config
         - name: envoycert
           mountPath: /certs
@@ -112,7 +112,7 @@ spec:
               fieldPath: metadata.namespace
       automountServiceAccountToken: false
       volumes:
-        - name: contour-config
+        - name: envoy-config
           emptyDir: {}
         - name: envoycert
           secret:
