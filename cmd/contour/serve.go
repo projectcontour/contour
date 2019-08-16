@@ -18,6 +18,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"net"
@@ -78,6 +79,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 		httpPort:              8080,
 		httpsPort:             8443,
 		HttpsHostPort:         0,
+		PermitInsecureGRPC:    false,
 		DisablePermitInsecure: false,
 	}
 
@@ -117,7 +119,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("contour-cafile", "CA bundle file name for serving gRPC with TLS").Envar("CONTOUR_CAFILE").StringVar(&ctx.caFile)
 	serve.Flag("contour-cert-file", "Contour certificate file name for serving gRPC over TLS").Envar("CONTOUR_CERT_FILE").StringVar(&ctx.contourCert)
 	serve.Flag("contour-key-file", "Contour key file name for serving gRPC over TLS").Envar("CONTOUR_KEY_FILE").StringVar(&ctx.contourKey)
-
+	serve.Flag("insecure", "Allow serving without TLS secured gRPC").BoolVar(&ctx.PermitInsecureGRPC)
 	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringVar(&ctx.rootNamespaces)
 
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&ctx.ingressClass)
@@ -175,8 +177,13 @@ type serveContext struct {
 	httpsAccessLog string
 	HttpsHostPort  uint32 `json:"httpsHostPort"`
 
+	// PermitInsecureGRPC disables TLS on Contour's gRPC listener.
+	PermitInsecureGRPC bool `json:"-"`
+
 	tlsConfig `json:"tls"`
 
+	// DisablePermitInsecure disables the use of the
+	// permitInsecure field in IngressRoute.
 	DisablePermitInsecure bool `json:"disablePermitInsecure"`
 }
 
@@ -187,14 +194,9 @@ type tlsConfig struct {
 // tlsconfig returns a new *tls.Config. If the context is not properly configured
 // for tls communication, tlsconfig returns nil.
 func (ctx *serveContext) tlsconfig() *tls.Config {
-	if ctx.caFile == "" && ctx.contourCert == "" && ctx.contourKey == "" {
-		// tls not enabled
-		return nil
-	}
-	// If one of the three TLS commands is not empty, they all must be not empty
-	if !(ctx.caFile != "" && ctx.contourCert != "" && ctx.contourKey != "") {
-		log.Fatal("You must supply all three TLS parameters - --contour-cafile, --contour-cert-file, --contour-key-file, or none of them.")
-	}
+
+	err := ctx.verifyTLSFlags()
+	check(err)
 
 	cert, err := tls.LoadX509KeyPair(ctx.contourCert, ctx.contourKey)
 	check(err)
@@ -213,6 +215,18 @@ func (ctx *serveContext) tlsconfig() *tls.Config {
 		ClientCAs:    certPool,
 		Rand:         rand.Reader,
 	}
+}
+
+// verifyTLSFlags indicates if the TLS flags are set up correctly.
+func (ctx *serveContext) verifyTLSFlags() error {
+	if ctx.caFile == "" && ctx.contourCert == "" && ctx.contourKey == "" {
+		return errors.New("no TLS parameters and --insecure not supplied. You must supply one or the other")
+	}
+	// If one of the three TLS commands is not empty, they all must be not empty
+	if !(ctx.caFile != "" && ctx.contourCert != "" && ctx.contourKey != "") {
+		return errors.New("you must supply all three TLS parameters - --contour-cafile, --contour-cert-file, --contour-key-file, or none of them")
+	}
+	return nil
 }
 
 // ingressRouteRootNamespaces returns a slice of namespaces restricting where
@@ -266,31 +280,33 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 	contour.SetHttpsHostPort(ctx.HttpsHostPort)
 
-	// step 4. wrap the gRPC cache handler in a k8s resource event handler.
-	reh := contour.ResourceEventHandler{
-		CacheHandler:          &ch,
-		HoldoffDelay:          100 * time.Millisecond,
-		HoldoffMaxDelay:       500 * time.Millisecond,
-		DisablePermitInsecure: ctx.DisablePermitInsecure,
-		KubernetesCache: dag.KubernetesCache{
-			IngressRouteRootNamespaces: ctx.ingressRouteRootNamespaces(),
-			IngressClass:               ctx.ingressClass,
+	// step 4. wrap the cache handler in a k8s event handler.
+	eh := &contour.EventHandler{
+		CacheHandler:    &ch,
+		HoldoffDelay:    100 * time.Millisecond,
+		HoldoffMaxDelay: 500 * time.Millisecond,
+		Builder: dag.Builder{
+			Source: dag.KubernetesCache{
+				IngressRouteRootNamespaces: ctx.ingressRouteRootNamespaces(),
+				IngressClass:               ctx.ingressClass,
+			},
+			DisablePermitInsecure: ctx.DisablePermitInsecure,
 		},
-		FieldLogger: log.WithField("context", "resourceEventHandler"),
+		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}
 
-	// step 5. register out resource event handler with the k8s informers.
-	coreInformers.Core().V1().Services().Informer().AddEventHandler(&reh)
-	coreInformers.Extensions().V1beta1().Ingresses().Informer().AddEventHandler(&reh)
-	contourInformers.Contour().V1beta1().IngressRoutes().Informer().AddEventHandler(&reh)
-	contourInformers.Contour().V1beta1().TLSCertificateDelegations().Informer().AddEventHandler(&reh)
+	// step 5. register our resource event handler with the k8s informers.
+	coreInformers.Core().V1().Services().Informer().AddEventHandler(eh)
+	coreInformers.Extensions().V1beta1().Ingresses().Informer().AddEventHandler(eh)
+	contourInformers.Contour().V1beta1().IngressRoutes().Informer().AddEventHandler(eh)
+	contourInformers.Contour().V1beta1().TLSCertificateDelegations().Informer().AddEventHandler(eh)
 	// Add informers for each root-ingressroute namespaces
 	for _, inf := range namespacedInformers {
-		inf.Core().V1().Secrets().Informer().AddEventHandler(&reh)
+		inf.Core().V1().Secrets().Informer().AddEventHandler(eh)
 	}
 	// If root-ingressroutes are not defined, then add the informer for all namespaces
 	if len(namespacedInformers) == 0 {
-		coreInformers.Core().V1().Secrets().Informer().AddEventHandler(&reh)
+		coreInformers.Core().V1().Secrets().Informer().AddEventHandler(eh)
 	}
 
 	// step 6. endpoints updates are handled directly by the EndpointsTranslator
@@ -308,12 +324,15 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		g.Add(startInformer(inf, log.WithField("context", "corenamespacedinformers")))
 	}
 
-	// step 8. setup prometheus registry and register base metrics.
+	// step 8. register our event handler with the workgroup
+	g.Add(eh.Start())
+
+	// step 9. setup prometheus registry and register base metrics.
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	registry.MustRegister(prometheus.NewGoCollector())
 
-	// step 9. create metrics service and register with workgroup.
+	// step 10. create metrics service and register with workgroup.
 	metricsvc := metrics.Service{
 		Service: httpsvc.Service{
 			Addr:        ctx.metricsAddr,
@@ -325,42 +344,37 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 	g.Add(metricsvc.Start)
 
-	// step 10. create debug service and register with workgroup.
+	// step 11. create debug service and register with workgroup.
 	debugsvc := debug.Service{
 		Service: httpsvc.Service{
 			Addr:        ctx.debugAddr,
 			Port:        ctx.debugPort,
 			FieldLogger: log.WithField("context", "debugsvc"),
 		},
-		KubernetesCache: &reh.KubernetesCache,
+		Builder: &eh.Builder,
 	}
 	g.Add(debugsvc.Start)
 
-	// step 11. register our custom metrics and plumb into cache handler
+	// step 12. register our custom metrics and plumb into cache handler
 	// and resource event handler.
 	metrics := metrics.NewMetrics(registry)
 	ch.Metrics = metrics
-	reh.Metrics = metrics
+	eh.Metrics = metrics
 
-	// step 12. create grpc handler and register with workgroup.
+	// step 13. create grpc handler and register with workgroup.
 	g.Add(func(stop <-chan struct{}) error {
 		log := log.WithField("context", "grpc")
 		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
 
-		var l net.Listener
-		var err error
-		tlsconfig := ctx.tlsconfig()
-		if tlsconfig != nil {
-			log.Info("Setting up TLS for gRPC")
-			l, err = tls.Listen("tcp", addr, tlsconfig)
-			if err != nil {
-				return err
-			}
-		} else {
-			l, err = net.Listen("tcp", addr)
-			if err != nil {
-				return err
-			}
+		l, err := net.Listen("tcp", addr)
+		if err != nil {
+			return err
+		}
+
+		if !ctx.PermitInsecureGRPC {
+			tlsconfig := ctx.tlsconfig()
+			log.Info("establishing TLS")
+			l = tls.NewListener(l, tlsconfig)
 		}
 
 		s := grpc.NewAPI(log, map[string]grpc.Resource{
@@ -370,12 +384,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			et.TypeURL():               et,
 			ch.SecretCache.TypeURL():   &ch.SecretCache,
 		})
-		log.Println("started")
-		defer log.Println("stopped")
+		log.WithField("address", addr).Info("started")
+		defer log.Info("stopped")
 		return s.Serve(l)
 	})
 
-	// step 13. GO!
+	// step 14. GO!
 	return g.Run()
 }
 

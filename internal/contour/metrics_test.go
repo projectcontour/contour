@@ -564,14 +564,13 @@ func TestIngressRouteMetrics(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			kc := &dag.KubernetesCache{
-				IngressRouteRootNamespaces: tc.rootNamespaces,
+			builder := dag.Builder{
+				Source: dag.KubernetesCache{
+					IngressRouteRootNamespaces: tc.rootNamespaces,
+				},
 			}
 			for _, o := range tc.objs {
-				kc.Insert(o)
-			}
-			builder := dag.Builder{
-				Source: kc,
+				builder.Source.Insert(o)
 			}
 			dag := builder.Build()
 

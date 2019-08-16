@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/heptio/contour/internal/contour"
@@ -30,7 +30,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -39,11 +39,11 @@ import (
 func TestGRPC(t *testing.T) {
 	// tr and et is recreated before the start of each test.
 	var et *contour.EndpointsTranslator
-	var reh *contour.ResourceEventHandler
+	var eh *contour.EventHandler
 
 	tests := map[string]func(*testing.T, *grpc.ClientConn){
 		"StreamClusters": func(t *testing.T, cc *grpc.ClientConn) {
-			reh.OnAdd(&v1.Service{
+			eh.OnAdd(&v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "simple",
 					Namespace: "default",
@@ -98,7 +98,7 @@ func TestGRPC(t *testing.T) {
 		},
 		"StreamListeners": func(t *testing.T, cc *grpc.ClientConn) {
 			// add an ingress, which will create a non tls listener
-			reh.OnAdd(&v1beta1.Ingress{
+			eh.OnAdd(&v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin-org",
 					Namespace: "default",
@@ -130,7 +130,7 @@ func TestGRPC(t *testing.T) {
 			checktimeout(t, stream)                // check that the second receive times out
 		},
 		"StreamRoutes": func(t *testing.T, cc *grpc.ClientConn) {
-			reh.OnAdd(&v1beta1.Ingress{
+			eh.OnAdd(&v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin-org",
 					Namespace: "default",
@@ -162,7 +162,7 @@ func TestGRPC(t *testing.T) {
 			checktimeout(t, stream)             // check that the second receive times out
 		},
 		"StreamSecrets": func(t *testing.T, cc *grpc.ClientConn) {
-			reh.OnAdd(&v1.Secret{
+			eh.OnAdd(&v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
@@ -194,7 +194,7 @@ func TestGRPC(t *testing.T) {
 			ch := contour.CacheHandler{
 				Metrics: metrics.NewMetrics(prometheus.NewRegistry()),
 			}
-			reh = &contour.ResourceEventHandler{
+			eh = &contour.EventHandler{
 				CacheHandler: &ch,
 				Metrics:      ch.Metrics,
 				FieldLogger:  log,
@@ -209,11 +209,15 @@ func TestGRPC(t *testing.T) {
 			l, err := net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)
 			done := make(chan error, 1)
+			stop := make(chan struct{})
+			run := eh.Start()
+			go run(stop)
 			go func() {
 				done <- srv.Serve(l)
 			}()
 			defer func() {
 				srv.Stop()
+				close(stop)
 				<-done
 			}()
 			cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
