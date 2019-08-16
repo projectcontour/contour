@@ -38,6 +38,7 @@ spec:
         - --contour-cafile=/ca/cacert.pem
         - --contour-cert-file=/certs/tls.crt
         - --contour-key-file=/certs/tls.key
+        - --config-path=/config/contour.json
         command: ["contour"]
         image: gcr.io/heptio-images/contour:master
         imagePullPolicy: Always
@@ -59,10 +60,13 @@ spec:
             port: 8000
         volumeMounts:
           - name: contourcert
-            mountPath: "/certs"
+            mountPath: /certs
             readOnly: true
           - name: cacert
-            mountPath: "/ca"
+            mountPath: /ca
+            readOnly: true
+          - name: contour-config
+            mountPath: /config
             readOnly: true
       dnsPolicy: ClusterFirst
       serviceAccountName: contour
@@ -73,4 +77,11 @@ spec:
         - name: cacert
           secret:
             secretName:   cacert
+        - name: contour-config
+            configMap:
+              name: contour
+              defaultMode: 0644
+                items:
+                - key: contour.json
+                  path: contour.json
 
