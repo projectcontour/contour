@@ -237,12 +237,3 @@ spec:
                   targetNamespaces:
                     type: array
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: contour
-  namespace: heptio-contour
-data:
-  contour.json: |
-    {}
----

@@ -30,7 +30,7 @@ spec:
         - --insecure
         - --envoy-service-http-port=8080
         - --envoy-service-https-port=8443
-        - --config-path=/config/contour.json
+        - --config-path=/config/contour.yaml
         livenessProbe:
           httpGet:
             path: /healthz
@@ -111,8 +111,8 @@ spec:
           name: contour
           defaultMode: 0643
           items:
-          - key: contour.json
-            path: contour.json
+          - key: contour.yaml
+            path: contour.yaml
       dnsPolicy: ClusterFirst
       serviceAccountName: contour
       terminationGracePeriodSeconds: 30

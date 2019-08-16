@@ -17,7 +17,6 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"log"
@@ -41,6 +40,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"gopkg.in/yaml.v2"
 	coreinformers "k8s.io/client-go/informers"
 )
 
@@ -93,7 +93,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 			return err
 		}
 		defer f.Close()
-		dec := json.NewDecoder(f)
+		dec := yaml.NewDecoder(f)
 		parsed = true
 		return dec.Decode(&ctx)
 	}
@@ -136,8 +136,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 
 type serveContext struct {
 	// contour's kubernetes client parameters
-	InCluster  bool   `json:"incluster"`
-	Kubeconfig string `json:"kubeconfig"`
+	InCluster  bool   `yaml:"incluster"`
+	Kubeconfig string `yaml:"kubeconfig"`
 
 	// contour's xds service parameters
 	xdsAddr                         string
@@ -176,17 +176,17 @@ type serveContext struct {
 	httpsAccessLog string
 
 	// PermitInsecureGRPC disables TLS on Contour's gRPC listener.
-	PermitInsecureGRPC bool `json:"-"`
+	PermitInsecureGRPC bool `yaml:"-"`
 
-	tlsConfig `json:"tls"`
+	TlsConfig `yaml:"tls"`
 
 	// DisablePermitInsecure disables the use of the
 	// permitInsecure field in IngressRoute.
 	DisablePermitInsecure bool `json:"disablePermitInsecure"`
 }
 
-type tlsConfig struct {
-	MinimumProtocolVersion string `json:"minimum-protocol-version"`
+type TlsConfig struct {
+	MinimumProtocolVersion string `yaml:"minimum-protocol-version"`
 }
 
 // tlsconfig returns a new *tls.Config. If the context is not properly configured
@@ -268,7 +268,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			HTTPSAddress:           ctx.httpsAddr,
 			HTTPSPort:              ctx.httpsPort,
 			HTTPSAccessLog:         ctx.httpsAccessLog,
-			MinimumProtocolVersion: dag.MinProtoVersion(ctx.tlsConfig.MinimumProtocolVersion),
+			MinimumProtocolVersion: dag.MinProtoVersion(ctx.TlsConfig.MinimumProtocolVersion),
 		},
 		ListenerCache: contour.NewListenerCache(ctx.statsAddr, ctx.statsPort),
 		FieldLogger:   log.WithField("context", "CacheHandler"),
