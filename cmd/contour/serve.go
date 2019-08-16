@@ -78,9 +78,9 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 		httpsAddr:             "0.0.0.0",
 		httpPort:              8080,
 		httpsPort:             8443,
-		HttpsHostPort:         0,
 		PermitInsecureGRPC:    false,
 		DisablePermitInsecure: false,
+		HttpsHostPort:         0,
 	}
 
 	parseConfig := func(_ *kingpin.ParseContext) error {
@@ -175,7 +175,6 @@ type serveContext struct {
 	httpsAddr      string
 	httpsPort      int
 	httpsAccessLog string
-	HttpsHostPort  uint32 `json:"httpsHostPort"`
 
 	// PermitInsecureGRPC disables TLS on Contour's gRPC listener.
 	PermitInsecureGRPC bool `json:"-"`
@@ -185,6 +184,10 @@ type serveContext struct {
 	// DisablePermitInsecure disables the use of the
 	// permitInsecure field in IngressRoute.
 	DisablePermitInsecure bool `json:"disablePermitInsecure"`
+
+	// The http redirect port value of the 301 redirect URL
+	// will be swapped with this value
+	HttpsHostPort uint32 `json:"httpsHostPort"`
 }
 
 type tlsConfig struct {
