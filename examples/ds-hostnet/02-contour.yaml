@@ -32,6 +32,7 @@ spec:
         args:
         - serve
         - --incluster
+        - --insecure
         - --envoy-service-http-port=8080
         - --envoy-service-https-port=8443
         - --config-path=/config/contour.json
