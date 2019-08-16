@@ -237,3 +237,16 @@ spec:
                   targetNamespaces:
                     type: array
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2019-08-16T04:18:56Z"
+  name: contour
+  namespace: heptio-contour
+  resourceVersion: "169259084"
+  selfLink: /api/v1/namespaces/heptio-contour/configmaps/contour
+  uid: f6dcf3ba-bfdc-11e9-a775-42010a980092
+data:
+  config.json: |
+          {}
+---
