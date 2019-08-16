@@ -72,6 +72,81 @@ spec:
                         - "1.3"
                         - "1.2"
                         - "1.1"
+            strategy:
+              type: string
+              enum:
+                - RoundRobin
+                - WeightedLeastRequest
+                - Random
+                - Cookie
+            healthCheck:
+              type: object
+              required:
+                - path
+              properties:
+                path:
+                  type: string
+                  pattern: ^\/.*$
+                intervalSeconds:
+                  type: integer
+                timeoutSeconds:
+                  type: integer
+                unhealthyThresholdCount:
+                  type: integer
+                healthyThresholdCount:
+                  type: integer
+            tcpproxy:
+              type: object
+              properties:
+                services:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - name
+                      - port
+                    properties:
+                      name:
+                        type: string
+                        pattern: ^[a-z]([-a-z0-9]*[a-z0-9])?$ # DNS-1035 label
+                      port:
+                        type: integer
+                      weight:
+                        type: integer
+                      strategy:
+                        type: string
+                        enum:
+                          - RoundRobin
+                          - WeightedLeastRequest
+                          - Random
+                          - Cookie
+                      healthCheck:
+                        type: object
+                        required:
+                          - path
+                        properties:
+                          path:
+                            type: string
+                            pattern: ^\/.*$
+                          intervalSeconds:
+                            type: integer
+                          timeoutSeconds:
+                            type: integer
+                          unhealthyThresholdCount:
+                            type: integer
+                          healthyThresholdCount:
+                            type: integer
+                delegate:
+                  type: object
+                  required:
+                    - name
+                  properties:
+                    name:
+                      type: string
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ # DNS-1123 subdomain
+                    namespace:
+                      type: string
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123 label
             routes:
               type: array
               items:
