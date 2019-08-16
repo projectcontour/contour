@@ -250,8 +250,8 @@ metadata:
   selfLink: /api/v1/namespaces/heptio-contour/configmaps/contour
   uid: f6dcf3ba-bfdc-11e9-a775-42010a980092
 data:
-  config.json: |
-          {}
+  contour.json: |
+    {}
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -280,7 +280,12 @@ spec:
         imagePullPolicy: Always
         name: contour
         command: ["contour"]
-        args: ["serve", "--incluster", "--envoy-service-http-port", "8080", "--envoy-service-https-port", "8443"]
+        args:
+        - serve
+        - --incluster
+        - --envoy-service-http-port=8080
+        - --envoy-service-https-port=8443
+        - --config-path=/config/contour.json
         livenessProbe:
           httpGet:
             path: /healthz
@@ -289,6 +294,10 @@ spec:
           httpGet:
             path: /healthz
             port: 8000
+        volumeMounts:
+          name: contour-config
+          mountPath: /config
+          readOnly: true
       - image: docker.io/envoyproxy/envoy:v1.11.1
         name: envoy
         ports:
@@ -352,6 +361,13 @@ spec:
       volumes:
       - name: envoy-config
         emptyDir: {}
+      - name: contour-config
+        configMap:
+          name: contour
+          defaultMode: 0644
+          items:
+          - key: contour.json
+            path: contour.json
       dnsPolicy: ClusterFirst
       serviceAccountName: contour
       terminationGracePeriodSeconds: 30
