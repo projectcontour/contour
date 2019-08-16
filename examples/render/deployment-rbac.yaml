@@ -240,6 +240,19 @@ spec:
                   targetNamespaces:
                     type: array
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2019-08-16T04:18:56Z"
+  name: contour
+  namespace: heptio-contour
+  resourceVersion: "169259084"
+  selfLink: /api/v1/namespaces/heptio-contour/configmaps/contour
+  uid: f6dcf3ba-bfdc-11e9-a775-42010a980092
+data:
+  config.json: |
+          {}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -306,7 +319,7 @@ spec:
           initialDelaySeconds: 3
           periodSeconds: 3
         volumeMounts:
-        - name: contour-config
+        - name: envoy-config
           mountPath: /config
         lifecycle:
           preStop:
@@ -328,7 +341,7 @@ spec:
         - bootstrap
         - /config/contour.json
         volumeMounts:
-        - name: contour-config
+        - name: envoy-config
           mountPath: /config
         env:
         - name: CONTOUR_NAMESPACE
@@ -336,7 +349,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
       volumes:
-      - name: contour-config
+      - name: envoy-config
         emptyDir: {}
       dnsPolicy: ClusterFirst
       serviceAccountName: contour

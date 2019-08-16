@@ -69,7 +69,7 @@ spec:
           initialDelaySeconds: 3
           periodSeconds: 3
         volumeMounts:
-        - name: contour-config
+        - name: envoy-config
           mountPath: /config
         lifecycle:
           preStop:
@@ -89,7 +89,7 @@ spec:
         command: ["contour"]
         args: ["bootstrap", "/config/contour.json"]
         volumeMounts:
-        - name: contour-config
+        - name: envoy-config
           mountPath: /config
         env:
         - name: CONTOUR_NAMESPACE
@@ -97,7 +97,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
       volumes:
-      - name: contour-config
+      - name: envoy-config
         emptyDir: {}
       dnsPolicy: ClusterFirst
       serviceAccountName: contour
