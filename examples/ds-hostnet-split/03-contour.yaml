@@ -7,6 +7,8 @@ metadata:
   namespace: heptio-contour
 spec:
   replicas: 2
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: contour
@@ -40,7 +42,8 @@ spec:
         - --contour-key-file=/certs/tls.key
         - --config-path=/config/contour.yaml
         command: ["contour"]
-        image: gcr.io/heptio-images/contour:master
+        # image: gcr.io/heptio-images/contour:master
+        image: docker.io/youngnick/contour:latest
         imagePullPolicy: Always
         name: contour
         ports:
@@ -55,9 +58,10 @@ spec:
             path: /healthz
             port: 8000
         readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 8000
+          tcpSocket:
+            port: 8001
+          initialDelaySeconds: 15
+          periodSeconds: 10
         volumeMounts:
           - name: contourcert
             mountPath: /certs
@@ -68,6 +72,12 @@ spec:
           - name: contour-config
             mountPath: /config
             readOnly: true
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
       dnsPolicy: ClusterFirst
       serviceAccountName: contour
       volumes:
