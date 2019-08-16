@@ -367,8 +367,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		if err != nil {
 			return err
 		}
+
 		if !ctx.PermitInsecureGRPC {
 			tlsconfig := ctx.tlsconfig()
+			log.Info("establishing TLS")
 			l = tls.NewListener(l, tlsconfig)
 		}
 
@@ -379,8 +381,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			et.TypeURL():               et,
 			ch.SecretCache.TypeURL():   &ch.SecretCache,
 		})
-		log.Println("started")
-		defer log.Println("stopped")
+		log.WithField("address", addr).Info("started")
+		defer log.Info("stopped")
 		return s.Serve(l)
 	})
 
