@@ -38,7 +38,7 @@ type Builder struct {
 
 	// Source is the source of Kuberenetes objects
 	// from which to build a DAG.
-	Source *KubernetesCache
+	Source KubernetesCache
 
 	// DisablePermitInsecure disables the use of the
 	// permitInsecure field in IngressRoute.

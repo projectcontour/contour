@@ -2994,13 +2994,11 @@ func TestDAGInsert(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var kc KubernetesCache
-			for _, o := range tc.objs {
-				kc.Insert(o)
-			}
 			builder := Builder{
-				Source:                &kc,
 				DisablePermitInsecure: tc.disablePermitInsecure,
+			}
+			for _, o := range tc.objs {
+				builder.Source.Insert(o)
 			}
 			dag := builder.Build()
 
@@ -3105,7 +3103,7 @@ func TestBuilderLookupHTTPService(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			b := Builder{
-				Source: &KubernetesCache{
+				Source: KubernetesCache{
 					services: services,
 				},
 			}
@@ -3233,14 +3231,14 @@ func TestDAGRootNamespaces(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			kc := &KubernetesCache{
-				IngressRouteRootNamespaces: tc.rootNamespaces,
-			}
-			for _, o := range tc.objs {
-				kc.Insert(o)
-			}
 			builder := Builder{
-				Source: kc,
+				Source: KubernetesCache{
+					IngressRouteRootNamespaces: tc.rootNamespaces,
+				},
+			}
+
+			for _, o := range tc.objs {
+				builder.Source.Insert(o)
 			}
 			dag := builder.Build()
 
@@ -3801,14 +3799,13 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			kc := &KubernetesCache{
-				IngressRouteRootNamespaces: []string{"roots"},
+			builder := Builder{
+				Source: KubernetesCache{
+					IngressRouteRootNamespaces: []string{"roots"},
+				},
 			}
 			for _, o := range tc.objs {
-				kc.Insert(o)
-			}
-			builder := Builder{
-				Source: kc,
+				builder.Source.Insert(o)
 			}
 			dag := builder.Build()
 
@@ -3943,12 +3940,9 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var kc KubernetesCache
+			var builder Builder
 			for _, o := range tc.objs {
-				kc.Insert(o)
-			}
-			builder := Builder{
-				Source: &kc,
+				builder.Source.Insert(o)
 			}
 			dag := builder.Build()
 

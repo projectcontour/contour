@@ -64,3 +64,39 @@ func TestServeContextIngressRouteRootNamespaces(t *testing.T) {
 		})
 	}
 }
+
+func TestServeContextTLSParams(t *testing.T) {
+	tests := map[string]struct {
+		ctx         serveContext
+		expecterror bool
+	}{
+		"tls supplied correctly": {
+			ctx: serveContext{
+				caFile:      "cacert.pem",
+				contourCert: "contourcert.pem",
+				contourKey:  "contourkey.pem",
+			},
+			expecterror: false,
+		},
+		"tls partially supplied": {
+			ctx: serveContext{
+				contourCert: "contourcert.pem",
+				contourKey:  "contourkey.pem",
+			},
+			expecterror: true,
+		},
+		"tls not supplied": {
+			ctx:         serveContext{},
+			expecterror: true,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := tc.ctx.verifyTLSFlags()
+			goterror := err != nil
+			if goterror != tc.expecterror {
+				t.Errorf("TLS Config: %s", err)
+			}
+		})
+	}
+}

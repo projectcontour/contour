@@ -16,8 +16,10 @@ package e2e
 
 import (
 	"context"
+	"math/rand"
 	"net"
 	"testing"
+	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
@@ -29,6 +31,7 @@ import (
 	cgrpc "github.com/heptio/contour/internal/grpc"
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/metrics"
+	"github.com/heptio/contour/internal/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -62,7 +65,9 @@ func (d *discardWriter) Write(buf []byte) (int, error) {
 	return len(buf), nil
 }
 
-func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.ResourceEventHandler, *grpc.ClientConn, func()) {
+func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEventHandler, *grpc.ClientConn, func()) {
+	t.Parallel()
+
 	log := logrus.New()
 	log.Out = &testWriter{t}
 
@@ -80,14 +85,19 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 		FieldLogger:   log,
 	}
 
-	reh := contour.ResourceEventHandler{
-		CacheHandler: ch,
-		Metrics:      ch.Metrics,
-		FieldLogger:  log,
+	rand.Seed(time.Now().Unix())
+
+	eh := &contour.EventHandler{
+		CacheHandler:    ch,
+		Metrics:         ch.Metrics,
+		FieldLogger:     log,
+		Sequence:        make(chan int, 1),
+		HoldoffDelay:    time.Duration(rand.Intn(100)) * time.Millisecond,
+		HoldoffMaxDelay: time.Duration(rand.Intn(500)) * time.Millisecond,
 	}
 
 	for _, opt := range opts {
-		opt(&reh)
+		opt(eh)
 	}
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
@@ -103,24 +113,44 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 		et.TypeURL():               et,
 	})
 
-	done := make(chan error, 1)
-	go func() {
-		done <- srv.Serve(l) // srv now owns l and will close l before returning
-	}()
+	var g workgroup.Group
+
+	g.Add(func(stop <-chan struct{}) error {
+		done := make(chan error)
+		go func() {
+			done <- srv.Serve(l) // srv now owns l and will close l before returning
+		}()
+		<-stop
+		srv.Stop()
+		return <-done
+	})
+	g.Add(eh.Start())
+
 	cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
 	check(t, err)
 
 	rh := &resourceEventHandler{
-		ResourceEventHandler: &reh,
-		EndpointsTranslator:  et,
+		EventHandler:        eh,
+		EndpointsTranslator: et,
 	}
+
+	stop := make(chan struct{})
+	g.Add(func(_ <-chan struct{}) error {
+		<-stop
+		return nil
+	})
+
+	done := make(chan error)
+	go func() {
+		done <- g.Run()
+	}()
 
 	return rh, cc, func() {
 		// close client connection
 		cc.Close()
 
-		// stop server and wait for it to stop
-		srv.Stop()
+		// stop server
+		close(stop)
 
 		<-done
 	}
@@ -129,7 +159,7 @@ func setup(t *testing.T, opts ...func(*contour.ResourceEventHandler)) (cache.Res
 // resourceEventHandler composes a contour.Translator and a contour.EndpointsTranslator
 // into a single ResourceEventHandler type.
 type resourceEventHandler struct {
-	*contour.ResourceEventHandler
+	*contour.EventHandler
 	*contour.EndpointsTranslator
 }
 
@@ -138,7 +168,8 @@ func (r *resourceEventHandler) OnAdd(obj interface{}) {
 	case *v1.Endpoints:
 		r.EndpointsTranslator.OnAdd(obj)
 	default:
-		r.ResourceEventHandler.OnAdd(obj)
+		r.EventHandler.OnAdd(obj)
+		<-r.EventHandler.Sequence
 	}
 }
 
@@ -147,7 +178,8 @@ func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 	case *v1.Endpoints:
 		r.EndpointsTranslator.OnUpdate(oldObj, newObj)
 	default:
-		r.ResourceEventHandler.OnUpdate(oldObj, newObj)
+		r.EventHandler.OnUpdate(oldObj, newObj)
+		<-r.EventHandler.Sequence
 	}
 }
 
@@ -156,7 +188,8 @@ func (r *resourceEventHandler) OnDelete(obj interface{}) {
 	case *v1.Endpoints:
 		r.EndpointsTranslator.OnDelete(obj)
 	default:
-		r.ResourceEventHandler.OnDelete(obj)
+		r.EventHandler.OnDelete(obj)
+		<-r.EventHandler.Sequence
 	}
 }
 

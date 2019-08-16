@@ -24,8 +24,7 @@ import (
 // quick and dirty dot debugging package
 
 type dotWriter struct {
-	kc                    *dag.KubernetesCache
-	disablePermitInsecure bool
+	*dag.Builder
 }
 
 type pair struct {
@@ -93,11 +92,7 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 		})
 	}
 
-	builder := &dag.Builder{
-		Source:                dw.kc,
-		DisablePermitInsecure: dw.disablePermitInsecure,
-	}
-	builder.Build().Visit(visit)
+	dw.Builder.Build().Visit(visit)
 
 	fmt.Fprintln(w, "}")
 }
