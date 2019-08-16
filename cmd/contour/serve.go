@@ -118,7 +118,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("contour-cafile", "CA bundle file name for serving gRPC with TLS").Envar("CONTOUR_CAFILE").StringVar(&ctx.caFile)
 	serve.Flag("contour-cert-file", "Contour certificate file name for serving gRPC over TLS").Envar("CONTOUR_CERT_FILE").StringVar(&ctx.contourCert)
 	serve.Flag("contour-key-file", "Contour key file name for serving gRPC over TLS").Envar("CONTOUR_KEY_FILE").StringVar(&ctx.contourKey)
-	serve.Flag("insecure", "Allow serving without TLS secured gRPC.").BoolVar(&ctx.PermitInsecureGRPC)
+	serve.Flag("insecure", "Allow serving without TLS secured gRPC").BoolVar(&ctx.PermitInsecureGRPC)
 	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringVar(&ctx.rootNamespaces)
 
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&ctx.ingressClass)
@@ -175,7 +175,8 @@ type serveContext struct {
 	httpsPort      int
 	httpsAccessLog string
 
-	PermitInsecureGRPC bool
+	// PermitInsecureGRPC disables TLS on Contour's gRPC listener.
+	PermitInsecureGRPC bool `json:"-"`
 
 	tlsConfig `json:"tls"`
 
@@ -223,9 +224,7 @@ func (ctx *serveContext) verifyTLSFlags() error {
 	if !(ctx.caFile != "" && ctx.contourCert != "" && ctx.contourKey != "") {
 		return errors.New("you must supply all three TLS parameters - --contour-cafile, --contour-cert-file, --contour-key-file, or none of them")
 	}
-
 	return nil
-
 }
 
 // ingressRouteRootNamespaces returns a slice of namespaces restricting where
