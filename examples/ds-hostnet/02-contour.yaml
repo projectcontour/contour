@@ -47,7 +47,7 @@ spec:
           name: https
         command: ["envoy"]
         args:
-        - --config-path /config/contour.json
+        - --config-path /config/envoy.json
         - --service-cluster $(CONTOUR_NAMESPACE)
         - --service-node $(ENVOY_POD_NAME)
         - --log-level info
@@ -87,7 +87,9 @@ spec:
         imagePullPolicy: Always
         name: envoy-initconfig
         command: ["contour"]
-        args: ["bootstrap", "/config/contour.json"]
+        args:
+        - bootstrap
+        - /config/envoy.json
         volumeMounts:
         - name: envoy-config
           mountPath: /config
