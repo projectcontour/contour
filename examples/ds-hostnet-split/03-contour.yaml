@@ -78,10 +78,9 @@ spec:
           secret:
             secretName:   cacert
         - name: contour-config
-            configMap:
-              name: contour
-              defaultMode: 0644
-                items:
-                - key: contour.json
-                  path: contour.json
-
+          configMap:
+            name: contour
+            defaultMode: 0644
+            items:
+            - key: contour.json
+              path: contour.json
