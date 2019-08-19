@@ -94,20 +94,6 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 }
 
 func upstreamFileTLSContext(cafile, certfile, keyfile string) *auth.UpstreamTlsContext {
-	if certfile == "" {
-		// Nothig to do
-		return nil
-	}
-
-	if certfile == "" {
-		// Nothing to do
-		return nil
-	}
-
-	if cafile == "" {
-		// You currently must supply a CA file, not just use others.
-		return nil
-	}
 	context := &auth.UpstreamTlsContext{
 		CommonTlsContext: &auth.CommonTlsContext{
 			TlsCertificates: []*auth.TlsCertificate{{
@@ -135,7 +121,6 @@ func upstreamFileTLSContext(cafile, certfile, keyfile string) *auth.UpstreamTlsC
 			},
 		},
 	}
-
 	return context
 }
 
