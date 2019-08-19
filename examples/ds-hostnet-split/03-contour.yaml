@@ -42,7 +42,6 @@ spec:
         - --contour-key-file=/certs/tls.key
         - --config-path=/config/contour.yaml
         command: ["contour"]
-        # image: gcr.io/heptio-images/contour:master
         image: docker.io/youngnick/contour:latest
         imagePullPolicy: Always
         name: contour

@@ -202,7 +202,7 @@ type serveContext struct {
 	DisablePermitInsecure bool `yaml:"disablePermitInsecure"`
 
 	DisableLeaderElection bool
-	LeaderElectionConfig  `yaml:"leaderelection"`
+	LeaderElectionConfig  `yaml:"-"`
 }
 
 // TLSConfig holds configuration file TLS configuration details.
@@ -399,8 +399,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			<-leadingDisabled
 		}
 
-		log.Info("Started leader election")
-		log.Infof("Leader election params: %#v", ctx.LeaderElectionConfig)
+		log.WithFields(logrus.Fields{
+			"configmapname":      ctx.LeaderElectionConfig.Name,
+			"configmapnamespace": ctx.LeaderElectionConfig.Namespace,
+		}).Info("Started leader election")
 
 		// Generate the event recorder to send election events to the logs.
 		// Set up the event bits
@@ -435,6 +437,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		)
 		check(err)
 
+		electionCtx := context.Background()
 		le, err := leaderelection.NewLeaderElector(leaderelection.LeaderElectionConfig{
 			Lock:          rl,
 			LeaseDuration: ctx.LeaderElectionConfig.LeaseDuration,
@@ -445,28 +448,32 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 					log.WithFields(logrus.Fields{
 						"lock":     rl.Describe(),
 						"identity": rl.Identity(),
-					}).Info("started leading")
+					}).Info("elected leader")
 					close(leaderOK)
 				},
 				OnStoppedLeading: func() {
 					// The context being canceled will trigger a handler that will
 					// deal with being deposed.
 					close(deposed)
+					electionCtx.Done()
 				},
 			},
 		})
 		check(err)
 		// Running the leader election requires a context.Context, but we're
 		// not using them, so we'll just pass in an empty one.
-		le.Run(context.Background())
+		le.Run(electionCtx)
 		return nil
 	})
 
-	g.Add(func(<-chan struct{}) error {
+	g.Add(func(stop <-chan struct{}) error {
 		// If we get deposed as leader, shut it down.
-
-		<-deposed
-		log.Fatal("Deposed as leader, exiting.")
+		select {
+		case <-stop:
+			// shut down
+		case <-deposed:
+			log.Info("deposed as leader")
+		}
 		return nil
 	})
 	// step 12. register our custom metrics and plumb into cache handler
@@ -478,7 +485,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// step 13. create grpc handler and register with workgroup.
 	g.Add(func(stop <-chan struct{}) error {
 		log := log.WithField("context", "grpc")
-		<-leaderOK
+		select {
+		case <-stop:
+			// shut down
+			return nil
+		case <-leaderOK:
+			// we've become leader, so continue
+		}
 		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
 
 		l, err := net.Listen("tcp", addr)
