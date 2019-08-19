@@ -15,7 +15,10 @@
 // of a set of related goroutines.
 package workgroup
 
-import "sync"
+import (
+	"context"
+	"sync"
+)
 
 // A Group manages a set of goroutines with related lifetimes.
 // The zero value for a Group is fully usable without initialisation.
@@ -24,13 +27,37 @@ type Group struct {
 }
 
 // Add adds a function to the Group.
-// The function will be exectuted in its own goroutine when Run is called.
+// The function will be executed in its own goroutine when Run is called.
 // Add must be called before Run.
 func (g *Group) Add(fn func(<-chan struct{}) error) {
 	g.fn = append(g.fn, fn)
 }
 
-// Run exectues each function registered via Add in its own goroutine.
+// AddContext adds a function taking a context.Context to the group.
+// The function will be executed in its own goroutine when Run is called.
+// The context supplied to the function will be canceled when the group
+// exits. AddContext must be called before Run.
+func (g *Group) AddContext(fn func(context.Context)) {
+	g.fn = append(g.fn, func(stop <-chan struct{}) error {
+		ctx, cancel := context.WithCancel(context.Background())
+		done := make(chan int)
+		go func() {
+			defer close(done)
+			fn(ctx)
+		}()
+		// wait for stop
+		<-stop
+
+		// cancel fn(ctx)
+		cancel()
+
+		// wait for fn(ctx) to exit
+		<-done
+		return nil
+	})
+}
+
+// Run executes each function registered via Add in its own goroutine.
 // Run blocks until all functions have returned.
 // The first function to return will trigger the closure of the channel
 // passed to each function, who should in turn, return.

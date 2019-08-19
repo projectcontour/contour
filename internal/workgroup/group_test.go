@@ -14,6 +14,7 @@
 package workgroup
 
 import (
+	"context"
 	"errors"
 	"io"
 	"testing"
@@ -36,6 +37,26 @@ func TestGroupFirstReturnValueIsReturnedToRunsCaller(t *testing.T) {
 	g.Add(func(stop <-chan struct{}) error {
 		<-stop
 		return errors.New("stopped")
+	})
+
+	result := make(chan error)
+	go func() {
+		result <- g.Run()
+	}()
+	close(wait)
+	assert(t, io.EOF, <-result)
+}
+
+func TestGroupAddContext(t *testing.T) {
+	var g Group
+	wait := make(chan int)
+	g.Add(func(<-chan struct{}) error {
+		<-wait
+		return io.EOF
+	})
+
+	g.AddContext(func(ctx context.Context) {
+		<-ctx.Done()
 	})
 
 	result := make(chan error)
