@@ -86,7 +86,17 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 			return err
 		}
 
-		// TODO(dfc) issue 1176: handle xDS ACK/NACK
+		// note: redeclare log in this scope so the next time around the loop all is forgotten.
+		log := log.WithField("version_info", req.VersionInfo).WithField("response_nonce", req.ResponseNonce)
+		if req.Node != nil {
+			log = log.WithField("node_id", req.Node.Id)
+		}
+
+		if err := req.ErrorDetail; err != nil {
+			// if Envoy rejected the last update log the details here.
+			// TODO(dfc) issue 1176: handle xDS ACK/NACK
+			log.WithField("code", err.Code).Error(err.Message)
+		}
 
 		// from the request we derive the resource to stream which have
 		// been registered according to the typeURL.
@@ -94,11 +104,7 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 		if !ok {
 			return fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl)
 		}
-
-		// stick some debugging details on the logger, not that we redeclare log in this scope
-		// so the next time around the loop all is forgotten.
-		log := log.WithField("version_info", req.VersionInfo).WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl).WithField("response_nonce", req.ResponseNonce).WithField("error_detail", req.ErrorDetail)
-
+		log = log.WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl)
 		log.Info("stream_wait")
 
 		// now we wait for a notification, if this is the first request received on this
