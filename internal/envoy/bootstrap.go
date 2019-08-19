@@ -99,36 +99,20 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 }
 
 func upstreamFileTLSContext(cafile, certfile, keyfile string) *auth.UpstreamTlsContext {
-	if certfile == "" {
-		// Nothig to do
-		return nil
-	}
-
-	if certfile == "" {
-		// Nothing to do
-		return nil
-	}
-
-	if cafile == "" {
-		// You currently must supply a CA file, not just use others.
-		return nil
-	}
 	context := &auth.UpstreamTlsContext{
 		CommonTlsContext: &auth.CommonTlsContext{
-			TlsCertificates: []*auth.TlsCertificate{
-				{
-					CertificateChain: &core.DataSource{
-						Specifier: &core.DataSource_Filename{
-							Filename: certfile,
-						},
-					},
-					PrivateKey: &core.DataSource{
-						Specifier: &core.DataSource_Filename{
-							Filename: keyfile,
-						},
+			TlsCertificates: []*auth.TlsCertificate{{
+				CertificateChain: &core.DataSource{
+					Specifier: &core.DataSource_Filename{
+						Filename: certfile,
 					},
 				},
-			},
+				PrivateKey: &core.DataSource{
+					Specifier: &core.DataSource_Filename{
+						Filename: keyfile,
+					},
+				},
+			}},
 			ValidationContextType: &auth.CommonTlsContext_ValidationContext{
 				ValidationContext: &auth.CertificateValidationContext{
 					TrustedCa: &core.DataSource{
@@ -142,7 +126,6 @@ func upstreamFileTLSContext(cafile, certfile, keyfile string) *auth.UpstreamTlsC
 			},
 		},
 	}
-
 	return context
 }
 
