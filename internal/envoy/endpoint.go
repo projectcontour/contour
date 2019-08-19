@@ -14,6 +14,7 @@
 package envoy
 
 import (
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 )
 
@@ -26,4 +27,23 @@ func LBEndpoint(addr string, port int) endpoint.LbEndpoint {
 			},
 		},
 	}
+}
+
+// Endpoints returns a slice of LocalityLbEndpoints.
+// The slice contains one entry, with one LbEndpoint per
+// *core.Address supplied.
+func Endpoints(addrs ...*core.Address) []endpoint.LocalityLbEndpoints {
+	lbendpoints := make([]endpoint.LbEndpoint, 0, len(addrs))
+	for _, addr := range addrs {
+		lbendpoints = append(lbendpoints, endpoint.LbEndpoint{
+			HostIdentifier: &endpoint.LbEndpoint_Endpoint{
+				Endpoint: &endpoint.Endpoint{
+					Address: addr,
+				},
+			},
+		})
+	}
+	return []endpoint.LocalityLbEndpoints{{
+		LbEndpoints: lbendpoints,
+	}}
 }

@@ -23,7 +23,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	clusterv2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	bootstrap "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
 )
 
@@ -43,11 +42,9 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 				LbPolicy:             api.Cluster_ROUND_ROBIN,
 				LoadAssignment: &api.ClusterLoadAssignment{
 					ClusterName: "contour",
-					Endpoints: []endpoint.LocalityLbEndpoints{{
-						LbEndpoints: []endpoint.LbEndpoint{
-							LBEndpoint(c.xdsAddress(), c.xdsGRPCPort()),
-						},
-					}},
+					Endpoints: Endpoints(
+						SocketAddress(c.xdsAddress(), c.xdsGRPCPort()),
+					),
 				},
 				Http2ProtocolOptions: new(core.Http2ProtocolOptions), // enables http2
 				CircuitBreakers: &clusterv2.CircuitBreakers{
@@ -73,11 +70,9 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 				LbPolicy:             api.Cluster_ROUND_ROBIN,
 				LoadAssignment: &api.ClusterLoadAssignment{
 					ClusterName: "service-stats",
-					Endpoints: []endpoint.LocalityLbEndpoints{{
-						LbEndpoints: []endpoint.LbEndpoint{
-							LBEndpoint(c.adminAddress(), c.adminPort()),
-						},
-					}},
+					Endpoints: Endpoints(
+						SocketAddress(c.adminAddress(), c.adminPort()),
+					),
 				},
 			}},
 		},

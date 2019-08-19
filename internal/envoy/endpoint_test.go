@@ -49,3 +49,28 @@ func TestLBEndpoint(t *testing.T) {
 		t.Fatal(diff)
 	}
 }
+
+func TestEndpoints(t *testing.T) {
+	got := Endpoints(
+		SocketAddress("github.com", 443),
+		SocketAddress("microsoft.com", 80),
+	)
+	want := []endpoint.LocalityLbEndpoints{{
+		LbEndpoints: []endpoint.LbEndpoint{{
+			HostIdentifier: &endpoint.LbEndpoint_Endpoint{
+				Endpoint: &endpoint.Endpoint{
+					Address: SocketAddress("github.com", 443),
+				},
+			},
+		}, {
+			HostIdentifier: &endpoint.LbEndpoint_Endpoint{
+				Endpoint: &endpoint.Endpoint{
+					Address: SocketAddress("microsoft.com", 80),
+				},
+			},
+		}},
+	}}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatal(diff)
+	}
+}
