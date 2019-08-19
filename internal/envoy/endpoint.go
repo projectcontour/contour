@@ -14,16 +14,17 @@
 package envoy
 
 import (
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 )
 
-// LBEndpoint creates a new SocketAddress LbEndpoint.
-func LBEndpoint(addr string, port int) endpoint.LbEndpoint {
+// LBEndpoint creates a new LbEndpoint.
+func LBEndpoint(addr *core.Address) endpoint.LbEndpoint {
 	return endpoint.LbEndpoint{
 		HostIdentifier: &endpoint.LbEndpoint_Endpoint{
 			Endpoint: &endpoint.Endpoint{
-				Address: SocketAddress(addr, port),
+				Address: addr,
 			},
 		},
 	}
@@ -46,4 +47,16 @@ func Endpoints(addrs ...*core.Address) []endpoint.LocalityLbEndpoints {
 	return []endpoint.LocalityLbEndpoints{{
 		LbEndpoints: lbendpoints,
 	}}
+}
+
+// ClusterLoadAssignment returns a *v2.ClusterLoadAssignment with a single
+// LocalityLbEndpoints of the supplied addresses.
+func ClusterLoadAssignment(name string, addrs ...*core.Address) *v2.ClusterLoadAssignment {
+	if len(addrs) == 0 {
+		return &v2.ClusterLoadAssignment{ClusterName: name}
+	}
+	return &v2.ClusterLoadAssignment{
+		ClusterName: name,
+		Endpoints:   Endpoints(addrs...),
+	}
 }
