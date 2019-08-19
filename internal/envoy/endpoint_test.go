@@ -16,32 +16,17 @@ package envoy
 import (
 	"testing"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestLBEndpoint(t *testing.T) {
-	const (
-		addr = "foo.example.com"
-		port = 8123
-	)
-
-	got := LBEndpoint(addr, port)
+	got := LBEndpoint(SocketAddress("microsoft.com", 81))
 	want := endpoint.LbEndpoint{
 		HostIdentifier: &endpoint.LbEndpoint_Endpoint{
 			Endpoint: &endpoint.Endpoint{
-				Address: &core.Address{
-					Address: &core.Address_SocketAddress{
-						SocketAddress: &core.SocketAddress{
-							Protocol: core.TCP,
-							Address:  addr,
-							PortSpecifier: &core.SocketAddress_PortValue{
-								PortValue: port,
-							},
-						},
-					},
-				},
+				Address: SocketAddress("microsoft.com", 81),
 			},
 		},
 	}
@@ -70,6 +55,43 @@ func TestEndpoints(t *testing.T) {
 			},
 		}},
 	}}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestClusterLoadAssignment(t *testing.T) {
+	got := ClusterLoadAssignment("empty")
+	want := &v2.ClusterLoadAssignment{
+		ClusterName: "empty",
+	}
+
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatal(diff)
+	}
+
+	got = ClusterLoadAssignment("one addr", SocketAddress("microsoft.com", 81))
+	want = &v2.ClusterLoadAssignment{
+		ClusterName: "one addr",
+		Endpoints:   Endpoints(SocketAddress("microsoft.com", 81)),
+	}
+
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatal(diff)
+	}
+
+	got = ClusterLoadAssignment("two addrs",
+		SocketAddress("microsoft.com", 81),
+		SocketAddress("github.com", 443),
+	)
+	want = &v2.ClusterLoadAssignment{
+		ClusterName: "two addrs",
+		Endpoints: Endpoints(
+			SocketAddress("microsoft.com", 81),
+			SocketAddress("github.com", 443),
+		),
+	}
+
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatal(diff)
 	}
