@@ -83,7 +83,7 @@ staticcheck:
 	go install honnef.co/go/tools/cmd/staticcheck
 	staticcheck \
 		-checks all,-ST1003 \
-		$(MODULE)./{cmd,internal}/...
+		$(MODULE)/{cmd,internal}/...
 
 misspell:
 	go install github.com/client9/misspell/cmd/misspell
@@ -95,7 +95,7 @@ misspell:
 
 unconvert:
 	go install github.com/mdempsky/unconvert
-	unconvert -v $(MODULE)./{cmd,internal}/...
+	unconvert -v $(MODULE)/{cmd,internal}/...
 
 ineffassign:
 	go install github.com/gordonklaus/ineffassign
@@ -105,11 +105,11 @@ pedantic: check errcheck
 
 unparam:
 	go install mvdan.cc/unparam
-	unparam -exported $(MODULE)./{cmd,internal}/...
+	unparam -exported $(MODULE)/{cmd,internal}/...
 
 errcheck:
 	go install github.com/kisielk/errcheck
-	errcheck $(MODULE)./...
+	errcheck $(MODULE)/...
 
 render:
 	@echo Rendering example deployment files...
