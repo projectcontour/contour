@@ -383,13 +383,78 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 	g.Add(debugsvc.Start)
 
-	// Leader Election starts here.
+	// step 12. Setup leader election
 
+	// leaderOK will block gRPC startup until it's closed.
 	leaderOK := make(chan struct{})
+	// deposed is closed by the leader election callback when
+	// we are deposed as leader so that we can clean up.
 	deposed := make(chan struct{})
+	// leadingDisabled
 	leadingDisabled := make(chan struct{})
 
-	g.Add(func(stop <-chan struct{}) error {
+	// Set up the leader election
+	// Generate the event recorder to send election events to the logs.
+	// Set up the event bits
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartLogging(log.Infof)
+	// Broadcast election events to the config map
+	eventBroadcaster.StartRecordingToSink(&clientcorev1.EventSinkImpl{Interface: clientcorev1.New(client.CoreV1().RESTClient()).Events("")})
+	eventsScheme := runtime.NewScheme()
+	// Need an eventsScheme
+	err := coreV1.AddToScheme(eventsScheme)
+	check(err)
+	// The recorder is what will record events about the resource lock
+	recorder := eventBroadcaster.NewRecorder(eventsScheme, coreV1.EventSource{Component: "contour"})
+
+	// Figure out the resource lock ID
+	resourceLockID, isPodNameEnvSet := os.LookupEnv("POD_NAME")
+	if !isPodNameEnvSet {
+		resourceLockID = uuid.New().String()
+	}
+
+	// Generate the resource lock.
+	// TODO(youngnick) change this to a Lease object instead
+	// of the configmap once the Lease API has been GA for a full support
+	// cycle (ie nine months).
+	rl, err := resourcelock.New(
+		resourcelock.ConfigMapsResourceLock,
+		ctx.LeaderElectionConfig.Namespace,
+		ctx.LeaderElectionConfig.Name,
+		client.CoreV1(),
+		coordinationClient,
+		resourcelock.ResourceLockConfig{
+			Identity:      resourceLockID,
+			EventRecorder: recorder,
+		},
+	)
+	check(err)
+
+	// Make the leader elector, ready to be used in the Workgroup.
+	le, err := leaderelection.NewLeaderElector(leaderelection.LeaderElectionConfig{
+		Lock:          rl,
+		LeaseDuration: ctx.LeaderElectionConfig.LeaseDuration,
+		RenewDeadline: ctx.LeaderElectionConfig.RenewDeadline,
+		RetryPeriod:   ctx.LeaderElectionConfig.RetryPeriod,
+		Callbacks: leaderelection.LeaderCallbacks{
+			OnStartedLeading: func(ctx context.Context) {
+				log.WithFields(logrus.Fields{
+					"lock":     rl.Describe(),
+					"identity": rl.Identity(),
+				}).Info("elected leader")
+				close(leaderOK)
+			},
+			OnStoppedLeading: func() {
+				// The context being canceled will trigger a handler that will
+				// deal with being deposed.
+				close(deposed)
+			},
+		},
+	})
+	check(err)
+	// AddContext will generate its own context.Context and pass it in,
+	// managing the close process when the other goroutines are closed.
+	g.AddContext(func(electionCtx context.Context) {
 		log := log.WithField("context", "leaderelect")
 		if ctx.DisableLeaderElection {
 			log.Info("Leader election disabled")
@@ -404,66 +469,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			"configmapnamespace": ctx.LeaderElectionConfig.Namespace,
 		}).Info("Started leader election")
 
-		// Generate the event recorder to send election events to the logs.
-		// Set up the event bits
-		eventBroadcaster := record.NewBroadcaster()
-		eventBroadcaster.StartLogging(log.Infof)
-		// Broadcast election events to the config map
-		eventBroadcaster.StartRecordingToSink(&clientcorev1.EventSinkImpl{Interface: clientcorev1.New(client.CoreV1().RESTClient()).Events("")})
-		eventsScheme := runtime.NewScheme()
-		// Need an eventsScheme
-		err := coreV1.AddToScheme(eventsScheme)
-		check(err)
-		// The recorder is what will record events about the resource lock
-		recorder := eventBroadcaster.NewRecorder(eventsScheme, coreV1.EventSource{Component: "contour"})
-
-		// Figure out the resource lock ID
-		var resourceLockID string
-		resourceLockID, isPodNameEnvSet := os.LookupEnv("POD_NAME")
-		if !isPodNameEnvSet {
-			resourceLockID = uuid.New().String()
-		}
-
-		rl, err := resourcelock.New(
-			resourcelock.ConfigMapsResourceLock,
-			ctx.LeaderElectionConfig.Namespace,
-			ctx.LeaderElectionConfig.Name,
-			client.CoreV1(),
-			coordinationClient,
-			resourcelock.ResourceLockConfig{
-				Identity:      resourceLockID,
-				EventRecorder: recorder,
-			},
-		)
-		check(err)
-
-		electionCtx := context.Background()
-		le, err := leaderelection.NewLeaderElector(leaderelection.LeaderElectionConfig{
-			Lock:          rl,
-			LeaseDuration: ctx.LeaderElectionConfig.LeaseDuration,
-			RenewDeadline: ctx.LeaderElectionConfig.RenewDeadline,
-			RetryPeriod:   ctx.LeaderElectionConfig.RetryPeriod,
-			Callbacks: leaderelection.LeaderCallbacks{
-				OnStartedLeading: func(ctx context.Context) {
-					log.WithFields(logrus.Fields{
-						"lock":     rl.Describe(),
-						"identity": rl.Identity(),
-					}).Info("elected leader")
-					close(leaderOK)
-				},
-				OnStoppedLeading: func() {
-					// The context being canceled will trigger a handler that will
-					// deal with being deposed.
-					close(deposed)
-					electionCtx.Done()
-				},
-			},
-		})
-		check(err)
 		// Running the leader election requires a context.Context, but we're
 		// not using them, so we'll just pass in an empty one.
 		le.Run(electionCtx)
-		return nil
 	})
 
 	g.Add(func(stop <-chan struct{}) error {
@@ -472,17 +480,22 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		case <-stop:
 			// shut down
 		case <-deposed:
-			log.Info("deposed as leader")
+			log.WithFields(logrus.Fields{
+				"context":  "leaderelection",
+				"lock":     rl.Describe(),
+				"identity": rl.Identity(),
+			}).Info("deposed as leader, shutting down")
 		}
 		return nil
 	})
-	// step 12. register our custom metrics and plumb into cache handler
+	// step 13. register our custom metrics and plumb into cache handler
 	// and resource event handler.
 	metrics := metrics.NewMetrics(registry)
 	ch.Metrics = metrics
 	eh.Metrics = metrics
 
-	// step 13. create grpc handler and register with workgroup.
+	// step 14. create grpc handler and register with workgroup.
+	// This will block until the program becomes the leader.
 	g.Add(func(stop <-chan struct{}) error {
 		log := log.WithField("context", "grpc")
 		select {
@@ -523,7 +536,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return s.Serve(l)
 	})
 
-	// step 14. GO!
+	// step 15. GO!
 	return g.Run()
 }
 
