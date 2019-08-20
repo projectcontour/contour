@@ -383,6 +383,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		})
 		log.WithField("address", addr).Info("started")
 		defer log.Info("stopped")
+
+		go func() {
+			<-stop
+			s.Stop()
+		}()
+
 		return s.Serve(l)
 	})
 
@@ -401,7 +407,7 @@ func startInformer(inf informer, log logrus.FieldLogger) func(stop <-chan struct
 		inf.WaitForCacheSync(stop)
 
 		log.Println("started")
-		defer log.Println("stopping")
+		defer log.Println("stopped")
 		inf.Start(stop)
 		<-stop
 		return nil
