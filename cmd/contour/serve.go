@@ -397,7 +397,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// Generate the event recorder to send election events to the logs.
 	// Set up the event bits
 	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartLogging(log.Infof)
 	// Broadcast election events to the config map
 	eventBroadcaster.StartRecordingToSink(&clientcorev1.EventSinkImpl{Interface: clientcorev1.New(client.CoreV1().RESTClient()).Events("")})
 	eventsScheme := runtime.NewScheme()
