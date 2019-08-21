@@ -24,6 +24,7 @@ import (
 
 func TestKubernetesCacheInsert(t *testing.T) {
 	tests := map[string]struct {
+		pre  []interface{}
 		obj  interface{}
 		want bool
 	}{
@@ -163,11 +164,115 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			obj:  "not an object",
 			want: false,
 		},
+		"insert service": {
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: false,
+		},
+		"insert service referenced by ingress backend": {
+			pre: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "www",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "service",
+						},
+					},
+				},
+			},
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert service in different namespace": {
+			pre: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "www",
+						Namespace: "kube-system",
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "service",
+						},
+					},
+				},
+			},
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: false,
+		},
+		"insert service referenced by ingressroute": {
+			pre: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						Routes: []ingressroutev1.Route{{
+							Services: []ingressroutev1.Service{{
+								Name: "service",
+							}},
+						}},
+					},
+				},
+			},
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert service referenced by ingressroute tcpproxy": {
+			pre: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						TCPProxy: &ingressroutev1.TCPProxy{
+							Services: []ingressroutev1.Service{{
+								Name: "service",
+							}},
+						},
+					},
+				},
+			},
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			var cache KubernetesCache
+			for _, p := range tc.pre {
+				cache.Insert(p)
+			}
 			got := cache.Insert(tc.obj)
 			if tc.want != got {
 				t.Fatalf("Insert(%v): expected %v, got %v", tc.obj, tc.want, got)
