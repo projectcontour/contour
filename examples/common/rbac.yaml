@@ -59,3 +59,41 @@ rules:
   - post
   - patch
 ---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  name: contour-leaderelection
+  namespace: heptio-contour
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: contour-leaderelection
+  namespace: heptio-contour
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: contour-leaderelection
+subjects:
+- kind: ServiceAccount
+  name: contour
+  namespace: heptio-contour

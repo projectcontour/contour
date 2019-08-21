@@ -128,6 +128,6 @@ func OutputCerts(config *certgenConfig,
 func doCertgen(config *certgenConfig) {
 	generatedCerts, err := GenerateCerts(config)
 	check(err)
-	kubeclient, _ := newClient(config.KubeConfig, config.InCluster)
+	kubeclient, _, _ := newClient(config.KubeConfig, config.InCluster)
 	OutputCerts(config, kubeclient, generatedCerts)
 }

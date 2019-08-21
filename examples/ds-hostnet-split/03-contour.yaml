@@ -7,6 +7,8 @@ metadata:
   namespace: heptio-contour
 spec:
   replicas: 2
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: contour
@@ -31,6 +33,7 @@ spec:
       - args:
         - serve
         - --incluster
+        - --enable-leader-election
         - --xds-address=0.0.0.0
         - --xds-port=8001
         - --envoy-service-http-port=80
@@ -55,9 +58,10 @@ spec:
             path: /healthz
             port: 8000
         readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 8000
+          tcpSocket:
+            port: 8001
+          initialDelaySeconds: 15
+          periodSeconds: 10
         volumeMounts:
           - name: contourcert
             mountPath: /certs
@@ -68,6 +72,12 @@ spec:
           - name: contour-config
             mountPath: /config
             readOnly: true
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
       dnsPolicy: ClusterFirst
       serviceAccountName: contour
       volumes:
