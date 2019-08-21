@@ -477,7 +477,8 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: contour
-  namespace: heptio-contour---
+  namespace: heptio-contour
+---
 apiVersion: v1
 kind: Service
 metadata:
