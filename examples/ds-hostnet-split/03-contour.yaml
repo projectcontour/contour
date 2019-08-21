@@ -33,6 +33,7 @@ spec:
       - args:
         - serve
         - --incluster
+        - --enable-leader-election
         - --xds-address=0.0.0.0
         - --xds-port=8001
         - --envoy-service-http-port=80
@@ -42,7 +43,7 @@ spec:
         - --contour-key-file=/certs/tls.key
         - --config-path=/config/contour.yaml
         command: ["contour"]
-        image: docker.io/youngnick/contour:latest
+        image: gcr.io/heptio-images/contour:master
         imagePullPolicy: Always
         name: contour
         ports:

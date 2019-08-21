@@ -88,7 +88,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 		httpsPort:             8443,
 		PermitInsecureGRPC:    false,
 		DisablePermitInsecure: false,
-		DisableLeaderElection: false,
+		EnableLeaderElection:  false,
 		LeaderElectionConfig: LeaderElectionConfig{
 			LeaseDuration: time.Second * 15,
 			RenewDeadline: time.Second * 10,
@@ -147,7 +147,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests").IntVar(&ctx.httpsPort)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ctx.useProxyProto)
 
-	serve.Flag("disable-leader-election", "Disable leader election mechanism").BoolVar(&ctx.DisableLeaderElection)
+	serve.Flag("enable-leader-election", "Enable leader election mechanism").BoolVar(&ctx.EnableLeaderElection)
 	return serve, &ctx
 }
 
@@ -201,8 +201,8 @@ type serveContext struct {
 	// permitInsecure field in IngressRoute.
 	DisablePermitInsecure bool `yaml:"disablePermitInsecure"`
 
-	DisableLeaderElection bool
-	LeaderElectionConfig  `yaml:"-"`
+	EnableLeaderElection bool
+	LeaderElectionConfig `yaml:"-"`
 }
 
 // TLSConfig holds configuration file TLS configuration details.
@@ -390,8 +390,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// deposed is closed by the leader election callback when
 	// we are deposed as leader so that we can clean up.
 	deposed := make(chan struct{})
-	// leadingDisabled
-	leadingDisabled := make(chan struct{})
 
 	// Set up the leader election
 	// Generate the event recorder to send election events to the logs.
@@ -455,12 +453,14 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// managing the close process when the other goroutines are closed.
 	g.AddContext(func(electionCtx context.Context) {
 		log := log.WithField("context", "leaderelect")
-		if ctx.DisableLeaderElection {
+		if !ctx.EnableLeaderElection {
 			log.Info("Leader election disabled")
 			// if leader election is disabled, signal the gRPC goroutine
-			// to start serving and block this goroutine forever.
+			// to start serving and finsh up this context.
+			// The Workgroup will handle leaving this running until everything
+			// else closes down.
 			close(leaderOK)
-			<-leadingDisabled
+			<-electionCtx.Done()
 		}
 
 		log.WithFields(logrus.Fields{
@@ -468,19 +468,19 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			"configmapnamespace": ctx.LeaderElectionConfig.Namespace,
 		}).Info("Started leader election")
 
-		// Running the leader election requires a context.Context, but we're
-		// not using them, so we'll just pass in an empty one.
 		le.Run(electionCtx)
+		log.Info("Finishing leader election")
 	})
 
 	g.Add(func(stop <-chan struct{}) error {
 		// If we get deposed as leader, shut it down.
+		log := log.WithField("context", "leaderelection-deposer")
 		select {
 		case <-stop:
 			// shut down
+			log.Info("stopped")
 		case <-deposed:
 			log.WithFields(logrus.Fields{
-				"context":  "leaderelection",
 				"lock":     rl.Describe(),
 				"identity": rl.Identity(),
 			}).Info("deposed as leader, shutting down")
