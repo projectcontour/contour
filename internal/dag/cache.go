@@ -66,7 +66,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			kc.services = make(map[Meta]*v1.Service)
 		}
 		kc.services[m] = obj
-		return true
+		return kc.serviceTriggersRebuild(obj)
 	case *v1beta1.Ingress:
 		class := getIngressClassAnnotation(obj.Annotations)
 		if class != "" && class != kc.ingressClass() {
@@ -150,4 +150,52 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		// not interesting
 		return false
 	}
+}
+
+// serviceTriggersRebuild returns true if this service is referenced
+// by either an Ingress or IngressRoute in this cache.
+func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
+	for _, ingress := range kc.ingresses {
+		if ingress.Namespace != service.Namespace {
+			continue
+		}
+		if backend := ingress.Spec.Backend; backend != nil {
+			if backend.ServiceName == service.Name {
+				return true
+			}
+		}
+
+		for _, rule := range ingress.Spec.Rules {
+			http := rule.IngressRuleValue.HTTP
+			if http == nil {
+				continue
+			}
+			for _, path := range http.Paths {
+				if path.Backend.ServiceName == service.Name {
+					return true
+				}
+			}
+		}
+	}
+
+	for _, ir := range kc.ingressroutes {
+		if ir.Namespace != service.Namespace {
+			continue
+		}
+		for _, route := range ir.Spec.Routes {
+			for _, s := range route.Services {
+				if s.Name == service.Name {
+					return true
+				}
+			}
+		}
+		if tcpproxy := ir.Spec.TCPProxy; tcpproxy != nil {
+			for _, s := range tcpproxy.Services {
+				if s.Name == service.Name {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }

@@ -626,12 +626,12 @@ func TestClusterPerServiceParameters(t *testing.T) {
 	})
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "1",
 		Resources: []types.Any{
 			any(t, cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80")),
 		},
 		TypeUrl: clusterType,
-		Nonce:   "2",
+		Nonce:   "1",
 	}, streamCDS(t, cc))
 }
 
@@ -681,7 +681,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 	})
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "1",
 		Resources: []types.Any{
 			any(t, &v2.Cluster{
 				Name:                 "default/kuard/80/58d888c08a",
@@ -709,7 +709,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 			}),
 		},
 		TypeUrl: clusterType,
-		Nonce:   "2",
+		Nonce:   "1",
 	}, streamCDS(t, cc))
 }
 
@@ -753,12 +753,12 @@ func TestClusterWithHealthChecks(t *testing.T) {
 	})
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "1",
 		Resources: []types.Any{
 			any(t, clusterWithHealthCheck("default/kuard/80/bc862a33ca", "default/kuard", "default_kuard_80", "/healthz", true)),
 		},
 		TypeUrl: clusterType,
-		Nonce:   "2",
+		Nonce:   "1",
 	}, streamCDS(t, cc))
 }
 
@@ -867,7 +867,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh.OnAdd(ir1)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
+		VersionInfo: "2",
 		Resources: []types.Any{
 			any(t, tlscluster(
 				"default/kuard/443/da39a3ee5e",
@@ -877,7 +877,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 				"")),
 		},
 		TypeUrl: clusterType,
-		Nonce:   "3",
+		Nonce:   "2",
 	}, streamCDS(t, cc))
 
 	ir2 := &ingressroutev1.IngressRoute{
@@ -904,7 +904,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh.OnUpdate(ir1, ir2)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "4",
+		VersionInfo: "3",
 		Resources: []types.Any{
 			any(t, tlscluster(
 				"default/kuard/443/98c0f31c72",
@@ -914,7 +914,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 				"subjname")),
 		},
 		TypeUrl: clusterType,
-		Nonce:   "4",
+		Nonce:   "3",
 	}, streamCDS(t, cc))
 }
 

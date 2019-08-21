@@ -364,7 +364,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 	rh.OnAdd(i1)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
+		VersionInfo: "2",
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
@@ -375,13 +375,13 @@ func TestIngressRouteTLSListener(t *testing.T) {
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "3",
+		Nonce:   "2",
 	}, streamLDS(t, cc))
 
 	// delete secret and assert that ingress_https is removed
 	rh.OnDelete(secret1)
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "4",
+		VersionInfo: "3",
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
@@ -391,7 +391,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "4",
+		Nonce:   "3",
 	}, streamLDS(t, cc))
 
 	rh.OnDelete(i1)
@@ -411,7 +411,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 	// add ingress and assert the existence of ingress_http and ingres_https
 	rh.OnAdd(i2)
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "7",
+		VersionInfo: "6",
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
@@ -422,7 +422,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "7",
+		Nonce:   "6",
 	}, streamLDS(t, cc))
 }
 
@@ -943,7 +943,7 @@ func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 
 	// assert there is an active listener
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "1",
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
@@ -953,7 +953,7 @@ func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "2",
+		Nonce:   "1",
 	}, streamLDS(t, cc))
 }
 
@@ -1093,14 +1093,14 @@ func TestIngressRouteHTTPS(t *testing.T) {
 		FilterChains: filterchaintls("example.com", s1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
 	}
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
+		VersionInfo: "2",
 		Resources: []types.Any{
 			any(t, ingressHTTP),
 			any(t, ingressHTTPS),
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "3",
+		Nonce:   "2",
 	}, streamLDS(t, cc))
 }
 
@@ -1163,13 +1163,13 @@ func TestLDSIngressRouteTCPProxyTLSPassthrough(t *testing.T) {
 	}
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "1",
 		Resources: []types.Any{
 			any(t, ingressHTTPS),
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "2",
+		Nonce:   "1",
 	}, streamLDS(t, cc))
 }
 
@@ -1236,13 +1236,13 @@ func TestLDSIngressRouteTCPForward(t *testing.T) {
 	}
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
+		VersionInfo: "2",
 		Resources: []types.Any{
 			any(t, ingressHTTPS),
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "3",
+		Nonce:   "2",
 	}, streamLDS(t, cc))
 }
 
@@ -1321,13 +1321,13 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 
 	// assert there is no ingress_https because there is no matching secret.
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
+		VersionInfo: "2",
 		Resources: []types.Any{
 			any(t, ingress_http),
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "3",
+		Nonce:   "2",
 	}, streamLDS(t, cc))
 
 	// t1 is a TLSCertificateDelegation that permits default to access secret/wildcard
@@ -1357,14 +1357,14 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 	}
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "4",
+		VersionInfo: "3",
 		Resources: []types.Any{
 			any(t, ingress_http),
 			any(t, ingress_https),
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "4",
+		Nonce:   "3",
 	}, streamLDS(t, cc))
 
 	// t2 is a TLSCertificateDelegation that permits access to secret/wildcard from all namespaces.
@@ -1385,14 +1385,14 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 	rh.OnUpdate(t1, t2)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "5",
+		VersionInfo: "4",
 		Resources: []types.Any{
 			any(t, ingress_http),
 			any(t, ingress_https),
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "5",
+		Nonce:   "4",
 	}, streamLDS(t, cc))
 
 	// t3 is a TLSCertificateDelegation that permits access to secret/different all namespaces.
@@ -1413,13 +1413,13 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 	rh.OnUpdate(t2, t3)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "6",
+		VersionInfo: "5",
 		Resources: []types.Any{
 			any(t, ingress_http),
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "6",
+		Nonce:   "5",
 	}, streamLDS(t, cc))
 
 	// t4 is a TLSCertificateDelegation that permits access to secret/wildcard from the kube-secret namespace.
@@ -1440,13 +1440,13 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 	rh.OnUpdate(t3, t4)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "7",
+		VersionInfo: "6",
 		Resources: []types.Any{
 			any(t, ingress_http),
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "7",
+		Nonce:   "6",
 	}, streamLDS(t, cc))
 
 }
@@ -1524,7 +1524,7 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 
 	// verify that i1's TLS 1.1 minimum has been upgraded to 1.2
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
+		VersionInfo: "2",
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
@@ -1535,7 +1535,7 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "3",
+		Nonce:   "2",
 	}, streamLDS(t, cc))
 
 	// i2 is a tls ingressroute
@@ -1575,7 +1575,7 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 
 	// verify that i2's TLS 1.3 minimum has NOT been downgraded to 1.2
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "4",
+		VersionInfo: "3",
 		Resources: []types.Any{
 			any(t, &v2.Listener{
 				Name:         "ingress_http",
@@ -1586,7 +1586,7 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 			any(t, staticListener()),
 		},
 		TypeUrl: listenerType,
-		Nonce:   "4",
+		Nonce:   "3",
 	}, streamLDS(t, cc))
 }
 
