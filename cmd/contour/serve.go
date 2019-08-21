@@ -452,7 +452,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// AddContext will generate its own context.Context and pass it in,
 	// managing the close process when the other goroutines are closed.
 	g.AddContext(func(electionCtx context.Context) {
-		log := log.WithField("context", "leaderelect")
+		log := log.WithField("context", "leaderelection")
 		if !ctx.EnableLeaderElection {
 			log.Info("Leader election disabled")
 			// if leader election is disabled, signal the gRPC goroutine
@@ -466,10 +466,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		log.WithFields(logrus.Fields{
 			"configmapname":      ctx.LeaderElectionConfig.Name,
 			"configmapnamespace": ctx.LeaderElectionConfig.Namespace,
-		}).Info("Started leader election")
+		}).Info("started")
 
 		le.Run(electionCtx)
-		log.Info("Finishing leader election")
+		log.Info("stopped")
 	})
 
 	g.Add(func(stop <-chan struct{}) error {
