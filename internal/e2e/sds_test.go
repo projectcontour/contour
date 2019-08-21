@@ -54,10 +54,10 @@ func TestSDSVisibility(t *testing.T) {
 	// assert that the secret is _not_ visible as it is
 	// not referenced by any ingress/ingressroute
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
-		VersionInfo: "1",
+		VersionInfo: "0",
 		Resources:   []types.Any{},
 		TypeUrl:     secretType,
-		Nonce:       "1",
+		Nonce:       "0",
 	})
 
 	// i1 is a tls ingress
@@ -80,10 +80,10 @@ func TestSDSVisibility(t *testing.T) {
 	// have any valid routes.
 	// i1 has a default route to backend:80, but there is no matching service.
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "1",
 		Resources:   resources(t, secret(s1)),
 		TypeUrl:     secretType,
-		Nonce:       "2",
+		Nonce:       "1",
 	})
 }
 
@@ -128,20 +128,20 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	rh.OnAdd(i1)
 
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "1",
 		Resources:   resources(t, secret(s1)),
 		TypeUrl:     secretType,
-		Nonce:       "2",
+		Nonce:       "1",
 	})
 
 	// verify that requesting the same resource without change
 	// does not bump the current version_info.
 
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "1",
 		Resources:   resources(t, secret(s1)),
 		TypeUrl:     secretType,
-		Nonce:       "2",
+		Nonce:       "1",
 	})
 
 	// s2 is not referenced by any active ingress object.
@@ -158,15 +158,11 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	}
 	rh.OnAdd(s2)
 
-	t.Skipf("See issue 1166")
-
-	// TODO(dfc) 1166: currently Contour will rebuild all the xDS tables
-	// when an unrelated secret changes.
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "1",
 		Resources:   resources(t, secret(s1)),
 		TypeUrl:     secretType,
-		Nonce:       "2",
+		Nonce:       "1",
 	})
 }
 
@@ -213,10 +209,10 @@ func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
 
 	// SDS should be empty
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "1",
 		Resources:   []types.Any{},
 		TypeUrl:     secretType,
-		Nonce:       "2",
+		Nonce:       "1",
 	})
 }
 

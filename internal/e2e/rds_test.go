@@ -481,7 +481,7 @@ func TestEditIngressInPlace(t *testing.T) {
 	}
 	rh.OnUpdate(i3, i4)
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "6",
+		VersionInfo: "5",
 		Resources: []types.Any{
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_http",
@@ -513,7 +513,7 @@ func TestEditIngressInPlace(t *testing.T) {
 				}}}),
 		},
 		TypeUrl: routeType,
-		Nonce:   "6",
+		Nonce:   "5",
 	}, streamRDS(t, cc))
 }
 
@@ -812,7 +812,7 @@ func TestInvalidCertInIngress(t *testing.T) {
 		},
 	})
 
-	assertRDS(t, cc, "2", []route.VirtualHost{{ // ingress_http
+	assertRDS(t, cc, "1", []route.VirtualHost{{ // ingress_http
 		Name:    "kuard.io",
 		Domains: domains("kuard.io"),
 		Routes: []route.Route{{
@@ -835,7 +835,7 @@ func TestInvalidCertInIngress(t *testing.T) {
 		},
 	})
 
-	assertRDS(t, cc, "3", []route.VirtualHost{{ // ingress_http
+	assertRDS(t, cc, "2", []route.VirtualHost{{ // ingress_http
 		Name:    "kuard.io",
 		Domains: domains("kuard.io"),
 		Routes: []route.Route{{
@@ -2205,7 +2205,7 @@ func TestRouteWithTLS(t *testing.T) {
 
 	// check that ingress_http has been updated.
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "1",
 		Resources: []types.Any{
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_http",
@@ -2230,7 +2230,7 @@ func TestRouteWithTLS(t *testing.T) {
 				}}}),
 		},
 		TypeUrl: routeType,
-		Nonce:   "2",
+		Nonce:   "1",
 	}, streamRDS(t, cc))
 }
 func TestRouteWithTLS_InsecurePaths(t *testing.T) {
@@ -2310,7 +2310,7 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 
 	// check that ingress_http has been updated.
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "1",
 		Resources: []types.Any{
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_http",
@@ -2347,7 +2347,7 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 				}}}),
 		},
 		TypeUrl: routeType,
-		Nonce:   "2",
+		Nonce:   "1",
 	}, streamRDS(t, cc))
 }
 
@@ -2431,7 +2431,7 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 
 	// check that ingress_http has been updated.
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "1",
 		Resources: []types.Any{
 			any(t, &v2.RouteConfiguration{
 				Name: "ingress_http",
@@ -2467,7 +2467,7 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 				}}}),
 		},
 		TypeUrl: routeType,
-		Nonce:   "2",
+		Nonce:   "1",
 	}, streamRDS(t, cc))
 }
 
