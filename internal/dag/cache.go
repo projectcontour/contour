@@ -59,7 +59,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			kc.secrets = make(map[Meta]*v1.Secret)
 		}
 		kc.secrets[m] = obj
-		return true
+		return kc.secretTriggersRebuild(obj)
 	case *v1.Service:
 		m := Meta{name: obj.Name, namespace: obj.Namespace}
 		if kc.services == nil {
@@ -153,7 +153,7 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 }
 
 // serviceTriggersRebuild returns true if this service is referenced
-// by either an Ingress or IngressRoute in this cache.
+// by an Ingress or IngressRoute in this cache.
 func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 	for _, ingress := range kc.ingresses {
 		if ingress.Namespace != service.Namespace {
@@ -194,6 +194,73 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 				if s.Name == service.Name {
 					return true
 				}
+			}
+		}
+	}
+	return false
+}
+
+// secretTriggersRebuild returns true if this secret is referenced by an Ingress
+// or IngressRoute object in this cache. If the secret is not in the same namespace
+// it must be mentioned by a TLSCertificateDelegation.
+func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
+	delegations := make(map[string]bool) // targetnamespace/secretname to bool
+	for _, d := range kc.delegations {
+		for _, cd := range d.Spec.Delegations {
+			for _, n := range cd.TargetNamespaces {
+				delegations[n+"/"+cd.SecretName] = true
+			}
+		}
+	}
+
+	for _, ingress := range kc.ingresses {
+		if ingress.Namespace == secret.Namespace {
+			for _, tls := range ingress.Spec.TLS {
+				if tls.SecretName == secret.Name {
+					return true
+				}
+			}
+		}
+		if delegations[ingress.Namespace+"/"+secret.Name] {
+			for _, tls := range ingress.Spec.TLS {
+				if tls.SecretName == secret.Namespace+"/"+secret.Name {
+					return true
+				}
+			}
+		}
+
+		if delegations["*/"+secret.Name] {
+			for _, tls := range ingress.Spec.TLS {
+				if tls.SecretName == secret.Namespace+"/"+secret.Name {
+					return true
+				}
+			}
+		}
+	}
+
+	for _, ir := range kc.ingressroutes {
+		vh := ir.Spec.VirtualHost
+		if vh == nil {
+			// not a root ingress
+			continue
+		}
+		tls := vh.TLS
+		if tls == nil {
+			// no tls spec
+			continue
+		}
+
+		if ir.Namespace == secret.Namespace && tls.SecretName == secret.Name {
+			return true
+		}
+		if delegations[ir.Namespace+"/"+secret.Name] {
+			if tls.SecretName == secret.Namespace+"/"+secret.Name {
+				return true
+			}
+		}
+		if delegations["*/"+secret.Name] {
+			if tls.SecretName == secret.Namespace+"/"+secret.Name {
+				return true
 			}
 		}
 	}

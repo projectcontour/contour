@@ -35,6 +35,203 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 			},
+			want: false,
+		},
+		"insert secret referenced by ingress": {
+			pre: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "www",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							SecretName: "secret",
+						}},
+					},
+				},
+			},
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert secret referenced by ingress via tls delegation": {
+			pre: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "www",
+						Namespace: "extra",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							SecretName: "default/secret",
+						}},
+					},
+				},
+
+				&ingressroutev1.TLSCertificateDelegation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "delegation",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.TLSCertificateDelegationSpec{
+						Delegations: []ingressroutev1.CertificateDelegation{{
+							SecretName: "secret",
+							TargetNamespaces: []string{
+								"extra",
+							},
+						}},
+					},
+				},
+			},
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert secret referenced by ingress via wildcard tls delegation": {
+			pre: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "www",
+						Namespace: "extra",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							SecretName: "default/secret",
+						}},
+					},
+				},
+
+				&ingressroutev1.TLSCertificateDelegation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "delegation",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.TLSCertificateDelegationSpec{
+						Delegations: []ingressroutev1.CertificateDelegation{{
+							SecretName: "secret",
+							TargetNamespaces: []string{
+								"*",
+							},
+						}},
+					},
+				},
+			},
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+
+		"insert secret referenced by ingressroute": {
+			pre: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							TLS: &ingressroutev1.TLS{
+								SecretName: "secret",
+							},
+						},
+					},
+				},
+			},
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert secret referenced by ingressroute via tls delegation": {
+			pre: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "extra",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							TLS: &ingressroutev1.TLS{
+								SecretName: "default/secret",
+							},
+						},
+					},
+				},
+				&ingressroutev1.TLSCertificateDelegation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "delegation",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.TLSCertificateDelegationSpec{
+						Delegations: []ingressroutev1.CertificateDelegation{{
+							SecretName: "secret",
+							TargetNamespaces: []string{
+								"extra",
+							},
+						}},
+					},
+				},
+			},
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert secret referenced by ingressroute via wildcard tls delegation": {
+			pre: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "extra",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							TLS: &ingressroutev1.TLS{
+								SecretName: "default/secret",
+							},
+						},
+					},
+				},
+				&ingressroutev1.TLSCertificateDelegation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "delegation",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.TLSCertificateDelegationSpec{
+						Delegations: []ingressroutev1.CertificateDelegation{{
+							SecretName: "secret",
+							TargetNamespaces: []string{
+								"*",
+							},
+						}},
+					},
+				},
+			},
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+			},
 			want: true,
 		},
 		"insert ingress empty ingress class": {
