@@ -1451,6 +1451,145 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 
 }
 
+func TestIngressRouteMinimumTLSVersion(t *testing.T) {
+	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
+		reh.CacheHandler.MinimumProtocolVersion = auth.TlsParameters_TLSv1_2
+	})
+
+	defer done()
+
+	// secret1 is a tls secret
+	secret1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Type: "kubernetes.io/tls",
+		Data: map[string][]byte{
+			v1.TLSCertKey:       []byte("certificate"),
+			v1.TLSPrivateKeyKey: []byte("key"),
+		},
+	}
+	rh.OnAdd(secret1)
+
+	svc1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	}
+	rh.OnAdd(svc1)
+
+	// i1 is a tls ingressroute
+	i1 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "kuard.example.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName:             "secret",
+					MinimumProtocolVersion: "1.1",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "backend",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnAdd(i1)
+
+	l1 := &v2.Listener{
+		Name:    "ingress_https",
+		Address: *envoy.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: []listener.ListenerFilter{
+			envoy.TLSInspector(),
+		},
+		FilterChains: filterchaintls("kuard.example.com", secret1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
+	}
+	l1.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = auth.TlsParameters_TLSv1_2
+
+	// verify that i1's TLS 1.1 minimum has been upgraded to 1.2
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "3",
+		Resources: []types.Any{
+			any(t, &v2.Listener{
+				Name:         "ingress_http",
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy.FilterChains(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
+			}),
+			any(t, l1),
+			any(t, staticListener()),
+		},
+		TypeUrl: listenerType,
+		Nonce:   "3",
+	}, streamLDS(t, cc))
+
+	// i2 is a tls ingressroute
+	i2 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "kuard.example.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName:             "secret",
+					MinimumProtocolVersion: "1.3",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "backend",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(i1, i2)
+
+	l2 := &v2.Listener{
+		Name:    "ingress_https",
+		Address: *envoy.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: []listener.ListenerFilter{
+			envoy.TLSInspector(),
+		},
+		FilterChains: filterchaintls("kuard.example.com", secret1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
+	}
+	l2.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = auth.TlsParameters_TLSv1_3
+
+	// verify that i2's TLS 1.3 minimum has NOT been downgraded to 1.2
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "4",
+		Resources: []types.Any{
+			any(t, &v2.Listener{
+				Name:         "ingress_http",
+				Address:      *envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy.FilterChains(envoy.HTTPConnectionManager("ingress_http", "/dev/stdout")),
+			}),
+			any(t, l2),
+			any(t, staticListener()),
+		},
+		TypeUrl: listenerType,
+		Nonce:   "4",
+	}, streamLDS(t, cc))
+}
+
 func streamLDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
 	t.Helper()
 	rds := v2.NewListenerDiscoveryServiceClient(cc)
