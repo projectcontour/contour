@@ -448,13 +448,11 @@ func (b *Builder) dag() *DAG {
 		for k, vh := range l.VirtualHosts {
 			switch vh := vh.(type) {
 			case *VirtualHost:
-				// suppress virtual hosts without routes.
-				if len(vh.routes) < 1 {
+				if !vh.Valid() {
 					delete(l.VirtualHosts, k)
 				}
 			case *SecureVirtualHost:
-				// suppress secure virtual hosts without secrets or tcpproxy.
-				if vh.Secret == nil && vh.TCPProxy == nil {
+				if !vh.Valid() {
 					delete(l.VirtualHosts, k)
 				}
 			}

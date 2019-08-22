@@ -161,6 +161,12 @@ func (v *VirtualHost) Visit(f func(Vertex)) {
 	}
 }
 
+func (v *VirtualHost) Valid() bool {
+	// A VirtualHost is valid if it has at least one route,
+	// or tcp proxy is not nil.
+	return len(v.routes) > 0 || v.TCPProxy != nil
+}
+
 // A SecureVirtualHost represents a HTTP host protected by TLS.
 type SecureVirtualHost struct {
 	VirtualHost
@@ -177,6 +183,11 @@ func (s *SecureVirtualHost) Visit(f func(Vertex)) {
 	if s.Secret != nil {
 		f(s.Secret) // secret is not required if vhost is using tls passthrough
 	}
+}
+
+func (s *SecureVirtualHost) Valid() bool {
+	// A SecureVirtualHost is valid if it as a Secret or a TCPProxy.
+	return s.Secret != nil || s.TCPProxy != nil
 }
 
 type Visitable interface {
