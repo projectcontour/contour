@@ -214,7 +214,7 @@ type Listener struct {
 	// Port is the TCP port to listen on.
 	Port int
 
-	VirtualHosts map[string]Vertex
+	VirtualHosts []Vertex
 }
 
 func (l *Listener) Visit(f func(Vertex)) {
