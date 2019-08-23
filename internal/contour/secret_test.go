@@ -111,6 +111,20 @@ func TestSecretVisit(t *testing.T) {
 		},
 		"simple ingress with secret": {
 			objs: []interface{}{
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:       "http",
+							Protocol:   "TCP",
+							Port:       8080,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
 				&v1beta1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -135,6 +149,20 @@ func TestSecretVisit(t *testing.T) {
 		},
 		"multiple ingresses with shared secret": {
 			objs: []interface{}{
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:       "http",
+							Protocol:   "TCP",
+							Port:       8080,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
 				&v1beta1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple-a",
@@ -175,6 +203,20 @@ func TestSecretVisit(t *testing.T) {
 		},
 		"multiple ingresses with different secrets": {
 			objs: []interface{}{
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:       "http",
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
 				&v1beta1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple-a",
@@ -217,6 +259,20 @@ func TestSecretVisit(t *testing.T) {
 		},
 		"simple ingressroute with secret": {
 			objs: []interface{}{
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:       "http",
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
 				&ingressroutev1.IngressRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
@@ -245,6 +301,20 @@ func TestSecretVisit(t *testing.T) {
 		},
 		"multiple ingressroutes with shared secret": {
 			objs: []interface{}{
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:       "http",
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
 				&ingressroutev1.IngressRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple-a",
@@ -293,6 +363,20 @@ func TestSecretVisit(t *testing.T) {
 		},
 		"multiple ingressroutes with different secret": {
 			objs: []interface{}{
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:       "http",
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
 				&ingressroutev1.IngressRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple-a",
