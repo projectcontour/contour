@@ -4224,19 +4224,8 @@ func secret(s *v1.Secret) *Secret {
 	}
 }
 
-func virtualhosts(vx ...Vertex) map[string]Vertex {
-	m := make(map[string]Vertex)
-	for _, v := range vx {
-		switch v := v.(type) {
-		case *VirtualHost:
-			m[v.Name] = v
-		case *SecureVirtualHost:
-			m[v.VirtualHost.Name] = v
-		default:
-			panic(fmt.Sprintf("unable to handle Vertex type %T", v))
-		}
-	}
-	return m
+func virtualhosts(vx ...Vertex) []Vertex {
+	return vx
 }
 
 func virtualhost(name string, v ...Vertex) *VirtualHost {

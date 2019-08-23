@@ -44,9 +44,11 @@ type Builder struct {
 	// permitInsecure field in IngressRoute.
 	DisablePermitInsecure bool
 
-	services  map[servicemeta]Service
-	secrets   map[Meta]*Secret
-	listeners map[int]*Listener
+	services map[servicemeta]Service
+	secrets  map[Meta]*Secret
+
+	virtualhosts       map[string]*VirtualHost
+	securevirtualhosts map[string]*SecureVirtualHost
 
 	orphaned map[Meta]bool
 
@@ -73,9 +75,11 @@ func (b *Builder) Build() *DAG {
 func (b *Builder) reset() {
 	b.services = make(map[servicemeta]Service, len(b.services))
 	b.secrets = make(map[Meta]*Secret, len(b.secrets))
-	b.listeners = make(map[int]*Listener, len(b.listeners))
 	b.orphaned = make(map[Meta]bool, len(b.orphaned))
 	b.statuses = make(map[Meta]Status, len(b.statuses))
+
+	b.virtualhosts = make(map[string]*VirtualHost)
+	b.securevirtualhosts = make(map[string]*SecureVirtualHost)
 }
 
 // lookupHTTPService returns a HTTPService that matches the Meta and port supplied.
@@ -206,51 +210,29 @@ func (b *Builder) lookupSecret(m Meta, validate func(*v1.Secret) bool) *Secret {
 }
 
 func (b *Builder) lookupVirtualHost(name string) *VirtualHost {
-	l := b.listener(80)
-	vh, ok := l.VirtualHosts[name]
+	vh, ok := b.virtualhosts[name]
 	if !ok {
 		vh := &VirtualHost{
 			Name: name,
 		}
-		l.VirtualHosts[vh.Name] = vh
+		b.virtualhosts[vh.Name] = vh
 		return vh
 	}
-	return vh.(*VirtualHost)
+	return vh
 }
 
 func (b *Builder) lookupSecureVirtualHost(name string) *SecureVirtualHost {
-	l := b.listener(443)
-	svh, ok := l.VirtualHosts[name]
+	svh, ok := b.securevirtualhosts[name]
 	if !ok {
 		svh := &SecureVirtualHost{
 			VirtualHost: VirtualHost{
 				Name: name,
 			},
 		}
-		l.VirtualHosts[svh.VirtualHost.Name] = svh
+		b.securevirtualhosts[svh.VirtualHost.Name] = svh
 		return svh
 	}
-	return svh.(*SecureVirtualHost)
-}
-
-// listener returns a listener for the supplied port.
-// TODO: the port value is not actually used as a port
-// anywhere. It's only used to choose between
-// 80 (for insecure) or 443 (for secure). This should be
-// fixed, see https://github.com/heptio/contour/issues/1135
-func (b *Builder) listener(port int) *Listener {
-	l, ok := b.listeners[port]
-	if !ok {
-		l = &Listener{
-			Port:         port,
-			VirtualHosts: make(map[string]Vertex),
-		}
-		if b.listeners == nil {
-			b.listeners = make(map[int]*Listener)
-		}
-		b.listeners[l.Port] = l
-	}
-	return l
+	return svh
 }
 
 // validIngressRoutes returns a slice of *ingressroutev1.IngressRoute objects.
@@ -377,8 +359,12 @@ func (b *Builder) computeIngresses() {
 					b.lookupVirtualHost(host).addRoute(v)
 				}
 
-				if b.secureVirtualhostExists(host) {
-					b.lookupSecureVirtualHost(host).addRoute(v)
+				// computeSecureVirtualhosts will have populated b.securevirtualhosts
+				// with the names of tls enabled ingress objects. If host exists then
+				// it is correctly configured for TLS.
+				svh, ok := b.securevirtualhosts[host]
+				if ok && host != "*" {
+					svh.addRoute(v)
 				}
 			}
 		}
@@ -440,32 +426,34 @@ func (b *Builder) computeIngressRoutes() {
 	}
 }
 
-func (b *Builder) secureVirtualhostExists(host string) bool {
-	_, ok := b.listener(443).VirtualHosts[host]
-	return ok && host != "*"
-}
-
 // dag returns a *DAG representing the current state of this builder.
 func (b *Builder) dag() *DAG {
 	var dag DAG
-	for _, l := range b.listeners {
-		for k, vh := range l.VirtualHosts {
-			switch vh := vh.(type) {
-			case *VirtualHost:
-				if !vh.Valid() {
-					delete(l.VirtualHosts, k)
-				}
-			case *SecureVirtualHost:
-				if !vh.Valid() {
-					delete(l.VirtualHosts, k)
-				}
-			}
-		}
-		// suppress empty listeners
-		if len(l.VirtualHosts) > 0 {
-			dag.roots = append(dag.roots, l)
+
+	http := &Listener{
+		Port: 80,
+	}
+	for _, vh := range b.virtualhosts {
+		if vh.Valid() {
+			http.VirtualHosts = append(http.VirtualHosts, vh)
 		}
 	}
+	if len(http.VirtualHosts) > 0 {
+		dag.roots = append(dag.roots, http)
+	}
+
+	https := &Listener{
+		Port: 443,
+	}
+	for _, vh := range b.securevirtualhosts {
+		if vh.Valid() {
+			https.VirtualHosts = append(https.VirtualHosts, vh)
+		}
+	}
+	if len(https.VirtualHosts) > 0 {
+		dag.roots = append(dag.roots, https)
+	}
+
 	for meta := range b.orphaned {
 		ir, ok := b.Source.ingressroutes[meta]
 		if ok {

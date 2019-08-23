@@ -224,15 +224,6 @@ func TestVisitSecrets(t *testing.T) {
 	}
 }
 
-func virtualhosts(vx ...dag.Vertex) map[string]dag.Vertex {
-	m := make(map[string]dag.Vertex)
-	for _, v := range vx {
-		switch v := v.(type) {
-		case *dag.VirtualHost:
-			m[v.Name] = v
-		case *dag.SecureVirtualHost:
-			m[v.VirtualHost.Name] = v
-		}
-	}
-	return m
+func virtualhosts(vx ...dag.Vertex) []dag.Vertex {
+	return vx
 }
