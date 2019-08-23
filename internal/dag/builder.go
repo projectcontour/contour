@@ -439,6 +439,9 @@ func (b *Builder) dag() *DAG {
 		}
 	}
 	if len(http.VirtualHosts) > 0 {
+		sort.SliceStable(http.VirtualHosts, func(i, j int) bool {
+			return http.VirtualHosts[i].(*VirtualHost).Name < http.VirtualHosts[j].(*VirtualHost).Name
+		})
 		dag.roots = append(dag.roots, http)
 	}
 
@@ -451,6 +454,9 @@ func (b *Builder) dag() *DAG {
 		}
 	}
 	if len(https.VirtualHosts) > 0 {
+		sort.SliceStable(https.VirtualHosts, func(i, j int) bool {
+			return https.VirtualHosts[i].(*SecureVirtualHost).Name < https.VirtualHosts[j].(*SecureVirtualHost).Name
+		})
 		dag.roots = append(dag.roots, https)
 	}
 
