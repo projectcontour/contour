@@ -175,7 +175,7 @@ type SecureVirtualHost struct {
 	MinProtoVersion auth.TlsParameters_TlsProtocol
 
 	// The cert and key for this host.
-	*Secret
+	Secret *Secret
 }
 
 func (s *SecureVirtualHost) Visit(f func(Vertex)) {
