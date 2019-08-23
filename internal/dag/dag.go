@@ -186,7 +186,7 @@ func (s *SecureVirtualHost) Visit(f func(Vertex)) {
 }
 
 func (s *SecureVirtualHost) Valid() bool {
-	// A SecureVirtualHost is valid if it as a Secret or a TCPProxy.
+	// A SecureVirtualHost is valid if it has a Secret or a TCPProxy.
 	return s.Secret != nil || s.TCPProxy != nil
 }
 

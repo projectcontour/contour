@@ -294,7 +294,8 @@ func (b *Builder) computeSecureVirtualhosts() {
 	for _, ing := range b.Source.ingresses {
 		for _, tls := range ing.Spec.TLS {
 			m := splitSecret(tls.SecretName, ing.Namespace)
-			if sec := b.lookupSecret(m, validSecret); sec != nil && b.delegationPermitted(m, ing.Namespace) {
+			sec := b.lookupSecret(m, validSecret)
+			if sec != nil && b.delegationPermitted(m, ing.Namespace) {
 				for _, host := range tls.Hosts {
 					svhost := b.lookupSecureVirtualHost(host)
 					svhost.Secret = sec
@@ -349,12 +350,15 @@ func (b *Builder) computeIngresses() {
 			host := stringOrDefault(rule.Host, "*")
 			for _, httppath := range httppaths(rule) {
 				path := stringOrDefault(httppath.Path, "/")
-				r := route(ing, path)
 				be := httppath.Backend
 				m := Meta{name: be.ServiceName, namespace: ing.Namespace}
-				if s := b.lookupHTTPService(m, be.ServicePort); s != nil {
-					r.Clusters = append(r.Clusters, &Cluster{Upstream: s})
+				s := b.lookupHTTPService(m, be.ServicePort)
+				if s == nil {
+					continue
 				}
+
+				r := route(ing, path)
+				r.Clusters = append(r.Clusters, &Cluster{Upstream: s})
 
 				var v Vertex = &PrefixRoute{
 					Prefix: path,
@@ -373,13 +377,14 @@ func (b *Builder) computeIngresses() {
 					b.lookupVirtualHost(host).addRoute(v)
 				}
 
-				if b.secureVirtualhostExists(host) && host != "*" {
+				if b.secureVirtualhostExists(host) {
 					b.lookupSecureVirtualHost(host).addRoute(v)
 				}
 			}
 		}
 	}
 }
+
 func (b *Builder) computeIngressRoutes() {
 	for _, ir := range b.validIngressRoutes() {
 		if ir.Spec.VirtualHost == nil {
@@ -410,7 +415,6 @@ func (b *Builder) computeIngressRoutes() {
 			// attach secrets to TLS enabled vhosts
 			m := splitSecret(tls.SecretName, ir.Namespace)
 			sec := b.lookupSecret(m, validSecret)
-			secretInvalidOrNotFound := sec == nil
 			if sec != nil && b.delegationPermitted(m, ir.Namespace) {
 				svhost := b.lookupSecureVirtualHost(host)
 				svhost.Secret = sec
@@ -422,7 +426,7 @@ func (b *Builder) computeIngressRoutes() {
 			passthrough = isBlank(tls.SecretName) && tls.Passthrough
 
 			// If not passthrough and secret is invalid, then set status
-			if secretInvalidOrNotFound && !passthrough {
+			if sec == nil && !passthrough {
 				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("TLS Secret [%s] not found or is malformed", tls.SecretName)})
 			}
 		}
@@ -438,7 +442,7 @@ func (b *Builder) computeIngressRoutes() {
 
 func (b *Builder) secureVirtualhostExists(host string) bool {
 	_, ok := b.listener(443).VirtualHosts[host]
-	return ok
+	return ok && host != "*"
 }
 
 // dag returns a *DAG representing the current state of this builder.

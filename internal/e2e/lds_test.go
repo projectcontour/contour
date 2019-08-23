@@ -63,6 +63,20 @@ func TestNonTLSListener(t *testing.T) {
 		},
 	}
 
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	})
+
 	// add it and assert that we now have a ingress_http listener
 	rh.OnAdd(i1)
 	assertEqual(t, &v2.DiscoveryResponse{
@@ -167,6 +181,20 @@ func TestTLSListener(t *testing.T) {
 			}},
 		},
 	}
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	})
 
 	// add secret
 	rh.OnAdd(s1)
@@ -458,6 +486,20 @@ func TestLDSFilter(t *testing.T) {
 		},
 	}
 
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	})
+
 	// add secret
 	rh.OnAdd(s1)
 
@@ -634,6 +676,19 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 			Backend: backend("backend", intstr.FromInt(80)),
 		},
 	}
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	})
 
 	// add it and assert that we now have a ingress_http listener using
 	// the proxy protocol (the true param to filterchain)
@@ -702,6 +757,20 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 		TypeUrl: listenerType,
 		Nonce:   "0",
 	}, streamLDS(t, cc))
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	})
 
 	// add ingress and assert the existence of ingress_http and ingres_https and both
 	// are using proxy protocol
@@ -785,6 +854,20 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 		Nonce:   "0",
 	}, streamLDS(t, cc))
 
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	})
+
 	// add ingress and assert the existence of ingress_http and ingres_https and both
 	// are using proxy protocol
 	rh.OnAdd(i1)
@@ -848,6 +931,20 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 			}},
 		},
 	}
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	})
 
 	// add secret
 	rh.OnAdd(s1)

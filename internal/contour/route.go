@@ -144,10 +144,6 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				vh.Visit(func(v dag.Vertex) {
 					switch r := v.(type) {
 					case *dag.PrefixRoute:
-						if len(r.Clusters) < 1 {
-							// no services for this route, skip it.
-							return
-						}
 						rr := route.Route{
 							Match:               envoy.RoutePrefix(r.Prefix),
 							Action:              envoy.RouteRoute(&r.Route),
@@ -160,10 +156,6 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 						}
 						vhost.Routes = append(vhost.Routes, rr)
 					case *dag.RegexRoute:
-						if len(r.Clusters) < 1 {
-							// no services for this route, skip it.
-							return
-						}
 						rr := route.Route{
 							Match:               envoy.RouteRegex(r.Regex),
 							Action:              envoy.RouteRoute(&r.Route),
@@ -187,20 +179,12 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				vh.Visit(func(v dag.Vertex) {
 					switch r := v.(type) {
 					case *dag.PrefixRoute:
-						if len(r.Clusters) < 1 {
-							// no services for this route, skip it.
-							return
-						}
 						vhost.Routes = append(vhost.Routes, route.Route{
 							Match:               envoy.RoutePrefix(r.Prefix),
 							Action:              envoy.RouteRoute(&r.Route),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
 						})
 					case *dag.RegexRoute:
-						if len(r.Clusters) < 1 {
-							// no services for this route, skip it.
-							return
-						}
 						vhost.Routes = append(vhost.Routes, route.Route{
 							Match:               envoy.RouteRegex(r.Regex),
 							Action:              envoy.RouteRoute(&r.Route),
