@@ -80,7 +80,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: 250 * time.Millisecond,
+				ConnectTimeout: duration(250 * time.Millisecond),
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				CommonLbConfig: ClusterCommonLBConfig(),
 			},
@@ -100,7 +100,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout:       250 * time.Millisecond,
+				ConnectTimeout:       duration(250 * time.Millisecond),
 				LbPolicy:             v2.Cluster_ROUND_ROBIN,
 				Http2ProtocolOptions: &core.Http2ProtocolOptions{},
 				CommonLbConfig:       ClusterCommonLBConfig(),
@@ -121,7 +121,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout:       250 * time.Millisecond,
+				ConnectTimeout:       duration(250 * time.Millisecond),
 				LbPolicy:             v2.Cluster_ROUND_ROBIN,
 				TlsContext:           UpstreamTLSContext(nil, "", "h2"),
 				Http2ProtocolOptions: &core.Http2ProtocolOptions{},
@@ -139,7 +139,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
 				LoadAssignment:       StaticClusterLoadAssignment(externalnameservice(s2)),
-				ConnectTimeout:       250 * time.Millisecond,
+				ConnectTimeout:       duration(250 * time.Millisecond),
 				LbPolicy:             v2.Cluster_ROUND_ROBIN,
 				CommonLbConfig:       ClusterCommonLBConfig(),
 			},
@@ -159,7 +159,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: 250 * time.Millisecond,
+				ConnectTimeout: duration(250 * time.Millisecond),
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				TlsContext:     UpstreamTLSContext(nil, ""),
 				CommonLbConfig: ClusterCommonLBConfig(),
@@ -194,7 +194,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: 250 * time.Millisecond,
+				ConnectTimeout: duration(250 * time.Millisecond),
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				TlsContext:     UpstreamTLSContext([]byte("cacert"), "foo.bar.io"),
 				CommonLbConfig: ClusterCommonLBConfig(),
@@ -218,7 +218,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: 250 * time.Millisecond,
+				ConnectTimeout: duration(250 * time.Millisecond),
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
 					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
@@ -246,7 +246,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: 250 * time.Millisecond,
+				ConnectTimeout: duration(250 * time.Millisecond),
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
 					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
@@ -274,7 +274,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: 250 * time.Millisecond,
+				ConnectTimeout: duration(250 * time.Millisecond),
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
 					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
@@ -302,7 +302,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: 250 * time.Millisecond,
+				ConnectTimeout: duration(250 * time.Millisecond),
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
 					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
@@ -327,7 +327,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: 250 * time.Millisecond,
+				ConnectTimeout: duration(250 * time.Millisecond),
 				LbPolicy:       v2.Cluster_RANDOM,
 				CommonLbConfig: ClusterCommonLBConfig(),
 			},
@@ -347,7 +347,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: 250 * time.Millisecond,
+				ConnectTimeout: duration(250 * time.Millisecond),
 				LbPolicy:       v2.Cluster_RING_HASH,
 				CommonLbConfig: ClusterCommonLBConfig(),
 			},
@@ -368,7 +368,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: 250 * time.Millisecond,
+				ConnectTimeout: duration(250 * time.Millisecond),
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				CommonLbConfig: ClusterCommonLBConfig(),
 			},
@@ -391,24 +391,22 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout:                250 * time.Millisecond,
+				ConnectTimeout:                duration(250 * time.Millisecond),
 				LbPolicy:                      v2.Cluster_ROUND_ROBIN,
 				CommonLbConfig:                ClusterCommonLBConfig(),
 				DrainConnectionsOnHostRemoval: true,
-				HealthChecks: []*core.HealthCheck{
-					{
-						Timeout:            secondsOrDefault(0, hcTimeout),
-						Interval:           secondsOrDefault(0, hcInterval),
-						UnhealthyThreshold: countOrDefault(0, hcUnhealthyThreshold),
-						HealthyThreshold:   countOrDefault(0, hcHealthyThreshold),
-						HealthChecker: &core.HealthCheck_HttpHealthCheck_{
-							HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
-								Host: hcHost,
-								Path: "/healthz",
-							},
+				HealthChecks: []*core.HealthCheck{{
+					Timeout:            secondsOrDefault(0, hcTimeout),
+					Interval:           secondsOrDefault(0, hcInterval),
+					UnhealthyThreshold: countOrDefault(0, hcUnhealthyThreshold),
+					HealthyThreshold:   countOrDefault(0, hcHealthyThreshold),
+					HealthChecker: &core.HealthCheck_HttpHealthCheck_{
+						HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
+							Host: hcHost,
+							Path: "/healthz",
 						},
 					},
-				},
+				}},
 			},
 		},
 	}

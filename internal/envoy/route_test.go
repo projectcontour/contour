@@ -446,12 +446,12 @@ func TestVirtualHost(t *testing.T) {
 	tests := map[string]struct {
 		hostname string
 		port     int
-		want     route.VirtualHost
+		want     *route.VirtualHost
 	}{
 		"default hostname": {
 			hostname: "*",
 			port:     9999,
-			want: route.VirtualHost{
+			want: &route.VirtualHost{
 				Name:    "*",
 				Domains: []string{"*"},
 			},
@@ -459,7 +459,7 @@ func TestVirtualHost(t *testing.T) {
 		"www.example.com": {
 			hostname: "www.example.com",
 			port:     9999,
-			want: route.VirtualHost{
+			want: &route.VirtualHost{
 				Name:    "www.example.com",
 				Domains: []string{"www.example.com", "www.example.com:*"},
 			},

@@ -45,30 +45,30 @@ const HTTPDefaultIdleTimeout = 60 * time.Second
 const TCPDefaultIdleTimeout = 9001 * time.Second
 
 // TLSInspector returns a new TLS inspector listener filter.
-func TLSInspector() listener.ListenerFilter {
-	return listener.ListenerFilter{
+func TLSInspector() *listener.ListenerFilter {
+	return &listener.ListenerFilter{
 		Name: util.TlsInspector,
 	}
 }
 
 // ProxyProtocol returns a new Proxy Protocol listener filter.
-func ProxyProtocol() listener.ListenerFilter {
-	return listener.ListenerFilter{
+func ProxyProtocol() *listener.ListenerFilter {
+	return &listener.ListenerFilter{
 		Name: util.ProxyProtocol,
 	}
 }
 
 // Listener returns a new v2.Listener for the supplied address, port, and filters.
-func Listener(name, address string, port int, lf []listener.ListenerFilter, filters ...listener.Filter) *v2.Listener {
+func Listener(name, address string, port int, lf []*listener.ListenerFilter, filters ...*listener.Filter) *v2.Listener {
 	l := &v2.Listener{
 		Name:            name,
-		Address:         *SocketAddress(address, port),
+		Address:         SocketAddress(address, port),
 		ListenerFilters: lf,
 	}
 	if len(filters) > 0 {
 		l.FilterChains = append(
 			l.FilterChains,
-			listener.FilterChain{
+			&listener.FilterChain{
 				Filters: filters,
 			},
 		)
@@ -82,8 +82,8 @@ func idleTimeout(d time.Duration) *time.Duration {
 
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
 // for the supplied route and access log.
-func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
-	return listener.Filter{
+func HTTPConnectionManager(routename, accessLogPath string) *listener.Filter {
+	return &listener.Filter{
 		Name: util.HTTPConnectionManager,
 		ConfigType: &listener.Filter_TypedConfig{
 			TypedConfig: any(&http.HttpConnectionManager{
@@ -91,7 +91,7 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 				RouteSpecifier: &http.HttpConnectionManager_Rds{
 					Rds: &http.Rds{
 						RouteConfigName: routename,
-						ConfigSource: core.ConfigSource{
+						ConfigSource: &core.ConfigSource{
 							ConfigSourceSpecifier: &core.ConfigSource_ApiConfigSource{
 								ApiConfigSource: &core.ApiConfigSource{
 									ApiType: core.ApiConfigSource_GRPC,
@@ -129,11 +129,11 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 }
 
 // TCPProxy creates a new TCPProxy filter.
-func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) listener.Filter {
+func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) *listener.Filter {
 	tcpIdleTimeout := idleTimeout(TCPDefaultIdleTimeout)
 	switch len(proxy.Clusters) {
 	case 1:
-		return listener.Filter{
+		return &listener.Filter{
 			Name: util.TCPProxy,
 			ConfigType: &listener.Filter_TypedConfig{
 				TypedConfig: any(&tcp.TcpProxy{
@@ -159,7 +159,7 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) list
 			})
 		}
 		sort.Stable(clustersByNameAndWeight(clusters))
-		return listener.Filter{
+		return &listener.Filter{
 			Name: util.TCPProxy,
 			ConfigType: &listener.Filter_TypedConfig{
 				TypedConfig: any(&tcp.TcpProxy{
@@ -217,37 +217,49 @@ func SocketAddress(address string, port int) *core.Address {
 	}
 }
 
-// Filters returns a []listener.Filter for the supplied filters.
-func Filters(filters ...listener.Filter) []listener.Filter {
+// Filters returns a []*listener.Filter for the supplied filters.
+func Filters(filters ...*listener.Filter) []*listener.Filter {
 	if len(filters) == 0 {
 		return nil
 	}
 	return filters
 }
 
-// FilterChains returns a []listener.FilterChain for the supplied filters.
-func FilterChains(filters ...listener.Filter) []listener.FilterChain {
+// FilterChain retruns a *listener.FilterChain for the supplied filters.
+func FilterChain(filters ...*listener.Filter) *listener.FilterChain {
+	return &listener.FilterChain{
+		Filters: filters,
+	}
+}
+
+// FilterChains returns a []*listener.FilterChain for the supplied filters.
+func FilterChains(filters ...*listener.Filter) []*listener.FilterChain {
 	if len(filters) == 0 {
 		return nil
 	}
-	return []listener.FilterChain{{
-		Filters: filters,
-	}}
+	return []*listener.FilterChain{
+		FilterChain(filters...),
+	}
 }
 
 // FilterChainTLS returns a TLS enabled listener.FilterChain,
-func FilterChainTLS(domain string, secret *dag.Secret, filters []listener.Filter, tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnProtos ...string) listener.FilterChain {
-	fc := listener.FilterChain{
+func FilterChainTLS(domain string, secret *dag.Secret, filters []*listener.Filter, tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnProtos ...string) *listener.FilterChain {
+	fc := &listener.FilterChain{
 		Filters: filters,
-	}
-	fc.FilterChainMatch = &listener.FilterChainMatch{
-		ServerNames: []string{domain},
+		FilterChainMatch: &listener.FilterChainMatch{
+			ServerNames: []string{domain},
+		},
 	}
 	// attach certificate data to this listener if provided.
 	if secret != nil {
 		fc.TlsContext = DownstreamTLSContext(Secretname(secret), tlsMinProtoVersion, alpnProtos...)
 	}
 	return fc
+}
+
+// ListenerFilters returns a []*listener.ListenerFilter for the supplied listener filters.
+func ListenerFilters(filters ...*listener.ListenerFilter) []*listener.ListenerFilter {
+	return filters
 }
 
 func any(pb proto.Message) *types.Any {

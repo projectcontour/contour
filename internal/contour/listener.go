@@ -286,16 +286,16 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 	return lv.listeners
 }
 
-func proxyProtocol(useProxy bool) []listener.ListenerFilter {
+func proxyProtocol(useProxy bool) []*listener.ListenerFilter {
 	if useProxy {
-		return []listener.ListenerFilter{
+		return envoy.ListenerFilters(
 			envoy.ProxyProtocol(),
-		}
+		)
 	}
 	return nil
 }
 
-func secureProxyProtocol(useProxy bool) []listener.ListenerFilter {
+func secureProxyProtocol(useProxy bool) []*listener.ListenerFilter {
 	return append(proxyProtocol(useProxy), envoy.TLSInspector())
 }
 
@@ -314,14 +314,14 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		// the listener properly.
 		v.http = true
 	case *dag.SecureVirtualHost:
-		filters := []listener.Filter{
+		filters := envoy.Filters(
 			envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.httpsAccessLog()),
-		}
+		)
 		alpnProtos := []string{"h2", "http/1.1"}
 		if vh.VirtualHost.TCPProxy != nil {
-			filters = []listener.Filter{
+			filters = envoy.Filters(
 				envoy.TCPProxy(ENVOY_HTTPS_LISTENER, vh.VirtualHost.TCPProxy, v.httpsAccessLog()),
-			}
+			)
 			alpnProtos = nil // do not offer ALPN
 		}
 

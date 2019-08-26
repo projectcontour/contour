@@ -35,78 +35,76 @@ func TestListener(t *testing.T) {
 	tests := map[string]struct {
 		name, address string
 		port          int
-		lf            []listener.ListenerFilter
-		f             []listener.Filter
+		lf            []*listener.ListenerFilter
+		f             []*listener.Filter
 		want          *v2.Listener
 	}{
 		"insecure listener": {
 			name:    "http",
 			address: "0.0.0.0",
 			port:    9000,
-			f:       []listener.Filter{HTTPConnectionManager("http", "/dev/null")},
+			f: []*listener.Filter{
+				HTTPConnectionManager("http", "/dev/null"),
+			},
 			want: &v2.Listener{
 				Name:    "http",
-				Address: *SocketAddress("0.0.0.0", 9000),
-				FilterChains: []listener.FilterChain{{
-					Filters: []listener.Filter{
-						HTTPConnectionManager("http", "/dev/null"),
-					},
-				}},
+				Address: SocketAddress("0.0.0.0", 9000),
+				FilterChains: FilterChains(
+					HTTPConnectionManager("http", "/dev/null"),
+				),
 			},
 		},
 		"insecure listener w/ proxy": {
 			name:    "http-proxy",
 			address: "0.0.0.0",
 			port:    9000,
-			lf: []listener.ListenerFilter{
+			lf: []*listener.ListenerFilter{
 				ProxyProtocol(),
 			},
-			f: []listener.Filter{
+			f: []*listener.Filter{
 				HTTPConnectionManager("http-proxy", "/dev/null"),
 			},
 			want: &v2.Listener{
 				Name:    "http-proxy",
-				Address: *SocketAddress("0.0.0.0", 9000),
-				ListenerFilters: []listener.ListenerFilter{
+				Address: SocketAddress("0.0.0.0", 9000),
+				ListenerFilters: ListenerFilters(
 					ProxyProtocol(),
-				},
-				FilterChains: []listener.FilterChain{{
-					Filters: []listener.Filter{
-						HTTPConnectionManager("http-proxy", "/dev/null"),
-					},
-				}},
+				),
+				FilterChains: FilterChains(
+					HTTPConnectionManager("http-proxy", "/dev/null"),
+				),
 			},
 		},
 		"secure listener": {
 			name:    "https",
 			address: "0.0.0.0",
 			port:    9000,
-			lf: []listener.ListenerFilter{
+			lf: ListenerFilters(
 				TLSInspector(),
-			},
+			),
 			want: &v2.Listener{
 				Name:    "https",
-				Address: *SocketAddress("0.0.0.0", 9000),
-				ListenerFilters: []listener.ListenerFilter{
+				Address: SocketAddress("0.0.0.0", 9000),
+				ListenerFilters: ListenerFilters(
 					TLSInspector(),
-				},
+				),
 			},
 		},
 		"secure listener w/ proxy": {
 			name:    "https-proxy",
 			address: "0.0.0.0",
 			port:    9000,
-			lf: []listener.ListenerFilter{
+			lf: ListenerFilters(
 				ProxyProtocol(),
 				TLSInspector(),
-			},
+			),
 			want: &v2.Listener{
 				Name:    "https-proxy",
-				Address: *SocketAddress("0.0.0.0", 9000),
-				ListenerFilters: []listener.ListenerFilter{
+				Address: SocketAddress("0.0.0.0", 9000),
+				ListenerFilters: ListenerFilters(
 					ProxyProtocol(),
 					TLSInspector(),
-				},
+				),
 			},
 		},
 	}
@@ -213,12 +211,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 	tests := map[string]struct {
 		routename string
 		accesslog string
-		want      listener.Filter
+		want      *listener.Filter
 	}{
 		"default": {
 			routename: "default/kuard",
 			accesslog: "/dev/stdout",
-			want: listener.Filter{
+			want: &listener.Filter{
 				Name: util.HTTPConnectionManager,
 				ConfigType: &listener.Filter_TypedConfig{
 					TypedConfig: any(&http.HttpConnectionManager{
@@ -226,7 +224,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						RouteSpecifier: &http.HttpConnectionManager_Rds{
 							Rds: &http.Rds{
 								RouteConfigName: "default/kuard",
-								ConfigSource: core.ConfigSource{
+								ConfigSource: &core.ConfigSource{
 									ConfigSourceSpecifier: &core.ConfigSource_ApiConfigSource{
 										ApiConfigSource: &core.ApiConfigSource{
 											ApiType: core.ApiConfigSource_GRPC,
@@ -305,13 +303,13 @@ func TestTCPProxy(t *testing.T) {
 
 	tests := map[string]struct {
 		proxy *dag.TCPProxy
-		want  listener.Filter
+		want  *listener.Filter
 	}{
 		"single cluster": {
 			proxy: &dag.TCPProxy{
 				Clusters: []*dag.Cluster{c1},
 			},
-			want: listener.Filter{
+			want: &listener.Filter{
 				Name: util.TCPProxy,
 				ConfigType: &listener.Filter_TypedConfig{
 					TypedConfig: any(&envoy_config_v2_tcpproxy.TcpProxy{
@@ -329,7 +327,7 @@ func TestTCPProxy(t *testing.T) {
 			proxy: &dag.TCPProxy{
 				Clusters: []*dag.Cluster{c2, c1},
 			},
-			want: listener.Filter{
+			want: &listener.Filter{
 				Name: util.TCPProxy,
 				ConfigType: &listener.Filter_TypedConfig{
 					TypedConfig: any(&envoy_config_v2_tcpproxy.TcpProxy{

@@ -18,7 +18,6 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
 	v1 "k8s.io/api/core/v1"
@@ -55,7 +54,7 @@ func TestSDSVisibility(t *testing.T) {
 	// not referenced by any ingress/ingressroute
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "0",
-		Resources:   []types.Any{},
+		Resources:   resources(t),
 		TypeUrl:     secretType,
 		Nonce:       "0",
 	})
@@ -210,7 +209,7 @@ func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
 	// SDS should be empty
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources:   []types.Any{},
+		Resources:   resources(t),
 		TypeUrl:     secretType,
 		Nonce:       "1",
 	})

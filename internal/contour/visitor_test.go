@@ -68,7 +68,7 @@ func TestVisitClusters(t *testing.T) {
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/example",
 					},
-					ConnectTimeout: 250 * time.Millisecond,
+					ConnectTimeout: duration(250 * time.Millisecond),
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
@@ -130,17 +130,17 @@ func TestVisitListeners(t *testing.T) {
 			want: listenermap(
 				&v2.Listener{
 					Name:    ENVOY_HTTPS_LISTENER,
-					Address: *envoy.SocketAddress("0.0.0.0", 8443),
-					FilterChains: []listener.FilterChain{{
+					Address: envoy.SocketAddress("0.0.0.0", 8443),
+					FilterChains: []*listener.FilterChain{{
 						FilterChainMatch: &listener.FilterChainMatch{
 							ServerNames: []string{"tcpproxy.example.com"},
 						},
 						TlsContext: tlscontext(auth.TlsParameters_TLSv1_1),
 						Filters:    envoy.Filters(envoy.TCPProxy(ENVOY_HTTPS_LISTENER, p1, DEFAULT_HTTPS_ACCESS_LOG)),
 					}},
-					ListenerFilters: []listener.ListenerFilter{
+					ListenerFilters: envoy.ListenerFilters(
 						envoy.TLSInspector(),
-					},
+					),
 				},
 			),
 		},

@@ -150,14 +150,14 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 
 // toAny converts the contents of a resourcer's Values to the
 // respective slice of types.Any.
-func toAny(typeURL string, values []proto.Message) ([]types.Any, error) {
-	var resources []types.Any
+func toAny(typeURL string, values []proto.Message) ([]*types.Any, error) {
+	var resources []*types.Any
 	for _, value := range values {
 		v, err := proto.Marshal(value)
 		if err != nil {
 			return nil, err
 		}
-		resources = append(resources, types.Any{TypeUrl: typeURL, Value: v})
+		resources = append(resources, &types.Any{TypeUrl: typeURL, Value: v})
 	}
 	return resources, nil
 }
