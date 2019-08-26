@@ -80,15 +80,17 @@ type serveContext struct {
 	// permitInsecure field in IngressRoute.
 	DisablePermitInsecure bool `yaml:"disablePermitInsecure,omitempty"`
 
-	EnableLeaderElection bool
+	// EnableLeaderElection should only be set by command line flag.
+	EnableLeaderElection bool `yaml:"-"`
+
+	// LeaderElectionConfig can be set in the config file.
 	LeaderElectionConfig `yaml:"leaderelection,omitempty"`
 }
 
 // newServeContext returns a serveContext initialized to defaults.
-// Supply one or more functions to modify the defaults.
-func newServeContext(options ...func(*serveContext)) *serveContext {
+func newServeContext() *serveContext {
 	// Set defaults for parameters which are then overridden via flags, ENV, or ConfigFile
-	ctx := serveContext{
+	return &serveContext{
 		Kubeconfig:            filepath.Join(os.Getenv("HOME"), ".kube", "config"),
 		xdsAddr:               "127.0.0.1",
 		xdsPort:               8001,
@@ -109,12 +111,6 @@ func newServeContext(options ...func(*serveContext)) *serveContext {
 		EnableLeaderElection:  false,
 		LeaderElectionConfig:  *newLeaderElectionConfig(),
 	}
-
-	for _, option := range options {
-		option(&ctx)
-	}
-
-	return &ctx
 }
 
 // TLSConfig holds configuration file TLS configuration details.
@@ -132,22 +128,15 @@ type LeaderElectionConfig struct {
 	Name          string        `yaml:"configmap-name,omitempty"`
 }
 
-// newLeaderElectionConfig returns a defaulted LeaderElectionConfig. Pass option
-// functions to modify the defaults.
-func newLeaderElectionConfig(options ...func(*LeaderElectionConfig)) *LeaderElectionConfig {
-	lec := LeaderElectionConfig{
+// newLeaderElectionConfig returns a defaulted LeaderElectionConfig.
+func newLeaderElectionConfig() *LeaderElectionConfig {
+	return &LeaderElectionConfig{
 		LeaseDuration: time.Second * 15,
 		RenewDeadline: time.Second * 10,
 		RetryPeriod:   time.Second * 2,
 		Namespace:     "heptio-contour",
 		Name:          "contour",
 	}
-
-	for _, option := range options {
-		option(&lec)
-	}
-
-	return &lec
 }
 
 // grpcOptions returns a slice of grpc.ServerOptions.

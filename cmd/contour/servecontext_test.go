@@ -108,11 +108,11 @@ func TestServeContextTLSParams(t *testing.T) {
 func TestConfigFileDefaultOverrideImport(t *testing.T) {
 	tests := map[string]struct {
 		yamlIn []byte
-		want   *serveContext
+		want   func() *serveContext
 	}{
 		"empty configuration": {
 			yamlIn: []byte(``),
-			want:   newServeContext(),
+			want:   newServeContext,
 		},
 		"defaults in yaml": {
 			yamlIn: []byte(`
@@ -125,24 +125,26 @@ leaderelection:
   renew-deadline: 10s
   retry-period: 2s
 `),
-			want: newServeContext(),
+			want: newServeContext,
 		},
 		"blank tls configuration": {
 			yamlIn: []byte(`
 tls:
 `),
-			want: newServeContext(),
+			want: newServeContext,
 		},
 		"tls configuration only": {
 			yamlIn: []byte(`
 tls:
   minimum-protocol-version: 1.2
 `),
-			want: newServeContext(func(ctx *serveContext) {
+			want: func() *serveContext {
+				ctx := newServeContext()
 				ctx.TLSConfig = TLSConfig{
 					MinimumProtocolVersion: "1.2",
 				}
-			}),
+				return ctx
+			},
 		},
 		"leader election namespace and configmap only": {
 			yamlIn: []byte(`
@@ -150,12 +152,12 @@ leaderelection:
   configmap-name: foo
   configmap-namespace: bar
 `),
-			want: newServeContext(func(ctx *serveContext) {
-				ctx.LeaderElectionConfig = *newLeaderElectionConfig(func(lec *LeaderElectionConfig) {
-					lec.Name = "foo"
-					lec.Namespace = "bar"
-				})
-			}),
+			want: func() *serveContext {
+				ctx := newServeContext()
+				ctx.LeaderElectionConfig.Name = "foo"
+				ctx.LeaderElectionConfig.Namespace = "bar"
+				return ctx
+			},
 		},
 		"leader election all fields set": {
 			yamlIn: []byte(`
@@ -166,15 +168,15 @@ leaderelection:
   renew-deadline: 500s
   retry-period: 60s
 `),
-			want: newServeContext(func(ctx *serveContext) {
-				ctx.LeaderElectionConfig = *newLeaderElectionConfig(func(lec *LeaderElectionConfig) {
-					lec.Name = "foo"
-					lec.Namespace = "bar"
-					lec.LeaseDuration = 600 * time.Second
-					lec.RenewDeadline = 500 * time.Second
-					lec.RetryPeriod = 60 * time.Second
-				})
-			}),
+			want: func() *serveContext {
+				ctx := newServeContext()
+				ctx.LeaderElectionConfig.Name = "foo"
+				ctx.LeaderElectionConfig.Namespace = "bar"
+				ctx.LeaderElectionConfig.LeaseDuration = 600 * time.Second
+				ctx.LeaderElectionConfig.RenewDeadline = 500 * time.Second
+				ctx.LeaderElectionConfig.RetryPeriod = 60 * time.Second
+				return ctx
+			},
 		},
 	}
 	for name, tc := range tests {
@@ -182,7 +184,9 @@ leaderelection:
 			got := newServeContext()
 			err := yaml.Unmarshal(tc.yamlIn, got)
 			checkErr(t, err)
-			if diff := cmp.Diff(*tc.want, *got, cmp.AllowUnexported(serveContext{})); diff != "" {
+			want := tc.want()
+
+			if diff := cmp.Diff(*want, *got, cmp.AllowUnexported(serveContext{})); diff != "" {
 				t.Error(diff)
 			}
 		})
