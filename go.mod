@@ -10,6 +10,7 @@ require (
 	github.com/envoyproxy/go-control-plane v0.8.3
 	github.com/envoyproxy/protoc-gen-validate v0.0.14 // indirect
 	github.com/evanphx/json-patch v4.1.0+incompatible
+	github.com/go-test/deep v1.0.3
 	github.com/gogo/protobuf v1.2.1
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/google/go-cmp v0.3.1
