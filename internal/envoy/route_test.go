@@ -25,6 +25,43 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+func TestRoute(t *testing.T) {
+	service := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	cluster := &dag.Cluster{
+		Upstream: &dag.TCPService{
+			Name:        service.Name,
+			Namespace:   service.Namespace,
+			ServicePort: &service.Spec.Ports[0],
+		},
+	}
+	match := RoutePrefix("/")
+	action := RouteRoute(&dag.Route{
+		Clusters: []*dag.Cluster{cluster},
+	})
+	got := Route(match, action)
+	want := &route.Route{
+		Match:               match,
+		Action:              action,
+		RequestHeadersToAdd: RouteHeaders(),
+	}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func TestRouteRoute(t *testing.T) {
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
