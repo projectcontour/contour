@@ -158,8 +158,8 @@ func weightedClusters(clusters []*dag.Cluster) *route.WeightedCluster {
 }
 
 // RouteRegex returns a regex matcher.
-func RouteRegex(regex string) route.RouteMatch {
-	return route.RouteMatch{
+func RouteRegex(regex string) *route.RouteMatch {
+	return &route.RouteMatch{
 		PathSpecifier: &route.RouteMatch_Regex{
 			Regex: regex,
 		},
@@ -167,8 +167,8 @@ func RouteRegex(regex string) route.RouteMatch {
 }
 
 // RoutePrefix returns a prefix matcher.
-func RoutePrefix(prefix string) route.RouteMatch {
-	return route.RouteMatch{
+func RoutePrefix(prefix string) *route.RouteMatch {
+	return &route.RouteMatch{
 		PathSpecifier: &route.RouteMatch_Prefix{
 			Prefix: prefix,
 		},
@@ -176,12 +176,12 @@ func RoutePrefix(prefix string) route.RouteMatch {
 }
 
 // VirtualHost creates a new route.VirtualHost.
-func VirtualHost(hostname string) route.VirtualHost {
+func VirtualHost(hostname string) *route.VirtualHost {
 	domains := []string{hostname}
 	if hostname != "*" {
 		domains = append(domains, hostname+":*")
 	}
-	return route.VirtualHost{
+	return &route.VirtualHost{
 		Name:    hashname(60, hostname),
 		Domains: domains,
 	}

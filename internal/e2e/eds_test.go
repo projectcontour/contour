@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/internal/envoy"
 	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
@@ -78,7 +77,7 @@ func TestAddRemoveEndpoints(t *testing.T) {
 
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
-		Resources:   []types.Any{},
+		Resources:   resources(t),
 		TypeUrl:     endpointType,
 		Nonce:       "2",
 	}, streamEDS(t, cc))
@@ -251,7 +250,7 @@ func TestIssue602(t *testing.T) {
 
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
-		Resources:   []types.Any{},
+		Resources:   resources(t),
 		TypeUrl:     endpointType,
 		Nonce:       "2",
 	}, streamEDS(t, cc))

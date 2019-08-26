@@ -80,7 +80,7 @@ func cluster(cluster *dag.Cluster, service *dag.TCPService) *v2.Cluster {
 	c := &v2.Cluster{
 		Name:           Clustername(cluster),
 		AltStatName:    altStatName(service),
-		ConnectTimeout: 250 * time.Millisecond,
+		ConnectTimeout: duration(250 * time.Millisecond),
 		LbPolicy:       lbPolicy(cluster.LoadBalancerStrategy),
 		CommonLbConfig: ClusterCommonLBConfig(),
 		HealthChecks:   edshealthcheck(cluster),

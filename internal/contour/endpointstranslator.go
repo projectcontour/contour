@@ -161,7 +161,9 @@ func (e *EndpointsTranslator) recomputeClusterLoadAssignment(oldep, newep *v1.En
 			if !ok {
 				cla = &v2.ClusterLoadAssignment{
 					ClusterName: servicename(newep.ObjectMeta, portname),
-					Endpoints:   make([]endpoint.LocalityLbEndpoints, 1),
+					Endpoints: []*endpoint.LocalityLbEndpoints{{
+						LbEndpoints: make([]*endpoint.LbEndpoint, 0, 1),
+					}},
 				}
 				clas[portname] = cla
 			}

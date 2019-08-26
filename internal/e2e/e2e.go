@@ -200,23 +200,20 @@ func check(t *testing.T, err error) {
 	}
 }
 
-func resources(t *testing.T, protos ...proto.Message) []types.Any {
+func resources(t *testing.T, protos ...proto.Message) []*types.Any {
 	t.Helper()
-	if len(protos) == 0 {
-		return nil
-	}
-	anys := make([]types.Any, len(protos))
-	for i, a := range protos {
-		anys[i] = any(t, a)
+	anys := make([]*types.Any, 0, len(protos))
+	for _, a := range protos {
+		anys = append(anys, any(t, a))
 	}
 	return anys
 }
 
-func any(t *testing.T, pb proto.Message) types.Any {
+func any(t *testing.T, pb proto.Message) *types.Any {
 	t.Helper()
 	any, err := types.MarshalAny(pb)
 	check(t, err)
-	return *any
+	return any
 }
 
 type grpcStream interface {

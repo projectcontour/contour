@@ -23,7 +23,7 @@ import (
 
 func TestLBEndpoint(t *testing.T) {
 	got := LBEndpoint(SocketAddress("microsoft.com", 81))
-	want := endpoint.LbEndpoint{
+	want := &endpoint.LbEndpoint{
 		HostIdentifier: &endpoint.LbEndpoint_Endpoint{
 			Endpoint: &endpoint.Endpoint{
 				Address: SocketAddress("microsoft.com", 81),
@@ -40,8 +40,8 @@ func TestEndpoints(t *testing.T) {
 		SocketAddress("github.com", 443),
 		SocketAddress("microsoft.com", 80),
 	)
-	want := []endpoint.LocalityLbEndpoints{{
-		LbEndpoints: []endpoint.LbEndpoint{{
+	want := []*endpoint.LocalityLbEndpoints{{
+		LbEndpoints: []*endpoint.LbEndpoint{{
 			HostIdentifier: &endpoint.LbEndpoint_Endpoint{
 				Endpoint: &endpoint.Endpoint{
 					Address: SocketAddress("github.com", 443),

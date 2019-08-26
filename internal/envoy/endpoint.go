@@ -20,8 +20,8 @@ import (
 )
 
 // LBEndpoint creates a new LbEndpoint.
-func LBEndpoint(addr *core.Address) endpoint.LbEndpoint {
-	return endpoint.LbEndpoint{
+func LBEndpoint(addr *core.Address) *endpoint.LbEndpoint {
+	return &endpoint.LbEndpoint{
 		HostIdentifier: &endpoint.LbEndpoint_Endpoint{
 			Endpoint: &endpoint.Endpoint{
 				Address: addr,
@@ -33,10 +33,10 @@ func LBEndpoint(addr *core.Address) endpoint.LbEndpoint {
 // Endpoints returns a slice of LocalityLbEndpoints.
 // The slice contains one entry, with one LbEndpoint per
 // *core.Address supplied.
-func Endpoints(addrs ...*core.Address) []endpoint.LocalityLbEndpoints {
-	lbendpoints := make([]endpoint.LbEndpoint, 0, len(addrs))
+func Endpoints(addrs ...*core.Address) []*endpoint.LocalityLbEndpoints {
+	lbendpoints := make([]*endpoint.LbEndpoint, 0, len(addrs))
 	for _, addr := range addrs {
-		lbendpoints = append(lbendpoints, endpoint.LbEndpoint{
+		lbendpoints = append(lbendpoints, &endpoint.LbEndpoint{
 			HostIdentifier: &endpoint.LbEndpoint_Endpoint{
 				Endpoint: &endpoint.Endpoint{
 					Address: addr,
@@ -44,7 +44,7 @@ func Endpoints(addrs ...*core.Address) []endpoint.LocalityLbEndpoints {
 			},
 		})
 	}
-	return []endpoint.LocalityLbEndpoints{{
+	return []*endpoint.LocalityLbEndpoints{{
 		LbEndpoints: lbendpoints,
 	}}
 }

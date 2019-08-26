@@ -37,20 +37,20 @@ func TestStatsListener(t *testing.T) {
 			port:    8123,
 			want: &v2.Listener{
 				Name:    "stats-health",
-				Address: *SocketAddress("127.0.0.127", 8123),
-				FilterChains: []listener.FilterChain{{
-					Filters: []listener.Filter{{
+				Address: SocketAddress("127.0.0.127", 8123),
+				FilterChains: FilterChains(
+					&listener.Filter{
 						Name: util.HTTPConnectionManager,
 						ConfigType: &listener.Filter_TypedConfig{
 							TypedConfig: any(&http.HttpConnectionManager{
 								StatPrefix: "stats",
 								RouteSpecifier: &http.HttpConnectionManager_RouteConfig{
 									RouteConfig: &v2.RouteConfiguration{
-										VirtualHosts: []route.VirtualHost{{
+										VirtualHosts: []*route.VirtualHost{{
 											Name:    "backend",
 											Domains: []string{"*"},
-											Routes: []route.Route{{
-												Match: route.RouteMatch{
+											Routes: []*route.Route{{
+												Match: &route.RouteMatch{
 													PathSpecifier: &route.RouteMatch_Prefix{
 														Prefix: "/stats",
 													},
@@ -85,8 +85,8 @@ func TestStatsListener(t *testing.T) {
 								NormalizePath: &types.BoolValue{Value: true},
 							}),
 						},
-					}},
-				}},
+					},
+				),
 			},
 		},
 	}

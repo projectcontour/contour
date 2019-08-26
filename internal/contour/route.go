@@ -144,7 +144,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				vh.Visit(func(v dag.Vertex) {
 					switch r := v.(type) {
 					case *dag.PrefixRoute:
-						rr := route.Route{
+						rr := &route.Route{
 							Match:               envoy.RoutePrefix(r.Prefix),
 							Action:              envoy.RouteRoute(&r.Route),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -156,7 +156,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 						}
 						vhost.Routes = append(vhost.Routes, rr)
 					case *dag.RegexRoute:
-						rr := route.Route{
+						rr := &route.Route{
 							Match:               envoy.RouteRegex(r.Regex),
 							Action:              envoy.RouteRoute(&r.Route),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -179,13 +179,13 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				vh.Visit(func(v dag.Vertex) {
 					switch r := v.(type) {
 					case *dag.PrefixRoute:
-						vhost.Routes = append(vhost.Routes, route.Route{
+						vhost.Routes = append(vhost.Routes, &route.Route{
 							Match:               envoy.RoutePrefix(r.Prefix),
 							Action:              envoy.RouteRoute(&r.Route),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
 						})
 					case *dag.RegexRoute:
-						vhost.Routes = append(vhost.Routes, route.Route{
+						vhost.Routes = append(vhost.Routes, &route.Route{
 							Match:               envoy.RouteRegex(r.Regex),
 							Action:              envoy.RouteRoute(&r.Route),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -209,13 +209,13 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 	}
 }
 
-type virtualHostsByName []route.VirtualHost
+type virtualHostsByName []*route.VirtualHost
 
 func (v virtualHostsByName) Len() int           { return len(v) }
 func (v virtualHostsByName) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
 func (v virtualHostsByName) Less(i, j int) bool { return v[i].Name < v[j].Name }
 
-type longestRouteFirst []route.Route
+type longestRouteFirst []*route.Route
 
 func (l longestRouteFirst) Len() int      { return len(l) }
 func (l longestRouteFirst) Swap(i, j int) { l[i], l[j] = l[j], l[i] }

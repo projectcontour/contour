@@ -34,10 +34,10 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 			CdsConfig: ConfigSource("contour"),
 		},
 		StaticResources: &bootstrap.Bootstrap_StaticResources{
-			Clusters: []api.Cluster{{
+			Clusters: []*api.Cluster{{
 				Name:                 "contour",
 				AltStatName:          strings.Join([]string{c.Namespace, "contour", strconv.Itoa(c.xdsGRPCPort())}, "_"),
-				ConnectTimeout:       5 * time.Second,
+				ConnectTimeout:       duration(5 * time.Second),
 				ClusterDiscoveryType: ClusterDiscoveryType(api.Cluster_STRICT_DNS),
 				LbPolicy:             api.Cluster_ROUND_ROBIN,
 				LoadAssignment: &api.ClusterLoadAssignment{
@@ -65,7 +65,7 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 			}, {
 				Name:                 "service-stats",
 				AltStatName:          strings.Join([]string{c.Namespace, "service-stats", strconv.Itoa(c.adminPort())}, "_"),
-				ConnectTimeout:       250 * time.Millisecond,
+				ConnectTimeout:       duration(250 * time.Millisecond),
 				ClusterDiscoveryType: ClusterDiscoveryType(api.Cluster_LOGICAL_DNS),
 				LbPolicy:             api.Cluster_ROUND_ROBIN,
 				LoadAssignment: &api.ClusterLoadAssignment{

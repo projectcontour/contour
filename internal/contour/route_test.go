@@ -180,10 +180,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "*",
 						Domains: []string{"*"},
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RoutePrefix("/"),
 							Action:              routecluster("default/kuard/8080/da39a3ee5e"),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -235,10 +235,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "*",
 						Domains: []string{"*"},
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RouteRegex("/[^/]+/invoices(/.*|/?)"),
 							Action:              routecluster("default/kuard/8080/da39a3ee5e"),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -289,10 +289,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "www.example.com",
 						Domains: domains("www.example.com"),
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RoutePrefix("/"),
 							Action:              routecluster("default/backend/80/da39a3ee5e"),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -347,10 +347,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "*", // default backend
 						Domains: []string{"*"},
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RoutePrefix("/"),
 							Action:              routecluster("default/kuard/8080/da39a3ee5e"),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -415,10 +415,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "www.example.com",
 						Domains: domains("www.example.com"),
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RoutePrefix("/"),
 							Action:              routecluster("default/kuard/8080/da39a3ee5e"),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -427,10 +427,10 @@ func TestRouteVisit(t *testing.T) {
 				},
 				"ingress_https": {
 					Name: "ingress_https",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "www.example.com",
 						Domains: domains("www.example.com"),
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RoutePrefix("/"),
 							Action:              routecluster("default/kuard/8080/da39a3ee5e"),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -489,10 +489,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "www.example.com",
 						Domains: domains("www.example.com"),
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match: envoy.RoutePrefix("/"),
 							Action: &route.Route_Redirect{
 								Redirect: &route.RedirectAction{
@@ -506,10 +506,10 @@ func TestRouteVisit(t *testing.T) {
 				},
 				"ingress_https": {
 					Name: "ingress_https",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "www.example.com",
 						Domains: domains("www.example.com"),
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RoutePrefix("/"),
 							Action:              routecluster("default/backend/8080/da39a3ee5e"),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -577,10 +577,10 @@ func TestRouteVisit(t *testing.T) {
 				},
 				"ingress_https": {
 					Name: "ingress_https",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "www.example.com",
 						Domains: domains("www.example.com"),
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RoutePrefix("/"),
 							Action:              routecluster("default/kuard/8080/da39a3ee5e"),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -645,10 +645,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "www.example.com",
 						Domains: domains("www.example.com"),
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match: envoy.RoutePrefix("/"),
 							Action: &route.Route_Redirect{
 								Redirect: &route.RedirectAction{
@@ -662,10 +662,10 @@ func TestRouteVisit(t *testing.T) {
 				},
 				"ingress_https": {
 					Name: "ingress_https",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "www.example.com",
 						Domains: domains("www.example.com"),
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RoutePrefix("/"),
 							Action:              routecluster("default/kuard/8080/da39a3ee5e"),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -725,10 +725,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "www.example.com",
 						Domains: domains("www.example.com"),
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RoutePrefix("/ws1"),
 							Action:              websocketroute("default/kuard/8080/da39a3ee5e"),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -778,10 +778,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "*",
 						Domains: []string{"*"},
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RoutePrefix("/"),
 							Action:              routetimeout("default/kuard/8080/da39a3ee5e", duration(0)),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -827,10 +827,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "*",
 						Domains: []string{"*"},
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RoutePrefix("/"),
 							Action:              routetimeout("default/kuard/8080/da39a3ee5e", duration(0)),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -876,10 +876,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "*",
 						Domains: []string{"*"},
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RoutePrefix("/"),
 							Action:              routetimeout("default/kuard/8080/da39a3ee5e", duration(90*time.Second)),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -933,10 +933,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "d31bb322ca62bb395acad00b3cbf45a3aa1010ca28dca7cddb4f7db786fa",
 						Domains: domains("my-very-very-long-service-host-name.subdomain.boring-dept.my.company"),
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RoutePrefix("/"),
 							Action:              routecluster("default/kuard/80/da39a3ee5e"),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -982,10 +982,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "*",
 						Domains: []string{"*"},
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RoutePrefix("/"),
 							Action:              routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 0),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -1032,10 +1032,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "*",
 						Domains: []string{"*"},
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RoutePrefix("/"),
 							Action:              routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 7, 0),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -1082,10 +1082,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "*",
 						Domains: []string{"*"},
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match:               envoy.RoutePrefix("/"),
 							Action:              routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 150*time.Millisecond),
 							RequestHeadersToAdd: envoy.RouteHeaders(),
@@ -1150,10 +1150,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "www.example.com",
 						Domains: domains("www.example.com"),
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match: envoy.RoutePrefix("/"),
 							Action: &route.Route_Route{
 								Route: &route.RouteAction{
@@ -1231,10 +1231,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "www.example.com",
 						Domains: domains("www.example.com"),
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match: envoy.RoutePrefix("/"),
 							Action: &route.Route_Route{
 								Route: &route.RouteAction{
@@ -1313,10 +1313,10 @@ func TestRouteVisit(t *testing.T) {
 			want: map[string]*v2.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
-					VirtualHosts: []route.VirtualHost{{
+					VirtualHosts: []*route.VirtualHost{{
 						Name:    "www.example.com",
 						Domains: domains("www.example.com"),
-						Routes: []route.Route{{
+						Routes: []*route.Route{{
 							Match: envoy.RoutePrefix("/"),
 							Action: &route.Route_Route{
 								Route: &route.RouteAction{
@@ -1398,42 +1398,42 @@ func TestRouteVisit(t *testing.T) {
 
 func TestSortLongestRouteFirst(t *testing.T) {
 	tests := map[string]struct {
-		routes []route.Route
-		want   []route.Route
+		routes []*route.Route
+		want   []*route.Route
 	}{
 		"two prefixes": {
-			routes: []route.Route{{
+			routes: []*route.Route{{
 				Match: envoy.RoutePrefix("/"),
 			}, {
 				Match: envoy.RoutePrefix("/longer"),
 			}},
-			want: []route.Route{{
+			want: []*route.Route{{
 				Match: envoy.RoutePrefix("/longer"),
 			}, {
 				Match: envoy.RoutePrefix("/"),
 			}},
 		},
 		"two regexes": {
-			routes: []route.Route{{
+			routes: []*route.Route{{
 				Match: envoy.RouteRegex("/v2"),
 			}, {
 				Match: envoy.RouteRegex("/v1/.+"),
 			}},
-			want: []route.Route{{
+			want: []*route.Route{{
 				Match: envoy.RouteRegex("/v2"),
 			}, {
 				Match: envoy.RouteRegex("/v1/.+"),
 			}},
 		},
 		"regex sorts before prefix": {
-			routes: []route.Route{{
+			routes: []*route.Route{{
 				Match: envoy.RouteRegex("/api/v?"),
 			}, {
 				Match: envoy.RoutePrefix("/"),
 			}, {
 				Match: envoy.RouteRegex(".*"),
 			}},
-			want: []route.Route{{
+			want: []*route.Route{{
 				Match: envoy.RouteRegex("/api/v?"),
 			}, {
 				Match: envoy.RouteRegex(".*"),
@@ -1445,7 +1445,7 @@ func TestSortLongestRouteFirst(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := append([]route.Route{}, tc.routes...) // shallow copy
+			got := append([]*route.Route{}, tc.routes...) // shallow copy
 			sort.Stable(longestRouteFirst(got))
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
