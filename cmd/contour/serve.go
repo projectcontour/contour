@@ -34,13 +34,15 @@ import (
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/debug"
-	"github.com/heptio/contour/internal/grpc"
+	cgrpc "github.com/heptio/contour/internal/grpc"
 	"github.com/heptio/contour/internal/httpsvc"
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/heptio/contour/internal/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
 	coreV1 "k8s.io/api/core/v1"
@@ -220,6 +222,29 @@ type LeaderElectionConfig struct {
 	Name          string        `yaml:"configmap-name"`
 }
 
+// grpcOptions returns a slice of grpc.ServerOptions.
+// if ctx.PermitInsecureGRPC is false, the option set will
+// include TLS configuration.
+func (ctx *serveContext) grpcOptions() []grpc.ServerOption {
+	opts := []grpc.ServerOption{
+		// By default the Go grpc library defaults to a value of ~100 streams per
+		// connection. This number is likely derived from the HTTP/2 spec:
+		// https://http2.github.io/http2-spec/#SettingValues
+		// We need to raise this value because Envoy will open one EDS stream per
+		// CDS entry. There doesn't seem to be a penalty for increasing this value,
+		// so set it the limit similar to envoyproxy/go-control-plane#70.
+		//
+		// Somewhat arbitrary limit to handle many, many, EDS streams.
+		grpc.MaxConcurrentStreams(1 << 20),
+	}
+	if !ctx.PermitInsecureGRPC {
+		tlsconfig := ctx.tlsconfig()
+		creds := credentials.NewTLS(tlsconfig)
+		opts = append(opts, grpc.Creds(creds))
+	}
+	return opts
+}
+
 // tlsconfig returns a new *tls.Config. If the context is not properly configured
 // for tls communication, tlsconfig returns nil.
 func (ctx *serveContext) tlsconfig() *tls.Config {
@@ -290,7 +315,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	// step 3. establish our (poorly named) gRPC cache handler.
-	ch := contour.CacheHandler{
+	ch := &contour.CacheHandler{
 		ListenerVisitorConfig: contour.ListenerVisitorConfig{
 			UseProxyProto:          ctx.useProxyProto,
 			HTTPAddress:            ctx.httpAddr,
@@ -310,7 +335,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 4. wrap the cache handler in a k8s event handler.
 	eh := &contour.EventHandler{
-		CacheHandler:    &ch,
+		CacheHandler:    ch,
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		Builder: dag.Builder{
@@ -497,42 +522,42 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// This will block until the program becomes the leader.
 	g.Add(func(stop <-chan struct{}) error {
 		log := log.WithField("context", "grpc")
-		select {
-		case <-stop:
-			// shut down
-			return nil
-		case <-leaderOK:
-			// we've become leader, so continue
-		}
-		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
-
-		l, err := net.Listen("tcp", addr)
-		if err != nil {
-			return err
-		}
-
-		if !ctx.PermitInsecureGRPC {
-			tlsconfig := ctx.tlsconfig()
-			log.Info("establishing TLS")
-			l = tls.NewListener(l, tlsconfig)
-		}
-
-		s := grpc.NewAPI(log, map[string]grpc.Resource{
+		resources := map[string]cgrpc.Resource{
 			ch.ClusterCache.TypeURL():  &ch.ClusterCache,
 			ch.RouteCache.TypeURL():    &ch.RouteCache,
 			ch.ListenerCache.TypeURL(): &ch.ListenerCache,
 			et.TypeURL():               et,
 			ch.SecretCache.TypeURL():   &ch.SecretCache,
-		})
-		log.WithField("address", addr).Info("started")
-		defer log.Info("stopped")
+		}
+		opts := ctx.grpcOptions()
+		s := cgrpc.NewAPI(log, resources, opts...)
+		select {
+		case <-stop:
+			// shut down
+			return nil
+		case <-leaderOK:
+			// we've become leader, open the listening socket
+			addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
+			l, err := net.Listen("tcp", addr)
+			if err != nil {
+				return err
+			}
 
-		go func() {
-			<-stop
-			s.Stop()
-		}()
+			log = log.WithField("address", addr)
+			if ctx.PermitInsecureGRPC {
+				log = log.WithField("insecure", true)
+			}
 
-		return s.Serve(l)
+			log.Info("started")
+			defer log.Info("stopped")
+
+			go func() {
+				<-stop
+				s.Stop()
+			}()
+
+			return s.Serve(l)
+		}
 	})
 
 	// step 15. GO!
