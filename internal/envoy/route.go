@@ -23,7 +23,21 @@ import (
 	"github.com/heptio/contour/internal/dag"
 )
 
-// RouteRoute creates a route.Route_Route for the services supplied.
+// Routes returns a []*route.Route for the supplied routes.
+func Routes(routes ...*route.Route) []*route.Route {
+	return routes
+}
+
+// Route returns a *route.Route for the supplied match and action.
+func Route(match *route.RouteMatch, action *route.Route_Route) *route.Route {
+	return &route.Route{
+		Match:               match,
+		Action:              action,
+		RequestHeadersToAdd: RouteHeaders(),
+	}
+}
+
+// RouteRoute creates a *route.Route_Route for the services supplied.
 // If len(services) is greater than one, the route's action will be a
 // weighted cluster.
 func RouteRoute(r *dag.Route) *route.Route_Route {
