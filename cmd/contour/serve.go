@@ -15,18 +15,10 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/tls"
-	"crypto/x509"
-	"errors"
-	"io/ioutil"
-	"log"
 	"net"
 	"os"
-	"path/filepath"
 	"reflect"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -41,8 +33,6 @@ import (
 	"github.com/heptio/contour/internal/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
 	coreV1 "k8s.io/api/core/v1"
@@ -69,36 +59,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	var (
 		configFile string
 		parsed     bool
-		ctx        serveContext
 	)
-	// Set defaults for parameters which are then overridden via flags, ENV, or ConfigFile
-	ctx = serveContext{
-		Kubeconfig:            filepath.Join(os.Getenv("HOME"), ".kube", "config"),
-		xdsAddr:               "127.0.0.1",
-		xdsPort:               8001,
-		statsAddr:             "0.0.0.0",
-		statsPort:             8002,
-		debugAddr:             "127.0.0.1",
-		debugPort:             6060,
-		metricsAddr:           "0.0.0.0",
-		metricsPort:           8000,
-		httpAccessLog:         contour.DEFAULT_HTTP_ACCESS_LOG,
-		httpsAccessLog:        contour.DEFAULT_HTTPS_ACCESS_LOG,
-		httpAddr:              "0.0.0.0",
-		httpsAddr:             "0.0.0.0",
-		httpPort:              8080,
-		httpsPort:             8443,
-		PermitInsecureGRPC:    false,
-		DisablePermitInsecure: false,
-		EnableLeaderElection:  false,
-		LeaderElectionConfig: LeaderElectionConfig{
-			LeaseDuration: time.Second * 15,
-			RenewDeadline: time.Second * 10,
-			RetryPeriod:   time.Second * 2,
-			Namespace:     "heptio-contour",
-			Name:          "contour",
-		},
-	}
+	ctx := newServeContext()
 
 	parseConfig := func(_ *kingpin.ParseContext) error {
 		if parsed || configFile == "" {
@@ -150,150 +112,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ctx.useProxyProto)
 
 	serve.Flag("enable-leader-election", "Enable leader election mechanism").BoolVar(&ctx.EnableLeaderElection)
-	return serve, &ctx
-}
-
-type serveContext struct {
-	// contour's kubernetes client parameters
-	InCluster  bool   `yaml:"incluster"`
-	Kubeconfig string `yaml:"kubeconfig"`
-
-	// contour's xds service parameters
-	xdsAddr                         string
-	xdsPort                         int
-	caFile, contourCert, contourKey string
-
-	// contour's debug handler parameters
-	debugAddr string
-	debugPort int
-
-	// contour's metrics handler parameters
-	metricsAddr string
-	metricsPort int
-
-	// ingressroute root namespaces
-	rootNamespaces string
-
-	// ingress class
-	ingressClass string
-
-	// envoy's stats listener parameters
-	statsAddr string
-	statsPort int
-
-	// envoy's listener parameters
-	useProxyProto bool
-
-	// envoy's http listener parameters
-	httpAddr      string
-	httpPort      int
-	httpAccessLog string
-
-	// envoy's https listener parameters
-	httpsAddr      string
-	httpsPort      int
-	httpsAccessLog string
-
-	// PermitInsecureGRPC disables TLS on Contour's gRPC listener.
-	PermitInsecureGRPC bool `yaml:"-"`
-
-	TLSConfig `yaml:"tls"`
-
-	// DisablePermitInsecure disables the use of the
-	// permitInsecure field in IngressRoute.
-	DisablePermitInsecure bool `yaml:"disablePermitInsecure"`
-
-	EnableLeaderElection bool
-	LeaderElectionConfig `yaml:"-"`
-}
-
-// TLSConfig holds configuration file TLS configuration details.
-type TLSConfig struct {
-	MinimumProtocolVersion string `yaml:"minimum-protocol-version"`
-}
-
-// LeaderElectionConfig holds the config bits for leader election inside the
-// configuration file.
-type LeaderElectionConfig struct {
-	LeaseDuration time.Duration `yaml:"lease-duration"`
-	RenewDeadline time.Duration `yaml:"renew-deadline"`
-	RetryPeriod   time.Duration `yaml:"retry-period"`
-	Namespace     string        `yaml:"configmap-namespace"`
-	Name          string        `yaml:"configmap-name"`
-}
-
-// grpcOptions returns a slice of grpc.ServerOptions.
-// if ctx.PermitInsecureGRPC is false, the option set will
-// include TLS configuration.
-func (ctx *serveContext) grpcOptions() []grpc.ServerOption {
-	opts := []grpc.ServerOption{
-		// By default the Go grpc library defaults to a value of ~100 streams per
-		// connection. This number is likely derived from the HTTP/2 spec:
-		// https://http2.github.io/http2-spec/#SettingValues
-		// We need to raise this value because Envoy will open one EDS stream per
-		// CDS entry. There doesn't seem to be a penalty for increasing this value,
-		// so set it the limit similar to envoyproxy/go-control-plane#70.
-		//
-		// Somewhat arbitrary limit to handle many, many, EDS streams.
-		grpc.MaxConcurrentStreams(1 << 20),
-	}
-	if !ctx.PermitInsecureGRPC {
-		tlsconfig := ctx.tlsconfig()
-		creds := credentials.NewTLS(tlsconfig)
-		opts = append(opts, grpc.Creds(creds))
-	}
-	return opts
-}
-
-// tlsconfig returns a new *tls.Config. If the context is not properly configured
-// for tls communication, tlsconfig returns nil.
-func (ctx *serveContext) tlsconfig() *tls.Config {
-
-	err := ctx.verifyTLSFlags()
-	check(err)
-
-	cert, err := tls.LoadX509KeyPair(ctx.contourCert, ctx.contourKey)
-	check(err)
-
-	ca, err := ioutil.ReadFile(ctx.caFile)
-	check(err)
-
-	certPool := x509.NewCertPool()
-	if ok := certPool.AppendCertsFromPEM(ca); !ok {
-		log.Fatalf("unable to append certificate in %s to CA pool", ctx.caFile)
-	}
-
-	return &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		ClientAuth:   tls.RequireAndVerifyClientCert,
-		ClientCAs:    certPool,
-		Rand:         rand.Reader,
-	}
-}
-
-// verifyTLSFlags indicates if the TLS flags are set up correctly.
-func (ctx *serveContext) verifyTLSFlags() error {
-	if ctx.caFile == "" && ctx.contourCert == "" && ctx.contourKey == "" {
-		return errors.New("no TLS parameters and --insecure not supplied. You must supply one or the other")
-	}
-	// If one of the three TLS commands is not empty, they all must be not empty
-	if !(ctx.caFile != "" && ctx.contourCert != "" && ctx.contourKey != "") {
-		return errors.New("you must supply all three TLS parameters - --contour-cafile, --contour-cert-file, --contour-key-file, or none of them")
-	}
-	return nil
-}
-
-// ingressRouteRootNamespaces returns a slice of namespaces restricting where
-// contour should look for ingressroute roots.
-func (ctx *serveContext) ingressRouteRootNamespaces() []string {
-	if strings.TrimSpace(ctx.rootNamespaces) == "" {
-		return nil
-	}
-	var ns []string
-	for _, s := range strings.Split(ctx.rootNamespaces, ",") {
-		ns = append(ns, strings.TrimSpace(s))
-	}
-	return ns
+	return serve, ctx
 }
 
 // doServe runs the contour serve subcommand.

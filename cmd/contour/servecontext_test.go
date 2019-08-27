@@ -16,6 +16,10 @@ package main
 import (
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/google/go-cmp/cmp"
+	"gopkg.in/yaml.v2"
 )
 
 func TestServeContextIngressRouteRootNamespaces(t *testing.T) {
@@ -98,5 +102,98 @@ func TestServeContextTLSParams(t *testing.T) {
 				t.Errorf("TLS Config: %s", err)
 			}
 		})
+	}
+}
+
+func TestConfigFileDefaultOverrideImport(t *testing.T) {
+	tests := map[string]struct {
+		yamlIn string
+		want   func() *serveContext
+	}{
+		"empty configuration": {
+			yamlIn: ``,
+			want:   newServeContext,
+		},
+		"defaults in yaml": {
+			yamlIn: `
+incluster: false
+disablePermitInsecure: false
+leaderelection:
+  configmap-name: contour
+  configmap-namespace: heptio-contour
+  lease-duration: 15s
+  renew-deadline: 10s
+  retry-period: 2s
+`,
+			want: newServeContext,
+		},
+		"blank tls configuration": {
+			yamlIn: `
+tls:
+`,
+			want: newServeContext,
+		},
+		"tls configuration only": {
+			yamlIn: `
+tls:
+  minimum-protocol-version: 1.2
+`,
+			want: func() *serveContext {
+				ctx := newServeContext()
+				ctx.TLSConfig.MinimumProtocolVersion = "1.2"
+				return ctx
+			},
+		},
+		"leader election namespace and configmap only": {
+			yamlIn: `
+leaderelection:
+  configmap-name: foo
+  configmap-namespace: bar
+`,
+			want: func() *serveContext {
+				ctx := newServeContext()
+				ctx.LeaderElectionConfig.Name = "foo"
+				ctx.LeaderElectionConfig.Namespace = "bar"
+				return ctx
+			},
+		},
+		"leader election all fields set": {
+			yamlIn: `
+leaderelection:
+  configmap-name: foo
+  configmap-namespace: bar
+  lease-duration: 600s
+  renew-deadline: 500s
+  retry-period: 60s
+`,
+			want: func() *serveContext {
+				ctx := newServeContext()
+				ctx.LeaderElectionConfig.Name = "foo"
+				ctx.LeaderElectionConfig.Namespace = "bar"
+				ctx.LeaderElectionConfig.LeaseDuration = 600 * time.Second
+				ctx.LeaderElectionConfig.RenewDeadline = 500 * time.Second
+				ctx.LeaderElectionConfig.RetryPeriod = 60 * time.Second
+				return ctx
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := newServeContext()
+			err := yaml.Unmarshal([]byte(tc.yamlIn), got)
+			checkErr(t, err)
+			want := tc.want()
+
+			if diff := cmp.Diff(*want, *got, cmp.AllowUnexported(serveContext{})); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+func checkErr(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Error(err)
 	}
 }
