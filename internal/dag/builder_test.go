@@ -1642,14 +1642,7 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				i3,
 			},
-			want: listeners(
-				&Listener{
-					Port: 443,
-					VirtualHosts: virtualhosts(
-						securevirtualhost("kuard.example.com", sec1),
-					),
-				},
-			),
+			want: listeners(),
 		},
 		"insert service, secret then ingress w/ tls": {
 			objs: []interface{}{

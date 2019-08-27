@@ -186,8 +186,10 @@ func (s *SecureVirtualHost) Visit(f func(Vertex)) {
 }
 
 func (s *SecureVirtualHost) Valid() bool {
-	// A SecureVirtualHost is valid if it has a Secret or a TCPProxy.
-	return s.Secret != nil || s.TCPProxy != nil
+	// A SecureVirtualHost is valid if either
+	// 1. it has a secret and at least one route.
+	// 2. it has a tcpproxy, because the tcpproxy backend may negotiate TLS itself.
+	return (s.Secret != nil && len(s.routes) > 0) || s.TCPProxy != nil
 }
 
 type Visitable interface {
