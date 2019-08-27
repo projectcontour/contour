@@ -17,8 +17,10 @@ import (
 	"context"
 	"net"
 	"os"
+	"os/signal"
 	"reflect"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/google/uuid"
@@ -379,7 +381,20 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 	})
 
-	// step 15. GO!
+	// step 15. Setup SIGTERM handler
+	g.Add(func(stop <-chan struct{}) error {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGTERM)
+		select {
+		case <-c:
+			log.WithField("context", "sigterm-handler").Info("received SIGTERM, shutting down")
+		case <-stop:
+			// Do nothing. The group is shutting down.
+		}
+		return nil
+	})
+
+	// step 16. GO!
 	return g.Run()
 }
 
