@@ -45,7 +45,7 @@ func TestSecureVirtualHostValid(t *testing.T) {
 	vh = SecureVirtualHost{
 		Secret: new(Secret),
 	}
-	assert.True(vh.Valid())
+	assert.False(vh.Valid())
 
 	vh = SecureVirtualHost{
 		VirtualHost: VirtualHost{

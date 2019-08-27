@@ -84,12 +84,10 @@ func TestSDSVisibility(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
-	// TODO(dfc) #1165: secret should not be present if the ingress does not
-	// have any valid routes.
 	// i1 has a default route to backend:80, but there is no matching service.
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources:   resources(t, secret(s1)),
+		Resources:   resources(t),
 		TypeUrl:     secretType,
 		Nonce:       "1",
 	})
