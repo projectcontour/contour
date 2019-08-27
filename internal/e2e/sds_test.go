@@ -66,10 +66,19 @@ func TestSDSVisibility(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "kuard.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: *backend("backend", intstr.FromInt(80)),
+						}},
+					},
+				},
 			}},
 		},
 	}
@@ -117,30 +126,53 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "kuard.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: *backend("backend", intstr.FromInt(80)),
+						}},
+					},
+				},
 			}},
 		},
 	}
 	rh.OnAdd(i1)
 
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	})
+
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
-		VersionInfo: "1",
+		VersionInfo: "2",
 		Resources:   resources(t, secret(s1)),
 		TypeUrl:     secretType,
-		Nonce:       "1",
+		Nonce:       "2",
 	})
 
 	// verify that requesting the same resource without change
 	// does not bump the current version_info.
 
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
-		VersionInfo: "1",
+		VersionInfo: "2",
 		Resources:   resources(t, secret(s1)),
 		TypeUrl:     secretType,
-		Nonce:       "1",
+		Nonce:       "2",
 	})
 
 	// s2 is not referenced by any active ingress object.
@@ -158,10 +190,10 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	rh.OnAdd(s2)
 
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
-		VersionInfo: "1",
+		VersionInfo: "2",
 		Resources:   resources(t, secret(s1)),
 		TypeUrl:     secretType,
-		Nonce:       "1",
+		Nonce:       "2",
 	})
 }
 
@@ -197,10 +229,19 @@ func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "invalid",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "kuard.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: *backend("backend", intstr.FromInt(80)),
+						}},
+					},
+				},
 			}},
 		},
 	}

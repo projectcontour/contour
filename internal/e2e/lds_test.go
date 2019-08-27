@@ -172,10 +172,19 @@ func TestTLSListener(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "kuard.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: *backend("backend", intstr.FromInt(80)),
+						}},
+					},
+				},
 			}},
 		},
 	}
@@ -241,10 +250,19 @@ func TestTLSListener(t *testing.T) {
 			},
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "kuard.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: *backend("backend", intstr.FromInt(80)),
+						}},
+					},
+				},
 			}},
 		},
 	}
@@ -482,10 +500,19 @@ func TestLDSFilter(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "kuard.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: *backend("backend", intstr.FromInt(80)),
+						}},
+					},
+				},
 			}},
 		},
 	}
@@ -586,13 +613,36 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
 			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "kuard.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: *backend("backend", intstr.FromInt(80)),
+						}},
+					},
+				},
+			}},
 		},
 	}
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	})
 
 	rh.OnAdd(i1)
 
@@ -623,10 +673,19 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 			},
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "kuard.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: *backend("backend", intstr.FromInt(80)),
+						}},
+					},
+				},
 			}},
 		},
 	}
@@ -743,10 +802,19 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "kuard.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: *backend("backend", intstr.FromInt(80)),
+						}},
+					},
+				},
 			}},
 		},
 	}
@@ -839,10 +907,19 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "kuard.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: *backend("backend", intstr.FromInt(80)),
+						}},
+					},
+				},
 			}},
 		},
 	}
@@ -932,10 +1009,19 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "kuard.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: *backend("backend", intstr.FromInt(80)),
+						}},
+					},
+				},
 			}},
 		},
 	}

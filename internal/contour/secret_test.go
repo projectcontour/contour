@@ -135,7 +135,16 @@ func TestSecretVisit(t *testing.T) {
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: backend("kuard", 8080),
+						Rules: []v1beta1.IngressRule{{
+							Host: "whatever.example.com",
+							IngressRuleValue: v1beta1.IngressRuleValue{
+								HTTP: &v1beta1.HTTPIngressRuleValue{
+									Paths: []v1beta1.HTTPIngressPath{{
+										Backend: *backend("kuard", 8080),
+									}},
+								},
+							},
+						}},
 					},
 				},
 				tlssecret("default", "secret", secretdata("cert", "key")),
@@ -170,7 +179,16 @@ func TestSecretVisit(t *testing.T) {
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: backend("kuard", 8080),
+						Rules: []v1beta1.IngressRule{{
+							Host: "whatever.example.com",
+							IngressRuleValue: v1beta1.IngressRuleValue{
+								HTTP: &v1beta1.HTTPIngressRuleValue{
+									Paths: []v1beta1.HTTPIngressPath{{
+										Backend: *backend("kuard", 8080),
+									}},
+								},
+							},
+						}},
 					},
 				},
 				&v1beta1.Ingress{
@@ -183,7 +201,16 @@ func TestSecretVisit(t *testing.T) {
 							Hosts:      []string{"omg.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: backend("kuard", 8080),
+						Rules: []v1beta1.IngressRule{{
+							Host: "omg.example.com",
+							IngressRuleValue: v1beta1.IngressRuleValue{
+								HTTP: &v1beta1.HTTPIngressRuleValue{
+									Paths: []v1beta1.HTTPIngressPath{{
+										Backend: *backend("kuard", 8080),
+									}},
+								},
+							},
+						}},
 					},
 				},
 				tlssecret("default", "secret", secretdata("cert", "key")),
@@ -218,7 +245,16 @@ func TestSecretVisit(t *testing.T) {
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret-a",
 						}},
-						Backend: backend("kuard", 8080),
+						Rules: []v1beta1.IngressRule{{
+							Host: "whatever.example.com",
+							IngressRuleValue: v1beta1.IngressRuleValue{
+								HTTP: &v1beta1.HTTPIngressRuleValue{
+									Paths: []v1beta1.HTTPIngressPath{{
+										Backend: *backend("kuard", 80),
+									}},
+								},
+							},
+						}},
 					},
 				},
 				&v1beta1.Ingress{
@@ -231,7 +267,16 @@ func TestSecretVisit(t *testing.T) {
 							Hosts:      []string{"omg.example.com"},
 							SecretName: "secret-b",
 						}},
-						Backend: backend("kuard", 8080),
+						Rules: []v1beta1.IngressRule{{
+							Host: "omg.example.com",
+							IngressRuleValue: v1beta1.IngressRuleValue{
+								HTTP: &v1beta1.HTTPIngressRuleValue{
+									Paths: []v1beta1.HTTPIngressPath{{
+										Backend: *backend("kuard", 80),
+									}},
+								},
+							},
+						}},
 					},
 				},
 				tlssecret("default", "secret-a", secretdata("cert-a", "key-a")),
