@@ -68,7 +68,7 @@ func (b *Builder) Build() *DAG {
 
 	b.computeIngressRoutes()
 
-	return b.dag()
+	return b.buildDAG()
 }
 
 // reset (re)inialises the internal state of the builder.
@@ -426,37 +426,17 @@ func (b *Builder) computeIngressRoutes() {
 	}
 }
 
-// dag returns a *DAG representing the current state of this builder.
-func (b *Builder) dag() *DAG {
+// buildDAG returns a *DAG representing the current state of this builder.
+func (b *Builder) buildDAG() *DAG {
 	var dag DAG
 
-	http := &Listener{
-		Port: 80,
-	}
-	for _, vh := range b.virtualhosts {
-		if vh.Valid() {
-			http.VirtualHosts = append(http.VirtualHosts, vh)
-		}
-	}
+	http := b.buildHTTPListener()
 	if len(http.VirtualHosts) > 0 {
-		sort.SliceStable(http.VirtualHosts, func(i, j int) bool {
-			return http.VirtualHosts[i].(*VirtualHost).Name < http.VirtualHosts[j].(*VirtualHost).Name
-		})
 		dag.roots = append(dag.roots, http)
 	}
 
-	https := &Listener{
-		Port: 443,
-	}
-	for _, vh := range b.securevirtualhosts {
-		if vh.Valid() {
-			https.VirtualHosts = append(https.VirtualHosts, vh)
-		}
-	}
+	https := b.buildHTTPSListener()
 	if len(https.VirtualHosts) > 0 {
-		sort.SliceStable(https.VirtualHosts, func(i, j int) bool {
-			return https.VirtualHosts[i].(*SecureVirtualHost).Name < https.VirtualHosts[j].(*SecureVirtualHost).Name
-		})
 		dag.roots = append(dag.roots, https)
 	}
 
@@ -468,6 +448,44 @@ func (b *Builder) dag() *DAG {
 	}
 	dag.statuses = b.statuses
 	return &dag
+}
+
+// buildHTTPListener builds a *dag.Listener for the vhosts bound to port 80.
+// The list of virtual hosts will attached to the listener will be sorted
+// by hostname.
+func (b *Builder) buildHTTPListener() *Listener {
+	var virtualhosts = make([]Vertex, 0, len(b.virtualhosts))
+	for _, vh := range b.virtualhosts {
+		if vh.Valid() {
+			virtualhosts = append(virtualhosts, vh)
+		}
+	}
+	sort.SliceStable(virtualhosts, func(i, j int) bool {
+		return virtualhosts[i].(*VirtualHost).Name < virtualhosts[j].(*VirtualHost).Name
+	})
+	return &Listener{
+		Port:         80,
+		VirtualHosts: virtualhosts,
+	}
+}
+
+// buildHTTPSListener builds a *dag.Listener for the vhosts bound to port 443.
+// The list of virtual hosts will attached to the listener will be sorted
+// by hostname.
+func (b *Builder) buildHTTPSListener() *Listener {
+	var virtualhosts = make([]Vertex, 0, len(b.securevirtualhosts))
+	for _, svh := range b.securevirtualhosts {
+		if svh.Valid() {
+			virtualhosts = append(virtualhosts, svh)
+		}
+	}
+	sort.SliceStable(virtualhosts, func(i, j int) bool {
+		return virtualhosts[i].(*SecureVirtualHost).Name < virtualhosts[j].(*SecureVirtualHost).Name
+	})
+	return &Listener{
+		Port:         443,
+		VirtualHosts: virtualhosts,
+	}
 }
 
 // setStatus assigns a status to an object.

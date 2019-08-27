@@ -135,10 +135,7 @@ func TestSecretVisit(t *testing.T) {
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				tlssecret("default", "secret", secretdata("cert", "key")),
@@ -173,10 +170,7 @@ func TestSecretVisit(t *testing.T) {
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1beta1.Ingress{
@@ -189,10 +183,7 @@ func TestSecretVisit(t *testing.T) {
 							Hosts:      []string{"omg.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				tlssecret("default", "secret", secretdata("cert", "key")),
@@ -227,10 +218,7 @@ func TestSecretVisit(t *testing.T) {
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret-a",
 						}},
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1beta1.Ingress{
@@ -243,10 +231,7 @@ func TestSecretVisit(t *testing.T) {
 							Hosts:      []string{"omg.example.com"},
 							SecretName: "secret-b",
 						}},
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				tlssecret("default", "secret-a", secretdata("cert-a", "key-a")),
@@ -484,5 +469,12 @@ func tlssecret(namespace, name string, data map[string][]byte) *v1.Secret {
 		},
 		Type: v1.SecretTypeTLS,
 		Data: data,
+	}
+}
+
+func backend(name string, port int) *v1beta1.IngressBackend {
+	return &v1beta1.IngressBackend{
+		ServiceName: name,
+		ServicePort: intstr.FromInt(port),
 	}
 }

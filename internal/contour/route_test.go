@@ -157,10 +157,7 @@ func TestRouteVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Service{
@@ -316,10 +313,7 @@ func TestRouteVisit(t *testing.T) {
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Secret{
@@ -755,10 +749,7 @@ func TestRouteVisit(t *testing.T) {
 						},
 					},
 					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Service{
@@ -804,10 +795,7 @@ func TestRouteVisit(t *testing.T) {
 						},
 					},
 					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Service{
@@ -853,10 +841,7 @@ func TestRouteVisit(t *testing.T) {
 						},
 					},
 					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Service{
@@ -959,10 +944,7 @@ func TestRouteVisit(t *testing.T) {
 						},
 					},
 					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Service{
@@ -1009,10 +991,7 @@ func TestRouteVisit(t *testing.T) {
 						},
 					},
 					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Service{
@@ -1059,10 +1038,7 @@ func TestRouteVisit(t *testing.T) {
 						},
 					},
 					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Service{
