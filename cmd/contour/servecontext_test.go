@@ -107,15 +107,15 @@ func TestServeContextTLSParams(t *testing.T) {
 
 func TestConfigFileDefaultOverrideImport(t *testing.T) {
 	tests := map[string]struct {
-		yamlIn []byte
+		yamlIn string
 		want   func() *serveContext
 	}{
 		"empty configuration": {
-			yamlIn: []byte(``),
+			yamlIn: ``,
 			want:   newServeContext,
 		},
 		"defaults in yaml": {
-			yamlIn: []byte(`
+			yamlIn: `
 incluster: false
 disablePermitInsecure: false
 leaderelection:
@@ -124,34 +124,32 @@ leaderelection:
   lease-duration: 15s
   renew-deadline: 10s
   retry-period: 2s
-`),
+`,
 			want: newServeContext,
 		},
 		"blank tls configuration": {
-			yamlIn: []byte(`
+			yamlIn: `
 tls:
-`),
+`,
 			want: newServeContext,
 		},
 		"tls configuration only": {
-			yamlIn: []byte(`
+			yamlIn: `
 tls:
   minimum-protocol-version: 1.2
-`),
+`,
 			want: func() *serveContext {
 				ctx := newServeContext()
-				ctx.TLSConfig = TLSConfig{
-					MinimumProtocolVersion: "1.2",
-				}
+				ctx.TLSConfig.MinimumProtocolVersion = "1.2"
 				return ctx
 			},
 		},
 		"leader election namespace and configmap only": {
-			yamlIn: []byte(`
+			yamlIn: `
 leaderelection:
   configmap-name: foo
   configmap-namespace: bar
-`),
+`,
 			want: func() *serveContext {
 				ctx := newServeContext()
 				ctx.LeaderElectionConfig.Name = "foo"
@@ -160,14 +158,14 @@ leaderelection:
 			},
 		},
 		"leader election all fields set": {
-			yamlIn: []byte(`
+			yamlIn: `
 leaderelection:
   configmap-name: foo
   configmap-namespace: bar
   lease-duration: 600s
   renew-deadline: 500s
   retry-period: 60s
-`),
+`,
 			want: func() *serveContext {
 				ctx := newServeContext()
 				ctx.LeaderElectionConfig.Name = "foo"
@@ -182,7 +180,7 @@ leaderelection:
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := newServeContext()
-			err := yaml.Unmarshal(tc.yamlIn, got)
+			err := yaml.Unmarshal([]byte(tc.yamlIn), got)
 			checkErr(t, err)
 			want := tc.want()
 

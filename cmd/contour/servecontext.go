@@ -109,7 +109,13 @@ func newServeContext() *serveContext {
 		PermitInsecureGRPC:    false,
 		DisablePermitInsecure: false,
 		EnableLeaderElection:  false,
-		LeaderElectionConfig:  *newLeaderElectionConfig(),
+		LeaderElectionConfig: LeaderElectionConfig{
+			LeaseDuration: time.Second * 15,
+			RenewDeadline: time.Second * 10,
+			RetryPeriod:   time.Second * 2,
+			Namespace:     "heptio-contour",
+			Name:          "contour",
+		},
 	}
 }
 
@@ -126,17 +132,6 @@ type LeaderElectionConfig struct {
 	RetryPeriod   time.Duration `yaml:"retry-period,omitempty"`
 	Namespace     string        `yaml:"configmap-namespace,omitempty"`
 	Name          string        `yaml:"configmap-name,omitempty"`
-}
-
-// newLeaderElectionConfig returns a defaulted LeaderElectionConfig.
-func newLeaderElectionConfig() *LeaderElectionConfig {
-	return &LeaderElectionConfig{
-		LeaseDuration: time.Second * 15,
-		RenewDeadline: time.Second * 10,
-		RetryPeriod:   time.Second * 2,
-		Namespace:     "heptio-contour",
-		Name:          "contour",
-	}
 }
 
 // grpcOptions returns a slice of grpc.ServerOptions.
