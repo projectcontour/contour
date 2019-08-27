@@ -26,7 +26,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestListenerCacheContents(t *testing.T) {
@@ -143,10 +142,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Service{
@@ -222,10 +218,7 @@ func TestListenerVisit(t *testing.T) {
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Secret{
@@ -281,10 +274,7 @@ func TestListenerVisit(t *testing.T) {
 							Hosts:      []string{"sortedsecond.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1beta1.Ingress{
@@ -297,10 +287,7 @@ func TestListenerVisit(t *testing.T) {
 							Hosts:      []string{"sortedfirst.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Secret{
@@ -362,10 +349,7 @@ func TestListenerVisit(t *testing.T) {
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "missing",
 						}},
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Secret{
@@ -474,10 +458,7 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 			},
@@ -498,10 +479,7 @@ func TestListenerVisit(t *testing.T) {
 							Hosts:      []string{"www.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Secret{
@@ -546,10 +524,7 @@ func TestListenerVisit(t *testing.T) {
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Secret{
@@ -608,10 +583,7 @@ func TestListenerVisit(t *testing.T) {
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Secret{
@@ -675,10 +647,7 @@ func TestListenerVisit(t *testing.T) {
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Secret{
@@ -737,10 +706,7 @@ func TestListenerVisit(t *testing.T) {
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Secret{
@@ -802,10 +768,7 @@ func TestListenerVisit(t *testing.T) {
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(8080),
-						},
+						Backend: backend("kuard", 8080),
 					},
 				},
 				&v1.Secret{

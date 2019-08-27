@@ -196,10 +196,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromInt(443),
-						},
+						Backend: backend("kuard", 443),
 					},
 				},
 				service("default", "kuard",
@@ -312,10 +309,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "beurocratic-company-test-domain-1",
 					},
 					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "tiny-cog-department-test-instance",
-							ServicePort: intstr.FromInt(443),
-						},
+						Backend: backend("tiny-cog-department-test-instance", 443),
 					},
 				},
 				service("beurocratic-company-test-domain-1", "tiny-cog-department-test-instance",
