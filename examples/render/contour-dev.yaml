@@ -46,72 +46,6 @@ spec:
       type: string
       description: Description of the current status
       JSONPath: .status.description
----
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: tlscertificatedelegations.contour.heptio.com
-  labels:
-    component: tlscertificatedelegation
-spec:
-  group: contour.heptio.com
-  version: v1beta1
-  scope: Namespaced
-  names:
-    plural: tlscertificatedelegations
-    kind: TLSCertificateDelegation
-  validation:
-    openAPIV3Schema:
-      properties:
-        spec:
-          properties:
-            delegations:
-              type: array
-              items:
-                type: object
-                required:
-                  - secretName
-                  - targetNamespaces
-                properties:
-                  match:
-                    type: string
-                  targetNamespaces:
-                    type: array
----
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: httploadbalancers.projectcontour.io
-  labels:
-    component: httploadbalancer
-spec:
-  group: projectcontour.io
-  version: v1alpha1
-  scope: Namespaced
-  names:
-    plural: httploadbalancers
-    kind: HTTPLoadBalancer
-  additionalPrinterColumns:
-    - name: FQDN
-      type: string
-      description: Fully qualified domain name
-      JSONPath: .spec.virtualhost.fqdn
-    - name: TLS Secret
-      type: string
-      description: Secret with TLS credentials
-      JSONPath: .spec.virtualhost.tls.secretName
-    - name: First route
-      type: string
-      description: First routes defined
-      JSONPath: .spec.routes[0].match
-    - name: Status
-      type: string
-      description: The current status of the IngressRoute
-      JSONPath: .status.currentStatus
-    - name: Status Description
-      type: string
-      description: Description of the current status
-      JSONPath: .status.description
   validation:
     openAPIV3Schema:
       properties:
@@ -216,24 +150,6 @@ spec:
                     namespace:
                       type: string
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123 label
-            includes:
-              type: array
-              items:
-                properties:
-                  name:
-                    type: string
-                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ # DNS-1123 subdomain
-                  namespace:
-                        type: string
-                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123 label
-                  conditions:
-                    type: array
-                    items:
-                      prefix:
-                        type: string
-                        pattern: ^\/.*$
-                      headersMatch:
-                        items:
             routes:
               type: array
               items:
@@ -296,12 +212,12 @@ spec:
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: tlscertificatedelegations.projectcontour.io
+  name: tlscertificatedelegations.contour.heptio.com
   labels:
     component: tlscertificatedelegation
 spec:
-  group: projectcontour.io
-  version: v1alpha1
+  group: contour.heptio.com
+  version: v1beta1
   scope: Namespaced
   names:
     plural: tlscertificatedelegations
@@ -324,7 +240,6 @@ spec:
                   targetNamespaces:
                     type: array
 ---
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -353,7 +268,7 @@ data:
       # retry-period: 2s
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 metadata:
   labels:
     app: contour
@@ -363,7 +278,8 @@ spec:
   selector:
     matchLabels:
       app: contour
-  replicas: 2
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -413,9 +329,9 @@ spec:
         env:
         - name: CONTOUR_NAMESPACE
           valueFrom:
-             fieldRef:
-               apiVersion: v1
-               fieldPath: metadata.namespace
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
         - name: ENVOY_POD_NAME
           valueFrom:
             fieldRef:
@@ -463,24 +379,13 @@ spec:
       - name: contour-config
         configMap:
           name: contour
-          defaultMode: 0643
+          defaultMode: 0644
           items:
           - key: contour.yaml
             path: contour.yaml
       dnsPolicy: ClusterFirst
       serviceAccountName: contour
       terminationGracePeriodSeconds: 30
-      # The affinity stanza below tells Kubernetes to try hard not to place 2 of
-      # these pods on the same node.
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app: contour
-              topologyKey: kubernetes.io/hostname
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding

@@ -69,7 +69,8 @@ Ingress HTTP traffic will be sent directly to the Endpoints corresponding to the
 As with all Kubernetes objects, you can use `kubectl` to create, list, describe, edit, and delete IngressRoute CRDs.
 
 Creating an IngressRoute:
-```
+
+```shell
 $ kubectl create -f basic.ingressroute.yaml
 ingressroute "basic" created
 ```
@@ -276,10 +277,10 @@ spec:
 #### Upstream TLS
 
 An IngressRoute route can proxy to an upstream TLS connection by first annotating the upstream Kubernetes service with: `contour.heptio.com/upstream-protocol.tls: "443,https"`.
-This annoation tells Contour which port should be used for the TLS connection.
+This annotation tells Contour which port should be used for the TLS connection.
 In this example, the upstream service is named `https` and uses port `443`.
 Additionally, it is possible for Envoy to verify the backend service's certificate.
-The service of an `IngressRoute` can optionally specify a `validation` struct which has a manditory `caSecret` key as well as an manditory `subjectName`.
+The service of an `IngressRoute` can optionally specify a `validation` struct which has a manditory `caSecret` key as well as an mandatory `subjectName`.
 
 Note: If spec.routes.services[].validation is present, spec.routes.services[].{name,port} must point to a service with a matching contour.heptio.com/upstream-protocol.tls Service annotation.
 

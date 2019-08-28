@@ -5,12 +5,12 @@ The Contour Ingress controller is a collaboration between:
 * Envoy, which provides the high performance reverse proxy.
 * Contour, which acts as a management server for Envoy and provides it with configuration.
 
-These containers are deployed as sidecars in a pod, although other configurations are possible.
+These containers are deployed separately, Contour as a Deployment and Envoy as a Daemonset, although other configurations are possible.
 
-During pod initialisation, Contour runs as an initcontainer and writes a bootstrap configuration to a temporary volume.
-This volume is passed to the Envoy container and directs Envoy to treat its sidecar Contour container as a [management server][0].
+In the Envoy Pods, Contour runs as an initcontainer in `bootstrap' mode and writes a bootstrap configuration to a temporary volume.
+This volume is passed to the Envoy container and directs Envoy to treat the Contour Deployment as a [management server]( https://github.com/envoyproxy/data-plane-api#terminology).
 
-After initialisation is complete, the Envoy container starts, retrieves the bootstrap configuration written by Contour, and starts to poll Contour for configuration.
+After initialisation is complete, the Envoy container starts, retrieves the bootstrap configuration written by Contour's `bootstrap' mode, and starts to poll Contour for configuration.
 
 Envoy will gracefully retry if the management server is unavailable, which removes any container startup ordering issues.
 
@@ -19,7 +19,7 @@ Contour is a client of the Kubernetes API. Contour watches Ingress, Service, and
 The transfer of information from Kubernetes to Contour is by watching the API with the SharedInformer framework.
 The transfer of information from Contour to Envoy is by polling from the Envoy side.
 
-Kubernetes Readiness Probes are configured to check the status of Envoy.
+Kubernetes Liveness and Readiness Probes are configured to check the status of Envoy.
 These are enabled over the metrics port and are served over http via `/healthz`.
 
-[0]: https://github.com/envoyproxy/data-plane-api#terminology
+For Contour, a Liveness probe checks the `/healthz` running on the Pod's metrics port. Readiness Probe is a TCP check that the gRPC port is open.

@@ -46,72 +46,6 @@ spec:
       type: string
       description: Description of the current status
       JSONPath: .status.description
----
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: tlscertificatedelegations.contour.heptio.com
-  labels:
-    component: tlscertificatedelegation
-spec:
-  group: contour.heptio.com
-  version: v1beta1
-  scope: Namespaced
-  names:
-    plural: tlscertificatedelegations
-    kind: TLSCertificateDelegation
-  validation:
-    openAPIV3Schema:
-      properties:
-        spec:
-          properties:
-            delegations:
-              type: array
-              items:
-                type: object
-                required:
-                  - secretName
-                  - targetNamespaces
-                properties:
-                  match:
-                    type: string
-                  targetNamespaces:
-                    type: array
----
-apiVersion: apiextensions.k8s.io/v1beta1
-kind: CustomResourceDefinition
-metadata:
-  name: httploadbalancers.projectcontour.io
-  labels:
-    component: httploadbalancer
-spec:
-  group: projectcontour.io
-  version: v1alpha1
-  scope: Namespaced
-  names:
-    plural: httploadbalancers
-    kind: HTTPLoadBalancer
-  additionalPrinterColumns:
-    - name: FQDN
-      type: string
-      description: Fully qualified domain name
-      JSONPath: .spec.virtualhost.fqdn
-    - name: TLS Secret
-      type: string
-      description: Secret with TLS credentials
-      JSONPath: .spec.virtualhost.tls.secretName
-    - name: First route
-      type: string
-      description: First routes defined
-      JSONPath: .spec.routes[0].match
-    - name: Status
-      type: string
-      description: The current status of the IngressRoute
-      JSONPath: .status.currentStatus
-    - name: Status Description
-      type: string
-      description: Description of the current status
-      JSONPath: .status.description
   validation:
     openAPIV3Schema:
       properties:
@@ -216,24 +150,6 @@ spec:
                     namespace:
                       type: string
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123 label
-            includes:
-              type: array
-              items:
-                properties:
-                  name:
-                    type: string
-                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ # DNS-1123 subdomain
-                  namespace:
-                        type: string
-                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123 label
-                  conditions:
-                    type: array
-                    items:
-                      prefix:
-                        type: string
-                        pattern: ^\/.*$
-                      headersMatch:
-                        items:
             routes:
               type: array
               items:
@@ -296,12 +212,12 @@ spec:
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: tlscertificatedelegations.projectcontour.io
+  name: tlscertificatedelegations.contour.heptio.com
   labels:
     component: tlscertificatedelegation
 spec:
-  group: projectcontour.io
-  version: v1alpha1
+  group: contour.heptio.com
+  version: v1beta1
   scope: Namespaced
   names:
     plural: tlscertificatedelegations
@@ -324,7 +240,6 @@ spec:
                   targetNamespaces:
                     type: array
 ---
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -352,136 +267,70 @@ data:
       # renew-deadline: 10s
       # retry-period: 2s
 ---
-apiVersion: apps/v1
-kind: Deployment
+---
+apiVersion: v1
+kind: ServiceAccount
 metadata:
-  labels:
-    app: contour
+  name: contour-certgen
+  namespace: heptio-contour
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
   name: contour
   namespace: heptio-contour
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: contour-certgen
+subjects:
+- kind: ServiceAccount
+  name: contour-certgen
+  namespace: heptio-contour
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  name: contour-certgen
+  namespace: heptio-contour
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - list
+  - watch
+  - create
+  - get
+  - put
+  - post
+  - patch
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: contour-certgen
+  namespace: heptio-contour
 spec:
-  selector:
-    matchLabels:
-      app: contour
-  replicas: 2
   template:
     metadata:
       labels:
-        app: contour
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "8002"
-        prometheus.io/path: "/stats/prometheus"
+        app: "contour-certgen"
     spec:
       containers:
-      - image: gcr.io/heptio-images/contour:master
-        imagePullPolicy: Always
-        name: contour
-        command: ["contour"]
-        args:
-        - serve
+      - name: contour
+        image: gcr.io/heptio-images/contour:master
+        command:
+        - contour
+        - certgen
         - --incluster
-        - --insecure
-        - --envoy-service-http-port=8080
-        - --envoy-service-https-port=8443
-        - --config-path=/config/contour.yaml
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8000
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 8000
-        volumeMounts:
-        - name: contour-config
-          mountPath: /config
-          readOnly: true
-      - image: docker.io/envoyproxy/envoy:v1.11.1
-        name: envoy
-        ports:
-        - containerPort: 8080
-          name: http
-        - containerPort: 8443
-          name: https
-        command: ["envoy"]
-        args:
-        - --config-path /config/envoy.json
-        - --service-cluster $(CONTOUR_NAMESPACE)
-        - --service-node $(ENVOY_POD_NAME)
-        - --log-level info
-        env:
-        - name: CONTOUR_NAMESPACE
-          valueFrom:
-             fieldRef:
-               apiVersion: v1
-               fieldPath: metadata.namespace
-        - name: ENVOY_POD_NAME
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.name
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 8002
-          initialDelaySeconds: 3
-          periodSeconds: 3
-        volumeMounts:
-        - name: envoy-config
-          mountPath: /config
-        lifecycle:
-          preStop:
-            exec:
-              command:
-              - bash
-              - -c
-              - --
-              - echo
-              - -ne
-              - "POST /healthcheck/fail HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
-              - '>/dev/tcp/localhost/9001'
-      initContainers:
-      - image: gcr.io/heptio-images/contour:master
-        imagePullPolicy: Always
-        name: envoy-initconfig
-        command: ["contour"]
-        args:
-        - bootstrap
-        - /config/envoy.json
-        volumeMounts:
-        - name: envoy-config
-          mountPath: /config
-        env:
-        - name: CONTOUR_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-      volumes:
-      - name: envoy-config
-        emptyDir: {}
-      - name: contour-config
-        configMap:
-          name: contour
-          defaultMode: 0643
-          items:
-          - key: contour.yaml
-            path: contour.yaml
-      dnsPolicy: ClusterFirst
-      serviceAccountName: contour
-      terminationGracePeriodSeconds: 30
-      # The affinity stanza below tells Kubernetes to try hard not to place 2 of
-      # these pods on the same node.
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app: contour
-              topologyKey: kubernetes.io/hostname
----
+        - --kube
+      restartPolicy: Never
+      serviceAccountName: contour-certgen
+  parallelism: 1
+  completions: 1
+  backoffLimit: 1
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
@@ -581,36 +430,252 @@ subjects:
 - kind: ServiceAccount
   name: contour
   namespace: heptio-contour
----
 apiVersion: v1
 kind: Service
 metadata:
  name: contour
  namespace: heptio-contour
- annotations:
-  # This annotation puts the AWS ELB into "TCP" mode so that it does not
-  # do HTTP negotiation for HTTPS connections at the ELB edge.
-  # The downside of this is the remote IP address of all connections will
-  # appear to be the internal address of the ELB. See docs/proxy-proto.md
-  # for information about enabling the PROXY protocol on the ELB to recover
-  # the original remote IP address.
-  service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
-
-  # Scrape metrics for the contour container
-  # The envoy container is scraped by annotations on the pod spec
-  prometheus.io/port: "8000"
-  prometheus.io/scrape: "true"
 spec:
+ ports:
+ - port: 8001
+   name: xds
+   protocol: TCP
+   targetPort: 8001
+ selector:
+   app: contour
+ type: ClusterIP
+apiVersion: v1
+kind: Service
+metadata:
+ name: envoy
+ namespace: heptio-contour
+ annotations:
+   service.beta.kubernetes.io/aws-load-balancer-type: nlb
+spec:
+ externalTrafficPolicy: Local
  ports:
  - port: 80
    name: http
    protocol: TCP
-   targetPort: 8080
  - port: 443
    name: https
    protocol: TCP
-   targetPort: 8443
  selector:
-   app: contour
+   app: envoy
  type: LoadBalancer
----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: contour
+  name: contour
+  namespace: heptio-contour
+spec:
+  replicas: 2
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: contour
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+      labels:
+        app: contour
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: contour
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      containers:
+      - args:
+        - serve
+        - --incluster
+        - --enable-leader-election
+        - --xds-address=0.0.0.0
+        - --xds-port=8001
+        - --envoy-service-http-port=80
+        - --envoy-service-https-port=443
+        - --contour-cafile=/ca/cacert.pem
+        - --contour-cert-file=/certs/tls.crt
+        - --contour-key-file=/certs/tls.key
+        - --config-path=/config/contour.yaml
+        command: ["contour"]
+        image: gcr.io/heptio-images/contour:master
+        imagePullPolicy: Always
+        name: contour
+        ports:
+        - containerPort: 8001
+          name: xds
+          protocol: TCP
+        - containerPort: 8000
+          name: debug
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+        readinessProbe:
+          tcpSocket:
+            port: 8001
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        volumeMounts:
+          - name: contourcert
+            mountPath: /certs
+            readOnly: true
+          - name: cacert
+            mountPath: /ca
+            readOnly: true
+          - name: contour-config
+            mountPath: /config
+            readOnly: true
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+      dnsPolicy: ClusterFirst
+      serviceAccountName: contour
+      volumes:
+        - name: contourcert
+          secret:
+            secretName: contourcert
+        - name: cacert
+          secret:
+            secretName:   cacert
+        - name: contour-config
+          configMap:
+            name: contour
+            defaultMode: 0644
+            items:
+            - key: contour.yaml
+              path: contour.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: envoy
+  name: envoy
+  namespace: heptio-contour
+spec:
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 10%
+  selector:
+    matchLabels:
+      app: envoy
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8002"
+        prometheus.io/path: "/stats/prometheus"
+      labels:
+        app: envoy
+    spec:
+      containers:
+      - args:
+        - -c
+        - /config/envoy.json
+        - --service-cluster $(CONTOUR_NAMESPACE)
+        - --service-node $(ENVOY_POD_NAME)
+        - --log-level info
+        command:
+        - envoy
+        image: docker.io/envoyproxy/envoy:v1.11.1
+        imagePullPolicy: IfNotPresent
+        name: envoy
+        env:
+        - name: CONTOUR_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: ENVOY_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        ports:
+        - containerPort: 80
+          hostPort: 80
+          name: http
+          protocol: TCP
+        - containerPort: 443
+          hostPort: 443
+          name: https
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8002
+          initialDelaySeconds: 3
+          periodSeconds: 3
+        volumeMounts:
+          - name: envoy-config
+            mountPath: /config
+          - name: envoycert
+            mountPath: /certs
+          - name: cacert
+            mountPath: /ca
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - bash
+              - -c
+              - --
+              - echo
+              - -ne
+              - "POST /healthcheck/fail HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+              - '>/dev/tcp/localhost/9001'
+      dnsPolicy: ClusterFirstWithHostNet
+      initContainers:
+      - args:
+        - bootstrap
+        - /config/envoy.json
+        - --xds-address=contour
+        - --xds-port=8001
+        - --envoy-cafile=/ca/cacert.pem
+        - --envoy-cert-file=/certs/tls.crt
+        - --envoy-key-file=/certs/tls.key
+        command:
+        - contour
+        image: gcr.io/heptio-images/contour:master
+        imagePullPolicy: Always
+        name: envoy-initconfig
+        volumeMounts:
+        - name: envoy-config
+          mountPath: /config
+        - name: envoycert
+          mountPath: /certs
+          readOnly: true
+        - name: cacert
+          mountPath: /ca
+          readOnly: true
+        env:
+        - name: CONTOUR_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+      automountServiceAccountToken: false
+      volumes:
+        - name: envoy-config
+          emptyDir: {}
+        - name: envoycert
+          secret:
+            secretName: envoycert
+        - name: cacert
+          secret:
+            secretName:   cacert
+      restartPolicy: Always

@@ -343,6 +343,14 @@ data:
     tls:
       # minimum TLS version that Contour will negotiate
       # minimumProtocolVersion: "1.1"
+    # The following config shows the defaults for the leader election.
+    # leaderelection:
+      # configmap-name: contour
+      # configmap-namespace: heptio-contour
+      # TODO(youngnick) not sure whether to document these tbh.
+      # lease-duration: 15s
+      # renew-deadline: 10s
+      # retry-period: 2s
 ---
 apiVersion: apps/v1
 kind: DaemonSet
