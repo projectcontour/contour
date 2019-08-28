@@ -40,6 +40,31 @@ kubectl apply -f examples/<your-desired-deployment>
 If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
 You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address](./deploy-options.md#get_your_hostname_or_ip_address).
 
+## The slightly easy way to upgrade
+
+If the following are true for you:
+
+ * You are using one of the [example](/example/) deployments.
+ * Your cluster can take few minutes of downtime.
+ * You only updated the namespace of an example manifest
+
+Then the simplest way to upgrade to 0.15 is to delete the namespace you installed Contour in and reapply one of the example configurations.
+From the root directory of the repository:
+
+```
+kubectl delete namespace <name-space>
+```
+
+Update the namespace in your desired manifest deployment and then
+
+```
+kubectl apply -f examples/<your-desired-deployment>
+```
+
+If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address](./deploy-options.md#get_your_hostname_or_ip_address).
+
+
 ## The less easy way
 
 This section contains information for administrators who wish to apply the Contour 0.14 to 0.15 changes manually.
