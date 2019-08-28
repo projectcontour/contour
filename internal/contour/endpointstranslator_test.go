@@ -14,7 +14,6 @@
 package contour
 
 import (
-	"reflect"
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -125,7 +124,9 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 		"simple": {
 			ep: endpoints("default", "simple", v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
-				Ports:     ports(8080),
+				Ports: ports(
+					port("", 8080),
+				),
 			}),
 			want: []proto.Message{
 				envoy.ClusterLoadAssignment("default/simple", envoy.SocketAddress("192.168.183.24", 8080)),
@@ -139,7 +140,9 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 					"50.17.206.192",
 					"50.19.99.160",
 				),
-				Ports: ports(80),
+				Ports: ports(
+					port("", 80),
+				),
 			}),
 			want: []proto.Message{
 				envoy.ClusterLoadAssignment("default/httpbin-org",
@@ -147,6 +150,77 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 					envoy.SocketAddress("50.17.192.147", 80),
 					envoy.SocketAddress("50.17.206.192", 80),
 					envoy.SocketAddress("50.19.99.160", 80),
+				),
+			},
+		},
+		"multiple ports": {
+			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+				Addresses: addresses(
+					"10.10.1.1",
+				),
+				Ports: ports(
+					port("a", 8675),
+					port("b", 309),
+				),
+			}),
+			want: []proto.Message{
+				envoy.ClusterLoadAssignment("default/httpbin-org/a",
+					envoy.SocketAddress("10.10.1.1", 8675),
+				),
+				envoy.ClusterLoadAssignment("default/httpbin-org/b",
+					envoy.SocketAddress("10.10.1.1", 309),
+				),
+			},
+		},
+		"cartesian product": {
+			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+				Addresses: addresses(
+					"10.10.1.1",
+					"10.10.2.2",
+				),
+				Ports: ports(
+					port("a", 8675),
+					port("b", 309),
+				),
+			}),
+			want: []proto.Message{
+				envoy.ClusterLoadAssignment("default/httpbin-org/a",
+					envoy.SocketAddress("10.10.1.1", 8675),
+					envoy.SocketAddress("10.10.2.2", 8675),
+				),
+				envoy.ClusterLoadAssignment("default/httpbin-org/b",
+					envoy.SocketAddress("10.10.1.1", 309),
+					envoy.SocketAddress("10.10.2.2", 309),
+				),
+			},
+		},
+		"not ready": {
+			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+				Addresses: addresses(
+					"10.10.1.1",
+				),
+				NotReadyAddresses: addresses(
+					"10.10.2.2",
+				),
+				Ports: ports(
+					port("a", 8675),
+				),
+			}, v1.EndpointSubset{
+				Addresses: addresses(
+					"10.10.1.1",
+					"10.10.2.2",
+				),
+				Ports: ports(
+					port("b", 309),
+				),
+			}),
+			want: []proto.Message{
+				envoy.ClusterLoadAssignment("default/httpbin-org/a",
+					envoy.SocketAddress("10.10.1.1", 8675),
+				),
+				envoy.ClusterLoadAssignment("default/httpbin-org/b",
+					envoy.SocketAddress("10.10.1.1", 309),
+					envoy.SocketAddress("10.10.2.2", 309),
 				),
 			},
 		},
@@ -160,8 +234,8 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 			}
 			et.OnAdd(tc.ep)
 			got := et.Contents()
-			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("got: %v, want: %v", got, tc.want)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 	}
@@ -177,24 +251,32 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 			setup: func(et *EndpointsTranslator) {
 				et.OnAdd(endpoints("default", "simple", v1.EndpointSubset{
 					Addresses: addresses("192.168.183.24"),
-					Ports:     ports(8080),
+					Ports: ports(
+						port("", 8080),
+					),
 				}))
 			},
 			ep: endpoints("default", "simple", v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
-				Ports:     ports(8080),
+				Ports: ports(
+					port("", 8080),
+				),
 			}),
 		},
 		"remove different": {
 			setup: func(et *EndpointsTranslator) {
 				et.OnAdd(endpoints("default", "simple", v1.EndpointSubset{
 					Addresses: addresses("192.168.183.24"),
-					Ports:     ports(8080),
+					Ports: ports(
+						port("", 8080),
+					),
 				}))
 			},
 			ep: endpoints("default", "different", v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
-				Ports:     ports(8080),
+				Ports: ports(
+					port("", 8080),
+				),
 			}),
 			want: []proto.Message{
 				envoy.ClusterLoadAssignment("default/simple", envoy.SocketAddress("192.168.183.24", 8080)),
@@ -204,7 +286,9 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 			setup: func(*EndpointsTranslator) {},
 			ep: endpoints("default", "simple", v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
-				Ports:     ports(8080),
+				Ports: ports(
+					port("", 8080),
+				),
 			}),
 		},
 		"remove long name": {
@@ -217,7 +301,10 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 							"172.16.0.1",
 							"172.16.0.2",
 						),
-						Ports: ports(8000, 8443),
+						Ports: ports(
+							port("http", 8080),
+							port("https", 8443),
+						),
 					},
 				)
 				et.OnAdd(e1)
@@ -230,7 +317,10 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 						"172.16.0.1",
 						"172.16.0.2",
 					),
-					Ports: ports(8000, 8443),
+					Ports: ports(
+						port("http", 8080),
+						port("https", 8443),
+					),
 				},
 			),
 		},
@@ -260,7 +350,9 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 		"simple": {
 			newep: endpoints("default", "simple", v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
-				Ports:     ports(8080),
+				Ports: ports(
+					port("", 8080),
+				),
 			}),
 			want: []proto.Message{
 				envoy.ClusterLoadAssignment("default/simple", envoy.SocketAddress("192.168.183.24", 8080)),
@@ -274,7 +366,9 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 					"50.17.206.192",
 					"50.19.99.160",
 				),
-				Ports: ports(80),
+				Ports: ports(
+					port("", 80),
+				),
 			}),
 			want: []proto.Message{
 				envoy.ClusterLoadAssignment("default/httpbin-org",
@@ -288,10 +382,9 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 		"named container port": {
 			newep: endpoints("default", "secure", v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
-				Ports: []v1.EndpointPort{{
-					Name: "https",
-					Port: 8443,
-				}},
+				Ports: ports(
+					port("https", 8443),
+				),
 			}),
 			want: []proto.Message{
 				envoy.ClusterLoadAssignment("default/secure/https", envoy.SocketAddress("192.168.183.24", 8443)),
@@ -300,7 +393,9 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 		"remove existing": {
 			oldep: endpoints("default", "simple", v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
-				Ports:     ports(8080),
+				Ports: ports(
+					port("", 8080),
+				),
 			}),
 		},
 	}
@@ -321,7 +416,9 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 	var et EndpointsTranslator
 	e1 := endpoints("default", "simple", v1.EndpointSubset{
 		Addresses: addresses("192.168.183.24"),
-		Ports:     ports(8080),
+		Ports: ports(
+			port("", 8080),
+		),
 	})
 	et.OnAdd(e1)
 
@@ -345,6 +442,18 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatal(diff)
+	}
+}
+
+func ports(eps ...v1.EndpointPort) []v1.EndpointPort {
+	return eps
+}
+
+func port(name string, port int32) v1.EndpointPort {
+	return v1.EndpointPort{
+		Name:     name,
+		Port:     port,
+		Protocol: "TCP",
 	}
 }
 
