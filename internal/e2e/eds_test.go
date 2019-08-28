@@ -41,13 +41,10 @@ func TestAddRemoveEndpoints(t *testing.T) {
 				"172.16.0.1",
 				"172.16.0.2",
 			),
-			Ports: []v1.EndpointPort{{
-				Name: "http",
-				Port: 8000,
-			}, {
-				Name: "https",
-				Port: 8443,
-			}},
+			Ports: ports(
+				port("https", 8443),
+				port("http", 8000),
+			),
 		},
 	)
 
@@ -106,31 +103,23 @@ func TestAddEndpointComplicated(t *testing.T) {
 		"kuard",
 		v1.EndpointSubset{
 			Addresses: addresses(
-				"10.48.1.77",
-			),
-			Ports: []v1.EndpointPort{{
-				Name: "foo",
-				Port: 9999,
-			}},
-		},
-		v1.EndpointSubset{
-			Addresses: addresses(
 				"10.48.1.78",
 			),
-			Ports: []v1.EndpointPort{{
-				Name: "foo",
-				Port: 8080,
-			}},
+			NotReadyAddresses: addresses(
+				"10.48.1.77",
+			),
+			Ports: ports(
+				port("foo", 8080),
+			),
 		},
 		v1.EndpointSubset{
 			Addresses: addresses(
 				"10.48.1.77",
 				"10.48.1.78",
 			),
-			Ports: []v1.EndpointPort{{
-				Name: "admin",
-				Port: 9000,
-			}},
+			Ports: ports(
+				port("admin", 9000),
+			),
 		},
 	)
 
@@ -146,7 +135,6 @@ func TestAddEndpointComplicated(t *testing.T) {
 			),
 			envoy.ClusterLoadAssignment(
 				"default/kuard/foo",
-				envoy.SocketAddress("10.48.1.77", 9999), // TODO(dfc) order is not guaranteed by endpoint controller
 				envoy.SocketAddress("10.48.1.78", 8080),
 			),
 		),
@@ -166,31 +154,23 @@ func TestEndpointFilter(t *testing.T) {
 		"kuard",
 		v1.EndpointSubset{
 			Addresses: addresses(
-				"10.48.1.77",
-			),
-			Ports: []v1.EndpointPort{{
-				Name: "foo",
-				Port: 9999,
-			}},
-		},
-		v1.EndpointSubset{
-			Addresses: addresses(
 				"10.48.1.78",
 			),
-			Ports: []v1.EndpointPort{{
-				Name: "foo",
-				Port: 8080,
-			}},
+			NotReadyAddresses: addresses(
+				"10.48.1.77",
+			),
+			Ports: ports(
+				port("foo", 8080),
+			),
 		},
 		v1.EndpointSubset{
 			Addresses: addresses(
 				"10.48.1.77",
 				"10.48.1.78",
 			),
-			Ports: []v1.EndpointPort{{
-				Name: "admin",
-				Port: 9000,
-			}},
+			Ports: ports(
+				port("admin", 9000),
+			),
 		},
 	)
 
@@ -201,7 +181,6 @@ func TestEndpointFilter(t *testing.T) {
 		Resources: resources(t,
 			envoy.ClusterLoadAssignment(
 				"default/kuard/foo",
-				envoy.SocketAddress("10.48.1.77", 9999), // TODO(dfc) order is not guaranteed by endpoint controller
 				envoy.SocketAddress("10.48.1.78", 8080),
 			),
 		),
@@ -228,9 +207,9 @@ func TestIssue602(t *testing.T) {
 
 	e1 := endpoints("default", "simple", v1.EndpointSubset{
 		Addresses: addresses("192.168.183.24"),
-		Ports: []v1.EndpointPort{{
-			Port: 8080,
-		}},
+		Ports: ports(
+			port("", 8080),
+		),
 	})
 	rh.OnAdd(e1)
 
@@ -274,6 +253,18 @@ func endpoints(ns, name string, subsets ...v1.EndpointSubset) *v1.Endpoints {
 			Namespace: ns,
 		},
 		Subsets: subsets,
+	}
+}
+
+func ports(eps ...v1.EndpointPort) []v1.EndpointPort {
+	return eps
+}
+
+func port(name string, port int32) v1.EndpointPort {
+	return v1.EndpointPort{
+		Name:     name,
+		Port:     port,
+		Protocol: "TCP",
 	}
 }
 
