@@ -135,10 +135,10 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 		"multiple addresses": {
 			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
 				Addresses: addresses(
-					"23.23.247.89",
 					"50.17.192.147",
 					"50.17.206.192",
 					"50.19.99.160",
+					"23.23.247.89",
 				),
 				Ports: ports(
 					port("", 80),
@@ -146,7 +146,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 			}),
 			want: []proto.Message{
 				envoy.ClusterLoadAssignment("default/httpbin-org",
-					envoy.SocketAddress("23.23.247.89", 80),
+					envoy.SocketAddress("23.23.247.89", 80), // addresses should be sorted
 					envoy.SocketAddress("50.17.192.147", 80),
 					envoy.SocketAddress("50.17.206.192", 80),
 					envoy.SocketAddress("50.19.99.160", 80),
@@ -159,12 +159,12 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 					"10.10.1.1",
 				),
 				Ports: ports(
-					port("a", 8675),
 					port("b", 309),
+					port("a", 8675),
 				),
 			}),
 			want: []proto.Message{
-				envoy.ClusterLoadAssignment("default/httpbin-org/a",
+				envoy.ClusterLoadAssignment("default/httpbin-org/a", // cluster names should be sorted
 					envoy.SocketAddress("10.10.1.1", 8675),
 				),
 				envoy.ClusterLoadAssignment("default/httpbin-org/b",
@@ -175,17 +175,17 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 		"cartesian product": {
 			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
 				Addresses: addresses(
-					"10.10.1.1",
 					"10.10.2.2",
+					"10.10.1.1",
 				),
 				Ports: ports(
-					port("a", 8675),
 					port("b", 309),
+					port("a", 8675),
 				),
 			}),
 			want: []proto.Message{
 				envoy.ClusterLoadAssignment("default/httpbin-org/a",
-					envoy.SocketAddress("10.10.1.1", 8675),
+					envoy.SocketAddress("10.10.1.1", 8675), // addresses should be sorted
 					envoy.SocketAddress("10.10.2.2", 8675),
 				),
 				envoy.ClusterLoadAssignment("default/httpbin-org/b",
@@ -207,8 +207,8 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				),
 			}, v1.EndpointSubset{
 				Addresses: addresses(
-					"10.10.1.1",
 					"10.10.2.2",
+					"10.10.1.1",
 				),
 				Ports: ports(
 					port("b", 309),
@@ -298,12 +298,12 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 					"what-a-descriptive-service-name-you-must-be-so-proud",
 					v1.EndpointSubset{
 						Addresses: addresses(
-							"172.16.0.1",
 							"172.16.0.2",
+							"172.16.0.1",
 						),
 						Ports: ports(
-							port("http", 8080),
 							port("https", 8443),
+							port("http", 8080),
 						),
 					},
 				)
@@ -314,12 +314,12 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 				"what-a-descriptive-service-name-you-must-be-so-proud",
 				v1.EndpointSubset{
 					Addresses: addresses(
-						"172.16.0.1",
 						"172.16.0.2",
+						"172.16.0.1",
 					),
 					Ports: ports(
-						port("http", 8080),
 						port("https", 8443),
+						port("http", 8080),
 					),
 				},
 			),
@@ -361,8 +361,8 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 		"multiple addresses": {
 			newep: endpoints("default", "httpbin-org", v1.EndpointSubset{
 				Addresses: addresses(
-					"23.23.247.89",
 					"50.17.192.147",
+					"23.23.247.89",
 					"50.17.206.192",
 					"50.19.99.160",
 				),
