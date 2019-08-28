@@ -53,11 +53,3 @@ func addresses(ips ...string) []v1.EndpointAddress {
 	}
 	return addrs
 }
-
-func ports(ps ...int32) []v1.EndpointPort {
-	var ports []v1.EndpointPort
-	for _, p := range ps {
-		ports = append(ports, v1.EndpointPort{Port: p})
-	}
-	return ports
-}
