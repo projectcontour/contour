@@ -1,4 +1,3 @@
-
 #!/bin/bash -e
 #
 # Copyright © 2018 Heptio
