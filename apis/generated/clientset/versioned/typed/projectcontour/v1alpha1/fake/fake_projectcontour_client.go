@@ -19,26 +19,26 @@ limitations under the License.
 package fake
 
 import (
-	v1beta1 "github.com/heptio/contour/apis/generated/clientset/versioned/typed/contour/v1beta1"
+	v1alpha1 "github.com/heptio/contour/apis/generated/clientset/versioned/typed/projectcontour/v1alpha1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )
 
-type FakeContourV1beta1 struct {
+type FakeProjectcontourV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeContourV1beta1) IngressRoutes(namespace string) v1beta1.IngressRouteInterface {
-	return &FakeIngressRoutes{c, namespace}
+func (c *FakeProjectcontourV1alpha1) HTTPLoadBalancers(namespace string) v1alpha1.HTTPLoadBalancerInterface {
+	return &FakeHTTPLoadBalancers{c, namespace}
 }
 
-func (c *FakeContourV1beta1) TLSCertificateDelegations(namespace string) v1beta1.TLSCertificateDelegationInterface {
+func (c *FakeProjectcontourV1alpha1) TLSCertificateDelegations(namespace string) v1alpha1.TLSCertificateDelegationInterface {
 	return &FakeTLSCertificateDelegations{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeContourV1beta1) RESTClient() rest.Interface {
+func (c *FakeProjectcontourV1alpha1) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }

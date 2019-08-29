@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Heptio
+Copyright 2019 VMware
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import (
 	versioned "github.com/heptio/contour/apis/generated/clientset/versioned"
 	contour "github.com/heptio/contour/apis/generated/informers/externalversions/contour"
 	internalinterfaces "github.com/heptio/contour/apis/generated/informers/externalversions/internalinterfaces"
+	projectcontour "github.com/heptio/contour/apis/generated/informers/externalversions/projectcontour"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -173,8 +174,13 @@ type SharedInformerFactory interface {
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
 	Contour() contour.Interface
+	Projectcontour() projectcontour.Interface
 }
 
 func (f *sharedInformerFactory) Contour() contour.Interface {
 	return contour.New(f, f.namespace, f.tweakListOptions)
+}
+
+func (f *sharedInformerFactory) Projectcontour() projectcontour.Interface {
+	return projectcontour.New(f, f.namespace, f.tweakListOptions)
 }
