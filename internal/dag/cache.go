@@ -54,6 +54,11 @@ type Meta struct {
 func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	switch obj := obj.(type) {
 	case *v1.Secret:
+		if _, hasCA := obj.Data["ca.crt"]; obj.Type != v1.SecretTypeTLS && !hasCA {
+			// ignore everything but kubernetes.io/tls secrets
+			// and secrets with a ca.crt key.
+			return false
+		}
 		m := Meta{name: obj.Name, namespace: obj.Namespace}
 		if kc.secrets == nil {
 			kc.secrets = make(map[Meta]*v1.Secret)
@@ -204,6 +209,15 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 // or IngressRoute object in this cache. If the secret is not in the same namespace
 // it must be mentioned by a TLSCertificateDelegation.
 func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
+	if _, isCA := secret.Data["ca.crt"]; isCA {
+		// locating a secret validation usage involves traversing each
+		// ingressroute object, determining if there is a valid delegation,
+		// and if the reference the secret as a certificate. The DAG already
+		// does this so don't reproduce the logic and just assume for the moment
+		// that any change to a CA secret will trigger a rebuild.
+		return true
+	}
+
 	delegations := make(map[string]bool) // targetnamespace/secretname to bool
 	for _, d := range kc.delegations {
 		for _, cd := range d.Spec.Delegations {
@@ -263,6 +277,7 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 				return true
 			}
 		}
+
 	}
 	return false
 }

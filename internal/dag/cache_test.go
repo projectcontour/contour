@@ -34,6 +34,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
 			},
 			want: false,
 		},
@@ -56,8 +57,32 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
 			},
 			want: true,
+		},
+		"insert secret w/ wrong type referenced by ingress": {
+			pre: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "www",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							SecretName: "secret",
+						}},
+					},
+				},
+			},
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Type: "banana",
+			},
+			want: false,
 		},
 		"insert secret referenced by ingress via tls delegation": {
 			pre: []interface{}{
@@ -93,6 +118,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
 			},
 			want: true,
 		},
@@ -130,10 +156,10 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
 			},
 			want: true,
 		},
-
 		"insert secret referenced by ingressroute": {
 			pre: []interface{}{
 				&ingressroutev1.IngressRoute{
@@ -155,6 +181,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
 			},
 			want: true,
 		},
@@ -193,6 +220,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
 			},
 			want: true,
 		},
@@ -231,9 +259,63 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
 			},
 			want: true,
 		},
+		"insert certificate secret": {
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ca",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					"ca.crt": []byte("ca"),
+				},
+			},
+			// TODO(dfc) this should be false because the CA secret is
+			// not referenced, but computing its reference duplicates the
+			// work done rebuilding the dag so for the moment assume that
+			// any CA secret causes a rebuild.
+			want: true,
+		},
+		"insert certificate secret referenced by ingressroute": {
+			pre: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "example-com",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "example.com",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{{
+								Name: "kuard",
+								Port: 8080,
+								UpstreamValidation: &ingressroutev1.UpstreamValidation{
+									CACertificate: "ca",
+									SubjectName:   "example.com",
+								},
+							}},
+						}},
+					},
+				},
+			},
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ca",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					"ca.crt": []byte("ca"),
+				},
+			},
+			want: true,
+		},
+
 		"insert ingress empty ingress class": {
 			obj: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
@@ -498,12 +580,14 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
 			}),
 			obj: &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
 			},
 			want: true,
 		},

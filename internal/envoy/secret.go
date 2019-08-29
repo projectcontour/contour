@@ -17,7 +17,7 @@ func Secretname(s *dag.Secret) string {
 	return hashname(60, ns, name, fmt.Sprintf("%x", hash[:5]))
 }
 
-// Secret creates new v2auth.Secret from secret.
+// Secret creates new auth.Secret from secret.
 func Secret(s *dag.Secret) *auth.Secret {
 	return &auth.Secret{
 		Name: Secretname(s),
