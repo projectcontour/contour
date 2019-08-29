@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright © 2018 Heptio
+# Copyright © 2019 VMware
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,10 +18,19 @@ VERSION=$(go list -m all | grep k8s.io/code-generator | rev | cut -d"-" -f1 | cu
 TMP_DIR=$(mktemp -d)
 git clone https://github.com/kubernetes/code-generator.git ${TMP_DIR}
 (cd ${TMP_DIR} && git reset --hard ${VERSION} && go mod init)
+
 ${TMP_DIR}/generate-groups.sh \
   all \
   github.com/heptio/contour/apis/generated \
   github.com/heptio/contour/apis \
-  contour:v1beta1 \
+  "contour:v1beta1 projectcontour:v1alpha1" \
+  --output-base . \
   --go-header-file hack/boilerplate.go.tmpl \
   $@
+
+# Copy the generated.deepcopy to the api packages
+rm -rf apis/generated
+cp -r github.com/heptio/contour/apis/generated apis/
+mv github.com/heptio/contour/apis/contour/v1beta1/zz_generated.deepcopy.go apis/contour/v1beta1
+mv github.com/heptio/contour/apis/projectcontour/v1alpha1/zz_generated.deepcopy.go apis/projectcontour/v1alpha1
+rm -rf github.com
