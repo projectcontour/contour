@@ -14,7 +14,11 @@ There are many different ways to apply routing to L7 HTTP ingress controllers. T
 
 ## Delegation
 
-The working model for delegation is DNS. As the owner of a DNS domain, for example `.com`, I _delegate_ to another nameserver the responsibility for handing the subdomain `vmware.com`. Any nameserver can hold a record for `heptio.com`, but without the linkage from the parent `.com` TLD, its information is unreachable and non authoritative.
+Contour's delegation model is now akin to file inclusion. Consider programming languages that support an `#include` or `import` syntax as part of prepossessing their source code. As the language's compiler or interpreter is processing the source code and encounters an include style syntax it branches to the file being included and processes it as if it's contents were in line in the parent document.
+
+Compare this to the way Contour builds its DAG. For each IngressRoute record Contour consults each route that has delegated to it, if it encounters a `includes:` key, Contour appends the contents to the delegate IngressRoute record.
+
+Additionally, Contour's delegation model follows how DNS is implemented. As the owner of a DNS domain, for example `.io`, I _delegate_ to another nameserver the responsibility for handing the subdomain `projectcontour.io`. Any nameserver can hold a record for `projectcontour.io`, but without the linkage from the parent `.io` TLD, its information is unreachable and non authoritative. Delegation can be applied to many different fields, not just vhost. 
 
 Each _root_ of a DAG starts at a virtual host, which describes properties such as the fully qualified name of the virtual host, TLS configuration, and possibly global access list details. The vertices of a graph do not contain virtual host information. Instead they are reachable from a root only by delegation. This permits the _owner_ of an ingress root to both delegate the authority to publish a service on a portion of the route space inside a virtual host, and to further delegate authority to publish and delegate.
 
@@ -26,13 +30,21 @@ The delegation concept is a key component to enable teams within a single Kubern
 
 ##### Root IngressRoutes
 
-From the top, delegation is enforced through the use of `root ingressroute namespaces` which allow a cluster admin to carve off a set of namespaces where Contour's IngressRoutes will live. Any root IngressRoute found outside of these configured namespaces will be deemed invalid. 
+From the top, delegation is enforced through the use of `root ingressroute namespaces` which allow a cluster admin to carve off a set of namespaces where Contour's IngressRoutes will live. Any root IngressRoute found outside of these configured namespaces will be deemed invalid.
 
-Another design decision is that now TLS certificates, typically referenced via Kubernetes secrets, are placed inside these root ingressroute namespaces limiting the access required for Contour itself as well as not requiring these certs to exist in each team namespace. 
+Another design decision is that now TLS certificates, typically referenced via Kubernetes secrets, are placed inside these root ingressroute namespaces limiting the access required for Contour itself as well as not requiring these certs to exist in each team namespace.
 
 ##### Delegated IngressRoutes
 
 A delegated IngressRoute lives in each team namespace. Teams can self-manage their own resources based upon what has been delegated to them. Users can also create their own delegations to support their application infrastructure as they see fit. 
+
+###### Includes & Conditions
+
+Conditions define possible routing decisions for a request. Things like pathPrefix, headers, etc are all options for a Condition. 
+
+Includes define how specific routing parameters (or `conditions:`) are delegated to other IngressRoutes. Each include defines what Namespace / IngressRoute name should apply a set of Conditions defined. The conditions defined are appended to any further conditions configured per route.
+
+When a route is constructed that has `conditions` applied, those parameters are automcatically appended to the configuration. For example, if a route had a path prefix `/api` defined, a route that defined `/v1` would result in a path prefix of `/api/v1` for the resulting configured request.
 
 ### Use Cases
 
@@ -46,6 +58,8 @@ Some use-cases for IngressRoute delegation:
 
 The following example shows a root IngressRoute that manages the host `projectcontour.io`. It references a Kubernetes secret named `tls-cert` to allow for TLS termination. It delegates two paths to a set of teams in different namespaces. The path `/blog` is delegated to the IngressRoute named `procon-teama` in the namespace `team-a`. The path `/community` is delegated to the IngressRoute named `procon-teamb` in the namespace `team-b`. The IngressRoute named `procon-invalid` in the namespace `team-invalid` references the path `/community`, but no traffic is routed to it since a root IngressRoute doesn't delegate.
 
+// TODO (SAS) Update diagram
+
 ![ingressroute-delegation](images/ingressroute-delegation.png)
 
 ## Routing Mechanisms
@@ -53,7 +67,6 @@ The following example shows a root IngressRoute that manages the host `projectco
 As noted previously, there are various ways to make routing decisions. Contour was originally designed to support prefix path based routing; however, there are many other mechanisms that Contour could support. It's important to note that these routing mechanisms are taking into consideration ***after*** the virtual host routing decision is made:
 
 - **Header:** Routing on an HTTP header that exists in the request (e.g. custom header, clientIP via header, HTTP method)
-  - *Note: Still requires a path to match against*
 - **Prefix Path:** The route matches the start of the :path header once the query string is removed
 - **Exact Path:** The route is an exact path rule meaning that the path must exactly match the *:path* header once the query string is removed
 - **Wildcard Path:** The route allows for a wildcard to be present in between two paths meaning that a portion of the path must match the *:path* header once the query string is removed.
