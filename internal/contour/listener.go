@@ -318,9 +318,9 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.httpsAccessLog()),
 		)
 		alpnProtos := []string{"h2", "http/1.1"}
-		if vh.VirtualHost.TCPProxy != nil {
+		if vh.TCPProxy != nil {
 			filters = envoy.Filters(
-				envoy.TCPProxy(ENVOY_HTTPS_LISTENER, vh.VirtualHost.TCPProxy, v.httpsAccessLog()),
+				envoy.TCPProxy(ENVOY_HTTPS_LISTENER, vh.TCPProxy, v.httpsAccessLog()),
 			)
 			alpnProtos = nil // do not offer ALPN
 		}

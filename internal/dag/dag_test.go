@@ -29,11 +29,6 @@ func TestVirtualHostValid(t *testing.T) {
 		},
 	}
 	assert.True(vh.Valid())
-
-	vh = VirtualHost{
-		TCPProxy: new(TCPProxy),
-	}
-	assert.True(vh.Valid())
 }
 
 func TestSecureVirtualHostValid(t *testing.T) {
@@ -67,17 +62,13 @@ func TestSecureVirtualHostValid(t *testing.T) {
 	assert.True(vh.Valid())
 
 	vh = SecureVirtualHost{
-		VirtualHost: VirtualHost{
-			TCPProxy: new(TCPProxy),
-		},
+		TCPProxy: new(TCPProxy),
 	}
 	assert.True(vh.Valid())
 
 	vh = SecureVirtualHost{
-		Secret: new(Secret),
-		VirtualHost: VirtualHost{
-			TCPProxy: new(TCPProxy),
-		},
+		Secret:   new(Secret),
+		TCPProxy: new(TCPProxy),
 	}
 	assert.True(vh.Valid())
 }

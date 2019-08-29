@@ -1990,11 +1990,11 @@ func TestDAGInsert(t *testing.T) {
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
 								Name: "kuard.example.com",
-								TCPProxy: &TCPProxy{
-									Clusters: clusters(
-										tcpService(s1),
-									),
-								},
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(
+									tcpService(s1),
+								),
 							},
 							Secret:          secret(sec1),
 							MinProtoVersion: auth.TlsParameters_TLSv1_1,
@@ -2014,11 +2014,11 @@ func TestDAGInsert(t *testing.T) {
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
 								Name: "kuard.example.com",
-								TCPProxy: &TCPProxy{
-									Clusters: clusters(
-										tcpService(s1),
-									),
-								},
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(
+									tcpService(s1),
+								),
 							},
 						},
 					),
@@ -2037,11 +2037,11 @@ func TestDAGInsert(t *testing.T) {
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
 								Name: "kuard.example.com",
-								TCPProxy: &TCPProxy{
-									Clusters: clusters(
-										tcpService(s6),
-									),
-								},
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(
+									tcpService(s6),
+								),
 							},
 						},
 					),
