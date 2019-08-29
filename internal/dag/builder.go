@@ -674,7 +674,7 @@ func (b *Builder) processTCPProxy(ir *ingressroutev1.IngressRoute, visited []*in
 				LoadBalancerStrategy: service.Strategy,
 			})
 		}
-		b.lookupSecureVirtualHost(host).VirtualHost.TCPProxy = &proxy
+		b.lookupSecureVirtualHost(host).TCPProxy = &proxy
 		b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
 		return
 	}

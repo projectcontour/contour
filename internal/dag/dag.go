@@ -133,9 +133,6 @@ type VirtualHost struct {
 	Name string
 
 	routes map[string]Vertex
-
-	// Service to TCP proxy all incoming connections.
-	*TCPProxy
 }
 
 func (v *VirtualHost) addRoute(route Vertex) {
@@ -156,15 +153,11 @@ func (v *VirtualHost) Visit(f func(Vertex)) {
 	for _, r := range v.routes {
 		f(r)
 	}
-	if v.TCPProxy != nil {
-		f(v.TCPProxy)
-	}
 }
 
 func (v *VirtualHost) Valid() bool {
-	// A VirtualHost is valid if it has at least one route,
-	// or tcp proxy is not nil.
-	return len(v.routes) > 0 || v.TCPProxy != nil
+	// A VirtualHost is valid if it has at least one route.
+	return len(v.routes) > 0
 }
 
 // A SecureVirtualHost represents a HTTP host protected by TLS.
@@ -176,10 +169,16 @@ type SecureVirtualHost struct {
 
 	// The cert and key for this host.
 	Secret *Secret
+
+	// Service to TCP proxy all incoming connections.
+	*TCPProxy
 }
 
 func (s *SecureVirtualHost) Visit(f func(Vertex)) {
 	s.VirtualHost.Visit(f)
+	if s.TCPProxy != nil {
+		f(s.TCPProxy)
+	}
 	if s.Secret != nil {
 		f(s.Secret) // secret is not required if vhost is using tls passthrough
 	}
