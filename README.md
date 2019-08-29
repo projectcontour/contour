@@ -4,9 +4,11 @@
 
 ## Overview
 
-Contour is an Ingress controller for Kubernetes that works by deploying the [Envoy proxy](https://www.envoyproxy.io/) as a reverse proxy and load balancer. Unlike other Ingress controllers, Contour supports dynamic configuration updates out of the box while maintaining a lightweight profile.
+Contour is an Ingress controller for Kubernetes that works by deploying the [Envoy proxy](https://www.envoyproxy.io/) as a reverse proxy and load balancer.
+Unlike other Ingress controllers, Contour supports dynamic configuration updates out of the box while maintaining a lightweight profile.
 
-Contour also introduces a new ingress API ([IngressRoute][2]) which is implemented via a Custom Resource Definition (CRD). Its goal is to expand upon the functionality of the Ingress API to allow for a richer user experience as well as solve shortcomings in the original design.
+Contour also introduces a new ingress API ([IngressRoute][2]) which is implemented via a Custom Resource Definition (CRD).
+Its goal is to expand upon the functionality of the Ingress API to allow for a richer user experience as well as solve shortcomings in the original design.
 
 ## Prerequisites
 
@@ -40,7 +42,6 @@ This command creates:
 - Depending on your configuration, new cloud resources -- for example, ELBs in AWS
 
 See also [TLS support](docs/tls.md) for details on configuring TLS support for the services behind Contour.
-TLS is available in Contour version 0.3 and later.
 
 For information on configuring TLS for gRPC between Contour and Envoy, see [grpc-tls-howto.md](docs/grpc-tls-howto.md)
 

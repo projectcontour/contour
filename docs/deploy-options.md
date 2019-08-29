@@ -3,25 +3,23 @@
 The [README](../README.md#get-started) shows you a simple way to get started with Contour on your cluster.
 This topic explains the details and shows you additional options.
 Most of this covers running Contour using a Kubernetes Service of `Type: LoadBalancer`.
-If you don't have a cluster with that capability or if you don't want to use it see the [Running without a Kubernetes LoadBalancer](#running-without-a-kubernetes-loadbalancer) section.
+If you don't have a cluster with that capability see the [Running without a Kubernetes LoadBalancer](#running-without-a-kubernetes-loadbalancer) section.
 
 ## Installation
 
 ### Recommended installation details
 
-The recommended installation of Contour has Contour running in a Deployment and Envoy in a Daemonset, with TLS securing the xDS gRPC communication between them.
-The `contour` example (which the README points you to) will install this for you.
+The recommended installation of Contour has Contour running in a Deployment and Envoy in a Daemonset with TLS securing the gRPC communication between them.
+The [`contour` example](../examples/contour/README.md) will install this for you.
 A Service of `type: LoadBalancer` is also set up to forward to the Envoy instances.
 
 The details of the installation are documented in [`contour`'s README.md](../examples/contour/README.md)
 
-When using this installation type, you may want to use Host Networking - please see the [appropriate section](#host-networking) for the details.
+If you wish to use Host Networking - please see the [appropriate section](#host-networking) for the details.
 
 ### Development installation details
 
-If you are running Contour for local development or in another small cluster (like minikube or kind), running multiple replicas may be overkill.
-For that use case, we provide the `contour-dev` example, which runs a single combined Pod in a Deployment that contains both Contour and Envoy containers.
-There is no security on their communication because it takes place over the Pod's localhost, and so the chances of people listening in are very low.
+If you are deploying contour on your laptop, we provide the `contour-dev` example, which runs a single combined Pod in a Deployment that contains both Contour and Envoy containers.
 
 Please see [`contour-dev`'s README.md](../examples/contour-dev/README.md) for the details.
 
@@ -158,11 +156,6 @@ curl -H 'Host: kuard.local' ${CONTOUR_IP}
 ## Running without a Kubernetes LoadBalancer
 
 If you can't or don't want to use a Service of `type: LoadBalancer` there are other ways to run Contour.
-
-### Local development
-
-As mentioned above, when you are doing local development, you can run a local cluster with [minikube](https://kubernetes.io/docs/setup/minikube/) or [kind](https://github.com/kubernetes-sigs/kind).
-Follow the instructions under [Get your hostname or IP address](#get-your-hostname-or-ip-address) to get access, then use your user agent of choice.
 
 ### NodePort Service
 
