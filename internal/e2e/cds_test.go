@@ -864,12 +864,12 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh.OnAdd(ir1)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
+		VersionInfo: "2",
 		Resources: resources(t,
 			tlscluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443", nil, ""),
 		),
 		TypeUrl: clusterType,
-		Nonce:   "1",
+		Nonce:   "2",
 	}, streamCDS(t, cc))
 
 	ir2 := &ingressroutev1.IngressRoute{
@@ -885,7 +885,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 					Name: "kuard",
 					Port: 443,
 					UpstreamValidation: &ingressroutev1.UpstreamValidation{
-						CACertificate: "foo",
+						CACertificate: secret.Name,
 						SubjectName:   "subjname",
 					},
 				}},
@@ -896,12 +896,12 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh.OnUpdate(ir1, ir2)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "3",
 		Resources: resources(t,
 			tlscluster("default/kuard/443/98c0f31c72", "default/kuard/securebackend", "default_kuard_443", []byte("ca"), "subjname"),
 		),
 		TypeUrl: clusterType,
-		Nonce:   "2",
+		Nonce:   "3",
 	}, streamCDS(t, cc))
 }
 

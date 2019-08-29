@@ -31,6 +31,35 @@ func TestDAGInsert(t *testing.T) {
 	// The DAG is sensitive to ordering, adding an ingress, then a service,
 	// should have the same result as adding a service, then an ingress.
 
+	sec1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata("certificate", "key"),
+	}
+
+	// Invalid cert in the secret
+	sec2 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata("", ""),
+	}
+
+	cert1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ca",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"ca.crt": []byte("ca"),
+		},
+	}
+
 	i1 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -87,7 +116,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host:             "kuard.example.com",
@@ -126,7 +155,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"b.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host:             "a.example.com",
@@ -148,7 +177,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"b.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host:             "a.example.com",
@@ -170,7 +199,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"b.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host:             "b.example.com",
@@ -190,7 +219,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"b.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host:             "b.example.com",
@@ -208,7 +237,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"b.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host: "b.example.com",
@@ -241,7 +270,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"b.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host: "b.example.com",
@@ -283,7 +312,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"b.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host: "b.example.com",
@@ -326,7 +355,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"b.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host: "b.example.com",
@@ -686,7 +715,7 @@ func TestDAGInsert(t *testing.T) {
 			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "kuard.example.com",
 				TLS: &ingressroutev1.TLS{
-					SecretName: "secret",
+					SecretName: sec1.Name,
 				},
 			},
 			Routes: []ingressroutev1.Route{{
@@ -883,7 +912,7 @@ func TestDAGInsert(t *testing.T) {
 			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "foo.com",
 				TLS: &ingressroutev1.TLS{
-					SecretName: "secret",
+					SecretName: sec1.Name,
 				},
 			},
 			Routes: []ingressroutev1.Route{{
@@ -906,7 +935,7 @@ func TestDAGInsert(t *testing.T) {
 			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "foo.com",
 				TLS: &ingressroutev1.TLS{
-					SecretName:             "secret",
+					SecretName:             sec1.Name,
 					MinimumProtocolVersion: "1.2",
 				},
 			},
@@ -930,7 +959,7 @@ func TestDAGInsert(t *testing.T) {
 			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "foo.com",
 				TLS: &ingressroutev1.TLS{
-					SecretName:             "secret",
+					SecretName:             sec1.Name,
 					MinimumProtocolVersion: "1.3",
 				},
 			},
@@ -954,7 +983,7 @@ func TestDAGInsert(t *testing.T) {
 			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "foo.com",
 				TLS: &ingressroutev1.TLS{
-					SecretName:             "secret",
+					SecretName:             sec1.Name,
 					MinimumProtocolVersion: "0.9999",
 				},
 			},
@@ -1114,7 +1143,7 @@ func TestDAGInsert(t *testing.T) {
 			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "foo.com",
 				TLS: &ingressroutev1.TLS{
-					SecretName: "secret",
+					SecretName: sec1.Name,
 				},
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1278,7 +1307,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: "kuard",
 					Port: 8080,
 					UpstreamValidation: &ingressroutev1.UpstreamValidation{
-						CACertificate: "ca",
+						CACertificate: cert1.Name,
 						SubjectName:   "example.com",
 					},
 				}},
@@ -1429,35 +1458,6 @@ func TestDAGInsert(t *testing.T) {
 				Protocol: "TCP",
 				Port:     8080,
 			}},
-		},
-	}
-
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: secretdata("certificate", "key"),
-	}
-
-	// Invalid cert in the secret
-	sec2 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: secretdata("", ""),
-	}
-
-	cert1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ca",
-			Namespace: "default",
-		},
-		Data: map[string][]byte{
-			"ca.crt": []byte("ca"),
 		},
 	}
 
