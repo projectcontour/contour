@@ -3099,7 +3099,8 @@ func TestBuilderLookupHTTPService(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			b := Builder{
 				Source: KubernetesCache{
-					services: services,
+					services:    services,
+					FieldLogger: testLogger(t),
 				},
 			}
 			b.reset()
@@ -3229,6 +3230,7 @@ func TestDAGRootNamespaces(t *testing.T) {
 			builder := Builder{
 				Source: KubernetesCache{
 					IngressRouteRootNamespaces: tc.rootNamespaces,
+					FieldLogger:                testLogger(t),
 				},
 			}
 
@@ -3797,6 +3799,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			builder := Builder{
 				Source: KubernetesCache{
 					IngressRouteRootNamespaces: []string{"roots"},
+					FieldLogger:                testLogger(t),
 				},
 			}
 			for _, o := range tc.objs {
