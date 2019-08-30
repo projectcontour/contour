@@ -19,6 +19,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	projectcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	"github.com/sirupsen/logrus"
 )
 
@@ -36,11 +37,13 @@ type KubernetesCache struct {
 	// If not set, defaults to DEFAULT_INGRESS_CLASS.
 	IngressClass string
 
-	ingresses     map[Meta]*v1beta1.Ingress
-	ingressroutes map[Meta]*ingressroutev1.IngressRoute
-	secrets       map[Meta]*v1.Secret
-	delegations   map[Meta]*ingressroutev1.TLSCertificateDelegation
-	services      map[Meta]*v1.Service
+	ingresses         map[Meta]*v1beta1.Ingress
+	ingressroutes     map[Meta]*ingressroutev1.IngressRoute
+	httploadbalancers map[Meta]*projectcontour.HTTPLoadBalancer
+	secrets           map[Meta]*v1.Secret
+	irdelegations     map[Meta]*ingressroutev1.TLSCertificateDelegation
+	httplbdelegations map[Meta]*projectcontour.TLSCertificateDelegation
+	services          map[Meta]*v1.Service
 
 	logrus.FieldLogger
 }
@@ -101,13 +104,32 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		}
 		kc.ingressroutes[m] = obj
 		return true
+	case *projectcontour.HTTPLoadBalancer:
+		class := getIngressClassAnnotation(obj.Annotations)
+		if class != "" && class != kc.ingressClass() {
+			return false
+		}
+		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		if kc.httploadbalancers == nil {
+			kc.httploadbalancers = make(map[Meta]*projectcontour.HTTPLoadBalancer)
+		}
+		kc.httploadbalancers[m] = obj
+		return true
 	case *ingressroutev1.TLSCertificateDelegation:
 		m := Meta{name: obj.Name, namespace: obj.Namespace}
-		if kc.delegations == nil {
-			kc.delegations = make(map[Meta]*ingressroutev1.TLSCertificateDelegation)
+		if kc.irdelegations == nil {
+			kc.irdelegations = make(map[Meta]*ingressroutev1.TLSCertificateDelegation)
 		}
-		kc.delegations[m] = obj
+		kc.irdelegations[m] = obj
 		return true
+	case *projectcontour.TLSCertificateDelegation:
+		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		if kc.httplbdelegations == nil {
+			kc.httplbdelegations = make(map[Meta]*projectcontour.TLSCertificateDelegation)
+		}
+		kc.httplbdelegations[m] = obj
+		return true
+
 	default:
 		// not an interesting object
 		kc.WithField("object", obj).Error("insert unknown object")
@@ -154,10 +176,20 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		_, ok := kc.ingressroutes[m]
 		delete(kc.ingressroutes, m)
 		return ok
+	case *projectcontour.HTTPLoadBalancer:
+		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		_, ok := kc.httploadbalancers[m]
+		delete(kc.httploadbalancers, m)
+		return ok
 	case *ingressroutev1.TLSCertificateDelegation:
 		m := Meta{name: obj.Name, namespace: obj.Namespace}
-		_, ok := kc.delegations[m]
-		delete(kc.delegations, m)
+		_, ok := kc.irdelegations[m]
+		delete(kc.irdelegations, m)
+		return ok
+	case *projectcontour.TLSCertificateDelegation:
+		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		_, ok := kc.httplbdelegations[m]
+		delete(kc.httplbdelegations, m)
 		return ok
 	default:
 		// not interesting
@@ -211,6 +243,27 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 			}
 		}
 	}
+
+	for _, ir := range kc.httploadbalancers {
+		if ir.Namespace != service.Namespace {
+			continue
+		}
+		for _, route := range ir.Spec.Routes {
+			for _, s := range route.Services {
+				if s.Name == service.Name {
+					return true
+				}
+			}
+		}
+		if tcpproxy := ir.Spec.TCPProxy; tcpproxy != nil {
+			for _, s := range tcpproxy.Services {
+				if s.Name == service.Name {
+					return true
+				}
+			}
+		}
+	}
+
 	return false
 }
 
@@ -228,7 +281,16 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 	}
 
 	delegations := make(map[string]bool) // targetnamespace/secretname to bool
-	for _, d := range kc.delegations {
+
+	// merge ingressroute.TLSCertificateDelegation and projectcontour.TLSCertificateDelegation.
+	for _, d := range kc.irdelegations {
+		for _, cd := range d.Spec.Delegations {
+			for _, n := range cd.TargetNamespaces {
+				delegations[n+"/"+cd.SecretName] = true
+			}
+		}
+	}
+	for _, d := range kc.httplbdelegations {
 		for _, cd := range d.Spec.Delegations {
 			for _, n := range cd.TargetNamespaces {
 				delegations[n+"/"+cd.SecretName] = true
@@ -286,7 +348,34 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 				return true
 			}
 		}
-
 	}
+
+	for _, httplb := range kc.httploadbalancers {
+		vh := httplb.Spec.VirtualHost
+		if vh == nil {
+			// not a root ingress
+			continue
+		}
+		tls := vh.TLS
+		if tls == nil {
+			// no tls spec
+			continue
+		}
+
+		if httplb.Namespace == secret.Namespace && tls.SecretName == secret.Name {
+			return true
+		}
+		if delegations[httplb.Namespace+"/"+secret.Name] {
+			if tls.SecretName == secret.Namespace+"/"+secret.Name {
+				return true
+			}
+		}
+		if delegations["*/"+secret.Name] {
+			if tls.SecretName == secret.Namespace+"/"+secret.Name {
+				return true
+			}
+		}
+	}
+
 	return false
 }

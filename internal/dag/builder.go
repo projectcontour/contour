@@ -306,7 +306,7 @@ func (b *Builder) delegationPermitted(secret Meta, to string) bool {
 		// secret is in the same namespace as target
 		return true
 	}
-	for _, d := range b.Source.delegations {
+	for _, d := range b.Source.irdelegations {
 		if d.Namespace != secret.namespace {
 			continue
 		}

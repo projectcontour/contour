@@ -172,6 +172,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	coreInformers.Extensions().V1beta1().Ingresses().Informer().AddEventHandler(eh)
 	contourInformers.Contour().V1beta1().IngressRoutes().Informer().AddEventHandler(eh)
 	contourInformers.Contour().V1beta1().TLSCertificateDelegations().Informer().AddEventHandler(eh)
+	contourInformers.Projectcontour().V1alpha1().HTTPLoadBalancers().Informer().AddEventHandler(eh)
+	contourInformers.Projectcontour().V1alpha1().TLSCertificateDelegations().Informer().AddEventHandler(eh)
+
 	// Add informers for each root-ingressroute namespaces
 	for _, inf := range namespacedInformers {
 		inf.Core().V1().Secrets().Informer().AddEventHandler(eh)

@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	projectcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -264,6 +265,110 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
+
+		"insert secret referenced by httploadbalancer": {
+			pre: []interface{}{
+				&projectcontour.HTTPLoadBalancer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projectcontour.HTTPLoadBalancerSpec{
+						VirtualHost: &projectcontour.VirtualHost{
+							TLS: &projectcontour.TLS{
+								SecretName: "secret",
+							},
+						},
+					},
+				},
+			},
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Type: v1.SecretTypeTLS,
+			},
+			want: true,
+		},
+		"insert secret referenced by httploadbalancer via tls delegation": {
+			pre: []interface{}{
+				&projectcontour.HTTPLoadBalancer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "extra",
+					},
+					Spec: projectcontour.HTTPLoadBalancerSpec{
+						VirtualHost: &projectcontour.VirtualHost{
+							TLS: &projectcontour.TLS{
+								SecretName: "default/secret",
+							},
+						},
+					},
+				},
+				&projectcontour.TLSCertificateDelegation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "delegation",
+						Namespace: "default",
+					},
+					Spec: projectcontour.TLSCertificateDelegationSpec{
+						Delegations: []projectcontour.CertificateDelegation{{
+							SecretName: "secret",
+							TargetNamespaces: []string{
+								"extra",
+							},
+						}},
+					},
+				},
+			},
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Type: v1.SecretTypeTLS,
+			},
+			want: true,
+		},
+		"insert secret referenced by httploadbalancer  via wildcard tls delegation": {
+			pre: []interface{}{
+				&projectcontour.HTTPLoadBalancer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "extra",
+					},
+					Spec: projectcontour.HTTPLoadBalancerSpec{
+						VirtualHost: &projectcontour.VirtualHost{
+							TLS: &projectcontour.TLS{
+								SecretName: "default/secret",
+							},
+						},
+					},
+				},
+				&projectcontour.TLSCertificateDelegation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "delegation",
+						Namespace: "default",
+					},
+					Spec: projectcontour.TLSCertificateDelegationSpec{
+						Delegations: []projectcontour.CertificateDelegation{{
+							SecretName: "secret",
+							TargetNamespaces: []string{
+								"*",
+							},
+						}},
+					},
+				},
+			},
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Type: v1.SecretTypeTLS,
+			},
+			want: true,
+		},
 		"insert certificate secret": {
 			obj: &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -316,7 +421,44 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-
+		/*
+			"insert certificate secret referenced by httploadbalancer": {
+				pre: []interface{}{
+					&projectcontour.HTTPLoadBalancer{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "example-com",
+							Namespace: "default",
+						},
+						Spec: projectcontour.HTTPLoadBalancerSpec{
+							VirtualHost: &projectcontour.VirtualHost{
+								Fqdn: "example.com",
+							},
+							Routes: []projectcontour.Route{{
+								Match: "/",
+								Services: []projectcontour.Service{{
+									Name: "kuard",
+									Port: 8080,
+									UpstreamValidation: &projectcontour.UpstreamValidation{
+										CACertificate: "ca",
+										SubjectName:   "example.com",
+									},
+								}},
+							}},
+						},
+					},
+				},
+				obj: &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ca",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						"ca.crt": []byte("ca"),
+					},
+				},
+				want: true,
+			},
+		*/
 		"insert ingress empty ingress class": {
 			obj: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
@@ -431,10 +573,85 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert tls certificate delegation": {
+		"insert httploadbalancer empty ingress annotation": {
+			obj: &projectcontour.HTTPLoadBalancer{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kuard",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert httploadbalancer incorrect contour.heptio.com/ingress.class": {
+			obj: &projectcontour.HTTPLoadBalancer{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"contour.heptio.com/ingress.class": "nginx",
+					},
+				},
+			},
+			want: false,
+		},
+		"insert httploadbalancer incorrect kubernetes.io/ingress.class": {
+			obj: &projectcontour.HTTPLoadBalancer{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"kubernetes.io/ingress.class": "nginx",
+					},
+				},
+			},
+			want: false,
+		},
+		"insert httploadbalancer: explicit contour.heptio.com/ingress.class": {
+			obj: &projectcontour.HTTPLoadBalancer{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kuard",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"contour.heptio.com/ingress.class": new(KubernetesCache).ingressClass(),
+					},
+				},
+			},
+			want: true,
+		},
+		"insert httploadbalancer explicit kubernetes.io/ingress.class": {
+			obj: &projectcontour.HTTPLoadBalancer{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kuard",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"kubernetes.io/ingress.class": new(KubernetesCache).ingressClass(),
+					},
+				},
+			},
+			want: true,
+		},
+		"insert tls contour/v1beta1.certificate delegation": {
 			obj: &ingressroutev1.TLSCertificateDelegation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "delegate",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert tls projectcontour/v1alpha1.certificate delegation": {
+			obj: &projectcontour.TLSCertificateDelegation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "delegate",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert httploadbalancer": {
+			obj: &projectcontour.HTTPLoadBalancer{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httplb",
 					Namespace: "default",
 				},
 			},
@@ -531,6 +748,54 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Spec: ingressroutev1.IngressRouteSpec{
 						TCPProxy: &ingressroutev1.TCPProxy{
 							Services: []ingressroutev1.Service{{
+								Name: "service",
+							}},
+						},
+					},
+				},
+			},
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert service referenced by httploadbalancer": {
+			pre: []interface{}{
+				&projectcontour.HTTPLoadBalancer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: projectcontour.HTTPLoadBalancerSpec{
+						Routes: []projectcontour.Route{{
+							Services: []projectcontour.Service{{
+								Name: "service",
+							}},
+						}},
+					},
+				},
+			},
+			obj: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert service referenced by httploadbalancer tcpproxy": {
+			pre: []interface{}{
+				&projectcontour.HTTPLoadBalancer{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: projectcontour.HTTPLoadBalancerSpec{
+						TCPProxy: &projectcontour.TCPProxy{
+							Services: []projectcontour.Service{{
 								Name: "service",
 							}},
 						},
@@ -673,6 +938,42 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				},
 			}),
 			obj: &ingressroutev1.IngressRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ingressroute",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"kubernetes.io/ingress.class": "nginx",
+					},
+				},
+			},
+			want: false,
+		},
+		"remove httploadbalancer": {
+			cache: cache(&projectcontour.HTTPLoadBalancer{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ingressroute",
+					Namespace: "default",
+				},
+			}),
+			obj: &projectcontour.HTTPLoadBalancer{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ingressroute",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"remove httploadbalancer incorrect ingressclass": {
+			cache: cache(&projectcontour.HTTPLoadBalancer{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ingressroute",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"kubernetes.io/ingress.class": "nginx",
+					},
+				},
+			}),
+			obj: &projectcontour.HTTPLoadBalancer{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "ingressroute",
 					Namespace: "default",
