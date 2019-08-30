@@ -6,11 +6,17 @@ metadata:
     component: httploadbalancer
 spec:
   group: projectcontour.io
-  version: v1alpha1
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
   scope: Namespaced
   names:
     plural: httploadbalancers
+    singular: httploadbalancer
     kind: HTTPLoadBalancer
+    shortNames:
+      - httplb
   additionalPrinterColumns:
     - name: FQDN
       type: string
@@ -43,8 +49,13 @@ spec:
   group: projectcontour.io
   version: v1alpha1
   scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
   names:
     plural: tlscertificatedelegations
+    singular: tlscertificatdelegation
     kind: TLSCertificateDelegation
   validation:
     openAPIV3Schema:
@@ -63,4 +74,3 @@ spec:
                     type: string
                   targetNamespaces:
                     type: array
-
