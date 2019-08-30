@@ -289,41 +289,39 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		namespacedInformers = append(namespacedInformers, inf)
 	}
 
-	// step 3. establish our (poorly named) gRPC cache handler.
-	ch := contour.CacheHandler{
-		ListenerVisitorConfig: contour.ListenerVisitorConfig{
-			UseProxyProto:          ctx.useProxyProto,
-			HTTPAddress:            ctx.httpAddr,
-			HTTPPort:               ctx.httpPort,
-			HTTPAccessLog:          ctx.httpAccessLog,
-			HTTPSAddress:           ctx.httpsAddr,
-			HTTPSPort:              ctx.httpsPort,
-			HTTPSAccessLog:         ctx.httpsAccessLog,
-			MinimumProtocolVersion: dag.MinProtoVersion(ctx.TLSConfig.MinimumProtocolVersion),
-		},
-		ListenerCache: contour.NewListenerCache(ctx.statsAddr, ctx.statsPort),
-		FieldLogger:   log.WithField("context", "CacheHandler"),
-		IngressRouteStatus: &k8s.IngressRouteStatus{
-			Client: contourClient,
-		},
-	}
-
-	// step 4. wrap the cache handler in a k8s event handler.
+	// step 3. build our mammoth Kubernetes event handler.
 	eh := &contour.EventHandler{
-		CacheHandler:    &ch,
+		CacheHandler: &contour.CacheHandler{
+			ListenerVisitorConfig: contour.ListenerVisitorConfig{
+				UseProxyProto:          ctx.useProxyProto,
+				HTTPAddress:            ctx.httpAddr,
+				HTTPPort:               ctx.httpPort,
+				HTTPAccessLog:          ctx.httpAccessLog,
+				HTTPSAddress:           ctx.httpsAddr,
+				HTTPSPort:              ctx.httpsPort,
+				HTTPSAccessLog:         ctx.httpsAccessLog,
+				MinimumProtocolVersion: dag.MinProtoVersion(ctx.TLSConfig.MinimumProtocolVersion),
+			},
+			ListenerCache: contour.NewListenerCache(ctx.statsAddr, ctx.statsPort),
+			FieldLogger:   log.WithField("context", "CacheHandler"),
+			IngressRouteStatus: &k8s.IngressRouteStatus{
+				Client: contourClient,
+			},
+		},
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
 				IngressRouteRootNamespaces: ctx.ingressRouteRootNamespaces(),
 				IngressClass:               ctx.ingressClass,
+				FieldLogger:                log.WithField("context", "KubernetesCache"),
 			},
 			DisablePermitInsecure: ctx.DisablePermitInsecure,
 		},
 		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}
 
-	// step 5. register our resource event handler with the k8s informers.
+	// step 4. register our resource event handler with the k8s informers.
 	coreInformers.Core().V1().Services().Informer().AddEventHandler(eh)
 	coreInformers.Extensions().V1beta1().Ingresses().Informer().AddEventHandler(eh)
 	contourInformers.Contour().V1beta1().IngressRoutes().Informer().AddEventHandler(eh)
@@ -337,14 +335,14 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		coreInformers.Core().V1().Secrets().Informer().AddEventHandler(eh)
 	}
 
-	// step 6. endpoints updates are handled directly by the EndpointsTranslator
+	// step 5. endpoints updates are handled directly by the EndpointsTranslator
 	// due to their high update rate and their orthogonal nature.
 	et := &contour.EndpointsTranslator{
 		FieldLogger: log.WithField("context", "endpointstranslator"),
 	}
 	coreInformers.Core().V1().Endpoints().Informer().AddEventHandler(et)
 
-	// step 7. setup workgroup runner and register informers.
+	// step 6. setup workgroup runner and register informers.
 	var g workgroup.Group
 	g.Add(startInformer(coreInformers, log.WithField("context", "coreinformers")))
 	g.Add(startInformer(contourInformers, log.WithField("context", "contourinformers")))
@@ -352,15 +350,15 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		g.Add(startInformer(inf, log.WithField("context", "corenamespacedinformers")))
 	}
 
-	// step 8. register our event handler with the workgroup
+	// step 7. register our event handler with the workgroup
 	g.Add(eh.Start())
 
-	// step 9. setup prometheus registry and register base metrics.
+	// step 8. setup prometheus registry and register base metrics.
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	registry.MustRegister(prometheus.NewGoCollector())
 
-	// step 10. create metrics service and register with workgroup.
+	// step 9. create metrics service and register with workgroup.
 	metricsvc := metrics.Service{
 		Service: httpsvc.Service{
 			Addr:        ctx.metricsAddr,
@@ -372,7 +370,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 	g.Add(metricsvc.Start)
 
-	// step 11. create debug service and register with workgroup.
+	// step 10. create debug service and register with workgroup.
 	debugsvc := debug.Service{
 		Service: httpsvc.Service{
 			Addr:        ctx.debugAddr,
@@ -383,7 +381,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 	g.Add(debugsvc.Start)
 
-	// step 12. Setup leader election
+	// step 11. Setup leader election
 
 	// leaderOK will block gRPC startup until it's closed.
 	leaderOK := make(chan struct{})
@@ -487,11 +485,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 		return nil
 	})
-	// step 13. register our custom metrics and plumb into cache handler
+	// step 12. register our custom metrics and plumb into cache handler
 	// and resource event handler.
 	metrics := metrics.NewMetrics(registry)
-	ch.Metrics = metrics
 	eh.Metrics = metrics
+	eh.CacheHandler.Metrics = metrics
 
 	// step 14. create grpc handler and register with workgroup.
 	// This will block until the program becomes the leader.
@@ -518,11 +516,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 
 		s := grpc.NewAPI(log, map[string]grpc.Resource{
-			ch.ClusterCache.TypeURL():  &ch.ClusterCache,
-			ch.RouteCache.TypeURL():    &ch.RouteCache,
-			ch.ListenerCache.TypeURL(): &ch.ListenerCache,
-			et.TypeURL():               et,
-			ch.SecretCache.TypeURL():   &ch.SecretCache,
+			eh.CacheHandler.ClusterCache.TypeURL():  &eh.CacheHandler.ClusterCache,
+			eh.CacheHandler.RouteCache.TypeURL():    &eh.CacheHandler.RouteCache,
+			eh.CacheHandler.ListenerCache.TypeURL(): &eh.CacheHandler.ListenerCache,
+			eh.CacheHandler.SecretCache.TypeURL():   &eh.CacheHandler.SecretCache,
+			et.TypeURL():                            et,
 		})
 		log.WithField("address", addr).Info("started")
 		defer log.Info("stopped")

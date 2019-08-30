@@ -567,6 +567,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			builder := dag.Builder{
 				Source: dag.KubernetesCache{
 					IngressRouteRootNamespaces: tc.rootNamespaces,
+					FieldLogger:                testLogger(t),
 				},
 			}
 			for _, o := range tc.objs {
