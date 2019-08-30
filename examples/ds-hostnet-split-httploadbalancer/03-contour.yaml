@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: contour
+  name: contour
+  namespace: heptio-contour
+spec:
+  replicas: 2
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: contour
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+      labels:
+        app: contour
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: contour
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      containers:
+      - args:
+        - serve
+        - --incluster
+        - --enable-leader-election
+        - --xds-address=0.0.0.0
+        - --xds-port=8001
+        - --envoy-service-http-port=80
+        - --envoy-service-https-port=443
+        - --contour-cafile=/ca/cacert.pem
+        - --contour-cert-file=/certs/tls.crt
+        - --contour-key-file=/certs/tls.key
+        - --config-path=/config/contour.yaml
+        command: ["contour"]
+        image: gcr.io/heptio-images/contour:master
+        imagePullPolicy: Always
+        name: contour
+        ports:
+        - containerPort: 8001
+          name: xds
+          protocol: TCP
+        - containerPort: 8000
+          name: debug
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+        readinessProbe:
+          tcpSocket:
+            port: 8001
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        volumeMounts:
+          - name: contourcert
+            mountPath: /certs
+            readOnly: true
+          - name: cacert
+            mountPath: /ca
+            readOnly: true
+          - name: contour-config
+            mountPath: /config
+            readOnly: true
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+      dnsPolicy: ClusterFirst
+      serviceAccountName: contour
+      volumes:
+        - name: contourcert
+          secret:
+            secretName: contourcert
+        - name: cacert
+          secret:
+            secretName:   cacert
+        - name: contour-config
+          configMap:
+            name: contour
+            defaultMode: 0644
+            items:
+            - key: contour.yaml
+              path: contour.yaml
