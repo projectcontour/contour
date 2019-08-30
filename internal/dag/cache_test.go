@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -466,7 +467,9 @@ func TestKubernetesCacheInsert(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var cache KubernetesCache
+			cache := KubernetesCache{
+				FieldLogger: testLogger(t),
+			}
 			for _, p := range tc.pre {
 				cache.Insert(p)
 			}
@@ -480,7 +483,9 @@ func TestKubernetesCacheInsert(t *testing.T) {
 
 func TestKubernetesCacheRemove(t *testing.T) {
 	cache := func(objs ...interface{}) *KubernetesCache {
-		var cache KubernetesCache
+		cache := KubernetesCache{
+			FieldLogger: testLogger(t),
+		}
 		for _, o := range objs {
 			cache.Insert(o)
 		}
@@ -609,4 +614,19 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			}
 		})
 	}
+}
+
+func testLogger(t *testing.T) logrus.FieldLogger {
+	log := logrus.New()
+	log.Out = &testWriter{t}
+	return log
+}
+
+type testWriter struct {
+	*testing.T
+}
+
+func (t *testWriter) Write(buf []byte) (int, error) {
+	t.Logf("%s", buf)
+	return len(buf), nil
 }
