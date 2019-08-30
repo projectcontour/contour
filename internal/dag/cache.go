@@ -19,6 +19,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	"github.com/sirupsen/logrus"
 )
 
 const DEFAULT_INGRESS_CLASS = "contour"
@@ -40,6 +41,8 @@ type KubernetesCache struct {
 	secrets       map[Meta]*v1.Secret
 	delegations   map[Meta]*ingressroutev1.TLSCertificateDelegation
 	services      map[Meta]*v1.Service
+
+	logrus.FieldLogger
 }
 
 // Meta holds the name and namespace of a Kubernetes object.
@@ -107,6 +110,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		return true
 	default:
 		// not an interesting object
+		kc.WithField("object", obj).Error("insert unknown object")
 		return false
 	}
 }
@@ -157,6 +161,7 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		return ok
 	default:
 		// not interesting
+		kc.WithField("object", obj).Error("remove unknown object")
 		return false
 	}
 }
