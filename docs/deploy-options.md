@@ -17,12 +17,6 @@ The details of the installation are documented in [`contour`'s README.md](../exa
 
 If you wish to use Host Networking please see the [appropriate section](#host-networking) for the details.
 
-### Development installation details
-
-If you are deploying contour on your laptop, we provide the `contour-dev` example, which runs a single combined Pod in a Deployment that contains both Contour and Envoy containers.
-
-Please see [`contour-dev`'s README.md](../examples/contour-dev/README.md) for the details.
-
 ## Testing your installation
 
 ### Get your hostname or IP address

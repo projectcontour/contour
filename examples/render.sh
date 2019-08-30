@@ -5,5 +5,3 @@ ls ds-grpc-v2/*.yaml | xargs cat common/gen-warning.yaml > render/daemonset-rbac
 ls deployment-grpc-v2/*.yaml | xargs cat common/gen-warning.yaml > render/deployment-rbac.yaml
 
 ls contour/*.yaml | xargs cat common/gen-warning.yaml > render/contour.yaml
-
-ls contour-dev/*.yaml | xargs cat common/gen-warning.yaml > render/contour-dev.yaml

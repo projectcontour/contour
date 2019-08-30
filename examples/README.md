@@ -12,11 +12,6 @@ It will deploy Contour into a Deployment, and Envoy into a Daemonset.
 The gRPC communication is secured with certificates.
 A `LoadBalancer` Service is created to expose Envoy to your cloud provider's load balancer.
 
-## [`contour-dev`](./contour-dev/README.md)
-
-This is an example installation of Contour, designed for local development.
-It will deploy a single Pod containing Contour and Envoy containers.
-
 ## `common`
 
 YAML fragments that are common across multiple examples. Not for applying to a Kubernetes cluster directly.
