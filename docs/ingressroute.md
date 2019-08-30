@@ -70,14 +70,14 @@ As with all Kubernetes objects, you can use `kubectl` to create, list, describe,
 
 Creating an IngressRoute:
 
-```shell
+```bash
 $ kubectl create -f basic.ingressroute.yaml
 ingressroute "basic" created
 ```
 
 Listing IngressRoutes:
 
-```Shell
+```bash
 $ kubectl get ingressroute
 NAME      AGE
 basic     24s

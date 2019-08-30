@@ -347,10 +347,6 @@ data:
     # leaderelection:
       # configmap-name: contour
       # configmap-namespace: heptio-contour
-      # TODO(youngnick) not sure whether to document these tbh.
-      # lease-duration: 15s
-      # renew-deadline: 10s
-      # retry-period: 2s
 ---
 apiVersion: apps/v1
 kind: DaemonSet

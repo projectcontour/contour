@@ -9,13 +9,13 @@ If you don't have a cluster with that capability see the [Running without a Kube
 
 ### Recommended installation details
 
-The recommended installation of Contour has Contour running in a Deployment and Envoy in a Daemonset with TLS securing the gRPC communication between them.
+The recommended installation of Contour is Contour running in a Deployment and Envoy in a Daemonset with TLS securing the gRPC communication between them.
 The [`contour` example](../examples/contour/README.md) will install this for you.
 A Service of `type: LoadBalancer` is also set up to forward to the Envoy instances.
 
 The details of the installation are documented in [`contour`'s README.md](../examples/contour/README.md)
 
-If you wish to use Host Networking - please see the [appropriate section](#host-networking) for the details.
+If you wish to use Host Networking please see the [appropriate section](#host-networking) for the details.
 
 ### Development installation details
 
@@ -30,7 +30,7 @@ Please see [`contour-dev`'s README.md](../examples/contour-dev/README.md) for th
 To retrieve the IP address or DNS name assigned to your Contour deployment, run:
 
 ```bash
-kubectl get -n heptio-contour service contour -o wide
+$ kubectl get -n heptio-contour service contour -o wide
 ```
 
 On AWS, for example, the response looks like:
@@ -50,7 +50,7 @@ See the [instructions for enabling the PROXY protocol.](proxy-proto.md).
 On Minikube, to get the IP address of the Contour service run:
 
 ```bash
-minikube service -n heptio-contour contour --url
+$ minikube service -n heptio-contour contour --url
 ```
 
 The response is always an IP address, for example `http://192.168.99.100:30588`. This is used as CONTOUR_IP in the rest of the documentation.
@@ -75,7 +75,7 @@ Then run the create cluster command passing the config file as a parameter.
 This file is in the `examples/kind` directory:
 
 ```bash
-kind create cluster --config examples/kind/kind-expose-port.yaml
+$ kind create cluster --config examples/kind/kind-expose-port.yaml
 ```
 
 Then, your CONTOUR_IP (as used below) will just be `localhost:8080`.
@@ -88,13 +88,13 @@ The Contour repository contains an example deployment of the Kubernetes Up and R
 To test your Contour deployment, deploy `kuard` with the following command:
 
 ```bash
-kubectl apply -f examples/example-workload/kuard.yaml
+$ kubectl apply -f examples/example-workload/kuard.yaml
 ```
 
 Then monitor the progress of the deployment with:
 
 ```bash
-kubectl get po,svc,ing -l app=kuard
+$ kubectl get po,svc,ing -l app=kuard
 ```
 
 You should see something like:
@@ -121,13 +121,13 @@ In your browser, navigate your browser to the IP or DNS address of the Contour S
 To test your Contour deployment with [IngressRoutes](ingressroute.md), run the following command:
 
 ```sh
-kubectl apply -f examples/example-workload/kuard-ingressroute.yaml
+$ kubectl apply -f examples/example-workload/kuard-ingressroute.yaml
 ```
 
 Then monitor the progress of the deployment with:
 
 ```sh
-kubectl get po,svc,ingressroute -l app=kuard
+$ kubectl get po,svc,ingressroute -l app=kuard
 ```
 
 You should see something like:
@@ -150,7 +150,7 @@ ingressroute.contour.heptio.com/kuard   1h
 In your terminal, use curl with the IP or DNS address of the Contour Service to send a request to the demo application:
 
 ```sh
-curl -H 'Host: kuard.local' ${CONTOUR_IP}
+$ curl -H 'Host: kuard.local' ${CONTOUR_IP}
 ```
 
 ## Running without a Kubernetes LoadBalancer
@@ -188,5 +188,5 @@ If the `kubernetes.io/ingress.class` annotation is present with a value other th
 To remove Contour from your cluster, delete the namespace:
 
 ```bash
-kubectl delete ns heptio-contour
+$ kubectl delete ns heptio-contour
 ```

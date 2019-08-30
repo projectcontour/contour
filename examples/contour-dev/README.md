@@ -1,10 +1,10 @@
-# Contour-dev Installation
+# `contour-dev` Installation
 
 This is an installation guide to configure Contour in a standalone Daemonset for easy trialling or development.
 
 ## Moving parts
 
-- Contour and Envoy are run as in a Daemonset as Sidecars.
+- Contour and Envoy containers deployed in a single Pod.
 - Envoy runs on ports 80 & 443
 
 ## Install
@@ -12,7 +12,7 @@ This is an installation guide to configure Contour in a standalone Daemonset for
 Either run:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/heptio/contour/master/examples/render/contour-dv.yaml
+kubectl apply -f https://raw.githubusercontent.com/heptio/contour/master/examples/render/contour-dev.yaml
 ```
 
 or:

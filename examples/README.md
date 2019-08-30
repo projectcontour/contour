@@ -1,25 +1,25 @@
 # examples
 
-This directory contains example code for both installing Contour Envoy.
- also for setting up various extensions and other pieces of software that may help with running Contour.
+This directory contains example code for installing Contour and Envoy.
 
-Most of the directories contain a complete set of Kubernetes YAML that can be applied to a cluster. This section describes the purpose of each directory, and inside each directory is a README.md that describes the details.
+Most subdirectories contain a complete set of Kubernetes YAML that can be applied to a cluster.
+This section describes the purpose of each subdirectory.
 
 ## [`contour`](./contour/README.md)
 
 This is the recommended example installation of Contour.
 It will deploy Contour into a Deployment, and Envoy into a Daemonset.
 The gRPC communication is secured with certificates.
-A `LoadBalancer` Service is creatd to expose Envoy to your upstream load balancer provider.
+A `LoadBalancer` Service is created to expose Envoy to your cloud provider's load balancer.
 
 ## [`contour-dev`](./contour-dev/README.md)
 
-This is an example installation of Contour, designed for local development or other trial use.
-It will deploy a single Pod that runs a Contour and an Envoy container.
+This is an example installation of Contour, designed for local development.
+It will deploy a single Pod containing Contour and Envoy containers.
 
 ## `common`
 
-The YAML fragments that are common across multiple examples. Not for applying to a Kubernetes cluster directly.
+YAML fragments that are common across multiple examples. Not for applying to a Kubernetes cluster directly.
 
 ## `example-workload`
 
