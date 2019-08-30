@@ -1,4 +1,4 @@
-FROM golang:1.13rc1 AS build
+FROM golang:1.13rc2 AS build
 WORKDIR /contour
 
 ENV GOPROXY=https://proxy.golang.org
