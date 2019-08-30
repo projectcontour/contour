@@ -54,6 +54,10 @@ type Meta struct {
 func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	switch obj := obj.(type) {
 	case *v1.Secret:
+		if obj.Type == v1.SecretTypeServiceAccountToken {
+			// ignore service account tokens, see #1419
+			return false
+		}
 		if _, hasCA := obj.Data["ca.crt"]; obj.Type != v1.SecretTypeTLS && !hasCA {
 			// ignore everything but kubernetes.io/tls secrets
 			// and secrets with a ca.crt key.
