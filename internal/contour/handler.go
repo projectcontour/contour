@@ -227,13 +227,14 @@ func (e *EventHandler) updateDAG() {
 // setIngressRouteStatus updates the status of Ingressroute objects.
 func (e *EventHandler) setIngressRouteStatus(statuses map[dag.Meta]dag.Status) {
 	for _, st := range statuses {
-		err := e.IngressRouteStatus.SetStatus(st.Status, st.Description, st.Object)
+		obj := st.Object.(*ingressroutev1.IngressRoute)
+		err := e.IngressRouteStatus.SetStatus(st.Status, st.Description, obj)
 		if err != nil {
 			e.WithError(err).
 				WithField("status", st.Status).
 				WithField("desc", st.Description).
-				WithField("name", st.Object.Name).
-				WithField("namespace", st.Object.Namespace).
+				WithField("name", obj.Name).
+				WithField("namespace", obj.Namespace).
 				Error("failed to set status")
 		}
 	}

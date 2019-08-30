@@ -1489,6 +1489,157 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	httlb1 := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	httlb1e := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Condition: projcontour.Condition{
+					Prefix: "/",
+				},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+					HealthCheck: &projcontour.HealthCheck{
+						Path: "/healthz",
+					},
+				}},
+			}},
+		},
+	}
+
+	// httplb6 has TLS and does not specify min tls version
+	httplb6 := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "foo.com",
+				TLS: &projcontour.TLS{
+					SecretName: sec1.Name,
+				},
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// httplb10 has a websocket route
+	httplb10 := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}, {
+				Condition: projcontour.Condition{
+					Prefix: "/websocket",
+				},
+				EnableWebsockets: true,
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// httplb10b has a websocket route w/multiple upstreams
+	httplb10b := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}, {
+				Condition: projcontour.Condition{
+					Prefix: "/websocket",
+				},
+				EnableWebsockets: true,
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}, {
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// httplb11 has a prefix-rewrite route
+	httplb11 := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}, {
+				Condition: projcontour.Condition{
+					Prefix: "/websocket",
+				},
+				PrefixRewrite: "/",
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			},
+			}},
+	}
+
 	tests := map[string]struct {
 		objs                  []interface{}
 		disablePermitInsecure bool
@@ -1990,7 +2141,6 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-
 		"insert ingressroute with websocket route": {
 			objs: []interface{}{
 				ir11, s1,
@@ -2053,7 +2203,6 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-
 		"insert root ingress route and delegate ingress route for a tcp proxy": {
 			objs: []interface{}{
 				ir1d, s6, ir1c,
@@ -3102,6 +3251,117 @@ func TestDAGInsert(t *testing.T) {
 								Clusters: clusters(service(s9)),
 							},
 						},
+					),
+				},
+			),
+		},
+		"insert httploadbalancer": {
+			objs: []interface{}{
+				httlb1, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"insert httploadbalancer w/ healthcheck": {
+			objs: []interface{}{
+				httlb1e, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/", &Cluster{
+								Upstream: service(s1),
+								HealthCheckPolicy: &HealthCheckPolicy{
+									Path: "/healthz",
+								},
+							}),
+						),
+					),
+				},
+			),
+		},
+		"insert httploadbalancer with websocket route": {
+			objs: []interface{}{
+				httplb11, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							prefixroute("/", service(s1)),
+							routeRewrite("/websocket", "/", service(s1)),
+						),
+					),
+				},
+			),
+		},
+		"insert httploadbalancer with prefix rewrite route": {
+			objs: []interface{}{
+				httplb10, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							prefixroute("/", service(s1)),
+							routeWebsocket("/websocket", service(s1)),
+						),
+					),
+				},
+			),
+		},
+		"insert httploadbalancer with multiple upstreams prefix rewrite route, websocket routes are dropped": {
+			objs: []interface{}{
+				httplb10b, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							prefixroute("/", service(s1)),
+						),
+					),
+				},
+			),
+		},
+		"insert httploadbalancer and service": {
+			objs: []interface{}{
+				httlb1, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"insert httploadbalancer without tls version": {
+			objs: []interface{}{
+				httplb6, s1, sec1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("foo.com", routeUpgrade("/", service(s1))),
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("foo.com", sec1, routeUpgrade("/", service(s1))),
 					),
 				},
 			),
