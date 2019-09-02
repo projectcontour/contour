@@ -547,15 +547,6 @@ rules:
   - put
   - post
   - patch
-- apiGroups: ["projectcontour.io"]
-  resources: ["httploadbalancers", "tlscertificatedelegations"]
-  verbs:
-  - get
-  - list
-  - watch
-  - put
-  - post
-  - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role

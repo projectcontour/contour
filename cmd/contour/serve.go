@@ -113,7 +113,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests").IntVar(&ctx.httpsPort)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ctx.useProxyProto)
 
-	serve.Flag("disable-leader-election", "Enable leader election mechanism").BoolVar(&ctx.DisableLeaderElection)
+	serve.Flag("disable-leader-election", "Disable leader election mechanism").BoolVar(&ctx.DisableLeaderElection)
 	return serve, ctx
 }
 
@@ -298,6 +298,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	check(err)
 	// AddContext will generate its own context.Context and pass it in,
 	// managing the close process when the other goroutines are closed.
+	// TODO(youngnick) we can probably skip this if leader election is disabled
+	// and just close leaderOK.
 	g.AddContext(func(electionCtx context.Context) {
 		log := log.WithField("context", "leaderelection")
 		if ctx.DisableLeaderElection {
@@ -340,7 +342,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	eh.CacheHandler.Metrics = metrics
 
 	// step 14. create grpc handler and register with workgroup.
-	// This will block until the program becomes the leader.
 	g.Add(func(stop <-chan struct{}) error {
 		log := log.WithField("context", "grpc")
 		resources := map[string]cgrpc.Resource{

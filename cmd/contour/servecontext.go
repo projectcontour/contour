@@ -80,7 +80,7 @@ type serveContext struct {
 	// permitInsecure field in IngressRoute.
 	DisablePermitInsecure bool `yaml:"disablePermitInsecure,omitempty"`
 
-	// DisableLeaderElection should only be set by command line flag.
+	// DisableLeaderElection can only be set by command line flag.
 	DisableLeaderElection bool `yaml:"-"`
 
 	// LeaderElectionConfig can be set in the config file.
