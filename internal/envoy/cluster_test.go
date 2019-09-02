@@ -395,8 +395,8 @@ func TestCluster(t *testing.T) {
 				CommonLbConfig:                ClusterCommonLBConfig(),
 				DrainConnectionsOnHostRemoval: true,
 				HealthChecks: []*core.HealthCheck{{
-					Timeout:            secondsOrDefault(0, hcTimeout),
-					Interval:           secondsOrDefault(0, hcInterval),
+					Timeout:            durationOrDefault(0, hcTimeout),
+					Interval:           durationOrDefault(0, hcInterval),
 					UnhealthyThreshold: countOrDefault(0, hcUnhealthyThreshold),
 					HealthyThreshold:   countOrDefault(0, hcHealthyThreshold),
 					HealthChecker: &core.HealthCheck_HttpHealthCheck_{
@@ -469,11 +469,11 @@ func TestClustername(t *testing.T) {
 				},
 				LoadBalancerStrategy: "Random",
 				HealthCheckPolicy: &dag.HealthCheckPolicy{
-					Path:                    "/healthz",
-					IntervalSeconds:         5,
-					TimeoutSeconds:          30,
-					UnhealthyThresholdCount: 3,
-					HealthyThresholdCount:   1,
+					Path:               "/healthz",
+					Interval:           5 * time.Second,
+					Timeout:            30 * time.Second,
+					UnhealthyThreshold: 3,
+					HealthyThreshold:   1,
 				},
 			},
 			want: "default/backend/80/5c26077e1d",

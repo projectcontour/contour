@@ -68,12 +68,12 @@ func TestHealthCheck(t *testing.T) {
 		"explicit healthcheck": {
 			cluster: &dag.Cluster{
 				HealthCheckPolicy: &dag.HealthCheckPolicy{
-					Host:                    "foo-bar-host",
-					Path:                    "/healthy",
-					TimeoutSeconds:          99,
-					IntervalSeconds:         98,
-					UnhealthyThresholdCount: 97,
-					HealthyThresholdCount:   96,
+					Host:               "foo-bar-host",
+					Path:               "/healthy",
+					Timeout:            99 * time.Second,
+					Interval:           98 * time.Second,
+					UnhealthyThreshold: 97,
+					HealthyThreshold:   96,
 				},
 			},
 			want: &core.HealthCheck{

@@ -180,17 +180,17 @@ func Clustername(cluster *dag.Cluster) string {
 	}
 	buf := cluster.LoadBalancerStrategy
 	if hc := cluster.HealthCheckPolicy; hc != nil {
-		if hc.TimeoutSeconds > 0 {
-			buf += (time.Duration(hc.TimeoutSeconds) * time.Second).String()
+		if hc.Timeout > 0 {
+			buf += hc.Timeout.String()
 		}
-		if hc.IntervalSeconds > 0 {
-			buf += (time.Duration(hc.IntervalSeconds) * time.Second).String()
+		if hc.Interval > 0 {
+			buf += hc.Interval.String()
 		}
-		if hc.UnhealthyThresholdCount > 0 {
-			buf += strconv.Itoa(int(hc.UnhealthyThresholdCount))
+		if hc.UnhealthyThreshold > 0 {
+			buf += strconv.Itoa(hc.UnhealthyThreshold)
 		}
-		if hc.HealthyThresholdCount > 0 {
-			buf += strconv.Itoa(int(hc.HealthyThresholdCount))
+		if hc.HealthyThreshold > 0 {
+			buf += strconv.Itoa(hc.HealthyThreshold)
 		}
 		buf += hc.Path
 	}
