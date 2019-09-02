@@ -113,7 +113,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests").IntVar(&ctx.httpsPort)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ctx.useProxyProto)
 
-	serve.Flag("enable-leader-election", "Enable leader election mechanism").BoolVar(&ctx.EnableLeaderElection)
+	serve.Flag("disable-leader-election", "Enable leader election mechanism").BoolVar(&ctx.DisableLeaderElection)
 	return serve, ctx
 }
 
@@ -300,10 +300,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// managing the close process when the other goroutines are closed.
 	g.AddContext(func(electionCtx context.Context) {
 		log := log.WithField("context", "leaderelection")
-		if !ctx.EnableLeaderElection {
+		if ctx.DisableLeaderElection {
 			log.Info("Leader election disabled")
-			// if leader election is disabled, signal the gRPC goroutine
-			// to start serving and finsh up this context.
+			// if leader election is disabled, send the go signal.
 			// The Workgroup will handle leaving this running until everything
 			// else closes down.
 			close(leaderOK)
@@ -353,33 +352,26 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 		opts := ctx.grpcOptions()
 		s := cgrpc.NewAPI(log, resources, opts...)
-		select {
-		case <-stop:
-			// shut down
-			return nil
-		case <-leaderOK:
-			// we've become leader, open the listening socket
-			addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
-			l, err := net.Listen("tcp", addr)
-			if err != nil {
-				return err
-			}
-
-			log = log.WithField("address", addr)
-			if ctx.PermitInsecureGRPC {
-				log = log.WithField("insecure", true)
-			}
-
-			log.Info("started")
-			defer log.Info("stopped")
-
-			go func() {
-				<-stop
-				s.Stop()
-			}()
-
-			return s.Serve(l)
+		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
+		l, err := net.Listen("tcp", addr)
+		if err != nil {
+			return err
 		}
+
+		log = log.WithField("address", addr)
+		if ctx.PermitInsecureGRPC {
+			log = log.WithField("insecure", true)
+		}
+
+		log.Info("started")
+		defer log.Info("stopped")
+
+		go func() {
+			<-stop
+			s.Stop()
+		}()
+
+		return s.Serve(l)
 	})
 
 	// step 15. Setup SIGTERM handler

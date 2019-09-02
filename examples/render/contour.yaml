@@ -346,7 +346,7 @@ data:
     # The following config shows the defaults for the leader election.
     # leaderelection:
       # configmap-name: contour
-      # configmap-namespace: heptio-contour
+      # configmap-namespace: leader-elect
 ---
 ---
 apiVersion: v1
@@ -481,6 +481,15 @@ rules:
   - put
   - post
   - patch
+- apiGroups: ["projectcontour.io"]
+  resources: ["httploadbalancers", "tlscertificatedelegations"]
+  verbs:
+  - get
+  - list
+  - watch
+  - put
+  - post
+  - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
@@ -594,7 +603,6 @@ spec:
       - args:
         - serve
         - --incluster
-        - --enable-leader-election
         - --xds-address=0.0.0.0
         - --xds-port=8001
         - --envoy-service-http-port=80
