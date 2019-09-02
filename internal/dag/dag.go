@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -302,7 +301,8 @@ type Cluster struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cds.proto#envoy-api-enum-cluster-lbpolicy
 	LoadBalancerStrategy string
 
-	HealthCheck *ingressroutev1.HealthCheck
+	// Cluster health check policy.
+	*HealthCheckPolicy
 }
 
 func (c Cluster) Visit(f func(Vertex)) {
@@ -349,4 +349,14 @@ func (s *Secret) toMeta() Meta {
 		name:      s.Name(),
 		namespace: s.Namespace(),
 	}
+}
+
+// Cluster health check policy.
+type HealthCheckPolicy struct {
+	Path                    string
+	Host                    string
+	IntervalSeconds         int64
+	TimeoutSeconds          int64
+	UnhealthyThresholdCount uint32
+	HealthyThresholdCount   uint32
 }

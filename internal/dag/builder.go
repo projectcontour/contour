@@ -574,7 +574,7 @@ func (b *Builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 					Upstream:             s,
 					LoadBalancerStrategy: service.Strategy,
 					Weight:               service.Weight,
-					HealthCheck:          service.HealthCheck,
+					HealthCheckPolicy:    healthCheckPolicy(service.HealthCheck),
 					UpstreamValidation:   uv,
 				})
 			}
@@ -619,6 +619,20 @@ func (b *Builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 	}
 
 	b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
+}
+
+func healthCheckPolicy(hc *ingressroutev1.HealthCheck) *HealthCheckPolicy {
+	if hc == nil {
+		return nil
+	}
+	return &HealthCheckPolicy{
+		Path:                    hc.Path,
+		Host:                    hc.Host,
+		IntervalSeconds:         hc.IntervalSeconds,
+		TimeoutSeconds:          hc.TimeoutSeconds,
+		UnhealthyThresholdCount: hc.UnhealthyThresholdCount,
+		HealthyThresholdCount:   hc.HealthyThresholdCount,
+	}
 }
 
 // TODO(dfc) needs unit tests; we should pass in some kind of context object that encasulates all the properties we need for reporting

@@ -32,7 +32,7 @@ const (
 
 // healthCheck returns a *core.HealthCheck value.
 func healthCheck(cluster *dag.Cluster) *core.HealthCheck {
-	hc := cluster.HealthCheck
+	hc := cluster.HealthCheckPolicy
 	host := hcHost
 	if hc.Host != "" {
 		host = hc.Host
