@@ -18,6 +18,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -626,12 +627,12 @@ func healthCheckPolicy(hc *ingressroutev1.HealthCheck) *HealthCheckPolicy {
 		return nil
 	}
 	return &HealthCheckPolicy{
-		Path:                    hc.Path,
-		Host:                    hc.Host,
-		IntervalSeconds:         hc.IntervalSeconds,
-		TimeoutSeconds:          hc.TimeoutSeconds,
-		UnhealthyThresholdCount: hc.UnhealthyThresholdCount,
-		HealthyThresholdCount:   hc.HealthyThresholdCount,
+		Path:               hc.Path,
+		Host:               hc.Host,
+		Interval:           time.Duration(hc.IntervalSeconds) * time.Second,
+		Timeout:            time.Duration(hc.TimeoutSeconds) * time.Second,
+		UnhealthyThreshold: int(hc.UnhealthyThresholdCount),
+		HealthyThreshold:   int(hc.HealthyThresholdCount),
 	}
 }
 

@@ -41,10 +41,10 @@ func healthCheck(cluster *dag.Cluster) *core.HealthCheck {
 	// TODO(dfc) why do we need to specify our own default, what is the default
 	// that envoy applies if these fields are left nil?
 	return &core.HealthCheck{
-		Timeout:            secondsOrDefault(hc.TimeoutSeconds, hcTimeout),
-		Interval:           secondsOrDefault(hc.IntervalSeconds, hcInterval),
-		UnhealthyThreshold: countOrDefault(hc.UnhealthyThresholdCount, hcUnhealthyThreshold),
-		HealthyThreshold:   countOrDefault(hc.HealthyThresholdCount, hcHealthyThreshold),
+		Timeout:            durationOrDefault(hc.Timeout, hcTimeout),
+		Interval:           durationOrDefault(hc.Interval, hcInterval),
+		UnhealthyThreshold: countOrDefault(hc.UnhealthyThreshold, hcUnhealthyThreshold),
+		HealthyThreshold:   countOrDefault(hc.HealthyThreshold, hcHealthyThreshold),
 		HealthChecker: &core.HealthCheck_HttpHealthCheck_{
 			HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
 				Path: hc.Path,
@@ -54,19 +54,18 @@ func healthCheck(cluster *dag.Cluster) *core.HealthCheck {
 	}
 }
 
-func secondsOrDefault(seconds int64, def time.Duration) *time.Duration {
-	if seconds != 0 {
-		t := time.Duration(seconds) * time.Second
-		return &t
+func durationOrDefault(duration, def time.Duration) *time.Duration {
+	if duration != 0 {
+		return &duration
 	}
 	return &def
 }
 
-func countOrDefault(count uint32, def int) *types.UInt32Value {
+func countOrDefault(count int, def int) *types.UInt32Value {
 	switch count {
 	case 0:
 		return u32(def)
 	default:
-		return u32(int(count))
+		return u32(count)
 	}
 }

@@ -353,10 +353,10 @@ func (s *Secret) toMeta() Meta {
 
 // Cluster health check policy.
 type HealthCheckPolicy struct {
-	Path                    string
-	Host                    string
-	IntervalSeconds         int64
-	TimeoutSeconds          int64
-	UnhealthyThresholdCount uint32
-	HealthyThresholdCount   uint32
+	Path               string
+	Host               string
+	Interval           time.Duration
+	Timeout            time.Duration
+	UnhealthyThreshold int
+	HealthyThreshold   int
 }
