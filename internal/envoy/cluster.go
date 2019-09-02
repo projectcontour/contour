@@ -98,7 +98,7 @@ func cluster(cluster *dag.Cluster, service *dag.TCPService) *v2.Cluster {
 	}
 
 	// Drain connections immediately if using healthchecks and the endpoint is known to be removed
-	if cluster.HealthCheck != nil {
+	if cluster.HealthCheckPolicy != nil {
 		c.DrainConnectionsOnHostRemoval = true
 	}
 
@@ -159,7 +159,7 @@ func lbPolicy(strategy string) v2.Cluster_LbPolicy {
 }
 
 func edshealthcheck(c *dag.Cluster) []*core.HealthCheck {
-	if c.HealthCheck == nil {
+	if c.HealthCheckPolicy == nil {
 		return nil
 	}
 	return []*core.HealthCheck{
@@ -179,18 +179,18 @@ func Clustername(cluster *dag.Cluster) string {
 		panic(fmt.Sprintf("unsupported upstream type: %T", s))
 	}
 	buf := cluster.LoadBalancerStrategy
-	if hc := cluster.HealthCheck; hc != nil {
-		if hc.TimeoutSeconds > 0 {
-			buf += (time.Duration(hc.TimeoutSeconds) * time.Second).String()
+	if hc := cluster.HealthCheckPolicy; hc != nil {
+		if hc.Timeout > 0 {
+			buf += hc.Timeout.String()
 		}
-		if hc.IntervalSeconds > 0 {
-			buf += (time.Duration(hc.IntervalSeconds) * time.Second).String()
+		if hc.Interval > 0 {
+			buf += hc.Interval.String()
 		}
-		if hc.UnhealthyThresholdCount > 0 {
-			buf += strconv.Itoa(int(hc.UnhealthyThresholdCount))
+		if hc.UnhealthyThreshold > 0 {
+			buf += strconv.Itoa(hc.UnhealthyThreshold)
 		}
-		if hc.HealthyThresholdCount > 0 {
-			buf += strconv.Itoa(int(hc.HealthyThresholdCount))
+		if hc.HealthyThreshold > 0 {
+			buf += strconv.Itoa(hc.HealthyThreshold)
 		}
 		buf += hc.Path
 	}
