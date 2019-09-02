@@ -98,7 +98,7 @@ func cluster(cluster *dag.Cluster, service *dag.TCPService) *v2.Cluster {
 	}
 
 	// Drain connections immediately if using healthchecks and the endpoint is known to be removed
-	if cluster.HealthCheck != nil {
+	if cluster.HealthCheckPolicy != nil {
 		c.DrainConnectionsOnHostRemoval = true
 	}
 
@@ -159,7 +159,7 @@ func lbPolicy(strategy string) v2.Cluster_LbPolicy {
 }
 
 func edshealthcheck(c *dag.Cluster) []*core.HealthCheck {
-	if c.HealthCheck == nil {
+	if c.HealthCheckPolicy == nil {
 		return nil
 	}
 	return []*core.HealthCheck{
@@ -179,7 +179,7 @@ func Clustername(cluster *dag.Cluster) string {
 		panic(fmt.Sprintf("unsupported upstream type: %T", s))
 	}
 	buf := cluster.LoadBalancerStrategy
-	if hc := cluster.HealthCheck; hc != nil {
+	if hc := cluster.HealthCheckPolicy; hc != nil {
 		if hc.TimeoutSeconds > 0 {
 			buf += (time.Duration(hc.TimeoutSeconds) * time.Second).String()
 		}

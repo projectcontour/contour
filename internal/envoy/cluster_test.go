@@ -23,7 +23,6 @@ import (
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
-	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -379,7 +378,7 @@ func TestCluster(t *testing.T) {
 					Name: s1.Name, Namespace: s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
 				},
-				HealthCheck: &ingressroutev1.HealthCheck{
+				HealthCheckPolicy: &dag.HealthCheckPolicy{
 					Path: "/healthz",
 				},
 			},
@@ -469,7 +468,7 @@ func TestClustername(t *testing.T) {
 					},
 				},
 				LoadBalancerStrategy: "Random",
-				HealthCheck: &ingressroutev1.HealthCheck{
+				HealthCheckPolicy: &dag.HealthCheckPolicy{
 					Path:                    "/healthz",
 					IntervalSeconds:         5,
 					TimeoutSeconds:          30,

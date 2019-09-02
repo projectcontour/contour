@@ -1953,7 +1953,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("example.com",
 							routeCluster("/", &Cluster{
 								Upstream: httpService(s1),
-								HealthCheck: &ingressroutev1.HealthCheck{
+								HealthCheckPolicy: &HealthCheckPolicy{
 									Path: "/healthz",
 								},
 							}),

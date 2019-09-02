@@ -19,7 +19,6 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/google/go-cmp/cmp"
-	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 )
 
@@ -32,7 +31,7 @@ func TestHealthCheck(t *testing.T) {
 		// when hc is nil, so if hc is not nil, at least one of the parameters on it must be set.
 		"blank healthcheck": {
 			cluster: &dag.Cluster{
-				HealthCheck: new(ingressroutev1.HealthCheck),
+				HealthCheckPolicy: new(dag.HealthCheckPolicy),
 			},
 			want: &core.HealthCheck{
 				Timeout:            duration(hcTimeout),
@@ -49,7 +48,7 @@ func TestHealthCheck(t *testing.T) {
 		},
 		"healthcheck path only": {
 			cluster: &dag.Cluster{
-				HealthCheck: &ingressroutev1.HealthCheck{
+				HealthCheckPolicy: &dag.HealthCheckPolicy{
 					Path: "/healthy",
 				},
 			},
@@ -68,7 +67,7 @@ func TestHealthCheck(t *testing.T) {
 		},
 		"explicit healthcheck": {
 			cluster: &dag.Cluster{
-				HealthCheck: &ingressroutev1.HealthCheck{
+				HealthCheckPolicy: &dag.HealthCheckPolicy{
 					Host:                    "foo-bar-host",
 					Path:                    "/healthy",
 					TimeoutSeconds:          99,
