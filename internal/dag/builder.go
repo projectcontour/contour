@@ -599,6 +599,12 @@ func (b *Builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 		}
 
 		if dest, ok := b.Source.ingressroutes[Meta{name: route.Delegate.Name, namespace: namespace}]; ok {
+			if dest.Spec.VirtualHost != nil {
+				description := fmt.Sprintf("root ingressroute cannot delegate to another root ingressroute")
+				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: description, Vhost: host})
+				return
+			}
+
 			// dest is not an orphaned ingress route, as there is an IR that points to it
 			delete(b.orphaned, Meta{name: dest.Name, namespace: dest.Namespace})
 
