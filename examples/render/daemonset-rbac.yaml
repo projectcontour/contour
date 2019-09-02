@@ -419,7 +419,7 @@ spec:
               fieldPath: metadata.name
         readinessProbe:
           httpGet:
-            path: /healthz
+            path: /ready
             port: 8002
           initialDelaySeconds: 3
           periodSeconds: 3
