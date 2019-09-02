@@ -445,6 +445,50 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	ir20 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "root-blog",
+			Namespace: "roots",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "blog.containersteve.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName: "blog-containersteve-com",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Delegate: &ingressroutev1.Delegate{
+					Name:      "blog",
+					Namespace: "marketing",
+				},
+			}},
+		},
+	}
+
+	ir21 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blog",
+			Namespace: "marketing",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "blog.containersteve.com",
+				TLS: &ingressroutev1.TLS{
+					SecretName: "blog-containersteve-com",
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "green",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -571,6 +615,23 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Status:      StatusInvalid,
 					Description: `fqdn "example.com" is used in multiple IngressRoutes: roots/example-com, roots/other-example`,
 					Vhost:       "example.com",
+				},
+			},
+		},
+		"root ingress delegating to another root": {
+			objs: []interface{}{ir20, ir21},
+			want: map[Meta]Status{
+				{name: ir20.Name, namespace: ir20.Namespace}: {
+					Object:      ir20,
+					Status:      StatusInvalid,
+					Description: `fqdn "blog.containersteve.com" is used in multiple IngressRoutes: marketing/blog, roots/root-blog`,
+					Vhost:       "blog.containersteve.com",
+				},
+				{name: ir21.Name, namespace: ir21.Namespace}: {
+					Object:      ir21,
+					Status:      StatusInvalid,
+					Description: `fqdn "blog.containersteve.com" is used in multiple IngressRoutes: marketing/blog, roots/root-blog`,
+					Vhost:       "blog.containersteve.com",
 				},
 			},
 		},

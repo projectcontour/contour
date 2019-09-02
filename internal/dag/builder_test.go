@@ -2983,6 +2983,54 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"ingressroute root delegates to another ingressroute root": {
+			objs: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "root-blog",
+						Namespace: "roots",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "blog.containersteve.com",
+							TLS: &ingressroutev1.TLS{
+								SecretName: "blog-containersteve-com",
+							},
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Delegate: &ingressroutev1.Delegate{
+								Name:      "blog",
+								Namespace: "marketing",
+							},
+						}},
+					},
+				},
+
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "blog",
+						Namespace: "marketing",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "blog.containersteve.com",
+							TLS: &ingressroutev1.TLS{
+								SecretName: "blog-containersteve-com",
+							},
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{{
+								Name: "green",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
 	}
 
 	for name, tc := range tests {
@@ -3008,7 +3056,7 @@ func TestDAGInsert(t *testing.T) {
 			}
 
 			opts := []cmp.Option{
-				cmp.AllowUnexported(Listener{}, VirtualHost{}),
+				cmp.AllowUnexported(VirtualHost{}),
 			}
 			if diff := cmp.Diff(want, got, opts...); diff != "" {
 				t.Fatal(diff)
