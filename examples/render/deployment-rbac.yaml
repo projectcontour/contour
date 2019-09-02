@@ -346,7 +346,7 @@ data:
     # The following config shows the defaults for the leader election.
     # leaderelection:
       # configmap-name: contour
-      # configmap-namespace: heptio-contour
+      # configmap-namespace: leader-elect
 ---
 apiVersion: apps/v1
 kind: Deployment

@@ -33,7 +33,6 @@ spec:
       - args:
         - serve
         - --incluster
-        - --enable-leader-election
         - --xds-address=0.0.0.0
         - --xds-port=8001
         - --envoy-service-http-port=80
