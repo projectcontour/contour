@@ -23,7 +23,6 @@ import (
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/gogo/protobuf/types"
 	"github.com/google/go-cmp/cmp"
-	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -379,7 +378,7 @@ func TestCluster(t *testing.T) {
 					Name: s1.Name, Namespace: s1.Namespace,
 					ServicePort: &s1.Spec.Ports[0],
 				},
-				HealthCheck: &ingressroutev1.HealthCheck{
+				HealthCheckPolicy: &dag.HealthCheckPolicy{
 					Path: "/healthz",
 				},
 			},
@@ -396,8 +395,8 @@ func TestCluster(t *testing.T) {
 				CommonLbConfig:                ClusterCommonLBConfig(),
 				DrainConnectionsOnHostRemoval: true,
 				HealthChecks: []*core.HealthCheck{{
-					Timeout:            secondsOrDefault(0, hcTimeout),
-					Interval:           secondsOrDefault(0, hcInterval),
+					Timeout:            durationOrDefault(0, hcTimeout),
+					Interval:           durationOrDefault(0, hcInterval),
 					UnhealthyThreshold: countOrDefault(0, hcUnhealthyThreshold),
 					HealthyThreshold:   countOrDefault(0, hcHealthyThreshold),
 					HealthChecker: &core.HealthCheck_HttpHealthCheck_{
@@ -469,12 +468,12 @@ func TestClustername(t *testing.T) {
 					},
 				},
 				LoadBalancerStrategy: "Random",
-				HealthCheck: &ingressroutev1.HealthCheck{
-					Path:                    "/healthz",
-					IntervalSeconds:         5,
-					TimeoutSeconds:          30,
-					UnhealthyThresholdCount: 3,
-					HealthyThresholdCount:   1,
+				HealthCheckPolicy: &dag.HealthCheckPolicy{
+					Path:               "/healthz",
+					Interval:           5 * time.Second,
+					Timeout:            30 * time.Second,
+					UnhealthyThreshold: 3,
+					HealthyThreshold:   1,
 				},
 			},
 			want: "default/backend/80/5c26077e1d",
