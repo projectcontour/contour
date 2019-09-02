@@ -153,32 +153,35 @@ func (b *Builder) lookupService(m Meta, port intstr.IntOrString) Service {
 }
 
 func (b *Builder) addHTTPService(svc *v1.Service, port *v1.ServicePort) *HTTPService {
+	s := newHTTPService(svc, port)
+	b.services[s.toMeta()] = s
+	return s
+}
+
+func newHTTPService(svc *v1.Service, port *v1.ServicePort) *HTTPService {
+	return &HTTPService{
+		TCPService: newTCPService(svc, port),
+		Protocol:   upstreamProtocol(svc, port),
+	}
+}
+
+func upstreamProtocol(svc *v1.Service, port *v1.ServicePort) string {
 	up := parseUpstreamProtocols(svc.Annotations, annotationUpstreamProtocol, "h2", "h2c", "tls")
 	protocol := up[port.Name]
 	if protocol == "" {
 		protocol = up[strconv.Itoa(int(port.Port))]
 	}
-
-	s := &HTTPService{
-		TCPService: TCPService{
-			Name:        svc.Name,
-			Namespace:   svc.Namespace,
-			ServicePort: port,
-
-			MaxConnections:     parseAnnotation(svc.Annotations, annotationMaxConnections),
-			MaxPendingRequests: parseAnnotation(svc.Annotations, annotationMaxPendingRequests),
-			MaxRequests:        parseAnnotation(svc.Annotations, annotationMaxRequests),
-			MaxRetries:         parseAnnotation(svc.Annotations, annotationMaxRetries),
-			ExternalName:       externalName(svc),
-		},
-		Protocol: protocol,
-	}
-	b.services[s.toMeta()] = s
-	return s
+	return protocol
 }
 
 func (b *Builder) addTCPService(svc *v1.Service, port *v1.ServicePort) *TCPService {
-	s := &TCPService{
+	s := newTCPService(svc, port)
+	b.services[s.toMeta()] = &s
+	return &s
+}
+
+func newTCPService(svc *v1.Service, port *v1.ServicePort) TCPService {
+	return TCPService{
 		Name:        svc.Name,
 		Namespace:   svc.Namespace,
 		ServicePort: port,
@@ -187,9 +190,8 @@ func (b *Builder) addTCPService(svc *v1.Service, port *v1.ServicePort) *TCPServi
 		MaxPendingRequests: parseAnnotation(svc.Annotations, annotationMaxPendingRequests),
 		MaxRequests:        parseAnnotation(svc.Annotations, annotationMaxRequests),
 		MaxRetries:         parseAnnotation(svc.Annotations, annotationMaxRetries),
+		ExternalName:       externalName(svc),
 	}
-	b.services[s.toMeta()] = s
-	return s
 }
 
 // lookupSecret returns a Secret if present or nil if the underlying kubernetes
