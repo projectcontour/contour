@@ -150,12 +150,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			},
 			ListenerCache: contour.NewListenerCache(ctx.statsAddr, ctx.statsPort),
 			FieldLogger:   log.WithField("context", "CacheHandler"),
-			IngressRouteStatus: &k8s.IngressRouteStatus{
-				Client: contourClient,
-			},
 		},
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
+		IngressRouteStatus: &k8s.IngressRouteStatus{
+			Client: contourClient,
+		},
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
 				IngressRouteRootNamespaces: ctx.ingressRouteRootNamespaces(),

@@ -77,9 +77,6 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 
 	r := prometheus.NewRegistry()
 	ch := &contour.CacheHandler{
-		IngressRouteStatus: &k8s.IngressRouteStatus{
-			Client: fake.NewSimpleClientset(),
-		},
 		Metrics:       metrics.NewMetrics(r),
 		ListenerCache: contour.NewListenerCache(statsAddress, statsPort),
 		FieldLogger:   log,
@@ -88,7 +85,10 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 	rand.Seed(time.Now().Unix())
 
 	eh := &contour.EventHandler{
-		CacheHandler:    ch,
+		CacheHandler: ch,
+		IngressRouteStatus: &k8s.IngressRouteStatus{
+			Client: fake.NewSimpleClientset(),
+		},
 		Metrics:         ch.Metrics,
 		FieldLogger:     log,
 		Sequence:        make(chan int, 1),
