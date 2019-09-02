@@ -174,7 +174,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
 				Delegate: &ingressroutev1.Delegate{
-					Name: "parent",
+					Name: "child",
 				},
 			}},
 		},
@@ -489,6 +489,58 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	ir22 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "root-blog",
+			Namespace: "roots",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "blog.containersteve.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Delegate: &ingressroutev1.Delegate{
+					Name:      "blog",
+					Namespace: "marketing",
+				},
+			}},
+		},
+	}
+
+	ir23 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blog",
+			Namespace: "marketing",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "www.containersteve.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "green",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	s8 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "green",
+			Namespace: "marketing",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -533,14 +585,29 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		"self-edge produces a cycle": {
 			objs: []interface{}{ir6},
 			want: map[Meta]Status{
-				{name: ir6.Name, namespace: ir6.Namespace}: {Object: ir6, Status: "invalid", Description: "route creates a delegation cycle: roots/self -> roots/self", Vhost: "example.com"},
+				{name: ir6.Name, namespace: ir6.Namespace}: {
+					Object:      ir6,
+					Status:      "invalid",
+					Description: "root ingressroute cannot delegate to another root ingressroute",
+					Vhost:       "example.com",
+				},
 			},
 		},
 		"child delegates to parent, producing a cycle": {
 			objs: []interface{}{ir7, ir8},
 			want: map[Meta]Status{
-				{name: ir7.Name, namespace: ir7.Namespace}: {Object: ir7, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
-				{name: ir8.Name, namespace: ir8.Namespace}: {Object: ir8, Status: "invalid", Description: "route creates a delegation cycle: roots/parent -> roots/child -> roots/parent", Vhost: "example.com"},
+				{name: ir7.Name, namespace: ir7.Namespace}: {
+					Object:      ir7,
+					Status:      "valid",
+					Description: "valid IngressRoute",
+					Vhost:       "example.com",
+				},
+				{name: ir8.Name, namespace: ir8.Namespace}: {
+					Object:      ir8,
+					Status:      "invalid",
+					Description: "route creates a delegation cycle: roots/parent -> roots/child -> roots/child",
+					Vhost:       "example.com",
+				},
 			},
 		},
 		"route has a list of services and also delegates": {
@@ -635,13 +702,30 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				},
 			},
 		},
+		"root ingress delegating to another root w/ different hostname": {
+			objs: []interface{}{ir22, ir23, s8},
+			want: map[Meta]Status{
+				{name: ir22.Name, namespace: ir22.Namespace}: {
+					Object:      ir22,
+					Status:      StatusInvalid,
+					Description: "root ingressroute cannot delegate to another root ingressroute",
+					Vhost:       "blog.containersteve.com",
+				},
+				{name: ir23.Name, namespace: ir23.Namespace}: {
+					Object:      ir23,
+					Status:      StatusValid,
+					Description: `valid IngressRoute`,
+					Vhost:       "www.containersteve.com",
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
 				Source: KubernetesCache{
-					IngressRouteRootNamespaces: []string{"roots"},
+					IngressRouteRootNamespaces: []string{"roots", "marketing"},
 					FieldLogger:                testLogger(t),
 				},
 			}

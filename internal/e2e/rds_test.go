@@ -2883,6 +2883,90 @@ func TestRoutePrefixRouteRegex(t *testing.T) {
 	}, streamRDS(t, cc))
 }
 
+func TestRDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	svc1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "green",
+			Namespace: "marketing",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	}
+	rh.OnAdd(svc1)
+
+	child := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blog",
+			Namespace: "marketing",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "www.containersteve.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: svc1.Name,
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnAdd(child)
+
+	root := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "root-blog",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &ingressroutev1.VirtualHost{
+				Fqdn: "blog.containersteve.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Delegate: &ingressroutev1.Delegate{
+					Name:      child.Name,
+					Namespace: child.Namespace,
+				},
+			}},
+		},
+	}
+	rh.OnAdd(root)
+
+	// verify that child's route is present because while it is not possible to
+	// delegate to it, it can host www.containersteve.com.
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "2",
+		Resources: resources(t,
+			&v2.RouteConfiguration{
+				Name: "ingress_http",
+				VirtualHosts: []*route.VirtualHost{{
+					Name:    "www.containersteve.com",
+					Domains: domains("www.containersteve.com"),
+					Routes: envoy.Routes(
+						envoy.Route(envoy.RoutePrefix("/"), routecluster("marketing/green/80/da39a3ee5e")),
+					),
+				}},
+			},
+			&v2.RouteConfiguration{
+				Name: "ingress_https",
+			},
+		),
+		TypeUrl: routeType,
+		Nonce:   "2",
+	}, streamRDS(t, cc))
+
+}
+
 func assertRDS(t *testing.T, cc *grpc.ClientConn, versioninfo string, ingress_http, ingress_https []*route.VirtualHost) {
 	t.Helper()
 	assertEqual(t, &v2.DiscoveryResponse{

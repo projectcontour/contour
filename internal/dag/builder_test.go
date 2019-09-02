@@ -1461,6 +1461,20 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	s8 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "green",
+			Namespace: "marketing",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs                  []interface{}
 		disablePermitInsecure bool
@@ -2993,9 +3007,6 @@ func TestDAGInsert(t *testing.T) {
 					Spec: ingressroutev1.IngressRouteSpec{
 						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "blog.containersteve.com",
-							TLS: &ingressroutev1.TLS{
-								SecretName: "blog-containersteve-com",
-							},
 						},
 						Routes: []ingressroutev1.Route{{
 							Match: "/",
@@ -3006,7 +3017,6 @@ func TestDAGInsert(t *testing.T) {
 						}},
 					},
 				},
-
 				&ingressroutev1.IngressRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "blog",
@@ -3014,10 +3024,7 @@ func TestDAGInsert(t *testing.T) {
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
 						VirtualHost: &ingressroutev1.VirtualHost{
-							Fqdn: "blog.containersteve.com",
-							TLS: &ingressroutev1.TLS{
-								SecretName: "blog-containersteve-com",
-							},
+							Fqdn: "www.containersteve.com",
 						},
 						Routes: []ingressroutev1.Route{{
 							Match: "/",
@@ -3028,8 +3035,16 @@ func TestDAGInsert(t *testing.T) {
 						}},
 					},
 				},
+				s8,
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("www.containersteve.com", prefixroute("/", httpService(s8))),
+					),
+				},
+			),
 		},
 	}
 
@@ -3037,6 +3052,9 @@ func TestDAGInsert(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
 				DisablePermitInsecure: tc.disablePermitInsecure,
+				Source: KubernetesCache{
+					FieldLogger: testLogger(t),
+				},
 			}
 			for _, o := range tc.objs {
 				if !builder.Source.Insert(o) {
