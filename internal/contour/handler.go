@@ -23,6 +23,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/internal/dag"
+	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +38,8 @@ type EventHandler struct {
 	*CacheHandler
 
 	HoldoffDelay, HoldoffMaxDelay time.Duration
+
+	IngressRouteStatus *k8s.IngressRouteStatus
 
 	*metrics.Metrics
 
@@ -207,9 +210,31 @@ func (e *EventHandler) incSequence() {
 	}
 }
 
-// updateDAG builds a new DAG and sends it to the CacheHandler.
+// updateDAG builds a new DAG and sends it to the CacheHandler
+// the updates the status on objects and updates the metrics.
 func (e *EventHandler) updateDAG() {
 	dag := e.Builder.Build()
 	e.CacheHandler.OnChange(dag)
+	statuses := dag.Statuses()
+	e.setIngressRouteStatus(statuses)
+
+	metrics := calculateIngressRouteMetric(statuses)
+	e.Metrics.SetIngressRouteMetric(metrics)
+
 	e.last = time.Now()
+}
+
+// setIngressRouteStatus updates the status of Ingressroute objects.
+func (e *EventHandler) setIngressRouteStatus(statuses map[dag.Meta]dag.Status) {
+	for _, st := range statuses {
+		err := e.IngressRouteStatus.SetStatus(st.Status, st.Description, st.Object)
+		if err != nil {
+			e.WithError(err).
+				WithField("status", st.Status).
+				WithField("desc", st.Description).
+				WithField("name", st.Object.Name).
+				WithField("namespace", st.Object.Namespace).
+				Error("failed to set status")
+		}
+	}
 }
