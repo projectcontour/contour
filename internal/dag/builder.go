@@ -368,7 +368,7 @@ func (b *Builder) computeIngressRoutes() {
 	for _, ir := range b.validIngressRoutes() {
 		if ir.Spec.VirtualHost == nil {
 			// mark delegate ingressroute orphaned.
-			b.setOrphaned(ir)
+			b.setOrphaned(ir.Name, ir.Namespace)
 			continue
 		}
 
@@ -421,11 +421,11 @@ func (b *Builder) computeIngressRoutes() {
 
 func (b *Builder) computeHTTPLoadBalancers() {
 	for _, httplb := range b.validHTTPLoadBalancers() {
-		//if httplb.Spec.VirtualHost == nil {
-		//	// mark delegate ingressroute orphaned.
-		//	b.setOrphaned(httplb)
-		//	continue
-		//}
+		if httplb.Spec.VirtualHost == nil {
+			// mark HTTPLoadBalancer as orphaned.
+			b.setOrphaned(httplb.Name, httplb.Namespace)
+			continue
+		}
 
 		// ensure root ingressroute lives in allowed namespace
 		if !b.rootAllowed(httplb.Namespace) {
@@ -494,6 +494,10 @@ func (b *Builder) buildDAG() *DAG {
 		if ok {
 			b.setStatus(Status{Object: ir, Status: StatusOrphaned, Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"})
 		}
+		httplb, ok := b.Source.httploadbalancers[meta]
+		if ok {
+			b.setStatus(Status{Object: httplb, Status: StatusOrphaned, Description: "this HTTPLoadBalancer is not part of a delegation chain from a root HTTPLoadBalancer"})
+		}
 	}
 	dag.statuses = b.statuses
 	return &dag
@@ -549,9 +553,9 @@ func (b *Builder) setStatus(st Status) {
 	}
 }
 
-// setOrphaned records an ingressroute as orphaned.
-func (b *Builder) setOrphaned(ir *ingressroutev1.IngressRoute) {
-	m := Meta{name: ir.Name, namespace: ir.Namespace}
+// setOrphaned records an IngressRoute/HTTPLoadBalancer resource as orphaned.
+func (b *Builder) setOrphaned(name, namespace string) {
+	m := Meta{name: name, namespace: namespace}
 	b.orphaned[m] = true
 }
 
