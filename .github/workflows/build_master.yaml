@@ -1,0 +1,27 @@
+name: Build and push :master image
+
+on:
+  push:
+    branches:
+      - master
+      - actionbuild
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Docker Hub README & description sync
+      uses: meeDamian/sync-readme@v1.0.5
+      with:
+        user: projectcontour
+        pass: ${{ secrets.DOCKER_PASSWORD }}
+        slug: organization/image-name
+        readme: ./README.md
+        description: Contour is a Kubernetes ingress controller using Lyft's Envoy proxy. https://projectcontour.io
+    - name: Docker Login
+      uses: actions/docker/login@master
+    - name: Use Makefile to build and push
+      env:
+        REGISTRY: docker.io/projectcontour
+      run: make push
