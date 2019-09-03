@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - actionbuild
 
 jobs:
   build:
@@ -24,7 +23,9 @@ jobs:
         slug: projectcontour/contour
         readme: ./README.md
         description: Contour is a Kubernetes ingress controller using Lyft's Envoy proxy. https://projectcontour.io
-    - name: Use Makefile to build and push
-      env:
-        REGISTRY: docker.io/projectcontour
-      run: make push
+    - name: Build
+      run: docker build . -t projectcontour/contour:master
+    - name: Push
+      run: docker push -t projectcontour/contour:master
+      
+      
