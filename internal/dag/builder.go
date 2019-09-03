@@ -546,15 +546,10 @@ func (b *Builder) buildHTTPSListener() *Listener {
 
 // setStatus assigns a status to an object.
 func (b *Builder) setStatus(st Status) {
-	var objectMeta metav1.ObjectMeta
-	switch obj := st.Object.(type) {
-	case *ingressroutev1.IngressRoute:
-		objectMeta = obj.ObjectMeta
-	case *projcontour.HTTPLoadBalancer:
-		objectMeta = obj.ObjectMeta
+	m := Meta{
+		name:      st.Object.GetObjectMeta().GetName(),
+		namespace: st.Object.GetObjectMeta().GetNamespace(),
 	}
-
-	m := Meta{name: objectMeta.Name, namespace: objectMeta.Namespace}
 	if _, ok := b.statuses[m]; !ok {
 		b.statuses[m] = st
 	}
@@ -1088,7 +1083,7 @@ func matchesPathPrefix(path, prefix string) bool {
 
 // Status contains the status for an IngressRoute (valid / invalid / orphan, etc)
 type Status struct {
-	Object      interface{}
+	Object      metav1.ObjectMetaAccessor
 	Status      string
 	Description string
 	Vhost       string
