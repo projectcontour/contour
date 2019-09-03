@@ -15,14 +15,6 @@ jobs:
       env:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-    - name: Docker Hub README & description sync
-      uses: meeDamian/sync-readme@v1.0.5
-      with:
-        user: projectcontour
-        pass: ${{ secrets.DOCKER_PASSWORD }}
-        slug: projectcontour/contour
-        readme: ./README.md
-        description: Contour is a Kubernetes ingress controller using Lyft's Envoy proxy. https://projectcontour.io
     - name: Build
       run: docker build . -t projectcontour/contour:master
     - name: Push
