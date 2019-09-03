@@ -21,6 +21,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -691,7 +692,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -712,9 +713,9 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName: sec1.Name,
 				},
 			},
@@ -742,9 +743,9 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					Passthrough: true,
 				},
 			},
@@ -765,9 +766,9 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					Passthrough: true,
 				},
 			},
@@ -803,7 +804,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -811,7 +812,7 @@ func TestDAGInsert(t *testing.T) {
 				Services: []ingressroutev1.Service{{
 					Name: "kuard",
 					Port: 8080,
-					HealthCheck: &ingressroutev1.HealthCheck{
+					HealthCheck: &projcontour.HealthCheck{
 						Path: "/healthz",
 					},
 				}},
@@ -826,7 +827,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -849,7 +850,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -909,9 +910,9 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "foo.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName: sec1.Name,
 				},
 			},
@@ -932,9 +933,9 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "foo.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName:             sec1.Name,
 					MinimumProtocolVersion: "1.2",
 				},
@@ -956,9 +957,9 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "foo.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName:             sec1.Name,
 					MinimumProtocolVersion: "1.3",
 				},
@@ -980,9 +981,9 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "foo.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName:             sec1.Name,
 					MinimumProtocolVersion: "0.9999",
 				},
@@ -1004,7 +1005,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1031,7 +1032,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1061,7 +1062,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1089,7 +1090,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1115,7 +1116,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1140,9 +1141,9 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "foo.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName: sec1.Name,
 				},
 			},
@@ -1163,12 +1164,12 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				RetryPolicy: &ingressroutev1.RetryPolicy{
+				RetryPolicy: &projcontour.RetryPolicy{
 					NumRetries:    6,
 					PerTryTimeout: "10s",
 				},
@@ -1186,12 +1187,12 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				RetryPolicy: &ingressroutev1.RetryPolicy{
+				RetryPolicy: &projcontour.RetryPolicy{
 					NumRetries:    6,
 					PerTryTimeout: "please",
 				},
@@ -1209,12 +1210,12 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				RetryPolicy: &ingressroutev1.RetryPolicy{
+				RetryPolicy: &projcontour.RetryPolicy{
 					NumRetries:    0,
 					PerTryTimeout: "10s",
 				},
@@ -1232,12 +1233,12 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
+				TimeoutPolicy: &projcontour.TimeoutPolicy{
 					Request: "peanut",
 				},
 				Services: []ingressroutev1.Service{{
@@ -1254,12 +1255,12 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
+				TimeoutPolicy: &projcontour.TimeoutPolicy{
 					Request: "1m30s", // 90 seconds y'all
 				},
 				Services: []ingressroutev1.Service{{
@@ -1276,12 +1277,12 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
+				TimeoutPolicy: &projcontour.TimeoutPolicy{
 					Request: "infinite",
 				},
 				Services: []ingressroutev1.Service{{
@@ -1298,7 +1299,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1306,7 +1307,7 @@ func TestDAGInsert(t *testing.T) {
 				Services: []ingressroutev1.Service{{
 					Name: "kuard",
 					Port: 8080,
-					UpstreamValidation: &ingressroutev1.UpstreamValidation{
+					UpstreamValidation: &projcontour.UpstreamValidation{
 						CACertificate: cert1.Name,
 						SubjectName:   "example.com",
 					},
@@ -2828,7 +2829,7 @@ func TestDAGInsert(t *testing.T) {
 						Name:      "example-com",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -2851,7 +2852,7 @@ func TestDAGInsert(t *testing.T) {
 						Name:      "example-com",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -2874,7 +2875,7 @@ func TestDAGInsert(t *testing.T) {
 						Name:      "example-com",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -2911,7 +2912,7 @@ func TestDAGInsert(t *testing.T) {
 						Name:      "example-com",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -2953,7 +2954,7 @@ func TestDAGInsert(t *testing.T) {
 						Name:      "example-com",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -3005,7 +3006,7 @@ func TestDAGInsert(t *testing.T) {
 						Namespace: "roots",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "blog.containersteve.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -3023,7 +3024,7 @@ func TestDAGInsert(t *testing.T) {
 						Namespace: "marketing",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.containersteve.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -3185,7 +3186,7 @@ func TestDAGRootNamespaces(t *testing.T) {
 			Namespace: "allowed1",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -3205,7 +3206,7 @@ func TestDAGRootNamespaces(t *testing.T) {
 			Namespace: "allowed2",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example2.com",
 			},
 			Routes: []ingressroutev1.Route{{

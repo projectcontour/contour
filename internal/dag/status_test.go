@@ -18,6 +18,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -31,7 +32,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "example",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -56,7 +57,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "example",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -76,7 +77,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "example",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -113,7 +114,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "delegated",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -134,7 +135,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "self",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -153,7 +154,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "parent",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -187,7 +188,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "parent",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -210,7 +211,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "parent",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -267,7 +268,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "parent",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{},
+			VirtualHost: &projcontour.VirtualHost{},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
 				Services: []ingressroutev1.Service{{
@@ -285,7 +286,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "invalidParent",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{},
+			VirtualHost: &projcontour.VirtualHost{},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
 				Delegate: &ingressroutev1.Delegate{
@@ -302,7 +303,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "example",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.*.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -322,7 +323,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "invalidir",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -341,7 +342,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: "roots",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -361,7 +362,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: "roots",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -451,9 +452,9 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: "roots",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "blog.containersteve.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName: "blog-containersteve-com",
 				},
 			},
@@ -473,9 +474,9 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: "marketing",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "blog.containersteve.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName: "blog-containersteve-com",
 				},
 			},
@@ -495,7 +496,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: "roots",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "blog.containersteve.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -514,7 +515,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: "marketing",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "www.containersteve.com",
 			},
 			Routes: []ingressroutev1.Route{{

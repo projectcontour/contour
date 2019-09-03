@@ -23,6 +23,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	"github.com/heptio/contour/internal/envoy"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -343,7 +344,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -405,7 +406,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -413,7 +414,7 @@ func TestClusterVisit(t *testing.T) {
 							Services: []ingressroutev1.Service{{
 								Name: "backend",
 								Port: 80,
-								HealthCheck: &ingressroutev1.HealthCheck{
+								HealthCheck: &projcontour.HealthCheck{
 									Path: "/healthy",
 								},
 							}},
@@ -463,7 +464,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -471,7 +472,7 @@ func TestClusterVisit(t *testing.T) {
 							Services: []ingressroutev1.Service{{
 								Name: "backend",
 								Port: 80,
-								HealthCheck: &ingressroutev1.HealthCheck{
+								HealthCheck: &projcontour.HealthCheck{
 									Host:                    "foo-bar-host",
 									Path:                    "/healthy",
 									TimeoutSeconds:          99,
@@ -526,7 +527,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -569,7 +570,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -612,7 +613,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -655,7 +656,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -717,7 +718,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
 						Routes: []ingressroutev1.Route{{

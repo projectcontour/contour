@@ -20,6 +20,7 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	clientset "github.com/heptio/contour/apis/generated/clientset/versioned"
+	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -33,7 +34,7 @@ func (irs *IngressRouteStatus) SetStatus(status, desc string, existing *ingressr
 	// Check if update needed by comparing status & desc
 	if existing.CurrentStatus != status || existing.Description != desc {
 		updated := existing.DeepCopy()
-		updated.Status = ingressroutev1.Status{
+		updated.Status = projcontour.Status{
 			CurrentStatus: status,
 			Description:   desc,
 		}

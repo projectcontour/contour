@@ -26,6 +26,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 )
 
 const (
@@ -630,7 +631,7 @@ func (b *Builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 	b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
 }
 
-func healthCheckPolicy(hc *ingressroutev1.HealthCheck) *HealthCheckPolicy {
+func healthCheckPolicy(hc *projcontour.HealthCheck) *HealthCheckPolicy {
 	if hc == nil {
 		return nil
 	}
@@ -766,7 +767,7 @@ func route(ingress *v1beta1.Ingress, path string) Route {
 	if request, ok := ingress.Annotations[annotationRequestTimeout]; ok {
 		// if the request timeout annotation is present on this ingress
 		// construct and use the ingressroute timeout policy logic.
-		timeout = timeoutPolicy(&ingressroutev1.TimeoutPolicy{
+		timeout = timeoutPolicy(&projcontour.TimeoutPolicy{
 			Request: request,
 		})
 	}

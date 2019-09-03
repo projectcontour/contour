@@ -23,6 +23,7 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/envoy"
 	"google.golang.org/grpc"
@@ -1168,7 +1169,7 @@ func TestWebsocketIngressRoute(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "websocket.hello.world"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "websocket.hello.world"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				Services: []ingressroutev1.Service{{
@@ -1242,7 +1243,7 @@ func TestWebsocketIngressRoute_MultipleUpstreams(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "websocket.hello.world"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "websocket.hello.world"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				Services: []ingressroutev1.Service{{
@@ -1304,7 +1305,7 @@ func TestPrefixRewriteIngressRoute(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "prefixrewrite.hello.world"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "prefixrewrite.hello.world"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				Services: []ingressroutev1.Service{{
@@ -1473,7 +1474,7 @@ func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
 			Namespace: "roots",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "example.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				Services: []ingressroutev1.Service{{
@@ -1533,7 +1534,7 @@ func TestRDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "example.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				Services: []ingressroutev1.Service{{
@@ -1588,7 +1589,7 @@ func TestRDSIngressRouteClassAnnotation(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "www.example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1621,7 +1622,7 @@ func TestRDSIngressRouteClassAnnotation(t *testing.T) {
 			},
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "www.example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1647,7 +1648,7 @@ func TestRDSIngressRouteClassAnnotation(t *testing.T) {
 			},
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "www.example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1673,7 +1674,7 @@ func TestRDSIngressRouteClassAnnotation(t *testing.T) {
 			},
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "www.example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1705,7 +1706,7 @@ func TestRDSIngressRouteClassAnnotation(t *testing.T) {
 			},
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "www.example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1897,7 +1898,7 @@ func TestRDSAssertNoDataRaceDuringInsertAndStream(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: &ingressroutev1.VirtualHost{Fqdn: fmt.Sprintf("example-%d.com", i)},
+					VirtualHost: &projcontour.VirtualHost{Fqdn: fmt.Sprintf("example-%d.com", i)},
 					Routes: []ingressroutev1.Route{{
 						Match: "/",
 						Services: []ingressroutev1.Service{{
@@ -2018,7 +2019,7 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/a",
 				Services: []ingressroutev1.Service{{
@@ -2045,7 +2046,7 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/a",
 				Services: []ingressroutev1.Service{{
@@ -2110,9 +2111,9 @@ func TestRouteWithTLS(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "test2.test.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName: "example-tls",
 				},
 			},
@@ -2208,9 +2209,9 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "test2.test.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName: "example-tls",
 				},
 			},
@@ -2320,9 +2321,9 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "test2.test.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName: "example-tls",
 				},
 			},
@@ -2449,10 +2450,10 @@ func TestRouteRetryIngressRoute(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				RetryPolicy: &ingressroutev1.RetryPolicy{
+				RetryPolicy: &projcontour.RetryPolicy{
 					NumRetries:    7,
 					PerTryTimeout: "120ms",
 				},
@@ -2506,7 +2507,7 @@ func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				Services: []ingressroutev1.Service{{
@@ -2532,10 +2533,10 @@ func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
+				TimeoutPolicy: &projcontour.TimeoutPolicy{
 					Request: "600",
 				},
 				Services: []ingressroutev1.Service{{
@@ -2560,10 +2561,10 @@ func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
+				TimeoutPolicy: &projcontour.TimeoutPolicy{
 					Request: "600s", // 10 * time.Minute
 				},
 				Services: []ingressroutev1.Service{{
@@ -2588,10 +2589,10 @@ func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
+				TimeoutPolicy: &projcontour.TimeoutPolicy{
 					Request: "infinity",
 				},
 				Services: []ingressroutev1.Service{{
@@ -2640,7 +2641,7 @@ func TestRouteWithSessionAffinity(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/cart",
 				Services: []ingressroutev1.Service{{
@@ -2668,7 +2669,7 @@ func TestRouteWithSessionAffinity(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/cart",
 				Services: []ingressroutev1.Service{{
@@ -2704,7 +2705,7 @@ func TestRouteWithSessionAffinity(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/cart",
 				Services: []ingressroutev1.Service{{
@@ -2792,7 +2793,7 @@ func TestLoadBalancingStrategies(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []ingressroutev1.Route{{
 				Match:    "/a",
 				Services: ss,
@@ -2908,7 +2909,7 @@ func TestRDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
 			Namespace: "marketing",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "www.containersteve.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -2928,7 +2929,7 @@ func TestRDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "blog.containersteve.com",
 			},
 			Routes: []ingressroutev1.Route{{
