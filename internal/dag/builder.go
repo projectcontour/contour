@@ -446,11 +446,7 @@ func (b *Builder) computeHTTPLoadBalancers() {
 			continue
 		}
 
-		var enforceTLS bool
-		var passthrough bool
-
-		// TODO (sas) Remove hardcodings!
-		enforceTLS = false
+		var enforceTLS, passthrough bool
 
 		if tls := httplb.Spec.VirtualHost.TLS; tls != nil {
 			// attach secrets to TLS enabled vhosts
