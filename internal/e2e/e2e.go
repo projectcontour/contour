@@ -86,7 +86,7 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 
 	eh := &contour.EventHandler{
 		CacheHandler: ch,
-		IngressRouteStatus: &k8s.CRDStatus{
+		CRDStatus: &k8s.CRDStatus{
 			Client: fake.NewSimpleClientset(),
 		},
 		Metrics:         ch.Metrics,
