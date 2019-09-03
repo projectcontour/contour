@@ -389,26 +389,7 @@ func (b *Builder) computeIngressRoutes() {
 			continue
 		}
 
-		var enforceTLS, passthrough bool
-		if tls := ir.Spec.VirtualHost.TLS; tls != nil {
-			// attach secrets to TLS enabled vhosts
-			m := splitSecret(tls.SecretName, ir.Namespace)
-			sec := b.lookupSecret(m, validSecret)
-			if sec != nil && b.delegationPermitted(m, ir.Namespace) {
-				svhost := b.lookupSecureVirtualHost(host)
-				svhost.Secret = sec
-				svhost.MinProtoVersion = MinProtoVersion(ir.Spec.VirtualHost.TLS.MinimumProtocolVersion)
-				enforceTLS = true
-			}
-			// passthrough is true if tls.secretName is not present, and
-			// tls.passthrough is set to true.
-			passthrough = isBlank(tls.SecretName) && tls.Passthrough
-
-			// If not passthrough and secret is invalid, then set status
-			if sec == nil && !passthrough {
-				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("TLS Secret [%s] not found or is malformed", tls.SecretName)})
-			}
-		}
+		enforceTLS, passthrough := b.configureSecureVirtualHost(ir)
 
 		switch {
 		case ir.Spec.TCPProxy != nil && (passthrough || enforceTLS):
@@ -417,6 +398,34 @@ func (b *Builder) computeIngressRoutes() {
 			b.processIngressRoutes(ir, "", nil, host, enforceTLS)
 		}
 	}
+}
+
+func (b *Builder) configureSecureVirtualHost(ir *ingressroutev1.IngressRoute) (enforceTLS, passthrough bool) {
+	tls := ir.Spec.VirtualHost.TLS
+	if tls == nil {
+		return false, false
+	}
+	m := splitSecret(tls.SecretName, ir.Namespace)
+	sec := b.lookupSecret(m, validSecret)
+	if sec != nil {
+		if !b.delegationPermitted(m, ir.Namespace) {
+			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("%s: certificate delegation not permitted", tls.SecretName)})
+			return false, false
+		}
+		svhost := b.lookupSecureVirtualHost(ir.Spec.VirtualHost.Fqdn)
+		svhost.Secret = sec
+		svhost.MinProtoVersion = MinProtoVersion(ir.Spec.VirtualHost.TLS.MinimumProtocolVersion)
+		enforceTLS = true
+	}
+	// passthrough is true if tls.secretName is not present, and
+	// tls.passthrough is set to true.
+	passthrough = isBlank(tls.SecretName) && tls.Passthrough
+
+	// If not passthrough and secret is invalid, then set status
+	if sec == nil && !passthrough {
+		b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("TLS Secret [%s] not found or is malformed", tls.SecretName)})
+	}
+	return enforceTLS, passthrough
 }
 
 func (b *Builder) computeHTTPLoadBalancers() {
