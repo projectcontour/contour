@@ -163,7 +163,6 @@ func (b *Builder) addHTTPService(svc *v1.Service, port *v1.ServicePort) *HTTPSer
 func newHTTPService(svc *v1.Service, port *v1.ServicePort) *HTTPService {
 	return &HTTPService{
 		TCPService: newTCPService(svc, port),
-		Protocol:   upstreamProtocol(svc, port),
 	}
 }
 
@@ -188,6 +187,7 @@ func newTCPService(svc *v1.Service, port *v1.ServicePort) TCPService {
 		Namespace:   svc.Namespace,
 		ServicePort: port,
 
+		Protocol:           upstreamProtocol(svc, port),
 		MaxConnections:     parseAnnotation(svc.Annotations, annotationMaxConnections),
 		MaxPendingRequests: parseAnnotation(svc.Annotations, annotationMaxPendingRequests),
 		MaxRequests:        parseAnnotation(svc.Annotations, annotationMaxRequests),

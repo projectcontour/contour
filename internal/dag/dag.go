@@ -243,6 +243,10 @@ type TCPService struct {
 
 	*v1.ServicePort
 
+	// Protocol is the layer 7 protocol of this service
+	// One of "", "h2", "h2c", or "tls".
+	Protocol string
+
 	// Circuit breaking limits
 
 	// Max connections is maximum number of connections
@@ -313,10 +317,6 @@ func (c Cluster) Visit(f func(Vertex)) {
 // HTTP/1.1 or HTTP/2.0.
 type HTTPService struct {
 	TCPService
-
-	// Protocol is the layer 7 protocol of this service
-	// One of "", "h2", "h2c", or "tls".
-	Protocol string
 }
 
 // Secret represents a K8s Secret for TLS usage as a DAG Vertex. A Secret is
