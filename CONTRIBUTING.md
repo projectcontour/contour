@@ -86,6 +86,8 @@ with a colon as delimiter. For example 'docs:', 'internal/(packagename):', 'desi
 - Try to keep your number of commits in a PR low. Generally we
 tend to squash before opening the PR, then have PR feedback as
 extra commits.
+- Do not merge commits that don't relate to the affected issue (e.g. "Updating from PR comments", etc). Should
+the need to cherrypick a commit or rollback arise, it should be clear what a specific commit's purpose is.
 - If master has moved on, you'll need to rebase before we can merge,
 so merging upstream master or rebasing from upstream before opening your
 PR will probably save you some time.
