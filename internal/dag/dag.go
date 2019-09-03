@@ -198,11 +198,6 @@ type Vertex interface {
 	Visitable
 }
 
-type Service interface {
-	Vertex
-	toMeta() servicemeta
-}
-
 // A Listener represents a TCP socket that accepts
 // incoming connections.
 type Listener struct {
@@ -237,8 +232,8 @@ func (t *TCPProxy) Visit(f func(Vertex)) {
 	}
 }
 
-// TCPService represents a Kuberentes Service that speaks TCP. That's all we know.
-type TCPService struct {
+// Service represents a single Kubernetes' Service's Port.
+type Service struct {
 	Name, Namespace string
 
 	*v1.ServicePort
@@ -275,7 +270,7 @@ type servicemeta struct {
 	port      int32
 }
 
-func (s *TCPService) toMeta() servicemeta {
+func (s *Service) toMeta() servicemeta {
 	return servicemeta{
 		name:      s.Name,
 		namespace: s.Namespace,
@@ -283,8 +278,8 @@ func (s *TCPService) toMeta() servicemeta {
 	}
 }
 
-func (s *TCPService) Visit(func(Vertex)) {
-	// TCPServices are leaves in the DAG.
+func (s *Service) Visit(func(Vertex)) {
+	// Services are leaves in the DAG.
 }
 
 // Cluster holds the connetion specific parameters that apply to
@@ -293,7 +288,7 @@ type Cluster struct {
 
 	// Upstream is the backend Kubernetes service traffic arriving
 	// at this Cluster will be forwarded too.
-	Upstream Service
+	Upstream *Service
 
 	// The relative weight of this Cluster compared to its siblings.
 	Weight int
@@ -311,12 +306,6 @@ type Cluster struct {
 
 func (c Cluster) Visit(f func(Vertex)) {
 	f(c.Upstream)
-}
-
-// HTTPService represents a Kuberneres Service object which speaks
-// HTTP/1.1 or HTTP/2.0.
-type HTTPService struct {
-	TCPService
 }
 
 // Secret represents a K8s Secret for TLS usage as a DAG Vertex. A Secret is

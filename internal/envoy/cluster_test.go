@@ -67,9 +67,7 @@ func TestCluster(t *testing.T) {
 	}{
 		"simple service": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.HTTPService{
-					TCPService: service(s1),
-				},
+				Upstream: service(s1),
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -86,9 +84,7 @@ func TestCluster(t *testing.T) {
 		},
 		"h2c upstream": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.HTTPService{
-					TCPService: service(s1, "h2c"),
-				},
+				Upstream: service(s1, "h2c"),
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -106,9 +102,7 @@ func TestCluster(t *testing.T) {
 		},
 		"h2 upstream": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.HTTPService{
-					TCPService: service(s1, "h2"),
-				},
+				Upstream: service(s1, "h2"),
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -127,15 +121,13 @@ func TestCluster(t *testing.T) {
 		},
 		"externalName service": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.HTTPService{
-					TCPService: *externalnameservice(s2),
-				},
+				Upstream: service(s2),
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
-				LoadAssignment:       StaticClusterLoadAssignment(externalnameservice(s2)),
+				LoadAssignment:       StaticClusterLoadAssignment(service(s2)),
 				ConnectTimeout:       duration(250 * time.Millisecond),
 				LbPolicy:             v2.Cluster_ROUND_ROBIN,
 				CommonLbConfig:       ClusterCommonLBConfig(),
@@ -143,9 +135,7 @@ func TestCluster(t *testing.T) {
 		},
 		"tls upstream": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.HTTPService{
-					TCPService: service(s1, "tls"),
-				},
+				Upstream: service(s1, "tls"),
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -163,9 +153,7 @@ func TestCluster(t *testing.T) {
 		},
 		"verify tls upstream with san": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.HTTPService{
-					TCPService: service(s1, "tls"),
-				},
+				Upstream: service(s1, "tls"),
 				UpstreamValidation: &dag.UpstreamValidation{
 					CACertificate: &dag.Secret{
 						Object: &v1.Secret{
@@ -197,12 +185,10 @@ func TestCluster(t *testing.T) {
 		},
 		"contour.heptio.com/max-connections": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.HTTPService{
-					TCPService: dag.TCPService{
-						Name: s1.Name, Namespace: s1.Namespace,
-						ServicePort:    &s1.Spec.Ports[0],
-						MaxConnections: 9000,
-					},
+				Upstream: &dag.Service{
+					Name: s1.Name, Namespace: s1.Namespace,
+					ServicePort:    &s1.Spec.Ports[0],
+					MaxConnections: 9000,
 				},
 			},
 			want: &v2.Cluster{
@@ -225,12 +211,10 @@ func TestCluster(t *testing.T) {
 		},
 		"contour.heptio.com/max-pending-requests": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.HTTPService{
-					TCPService: dag.TCPService{
-						Name: s1.Name, Namespace: s1.Namespace,
-						ServicePort:        &s1.Spec.Ports[0],
-						MaxPendingRequests: 4096,
-					},
+				Upstream: &dag.Service{
+					Name: s1.Name, Namespace: s1.Namespace,
+					ServicePort:        &s1.Spec.Ports[0],
+					MaxPendingRequests: 4096,
 				},
 			},
 			want: &v2.Cluster{
@@ -253,12 +237,10 @@ func TestCluster(t *testing.T) {
 		},
 		"contour.heptio.com/max-requests": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.HTTPService{
-					TCPService: dag.TCPService{
-						Name: s1.Name, Namespace: s1.Namespace,
-						ServicePort: &s1.Spec.Ports[0],
-						MaxRequests: 404,
-					},
+				Upstream: &dag.Service{
+					Name: s1.Name, Namespace: s1.Namespace,
+					ServicePort: &s1.Spec.Ports[0],
+					MaxRequests: 404,
 				},
 			},
 			want: &v2.Cluster{
@@ -281,12 +263,10 @@ func TestCluster(t *testing.T) {
 		},
 		"contour.heptio.com/max-retries": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.HTTPService{
-					TCPService: dag.TCPService{
-						Name: s1.Name, Namespace: s1.Namespace,
-						ServicePort: &s1.Spec.Ports[0],
-						MaxRetries:  7,
-					},
+				Upstream: &dag.Service{
+					Name: s1.Name, Namespace: s1.Namespace,
+					ServicePort: &s1.Spec.Ports[0],
+					MaxRetries:  7,
 				},
 			},
 			want: &v2.Cluster{
@@ -309,9 +289,7 @@ func TestCluster(t *testing.T) {
 		},
 		"cluster with random load balancer policy": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.HTTPService{
-					TCPService: service(s1),
-				},
+				Upstream:             service(s1),
 				LoadBalancerStrategy: "Random",
 			},
 			want: &v2.Cluster{
@@ -329,9 +307,7 @@ func TestCluster(t *testing.T) {
 		},
 		"cluster with cookie policy": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.HTTPService{
-					TCPService: service(s1),
-				},
+				Upstream:             service(s1),
 				LoadBalancerStrategy: "Cookie",
 			},
 			want: &v2.Cluster{
@@ -350,10 +326,7 @@ func TestCluster(t *testing.T) {
 
 		"tcp service": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.TCPService{
-					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort: &s1.Spec.Ports[0],
-				},
+				Upstream: service(s1),
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -370,10 +343,7 @@ func TestCluster(t *testing.T) {
 		},
 		"tcp service with healthcheck": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.TCPService{
-					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort: &s1.Spec.Ports[0],
-				},
+				Upstream: service(s1),
 				HealthCheckPolicy: &dag.HealthCheckPolicy{
 					Path: "/healthz",
 				},
@@ -423,7 +393,7 @@ func TestClustername(t *testing.T) {
 	}{
 		"simple": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.TCPService{
+				Upstream: &dag.Service{
 					Name:      "backend",
 					Namespace: "default",
 					ServicePort: &v1.ServicePort{
@@ -438,7 +408,7 @@ func TestClustername(t *testing.T) {
 		},
 		"far too long": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.TCPService{
+				Upstream: &dag.Service{
 					Name:      "must-be-in-want-of-a-wife",
 					Namespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
 					ServicePort: &v1.ServicePort{
@@ -453,7 +423,7 @@ func TestClustername(t *testing.T) {
 		},
 		"various healthcheck params": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.TCPService{
+				Upstream: &dag.Service{
 					Name:      "backend",
 					Namespace: "default",
 					ServicePort: &v1.ServicePort{
@@ -476,7 +446,7 @@ func TestClustername(t *testing.T) {
 		},
 		"upstream tls validation with subject alt name": {
 			cluster: &dag.Cluster{
-				Upstream: &dag.TCPService{
+				Upstream: &dag.Service{
 					Name:      "backend",
 					Namespace: "default",
 					ServicePort: &v1.ServicePort{
@@ -636,23 +606,16 @@ func TestClusterCommonLBConfig(t *testing.T) {
 	}
 }
 
-func service(s *v1.Service, protocols ...string) dag.TCPService {
+func service(s *v1.Service, protocols ...string) *dag.Service {
 	protocol := ""
 	if len(protocols) > 0 {
 		protocol = protocols[0]
 	}
-	return dag.TCPService{
-		Name:        s.Name,
-		Namespace:   s.Namespace,
-		ServicePort: &s.Spec.Ports[0],
-		Protocol:    protocol,
-	}
-}
-func externalnameservice(s *v1.Service) *dag.TCPService {
-	return &dag.TCPService{
+	return &dag.Service{
 		Name:         s.Name,
 		Namespace:    s.Namespace,
 		ServicePort:  &s.Spec.Ports[0],
 		ExternalName: s.Spec.ExternalName,
+		Protocol:     protocol,
 	}
 }

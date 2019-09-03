@@ -41,7 +41,7 @@ func TestRoute(t *testing.T) {
 		},
 	}
 	cluster := &dag.Cluster{
-		Upstream: &dag.TCPService{
+		Upstream: &dag.Service{
 			Name:        service.Name,
 			Namespace:   service.Namespace,
 			ServicePort: &service.Spec.Ports[0],
@@ -78,14 +78,14 @@ func TestRouteRoute(t *testing.T) {
 		},
 	}
 	c1 := &dag.Cluster{
-		Upstream: &dag.TCPService{
+		Upstream: &dag.Service{
 			Name:        s1.Name,
 			Namespace:   s1.Namespace,
 			ServicePort: &s1.Spec.Ports[0],
 		},
 	}
 	c2 := &dag.Cluster{
-		Upstream: &dag.TCPService{
+		Upstream: &dag.Service{
 			Name:        s1.Name,
 			Namespace:   s1.Namespace,
 			ServicePort: &s1.Spec.Ports[0],
@@ -128,14 +128,14 @@ func TestRouteRoute(t *testing.T) {
 		"multiple": {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{{
-					Upstream: &dag.TCPService{
+					Upstream: &dag.Service{
 						Name:        s1.Name,
 						Namespace:   s1.Namespace,
 						ServicePort: &s1.Spec.Ports[0],
 					},
 					Weight: 90,
 				}, {
-					Upstream: &dag.TCPService{
+					Upstream: &dag.Service{
 						Name:        s1.Name,
 						Namespace:   s1.Namespace, // it's valid to mention the same service several times per route.
 						ServicePort: &s1.Spec.Ports[0],
@@ -163,14 +163,14 @@ func TestRouteRoute(t *testing.T) {
 			route: &dag.Route{
 				Websocket: true,
 				Clusters: []*dag.Cluster{{
-					Upstream: &dag.TCPService{
+					Upstream: &dag.Service{
 						Name:        s1.Name,
 						Namespace:   s1.Namespace,
 						ServicePort: &s1.Spec.Ports[0],
 					},
 					Weight: 90,
 				}, {
-					Upstream: &dag.TCPService{
+					Upstream: &dag.Service{
 						Name:        s1.Name,
 						Namespace:   s1.Namespace, // it's valid to mention the same service several times per route.
 						ServicePort: &s1.Spec.Ports[0],
@@ -367,7 +367,7 @@ func TestWeightedClusters(t *testing.T) {
 	}{
 		"multiple services w/o weights": {
 			clusters: []*dag.Cluster{{
-				Upstream: &dag.TCPService{
+				Upstream: &dag.Service{
 					Name:      "kuard",
 					Namespace: "default",
 					ServicePort: &v1.ServicePort{
@@ -375,7 +375,7 @@ func TestWeightedClusters(t *testing.T) {
 					},
 				},
 			}, {
-				Upstream: &dag.TCPService{
+				Upstream: &dag.Service{
 					Name:      "nginx",
 					Namespace: "default",
 					ServicePort: &v1.ServicePort{
@@ -396,7 +396,7 @@ func TestWeightedClusters(t *testing.T) {
 		},
 		"multiple weighted services": {
 			clusters: []*dag.Cluster{{
-				Upstream: &dag.TCPService{
+				Upstream: &dag.Service{
 					Name:      "kuard",
 					Namespace: "default",
 					ServicePort: &v1.ServicePort{
@@ -405,7 +405,7 @@ func TestWeightedClusters(t *testing.T) {
 				},
 				Weight: 80,
 			}, {
-				Upstream: &dag.TCPService{
+				Upstream: &dag.Service{
 					Name:      "nginx",
 					Namespace: "default",
 					ServicePort: &v1.ServicePort{
@@ -427,7 +427,7 @@ func TestWeightedClusters(t *testing.T) {
 		},
 		"multiple weighted services and one with no weight specified": {
 			clusters: []*dag.Cluster{{
-				Upstream: &dag.TCPService{
+				Upstream: &dag.Service{
 					Name:      "kuard",
 					Namespace: "default",
 					ServicePort: &v1.ServicePort{
@@ -436,7 +436,7 @@ func TestWeightedClusters(t *testing.T) {
 				},
 				Weight: 80,
 			}, {
-				Upstream: &dag.TCPService{
+				Upstream: &dag.Service{
 					Name:      "nginx",
 					Namespace: "default",
 					ServicePort: &v1.ServicePort{
@@ -445,7 +445,7 @@ func TestWeightedClusters(t *testing.T) {
 				},
 				Weight: 20,
 			}, {
-				Upstream: &dag.TCPService{
+				Upstream: &dag.Service{
 					Name:      "notraffic",
 					Namespace: "default",
 					ServicePort: &v1.ServicePort{
