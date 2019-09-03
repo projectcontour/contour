@@ -24,26 +24,46 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// IngressRouteStatus allows for updating the object's Status field
-type IngressRouteStatus struct {
+// CRDStatus allows for updating the object's Status field
+type CRDStatus struct {
 	Client clientset.Interface
 }
 
 // SetStatus sets the IngressRoute status field to an Valid or Invalid status
-func (irs *IngressRouteStatus) SetStatus(status, desc string, existing *ingressroutev1.IngressRoute) error {
-	// Check if update needed by comparing status & desc
-	if existing.CurrentStatus != status || existing.Description != desc {
-		updated := existing.DeepCopy()
-		updated.Status = projcontour.Status{
-			CurrentStatus: status,
-			Description:   desc,
+func (irs *CRDStatus) SetStatus(status, desc string, existing interface{}) error {
+	switch exist := existing.(type) {
+	case *ingressroutev1.IngressRoute:
+		// Check if update needed by comparing status & desc
+		if irs.updateNeeded(status, desc, exist.Status) {
+			updated := exist.DeepCopy()
+			updated.Status = projcontour.Status{
+				CurrentStatus: status,
+				Description:   desc,
+			}
+			return irs.setIngressRouteStatus(exist, updated)
 		}
-		return irs.setStatus(existing, updated)
+	case *projcontour.HTTPLoadBalancer:
+		// Check if update needed by comparing status & desc
+		if irs.updateNeeded(status, desc, exist.Status) {
+			updated := exist.DeepCopy()
+			updated.Status = projcontour.Status{
+				CurrentStatus: status,
+				Description:   desc,
+			}
+			return irs.setHTTPLoadBalancerStatus(exist, updated)
+		}
 	}
 	return nil
 }
 
-func (irs *IngressRouteStatus) setStatus(existing, updated *ingressroutev1.IngressRoute) error {
+func (irs *CRDStatus) updateNeeded(status, desc string, existing projcontour.Status) bool {
+	if existing.CurrentStatus != status || existing.Description != desc {
+		return true
+	}
+	return false
+}
+
+func (irs *CRDStatus) setIngressRouteStatus(existing, updated *ingressroutev1.IngressRoute) error {
 	existingBytes, err := json.Marshal(existing)
 	if err != nil {
 		return err
@@ -62,5 +82,27 @@ func (irs *IngressRouteStatus) setStatus(existing, updated *ingressroutev1.Ingre
 	}
 
 	_, err = irs.Client.ContourV1beta1().IngressRoutes(existing.GetNamespace()).Patch(existing.GetName(), types.MergePatchType, patchBytes)
+	return err
+}
+
+func (irs *CRDStatus) setHTTPLoadBalancerStatus(existing, updated *projcontour.HTTPLoadBalancer) error {
+	existingBytes, err := json.Marshal(existing)
+	if err != nil {
+		return err
+	}
+	// Need to set the resource version of the updated endpoints to the resource
+	// version of the current service. Otherwise, the resulting patch does not
+	// have a resource version, and the server complains.
+	updated.ResourceVersion = existing.ResourceVersion
+	updatedBytes, err := json.Marshal(updated)
+	if err != nil {
+		return err
+	}
+	patchBytes, err := jsonpatch.CreateMergePatch(existingBytes, updatedBytes)
+	if err != nil {
+		return err
+	}
+
+	_, err = irs.Client.ProjectcontourV1alpha1().HTTPLoadBalancers(existing.GetNamespace()).Patch(existing.GetName(), types.MergePatchType, patchBytes)
 	return err
 }

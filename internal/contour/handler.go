@@ -22,6 +22,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/metrics"
@@ -39,7 +40,7 @@ type EventHandler struct {
 
 	HoldoffDelay, HoldoffMaxDelay time.Duration
 
-	IngressRouteStatus *k8s.IngressRouteStatus
+	IngressRouteStatus *k8s.CRDStatus
 
 	*metrics.Metrics
 
@@ -229,6 +230,16 @@ func (e *EventHandler) setStatus(statuses map[dag.Meta]dag.Status) {
 	for _, st := range statuses {
 		switch obj := st.Object.(type) {
 		case *ingressroutev1.IngressRoute:
+			err := e.IngressRouteStatus.SetStatus(st.Status, st.Description, obj)
+			if err != nil {
+				e.WithError(err).
+					WithField("status", st.Status).
+					WithField("desc", st.Description).
+					WithField("name", obj.Name).
+					WithField("namespace", obj.Namespace).
+					Error("failed to set status")
+			}
+		case *projcontour.HTTPLoadBalancer:
 			err := e.IngressRouteStatus.SetStatus(st.Status, st.Description, obj)
 			if err != nil {
 				e.WithError(err).
