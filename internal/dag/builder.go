@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -624,9 +625,13 @@ func (b *Builder) processIngressRoutes(ir *ingressroutev1.IngressRoute, prefixMa
 				}
 
 				var uv *UpstreamValidation
+				var err error
 				if s.Protocol == "tls" {
 					// we can only validate TLS connections to services that talk TLS
-					uv = b.lookupUpstreamValidation(ir, host, route, service, ir.Namespace)
+					uv, err = b.lookupUpstreamValidation(ir.Name, host, route.Match, service.Name, service.UpstreamValidation, ir.Namespace)
+					if err != nil {
+						b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: err.Error(), Vhost: host})
+					}
 				}
 				r.Clusters = append(r.Clusters, &Cluster{
 					Upstream:             s,
@@ -690,24 +695,19 @@ func (b *Builder) processRoutes(httplb *projcontour.HTTPLoadBalancer, host strin
 
 	for _, route := range httplb.Spec.Routes {
 		// route cannot both delegate and point to services
-		//if len(route.Services) > 0 && route.Delegate != nil {
-		//	b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: cannot specify services and delegate in the same route", route.Match), Vhost: host})
-		//	return
-		//}
+		if len(route.Services) > 0 && route.Includes != nil {
+			b.setStatus(Status{Object: httplb, Status: StatusInvalid, Description: fmt.Sprintf("route %q: cannot specify services and include in the same route", conditionPath(route.Condition)), Vhost: host})
+			return
+		}
 
 		// Cannot support multiple services with websockets (See: https://github.com/heptio/contour/issues/732)
 		if len(route.Services) > 1 && route.EnableWebsockets {
-			b.setStatus(Status{Object: httplb, Status: StatusInvalid, Description: fmt.Sprintf("route %q: cannot specify multiple services and enable websockets", route.Condition.Prefix), Vhost: host})
+			b.setStatus(Status{Object: httplb, Status: StatusInvalid, Description: fmt.Sprintf("route %q: cannot specify multiple services and enable websockets", conditionPath(route.Condition)), Vhost: host})
 			return
 		}
 
 		// base case: The route points to services, so we add them to the vhost
 		if len(route.Services) > 0 {
-			//if !matchesPathPrefix(route.Match, prefixMatch) {
-			//	b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("the path prefix %q does not match the parent's path prefix %q", route.Match, prefixMatch), Vhost: host})
-			//	return
-			//}
-
 			routePath := conditionPath(route.Condition)
 
 			r := &PrefixRoute{
@@ -738,18 +738,21 @@ func (b *Builder) processRoutes(httplb *projcontour.HTTPLoadBalancer, host strin
 					return
 				}
 
-				// TODO (sas) Enable TLS
-				//var uv *UpstreamValidation
-				//if s.Protocol == "tls" {
-				//	// we can only validate TLS connections to services that talk TLS
-				//	uv = b.lookupUpstreamValidation(ir, host, route, service, ir.Namespace)
-				//}
+				var uv *UpstreamValidation
+				var err error
+				if s.Protocol == "tls" {
+					// we can only validate TLS connections to services that talk TLS
+					uv, err = b.lookupUpstreamValidation(httplb.Name, host, route.Condition.Prefix, service.Name, service.UpstreamValidation, httplb.Namespace)
+					if err != nil {
+						b.setStatus(Status{Object: httplb, Status: StatusInvalid, Description: err.Error(), Vhost: host})
+					}
+				}
 				r.Clusters = append(r.Clusters, &Cluster{
 					Upstream:             s,
 					LoadBalancerStrategy: service.Strategy,
 					Weight:               service.Weight,
 					HealthCheckPolicy:    healthCheckPolicy(service.HealthCheck),
-					//UpstreamValidation: uv, // TODO (sas) Enable UpstreamValidation
+					UpstreamValidation:   uv,
 				})
 			}
 
@@ -797,30 +800,27 @@ func (b *Builder) processRoutes(httplb *projcontour.HTTPLoadBalancer, host strin
 	b.setStatus(Status{Object: httplb, Status: StatusValid, Description: "valid HTTPLoadBalancer", Vhost: host})
 }
 
-func (b *Builder) lookupUpstreamValidation(ir *ingressroutev1.IngressRoute, host string, route ingressroutev1.Route, service ingressroutev1.Service, namespace string) *UpstreamValidation {
-	uv := service.UpstreamValidation
+func (b *Builder) lookupUpstreamValidation(crdName, host, match string, serviceName string, uv *projcontour.UpstreamValidation, namespace string) (*UpstreamValidation, error) {
 	if uv == nil {
 		// no upstream validation requested, nothing to do
-		return nil
+		return nil, nil
 	}
 
 	cacert := b.lookupSecret(Meta{name: uv.CACertificate, namespace: namespace}, validCA)
 	if cacert == nil {
 		// UpstreamValidation is requested, but cert is missing or not configured
-		b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: upstreamValidation requested but secret not found or misconfigured", route.Match, service.Name), Vhost: host})
-		return nil
+		return nil, errors.New(fmt.Sprintf("route %q: service %q: upstreamValidation requested but secret not found or misconfigured", match, serviceName))
 	}
 
 	if uv.SubjectName == "" {
 		// UpstreamValidation is requested, but SAN is not provided
-		b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("route %q: service %q: upstreamValidation requested but subject alt name not found or misconfigured", route.Match, service.Name), Vhost: host})
-		return nil
+		return nil, errors.New(fmt.Sprintf("route %q: service %q: upstreamValidation requested but subject alt name not found or misconfigured", match, serviceName))
 	}
 
 	return &UpstreamValidation{
 		CACertificate: cacert,
 		SubjectName:   uv.SubjectName,
-	}
+	}, nil
 }
 
 func (b *Builder) processTCPProxy(ir *ingressroutev1.IngressRoute, visited []*ingressroutev1.IngressRoute, host string) {
