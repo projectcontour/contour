@@ -16,10 +16,10 @@ package dag
 import (
 	"time"
 
-	"github.com/heptio/contour/apis/contour/v1beta1"
+	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 )
 
-func retryPolicy(rp *v1beta1.RetryPolicy) *RetryPolicy {
+func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
 	if rp == nil {
 		return nil
 	}
@@ -31,7 +31,7 @@ func retryPolicy(rp *v1beta1.RetryPolicy) *RetryPolicy {
 	}
 }
 
-func timeoutPolicy(tp *v1beta1.TimeoutPolicy) *TimeoutPolicy {
+func timeoutPolicy(tp *projcontour.TimeoutPolicy) *TimeoutPolicy {
 	if tp == nil {
 		return nil
 	}
