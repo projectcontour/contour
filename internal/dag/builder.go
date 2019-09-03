@@ -18,7 +18,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -686,34 +685,6 @@ func (b *Builder) processIngressRoutes(ir *ingressroutev1.IngressRoute, prefixMa
 	b.setStatus(Status{Object: ir, Status: StatusValid, Description: "valid IngressRoute", Vhost: host})
 }
 
-func healthCheckPolicy(hc *projcontour.HealthCheck) *HealthCheckPolicy {
-	if hc == nil {
-		return nil
-	}
-	return &HealthCheckPolicy{
-		Path:               hc.Path,
-		Host:               hc.Host,
-		Interval:           time.Duration(hc.IntervalSeconds) * time.Second,
-		Timeout:            time.Duration(hc.TimeoutSeconds) * time.Second,
-		UnhealthyThreshold: int(hc.UnhealthyThresholdCount),
-		HealthyThreshold:   int(hc.HealthyThresholdCount),
-	}
-}
-
-func getHealthCheck(hc *projcontour.HealthCheck) *HealthCheckPolicy {
-	if hc == nil {
-		return nil
-	}
-	return &HealthCheckPolicy{
-		Path:               hc.Path,
-		Host:               hc.Host,
-		Interval:           time.Duration(hc.IntervalSeconds) * time.Second,
-		Timeout:            time.Duration(hc.TimeoutSeconds) * time.Second,
-		UnhealthyThreshold: int(hc.UnhealthyThresholdCount),
-		HealthyThreshold:   int(hc.HealthyThresholdCount),
-	}
-}
-
 func (b *Builder) processRoutes(httplb *projcontour.HTTPLoadBalancer, host string, enforceTLS bool) {
 	// visited = append(visited, httplb) //TODO (sas) Implement delegation
 
@@ -777,7 +748,7 @@ func (b *Builder) processRoutes(httplb *projcontour.HTTPLoadBalancer, host strin
 					Upstream:             s,
 					LoadBalancerStrategy: service.Strategy,
 					Weight:               service.Weight,
-					HealthCheckPolicy:    getHealthCheck(service.HealthCheck),
+					HealthCheckPolicy:    healthCheckPolicy(service.HealthCheck),
 					//UpstreamValidation: uv, // TODO (sas) Enable UpstreamValidation
 				})
 			}
