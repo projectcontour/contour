@@ -44,7 +44,7 @@ func TestVisitClusters(t *testing.T) {
 						},
 						TCPProxy: &dag.TCPProxy{
 							Clusters: []*dag.Cluster{{
-								Upstream: &dag.TCPService{
+								Upstream: &dag.Service{
 									Name:      "example",
 									Namespace: "default",
 									ServicePort: &v1.ServicePort{
@@ -89,7 +89,7 @@ func TestVisitClusters(t *testing.T) {
 func TestVisitListeners(t *testing.T) {
 	p1 := &dag.TCPProxy{
 		Clusters: []*dag.Cluster{{
-			Upstream: &dag.TCPService{
+			Upstream: &dag.Service{
 				Name:      "example",
 				Namespace: "default",
 				ServicePort: &v1.ServicePort{
@@ -171,7 +171,7 @@ func TestVisitSecrets(t *testing.T) {
 						},
 						TCPProxy: &dag.TCPProxy{
 							Clusters: []*dag.Cluster{{
-								Upstream: &dag.TCPService{
+								Upstream: &dag.Service{
 									Name:      "example",
 									Namespace: "default",
 									ServicePort: &v1.ServicePort{

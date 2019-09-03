@@ -47,8 +47,8 @@ func (c *ctx) writeVertex(v dag.Vertex) {
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{listener|%s:%d}"]`+"\n", v, v.Address, v.Port)
 	case *dag.Secret:
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{secret|%s/%s}"]`+"\n", v, v.Namespace(), v.Name())
-	case *dag.HTTPService:
-		fmt.Fprintf(c.w, `"%p" [shape=record, label="{httpservice|%s/%s:%d}"]`+"\n", v, v.Namespace, v.Name, v.Port)
+	case *dag.Service:
+		fmt.Fprintf(c.w, `"%p" [shape=record, label="{service|%s/%s:%d}"]`+"\n", v, v.Namespace, v.Name, v.Port)
 	case *dag.VirtualHost:
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{http://%s}"]`+"\n", v, v.Name)
 	case *dag.SecureVirtualHost:
@@ -57,8 +57,6 @@ func (c *ctx) writeVertex(v dag.Vertex) {
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{prefix|%s}"]`+"\n", v, v.Prefix)
 	case *dag.RegexRoute:
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{regex|%s}"]`+"\n", v, v.Regex)
-	case *dag.TCPService:
-		fmt.Fprintf(c.w, `"%p" [shape=record, label="{tcpservice|%s/%s:%d}"]`+"\n", v, v.Namespace, v.Name, v.Port)
 	case *dag.TCPProxy:
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{tcpproxy}"]`+"\n", v)
 	case *dag.Cluster:

@@ -46,7 +46,7 @@ type Builder struct {
 	// permitInsecure field in IngressRoute.
 	DisablePermitInsecure bool
 
-	services map[servicemeta]Service
+	services map[servicemeta]*Service
 	secrets  map[Meta]*Secret
 
 	virtualhosts       map[string]*VirtualHost
@@ -75,7 +75,7 @@ func (b *Builder) Build() *DAG {
 
 // reset (re)inialises the internal state of the builder.
 func (b *Builder) reset() {
-	b.services = make(map[servicemeta]Service, len(b.services))
+	b.services = make(map[servicemeta]*Service, len(b.services))
 	b.secrets = make(map[Meta]*Secret, len(b.secrets))
 	b.orphaned = make(map[Meta]bool, len(b.orphaned))
 	b.statuses = make(map[Meta]Status, len(b.statuses))
@@ -84,105 +84,43 @@ func (b *Builder) reset() {
 	b.securevirtualhosts = make(map[string]*SecureVirtualHost)
 }
 
-// lookupHTTPService returns a HTTPService that matches the Meta and port supplied.
-func (b *Builder) lookupHTTPService(m Meta, port intstr.IntOrString) *HTTPService {
-	s := b.lookupService(m, port)
-	switch s := s.(type) {
-	case *HTTPService:
-		return s
-	case nil:
-		svc, ok := b.Source.services[m]
-		if !ok {
+// lookupService returns a Service that matches the Meta and Port of the Kubernetes' Service.
+func (b *Builder) lookupService(m Meta, port intstr.IntOrString) *Service {
+	lookup := func() *Service {
+		if port.Type != intstr.Int {
+			// can't handle, give up
 			return nil
 		}
-		for i := range svc.Spec.Ports {
-			p := &svc.Spec.Ports[i]
-			if int(p.Port) == port.IntValue() {
-				return b.addHTTPService(svc, p)
-			}
-			if port.String() == p.Name {
-				return b.addHTTPService(svc, p)
-			}
+		sm := servicemeta{
+			name:      m.name,
+			namespace: m.namespace,
+			port:      int32(port.IntValue()),
 		}
-		return nil
-	default:
-		// some other type
-		return nil
+		return b.services[sm]
 	}
-}
 
-// lookupTCPService returns a TCPService that matches the Meta and port supplied.
-func (b *Builder) lookupTCPService(m Meta, port intstr.IntOrString) *TCPService {
-	s := b.lookupService(m, port)
-	switch s := s.(type) {
-	case *TCPService:
+	s := lookup()
+	if s != nil {
 		return s
-	case nil:
-		svc, ok := b.Source.services[m]
-		if !ok {
-			return nil
-		}
-		for i := range svc.Spec.Ports {
-			p := &svc.Spec.Ports[i]
-			if int(p.Port) == port.IntValue() {
-				return b.addTCPService(svc, p)
-			}
-			if port.String() == p.Name {
-				return b.addTCPService(svc, p)
-			}
-		}
-		return nil
-	default:
-		// some other type
-		return nil
 	}
-}
-func (b *Builder) lookupService(m Meta, port intstr.IntOrString) Service {
-	if port.Type != intstr.Int {
-		// can't handle, give up
-		return nil
-	}
-	sm := servicemeta{
-		name:      m.name,
-		namespace: m.namespace,
-		port:      int32(port.IntValue()),
-	}
-	s, ok := b.services[sm]
+	svc, ok := b.Source.services[m]
 	if !ok {
-		return nil // avoid typed nil
+		return nil
 	}
-	return s
-}
-
-func (b *Builder) addHTTPService(svc *v1.Service, port *v1.ServicePort) *HTTPService {
-	s := newHTTPService(svc, port)
-	b.services[s.toMeta()] = s
-	return s
-}
-
-func newHTTPService(svc *v1.Service, port *v1.ServicePort) *HTTPService {
-	return &HTTPService{
-		TCPService: newTCPService(svc, port),
+	for i := range svc.Spec.Ports {
+		p := &svc.Spec.Ports[i]
+		if int(p.Port) == port.IntValue() {
+			return b.addService(svc, p)
+		}
+		if port.String() == p.Name {
+			return b.addService(svc, p)
+		}
 	}
+	return nil
 }
 
-func upstreamProtocol(svc *v1.Service, port *v1.ServicePort) string {
-	up := parseUpstreamProtocols(svc.Annotations, annotationUpstreamProtocol, "h2", "h2c", "tls")
-	protocol := up[port.Name]
-	if protocol == "" {
-		protocol = up[strconv.Itoa(int(port.Port))]
-	}
-	return protocol
-}
-
-func (b *Builder) addTCPService(svc *v1.Service, port *v1.ServicePort) *TCPService {
-	s := newTCPService(svc, port)
-	b.services[s.toMeta()] = &s
-	return &s
-}
-
-func newTCPService(svc *v1.Service, port *v1.ServicePort) TCPService {
-	return TCPService{
+func (b *Builder) addService(svc *v1.Service, port *v1.ServicePort) *Service {
+	s := &Service{
 		Name:        svc.Name,
 		Namespace:   svc.Namespace,
 		ServicePort: port,
@@ -194,6 +132,17 @@ func newTCPService(svc *v1.Service, port *v1.ServicePort) TCPService {
 		MaxRetries:         parseAnnotation(svc.Annotations, annotationMaxRetries),
 		ExternalName:       externalName(svc),
 	}
+	b.services[s.toMeta()] = s
+	return s
+}
+
+func upstreamProtocol(svc *v1.Service, port *v1.ServicePort) string {
+	up := parseUpstreamProtocols(svc.Annotations, annotationUpstreamProtocol, "h2", "h2c", "tls")
+	protocol := up[port.Name]
+	if protocol == "" {
+		protocol = up[strconv.Itoa(int(port.Port))]
+	}
+	return protocol
 }
 
 // lookupSecret returns a Secret if present or nil if the underlying kubernetes
@@ -338,7 +287,7 @@ func (b *Builder) computeIngresses() {
 				path := stringOrDefault(httppath.Path, "/")
 				be := httppath.Backend
 				m := Meta{name: be.ServiceName, namespace: ing.Namespace}
-				s := b.lookupHTTPService(m, be.ServicePort)
+				s := b.lookupService(m, be.ServicePort)
 				if s == nil {
 					continue
 				}
@@ -562,7 +511,7 @@ func (b *Builder) processRoutes(ir *ingressroutev1.IngressRoute, prefixMatch str
 					return
 				}
 				m := Meta{name: service.Name, namespace: ir.Namespace}
-				s := b.lookupHTTPService(m, intstr.FromInt(service.Port))
+				s := b.lookupService(m, intstr.FromInt(service.Port))
 
 				if s == nil {
 					b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("Service [%s:%d] is invalid or missing", service.Name, service.Port)})
@@ -688,7 +637,7 @@ func (b *Builder) processTCPProxy(ir *ingressroutev1.IngressRoute, visited []*in
 		var proxy TCPProxy
 		for _, service := range tcpproxy.Services {
 			m := Meta{name: service.Name, namespace: ir.Namespace}
-			s := b.lookupTCPService(m, intstr.FromInt(service.Port))
+			s := b.lookupService(m, intstr.FromInt(service.Port))
 			if s == nil {
 				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("tcpproxy: service %s/%s/%d: not found", ir.Namespace, service.Name, service.Port), Vhost: host})
 				return

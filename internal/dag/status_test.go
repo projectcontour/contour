@@ -20,11 +20,21 @@ import (
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestDAGIngressRouteStatus(t *testing.T) {
+	sec1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ssl-cert",
+			Namespace: "roots",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata("certificate", "key"),
+	}
+
 	// ir1 is a valid ingressroute
 	ir1 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -542,6 +552,57 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	s9 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nginx",
+			Namespace: "roots",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	}
+
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nginx",
+			Namespace: "roots",
+		},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"example.com"},
+				SecretName: sec1.Name,
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host:             "example.com",
+				IngressRuleValue: ingressrulevalue(backend(s9.Name, intstr.FromInt(80))),
+			}},
+		},
+	}
+
+	ir24 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nginx",
+			Namespace: "roots",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &projcontour.TLS{
+					SecretName: sec1.Name,
+				},
+			},
+			TCPProxy: &ingressroutev1.TCPProxy{
+				Services: []ingressroutev1.Service{{
+					Name: s9.Name,
+					Port: 80,
+				}},
+			},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -717,6 +778,20 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Status:      StatusValid,
 					Description: `valid IngressRoute`,
 					Vhost:       "www.containersteve.com",
+				},
+			},
+		},
+		// issue 1399
+		"service shared across ingress and ingressroute tcpproxy": {
+			objs: []interface{}{
+				sec1, s9, i1, ir24,
+			},
+			want: map[Meta]Status{
+				{name: ir24.Name, namespace: ir24.Namespace}: {
+					Object:      ir24,
+					Status:      StatusValid,
+					Description: `valid IngressRoute`,
+					Vhost:       "example.com",
 				},
 			},
 		},
