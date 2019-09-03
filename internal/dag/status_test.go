@@ -603,6 +603,36 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	sec2 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default-ssl-cert",
+			Namespace: "heptio-contour",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata("certificate", "key"),
+	}
+
+	ir25 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "sample-app",
+			Namespace: "roots",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "127.0.0.1.nip.io",
+				TLS: &projcontour.TLS{
+					SecretName: sec2.Namespace + "/" + sec2.Name,
+				},
+			},
+			TCPProxy: &ingressroutev1.TCPProxy{
+				Services: []ingressroutev1.Service{{
+					Name: "sample-app",
+					Port: 80,
+				}},
+			},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -792,6 +822,20 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Status:      StatusValid,
 					Description: `valid IngressRoute`,
 					Vhost:       "example.com",
+				},
+			},
+		},
+		// issue 1347
+		"check status set when tcpproxy combined with tls delegation failure": {
+			objs: []interface{}{
+				sec2,
+				ir25,
+			},
+			want: map[Meta]Status{
+				{name: ir25.Name, namespace: ir25.Namespace}: {
+					Object:      ir25,
+					Status:      StatusInvalid,
+					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
 				},
 			},
 		},
