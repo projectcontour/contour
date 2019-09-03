@@ -27,7 +27,7 @@ type HTTPLoadBalancerSpec struct {
 	// TCPProxy holds TCP proxy information.
 	TCPProxy *TCPProxy `json:"tcpproxy,omitempty"`
 	// Includes allow for specific routing configuration to be appended to another HTTPLoadBalancer in another namespace
-	Includes *[]Include `json:"includes,omitempty"`
+	Includes []Include `json:"includes,omitempty"`
 }
 
 // Include describes a set of policies that can be applied to an HTTPLoadBalancer in a namespace

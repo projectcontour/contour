@@ -174,13 +174,9 @@ func (in *HTTPLoadBalancerSpec) DeepCopyInto(out *HTTPLoadBalancerSpec) {
 	}
 	if in.Includes != nil {
 		in, out := &in.Includes, &out.Includes
-		*out = new([]Include)
-		if **in != nil {
-			in, out := *in, *out
-			*out = make([]Include, len(*in))
-			for i := range *in {
-				(*in)[i].DeepCopyInto(&(*out)[i])
-			}
+		*out = make([]Include, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	return
