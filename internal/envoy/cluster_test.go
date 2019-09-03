@@ -87,8 +87,7 @@ func TestCluster(t *testing.T) {
 		"h2c upstream": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.HTTPService{
-					TCPService: service(s1),
-					Protocol:   "h2c",
+					TCPService: service(s1, "h2c"),
 				},
 			},
 			want: &v2.Cluster{
@@ -108,8 +107,7 @@ func TestCluster(t *testing.T) {
 		"h2 upstream": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.HTTPService{
-					TCPService: service(s1),
-					Protocol:   "h2",
+					TCPService: service(s1, "h2"),
 				},
 			},
 			want: &v2.Cluster{
@@ -146,8 +144,7 @@ func TestCluster(t *testing.T) {
 		"tls upstream": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.HTTPService{
-					TCPService: service(s1),
-					Protocol:   "tls",
+					TCPService: service(s1, "tls"),
 				},
 			},
 			want: &v2.Cluster{
@@ -167,8 +164,7 @@ func TestCluster(t *testing.T) {
 		"verify tls upstream with san": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.HTTPService{
-					TCPService: tlsservice(s1, "cacert", "foo.bar.io"),
-					Protocol:   "tls",
+					TCPService: service(s1, "tls"),
 				},
 				UpstreamValidation: &dag.UpstreamValidation{
 					CACertificate: &dag.Secret{
@@ -640,11 +636,16 @@ func TestClusterCommonLBConfig(t *testing.T) {
 	}
 }
 
-func service(s *v1.Service) dag.TCPService {
+func service(s *v1.Service, protocols ...string) dag.TCPService {
+	protocol := ""
+	if len(protocols) > 0 {
+		protocol = protocols[0]
+	}
 	return dag.TCPService{
 		Name:        s.Name,
 		Namespace:   s.Namespace,
 		ServicePort: &s.Spec.Ports[0],
+		Protocol:    protocol,
 	}
 }
 func externalnameservice(s *v1.Service) *dag.TCPService {
@@ -653,13 +654,5 @@ func externalnameservice(s *v1.Service) *dag.TCPService {
 		Namespace:    s.Namespace,
 		ServicePort:  &s.Spec.Ports[0],
 		ExternalName: s.Spec.ExternalName,
-	}
-}
-
-func tlsservice(s *v1.Service, cert, subjectaltname string) dag.TCPService {
-	return dag.TCPService{
-		Name:        s.Name,
-		Namespace:   s.Namespace,
-		ServicePort: &s.Spec.Ports[0],
 	}
 }
