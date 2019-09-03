@@ -837,7 +837,12 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		"missing service shows invalid status": {
 			objs: []interface{}{ir16},
 			want: map[Meta]Status{
-				{name: ir16.Name, namespace: ir16.Namespace}: {Object: ir16, Status: "invalid", Description: `Service [invalid:8080] is invalid or missing`, Vhost: ""},
+				{name: ir16.Name, namespace: ir16.Namespace}: {
+					Object:      ir16,
+					Status:      "invalid",
+					Description: `Service [invalid:8080] is invalid or missing`,
+					Vhost:       ir16.Spec.VirtualHost.Fqdn,
+				},
 			},
 		},
 		"insert ingressroute": {
@@ -927,6 +932,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Object:      ir25,
 					Status:      StatusInvalid,
 					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
+					Vhost:       ir25.Spec.VirtualHost.Fqdn,
 				},
 			},
 		},
@@ -941,6 +947,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Object:      ir26,
 					Status:      StatusInvalid,
 					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
+					Vhost:       ir26.Spec.VirtualHost.Fqdn,
 				},
 			},
 		},
@@ -970,6 +977,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Object:      ir28,
 					Status:      StatusInvalid,
 					Description: "TLS Secret [heptio-contour/ssl-cert] not found or is malformed",
+					Vhost:       ir28.Spec.VirtualHost.Fqdn,
 				},
 			},
 		},
