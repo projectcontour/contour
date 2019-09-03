@@ -3590,6 +3590,43 @@ func TestDAGRootNamespaces(t *testing.T) {
 		},
 	}
 
+	httplb1 := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "allowed1",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// ir2 is like ir1, but in a different namespace
+	httplb2 := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "allowed2",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example2.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	s2 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -3661,14 +3698,52 @@ func TestDAGRootNamespaces(t *testing.T) {
 			objs:           []interface{}{ir1, ir2, s3},
 			want:           1,
 		},
+		"nil root httplb namespaces": {
+			objs: []interface{}{httplb1, s2},
+			want: 1,
+		},
+		"empty root httplb namespaces": {
+			objs: []interface{}{httplb1, s2},
+			want: 1,
+		},
+		"single root namespace with root httplb": {
+			rootNamespaces: []string{"allowed1"},
+			objs:           []interface{}{httplb1, s2},
+			want:           1,
+		},
+		"multiple root namespaces, one with a root httplb": {
+			rootNamespaces: []string{"foo", "allowed1", "bar"},
+			objs:           []interface{}{httplb1, s2},
+			want:           1,
+		},
+		"multiple root namespaces, each with a root httplb": {
+			rootNamespaces: []string{"foo", "allowed1", "allowed2"},
+			objs:           []interface{}{httplb1, httplb2, s2, s3},
+			want:           2,
+		},
+		"root httplb defined outside single root namespaces": {
+			rootNamespaces: []string{"foo"},
+			objs:           []interface{}{httplb1},
+			want:           0,
+		},
+		"root httplb defined outside multiple root namespaces": {
+			rootNamespaces: []string{"foo", "bar"},
+			objs:           []interface{}{httplb1},
+			want:           0,
+		},
+		"two root httplb, one inside root namespace, one outside": {
+			rootNamespaces: []string{"foo", "allowed2"},
+			objs:           []interface{}{httplb1, httplb2, s3},
+			want:           1,
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
 				Source: KubernetesCache{
-					IngressRouteRootNamespaces: tc.rootNamespaces,
-					FieldLogger:                testLogger(t),
+					RootNamespaces: tc.rootNamespaces,
+					FieldLogger:    testLogger(t),
 				},
 			}
 

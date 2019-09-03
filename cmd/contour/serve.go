@@ -101,7 +101,9 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("contour-cert-file", "Contour certificate file name for serving gRPC over TLS").Envar("CONTOUR_CERT_FILE").StringVar(&ctx.contourCert)
 	serve.Flag("contour-key-file", "Contour key file name for serving gRPC over TLS").Envar("CONTOUR_KEY_FILE").StringVar(&ctx.contourKey)
 	serve.Flag("insecure", "Allow serving without TLS secured gRPC").BoolVar(&ctx.PermitInsecureGRPC)
-	serve.Flag("ingressroute-root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringVar(&ctx.rootNamespaces)
+	// TODO(sas) Deprecate `ingressroute-root-namespaces` in v1.0
+	serve.Flag("ingressroute-root-namespaces", "DEPRECATED (Use 'root-namespaces'): Restrict contour to searching these namespaces for root ingress routes").StringVar(&ctx.rootNamespaces)
+	serve.Flag("root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringVar(&ctx.rootNamespaces)
 
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&ctx.ingressClass)
 
@@ -158,9 +160,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		},
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
-				IngressRouteRootNamespaces: ctx.ingressRouteRootNamespaces(),
-				IngressClass:               ctx.ingressClass,
-				FieldLogger:                log.WithField("context", "KubernetesCache"),
+				RootNamespaces: ctx.ingressRouteRootNamespaces(),
+				IngressClass:   ctx.ingressClass,
+				FieldLogger:    log.WithField("context", "KubernetesCache"),
 			},
 			DisablePermitInsecure: ctx.DisablePermitInsecure,
 		},
