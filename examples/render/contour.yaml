@@ -324,7 +324,6 @@ spec:
                   targetNamespaces:
                     type: array
 ---
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -347,7 +346,6 @@ data:
     # leaderelection:
       # configmap-name: contour
       # configmap-namespace: leader-elect
----
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -412,6 +410,7 @@ spec:
   parallelism: 1
   completions: 1
   backoffLimit: 1
+---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
@@ -520,6 +519,7 @@ subjects:
 - kind: ServiceAccount
   name: contour
   namespace: heptio-contour
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -534,6 +534,7 @@ spec:
  selector:
    app: contour
  type: ClusterIP
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -559,6 +560,7 @@ spec:
  selector:
    app: envoy
  type: LoadBalancer
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -654,6 +656,7 @@ spec:
             items:
             - key: contour.yaml
               path: contour.yaml
+---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -773,3 +776,4 @@ spec:
           secret:
             secretName:   cacert
       restartPolicy: Always
+---

@@ -12,3 +12,4 @@ spec:
  selector:
    app: contour
  type: ClusterIP
+---
