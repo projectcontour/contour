@@ -17,6 +17,8 @@
 package contour
 
 import (
+	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/metrics"
 )
@@ -29,19 +31,29 @@ func calculateIngressRouteMetric(statuses map[dag.Meta]dag.Status) metrics.Ingre
 	metricRoots := make(map[metrics.Meta]int)
 
 	for _, v := range statuses {
+		var namespace string
+		switch obj := v.Object.(type) {
+		case *ingressroutev1.IngressRoute:
+			namespace = obj.Namespace
+			if obj.Spec.VirtualHost != nil {
+				metricRoots[metrics.Meta{Namespace: namespace}]++
+			}
+		case *projcontour.HTTPLoadBalancer:
+			namespace = obj.Namespace
+			if obj.Spec.VirtualHost != nil {
+				metricRoots[metrics.Meta{Namespace: namespace}]++
+			}
+		}
+
 		switch v.Status {
 		case dag.StatusValid:
-			metricValid[metrics.Meta{VHost: v.Vhost, Namespace: v.Object.GetNamespace()}]++
+			metricValid[metrics.Meta{VHost: v.Vhost, Namespace: namespace}]++
 		case dag.StatusInvalid:
-			metricInvalid[metrics.Meta{VHost: v.Vhost, Namespace: v.Object.GetNamespace()}]++
+			metricInvalid[metrics.Meta{VHost: v.Vhost, Namespace: namespace}]++
 		case dag.StatusOrphaned:
-			metricOrphaned[metrics.Meta{Namespace: v.Object.GetNamespace()}]++
+			metricOrphaned[metrics.Meta{Namespace: namespace}]++
 		}
-		metricTotal[metrics.Meta{Namespace: v.Object.GetNamespace()}]++
-
-		if v.Object.Spec.VirtualHost != nil {
-			metricRoots[metrics.Meta{Namespace: v.Object.GetNamespace()}]++
-		}
+		metricTotal[metrics.Meta{Namespace: namespace}]++
 	}
 
 	return metrics.IngressRouteMetric{

@@ -801,8 +801,8 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
 				Source: KubernetesCache{
-					IngressRouteRootNamespaces: []string{"roots", "marketing"},
-					FieldLogger:                testLogger(t),
+					RootNamespaces: []string{"roots", "marketing"},
+					FieldLogger:    testLogger(t),
 				},
 			}
 			for _, o := range tc.objs {

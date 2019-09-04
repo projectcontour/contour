@@ -28,10 +28,10 @@ const DEFAULT_INGRESS_CLASS = "contour"
 // A KubernetesCache holds Kubernetes objects and associated configuration and produces
 // DAG values.
 type KubernetesCache struct {
-	// IngressRouteRootNamespaces specifies the namespaces where root
+	// RootNamespaces specifies the namespaces where root
 	// IngressRoutes can be defined. If empty, roots can be defined in any
 	// namespace.
-	IngressRouteRootNamespaces []string
+	RootNamespaces []string
 
 	// Contour's IngressClass.
 	// If not set, defaults to DEFAULT_INGRESS_CLASS.
