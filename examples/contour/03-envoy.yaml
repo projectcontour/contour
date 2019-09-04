@@ -89,7 +89,7 @@ spec:
         - --envoy-key-file=/certs/tls.key
         command:
         - contour
-        image: gcr.io/heptio-images/contour:master
+        image: projectcontour/contour:master
         imagePullPolicy: Always
         name: envoy-initconfig
         volumeMounts:
