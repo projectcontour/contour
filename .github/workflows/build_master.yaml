@@ -12,7 +12,7 @@ jobs:
     - uses: actions/checkout@v1
     - name: Build and Push to registry
       env:
-        DOCKER_USERNAME: projectcontour
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         REGISTRY: projectcontour
         VERSION: master
