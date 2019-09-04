@@ -3399,13 +3399,11 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("example.com",
 							routeCluster("/",
 								&Cluster{
-									Upstream: &HTTPService{
-										TCPService: TCPService{
-											Name:        s1a.Name,
-											Namespace:   s1a.Namespace,
-											ServicePort: &s1a.Spec.Ports[0],
-										},
-										Protocol: "tls",
+									Upstream: &Service{
+										Name:        s1a.Name,
+										Namespace:   s1a.Namespace,
+										ServicePort: &s1a.Spec.Ports[0],
+										Protocol:    "tls",
 									},
 									UpstreamValidation: &UpstreamValidation{
 										CACertificate: secret(cert1),
