@@ -21,6 +21,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,6 +31,35 @@ import (
 func TestDAGInsert(t *testing.T) {
 	// The DAG is sensitive to ordering, adding an ingress, then a service,
 	// should have the same result as adding a service, then an ingress.
+
+	sec1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata("certificate", "key"),
+	}
+
+	// Invalid cert in the secret
+	sec2 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata("", ""),
+	}
+
+	cert1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ca",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"ca.crt": []byte("ca"),
+		},
+	}
 
 	i1 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -87,7 +117,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host:             "kuard.example.com",
@@ -126,7 +156,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"b.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host:             "a.example.com",
@@ -148,7 +178,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"b.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host:             "a.example.com",
@@ -170,7 +200,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"b.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host:             "b.example.com",
@@ -190,7 +220,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"b.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host:             "b.example.com",
@@ -208,7 +238,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"b.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host: "b.example.com",
@@ -241,7 +271,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"b.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host: "b.example.com",
@@ -283,7 +313,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"b.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host: "b.example.com",
@@ -326,7 +356,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
 				Hosts:      []string{"b.example.com"},
-				SecretName: "secret",
+				SecretName: sec1.Name,
 			}},
 			Rules: []v1beta1.IngressRule{{
 				Host: "b.example.com",
@@ -662,7 +692,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -683,10 +713,10 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &ingressroutev1.TLS{
-					SecretName: "secret",
+				TLS: &projcontour.TLS{
+					SecretName: sec1.Name,
 				},
 			},
 			Routes: []ingressroutev1.Route{{
@@ -713,9 +743,9 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					Passthrough: true,
 				},
 			},
@@ -736,9 +766,9 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					Passthrough: true,
 				},
 			},
@@ -774,7 +804,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -782,7 +812,7 @@ func TestDAGInsert(t *testing.T) {
 				Services: []ingressroutev1.Service{{
 					Name: "kuard",
 					Port: 8080,
-					HealthCheck: &ingressroutev1.HealthCheck{
+					HealthCheck: &projcontour.HealthCheck{
 						Path: "/healthz",
 					},
 				}},
@@ -797,7 +827,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -820,7 +850,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -880,10 +910,10 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "foo.com",
-				TLS: &ingressroutev1.TLS{
-					SecretName: "secret",
+				TLS: &projcontour.TLS{
+					SecretName: sec1.Name,
 				},
 			},
 			Routes: []ingressroutev1.Route{{
@@ -903,10 +933,10 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "foo.com",
-				TLS: &ingressroutev1.TLS{
-					SecretName:             "secret",
+				TLS: &projcontour.TLS{
+					SecretName:             sec1.Name,
 					MinimumProtocolVersion: "1.2",
 				},
 			},
@@ -927,10 +957,10 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "foo.com",
-				TLS: &ingressroutev1.TLS{
-					SecretName:             "secret",
+				TLS: &projcontour.TLS{
+					SecretName:             sec1.Name,
 					MinimumProtocolVersion: "1.3",
 				},
 			},
@@ -951,10 +981,10 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "foo.com",
-				TLS: &ingressroutev1.TLS{
-					SecretName:             "secret",
+				TLS: &projcontour.TLS{
+					SecretName:             sec1.Name,
 					MinimumProtocolVersion: "0.9999",
 				},
 			},
@@ -975,7 +1005,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1002,7 +1032,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1032,7 +1062,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1060,7 +1090,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1086,7 +1116,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1111,10 +1141,10 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "foo.com",
-				TLS: &ingressroutev1.TLS{
-					SecretName: "secret",
+				TLS: &projcontour.TLS{
+					SecretName: sec1.Name,
 				},
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1134,12 +1164,12 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				RetryPolicy: &ingressroutev1.RetryPolicy{
+				RetryPolicy: &projcontour.RetryPolicy{
 					NumRetries:    6,
 					PerTryTimeout: "10s",
 				},
@@ -1157,12 +1187,12 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				RetryPolicy: &ingressroutev1.RetryPolicy{
+				RetryPolicy: &projcontour.RetryPolicy{
 					NumRetries:    6,
 					PerTryTimeout: "please",
 				},
@@ -1180,12 +1210,12 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				RetryPolicy: &ingressroutev1.RetryPolicy{
+				RetryPolicy: &projcontour.RetryPolicy{
 					NumRetries:    0,
 					PerTryTimeout: "10s",
 				},
@@ -1203,12 +1233,12 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
+				TimeoutPolicy: &projcontour.TimeoutPolicy{
 					Request: "peanut",
 				},
 				Services: []ingressroutev1.Service{{
@@ -1225,12 +1255,12 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
+				TimeoutPolicy: &projcontour.TimeoutPolicy{
 					Request: "1m30s", // 90 seconds y'all
 				},
 				Services: []ingressroutev1.Service{{
@@ -1247,12 +1277,12 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "bar.com",
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
+				TimeoutPolicy: &projcontour.TimeoutPolicy{
 					Request: "infinite",
 				},
 				Services: []ingressroutev1.Service{{
@@ -1269,7 +1299,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1277,8 +1307,8 @@ func TestDAGInsert(t *testing.T) {
 				Services: []ingressroutev1.Service{{
 					Name: "kuard",
 					Port: 8080,
-					UpstreamValidation: &ingressroutev1.UpstreamValidation{
-						CACertificate: "ca",
+					UpstreamValidation: &projcontour.UpstreamValidation{
+						CACertificate: cert1.Name,
 						SubjectName:   "example.com",
 					},
 				}},
@@ -1432,32 +1462,30 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	sec1 := &v1.Secret{
+	s8 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
+			Name:      "green",
+			Namespace: "marketing",
 		},
-		Type: v1.SecretTypeTLS,
-		Data: secretdata("certificate", "key"),
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
 	}
 
-	// Invalid cert in the secret
-	sec2 := &v1.Secret{
+	s9 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
+			Name:      "nginx",
 			Namespace: "default",
 		},
-		Type: v1.SecretTypeTLS,
-		Data: secretdata("", ""),
-	}
-
-	cert1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ca",
-			Namespace: "default",
-		},
-		Data: map[string][]byte{
-			"ca.crt": []byte("ca"),
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol: "TCP",
+				Port:     80,
+			}},
 		},
 	}
 
@@ -1481,7 +1509,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", httpService(s1))),
+						virtualhost("*", prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1501,7 +1529,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", httpService(s1))),
+						virtualhost("*", prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1527,7 +1555,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("kuard.example.com", prefixroute("/", httpService(s1))),
+						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1562,7 +1590,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", httpService(s1))),
+						virtualhost("*", prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1576,7 +1604,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", httpService(s1))),
+						virtualhost("*", prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1590,7 +1618,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", httpService(s1))),
+						virtualhost("*", prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1604,7 +1632,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", httpService(s1))),
+						virtualhost("*", prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1632,7 +1660,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", httpService(s1))),
+						virtualhost("*", prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1654,13 +1682,13 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("kuard.example.com", prefixroute("/", httpService(s1))),
+						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
 					),
 				},
 				&Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						securevirtualhost("kuard.example.com", sec1, prefixroute("/", httpService(s1))),
+						securevirtualhost("kuard.example.com", sec1, prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1682,7 +1710,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", httpService(s1))),
+						virtualhost("*", prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1704,7 +1732,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("kuard.example.com", prefixroute("/", httpService(s1))),
+						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1724,8 +1752,8 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("a.example.com", prefixroute("/", httpService(s1))),
-						virtualhost("b.example.com", prefixroute("/", httpService(s1))),
+						virtualhost("a.example.com", prefixroute("/", service(s1))),
+						virtualhost("b.example.com", prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1739,8 +1767,8 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("a.example.com", prefixroute("/", httpService(s1))),
-						virtualhost("b.example.com", prefixroute("/", httpService(s1))),
+						virtualhost("a.example.com", prefixroute("/", service(s1))),
+						virtualhost("b.example.com", prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1755,13 +1783,13 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("a.example.com", prefixroute("/", httpService(s1))),
-						virtualhost("b.example.com", prefixroute("/", httpService(s1))),
+						virtualhost("a.example.com", prefixroute("/", service(s1))),
+						virtualhost("b.example.com", prefixroute("/", service(s1))),
 					),
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						securevirtualhost("b.example.com", sec1, prefixroute("/", httpService(s1))),
+						securevirtualhost("b.example.com", sec1, prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1776,13 +1804,13 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("a.example.com", prefixroute("/", httpService(s1))),
-						virtualhost("b.example.com", prefixroute("/", httpService(s1))),
+						virtualhost("a.example.com", prefixroute("/", service(s1))),
+						virtualhost("b.example.com", prefixroute("/", service(s1))),
 					),
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						securevirtualhost("b.example.com", sec1, prefixroute("/", httpService(s1))),
+						securevirtualhost("b.example.com", sec1, prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1797,7 +1825,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
-							prefixroute("/", httpService(s1)),
+							prefixroute("/", service(s1)),
 						),
 					),
 				},
@@ -1814,8 +1842,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
-							prefixroute("/", httpService(s1)),
-							prefixroute("/kuarder", httpService(s2)),
+							prefixroute("/", service(s1)),
+							prefixroute("/kuarder", service(s2)),
 						),
 					),
 				},
@@ -1830,8 +1858,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
-							prefixroute("/", httpService(s1)),
-							prefixroute("/kuarder", httpService(s2)),
+							prefixroute("/", service(s1)),
+							prefixroute("/kuarder", service(s2)),
 						),
 					),
 				},
@@ -1854,8 +1882,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 443,
 					VirtualHosts: virtualhosts(
 						securevirtualhost("b.example.com", sec1,
-							prefixroute("/", httpService(s1)),
-							prefixroute("/kuarder", httpService(s2)),
+							prefixroute("/", service(s1)),
+							prefixroute("/kuarder", service(s2)),
 						),
 					),
 				},
@@ -1887,7 +1915,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						securevirtualhost("b.example.com", sec1, prefixroute("/", httpService(s1))),
+						securevirtualhost("b.example.com", sec1, prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1900,12 +1928,12 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("b.example.com", routeUpgrade("/", httpService(s1))),
+						virtualhost("b.example.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						securevirtualhost("b.example.com", sec1, routeUpgrade("/", httpService(s1))),
+						securevirtualhost("b.example.com", sec1, routeUpgrade("/", service(s1))),
 					),
 				},
 			),
@@ -1919,12 +1947,12 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("b.example.com", routeUpgrade("/", httpService(s1))),
+						virtualhost("b.example.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						securevirtualhost("b.example.com", sec1, routeUpgrade("/", httpService(s1))),
+						securevirtualhost("b.example.com", sec1, routeUpgrade("/", service(s1))),
 					),
 				},
 			),
@@ -1937,7 +1965,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("example.com", prefixroute("/", httpService(s1))),
+						virtualhost("example.com", prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -1952,8 +1980,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeCluster("/", &Cluster{
-								Upstream: httpService(s1),
-								HealthCheck: &ingressroutev1.HealthCheck{
+								Upstream: service(s1),
+								HealthCheckPolicy: &HealthCheckPolicy{
 									Path: "/healthz",
 								},
 							}),
@@ -1972,8 +2000,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
-							prefixroute("/", httpService(s1)),
-							routeRewrite("/websocket", "/", httpService(s1)),
+							prefixroute("/", service(s1)),
+							routeRewrite("/websocket", "/", service(s1)),
 						),
 					),
 				},
@@ -1990,11 +2018,11 @@ func TestDAGInsert(t *testing.T) {
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
 								Name: "kuard.example.com",
-								TCPProxy: &TCPProxy{
-									Clusters: clusters(
-										tcpService(s1),
-									),
-								},
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(
+									service(s1),
+								),
 							},
 							Secret:          secret(sec1),
 							MinProtoVersion: auth.TlsParameters_TLSv1_1,
@@ -2014,11 +2042,11 @@ func TestDAGInsert(t *testing.T) {
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
 								Name: "kuard.example.com",
-								TCPProxy: &TCPProxy{
-									Clusters: clusters(
-										tcpService(s1),
-									),
-								},
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(
+									service(s1),
+								),
 							},
 						},
 					),
@@ -2037,11 +2065,11 @@ func TestDAGInsert(t *testing.T) {
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
 								Name: "kuard.example.com",
-								TCPProxy: &TCPProxy{
-									Clusters: clusters(
-										tcpService(s6),
-									),
-								},
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(
+									service(s6),
+								),
 							},
 						},
 					),
@@ -2057,8 +2085,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
-							prefixroute("/", httpService(s1)),
-							routeWebsocket("/websocket", httpService(s1)),
+							prefixroute("/", service(s1)),
+							routeWebsocket("/websocket", service(s1)),
 						),
 					),
 				},
@@ -2073,7 +2101,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
-							prefixroute("/", httpService(s1)),
+							prefixroute("/", service(s1)),
 						),
 					),
 				},
@@ -2087,7 +2115,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("example.com", prefixroute("/", httpService(s1))),
+						virtualhost("example.com", prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -2100,12 +2128,12 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("foo.com", routeUpgrade("/", httpService(s1))),
+						virtualhost("foo.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						securevirtualhost("foo.com", sec1, routeUpgrade("/", httpService(s1))),
+						securevirtualhost("foo.com", sec1, routeUpgrade("/", service(s1))),
 					),
 				},
 			),
@@ -2119,12 +2147,12 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("foo.com", prefixroute("/", httpService(s1))),
+						virtualhost("foo.com", prefixroute("/", service(s1))),
 					),
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						securevirtualhost("foo.com", sec1, prefixroute("/", httpService(s1))),
+						securevirtualhost("foo.com", sec1, prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -2138,12 +2166,12 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("foo.com", routeUpgrade("/", httpService(s1))),
+						virtualhost("foo.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						securevirtualhost("foo.com", sec1, routeUpgrade("/", httpService(s1))),
+						securevirtualhost("foo.com", sec1, routeUpgrade("/", service(s1))),
 					),
 				},
 			),
@@ -2156,7 +2184,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("foo.com", routeUpgrade("/", httpService(s1))),
+						virtualhost("foo.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Port: 443,
@@ -2165,7 +2193,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "foo.com",
 								routes: routes(
-									routeUpgrade("/", httpService(s1)),
+									routeUpgrade("/", service(s1)),
 								),
 							},
 							MinProtoVersion: auth.TlsParameters_TLSv1_2,
@@ -2183,7 +2211,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("foo.com", routeUpgrade("/", httpService(s1))),
+						virtualhost("foo.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Port: 443,
@@ -2192,7 +2220,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "foo.com",
 								routes: routes(
-									routeUpgrade("/", httpService(s1)),
+									routeUpgrade("/", service(s1)),
 								),
 							},
 							MinProtoVersion: auth.TlsParameters_TLSv1_3,
@@ -2210,12 +2238,12 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("foo.com", routeUpgrade("/", httpService(s1))),
+						virtualhost("foo.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-						securevirtualhost("foo.com", sec1, routeUpgrade("/", httpService(s1))),
+						securevirtualhost("foo.com", sec1, routeUpgrade("/", service(s1))),
 					),
 				},
 			),
@@ -2234,7 +2262,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("example.com", prefixroute("/", httpService(s1), httpService(s2))),
+						virtualhost("example.com", prefixroute("/", service(s1), service(s2))),
 					),
 				},
 			),
@@ -2249,7 +2277,7 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("b.example.com", prefixroute("/", httpService(s1))),
+						virtualhost("b.example.com", prefixroute("/", service(s1))),
 					),
 				}, &Listener{
 					Port: 443,
@@ -2258,7 +2286,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "b.example.com",
 								routes: routes(
-									prefixroute("/", httpService(s1)),
+									prefixroute("/", service(s1)),
 								),
 							},
 							MinProtoVersion: auth.TlsParameters_TLSv1_3,
@@ -2278,8 +2306,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
-							prefixroute("/", httpService(s1)),
-							routeWebsocket("/ws1", httpService(s1)),
+							prefixroute("/", service(s1)),
+							routeWebsocket("/ws1", service(s1)),
 						),
 					),
 				},
@@ -2426,7 +2454,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
-							prefixroute("/", httpService(s1)),
+							prefixroute("/", service(s1)),
 						),
 					),
 				},
@@ -2443,13 +2471,11 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("example.com",
 							routeCluster("/",
 								&Cluster{
-									Upstream: &HTTPService{
-										TCPService: TCPService{
-											Name:        s1a.Name,
-											Namespace:   s1a.Namespace,
-											ServicePort: &s1a.Spec.Ports[0],
-										},
-										Protocol: "tls",
+									Upstream: &Service{
+										Name:        s1a.Name,
+										Namespace:   s1a.Namespace,
+										ServicePort: &s1a.Spec.Ports[0],
+										Protocol:    "tls",
 									},
 								},
 							),
@@ -2469,13 +2495,11 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("example.com",
 							routeCluster("/",
 								&Cluster{
-									Upstream: &HTTPService{
-										TCPService: TCPService{
-											Name:        s1a.Name,
-											Namespace:   s1a.Namespace,
-											ServicePort: &s1a.Spec.Ports[0],
-										},
-										Protocol: "tls",
+									Upstream: &Service{
+										Name:        s1a.Name,
+										Namespace:   s1a.Namespace,
+										ServicePort: &s1a.Spec.Ports[0],
+										Protocol:    "tls",
 									},
 									UpstreamValidation: &UpstreamValidation{
 										CACertificate: secret(cert1),
@@ -2498,8 +2522,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
-							prefixroute("/blog", httpService(s4)),
-							prefixroute("/blog/admin", httpService(s5)),
+							prefixroute("/blog", service(s4)),
+							prefixroute("/blog/admin", service(s5)),
 						),
 					),
 				},
@@ -2630,16 +2654,16 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
-							routeUpgrade("/", httpService(s13a)),
-							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", httpService(s13b)),
+							routeUpgrade("/", service(s13a)),
+							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b)),
 						),
 					),
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
 						securevirtualhost("example.com", sec13,
-							routeUpgrade("/", httpService(s13a)),
-							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", httpService(s13b)),
+							routeUpgrade("/", service(s13a)),
+							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b)),
 						),
 					),
 				},
@@ -2654,13 +2678,11 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
-							prefixroute("/", &HTTPService{
-								TCPService: TCPService{
-									Name:        s3a.Name,
-									Namespace:   s3a.Namespace,
-									ServicePort: &s3a.Spec.Ports[0],
-								},
-								Protocol: "h2c",
+							prefixroute("/", &Service{
+								Name:        s3a.Name,
+								Namespace:   s3a.Namespace,
+								ServicePort: &s3a.Spec.Ports[0],
+								Protocol:    "h2c",
 							}),
 						),
 					),
@@ -2676,13 +2698,11 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
-							prefixroute("/", &HTTPService{
-								TCPService: TCPService{
-									Name:        s3b.Name,
-									Namespace:   s3b.Namespace,
-									ServicePort: &s3b.Spec.Ports[0],
-								},
-								Protocol: "h2",
+							prefixroute("/", &Service{
+								Name:        s3b.Name,
+								Namespace:   s3b.Namespace,
+								ServicePort: &s3b.Spec.Ports[0],
+								Protocol:    "h2",
 							}),
 						),
 					),
@@ -2698,13 +2718,11 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
-							prefixroute("/", &HTTPService{
-								TCPService: TCPService{
-									Name:        s3c.Name,
-									Namespace:   s3c.Namespace,
-									ServicePort: &s3c.Spec.Ports[0],
-								},
-								Protocol: "tls",
+							prefixroute("/", &Service{
+								Name:        s3c.Name,
+								Namespace:   s3c.Namespace,
+								ServicePort: &s3c.Spec.Ports[0],
+								Protocol:    "tls",
 							}),
 						),
 					),
@@ -2721,16 +2739,14 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
-							prefixroute("/", &HTTPService{
-								TCPService: TCPService{
-									Name:               s1b.Name,
-									Namespace:          s1b.Namespace,
-									ServicePort:        &s1b.Spec.Ports[0],
-									MaxConnections:     9000,
-									MaxPendingRequests: 4096,
-									MaxRequests:        404,
-									MaxRetries:         7,
-								},
+							prefixroute("/", &Service{
+								Name:               s1b.Name,
+								Namespace:          s1b.Namespace,
+								ServicePort:        &s1b.Spec.Ports[0],
+								MaxConnections:     9000,
+								MaxPendingRequests: 4096,
+								MaxRequests:        404,
+								MaxRetries:         7,
 							}),
 						),
 					),
@@ -2747,22 +2763,18 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeCluster("/a", &Cluster{
-								Upstream: &HTTPService{
-									TCPService: TCPService{
-										Name:        s1.Name,
-										Namespace:   s1.Namespace,
-										ServicePort: &s1.Spec.Ports[0],
-									},
+								Upstream: &Service{
+									Name:        s1.Name,
+									Namespace:   s1.Namespace,
+									ServicePort: &s1.Spec.Ports[0],
 								},
 								Weight: 90,
 							}),
 							routeCluster("/b", &Cluster{
-								Upstream: &HTTPService{
-									TCPService: TCPService{
-										Name:        s1.Name,
-										Namespace:   s1.Namespace,
-										ServicePort: &s1.Spec.Ports[0],
-									},
+								Upstream: &Service{
+									Name:        s1.Name,
+									Namespace:   s1.Namespace,
+									ServicePort: &s1.Spec.Ports[0],
 								},
 								Weight: 60,
 							}),
@@ -2782,21 +2794,17 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("example.com",
 							routeCluster("/a",
 								&Cluster{
-									Upstream: &HTTPService{
-										TCPService: TCPService{
-											Name:        s1.Name,
-											Namespace:   s1.Namespace,
-											ServicePort: &s1.Spec.Ports[0],
-										},
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
 									},
 									Weight: 90,
 								}, &Cluster{
-									Upstream: &HTTPService{
-										TCPService: TCPService{
-											Name:        s1.Name,
-											Namespace:   s1.Namespace,
-											ServicePort: &s1.Spec.Ports[0],
-										},
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
 									},
 									Weight: 60,
 								},
@@ -2814,7 +2822,7 @@ func TestDAGInsert(t *testing.T) {
 						Name:      "example-com",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -2837,7 +2845,7 @@ func TestDAGInsert(t *testing.T) {
 						Name:      "example-com",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -2860,7 +2868,7 @@ func TestDAGInsert(t *testing.T) {
 						Name:      "example-com",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -2897,7 +2905,7 @@ func TestDAGInsert(t *testing.T) {
 						Name:      "example-com",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -2939,7 +2947,7 @@ func TestDAGInsert(t *testing.T) {
 						Name:      "example-com",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -2978,7 +2986,122 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("example.com", prefixroute("/finance", httpService(s7))),
+						virtualhost("example.com", prefixroute("/finance", service(s7))),
+					),
+				},
+			),
+		},
+		"ingressroute root delegates to another ingressroute root": {
+			objs: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "root-blog",
+						Namespace: "roots",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "blog.containersteve.com",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Delegate: &ingressroutev1.Delegate{
+								Name:      "blog",
+								Namespace: "marketing",
+							},
+						}},
+					},
+				},
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "blog",
+						Namespace: "marketing",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.containersteve.com",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{{
+								Name: "green",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				s8,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("www.containersteve.com", prefixroute("/", service(s8))),
+					),
+				},
+			),
+		},
+		// issue 1399
+		"service shared across ingress and ingressroute tcpproxy": {
+			objs: []interface{}{
+				sec1,
+				s9,
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "nginx",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							Hosts:      []string{"example.com"},
+							SecretName: s1.Name,
+						}},
+						Rules: []v1beta1.IngressRule{{
+							Host:             "example.com",
+							IngressRuleValue: ingressrulevalue(backend(s9.Name, intstr.FromInt(80))),
+						}},
+					},
+				},
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "nginx",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "example.com",
+							TLS: &projcontour.TLS{
+								SecretName: sec1.Name,
+							},
+						},
+						TCPProxy: &ingressroutev1.TCPProxy{
+							Services: []ingressroutev1.Service{{
+								Name: s9.Name,
+								Port: 80,
+							}},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", prefixroute("/", service(s9))),
+					),
+				},
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "example.com",
+							},
+							MinProtoVersion: auth.TlsParameters_TLSv1_1,
+							Secret:          secret(sec1),
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(service(s9)),
+							},
+						},
 					),
 				},
 			),
@@ -2989,6 +3112,9 @@ func TestDAGInsert(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
 				DisablePermitInsecure: tc.disablePermitInsecure,
+				Source: KubernetesCache{
+					FieldLogger: testLogger(t),
+				},
 			}
 			for _, o := range tc.objs {
 				if !builder.Source.Insert(o) {
@@ -3008,7 +3134,7 @@ func TestDAGInsert(t *testing.T) {
 			}
 
 			opts := []cmp.Option{
-				cmp.AllowUnexported(Listener{}, VirtualHost{}),
+				cmp.AllowUnexported(VirtualHost{}),
 			}
 			if diff := cmp.Diff(want, got, opts...); diff != "" {
 				t.Fatal(diff)
@@ -3049,7 +3175,7 @@ func secretdata(cert, key string) map[string][]byte {
 	}
 }
 
-func TestBuilderLookupHTTPService(t *testing.T) {
+func TestBuilderLookupService(t *testing.T) {
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -3071,27 +3197,27 @@ func TestBuilderLookupHTTPService(t *testing.T) {
 	tests := map[string]struct {
 		Meta
 		port intstr.IntOrString
-		want *HTTPService
+		want *Service
 	}{
 		"lookup service by port number": {
 			Meta: Meta{name: "service1", namespace: "default"},
 			port: intstr.FromInt(8080),
-			want: httpService(s1),
+			want: service(s1),
 		},
 		"lookup service by port name": {
 			Meta: Meta{name: "service1", namespace: "default"},
 			port: intstr.FromString("http"),
-			want: httpService(s1),
+			want: service(s1),
 		},
 		"lookup service by port number (as string)": {
 			Meta: Meta{name: "service1", namespace: "default"},
 			port: intstr.Parse("8080"),
-			want: httpService(s1),
+			want: service(s1),
 		},
 		"lookup service by port number (from string)": {
 			Meta: Meta{name: "service1", namespace: "default"},
 			port: intstr.FromString("8080"),
-			want: httpService(s1),
+			want: service(s1),
 		},
 	}
 
@@ -3099,11 +3225,12 @@ func TestBuilderLookupHTTPService(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			b := Builder{
 				Source: KubernetesCache{
-					services: services,
+					services:    services,
+					FieldLogger: testLogger(t),
 				},
 			}
 			b.reset()
-			got := b.lookupHTTPService(tc.Meta, tc.port)
+			got := b.lookupService(tc.Meta, tc.port)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}
@@ -3118,7 +3245,7 @@ func TestDAGRootNamespaces(t *testing.T) {
 			Namespace: "allowed1",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -3138,7 +3265,7 @@ func TestDAGRootNamespaces(t *testing.T) {
 			Namespace: "allowed2",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example2.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -3229,6 +3356,7 @@ func TestDAGRootNamespaces(t *testing.T) {
 			builder := Builder{
 				Source: KubernetesCache{
 					IngressRouteRootNamespaces: tc.rootNamespaces,
+					FieldLogger:                testLogger(t),
 				},
 			}
 
@@ -3336,631 +3464,6 @@ func TestMatchesPathPrefix(t *testing.T) {
 			got := matchesPathPrefix(tc.path, tc.prefix)
 			if got != tc.matches {
 				t.Errorf("expected %v but got %v", tc.matches, got)
-			}
-		})
-	}
-}
-
-func TestDAGIngressRouteStatus(t *testing.T) {
-	// ir1 is a valid ingressroute
-	ir1 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "example",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/foo",
-				Services: []ingressroutev1.Service{{
-					Name: "home",
-					Port: 8080,
-				}},
-			}, {
-				Match: "/prefix",
-				Delegate: &ingressroutev1.Delegate{
-					Name: "delegated",
-				}},
-			},
-		},
-	}
-
-	// ir2 is invalid because it contains a service with negative port
-	ir2 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "example",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/foo",
-				Services: []ingressroutev1.Service{{
-					Name: "home",
-					Port: -80,
-				}},
-			}},
-		},
-	}
-
-	// ir3 is invalid because it lives outside the roots namespace
-	ir3 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "finance",
-			Name:      "example",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/foobar",
-				Services: []ingressroutev1.Service{{
-					Name: "home",
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-
-	// ir4 is invalid because its match prefix does not match its parent's (ir1)
-	ir4 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "delegated",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			Routes: []ingressroutev1.Route{{
-				Match: "/doesnotmatch",
-				Services: []ingressroutev1.Service{{
-					Name: "home",
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-
-	// ir5 is invalid because its service weight is less than zero
-	ir5 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "delegated",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/foo",
-				Services: []ingressroutev1.Service{{
-					Name:   "home",
-					Port:   8080,
-					Weight: -10,
-				}},
-			}},
-		},
-	}
-
-	// ir6 is invalid because it delegates to itself, producing a cycle
-	ir6 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "self",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/foo",
-				Delegate: &ingressroutev1.Delegate{
-					Name: "self",
-				},
-			}},
-		},
-	}
-
-	// ir7 delegates to ir8, which is invalid because it delegates back to ir7
-	ir7 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "parent",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/foo",
-				Delegate: &ingressroutev1.Delegate{
-					Name: "child",
-				},
-			}},
-		},
-	}
-
-	ir8 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "child",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			Routes: []ingressroutev1.Route{{
-				Match: "/foo",
-				Delegate: &ingressroutev1.Delegate{
-					Name: "parent",
-				},
-			}},
-		},
-	}
-
-	// ir9 is invalid because it has a route that both delegates and has a list of services
-	ir9 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "parent",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/foo",
-				Delegate: &ingressroutev1.Delegate{
-					Name: "child",
-				},
-				Services: []ingressroutev1.Service{{
-					Name: "kuard",
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-
-	// ir10 delegates to ir11 and ir 12.
-	ir10 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "parent",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/foo",
-				Delegate: &ingressroutev1.Delegate{
-					Name: "validChild",
-				},
-			}, {
-				Match: "/bar",
-				Delegate: &ingressroutev1.Delegate{
-					Name: "invalidChild",
-				},
-			}},
-		},
-	}
-
-	ir11 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "validChild",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			Routes: []ingressroutev1.Route{{
-				Match: "/foo",
-				Services: []ingressroutev1.Service{{
-					Name: "foo2",
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-
-	// ir12 is invalid because it contains an invalid port
-	ir12 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "invalidChild",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			Routes: []ingressroutev1.Route{{
-				Match: "/bar",
-				Services: []ingressroutev1.Service{{
-					Name: "foo3",
-					Port: 12345678,
-				}},
-			}},
-		},
-	}
-
-	// ir13 is invalid because it does not specify and FQDN
-	ir13 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "parent",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{},
-			Routes: []ingressroutev1.Route{{
-				Match: "/foo",
-				Services: []ingressroutev1.Service{{
-					Name: "foo",
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-
-	// ir14 delegates tp ir15 but it is invalid because it is missing fqdn
-	ir14 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "invalidParent",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{},
-			Routes: []ingressroutev1.Route{{
-				Match: "/foo",
-				Delegate: &ingressroutev1.Delegate{
-					Name: "validChild",
-				},
-			}},
-		},
-	}
-
-	// ir15 is invalid because it contains a wildcarded fqdn
-	ir15 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "example",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "example.*.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/foo",
-				Services: []ingressroutev1.Service{{
-					Name: "home",
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-
-	// ir16 is invalid because it references an invalid service
-	ir16 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "invalidir",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/foo",
-				Services: []ingressroutev1.Service{{
-					Name: "invalid",
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-
-	s4 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "home",
-			Namespace: "roots",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
-		},
-	}
-
-	s5 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "parent",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
-		},
-	}
-
-	s6 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "foo2",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
-		},
-	}
-
-	s7 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo3",
-			Namespace: "roots",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     12345678,
-			}},
-		},
-	}
-
-	tests := map[string]struct {
-		objs []interface{}
-		want []Status
-	}{
-		"valid ingressroute": {
-			objs: []interface{}{ir1, s4},
-			want: []Status{{Object: ir1, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"}},
-		},
-		"invalid port in service": {
-			objs: []interface{}{ir2},
-			want: []Status{{Object: ir2, Status: "invalid", Description: `route "/foo": service "home": port must be in the range 1-65535`, Vhost: "example.com"}},
-		},
-		"root ingressroute outside of roots namespace": {
-			objs: []interface{}{ir3},
-			want: []Status{{Object: ir3, Status: "invalid", Description: "root IngressRoute cannot be defined in this namespace"}},
-		},
-		"delegated route's match prefix does not match parent's prefix": {
-			objs: []interface{}{ir1, ir4, s4},
-			want: []Status{
-				{Object: ir1, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
-				{Object: ir4, Status: "invalid", Description: `the path prefix "/doesnotmatch" does not match the parent's path prefix "/prefix"`, Vhost: "example.com"},
-			},
-		},
-		"invalid weight in service": {
-			objs: []interface{}{ir5},
-			want: []Status{{Object: ir5, Status: "invalid", Description: `route "/foo": service "home": weight must be greater than or equal to zero`, Vhost: "example.com"}},
-		},
-		"root ingressroute does not specify FQDN": {
-			objs: []interface{}{ir13},
-			want: []Status{{Object: ir13, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"}},
-		},
-		"self-edge produces a cycle": {
-			objs: []interface{}{ir6},
-			want: []Status{{Object: ir6, Status: "invalid", Description: "route creates a delegation cycle: roots/self -> roots/self", Vhost: "example.com"}},
-		},
-		"child delegates to parent, producing a cycle": {
-			objs: []interface{}{ir7, ir8},
-			want: []Status{
-				{Object: ir7, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
-				{Object: ir8, Status: "invalid", Description: "route creates a delegation cycle: roots/parent -> roots/child -> roots/parent", Vhost: "example.com"},
-			},
-		},
-		"route has a list of services and also delegates": {
-			objs: []interface{}{ir9},
-			want: []Status{{Object: ir9, Status: "invalid", Description: `route "/foo": cannot specify services and delegate in the same route`, Vhost: "example.com"}},
-		},
-		"ingressroute is an orphaned route": {
-			objs: []interface{}{ir8},
-			want: []Status{{Object: ir8, Status: "orphaned", Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"}},
-		},
-		"ingressroute delegates to multiple ingressroutes, one is invalid": {
-			objs: []interface{}{ir10, ir11, ir12, s6, s7},
-			want: []Status{
-				{Object: ir11, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
-				{Object: ir12, Status: "invalid", Description: `route "/bar": service "foo3": port must be in the range 1-65535`, Vhost: "example.com"},
-				{Object: ir10, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
-			},
-		},
-		"invalid parent orphans children": {
-			objs: []interface{}{ir14, ir11},
-			want: []Status{
-				{Object: ir14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
-				{Object: ir11, Status: "orphaned", Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"},
-			},
-		},
-		"multi-parent children is not orphaned when one of the parents is invalid": {
-			objs: []interface{}{ir14, ir11, ir10, s5, s6},
-			want: []Status{
-				{Object: ir14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
-				{Object: ir11, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
-				{Object: ir10, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
-			},
-		},
-		"invalid FQDN contains wildcard": {
-			objs: []interface{}{ir15},
-			want: []Status{{Object: ir15, Status: "invalid", Description: `Spec.VirtualHost.Fqdn "example.*.com" cannot use wildcards`, Vhost: "example.*.com"}},
-		},
-		"missing service shows invalid status": {
-			objs: []interface{}{ir16},
-			want: []Status{{Object: ir16, Status: "invalid", Description: `Service [invalid:8080] is invalid or missing`, Vhost: ""}},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			builder := Builder{
-				Source: KubernetesCache{
-					IngressRouteRootNamespaces: []string{"roots"},
-				},
-			}
-			for _, o := range tc.objs {
-				builder.Source.Insert(o)
-			}
-			dag := builder.Build()
-
-			got := dag.Statuses()
-			if len(tc.want) != len(got) {
-				t.Fatalf("expected:\n%v\ngot\n%v", tc.want, got)
-			}
-
-			for _, ex := range tc.want {
-				var found bool
-				for _, g := range got {
-					if cmp.Equal(ex, g) {
-						found = true
-						break
-					}
-				}
-				if !found {
-					t.Fatalf("expected to find:\n%v\nbut did not find it in:\n%v", ex, got)
-				}
-			}
-		})
-	}
-}
-
-func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
-	ir1 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-com",
-			Namespace: "default",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: "kuard",
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-
-	// ir2 reuses the fqdn used in ir1
-	ir2 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "other-example",
-			Namespace: "default",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: "kuard",
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
-
-	tests := map[string]struct {
-		objs       []interface{}
-		want       []Vertex
-		wantStatus map[Meta]Status
-	}{
-		"insert ingressroute": {
-			objs: []interface{}{
-				s1, ir1,
-			},
-			want: listeners(
-				&Listener{
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						&VirtualHost{
-							Name: "example.com",
-							routes: routes(
-								prefixroute("/", httpService(s1)),
-							),
-						},
-					),
-				},
-			),
-			wantStatus: map[Meta]Status{
-				{name: ir1.Name, namespace: ir1.Namespace}: {
-					Object:      ir1,
-					Status:      StatusValid,
-					Description: "valid IngressRoute",
-					Vhost:       "example.com",
-				},
-			},
-		},
-		"insert conflicting ingressroutes due to fqdn reuse": {
-			objs: []interface{}{
-				ir1, ir2,
-			},
-			want: []Vertex{},
-			wantStatus: map[Meta]Status{
-				{name: ir1.Name, namespace: ir1.Namespace}: {
-					Object:      ir1,
-					Status:      StatusInvalid,
-					Description: `fqdn "example.com" is used in multiple IngressRoutes: default/example-com, default/other-example`,
-					Vhost:       "example.com",
-				},
-				{name: ir2.Name, namespace: ir2.Namespace}: {
-					Object:      ir2,
-					Status:      StatusInvalid,
-					Description: `fqdn "example.com" is used in multiple IngressRoutes: default/example-com, default/other-example`,
-					Vhost:       "example.com",
-				},
-			},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			var builder Builder
-			for _, o := range tc.objs {
-				builder.Source.Insert(o)
-			}
-			dag := builder.Build()
-
-			got := make(map[int]*Listener)
-			dag.Visit(listenerMap(got).Visit)
-
-			want := make(map[int]*Listener)
-			for _, v := range tc.want {
-				if l, ok := v.(*Listener); ok {
-					want[l.Port] = l
-				}
-			}
-
-			opts := []cmp.Option{
-				cmp.AllowUnexported(Listener{}, VirtualHost{}),
-			}
-			if diff := cmp.Diff(want, got, opts...); diff != "" {
-				t.Fatal(diff)
-			}
-
-			gotStatus := dag.statuses
-			if diff := cmp.Diff(tc.wantStatus, gotStatus); diff != "" {
-				t.Fatal(diff)
 			}
 		})
 	}
@@ -4133,17 +3636,9 @@ func routes(v ...Vertex) map[string]Vertex {
 	return m
 }
 
-func prefixroute(prefix string, first *HTTPService, rest ...*HTTPService) *PrefixRoute {
-	services := append([]*HTTPService{first}, rest...)
-	route := PrefixRoute{
-		Prefix: prefix,
-	}
-	for _, s := range services {
-		route.Clusters = append(route.Clusters, &Cluster{
-			Upstream: s,
-		})
-	}
-	return &route
+func prefixroute(prefix string, first *Service, rest ...*Service) *PrefixRoute {
+	services := append([]*Service{first}, rest...)
+	return routeCluster(prefix, clusters(services...)...)
 }
 
 func routeCluster(prefix string, clusters ...*Cluster) *PrefixRoute {
@@ -4156,25 +3651,25 @@ func routeCluster(prefix string, clusters ...*Cluster) *PrefixRoute {
 	return &route
 }
 
-func routeUpgrade(prefix string, first *HTTPService, rest ...*HTTPService) *PrefixRoute {
+func routeUpgrade(prefix string, first *Service, rest ...*Service) *PrefixRoute {
 	r := prefixroute(prefix, first, rest...)
 	r.HTTPSUpgrade = true
 	return r
 }
 
-func routeRewrite(prefix, rewrite string, first *HTTPService, rest ...*HTTPService) *PrefixRoute {
+func routeRewrite(prefix, rewrite string, first *Service, rest ...*Service) *PrefixRoute {
 	r := prefixroute(prefix, first, rest...)
 	r.PrefixRewrite = rewrite
 	return r
 }
 
-func routeWebsocket(prefix string, first *HTTPService, rest ...*HTTPService) *PrefixRoute {
+func routeWebsocket(prefix string, first *Service, rest ...*Service) *PrefixRoute {
 	r := prefixroute(prefix, first, rest...)
 	r.Websocket = true
 	return r
 }
 
-func clusters(services ...Service) (c []*Cluster) {
+func clusters(services ...*Service) (c []*Cluster) {
 	for _, s := range services {
 		c = append(c, &Cluster{
 			Upstream: s,
@@ -4183,21 +3678,11 @@ func clusters(services ...Service) (c []*Cluster) {
 	return c
 }
 
-func tcpService(s *v1.Service) *TCPService {
-	return &TCPService{
+func service(s *v1.Service) *Service {
+	return &Service{
 		Name:        s.Name,
 		Namespace:   s.Namespace,
 		ServicePort: &s.Spec.Ports[0],
-	}
-}
-
-func httpService(s *v1.Service) *HTTPService {
-	return &HTTPService{
-		TCPService: TCPService{
-			Name:        s.Name,
-			Namespace:   s.Namespace,
-			ServicePort: &s.Spec.Ports[0],
-		},
 	}
 }
 
@@ -4205,7 +3690,7 @@ func clustermap(services ...*v1.Service) []*Cluster {
 	var c []*Cluster
 	for _, s := range services {
 		c = append(c, &Cluster{
-			Upstream: httpService(s),
+			Upstream: service(s),
 		})
 	}
 	return c

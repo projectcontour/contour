@@ -19,6 +19,7 @@ import (
 
 	ingressroutev1beta1 "github.com/heptio/contour/apis/contour/v1beta1"
 	"github.com/heptio/contour/apis/generated/clientset/versioned/fake"
+	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	k8stesting "k8s.io/client-go/testing"
@@ -40,7 +41,7 @@ func TestSetStatus(t *testing.T) {
 					Name:      "test",
 					Namespace: "default",
 				},
-				Status: ingressroutev1beta1.Status{
+				Status: projcontour.Status{
 					CurrentStatus: "",
 					Description:   "",
 				},
@@ -56,7 +57,7 @@ func TestSetStatus(t *testing.T) {
 					Name:      "test",
 					Namespace: "default",
 				},
-				Status: ingressroutev1beta1.Status{
+				Status: projcontour.Status{
 					CurrentStatus: "valid",
 					Description:   "this is a valid IR",
 				},
@@ -72,7 +73,7 @@ func TestSetStatus(t *testing.T) {
 					Name:      "test",
 					Namespace: "default",
 				},
-				Status: ingressroutev1beta1.Status{
+				Status: projcontour.Status{
 					CurrentStatus: "invalid",
 					Description:   "boo hiss",
 				},

@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -133,9 +132,6 @@ type VirtualHost struct {
 	Name string
 
 	routes map[string]Vertex
-
-	// Service to TCP proxy all incoming connections.
-	*TCPProxy
 }
 
 func (v *VirtualHost) addRoute(route Vertex) {
@@ -156,15 +152,11 @@ func (v *VirtualHost) Visit(f func(Vertex)) {
 	for _, r := range v.routes {
 		f(r)
 	}
-	if v.TCPProxy != nil {
-		f(v.TCPProxy)
-	}
 }
 
 func (v *VirtualHost) Valid() bool {
-	// A VirtualHost is valid if it has at least one route,
-	// or tcp proxy is not nil.
-	return len(v.routes) > 0 || v.TCPProxy != nil
+	// A VirtualHost is valid if it has at least one route.
+	return len(v.routes) > 0
 }
 
 // A SecureVirtualHost represents a HTTP host protected by TLS.
@@ -176,10 +168,16 @@ type SecureVirtualHost struct {
 
 	// The cert and key for this host.
 	Secret *Secret
+
+	// Service to TCP proxy all incoming connections.
+	*TCPProxy
 }
 
 func (s *SecureVirtualHost) Visit(f func(Vertex)) {
 	s.VirtualHost.Visit(f)
+	if s.TCPProxy != nil {
+		f(s.TCPProxy)
+	}
 	if s.Secret != nil {
 		f(s.Secret) // secret is not required if vhost is using tls passthrough
 	}
@@ -198,11 +196,6 @@ type Visitable interface {
 
 type Vertex interface {
 	Visitable
-}
-
-type Service interface {
-	Vertex
-	toMeta() servicemeta
 }
 
 // A Listener represents a TCP socket that accepts
@@ -239,11 +232,15 @@ func (t *TCPProxy) Visit(f func(Vertex)) {
 	}
 }
 
-// TCPService represents a Kuberentes Service that speaks TCP. That's all we know.
-type TCPService struct {
+// Service represents a single Kubernetes' Service's Port.
+type Service struct {
 	Name, Namespace string
 
 	*v1.ServicePort
+
+	// Protocol is the layer 7 protocol of this service
+	// One of "", "h2", "h2c", or "tls".
+	Protocol string
 
 	// Circuit breaking limits
 
@@ -273,7 +270,7 @@ type servicemeta struct {
 	port      int32
 }
 
-func (s *TCPService) toMeta() servicemeta {
+func (s *Service) toMeta() servicemeta {
 	return servicemeta{
 		name:      s.Name,
 		namespace: s.Namespace,
@@ -281,8 +278,8 @@ func (s *TCPService) toMeta() servicemeta {
 	}
 }
 
-func (s *TCPService) Visit(func(Vertex)) {
-	// TCPServices are leaves in the DAG.
+func (s *Service) Visit(func(Vertex)) {
+	// Services are leaves in the DAG.
 }
 
 // Cluster holds the connetion specific parameters that apply to
@@ -291,7 +288,7 @@ type Cluster struct {
 
 	// Upstream is the backend Kubernetes service traffic arriving
 	// at this Cluster will be forwarded too.
-	Upstream Service
+	Upstream *Service
 
 	// The relative weight of this Cluster compared to its siblings.
 	Weight int
@@ -303,21 +300,12 @@ type Cluster struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cds.proto#envoy-api-enum-cluster-lbpolicy
 	LoadBalancerStrategy string
 
-	HealthCheck *ingressroutev1.HealthCheck
+	// Cluster health check policy.
+	*HealthCheckPolicy
 }
 
 func (c Cluster) Visit(f func(Vertex)) {
 	f(c.Upstream)
-}
-
-// HTTPService represents a Kuberneres Service object which speaks
-// HTTP/1.1 or HTTP/2.0.
-type HTTPService struct {
-	TCPService
-
-	// Protocol is the layer 7 protocol of this service
-	// One of "", "h2", "h2c", or "tls".
-	Protocol string
 }
 
 // Secret represents a K8s Secret for TLS usage as a DAG Vertex. A Secret is
@@ -350,4 +338,14 @@ func (s *Secret) toMeta() Meta {
 		name:      s.Name(),
 		namespace: s.Namespace(),
 	}
+}
+
+// Cluster health check policy.
+type HealthCheckPolicy struct {
+	Path               string
+	Host               string
+	Interval           time.Duration
+	Timeout            time.Duration
+	UnhealthyThreshold int
+	HealthyThreshold   int
 }

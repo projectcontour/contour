@@ -46,6 +46,72 @@ spec:
       type: string
       description: Description of the current status
       JSONPath: .status.description
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: tlscertificatedelegations.contour.heptio.com
+  labels:
+    component: tlscertificatedelegation
+spec:
+  group: contour.heptio.com
+  version: v1beta1
+  scope: Namespaced
+  names:
+    plural: tlscertificatedelegations
+    kind: TLSCertificateDelegation
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            delegations:
+              type: array
+              items:
+                type: object
+                required:
+                  - secretName
+                  - targetNamespaces
+                properties:
+                  match:
+                    type: string
+                  targetNamespaces:
+                    type: array
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: httploadbalancers.projectcontour.io
+  labels:
+    component: httploadbalancer
+spec:
+  group: projectcontour.io
+  version: v1alpha1
+  scope: Namespaced
+  names:
+    plural: httploadbalancers
+    kind: HTTPLoadBalancer
+  additionalPrinterColumns:
+    - name: FQDN
+      type: string
+      description: Fully qualified domain name
+      JSONPath: .spec.virtualhost.fqdn
+    - name: TLS Secret
+      type: string
+      description: Secret with TLS credentials
+      JSONPath: .spec.virtualhost.tls.secretName
+    - name: First route
+      type: string
+      description: First routes defined
+      JSONPath: .spec.routes[0].match
+    - name: Status
+      type: string
+      description: The current status of the IngressRoute
+      JSONPath: .status.currentStatus
+    - name: Status Description
+      type: string
+      description: Description of the current status
+      JSONPath: .status.description
   validation:
     openAPIV3Schema:
       properties:
@@ -150,6 +216,24 @@ spec:
                     namespace:
                       type: string
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123 label
+            includes:
+              type: array
+              items:
+                properties:
+                  name:
+                    type: string
+                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ # DNS-1123 subdomain
+                  namespace:
+                        type: string
+                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ # DNS-1123 label
+                  conditions:
+                    type: array
+                    items:
+                      prefix:
+                        type: string
+                        pattern: ^\/.*$
+                      headersMatch:
+                        items:
             routes:
               type: array
               items:
@@ -212,12 +296,12 @@ spec:
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: tlscertificatedelegations.contour.heptio.com
+  name: tlscertificatedelegations.projectcontour.io
   labels:
     component: tlscertificatedelegation
 spec:
-  group: contour.heptio.com
-  version: v1beta1
+  group: projectcontour.io
+  version: v1alpha1
   scope: Namespaced
   names:
     plural: tlscertificatedelegations
@@ -258,6 +342,10 @@ data:
     tls:
       # minimum TLS version that Contour will negotiate
       # minimumProtocolVersion: "1.1"
+    # The following config shows the defaults for the leader election.
+    # leaderelection:
+      # configmap-name: contour
+      # configmap-namespace: leader-elect
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -439,6 +527,15 @@ rules:
   - put
   - post
   - patch
+- apiGroups: ["projectcontour.io"]
+  resources: ["httploadbalancers", "tlscertificatedelegations"]
+  verbs:
+  - get
+  - list
+  - watch
+  - put
+  - post
+  - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
@@ -478,6 +575,7 @@ subjects:
 - kind: ServiceAccount
   name: contour
   namespace: heptio-contour
+---
 ---
 apiVersion: v1
 kind: Service

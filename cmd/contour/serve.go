@@ -113,7 +113,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests").IntVar(&ctx.httpsPort)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ctx.useProxyProto)
 
-	serve.Flag("enable-leader-election", "Enable leader election mechanism").BoolVar(&ctx.EnableLeaderElection)
+	serve.Flag("disable-leader-election", "Disable leader election mechanism").BoolVar(&ctx.DisableLeaderElection)
 	return serve, ctx
 }
 
@@ -135,45 +135,46 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		namespacedInformers = append(namespacedInformers, inf)
 	}
 
-	// step 3. establish our (poorly named) gRPC cache handler.
-	ch := &contour.CacheHandler{
-		ListenerVisitorConfig: contour.ListenerVisitorConfig{
-			UseProxyProto:          ctx.useProxyProto,
-			HTTPAddress:            ctx.httpAddr,
-			HTTPPort:               ctx.httpPort,
-			HTTPAccessLog:          ctx.httpAccessLog,
-			HTTPSAddress:           ctx.httpsAddr,
-			HTTPSPort:              ctx.httpsPort,
-			HTTPSAccessLog:         ctx.httpsAccessLog,
-			MinimumProtocolVersion: dag.MinProtoVersion(ctx.TLSConfig.MinimumProtocolVersion),
+	// step 3. build our mammoth Kubernetes event handler.
+	eh := &contour.EventHandler{
+		CacheHandler: &contour.CacheHandler{
+			ListenerVisitorConfig: contour.ListenerVisitorConfig{
+				UseProxyProto:          ctx.useProxyProto,
+				HTTPAddress:            ctx.httpAddr,
+				HTTPPort:               ctx.httpPort,
+				HTTPAccessLog:          ctx.httpAccessLog,
+				HTTPSAddress:           ctx.httpsAddr,
+				HTTPSPort:              ctx.httpsPort,
+				HTTPSAccessLog:         ctx.httpsAccessLog,
+				MinimumProtocolVersion: dag.MinProtoVersion(ctx.TLSConfig.MinimumProtocolVersion),
+			},
+			ListenerCache: contour.NewListenerCache(ctx.statsAddr, ctx.statsPort),
+			FieldLogger:   log.WithField("context", "CacheHandler"),
 		},
-		ListenerCache: contour.NewListenerCache(ctx.statsAddr, ctx.statsPort),
-		FieldLogger:   log.WithField("context", "CacheHandler"),
+		HoldoffDelay:    100 * time.Millisecond,
+		HoldoffMaxDelay: 500 * time.Millisecond,
 		IngressRouteStatus: &k8s.IngressRouteStatus{
 			Client: contourClient,
 		},
-	}
-
-	// step 4. wrap the cache handler in a k8s event handler.
-	eh := &contour.EventHandler{
-		CacheHandler:    ch,
-		HoldoffDelay:    100 * time.Millisecond,
-		HoldoffMaxDelay: 500 * time.Millisecond,
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
 				IngressRouteRootNamespaces: ctx.ingressRouteRootNamespaces(),
 				IngressClass:               ctx.ingressClass,
+				FieldLogger:                log.WithField("context", "KubernetesCache"),
 			},
 			DisablePermitInsecure: ctx.DisablePermitInsecure,
 		},
 		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}
 
-	// step 5. register our resource event handler with the k8s informers.
+	// step 4. register our resource event handler with the k8s informers.
 	coreInformers.Core().V1().Services().Informer().AddEventHandler(eh)
 	coreInformers.Extensions().V1beta1().Ingresses().Informer().AddEventHandler(eh)
 	contourInformers.Contour().V1beta1().IngressRoutes().Informer().AddEventHandler(eh)
 	contourInformers.Contour().V1beta1().TLSCertificateDelegations().Informer().AddEventHandler(eh)
+	contourInformers.Projectcontour().V1alpha1().HTTPLoadBalancers().Informer().AddEventHandler(eh)
+	contourInformers.Projectcontour().V1alpha1().TLSCertificateDelegations().Informer().AddEventHandler(eh)
+
 	// Add informers for each root-ingressroute namespaces
 	for _, inf := range namespacedInformers {
 		inf.Core().V1().Secrets().Informer().AddEventHandler(eh)
@@ -183,14 +184,14 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		coreInformers.Core().V1().Secrets().Informer().AddEventHandler(eh)
 	}
 
-	// step 6. endpoints updates are handled directly by the EndpointsTranslator
+	// step 5. endpoints updates are handled directly by the EndpointsTranslator
 	// due to their high update rate and their orthogonal nature.
 	et := &contour.EndpointsTranslator{
 		FieldLogger: log.WithField("context", "endpointstranslator"),
 	}
 	coreInformers.Core().V1().Endpoints().Informer().AddEventHandler(et)
 
-	// step 7. setup workgroup runner and register informers.
+	// step 6. setup workgroup runner and register informers.
 	var g workgroup.Group
 	g.Add(startInformer(coreInformers, log.WithField("context", "coreinformers")))
 	g.Add(startInformer(contourInformers, log.WithField("context", "contourinformers")))
@@ -198,15 +199,15 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		g.Add(startInformer(inf, log.WithField("context", "corenamespacedinformers")))
 	}
 
-	// step 8. register our event handler with the workgroup
+	// step 7. register our event handler with the workgroup
 	g.Add(eh.Start())
 
-	// step 9. setup prometheus registry and register base metrics.
+	// step 8. setup prometheus registry and register base metrics.
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	registry.MustRegister(prometheus.NewGoCollector())
 
-	// step 10. create metrics service and register with workgroup.
+	// step 9. create metrics service and register with workgroup.
 	metricsvc := metrics.Service{
 		Service: httpsvc.Service{
 			Addr:        ctx.metricsAddr,
@@ -218,7 +219,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 	g.Add(metricsvc.Start)
 
-	// step 11. create debug service and register with workgroup.
+	// step 10. create debug service and register with workgroup.
 	debugsvc := debug.Service{
 		Service: httpsvc.Service{
 			Addr:        ctx.debugAddr,
@@ -229,7 +230,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 	g.Add(debugsvc.Start)
 
-	// step 12. Setup leader election
+	// step 11. Setup leader election
 
 	// leaderOK will block gRPC startup until it's closed.
 	leaderOK := make(chan struct{})
@@ -297,12 +298,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	check(err)
 	// AddContext will generate its own context.Context and pass it in,
 	// managing the close process when the other goroutines are closed.
+	// TODO(youngnick) we can probably skip this if leader election is disabled
+	// and just close leaderOK.
 	g.AddContext(func(electionCtx context.Context) {
 		log := log.WithField("context", "leaderelection")
-		if !ctx.EnableLeaderElection {
+		if ctx.DisableLeaderElection {
 			log.Info("Leader election disabled")
-			// if leader election is disabled, signal the gRPC goroutine
-			// to start serving and finsh up this context.
+			// if leader election is disabled, send the go signal.
 			// The Workgroup will handle leaving this running until everything
 			// else closes down.
 			close(leaderOK)
@@ -333,52 +335,44 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 		return nil
 	})
-	// step 13. register our custom metrics and plumb into cache handler
+	// step 12. register our custom metrics and plumb into cache handler
 	// and resource event handler.
 	metrics := metrics.NewMetrics(registry)
-	ch.Metrics = metrics
 	eh.Metrics = metrics
+	eh.CacheHandler.Metrics = metrics
 
 	// step 14. create grpc handler and register with workgroup.
-	// This will block until the program becomes the leader.
 	g.Add(func(stop <-chan struct{}) error {
 		log := log.WithField("context", "grpc")
 		resources := map[string]cgrpc.Resource{
-			ch.ClusterCache.TypeURL():  &ch.ClusterCache,
-			ch.RouteCache.TypeURL():    &ch.RouteCache,
-			ch.ListenerCache.TypeURL(): &ch.ListenerCache,
-			et.TypeURL():               et,
-			ch.SecretCache.TypeURL():   &ch.SecretCache,
+			eh.CacheHandler.ClusterCache.TypeURL():  &eh.CacheHandler.ClusterCache,
+			eh.CacheHandler.RouteCache.TypeURL():    &eh.CacheHandler.RouteCache,
+			eh.CacheHandler.ListenerCache.TypeURL(): &eh.CacheHandler.ListenerCache,
+			eh.CacheHandler.SecretCache.TypeURL():   &eh.CacheHandler.SecretCache,
+			et.TypeURL():                            et,
 		}
 		opts := ctx.grpcOptions()
 		s := cgrpc.NewAPI(log, resources, opts...)
-		select {
-		case <-stop:
-			// shut down
-			return nil
-		case <-leaderOK:
-			// we've become leader, open the listening socket
-			addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
-			l, err := net.Listen("tcp", addr)
-			if err != nil {
-				return err
-			}
-
-			log = log.WithField("address", addr)
-			if ctx.PermitInsecureGRPC {
-				log = log.WithField("insecure", true)
-			}
-
-			log.Info("started")
-			defer log.Info("stopped")
-
-			go func() {
-				<-stop
-				s.Stop()
-			}()
-
-			return s.Serve(l)
+		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
+		l, err := net.Listen("tcp", addr)
+		if err != nil {
+			return err
 		}
+
+		log = log.WithField("address", addr)
+		if ctx.PermitInsecureGRPC {
+			log = log.WithField("insecure", true)
+		}
+
+		log.Info("started")
+		defer log.Info("stopped")
+
+		go func() {
+			<-stop
+			s.Stop()
+		}()
+
+		return s.Serve(l)
 	})
 
 	// step 15. Setup SIGTERM handler

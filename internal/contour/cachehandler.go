@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/heptio/contour/internal/dag"
-	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -34,9 +33,9 @@ type CacheHandler struct {
 	ClusterCache
 	SecretCache
 
-	IngressRouteStatus *k8s.IngressRouteStatus
-	logrus.FieldLogger
 	*metrics.Metrics
+
+	logrus.FieldLogger
 }
 
 func (ch *CacheHandler) OnChange(dag *dag.DAG) {
@@ -48,27 +47,7 @@ func (ch *CacheHandler) OnChange(dag *dag.DAG) {
 	ch.updateRoutes(dag)
 	ch.updateClusters(dag)
 
-	statuses := dag.Statuses()
-	ch.setIngressRouteStatus(statuses)
-
-	metrics := calculateIngressRouteMetric(statuses)
-	ch.Metrics.SetIngressRouteMetric(metrics)
-
 	ch.SetDAGLastRebuilt(time.Now())
-}
-
-func (ch *CacheHandler) setIngressRouteStatus(statuses map[dag.Meta]dag.Status) {
-	for _, st := range statuses {
-		err := ch.IngressRouteStatus.SetStatus(st.Status, st.Description, st.Object)
-		if err != nil {
-			ch.WithError(err).
-				WithField("status", st.Status).
-				WithField("desc", st.Description).
-				WithField("name", st.Object.Name).
-				WithField("namespace", st.Object.Namespace).
-				Error("failed to set status")
-		}
-	}
 }
 
 func (ch *CacheHandler) updateSecrets(root dag.Visitable) {

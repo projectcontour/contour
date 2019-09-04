@@ -278,7 +278,7 @@ func TestTCPProxy(t *testing.T) {
 	)
 
 	c1 := &dag.Cluster{
-		Upstream: &dag.TCPService{
+		Upstream: &dag.Service{
 			Name:      "example",
 			Namespace: "default",
 			ServicePort: &v1.ServicePort{
@@ -289,7 +289,7 @@ func TestTCPProxy(t *testing.T) {
 		},
 	}
 	c2 := &dag.Cluster{
-		Upstream: &dag.TCPService{
+		Upstream: &dag.Service{
 			Name:      "example2",
 			Namespace: "default",
 			ServicePort: &v1.ServicePort{

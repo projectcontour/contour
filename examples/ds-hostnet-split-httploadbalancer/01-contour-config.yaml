@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: contour
+  namespace: heptio-contour
+data:
+  contour.yaml: |
+    # should contour expect to be running inside a k8s cluster
+    # incluster: true
+    #
+    # path to kubeconfig (if not running inside a k8s cluster)
+    # kubeconfig: /path/to/.kube/config
+    #
+    # disable ingressroute permitInsecure field
+    # disablePermitInsecure: false
+    tls:
+      # minimum TLS version that Contour will negotiate
+      # minimumProtocolVersion: "1.1"
+---

@@ -19,6 +19,7 @@ import (
 	"time"
 
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
@@ -322,9 +323,9 @@ func TestIngressRouteTLSListener(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName:             "secret",
 					MinimumProtocolVersion: "1.1",
 				},
@@ -346,9 +347,9 @@ func TestIngressRouteTLSListener(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName:             "secret",
 					MinimumProtocolVersion: "1.3",
 				},
@@ -1105,7 +1106,7 @@ func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 			Namespace: "roots",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "example.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				Services: []ingressroutev1.Service{{
@@ -1175,7 +1176,7 @@ func TestLDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "example.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				Services: []ingressroutev1.Service{{
@@ -1234,9 +1235,9 @@ func TestIngressRouteHTTPS(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName: "secret",
 				},
 			},
@@ -1314,9 +1315,9 @@ func TestLDSIngressRouteTCPProxyTLSPassthrough(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard-tcp.example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					Passthrough: true,
 				},
 			},
@@ -1393,9 +1394,9 @@ func TestLDSIngressRouteTCPForward(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard-tcp.example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName: "secret",
 				},
 			},
@@ -1494,9 +1495,9 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName: "secret/wildcard",
 				},
 			},
@@ -1693,9 +1694,9 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName:             "secret",
 					MinimumProtocolVersion: "1.1",
 				},
@@ -1746,9 +1747,9 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName:             "secret",
 					MinimumProtocolVersion: "1.3",
 				},
@@ -1786,6 +1787,84 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 				),
 			},
 			l2,
+			staticListener(),
+		),
+		TypeUrl: listenerType,
+		Nonce:   "2",
+	}, streamLDS(t, cc))
+}
+
+func TestLDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	svc1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "green",
+			Namespace: "marketing",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	}
+	rh.OnAdd(svc1)
+
+	child := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blog",
+			Namespace: "marketing",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "www.containersteve.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: svc1.Name,
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnAdd(child)
+
+	root := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "root-blog",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "blog.containersteve.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Delegate: &ingressroutev1.Delegate{
+					Name:      child.Name,
+					Namespace: child.Namespace,
+				},
+			}},
+		},
+	}
+	rh.OnAdd(root)
+
+	// verify that port 80 is present because while it is not possible to
+	// delegate to it, child can host a vhost which opens port 80.
+	assertEqual(t, &v2.DiscoveryResponse{
+		VersionInfo: "2",
+		Resources: resources(t,
+			&v2.Listener{
+				Name:    "ingress_http",
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy.FilterChains(
+					envoy.HTTPConnectionManager("ingress_http", "/dev/stdout"),
+				),
+			},
 			staticListener(),
 		),
 		TypeUrl: listenerType,

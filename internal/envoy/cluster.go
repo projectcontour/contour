@@ -34,30 +34,23 @@ const CACertificateKey = "ca.crt"
 
 // Cluster creates new v2.Cluster from dag.Cluster.
 func Cluster(c *dag.Cluster) *v2.Cluster {
-	switch upstream := c.Upstream.(type) {
-	case *dag.HTTPService:
-		cl := cluster(c, &upstream.TCPService)
-		switch upstream.Protocol {
-		case "tls":
-			cl.TlsContext = UpstreamTLSContext(
-				upstreamValidationCACert(c),
-				upstreamValidationSubjectAltName(c),
-			)
-		case "h2":
-			cl.TlsContext = UpstreamTLSContext(
-				upstreamValidationCACert(c),
-				upstreamValidationSubjectAltName(c),
-				"h2")
-			fallthrough
-		case "h2c":
-			cl.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
-		}
-		return cl
-	case *dag.TCPService:
-		return cluster(c, upstream)
-	default:
-		panic(fmt.Sprintf("unsupported upstream type: %T", upstream))
+	cl := cluster(c)
+	switch c.Upstream.Protocol {
+	case "tls":
+		cl.TlsContext = UpstreamTLSContext(
+			upstreamValidationCACert(c),
+			upstreamValidationSubjectAltName(c),
+		)
+	case "h2":
+		cl.TlsContext = UpstreamTLSContext(
+			upstreamValidationCACert(c),
+			upstreamValidationSubjectAltName(c),
+			"h2")
+		fallthrough
+	case "h2c":
+		cl.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
 	}
+	return cl
 }
 
 func upstreamValidationCACert(c *dag.Cluster) []byte {
@@ -76,7 +69,8 @@ func upstreamValidationSubjectAltName(c *dag.Cluster) string {
 	return c.UpstreamValidation.SubjectName
 }
 
-func cluster(cluster *dag.Cluster, service *dag.TCPService) *v2.Cluster {
+func cluster(cluster *dag.Cluster) *v2.Cluster {
+	service := cluster.Upstream
 	c := &v2.Cluster{
 		Name:           Clustername(cluster),
 		AltStatName:    altStatName(service),
@@ -98,7 +92,7 @@ func cluster(cluster *dag.Cluster, service *dag.TCPService) *v2.Cluster {
 	}
 
 	// Drain connections immediately if using healthchecks and the endpoint is known to be removed
-	if cluster.HealthCheck != nil {
+	if cluster.HealthCheckPolicy != nil {
 		c.DrainConnectionsOnHostRemoval = true
 	}
 
@@ -116,7 +110,7 @@ func cluster(cluster *dag.Cluster, service *dag.TCPService) *v2.Cluster {
 }
 
 // StaticClusterLoadAssignment creates a *v2.ClusterLoadAssignment pointing to the external DNS address of the service
-func StaticClusterLoadAssignment(service *dag.TCPService) *v2.ClusterLoadAssignment {
+func StaticClusterLoadAssignment(service *dag.Service) *v2.ClusterLoadAssignment {
 	name := []string{
 		service.Namespace,
 		service.Name,
@@ -130,7 +124,7 @@ func StaticClusterLoadAssignment(service *dag.TCPService) *v2.ClusterLoadAssignm
 	}
 }
 
-func edsconfig(cluster string, service *dag.TCPService) *v2.Cluster_EdsClusterConfig {
+func edsconfig(cluster string, service *dag.Service) *v2.Cluster_EdsClusterConfig {
 	name := []string{
 		service.Namespace,
 		service.Name,
@@ -159,7 +153,7 @@ func lbPolicy(strategy string) v2.Cluster_LbPolicy {
 }
 
 func edshealthcheck(c *dag.Cluster) []*core.HealthCheck {
-	if c.HealthCheck == nil {
+	if c.HealthCheckPolicy == nil {
 		return nil
 	}
 	return []*core.HealthCheck{
@@ -169,28 +163,20 @@ func edshealthcheck(c *dag.Cluster) []*core.HealthCheck {
 
 // Clustername returns the name of the CDS cluster for this service.
 func Clustername(cluster *dag.Cluster) string {
-	var service *dag.TCPService
-	switch s := cluster.Upstream.(type) {
-	case *dag.HTTPService:
-		service = &s.TCPService
-	case *dag.TCPService:
-		service = s
-	default:
-		panic(fmt.Sprintf("unsupported upstream type: %T", s))
-	}
+	service := cluster.Upstream
 	buf := cluster.LoadBalancerStrategy
-	if hc := cluster.HealthCheck; hc != nil {
-		if hc.TimeoutSeconds > 0 {
-			buf += (time.Duration(hc.TimeoutSeconds) * time.Second).String()
+	if hc := cluster.HealthCheckPolicy; hc != nil {
+		if hc.Timeout > 0 {
+			buf += hc.Timeout.String()
 		}
-		if hc.IntervalSeconds > 0 {
-			buf += (time.Duration(hc.IntervalSeconds) * time.Second).String()
+		if hc.Interval > 0 {
+			buf += hc.Interval.String()
 		}
-		if hc.UnhealthyThresholdCount > 0 {
-			buf += strconv.Itoa(int(hc.UnhealthyThresholdCount))
+		if hc.UnhealthyThreshold > 0 {
+			buf += strconv.Itoa(hc.UnhealthyThreshold)
 		}
-		if hc.HealthyThresholdCount > 0 {
-			buf += strconv.Itoa(int(hc.HealthyThresholdCount))
+		if hc.HealthyThreshold > 0 {
+			buf += strconv.Itoa(hc.HealthyThreshold)
 		}
 		buf += hc.Path
 	}
@@ -207,7 +193,7 @@ func Clustername(cluster *dag.Cluster) string {
 
 // altStatName generates an alternative stat name for the service
 // using format ns_name_port
-func altStatName(service *dag.TCPService) string {
+func altStatName(service *dag.Service) string {
 	return strings.Join([]string{service.Namespace, service.Name, strconv.Itoa(int(service.Port))}, "_")
 }
 

@@ -80,8 +80,8 @@ type serveContext struct {
 	// permitInsecure field in IngressRoute.
 	DisablePermitInsecure bool `yaml:"disablePermitInsecure,omitempty"`
 
-	// EnableLeaderElection should only be set by command line flag.
-	EnableLeaderElection bool `yaml:"-"`
+	// DisableLeaderElection can only be set by command line flag.
+	DisableLeaderElection bool `yaml:"-"`
 
 	// LeaderElectionConfig can be set in the config file.
 	LeaderElectionConfig `yaml:"leaderelection,omitempty"`
@@ -108,13 +108,13 @@ func newServeContext() *serveContext {
 		httpsPort:             8443,
 		PermitInsecureGRPC:    false,
 		DisablePermitInsecure: false,
-		EnableLeaderElection:  false,
+		DisableLeaderElection: false,
 		LeaderElectionConfig: LeaderElectionConfig{
 			LeaseDuration: time.Second * 15,
 			RenewDeadline: time.Second * 10,
 			RetryPeriod:   time.Second * 2,
 			Namespace:     "heptio-contour",
-			Name:          "contour",
+			Name:          "leader-elect",
 		},
 	}
 }

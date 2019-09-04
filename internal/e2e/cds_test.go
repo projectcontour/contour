@@ -23,6 +23,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/gogo/protobuf/types"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	"github.com/heptio/contour/internal/envoy"
 	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
@@ -605,7 +606,7 @@ func TestClusterPerServiceParameters(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/a",
 				Services: []ingressroutev1.Service{{
@@ -660,7 +661,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/a",
 				Services: []ingressroutev1.Service{{
@@ -736,14 +737,14 @@ func TestClusterWithHealthChecks(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/a",
 				Services: []ingressroutev1.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90,
-					HealthCheck: &ingressroutev1.HealthCheck{
+					HealthCheck: &projcontour.HealthCheck{
 						Path: "/healthz",
 					},
 				}},
@@ -850,7 +851,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/a",
 				Services: []ingressroutev1.Service{{
@@ -864,12 +865,12 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh.OnAdd(ir1)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
+		VersionInfo: "2",
 		Resources: resources(t,
 			tlscluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443", nil, ""),
 		),
 		TypeUrl: clusterType,
-		Nonce:   "1",
+		Nonce:   "2",
 	}, streamCDS(t, cc))
 
 	ir2 := &ingressroutev1.IngressRoute{
@@ -878,14 +879,14 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/a",
 				Services: []ingressroutev1.Service{{
 					Name: "kuard",
 					Port: 443,
-					UpstreamValidation: &ingressroutev1.UpstreamValidation{
-						CACertificate: "foo",
+					UpstreamValidation: &projcontour.UpstreamValidation{
+						CACertificate: secret.Name,
 						SubjectName:   "subjname",
 					},
 				}},
@@ -896,12 +897,12 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh.OnUpdate(ir1, ir2)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "3",
 		Resources: resources(t,
 			tlscluster("default/kuard/443/98c0f31c72", "default/kuard/securebackend", "default_kuard_443", []byte("ca"), "subjname"),
 		),
 		TypeUrl: clusterType,
-		Nonce:   "2",
+		Nonce:   "3",
 	}, streamCDS(t, cc))
 }
 
@@ -967,7 +968,7 @@ func TestUnreferencedService(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/a",
 				Services: []ingressroutev1.Service{{

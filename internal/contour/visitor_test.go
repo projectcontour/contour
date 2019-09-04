@@ -41,19 +41,19 @@ func TestVisitClusters(t *testing.T) {
 					&dag.SecureVirtualHost{
 						VirtualHost: dag.VirtualHost{
 							Name: "www.example.com",
-							TCPProxy: &dag.TCPProxy{
-								Clusters: []*dag.Cluster{{
-									Upstream: &dag.TCPService{
-										Name:      "example",
-										Namespace: "default",
-										ServicePort: &v1.ServicePort{
-											Protocol:   "TCP",
-											Port:       443,
-											TargetPort: intstr.FromInt(8443),
-										},
+						},
+						TCPProxy: &dag.TCPProxy{
+							Clusters: []*dag.Cluster{{
+								Upstream: &dag.Service{
+									Name:      "example",
+									Namespace: "default",
+									ServicePort: &v1.ServicePort{
+										Protocol:   "TCP",
+										Port:       443,
+										TargetPort: intstr.FromInt(8443),
 									},
-								}},
-							},
+								},
+							}},
 						},
 						Secret: new(dag.Secret),
 					},
@@ -89,7 +89,7 @@ func TestVisitClusters(t *testing.T) {
 func TestVisitListeners(t *testing.T) {
 	p1 := &dag.TCPProxy{
 		Clusters: []*dag.Cluster{{
-			Upstream: &dag.TCPService{
+			Upstream: &dag.Service{
 				Name:      "example",
 				Namespace: "default",
 				ServicePort: &v1.ServicePort{
@@ -111,9 +111,9 @@ func TestVisitListeners(t *testing.T) {
 				VirtualHosts: virtualhosts(
 					&dag.SecureVirtualHost{
 						VirtualHost: dag.VirtualHost{
-							Name:     "tcpproxy.example.com",
-							TCPProxy: p1,
+							Name: "tcpproxy.example.com",
 						},
+						TCPProxy: p1,
 						Secret: &dag.Secret{
 							Object: &v1.Secret{
 								ObjectMeta: metav1.ObjectMeta{
@@ -168,19 +168,19 @@ func TestVisitSecrets(t *testing.T) {
 					&dag.SecureVirtualHost{
 						VirtualHost: dag.VirtualHost{
 							Name: "www.example.com",
-							TCPProxy: &dag.TCPProxy{
-								Clusters: []*dag.Cluster{{
-									Upstream: &dag.TCPService{
-										Name:      "example",
-										Namespace: "default",
-										ServicePort: &v1.ServicePort{
-											Protocol:   "TCP",
-											Port:       443,
-											TargetPort: intstr.FromInt(8443),
-										},
+						},
+						TCPProxy: &dag.TCPProxy{
+							Clusters: []*dag.Cluster{{
+								Upstream: &dag.Service{
+									Name:      "example",
+									Namespace: "default",
+									ServicePort: &v1.ServicePort{
+										Protocol:   "TCP",
+										Port:       443,
+										TargetPort: intstr.FromInt(8443),
 									},
-								}},
-							},
+								},
+							}},
 						},
 						Secret: &dag.Secret{
 							Object: &v1.Secret{

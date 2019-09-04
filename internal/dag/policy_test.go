@@ -18,12 +18,12 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/heptio/contour/apis/contour/v1beta1"
+	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 )
 
 func TestRetryPolicyIngressRoute(t *testing.T) {
 	tests := map[string]struct {
-		rp   *v1beta1.RetryPolicy
+		rp   *projcontour.RetryPolicy
 		want *RetryPolicy
 	}{
 		"nil retry policy": {
@@ -31,14 +31,14 @@ func TestRetryPolicyIngressRoute(t *testing.T) {
 			want: nil,
 		},
 		"empty policy": {
-			rp: &v1beta1.RetryPolicy{},
+			rp: &projcontour.RetryPolicy{},
 			want: &RetryPolicy{
 				RetryOn:    "5xx",
 				NumRetries: 1,
 			},
 		},
 		"explicitly zero retries": {
-			rp: &v1beta1.RetryPolicy{
+			rp: &projcontour.RetryPolicy{
 				NumRetries: 0, // zero value for NumRetries
 			},
 			want: &RetryPolicy{
@@ -47,7 +47,7 @@ func TestRetryPolicyIngressRoute(t *testing.T) {
 			},
 		},
 		"no retry count, per try timeout": {
-			rp: &v1beta1.RetryPolicy{
+			rp: &projcontour.RetryPolicy{
 				PerTryTimeout: "10s",
 			},
 			want: &RetryPolicy{
@@ -57,7 +57,7 @@ func TestRetryPolicyIngressRoute(t *testing.T) {
 			},
 		},
 		"explicit 0s timeout": {
-			rp: &v1beta1.RetryPolicy{
+			rp: &projcontour.RetryPolicy{
 				PerTryTimeout: "0s",
 			},
 			want: &RetryPolicy{
@@ -80,7 +80,7 @@ func TestRetryPolicyIngressRoute(t *testing.T) {
 
 func TestTimeoutPolicyIngressRoute(t *testing.T) {
 	tests := map[string]struct {
-		tp   *v1beta1.TimeoutPolicy
+		tp   *projcontour.TimeoutPolicy
 		want *TimeoutPolicy
 	}{
 		"nil timeout policy": {
@@ -88,13 +88,13 @@ func TestTimeoutPolicyIngressRoute(t *testing.T) {
 			want: nil,
 		},
 		"empty timeout policy": {
-			tp: &v1beta1.TimeoutPolicy{},
+			tp: &projcontour.TimeoutPolicy{},
 			want: &TimeoutPolicy{
 				Timeout: 0 * time.Second,
 			},
 		},
 		"valid request timeout": {
-			tp: &v1beta1.TimeoutPolicy{
+			tp: &projcontour.TimeoutPolicy{
 				Request: "1m30s",
 			},
 			want: &TimeoutPolicy{
@@ -102,7 +102,7 @@ func TestTimeoutPolicyIngressRoute(t *testing.T) {
 			},
 		},
 		"invalid request timeout": {
-			tp: &v1beta1.TimeoutPolicy{
+			tp: &projcontour.TimeoutPolicy{
 				Request: "90", // 90 what?
 			},
 			want: &TimeoutPolicy{
@@ -114,7 +114,7 @@ func TestTimeoutPolicyIngressRoute(t *testing.T) {
 			},
 		},
 		"infinite request timeout": {
-			tp: &v1beta1.TimeoutPolicy{
+			tp: &projcontour.TimeoutPolicy{
 				Request: "infinite",
 			},
 			want: &TimeoutPolicy{

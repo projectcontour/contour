@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Heptio
+Copyright 2019 VMware
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	v1beta1 "github.com/heptio/contour/apis/contour/v1beta1"
+	v1alpha1 "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -57,6 +58,12 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Contour().V1beta1().IngressRoutes().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("tlscertificatedelegations"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Contour().V1beta1().TLSCertificateDelegations().Informer()}, nil
+
+		// Group=projectcontour.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("httploadbalancers"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Projectcontour().V1alpha1().HTTPLoadBalancers().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("tlscertificatedelegations"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Projectcontour().V1alpha1().TLSCertificateDelegations().Informer()}, nil
 
 	}
 

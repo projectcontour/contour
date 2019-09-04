@@ -1,0 +1,76 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: httploadbalancers.projectcontour.io
+  labels:
+    component: httploadbalancer
+spec:
+  group: projectcontour.io
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+  scope: Namespaced
+  names:
+    plural: httploadbalancers
+    singular: httploadbalancer
+    kind: HTTPLoadBalancer
+    shortNames:
+      - httplb
+  additionalPrinterColumns:
+    - name: FQDN
+      type: string
+      description: Fully qualified domain name
+      JSONPath: .spec.virtualhost.fqdn
+    - name: TLS Secret
+      type: string
+      description: Secret with TLS credentials
+      JSONPath: .spec.virtualhost.tls.secretName
+    - name: First route
+      type: string
+      description: First routes defined
+      JSONPath: .spec.routes[0].match
+    - name: Status
+      type: string
+      description: The current status of the IngressRoute
+      JSONPath: .status.currentStatus
+    - name: Status Description
+      type: string
+      description: Description of the current status
+      JSONPath: .status.description
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: tlscertificatedelegations.projectcontour.io
+  labels:
+    component: tlscertificatedelegation
+spec:
+  group: projectcontour.io
+  version: v1alpha1
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+  names:
+    plural: tlscertificatedelegations
+    singular: tlscertificatdelegation
+    kind: TLSCertificateDelegation
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            delegations:
+              type: array
+              items:
+                type: object
+                required:
+                  - secretName
+                  - targetNamespaces
+                properties:
+                  match:
+                    type: string
+                  targetNamespaces:
+                    type: array

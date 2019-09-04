@@ -119,15 +119,10 @@ func visitClusters(root dag.Vertex) map[string]*v2.Cluster {
 
 func (v *clusterVisitor) visit(vertex dag.Vertex) {
 	if cluster, ok := vertex.(*dag.Cluster); ok {
-		switch cluster.Upstream.(type) {
-		case *dag.HTTPService, *dag.TCPService:
-			name := envoy.Clustername(cluster)
-			if _, ok := v.clusters[name]; !ok {
-				c := envoy.Cluster(cluster)
-				v.clusters[c.Name] = c
-			}
-		default:
-			// nothing
+		name := envoy.Clustername(cluster)
+		if _, ok := v.clusters[name]; !ok {
+			c := envoy.Cluster(cluster)
+			v.clusters[c.Name] = c
 		}
 	}
 

@@ -119,7 +119,7 @@ func TestConfigFileDefaultOverrideImport(t *testing.T) {
 incluster: false
 disablePermitInsecure: false
 leaderelection:
-  configmap-name: contour
+  configmap-name: leader-elect
   configmap-namespace: heptio-contour
   lease-duration: 15s
   renew-deadline: 10s
