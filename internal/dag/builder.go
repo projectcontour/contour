@@ -692,12 +692,6 @@ func (b *Builder) processRoutes(httplb *projcontour.HTTPLoadBalancer, host strin
 	// visited = append(visited, httplb) //TODO (sas) Implement delegation
 
 	for _, route := range httplb.Spec.Routes {
-		// route cannot both delegate and point to services
-		if len(route.Services) > 0 && route.Includes != nil {
-			b.setStatus(Status{Object: httplb, Status: StatusInvalid, Description: fmt.Sprintf("route %q: cannot specify services and include in the same route", conditionPath(route.Condition)), Vhost: host})
-			return
-		}
-
 		// Cannot support multiple services with websockets (See: https://github.com/heptio/contour/issues/732)
 		if len(route.Services) > 1 && route.EnableWebsockets {
 			b.setStatus(Status{Object: httplb, Status: StatusInvalid, Description: fmt.Sprintf("route %q: cannot specify multiple services and enable websockets", conditionPath(route.Condition)), Vhost: host})

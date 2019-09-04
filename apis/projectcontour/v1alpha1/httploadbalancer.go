@@ -78,8 +78,6 @@ type TLS struct {
 
 // Route contains the set of routes for a virtual host
 type Route struct {
-	// Includes allow for specific routing configuration to be appended to another HTTPLoadBalancer in another namespace
-	Includes []Include `json:"includes,omitempty"`
 	// Condition defines additional routing parameters on the route
 	Condition `json:"condition,omitempty"`
 	// Services are the services to proxy traffic
