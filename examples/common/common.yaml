@@ -321,4 +321,3 @@ spec:
                   targetNamespaces:
                     type: array
 ---
-
