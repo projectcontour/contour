@@ -14,6 +14,7 @@ jobs:
       env:
         DOCKER_USERNAME: projectcontour
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        REGISTRY: projectcontour/contour
       run: |
         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         make push
