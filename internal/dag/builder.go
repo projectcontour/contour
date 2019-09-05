@@ -390,13 +390,10 @@ func (b *Builder) computeIngressRoutes() {
 		}
 
 		enforceTLS, passthrough := b.configureSecureVirtualHost(ir)
-
-		switch {
-		case ir.Spec.TCPProxy != nil && (passthrough || enforceTLS):
+		if ir.Spec.TCPProxy != nil && (passthrough || enforceTLS) {
 			b.processTCPProxy(ir, nil, host)
-		case ir.Spec.Routes != nil:
-			b.processIngressRoutes(ir, "", nil, host, enforceTLS)
 		}
+		b.processIngressRoutes(ir, "", nil, host, ir.Spec.TCPProxy == nil && enforceTLS)
 	}
 }
 
@@ -604,11 +601,12 @@ func (b *Builder) processIngressRoutes(ir *ingressroutev1.IngressRoute, prefixMa
 				return
 			}
 
+			permitInsecure := route.PermitInsecure && !b.DisablePermitInsecure
 			r := &PrefixRoute{
 				Prefix: route.Match,
 				Route: Route{
 					Websocket:     route.EnableWebsockets,
-					HTTPSUpgrade:  routeEnforceTLS(enforceTLS, route.PermitInsecure && !b.DisablePermitInsecure),
+					HTTPSUpgrade:  routeEnforceTLS(enforceTLS, permitInsecure),
 					PrefixRewrite: route.PrefixRewrite,
 					TimeoutPolicy: timeoutPolicy(route.TimeoutPolicy),
 					RetryPolicy:   retryPolicy(route.RetryPolicy),
@@ -650,7 +648,9 @@ func (b *Builder) processIngressRoutes(ir *ingressroutev1.IngressRoute, prefixMa
 			}
 
 			b.lookupVirtualHost(host).addRoute(r)
-			b.lookupSecureVirtualHost(host).addRoute(r)
+			if enforceTLS {
+				b.lookupSecureVirtualHost(host).addRoute(r)
+			}
 			continue
 		}
 
