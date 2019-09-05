@@ -79,7 +79,7 @@ type TLS struct {
 // Route contains the set of routes for a virtual host
 type Route struct {
 	// Condition defines additional routing parameters on the route
-	Condition `json:"condition,omitempty"`
+	Condition *Condition `json:"condition,omitempty"`
 	// Services are the services to proxy traffic
 	Services []Service `json:"services,omitempty"`
 	// Enables websocket support for the route
