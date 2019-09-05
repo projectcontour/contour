@@ -13,7 +13,8 @@ TAG_LATEST ?= false
 # LOCALIP as an env var before running 'make local' will solve that.
 LOCALIP ?= $(shell ifconfig | grep inet | grep -v '::' | grep -v 127.0.0.1 | head -n1 | awk '{print $$2}')
 
-GIT_REF = $(shell git rev-parse --short=8 --verify HEAD)
+# Sets GIT_REF to a tag if it's present, otherwise the short rev.
+GIT_REF = $(shell git describe --tags || git rev-parse --short=8 --verify HEAD)
 VERSION ?= $(GIT_REF)
 
 export GO111MODULE=on
