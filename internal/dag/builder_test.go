@@ -1517,7 +1517,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Condition: projcontour.Condition{
+				Condition: &projcontour.Condition{
 					Prefix: "/",
 				},
 				Services: []projcontour.Service{{
@@ -1553,6 +1553,28 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	httplb17 := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+					UpstreamValidation: &projcontour.UpstreamValidation{
+						CACertificate: cert1.Name,
+						SubjectName:   "example.com",
+					},
+				}},
+			}},
+		},
+	}
+
 	// httplb10 has a websocket route
 	httplb10 := &projcontour.HTTPLoadBalancer{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1569,7 +1591,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 				}},
 			}, {
-				Condition: projcontour.Condition{
+				Condition: &projcontour.Condition{
 					Prefix: "/websocket",
 				},
 				EnableWebsockets: true,
@@ -1597,7 +1619,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 				}},
 			}, {
-				Condition: projcontour.Condition{
+				Condition: &projcontour.Condition{
 					Prefix: "/websocket",
 				},
 				EnableWebsockets: true,
@@ -1628,7 +1650,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 				}},
 			}, {
-				Condition: projcontour.Condition{
+				Condition: &projcontour.Condition{
 					Prefix: "/websocket",
 				},
 				PrefixRewrite: "/",
@@ -1640,7 +1662,7 @@ func TestDAGInsert(t *testing.T) {
 			}},
 	}
 
-	httplb17 := &projcontour.HTTPLoadBalancer{
+	httplb100 := &projcontour.HTTPLoadBalancer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
@@ -1649,14 +1671,50 @@ func TestDAGInsert(t *testing.T) {
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
+			Includes: []projcontour.Include{{
+				Name:      "marketingwww",
+				Namespace: "marketing",
+				Condition: projcontour.Condition{
+					Prefix: "/blog",
+				},
+			}},
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
 					Name: "kuard",
 					Port: 8080,
-					UpstreamValidation: &projcontour.UpstreamValidation{
-						CACertificate: cert1.Name,
-						SubjectName:   "example.com",
-					},
+				}},
+			}},
+		},
+	}
+
+	httplb100a := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "marketingwww",
+			Namespace: "marketing",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "blog",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	httplb100b := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "marketingwww",
+			Namespace: "marketing",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			Routes: []projcontour.Route{{
+				Condition: &projcontour.Condition{
+					Prefix: "/infotech",
+				},
+				Services: []projcontour.Service{{
+					Name: "blog",
+					Port: 8080,
 				}},
 			}},
 		},
@@ -3408,6 +3466,70 @@ func TestDAGInsert(t *testing.T) {
 									UpstreamValidation: &UpstreamValidation{
 										CACertificate: secret(cert1),
 										SubjectName:   "example.com",
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert httplb with pathPrefix include": {
+			objs: []interface{}{
+				httplb100, httplb100a, s1, s4,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+							routeCluster("/blog",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s4.Name,
+										Namespace:   s4.Namespace,
+										ServicePort: &s4.Spec.Ports[0],
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert httplb with pathPrefix include, child adds to pathPrefix": {
+			objs: []interface{}{
+				httplb100, httplb100b, s1, s4,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+							routeCluster("/blog/infotech",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s4.Name,
+										Namespace:   s4.Namespace,
+										ServicePort: &s4.Spec.Ports[0],
 									},
 								},
 							),
