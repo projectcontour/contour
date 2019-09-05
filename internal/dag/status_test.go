@@ -654,6 +654,54 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	s10 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tls-passthrough",
+			Namespace: "roots",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "https",
+				Protocol:   "TCP",
+				Port:       443,
+				TargetPort: intstr.FromInt(443),
+			}, {
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(80),
+			}},
+		},
+	}
+
+	ir27 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-tcp",
+			Namespace: s10.Namespace,
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "kuard.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: s10.Name,
+					Port: 80, // proxy non secure traffic to port 80
+				}},
+			}},
+			TCPProxy: &ingressroutev1.TCPProxy{
+				Services: []ingressroutev1.Service{{
+					Name: s10.Name,
+					Port: 443, // ssl passthrough to secure port
+				}},
+			},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -871,6 +919,21 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Object:      ir26,
 					Status:      StatusInvalid,
 					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
+				},
+			},
+		},
+		// issue 910
+		"non tls routes can be combined with tcp proxy": {
+			objs: []interface{}{
+				s10,
+				ir27,
+			},
+			want: map[Meta]Status{
+				{name: ir27.Name, namespace: ir27.Namespace}: {
+					Object:      ir27,
+					Status:      StatusValid,
+					Description: `valid IngressRoute`,
+					Vhost:       ir27.Spec.VirtualHost.Fqdn,
 				},
 			},
 		},

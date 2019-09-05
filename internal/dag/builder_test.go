@@ -719,13 +719,6 @@ func TestDAGInsert(t *testing.T) {
 					SecretName: sec1.Name,
 				},
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: "kuard",
-					Port: 8080,
-				}},
-			}},
 			TCPProxy: &ingressroutev1.TCPProxy{
 				Services: []ingressroutev1.Service{{
 					Name: "kuard",
@@ -1315,7 +1308,6 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
-
 	s5 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog-admin",
@@ -1486,6 +1478,57 @@ func TestDAGInsert(t *testing.T) {
 				Protocol: "TCP",
 				Port:     80,
 			}},
+		},
+	}
+
+	s10 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tls-passthrough",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "https",
+				Protocol:   "TCP",
+				Port:       443,
+				TargetPort: intstr.FromInt(443),
+			}, {
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(80),
+			}},
+		},
+	}
+
+	// ir18 tcp forwards traffic to by TLS pass-throughing
+	// it. It also exposes non HTTP traffic to the the non secure port of the
+	// application so it can give an informational message
+	ir18 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-tcp",
+			Namespace: s10.Namespace,
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "kuard.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: s10.Name,
+					Port: 80, // proxy non secure traffic to port 80
+				}},
+			}},
+			TCPProxy: &ingressroutev1.TCPProxy{
+				Services: []ingressroutev1.Service{{
+					Name: s10.Name,
+					Port: 443, // ssl passthrough to secure port
+				}},
+			},
 		},
 	}
 
@@ -2741,7 +2784,43 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-
+		"insert ingressroute routing and tcpproxying": {
+			objs: []interface{}{
+				s10, ir18,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost(ir18.Spec.VirtualHost.Fqdn,
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s10.Name,
+										Namespace:   s10.Namespace,
+										ServicePort: &s10.Spec.Ports[1],
+									},
+								},
+							),
+						),
+					),
+				},
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: ir18.Spec.VirtualHost.Fqdn,
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(service(s10)),
+							},
+							MinProtoVersion: auth.TlsParameters_TLS_AUTO, // tls passthrough does not specify a TLS version; that's the domain of the backend
+						},
+					),
+				},
+			),
+		},
 		"insert root ingress route and delegate ingress route": {
 			objs: []interface{}{
 				ir5, s4, ir4, s5, ir3,
