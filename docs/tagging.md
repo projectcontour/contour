@@ -16,6 +16,6 @@ The `latest` tag follows the most recently released version of Contour.
 
 ## Development
 
-`gcr.io/heptio-images/contour:master`
+`projectcontour/contour:master`
 
 The `master` tag follows the latest commit to land on the `master` branch.

@@ -33,7 +33,7 @@ spec:
 ...
 spec:
   containers:
-  - image: gcr.io/heptio-images/contour:master
+  - image: projectcontour/contour:master
     imagePullPolicy: Always
     name: contour
     command: ["contour"]
