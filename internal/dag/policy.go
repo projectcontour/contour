@@ -40,6 +40,20 @@ func timeoutPolicy(tp *projcontour.TimeoutPolicy) *TimeoutPolicy {
 	}
 }
 
+func healthCheckPolicy(hc *projcontour.HealthCheck) *HealthCheckPolicy {
+	if hc == nil {
+		return nil
+	}
+	return &HealthCheckPolicy{
+		Path:               hc.Path,
+		Host:               hc.Host,
+		Interval:           time.Duration(hc.IntervalSeconds) * time.Second,
+		Timeout:            time.Duration(hc.TimeoutSeconds) * time.Second,
+		UnhealthyThreshold: int(hc.UnhealthyThresholdCount),
+		HealthyThreshold:   int(hc.HealthyThresholdCount),
+	}
+}
+
 func parseTimeout(timeout string) time.Duration {
 	if timeout == "" {
 		// Blank is interpreted as no timeout specified, use envoy defaults

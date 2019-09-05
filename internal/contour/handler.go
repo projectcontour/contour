@@ -22,6 +22,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/metrics"
@@ -39,7 +40,7 @@ type EventHandler struct {
 
 	HoldoffDelay, HoldoffMaxDelay time.Duration
 
-	IngressRouteStatus *k8s.IngressRouteStatus
+	CRDStatus *k8s.CRDStatus
 
 	*metrics.Metrics
 
@@ -216,7 +217,7 @@ func (e *EventHandler) updateDAG() {
 	dag := e.Builder.Build()
 	e.CacheHandler.OnChange(dag)
 	statuses := dag.Statuses()
-	e.setIngressRouteStatus(statuses)
+	e.setStatus(statuses)
 
 	metrics := calculateIngressRouteMetric(statuses)
 	e.Metrics.SetIngressRouteMetric(metrics)
@@ -224,17 +225,34 @@ func (e *EventHandler) updateDAG() {
 	e.last = time.Now()
 }
 
-// setIngressRouteStatus updates the status of Ingressroute objects.
-func (e *EventHandler) setIngressRouteStatus(statuses map[dag.Meta]dag.Status) {
+// setStatus updates the status of objects.
+func (e *EventHandler) setStatus(statuses map[dag.Meta]dag.Status) {
 	for _, st := range statuses {
-		err := e.IngressRouteStatus.SetStatus(st.Status, st.Description, st.Object)
-		if err != nil {
-			e.WithError(err).
-				WithField("status", st.Status).
-				WithField("desc", st.Description).
-				WithField("name", st.Object.Name).
-				WithField("namespace", st.Object.Namespace).
-				Error("failed to set status")
+		switch obj := st.Object.(type) {
+		case *ingressroutev1.IngressRoute:
+			err := e.CRDStatus.SetStatus(st.Status, st.Description, obj)
+			if err != nil {
+				e.WithError(err).
+					WithField("status", st.Status).
+					WithField("desc", st.Description).
+					WithField("name", obj.Name).
+					WithField("namespace", obj.Namespace).
+					Error("failed to set status")
+			}
+		case *projcontour.HTTPLoadBalancer:
+			err := e.CRDStatus.SetStatus(st.Status, st.Description, obj)
+			if err != nil {
+				e.WithError(err).
+					WithField("status", st.Status).
+					WithField("desc", st.Description).
+					WithField("name", obj.Name).
+					WithField("namespace", obj.Namespace).
+					Error("failed to set status")
+			}
+		default:
+			e.WithField("namespace", obj.GetObjectMeta().GetNamespace()).
+				WithField("name", obj.GetObjectMeta().GetName()).
+				Error("set status: unknown object type")
 		}
 	}
 }

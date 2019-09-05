@@ -1085,7 +1085,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 
 func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.Source.IngressRouteRootNamespaces = []string{"roots"}
+		reh.Builder.Source.RootNamespaces = []string{"roots"}
 	})
 	defer done()
 
@@ -1155,7 +1155,7 @@ func TestLDSIngressRouteInsideRootNamespaces(t *testing.T) {
 
 func TestLDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.Source.IngressRouteRootNamespaces = []string{"roots"}
+		reh.Builder.Source.RootNamespaces = []string{"roots"}
 	})
 	defer done()
 
