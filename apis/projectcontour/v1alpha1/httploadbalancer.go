@@ -36,8 +36,8 @@ type Include struct {
 	Name string `json:"name"`
 	// Namespace of where the HTTPLoadBalancer
 	Namespace string `json:"namespace,omitempty"`
-	// Condition are a set of Conditions that are applied to the HTTPLoadBalancer in a namespace
-	Condition []Condition `json:"conditions"`
+	// Condition is a set of routing properies that is applied to an HTTPLoadBalancer in a namespace
+	Condition `json:"conditions"`
 }
 
 // Condition are policies that are applied on top of HTTPLoadBalancers
@@ -79,7 +79,7 @@ type TLS struct {
 // Route contains the set of routes for a virtual host
 type Route struct {
 	// Condition defines additional routing parameters on the route
-	Condition `json:"condition,omitempty"`
+	Condition *Condition `json:"condition,omitempty"`
 	// Services are the services to proxy traffic
 	Services []Service `json:"services,omitempty"`
 	// Enables websocket support for the route

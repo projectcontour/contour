@@ -603,6 +603,105 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	sec2 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default-ssl-cert",
+			Namespace: "heptio-contour",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata("certificate", "key"),
+	}
+
+	ir25 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "sample-app",
+			Namespace: "roots",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "127.0.0.1.nip.io",
+				TLS: &projcontour.TLS{
+					SecretName: sec2.Namespace + "/" + sec2.Name,
+				},
+			},
+			TCPProxy: &ingressroutev1.TCPProxy{
+				Services: []ingressroutev1.Service{{
+					Name: "sample-app",
+					Port: 80,
+				}},
+			},
+		},
+	}
+
+	ir26 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "app-with-tls-delegation",
+			Namespace: "roots",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "app-with-tls-delegation.127.0.0.1.nip.io",
+				TLS: &projcontour.TLS{
+					SecretName: sec2.Namespace + "/" + sec2.Name,
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Services: []ingressroutev1.Service{{
+					Name: "sample-app",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	s10 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tls-passthrough",
+			Namespace: "roots",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "https",
+				Protocol:   "TCP",
+				Port:       443,
+				TargetPort: intstr.FromInt(443),
+			}, {
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(80),
+			}},
+		},
+	}
+
+	ir27 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-tcp",
+			Namespace: s10.Namespace,
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "kuard.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: s10.Name,
+					Port: 80, // proxy non secure traffic to port 80
+				}},
+			}},
+			TCPProxy: &ingressroutev1.TCPProxy{
+				Services: []ingressroutev1.Service{{
+					Name: s10.Name,
+					Port: 443, // ssl passthrough to secure port
+				}},
+			},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -795,14 +894,57 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				},
 			},
 		},
+		// issue 1347
+		"check status set when tcpproxy combined with tls delegation failure": {
+			objs: []interface{}{
+				sec2,
+				ir25,
+			},
+			want: map[Meta]Status{
+				{name: ir25.Name, namespace: ir25.Namespace}: {
+					Object:      ir25,
+					Status:      StatusInvalid,
+					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
+				},
+			},
+		},
+		// issue 1348
+		"check status set when routes combined with tls delegation failure": {
+			objs: []interface{}{
+				sec2,
+				ir26,
+			},
+			want: map[Meta]Status{
+				{name: ir26.Name, namespace: ir26.Namespace}: {
+					Object:      ir26,
+					Status:      StatusInvalid,
+					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
+				},
+			},
+		},
+		// issue 910
+		"non tls routes can be combined with tcp proxy": {
+			objs: []interface{}{
+				s10,
+				ir27,
+			},
+			want: map[Meta]Status{
+				{name: ir27.Name, namespace: ir27.Namespace}: {
+					Object:      ir27,
+					Status:      StatusValid,
+					Description: `valid IngressRoute`,
+					Vhost:       ir27.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
 				Source: KubernetesCache{
-					IngressRouteRootNamespaces: []string{"roots", "marketing"},
-					FieldLogger:                testLogger(t),
+					RootNamespaces: []string{"roots", "marketing"},
+					FieldLogger:    testLogger(t),
 				},
 			}
 			for _, o := range tc.objs {

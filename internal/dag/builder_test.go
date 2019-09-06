@@ -719,13 +719,6 @@ func TestDAGInsert(t *testing.T) {
 					SecretName: sec1.Name,
 				},
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: "kuard",
-					Port: 8080,
-				}},
-			}},
 			TCPProxy: &ingressroutev1.TCPProxy{
 				Services: []ingressroutev1.Service{{
 					Name: "kuard",
@@ -1315,7 +1308,6 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
-
 	s5 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog-admin",
@@ -1485,6 +1477,288 @@ func TestDAGInsert(t *testing.T) {
 			Ports: []v1.ServicePort{{
 				Protocol: "TCP",
 				Port:     80,
+			}},
+		},
+	}
+
+	s10 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tls-passthrough",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "https",
+				Protocol:   "TCP",
+				Port:       443,
+				TargetPort: intstr.FromInt(443),
+			}, {
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(80),
+			}},
+		},
+	}
+
+	// ir18 tcp forwards traffic to by TLS pass-throughing
+	// it. It also exposes non HTTP traffic to the the non secure port of the
+	// application so it can give an informational message
+	ir18 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-tcp",
+			Namespace: s10.Namespace,
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "kuard.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: s10.Name,
+					Port: 80, // proxy non secure traffic to port 80
+				}},
+			}},
+			TCPProxy: &ingressroutev1.TCPProxy{
+				Services: []ingressroutev1.Service{{
+					Name: s10.Name,
+					Port: 443, // ssl passthrough to secure port
+				}},
+			},
+		},
+	}
+
+	httlb1 := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	httlb1e := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Condition: &projcontour.Condition{
+					Prefix: "/",
+				},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+					HealthCheck: &projcontour.HealthCheck{
+						Path: "/healthz",
+					},
+				}},
+			}},
+		},
+	}
+
+	// httplb6 has TLS and does not specify min tls version
+	httplb6 := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "foo.com",
+				TLS: &projcontour.TLS{
+					SecretName: sec1.Name,
+				},
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	httplb17 := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+					UpstreamValidation: &projcontour.UpstreamValidation{
+						CACertificate: cert1.Name,
+						SubjectName:   "example.com",
+					},
+				}},
+			}},
+		},
+	}
+
+	// httplb10 has a websocket route
+	httplb10 := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}, {
+				Condition: &projcontour.Condition{
+					Prefix: "/websocket",
+				},
+				EnableWebsockets: true,
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// httplb10b has a websocket route w/multiple upstreams
+	httplb10b := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}, {
+				Condition: &projcontour.Condition{
+					Prefix: "/websocket",
+				},
+				EnableWebsockets: true,
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}, {
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// httplb11 has a prefix-rewrite route
+	httplb11 := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}, {
+				Condition: &projcontour.Condition{
+					Prefix: "/websocket",
+				},
+				PrefixRewrite: "/",
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			},
+			}},
+	}
+
+	httplb100 := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "marketingwww",
+				Namespace: "marketing",
+				Condition: projcontour.Condition{
+					Prefix: "/blog",
+				},
+			}},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	httplb100a := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "marketingwww",
+			Namespace: "marketing",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "blog",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	httplb100b := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "marketingwww",
+			Namespace: "marketing",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			Routes: []projcontour.Route{{
+				Condition: &projcontour.Condition{
+					Prefix: "/infotech",
+				},
+				Services: []projcontour.Service{{
+					Name: "blog",
+					Port: 8080,
+				}},
 			}},
 		},
 	}
@@ -1990,7 +2264,6 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-
 		"insert ingressroute with websocket route": {
 			objs: []interface{}{
 				ir11, s1,
@@ -2053,7 +2326,6 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-
 		"insert root ingress route and delegate ingress route for a tcp proxy": {
 			objs: []interface{}{
 				ir1d, s6, ir1c,
@@ -2512,7 +2784,43 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-
+		"insert ingressroute routing and tcpproxying": {
+			objs: []interface{}{
+				s10, ir18,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost(ir18.Spec.VirtualHost.Fqdn,
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s10.Name,
+										Namespace:   s10.Namespace,
+										ServicePort: &s10.Spec.Ports[1],
+									},
+								},
+							),
+						),
+					),
+				},
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: ir18.Spec.VirtualHost.Fqdn,
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(service(s10)),
+							},
+							MinProtoVersion: auth.TlsParameters_TLS_AUTO, // tls passthrough does not specify a TLS version; that's the domain of the backend
+						},
+					),
+				},
+			),
+		},
 		"insert root ingress route and delegate ingress route": {
 			objs: []interface{}{
 				ir5, s4, ir4, s5, ir3,
@@ -3106,6 +3414,209 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"insert httploadbalancer": {
+			objs: []interface{}{
+				httlb1, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"insert httploadbalancer w/ healthcheck": {
+			objs: []interface{}{
+				httlb1e, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/", &Cluster{
+								Upstream: service(s1),
+								HealthCheckPolicy: &HealthCheckPolicy{
+									Path: "/healthz",
+								},
+							}),
+						),
+					),
+				},
+			),
+		},
+		"insert httploadbalancer with websocket route": {
+			objs: []interface{}{
+				httplb11, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							prefixroute("/", service(s1)),
+							routeRewrite("/websocket", "/", service(s1)),
+						),
+					),
+				},
+			),
+		},
+		"insert httploadbalancer with prefix rewrite route": {
+			objs: []interface{}{
+				httplb10, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							prefixroute("/", service(s1)),
+							routeWebsocket("/websocket", service(s1)),
+						),
+					),
+				},
+			),
+		},
+		"insert httploadbalancer with multiple upstreams prefix rewrite route, websocket routes are dropped": {
+			objs: []interface{}{
+				httplb10b, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							prefixroute("/", service(s1)),
+						),
+					),
+				},
+			),
+		},
+		"insert httploadbalancer and service": {
+			objs: []interface{}{
+				httlb1, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"insert httploadbalancer without tls version": {
+			objs: []interface{}{
+				httplb6, s1, sec1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("foo.com", routeUpgrade("/", service(s1))),
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("foo.com", sec1, routeUpgrade("/", service(s1))),
+					),
+				},
+			),
+		},
+		"insert httplb expecting verification": {
+			objs: []interface{}{
+				cert1, httplb17, s1a,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1a.Name,
+										Namespace:   s1a.Namespace,
+										ServicePort: &s1a.Spec.Ports[0],
+										Protocol:    "tls",
+									},
+									UpstreamValidation: &UpstreamValidation{
+										CACertificate: secret(cert1),
+										SubjectName:   "example.com",
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert httplb with pathPrefix include": {
+			objs: []interface{}{
+				httplb100, httplb100a, s1, s4,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+							routeCluster("/blog",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s4.Name,
+										Namespace:   s4.Namespace,
+										ServicePort: &s4.Spec.Ports[0],
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert httplb with pathPrefix include, child adds to pathPrefix": {
+			objs: []interface{}{
+				httplb100, httplb100b, s1, s4,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+							routeCluster("/blog/infotech",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s4.Name,
+										Namespace:   s4.Namespace,
+										ServicePort: &s4.Spec.Ports[0],
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
 	}
 
 	for name, tc := range tests {
@@ -3278,6 +3789,43 @@ func TestDAGRootNamespaces(t *testing.T) {
 		},
 	}
 
+	httplb1 := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "allowed1",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// ir2 is like ir1, but in a different namespace
+	httplb2 := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "allowed2",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example2.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	s2 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -3349,14 +3897,52 @@ func TestDAGRootNamespaces(t *testing.T) {
 			objs:           []interface{}{ir1, ir2, s3},
 			want:           1,
 		},
+		"nil root httplb namespaces": {
+			objs: []interface{}{httplb1, s2},
+			want: 1,
+		},
+		"empty root httplb namespaces": {
+			objs: []interface{}{httplb1, s2},
+			want: 1,
+		},
+		"single root namespace with root httplb": {
+			rootNamespaces: []string{"allowed1"},
+			objs:           []interface{}{httplb1, s2},
+			want:           1,
+		},
+		"multiple root namespaces, one with a root httplb": {
+			rootNamespaces: []string{"foo", "allowed1", "bar"},
+			objs:           []interface{}{httplb1, s2},
+			want:           1,
+		},
+		"multiple root namespaces, each with a root httplb": {
+			rootNamespaces: []string{"foo", "allowed1", "allowed2"},
+			objs:           []interface{}{httplb1, httplb2, s2, s3},
+			want:           2,
+		},
+		"root httplb defined outside single root namespaces": {
+			rootNamespaces: []string{"foo"},
+			objs:           []interface{}{httplb1},
+			want:           0,
+		},
+		"root httplb defined outside multiple root namespaces": {
+			rootNamespaces: []string{"foo", "bar"},
+			objs:           []interface{}{httplb1},
+			want:           0,
+		},
+		"two root httplb, one inside root namespace, one outside": {
+			rootNamespaces: []string{"foo", "allowed2"},
+			objs:           []interface{}{httplb1, httplb2, s3},
+			want:           1,
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
 				Source: KubernetesCache{
-					IngressRouteRootNamespaces: tc.rootNamespaces,
-					FieldLogger:                testLogger(t),
+					RootNamespaces: tc.rootNamespaces,
+					FieldLogger:    testLogger(t),
 				},
 			}
 
