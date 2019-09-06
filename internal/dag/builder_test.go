@@ -1532,6 +1532,28 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	ir19 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "app-with-tls-delegation",
+			Namespace: s10.Namespace,
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "app-with-tls-delegation.127.0.0.1.nip.io",
+				TLS: &projcontour.TLS{
+					SecretName: "heptio-contour/ssl-cert", // not delegated
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: s10.Name,
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
 	httlb1 := &projcontour.HTTPLoadBalancer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -2820,6 +2842,12 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 			),
+		},
+		"insert ingressroute with missing tls delegation should not present port 80": {
+			objs: []interface{}{
+				s10, ir19,
+			},
+			want: listeners(), // no listeners, ir19 is invalid
 		},
 		"insert root ingress route and delegate ingress route": {
 			objs: []interface{}{
