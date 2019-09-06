@@ -24,7 +24,7 @@ If you are doing a patch release on an existing branch, skip this step and just 
 This branch is used for all the release types, alpha through final.
 Each on of the release types is just a different tag on the release branch./
 
-## Alpha, beta, and RC releases
+## Alpha, beta, and release candidates
 
 The steps for an non-production release are
 
