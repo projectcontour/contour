@@ -40,6 +40,10 @@ kubectl apply -f examples/<your-desired-deployment>
 If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
 You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address](./deploy-options.md#get_your_hostname_or_ip_address).
 
+### Note
+
+If you deployed Contour into a different namespace than heptio-contour with a standard example, please delete that namespace. Then in your editor of choice do a search and replace for `heptio-contour` and replace it with your preferred name space and apply the updated manifest.
+
 ## The less easy way
 
 This section contains information for administrators who wish to apply the Contour 0.14 to 0.15 changes manually.
