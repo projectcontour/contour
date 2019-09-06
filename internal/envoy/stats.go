@@ -17,7 +17,6 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	health_check "github.com/envoyproxy/go-control-plane/envoy/config/filter/http/health_check/v2"
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/util"
 	"github.com/gogo/protobuf/types"
@@ -74,19 +73,6 @@ func StatsListener(address string, port int) *v2.Listener {
 							},
 						},
 						HttpFilters: []*http.HttpFilter{{
-							Name: util.HealthCheck,
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: any(&health_check.HealthCheck{
-									PassThroughMode: &types.BoolValue{Value: false},
-									Headers: []*route.HeaderMatcher{{
-										Name: ":path",
-										HeaderMatchSpecifier: &route.HeaderMatcher_ExactMatch{
-											ExactMatch: "/healthz",
-										},
-									}},
-								}),
-							},
-						}, {
 							Name: util.Router,
 						}},
 						NormalizePath: &types.BoolValue{Value: true},
