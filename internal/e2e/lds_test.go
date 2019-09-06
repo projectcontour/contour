@@ -316,25 +316,39 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		},
 	}
 
+	svc1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: secret1.Namespace,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	}
+
 	// i1 is a tls ingressroute
 	i1 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
-			Namespace: "default",
+			Namespace: secret1.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
 				TLS: &projcontour.TLS{
-					SecretName:             "secret",
+					SecretName:             secret1.Name,
 					MinimumProtocolVersion: "1.1",
 				},
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				Services: []ingressroutev1.Service{{
-					Name: "backend",
-					Port: 80,
+					Name: svc1.Name,
+					Port: int(svc1.Spec.Ports[0].Port),
 				}},
 			}},
 		},
@@ -344,36 +358,22 @@ func TestIngressRouteTLSListener(t *testing.T) {
 	i2 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
-			Namespace: "default",
+			Namespace: secret1.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
 				TLS: &projcontour.TLS{
-					SecretName:             "secret",
+					SecretName:             secret1.Name,
 					MinimumProtocolVersion: "1.3",
 				},
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				Services: []ingressroutev1.Service{{
-					Name: "backend",
-					Port: 80,
+					Name: svc1.Name,
+					Port: int(svc1.Spec.Ports[0].Port),
 				}},
-			}},
-		},
-	}
-
-	svc1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
 			}},
 		},
 	}
@@ -425,18 +425,12 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		Nonce:   "1",
 	}, streamLDS(t, cc))
 
-	// delete secret and assert that ingress_https is removed
+	// delete secret and assert both listeners are removed because the
+	// ingressroute is no longer valid.
 	rh.OnDelete(secret1)
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
-			&v2.Listener{
-				Name:    "ingress_http",
-				Address: envoy.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy.FilterChains(
-					envoy.HTTPConnectionManager("ingress_http", "/dev/stdout"),
-				),
-			},
 			staticListener(),
 		),
 		TypeUrl: listenerType,
@@ -1511,19 +1505,10 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 		},
 	})
 
-	ingress_http := &v2.Listener{
-		Name:    "ingress_http",
-		Address: envoy.SocketAddress("0.0.0.0", 8080),
-		FilterChains: envoy.FilterChains(
-			envoy.HTTPConnectionManager("ingress_http", "/dev/stdout"),
-		),
-	}
-
-	// assert there is no ingress_https because there is no matching secret.
+	// assert there are no listeners
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
-			ingress_http,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
@@ -1546,6 +1531,14 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 		},
 	}
 	rh.OnAdd(t1)
+
+	ingress_http := &v2.Listener{
+		Name:    "ingress_http",
+		Address: envoy.SocketAddress("0.0.0.0", 8080),
+		FilterChains: envoy.FilterChains(
+			envoy.HTTPConnectionManager("ingress_http", "/dev/stdout"),
+		),
+	}
 
 	ingress_https := &v2.Listener{
 		Name:    "ingress_https",
@@ -1615,7 +1608,6 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "4",
 		Resources: resources(t,
-			ingress_http,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
@@ -1642,7 +1634,6 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "5",
 		Resources: resources(t,
-			ingress_http,
 			staticListener(),
 		),
 		TypeUrl: listenerType,

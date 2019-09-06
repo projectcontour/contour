@@ -366,63 +366,63 @@ func (b *Builder) computeIngresses() {
 
 func (b *Builder) computeIngressRoutes() {
 	for _, ir := range b.validIngressRoutes() {
-		if ir.Spec.VirtualHost == nil {
-			// mark delegate ingressroute orphaned.
-			b.setOrphaned(ir.Name, ir.Namespace)
-			continue
-		}
-
-		// ensure root ingressroute lives in allowed namespace
-		if !b.rootAllowed(ir.Namespace) {
-			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: "root IngressRoute cannot be defined in this namespace"})
-			continue
-		}
-
-		host := ir.Spec.VirtualHost.Fqdn
-		if isBlank(host) {
-			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: "Spec.VirtualHost.Fqdn must be specified"})
-			continue
-		}
-
-		if strings.Contains(host, "*") {
-			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("Spec.VirtualHost.Fqdn %q cannot use wildcards", host), Vhost: host})
-			continue
-		}
-
-		enforceTLS, passthrough := b.configureSecureVirtualHost(ir)
-		if ir.Spec.TCPProxy != nil && (passthrough || enforceTLS) {
-			b.processTCPProxy(ir, nil, host)
-		}
-		b.processIngressRoutes(ir, "", nil, host, ir.Spec.TCPProxy == nil && enforceTLS)
+		b.computeIngressRoute(ir)
 	}
 }
 
-func (b *Builder) configureSecureVirtualHost(ir *ingressroutev1.IngressRoute) (enforceTLS, passthrough bool) {
-	tls := ir.Spec.VirtualHost.TLS
-	if tls == nil {
-		return false, false
+func (b *Builder) computeIngressRoute(ir *ingressroutev1.IngressRoute) {
+	if ir.Spec.VirtualHost == nil {
+		// mark delegate ingressroute orphaned.
+		b.setOrphaned(ir.Name, ir.Namespace)
+		return
 	}
-	m := splitSecret(tls.SecretName, ir.Namespace)
-	sec := b.lookupSecret(m, validSecret)
-	if sec != nil {
-		if !b.delegationPermitted(m, ir.Namespace) {
-			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("%s: certificate delegation not permitted", tls.SecretName)})
-			return false, false
-		}
-		svhost := b.lookupSecureVirtualHost(ir.Spec.VirtualHost.Fqdn)
-		svhost.Secret = sec
-		svhost.MinProtoVersion = MinProtoVersion(ir.Spec.VirtualHost.TLS.MinimumProtocolVersion)
-		enforceTLS = true
-	}
-	// passthrough is true if tls.secretName is not present, and
-	// tls.passthrough is set to true.
-	passthrough = isBlank(tls.SecretName) && tls.Passthrough
 
-	// If not passthrough and secret is invalid, then set status
-	if sec == nil && !passthrough {
-		b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("TLS Secret [%s] not found or is malformed", tls.SecretName)})
+	// ensure root ingressroute lives in allowed namespace
+	if !b.rootAllowed(ir.Namespace) {
+		b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: "root IngressRoute cannot be defined in this namespace"})
+		return
 	}
-	return enforceTLS, passthrough
+
+	host := ir.Spec.VirtualHost.Fqdn
+	if isBlank(host) {
+		b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: "Spec.VirtualHost.Fqdn must be specified"})
+		return
+	}
+
+	if strings.Contains(host, "*") {
+		b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("Spec.VirtualHost.Fqdn %q cannot use wildcards", host), Vhost: host})
+		return
+	}
+
+	var enforceTLS, passthrough bool
+	if tls := ir.Spec.VirtualHost.TLS; tls != nil {
+		m := splitSecret(tls.SecretName, ir.Namespace)
+		sec := b.lookupSecret(m, validSecret)
+		if sec != nil {
+			if !b.delegationPermitted(m, ir.Namespace) {
+				b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("%s: certificate delegation not permitted", tls.SecretName)})
+				return
+			}
+			svhost := b.lookupSecureVirtualHost(ir.Spec.VirtualHost.Fqdn)
+			svhost.Secret = sec
+			svhost.MinProtoVersion = MinProtoVersion(ir.Spec.VirtualHost.TLS.MinimumProtocolVersion)
+			enforceTLS = true
+		}
+		// passthrough is true if tls.secretName is not present, and
+		// tls.passthrough is set to true.
+		passthrough = isBlank(tls.SecretName) && tls.Passthrough
+
+		// If not passthrough and secret is invalid, then set status
+		if sec == nil && !passthrough {
+			b.setStatus(Status{Object: ir, Status: StatusInvalid, Description: fmt.Sprintf("TLS Secret [%s] not found or is malformed", tls.SecretName)})
+			return
+		}
+	}
+
+	if ir.Spec.TCPProxy != nil && (passthrough || enforceTLS) {
+		b.processTCPProxy(ir, nil, host)
+	}
+	b.processIngressRoutes(ir, "", nil, host, ir.Spec.TCPProxy == nil && enforceTLS)
 }
 
 func (b *Builder) computeHTTPLoadBalancers() {
@@ -451,7 +451,6 @@ func (b *Builder) computeHTTPLoadBalancers() {
 		}
 
 		var enforceTLS, passthrough bool
-
 		if tls := httplb.Spec.VirtualHost.TLS; tls != nil {
 			// attach secrets to TLS enabled vhosts
 			m := splitSecret(tls.SecretName, httplb.Namespace)

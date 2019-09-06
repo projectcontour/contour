@@ -702,6 +702,28 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	ir28 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "app-with-tls-delegation",
+			Namespace: s10.Namespace,
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "app-with-tls-delegation.127.0.0.1.nip.io",
+				TLS: &projcontour.TLS{
+					SecretName: "heptio-contour/ssl-cert", // not delegated
+				},
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: s10.Name,
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -934,6 +956,20 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Status:      StatusValid,
 					Description: `valid IngressRoute`,
 					Vhost:       ir27.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		// issue 1452
+		"ingressroute with missing secret delegation should be invalid": {
+			objs: []interface{}{
+				s10,
+				ir28,
+			},
+			want: map[Meta]Status{
+				{name: ir28.Name, namespace: ir28.Namespace}: {
+					Object:      ir28,
+					Status:      StatusInvalid,
+					Description: "TLS Secret [heptio-contour/ssl-cert] not found or is malformed",
 				},
 			},
 		},
