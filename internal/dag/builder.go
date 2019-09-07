@@ -480,16 +480,7 @@ func (b *Builder) computeHTTPLoadBalancers() {
 		}
 
 		// Loop over and process all includes
-		for _, include := range httplb.Spec.Includes {
-			if dest, ok := b.Source.httploadbalancers[Meta{name: include.Name, namespace: include.Namespace}]; ok {
-				switch {
-				//	case ir.Spec.TCPProxy != nil && (passthrough || enforceTLS):
-				//		b.processTCPProxy(ir, nil, host)
-				case httplb.Spec.Routes != nil:
-					b.processRoutes(dest, host, &include.Condition, enforceTLS)
-				}
-			}
-		}
+		b.processIncludes(httplb, host, nil, enforceTLS)
 
 		// Process any routes
 		switch {
@@ -497,6 +488,36 @@ func (b *Builder) computeHTTPLoadBalancers() {
 		//		b.processTCPProxy(ir, nil, host)
 		case httplb.Spec.Routes != nil:
 			b.processRoutes(httplb, host, nil, enforceTLS)
+		}
+	}
+}
+
+// mergeConditions merges any two conditions when they are delegated
+func mergeConditions(delegate, include *projcontour.Condition) *projcontour.Condition {
+	if delegate == nil {
+		return include
+	}
+
+	result := delegate.DeepCopy()
+	result.Prefix = delegate.Prefix + include.Prefix
+	return result
+}
+
+func (b *Builder) processIncludes(httplb *projcontour.HTTPLoadBalancer, host string, delegatedCondition *projcontour.Condition, enforceTLS bool) {
+	// Loop over and process all includes
+	for _, include := range httplb.Spec.Includes {
+		if delegatedHTTPLb, ok := b.Source.httploadbalancers[Meta{name: include.Name, namespace: include.Namespace}]; ok {
+			switch {
+			//	case ir.Spec.TCPProxy != nil && (passthrough || enforceTLS):
+			//		b.processTCPProxy(ir, nil, host)
+			case httplb.Spec.Routes != nil:
+				b.processRoutes(delegatedHTTPLb, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS)
+			}
+
+			// Loop over any includes in the delegated httlb
+			if len(delegatedHTTPLb.Spec.Includes) > 0 {
+				b.processIncludes(delegatedHTTPLb, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS)
+			}
 		}
 	}
 }
@@ -780,7 +801,6 @@ func (b *Builder) processRoutes(httplb *projcontour.HTTPLoadBalancer, host strin
 			continue
 		}
 	}
-
 	b.setStatus(Status{Object: httplb, Status: StatusValid, Description: "valid HTTPLoadBalancer", Vhost: host})
 }
 
