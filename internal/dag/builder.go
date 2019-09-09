@@ -322,7 +322,15 @@ func (b *Builder) computeIngresses() {
 		rules := rulesFromSpec(ing.Spec)
 
 		for _, rule := range rules {
-			host := stringOrDefault(rule.Host, "*")
+			if strings.Contains(rule.Host, "*") {
+				// reject hosts with wildcard characters.
+				continue
+			}
+			host := rule.Host
+			if host == "" {
+				// if host name is blank, rewrite to Envoy's * default host.
+				host = "*"
+			}
 			for _, httppath := range httppaths(rule) {
 				path := stringOrDefault(httppath.Path, "/")
 				be := httppath.Backend
