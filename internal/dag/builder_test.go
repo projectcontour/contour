@@ -589,6 +589,51 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	i16 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "wildcards",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				// no hostname
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http")},
+						}},
+					},
+				},
+			}, {
+				Host: "*",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}},
+					},
+				},
+			}, {
+				Host: "*.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuarder",
+								ServicePort: intstr.FromInt(8080),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
 	// s3a and b have http/2 protocol annotations
 	s3a := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2962,7 +3007,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert ingressroute with regex route": {
+		"insert ingress with regex route": {
 			objs: []interface{}{
 				i15,
 				s1,
@@ -2977,6 +3022,21 @@ func TestDAGInsert(t *testing.T) {
 								Clusters: clustermap(s1),
 							},
 						}),
+					),
+				},
+			),
+		},
+		// issue 1234
+		"insert ingress with wildcard hostnames": {
+			objs: []interface{}{
+				s1,
+				i16,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", service(s1))),
 					),
 				},
 			),
