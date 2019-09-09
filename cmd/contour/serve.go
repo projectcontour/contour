@@ -23,7 +23,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
 	contourinformers "github.com/heptio/contour/apis/generated/informers/externalversions"
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/dag"
@@ -37,13 +36,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
-	coreV1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	coreinformers "k8s.io/client-go/informers"
-	clientcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	"k8s.io/client-go/tools/leaderelection"
-	"k8s.io/client-go/tools/leaderelection/resourcelock"
-	"k8s.io/client-go/tools/record"
 )
 
 // registerServe registers the serve subcommand and flags
@@ -232,118 +225,44 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 	g.Add(debugsvc.Start)
 
-	// step 11. Setup leader election
+	// step 11. if enabled, register leader election
+	if !ctx.DisableLeaderElection {
+		log := log.WithField("context", "leaderelection")
+		le, _, deposed := newLeaderElector(log, ctx, client, coordinationClient)
 
-	// leaderOK will block gRPC startup until it's closed.
-	leaderOK := make(chan struct{})
-	// deposed is closed by the leader election callback when
-	// we are deposed as leader so that we can clean up.
-	deposed := make(chan struct{})
+		g.AddContext(func(electionCtx context.Context) {
+			log.WithFields(logrus.Fields{
+				"configmapname":      ctx.LeaderElectionConfig.Name,
+				"configmapnamespace": ctx.LeaderElectionConfig.Namespace,
+			}).Info("started")
 
-	// Set up the leader election
-	// Generate the event recorder to send election events to the logs.
-	// Set up the event bits
-	eventBroadcaster := record.NewBroadcaster()
-	// Broadcast election events to the config map
-	eventBroadcaster.StartRecordingToSink(&clientcorev1.EventSinkImpl{Interface: clientcorev1.New(client.CoreV1().RESTClient()).Events("")})
-	eventsScheme := runtime.NewScheme()
-	// Need an eventsScheme
-	err := coreV1.AddToScheme(eventsScheme)
-	check(err)
-	// The recorder is what will record events about the resource lock
-	recorder := eventBroadcaster.NewRecorder(eventsScheme, coreV1.EventSource{Component: "contour"})
+			le.Run(electionCtx)
+			log.Info("stopped")
+		})
 
-	// Figure out the resource lock ID
-	resourceLockID, isPodNameEnvSet := os.LookupEnv("POD_NAME")
-	if !isPodNameEnvSet {
-		resourceLockID = uuid.New().String()
+		g.Add(func(stop <-chan struct{}) error {
+			// If we get deposed as leader, shut it down.
+			log := log.WithField("context", "leaderelection-deposer")
+			select {
+			case <-stop:
+				// shut down
+				log.Info("stopped")
+			case <-deposed:
+				log.Info("deposed as leader, shutting down")
+			}
+			return nil
+		})
+	} else {
+		log.Info("Leader election disabled")
 	}
 
-	// Generate the resource lock.
-	// TODO(youngnick) change this to a Lease object instead
-	// of the configmap once the Lease API has been GA for a full support
-	// cycle (ie nine months).
-	rl, err := resourcelock.New(
-		resourcelock.ConfigMapsResourceLock,
-		ctx.LeaderElectionConfig.Namespace,
-		ctx.LeaderElectionConfig.Name,
-		client.CoreV1(),
-		coordinationClient,
-		resourcelock.ResourceLockConfig{
-			Identity:      resourceLockID,
-			EventRecorder: recorder,
-		},
-	)
-	check(err)
-
-	// Make the leader elector, ready to be used in the Workgroup.
-	le, err := leaderelection.NewLeaderElector(leaderelection.LeaderElectionConfig{
-		Lock:          rl,
-		LeaseDuration: ctx.LeaderElectionConfig.LeaseDuration,
-		RenewDeadline: ctx.LeaderElectionConfig.RenewDeadline,
-		RetryPeriod:   ctx.LeaderElectionConfig.RetryPeriod,
-		Callbacks: leaderelection.LeaderCallbacks{
-			OnStartedLeading: func(ctx context.Context) {
-				log.WithFields(logrus.Fields{
-					"lock":     rl.Describe(),
-					"identity": rl.Identity(),
-				}).Info("elected leader")
-				close(leaderOK)
-			},
-			OnStoppedLeading: func() {
-				// The context being canceled will trigger a handler that will
-				// deal with being deposed.
-				close(deposed)
-			},
-		},
-	})
-	check(err)
-	// AddContext will generate its own context.Context and pass it in,
-	// managing the close process when the other goroutines are closed.
-	// TODO(youngnick) we can probably skip this if leader election is disabled
-	// and just close leaderOK.
-	g.AddContext(func(electionCtx context.Context) {
-		log := log.WithField("context", "leaderelection")
-		if ctx.DisableLeaderElection {
-			log.Info("Leader election disabled")
-			// if leader election is disabled, send the go signal.
-			// The Workgroup will handle leaving this running until everything
-			// else closes down.
-			close(leaderOK)
-			<-electionCtx.Done()
-		}
-
-		log.WithFields(logrus.Fields{
-			"configmapname":      ctx.LeaderElectionConfig.Name,
-			"configmapnamespace": ctx.LeaderElectionConfig.Namespace,
-		}).Info("started")
-
-		le.Run(electionCtx)
-		log.Info("stopped")
-	})
-
-	g.Add(func(stop <-chan struct{}) error {
-		// If we get deposed as leader, shut it down.
-		log := log.WithField("context", "leaderelection-deposer")
-		select {
-		case <-stop:
-			// shut down
-			log.Info("stopped")
-		case <-deposed:
-			log.WithFields(logrus.Fields{
-				"lock":     rl.Describe(),
-				"identity": rl.Identity(),
-			}).Info("deposed as leader, shutting down")
-		}
-		return nil
-	})
 	// step 12. register our custom metrics and plumb into cache handler
 	// and resource event handler.
 	metrics := metrics.NewMetrics(registry)
 	eh.Metrics = metrics
 	eh.CacheHandler.Metrics = metrics
 
-	// step 14. create grpc handler and register with workgroup.
+	// step 13. create grpc handler and register with workgroup.
 	g.Add(func(stop <-chan struct{}) error {
 		log := log.WithField("context", "grpc")
 		resources := map[string]cgrpc.Resource{
@@ -377,7 +296,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return s.Serve(l)
 	})
 
-	// step 15. Setup SIGTERM handler
+	// step 14. Setup SIGTERM handler
 	g.Add(func(stop <-chan struct{}) error {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGTERM)
@@ -390,7 +309,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return nil
 	})
 
-	// step 16. GO!
+	// step 15. GO!
 	return g.Run()
 }
 
