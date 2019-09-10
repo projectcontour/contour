@@ -444,7 +444,7 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		return
 	}
 
-	// ensure root ingressroute lives in allowed namespace
+	// ensure root httpproxy lives in allowed namespace
 	if !b.rootAllowed(proxy.Namespace) {
 		sw.SetInvalid("root HTTPProxy cannot be defined in this namespace")
 		return
@@ -483,6 +483,9 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		}
 	}
 
+	// Set default status
+	sw.SetValid().WithValue("description", "valid HTTPProxy")
+
 	// Loop over and process all includes
 	b.processIncludes(sw, proxy, host, nil, enforceTLS, nil)
 
@@ -513,32 +516,40 @@ func (b *Builder) processIncludes(sw *ObjectStatusWriter, proxy *projcontour.HTT
 	for _, include := range proxy.Spec.Includes {
 		if delegatedProxy, ok := b.Source.httpproxies[Meta{name: include.Name, namespace: include.Namespace}]; ok {
 
-			// ensure we are not following an edge that produces a cycle
 			var path []string
 			for _, vproxy := range visited {
 				path = append(path, fmt.Sprintf("%s/%s", vproxy.Namespace, vproxy.Name))
-			}
-			for _, vir := range visited {
-				if delegatedProxy.Name == vir.Name && delegatedProxy.Namespace == vir.Namespace {
-					path = append(path, fmt.Sprintf("%s/%s", delegatedProxy.Namespace, delegatedProxy.Name))
-					description := fmt.Sprintf("include creates a delegation cycle: %s", strings.Join(path, " -> "))
-					sw.WithObject(delegatedProxy).SetInvalid(description).Commit()
-					return
-				}
 			}
 
 			// Process any routes
 			switch {
 			//	case ir.Spec.TCPProxy != nil && (passthrough || enforceTLS):
 			//		b.processTCPProxy(ir, nil, host)
-			case proxy.Spec.Routes != nil:
-				b.processRoutes(sw, delegatedProxy, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS)
+			case delegatedProxy.Spec.Routes != nil:
+				b.processRoutes(sw.WithObject(delegatedProxy).WithValue("vhost", host), delegatedProxy, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS)
 			}
 
 			// Loop over any includes in the delegated httlb
 			if len(delegatedProxy.Spec.Includes) > 0 {
-				b.processIncludes(sw, delegatedProxy, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS, visited)
+				for _, vir := range visited {
+					if delegatedProxy.Name == vir.Name && delegatedProxy.Namespace == vir.Namespace {
+						path = append(path, fmt.Sprintf("%s/%s", delegatedProxy.Namespace, delegatedProxy.Name))
+						description := fmt.Sprintf("include creates a delegation cycle: %s", strings.Join(path, " -> "))
+						sw.WithObject(proxy).SetInvalid(description).Commit()
+						return
+					}
+				}
+
+				b.processIncludes(sw.WithObject(delegatedProxy), delegatedProxy, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS, visited)
 			}
+
+			if delegatedProxy.Spec.VirtualHost != nil {
+				sw.SetInvalid("root httpproxy cannot delegate to another root httpproxy")
+				return
+			}
+
+			// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
+			delete(b.orphaned, Meta{name: delegatedProxy.Name, namespace: delegatedProxy.Namespace})
 		}
 	}
 }
@@ -753,11 +764,12 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 			sw.Commit()
 		}
 	}
-	sw.SetValid()
+	sw.SetValid().WithValue("description", "valid IngressRoute")
 }
 
 func (b *Builder) processRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, host string, condition *projcontour.Condition, enforceTLS bool) {
 	for _, route := range proxy.Spec.Routes {
+
 		// Cannot support multiple services with websockets (See: https://github.com/heptio/contour/issues/732)
 		if len(route.Services) > 1 && route.EnableWebsockets {
 			sw.SetInvalid(fmt.Sprintf("route %q: cannot specify multiple services and enable websockets", conditionPath(route.Condition, condition)))
@@ -816,10 +828,11 @@ func (b *Builder) processRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 
 			b.lookupVirtualHost(host).addRoute(r)
 			b.lookupSecureVirtualHost(host).addRoute(r)
+
+			sw.SetValid().WithValue("description", "valid HTTPProxy")
 			continue
 		}
 	}
-	sw.SetValid()
 }
 
 func (b *Builder) lookupUpstreamValidation(match string, serviceName string, uv *projcontour.UpstreamValidation, namespace string) (*UpstreamValidation, error) {
@@ -870,7 +883,7 @@ func (b *Builder) processTCPProxy(sw *ObjectStatusWriter, ir *ingressroutev1.Ing
 			})
 		}
 		b.lookupSecureVirtualHost(host).TCPProxy = &proxy
-		sw.SetValid()
+		sw.SetValid().WithValue("description", "valid TCPProxy")
 		return
 	}
 
@@ -908,7 +921,7 @@ func (b *Builder) processTCPProxy(sw *ObjectStatusWriter, ir *ingressroutev1.Ing
 		sw.Commit()
 	}
 
-	sw.SetValid()
+	sw.SetValid().WithValue("description", "valid TCPProxy")
 }
 
 func conditionPath(routeCondition, includeCondition *projcontour.Condition) string {
