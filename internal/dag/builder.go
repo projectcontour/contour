@@ -253,11 +253,8 @@ func (b *Builder) validHTTPLoadBalancers() []*projcontour.HTTPLoadBalancer {
 			sort.Strings(conflicting) // sort for test stability
 			msg := fmt.Sprintf("fqdn %q is used in multiple HTTPLoadBalancers: %s", fqdn, strings.Join(conflicting, ", "))
 			for _, httplb := range httplbs {
-				//b.setStatus(Status{Object: httplb, Status: StatusInvalid, Description: msg, Vhost: fqdn})
-				// TODO (sas) Make Status work with both IngressRoutes & HTTPLoadBalancers
-				fmt.Printf("Name: %s Namespace: %s Status: %s Description: %s VHost: %s\n", httplb.Name, httplb.Namespace, StatusInvalid, msg, fqdn)
+				b.setStatus(Status{Object: httplb, Status: StatusInvalid, Description: msg, Vhost: fqdn})
 			}
-
 		}
 	}
 	return valid
@@ -480,16 +477,7 @@ func (b *Builder) computeHTTPLoadBalancers() {
 		}
 
 		// Loop over and process all includes
-		for _, include := range httplb.Spec.Includes {
-			if dest, ok := b.Source.httploadbalancers[Meta{name: include.Name, namespace: include.Namespace}]; ok {
-				switch {
-				//	case ir.Spec.TCPProxy != nil && (passthrough || enforceTLS):
-				//		b.processTCPProxy(ir, nil, host)
-				case httplb.Spec.Routes != nil:
-					b.processRoutes(dest, host, &include.Condition, enforceTLS)
-				}
-			}
-		}
+		b.processIncludes(httplb, host, nil, enforceTLS, nil)
 
 		// Process any routes
 		switch {
@@ -497,6 +485,54 @@ func (b *Builder) computeHTTPLoadBalancers() {
 		//		b.processTCPProxy(ir, nil, host)
 		case httplb.Spec.Routes != nil:
 			b.processRoutes(httplb, host, nil, enforceTLS)
+		}
+	}
+}
+
+// mergeConditions merges any two conditions when they are delegated
+func mergeConditions(delegate, include *projcontour.Condition) *projcontour.Condition {
+	if delegate == nil {
+		return include
+	}
+
+	result := delegate.DeepCopy()
+	result.Prefix = delegate.Prefix + include.Prefix
+	return result
+}
+
+func (b *Builder) processIncludes(httplb *projcontour.HTTPLoadBalancer, host string, delegatedCondition *projcontour.Condition, enforceTLS bool, visited []*projcontour.HTTPLoadBalancer) {
+	visited = append(visited, httplb)
+
+	// Loop over and process all includes
+	for _, include := range httplb.Spec.Includes {
+		if delegatedHTTPLb, ok := b.Source.httploadbalancers[Meta{name: include.Name, namespace: include.Namespace}]; ok {
+
+			// ensure we are not following an edge that produces a cycle
+			var path []string
+			for _, vhttplb := range visited {
+				path = append(path, fmt.Sprintf("%s/%s", vhttplb.Namespace, vhttplb.Name))
+			}
+			for _, vir := range visited {
+				if delegatedHTTPLb.Name == vir.Name && delegatedHTTPLb.Namespace == vir.Namespace {
+					path = append(path, fmt.Sprintf("%s/%s", delegatedHTTPLb.Namespace, delegatedHTTPLb.Name))
+					description := fmt.Sprintf("include creates a delegation cycle: %s", strings.Join(path, " -> "))
+					b.setStatus(Status{Object: delegatedHTTPLb, Status: StatusInvalid, Description: description, Vhost: host})
+					return
+				}
+			}
+
+			// Process any routes
+			switch {
+			//	case ir.Spec.TCPProxy != nil && (passthrough || enforceTLS):
+			//		b.processTCPProxy(ir, nil, host)
+			case httplb.Spec.Routes != nil:
+				b.processRoutes(delegatedHTTPLb, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS)
+			}
+
+			// Loop over any includes in the delegated httlb
+			if len(delegatedHTTPLb.Spec.Includes) > 0 {
+				b.processIncludes(delegatedHTTPLb, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS, visited)
+			}
 		}
 	}
 }
@@ -780,7 +816,6 @@ func (b *Builder) processRoutes(httplb *projcontour.HTTPLoadBalancer, host strin
 			continue
 		}
 	}
-
 	b.setStatus(Status{Object: httplb, Status: StatusValid, Description: "valid HTTPLoadBalancer", Vhost: host})
 }
 
