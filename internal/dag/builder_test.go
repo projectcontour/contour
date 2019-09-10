@@ -1613,12 +1613,12 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	httlb1 := &projcontour.HTTPLoadBalancer{
+	proxy1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPLoadBalancerSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
@@ -1631,12 +1631,12 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	httlb1e := &projcontour.HTTPLoadBalancer{
+	proxy1e := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPLoadBalancerSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
@@ -1655,13 +1655,13 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	// httplb6 has TLS and does not specify min tls version
-	httplb6 := &projcontour.HTTPLoadBalancer{
+	// proxy6 has TLS and does not specify min tls version
+	proxy6 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPLoadBalancerSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "foo.com",
 				TLS: &projcontour.TLS{
@@ -1677,12 +1677,12 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	httplb17 := &projcontour.HTTPLoadBalancer{
+	proxy17 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPLoadBalancerSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
@@ -1699,13 +1699,13 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	// httplb10 has a websocket route
-	httplb10 := &projcontour.HTTPLoadBalancer{
+	// proxy10 has a websocket route
+	proxy10 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPLoadBalancerSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
@@ -1727,13 +1727,13 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	// httplb10b has a websocket route w/multiple upstreams
-	httplb10b := &projcontour.HTTPLoadBalancer{
+	// proxy10b has a websocket route w/multiple upstreams
+	proxy10b := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPLoadBalancerSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
@@ -1758,13 +1758,13 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	// httplb11 has a prefix-rewrite route
-	httplb11 := &projcontour.HTTPLoadBalancer{
+	// proxy11 has a prefix-rewrite route
+	proxy11 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPLoadBalancerSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
@@ -1786,12 +1786,12 @@ func TestDAGInsert(t *testing.T) {
 			}},
 	}
 
-	httplb100 := &projcontour.HTTPLoadBalancer{
+	proxy100 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPLoadBalancerSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
@@ -1811,12 +1811,12 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	httplb100a := &projcontour.HTTPLoadBalancer{
+	proxy100a := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "marketingwww",
 			Namespace: "marketing",
 		},
-		Spec: projcontour.HTTPLoadBalancerSpec{
+		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
 					Name: "blog",
@@ -1826,12 +1826,12 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	httplb100b := &projcontour.HTTPLoadBalancer{
+	proxy100b := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "marketingwww",
 			Namespace: "marketing",
 		},
-		Spec: projcontour.HTTPLoadBalancerSpec{
+		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
 				Condition: &projcontour.Condition{
 					Prefix: "/infotech",
@@ -1844,12 +1844,12 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	httplb100c := &projcontour.HTTPLoadBalancer{
+	proxy100c := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "marketingwww",
 			Namespace: "marketing",
 		},
-		Spec: projcontour.HTTPLoadBalancerSpec{
+		Spec: projcontour.HTTPProxySpec{
 			Includes: []projcontour.Include{{
 				Name:      "marketingit",
 				Namespace: "it",
@@ -1874,12 +1874,12 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	httplb100d := &projcontour.HTTPLoadBalancer{
+	proxy100d := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "marketingit",
 			Namespace: "it",
 		},
-		Spec: projcontour.HTTPLoadBalancerSpec{
+		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
 				Condition: &projcontour.Condition{
 					Prefix: "/foo",
@@ -3564,9 +3564,9 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httploadbalancer": {
+		"insert httproxy": {
 			objs: []interface{}{
-				httlb1, s1,
+				proxy1, s1,
 			},
 			want: listeners(
 				&Listener{
@@ -3577,9 +3577,9 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httploadbalancer w/ healthcheck": {
+		"insert httpproxy w/ healthcheck": {
 			objs: []interface{}{
-				httlb1e, s1,
+				proxy1e, s1,
 			},
 			want: listeners(
 				&Listener{
@@ -3597,9 +3597,9 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httploadbalancer with websocket route": {
+		"insert httpproxy with websocket route": {
 			objs: []interface{}{
-				httplb11, s1,
+				proxy11, s1,
 			},
 			want: listeners(
 				&Listener{
@@ -3613,9 +3613,9 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httploadbalancer with prefix rewrite route": {
+		"insert httpproxy with prefix rewrite route": {
 			objs: []interface{}{
-				httplb10, s1,
+				proxy10, s1,
 			},
 			want: listeners(
 				&Listener{
@@ -3629,9 +3629,9 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httploadbalancer with multiple upstreams prefix rewrite route, websocket routes are dropped": {
+		"insert httpproxy with multiple upstreams prefix rewrite route, websocket routes are dropped": {
 			objs: []interface{}{
-				httplb10b, s1,
+				proxy10b, s1,
 			},
 			want: listeners(
 				&Listener{
@@ -3644,9 +3644,9 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httploadbalancer and service": {
+		"insert httpproxy and service": {
 			objs: []interface{}{
-				httlb1, s1,
+				proxy1, s1,
 			},
 			want: listeners(
 				&Listener{
@@ -3657,9 +3657,9 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httploadbalancer without tls version": {
+		"insert httpproxy without tls version": {
 			objs: []interface{}{
-				httplb6, s1, sec1,
+				proxy6, s1, sec1,
 			},
 			want: listeners(
 				&Listener{
@@ -3675,9 +3675,9 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httplb expecting verification": {
+		"insert httpproxy expecting verification": {
 			objs: []interface{}{
-				cert1, httplb17, s1a,
+				cert1, proxy17, s1a,
 			},
 			want: listeners(
 				&Listener{
@@ -3703,9 +3703,9 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httplb with pathPrefix include": {
+		"insert httpproxy with pathPrefix include": {
 			objs: []interface{}{
-				httplb100, httplb100a, s1, s4,
+				proxy100, proxy100a, s1, s4,
 			},
 			want: listeners(
 				&Listener{
@@ -3735,9 +3735,9 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httplb with pathPrefix include, child adds to pathPrefix": {
+		"insert httpproxy with pathPrefix include, child adds to pathPrefix": {
 			objs: []interface{}{
-				httplb100, httplb100b, s1, s4,
+				proxy100, proxy100b, s1, s4,
 			},
 			want: listeners(
 				&Listener{
@@ -3767,9 +3767,9 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httplb with pathPrefix include, child adds to pathPrefix, delegates again": {
+		"insert httpproxy with pathPrefix include, child adds to pathPrefix, delegates again": {
 			objs: []interface{}{
-				httplb100, httplb100c, httplb100d, s1, s4, s11,
+				proxy100, proxy100c, proxy100d, s1, s4, s11,
 			},
 			want: listeners(
 				&Listener{
@@ -3989,12 +3989,12 @@ func TestDAGRootNamespaces(t *testing.T) {
 		},
 	}
 
-	httplb1 := &projcontour.HTTPLoadBalancer{
+	proxy1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "allowed1",
 		},
-		Spec: projcontour.HTTPLoadBalancerSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
@@ -4007,13 +4007,13 @@ func TestDAGRootNamespaces(t *testing.T) {
 		},
 	}
 
-	// ir2 is like ir1, but in a different namespace
-	httplb2 := &projcontour.HTTPLoadBalancer{
+	// proxy2 is like ir1, but in a different namespace
+	proxy2 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "allowed2",
 		},
-		Spec: projcontour.HTTPLoadBalancerSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example2.com",
 			},
@@ -4097,42 +4097,42 @@ func TestDAGRootNamespaces(t *testing.T) {
 			objs:           []interface{}{ir1, ir2, s3},
 			want:           1,
 		},
-		"nil root httplb namespaces": {
-			objs: []interface{}{httplb1, s2},
+		"nil root httpproxy namespaces": {
+			objs: []interface{}{proxy1, s2},
 			want: 1,
 		},
-		"empty root httplb namespaces": {
-			objs: []interface{}{httplb1, s2},
+		"empty root httpproxy namespaces": {
+			objs: []interface{}{proxy1, s2},
 			want: 1,
 		},
-		"single root namespace with root httplb": {
+		"single root namespace with root httpproxy": {
 			rootNamespaces: []string{"allowed1"},
-			objs:           []interface{}{httplb1, s2},
+			objs:           []interface{}{proxy1, s2},
 			want:           1,
 		},
-		"multiple root namespaces, one with a root httplb": {
+		"multiple root namespaces, one with a root httpproxy": {
 			rootNamespaces: []string{"foo", "allowed1", "bar"},
-			objs:           []interface{}{httplb1, s2},
+			objs:           []interface{}{proxy1, s2},
 			want:           1,
 		},
-		"multiple root namespaces, each with a root httplb": {
+		"multiple root namespaces, each with a root httpproxy": {
 			rootNamespaces: []string{"foo", "allowed1", "allowed2"},
-			objs:           []interface{}{httplb1, httplb2, s2, s3},
+			objs:           []interface{}{proxy1, proxy2, s2, s3},
 			want:           2,
 		},
-		"root httplb defined outside single root namespaces": {
+		"root httpproxy defined outside single root namespaces": {
 			rootNamespaces: []string{"foo"},
-			objs:           []interface{}{httplb1},
+			objs:           []interface{}{proxy1},
 			want:           0,
 		},
-		"root httplb defined outside multiple root namespaces": {
+		"root httpproxy defined outside multiple root namespaces": {
 			rootNamespaces: []string{"foo", "bar"},
-			objs:           []interface{}{httplb1},
+			objs:           []interface{}{proxy1},
 			want:           0,
 		},
-		"two root httplb, one inside root namespace, one outside": {
+		"two root httpproxy, one inside root namespace, one outside": {
 			rootNamespaces: []string{"foo", "allowed2"},
-			objs:           []interface{}{httplb1, httplb2, s3},
+			objs:           []interface{}{proxy1, proxy2, s3},
 			want:           1,
 		},
 	}

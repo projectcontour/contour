@@ -18,6 +18,6 @@ limitations under the License.
 
 package v1alpha1
 
-type HTTPLoadBalancerExpansion interface{}
+type HTTPProxyExpansion interface{}
 
 type TLSCertificateDelegationExpansion interface{}

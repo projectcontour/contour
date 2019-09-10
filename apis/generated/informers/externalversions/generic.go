@@ -60,8 +60,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Contour().V1beta1().TLSCertificateDelegations().Informer()}, nil
 
 		// Group=projectcontour.io, Version=v1alpha1
-	case v1alpha1.SchemeGroupVersion.WithResource("httploadbalancers"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Projectcontour().V1alpha1().HTTPLoadBalancers().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("httpproxies"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Projectcontour().V1alpha1().HTTPProxies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("tlscertificatedelegations"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Projectcontour().V1alpha1().TLSCertificateDelegations().Informer()}, nil
 

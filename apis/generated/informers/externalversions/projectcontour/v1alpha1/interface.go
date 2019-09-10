@@ -24,8 +24,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// HTTPLoadBalancers returns a HTTPLoadBalancerInformer.
-	HTTPLoadBalancers() HTTPLoadBalancerInformer
+	// HTTPProxies returns a HTTPProxyInformer.
+	HTTPProxies() HTTPProxyInformer
 	// TLSCertificateDelegations returns a TLSCertificateDelegationInformer.
 	TLSCertificateDelegations() TLSCertificateDelegationInformer
 }
@@ -41,9 +41,9 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// HTTPLoadBalancers returns a HTTPLoadBalancerInformer.
-func (v *version) HTTPLoadBalancers() HTTPLoadBalancerInformer {
-	return &hTTPLoadBalancerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+// HTTPProxies returns a HTTPProxyInformer.
+func (v *version) HTTPProxies() HTTPProxyInformer {
+	return &hTTPProxyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // TLSCertificateDelegations returns a TLSCertificateDelegationInformer.

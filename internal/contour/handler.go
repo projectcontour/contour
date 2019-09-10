@@ -239,7 +239,7 @@ func (e *EventHandler) setStatus(statuses map[dag.Meta]dag.Status) {
 					WithField("namespace", obj.Namespace).
 					Error("failed to set status")
 			}
-		case *projcontour.HTTPLoadBalancer:
+		case *projcontour.HTTPProxy:
 			err := e.CRDStatus.SetStatus(st.Status, st.Description, obj)
 			if err != nil {
 				e.WithError(err).

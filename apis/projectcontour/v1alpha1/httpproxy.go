@@ -17,8 +17,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// HTTPLoadBalancerSpec defines the spec of the CRD
-type HTTPLoadBalancerSpec struct {
+// HTTPProxySpec defines the spec of the CRD.
+type HTTPProxySpec struct {
 	// Virtualhost appears at most once. If it is present, the object is considered
 	// to be a "root".
 	VirtualHost *VirtualHost `json:"virtualhost,omitempty"`
@@ -26,27 +26,27 @@ type HTTPLoadBalancerSpec struct {
 	Routes []Route `json:"routes"`
 	// TCPProxy holds TCP proxy information.
 	TCPProxy *TCPProxy `json:"tcpproxy,omitempty"`
-	// Includes allow for specific routing configuration to be appended to another HTTPLoadBalancer in another namespace
+	// Includes allow for specific routing configuration to be appended to another HTTPProxy in another namespace.
 	Includes []Include `json:"includes,omitempty"`
 }
 
-// Include describes a set of policies that can be applied to an HTTPLoadBalancer in a namespace
+// Include describes a set of policies that can be applied to an HTTPProxy in a namespace.
 type Include struct {
-	// Name of the HTTPLoadBalancer
+	// Name of the HTTPProxy
 	Name string `json:"name"`
-	// Namespace of where the HTTPLoadBalancer
+	// Namespace of the HTTPProxy
 	Namespace string `json:"namespace,omitempty"`
-	// Condition is a set of routing properies that is applied to an HTTPLoadBalancer in a namespace
+	// Condition is a set of routing properies that is applied to an HTTPProxy in a namespace.
 	Condition `json:"conditions"`
 }
 
-// Condition are policies that are applied on top of HTTPLoadBalancers
+// Condition are policies that are applied on top of HTTPProxies.
 type Condition struct {
-	// Prefix defines a prefix match for a request
+	// Prefix defines a prefix match for a request.
 	Prefix string `json:"prefix,omitempty"`
-	// HeadersMatch represent a set of HTTP headers that match the key/value exactly as specified
+	// HeadersMatch represent a set of HTTP headers that match the key/value exactly as specified.
 	HeadersMatch map[string][]string `json:"headersMatch,omitempty"`
-	// HeadersContain represent a set of HTTP headers that match the key exactly and the value as a contains
+	// HeadersContain represent a set of HTTP headers that match the key exactly and the value as a contains.
 	HeadersContain map[string][]string `json:"headersContain,omitempty"`
 }
 
@@ -99,22 +99,22 @@ type Route struct {
 type TCPProxy struct {
 	// Services are the services to proxy traffic
 	Services []Service `json:"services,omitempty"`
-	// Include specifies that this tcpproxy should be delegated to another HTTPLoadBalancer
+	// Include specifies that this tcpproxy should be delegated to another HTTPProxy.
 	Include Include `json:"includes,omitempty"`
 }
 
-// Service defines an upstream to proxy traffic to
+// Service defines an Kubernetes Service to proxy traffic.
 type Service struct {
 	// Name is the name of Kubernetes service to proxy traffic.
 	// Names defined here will be used to look up corresponding endpoints which contain the ips to route.
 	Name string `json:"name"`
-	// Port (defined as Integer) to proxy traffic to since a service can have multiple defined
+	// Port (defined as Integer) to proxy traffic to since a service can have multiple defined.
 	Port int `json:"port"`
 	// Weight defines percentage of traffic to balance traffic
 	Weight int `json:"weight,omitempty"`
 	// HealthCheck defines optional healthchecks on the upstream service
 	HealthCheck *HealthCheck `json:"healthCheck,omitempty"`
-	// LB Algorithm to apply (see https://github.com/heptio/contour/blob/master/design/HTTPLoadBalancer-design.md#load-balancing)
+	// LB Algorithm to apply.
 	Strategy string `json:"strategy,omitempty"`
 	// UpstreamValidation defines how to verify the backend service's certificate
 	UpstreamValidation *UpstreamValidation `json:"validation,omitempty"`
@@ -163,7 +163,7 @@ type UpstreamValidation struct {
 	SubjectName string `json:"subjectName"`
 }
 
-// Status reports the current state of the HTTPLoadBalancer
+// Status reports the current state of the HTTPProxy.
 type Status struct {
 	CurrentStatus string `json:"currentStatus"`
 	Description   string `json:"description"`
@@ -172,20 +172,20 @@ type Status struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// HTTPLoadBalancer is an Ingress CRD specification
-type HTTPLoadBalancer struct {
+// HTTPProxy is an Ingress CRD specification
+type HTTPProxy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
 
-	Spec   HTTPLoadBalancerSpec `json:"spec"`
+	Spec   HTTPProxySpec `json:"spec"`
 	Status `json:"status"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// HTTPLoadBalancerList is a list of HTTPLoadBalancers
-type HTTPLoadBalancerList struct {
+// HTTPProxyList is a list of HTTPProxies.
+type HTTPProxyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
-	Items           []HTTPLoadBalancer `json:"items"`
+	Items           []HTTPProxy `json:"items"`
 }

@@ -1005,7 +1005,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 	}
 }
 
-func TestDAGHTTPLoadBalancerStatus(t *testing.T) {
+func TestDAGHTTPProxyStatus(t *testing.T) {
 
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1021,13 +1021,13 @@ func TestDAGHTTPLoadBalancerStatus(t *testing.T) {
 		},
 	}
 
-	// httplb6 is invalid because it delegates to itself, producing a cycle
-	httplb6 := &projcontour.HTTPLoadBalancer{
+	// proxy6 is invalid because it delegates to itself, producing a cycle
+	proxy6 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "self",
 			Namespace: "roots",
 		},
-		Spec: projcontour.HTTPLoadBalancerSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
@@ -1052,10 +1052,10 @@ func TestDAGHTTPLoadBalancerStatus(t *testing.T) {
 		want map[Meta]Status
 	}{
 		"self-edge produces a cycle": {
-			objs: []interface{}{httplb6, s1},
+			objs: []interface{}{proxy6, s1},
 			want: map[Meta]Status{
-				{name: httplb6.Name, namespace: httplb6.Namespace}: {
-					Object:      httplb6,
+				{name: proxy6.Name, namespace: proxy6.Namespace}: {
+					Object:      proxy6,
 					Status:      "invalid",
 					Description: "include creates a delegation cycle: roots/self -> roots/self",
 					Vhost:       "example.com",

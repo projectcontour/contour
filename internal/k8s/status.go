@@ -42,7 +42,7 @@ func (irs *CRDStatus) SetStatus(status, desc string, existing interface{}) error
 			}
 			return irs.setIngressRouteStatus(exist, updated)
 		}
-	case *projcontour.HTTPLoadBalancer:
+	case *projcontour.HTTPProxy:
 		// Check if update needed by comparing status & desc
 		if irs.updateNeeded(status, desc, exist.Status) {
 			updated := exist.DeepCopy()
@@ -50,7 +50,7 @@ func (irs *CRDStatus) SetStatus(status, desc string, existing interface{}) error
 				CurrentStatus: status,
 				Description:   desc,
 			}
-			return irs.setHTTPLoadBalancerStatus(exist, updated)
+			return irs.setHTTPProxyStatus(exist, updated)
 		}
 	}
 	return nil
@@ -85,7 +85,7 @@ func (irs *CRDStatus) setIngressRouteStatus(existing, updated *ingressroutev1.In
 	return err
 }
 
-func (irs *CRDStatus) setHTTPLoadBalancerStatus(existing, updated *projcontour.HTTPLoadBalancer) error {
+func (irs *CRDStatus) setHTTPProxyStatus(existing, updated *projcontour.HTTPProxy) error {
 	existingBytes, err := json.Marshal(existing)
 	if err != nil {
 		return err
@@ -103,6 +103,6 @@ func (irs *CRDStatus) setHTTPLoadBalancerStatus(existing, updated *projcontour.H
 		return err
 	}
 
-	_, err = irs.Client.ProjectcontourV1alpha1().HTTPLoadBalancers(existing.GetNamespace()).Patch(existing.GetName(), types.MergePatchType, patchBytes)
+	_, err = irs.Client.ProjectcontourV1alpha1().HTTPProxies(existing.GetNamespace()).Patch(existing.GetName(), types.MergePatchType, patchBytes)
 	return err
 }
