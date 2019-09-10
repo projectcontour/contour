@@ -62,8 +62,8 @@ func (osw *ObjectStatusWriter) SetInvalid(desc string) *ObjectStatusWriter {
 	return osw.WithValue("description", desc).WithValue("status", StatusInvalid)
 }
 
-func (osw *ObjectStatusWriter) SetValid() {
-	osw.WithValue("status", StatusValid).WithValue("description", "valid IngressRoute")
+func (osw *ObjectStatusWriter) SetValid(desc string) *ObjectStatusWriter {
+	return osw.WithValue("status", StatusValid).WithValue("description", desc)
 }
 
 func (osw *ObjectStatusWriter) WithObject(obj Object) *ObjectStatusWriter {
@@ -83,6 +83,7 @@ func (osw *ObjectStatusWriter) Commit() {
 		// nothing to commit
 		return
 	}
+
 	m := Meta{
 		name:      osw.obj.GetObjectMeta().GetName(),
 		namespace: osw.obj.GetObjectMeta().GetNamespace(),
