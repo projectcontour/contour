@@ -1,6 +1,6 @@
 PROJECT = contour
 MODULE = github.com/heptio/$(PROJECT)
-REGISTRY ?= gcr.io/heptio-images
+REGISTRY ?= projectcontour
 IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml

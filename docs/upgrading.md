@@ -50,7 +50,7 @@ This section contains information for administrators who wish to apply the Conto
 
 ### Upgrade to Contour 0.15.0
 
-Change the Contour image version to `gcr.io/heptio-images/contour:v0.15.0`.
+Change the Contour image version to `projectcontour/contour:v0.15.0`.
 
 ### Enabling TLS for gRPC
 
