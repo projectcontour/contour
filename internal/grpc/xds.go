@@ -35,7 +35,7 @@ type Resource interface {
 	Query(names []string) []proto.Message
 
 	// Register registers ch to receive a value when Notify is called.
-	Register(chan int, int)
+	Register(chan int, int, ...string)
 
 	// TypeURL returns the typeURL of messages returned from Values.
 	TypeURL() string
@@ -109,7 +109,7 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 
 		// now we wait for a notification, if this is the first request received on this
 		// connection last will be less than zero and that will trigger a response immediately.
-		r.Register(ch, last)
+		r.Register(ch, last, req.ResourceNames...)
 		select {
 		case last = <-ch:
 			// boom, something in the cache has changed.

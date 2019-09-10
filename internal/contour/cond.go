@@ -22,7 +22,7 @@ import "sync"
 // the waiters. This permits goroutines to wait on Cond events using select.
 type Cond struct {
 	mu      sync.Mutex
-	waiters []chan int
+	waiters map[chan int][]string
 	last    int
 }
 
@@ -32,9 +32,9 @@ type Cond struct {
 // is less than the Conds internal counter, then the caller has missed at least
 // one notification and will fire immediately.
 //
-// Sends by the broadcaster to ch must not block, therefor ch must have a capacity
+// Sends by the broadcaster to ch must not block, therefore ch must have a capacity
 // of at least 1.
-func (c *Cond) Register(ch chan int, last int) {
+func (c *Cond) Register(ch chan int, last int, hints ...string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -43,17 +43,35 @@ func (c *Cond) Register(ch chan int, last int) {
 		ch <- c.last
 		return
 	}
-	c.waiters = append(c.waiters, ch)
+	if c.waiters == nil {
+		c.waiters = make(map[chan int][]string)
+	}
+	c.waiters[ch] = hints
 }
 
 // Notify notifies all registered waiters that an event has ocured.
-func (c *Cond) Notify() {
+func (c *Cond) Notify(hints ...string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.last++
 
-	for _, ch := range c.waiters {
-		ch <- c.last
+	m := make(map[string]bool)
+	for _, h := range hints {
+		m[h] = true
 	}
-	c.waiters = c.waiters[:0]
+
+	for ch, hints := range c.waiters {
+		if len(hints) == 0 {
+			ch <- c.last
+			delete(c.waiters, ch)
+			continue
+		}
+		for _, h := range hints {
+			if m[h] {
+				ch <- c.last
+				delete(c.waiters, ch)
+				break
+			}
+		}
+	}
 }

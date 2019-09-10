@@ -34,7 +34,6 @@ import (
 type EndpointsTranslator struct {
 	logrus.FieldLogger
 	clusterLoadAssignmentCache
-	Cond
 }
 
 func (e *EndpointsTranslator) OnAdd(obj interface{}) {
@@ -129,8 +128,6 @@ func (e *EndpointsTranslator) recomputeClusterLoadAssignment(oldep, newep *v1.En
 		return
 	}
 
-	defer e.Notify()
-
 	if oldep == nil {
 		oldep = &v1.Endpoints{
 			ObjectMeta: newep.ObjectMeta,
@@ -189,11 +186,13 @@ func (e *EndpointsTranslator) recomputeClusterLoadAssignment(oldep, newep *v1.En
 			}
 		}
 	}
+
 }
 
 type clusterLoadAssignmentCache struct {
 	mu      sync.Mutex
 	entries map[string]*v2.ClusterLoadAssignment
+	Cond
 }
 
 // Add adds an entry to the cache. If a ClusterLoadAssignment with the same
@@ -205,6 +204,7 @@ func (c *clusterLoadAssignmentCache) Add(a *v2.ClusterLoadAssignment) {
 		c.entries = make(map[string]*v2.ClusterLoadAssignment)
 	}
 	c.entries[a.ClusterName] = a
+	c.Notify(a.ClusterName)
 }
 
 // Remove removes the named entry from the cache. If the entry
@@ -213,6 +213,7 @@ func (c *clusterLoadAssignmentCache) Remove(name string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	delete(c.entries, name)
+	c.Notify(name)
 }
 
 // Contents returns a copy of the contents of the cache.

@@ -52,7 +52,7 @@ func TestAddRemoveEndpoints(t *testing.T) {
 
 	// check that it's been translated correctly.
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
+		VersionInfo: "2",
 		Resources: resources(t,
 			envoy.ClusterLoadAssignment(
 				"super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http",
@@ -66,17 +66,17 @@ func TestAddRemoveEndpoints(t *testing.T) {
 			),
 		),
 		TypeUrl: endpointType,
-		Nonce:   "1",
+		Nonce:   "2",
 	}, streamEDS(t, cc))
 
 	// remove e1 and check that the EDS cache is now empty.
 	rh.OnDelete(e1)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+		VersionInfo: "4",
 		Resources:   resources(t),
 		TypeUrl:     endpointType,
-		Nonce:       "2",
+		Nonce:       "4",
 	}, streamEDS(t, cc))
 }
 
@@ -112,7 +112,7 @@ func TestAddEndpointComplicated(t *testing.T) {
 	rh.OnAdd(e1)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
+		VersionInfo: "2",
 		Resources: resources(t,
 			envoy.ClusterLoadAssignment(
 				"default/kuard/admin",
@@ -125,7 +125,7 @@ func TestAddEndpointComplicated(t *testing.T) {
 			),
 		),
 		TypeUrl: endpointType,
-		Nonce:   "1",
+		Nonce:   "2",
 	}, streamEDS(t, cc))
 }
 
@@ -163,7 +163,7 @@ func TestEndpointFilter(t *testing.T) {
 	rh.OnAdd(e1)
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
+		VersionInfo: "2",
 		Resources: resources(t,
 			envoy.ClusterLoadAssignment(
 				"default/kuard/foo",
@@ -171,16 +171,16 @@ func TestEndpointFilter(t *testing.T) {
 			),
 		),
 		TypeUrl: endpointType,
-		Nonce:   "1",
+		Nonce:   "2",
 	}, streamEDS(t, cc, "default/kuard/foo"))
 
 	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
+		VersionInfo: "2",
 		TypeUrl:     endpointType,
 		Resources: resources(t,
 			envoy.ClusterLoadAssignment("default/kuard/bar"),
 		),
-		Nonce: "1",
+		Nonce: "2",
 	}, streamEDS(t, cc, "default/kuard/bar"))
 
 }
