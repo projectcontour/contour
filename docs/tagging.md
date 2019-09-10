@@ -4,18 +4,18 @@ This document describes Contour's image tagging policy.
 
 ## Released versions
 
-`gcr.io/heptio-images/contour:<SemVer>`
+`docker.io/projectcontour/contour:<SemVer>`
 
-Contour follows the [Semantic Versioning](http://semver.org/) standard for releases. Each tag in the github.com/heptio/contour repository has a matching image. eg. `gcr.io/heptio-images/contour:v0.1.0`
+Contour follows the [Semantic Versioning](http://semver.org/) standard for releases. Each tag in the github.com/heptio/contour repository has a matching image. eg. `docker.io/projectcontour/contour:v0.15.0`
 
 ### Latest
 
-`gcr.io/heptio-images/contour:latest`
+`docker.io/projectcontour/contour:latest`
 
-The `latest` tag follows the most recently released version of Contour.
+The `latest` tag follows the most recent stable version of Contour.
 
 ## Development
 
-`projectcontour/contour:master`
+`docker.io/projectcontour/contour:master`
 
 The `master` tag follows the latest commit to land on the `master` branch.

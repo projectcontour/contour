@@ -33,7 +33,7 @@ spec:
 ...
 spec:
   containers:
-  - image: projectcontour/contour:master
+  - image: docker.io/projectcontour/contour:master
     imagePullPolicy: Always
     name: contour
     command: ["contour"]
