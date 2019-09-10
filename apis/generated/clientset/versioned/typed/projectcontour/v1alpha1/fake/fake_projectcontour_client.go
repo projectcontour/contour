@@ -28,8 +28,8 @@ type FakeProjectcontourV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeProjectcontourV1alpha1) HTTPLoadBalancers(namespace string) v1alpha1.HTTPLoadBalancerInterface {
-	return &FakeHTTPLoadBalancers{c, namespace}
+func (c *FakeProjectcontourV1alpha1) HTTPProxies(namespace string) v1alpha1.HTTPProxyInterface {
+	return &FakeHTTPProxies{c, namespace}
 }
 
 func (c *FakeProjectcontourV1alpha1) TLSCertificateDelegations(namespace string) v1alpha1.TLSCertificateDelegationInterface {

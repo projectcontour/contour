@@ -266,14 +266,14 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 
-		"insert secret referenced by httploadbalancer": {
+		"insert secret referenced by httpproxy": {
 			pre: []interface{}{
-				&projcontour.HTTPLoadBalancer{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPLoadBalancerSpec{
+					Spec: projcontour.HTTPProxySpec{
 						VirtualHost: &projcontour.VirtualHost{
 							TLS: &projcontour.TLS{
 								SecretName: "secret",
@@ -291,14 +291,14 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert secret referenced by httploadbalancer via tls delegation": {
+		"insert secret referenced by httpproxy via tls delegation": {
 			pre: []interface{}{
-				&projcontour.HTTPLoadBalancer{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "extra",
 					},
-					Spec: projcontour.HTTPLoadBalancerSpec{
+					Spec: projcontour.HTTPProxySpec{
 						VirtualHost: &projcontour.VirtualHost{
 							TLS: &projcontour.TLS{
 								SecretName: "default/secret",
@@ -330,14 +330,14 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert secret referenced by httploadbalancer  via wildcard tls delegation": {
+		"insert secret referenced by httpproxy via wildcard tls delegation": {
 			pre: []interface{}{
-				&projcontour.HTTPLoadBalancer{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "extra",
 					},
-					Spec: projcontour.HTTPLoadBalancerSpec{
+					Spec: projcontour.HTTPProxySpec{
 						VirtualHost: &projcontour.VirtualHost{
 							TLS: &projcontour.TLS{
 								SecretName: "default/secret",
@@ -422,14 +422,14 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		/*
-			"insert certificate secret referenced by httploadbalancer": {
+			"insert certificate secret referenced by httpproxy": {
 				pre: []interface{}{
-					&projcontour.HTTPLoadBalancer{
+					&projcontour.HTTPProxy{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "example-com",
 							Namespace: "default",
 						},
-						Spec: projcontour.HTTPLoadBalancerSpec{
+						Spec: projcontour.HTTPProxySpec{
 							VirtualHost: &projcontour.VirtualHost{
 								Fqdn: "example.com",
 							},
@@ -573,8 +573,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert httploadbalancer empty ingress annotation": {
-			obj: &projcontour.HTTPLoadBalancer{
+		"insert httpproxy empty ingress annotation": {
+			obj: &projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kuard",
 					Namespace: "default",
@@ -582,8 +582,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert httploadbalancer incorrect contour.heptio.com/ingress.class": {
-			obj: &projcontour.HTTPLoadBalancer{
+		"insert httpproxy incorrect contour.heptio.com/ingress.class": {
+			obj: &projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "simple",
 					Namespace: "default",
@@ -594,8 +594,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: false,
 		},
-		"insert httploadbalancer incorrect kubernetes.io/ingress.class": {
-			obj: &projcontour.HTTPLoadBalancer{
+		"insert httpproxy incorrect kubernetes.io/ingress.class": {
+			obj: &projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "simple",
 					Namespace: "default",
@@ -606,8 +606,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: false,
 		},
-		"insert httploadbalancer: explicit contour.heptio.com/ingress.class": {
-			obj: &projcontour.HTTPLoadBalancer{
+		"insert httpproxy: explicit contour.heptio.com/ingress.class": {
+			obj: &projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kuard",
 					Namespace: "default",
@@ -618,8 +618,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert httploadbalancer explicit kubernetes.io/ingress.class": {
-			obj: &projcontour.HTTPLoadBalancer{
+		"insert httpproxy explicit kubernetes.io/ingress.class": {
+			obj: &projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kuard",
 					Namespace: "default",
@@ -648,10 +648,10 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert httploadbalancer": {
-			obj: &projcontour.HTTPLoadBalancer{
+		"insert httpproxy": {
+			obj: &projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "httplb",
+					Name:      "httpproxy",
 					Namespace: "default",
 				},
 			},
@@ -762,14 +762,14 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert service referenced by httploadbalancer": {
+		"insert service referenced by httpproxy": {
 			pre: []interface{}{
-				&projcontour.HTTPLoadBalancer{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPLoadBalancerSpec{
+					Spec: projcontour.HTTPProxySpec{
 						Routes: []projcontour.Route{{
 							Services: []projcontour.Service{{
 								Name: "service",
@@ -786,14 +786,14 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert service referenced by httploadbalancer tcpproxy": {
+		"insert service referenced by httpproxy tcpproxy": {
 			pre: []interface{}{
-				&projcontour.HTTPLoadBalancer{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPLoadBalancerSpec{
+					Spec: projcontour.HTTPProxySpec{
 						TCPProxy: &projcontour.TCPProxy{
 							Services: []projcontour.Service{{
 								Name: "service",
@@ -948,14 +948,14 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			},
 			want: false,
 		},
-		"remove httploadbalancer": {
-			cache: cache(&projcontour.HTTPLoadBalancer{
+		"remove httpproxy": {
+			cache: cache(&projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "ingressroute",
 					Namespace: "default",
 				},
 			}),
-			obj: &projcontour.HTTPLoadBalancer{
+			obj: &projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "ingressroute",
 					Namespace: "default",
@@ -963,8 +963,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			},
 			want: true,
 		},
-		"remove httploadbalancer incorrect ingressclass": {
-			cache: cache(&projcontour.HTTPLoadBalancer{
+		"remove httpproxy incorrect ingressclass": {
+			cache: cache(&projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "ingressroute",
 					Namespace: "default",
@@ -973,7 +973,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					},
 				},
 			}),
-			obj: &projcontour.HTTPLoadBalancer{
+			obj: &projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "ingressroute",
 					Namespace: "default",

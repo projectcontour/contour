@@ -63,7 +63,7 @@ func (b *Builder) Build() *DAG {
 
 	b.computeIngressRoutes()
 
-	b.computeHTTPLoadBalancers()
+	b.computeHTTPProxies()
 
 	return b.buildDAG()
 }
@@ -219,35 +219,35 @@ func (b *Builder) validIngressRoutes() []*ingressroutev1.IngressRoute {
 	return valid
 }
 
-// validHTTPLoadBalancers returns a slice of *projcontour.HTTPLoadBalancer objects.
-// invalid HTTPLoadBalancers objects are excluded from the slice and their status
+// validHTTPProxies returns a slice of *projcontour.HTTPProxy objects.
+// invalid HTTPProxy objects are excluded from the slice and their status
 // updated accordingly.
-func (b *Builder) validHTTPLoadBalancers() []*projcontour.HTTPLoadBalancer {
-	// ensure that a given fqdn is only referenced in a single httploadbalancer resource
-	var valid []*projcontour.HTTPLoadBalancer
-	fqdnHTTPLoadBalancers := make(map[string][]*projcontour.HTTPLoadBalancer)
-	for _, httplb := range b.Source.httploadbalancers {
-		if httplb.Spec.VirtualHost == nil {
-			valid = append(valid, httplb)
+func (b *Builder) validHTTPProxies() []*projcontour.HTTPProxy {
+	// ensure that a given fqdn is only referenced in a single HTTPProxy resource
+	var valid []*projcontour.HTTPProxy
+	fqdnHTTPProxies := make(map[string][]*projcontour.HTTPProxy)
+	for _, proxy := range b.Source.httpproxies {
+		if proxy.Spec.VirtualHost == nil {
+			valid = append(valid, proxy)
 			continue
 		}
-		fqdnHTTPLoadBalancers[httplb.Spec.VirtualHost.Fqdn] = append(fqdnHTTPLoadBalancers[httplb.Spec.VirtualHost.Fqdn], httplb)
+		fqdnHTTPProxies[proxy.Spec.VirtualHost.Fqdn] = append(fqdnHTTPProxies[proxy.Spec.VirtualHost.Fqdn], proxy)
 	}
 
-	for fqdn, httplbs := range fqdnHTTPLoadBalancers {
-		switch len(httplbs) {
+	for fqdn, proxies := range fqdnHTTPProxies {
+		switch len(proxies) {
 		case 1:
-			valid = append(valid, httplbs[0])
+			valid = append(valid, proxies[0])
 		default:
 			// multiple irs use the same fqdn. mark them as invalid.
 			var conflicting []string
-			for _, httplb := range httplbs {
-				conflicting = append(conflicting, httplb.Namespace+"/"+httplb.Name)
+			for _, proxy := range proxies {
+				conflicting = append(conflicting, proxy.Namespace+"/"+proxy.Name)
 			}
 			sort.Strings(conflicting) // sort for test stability
-			msg := fmt.Sprintf("fqdn %q is used in multiple HTTPLoadBalancers: %s", fqdn, strings.Join(conflicting, ", "))
-			for _, httplb := range httplbs {
-				b.WithObject(httplb).WithValue("vhost", fqdn).SetInvalid(msg).Commit()
+			msg := fmt.Sprintf("fqdn %q is used in multiple HTTPProxies: %s", fqdn, strings.Join(conflicting, ", "))
+			for _, proxy := range proxies {
+				b.WithObject(proxy).WithValue("vhost", fqdn).SetInvalid(msg).Commit()
 			}
 		}
 	}
@@ -428,29 +428,29 @@ func (b *Builder) computeIngressRoute(ir *ingressroutev1.IngressRoute) {
 	b.processIngressRoutes(sw, ir, "", nil, host, ir.Spec.TCPProxy == nil && enforceTLS)
 }
 
-func (b *Builder) computeHTTPLoadBalancers() {
-	for _, httplb := range b.validHTTPLoadBalancers() {
-		b.computeHTTPLoadBalancer(httplb)
+func (b *Builder) computeHTTPProxies() {
+	for _, proxy := range b.validHTTPProxies() {
+		b.computeHTTPProxy(proxy)
 	}
 }
 
-func (b *Builder) computeHTTPLoadBalancer(httplb *projcontour.HTTPLoadBalancer) {
-	sw := b.WithObject(httplb)
+func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
+	sw := b.WithObject(proxy)
 	defer sw.Commit()
 
-	if httplb.Spec.VirtualHost == nil {
-		// mark HTTPLoadBalancer as orphaned.
-		b.setOrphaned(httplb)
+	if proxy.Spec.VirtualHost == nil {
+		// mark HTTPProxy as orphaned.
+		b.setOrphaned(proxy)
 		return
 	}
 
 	// ensure root ingressroute lives in allowed namespace
-	if !b.rootAllowed(httplb.Namespace) {
-		sw.SetInvalid("root HTTPLoadBalancer cannot be defined in this namespace")
+	if !b.rootAllowed(proxy.Namespace) {
+		sw.SetInvalid("root HTTPProxy cannot be defined in this namespace")
 		return
 	}
 
-	host := httplb.Spec.VirtualHost.Fqdn
+	host := proxy.Spec.VirtualHost.Fqdn
 	if isBlank(host) {
 		sw.SetInvalid("Spec.VirtualHost.Fqdn must be specified")
 		return
@@ -462,14 +462,14 @@ func (b *Builder) computeHTTPLoadBalancer(httplb *projcontour.HTTPLoadBalancer) 
 	}
 
 	var enforceTLS, passthrough bool
-	if tls := httplb.Spec.VirtualHost.TLS; tls != nil {
+	if tls := proxy.Spec.VirtualHost.TLS; tls != nil {
 		// attach secrets to TLS enabled vhosts
-		m := splitSecret(tls.SecretName, httplb.Namespace)
+		m := splitSecret(tls.SecretName, proxy.Namespace)
 		sec := b.lookupSecret(m, validSecret)
-		if sec != nil && b.delegationPermitted(m, httplb.Namespace) {
+		if sec != nil && b.delegationPermitted(m, proxy.Namespace) {
 			svhost := b.lookupSecureVirtualHost(host)
 			svhost.Secret = sec
-			svhost.MinProtoVersion = MinProtoVersion(httplb.Spec.VirtualHost.TLS.MinimumProtocolVersion)
+			svhost.MinProtoVersion = MinProtoVersion(proxy.Spec.VirtualHost.TLS.MinimumProtocolVersion)
 			enforceTLS = true
 		}
 		// passthrough is true if tls.secretName is not present, and
@@ -484,14 +484,14 @@ func (b *Builder) computeHTTPLoadBalancer(httplb *projcontour.HTTPLoadBalancer) 
 	}
 
 	// Loop over and process all includes
-	b.processIncludes(sw, httplb, host, nil, enforceTLS, nil)
+	b.processIncludes(sw, proxy, host, nil, enforceTLS, nil)
 
 	// Process any routes
 	switch {
 	//	case ir.Spec.TCPProxy != nil && (passthrough || enforceTLS):
 	//		b.processTCPProxy(ir, nil, host)
-	case httplb.Spec.Routes != nil:
-		b.processRoutes(sw, httplb, host, nil, enforceTLS)
+	case proxy.Spec.Routes != nil:
+		b.processRoutes(sw, proxy, host, nil, enforceTLS)
 	}
 }
 
@@ -506,23 +506,23 @@ func mergeConditions(delegate, include *projcontour.Condition) *projcontour.Cond
 	return result
 }
 
-func (b *Builder) processIncludes(sw *ObjectStatusWriter, httplb *projcontour.HTTPLoadBalancer, host string, delegatedCondition *projcontour.Condition, enforceTLS bool, visited []*projcontour.HTTPLoadBalancer) {
-	visited = append(visited, httplb)
+func (b *Builder) processIncludes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, host string, delegatedCondition *projcontour.Condition, enforceTLS bool, visited []*projcontour.HTTPProxy) {
+	visited = append(visited, proxy)
 
 	// Loop over and process all includes
-	for _, include := range httplb.Spec.Includes {
-		if delegatedHTTPLb, ok := b.Source.httploadbalancers[Meta{name: include.Name, namespace: include.Namespace}]; ok {
+	for _, include := range proxy.Spec.Includes {
+		if delegatedProxy, ok := b.Source.httpproxies[Meta{name: include.Name, namespace: include.Namespace}]; ok {
 
 			// ensure we are not following an edge that produces a cycle
 			var path []string
-			for _, vhttplb := range visited {
-				path = append(path, fmt.Sprintf("%s/%s", vhttplb.Namespace, vhttplb.Name))
+			for _, vproxy := range visited {
+				path = append(path, fmt.Sprintf("%s/%s", vproxy.Namespace, vproxy.Name))
 			}
 			for _, vir := range visited {
-				if delegatedHTTPLb.Name == vir.Name && delegatedHTTPLb.Namespace == vir.Namespace {
-					path = append(path, fmt.Sprintf("%s/%s", delegatedHTTPLb.Namespace, delegatedHTTPLb.Name))
+				if delegatedProxy.Name == vir.Name && delegatedProxy.Namespace == vir.Namespace {
+					path = append(path, fmt.Sprintf("%s/%s", delegatedProxy.Namespace, delegatedProxy.Name))
 					description := fmt.Sprintf("include creates a delegation cycle: %s", strings.Join(path, " -> "))
-					sw.WithObject(delegatedHTTPLb).SetInvalid(description).Commit()
+					sw.WithObject(delegatedProxy).SetInvalid(description).Commit()
 					return
 				}
 			}
@@ -531,13 +531,13 @@ func (b *Builder) processIncludes(sw *ObjectStatusWriter, httplb *projcontour.HT
 			switch {
 			//	case ir.Spec.TCPProxy != nil && (passthrough || enforceTLS):
 			//		b.processTCPProxy(ir, nil, host)
-			case httplb.Spec.Routes != nil:
-				b.processRoutes(sw, delegatedHTTPLb, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS)
+			case proxy.Spec.Routes != nil:
+				b.processRoutes(sw, delegatedProxy, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS)
 			}
 
 			// Loop over any includes in the delegated httlb
-			if len(delegatedHTTPLb.Spec.Includes) > 0 {
-				b.processIncludes(sw, delegatedHTTPLb, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS, visited)
+			if len(delegatedProxy.Spec.Includes) > 0 {
+				b.processIncludes(sw, delegatedProxy, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS, visited)
 			}
 		}
 	}
@@ -565,11 +565,11 @@ func (b *Builder) buildDAG() *DAG {
 				WithValue("description", "this IngressRoute is not part of a delegation chain from a root IngressRoute").
 				Commit()
 		}
-		httplb, ok := b.Source.httploadbalancers[meta]
+		proxy, ok := b.Source.httpproxies[meta]
 		if ok {
-			b.WithObject(httplb).
+			b.WithObject(proxy).
 				WithValue("status", StatusOrphaned).
-				WithValue("description", "this HTTPLoadBalancer is not part of a delegation chain from a root HTTPLoadBalancer").
+				WithValue("description", "this HTTPProxy is not part of a delegation chain from a root HTTPProxy").
 				Commit()
 		}
 	}
@@ -616,7 +616,7 @@ func (b *Builder) buildHTTPSListener() *Listener {
 	}
 }
 
-// setOrphaned records an IngressRoute/HTTPLoadBalancer resource as orphaned.
+// setOrphaned records an IngressRoute/HTTPProxy resource as orphaned.
 func (b *Builder) setOrphaned(obj Object) {
 	m := Meta{
 		name:      obj.GetObjectMeta().GetName(),
@@ -625,7 +625,7 @@ func (b *Builder) setOrphaned(obj Object) {
 	b.orphaned[m] = true
 }
 
-// rootAllowed returns true if the IngressRoute or HTTPLoadBalancer lives in a permitted root namespace.
+// rootAllowed returns true if the IngressRoute or HTTPProxy lives in a permitted root namespace.
 func (b *Builder) rootAllowed(namespace string) bool {
 	if len(b.Source.RootNamespaces) == 0 {
 		return true
@@ -756,8 +756,8 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 	sw.SetValid()
 }
 
-func (b *Builder) processRoutes(sw *ObjectStatusWriter, httplb *projcontour.HTTPLoadBalancer, host string, condition *projcontour.Condition, enforceTLS bool) {
-	for _, route := range httplb.Spec.Routes {
+func (b *Builder) processRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, host string, condition *projcontour.Condition, enforceTLS bool) {
+	for _, route := range proxy.Spec.Routes {
 		// Cannot support multiple services with websockets (See: https://github.com/heptio/contour/issues/732)
 		if len(route.Services) > 1 && route.EnableWebsockets {
 			sw.SetInvalid(fmt.Sprintf("route %q: cannot specify multiple services and enable websockets", conditionPath(route.Condition, condition)))
@@ -788,7 +788,7 @@ func (b *Builder) processRoutes(sw *ObjectStatusWriter, httplb *projcontour.HTTP
 					sw.SetInvalid(fmt.Sprintf("route %q: service %q: weight must be greater than or equal to zero", routePath, service.Name))
 					return
 				}
-				m := Meta{name: service.Name, namespace: httplb.Namespace}
+				m := Meta{name: service.Name, namespace: proxy.Namespace}
 				s := b.lookupService(m, intstr.FromInt(service.Port))
 
 				if s == nil {
@@ -800,7 +800,7 @@ func (b *Builder) processRoutes(sw *ObjectStatusWriter, httplb *projcontour.HTTP
 				var err error
 				if s.Protocol == "tls" {
 					// we can only validate TLS connections to services that talk TLS
-					uv, err = b.lookupUpstreamValidation(routePath, service.Name, service.UpstreamValidation, httplb.Namespace)
+					uv, err = b.lookupUpstreamValidation(routePath, service.Name, service.UpstreamValidation, proxy.Namespace)
 					if err != nil {
 						sw.SetInvalid(err.Error())
 					}

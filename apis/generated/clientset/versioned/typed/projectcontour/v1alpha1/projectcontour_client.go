@@ -27,7 +27,7 @@ import (
 
 type ProjectcontourV1alpha1Interface interface {
 	RESTClient() rest.Interface
-	HTTPLoadBalancersGetter
+	HTTPProxiesGetter
 	TLSCertificateDelegationsGetter
 }
 
@@ -36,8 +36,8 @@ type ProjectcontourV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *ProjectcontourV1alpha1Client) HTTPLoadBalancers(namespace string) HTTPLoadBalancerInterface {
-	return newHTTPLoadBalancers(c, namespace)
+func (c *ProjectcontourV1alpha1Client) HTTPProxies(namespace string) HTTPProxyInterface {
+	return newHTTPProxies(c, namespace)
 }
 
 func (c *ProjectcontourV1alpha1Client) TLSCertificateDelegations(namespace string) TLSCertificateDelegationInterface {

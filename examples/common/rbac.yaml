@@ -59,7 +59,7 @@ rules:
   - post
   - patch
 - apiGroups: ["projectcontour.io"]
-  resources: ["httploadbalancers", "tlscertificatedelegations"]
+  resources: ["httpproxies", "tlscertificatedelegations"]
   verbs:
   - get
   - list

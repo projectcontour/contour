@@ -18,13 +18,13 @@ limitations under the License.
 
 package v1alpha1
 
-// HTTPLoadBalancerListerExpansion allows custom methods to be added to
-// HTTPLoadBalancerLister.
-type HTTPLoadBalancerListerExpansion interface{}
+// HTTPProxyListerExpansion allows custom methods to be added to
+// HTTPProxyLister.
+type HTTPProxyListerExpansion interface{}
 
-// HTTPLoadBalancerNamespaceListerExpansion allows custom methods to be added to
-// HTTPLoadBalancerNamespaceLister.
-type HTTPLoadBalancerNamespaceListerExpansion interface{}
+// HTTPProxyNamespaceListerExpansion allows custom methods to be added to
+// HTTPProxyNamespaceLister.
+type HTTPProxyNamespaceListerExpansion interface{}
 
 // TLSCertificateDelegationListerExpansion allows custom methods to be added to
 // TLSCertificateDelegationLister.

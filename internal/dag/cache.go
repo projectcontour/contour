@@ -37,13 +37,13 @@ type KubernetesCache struct {
 	// If not set, defaults to DEFAULT_INGRESS_CLASS.
 	IngressClass string
 
-	ingresses         map[Meta]*v1beta1.Ingress
-	ingressroutes     map[Meta]*ingressroutev1.IngressRoute
-	httploadbalancers map[Meta]*projectcontour.HTTPLoadBalancer
-	secrets           map[Meta]*v1.Secret
-	irdelegations     map[Meta]*ingressroutev1.TLSCertificateDelegation
-	httplbdelegations map[Meta]*projectcontour.TLSCertificateDelegation
-	services          map[Meta]*v1.Service
+	ingresses            map[Meta]*v1beta1.Ingress
+	ingressroutes        map[Meta]*ingressroutev1.IngressRoute
+	httpproxies          map[Meta]*projectcontour.HTTPProxy
+	secrets              map[Meta]*v1.Secret
+	irdelegations        map[Meta]*ingressroutev1.TLSCertificateDelegation
+	httpproxydelegations map[Meta]*projectcontour.TLSCertificateDelegation
+	services             map[Meta]*v1.Service
 
 	logrus.FieldLogger
 }
@@ -104,16 +104,16 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		}
 		kc.ingressroutes[m] = obj
 		return true
-	case *projectcontour.HTTPLoadBalancer:
+	case *projectcontour.HTTPProxy:
 		class := getIngressClassAnnotation(obj.Annotations)
 		if class != "" && class != kc.ingressClass() {
 			return false
 		}
 		m := Meta{name: obj.Name, namespace: obj.Namespace}
-		if kc.httploadbalancers == nil {
-			kc.httploadbalancers = make(map[Meta]*projectcontour.HTTPLoadBalancer)
+		if kc.httpproxies == nil {
+			kc.httpproxies = make(map[Meta]*projectcontour.HTTPProxy)
 		}
-		kc.httploadbalancers[m] = obj
+		kc.httpproxies[m] = obj
 		return true
 	case *ingressroutev1.TLSCertificateDelegation:
 		m := Meta{name: obj.Name, namespace: obj.Namespace}
@@ -124,10 +124,10 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		return true
 	case *projectcontour.TLSCertificateDelegation:
 		m := Meta{name: obj.Name, namespace: obj.Namespace}
-		if kc.httplbdelegations == nil {
-			kc.httplbdelegations = make(map[Meta]*projectcontour.TLSCertificateDelegation)
+		if kc.httpproxydelegations == nil {
+			kc.httpproxydelegations = make(map[Meta]*projectcontour.TLSCertificateDelegation)
 		}
-		kc.httplbdelegations[m] = obj
+		kc.httpproxydelegations[m] = obj
 		return true
 
 	default:
@@ -176,10 +176,10 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		_, ok := kc.ingressroutes[m]
 		delete(kc.ingressroutes, m)
 		return ok
-	case *projectcontour.HTTPLoadBalancer:
+	case *projectcontour.HTTPProxy:
 		m := Meta{name: obj.Name, namespace: obj.Namespace}
-		_, ok := kc.httploadbalancers[m]
-		delete(kc.httploadbalancers, m)
+		_, ok := kc.httpproxies[m]
+		delete(kc.httpproxies, m)
 		return ok
 	case *ingressroutev1.TLSCertificateDelegation:
 		m := Meta{name: obj.Name, namespace: obj.Namespace}
@@ -188,8 +188,8 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		return ok
 	case *projectcontour.TLSCertificateDelegation:
 		m := Meta{name: obj.Name, namespace: obj.Namespace}
-		_, ok := kc.httplbdelegations[m]
-		delete(kc.httplbdelegations, m)
+		_, ok := kc.httpproxydelegations[m]
+		delete(kc.httpproxydelegations, m)
 		return ok
 	default:
 		// not interesting
@@ -244,7 +244,7 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 		}
 	}
 
-	for _, ir := range kc.httploadbalancers {
+	for _, ir := range kc.httpproxies {
 		if ir.Namespace != service.Namespace {
 			continue
 		}
@@ -290,7 +290,7 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 			}
 		}
 	}
-	for _, d := range kc.httplbdelegations {
+	for _, d := range kc.httpproxydelegations {
 		for _, cd := range d.Spec.Delegations {
 			for _, n := range cd.TargetNamespaces {
 				delegations[n+"/"+cd.SecretName] = true
@@ -350,8 +350,8 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 		}
 	}
 
-	for _, httplb := range kc.httploadbalancers {
-		vh := httplb.Spec.VirtualHost
+	for _, proxy := range kc.httpproxies {
+		vh := proxy.Spec.VirtualHost
 		if vh == nil {
 			// not a root ingress
 			continue
@@ -362,10 +362,10 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 			continue
 		}
 
-		if httplb.Namespace == secret.Namespace && tls.SecretName == secret.Name {
+		if proxy.Namespace == secret.Namespace && tls.SecretName == secret.Name {
 			return true
 		}
-		if delegations[httplb.Namespace+"/"+secret.Name] {
+		if delegations[proxy.Namespace+"/"+secret.Name] {
 			if tls.SecretName == secret.Namespace+"/"+secret.Name {
 				return true
 			}
