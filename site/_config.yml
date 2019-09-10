@@ -75,6 +75,7 @@ plugins:
 include:
   - CONTRIBUTING.md
   - README.md
+  - _redirects
 
 # Exclude these files from your production _site
 exclude:
