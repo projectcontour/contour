@@ -589,6 +589,51 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	i16 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "wildcards",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				// no hostname
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http")},
+						}},
+					},
+				},
+			}, {
+				Host: "*",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}},
+					},
+				},
+			}, {
+				Host: "*.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuarder",
+								ServicePort: intstr.FromInt(8080),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
 	// s3a and b have http/2 protocol annotations
 	s3a := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1501,6 +1546,20 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	s11 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blog",
+			Namespace: "it",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "blog",
+				Protocol: "TCP",
+				Port:     8080,
+			}},
+		},
+	}
+
 	// ir18 tcp forwards traffic to by TLS pass-throughing
 	// it. It also exposes non HTTP traffic to the the non secure port of the
 	// application so it can give an informational message
@@ -1776,6 +1835,54 @@ func TestDAGInsert(t *testing.T) {
 			Routes: []projcontour.Route{{
 				Condition: &projcontour.Condition{
 					Prefix: "/infotech",
+				},
+				Services: []projcontour.Service{{
+					Name: "blog",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	httplb100c := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "marketingwww",
+			Namespace: "marketing",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			Includes: []projcontour.Include{{
+				Name:      "marketingit",
+				Namespace: "it",
+				Condition: projcontour.Condition{
+					Prefix: "/it",
+				},
+			}},
+			Routes: []projcontour.Route{{
+				Condition: &projcontour.Condition{
+					Prefix: "/infotech",
+				},
+				Services: []projcontour.Service{{
+					Name: "blog",
+					Port: 8080,
+				}},
+			}, {
+				Services: []projcontour.Service{{
+					Name: "blog",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	httplb100d := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "marketingit",
+			Namespace: "it",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			Routes: []projcontour.Route{{
+				Condition: &projcontour.Condition{
+					Prefix: "/foo",
 				},
 				Services: []projcontour.Service{{
 					Name: "blog",
@@ -2962,7 +3069,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert ingressroute with regex route": {
+		"insert ingress with regex route": {
 			objs: []interface{}{
 				i15,
 				s1,
@@ -2977,6 +3084,21 @@ func TestDAGInsert(t *testing.T) {
 								Clusters: clustermap(s1),
 							},
 						}),
+					),
+				},
+			),
+		},
+		// issue 1234
+		"insert ingress with wildcard hostnames": {
+			objs: []interface{}{
+				s1,
+				i16,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", service(s1))),
 					),
 				},
 			),
@@ -3637,6 +3759,56 @@ func TestDAGInsert(t *testing.T) {
 										Name:        s4.Name,
 										Namespace:   s4.Namespace,
 										ServicePort: &s4.Spec.Ports[0],
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert httplb with pathPrefix include, child adds to pathPrefix, delegates again": {
+			objs: []interface{}{
+				httplb100, httplb100c, httplb100d, s1, s4, s11,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+							routeCluster("/blog/infotech",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s4.Name,
+										Namespace:   s4.Namespace,
+										ServicePort: &s4.Spec.Ports[0],
+									},
+								},
+							),
+							routeCluster("/blog",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s4.Name,
+										Namespace:   s4.Namespace,
+										ServicePort: &s4.Spec.Ports[0],
+									},
+								},
+							),
+							routeCluster("/blog/it/foo",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s11.Name,
+										Namespace:   s11.Namespace,
+										ServicePort: &s11.Spec.Ports[0],
 									},
 								},
 							),

@@ -989,6 +989,87 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			dag := builder.Build()
 
 			got := dag.Statuses()
+
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestDAGHTTPLoadBalancerStatus(t *testing.T) {
+
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "green",
+			Namespace: "roots",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	}
+
+	// httplb6 is invalid because it delegates to itself, producing a cycle
+	httplb6 := &projcontour.HTTPLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "self",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPLoadBalancerSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "self",
+				Namespace: "roots",
+				Condition: projcontour.Condition{
+					Prefix: "/foo",
+				},
+			}},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "green",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	tests := map[string]struct {
+		objs []interface{}
+		want map[Meta]Status
+	}{
+		"self-edge produces a cycle": {
+			objs: []interface{}{httplb6, s1},
+			want: map[Meta]Status{
+				{name: httplb6.Name, namespace: httplb6.Namespace}: {
+					Object:      httplb6,
+					Status:      "invalid",
+					Description: "include creates a delegation cycle: roots/self -> roots/self",
+					Vhost:       "example.com",
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			builder := Builder{
+				Source: KubernetesCache{
+					RootNamespaces: []string{"roots", "marketing"},
+					FieldLogger:    testLogger(t),
+				},
+			}
+			for _, o := range tc.objs {
+				builder.Source.Insert(o)
+			}
+			dag := builder.Build()
+			got := dag.Statuses()
+
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}
