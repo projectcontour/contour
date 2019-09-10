@@ -128,7 +128,7 @@ warbed.
 Before a change is submitted it should pass all the pre commit CI jobs.
 If there are unrelated test failures the change can be merged so long as a reference to an issue that tracks the test failures is provided.
 
-Once a change lands in master it will be built and available at this tag, `projectcontour/contour:master`.
+Once a change lands in master it will be built and available at this tag, `docker.io/projectcontour/contour:master`.
 You can read more about the available contour images in the [tagging][7] document.
 
 ### Build an image

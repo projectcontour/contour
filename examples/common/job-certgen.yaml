@@ -50,7 +50,7 @@ spec:
     spec:
       containers:
       - name: contour
-        image: projectcontour/contour:master
+        image: docker.io/projectcontour/contour:master
         command:
         - contour
         - certgen

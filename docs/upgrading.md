@@ -50,7 +50,9 @@ This section contains information for administrators who wish to apply the Conto
 
 ### Upgrade to Contour 0.15.0
 
-Change the Contour image version to `projectcontour/contour:v0.15.0`.
+Due to the sun setting on the Heptio brand, from v0.15.0 onwards our images are now served from the docker hub repository [`docker.io/projectcontour/contour`](https://hub.docker.com/r/projectcontour/contour)
+
+Change the Contour image version to `docker.io/projectcontour/contour:v0.15.0`.
 
 ### Enabling TLS for gRPC
 
@@ -80,10 +82,12 @@ You can enable leader election with the `--enable-leader-election` flag to `cont
 If you have deployed Contour and Envoy in their own pods--we call this split deployment--you should enable leader election so all envoy pods take their configuration from the lead contour. 
 
 To enable leader election, the following must be true for you:
+
 - You are running in a split Contour and Envoy setup.
 That is, there are separate Contour and Envoy pod(s).  
 
 In order for leader election to work, you must make the following changes to your setup:
+
 - The Contour Deployment must have its readiness probe changed too TCP readiness probe
 configured to check port 8001 (the gRPC port), as non-leaders will not serve gRPC, and
 Envoys may not be properly configured if they attempt to connect to a non-leader Contour.
