@@ -76,7 +76,7 @@ include:
   - CONTRIBUTING.md
   - README.md
   - _redirects
-  - quickstart
+  - examples
 
 # Exclude these files from your production _site
 exclude:
