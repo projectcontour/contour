@@ -1,3 +1,4 @@
 # redirect /quickstart/contour.yaml to the deployment that matches :latest
 # kubectl apply https://projectcontour.io/quickstart/contour.yaml
 /quickstart/contour.yaml	https://raw.githubusercontent.com/heptio/contour/release-0.15/examples/render/deployment-rbac.yaml	302
+/quickstart/kuard.yaml	https://raw.githubusercontent.com/heptio/contour/master/examples/example-workload/kuard.yaml	302
