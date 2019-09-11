@@ -74,6 +74,11 @@ Tag the head of your release branch with the release tag, and push
 
 If you've made a production release (that is, a final release or a patch release), you have a couple of things left to do.
 
+### Updating quickstart URL
+
+The quickstart url, https://projectcontour.io/quickstart/contour.yaml redirects to the current stable release.
+This is controlled by a line in `site/_redirects`. If the definition of `:latest` has changed, update the quickstart redirector to match.
+
 ### Do the Github release and write release notes
 
 Now you have a tag pushed to Github, go to the release tab on github, select the tag and write up your release notes. For patch releases, include the previous release notes below the new ones.

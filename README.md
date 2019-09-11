@@ -32,7 +32,7 @@ See the [deployment documentation][1] for more deployment options if you don't m
 Run:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/heptio/contour/master/examples/render/contour.yaml
+kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
 ```
 
 This command creates:
@@ -52,7 +52,7 @@ If you don't have an application ready to run with Contour, you can explore with
 Run:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/heptio/contour/master/examples/example-workload/kuard.yaml
+kubectl apply -f https://projectcontour.io/quickstart/kuard.yaml
 ```
 
 This example specifies a default backend for all hosts, so that you can test your Contour install. It's recommended for exploration and testing only, however, because it responds to all requests regardless of the incoming DNS that is mapped. You probably want to run with specific Ingress rules for specific hostnames.
