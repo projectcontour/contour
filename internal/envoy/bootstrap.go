@@ -20,10 +20,11 @@ import (
 	"time"
 
 	api "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	clusterv2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	bootstrap "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
+	"github.com/heptio/contour/internal/protobuf"
 )
 
 // Bootstrap creates a new v2 Bootstrap configuration.
@@ -37,7 +38,7 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 			Clusters: []*api.Cluster{{
 				Name:                 "contour",
 				AltStatName:          strings.Join([]string{c.Namespace, "contour", strconv.Itoa(c.xdsGRPCPort())}, "_"),
-				ConnectTimeout:       duration(5 * time.Second),
+				ConnectTimeout:       protobuf.Duration(5 * time.Second),
 				ClusterDiscoveryType: ClusterDiscoveryType(api.Cluster_STRICT_DNS),
 				LbPolicy:             api.Cluster_ROUND_ROBIN,
 				LoadAssignment: &api.ClusterLoadAssignment{
@@ -46,26 +47,26 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 						SocketAddress(c.xdsAddress(), c.xdsGRPCPort()),
 					),
 				},
-				Http2ProtocolOptions: new(core.Http2ProtocolOptions), // enables http2
+				Http2ProtocolOptions: new(envoy_api_v2_core.Http2ProtocolOptions), // enables http2
 				CircuitBreakers: &clusterv2.CircuitBreakers{
 					Thresholds: []*clusterv2.CircuitBreakers_Thresholds{{
-						Priority:           core.RoutingPriority_HIGH,
-						MaxConnections:     u32(100000),
-						MaxPendingRequests: u32(100000),
-						MaxRequests:        u32(60000000),
-						MaxRetries:         u32(50),
+						Priority:           envoy_api_v2_core.RoutingPriority_HIGH,
+						MaxConnections:     protobuf.UInt32(100000),
+						MaxPendingRequests: protobuf.UInt32(100000),
+						MaxRequests:        protobuf.UInt32(60000000),
+						MaxRetries:         protobuf.UInt32(50),
 					}, {
-						Priority:           core.RoutingPriority_DEFAULT,
-						MaxConnections:     u32(100000),
-						MaxPendingRequests: u32(100000),
-						MaxRequests:        u32(60000000),
-						MaxRetries:         u32(50),
+						Priority:           envoy_api_v2_core.RoutingPriority_DEFAULT,
+						MaxConnections:     protobuf.UInt32(100000),
+						MaxPendingRequests: protobuf.UInt32(100000),
+						MaxRequests:        protobuf.UInt32(60000000),
+						MaxRetries:         protobuf.UInt32(50),
 					}},
 				},
 			}, {
 				Name:                 "service-stats",
 				AltStatName:          strings.Join([]string{c.Namespace, "service-stats", strconv.Itoa(c.adminPort())}, "_"),
-				ConnectTimeout:       duration(250 * time.Millisecond),
+				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
 				ClusterDiscoveryType: ClusterDiscoveryType(api.Cluster_LOGICAL_DNS),
 				LbPolicy:             api.Cluster_ROUND_ROBIN,
 				LoadAssignment: &api.ClusterLoadAssignment{
@@ -93,25 +94,25 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 	return b
 }
 
-func upstreamFileTLSContext(cafile, certfile, keyfile string) *auth.UpstreamTlsContext {
-	context := &auth.UpstreamTlsContext{
-		CommonTlsContext: &auth.CommonTlsContext{
-			TlsCertificates: []*auth.TlsCertificate{{
-				CertificateChain: &core.DataSource{
-					Specifier: &core.DataSource_Filename{
+func upstreamFileTLSContext(cafile, certfile, keyfile string) *envoy_api_v2_auth.UpstreamTlsContext {
+	context := &envoy_api_v2_auth.UpstreamTlsContext{
+		CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
+			TlsCertificates: []*envoy_api_v2_auth.TlsCertificate{{
+				CertificateChain: &envoy_api_v2_core.DataSource{
+					Specifier: &envoy_api_v2_core.DataSource_Filename{
 						Filename: certfile,
 					},
 				},
-				PrivateKey: &core.DataSource{
-					Specifier: &core.DataSource_Filename{
+				PrivateKey: &envoy_api_v2_core.DataSource{
+					Specifier: &envoy_api_v2_core.DataSource_Filename{
 						Filename: keyfile,
 					},
 				},
 			}},
-			ValidationContextType: &auth.CommonTlsContext_ValidationContext{
-				ValidationContext: &auth.CertificateValidationContext{
-					TrustedCa: &core.DataSource{
-						Specifier: &core.DataSource_Filename{
+			ValidationContextType: &envoy_api_v2_auth.CommonTlsContext_ValidationContext{
+				ValidationContext: &envoy_api_v2_auth.CertificateValidationContext{
+					TrustedCa: &envoy_api_v2_core.DataSource{
+						Specifier: &envoy_api_v2_core.DataSource_Filename{
 							Filename: cafile,
 						},
 					},

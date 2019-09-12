@@ -49,8 +49,8 @@ func healthCheckPolicy(hc *projcontour.HealthCheck) *HealthCheckPolicy {
 		Host:               hc.Host,
 		Interval:           time.Duration(hc.IntervalSeconds) * time.Second,
 		Timeout:            time.Duration(hc.TimeoutSeconds) * time.Second,
-		UnhealthyThreshold: int(hc.UnhealthyThresholdCount),
-		HealthyThreshold:   int(hc.HealthyThresholdCount),
+		UnhealthyThreshold: hc.UnhealthyThresholdCount,
+		HealthyThreshold:   hc.HealthyThresholdCount,
 	}
 }
 
@@ -80,7 +80,7 @@ func parseTimeout(timeout string) time.Duration {
 	return d
 }
 
-func max(a, b int) int {
+func max(a, b uint32) uint32 {
 	if a > b {
 		return a
 	}

@@ -23,7 +23,7 @@ import (
 	"os"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )

@@ -18,7 +18,7 @@ import (
 
 	accesslog_v2 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v2"
 	envoy_accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
-	"github.com/envoyproxy/go-control-plane/pkg/util"
+	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -30,9 +30,9 @@ func TestFileAccessLog(t *testing.T) {
 		"stdout": {
 			path: "/dev/stdout",
 			want: []*envoy_accesslog.AccessLog{{
-				Name: util.FileAccessLog,
+				Name: wellknown.FileAccessLog,
 				ConfigType: &envoy_accesslog.AccessLog_TypedConfig{
-					TypedConfig: any(&accesslog_v2.FileAccessLog{
+					TypedConfig: toAny(&accesslog_v2.FileAccessLog{
 						Path: "/dev/stdout",
 					}),
 				},

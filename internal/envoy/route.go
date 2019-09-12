@@ -14,34 +14,33 @@ package envoy
 
 import (
 	"sort"
-	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	"github.com/gogo/protobuf/types"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/heptio/contour/internal/dag"
+	"github.com/heptio/contour/internal/protobuf"
 )
 
-// Routes returns a []*route.Route for the supplied routes.
-func Routes(routes ...*route.Route) []*route.Route {
+// Routes returns a []*envoy_api_v2_route.Route for the supplied routes.
+func Routes(routes ...*envoy_api_v2_route.Route) []*envoy_api_v2_route.Route {
 	return routes
 }
 
-// Route returns a *route.Route for the supplied match and action.
-func Route(match *route.RouteMatch, action *route.Route_Route) *route.Route {
-	return &route.Route{
+// Route returns a *envoy_api_v2_route.Route for the supplied match and action.
+func Route(match *envoy_api_v2_route.RouteMatch, action *envoy_api_v2_route.Route_Route) *envoy_api_v2_route.Route {
+	return &envoy_api_v2_route.Route{
 		Match:               match,
 		Action:              action,
 		RequestHeadersToAdd: RouteHeaders(),
 	}
 }
 
-// RouteRoute creates a *route.Route_Route for the services supplied.
+// RouteRoute creates a *envoy_api_v2_route.Route_Route for the services supplied.
 // If len(services) is greater than one, the route's action will be a
 // weighted cluster.
-func RouteRoute(r *dag.Route) *route.Route_Route {
-	ra := route.RouteAction{
+func RouteRoute(r *dag.Route) *envoy_api_v2_route.Route_Route {
+	ra := envoy_api_v2_route.RouteAction{
 		RetryPolicy:   retryPolicy(r),
 		Timeout:       timeout(r),
 		PrefixRewrite: r.PrefixRewrite,
@@ -50,7 +49,7 @@ func RouteRoute(r *dag.Route) *route.Route_Route {
 
 	if r.Websocket {
 		ra.UpgradeConfigs = append(ra.UpgradeConfigs,
-			&route.RouteAction_UpgradeConfig{
+			&envoy_api_v2_route.RouteAction_UpgradeConfig{
 				UpgradeType: "websocket",
 			},
 		)
@@ -58,29 +57,29 @@ func RouteRoute(r *dag.Route) *route.Route_Route {
 
 	switch len(r.Clusters) {
 	case 1:
-		ra.ClusterSpecifier = &route.RouteAction_Cluster{
+		ra.ClusterSpecifier = &envoy_api_v2_route.RouteAction_Cluster{
 			Cluster: Clustername(r.Clusters[0]),
 		}
 	default:
-		ra.ClusterSpecifier = &route.RouteAction_WeightedClusters{
+		ra.ClusterSpecifier = &envoy_api_v2_route.RouteAction_WeightedClusters{
 			WeightedClusters: weightedClusters(r.Clusters),
 		}
 	}
-	return &route.Route_Route{
+	return &envoy_api_v2_route.Route_Route{
 		Route: &ra,
 	}
 }
 
 // hashPolicy returns a slice of hash policies iff at least one of the route's
 // clusters supplied uses the `Cookie` load balancing stategy.
-func hashPolicy(r *dag.Route) []*route.RouteAction_HashPolicy {
+func hashPolicy(r *dag.Route) []*envoy_api_v2_route.RouteAction_HashPolicy {
 	for _, c := range r.Clusters {
 		if c.LoadBalancerStrategy == "Cookie" {
-			return []*route.RouteAction_HashPolicy{{
-				PolicySpecifier: &route.RouteAction_HashPolicy_Cookie_{
-					Cookie: &route.RouteAction_HashPolicy_Cookie{
+			return []*envoy_api_v2_route.RouteAction_HashPolicy{{
+				PolicySpecifier: &envoy_api_v2_route.RouteAction_HashPolicy_Cookie_{
+					Cookie: &envoy_api_v2_route.RouteAction_HashPolicy_Cookie{
 						Name: "X-Contour-Session-Affinity",
-						Ttl:  duration(0),
+						Ttl:  protobuf.Duration(0),
 						Path: "/",
 					},
 				},
@@ -90,7 +89,7 @@ func hashPolicy(r *dag.Route) []*route.RouteAction_HashPolicy {
 	return nil
 }
 
-func timeout(r *dag.Route) *time.Duration {
+func timeout(r *dag.Route) *duration.Duration {
 	if r.TimeoutPolicy == nil {
 		return nil
 	}
@@ -102,13 +101,13 @@ func timeout(r *dag.Route) *time.Duration {
 	case -1:
 		// infinite timeout, set timeout value to a pointer to zero which tells
 		// envoy "infinite timeout"
-		return duration(0)
+		return protobuf.Duration(0)
 	default:
-		return duration(r.TimeoutPolicy.Timeout)
+		return protobuf.Duration(r.TimeoutPolicy.Timeout)
 	}
 }
 
-func retryPolicy(r *dag.Route) *route.RetryPolicy {
+func retryPolicy(r *dag.Route) *envoy_api_v2_route.RetryPolicy {
 	if r.RetryPolicy == nil {
 		return nil
 	}
@@ -116,24 +115,23 @@ func retryPolicy(r *dag.Route) *route.RetryPolicy {
 		return nil
 	}
 
-	rp := &route.RetryPolicy{
+	rp := &envoy_api_v2_route.RetryPolicy{
 		RetryOn: r.RetryPolicy.RetryOn,
 	}
 	if r.RetryPolicy.NumRetries > 0 {
-		rp.NumRetries = u32(r.RetryPolicy.NumRetries)
+		rp.NumRetries = protobuf.UInt32(r.RetryPolicy.NumRetries)
 	}
 	if r.RetryPolicy.PerTryTimeout > 0 {
-		timeout := r.RetryPolicy.PerTryTimeout
-		rp.PerTryTimeout = &timeout
+		rp.PerTryTimeout = protobuf.Duration(r.RetryPolicy.PerTryTimeout)
 	}
 	return rp
 }
 
 // UpgradeHTTPS returns a route Action that redirects the request to HTTPS.
-func UpgradeHTTPS() *route.Route_Redirect {
-	return &route.Route_Redirect{
-		Redirect: &route.RedirectAction{
-			SchemeRewriteSpecifier: &route.RedirectAction_HttpsRedirect{
+func UpgradeHTTPS() *envoy_api_v2_route.Route_Redirect {
+	return &envoy_api_v2_route.Route_Redirect{
+		Redirect: &envoy_api_v2_route.RedirectAction{
+			SchemeRewriteSpecifier: &envoy_api_v2_route.RedirectAction_HttpsRedirect{
 				HttpsRedirect: true,
 			},
 		},
@@ -141,21 +139,21 @@ func UpgradeHTTPS() *route.Route_Redirect {
 }
 
 // RouteHeaders returns a list of headers to be applied at the Route level on envoy
-func RouteHeaders() []*core.HeaderValueOption {
+func RouteHeaders() []*envoy_api_v2_core.HeaderValueOption {
 	return headers(
 		appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
 	)
 }
 
 // weightedClusters returns a route.WeightedCluster for multiple services.
-func weightedClusters(clusters []*dag.Cluster) *route.WeightedCluster {
-	var wc route.WeightedCluster
-	var total int
+func weightedClusters(clusters []*dag.Cluster) *envoy_api_v2_route.WeightedCluster {
+	var wc envoy_api_v2_route.WeightedCluster
+	var total uint32
 	for _, cluster := range clusters {
 		total += cluster.Weight
-		wc.Clusters = append(wc.Clusters, &route.WeightedCluster_ClusterWeight{
+		wc.Clusters = append(wc.Clusters, &envoy_api_v2_route.WeightedCluster_ClusterWeight{
 			Name:   Clustername(cluster),
-			Weight: u32(cluster.Weight),
+			Weight: protobuf.UInt32(cluster.Weight),
 		})
 	}
 	// Check if no weights were defined, if not default to even distribution
@@ -163,45 +161,45 @@ func weightedClusters(clusters []*dag.Cluster) *route.WeightedCluster {
 		for _, c := range wc.Clusters {
 			c.Weight.Value = 1
 		}
-		total = len(clusters)
+		total = uint32(len(clusters))
 	}
-	wc.TotalWeight = u32(total)
+	wc.TotalWeight = protobuf.UInt32(total)
 
 	sort.Stable(clusterWeightByName(wc.Clusters))
 	return &wc
 }
 
 // RouteRegex returns a regex matcher.
-func RouteRegex(regex string) *route.RouteMatch {
-	return &route.RouteMatch{
-		PathSpecifier: &route.RouteMatch_Regex{
+func RouteRegex(regex string) *envoy_api_v2_route.RouteMatch {
+	return &envoy_api_v2_route.RouteMatch{
+		PathSpecifier: &envoy_api_v2_route.RouteMatch_Regex{
 			Regex: regex,
 		},
 	}
 }
 
 // RoutePrefix returns a prefix matcher.
-func RoutePrefix(prefix string) *route.RouteMatch {
-	return &route.RouteMatch{
-		PathSpecifier: &route.RouteMatch_Prefix{
+func RoutePrefix(prefix string) *envoy_api_v2_route.RouteMatch {
+	return &envoy_api_v2_route.RouteMatch{
+		PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
 			Prefix: prefix,
 		},
 	}
 }
 
 // VirtualHost creates a new route.VirtualHost.
-func VirtualHost(hostname string) *route.VirtualHost {
+func VirtualHost(hostname string) *envoy_api_v2_route.VirtualHost {
 	domains := []string{hostname}
 	if hostname != "*" {
 		domains = append(domains, hostname+":*")
 	}
-	return &route.VirtualHost{
+	return &envoy_api_v2_route.VirtualHost{
 		Name:    hashname(60, hostname),
 		Domains: domains,
 	}
 }
 
-type clusterWeightByName []*route.WeightedCluster_ClusterWeight
+type clusterWeightByName []*envoy_api_v2_route.WeightedCluster_ClusterWeight
 
 func (c clusterWeightByName) Len() int      { return len(c) }
 func (c clusterWeightByName) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
@@ -213,31 +211,16 @@ func (c clusterWeightByName) Less(i, j int) bool {
 
 }
 
-func headers(first *core.HeaderValueOption, rest ...*core.HeaderValueOption) []*core.HeaderValueOption {
-	return append([]*core.HeaderValueOption{first}, rest...)
+func headers(first *envoy_api_v2_core.HeaderValueOption, rest ...*envoy_api_v2_core.HeaderValueOption) []*envoy_api_v2_core.HeaderValueOption {
+	return append([]*envoy_api_v2_core.HeaderValueOption{first}, rest...)
 }
 
-func appendHeader(key, value string) *core.HeaderValueOption {
-	return &core.HeaderValueOption{
-		Header: &core.HeaderValue{
+func appendHeader(key, value string) *envoy_api_v2_core.HeaderValueOption {
+	return &envoy_api_v2_core.HeaderValueOption{
+		Header: &envoy_api_v2_core.HeaderValue{
 			Key:   key,
 			Value: value,
 		},
-		Append: bv(true),
+		Append: protobuf.Bool(true),
 	}
 }
-
-func u32(val int) *types.UInt32Value { return &types.UInt32Value{Value: uint32(val)} }
-
-var bvTrue = types.BoolValue{Value: true}
-
-// bv returns a pointer to a true types.BoolValue if val is true,
-// otherwise it returns nil.
-func bv(val bool) *types.BoolValue {
-	if val {
-		return &bvTrue
-	}
-	return nil
-}
-
-func duration(d time.Duration) *time.Duration { return &d }

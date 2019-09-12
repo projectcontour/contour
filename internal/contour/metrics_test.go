@@ -108,27 +108,6 @@ func TestIngressRouteMetrics(t *testing.T) {
 		},
 	}
 
-	// ir5 is invalid because its service weight is less than zero
-	ir5 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "delegated",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/foo",
-				Services: []ingressroutev1.Service{{
-					Name:   "home",
-					Port:   8080,
-					Weight: -10,
-				}},
-			}},
-		},
-	}
-
 	// ir6 is invalid because it delegates to itself, producing a cycle
 	ir6 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -408,22 +387,6 @@ func TestIngressRouteMetrics(t *testing.T) {
 				},
 				Total: map[metrics.Meta]int{
 					{Namespace: "roots"}: 2,
-				},
-			},
-		},
-		"invalid weight in service": {
-			objs: []interface{}{ir5},
-			want: metrics.IngressRouteMetric{
-				Invalid: map[metrics.Meta]int{
-					{Namespace: "roots", VHost: "example.com"}: 1,
-				},
-				Valid:    map[metrics.Meta]int{},
-				Orphaned: map[metrics.Meta]int{},
-				Root: map[metrics.Meta]int{
-					{Namespace: "roots"}: 1,
-				},
-				Total: map[metrics.Meta]int{
-					{Namespace: "roots"}: 1,
 				},
 			},
 		},

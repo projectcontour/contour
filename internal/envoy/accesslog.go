@@ -16,15 +16,15 @@ package envoy
 import (
 	accesslogv2 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v2"
 	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
-	"github.com/envoyproxy/go-control-plane/pkg/util"
+	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 )
 
 // FileAccessLog returns a new file based access log filter.
 func FileAccessLog(path string) []*accesslog.AccessLog {
 	return []*accesslog.AccessLog{{
-		Name: util.FileAccessLog,
+		Name: wellknown.FileAccessLog,
 		ConfigType: &accesslog.AccessLog_TypedConfig{
-			TypedConfig: any(&accesslogv2.FileAccessLog{
+			TypedConfig: toAny(&accesslogv2.FileAccessLog{
 				Path: path,
 				// TODO(dfc) FileAccessLog_Format elided.
 			}),

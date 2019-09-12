@@ -102,7 +102,7 @@ type RetryPolicy struct {
 
 	// NumRetries specifies the allowed number of retries.
 	// Ignored if RetryOn is blank, or defaults to 1 if RetryOn is set.
-	NumRetries int
+	NumRetries uint32
 
 	// PerTryTimeout specifies the timeout per retry attempt.
 	// Ignored if RetryOn is blank.
@@ -163,8 +163,8 @@ func (v *VirtualHost) Valid() bool {
 type SecureVirtualHost struct {
 	VirtualHost
 
-	// TLS minimum protocol version. Defaults to auth.TlsParameters_TLS_AUTO
-	MinProtoVersion auth.TlsParameters_TlsProtocol
+	// TLS minimum protocol version. Defaults to envoy_api_v2_auth.TlsParameters_TLS_AUTO
+	MinProtoVersion envoy_api_v2_auth.TlsParameters_TlsProtocol
 
 	// The cert and key for this host.
 	Secret *Secret
@@ -246,19 +246,19 @@ type Service struct {
 
 	// Max connections is maximum number of connections
 	// that Envoy will make to the upstream cluster.
-	MaxConnections int
+	MaxConnections uint32
 
 	// MaxPendingRequests is maximum number of pending
 	// requests that Envoy will allow to the upstream cluster.
-	MaxPendingRequests int
+	MaxPendingRequests uint32
 
 	// MaxRequests is the maximum number of parallel requests that
 	// Envoy will make to the upstream cluster.
-	MaxRequests int
+	MaxRequests uint32
 
 	// MaxRetries is the maximum number of parallel retries that
 	// Envoy will allow to the upstream cluster.
-	MaxRetries int
+	MaxRetries uint32
 
 	// ExternalName is an optional field referencing a dns entry for Service type "ExternalName"
 	ExternalName string
@@ -291,7 +291,7 @@ type Cluster struct {
 	Upstream *Service
 
 	// The relative weight of this Cluster compared to its siblings.
-	Weight int
+	Weight uint32
 
 	// UpstreamValidation defines how to verify the backend service's certificate
 	UpstreamValidation *UpstreamValidation
@@ -346,6 +346,6 @@ type HealthCheckPolicy struct {
 	Host               string
 	Interval           time.Duration
 	Timeout            time.Duration
-	UnhealthyThreshold int
-	HealthyThreshold   int
+	UnhealthyThreshold uint32
+	HealthyThreshold   uint32
 }

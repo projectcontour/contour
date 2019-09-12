@@ -17,15 +17,15 @@ import (
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
+	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestLBEndpoint(t *testing.T) {
 	got := LBEndpoint(SocketAddress("microsoft.com", 81))
-	want := &endpoint.LbEndpoint{
-		HostIdentifier: &endpoint.LbEndpoint_Endpoint{
-			Endpoint: &endpoint.Endpoint{
+	want := &envoy_api_v2_endpoint.LbEndpoint{
+		HostIdentifier: &envoy_api_v2_endpoint.LbEndpoint_Endpoint{
+			Endpoint: &envoy_api_v2_endpoint.Endpoint{
 				Address: SocketAddress("microsoft.com", 81),
 			},
 		},
@@ -40,16 +40,16 @@ func TestEndpoints(t *testing.T) {
 		SocketAddress("github.com", 443),
 		SocketAddress("microsoft.com", 80),
 	)
-	want := []*endpoint.LocalityLbEndpoints{{
-		LbEndpoints: []*endpoint.LbEndpoint{{
-			HostIdentifier: &endpoint.LbEndpoint_Endpoint{
-				Endpoint: &endpoint.Endpoint{
+	want := []*envoy_api_v2_endpoint.LocalityLbEndpoints{{
+		LbEndpoints: []*envoy_api_v2_endpoint.LbEndpoint{{
+			HostIdentifier: &envoy_api_v2_endpoint.LbEndpoint_Endpoint{
+				Endpoint: &envoy_api_v2_endpoint.Endpoint{
 					Address: SocketAddress("github.com", 443),
 				},
 			},
 		}, {
-			HostIdentifier: &endpoint.LbEndpoint_Endpoint{
-				Endpoint: &endpoint.Endpoint{
+			HostIdentifier: &envoy_api_v2_endpoint.LbEndpoint_Endpoint{
+				Endpoint: &envoy_api_v2_endpoint.Endpoint{
 					Address: SocketAddress("microsoft.com", 80),
 				},
 			},

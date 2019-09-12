@@ -117,27 +117,6 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
-	// ir5 is invalid because its service weight is less than zero
-	ir5 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "delegated",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/foo",
-				Services: []ingressroutev1.Service{{
-					Name:   "home",
-					Port:   8080,
-					Weight: -10,
-				}},
-			}},
-		},
-	}
-
 	// ir6 is invalid because it delegates to itself, producing a cycle
 	ir6 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -753,12 +732,6 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{name: ir4.Name, namespace: ir4.Namespace}: {Object: ir4, Status: "invalid", Description: `the path prefix "/doesnotmatch" does not match the parent's path prefix "/prefix"`, Vhost: "example.com"},
 			},
 		},
-		"invalid weight in service": {
-			objs: []interface{}{ir5},
-			want: map[Meta]Status{
-				{name: ir5.Name, namespace: ir5.Namespace}: {Object: ir5, Status: "invalid", Description: `route "/foo": service "home": weight must be greater than or equal to zero`, Vhost: "example.com"},
-			},
-		},
 		"root ingressroute does not specify FQDN": {
 			objs: []interface{}{ir13},
 			want: map[Meta]Status{
@@ -1089,29 +1062,6 @@ func TestDAGHTTPProxyStatus(t *testing.T) {
 				Services: []projcontour.Service{{
 					Name: "home",
 					Port: 8080,
-				}},
-			}},
-		},
-	}
-
-	// proxy5 is invalid because its service weight is less than zero
-	proxy5 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "delegated",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []projcontour.Route{{
-				Condition: &projcontour.Condition{
-					Prefix: "/foo",
-				},
-				Services: []projcontour.Service{{
-					Name:   "home",
-					Port:   8080,
-					Weight: -10,
 				}},
 			}},
 		},
@@ -1529,12 +1479,6 @@ func TestDAGHTTPProxyStatus(t *testing.T) {
 			objs: []interface{}{proxy3},
 			want: map[Meta]Status{
 				{name: proxy3.Name, namespace: proxy3.Namespace}: {Object: proxy3, Status: "invalid", Description: "root HTTPProxy cannot be defined in this namespace"},
-			},
-		},
-		"invalid weight in service": {
-			objs: []interface{}{proxy5},
-			want: map[Meta]Status{
-				{name: proxy5.Name, namespace: proxy5.Namespace}: {Object: proxy5, Status: "invalid", Description: `route "/foo": service "home": weight must be greater than or equal to zero`, Vhost: "example.com"},
 			},
 		},
 		"root proxy does not specify FQDN": {

@@ -24,8 +24,9 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	envoy "github.com/envoyproxy/go-control-plane/pkg/cache"
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/heptio/contour/apis/generated/clientset/versioned/fake"
 	"github.com/heptio/contour/internal/contour"
 	cgrpc "github.com/heptio/contour/internal/grpc"
@@ -200,20 +201,20 @@ func check(t *testing.T, err error) {
 	}
 }
 
-func resources(t *testing.T, protos ...proto.Message) []*types.Any {
+func resources(t *testing.T, protos ...proto.Message) []*any.Any {
 	t.Helper()
-	anys := make([]*types.Any, 0, len(protos))
+	anys := make([]*any.Any, 0, len(protos))
 	for _, a := range protos {
-		anys = append(anys, any(t, a))
+		anys = append(anys, toAny(t, a))
 	}
 	return anys
 }
 
-func any(t *testing.T, pb proto.Message) *types.Any {
+func toAny(t *testing.T, pb proto.Message) *any.Any {
 	t.Helper()
-	any, err := types.MarshalAny(pb)
+	a, err := ptypes.MarshalAny(pb)
 	check(t, err)
-	return any
+	return a
 }
 
 type grpcStream interface {
@@ -295,5 +296,3 @@ func assertEqual(t *testing.T, want, got *v2.DiscoveryResponse) {
 		t.Fatalf("\nexpected:\n%v\ngot:\n%v", m.Text(want), m.Text(got))
 	}
 }
-
-func u32(val int) *types.UInt32Value { return &types.UInt32Value{Value: uint32(val)} }

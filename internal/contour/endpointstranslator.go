@@ -19,9 +19,9 @@ import (
 	"sync"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
+	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/heptio/contour/internal/envoy"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
@@ -156,7 +156,7 @@ func (e *EndpointsTranslator) recomputeClusterLoadAssignment(oldep, newep *v1.En
 			addresses := append([]v1.EndpointAddress{}, s.Addresses...) // shallow copy
 			sort.Slice(addresses, func(i, j int) bool { return addresses[i].IP < addresses[j].IP })
 
-			lbendpoints := make([]*endpoint.LbEndpoint, 0, len(addresses))
+			lbendpoints := make([]*envoy_api_v2_endpoint.LbEndpoint, 0, len(addresses))
 			for _, a := range addresses {
 				addr := envoy.SocketAddress(a.IP, int(p.Port))
 				lbendpoints = append(lbendpoints, envoy.LBEndpoint(addr))
@@ -164,7 +164,7 @@ func (e *EndpointsTranslator) recomputeClusterLoadAssignment(oldep, newep *v1.En
 
 			cla := &v2.ClusterLoadAssignment{
 				ClusterName: servicename(newep.ObjectMeta, p.Name),
-				Endpoints: []*endpoint.LocalityLbEndpoints{{
+				Endpoints: []*envoy_api_v2_endpoint.LocalityLbEndpoints{{
 					LbEndpoints: lbendpoints,
 				}},
 			}

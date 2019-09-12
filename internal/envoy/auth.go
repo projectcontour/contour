@@ -14,8 +14,8 @@
 package envoy
 
 import (
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 )
 
 var (
@@ -44,12 +44,12 @@ var (
 	}
 )
 
-// UpstreamTLSContext creates an auth.UpstreamTlsContext. By default
+// UpstreamTLSContext creates an envoy_api_v2_auth.UpstreamTlsContext. By default
 // UpstreamTLSContext returns a HTTP/1.1 TLS enabled context. A list of
 // additional ALPN protocols can be provided.
-func UpstreamTLSContext(ca []byte, subjectName string, alpnProtocols ...string) *auth.UpstreamTlsContext {
-	context := &auth.UpstreamTlsContext{
-		CommonTlsContext: &auth.CommonTlsContext{
+func UpstreamTLSContext(ca []byte, subjectName string, alpnProtocols ...string) *envoy_api_v2_auth.UpstreamTlsContext {
+	context := &envoy_api_v2_auth.UpstreamTlsContext{
+		CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
 			AlpnProtocols: alpnProtocols,
 		},
 	}
@@ -67,7 +67,7 @@ func UpstreamTLSContext(ca []byte, subjectName string, alpnProtocols ...string) 
 	return context
 }
 
-func validationContext(ca []byte, subjectName string) *auth.CommonTlsContext_ValidationContext {
+func validationContext(ca []byte, subjectName string) *envoy_api_v2_auth.CommonTlsContext_ValidationContext {
 	if len(ca) < 1 {
 		// no ca provided, nothing to do
 		return nil
@@ -78,11 +78,11 @@ func validationContext(ca []byte, subjectName string) *auth.CommonTlsContext_Val
 		return nil
 	}
 
-	return &auth.CommonTlsContext_ValidationContext{
-		ValidationContext: &auth.CertificateValidationContext{
-			TrustedCa: &core.DataSource{
+	return &envoy_api_v2_auth.CommonTlsContext_ValidationContext{
+		ValidationContext: &envoy_api_v2_auth.CertificateValidationContext{
+			TrustedCa: &envoy_api_v2_core.DataSource{
 				// TODO(dfc) update this for SDS
-				Specifier: &core.DataSource_InlineBytes{
+				Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
 					InlineBytes: ca,
 				},
 			},
@@ -92,15 +92,15 @@ func validationContext(ca []byte, subjectName string) *auth.CommonTlsContext_Val
 }
 
 // DownstreamTLSContext creates a new DownstreamTlsContext.
-func DownstreamTLSContext(secretName string, tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnProtos ...string) *auth.DownstreamTlsContext {
-	return &auth.DownstreamTlsContext{
-		CommonTlsContext: &auth.CommonTlsContext{
-			TlsParams: &auth.TlsParameters{
+func DownstreamTLSContext(secretName string, tlsMinProtoVersion envoy_api_v2_auth.TlsParameters_TlsProtocol, alpnProtos ...string) *envoy_api_v2_auth.DownstreamTlsContext {
+	return &envoy_api_v2_auth.DownstreamTlsContext{
+		CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
+			TlsParams: &envoy_api_v2_auth.TlsParameters{
 				TlsMinimumProtocolVersion: tlsMinProtoVersion,
-				TlsMaximumProtocolVersion: auth.TlsParameters_TLSv1_3,
+				TlsMaximumProtocolVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
 				CipherSuites:              ciphers,
 			},
-			TlsCertificateSdsSecretConfigs: []*auth.SdsSecretConfig{{
+			TlsCertificateSdsSecretConfigs: []*envoy_api_v2_auth.SdsSecretConfig{{
 				Name:      secretName,
 				SdsConfig: ConfigSource("contour"),
 			}},

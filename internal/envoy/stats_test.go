@@ -17,12 +17,12 @@ import (
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
-	"github.com/envoyproxy/go-control-plane/pkg/util"
-	"github.com/gogo/protobuf/types"
+	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/google/go-cmp/cmp"
+	"github.com/heptio/contour/internal/protobuf"
 )
 
 func TestStatsListener(t *testing.T) {
@@ -38,53 +38,51 @@ func TestStatsListener(t *testing.T) {
 				Name:    "stats-health",
 				Address: SocketAddress("127.0.0.127", 8123),
 				FilterChains: FilterChains(
-					&listener.Filter{
-						Name: util.HTTPConnectionManager,
-						ConfigType: &listener.Filter_TypedConfig{
-							TypedConfig: any(&http.HttpConnectionManager{
+					&envoy_api_v2_listener.Filter{
+						Name: wellknown.HTTPConnectionManager,
+						ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
+							TypedConfig: toAny(&http.HttpConnectionManager{
 								StatPrefix: "stats",
 								RouteSpecifier: &http.HttpConnectionManager_RouteConfig{
 									RouteConfig: &v2.RouteConfiguration{
-										VirtualHosts: []*route.VirtualHost{{
+										VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
 											Name:    "backend",
 											Domains: []string{"*"},
-											Routes: []*route.Route{
-												{
-													Match: &route.RouteMatch{
-														PathSpecifier: &route.RouteMatch_Prefix{
-															Prefix: "/ready",
-														},
+											Routes: []*envoy_api_v2_route.Route{{
+												Match: &envoy_api_v2_route.RouteMatch{
+													PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
+														Prefix: "/ready",
 													},
-													Action: &route.Route_Route{
-														Route: &route.RouteAction{
-															ClusterSpecifier: &route.RouteAction_Cluster{
-																Cluster: "service-stats",
-															},
+												},
+												Action: &envoy_api_v2_route.Route_Route{
+													Route: &envoy_api_v2_route.RouteAction{
+														ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+															Cluster: "service-stats",
 														},
 													},
 												},
-												{
-													Match: &route.RouteMatch{
-														PathSpecifier: &route.RouteMatch_Prefix{
-															Prefix: "/stats",
-														},
+											}, {
+												Match: &envoy_api_v2_route.RouteMatch{
+													PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
+														Prefix: "/stats",
 													},
-													Action: &route.Route_Route{
-														Route: &route.RouteAction{
-															ClusterSpecifier: &route.RouteAction_Cluster{
-																Cluster: "service-stats",
-															},
+												},
+												Action: &envoy_api_v2_route.Route_Route{
+													Route: &envoy_api_v2_route.RouteAction{
+														ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+															Cluster: "service-stats",
 														},
 													},
 												},
+											},
 											},
 										}},
 									},
 								},
 								HttpFilters: []*http.HttpFilter{{
-									Name: util.Router,
+									Name: wellknown.Router,
 								}},
-								NormalizePath: &types.BoolValue{Value: true},
+								NormalizePath: protobuf.Bool(true),
 							}),
 						},
 					},

@@ -2427,7 +2427,7 @@ func TestDAGInsert(t *testing.T) {
 								),
 							},
 							Secret:          secret(sec1),
-							MinProtoVersion: auth.TlsParameters_TLSv1_1,
+							MinProtoVersion: envoy_api_v2_auth.TlsParameters_TLSv1_1,
 						},
 					),
 				},
@@ -2597,7 +2597,7 @@ func TestDAGInsert(t *testing.T) {
 									routeUpgrade("/", service(s1)),
 								),
 							},
-							MinProtoVersion: auth.TlsParameters_TLSv1_2,
+							MinProtoVersion: envoy_api_v2_auth.TlsParameters_TLSv1_2,
 							Secret:          secret(sec1),
 						},
 					),
@@ -2624,7 +2624,7 @@ func TestDAGInsert(t *testing.T) {
 									routeUpgrade("/", service(s1)),
 								),
 							},
-							MinProtoVersion: auth.TlsParameters_TLSv1_3,
+							MinProtoVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
 							Secret:          secret(sec1),
 						},
 					),
@@ -2690,7 +2690,7 @@ func TestDAGInsert(t *testing.T) {
 									prefixroute("/", service(s1)),
 								),
 							},
-							MinProtoVersion: auth.TlsParameters_TLSv1_3,
+							MinProtoVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
 							Secret:          secret(sec1),
 						},
 					),
@@ -2944,7 +2944,7 @@ func TestDAGInsert(t *testing.T) {
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(service(s10)),
 							},
-							MinProtoVersion: auth.TlsParameters_TLS_AUTO, // tls passthrough does not specify a TLS version; that's the domain of the backend
+							MinProtoVersion: envoy_api_v2_auth.TlsParameters_TLS_AUTO, // tls passthrough does not specify a TLS version; that's the domain of the backend
 						},
 					),
 				},
@@ -3554,7 +3554,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "example.com",
 							},
-							MinProtoVersion: auth.TlsParameters_TLSv1_1,
+							MinProtoVersion: envoy_api_v2_auth.TlsParameters_TLSv1_1,
 							Secret:          secret(sec1),
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(service(s9)),
@@ -4505,7 +4505,7 @@ func securevirtualhost(name string, sec *v1.Secret, v ...Vertex) *SecureVirtualH
 			Name:   name,
 			routes: routes(v...),
 		},
-		MinProtoVersion: auth.TlsParameters_TLSv1_1,
+		MinProtoVersion: envoy_api_v2_auth.TlsParameters_TLSv1_1,
 		Secret:          secret(sec),
 	}
 }

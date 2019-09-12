@@ -17,9 +17,9 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
 )
@@ -27,12 +27,12 @@ import (
 // ClusterCache manages the contents of the gRPC CDS cache.
 type ClusterCache struct {
 	mu     sync.Mutex
-	values map[string]*v2.Cluster
+	values map[string]*envoy_api_v2.Cluster
 	Cond
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *ClusterCache) Update(v map[string]*v2.Cluster) {
+func (c *ClusterCache) Update(v map[string]*envoy_api_v2.Cluster) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -72,20 +72,22 @@ func (c *ClusterCache) Query(names []string) []proto.Message {
 
 type clusterByName []proto.Message
 
-func (c clusterByName) Len() int           { return len(c) }
-func (c clusterByName) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
-func (c clusterByName) Less(i, j int) bool { return c[i].(*v2.Cluster).Name < c[j].(*v2.Cluster).Name }
+func (c clusterByName) Len() int      { return len(c) }
+func (c clusterByName) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
+func (c clusterByName) Less(i, j int) bool {
+	return c[i].(*envoy_api_v2.Cluster).Name < c[j].(*envoy_api_v2.Cluster).Name
+}
 
 func (*ClusterCache) TypeURL() string { return cache.ClusterType }
 
 type clusterVisitor struct {
-	clusters map[string]*v2.Cluster
+	clusters map[string]*envoy_api_v2.Cluster
 }
 
-// visitCluster produces a map of *v2.Clusters.
-func visitClusters(root dag.Vertex) map[string]*v2.Cluster {
+// visitCluster produces a map of *envoy_api_v2.Clusters.
+func visitClusters(root dag.Vertex) map[string]*envoy_api_v2.Cluster {
 	cv := clusterVisitor{
-		clusters: make(map[string]*v2.Cluster),
+		clusters: make(map[string]*envoy_api_v2.Cluster),
 	}
 	cv.visit(root)
 	return cv.clusters

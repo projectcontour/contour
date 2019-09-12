@@ -17,9 +17,9 @@ import (
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-	"github.com/gogo/protobuf/proto"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	"github.com/golang/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
@@ -263,11 +263,11 @@ func TestListenerVisit(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
-				FilterChains: []*listener.FilterChain{{
-					FilterChainMatch: &listener.FilterChainMatch{
+				FilterChains: []*envoy_api_v2_listener.FilterChain{{
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TlsContext: tlscontext(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:    envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
 				}},
 			}),
@@ -350,17 +350,17 @@ func TestListenerVisit(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
-				FilterChains: []*listener.FilterChain{{
-					FilterChainMatch: &listener.FilterChainMatch{
+				FilterChains: []*envoy_api_v2_listener.FilterChain{{
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"sortedfirst.example.com"},
 					},
-					TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TlsContext: tlscontext(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:    envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
 				}, {
-					FilterChainMatch: &listener.FilterChainMatch{
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"sortedsecond.example.com"},
 					},
-					TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TlsContext: tlscontext(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:    envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
 				}},
 			}),
@@ -472,11 +472,11 @@ func TestListenerVisit(t *testing.T) {
 			}, &v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
 				Address: envoy.SocketAddress("0.0.0.0", 8443),
-				FilterChains: []*listener.FilterChain{{
-					FilterChainMatch: &listener.FilterChainMatch{
+				FilterChains: []*envoy_api_v2_listener.FilterChain{{
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TlsContext: tlscontext(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:    envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
@@ -553,11 +553,11 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
 				Address: envoy.SocketAddress("0.0.0.0", 8443),
-				FilterChains: []*listener.FilterChain{{
-					FilterChainMatch: &listener.FilterChainMatch{
+				FilterChains: []*envoy_api_v2_listener.FilterChain{{
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TlsContext: tlscontext(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:    envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
@@ -627,11 +627,11 @@ func TestListenerVisit(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
-				FilterChains: []*listener.FilterChain{{
-					FilterChainMatch: &listener.FilterChainMatch{
+				FilterChains: []*envoy_api_v2_listener.FilterChain{{
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TlsContext: tlscontext(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:    envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
 				}},
 			}),
@@ -699,11 +699,11 @@ func TestListenerVisit(t *testing.T) {
 					envoy.ProxyProtocol(),
 					envoy.TLSInspector(),
 				),
-				FilterChains: []*listener.FilterChain{{
-					FilterChainMatch: &listener.FilterChainMatch{
+				FilterChains: []*envoy_api_v2_listener.FilterChain{{
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TlsContext: tlscontext(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:    envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
 				}},
 			}),
@@ -768,18 +768,18 @@ func TestListenerVisit(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
-				FilterChains: []*listener.FilterChain{{
-					FilterChainMatch: &listener.FilterChainMatch{
+				FilterChains: []*envoy_api_v2_listener.FilterChain{{
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TlsContext: tlscontext(auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TlsContext: tlscontext(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:    envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, "/tmp/https_access.log")),
 				}},
 			}),
 		},
 		"tls-min-protocol-version from config": {
 			ListenerVisitorConfig: ListenerVisitorConfig{
-				MinimumProtocolVersion: auth.TlsParameters_TLSv1_3,
+				MinimumProtocolVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
 			},
 			objs: []interface{}{
 				&v1beta1.Ingress{
@@ -833,11 +833,11 @@ func TestListenerVisit(t *testing.T) {
 			}, &v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
 				Address: envoy.SocketAddress("0.0.0.0", 8443),
-				FilterChains: []*listener.FilterChain{{
-					FilterChainMatch: &listener.FilterChainMatch{
+				FilterChains: []*envoy_api_v2_listener.FilterChain{{
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TlsContext: tlscontext(auth.TlsParameters_TLSv1_3, "h2", "http/1.1"),
+					TlsContext: tlscontext(envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"),
 					Filters:    envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
@@ -847,7 +847,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"tls-min-protocol-version from config overridden by annotation": {
 			ListenerVisitorConfig: ListenerVisitorConfig{
-				MinimumProtocolVersion: auth.TlsParameters_TLSv1_3,
+				MinimumProtocolVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
 			},
 			objs: []interface{}{
 				&v1beta1.Ingress{
@@ -904,11 +904,11 @@ func TestListenerVisit(t *testing.T) {
 			}, &v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
 				Address: envoy.SocketAddress("0.0.0.0", 8443),
-				FilterChains: []*listener.FilterChain{{
-					FilterChainMatch: &listener.FilterChainMatch{
+				FilterChains: []*envoy_api_v2_listener.FilterChain{{
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TlsContext: tlscontext(auth.TlsParameters_TLSv1_3, "h2", "http/1.1"), // note, cannot downgrade from the configured version
+					TlsContext: tlscontext(envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"), // note, cannot downgrade from the configured version
 					Filters:    envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
@@ -918,7 +918,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"tls-min-protocol-version from config overridden by ingressroute": {
 			ListenerVisitorConfig: ListenerVisitorConfig{
-				MinimumProtocolVersion: auth.TlsParameters_TLSv1_3,
+				MinimumProtocolVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
 			},
 			objs: []interface{}{
 				&ingressroutev1.IngressRoute{
@@ -975,11 +975,11 @@ func TestListenerVisit(t *testing.T) {
 			}, &v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
 				Address: envoy.SocketAddress("0.0.0.0", 8443),
-				FilterChains: []*listener.FilterChain{{
-					FilterChainMatch: &listener.FilterChainMatch{
+				FilterChains: []*envoy_api_v2_listener.FilterChain{{
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TlsContext: tlscontext(auth.TlsParameters_TLSv1_3, "h2", "http/1.1"), // note, cannot downgrade from the configured version
+					TlsContext: tlscontext(envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"), // note, cannot downgrade from the configured version
 					Filters:    envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, DEFAULT_HTTPS_ACCESS_LOG)),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
@@ -1000,7 +1000,7 @@ func TestListenerVisit(t *testing.T) {
 	}
 }
 
-func tlscontext(tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnprotos ...string) *auth.DownstreamTlsContext {
+func tlscontext(tlsMinProtoVersion envoy_api_v2_auth.TlsParameters_TlsProtocol, alpnprotos ...string) *envoy_api_v2_auth.DownstreamTlsContext {
 	return envoy.DownstreamTLSContext("default/secret/735ad571c1", tlsMinProtoVersion, alpnprotos...)
 }
 
