@@ -1143,7 +1143,7 @@ func TestDAGHTTPProxyStatus(t *testing.T) {
 		},
 	}
 
-	// proxy7 delegates to proxy8, which is invalid because proxy8 delegates back to proxy7
+	// proxy7 delegates to proxy8, which is invalid because proxy8 delegates back to proxy8
 	proxy7 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "parent",
@@ -1170,7 +1170,7 @@ func TestDAGHTTPProxyStatus(t *testing.T) {
 		},
 		Spec: projcontour.HTTPProxySpec{
 			Includes: []projcontour.Include{{
-				Name:      "parent",
+				Name:      "child",
 				Namespace: "roots",
 				Condition: projcontour.Condition{
 					Prefix: "/foo",
@@ -1549,7 +1549,7 @@ func TestDAGHTTPProxyStatus(t *testing.T) {
 				{name: proxy6.Name, namespace: proxy6.Namespace}: {
 					Object:      proxy6,
 					Status:      "invalid",
-					Description: "include creates a delegation cycle: roots/self -> roots/self",
+					Description: "root httpproxy cannot delegate to another root httpproxy",
 					Vhost:       "example.com",
 				},
 			},
@@ -1566,7 +1566,7 @@ func TestDAGHTTPProxyStatus(t *testing.T) {
 				{name: proxy8.Name, namespace: proxy8.Namespace}: {
 					Object:      proxy8,
 					Status:      "invalid",
-					Description: "include creates a delegation cycle: roots/parent -> roots/child -> roots/parent",
+					Description: "include creates a delegation cycle: roots/parent -> roots/child -> roots/child",
 					Vhost:       "example.com",
 				},
 			},

@@ -515,6 +515,10 @@ func (b *Builder) processIncludes(sw *ObjectStatusWriter, proxy *projcontour.HTT
 	// Loop over and process all includes
 	for _, include := range proxy.Spec.Includes {
 		if delegatedProxy, ok := b.Source.httpproxies[Meta{name: include.Name, namespace: include.Namespace}]; ok {
+			if delegatedProxy.Spec.VirtualHost != nil {
+				sw.SetInvalid("root httpproxy cannot delegate to another root httpproxy")
+				return
+			}
 
 			var path []string
 			for _, vproxy := range visited {
@@ -535,17 +539,13 @@ func (b *Builder) processIncludes(sw *ObjectStatusWriter, proxy *projcontour.HTT
 					if delegatedProxy.Name == vir.Name && delegatedProxy.Namespace == vir.Namespace {
 						path = append(path, fmt.Sprintf("%s/%s", delegatedProxy.Namespace, delegatedProxy.Name))
 						description := fmt.Sprintf("include creates a delegation cycle: %s", strings.Join(path, " -> "))
-						sw.WithObject(proxy).SetInvalid(description).Commit()
+						sw.SetInvalid(description)
 						return
 					}
 				}
-
-				b.processIncludes(sw.WithObject(delegatedProxy), delegatedProxy, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS, visited)
-			}
-
-			if delegatedProxy.Spec.VirtualHost != nil {
-				sw.SetInvalid("root httpproxy cannot delegate to another root httpproxy")
-				return
+				sw := sw.WithObject(delegatedProxy)
+				b.processIncludes(sw, delegatedProxy, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS, visited)
+				sw.Commit()
 			}
 
 			// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
@@ -828,9 +828,6 @@ func (b *Builder) processRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 
 			b.lookupVirtualHost(host).addRoute(r)
 			b.lookupSecureVirtualHost(host).addRoute(r)
-
-			sw.SetValid().WithValue("description", "valid HTTPProxy")
-			continue
 		}
 	}
 }
