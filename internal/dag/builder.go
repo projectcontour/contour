@@ -515,10 +515,19 @@ func (b *Builder) processIncludes(sw *ObjectStatusWriter, proxy *projcontour.HTT
 	// Loop over and process all includes
 	for _, include := range proxy.Spec.Includes {
 		if delegatedProxy, ok := b.Source.httpproxies[Meta{name: include.Name, namespace: include.Namespace}]; ok {
+
 			if delegatedProxy.Spec.VirtualHost != nil {
-				sw.SetInvalid("root httpproxy cannot delegate to another root httpproxy")
+				sw.SetInvalid("root httpproxy cannot delegate to another root httpproxy").Commit()
 				return
 			}
+
+			//if delegatedProxy.Name == proxy.Name {
+			//	sw.SetInvalid("root httpproxy cannot delegate to itself")
+			//	return
+			//}
+
+			// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
+			delete(b.orphaned, Meta{name: delegatedProxy.Name, namespace: delegatedProxy.Namespace})
 
 			var path []string
 			for _, vproxy := range visited {
@@ -547,9 +556,6 @@ func (b *Builder) processIncludes(sw *ObjectStatusWriter, proxy *projcontour.HTT
 				b.processIncludes(sw, delegatedProxy, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS, visited)
 				sw.Commit()
 			}
-
-			// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
-			delete(b.orphaned, Meta{name: delegatedProxy.Name, namespace: delegatedProxy.Namespace})
 		}
 	}
 }
@@ -768,8 +774,9 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 }
 
 func (b *Builder) processRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, host string, condition *projcontour.Condition, enforceTLS bool) {
-	for _, route := range proxy.Spec.Routes {
+	defer sw.Commit()
 
+	for _, route := range proxy.Spec.Routes {
 		// Cannot support multiple services with websockets (See: https://github.com/heptio/contour/issues/732)
 		if len(route.Services) > 1 && route.EnableWebsockets {
 			sw.SetInvalid(fmt.Sprintf("route %q: cannot specify multiple services and enable websockets", conditionPath(route.Condition, condition)))
@@ -828,6 +835,8 @@ func (b *Builder) processRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 
 			b.lookupVirtualHost(host).addRoute(r)
 			b.lookupSecureVirtualHost(host).addRoute(r)
+
+			sw.SetValid().WithValue("description", "valid HTTPProxy")
 		}
 	}
 }
