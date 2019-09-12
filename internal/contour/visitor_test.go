@@ -17,14 +17,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/google/go-cmp/cmp"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
-	"k8s.io/api/core/v1"
+	"github.com/heptio/contour/internal/protobuf"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -32,7 +33,7 @@ import (
 func TestVisitClusters(t *testing.T) {
 	tests := map[string]struct {
 		root dag.Visitable
-		want map[string]*v2.Cluster
+		want map[string]*envoy_api_v2.Cluster
 	}{
 		"TCPService forward": {
 			root: &dag.Listener{
@@ -60,16 +61,16 @@ func TestVisitClusters(t *testing.T) {
 				),
 			},
 			want: clustermap(
-				&v2.Cluster{
+				&envoy_api_v2.Cluster{
 					Name:                 "default/example/443/da39a3ee5e",
 					AltStatName:          "default_example_443",
-					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/example",
 					},
-					ConnectTimeout: duration(250 * time.Millisecond),
-					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
+					LbPolicy:       envoy_api_v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
@@ -103,7 +104,7 @@ func TestVisitListeners(t *testing.T) {
 
 	tests := map[string]struct {
 		root dag.Visitable
-		want map[string]*v2.Listener
+		want map[string]*envoy_api_v2.Listener
 	}{
 		"TCPService forward": {
 			root: &dag.Listener{
@@ -123,19 +124,19 @@ func TestVisitListeners(t *testing.T) {
 								Data: secretdata("certificate", "key"),
 							},
 						},
-						MinProtoVersion: auth.TlsParameters_TLSv1_1,
+						MinProtoVersion: envoy_api_v2_auth.TlsParameters_TLSv1_1,
 					},
 				),
 			},
 			want: listenermap(
-				&v2.Listener{
+				&envoy_api_v2.Listener{
 					Name:    ENVOY_HTTPS_LISTENER,
 					Address: envoy.SocketAddress("0.0.0.0", 8443),
-					FilterChains: []*listener.FilterChain{{
-						FilterChainMatch: &listener.FilterChainMatch{
+					FilterChains: []*envoy_api_v2_listener.FilterChain{{
+						FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 							ServerNames: []string{"tcpproxy.example.com"},
 						},
-						TlsContext: tlscontext(auth.TlsParameters_TLSv1_1),
+						TlsContext: tlscontext(envoy_api_v2_auth.TlsParameters_TLSv1_1),
 						Filters:    envoy.Filters(envoy.TCPProxy(ENVOY_HTTPS_LISTENER, p1, DEFAULT_HTTPS_ACCESS_LOG)),
 					}},
 					ListenerFilters: envoy.ListenerFilters(
@@ -159,7 +160,7 @@ func TestVisitListeners(t *testing.T) {
 func TestVisitSecrets(t *testing.T) {
 	tests := map[string]struct {
 		root dag.Visitable
-		want map[string]*auth.Secret
+		want map[string]*envoy_api_v2_auth.Secret
 	}{
 		"TCPService forward": {
 			root: &dag.Listener{
@@ -194,17 +195,17 @@ func TestVisitSecrets(t *testing.T) {
 					},
 				),
 			},
-			want: secretmap(&auth.Secret{
+			want: secretmap(&envoy_api_v2_auth.Secret{
 				Name: "default/secret/735ad571c1",
-				Type: &auth.Secret_TlsCertificate{
-					TlsCertificate: &auth.TlsCertificate{
-						PrivateKey: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
+				Type: &envoy_api_v2_auth.Secret_TlsCertificate{
+					TlsCertificate: &envoy_api_v2_auth.TlsCertificate{
+						PrivateKey: &envoy_api_v2_core.DataSource{
+							Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
 								InlineBytes: []byte("key"),
 							},
 						},
-						CertificateChain: &core.DataSource{
-							Specifier: &core.DataSource_InlineBytes{
+						CertificateChain: &envoy_api_v2_core.DataSource{
+							Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
 								InlineBytes: []byte("certificate"),
 							},
 						},

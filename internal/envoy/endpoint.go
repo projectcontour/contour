@@ -15,15 +15,15 @@ package envoy
 
 import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 )
 
 // LBEndpoint creates a new LbEndpoint.
-func LBEndpoint(addr *core.Address) *endpoint.LbEndpoint {
-	return &endpoint.LbEndpoint{
-		HostIdentifier: &endpoint.LbEndpoint_Endpoint{
-			Endpoint: &endpoint.Endpoint{
+func LBEndpoint(addr *envoy_api_v2_core.Address) *envoy_api_v2_endpoint.LbEndpoint {
+	return &envoy_api_v2_endpoint.LbEndpoint{
+		HostIdentifier: &envoy_api_v2_endpoint.LbEndpoint_Endpoint{
+			Endpoint: &envoy_api_v2_endpoint.Endpoint{
 				Address: addr,
 			},
 		},
@@ -32,26 +32,26 @@ func LBEndpoint(addr *core.Address) *endpoint.LbEndpoint {
 
 // Endpoints returns a slice of LocalityLbEndpoints.
 // The slice contains one entry, with one LbEndpoint per
-// *core.Address supplied.
-func Endpoints(addrs ...*core.Address) []*endpoint.LocalityLbEndpoints {
-	lbendpoints := make([]*endpoint.LbEndpoint, 0, len(addrs))
+// *envoy_api_v2_core.Address supplied.
+func Endpoints(addrs ...*envoy_api_v2_core.Address) []*envoy_api_v2_endpoint.LocalityLbEndpoints {
+	lbendpoints := make([]*envoy_api_v2_endpoint.LbEndpoint, 0, len(addrs))
 	for _, addr := range addrs {
-		lbendpoints = append(lbendpoints, &endpoint.LbEndpoint{
-			HostIdentifier: &endpoint.LbEndpoint_Endpoint{
-				Endpoint: &endpoint.Endpoint{
+		lbendpoints = append(lbendpoints, &envoy_api_v2_endpoint.LbEndpoint{
+			HostIdentifier: &envoy_api_v2_endpoint.LbEndpoint_Endpoint{
+				Endpoint: &envoy_api_v2_endpoint.Endpoint{
 					Address: addr,
 				},
 			},
 		})
 	}
-	return []*endpoint.LocalityLbEndpoints{{
+	return []*envoy_api_v2_endpoint.LocalityLbEndpoints{{
 		LbEndpoints: lbendpoints,
 	}}
 }
 
 // ClusterLoadAssignment returns a *v2.ClusterLoadAssignment with a single
 // LocalityLbEndpoints of the supplied addresses.
-func ClusterLoadAssignment(name string, addrs ...*core.Address) *v2.ClusterLoadAssignment {
+func ClusterLoadAssignment(name string, addrs ...*envoy_api_v2_core.Address) *v2.ClusterLoadAssignment {
 	if len(addrs) == 0 {
 		return &v2.ClusterLoadAssignment{ClusterName: name}
 	}

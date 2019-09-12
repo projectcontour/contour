@@ -16,8 +16,8 @@ package envoy
 import (
 	"testing"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -26,42 +26,42 @@ func TestUpstreamTLSContext(t *testing.T) {
 		ca            []byte
 		subjectName   string
 		alpnProtocols []string
-		want          *auth.UpstreamTlsContext
+		want          *envoy_api_v2_auth.UpstreamTlsContext
 	}{
 		"no alpn, no validation": {
-			want: &auth.UpstreamTlsContext{
-				CommonTlsContext: &auth.CommonTlsContext{},
+			want: &envoy_api_v2_auth.UpstreamTlsContext{
+				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{},
 			},
 		},
 		"h2, no validation": {
 			alpnProtocols: []string{"h2c"},
-			want: &auth.UpstreamTlsContext{
-				CommonTlsContext: &auth.CommonTlsContext{
+			want: &envoy_api_v2_auth.UpstreamTlsContext{
+				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
 					AlpnProtocols: []string{"h2c"},
 				},
 			},
 		},
 		"no alpn, missing altname": {
 			ca: []byte("ca"),
-			want: &auth.UpstreamTlsContext{
-				CommonTlsContext: &auth.CommonTlsContext{},
+			want: &envoy_api_v2_auth.UpstreamTlsContext{
+				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{},
 			},
 		},
 		"no alpn, missing ca": {
 			subjectName: "www.example.com",
-			want: &auth.UpstreamTlsContext{
-				CommonTlsContext: &auth.CommonTlsContext{},
+			want: &envoy_api_v2_auth.UpstreamTlsContext{
+				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{},
 			},
 		},
 		"no alpn, ca and altname": {
 			ca:          []byte("ca"),
 			subjectName: "www.example.com",
-			want: &auth.UpstreamTlsContext{
-				CommonTlsContext: &auth.CommonTlsContext{
-					ValidationContextType: &auth.CommonTlsContext_ValidationContext{
-						ValidationContext: &auth.CertificateValidationContext{
-							TrustedCa: &core.DataSource{
-								Specifier: &core.DataSource_InlineBytes{
+			want: &envoy_api_v2_auth.UpstreamTlsContext{
+				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
+					ValidationContextType: &envoy_api_v2_auth.CommonTlsContext_ValidationContext{
+						ValidationContext: &envoy_api_v2_auth.CertificateValidationContext{
+							TrustedCa: &envoy_api_v2_core.DataSource{
+								Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
 									InlineBytes: []byte("ca"),
 								},
 							},

@@ -18,10 +18,9 @@ import (
 	"sync"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/proto"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
 )
@@ -172,32 +171,30 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 	}
 }
 
-type virtualHostsByName []*route.VirtualHost
+type virtualHostsByName []*envoy_api_v2_route.VirtualHost
 
 func (v virtualHostsByName) Len() int           { return len(v) }
 func (v virtualHostsByName) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
 func (v virtualHostsByName) Less(i, j int) bool { return v[i].Name < v[j].Name }
 
-type longestRouteFirst []*route.Route
+type longestRouteFirst []*envoy_api_v2_route.Route
 
 func (l longestRouteFirst) Len() int      { return len(l) }
 func (l longestRouteFirst) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
 func (l longestRouteFirst) Less(i, j int) bool {
 	switch a := l[i].Match.PathSpecifier.(type) {
-	case *route.RouteMatch_Prefix:
+	case *envoy_api_v2_route.RouteMatch_Prefix:
 		switch b := l[j].Match.PathSpecifier.(type) {
-		case *route.RouteMatch_Prefix:
+		case *envoy_api_v2_route.RouteMatch_Prefix:
 			return a.Prefix > b.Prefix
 		}
-	case *route.RouteMatch_Regex:
+	case *envoy_api_v2_route.RouteMatch_Regex:
 		switch b := l[j].Match.PathSpecifier.(type) {
-		case *route.RouteMatch_Regex:
+		case *envoy_api_v2_route.RouteMatch_Regex:
 			return a.Regex > b.Regex
-		case *route.RouteMatch_Prefix:
+		case *envoy_api_v2_route.RouteMatch_Prefix:
 			return true
 		}
 	}
 	return false
 }
-
-func u32(val int) *types.UInt32Value { return &types.UInt32Value{Value: uint32(val)} }

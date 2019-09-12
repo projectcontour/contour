@@ -39,9 +39,12 @@ const (
 
 // parseAnnotation parses the annotation map for the supplied key.
 // If the value is not present, or malformed, then zero is returned.
-func parseAnnotation(annotations map[string]string, annotation string) int {
-	v, _ := strconv.ParseInt(annotations[annotation], 10, 32)
-	return int(v)
+func parseAnnotation(annotations map[string]string, annotation string) uint32 {
+	v, err := strconv.ParseUint(annotations[annotation], 10, 32)
+	if err != nil {
+		return 0
+	}
+	return uint32(v)
 }
 
 // parseUpstreamProtocols parses the annotations map for a contour.heptio.com/upstream-protocol.{protocol}

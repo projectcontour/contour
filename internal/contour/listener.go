@@ -17,12 +17,12 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
 )
@@ -70,7 +70,7 @@ type ListenerVisitorConfig struct {
 	UseProxyProto bool
 
 	// MinimumProtocolVersion defines the min tls protocol version to be used
-	MinimumProtocolVersion auth.TlsParameters_TlsProtocol
+	MinimumProtocolVersion envoy_api_v2_auth.TlsParameters_TlsProtocol
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
@@ -128,12 +128,12 @@ func (lvc *ListenerVisitorConfig) httpsAccessLog() string {
 }
 
 // minProtocolVersion returns the requested minimum TLS protocol
-// version or auth.TlsParameters_TLSv1_1 if not configured {
-func (lvc *ListenerVisitorConfig) minProtoVersion() auth.TlsParameters_TlsProtocol {
-	if lvc.MinimumProtocolVersion > auth.TlsParameters_TLSv1_1 {
+// version or envoy_api_v2_auth.TlsParameters_TLSv1_1 if not configured {
+func (lvc *ListenerVisitorConfig) minProtoVersion() envoy_api_v2_auth.TlsParameters_TlsProtocol {
+	if lvc.MinimumProtocolVersion > envoy_api_v2_auth.TlsParameters_TLSv1_1 {
 		return lvc.MinimumProtocolVersion
 	}
-	return auth.TlsParameters_TLSv1_1
+	return envoy_api_v2_auth.TlsParameters_TLSv1_1
 }
 
 // ListenerCache manages the contents of the gRPC LDS cache.
@@ -260,7 +260,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 	return lv.listeners
 }
 
-func proxyProtocol(useProxy bool) []*listener.ListenerFilter {
+func proxyProtocol(useProxy bool) []*envoy_api_v2_listener.ListenerFilter {
 	if useProxy {
 		return envoy.ListenerFilters(
 			envoy.ProxyProtocol(),
@@ -269,12 +269,12 @@ func proxyProtocol(useProxy bool) []*listener.ListenerFilter {
 	return nil
 }
 
-func secureProxyProtocol(useProxy bool) []*listener.ListenerFilter {
+func secureProxyProtocol(useProxy bool) []*envoy_api_v2_listener.ListenerFilter {
 	return append(proxyProtocol(useProxy), envoy.TLSInspector())
 }
 
 func (v *listenerVisitor) visit(vertex dag.Vertex) {
-	max := func(a, b auth.TlsParameters_TlsProtocol) auth.TlsParameters_TlsProtocol {
+	max := func(a, b envoy_api_v2_auth.TlsParameters_TlsProtocol) envoy_api_v2_auth.TlsParameters_TlsProtocol {
 		if a > b {
 			return a
 		}

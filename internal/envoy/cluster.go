@@ -23,10 +23,11 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
-	"github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/heptio/contour/internal/dag"
+	"github.com/heptio/contour/internal/protobuf"
 )
 
 // CACertificateKey stores the key for the TLS validation secret cert
@@ -48,7 +49,7 @@ func Cluster(c *dag.Cluster) *v2.Cluster {
 			"h2")
 		fallthrough
 	case "h2c":
-		cl.Http2ProtocolOptions = &core.Http2ProtocolOptions{}
+		cl.Http2ProtocolOptions = &envoy_api_v2_core.Http2ProtocolOptions{}
 	}
 	return cl
 }
@@ -74,7 +75,7 @@ func cluster(cluster *dag.Cluster) *v2.Cluster {
 	c := &v2.Cluster{
 		Name:           Clustername(cluster),
 		AltStatName:    altStatName(service),
-		ConnectTimeout: duration(250 * time.Millisecond),
+		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 		LbPolicy:       lbPolicy(cluster.LoadBalancerStrategy),
 		CommonLbConfig: ClusterCommonLBConfig(),
 		HealthChecks:   edshealthcheck(cluster),
@@ -152,11 +153,11 @@ func lbPolicy(strategy string) v2.Cluster_LbPolicy {
 	}
 }
 
-func edshealthcheck(c *dag.Cluster) []*core.HealthCheck {
+func edshealthcheck(c *dag.Cluster) []*envoy_api_v2_core.HealthCheck {
 	if c.HealthCheckPolicy == nil {
 		return nil
 	}
-	return []*core.HealthCheck{
+	return []*envoy_api_v2_core.HealthCheck{
 		healthCheck(c),
 	}
 }
@@ -173,10 +174,10 @@ func Clustername(cluster *dag.Cluster) string {
 			buf += hc.Interval.String()
 		}
 		if hc.UnhealthyThreshold > 0 {
-			buf += strconv.Itoa(hc.UnhealthyThreshold)
+			buf += strconv.Itoa(int(hc.UnhealthyThreshold))
 		}
 		if hc.HealthyThreshold > 0 {
-			buf += strconv.Itoa(hc.HealthyThreshold)
+			buf += strconv.Itoa(int(hc.HealthyThreshold))
 		}
 		buf += hc.Path
 	}
@@ -246,7 +247,7 @@ func min(a, b int) int {
 }
 
 // anyPositive indicates if any of the values provided are greater than zero.
-func anyPositive(first int, rest ...int) bool {
+func anyPositive(first uint32, rest ...uint32) bool {
 	if first > 0 {
 		return true
 	}
@@ -259,13 +260,13 @@ func anyPositive(first int, rest ...int) bool {
 }
 
 // u32nil creates a *types.UInt32Value containing v.
-// u32nil returns nil if v is zero.
-func u32nil(val int) *types.UInt32Value {
+// u33nil returns nil if v is zero.
+func u32nil(val uint32) *wrappers.UInt32Value {
 	switch val {
 	case 0:
 		return nil
 	default:
-		return u32(val)
+		return protobuf.UInt32(val)
 	}
 }
 
@@ -278,15 +279,15 @@ func ClusterCommonLBConfig() *v2.Cluster_CommonLbConfig {
 	}
 }
 
-// ConfigSource returns a *core.ConfigSource for cluster.
-func ConfigSource(cluster string) *core.ConfigSource {
-	return &core.ConfigSource{
-		ConfigSourceSpecifier: &core.ConfigSource_ApiConfigSource{
-			ApiConfigSource: &core.ApiConfigSource{
-				ApiType: core.ApiConfigSource_GRPC,
-				GrpcServices: []*core.GrpcService{{
-					TargetSpecifier: &core.GrpcService_EnvoyGrpc_{
-						EnvoyGrpc: &core.GrpcService_EnvoyGrpc{
+// ConfigSource returns a *envoy_api_v2_core.ConfigSource for cluster.
+func ConfigSource(cluster string) *envoy_api_v2_core.ConfigSource {
+	return &envoy_api_v2_core.ConfigSource{
+		ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
+			ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
+				ApiType: envoy_api_v2_core.ApiConfigSource_GRPC,
+				GrpcServices: []*envoy_api_v2_core.GrpcService{{
+					TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
+						EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
 							ClusterName: cluster,
 						},
 					},

@@ -688,10 +688,6 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 					sw.SetInvalid(fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", route.Match, service.Name))
 					return
 				}
-				if service.Weight < 0 {
-					sw.SetInvalid(fmt.Sprintf("route %q: service %q: weight must be greater than or equal to zero", route.Match, service.Name))
-					return
-				}
 				m := Meta{name: service.Name, namespace: ir.Namespace}
 				s := b.lookupService(m, intstr.FromInt(service.Port))
 
@@ -794,10 +790,6 @@ func (b *Builder) processRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			for _, service := range route.Services {
 				if service.Port < 1 || service.Port > 65535 {
 					sw.SetInvalid(fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", routePath, service.Name))
-					return
-				}
-				if service.Weight < 0 {
-					sw.SetInvalid(fmt.Sprintf("route %q: service %q: weight must be greater than or equal to zero", routePath, service.Name))
 					return
 				}
 				m := Meta{name: service.Name, namespace: proxy.Namespace}
@@ -987,15 +979,15 @@ func isBlank(s string) bool {
 
 // MinProtoVersion returns the TLS protocol version specified by an ingress annotation
 // or default if non present.
-func MinProtoVersion(version string) auth.TlsParameters_TlsProtocol {
+func MinProtoVersion(version string) envoy_api_v2_auth.TlsParameters_TlsProtocol {
 	switch version {
 	case "1.3":
-		return auth.TlsParameters_TLSv1_3
+		return envoy_api_v2_auth.TlsParameters_TLSv1_3
 	case "1.2":
-		return auth.TlsParameters_TLSv1_2
+		return envoy_api_v2_auth.TlsParameters_TLSv1_2
 	default:
 		// any other value is interpreted as TLS/1.1
-		return auth.TlsParameters_TLSv1_1
+		return envoy_api_v2_auth.TlsParameters_TLSv1_1
 	}
 }
 

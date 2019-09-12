@@ -20,11 +20,11 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	"github.com/gogo/protobuf/types"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
 	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	"github.com/heptio/contour/internal/envoy"
+	"github.com/heptio/contour/internal/protobuf"
 	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -519,14 +519,14 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 					EdsConfig:   envoy.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				ConnectTimeout: duration(250 * time.Millisecond),
+				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
 					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
-						MaxConnections:     u32(9000),
-						MaxPendingRequests: u32(4096),
-						MaxRequests:        u32(404),
-						MaxRetries:         u32(7),
+						MaxConnections:     protobuf.UInt32(9000),
+						MaxPendingRequests: protobuf.UInt32(4096),
+						MaxRequests:        protobuf.UInt32(404),
+						MaxRetries:         protobuf.UInt32(7),
 					}},
 				},
 				CommonLbConfig: envoy.ClusterCommonLBConfig(),
@@ -565,11 +565,11 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 					EdsConfig:   envoy.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				ConnectTimeout: duration(250 * time.Millisecond),
+				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
 					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
-						MaxPendingRequests: u32(9999),
+						MaxPendingRequests: protobuf.UInt32(9999),
 					}},
 				},
 				CommonLbConfig: envoy.ClusterCommonLBConfig(),
@@ -691,7 +691,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 					EdsConfig:   envoy.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				ConnectTimeout: duration(250 * time.Millisecond),
+				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 				LbPolicy:       v2.Cluster_RANDOM,
 				CommonLbConfig: envoy.ClusterCommonLBConfig(),
 			},
@@ -703,7 +703,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 					EdsConfig:   envoy.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				ConnectTimeout: duration(250 * time.Millisecond),
+				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 				LbPolicy:       v2.Cluster_LEAST_REQUEST,
 				CommonLbConfig: envoy.ClusterCommonLBConfig(),
 			},
@@ -1054,7 +1054,7 @@ func cluster(name, servicename, statName string) *v2.Cluster {
 			EdsConfig:   envoy.ConfigSource("contour"),
 			ServiceName: servicename,
 		},
-		ConnectTimeout: duration(250 * time.Millisecond),
+		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 		LbPolicy:       v2.Cluster_ROUND_ROBIN,
 		CommonLbConfig: envoy.ClusterCommonLBConfig(),
 	}
@@ -1065,7 +1065,7 @@ func externalnamecluster(name, servicename, statName, externalName string, port 
 		Name:                 name,
 		ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
 		AltStatName:          statName,
-		ConnectTimeout:       duration(250 * time.Millisecond),
+		ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
 		LbPolicy:             v2.Cluster_ROUND_ROBIN,
 		CommonLbConfig:       envoy.ClusterCommonLBConfig(),
 		LoadAssignment: &v2.ClusterLoadAssignment{
@@ -1085,17 +1085,13 @@ func tlscluster(name, servicename, statsName string, ca []byte, subjectName stri
 
 func clusterWithHealthCheck(name, servicename, statName, healthCheckPath string, drainConnOnHostRemoval bool) *v2.Cluster {
 	c := cluster(name, servicename, statName)
-	timeout := 2 * time.Second
-	interval := 10 * time.Second
-	unhealthyThreshold := types.UInt32Value{Value: 3}
-	healthyThreshold := types.UInt32Value{Value: 2}
-	c.HealthChecks = []*core.HealthCheck{{
-		Timeout:            &timeout,
-		Interval:           &interval,
-		UnhealthyThreshold: &unhealthyThreshold,
-		HealthyThreshold:   &healthyThreshold,
-		HealthChecker: &core.HealthCheck_HttpHealthCheck_{
-			HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
+	c.HealthChecks = []*envoy_api_v2_core.HealthCheck{{
+		Timeout:            protobuf.Duration(2 * time.Second),
+		Interval:           protobuf.Duration(10 * time.Second),
+		UnhealthyThreshold: protobuf.UInt32(3),
+		HealthyThreshold:   protobuf.UInt32(2),
+		HealthChecker: &envoy_api_v2_core.HealthCheck_HttpHealthCheck_{
+			HttpHealthCheck: &envoy_api_v2_core.HealthCheck_HttpHealthCheck{
 				Host: "contour-envoy-healthcheck",
 				Path: healthCheckPath,
 			},

@@ -22,13 +22,14 @@ import (
 	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	envoy_config_v2_tcpproxy "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
-	"github.com/envoyproxy/go-control-plane/pkg/util"
+	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/heptio/contour/internal/contour"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
+	"github.com/heptio/contour/internal/protobuf"
 	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -400,7 +401,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		FilterChains: filterchaintls("kuard.example.com", secret1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
 	}
 
-	l1.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = auth.TlsParameters_TLSv1_1
+	l1.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = envoy_api_v2_auth.TlsParameters_TLSv1_1
 
 	// add service
 	rh.OnAdd(svc1)
@@ -449,7 +450,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		FilterChains: filterchaintls("kuard.example.com", secret1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
 	}
 
-	l2.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = auth.TlsParameters_TLSv1_3
+	l2.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = envoy_api_v2_auth.TlsParameters_TLSv1_3
 
 	// add ingress and assert the existence of ingress_http and ingres_https
 	rh.OnAdd(i2)
@@ -697,7 +698,7 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 		FilterChains: filterchaintls("kuard.example.com", s1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
 	}
 	// easier to patch this up than add more params to filterchaintls
-	l1.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = auth.TlsParameters_TLSv1_3
+	l1.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = envoy_api_v2_auth.TlsParameters_TLSv1_3
 
 	assertEqual(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
@@ -1341,11 +1342,11 @@ func TestLDSIngressRouteTCPProxyTLSPassthrough(t *testing.T) {
 	ingressHTTPS := &v2.Listener{
 		Name:    "ingress_https",
 		Address: envoy.SocketAddress("0.0.0.0", 8443),
-		FilterChains: []*listener.FilterChain{{
+		FilterChains: []*envoy_api_v2_listener.FilterChain{{
 			Filters: envoy.Filters(
 				tcpproxy(t, "ingress_https", "default/correct-backend/80/da39a3ee5e"),
 			),
-			FilterChainMatch: &listener.FilterChainMatch{
+			FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 				ServerNames: []string{"kuard-tcp.example.com"},
 			},
 		}},
@@ -1644,7 +1645,7 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 
 func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
-		reh.CacheHandler.MinimumProtocolVersion = auth.TlsParameters_TLSv1_2
+		reh.CacheHandler.MinimumProtocolVersion = envoy_api_v2_auth.TlsParameters_TLSv1_2
 	})
 
 	defer done()
@@ -1711,7 +1712,7 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 		),
 		FilterChains: filterchaintls("kuard.example.com", secret1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
 	}
-	l1.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = auth.TlsParameters_TLSv1_2
+	l1.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = envoy_api_v2_auth.TlsParameters_TLSv1_2
 
 	// verify that i1's TLS 1.1 minimum has been upgraded to 1.2
 	assertEqual(t, &v2.DiscoveryResponse{
@@ -1764,7 +1765,7 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 		),
 		FilterChains: filterchaintls("kuard.example.com", secret1, envoy.HTTPConnectionManager("ingress_https", "/dev/stdout"), "h2", "http/1.1"),
 	}
-	l2.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = auth.TlsParameters_TLSv1_3
+	l2.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = envoy_api_v2_auth.TlsParameters_TLSv1_3
 
 	// verify that i2's TLS 1.3 minimum has NOT been downgraded to 1.2
 	assertEqual(t, &v2.DiscoveryResponse{
@@ -1881,31 +1882,31 @@ func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
 	}
 }
 
-func filterchaintls(domain string, secret *v1.Secret, filter *listener.Filter, alpn ...string) []*listener.FilterChain {
-	return []*listener.FilterChain{
+func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_listener.Filter, alpn ...string) []*envoy_api_v2_listener.FilterChain {
+	return []*envoy_api_v2_listener.FilterChain{
 		envoy.FilterChainTLS(
 			domain,
 			&dag.Secret{Object: secret},
-			[]*listener.Filter{
+			[]*envoy_api_v2_listener.Filter{
 				filter,
 			},
-			auth.TlsParameters_TLSv1_1,
+			envoy_api_v2_auth.TlsParameters_TLSv1_1,
 			alpn...,
 		),
 	}
 }
 
-func tcpproxy(t *testing.T, statPrefix, cluster string) *listener.Filter {
-	return &listener.Filter{
-		Name: util.TCPProxy,
-		ConfigType: &listener.Filter_TypedConfig{
-			TypedConfig: any(t, &envoy_config_v2_tcpproxy.TcpProxy{
+func tcpproxy(t *testing.T, statPrefix, cluster string) *envoy_api_v2_listener.Filter {
+	return &envoy_api_v2_listener.Filter{
+		Name: wellknown.TCPProxy,
+		ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
+			TypedConfig: toAny(t, &envoy_config_v2_tcpproxy.TcpProxy{
 				StatPrefix: statPrefix,
 				ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
 					Cluster: cluster,
 				},
 				AccessLog:   envoy.FileAccessLog("/dev/stdout"),
-				IdleTimeout: idleTimeout(envoy.TCPDefaultIdleTimeout),
+				IdleTimeout: protobuf.Duration(9001 * time.Second),
 			}),
 		},
 	}
@@ -1913,8 +1914,4 @@ func tcpproxy(t *testing.T, statPrefix, cluster string) *listener.Filter {
 
 func staticListener() *v2.Listener {
 	return envoy.StatsListener(statsAddress, statsPort)
-}
-
-func idleTimeout(d time.Duration) *time.Duration {
-	return &d
 }

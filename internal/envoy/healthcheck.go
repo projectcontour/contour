@@ -16,9 +16,11 @@ package envoy
 import (
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	"github.com/gogo/protobuf/types"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/golang/protobuf/ptypes/duration"
+	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/heptio/contour/internal/dag"
+	"github.com/heptio/contour/internal/protobuf"
 )
 
 const (
@@ -30,8 +32,8 @@ const (
 	hcHost               = "contour-envoy-healthcheck"
 )
 
-// healthCheck returns a *core.HealthCheck value.
-func healthCheck(cluster *dag.Cluster) *core.HealthCheck {
+// healthCheck returns a *envoy_api_v2_core.HealthCheck value.
+func healthCheck(cluster *dag.Cluster) *envoy_api_v2_core.HealthCheck {
 	hc := cluster.HealthCheckPolicy
 	host := hcHost
 	if hc.Host != "" {
@@ -40,13 +42,13 @@ func healthCheck(cluster *dag.Cluster) *core.HealthCheck {
 
 	// TODO(dfc) why do we need to specify our own default, what is the default
 	// that envoy applies if these fields are left nil?
-	return &core.HealthCheck{
+	return &envoy_api_v2_core.HealthCheck{
 		Timeout:            durationOrDefault(hc.Timeout, hcTimeout),
 		Interval:           durationOrDefault(hc.Interval, hcInterval),
 		UnhealthyThreshold: countOrDefault(hc.UnhealthyThreshold, hcUnhealthyThreshold),
 		HealthyThreshold:   countOrDefault(hc.HealthyThreshold, hcHealthyThreshold),
-		HealthChecker: &core.HealthCheck_HttpHealthCheck_{
-			HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
+		HealthChecker: &envoy_api_v2_core.HealthCheck_HttpHealthCheck_{
+			HttpHealthCheck: &envoy_api_v2_core.HealthCheck_HttpHealthCheck{
 				Path: hc.Path,
 				Host: host,
 			},
@@ -54,18 +56,18 @@ func healthCheck(cluster *dag.Cluster) *core.HealthCheck {
 	}
 }
 
-func durationOrDefault(duration, def time.Duration) *time.Duration {
-	if duration != 0 {
-		return &duration
+func durationOrDefault(d, def time.Duration) *duration.Duration {
+	if d != 0 {
+		return protobuf.Duration(d)
 	}
-	return &def
+	return protobuf.Duration(def)
 }
 
-func countOrDefault(count int, def int) *types.UInt32Value {
+func countOrDefault(count uint32, def uint32) *wrappers.UInt32Value {
 	switch count {
 	case 0:
-		return u32(def)
+		return protobuf.UInt32(def)
 	default:
-		return u32(count)
+		return protobuf.UInt32(count)
 	}
 }

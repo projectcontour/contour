@@ -17,9 +17,9 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
 )
@@ -27,12 +27,12 @@ import (
 // SecretCache manages the contents of the gRPC SDS cache.
 type SecretCache struct {
 	mu     sync.Mutex
-	values map[string]*auth.Secret
+	values map[string]*envoy_api_v2_auth.Secret
 	Cond
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *SecretCache) Update(v map[string]*auth.Secret) {
+func (c *SecretCache) Update(v map[string]*envoy_api_v2_auth.Secret) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -73,19 +73,19 @@ type secretsByName []proto.Message
 func (s secretsByName) Len() int      { return len(s) }
 func (s secretsByName) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 func (s secretsByName) Less(i, j int) bool {
-	return s[i].(*auth.Secret).Name < s[j].(*auth.Secret).Name
+	return s[i].(*envoy_api_v2_auth.Secret).Name < s[j].(*envoy_api_v2_auth.Secret).Name
 }
 
 func (*SecretCache) TypeURL() string { return cache.SecretType }
 
 type secretVisitor struct {
-	secrets map[string]*auth.Secret
+	secrets map[string]*envoy_api_v2_auth.Secret
 }
 
-// visitSecrets produces a map of *auth.Secret
-func visitSecrets(root dag.Vertex) map[string]*auth.Secret {
+// visitSecrets produces a map of *envoy_api_v2_auth.Secret
+func visitSecrets(root dag.Vertex) map[string]*envoy_api_v2_auth.Secret {
 	sv := secretVisitor{
-		secrets: make(map[string]*auth.Secret),
+		secrets: make(map[string]*envoy_api_v2_auth.Secret),
 	}
 	sv.visit(root)
 	return sv.secrets

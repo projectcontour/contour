@@ -17,8 +17,8 @@ import (
 	"testing"
 
 	bootstrap "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -742,7 +742,6 @@ func TestBootstrap(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-
 			got := Bootstrap(&tc.config)
 			want := new(bootstrap.Bootstrap)
 			unmarshal(t, tc.want, want)
