@@ -113,7 +113,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 		l.Visit(func(vertex dag.Vertex) {
 			switch vh := vertex.(type) {
 			case *dag.VirtualHost:
-				vhost := envoy.VirtualHost(vh.Name)
+				var routes []*envoy_api_v2_route.Route
 				vh.Visit(func(v dag.Vertex) {
 					switch r := v.(type) {
 					case *dag.PrefixRoute:
@@ -123,7 +123,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 							rr.Action = envoy.UpgradeHTTPS()
 							rr.RequestHeadersToAdd = nil
 						}
-						vhost.Routes = append(vhost.Routes, rr)
+						routes = append(routes, rr)
 					case *dag.RegexRoute:
 						rr := envoy.Route(envoy.RouteRegex(r.Regex), envoy.RouteRoute(&r.Route))
 
@@ -131,34 +131,36 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 							rr.Action = envoy.UpgradeHTTPS()
 							rr.RequestHeadersToAdd = nil
 						}
-						vhost.Routes = append(vhost.Routes, rr)
+						routes = append(routes, rr)
 					}
 				})
-				if len(vhost.Routes) < 1 {
+				if len(routes) < 1 {
 					return
 				}
-				sort.Stable(longestRouteFirst(vhost.Routes))
+				sort.Stable(longestRouteFirst(routes))
+				vhost := envoy.VirtualHost(vh.Name, routes...)
 				v.routes["ingress_http"].VirtualHosts = append(v.routes["ingress_http"].VirtualHosts, vhost)
 			case *dag.SecureVirtualHost:
-				vhost := envoy.VirtualHost(vh.VirtualHost.Name)
+				var routes []*envoy_api_v2_route.Route
 				vh.Visit(func(v dag.Vertex) {
 					switch r := v.(type) {
 					case *dag.PrefixRoute:
-						vhost.Routes = append(
-							vhost.Routes,
+						routes = append(
+							routes,
 							envoy.Route(envoy.RoutePrefix(r.Prefix), envoy.RouteRoute(&r.Route)),
 						)
 					case *dag.RegexRoute:
-						vhost.Routes = append(
-							vhost.Routes,
+						routes = append(
+							routes,
 							envoy.Route(envoy.RouteRegex(r.Regex), envoy.RouteRoute(&r.Route)),
 						)
 					}
 				})
-				if len(vhost.Routes) < 1 {
+				if len(routes) < 1 {
 					return
 				}
-				sort.Stable(longestRouteFirst(vhost.Routes))
+				sort.Stable(longestRouteFirst(routes))
+				vhost := envoy.VirtualHost(vh.VirtualHost.Name, routes...)
 				v.routes["ingress_https"].VirtualHosts = append(v.routes["ingress_https"].VirtualHosts, vhost)
 			default:
 				// recurse
