@@ -37,10 +37,10 @@ const (
 	annotationPerTryTimeout      = "contour.heptio.com/per-try-timeout"
 )
 
-// parseAnnotation parses the annotation map for the supplied key.
-// If the value is not present, or malformed, then zero is returned.
-func parseAnnotation(annotations map[string]string, annotation string) uint32 {
-	v, err := strconv.ParseUint(annotations[annotation], 10, 32)
+// parseUInt32 parses the supplied string as if it were a uint32.
+// If the value is not present, or malformed, or outside uint32's range, zero is returned.
+func parseUInt32(s string) uint32 {
+	v, err := strconv.ParseUint(s, 10, 32)
 	if err != nil {
 		return 0
 	}

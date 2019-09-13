@@ -23,64 +23,36 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestParseAnnotation(t *testing.T) {
+func TestParseUint32(t *testing.T) {
 	tests := map[string]struct {
-		a    map[string]string
-		key  string
+		s    string
 		want uint32
 	}{
-		"empty map": {
-			a:    nil,
-			key:  "timeout",
-			want: 0,
-		},
-		"missing": {
-			a: map[string]string{
-				"retries": "99",
-			},
-			key:  "timeout",
-			want: 0,
-		},
 		"blank": {
-			a: map[string]string{
-				"timeout": "",
-			},
-			key:  "timeout",
+			s:    "",
 			want: 0,
 		},
 		"negative": {
-			a: map[string]string{
-				"timeout": "-6", // for alice
-			},
-			key:  "timeout",
+			s:    "-6", // for alice
 			want: 0,
 		},
 		"explicit": {
-			a: map[string]string{
-				"timeout": "0",
-			},
-			key:  "timeout",
+			s:    "0",
 			want: 0,
 		},
 		"positive": {
-			a: map[string]string{
-				"timeout": "2",
-			},
-			key:  "timeout",
+			s:    "2",
 			want: 2,
 		},
 		"too large": {
-			a: map[string]string{
-				"timeout": "144115188075855872", // larger than uint32
-			},
-			key:  "timeout",
+			s:    "144115188075855872", // larger than uint32
 			want: 0,
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := parseAnnotation(tc.a, tc.key)
+			got := parseUInt32(tc.s)
 			if got != tc.want {
 				t.Fatalf("expected: %v, got %v", tc.want, got)
 			}
