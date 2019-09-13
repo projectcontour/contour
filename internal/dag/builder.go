@@ -212,7 +212,9 @@ func (b *Builder) validIngressRoutes() []*ingressroutev1.IngressRoute {
 			sort.Strings(conflicting) // sort for test stability
 			msg := fmt.Sprintf("fqdn %q is used in multiple IngressRoutes: %s", fqdn, strings.Join(conflicting, ", "))
 			for _, ir := range irs {
-				b.WithObject(ir).WithValue("vhost", fqdn).SetInvalid(msg).Commit()
+				sw, commit := b.WithObject(ir)
+				sw.WithValue("vhost", fqdn).SetInvalid(msg)
+				commit()
 			}
 		}
 	}
@@ -247,7 +249,9 @@ func (b *Builder) validHTTPProxies() []*projcontour.HTTPProxy {
 			sort.Strings(conflicting) // sort for test stability
 			msg := fmt.Sprintf("fqdn %q is used in multiple HTTPProxies: %s", fqdn, strings.Join(conflicting, ", "))
 			for _, proxy := range proxies {
-				b.WithObject(proxy).WithValue("vhost", fqdn).SetInvalid(msg).Commit()
+				sw, commit := b.WithObject(proxy)
+				sw.WithValue("vhost", fqdn).SetInvalid(msg)
+				commit()
 			}
 		}
 	}
@@ -370,8 +374,8 @@ func (b *Builder) computeIngressRoutes() {
 }
 
 func (b *Builder) computeIngressRoute(ir *ingressroutev1.IngressRoute) {
-	sw := b.WithObject(ir)
-	defer sw.Commit()
+	sw, commit := b.WithObject(ir)
+	defer commit()
 
 	if ir.Spec.VirtualHost == nil {
 		// mark delegate ingressroute orphaned.
@@ -435,8 +439,8 @@ func (b *Builder) computeHTTPProxies() {
 }
 
 func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
-	sw := b.WithObject(proxy)
-	defer sw.Commit()
+	sw, commit := b.WithObject(proxy)
+	defer commit()
 
 	if proxy.Spec.VirtualHost == nil {
 		// mark HTTPProxy as orphaned.
@@ -530,7 +534,9 @@ func (b *Builder) processIncludes(sw *ObjectStatusWriter, proxy *projcontour.HTT
 			//	case ir.Spec.TCPProxy != nil && (passthrough || enforceTLS):
 			//		b.processTCPProxy(ir, nil, host)
 			case delegatedProxy.Spec.Routes != nil:
-				b.processRoutes(sw.WithObject(delegatedProxy).WithValue("vhost", host), delegatedProxy, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS)
+				sw, commit := sw.WithObject(delegatedProxy)
+				b.processRoutes(sw, delegatedProxy, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS)
+				commit()
 			}
 
 			// Loop over any includes in the delegated httlb
@@ -543,9 +549,9 @@ func (b *Builder) processIncludes(sw *ObjectStatusWriter, proxy *projcontour.HTT
 						return
 					}
 				}
-				sw := sw.WithObject(delegatedProxy)
+				sw, commit := sw.WithObject(delegatedProxy)
 				b.processIncludes(sw, delegatedProxy, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS, visited)
-				sw.Commit()
+				commit()
 			}
 
 			// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
@@ -571,17 +577,17 @@ func (b *Builder) buildDAG() *DAG {
 	for meta := range b.orphaned {
 		ir, ok := b.Source.ingressroutes[meta]
 		if ok {
-			b.WithObject(ir).
-				WithValue("status", StatusOrphaned).
-				WithValue("description", "this IngressRoute is not part of a delegation chain from a root IngressRoute").
-				Commit()
+			sw, commit := b.WithObject(ir)
+			sw.WithValue("status", StatusOrphaned).
+				WithValue("description", "this IngressRoute is not part of a delegation chain from a root IngressRoute")
+			commit()
 		}
 		proxy, ok := b.Source.httpproxies[meta]
 		if ok {
-			b.WithObject(proxy).
-				WithValue("status", StatusOrphaned).
-				WithValue("description", "this HTTPProxy is not part of a delegation chain from a root HTTPProxy").
-				Commit()
+			sw, commit := b.WithObject(proxy)
+			sw.WithValue("status", StatusOrphaned).
+				WithValue("description", "this HTTPProxy is not part of a delegation chain from a root HTTPProxy")
+			commit()
 		}
 	}
 	dag.statuses = b.statuses
@@ -755,9 +761,9 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 			}
 
 			// follow the link and process the target ingress route
-			sw := sw.WithObject(dest)
+			sw, commit := sw.WithObject(dest)
 			b.processIngressRoutes(sw, dest, route.Match, visited, host, enforceTLS)
-			sw.Commit()
+			commit()
 		}
 	}
 	sw.SetValid().WithValue("description", "valid IngressRoute")
@@ -905,9 +911,9 @@ func (b *Builder) processTCPProxy(sw *ObjectStatusWriter, ir *ingressroutev1.Ing
 		}
 
 		// follow the link and process the target ingress route
-		sw := sw.WithObject(dest)
+		sw, commit := sw.WithObject(dest)
 		b.processTCPProxy(sw, dest, visited, host)
-		sw.Commit()
+		commit()
 	}
 
 	sw.SetValid().WithValue("description", "valid TCPProxy")
