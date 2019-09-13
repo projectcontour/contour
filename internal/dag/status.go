@@ -45,40 +45,25 @@ type ObjectStatusWriter struct {
 	values map[string]string
 }
 
-func (sw *StatusWriter) WithObject(obj Object) *ObjectStatusWriter {
-	return &ObjectStatusWriter{
+// WithObject returns an ObjectStatusWriter that can be used to set the state of
+// the Object. The state can be set as many times as necessary. The state of the
+// object can be made perminent by calling the commit function returned from WithObject.
+// The caller should pass the ObjectStatusWriter to functions interested in writing status,
+// but keep the commit function for itself. The commit function should be either called
+// via a defer, or directly if statuses are being set in a loop (as defers will not fire
+// until the end of the function).
+func (sw *StatusWriter) WithObject(obj Object) (_ *ObjectStatusWriter, commit func()) {
+	osw := &ObjectStatusWriter{
 		sw:     sw,
 		obj:    obj,
 		values: make(map[string]string),
 	}
-}
-
-func (osw *ObjectStatusWriter) WithValue(key, val string) *ObjectStatusWriter {
-	osw.values[key] = val
-	return osw
-}
-
-func (osw *ObjectStatusWriter) SetInvalid(desc string) *ObjectStatusWriter {
-	return osw.WithValue("description", desc).WithValue("status", StatusInvalid)
-}
-
-func (osw *ObjectStatusWriter) SetValid() *ObjectStatusWriter {
-	return osw.WithValue("status", StatusValid)
-}
-
-func (osw *ObjectStatusWriter) WithObject(obj Object) *ObjectStatusWriter {
-	m := make(map[string]string)
-	for k, v := range osw.values {
-		m[k] = v
-	}
-	return &ObjectStatusWriter{
-		sw:     osw.sw,
-		obj:    obj,
-		values: m,
+	return osw, func() {
+		sw.commit(osw)
 	}
 }
 
-func (osw *ObjectStatusWriter) Commit() {
+func (sw *StatusWriter) commit(osw *ObjectStatusWriter) {
 	if len(osw.values) == 0 {
 		// nothing to commit
 		return
@@ -88,13 +73,44 @@ func (osw *ObjectStatusWriter) Commit() {
 		name:      osw.obj.GetObjectMeta().GetName(),
 		namespace: osw.obj.GetObjectMeta().GetNamespace(),
 	}
-	if _, ok := osw.sw.statuses[m]; !ok {
+	if _, ok := sw.statuses[m]; !ok {
 		// only record the first status event
-		osw.sw.statuses[m] = Status{
+		sw.statuses[m] = Status{
 			Object:      osw.obj,
 			Status:      osw.values["status"],
 			Description: osw.values["description"],
 			Vhost:       osw.values["vhost"],
 		}
+	}
+}
+func (osw *ObjectStatusWriter) WithValue(key, val string) *ObjectStatusWriter {
+	osw.values[key] = val
+	return osw
+}
+
+func (osw *ObjectStatusWriter) SetInvalid(desc string) {
+	osw.WithValue("description", desc).WithValue("status", StatusInvalid)
+}
+
+func (osw *ObjectStatusWriter) SetValid() *ObjectStatusWriter {
+	return osw.WithValue("status", StatusValid)
+}
+
+// WithObject returns a new ObjectStatusWriter with a copy of the current
+// ObjectStatusWriter's values, including its status if set. This is convenient if
+// the object shares a relationship with its parent. The caller should arrange for
+// the commit function to be called to write the final status of the object.
+func (osw *ObjectStatusWriter) WithObject(obj Object) (_ *ObjectStatusWriter, commit func()) {
+	m := make(map[string]string)
+	for k, v := range osw.values {
+		m[k] = v
+	}
+	nosw := &ObjectStatusWriter{
+		sw:     osw.sw,
+		obj:    obj,
+		values: m,
+	}
+	return nosw, func() {
+		osw.sw.commit(nosw)
 	}
 }
