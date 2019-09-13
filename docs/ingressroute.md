@@ -85,8 +85,8 @@ basic     24s
 
 Describing IngressRoutes:
 
-```Shell
-kubectl describe ingressroute basic
+```bash
+$ kubectl describe ingressroute basic
 Name:         basic
 Namespace:    default
 Labels:       <none>
@@ -112,7 +112,7 @@ Events:    <none>
 
 Deleting IngressRoutes:
 
-```Shell
+```bash
 $ kubectl delete ingressroute basic
 ingressroute "basic" deleted
 ```
@@ -698,7 +698,7 @@ There's nothing specific in the `IngressRoute` object that needs configured othe
 
 NOTE: The ports are required to be specified.
 
-```
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
