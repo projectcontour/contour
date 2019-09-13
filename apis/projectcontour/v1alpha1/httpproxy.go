@@ -36,7 +36,7 @@ type Include struct {
 	Name string `json:"name"`
 	// Namespace of the HTTPProxy
 	Namespace string `json:"namespace,omitempty"`
-	// Condition is a set of routing properies that is applied to an HTTPProxy in a namespace.
+	// Condition is a set of routing properties that is applied to an HTTPProxy in a namespace.
 	Condition `json:"conditions"`
 }
 
@@ -44,10 +44,16 @@ type Include struct {
 type Condition struct {
 	// Prefix defines a prefix match for a request.
 	Prefix string `json:"prefix,omitempty"`
-	// HeadersMatch represent a set of HTTP headers that match the key/value exactly as specified.
-	HeadersMatch map[string][]string `json:"headersMatch,omitempty"`
-	// HeadersContain represent a set of HTTP headers that match the key exactly and the value as a contains.
+	// Header matches only the key of the header ignoring any value supplied in the request.
+	Header string `json:"header,omitempty"`
+	// HeadersContain represent a set of HTTP headers that match the key and contain the value as specified.
 	HeadersContain map[string][]string `json:"headersContain,omitempty"`
+	// HeadersMatch represent a set of HTTP headers that match the key and match the value as specified exactly.
+	HeadersMatch map[string][]string `json:"headersMatch,omitempty"`
+	// HeadersNotContain represent a set of HTTP headers that match the key and do not contain the value as specified.
+	HeadersNotContain map[string][]string `json:"headersNotContain,omitempty"`
+	// HeadersNotMatch represent a set of HTTP headers that match the key and do not match the value as specified exactly.
+	HeadersNotMatch map[string][]string `json:"headersNotMatch,omitempty"`
 }
 
 // VirtualHost appears at most once. If it is present, the object is considered
