@@ -14,6 +14,8 @@
 package dag
 
 import (
+	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
+	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -92,8 +94,15 @@ func (osw *ObjectStatusWriter) SetInvalid(desc string) {
 	osw.WithValue("description", desc).WithValue("status", StatusInvalid)
 }
 
-func (osw *ObjectStatusWriter) SetValid() *ObjectStatusWriter {
-	return osw.WithValue("status", StatusValid)
+func (osw *ObjectStatusWriter) SetValid() {
+	switch osw.obj.(type) {
+	case *projcontour.HTTPProxy:
+		osw.WithValue("description", "valid HTTPProxy").WithValue("status", StatusValid)
+	case *ingressroutev1.IngressRoute:
+		osw.WithValue("description", "valid IngressRoute").WithValue("status", StatusValid)
+	default:
+		// not a supported type
+	}
 }
 
 // WithObject returns a new ObjectStatusWriter with a copy of the current
