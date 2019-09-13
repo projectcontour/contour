@@ -122,10 +122,10 @@ func (b *Builder) addService(svc *v1.Service, port *v1.ServicePort) *Service {
 		ServicePort: port,
 
 		Protocol:           upstreamProtocol(svc, port),
-		MaxConnections:     parseAnnotation(svc.Annotations, annotationMaxConnections),
-		MaxPendingRequests: parseAnnotation(svc.Annotations, annotationMaxPendingRequests),
-		MaxRequests:        parseAnnotation(svc.Annotations, annotationMaxRequests),
-		MaxRetries:         parseAnnotation(svc.Annotations, annotationMaxRetries),
+		MaxConnections:     parseUInt32(svc.Annotations[annotationMaxConnections]),
+		MaxPendingRequests: parseUInt32(svc.Annotations[annotationMaxPendingRequests]),
+		MaxRequests:        parseUInt32(svc.Annotations[annotationMaxRequests]),
+		MaxRetries:         parseUInt32(svc.Annotations[annotationMaxRetries]),
 		ExternalName:       externalName(svc),
 	}
 	b.services[s.toMeta()] = s
@@ -952,7 +952,7 @@ func route(ingress *v1beta1.Ingress, path string) Route {
 			RetryOn: retryOn,
 			// TODO(dfc) NumRetries may parse as 0, which is inconsistent with
 			// retryPolicyIngressRoute()'s default value of 1.
-			NumRetries: parseAnnotation(ingress.Annotations, annotationNumRetries),
+			NumRetries: parseUInt32(ingress.Annotations[annotationNumRetries]),
 			// TODO(dfc) PerTryTimeout will parse to -1, infinite, in the case of
 			// invalid data, this is inconsistent with retryPolicyIngressRoute()'s default value
 			// of 0 duration.
