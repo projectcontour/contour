@@ -188,7 +188,7 @@ func RoutePrefix(prefix string) *envoy_api_v2_route.RouteMatch {
 }
 
 // VirtualHost creates a new route.VirtualHost.
-func VirtualHost(hostname string) *envoy_api_v2_route.VirtualHost {
+func VirtualHost(hostname string, routes ...*envoy_api_v2_route.Route) *envoy_api_v2_route.VirtualHost {
 	domains := []string{hostname}
 	if hostname != "*" {
 		domains = append(domains, hostname+":*")
@@ -196,6 +196,7 @@ func VirtualHost(hostname string) *envoy_api_v2_route.VirtualHost {
 	return &envoy_api_v2_route.VirtualHost{
 		Name:    hashname(60, hostname),
 		Domains: domains,
+		Routes:  routes,
 	}
 }
 
