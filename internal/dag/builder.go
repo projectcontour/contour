@@ -488,7 +488,7 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 	}
 
 	// Set default status
-	sw.SetValid().WithValue("description", "valid HTTPProxy")
+	sw.SetValid()
 
 	// Loop over and process all includes
 	b.processIncludes(sw, proxy, host, nil, enforceTLS, nil)
@@ -500,6 +500,7 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 	case proxy.Spec.Routes != nil:
 		b.processRoutes(sw, proxy, host, nil, enforceTLS)
 	}
+
 }
 
 // mergeConditions merges any two conditions when they are delegated
@@ -766,7 +767,7 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 			commit()
 		}
 	}
-	sw.SetValid().WithValue("description", "valid IngressRoute")
+	sw.SetValid()
 }
 
 func (b *Builder) processRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, host string, condition *projcontour.Condition, enforceTLS bool) {
@@ -878,7 +879,7 @@ func (b *Builder) processTCPProxy(sw *ObjectStatusWriter, ir *ingressroutev1.Ing
 			})
 		}
 		b.lookupSecureVirtualHost(host).TCPProxy = &proxy
-		sw.SetValid().WithValue("description", "valid TCPProxy")
+		sw.SetValid()
 		return
 	}
 
@@ -916,7 +917,7 @@ func (b *Builder) processTCPProxy(sw *ObjectStatusWriter, ir *ingressroutev1.Ing
 		commit()
 	}
 
-	sw.SetValid().WithValue("description", "valid TCPProxy")
+	sw.SetValid()
 }
 
 func conditionPath(routeCondition, includeCondition *projcontour.Condition) string {
