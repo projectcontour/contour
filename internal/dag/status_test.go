@@ -703,6 +703,60 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	ir29 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "site1",
+			Namespace: s1.Namespace,
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "site1.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Delegate: &ingressroutev1.Delegate{
+					Name:      "www",
+					Namespace: s1.Namespace,
+				},
+			}},
+		},
+	}
+
+	ir30 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "site2",
+			Namespace: s1.Namespace,
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "site2.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Delegate: &ingressroutev1.Delegate{
+					Name:      "www",
+					Namespace: s1.Namespace,
+				},
+			}},
+		},
+	}
+
+	ir31 := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "www",
+			Namespace: s1.Namespace,
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			Routes: []ingressroutev1.Route{{
+				Match: "/foo",
+				Services: []ingressroutev1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -729,7 +783,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			objs: []interface{}{ir1, ir4, s4},
 			want: map[Meta]Status{
 				{name: ir1.Name, namespace: ir1.Namespace}: {Object: ir1, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
-				{name: ir4.Name, namespace: ir4.Namespace}: {Object: ir4, Status: "invalid", Description: `the path prefix "/doesnotmatch" does not match the parent's path prefix "/prefix"`, Vhost: "example.com"},
+				{name: ir4.Name, namespace: ir4.Namespace}: {Object: ir4, Status: "invalid", Description: `the path prefix "/doesnotmatch" does not match the parent's path prefix "/prefix"`},
 			},
 		},
 		"root ingressroute does not specify FQDN": {
@@ -762,7 +816,6 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Object:      ir8,
 					Status:      "invalid",
 					Description: "route creates a delegation cycle: roots/parent -> roots/child -> roots/child",
-					Vhost:       "example.com",
 				},
 			},
 		},
@@ -781,8 +834,8 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		"ingressroute delegates to multiple ingressroutes, one is invalid": {
 			objs: []interface{}{ir10, ir11, ir12, s6, s7},
 			want: map[Meta]Status{
-				{name: ir11.Name, namespace: ir11.Namespace}: {Object: ir11, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
-				{name: ir12.Name, namespace: ir12.Namespace}: {Object: ir12, Status: "invalid", Description: `route "/bar": service "foo3": port must be in the range 1-65535`, Vhost: "example.com"},
+				{name: ir11.Name, namespace: ir11.Namespace}: {Object: ir11, Status: "valid", Description: "valid IngressRoute"},
+				{name: ir12.Name, namespace: ir12.Namespace}: {Object: ir12, Status: "invalid", Description: `route "/bar": service "foo3": port must be in the range 1-65535`},
 				{name: ir10.Name, namespace: ir10.Namespace}: {Object: ir10, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
 			},
 		},
@@ -797,7 +850,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			objs: []interface{}{ir14, ir11, ir10, s5, s6},
 			want: map[Meta]Status{
 				{name: ir14.Name, namespace: ir14.Namespace}: {Object: ir14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
-				{name: ir11.Name, namespace: ir11.Namespace}: {Object: ir11, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
+				{name: ir11.Name, namespace: ir11.Namespace}: {Object: ir11, Status: "valid", Description: "valid IngressRoute"},
 				{name: ir10.Name, namespace: ir10.Namespace}: {Object: ir10, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
 			},
 		},
@@ -951,6 +1004,30 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Status:      StatusInvalid,
 					Description: "TLS Secret [heptio-contour/ssl-cert] not found or is malformed",
 					Vhost:       ir28.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		"two root ingressroutes delegated to the same object should not conflict on hostname": {
+			objs: []interface{}{
+				s1, ir29, ir30, ir31,
+			},
+			want: map[Meta]Status{
+				{name: ir29.Name, namespace: ir29.Namespace}: {
+					Object:      ir29,
+					Status:      "valid",
+					Description: "valid IngressRoute",
+					Vhost:       "site1.com",
+				},
+				{name: ir30.Name, namespace: ir30.Namespace}: {
+					Object:      ir30,
+					Status:      "valid",
+					Description: "valid IngressRoute",
+					Vhost:       "site2.com",
+				},
+				{name: ir31.Name, namespace: ir31.Namespace}: {
+					Object:      ir31,
+					Status:      "valid",
+					Description: "valid IngressRoute",
 				},
 			},
 		},
