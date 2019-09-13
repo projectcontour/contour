@@ -762,7 +762,7 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 			}
 
 			// follow the link and process the target ingress route
-			sw, commit := sw.WithObject(dest)
+			sw, commit := b.WithObject(dest)
 			b.processIngressRoutes(sw, dest, route.Match, visited, host, enforceTLS)
 			commit()
 		}

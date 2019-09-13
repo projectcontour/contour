@@ -376,7 +376,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			objs: []interface{}{ir1, ir4, s3},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
-					{Namespace: "roots", VHost: "example.com"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Valid: map[metrics.Meta]int{
 					{Namespace: "roots", VHost: "example.com"}: 1,
@@ -426,7 +426,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			objs: []interface{}{ir7, ir8},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
-					{Namespace: "roots", VHost: "example.com"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Valid: map[metrics.Meta]int{
 					{Namespace: "roots", VHost: "example.com"}: 1,
@@ -474,10 +474,11 @@ func TestIngressRouteMetrics(t *testing.T) {
 			objs: []interface{}{ir10, ir11, ir12, s1, s2},
 			want: metrics.IngressRouteMetric{
 				Invalid: map[metrics.Meta]int{
-					{Namespace: "roots", VHost: "example.com"}: 1,
+					{Namespace: "roots"}: 1,
 				},
 				Valid: map[metrics.Meta]int{
-					{Namespace: "roots", VHost: "example.com"}: 2,
+					{Namespace: "roots"}:                       1,
+					{Namespace: "roots", VHost: "example.com"}: 1,
 				},
 				Orphaned: map[metrics.Meta]int{},
 				Root: map[metrics.Meta]int{
@@ -513,7 +514,8 @@ func TestIngressRouteMetrics(t *testing.T) {
 					{Namespace: "roots"}: 1,
 				},
 				Valid: map[metrics.Meta]int{
-					{Namespace: "roots", VHost: "example.com"}: 2,
+					{Namespace: "roots", VHost: "example.com"}: 1,
+					{Namespace: "roots"}:                       1,
 				},
 				Orphaned: map[metrics.Meta]int{},
 				Root: map[metrics.Meta]int{
