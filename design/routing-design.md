@@ -14,57 +14,74 @@ There are many different ways to apply routing to L7 HTTP ingress controllers. T
 
 ## Delegation
 
-Contour's delegation model is now akin to file inclusion. Consider programming languages that support an `#include` or `import` syntax as part of prepossessing their source code. As the language's compiler or interpreter is processing the source code and encounters an include style syntax it branches to the file being included and processes it as if it's contents were in line in the parent document.
+Contour's delegation model is now akin to file inclusion. Consider programming languages that support an `#include` or `import` syntax as part of prepossessing their source code.
+As the language's compiler or interpreter is processing the source code and encounters an include style syntax it branches to the file being included and processes it as if it's contents were in line in the parent document.
 
-Compare this to the way Contour builds its DAG. For each IngressRoute record Contour consults each route that has delegated to it, if it encounters a `includes:` key, Contour appends the contents to the delegate IngressRoute record.
+Compare this to the way Contour builds its DAG. For each HTTPProxy record, Contour consults each route that has delegated to it, if it encounters a `includes:` key, Contour appends the contents to the delegate HTTPProxy record.
 
-Additionally, Contour's delegation model follows how DNS is implemented. As the owner of a DNS domain, for example `.io`, I _delegate_ to another nameserver the responsibility for handing the subdomain `projectcontour.io`. Any nameserver can hold a record for `projectcontour.io`, but without the linkage from the parent `.io` TLD, its information is unreachable and non authoritative. Delegation can be applied to many different fields, not just vhost. 
+Additionally, Contour's delegation model follows how DNS is implemented. As the owner of a DNS domain, for example `.io`, I _delegate_ to another nameserver the responsibility for handing the subdomain `projectcontour.io`.
+Any nameserver can hold a record for `projectcontour.io`, but without the linkage from the parent `.io` TLD, its information is unreachable and non authoritative.
+Delegation can be applied to many different fields, not just vhost. 
 
-Each _root_ of a DAG starts at a virtual host, which describes properties such as the fully qualified name of the virtual host, TLS configuration, and possibly global access list details. The vertices of a graph do not contain virtual host information. Instead they are reachable from a root only by delegation. This permits the _owner_ of an ingress root to both delegate the authority to publish a service on a portion of the route space inside a virtual host, and to further delegate authority to publish and delegate.
+Each _root_ of a DAG starts at a virtual host, which describes properties such as the fully qualified name of the virtual host, TLS configuration, and possibly global access list details.
+The vertices of a graph do not contain virtual host information. Instead they are reachable from a root only by delegation.
+This permits the _owner_ of an ingress root to both delegate the authority to publish a service on a portion of the route space inside a virtual host, and to further delegate authority to publish and delegate.
 
-In practice the linkage, or delegation, from root to vertex, is performed with a specific type of route action. You can think of it as routing traffic to another ingress route for further processing, instead of routing traffic directly to a service. How routing decisions are made is based upon the configuration for the route action. Detailed information regarding how Delegation functions can be found later on in the document in the "detailed design" sections.
+In practice the linkage, or delegation, from root to vertex, is performed with a specific type of route action.
+You can think of it as routing traffic to another ingress route for further processing, instead of routing traffic directly to a service.
+How routing decisions are made is based upon the configuration for the route action.
+Detailed information regarding how Delegation functions can be found later on in the document in the "detailed design" sections.
 
 ### Delegation within Kubernetes
 
-The delegation concept is a key component to enable teams within a single Kubernetes cluster as well as provide security for ingress limiting what users can specify within the cluster. Delegation allows for portions of a HTTP request to be delegated to a Kubernetes namespace. This allows teams to self-manage in a safe way portions of the http request. Users that do not have authority (or have not be delegated), cannot affect the routing configuration; their requests will be dropped. 
+The delegation concept is a key component to enable teams within a single Kubernetes cluster as well as provide security for ingress limiting what users can specify within the cluster.
+Delegation allows for portions of a HTTP request to be delegated to a Kubernetes namespace.
+This allows teams to self-manage in a safe way portions of the http request. Users that do not have authority (or have not be delegated), cannot affect the routing configuration; their requests will be dropped. 
 
-##### Root IngressRoutes
+##### Root HTTPProxies
 
-From the top, delegation is enforced through the use of `root ingressroute namespaces` which allow a cluster admin to carve off a set of namespaces where Contour's IngressRoutes will live. Any root IngressRoute found outside of these configured namespaces will be deemed invalid.
+From the top, delegation is enforced through the use of `root HTTPProxy namespaces` which allow a cluster admin to carve off a set of namespaces where Contour's HTTPProxies will live.
+Any root HTTPProxy found outside of these configured namespaces will be deemed invalid.
 
-Another design decision is that now TLS certificates, typically referenced via Kubernetes secrets, are placed inside these root ingressroute namespaces limiting the access required for Contour itself as well as not requiring these certs to exist in each team namespace.
+Another design decision is that now TLS certificates, typically referenced via Kubernetes secrets, are placed inside these root HTTPProxy namespaces limiting the access required for Contour itself as well as not requiring these certs to exist in each team namespace.
 
-##### Delegated IngressRoutes
+##### Delegated HTTPProxies
 
-A delegated IngressRoute lives in each team namespace. Teams can self-manage their own resources based upon what has been delegated to them. Users can also create their own delegations to support their application infrastructure as they see fit. 
+A delegated HTTPProxy lives in each team namespace.
+Teams can self-manage their own resources based upon what has been delegated to them.
+Users can also create their own delegations to support their application infrastructure as they see fit. 
 
 ###### Includes & Conditions
 
-Conditions define possible routing decisions for a request. Things like pathPrefix, headers, etc are all options for a Condition. 
+Conditions define possible routing decisions for a request, which include things like pathPrefix, headers, etc are all options for a Condition. 
 
-Includes define how specific routing parameters (or `conditions:`) are delegated to other IngressRoutes. Each include defines what Namespace / IngressRoute name should apply a set of Conditions defined. The conditions defined are appended to any further conditions configured per route.
+Includes define how specific routing parameters (or `conditions:`) are delegated to other HTTPProxies.
+Each include defines what Namespace / HTTPProxy name should apply a set of Conditions defined.
+The conditions defined are appended to any further conditions configured per route.
 
-When a route is constructed that has `conditions` applied, those parameters are automcatically appended to the configuration. For example, if a route had a path prefix `/api` defined, a route that defined `/v1` would result in a path prefix of `/api/v1` for the resulting configured request.
+When a route is constructed that has `conditions` applied, those parameters are automatically appended to the configuration.
+For example, if a route had a path prefix `/api` defined, a route that defined `/v1` would result in a path prefix of `/api/v1` for the resulting configured request.
 
 ### Use Cases
 
-Some use-cases for IngressRoute delegation:
+Some use-cases for HTTPProxy delegation:
 
 - Restrict where TLS secrets exist in the cluster and who can access private keys
-- Allow for a predictable routing decisions to eliminiate path conflicts
-- Teams should be able to self-manage their own resources safely in a shared cluster without requiring administrative involvelement
+- Allow for a predictable routing decisions to eliminate path conflicts
+- Teams should be able to self-manage their own resources safely in a shared cluster without requiring administrative involvement
 
 ### Example
 
-The following example shows a root IngressRoute that manages the host `projectcontour.io`. It references a Kubernetes secret named `tls-cert` to allow for TLS termination. It delegates two paths to a set of teams in different namespaces. The path `/blog` is delegated to the IngressRoute named `procon-teama` in the namespace `team-a`. The path `/community` is delegated to the IngressRoute named `procon-teamb` in the namespace `team-b`. The IngressRoute named `procon-invalid` in the namespace `team-invalid` references the path `/community`, but no traffic is routed to it since a root IngressRoute doesn't delegate.
-
-// TODO (SAS) Update diagram
-
-![ingressroute-delegation](images/ingressroute-delegation.png)
+The following example shows a root HTTPProxy that manages the host `projectcontour.io`.
+It references a Kubernetes secret named `tls-cert` to allow for TLS termination.
+It delegates two paths to a set of teams in different namespaces.
+The path `/blog` is delegated to the HTTPProxy named `procon-teama` in the namespace `team-a`. The path `/community` is delegated to the HTTPProxy named `procon-teamb` in the namespace `team-b`.
+The HTTPProxy named `procon-invalid` in the namespace `team-invalid` references the path `/community`, but no traffic is routed to it since a root HTTPProxy doesn't delegate.
 
 ## Routing Mechanisms
 
-As noted previously, there are various ways to make routing decisions. Contour was originally designed to support prefix path based routing; however, there are many other mechanisms that Contour could support. It's important to note that these routing mechanisms are taking into consideration ***after*** the virtual host routing decision is made:
+As noted previously, there are various ways to make routing decisions. Contour was originally designed to support prefix path based routing; however, there are many other mechanisms that Contour could support.
+It's important to note that these routing mechanisms are taking into consideration ***after*** the virtual host routing decision is made:
 
 - **Header:** Routing on an HTTP header that exists in the request (e.g. custom header, clientIP via header, HTTP method)
 - **Prefix Path:** The route matches the start of the :path header once the query string is removed
@@ -101,9 +118,10 @@ Exact Path based routing makes decisions based upon the path of the request (e.g
 
 - Match only specific paths (i.e. `/path` should match but `/pathfoo` should ***not***), ensuring that only specified paths are served`
 
-### Wilcard Path Routing
+### Wildcard Path Routing
 
-Wildcard path based routing allows for a portion of the path to be dynamic (e.g. /path/*/foo). This is useful to allow for many types of request paths to be routed to the same backed without specifying them explicitly up front.
+Wildcard path based routing allows for a portion of the path to be dynamic (e.g. /path/*/foo).
+This is useful to allow for many types of request paths to be routed to the same backed without specifying them explicitly up front.
 
 #### Use Cases
 
@@ -114,40 +132,55 @@ Wildcard path based routing allows for a portion of the path to be dynamic (e.g.
 
 ### Header Routing
 
-The IngressRoute spec will be updated to allow for a `header` field to be added which will allow for a set of key/value pairs to be applied to the route. Additionally, the path `match` moves to its own `path` variable. All the header key/values supplied will be taken into account when routing decisions are made.
+Routing configurations with Headers are defined within Conditions.
+A `Header` condition type is specified and the following types are permitted:
 
-- **header:** Key used to match a specific header in the request
-- **value**: The value of the header matching the key specified
+- **exact**: Matches the value exactly as provided
+- **notexact**: Matches that the value does not match exactly as provided
+- **contains**: Matches that the value exists somewhere in the value of the header
+- **notcontains**: Matches that the value does not exist somewhere in the value of the header
+- **present**: Header exists in the request (value is ignored)
 
-**NOTE**: *Routing on a `header` value* still requires a path prefix to be specified.
+Example: 
+```yaml
+spec:
+  routes:
+  - condition:
+    - header:
+        name: x-header     # Name of header to match on (key)
+        [headerMatchType]: # One of the match types specified previously
+        present: false     # Set to `true` if requesting a header present match type
+```
 
 ### Path Match with Headers
 
 In the following example, you can define for path `/foo` and send traffic to different services for the same path but which contain different headers. This example shows how to have 2 routes match specific headers and a last route match a request without specific headers.
 
 ```yaml
-apiVersion: projectcontour.io/v1
-kind: IngressRoute
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
 metadata: 
   name: example
 spec:
   routes:
-  - match:
-      path: /foo
-      - header: x-header
-        value: a
+  - conditions:
+    - prefix: /foo
+    - header:
+        name: x-header
+        exact: a
     services:
     - name: backend-a
       port: 9999
-  - match: 
-      path: /foo
-      - header: x-header
-        value: b
+  - conditions:
+    - prefix: /foo
+    - header:
+        name: x-header
+        exact: b
     services:
     - name: backend-b
       port: 9999
-  - match: 
-    path: /foo
+  - conditions: 
+      - prefix: /foo
     services:
     - name: backend-default
       port: 9999
@@ -161,85 +194,71 @@ Following are sample requests and which backends will handle the request:
 - `GET -H "x-header: b" /foo` —> `backend-b`
 - `GET /foo` —>  `backend-default`
 
-### Path Match with Cookie
-
-In the following example, you can route any request to path `/foo` containing a cookie containing `user=test` to the backend named `cookiebackend` over port `80`.
-
-```yaml
-apiVersion: projectcontour.io/v1
-kind: IngressRoute
-metadata: 
-  name: example
-spec:
-  routes:
-  - match:
-    path: /foo
-    - header: cookie
-      value: user=test
-    services:
-    - name: cookiebackend
-      port: 80    
-```
-
 ### Header Delegation
 
-Currently with IngressRoute, path prefixes of a request can be delegated to teams, users, namespaces, within a single Kubernetes cluster. This design looks to add headers as a mechanism to pass authority off to teams, users or namespaces.
+Currently with HTTPProxy, path prefixes of a request can be delegated to teams, users, namespaces, within a single Kubernetes cluster.
+This design looks to add headers as a mechanism to pass authority off to teams, users or namespaces.
 
 The following example shows how requests to a specific path with a specific header can be delegated to a team in another namespace as well as how requests that don't match the headers specified previously will be handled in the current namespace.
 
-##### Root IngressRoute Example:
+##### Root HTTPProxy Example:
 
 ```yaml
-apiVersion: projectcontour.io/v1
-kind: IngressRoute
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
 metadata: 
   name: example
 spec:
-  routes:
-  - match:
-    path: /foo
-    - header: x-header
-      value: a
-    delegate:
-      name: headera-ir
+  includes:
+    - name: headera-ir
       namespace: team-a
-  - match: 
-      path: /foo
-      - header: x-header
-        value: b
-      - user-agent: Chrome
-    delegate:
-      name: headerb-ir
+      conditions:
+      - header:
+          name: x-header
+          exact: a
+      - prefix: /foo
+    - name: headerb-ir
       namespace: team-b
-  - match: 
-    path: /foo
+      conditions:
+      - header:
+          name: x-header
+          exact: b
+      - prefix: /foo
+  routes:
+  - conditions:
+    - prefix: /foo
+    - header:
+        name: x-header
+        exact: a
     services:
     - name: backend-default
       port: 9999
 ```
 
-##### Delegated IngressRoute Example:
+##### Delegated HTTPProxy Example:
 
 ```yaml
-apiVersion: projectcontour.io/v1
-kind: IngressRoute
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
 metadata: 
-  name: example
+  name: example-teama
+  namespace: teama
 spec:
   routes:
-  - match:
-    path: /foo
-    - header: x-header
-      value: a
-    - name: headerb-ir
+  - services:
+    - name: headera-ir
       port: 80
-  - match: 
-      path: /foo
-      - header: x-header
-        value: b
-      - header: user-agent 
-        value: Chrome
-    services:
+```
+
+```yaml
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
+metadata: 
+  name: example-teamb
+  namespace: teamb
+spec:
+  routes:
+  - services:
     - name: headerb-ir
       port: 80
 ```
@@ -254,29 +273,31 @@ Following are sample requests and which backends will handle the request:
 
 ### Path Matching
 
-Matching requests off of the HTTP request path is a core component of Contour. Path matching allows for applications to respond to specific portions of the request space. The following sections will outline the different path matching styles that Contour will support in IngressRoute/v1.
+Matching requests off of the HTTP request path is a core component of Contour.
+Path matching allows for applications to respond to specific portions of the request space.
+The following sections will outline the different path matching styles that Contour will support in HTTPProxy/v1alpha1.
 
 #### Path Prefix
 
-A prefix-based match means a request will route if the first part of the defined path matches the first portion of the request. For example, if a path prefix `/foo` is specified, it will match `/foo`, `/foo/bar`, as well as `/foobar`. Basically, anything after `/foo` unless additional routes are further defined.
+A prefix-based match means a request will route if the first part of the defined path matches the first portion of the request.
+For example, if a path prefix `/foo` is specified, it will match `/foo`, `/foo/bar`, as well as `/foobar`.
+Basically, anything after `/foo` unless additional routes are further defined.
 
-Users can specify a prefix match by utilizing the `prefix` attribute in the match spec of a route definition. 
+Users can specify a prefix match by utilizing the `prefix` attribute in the `condition` spec of a route definition. 
 
 Route delegation is possible with prefix matching.
-
-*Note: This is a breaking change from IngressRoute/v1beta1*
 
 ##### Example:
 
 ```yaml
-apiVersion: projectcontour.io/v1
-kind: IngressRoute
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
 metadata: 
   name: example
 spec:
   routes:
-  - match:
-    prefix: /foo
+  - conditions:
+    - prefix: /foo
     services:
     - name: prefix-service
       port: 80
@@ -284,21 +305,24 @@ spec:
 
 #### Exact Match
 
-Matching on a path prefix is not always desired if the application owner intends that only predefined paths will match. For example, if a exact path `/app` is specified, it will only match `/app`, all other paths will not match this route. Users can specify an exact match by utilizing the `path` attribute in the match spec of a route definition. 
+Matching on a path prefix is not always desired if the application owner intends that only predefined paths will match. 
+For example, if a exact path `/app` is specified, it will only match `/app`, all other paths will not match this route.
+Users can specify an exact match by utilizing the `path` attribute in the match spec of a route definition. 
 
 Route delegation is still possible with an exact match since the path is still delegated, only the matching logic is changes between prefix or exact path matching. 
 
 ##### Example:
 
 ```yaml
-apiVersion: projectcontour.io/v1
-kind: IngressRoute
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
 metadata: 
   name: example
 spec:
   routes:
   - match:
-    path: /app
+    conditions:
+    - exact: /app
     services:
     - name: exactmatch-service
       port: 80
@@ -306,40 +330,41 @@ spec:
 
 #### Path Wildcard:
 
-Another style of path matching is a wildcard style which allows for a portion of the path to be wildcarded. A wildcard match allows for a portion of a path to be dynamic.
+Another style of path matching is a wildcard style which allows for a portion of the path to be wildcarded.
+A wildcard match allows for a portion of a path to be dynamic.
 
-For example, we could define a wildcard style path: `/app2/*/foo`, but not `/app2/*`. Wildcard paths are be able to delegated without issue as long as the `*` is bounded by paths. The previous example ending with `*` has too large of a match to allow for delegation. If this is encountered, Contour will set the status to be error for the corresponding IngressRoute.
+For example, we could define a wildcard style path: `/app2/*/foo`, but not `/app2/*`.
+Wildcard paths are be able to delegated without issue as long as the `*` is bounded by paths.
+The previous example ending with `*` has too large of a match to allow for delegation.
+If this is encountered, Contour will set the status to be error for the corresponding HTTPProxy.
 
 *Note: The type of route match will still need to be specified (e.g. prefix, or path). The examples below show a `prefix` match, but a `path` match would work as well.*
 
-##### Root IngressRoute:
+##### Root HTTPProxy:
 
 ```yaml
-apiVersion: projectcontour.io/v1
-kind: IngressRoute
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
 metadata: 
   name: example
 spec:
-  routes:
-  - match:
-    prefix: /app/*/foo  
-    delegate:
-      name: wildcard
+  - includes:
+    - name: wildcard
       namespace: prefix
+      conditions:
+      - prefix: /app/*/foo   
 ```
 
-##### Delegate IngressRoute:
+##### Delegate HTTPProxy:
 
 ```yaml
-apiVersion: projectcontour.io/v1
-kind: IngressRoute
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
 metadata: 
-  name: example
+  name: example-child
 spec:
   routes:
-  - match:
-    prefix: /app/*/foo  
-    services:
+  - services:
     - name: wildcard-service
       port: 80
 ```
@@ -354,4 +379,5 @@ Following are sample requests and which backends will handle the request:
 
 ## Security Considerations
 
-- If the delegation is not properly implemented, there could be ways that users get access to portions of the host requests which they should not have access. This will need to be mitigated with proper testing and validation of the design implementation.
+- If the delegation is not properly implemented, there could be ways that users get access to portions of the host requests which they should not have access.
+This will need to be mitigated with proper testing and validation of the design implementation.
