@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/heptio/contour/internal/contour"
+	"github.com/projectcontour/contour/internal/contour"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )

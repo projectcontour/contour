@@ -6,7 +6,8 @@ This document describes Contour's image tagging policy.
 
 `docker.io/projectcontour/contour:<SemVer>`
 
-Contour follows the [Semantic Versioning](http://semver.org/) standard for releases. Each tag in the github.com/heptio/contour repository has a matching image. eg. `docker.io/projectcontour/contour:v0.15.0`
+Contour follows the [Semantic Versioning](http://semver.org/) standard for releases.
+Each tag in the github.com/projectcontour/contour repository has a matching image. eg. `docker.io/projectcontour/contour:v0.15.0`
 
 ### Latest
 

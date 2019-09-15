@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 func TestRetryPolicyIngressRoute(t *testing.T) {

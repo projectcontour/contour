@@ -26,8 +26,8 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/golang/protobuf/ptypes/wrappers"
-	"github.com/heptio/contour/internal/dag"
-	"github.com/heptio/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 // CACertificateKey stores the key for the TLS validation secret cert

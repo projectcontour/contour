@@ -17,10 +17,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
-	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
-	"github.com/heptio/contour/internal/dag"
-	"github.com/heptio/contour/internal/metrics"
+	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/metrics"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

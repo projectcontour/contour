@@ -19,11 +19,11 @@ limitations under the License.
 package fake
 
 import (
-	clientset "github.com/heptio/contour/apis/generated/clientset/versioned"
-	contourv1beta1 "github.com/heptio/contour/apis/generated/clientset/versioned/typed/contour/v1beta1"
-	fakecontourv1beta1 "github.com/heptio/contour/apis/generated/clientset/versioned/typed/contour/v1beta1/fake"
-	projectcontourv1alpha1 "github.com/heptio/contour/apis/generated/clientset/versioned/typed/projectcontour/v1alpha1"
-	fakeprojectcontourv1alpha1 "github.com/heptio/contour/apis/generated/clientset/versioned/typed/projectcontour/v1alpha1/fake"
+	clientset "github.com/projectcontour/contour/apis/generated/clientset/versioned"
+	contourv1beta1 "github.com/projectcontour/contour/apis/generated/clientset/versioned/typed/contour/v1beta1"
+	fakecontourv1beta1 "github.com/projectcontour/contour/apis/generated/clientset/versioned/typed/contour/v1beta1/fake"
+	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/generated/clientset/versioned/typed/projectcontour/v1alpha1"
+	fakeprojectcontourv1alpha1 "github.com/projectcontour/contour/apis/generated/clientset/versioned/typed/projectcontour/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

@@ -40,7 +40,7 @@ For this type of service (i.e. `ExternalName`) when creating the cluster in `int
 
 ## Alternatives
 
-Potentially, we could avoid using a Service of type `ExternalName` by simply just extending the `IngressRoute` CRD as proposed here: https://github.com/heptio/contour/issues/825#issue-386869426
+Potentially, we could avoid using a Service of type `ExternalName` by simply just extending the `IngressRoute` CRD as proposed here: https://github.com/projectcontour/contour/issues/825#issue-386869426
 
 The downside to this approach is it couldn't be used with Ingress resources.
 

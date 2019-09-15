@@ -27,8 +27,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
-	"github.com/heptio/contour/internal/dag"
-	"github.com/heptio/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 // TLSInspector returns a new TLS inspector listener filter.
@@ -118,7 +118,7 @@ func HTTPConnectionManager(routename, accessLogPath string) *envoy_api_v2_listen
 func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) *envoy_api_v2_listener.Filter {
 	// Set the idle timeout in seconds for connections through a TCP Proxy type filter.
 	// The value of two and a half hours for reasons documented at
-	// https://github.com/heptio/contour/issues/1074
+	// https://github.com/projectcontour/contour/issues/1074
 	// Set to 9001 because now it's OVER NINE THOUSAND.
 	idleTimeout := protobuf.Duration(9001 * time.Second)
 

@@ -21,10 +21,10 @@ package v1alpha1
 import (
 	time "time"
 
-	versioned "github.com/heptio/contour/apis/generated/clientset/versioned"
-	internalinterfaces "github.com/heptio/contour/apis/generated/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/heptio/contour/apis/generated/listers/projectcontour/v1alpha1"
-	projectcontourv1alpha1 "github.com/heptio/contour/apis/projectcontour/v1alpha1"
+	versioned "github.com/projectcontour/contour/apis/generated/clientset/versioned"
+	internalinterfaces "github.com/projectcontour/contour/apis/generated/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/projectcontour/contour/apis/generated/listers/projectcontour/v1alpha1"
+	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"

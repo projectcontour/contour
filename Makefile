@@ -1,5 +1,6 @@
+ORG = projectcontour
 PROJECT = contour
-MODULE = github.com/heptio/$(PROJECT)
+MODULE = github.com/$(ORG)/$(PROJECT)
 REGISTRY ?= projectcontour
 IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis

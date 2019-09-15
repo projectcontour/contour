@@ -19,8 +19,8 @@ package contour
 import (
 	"time"
 
-	"github.com/heptio/contour/internal/dag"
-	"github.com/heptio/contour/internal/metrics"
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )

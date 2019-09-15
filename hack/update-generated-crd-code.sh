@@ -21,8 +21,8 @@ git clone https://github.com/kubernetes/code-generator.git ${TMP_DIR}
 
 ${TMP_DIR}/generate-groups.sh \
   all \
-  github.com/heptio/contour/apis/generated \
-  github.com/heptio/contour/apis \
+  github.com/projectcontour/contour/apis/generated \
+  github.com/projectcontour/contour/apis \
   "contour:v1beta1 projectcontour:v1alpha1" \
   --output-base . \
   --go-header-file hack/boilerplate.go.tmpl \
@@ -30,7 +30,7 @@ ${TMP_DIR}/generate-groups.sh \
 
 # Copy the generated.deepcopy to the api packages
 rm -rf apis/generated
-cp -r github.com/heptio/contour/apis/generated apis/
-mv github.com/heptio/contour/apis/contour/v1beta1/zz_generated.deepcopy.go apis/contour/v1beta1
-mv github.com/heptio/contour/apis/projectcontour/v1alpha1/zz_generated.deepcopy.go apis/projectcontour/v1alpha1
+cp -r github.com/projectcontour/contour/apis/generated apis/
+mv github.com/projectcontour/contour/apis/contour/v1beta1/zz_generated.deepcopy.go apis/contour/v1beta1
+mv github.com/projectcontour/contour/apis/projectcontour/v1alpha1/zz_generated.deepcopy.go apis/projectcontour/v1alpha1
 rm -rf github.com

@@ -119,7 +119,7 @@ ingressroute "basic" deleted
 
 ## IngressRoute API Specification
 
-There are a number of [working examples](https://github.com/heptio/contour/tree/master/examples/example-workload/ingressroute) of IngressRoute objects in the `examples/example-workload` directory.
+There are a number of [working examples](https://github.com/projectcontour/contour/tree/master/examples/example-workload/ingressroute) of IngressRoute objects in the `examples/example-workload` directory.
 We will use these examples as a mechanism to describe IngressRoute API functionality.
 
 ### Virtual Host Configuration

@@ -90,6 +90,6 @@ This phase will add additional functionality and/or tools to help with the certi
 
 This phase will flip the example deployments to all use a secure mode, make those command line options default, and include an option to restore the current behavior. Watch [#1185][3] to track this phase.
 
-[1]: https://github.com/heptio/contour/issues/1130
-[2]: https://github.com/heptio/contour/issues/1184
-[3]: https://github.com/heptio/contour/issues/1185
+[1]: https://github.com/projectcontour/contour/issues/1130
+[2]: https://github.com/projectcontour/contour/issues/1184
+[3]: https://github.com/projectcontour/contour/issues/1185

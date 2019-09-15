@@ -14,7 +14,7 @@
 package v1beta1
 
 import (
-	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -69,7 +69,7 @@ type Service struct {
 	Weight uint32 `json:"weight,omitempty"`
 	// HealthCheck defines optional healthchecks on the upstream service
 	HealthCheck *projcontour.HealthCheck `json:"healthCheck,omitempty"`
-	// LB Algorithm to apply (see https://github.com/heptio/contour/blob/master/design/ingressroute-design.md#load-balancing)
+	// LB Algorithm to apply (see https://github.com/projectcontour/contour/blob/master/design/ingressroute-design.md#load-balancing)
 	Strategy string `json:"strategy,omitempty"`
 	// UpstreamValidation defines how to verify the backend service's certificate
 	UpstreamValidation *projcontour.UpstreamValidation `json:"validation,omitempty"`

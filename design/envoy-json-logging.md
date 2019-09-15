@@ -19,7 +19,7 @@ It is intended to allow some customisability of the JSON output while providing 
 
 ## Background
 
-This feature was requested some time ago in [#624](https://github.com/heptio/contour/issues/624).
+This feature was requested some time ago in [#624](https://github.com/projectcontour/contour/issues/624).
 Since that time, two changes have come to Contour that assist with this design:
 
 - Configuration file for Contour.

@@ -1,4 +1,4 @@
-module github.com/heptio/contour
+module github.com/projectcontour/contour
 
 go 1.13
 

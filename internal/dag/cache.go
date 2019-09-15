@@ -18,8 +18,8 @@ import (
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/client-go/tools/cache"
 
-	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
-	projectcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
+	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
+	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/sirupsen/logrus"
 )
 

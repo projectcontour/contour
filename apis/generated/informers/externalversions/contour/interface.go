@@ -19,8 +19,8 @@ limitations under the License.
 package contour
 
 import (
-	v1beta1 "github.com/heptio/contour/apis/generated/informers/externalversions/contour/v1beta1"
-	internalinterfaces "github.com/heptio/contour/apis/generated/informers/externalversions/internalinterfaces"
+	v1beta1 "github.com/projectcontour/contour/apis/generated/informers/externalversions/contour/v1beta1"
+	internalinterfaces "github.com/projectcontour/contour/apis/generated/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to each of this group's versions.

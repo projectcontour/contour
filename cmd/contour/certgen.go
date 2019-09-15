@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/heptio/contour/internal/certgen"
+	"github.com/projectcontour/contour/internal/certgen"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	"k8s.io/client-go/kubernetes"
 )

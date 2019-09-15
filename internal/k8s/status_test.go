@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"testing"
 
-	ingressroutev1beta1 "github.com/heptio/contour/apis/contour/v1beta1"
-	"github.com/heptio/contour/apis/generated/clientset/versioned/fake"
-	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
+	ingressroutev1beta1 "github.com/projectcontour/contour/apis/contour/v1beta1"
+	"github.com/projectcontour/contour/apis/generated/clientset/versioned/fake"
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	k8stesting "k8s.io/client-go/testing"

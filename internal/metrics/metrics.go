@@ -21,7 +21,7 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/heptio/contour/internal/httpsvc"
+	"github.com/projectcontour/contour/internal/httpsvc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

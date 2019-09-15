@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/heptio/contour/internal/workgroup"
+	"github.com/projectcontour/contour/internal/workgroup"
 )
 
 func ExampleGroup_Run() {
