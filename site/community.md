@@ -6,7 +6,7 @@ id: community
 ---
 Do you want to help build Contour?
 
-If you’re a newcomer, check out the “[Good first issue](https://github.com/heptio/projectcontour/issues?q=is%3Aopen+is%3Aissue+label%3A%22Good+first+issue%22)” and “[Help wanted](https://github.com/projectcontour/contour/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+label%3A%22Help+wanted%22+)” labels in the Contour repository.
+If you’re a newcomer, check out the “[Good first issue](https://github.com/projectcontour/contour/issues?q=is%3Aopen+is%3Aissue+label%3A%22Good+first+issue%22)” and “[Help wanted](https://github.com/projectcontour/contour/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+label%3A%22Help+wanted%22+)” labels in the Contour repository.
 
 * Follow us on Twitter at [@projectcontour](https://twitter.com/projectcontour)
 
