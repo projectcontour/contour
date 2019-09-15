@@ -1,4 +1,4 @@
-# Contour [![Build Status](https://travis-ci.org/heptio/contour.svg?branch=master)](https://travis-ci.org/heptio/contour) [![Go Report Card](https://goreportcard.com/badge/github.com/projectcontour/contour)](https://goreportcard.com/report/github.com/projectcontour/contour) ![GitHub release](https://img.shields.io/github/release/heptio/contour.svg) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+# Contour [![Build Status](https://travis-ci.org/projectcontour/contour.svg?branch=master)](https://travis-ci.org/projectcontour/contour) [![Go Report Card](https://goreportcard.com/badge/github.com/projectcontour/contour)](https://goreportcard.com/report/github.com/projectcontour/contour) ![GitHub release](https://img.shields.io/github/release/projectcontour/contour.svg) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ![Contour is fun at parties!](contour.png)
 
