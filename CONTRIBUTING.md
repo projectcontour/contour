@@ -20,7 +20,7 @@ This section describes how to build Contour from source.
 Contour uses [`go modules`][2] for dependency management.
 
 ```
-go get github.com/heptio/contour
+go get github.com/projectcontour/contour
 ```
 
 Go is very particular when it comes to the location of the source code in your `$GOPATH`.
@@ -32,9 +32,9 @@ git remote rename origin upstream
 git remote add origin git@github.com:davecheney/contour.git
 ```
 
-This ensures that the source code on disk remains at `$GOPATH/src/github.com/heptio/contour` while the remote repository is configured for your fork.
+This ensures that the source code on disk remains at `$GOPATH/src/github.com/projectcontour/contour` while the remote repository is configured for your fork.
 
-The remainder of this document assumes your terminal's working directory is `$GOPATH/src/github.com/heptio/contour`.
+The remainder of this document assumes your terminal's working directory is `$GOPATH/src/github.com/projectcontour/contour`.
 
 ### Building
 
@@ -55,7 +55,7 @@ Once you have Contour building, you can run all the unit tests for the project:
 make check
 ```
 
-This assumes your working directory is set to `$GOPATH/src/github.com/heptio/contour`. 
+This assumes your working directory is set to `$GOPATH/src/github.com/projectcontour/contour`. 
 
 To run the tests for a single package, change to package directory and run:
 
@@ -74,7 +74,7 @@ This project operates according to the _talk, then code_ rule.
 If you plan to submit a pull request for anything more than a typo or obvious bug fix, first you _should_ [raise an issue][6] to discuss your proposal, before submitting any code.
 
 Depending on the size of the feature you may be expected to first write a design proposal.
-A proposal template is [available here](https://github.com/heptio/contour/tree/master/design/design-document-tmpl.md)
+A proposal template is [available here](https://github.com/projectcontour/contour/tree/master/design/design-document-tmpl.md)
 
 ### Commit message and PR guidelines
 
@@ -215,6 +215,6 @@ By making a contribution to this project, I certify that:
 [3]: https://golang.org/doc/code.html
 [4]: https://golang.org/pkg/testing/
 [5]: https://developercertificate.org/
-[6]: https://github.com/heptio/contour/issues
+[6]: https://github.com/projectcontour/contour/issues
 [6]: docs/tagging.md
 [7]: docs/deploy-options.md

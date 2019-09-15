@@ -19,8 +19,8 @@ import (
 
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/google/go-cmp/cmp"
-	"github.com/heptio/contour/internal/dag"
-	"github.com/heptio/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 func TestHealthCheck(t *testing.T) {

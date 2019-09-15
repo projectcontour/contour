@@ -1,4 +1,4 @@
-# Contour [![Build Status](https://travis-ci.org/heptio/contour.svg?branch=master)](https://travis-ci.org/heptio/contour) [![Go Report Card](https://goreportcard.com/badge/github.com/heptio/contour)](https://goreportcard.com/report/github.com/heptio/contour) ![GitHub release](https://img.shields.io/github/release/heptio/contour.svg) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+# Contour [![Build Status](https://travis-ci.org/heptio/contour.svg?branch=master)](https://travis-ci.org/heptio/contour) [![Go Report Card](https://goreportcard.com/badge/github.com/projectcontour/contour)](https://goreportcard.com/report/github.com/projectcontour/contour) ![GitHub release](https://img.shields.io/github/release/heptio/contour.svg) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ![Contour is fun at parties!](contour.png)
 
@@ -98,8 +98,8 @@ Thanks for taking the time to join our community and start contributing!
 
 ## Changelog
 
-See [the list of releases](https://github.com/heptio/contour/releases) to find out about feature changes.
+See [the list of releases](https://github.com/projectcontour/contour/releases) to find out about feature changes.
 
 [1]: /docs/deploy-options.md
 [2]: /docs/ingressroute.md
-[3]: https://github.com/heptio/contour/issues
+[3]: https://github.com/projectcontour/contour/issues

@@ -17,7 +17,7 @@ import (
 	"os"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/heptio/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/envoy"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 

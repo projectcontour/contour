@@ -19,8 +19,8 @@ import (
 	"net/http"
 	"net/http/pprof"
 
-	"github.com/heptio/contour/internal/dag"
-	"github.com/heptio/contour/internal/httpsvc"
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/httpsvc"
 )
 
 // Service serves various http endpoints including /debug/pprof.

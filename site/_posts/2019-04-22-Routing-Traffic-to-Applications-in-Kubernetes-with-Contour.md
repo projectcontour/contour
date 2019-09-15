@@ -31,7 +31,7 @@ At the same time a number of web application deployment patterns, such as blue/g
 IngressRoute is designed to provide a sensible home for configuration parameters as well as to share an ingress controller across multiple namespaces and teams in the same Kubernetes cluster. We do this by using a process we call delegation. This delegation concept patterns off of the way a subdomain is delegated from one domain name server to another, and allows for teams to define and self-manage IngressRoute resources safely.
 
 ## Contour 0.10
-Version 0.10 of Contour adds some exciting features to address TLS certificates and how they are referenced. This new version brings a feature called [TLS Certificate Delegation](https://github.com/heptio/contour/blob/master/design/tls-certificate-delegation.md). This facility makes it possible for an IngressRoute objects to reference, subject to the appropriate permissions, a Kubernetes Secret object in another namespace. The primary use case for this facility is to allow you, as an administrator, to place a TLS wildcard certificate in a secret object in your own namespace and delegate the permission for Contour to reference that secret from another namespace.
+Version 0.10 of Contour adds some exciting features to address TLS certificates and how they are referenced. This new version brings a feature called [TLS Certificate Delegation](https://github.com/projectcontour/contour/blob/master/design/tls-certificate-delegation.md). This facility makes it possible for an IngressRoute objects to reference, subject to the appropriate permissions, a Kubernetes Secret object in another namespace. The primary use case for this facility is to allow you, as an administrator, to place a TLS wildcard certificate in a secret object in your own namespace and delegate the permission for Contour to reference that secret from another namespace.
 
 Much like how IngressRoute delegation can limit which namespaces can utilize a host plus path combination, this TLS cert delegation now similarly limits what certificates users can access, further enhancing Contour’s multi-team functionality.
 
@@ -40,12 +40,12 @@ The Contour team would love to hear your feedback on your application requiremen
 
 Contour is also very community driven so please speak up! Many features today (including IngressRoute) were driven from users who needed a better way to solve their current problems.
 
-If you are interested in contributing, a great place to start is to comment on one of the issues labeled with [Help Wanted](https://github.com/heptio/contour/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22) and work with the team on how to resolve them.
+If you are interested in contributing, a great place to start is to comment on one of the issues labeled with [Help Wanted](https://github.com/projectcontour/contour/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22) and work with the team on how to resolve them.
 
 ## Join the Contour Community!
 * Get updates on Twitter ([@projectcontour](https://twitter.com/projectcontour))
 * Chat with us on Slack ([#contour](https://kubernetes.slack.com/messages/C8XRH2R4J) on Kubernetes)
-* Collaborate with us on GitHub: [github.com/heptio/contour](https://github.com/heptio/contour)
+* Collaborate with us on GitHub: [github.com/heptio/contour](https://github.com/projectcontour/contour)
 
 We’re immensely grateful for all of the community contributions that help make Contour even better! For version 0.10, special thanks go out to:
 * @vaamarnath

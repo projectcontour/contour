@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/heptio/contour/internal/dag"
-	"github.com/heptio/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
 )
 
 // quick and dirty dot debugging package

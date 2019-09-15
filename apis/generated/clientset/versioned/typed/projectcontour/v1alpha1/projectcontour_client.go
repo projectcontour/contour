@@ -19,8 +19,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/heptio/contour/apis/generated/clientset/versioned/scheme"
-	v1alpha1 "github.com/heptio/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/apis/generated/clientset/versioned/scheme"
+	v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
 )

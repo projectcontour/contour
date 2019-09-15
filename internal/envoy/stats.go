@@ -19,7 +19,7 @@ import (
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/heptio/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 // StatsListener returns a *v2.Listener configured to serve prometheus

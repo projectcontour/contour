@@ -24,8 +24,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
-	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
+	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 // Builder builds a DAG.
@@ -666,7 +666,7 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 			return
 		}
 
-		// Cannot support multiple services with websockets (See: https://github.com/heptio/contour/issues/732)
+		// Cannot support multiple services with websockets (See: https://github.com/projectcontour/contour/issues/732)
 		if len(route.Services) > 1 && route.EnableWebsockets {
 			sw.SetInvalid(fmt.Sprintf("route %q: cannot specify multiple services and enable websockets", route.Match))
 			return
@@ -773,7 +773,7 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 func (b *Builder) processRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, host string, condition *projcontour.Condition, enforceTLS bool) {
 	for _, route := range proxy.Spec.Routes {
 
-		// Cannot support multiple services with websockets (See: https://github.com/heptio/contour/issues/732)
+		// Cannot support multiple services with websockets (See: https://github.com/projectcontour/contour/issues/732)
 		if len(route.Services) > 1 && route.EnableWebsockets {
 			sw.SetInvalid(fmt.Sprintf("route %q: cannot specify multiple services and enable websockets", conditionPath(route.Condition, condition)))
 			return

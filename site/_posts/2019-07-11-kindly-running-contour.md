@@ -75,7 +75,7 @@ Additionally, the Envoy DaemonSet will be configured to use `HostNetworking` to 
 Deploy contour:
 
 ```bash
-$ git clone https://github.com/heptio/contour.git
+$ git clone https://github.com/projectcontour/contour.git
 $ kubectl apply -f contour/examples/ds-hostnet-split
 ```
 
@@ -139,4 +139,4 @@ Please reach out in one of the following ways and let us know how you are using 
 
 - Get updates on Twitter [@projectcontour](https://twitter.com/projectcontour)
 - Chat with us in [#contour on the Kubernetes Slack](https://kubernetes.slack.com/messages/contour)
-- Collaborate with us on [GitHub](https://github.com/heptio/contour)
+- Collaborate with us on [GitHub](https://github.com/projectcontour/contour)

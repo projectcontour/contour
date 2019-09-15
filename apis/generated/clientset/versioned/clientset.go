@@ -19,8 +19,8 @@ limitations under the License.
 package versioned
 
 import (
-	contourv1beta1 "github.com/heptio/contour/apis/generated/clientset/versioned/typed/contour/v1beta1"
-	projectcontourv1alpha1 "github.com/heptio/contour/apis/generated/clientset/versioned/typed/projectcontour/v1alpha1"
+	contourv1beta1 "github.com/projectcontour/contour/apis/generated/clientset/versioned/typed/contour/v1beta1"
+	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/generated/clientset/versioned/typed/projectcontour/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

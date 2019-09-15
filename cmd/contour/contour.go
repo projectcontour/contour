@@ -18,7 +18,7 @@ import (
 	"os"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
-	clientset "github.com/heptio/contour/apis/generated/clientset/versioned"
+	clientset "github.com/projectcontour/contour/apis/generated/clientset/versioned"
 	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	"k8s.io/client-go/kubernetes"

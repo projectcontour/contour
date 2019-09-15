@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/heptio/contour/internal/contour"
+	"github.com/projectcontour/contour/internal/contour"
 )
 
 func ExampleCond() {

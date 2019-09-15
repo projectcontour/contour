@@ -9,7 +9,7 @@ twitter:
   username: projectcontour
   card: summary
 vm_logo: vm-logo.png
-gh_repo: https://github.com/heptio/contour
+gh_repo: https://github.com/projectcontour/contour
 markdown: redcarpet
 hero:
   background-color: dark-blue
@@ -33,7 +33,7 @@ footer_social_links:
     url: feed.xml
   GitHub:
     fa_icon: fab fa-github
-    url: https://github.com/heptio/contour
+    url: https://github.com/projectcontour/contour
 
 defaults:
   - scope:

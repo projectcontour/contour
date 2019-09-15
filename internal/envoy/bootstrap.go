@@ -24,7 +24,7 @@ import (
 	clusterv2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	bootstrap "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
-	"github.com/heptio/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 // Bootstrap creates a new v2 Bootstrap configuration.

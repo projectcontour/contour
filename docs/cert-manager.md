@@ -6,7 +6,7 @@ This tutorial shows you how to securely deploy an HTTPS web application on a Kub
 - Contour, as the Ingress controller
 - [JetStack's cert-manager][1] to provision TLS certificates from [the Let's Encrypt project][5]
 
-**Please note** that this tutorial currently only works with `Ingress` resources. `IngressRoute` support will land when https://github.com/heptio/contour/issues/509 is fixed.
+**Please note** that this tutorial currently only works with `Ingress` resources. `IngressRoute` support will land when https://github.com/projectcontour/contour/issues/509 is fixed.
 
 ## Prerequisites
 
@@ -520,7 +520,7 @@ Now any requests to the insecure HTTP version of your site get an unconditional 
 * Connection #0 to host httpbin.davecheney.com left intact
 ```
 
-[0]: https://github.com/heptio/contour/
+[0]: https://github.com/projectcontour/contour/
 [1]: https://github.com/jetstack/cert-manager
 [2]: https://letsencrypt.org/docs/rate-limits/
 [3]: http://httpbin.org/

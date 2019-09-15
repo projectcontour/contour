@@ -22,7 +22,7 @@ import (
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/google/go-cmp/cmp"
-	"github.com/heptio/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 func TestStatsListener(t *testing.T) {

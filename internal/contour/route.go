@@ -21,8 +21,8 @@ import (
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/golang/protobuf/proto"
-	"github.com/heptio/contour/internal/dag"
-	"github.com/heptio/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
 )
 
 // RouteCache manages the contents of the gRPC RDS cache.

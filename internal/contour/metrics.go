@@ -17,9 +17,9 @@
 package contour
 
 import (
-	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
-	"github.com/heptio/contour/internal/dag"
-	"github.com/heptio/contour/internal/metrics"
+	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/metrics"
 )
 
 func calculateIngressRouteMetric(statuses map[dag.Meta]dag.Status) metrics.IngressRouteMetric {

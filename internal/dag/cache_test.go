@@ -16,8 +16,8 @@ package dag
 import (
 	"testing"
 
-	ingressroutev1 "github.com/heptio/contour/apis/contour/v1beta1"
-	projcontour "github.com/heptio/contour/apis/projectcontour/v1alpha1"
+	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
