@@ -109,6 +109,9 @@ func HTTPConnectionManager(routename, accessLogPath string) *envoy_api_v2_listen
 				// This is chosen as a rough default to stop idle connections wasting resources,
 				// without stopping slow connections from being terminated too quickly.
 				IdleTimeout: protobuf.Duration(60 * time.Second),
+
+				// issue #1487 pass through X-Request-Id if provided.
+				PreserveExternalRequestId: true,
 			}),
 		},
 	}
