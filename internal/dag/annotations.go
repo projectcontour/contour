@@ -25,6 +25,8 @@ const (
 	// set docs/annotations.md for details of how these annotations
 	// are applied by Contour.
 
+	// TODO(dfc) remove these deprecated forms after Contour 1.0.
+
 	annotationRequestTimeout     = "contour.heptio.com/request-timeout"
 	annotationWebsocketRoutes    = "contour.heptio.com/websocket-routes"
 	annotationUpstreamProtocol   = "contour.heptio.com/upstream-protocol"
@@ -87,21 +89,21 @@ func websocketRoutes(i *v1beta1.Ingress) map[string]bool {
 	return routes
 }
 
-// getIngressClassAnnotation checks for the acceptable ingress class annotations
-// 1. contour.heptio.com/ingress.class
-// 2. kubernetes.io/ingress.class
-//
-// it returns the first matching ingress annotation (in the above order) with test
-func getIngressClassAnnotation(annotations map[string]string) string {
-	class, ok := annotations["contour.heptio.com/ingress.class"]
-	if ok {
+// ingressClass returns the first matching ingress class for the following
+// annotations:
+// 1. projectcontour.io/ingress.class
+// 2. contour.heptio.com/ingress.class
+// 3. kubernetes.io/ingress.class
+func ingressClass(o Object) string {
+	a := o.GetObjectMeta().GetAnnotations()
+	if class, ok := a["projectcontour.io/ingress.class"]; ok {
 		return class
 	}
-
-	class, ok = annotations["kubernetes.io/ingress.class"]
-	if ok {
+	if class, ok := a["contour.heptio.com/ingress.class"]; ok {
 		return class
 	}
-
+	if class, ok := a["kubernetes.io/ingress.class"]; ok {
+		return class
+	}
 	return ""
 }

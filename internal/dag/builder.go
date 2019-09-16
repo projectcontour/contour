@@ -154,7 +154,7 @@ func (b *Builder) lookupSecret(m Meta, validate func(*v1.Secret) bool) *Secret {
 	s := &Secret{
 		Object: sec,
 	}
-	b.secrets[s.toMeta()] = s
+	b.secrets[toMeta(sec)] = s
 	return s
 }
 
