@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/projectcontour/contour/internal/dag"
+
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/golang/protobuf/proto"
@@ -175,7 +177,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("*",
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+						envoy.Route(envoy.RoutePrefix("/", nil), routecluster("default/kuard/8080/da39a3ee5e")),
 					),
 				),
 				envoy.RouteConfiguration("ingress_https"),
@@ -266,7 +268,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/backend/80/da39a3ee5e")),
+						envoy.Route(envoy.RoutePrefix("/", nil), routecluster("default/backend/80/da39a3ee5e")),
 					),
 				),
 				envoy.RouteConfiguration("ingress_https"),
@@ -312,7 +314,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("*",
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+						envoy.Route(envoy.RoutePrefix("/", nil), routecluster("default/kuard/8080/da39a3ee5e")),
 					),
 				),
 				envoy.RouteConfiguration("ingress_https"),
@@ -371,12 +373,12 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+						envoy.Route(envoy.RoutePrefix("/", nil), routecluster("default/kuard/8080/da39a3ee5e")),
 					),
 				),
 				envoy.RouteConfiguration("ingress_https",
 					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+						envoy.Route(envoy.RoutePrefix("/", nil), routecluster("default/kuard/8080/da39a3ee5e")),
 					),
 				),
 			),
@@ -432,7 +434,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
 						&envoy_api_v2_route.Route{
-							Match: envoy.RoutePrefix("/"),
+							Match: envoy.RoutePrefix("/", nil),
 							Action: &envoy_api_v2_route.Route_Redirect{
 								Redirect: &envoy_api_v2_route.RedirectAction{
 									SchemeRewriteSpecifier: &envoy_api_v2_route.RedirectAction_HttpsRedirect{
@@ -445,7 +447,7 @@ func TestRouteVisit(t *testing.T) {
 				),
 				envoy.RouteConfiguration("ingress_https",
 					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/backend/8080/da39a3ee5e")),
+						envoy.Route(envoy.RoutePrefix("/", nil), routecluster("default/backend/8080/da39a3ee5e")),
 					),
 				),
 			),
@@ -507,7 +509,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy.RouteConfiguration("ingress_http"),
 				envoy.RouteConfiguration("ingress_https",
 					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+						envoy.Route(envoy.RoutePrefix("/", nil), routecluster("default/kuard/8080/da39a3ee5e")),
 					),
 				),
 			),
@@ -569,7 +571,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
 						&envoy_api_v2_route.Route{
-							Match: envoy.RoutePrefix("/"),
+							Match: envoy.RoutePrefix("/", nil),
 							Action: &envoy_api_v2_route.Route_Redirect{
 								Redirect: &envoy_api_v2_route.RedirectAction{
 									SchemeRewriteSpecifier: &envoy_api_v2_route.RedirectAction_HttpsRedirect{
@@ -582,7 +584,7 @@ func TestRouteVisit(t *testing.T) {
 				),
 				envoy.RouteConfiguration("ingress_https",
 					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+						envoy.Route(envoy.RoutePrefix("/", nil), routecluster("default/kuard/8080/da39a3ee5e")),
 					),
 				),
 			),
@@ -638,8 +640,8 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/ws1"), websocketroute("default/kuard/8080/da39a3ee5e")),
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+						envoy.Route(envoy.RoutePrefix("/ws1", nil), websocketroute("default/kuard/8080/da39a3ee5e")),
+						envoy.Route(envoy.RoutePrefix("/", nil), routecluster("default/kuard/8080/da39a3ee5e")),
 					),
 				),
 				envoy.RouteConfiguration("ingress_https"),
@@ -676,7 +678,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("*",
-						envoy.Route(envoy.RoutePrefix("/"), routetimeout("default/kuard/8080/da39a3ee5e", 0)),
+						envoy.Route(envoy.RoutePrefix("/", nil), routetimeout("default/kuard/8080/da39a3ee5e", 0)),
 					),
 				),
 				envoy.RouteConfiguration("ingress_https"),
@@ -713,7 +715,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("*",
-						envoy.Route(envoy.RoutePrefix("/"), routetimeout("default/kuard/8080/da39a3ee5e", 0)),
+						envoy.Route(envoy.RoutePrefix("/", nil), routetimeout("default/kuard/8080/da39a3ee5e", 0)),
 					),
 				),
 				envoy.RouteConfiguration("ingress_https"),
@@ -750,7 +752,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("*",
-						envoy.Route(envoy.RoutePrefix("/"), routetimeout("default/kuard/8080/da39a3ee5e", 90*time.Second)),
+						envoy.Route(envoy.RoutePrefix("/", nil), routetimeout("default/kuard/8080/da39a3ee5e", 90*time.Second)),
 					),
 				),
 				envoy.RouteConfiguration("ingress_https"),
@@ -798,7 +800,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("my-very-very-long-service-host-name.subdomain.boring-dept.my.company",
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
+						envoy.Route(envoy.RoutePrefix("/", nil), routecluster("default/kuard/80/da39a3ee5e")),
 					),
 				),
 				envoy.RouteConfiguration("ingress_https"),
@@ -835,7 +837,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("*",
-						envoy.Route(envoy.RoutePrefix("/"), routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 0)),
+						envoy.Route(envoy.RoutePrefix("/", nil), routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 0)),
 					),
 				),
 				envoy.RouteConfiguration("ingress_https"),
@@ -873,7 +875,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("*",
-						envoy.Route(envoy.RoutePrefix("/"), routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 7, 0)),
+						envoy.Route(envoy.RoutePrefix("/", nil), routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 7, 0)),
 					),
 				),
 				envoy.RouteConfiguration("ingress_https"),
@@ -911,7 +913,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("*",
-						envoy.Route(envoy.RoutePrefix("/"), routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 150*time.Millisecond)),
+						envoy.Route(envoy.RoutePrefix("/", nil), routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 150*time.Millisecond)),
 					),
 				),
 				envoy.RouteConfiguration("ingress_https"),
@@ -970,7 +972,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/"), &envoy_api_v2_route.Route_Route{
+						envoy.Route(envoy.RoutePrefix("/", nil), &envoy_api_v2_route.Route_Route{
 							Route: &envoy_api_v2_route.RouteAction{
 								ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
 									WeightedClusters: &envoy_api_v2_route.WeightedCluster{
@@ -1042,7 +1044,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/"), &envoy_api_v2_route.Route_Route{
+						envoy.Route(envoy.RoutePrefix("/", nil), &envoy_api_v2_route.Route_Route{
 							Route: &envoy_api_v2_route.RouteAction{
 								ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
 									WeightedClusters: &envoy_api_v2_route.WeightedCluster{
@@ -1115,7 +1117,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/"), &envoy_api_v2_route.Route_Route{
+						envoy.Route(envoy.RoutePrefix("/", nil), &envoy_api_v2_route.Route_Route{
 							Route: &envoy_api_v2_route.RouteAction{
 								ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
 									WeightedClusters: &envoy_api_v2_route.WeightedCluster{
@@ -1172,6 +1174,318 @@ func TestRouteVisit(t *testing.T) {
 				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
+		"basic httpproxy": {
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "example.com",
+						},
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{
+								{
+									Name: "backend",
+									Port: 80,
+								},
+							},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("example.com",
+						envoy.Route(envoy.RoutePrefix("/", nil), routecluster("default/backend/80/da39a3ee5e")),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
+		},
+		"httpproxy w/header contain": {
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "example.com",
+						},
+						Routes: []projcontour.Route{{
+							Condition: &projcontour.Condition{
+								HeadersContain: map[string][]string{
+									"x-contain": {"ghi"},
+								},
+							},
+							Services: []projcontour.Service{
+								{
+									Name: "backend",
+									Port: 80,
+								},
+							},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("example.com",
+						envoy.Route(envoy.RoutePrefix("/", []dag.HeaderMatch{
+							{
+								MatchType: "contains",
+								Name:      "x-contain",
+								Value:     "ghi",
+								Invert:    false,
+							},
+						}), routecluster("default/backend/80/da39a3ee5e")),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
+			//map[string]*v2.RouteConfiguration{
+			//	"ingress_http": {
+			//		Name: "ingress_http",
+			//		VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
+			//			Name:    "example.com",
+			//			Domains: domains("example.com"),
+			//			Routes: envoy.Routes(
+			//				envoy.Route(envoy.RoutePrefix("/", []dag.HeaderMatch{
+			//					{
+			//						MatchType: "contains",
+			//						Name:      "x-contain",
+			//						Value:     "ghi",
+			//						Invert:    false,
+			//					},
+			//				}), routecluster("default/backend/80/da39a3ee5e")),
+			//			),
+			//		}},
+			//	},
+			//	"ingress_https": {
+			//		Name: "ingress_https",
+			//	},
+			//},
+		},
+		"httpproxy w/header not contain": {
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "example.com",
+						},
+						Routes: []projcontour.Route{{
+							Condition: &projcontour.Condition{
+								HeadersNotContain: map[string][]string{
+									"x-notcontain": {"jkl"},
+								},
+							},
+							Services: []projcontour.Service{
+								{
+									Name: "backend",
+									Port: 80,
+								},
+							},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("example.com",
+						envoy.Route(envoy.RoutePrefix("/", []dag.HeaderMatch{
+							{
+								MatchType: "contains",
+								Name:      "x-notcontain",
+								Value:     "jkl",
+								Invert:    true,
+							},
+						}), routecluster("default/backend/80/da39a3ee5e")),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
+			//map[string]*v2.RouteConfiguration{
+			//	"ingress_http": {
+			//		Name: "ingress_http",
+			//		VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
+			//			Name:    "example.com",
+			//			Domains: domains("example.com"),
+			//			Routes: envoy.Routes(
+			//				envoy.Route(envoy.RoutePrefix("/", []dag.HeaderMatch{
+			//					{
+			//						MatchType: "contains",
+			//						Name:      "x-notcontain",
+			//						Value:     "jkl",
+			//						Invert:    true,
+			//					},
+			//				}), routecluster("default/backend/80/da39a3ee5e")),
+			//			),
+			//		}},
+			//	},
+			//	"ingress_https": {
+			//		Name: "ingress_https",
+			//	},
+			//},
+		},
+		"httpproxy w/header match": {
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "example.com",
+						},
+						Routes: []projcontour.Route{{
+							Condition: &projcontour.Condition{
+								HeadersMatch: map[string][]string{
+									"x-match": {"abc"},
+								},
+							},
+							Services: []projcontour.Service{
+								{
+									Name: "backend",
+									Port: 80,
+								},
+							},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("example.com",
+						envoy.Route(envoy.RoutePrefix("/", []dag.HeaderMatch{
+							{
+								MatchType: "exact",
+								Name:      "x-match",
+								Value:     "abc",
+								Invert:    false,
+							},
+						}), routecluster("default/backend/80/da39a3ee5e")),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
+		},
+		"httpproxy w/header not match": {
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "example.com",
+						},
+						Routes: []projcontour.Route{{
+							Condition: &projcontour.Condition{
+								HeadersNotMatch: map[string][]string{
+									"x-notmatch": {"def"},
+								},
+							},
+							Services: []projcontour.Service{
+								{
+									Name: "backend",
+									Port: 80,
+								},
+							},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("example.com",
+						envoy.Route(envoy.RoutePrefix("/", []dag.HeaderMatch{
+							{
+								MatchType: "exact",
+								Name:      "x-notmatch",
+								Value:     "def",
+								Invert:    true,
+							},
+						}), routecluster("default/backend/80/da39a3ee5e")),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
+		},
 	}
 
 	for name, tc := range tests {
@@ -1192,14 +1506,14 @@ func TestSortLongestRouteFirst(t *testing.T) {
 	}{
 		"two prefixes": {
 			routes: []*envoy_api_v2_route.Route{{
-				Match: envoy.RoutePrefix("/"),
+				Match: envoy.RoutePrefix("/", nil),
 			}, {
-				Match: envoy.RoutePrefix("/longer"),
+				Match: envoy.RoutePrefix("/longer", nil),
 			}},
 			want: []*envoy_api_v2_route.Route{{
-				Match: envoy.RoutePrefix("/longer"),
+				Match: envoy.RoutePrefix("/longer", nil),
 			}, {
-				Match: envoy.RoutePrefix("/"),
+				Match: envoy.RoutePrefix("/", nil),
 			}},
 		},
 		"two regexes": {
@@ -1218,7 +1532,7 @@ func TestSortLongestRouteFirst(t *testing.T) {
 			routes: []*envoy_api_v2_route.Route{{
 				Match: envoy.RouteRegex("/api/v?"),
 			}, {
-				Match: envoy.RoutePrefix("/"),
+				Match: envoy.RoutePrefix("/", nil),
 			}, {
 				Match: envoy.RouteRegex(".*"),
 			}},
@@ -1227,7 +1541,7 @@ func TestSortLongestRouteFirst(t *testing.T) {
 			}, {
 				Match: envoy.RouteRegex(".*"),
 			}, {
-				Match: envoy.RoutePrefix("/"),
+				Match: envoy.RoutePrefix("/", nil),
 			}},
 		},
 	}
@@ -1241,13 +1555,6 @@ func TestSortLongestRouteFirst(t *testing.T) {
 			}
 		})
 	}
-}
-
-func domains(hostname string) []string {
-	if hostname == "*" {
-		return []string{"*"}
-	}
-	return []string{hostname, hostname + ":*"}
 }
 
 func routecluster(cluster string) *envoy_api_v2_route.Route_Route {

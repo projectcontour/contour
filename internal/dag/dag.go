@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -83,6 +83,17 @@ type Route struct {
 
 	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
 	PrefixRewrite string
+
+	// Match on headers for Route requests
+	HeaderMatch []HeaderMatch
+}
+
+// HeaderMatch describes a route match on a header
+type HeaderMatch struct {
+	MatchType string
+	Name      string
+	Value     string
+	Invert    bool
 }
 
 // TimeoutPolicy defines the timeout request/idle

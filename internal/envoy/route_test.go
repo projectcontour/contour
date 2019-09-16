@@ -50,7 +50,7 @@ func TestRoute(t *testing.T) {
 			ServicePort: &service.Spec.Ports[0],
 		},
 	}
-	match := RoutePrefix("/")
+	match := RoutePrefix("/", nil)
 	action := RouteRoute(&dag.Route{
 		Clusters: []*dag.Cluster{cluster},
 	})
@@ -577,6 +577,157 @@ func TestUpgradeHTTPS(t *testing.T) {
 
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatal(diff)
+	}
+}
+
+func TestRoutePrefix(t *testing.T) {
+	tests := map[string]struct {
+		prefix  string
+		headers []dag.HeaderMatch
+		want    *envoy_api_v2_route.RouteMatch
+	}{
+		"base case": {
+			prefix:  "/",
+			headers: nil,
+			want: &envoy_api_v2_route.RouteMatch{
+				PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
+					Prefix: "/",
+				},
+			},
+		},
+		"contains headers": {
+			prefix: "/",
+			headers: []dag.HeaderMatch{{
+				MatchType: "contains",
+				Name:      "x-header",
+				Value:     "abc",
+				Invert:    false,
+			}},
+			want: &envoy_api_v2_route.RouteMatch{
+				PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
+					Prefix: "/",
+				},
+				Headers: []*envoy_api_v2_route.HeaderMatcher{{
+					Name: "x-header",
+					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_RegexMatch{
+						RegexMatch: ".*abc.*",
+					},
+					InvertMatch: false,
+				}},
+			},
+		},
+		"not contains headers": {
+			prefix: "/",
+			headers: []dag.HeaderMatch{{
+				MatchType: "contains",
+				Name:      "x-header",
+				Value:     "abc",
+				Invert:    true,
+			}},
+			want: &envoy_api_v2_route.RouteMatch{
+				PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
+					Prefix: "/",
+				},
+				Headers: []*envoy_api_v2_route.HeaderMatcher{{
+					Name: "x-header",
+					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_RegexMatch{
+						RegexMatch: ".*abc.*",
+					},
+					InvertMatch: true,
+				}},
+			},
+		},
+		"exact match headers": {
+			prefix: "/",
+			headers: []dag.HeaderMatch{{
+				MatchType: "exact",
+				Name:      "x-header",
+				Value:     "abc",
+				Invert:    false,
+			}},
+			want: &envoy_api_v2_route.RouteMatch{
+				PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
+					Prefix: "/",
+				},
+				Headers: []*envoy_api_v2_route.HeaderMatcher{{
+					Name: "x-header",
+					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_ExactMatch{
+						ExactMatch: "abc",
+					},
+					InvertMatch: false,
+				}},
+			},
+		},
+		"not exact match headers": {
+			prefix: "/",
+			headers: []dag.HeaderMatch{{
+				MatchType: "exact",
+				Name:      "x-header",
+				Value:     "abc",
+				Invert:    true,
+			}},
+			want: &envoy_api_v2_route.RouteMatch{
+				PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
+					Prefix: "/",
+				},
+				Headers: []*envoy_api_v2_route.HeaderMatcher{{
+					Name: "x-header",
+					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_ExactMatch{
+						ExactMatch: "abc",
+					},
+					InvertMatch: true,
+				}},
+			},
+		},
+		"headers present": {
+			prefix: "/",
+			headers: []dag.HeaderMatch{{
+				MatchType: "present",
+				Name:      "x-header",
+				Invert:    false,
+			}},
+			want: &envoy_api_v2_route.RouteMatch{
+				PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
+					Prefix: "/",
+				},
+				Headers: []*envoy_api_v2_route.HeaderMatcher{{
+					Name: "x-header",
+					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_PresentMatch{
+						PresentMatch: true,
+					},
+					InvertMatch: false,
+				}},
+			},
+		},
+		"headers present - value ignored": {
+			prefix: "/",
+			headers: []dag.HeaderMatch{{
+				MatchType: "present",
+				Name:      "x-header",
+				Value:     "ignoreme",
+				Invert:    false,
+			}},
+			want: &envoy_api_v2_route.RouteMatch{
+				PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
+					Prefix: "/",
+				},
+				Headers: []*envoy_api_v2_route.HeaderMatcher{{
+					Name: "x-header",
+					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_PresentMatch{
+						PresentMatch: true,
+					},
+					InvertMatch: false,
+				}},
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := RoutePrefix(tc.prefix, tc.headers)
+			if diff := cmp.Diff(got, tc.want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
 	}
 }
 

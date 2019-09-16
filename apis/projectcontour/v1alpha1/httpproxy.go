@@ -51,9 +51,9 @@ type Condition struct {
 	// HeadersMatch represent a set of HTTP headers that match the key and match the value as specified exactly.
 	HeadersMatch map[string][]string `json:"headersMatch,omitempty"`
 	// HeadersNotContain represent a set of HTTP headers that match the key and do not contain the value as specified.
-	HeadersNotContain map[string][]string `json:"headersContain,omitempty"`
+	HeadersNotContain map[string][]string `json:"headersNotContain,omitempty"`
 	// HeadersNotMatch represent a set of HTTP headers that match the key and do not match the value as specified exactly.
-	HeadersNotMatch map[string][]string `json:"headersMatch,omitempty"`
+	HeadersNotMatch map[string][]string `json:"headersNotMatch,omitempty"`
 }
 
 // VirtualHost appears at most once. If it is present, the object is considered

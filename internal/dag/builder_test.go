@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -1886,6 +1886,119 @@ func TestDAGInsert(t *testing.T) {
 				},
 				Services: []projcontour.Service{{
 					Name: "blog",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy101 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Condition: &projcontour.Condition{
+					HeadersContain: map[string][]string{
+						"x-header": {"abc"},
+					},
+				},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy102 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Condition: &projcontour.Condition{
+					HeadersMatch: map[string][]string{
+						"x-header": {"abc"},
+					},
+				},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy103 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Condition: &projcontour.Condition{
+					HeadersNotContain: map[string][]string{
+						"x-header": {"abc"},
+					},
+				},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy104 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Condition: &projcontour.Condition{
+					HeadersNotMatch: map[string][]string{
+						"x-header": {"abc"},
+					},
+				},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy105 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Condition: &projcontour.Condition{
+					Header: "user-agent",
+				},
+				Services: []projcontour.Service{{
+					Name: "kuard",
 					Port: 8080,
 				}},
 			}},
@@ -3817,6 +3930,112 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"insert httpproxy with header contains match": {
+			objs: []interface{}{
+				proxy102, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							headerroute(
+								"/",
+								[]HeaderMatch{{
+									MatchType: "exact",
+									Name:      "x-header",
+									Value:     "abc",
+								}},
+								service(s1))),
+					),
+				},
+			),
+		},
+		"insert httpproxy with header exact match": {
+			objs: []interface{}{
+				proxy101, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							headerroute(
+								"/",
+								[]HeaderMatch{{
+									MatchType: "contains",
+									Name:      "x-header",
+									Value:     "abc",
+								}},
+								service(s1))),
+					),
+				},
+			),
+		},
+		"insert httpproxy with header not contains match": {
+			objs: []interface{}{
+				proxy103, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							headerroute(
+								"/",
+								[]HeaderMatch{{
+									MatchType: "contains",
+									Name:      "x-header",
+									Value:     "abc",
+									Invert:    true,
+								}},
+								service(s1))),
+					),
+				},
+			),
+		},
+		"insert httpproxy with header not exact match": {
+			objs: []interface{}{
+				proxy104, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							headerroute(
+								"/",
+								[]HeaderMatch{{
+									MatchType: "exact",
+									Name:      "x-header",
+									Value:     "abc",
+									Invert:    true,
+								}},
+								service(s1))),
+					),
+				},
+			),
+		},
+		"insert httpproxy with header match only": {
+			objs: []interface{}{
+				proxy105, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							headerroute(
+								"/",
+								[]HeaderMatch{{
+									MatchType: "present",
+									Name:      "user-agent",
+								}},
+								service(s1))),
+					),
+				},
+			),
+		},
 	}
 
 	for name, tc := range tests {
@@ -4427,11 +4646,27 @@ func prefixroute(prefix string, first *Service, rest ...*Service) *PrefixRoute {
 	return routeCluster(prefix, clusters(services...)...)
 }
 
+func headerroute(prefix string, headers []HeaderMatch, first *Service, rest ...*Service) *PrefixRoute {
+	services := append([]*Service{first}, rest...)
+	return routeHeaderCluster(prefix, headers, clusters(services...)...)
+}
+
 func routeCluster(prefix string, clusters ...*Cluster) *PrefixRoute {
 	route := PrefixRoute{
 		Prefix: prefix,
 		Route: Route{
 			Clusters: clusters,
+		},
+	}
+	return &route
+}
+
+func routeHeaderCluster(prefix string, headers []HeaderMatch, clusters ...*Cluster) *PrefixRoute {
+	route := PrefixRoute{
+		Prefix: prefix,
+		Route: Route{
+			Clusters:    clusters,
+			HeaderMatch: headers,
 		},
 	}
 	return &route

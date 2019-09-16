@@ -23,7 +23,7 @@ import (
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
@@ -778,6 +778,7 @@ func (b *Builder) processRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 					PrefixRewrite: route.PrefixRewrite,
 					TimeoutPolicy: timeoutPolicy(route.TimeoutPolicy),
 					RetryPolicy:   retryPolicy(route.RetryPolicy),
+					HeaderMatch:   conditionHeaders(route.Condition),
 				},
 			}
 
@@ -924,6 +925,69 @@ func conditionPath(routeCondition, includeCondition *projcontour.Condition) stri
 	return pathPrefix
 }
 
+func conditionHeaders(routeCondition *projcontour.Condition) []HeaderMatch {
+	// TODO(sas) Handle conflicts with status
+	// TODO(sas) Handle included header types
+
+	if routeCondition == nil {
+		return nil
+	}
+
+	var headers []HeaderMatch
+	for key, h := range routeCondition.HeadersContain {
+		for _, val := range h {
+			headers = append(headers, HeaderMatch{
+				MatchType: "contains",
+				Name:      key,
+				Value:     val,
+				Invert:    false,
+			})
+		}
+	}
+
+	for key, h := range routeCondition.HeadersNotContain {
+		for _, val := range h {
+			headers = append(headers, HeaderMatch{
+				MatchType: "contains",
+				Name:      key,
+				Value:     val,
+				Invert:    true,
+			})
+		}
+	}
+
+	for key, h := range routeCondition.HeadersMatch {
+		for _, val := range h {
+			headers = append(headers, HeaderMatch{
+				MatchType: "exact",
+				Name:      key,
+				Value:     val,
+				Invert:    false,
+			})
+		}
+	}
+
+	for key, h := range routeCondition.HeadersNotMatch {
+		for _, val := range h {
+			headers = append(headers, HeaderMatch{
+				MatchType: "exact",
+				Name:      key,
+				Value:     val,
+				Invert:    true,
+			})
+		}
+	}
+
+	if len(routeCondition.Header) > 0 {
+		headers = append(headers, HeaderMatch{
+			MatchType: "present",
+			Name:      routeCondition.Header,
+		})
+	}
+
+	return headers
+}
+
 func externalName(svc *v1.Service) string {
 	if svc.Spec.Type != v1.ServiceTypeExternalName {
 		return ""
@@ -980,7 +1044,6 @@ func route(ingress *v1beta1.Ingress, path string, service *Service) Vertex {
 		Prefix: path,
 		Route:  r,
 	}
-
 }
 
 // isBlank indicates if a string contains nothing but blank characters.

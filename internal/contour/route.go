@@ -123,8 +123,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				vh.Visit(func(v dag.Vertex) {
 					switch r := v.(type) {
 					case *dag.PrefixRoute:
-						rr := envoy.Route(envoy.RoutePrefix(r.Prefix), envoy.RouteRoute(&r.Route))
-
+						rr := envoy.Route(envoy.RoutePrefix(r.Prefix, r.HeaderMatch), envoy.RouteRoute(&r.Route))
 						if r.HTTPSUpgrade {
 							rr.Action = envoy.UpgradeHTTPS()
 						}
@@ -151,7 +150,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 					case *dag.PrefixRoute:
 						routes = append(
 							routes,
-							envoy.Route(envoy.RoutePrefix(r.Prefix), envoy.RouteRoute(&r.Route)),
+							envoy.Route(envoy.RoutePrefix(r.Prefix, r.HeaderMatch), envoy.RouteRoute(&r.Route)),
 						)
 					case *dag.RegexRoute:
 						routes = append(
