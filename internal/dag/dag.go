@@ -333,13 +333,6 @@ func (s *Secret) PrivateKey() []byte {
 	return s.Object.Data[v1.TLSPrivateKeyKey]
 }
 
-func (s *Secret) toMeta() Meta {
-	return Meta{
-		name:      s.Name(),
-		namespace: s.Namespace(),
-	}
-}
-
 // Cluster health check policy.
 type HealthCheckPolicy struct {
 	Path               string

@@ -10,6 +10,10 @@ annotations.
 
 However, Contour still supports a number of annotations on the Ingress resources.
 
+## Deprecation notice
+
+The `contour.heptio.com` annotations are deprecated, please use the `projectcontour.io` form going forward.
+
 ## Standard Kubernetes Ingress annotations
 
  - `kubernetes.io/ingress.class`: The Ingress class that should interpret and serve the Ingress. If not set, then all Ingress controllers serve the Ingress. If specified as `kubernetes.io/ingress.class: contour`, then Contour serves the Ingress. If any other value, Contour ignores the Ingress definition. You can override the default class `contour` with the `--ingress-class-name` flag at runtime. This can be useful while you are migrating from another controller, or if you need multiple instances of Contour.
@@ -20,7 +24,8 @@ The `ingress.kubernetes.io/force-ssl-redirect` annotation takes precedence over 
 
 ## Contour specific Ingress annotations
 
- - `contour.heptio.com/ingress.class`: The Ingress class that should interpret and serve the Ingress. If not set, then all Ingress controllers serve the Ingress. If specified as `contour.heptio.com/ingress.class: contour`, then Contour serves the Ingress. If any other value, Contour ignores the Ingress definition. You can override the default class `contour` with the `--ingress-class-name` flag at runtime. This can be useful while you are migrating from another controller, or if you need multiple instances of Contour.
+ - `projectcontour.io/ingress.class`: The Ingress class that should interpret and serve the Ingress. If not set, then all Ingress controllers serve the Ingress. If specified as `projectcontour.io/ingress.class: contour`, then Contour serves the Ingress. If any other value, Contour ignores the Ingress definition. You can override the default class `contour` with the `--ingress-class-name` flag at runtime. This can be useful while you are migrating from another controller, or if you need multiple instances of Contour.
+ - `contour.heptio.com/ingress.class`: deprecated form of `projectcontour.io/ingress.class`.
  - `contour.heptio.com/request-timeout`: [The Envoy HTTP route timeout](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout), specified as a [golang duration](https://golang.org/pkg/time/#ParseDuration). By default, Envoy has a 15 second timeout for a backend service to respond. Set this to `infinity` to specify that Envoy should never timeout the connection to the backend. Note that the value `0s` / zero has special semantics for Envoy.
  - `contour.heptio.com/retry-on`: [The conditions for Envoy to retry a request](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-field-route-routeaction-retrypolicy-retry-on). See also [possible values and their meanings for `retry-on`](https://www.envoyproxy.io/docs/envoy/latest/configuration/http_filters/router_filter.html#config-http-filters-router-x-envoy-retry-on).
  - `contour.heptio.com/num-retries`: [The maximum number of retries](https://www.envoyproxy.io/docs/envoy/latest/configuration/http_filters/router_filter.html#config-http-filters-router-x-envoy-max-retries) Envoy should make before abandoning and returning an error to the client. Applies only if `contour.heptio.com/retry-on` is specified.

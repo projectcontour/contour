@@ -53,6 +53,14 @@ type Meta struct {
 	name, namespace string
 }
 
+func toMeta(obj Object) Meta {
+	m := obj.GetObjectMeta()
+	return Meta{
+		name:      m.GetName(),
+		namespace: m.GetNamespace(),
+	}
+}
+
 // Insert inserts obj into the KubernetesCache.
 // Insert returns true if the cache accepted the object, or false if the value
 // is not interesting to the cache. If an object with a matching type, name,
@@ -69,61 +77,61 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			// and secrets with a ca.crt key.
 			return false
 		}
-		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		m := toMeta(obj)
 		if kc.secrets == nil {
 			kc.secrets = make(map[Meta]*v1.Secret)
 		}
 		kc.secrets[m] = obj
 		return kc.secretTriggersRebuild(obj)
 	case *v1.Service:
-		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		m := toMeta(obj)
 		if kc.services == nil {
 			kc.services = make(map[Meta]*v1.Service)
 		}
 		kc.services[m] = obj
 		return kc.serviceTriggersRebuild(obj)
 	case *v1beta1.Ingress:
-		class := getIngressClassAnnotation(obj.Annotations)
+		class := ingressClass(obj)
 		if class != "" && class != kc.ingressClass() {
 			return false
 		}
-		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		m := toMeta(obj)
 		if kc.ingresses == nil {
 			kc.ingresses = make(map[Meta]*v1beta1.Ingress)
 		}
 		kc.ingresses[m] = obj
 		return true
 	case *ingressroutev1.IngressRoute:
-		class := getIngressClassAnnotation(obj.Annotations)
+		class := ingressClass(obj)
 		if class != "" && class != kc.ingressClass() {
 			return false
 		}
-		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		m := toMeta(obj)
 		if kc.ingressroutes == nil {
 			kc.ingressroutes = make(map[Meta]*ingressroutev1.IngressRoute)
 		}
 		kc.ingressroutes[m] = obj
 		return true
 	case *projectcontour.HTTPProxy:
-		class := getIngressClassAnnotation(obj.Annotations)
+		class := ingressClass(obj)
 		if class != "" && class != kc.ingressClass() {
 			return false
 		}
-		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		m := toMeta(obj)
 		if kc.httpproxies == nil {
 			kc.httpproxies = make(map[Meta]*projectcontour.HTTPProxy)
 		}
 		kc.httpproxies[m] = obj
 		return true
 	case *ingressroutev1.TLSCertificateDelegation:
-		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		m := toMeta(obj)
 		if kc.irdelegations == nil {
 			kc.irdelegations = make(map[Meta]*ingressroutev1.TLSCertificateDelegation)
 		}
 		kc.irdelegations[m] = obj
 		return true
 	case *projectcontour.TLSCertificateDelegation:
-		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		m := toMeta(obj)
 		if kc.httpproxydelegations == nil {
 			kc.httpproxydelegations = make(map[Meta]*projectcontour.TLSCertificateDelegation)
 		}
@@ -157,37 +165,37 @@ func (kc *KubernetesCache) Remove(obj interface{}) bool {
 func (kc *KubernetesCache) remove(obj interface{}) bool {
 	switch obj := obj.(type) {
 	case *v1.Secret:
-		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		m := toMeta(obj)
 		_, ok := kc.secrets[m]
 		delete(kc.secrets, m)
 		return ok
 	case *v1.Service:
-		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		m := toMeta(obj)
 		_, ok := kc.services[m]
 		delete(kc.services, m)
 		return ok
 	case *v1beta1.Ingress:
-		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		m := toMeta(obj)
 		_, ok := kc.ingresses[m]
 		delete(kc.ingresses, m)
 		return ok
 	case *ingressroutev1.IngressRoute:
-		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		m := toMeta(obj)
 		_, ok := kc.ingressroutes[m]
 		delete(kc.ingressroutes, m)
 		return ok
 	case *projectcontour.HTTPProxy:
-		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		m := toMeta(obj)
 		_, ok := kc.httpproxies[m]
 		delete(kc.httpproxies, m)
 		return ok
 	case *ingressroutev1.TLSCertificateDelegation:
-		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		m := toMeta(obj)
 		_, ok := kc.irdelegations[m]
 		delete(kc.irdelegations, m)
 		return ok
 	case *projectcontour.TLSCertificateDelegation:
-		m := Meta{name: obj.Name, namespace: obj.Namespace}
+		m := toMeta(obj)
 		_, ok := kc.httpproxydelegations[m]
 		delete(kc.httpproxydelegations, m)
 		return ok
