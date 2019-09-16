@@ -108,6 +108,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests").IntVar(&ctx.httpsPort)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners").BoolVar(&ctx.useProxyProto)
 
+	serve.Flag("accesslog-format", "Format for Envoy access logs").StringVar(&ctx.AccessLogFormat)
 	serve.Flag("disable-leader-election", "Disable leader election mechanism").BoolVar(&ctx.DisableLeaderElection)
 	return serve, ctx
 }
@@ -141,6 +142,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				HTTPSAddress:           ctx.httpsAddr,
 				HTTPSPort:              ctx.httpsPort,
 				HTTPSAccessLog:         ctx.httpsAccessLog,
+				AccessLogType:          ctx.AccessLogFormat,
+				AccessLogFields:        ctx.AccessLogFields,
 				MinimumProtocolVersion: dag.MinProtoVersion(ctx.TLSConfig.MinimumProtocolVersion),
 			},
 			ListenerCache: contour.NewListenerCache(ctx.statsAddr, ctx.statsPort),

@@ -19,6 +19,7 @@ import (
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	envoy_api_v2_accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
@@ -36,6 +37,7 @@ const (
 	DEFAULT_HTTPS_ACCESS_LOG       = "/dev/stdout"
 	DEFAULT_HTTPS_LISTENER_ADDRESS = DEFAULT_HTTP_LISTENER_ADDRESS
 	DEFAULT_HTTPS_LISTENER_PORT    = 8443
+	DEFAULT_ACCESS_LOG_TYPE        = "clf"
 )
 
 // ListenerVisitorConfig holds configuration parameters for visitListeners.
@@ -71,6 +73,16 @@ type ListenerVisitorConfig struct {
 
 	// MinimumProtocolVersion defines the min tls protocol version to be used
 	MinimumProtocolVersion envoy_api_v2_auth.TlsParameters_TlsProtocol
+
+	// AccessLogType defines if Envoy logs should be output as CLF or JSON.
+	// Valid values: 'clf', 'json'
+	// If not set, defaults to 'clf'
+	AccessLogType string
+
+	// AccessLogFields sets the fields that should be shown in JSON logs.
+	// Valid entries are the keys from internal/envoy/accesslog.go:jsonheaders
+	// Defaults to a particular set of fields.
+	AccessLogFields []string
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
@@ -127,6 +139,42 @@ func (lvc *ListenerVisitorConfig) httpsAccessLog() string {
 	return DEFAULT_HTTPS_ACCESS_LOG
 }
 
+// accesslogType returns the access log type that should be configured
+// across all listener types or DEFAULT_ACCESS_LOG_TYPE if not configured.
+func (lvc *ListenerVisitorConfig) accesslogType() string {
+	if lvc.AccessLogType != "" {
+		return lvc.AccessLogType
+	}
+	return DEFAULT_ACCESS_LOG_TYPE
+}
+
+// accesslogFields returns the access log fields that should be configured
+// for Envoy, or a default set if not configured.
+func (lvc *ListenerVisitorConfig) accesslogFields() []string {
+	if lvc.AccessLogFields != nil {
+		return lvc.AccessLogFields
+	}
+	return envoy.DefaultFields
+}
+
+func (lvc *ListenerVisitorConfig) newInsecureAccessLog() []*envoy_api_v2_accesslog.AccessLog {
+	switch lvc.accesslogType() {
+	case "json":
+		return envoy.FileAccessLogJSON(lvc.httpAccessLog(), lvc.accesslogFields())
+	default:
+		return envoy.FileAccessLog(lvc.httpAccessLog())
+	}
+}
+
+func (lvc *ListenerVisitorConfig) newSecureAccessLog() []*envoy_api_v2_accesslog.AccessLog {
+	switch lvc.accesslogType() {
+	case "json":
+		return envoy.FileAccessLogJSON(lvc.httpsAccessLog(), lvc.accesslogFields())
+	default:
+		return envoy.FileAccessLog(lvc.httpsAccessLog())
+	}
+}
+
 // minProtocolVersion returns the requested minimum TLS protocol
 // version or envoy_api_v2_auth.TlsParameters_TLSv1_1 if not configured {
 func (lvc *ListenerVisitorConfig) minProtoVersion() envoy_api_v2_auth.TlsParameters_TlsProtocol {
@@ -178,6 +226,8 @@ func (c *ListenerCache) Contents() []proto.Message {
 	return values
 }
 
+// Query returns the proto.Messages in the ListenerCache that match
+// a slice of strings
 func (c *ListenerCache) Query(names []string) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -237,7 +287,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 			ENVOY_HTTP_LISTENER,
 			lvc.httpAddress(), lvc.httpPort(),
 			proxyProtocol(lvc.UseProxyProto),
-			envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, lvc.httpAccessLog()),
+			envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, lvc.newInsecureAccessLog()),
 		)
 
 	}
@@ -289,12 +339,12 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		v.http = true
 	case *dag.SecureVirtualHost:
 		filters := envoy.Filters(
-			envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.httpsAccessLog()),
+			envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.ListenerVisitorConfig.newSecureAccessLog()),
 		)
 		alpnProtos := []string{"h2", "http/1.1"}
 		if vh.TCPProxy != nil {
 			filters = envoy.Filters(
-				envoy.TCPProxy(ENVOY_HTTPS_LISTENER, vh.TCPProxy, v.httpsAccessLog()),
+				envoy.TCPProxy(ENVOY_HTTPS_LISTENER, vh.TCPProxy, v.ListenerVisitorConfig.newSecureAccessLog()),
 			)
 			alpnProtos = nil // do not offer ALPN
 		}

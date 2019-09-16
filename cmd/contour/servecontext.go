@@ -71,6 +71,16 @@ type serveContext struct {
 	httpsPort      int
 	httpsAccessLog string
 
+	// Envoy's access logging format options
+
+	// AccessLogFormat sets the global access log format.
+	// Valid options are 'clf' or 'json'
+	AccessLogFormat string `yaml:"accesslog-format"`
+
+	// AccessLogFields sets the fields that JSON logging will
+	// output when AccessLogFormat is json.
+	AccessLogFields []string `yaml:"json-fields"`
+
 	// PermitInsecureGRPC disables TLS on Contour's gRPC listener.
 	PermitInsecureGRPC bool `yaml:"-"`
 
@@ -109,6 +119,30 @@ func newServeContext() *serveContext {
 		PermitInsecureGRPC:    false,
 		DisablePermitInsecure: false,
 		DisableLeaderElection: false,
+		AccessLogFormat:       "clf",
+		AccessLogFields: []string{
+			"@timestamp",
+			"authority",
+			"bytes_received",
+			"bytes_sent",
+			"downstream_local_address",
+			"downstream_remote_address",
+			"duration",
+			"method",
+			"path",
+			"protocol",
+			"request_id",
+			"requested_server_name",
+			"response_code",
+			"response_flags",
+			"uber_trace_id",
+			"upstream_cluster",
+			"upstream_host",
+			"upstream_local_address",
+			"upstream_service_time",
+			"user_agent",
+			"x_forwarded_for",
+		},
 		LeaderElectionConfig: LeaderElectionConfig{
 			LeaseDuration: time.Second * 15,
 			RenewDeadline: time.Second * 10,

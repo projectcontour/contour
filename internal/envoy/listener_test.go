@@ -21,10 +21,12 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	envoy_api_v2_accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	envoy_config_v2_tcpproxy "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
@@ -44,13 +46,13 @@ func TestListener(t *testing.T) {
 			address: "0.0.0.0",
 			port:    9000,
 			f: []*envoy_api_v2_listener.Filter{
-				HTTPConnectionManager("http", "/dev/null"),
+				HTTPConnectionManager("http", FileAccessLog("/dev/null")),
 			},
 			want: &v2.Listener{
 				Name:    "http",
 				Address: SocketAddress("0.0.0.0", 9000),
 				FilterChains: FilterChains(
-					HTTPConnectionManager("http", "/dev/null"),
+					HTTPConnectionManager("http", FileAccessLog("/dev/null")),
 				),
 			},
 		},
@@ -62,7 +64,7 @@ func TestListener(t *testing.T) {
 				ProxyProtocol(),
 			},
 			f: []*envoy_api_v2_listener.Filter{
-				HTTPConnectionManager("http-proxy", "/dev/null"),
+				HTTPConnectionManager("http-proxy", FileAccessLog("/dev/null")),
 			},
 			want: &v2.Listener{
 				Name:    "http-proxy",
@@ -71,7 +73,7 @@ func TestListener(t *testing.T) {
 					ProxyProtocol(),
 				),
 				FilterChains: FilterChains(
-					HTTPConnectionManager("http-proxy", "/dev/null"),
+					HTTPConnectionManager("http-proxy", FileAccessLog("/dev/null")),
 				),
 			},
 		},
@@ -112,7 +114,7 @@ func TestListener(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := Listener(tc.name, tc.address, tc.port, tc.lf, tc.f...)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
+			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
 				t.Fatal(diff)
 			}
 		})
@@ -154,7 +156,7 @@ func TestSocketAddress(t *testing.T) {
 			},
 		},
 	}
-	if diff := cmp.Diff(want, got); diff != "" {
+	if diff := cmp.Diff(want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
 		t.Fatal(diff)
 	}
 }
@@ -199,20 +201,20 @@ func TestDownstreamTLSContext(t *testing.T) {
 			AlpnProtocols: []string{"h2", "http/1.1"},
 		},
 	}
-	if diff := cmp.Diff(want, got); diff != "" {
+	if diff := cmp.Diff(want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
 		t.Fatal(diff)
 	}
 }
 
 func TestHTTPConnectionManager(t *testing.T) {
 	tests := map[string]struct {
-		routename string
-		accesslog string
-		want      *envoy_api_v2_listener.Filter
+		routename    string
+		accesslogger []*envoy_api_v2_accesslog.AccessLog
+		want         *envoy_api_v2_listener.Filter
 	}{
 		"default": {
-			routename: "default/kuard",
-			accesslog: "/dev/stdout",
+			routename:    "default/kuard",
+			accesslogger: FileAccessLog("/dev/stdout"),
 			want: &envoy_api_v2_listener.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
@@ -261,8 +263,8 @@ func TestHTTPConnectionManager(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := HTTPConnectionManager(tc.routename, tc.accesslog)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
+			got := HTTPConnectionManager(tc.routename, tc.accesslogger)
+			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
 				t.Fatal(diff)
 			}
 		})
@@ -351,8 +353,8 @@ func TestTCPProxy(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := TCPProxy(statPrefix, tc.proxy, accessLogPath)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
+			got := TCPProxy(statPrefix, tc.proxy, FileAccessLog(accessLogPath))
+			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
 				t.Fatal(diff)
 			}
 		})
