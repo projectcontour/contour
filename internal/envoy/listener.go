@@ -119,10 +119,11 @@ func HTTPConnectionManager(routename, accessLogPath string) listener.Filter {
 					// a Host: header. See #537.
 					AcceptHttp_10: true,
 				},
-				AccessLog:        FileAccessLog(accessLogPath),
-				UseRemoteAddress: &types.BoolValue{Value: true}, // TODO(jbeda) should this ever be false?
-				NormalizePath:    &types.BoolValue{Value: true},
-				IdleTimeout:      idleTimeout(HTTPDefaultIdleTimeout),
+				AccessLog:                 FileAccessLog(accessLogPath),
+				UseRemoteAddress:          &types.BoolValue{Value: true}, // TODO(jbeda) should this ever be false?
+				NormalizePath:             &types.BoolValue{Value: true},
+				IdleTimeout:               idleTimeout(HTTPDefaultIdleTimeout),
+				PreserveExternalRequestId: true,
 			}),
 		},
 	}
