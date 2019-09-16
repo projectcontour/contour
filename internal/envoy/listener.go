@@ -21,6 +21,7 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
@@ -65,7 +66,8 @@ func Listener(name, address string, port int, lf []*envoy_api_v2_listener.Listen
 
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
 // for the supplied route and access log.
-func HTTPConnectionManager(routename, accessLogPath string) *envoy_api_v2_listener.Filter {
+func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog) *envoy_api_v2_listener.Filter {
+
 	return &envoy_api_v2_listener.Filter{
 		Name: wellknown.HTTPConnectionManager,
 		ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
@@ -102,7 +104,7 @@ func HTTPConnectionManager(routename, accessLogPath string) *envoy_api_v2_listen
 					// a Host: header. See #537.
 					AcceptHttp_10: true,
 				},
-				AccessLog:        FileAccessLog(accessLogPath),
+				AccessLog:        accesslogger,
 				UseRemoteAddress: protobuf.Bool(true),
 				NormalizePath:    protobuf.Bool(true),
 				// Sets the idle timeout for HTTP connections to 60 seconds.
@@ -118,7 +120,7 @@ func HTTPConnectionManager(routename, accessLogPath string) *envoy_api_v2_listen
 }
 
 // TCPProxy creates a new TCPProxy filter.
-func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) *envoy_api_v2_listener.Filter {
+func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.AccessLog) *envoy_api_v2_listener.Filter {
 	// Set the idle timeout in seconds for connections through a TCP Proxy type filter.
 	// The value of two and a half hours for reasons documented at
 	// https://github.com/projectcontour/contour/issues/1074
@@ -135,7 +137,7 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) *env
 					ClusterSpecifier: &tcp.TcpProxy_Cluster{
 						Cluster: Clustername(proxy.Clusters[0]),
 					},
-					AccessLog:   FileAccessLog(accessLogPath),
+					AccessLog:   accesslogger,
 					IdleTimeout: idleTimeout,
 				}),
 			},
@@ -163,7 +165,7 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accessLogPath string) *env
 							Clusters: clusters,
 						},
 					},
-					AccessLog:   FileAccessLog(accessLogPath),
+					AccessLog:   accesslogger,
 					IdleTimeout: idleTimeout,
 				}),
 			},
