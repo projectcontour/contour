@@ -335,24 +335,11 @@ func (b *Builder) computeIngresses() {
 					continue
 				}
 
-				r := route(ing, path)
-				r.Clusters = append(r.Clusters, &Cluster{Upstream: s})
-
-				var v Vertex = &PrefixRoute{
-					Prefix: path,
-					Route:  r,
-				}
-				if strings.ContainsAny(path, "^+*[]%") {
-					// path smells like a regex
-					v = &RegexRoute{
-						Regex: path,
-						Route: r,
-					}
-				}
+				r := route(ing, path, s)
 
 				// should we create port 80 routes for this ingress
 				if tlsRequired(ing) || httpAllowed(ing) {
-					b.lookupVirtualHost(host).addRoute(v)
+					b.lookupVirtualHost(host).addRoute(r)
 				}
 
 				// computeSecureVirtualhosts will have populated b.securevirtualhosts
@@ -360,7 +347,7 @@ func (b *Builder) computeIngresses() {
 				// it is correctly configured for TLS.
 				svh, ok := b.securevirtualhosts[host]
 				if ok && host != "*" {
-					svh.addRoute(v)
+					svh.addRoute(r)
 				}
 			}
 		}
@@ -945,7 +932,7 @@ func externalName(svc *v1.Service) string {
 }
 
 // route returns a dag.Route for the supplied Ingress.
-func route(ingress *v1beta1.Ingress, path string) Route {
+func route(ingress *v1beta1.Ingress, path string, service *Service) Vertex {
 	var retry *RetryPolicy
 	if retryOn, ok := ingress.Annotations[annotationRetryOn]; ok && len(retryOn) > 0 {
 		// if there is a non empty retry-on annotation, build a RetryPolicy manually.
@@ -971,12 +958,29 @@ func route(ingress *v1beta1.Ingress, path string) Route {
 	}
 
 	wr := websocketRoutes(ingress)
-	return Route{
+	r := Route{
 		HTTPSUpgrade:  tlsRequired(ingress),
 		Websocket:     wr[path],
 		TimeoutPolicy: timeout,
 		RetryPolicy:   retry,
+		Clusters: []*Cluster{{
+			Upstream: service,
+		}},
 	}
+
+	if strings.ContainsAny(path, "^+*[]%") {
+		// path smells like a regex
+		return &RegexRoute{
+			Regex: path,
+			Route: r,
+		}
+	}
+
+	return &PrefixRoute{
+		Prefix: path,
+		Route:  r,
+	}
+
 }
 
 // isBlank indicates if a string contains nothing but blank characters.
