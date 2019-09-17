@@ -12,9 +12,9 @@ It will deploy Contour into a Deployment, and Envoy into a Daemonset.
 The gRPC communication is secured with certificates.
 A `LoadBalancer` Service is created to expose Envoy to your cloud provider's load balancer.
 
-## `common`
+## `render`
 
-YAML fragments that are common across multiple examples. Not for applying to a Kubernetes cluster directly.
+Single file renderings of other examples suitable for `kubectl apply`ing via a URL.
 
 ## `example-workload`
 
@@ -31,19 +31,3 @@ If you have your own Grafana and Prometheus deployment already, the supplied [Co
 ## `kind`, `root-rbac`
 
 Both of these examples are fragments used in other documentation ([deploy-options](../docs/deploy-options.md) and [ingressroute](../docs/ingressroute.md) respectively.)
-
-## `deployment-grpc-v2`
-
-> This example is deprecated and will be removed as part of the Contour 1.0 release.
-
-## `ds-grpc-v2`
-
-> This example is deprecated and will be removed as part of the Contour 1.0 release.
-
-## `ds-hostnet`
-
-> This example is deprecated and will be removed as part of the Contour 1.0 release.
-
-## `ds-hostnet-split`
-
-> This example is deprecated and will be removed as part of the Contour 1.0 release.
