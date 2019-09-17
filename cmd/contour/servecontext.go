@@ -75,11 +75,11 @@ type serveContext struct {
 
 	// AccessLogFormat sets the global access log format.
 	// Valid options are 'clf' or 'json'
-	AccessLogFormat string `yaml:"accesslog-format"`
+	AccessLogFormat string `yaml:"accesslog-format,omitempty"`
 
 	// AccessLogFields sets the fields that JSON logging will
 	// output when AccessLogFormat is json.
-	AccessLogFields []string `yaml:"json-fields"`
+	AccessLogFields []string `yaml:"json-fields,omitempty"`
 
 	// PermitInsecureGRPC disables TLS on Contour's gRPC listener.
 	PermitInsecureGRPC bool `yaml:"-"`
