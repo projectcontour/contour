@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
  name: envoy
- namespace: heptio-contour
+ namespace: projectcontour
  annotations:
   # This annotation puts the AWS ELB into "TCP" mode so that it does not
   # do HTTP negotiation for HTTPS connections at the ELB edge.

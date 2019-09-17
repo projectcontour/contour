@@ -4,13 +4,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: heptio-contour
+  name: projectcontour 
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: contour
-  namespace: heptio-contour
+  namespace: projectcontour
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
@@ -328,7 +328,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: contour
-  namespace: heptio-contour
+  namespace: projectcontour
 data:
   contour.yaml: |
     # should contour expect to be running inside a k8s cluster
@@ -351,13 +351,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: contour-certgen
-  namespace: heptio-contour
+  namespace: projectcontour
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
   name: contour
-  namespace: heptio-contour
+  namespace: projectcontour
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -365,13 +365,13 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: contour-certgen
-  namespace: heptio-contour
+  namespace: projectcontour
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
   name: contour-certgen
-  namespace: heptio-contour
+  namespace: projectcontour
 rules:
 - apiGroups:
   - ""
@@ -390,7 +390,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: contour-certgen
-  namespace: heptio-contour
+  namespace: projectcontour
 spec:
   template:
     metadata:
@@ -422,7 +422,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: contour
-  namespace: heptio-contour
+  namespace: projectcontour
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
@@ -485,7 +485,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
   name: contour-leaderelection
-  namespace: heptio-contour
+  namespace: projectcontour
 rules:
 - apiGroups:
   - ""
@@ -510,7 +510,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
   name: contour-leaderelection
-  namespace: heptio-contour
+  namespace: projectcontour
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -518,13 +518,13 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: contour
-  namespace: heptio-contour
+  namespace: projectcontour
 ---
 apiVersion: v1
 kind: Service
 metadata:
  name: contour
- namespace: heptio-contour
+ namespace: projectcontour
 spec:
  ports:
  - port: 8001
@@ -539,7 +539,7 @@ apiVersion: v1
 kind: Service
 metadata:
  name: envoy
- namespace: heptio-contour
+ namespace: projectcontour
  annotations:
   # This annotation puts the AWS ELB into "TCP" mode so that it does not
   # do HTTP negotiation for HTTPS connections at the ELB edge.
@@ -567,7 +567,7 @@ metadata:
   labels:
     app: contour
   name: contour
-  namespace: heptio-contour
+  namespace: projectcontour
 spec:
   replicas: 2
   strategy:
@@ -663,7 +663,7 @@ metadata:
   labels:
     app: envoy
   name: envoy
-  namespace: heptio-contour
+  namespace: projectcontour
 spec:
   updateStrategy:
     type: RollingUpdate

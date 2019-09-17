@@ -11,7 +11,7 @@ Because the HTTP and HTTPS listeners both use the same code, if you have no ingr
 To test whether Contour is correctly deployed you can deploy the kuard example service:
 
 ```sh
-% kubectl apply -f https://raw.githubusercontent.com/heptio/contour/master/examples/example-workload/kuard.yaml
+% kubectl apply -f https://projectcontour.io/examples/kuard.yaml
 ```
 
 ## Access the Envoy admin interface remotely
@@ -23,9 +23,9 @@ To access it from your workstation use `kubectl port-forward` like so,
 
 ```sh
 # Get one of the pods that matches the Envoy daemonset
-ENVOY_POD=$(kubectl -n heptio-contour get pod -l app=envoy -o name | head -1)
+ENVOY_POD=$(kubectl -n projectcontour get pod -l app=envoy -o name | head -1)
 # Do the port forward to that pod
-kubectl -n heptio-contour port-forward $ENVOY_POD 9001
+kubectl -n projectcontour port-forward $ENVOY_POD 9001
 ```
 
 Then navigate to [http://127.0.0.1:9001/](http://127.0.0.1:9001/) to access the admin interface for the Envoy container running on that pod.
@@ -38,9 +38,9 @@ To access it from your workstation use `kubectl port-forward` like so,
 
 ```sh
 # Get one of the pods that matches the Contour deployment
-CONTOUR_POD=$(kubectl -n heptio-contour get pod -l app=contour -o name | head -1)
+CONTOUR_POD=$(kubectl -n projectcontour get pod -l app=contour -o name | head -1)
 # Do the port forward to that pod
-kubectl -n heptio-contour port-forward $CONTOUR_POD 6060
+kubectl -n projectcontour port-forward $CONTOUR_POD 6060
 ```
 
 ## Visualizing Contour's internal directed acyclic graph (DAG)
@@ -52,9 +52,9 @@ To download the graph and save it as a PNG:
 
 ```sh
 # Port forward into the contour pod
-CONTOUR_POD=$(kubectl -n heptio-contour get pod -l app=contour -o name | head -1)
+CONTOUR_POD=$(kubectl -n projectcontour get pod -l app=contour -o name | head -1)
 # Do the port forward to that pod
-kubectl -n heptio-contour port-forward $CONTOUR_POD 6060
+kubectl -n projectcontour port-forward $CONTOUR_POD 6060
 # Download and store the DAG in png format
 curl localhost:6060/debug/dag | dot -T png > contour-dag.png
 ```
@@ -74,9 +74,9 @@ Do this is via `kubectl exec`:
 
 ```sh
 # Get one of the pods that matches the examples/daemonset
-CONTOUR_POD=$(kubectl -n heptio-contour get pod -l app=contour -o jsonpath='{.items[0].metadata.name}')
+CONTOUR_POD=$(kubectl -n projectcontour get pod -l app=contour -o jsonpath='{.items[0].metadata.name}')
 # Do the port forward to that pod
-kubectl -n heptio-contour exec $CONTOUR_POD -c contour -- contour cli lds --cafile=/ca/cacert.pem --cert-file=/certs/tls.crt --key-file=/certs/tls.key
+kubectl -n projectcontour exec $CONTOUR_POD -c contour -- contour cli lds --cafile=/ca/cacert.pem --cert-file=/certs/tls.crt --key-file=/certs/tls.key
 ```
 
 Which will stream changes to the LDS api endpoint to your terminal.

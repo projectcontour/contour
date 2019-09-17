@@ -24,7 +24,7 @@ If you wish to use Host Networking please see the [appropriate section](#host-ne
 To retrieve the IP address or DNS name assigned to your Contour deployment, run:
 
 ```bash
-$ kubectl get -n heptio-contour service contour -o wide
+$ kubectl get -n projectcontour service contour -o wide
 ```
 
 On AWS, for example, the response looks like:
@@ -44,7 +44,7 @@ See the [instructions for enabling the PROXY protocol.](proxy-proto.md).
 On Minikube, to get the IP address of the Contour service run:
 
 ```bash
-$ minikube service -n heptio-contour contour --url
+$ minikube service -n projectcontour contour --url
 ```
 
 The response is always an IP address, for example `http://192.168.99.100:30588`. This is used as CONTOUR_IP in the rest of the documentation.
@@ -82,7 +82,7 @@ The Contour repository contains an example deployment of the Kubernetes Up and R
 To test your Contour deployment, deploy `kuard` with the following command:
 
 ```bash
-$ kubectl apply -f examples/example-workload/kuard.yaml
+$ kubectl apply -f https://projectcontour.io/examples/kuard.yaml
 ```
 
 Then monitor the progress of the deployment with:
@@ -115,7 +115,7 @@ In your browser, navigate your browser to the IP or DNS address of the Contour S
 To test your Contour deployment with [IngressRoutes](ingressroute.md), run the following command:
 
 ```sh
-$ kubectl apply -f examples/example-workload/kuard-ingressroute.yaml
+$ kubectl apply -f https://projectcontour.io/examples/kuard-ingressroute.yaml
 ```
 
 Then monitor the progress of the deployment with:
@@ -182,5 +182,5 @@ If the `kubernetes.io/ingress.class` annotation is present with a value other th
 To remove Contour from your cluster, delete the namespace:
 
 ```bash
-$ kubectl delete ns heptio-contour
+$ kubectl delete ns projectcontour
 ```

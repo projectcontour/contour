@@ -18,9 +18,7 @@ Single file renderings of other examples suitable for `kubectl apply`ing via a U
 
 ## `example-workload`
 
-An example workload using Ingress ([kuard.yaml](./example-workload/kuard.yaml)) and one using IngressRoute ([kuard-ingressroute.yaml](./example-workload/kuard-ingressroute.yaml)).
-
-There are also further IngressRoute examples under the `example-workload/ingressroute` directory. See the [README](./example-workload/ingressroute/README.md) for more details on each example.
+IngressRoute examples under the `example-workload/ingressroute` directory. See the [README](./example-workload/ingressroute/README.md) for more details on each example.
 
 ## `grafana`, `prometheus`
 

@@ -4,7 +4,7 @@ metadata:
   labels:
     app: envoy
   name: envoy
-  namespace: heptio-contour
+  namespace: projectcontour
 spec:
   updateStrategy:
     type: RollingUpdate

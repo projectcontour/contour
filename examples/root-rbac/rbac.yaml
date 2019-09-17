@@ -9,7 +9,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: contour
-    namespace: heptio-contour
+    namespace: projectcontour
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
@@ -28,7 +28,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
-  namespace: heptio-contour
+  namespace: projectcontour
   name: contour-secrets
 rules:
   - apiGroups:
@@ -47,7 +47,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: contour
-    namespace: heptio-contour
+    namespace: projectcontour
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -57,11 +57,11 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: contour-secrets
-  namespace: heptio-contour
+  namespace: projectcontour
 subjects:
   - kind: ServiceAccount
     name: contour
-    namespace: heptio-contour
+    namespace: projectcontour
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
