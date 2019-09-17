@@ -51,6 +51,7 @@ spec:
       containers:
       - name: contour
         image: docker.io/projectcontour/contour:master
+        imagePullPolicy: Always
         command:
         - contour
         - certgen
