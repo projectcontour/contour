@@ -21,7 +21,7 @@ metadata:
       service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
       service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: '*'
     name: contour
-    namespace: heptio-contour
+    namespace: projectcontour
 spec:
   type: LoadBalancer
 ...

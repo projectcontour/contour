@@ -10,7 +10,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: contour
-  namespace: heptio-contour
+  namespace: projectcontour
 data:
   contour.yaml: |
     # should contour expect to be running inside a k8s cluster

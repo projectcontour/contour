@@ -41,9 +41,9 @@ func TestServeContextIngressRouteRootNamespaces(t *testing.T) {
 		},
 		"one value": {
 			ctx: serveContext{
-				rootNamespaces: "heptio-contour",
+				rootNamespaces: "projectcontour",
 			},
-			want: []string{"heptio-contour"},
+			want: []string{"projectcontour"},
 		},
 		"multiple, easy": {
 			ctx: serveContext{
@@ -120,7 +120,7 @@ incluster: false
 disablePermitInsecure: false
 leaderelection:
   configmap-name: leader-elect
-  configmap-namespace: heptio-contour
+  configmap-namespace: projectcontour
   lease-duration: 15s
   renew-deadline: 10s
   retry-period: 2s

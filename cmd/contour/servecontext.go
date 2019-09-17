@@ -147,7 +147,7 @@ func newServeContext() *serveContext {
 			LeaseDuration: time.Second * 15,
 			RenewDeadline: time.Second * 10,
 			RetryPeriod:   time.Second * 2,
-			Namespace:     "heptio-contour",
+			Namespace:     "projectcontour",
 			Name:          "leader-elect",
 		},
 	}

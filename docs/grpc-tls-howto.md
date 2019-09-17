@@ -2,14 +2,14 @@
 
 ## Outcomes
 
-The outcome of this is that we will have three Secrets available in the `heptio-contour` namespace:
+The outcome of this is that we will have three Secrets available in the `projectcontour` namespace:
 - cacert: contains the CA's public certificate.
 - contourcert: contains Contour's keypair, used for serving TLS secured gRPC. This must be a valid certificate for the name `contour` in order for this to work. This is currently hardcoded by Contour.
 - envoycert: contains Envoy's keypair, used as a client for connecting to Contour.
 
 ### Ways you can get the certificates into your cluster
 
-- Deploy the Job from [certgen.yaml](../examples/ds-hostnet-split/02-job-certgen.yaml).
+- Deploy the Job from [certgen.yaml](../examples/contour/02-job-certgen.yaml).
 This will run `contour certgen --kube` for you.
 - Run `contour certgen --kube` locally.
 - Run the manual procedure below.
@@ -86,13 +86,13 @@ Like the contour cert, this CSR uses the file [_integration/cert-envoy.ext](./_i
 Next, we create the required secrets in the target Kubernetes cluster:
 
 ```
-kubectl create secret -n heptio-contour generic cacert --from-file=./certs/cacert.pem
-kubectl create secret -n heptio-contour tls contourcert --key=./certs/contourkey.pem --cert=./certs/contourcert.pem
-kubectl create secret -n heptio-contour tls envoycert --key=./certs/envoykey.pem --cert=./certs/envoycert.pem
+kubectl create secret -n projectcontour generic cacert --from-file=./certs/cacert.pem
+kubectl create secret -n projectcontour tls contourcert --key=./certs/contourkey.pem --cert=./certs/contourcert.pem
+kubectl create secret -n projectcontour tls envoycert --key=./certs/envoykey.pem --cert=./certs/envoycert.pem
 ```
 
 Note that we don't put the CA **key** into the cluster, there's no reason for that to be there, and that would create a security problem. That also means that the `cacert` secret can't be a `tls` type secret, as they must be a keypair.
 
 # Conclusion
 
-Once this process is done, the certificates will be present as Secrets in the `heptio-contour` namespace, as required by `examples/ds-hostnet-split`.
+Once this process is done, the certificates will be present as Secrets in the `projectcontour` namespace, as required by `examples/contour`.

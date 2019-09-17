@@ -12,7 +12,7 @@ This configuration has several advantages:
 - Contour is run as Deployment and Envoy as a Daemonset
 - Envoy runs on host networking
 - Envoy runs on ports 80 & 443
-- In our example deployment, the following certificates must be present as Secrets in the `heptio-contour` namespace for the example YAMLs to apply:
+- In our example deployment, the following certificates must be present as Secrets in the `projectcontour` namespace for the example YAMLs to apply:
   - `cacert`: must contain a `cacert.pem` key that contains a CA certificate that signs the other certificates.
   - `contourcert`: be a Secret of type `kubernetes.io/tls` and must contain `tls.crt` and `tls.key` keys that contain a certificate and key for Contour. The certificate must be valid for the name `contour` either via CN or SAN.
   - `envoycert`: be a Secret of type `kubernetes.io/tls` and must contain `tls.crt` and `tls.key` keys that contain a certificate and key for Envoy.
@@ -23,19 +23,19 @@ For detailed instructions on how to configure the required certs manually, see t
 
 Either:
 
-1. Run `kubectl apply -f https://raw.githubusercontent.com/heptio/contour/master/examples/render/contour.yaml`
+1. Run `kubectl apply -f https://projectcontour.io/quickstart/contour.yaml`
 
 or:
-Clone or fork the repository, change directory to `examples/contour`, then run:
+Clone or fork the repository, then run:
 
 ```bash
-kubectl apply -f .
+kubectl apply -f examples/contour
 ```
 
 This will:
 
 - set up RBAC and Contour's CRDs (that is, IngressRoute)
-- run a Kubernetes Job that will generate one-year validity certs and put them into `heptio-contour`
+- run a Kubernetes Job that will generate one-year validity certs and put them into `projectcontour`
 - Install Contour and Envoy in a Deployment and Daemonset respectively.
 
 **NOTE**: The current configuration exposes the `/stats` path from the Envoy Admin UI so that Prometheus can scrape for metrics.

@@ -38,12 +38,12 @@ Run:
 kubectl apply -f https://j.hept.io/contour-deployment-rbac
 ```
 
-to set up Contour as a deployment in its own namespace, `heptio-contour`, and tell the cloud provider to provision an external IP that is forwarded to the Contour pods.
+to set up Contour as a deployment in its own namespace, `projectcontour`, and tell the cloud provider to provision an external IP that is forwarded to the Contour pods.
 
 Check the progress of the deployment with this command:
 
 ```
-% kubectl -n heptio-contour get po
+% kubectl -n projectcontour get po
 NAME                      READY     STATUS    RESTARTS   AGE
 contour-f9f68994f-kzjdz   2/2       Running   0          6d
 contour-f9f68994f-t7h8n   2/2       Running   0          6d
@@ -55,7 +55,7 @@ After all the `contour` pods reach `Running` status, move on to the next step.
 Retrieve the external address of the load balancer assigned to Contour by your cloud provider:
 
 ```
-% kubectl get -n heptio-contour service contour -o wide
+% kubectl get -n projectcontour service contour -o wide
 NAME      TYPE           CLUSTER-IP     EXTERNAL-IP    PORT(S)                      AGE       SELECTOR
 contour   LoadBalancer   10.51.245.99   35.189.26.87   80:30111/TCP,443:30933/TCP   38d       app=contour
 ```

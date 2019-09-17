@@ -35,7 +35,7 @@ func registerBootstrap(app *kingpin.Application) (*kingpin.CmdClause, *bootstrap
 	bootstrap.Flag("envoy-cafile", "gRPC CA Filename for Envoy to load").Envar("ENVOY_CAFILE").StringVar(&ctx.config.GrpcCABundle)
 	bootstrap.Flag("envoy-cert-file", "gRPC Client cert filename for Envoy to load").Envar("ENVOY_CERT_FILE").StringVar(&ctx.config.GrpcClientCert)
 	bootstrap.Flag("envoy-key-file", "gRPC Client key filename for Envoy to load").Envar("ENVOY_KEY_FILE").StringVar(&ctx.config.GrpcClientKey)
-	bootstrap.Flag("namespace", "The namespace the Envoy container will run in").Envar("CONTOUR_NAMESPACE").Default("heptio-contour").StringVar(&ctx.config.Namespace)
+	bootstrap.Flag("namespace", "The namespace the Envoy container will run in").Envar("CONTOUR_NAMESPACE").Default("projectcontour").StringVar(&ctx.config.Namespace)
 	return bootstrap, &ctx
 }
 

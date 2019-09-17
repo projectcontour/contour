@@ -129,12 +129,12 @@ gencerts: certs/contourcert.pem certs/envoycert.pem
 	@echo "certs are generated."
 
 applycerts: gencerts
-	@kubectl create secret -n heptio-contour generic cacert --from-file=./certs/CAcert.pem
-	@kubectl create secret -n heptio-contour tls contourcert --key=./certs/contourkey.pem --cert=./certs/contourcert.pem
-	@kubectl create secret -n heptio-contour tls envoycert --key=./certs/envoykey.pem --cert=./certs/envoycert.pem
+	@kubectl create secret -n projectcontour generic cacert --from-file=./certs/CAcert.pem
+	@kubectl create secret -n projectcontour tls contourcert --key=./certs/contourkey.pem --cert=./certs/contourcert.pem
+	@kubectl create secret -n projectcontour tls envoycert --key=./certs/envoykey.pem --cert=./certs/envoycert.pem
 
 cleancerts:
-	@kubectl delete secret -n heptio-contour cacert contourcert envoycert
+	@kubectl delete secret -n projectcontour cacert contourcert envoycert
 
 certs:
 	@mkdir -p certs

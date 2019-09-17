@@ -31,7 +31,7 @@ func TestGeneratedCertsValid(t *testing.T) {
 		t.Fatalf("Failed to generate CA cert: %s", err)
 	}
 
-	contourcert, _, err := NewCert(cacert, cakey, expiry, "contour", "heptio-contour")
+	contourcert, _, err := NewCert(cacert, cakey, expiry, "contour", "projectcontour")
 	if err != nil {
 		t.Fatalf("Failed to generate Contour cert: %s", err)
 	}
@@ -41,7 +41,7 @@ func TestGeneratedCertsValid(t *testing.T) {
 	if !ok {
 		t.Fatal("Failed to set up CA cert for testing, maybe it's an invalid PEM")
 	}
-	envoycert, _, err := NewCert(cacert, cakey, expiry, "envoy", "heptio-contour")
+	envoycert, _, err := NewCert(cacert, cakey, expiry, "envoy", "projectcontour")
 	if err != nil {
 		t.Fatalf("Failed to generate Envoy cert: %s", err)
 	}

@@ -43,7 +43,7 @@ In order to facilitate debugging and to find out exactly the data that is being 
 will add support to contour cli sub command. This cmd shd be used stream changes to the SDS api endpoint
 to the terminal.
 
-`kubectl -n heptio-contour exec $CONTOUR_POD -c contour contour cli sds`
+`kubectl -n projectcontour exec $CONTOUR_POD -c contour contour cli sds`
 
 
 [0]: https://github.com/projectcontour/contour/issues/898

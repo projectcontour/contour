@@ -3,7 +3,7 @@ apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 metadata: 
   name: contour-validname
-  namespace: heptio-contour
+  namespace: projectcontour
 spec: 
   virtualhost:
     fqdn: contour.local
@@ -18,7 +18,7 @@ apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 metadata: 
   name: contour-shortname
-  namespace: heptio-contour
+  namespace: projectcontour
 spec: 
   virtualhost:
     fqdn: contour
@@ -32,7 +32,7 @@ apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 metadata: 
   name: contour-singlechar
-  namespace: heptio-contour
+  namespace: projectcontour
 spec: 
   virtualhost:
     fqdn: c
@@ -46,10 +46,10 @@ apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 metadata: 
   name: contour-hyphen
-  namespace: heptio-contour
+  namespace: projectcontour
 spec: 
   virtualhost:
-    fqdn: contour.heptio-contour
+    fqdn: contour.projectcontour
   routes: 
     - match: /
       services: 
@@ -60,10 +60,10 @@ apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 metadata: 
   name: contour-fqdn
-  namespace: heptio-contour
+  namespace: projectcontour
 spec: 
   virtualhost:
-    fqdn: contour.heptio-contour.svc.cluster.local
+    fqdn: contour.projectcontour.svc.cluster.local
   routes: 
     - match: /
       services: 
