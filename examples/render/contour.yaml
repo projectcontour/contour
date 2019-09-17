@@ -164,8 +164,8 @@ data:
     # kubeconfig: /path/to/.kube/config
     #
     # disable ingressroute permitInsecure field
-    # disablePermitInsecure: false
-    # tls:
+    disablePermitInsecure: false
+    tls:
     #   minimum TLS version that Contour will negotiate
     #   minimum-protocol-version: "1.1"
     # The following config shows the defaults for the leader election.
@@ -174,7 +174,7 @@ data:
     #   configmap-namespace: leader-elect
     ### Logging options
     # Default setting
-    # accesslog-format: clf
+    accesslog-format: clf
     # To enable JSON logging in Envoy
     # accesslog-format: json
     # The default fields that will be logged are specified below.
@@ -258,6 +258,7 @@ spec:
       containers:
       - name: contour
         image: docker.io/projectcontour/contour:master
+        imagePullPolicy: Always
         command:
         - contour
         - certgen
