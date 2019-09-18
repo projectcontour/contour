@@ -74,7 +74,7 @@ type serveContext struct {
 	// Envoy's access logging format options
 
 	// AccessLogFormat sets the global access log format.
-	// Valid options are 'clf' or 'json'
+	// Valid options are 'envoy' or 'json'
 	AccessLogFormat string `yaml:"accesslog-format,omitempty"`
 
 	// AccessLogFields sets the fields that JSON logging will
@@ -119,7 +119,7 @@ func newServeContext() *serveContext {
 		PermitInsecureGRPC:    false,
 		DisablePermitInsecure: false,
 		DisableLeaderElection: false,
-		AccessLogFormat:       "clf",
+		AccessLogFormat:       "envoy",
 		AccessLogFields: []string{
 			"@timestamp",
 			"authority",

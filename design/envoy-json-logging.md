@@ -68,9 +68,9 @@ logging:
 
 #### `format`
 
-There are two valid options here: `json` and `clf`.
+There are two valid options here: `json` and `envoy`.
 
-`clf` is the default, and will set Envoy logs to CLF format.
+`envoy`  will use Envoy's [default format](https://www.envoyproxy.io/docs/envoy/latest/configuration/access_log#default-format).
 
 Having only `format: json` present will set the Envoy logs to JSON format, with the default fields specified in the `json-fields` section.
 

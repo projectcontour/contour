@@ -174,7 +174,7 @@ data:
     #   configmap-namespace: leader-elect
     ### Logging options
     # Default setting
-    accesslog-format: clf
+    accesslog-format: envoy
     # To enable JSON logging in Envoy
     # accesslog-format: json
     # The default fields that will be logged are specified below.
