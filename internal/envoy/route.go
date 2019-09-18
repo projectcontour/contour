@@ -31,9 +31,8 @@ func Routes(routes ...*envoy_api_v2_route.Route) []*envoy_api_v2_route.Route {
 // Route returns a *envoy_api_v2_route.Route for the supplied match and action.
 func Route(match *envoy_api_v2_route.RouteMatch, action *envoy_api_v2_route.Route_Route) *envoy_api_v2_route.Route {
 	return &envoy_api_v2_route.Route{
-		Match:               match,
-		Action:              action,
-		RequestHeadersToAdd: RouteHeaders(),
+		Match:  match,
+		Action: action,
 	}
 }
 
@@ -139,13 +138,6 @@ func UpgradeHTTPS() *envoy_api_v2_route.Route_Redirect {
 	}
 }
 
-// RouteHeaders returns a list of headers to be applied at the Route level on envoy
-func RouteHeaders() []*envoy_api_v2_core.HeaderValueOption {
-	return headers(
-		appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
-	)
-}
-
 // weightedClusters returns a route.WeightedCluster for multiple services.
 func weightedClusters(clusters []*dag.Cluster) *envoy_api_v2_route.WeightedCluster {
 	var wc envoy_api_v2_route.WeightedCluster
@@ -206,6 +198,9 @@ func RouteConfiguration(name string, virtualhosts ...*envoy_api_v2_route.Virtual
 	return &v2.RouteConfiguration{
 		Name:         name,
 		VirtualHosts: virtualhosts,
+		RequestHeadersToAdd: Headers(
+			AppendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
+		),
 	}
 }
 
@@ -221,11 +216,11 @@ func (c clusterWeightByName) Less(i, j int) bool {
 
 }
 
-func headers(first *envoy_api_v2_core.HeaderValueOption, rest ...*envoy_api_v2_core.HeaderValueOption) []*envoy_api_v2_core.HeaderValueOption {
+func Headers(first *envoy_api_v2_core.HeaderValueOption, rest ...*envoy_api_v2_core.HeaderValueOption) []*envoy_api_v2_core.HeaderValueOption {
 	return append([]*envoy_api_v2_core.HeaderValueOption{first}, rest...)
 }
 
-func appendHeader(key, value string) *envoy_api_v2_core.HeaderValueOption {
+func AppendHeader(key, value string) *envoy_api_v2_core.HeaderValueOption {
 	return &envoy_api_v2_core.HeaderValueOption{
 		Header: &envoy_api_v2_core.HeaderValue{
 			Key:   key,

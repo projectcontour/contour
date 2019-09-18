@@ -90,13 +90,19 @@ type routeVisitor struct {
 }
 
 func visitRoutes(root dag.Vertex) map[string]*v2.RouteConfiguration {
+	headers := envoy.Headers(
+		envoy.AppendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
+	)
+
 	rv := routeVisitor{
 		routes: map[string]*v2.RouteConfiguration{
 			"ingress_http": {
-				Name: "ingress_http",
+				Name:                "ingress_http",
+				RequestHeadersToAdd: headers,
 			},
 			"ingress_https": {
-				Name: "ingress_https",
+				Name:                "ingress_https",
+				RequestHeadersToAdd: headers,
 			},
 		},
 	}
@@ -121,7 +127,6 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 
 						if r.HTTPSUpgrade {
 							rr.Action = envoy.UpgradeHTTPS()
-							rr.RequestHeadersToAdd = nil
 						}
 						routes = append(routes, rr)
 					case *dag.RegexRoute:
@@ -129,7 +134,6 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 
 						if r.HTTPSUpgrade {
 							rr.Action = envoy.UpgradeHTTPS()
-							rr.RequestHeadersToAdd = nil
 						}
 						routes = append(routes, rr)
 					}
