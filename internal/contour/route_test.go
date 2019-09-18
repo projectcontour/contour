@@ -142,14 +142,10 @@ func TestRouteVisit(t *testing.T) {
 	}{
 		"nothing": {
 			objs: nil,
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http"),
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 		"one http only ingress with service": {
 			objs: []interface{}{
@@ -176,21 +172,14 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "*",
-						Domains: domains("*"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-						),
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 		"one http only ingress with regex match": {
 			objs: []interface{}{
@@ -229,21 +218,14 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "*",
-						Domains: domains("*"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RouteRegex("/[^/]+/invoices(/.*|/?)"), routecluster("default/kuard/8080/da39a3ee5e")),
-						),
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						envoy.Route(envoy.RouteRegex("/[^/]+/invoices(/.*|/?)"), routecluster("default/kuard/8080/da39a3ee5e")),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 		"one http only ingressroute": {
 			objs: []interface{}{
@@ -281,21 +263,14 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "www.example.com",
-						Domains: domains("www.example.com"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), routecluster("default/backend/80/da39a3ee5e")),
-						),
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/backend/80/da39a3ee5e")),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 		"default backend ingress with secret": {
 			objs: []interface{}{
@@ -334,21 +309,14 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "*", // default backend
-						Domains: domains("*"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-						),
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https", // no https for default backend
-				},
-			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 		"vhost ingress with secret": {
 			objs: []interface{}{
@@ -400,28 +368,18 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "www.example.com",
-						Domains: domains("www.example.com"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-						),
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "www.example.com",
-						Domains: domains("www.example.com"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-						),
-					}},
-				},
-			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+					),
+				),
+			),
 		},
 		"simple ingressroute with secret": {
 			objs: []interface{}{
@@ -470,13 +428,10 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "www.example.com",
-						Domains: domains("www.example.com"),
-						Routes: []*envoy_api_v2_route.Route{{
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
 							Match: envoy.RoutePrefix("/"),
 							Action: &envoy_api_v2_route.Route_Redirect{
 								Redirect: &envoy_api_v2_route.RedirectAction{
@@ -485,20 +440,15 @@ func TestRouteVisit(t *testing.T) {
 									},
 								},
 							},
-						}},
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "www.example.com",
-						Domains: domains("www.example.com"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), routecluster("default/backend/8080/da39a3ee5e")),
-						),
-					}},
-				},
-			},
+						},
+					),
+				),
+				envoy.RouteConfiguration("ingress_https",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/backend/8080/da39a3ee5e")),
+					),
+				),
+			),
 		},
 		"simple tls ingress with allow-http:false": {
 			objs: []interface{}{
@@ -553,21 +503,14 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "www.example.com",
-						Domains: domains("www.example.com"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-						),
-					}},
-				},
-			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http"),
+				envoy.RouteConfiguration("ingress_https",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+					),
+				),
+			),
 		},
 		"simple tls ingress with force-ssl-redirect": {
 			objs: []interface{}{
@@ -622,13 +565,10 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "www.example.com",
-						Domains: domains("www.example.com"),
-						Routes: []*envoy_api_v2_route.Route{{
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
 							Match: envoy.RoutePrefix("/"),
 							Action: &envoy_api_v2_route.Route_Redirect{
 								Redirect: &envoy_api_v2_route.RedirectAction{
@@ -637,20 +577,15 @@ func TestRouteVisit(t *testing.T) {
 									},
 								},
 							},
-						}},
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "www.example.com",
-						Domains: domains("www.example.com"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-						),
-					}},
-				},
-			},
+						},
+					),
+				),
+				envoy.RouteConfiguration("ingress_https",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+					),
+				),
+			),
 		},
 		"ingress with websocket annotation": {
 			objs: []interface{}{
@@ -700,22 +635,15 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "www.example.com",
-						Domains: domains("www.example.com"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/ws1"), websocketroute("default/kuard/8080/da39a3ee5e")),
-							envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-						),
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/ws1"), websocketroute("default/kuard/8080/da39a3ee5e")),
+						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 		"ingress invalid timeout": {
 			objs: []interface{}{
@@ -745,21 +673,14 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "*",
-						Domains: domains("*"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), routetimeout("default/kuard/8080/da39a3ee5e", 0)),
-						),
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						envoy.Route(envoy.RoutePrefix("/"), routetimeout("default/kuard/8080/da39a3ee5e", 0)),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 		"ingress infinite timeout": {
 			objs: []interface{}{
@@ -789,21 +710,14 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "*",
-						Domains: domains("*"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), routetimeout("default/kuard/8080/da39a3ee5e", 0)),
-						),
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						envoy.Route(envoy.RoutePrefix("/"), routetimeout("default/kuard/8080/da39a3ee5e", 0)),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 		"ingress 90 second timeout": {
 			objs: []interface{}{
@@ -833,21 +747,14 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "*",
-						Domains: domains("*"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), routetimeout("default/kuard/8080/da39a3ee5e", 90*time.Second)),
-						),
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						envoy.Route(envoy.RoutePrefix("/"), routetimeout("default/kuard/8080/da39a3ee5e", 90*time.Second)),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 		"vhost name exceeds 60 chars": { // heptio/contour#25
 			objs: []interface{}{
@@ -888,21 +795,14 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "d31bb322ca62bb395acad00b3cbf45a3aa1010ca28dca7cddb4f7db786fa",
-						Domains: domains("my-very-very-long-service-host-name.subdomain.boring-dept.my.company"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
-						),
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("my-very-very-long-service-host-name.subdomain.boring-dept.my.company",
+						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 		"ingress retry-on": {
 			objs: []interface{}{
@@ -932,21 +832,14 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "*",
-						Domains: domains("*"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 0)),
-						),
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						envoy.Route(envoy.RoutePrefix("/"), routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 0)),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 		"ingress retry-on, num-retries": {
 			objs: []interface{}{
@@ -977,21 +870,14 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "*",
-						Domains: domains("*"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 7, 0)),
-						),
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						envoy.Route(envoy.RoutePrefix("/"), routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 7, 0)),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 		"ingress retry-on, per-try-timeout": {
 			objs: []interface{}{
@@ -1022,21 +908,14 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "*",
-						Domains: domains("*"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 150*time.Millisecond)),
-						),
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						envoy.Route(envoy.RoutePrefix("/"), routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 150*time.Millisecond)),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 		"ingressroute no weights defined": {
 			objs: []interface{}{
@@ -1088,33 +967,26 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "www.example.com",
-						Domains: domains("www.example.com"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), &envoy_api_v2_route.Route_Route{
-								Route: &envoy_api_v2_route.RouteAction{
-									ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_api_v2_route.WeightedCluster{
-											Clusters: weightedClusters(
-												weightedCluster("default/backend/80/da39a3ee5e", 1),
-												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
-											),
-											TotalWeight: protobuf.UInt32(2),
-										},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/"), &envoy_api_v2_route.Route_Route{
+							Route: &envoy_api_v2_route.RouteAction{
+								ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+									WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+										Clusters: weightedClusters(
+											weightedCluster("default/backend/80/da39a3ee5e", 1),
+											weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
+										),
+										TotalWeight: protobuf.UInt32(2),
 									},
 								},
-							}),
-						),
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
+							},
+						}),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 		"ingressroute one weight defined": {
 			objs: []interface{}{
@@ -1167,33 +1039,26 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "www.example.com",
-						Domains: domains("www.example.com"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), &envoy_api_v2_route.Route_Route{
-								Route: &envoy_api_v2_route.RouteAction{
-									ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_api_v2_route.WeightedCluster{
-											Clusters: weightedClusters(
-												weightedCluster("default/backend/80/da39a3ee5e", 0),
-												weightedCluster("default/backendtwo/80/da39a3ee5e", 50),
-											),
-											TotalWeight: protobuf.UInt32(50),
-										},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/"), &envoy_api_v2_route.Route_Route{
+							Route: &envoy_api_v2_route.RouteAction{
+								ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+									WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+										Clusters: weightedClusters(
+											weightedCluster("default/backend/80/da39a3ee5e", 0),
+											weightedCluster("default/backendtwo/80/da39a3ee5e", 50),
+										),
+										TotalWeight: protobuf.UInt32(50),
 									},
 								},
-							}),
-						),
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
+							},
+						}),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 		"ingressroute all weights defined": {
 			objs: []interface{}{
@@ -1247,33 +1112,26 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-					VirtualHosts: []*envoy_api_v2_route.VirtualHost{{
-						Name:    "www.example.com",
-						Domains: domains("www.example.com"),
-						Routes: envoy.Routes(
-							envoy.Route(envoy.RoutePrefix("/"), &envoy_api_v2_route.Route_Route{
-								Route: &envoy_api_v2_route.RouteAction{
-									ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_api_v2_route.WeightedCluster{
-											Clusters: weightedClusters(
-												weightedCluster("default/backend/80/da39a3ee5e", 22),
-												weightedCluster("default/backendtwo/80/da39a3ee5e", 50),
-											),
-											TotalWeight: protobuf.UInt32(72),
-										},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/"), &envoy_api_v2_route.Route_Route{
+							Route: &envoy_api_v2_route.RouteAction{
+								ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+									WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+										Clusters: weightedClusters(
+											weightedCluster("default/backend/80/da39a3ee5e", 22),
+											weightedCluster("default/backendtwo/80/da39a3ee5e", 50),
+										),
+										TotalWeight: protobuf.UInt32(72),
 									},
 								},
-							}),
-						),
-					}},
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
+							},
+						}),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 		"ingressroute w/ missing fqdn": {
 			objs: []interface{}{
@@ -1309,14 +1167,10 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http", // should be blank, no fqdn defined.
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http"), // should be blank, no fqdn defined.
+				envoy.RouteConfiguration("ingress_https"),
+			),
 		},
 	}
 
@@ -1446,4 +1300,12 @@ func weightedCluster(name string, weight uint32) *envoy_api_v2_route.WeightedClu
 		Name:   name,
 		Weight: protobuf.UInt32(weight),
 	}
+}
+
+func routeConfigurations(rcs ...*v2.RouteConfiguration) map[string]*v2.RouteConfiguration {
+	m := make(map[string]*v2.RouteConfiguration)
+	for _, rc := range rcs {
+		m[rc.Name] = rc
+	}
+	return m
 }
