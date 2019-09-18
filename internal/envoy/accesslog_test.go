@@ -14,8 +14,6 @@
 package envoy
 
 import (
-	"encoding/json"
-	"fmt"
 	"testing"
 
 	accesslog_v2 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v2"
@@ -111,11 +109,6 @@ func TestJSONFileAccessLog(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := FileAccessLogJSON(tc.path, tc.headers)
-			output, err := json.Marshal(got)
-			if err != nil {
-				t.Fatal(err)
-			}
-			fmt.Printf("%s\n", output)
 			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
 				t.Fatal(diff)
 			}

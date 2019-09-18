@@ -15,6 +15,7 @@ package envoy
 import (
 	"sort"
 
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/golang/protobuf/ptypes/duration"
@@ -197,6 +198,14 @@ func VirtualHost(hostname string, routes ...*envoy_api_v2_route.Route) *envoy_ap
 		Name:    hashname(60, hostname),
 		Domains: domains,
 		Routes:  routes,
+	}
+}
+
+// RouteConfiguration returns a *v2.RouteConfiguration.
+func RouteConfiguration(name string, virtualhosts ...*envoy_api_v2_route.VirtualHost) *v2.RouteConfiguration {
+	return &v2.RouteConfiguration{
+		Name:         name,
+		VirtualHosts: virtualhosts,
 	}
 }
 
