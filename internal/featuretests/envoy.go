@@ -19,8 +19,6 @@ import (
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 )
 
-func virtualhosts(v ...*envoy_api_v2_route.VirtualHost) []*envoy_api_v2_route.VirtualHost { return v }
-
 func routecluster(cluster string) *envoy_api_v2_route.Route_Route {
 	return &envoy_api_v2_route.Route_Route{
 		Route: &envoy_api_v2_route.RouteAction{
