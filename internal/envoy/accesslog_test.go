@@ -48,7 +48,7 @@ func TestFileAccessLog(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := FileAccessLog(tc.path)
+			got := FileAccessLogEnvoy(tc.path)
 			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
 				t.Fatal(diff)
 			}

@@ -46,13 +46,13 @@ func TestListener(t *testing.T) {
 			address: "0.0.0.0",
 			port:    9000,
 			f: []*envoy_api_v2_listener.Filter{
-				HTTPConnectionManager("http", FileAccessLog("/dev/null")),
+				HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null")),
 			},
 			want: &v2.Listener{
 				Name:    "http",
 				Address: SocketAddress("0.0.0.0", 9000),
 				FilterChains: FilterChains(
-					HTTPConnectionManager("http", FileAccessLog("/dev/null")),
+					HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null")),
 				),
 			},
 		},
@@ -64,7 +64,7 @@ func TestListener(t *testing.T) {
 				ProxyProtocol(),
 			},
 			f: []*envoy_api_v2_listener.Filter{
-				HTTPConnectionManager("http-proxy", FileAccessLog("/dev/null")),
+				HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null")),
 			},
 			want: &v2.Listener{
 				Name:    "http-proxy",
@@ -73,7 +73,7 @@ func TestListener(t *testing.T) {
 					ProxyProtocol(),
 				),
 				FilterChains: FilterChains(
-					HTTPConnectionManager("http-proxy", FileAccessLog("/dev/null")),
+					HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null")),
 				),
 			},
 		},
@@ -214,7 +214,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 	}{
 		"default": {
 			routename:    "default/kuard",
-			accesslogger: FileAccessLog("/dev/stdout"),
+			accesslogger: FileAccessLogEnvoy("/dev/stdout"),
 			want: &envoy_api_v2_listener.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
@@ -251,7 +251,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							// a Host: header. See #537.
 							AcceptHttp_10: true,
 						},
-						AccessLog:                 FileAccessLog("/dev/stdout"),
+						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
 						IdleTimeout:               protobuf.Duration(60 * time.Second),
@@ -317,7 +317,7 @@ func TestTCPProxy(t *testing.T) {
 						ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
 							Cluster: Clustername(c1),
 						},
-						AccessLog:   FileAccessLog(accessLogPath),
+						AccessLog:   FileAccessLogEnvoy(accessLogPath),
 						IdleTimeout: protobuf.Duration(9001 * time.Second),
 					}),
 				},
@@ -343,7 +343,7 @@ func TestTCPProxy(t *testing.T) {
 								}},
 							},
 						},
-						AccessLog:   FileAccessLog(accessLogPath),
+						AccessLog:   FileAccessLogEnvoy(accessLogPath),
 						IdleTimeout: protobuf.Duration(9001 * time.Second),
 					}),
 				},
@@ -353,7 +353,7 @@ func TestTCPProxy(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := TCPProxy(statPrefix, tc.proxy, FileAccessLog(accessLogPath))
+			got := TCPProxy(statPrefix, tc.proxy, FileAccessLogEnvoy(accessLogPath))
 			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
 				t.Fatal(diff)
 			}
