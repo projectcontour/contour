@@ -22,8 +22,13 @@ import "sync"
 // the waiters. This permits goroutines to wait on Cond events using select.
 type Cond struct {
 	mu      sync.Mutex
-	waiters map[chan int][]string
+	waiters []waiter
 	last    int
+}
+
+type waiter struct {
+	ch    chan int
+	hints []string
 }
 
 // Register registers ch to receive a value when Notify is called.
@@ -43,35 +48,47 @@ func (c *Cond) Register(ch chan int, last int, hints ...string) {
 		ch <- c.last
 		return
 	}
-	if c.waiters == nil {
-		c.waiters = make(map[chan int][]string)
-	}
-	c.waiters[ch] = hints
+	c.waiters = append(c.waiters, waiter{
+		ch:    ch,
+		hints: hints,
+	})
 }
 
-// Notify notifies all registered waiters that an event has ocured.
+// Notify notifies all interested waiters that an event has ocured.
 func (c *Cond) Notify(hints ...string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.last++
 
-	m := make(map[string]bool)
-	for _, h := range hints {
-		m[h] = true
-	}
+	notify := c.waiters
+	c.waiters = nil
 
-	for ch, hints := range c.waiters {
+	for _, waiter := range notify {
 		if len(hints) == 0 {
-			ch <- c.last
-			delete(c.waiters, ch)
+			// notify unconditionally
+			waiter.ch <- c.last
 			continue
 		}
-		for _, h := range hints {
-			if m[h] {
-				ch <- c.last
-				delete(c.waiters, ch)
-				break
+		if intersection(hints, waiter.hints) {
+			// one of the hints registered has been notified
+			waiter.ch <- c.last
+			continue
+		}
+
+		// not notified this time, put back on the list
+		c.waiters = append(c.waiters, waiter)
+	}
+}
+
+// intersection returns true if the set of elements in left
+// intersects with the set in right.
+func intersection(left, right []string) bool {
+	for _, l := range left {
+		for _, r := range right {
+			if l == r {
+				return true
 			}
 		}
 	}
+	return false
 }
