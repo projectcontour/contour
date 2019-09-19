@@ -45,9 +45,16 @@ type Route struct {
 	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
 	PrefixRewrite string `json:"prefixRewrite,omitempty"`
 	// The timeout policy for this route
-	TimeoutPolicy *projcontour.TimeoutPolicy `json:"timeoutPolicy,omitempty"`
+	TimeoutPolicy *TimeoutPolicy `json:"timeoutPolicy,omitempty"`
 	// // The retry policy for this route
 	RetryPolicy *projcontour.RetryPolicy `json:"retryPolicy,omitempty"`
+}
+
+// TimeoutPolicy define the attributes associated with timeout
+type TimeoutPolicy struct {
+	// Timeout for receiving a response from the server after processing a request from client.
+	// If not supplied the timeout duration is undefined.
+	Request string `json:"request"`
 }
 
 // TCPProxy contains the set of services to proxy TCP connections.

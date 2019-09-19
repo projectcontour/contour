@@ -1276,7 +1276,7 @@ func TestDAGInsert(t *testing.T) {
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
 					Request: "peanut",
 				},
 				Services: []ingressroutev1.Service{{
@@ -1298,7 +1298,7 @@ func TestDAGInsert(t *testing.T) {
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
 					Request: "1m30s", // 90 seconds y'all
 				},
 				Services: []ingressroutev1.Service{{
@@ -1320,7 +1320,7 @@ func TestDAGInsert(t *testing.T) {
 			},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
 					Request: "infinite",
 				},
 				Services: []ingressroutev1.Service{{

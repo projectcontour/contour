@@ -673,7 +673,7 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 					Websocket:     route.EnableWebsockets,
 					HTTPSUpgrade:  routeEnforceTLS(enforceTLS, permitInsecure),
 					PrefixRewrite: route.PrefixRewrite,
-					TimeoutPolicy: timeoutPolicy(route.TimeoutPolicy),
+					TimeoutPolicy: ingressrouteTimeoutPolicy(route.TimeoutPolicy),
 					RetryPolicy:   retryPolicy(route.RetryPolicy),
 				},
 			}

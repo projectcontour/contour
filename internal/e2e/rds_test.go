@@ -2217,7 +2217,7 @@ func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
 					Request: "600",
 				},
 				Services: []ingressroutev1.Service{{
@@ -2243,7 +2243,7 @@ func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
 					Request: "600s", // 10 * time.Minute
 				},
 				Services: []ingressroutev1.Service{{
@@ -2269,7 +2269,7 @@ func TestRouteTimeoutPolicyIngressRoute(t *testing.T) {
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
 					Request: "infinity",
 				},
 				Services: []ingressroutev1.Service{{
