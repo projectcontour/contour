@@ -19,21 +19,27 @@ With the introduction of HTTPProxy, IngressRoute CRD is now marked as deprecated
 
 The IngressRoute CRD will be supported in its current state until the Contour 1.0.0 release and will be removed shortly after.
 
-### CLF logging
+### Envoy logging
 
-TODO(youngnick) please document the CLF default.
+Contour now supports JSON formatted logs for Envoy.
 
-### JSON logging
-
-Contour now supports JSON formatted logs.
+By default, Contour will log with Envoy's [default logging scheme](https://www.envoyproxy.io/docs/envoy/v1.5.0/configuration/access_log#config-access-log-default-format).
 
 Please see the [documention](/docs/structured-logs.md) and [design document](/design/envoy-json-logging.md) for more information.
 
-Fixes #624. Thanks @youngnick. 
+Fixes #624. Thanks @youngnick.
 
 ### Leadership improvements
 
-TODO(youngnick) please document the improvements to leadership elections.
+Leader election no longer blocks the opening of the xDS serving port.
+All Contours serve xDS, the leadership will control which Contour writes status updates.
+This work is ongoing and is documented in #1385.
+It is anticipated to be finished in 1.0.0-rc1.
+
+Leader election now uses a ConfigMap named `leader-elect` in the `projectcontour` namespace by default.
+This can be changed using the config file.
+
+Because of this, rolling updates will now complete, and the example Contour Deployment has been reverted to the RollingUpdate strategy.
 
 ### Contour image registry changes
 
