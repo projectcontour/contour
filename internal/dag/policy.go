@@ -16,6 +16,7 @@ package dag
 import (
 	"time"
 
+	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
@@ -28,6 +29,15 @@ func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
 		RetryOn:       "5xx",
 		NumRetries:    max(1, rp.NumRetries),
 		PerTryTimeout: perTryTimeout,
+	}
+}
+
+func ingressrouteTimeoutPolicy(tp *ingressroutev1.TimeoutPolicy) *TimeoutPolicy {
+	if tp == nil {
+		return nil
+	}
+	return &TimeoutPolicy{
+		Timeout: parseTimeout(tp.Request),
 	}
 }
 

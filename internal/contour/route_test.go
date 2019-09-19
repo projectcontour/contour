@@ -1243,13 +1243,6 @@ func TestSortLongestRouteFirst(t *testing.T) {
 	}
 }
 
-func domains(hostname string) []string {
-	if hostname == "*" {
-		return []string{"*"}
-	}
-	return []string{hostname, hostname + ":*"}
-}
-
 func routecluster(cluster string) *envoy_api_v2_route.Route_Route {
 	return &envoy_api_v2_route.Route_Route{
 		Route: &envoy_api_v2_route.RouteAction{

@@ -4,7 +4,7 @@ This document describes the changes needed to upgrade your Contour installation.
 
 ## Upgrading Contour 0.15 to 1.0.0-beta.1
 
-Contour 1.0.0-beta.1 changes the namespace Contour is deployed too, promotes leader election to on by default, and introduces a new version of the IngressRoute CRD, now called HTTPProxy.
+Contour 1.0.0-beta.1 changes the namespace Contour is deployed to, promotes leader election to on by default, and introduces a new version of the IngressRoute CRD, now called HTTPProxy.
 
 ### Beta release
 
@@ -71,10 +71,26 @@ Change the Contour image version to `docker.io/projectcontour/contour:v1.0.0-bet
 The recommended version of Envoy remains unchanged from Contour 0.15.
 Ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.11.1`.
 
+### Split deployment/daemonset now the default
+
+We have changed the example installation to use a separate pod installation, where Contour is in a Deployment and Envoy is in a Daemonset.
+Separated pod installations separate the lifecyle of Contour and Envoy, increasing operability.
+Because of this, we are marking the single pod install type as officially deprecated.
+If you are still running a single pod install type, please review the [`contour` example](../examples/contour/README.md) and either adapt it or use it directly.
+
 ### Leader Election
 
 Contour 1.0.0-beta.1 enables leader election by default.
-No specific configuration is required 
+No specific configuration is required if you are using the [example deployment](../examples/contour/README.md).
+
+Leader election requires that Contour have write access to a ConfigMap called `leader-elect` in the project-contour namespace.
+This is done with the [contour-leaderelection Role](https://github.com/projectcontour/contour/blob/master/examples/contour/02-rbac.yaml#L71) in the [example RBAC](../examples/contour/02-rbac.yaml).
+The namespace and name of the configmap are configurable via the configuration file.
+
+The leader election no longer blocks serving of gRPC until an instance becomes the leader.
+It's intended that the leader election control writing status back to Contour CRDs (like HTTPProxy and IngressRoute).
+This is not currently implemented.
+Leader election is currently a no-op.
 
 Should you wish to disable leader election, pass `contour serve --disable-leader-election`.
 
