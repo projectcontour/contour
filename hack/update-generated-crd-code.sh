@@ -17,7 +17,7 @@
 VERSION=$(go list -m all | grep k8s.io/code-generator | rev | cut -d"-" -f1 | cut -d" " -f1 | rev)
 TMP_DIR=$(mktemp -d)
 git clone https://github.com/kubernetes/code-generator.git ${TMP_DIR}
-(cd ${TMP_DIR} && git reset --hard ${VERSION} && go mod init)
+(cd ${TMP_DIR} && git reset --hard ${VERSION})
 
 ${TMP_DIR}/generate-groups.sh \
   all \
