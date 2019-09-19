@@ -2809,1022 +2809,1022 @@ func TestRDSHTTPProxyOutsideRootNamespaces(t *testing.T) {
 	}, streamRDS(t, cc, "ingress_http"))
 }
 
-func TestHTTPProxyRouteWithAServiceWeight(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
+//func TestHTTPProxyRouteWithAServiceWeight(t *testing.T) {
+//	rh, cc, done := setup(t)
+//	defer done()
+//
+//	rh.OnAdd(&v1.Service{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "kuard",
+//			Namespace: "default",
+//		},
+//		Spec: v1.ServiceSpec{
+//			Ports: []v1.ServicePort{{
+//				Protocol:   "TCP",
+//				Port:       80,
+//				TargetPort: intstr.FromInt(8080),
+//			}},
+//		},
+//	})
+//
+//	proxy1 := &projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
+//			Routes: []projcontour.Route{{
+//				Condition: &projcontour.Condition{
+//					Prefix: "/a",
+//				},
+//				Services: []projcontour.Service{{
+//					Name:   "kuard",
+//					Port:   80,
+//					Weight: 90, // ignored
+//				}},
+//			}},
+//		},
+//	}
+//
+//	rh.OnAdd(proxy1)
+//	assertRDS(t, cc, "1", virtualhosts(
+//		envoy.VirtualHost("test2.test.com",
+//			envoy.Route(envoy.RoutePrefix("/a"), routecluster("default/kuard/80/da39a3ee5e")),
+//		),
+//	), nil)
+//
+//	proxy2 := &projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
+//			Routes: []projcontour.Route{{
+//				Condition: &projcontour.Condition{
+//					Prefix: "/a",
+//				},
+//				Services: []projcontour.Service{{
+//					Name:   "kuard",
+//					Port:   80,
+//					Weight: 90,
+//				}, {
+//					Name:   "kuard",
+//					Port:   80,
+//					Weight: 60,
+//				}},
+//			}},
+//		},
+//	}
+//
+//	rh.OnUpdate(proxy1, proxy2)
+//	assertRDS(t, cc, "2", virtualhosts(
+//		envoy.VirtualHost("test2.test.com",
+//			envoy.Route(envoy.RoutePrefix("/a"), routeweightedcluster(
+//				weightedcluster{"default/kuard/80/da39a3ee5e", 60},
+//				weightedcluster{"default/kuard/80/da39a3ee5e", 90}),
+//			),
+//		),
+//	), nil)
+//}
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+//func TestWebsocketHTTProxy(t *testing.T) {
+//	rh, cc, done := setup(t)
+//	defer done()
+//
+//	rh.OnAdd(&v1.Service{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "ws",
+//			Namespace: "default",
+//		},
+//		Spec: v1.ServiceSpec{
+//			Ports: []v1.ServicePort{{
+//				Protocol:   "TCP",
+//				Port:       80,
+//				TargetPort: intstr.FromInt(8080),
+//			}},
+//		},
+//	})
+//
+//	rh.OnAdd(&projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{Fqdn: "websocket.hello.world"},
+//			Routes: []projcontour.Route{{
+//				Services: []projcontour.Service{{
+//					Name: "ws",
+//					Port: 80,
+//				}},
+//			}, {
+//				Condition: &projcontour.Condition{
+//					Prefix: "/ws-1",
+//				},
+//				EnableWebsockets: true,
+//				Services: []projcontour.Service{{
+//					Name: "ws",
+//					Port: 80,
+//				}},
+//			}, {
+//				Condition: &projcontour.Condition{
+//					Prefix: "/ws-2",
+//				},
+//				EnableWebsockets: true,
+//				Services: []projcontour.Service{{
+//					Name: "ws",
+//					Port: 80,
+//				}},
+//			}},
+//		},
+//	})
+//
+//	assertRDS(t, cc, "1", virtualhosts(
+//		envoy.VirtualHost("websocket.hello.world",
+//			envoy.Route(envoy.RoutePrefix("/ws-2"), websocketroute("default/ws/80/da39a3ee5e")),
+//			envoy.Route(envoy.RoutePrefix("/ws-1"), websocketroute("default/ws/80/da39a3ee5e")),
+//			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/ws/80/da39a3ee5e")),
+//		),
+//	), nil)
+//}
+//
+//func TestWebsocketHTTPProxy_MultipleUpstreams(t *testing.T) {
+//	rh, cc, done := setup(t)
+//	defer done()
+//
+//	rh.OnAdd(&v1.Service{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "ws",
+//			Namespace: "default",
+//		},
+//		Spec: v1.ServiceSpec{
+//			Ports: []v1.ServicePort{{
+//				Protocol:   "TCP",
+//				Port:       80,
+//				TargetPort: intstr.FromInt(8080),
+//			}},
+//		},
+//	})
+//
+//	rh.OnAdd(&v1.Service{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "ws2",
+//			Namespace: "default",
+//		},
+//		Spec: v1.ServiceSpec{
+//			Ports: []v1.ServicePort{{
+//				Protocol:   "TCP",
+//				Port:       80,
+//				TargetPort: intstr.FromInt(8080),
+//			}},
+//		},
+//	})
+//
+//	rh.OnAdd(&projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{Fqdn: "websocket.hello.world"},
+//			Routes: []projcontour.Route{{
+//				Services: []projcontour.Service{{
+//					Name: "ws",
+//					Port: 80,
+//				}},
+//			}, {
+//				Condition: &projcontour.Condition{
+//					Prefix: "/ws-1",
+//				},
+//				EnableWebsockets: true,
+//				Services: []projcontour.Service{{
+//					Name: "ws",
+//					Port: 80,
+//				},
+//					{
+//						Name: "ws2",
+//						Port: 80,
+//					}},
+//			}, {
+//				Condition: &projcontour.Condition{
+//					Prefix: "/ws-2",
+//				},
+//				EnableWebsockets: true,
+//				Services: []projcontour.Service{{
+//					Name: "ws",
+//					Port: 80,
+//				}},
+//			}},
+//		},
+//	})
+//
+//	assertRDS(t, cc, "1", virtualhosts(
+//		envoy.VirtualHost("websocket.hello.world",
+//			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/ws/80/da39a3ee5e")),
+//		),
+//	), nil)
+//}
+//
+//func TestPrefixRewriteHTTPProxy(t *testing.T) {
+//	rh, cc, done := setup(t)
+//	defer done()
+//
+//	rh.OnAdd(&v1.Service{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "ws",
+//			Namespace: "default",
+//		},
+//		Spec: v1.ServiceSpec{
+//			Ports: []v1.ServicePort{{
+//				Protocol:   "TCP",
+//				Port:       80,
+//				TargetPort: intstr.FromInt(8080),
+//			}},
+//		},
+//	})
+//
+//	rh.OnAdd(&projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{Fqdn: "prefixrewrite.hello.world"},
+//			Routes: []projcontour.Route{{
+//				Services: []projcontour.Service{{
+//					Name: "ws",
+//					Port: 80,
+//				}},
+//			}, {
+//				Condition: &projcontour.Condition{
+//					Prefix: "/ws-1",
+//				},
+//				PrefixRewrite: "/",
+//				Services: []projcontour.Service{{
+//					Name: "ws",
+//					Port: 80,
+//				}},
+//			}, {
+//				Condition: &projcontour.Condition{
+//					Prefix: "/ws-2",
+//				},
+//				PrefixRewrite: "/",
+//				Services: []projcontour.Service{{
+//					Name: "ws",
+//					Port: 80,
+//				}},
+//			}},
+//		},
+//	})
+//
+//	assertRDS(t, cc, "1", virtualhosts(
+//		envoy.VirtualHost("prefixrewrite.hello.world",
+//			envoy.Route(envoy.RoutePrefix("/ws-2"), prefixrewriteroute("default/ws/80/da39a3ee5e")),
+//			envoy.Route(envoy.RoutePrefix("/ws-1"), prefixrewriteroute("default/ws/80/da39a3ee5e")),
+//			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/ws/80/da39a3ee5e")),
+//		),
+//	), nil)
+//}
+//
+//func TestHTTPProxyRouteWithTLS(t *testing.T) {
+//	rh, cc, done := setup(t)
+//	defer done()
+//
+//	rh.OnAdd(&v1.Service{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "kuard",
+//			Namespace: "default",
+//		},
+//		Spec: v1.ServiceSpec{
+//			Ports: []v1.ServicePort{{
+//				Protocol:   "TCP",
+//				Port:       80,
+//				TargetPort: intstr.FromInt(8080),
+//			}},
+//		},
+//	})
+//
+//	rh.OnAdd(&v1.Secret{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "example-tls",
+//			Namespace: "default",
+//		},
+//		Type: "kubernetes.io/tls",
+//		Data: map[string][]byte{
+//			v1.TLSCertKey:       []byte("certificate"),
+//			v1.TLSPrivateKeyKey: []byte("key"),
+//		},
+//	})
+//
+//	proxy1 := &projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{
+//				Fqdn: "test2.test.com",
+//				TLS: &projcontour.TLS{
+//					SecretName: "example-tls",
+//				},
+//			},
+//			Routes: []projcontour.Route{{
+//				Condition: &projcontour.Condition{
+//					Prefix: "/a",
+//				},
+//				Services: []projcontour.Service{{
+//					Name: "kuard",
+//					Port: 80,
+//				}},
+//			}},
+//		},
+//	}
+//
+//	rh.OnAdd(proxy1)
+//
+//	// check that ingress_http has been updated.
+//	assertEqual(t, &v2.DiscoveryResponse{
+//		VersionInfo: "1",
+//		Resources: resources(t,
+//			envoy.RouteConfiguration("ingress_http",
+//				envoy.VirtualHost("test2.test.com",
+//					&envoy_api_v2_route.Route{
+//						Match:  envoy.RoutePrefix("/a"),
+//						Action: envoy.UpgradeHTTPS(),
+//					},
+//				),
+//			),
+//			envoy.RouteConfiguration("ingress_https",
+//				envoy.VirtualHost("test2.test.com",
+//					envoy.Route(envoy.RoutePrefix("/a"), routecluster("default/kuard/80/da39a3ee5e")),
+//				),
+//			),
+//		),
+//		TypeUrl: routeType,
+//		Nonce:   "1",
+//	}, streamRDS(t, cc))
+//}
+//
+//func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
+//	rh, cc, done := setup(t)
+//	defer done()
+//
+//	rh.OnAdd(&v1.Service{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "kuard",
+//			Namespace: "default",
+//		},
+//		Spec: v1.ServiceSpec{
+//			Ports: []v1.ServicePort{{
+//				Protocol:   "TCP",
+//				Port:       80,
+//				TargetPort: intstr.FromInt(8080),
+//			}},
+//		},
+//	})
+//
+//	rh.OnAdd(&v1.Service{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "svc2",
+//			Namespace: "default",
+//		},
+//		Spec: v1.ServiceSpec{
+//			Ports: []v1.ServicePort{{
+//				Protocol:   "TCP",
+//				Port:       80,
+//				TargetPort: intstr.FromInt(8080),
+//			}},
+//		},
+//	})
+//
+//	rh.OnAdd(&v1.Secret{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "example-tls",
+//			Namespace: "default",
+//		},
+//		Type: "kubernetes.io/tls",
+//		Data: map[string][]byte{
+//			v1.TLSCertKey:       []byte("certificate"),
+//			v1.TLSPrivateKeyKey: []byte("key"),
+//		},
+//	})
+//
+//	proxy1 := &projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{
+//				Fqdn: "test2.test.com",
+//				TLS: &projcontour.TLS{
+//					SecretName: "example-tls",
+//				},
+//			},
+//			Routes: []projcontour.Route{{
+//				Condition: &projcontour.Condition{
+//					Prefix: "/insecure",
+//				},
+//				PermitInsecure: true,
+//				Services: []projcontour.Service{{Name: "kuard",
+//					Port: 80,
+//				}},
+//			}, {
+//				Condition: &projcontour.Condition{
+//					Prefix: "/secure",
+//				},
+//				Services: []projcontour.Service{{
+//					Name: "svc2",
+//					Port: 80,
+//				}},
+//			}},
+//		},
+//	}
+//
+//	rh.OnAdd(proxy1)
+//
+//	// check that ingress_http has been updated.
+//	assertEqual(t, &v2.DiscoveryResponse{
+//		VersionInfo: "1",
+//		Resources: resources(t,
+//			envoy.RouteConfiguration("ingress_http",
+//				envoy.VirtualHost("test2.test.com",
+//					&envoy_api_v2_route.Route{
+//						Match:  envoy.RoutePrefix("/secure"),
+//						Action: envoy.UpgradeHTTPS(),
+//					},
+//					envoy.Route(envoy.RoutePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
+//				),
+//			),
+//			envoy.RouteConfiguration("ingress_https",
+//				envoy.VirtualHost("test2.test.com",
+//					envoy.Route(envoy.RoutePrefix("/secure"), routecluster("default/svc2/80/da39a3ee5e")),
+//					envoy.Route(envoy.RoutePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
+//				),
+//			),
+//		),
+//		TypeUrl: routeType,
+//		Nonce:   "1",
+//	}, streamRDS(t, cc))
+//}
+//
+//func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
+//	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
+//		reh.DisablePermitInsecure = true
+//	})
+//
+//	defer done()
+//
+//	rh.OnAdd(&v1.Service{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "kuard",
+//			Namespace: "default",
+//		},
+//		Spec: v1.ServiceSpec{
+//			Ports: []v1.ServicePort{{
+//				Protocol:   "TCP",
+//				Port:       80,
+//				TargetPort: intstr.FromInt(8080),
+//			}},
+//		},
+//	})
+//
+//	rh.OnAdd(&v1.Service{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "svc2",
+//			Namespace: "default",
+//		},
+//		Spec: v1.ServiceSpec{
+//			Ports: []v1.ServicePort{{
+//				Protocol:   "TCP",
+//				Port:       80,
+//				TargetPort: intstr.FromInt(8080),
+//			}},
+//		},
+//	})
+//
+//	rh.OnAdd(&v1.Secret{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "example-tls",
+//			Namespace: "default",
+//		},
+//		Type: "kubernetes.io/tls",
+//		Data: map[string][]byte{
+//			v1.TLSCertKey:       []byte("certificate"),
+//			v1.TLSPrivateKeyKey: []byte("key"),
+//		},
+//	})
+//
+//	proxy1 := &projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{
+//				Fqdn: "test2.test.com",
+//				TLS: &projcontour.TLS{
+//					SecretName: "example-tls",
+//				},
+//			},
+//			Routes: []projcontour.Route{{
+//				Condition: &projcontour.Condition{
+//					Prefix: "/insecure",
+//				},
+//				PermitInsecure: true,
+//				Services: []projcontour.Service{{
+//					Name: "kuard",
+//					Port: 80,
+//				}},
+//			}, {
+//				Condition: &projcontour.Condition{
+//					Prefix: "/secure",
+//				},
+//				Services: []projcontour.Service{{
+//					Name: "svc2",
+//					Port: 80,
+//				}},
+//			}},
+//		},
+//	}
+//
+//	rh.OnAdd(proxy1)
+//
+//	// check that ingress_http has been updated.
+//	assertEqual(t, &v2.DiscoveryResponse{
+//		VersionInfo: "1",
+//		Resources: resources(t,
+//			envoy.RouteConfiguration("ingress_http",
+//				envoy.VirtualHost("test2.test.com",
+//					&envoy_api_v2_route.Route{
+//						Match:  envoy.RoutePrefix("/secure"),
+//						Action: envoy.UpgradeHTTPS(),
+//					},
+//					&envoy_api_v2_route.Route{
+//						Match:  envoy.RoutePrefix("/insecure"),
+//						Action: envoy.UpgradeHTTPS(),
+//					},
+//				),
+//			),
+//			envoy.RouteConfiguration("ingress_https",
+//				envoy.VirtualHost("test2.test.com",
+//					envoy.Route(envoy.RoutePrefix("/secure"), routecluster("default/svc2/80/da39a3ee5e")),
+//					envoy.Route(envoy.RoutePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
+//				),
+//			),
+//		),
+//		TypeUrl: routeType,
+//		Nonce:   "1",
+//	}, streamRDS(t, cc))
+//}
 
-	proxy1 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
-				Condition: &projcontour.Condition{
-					Prefix: "/a",
-				},
-				Services: []projcontour.Service{{
-					Name:   "kuard",
-					Port:   80,
-					Weight: 90, // ignored
-				}},
-			}},
-		},
-	}
-
-	rh.OnAdd(proxy1)
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("test2.test.com",
-			envoy.Route(envoy.RoutePrefix("/a"), routecluster("default/kuard/80/da39a3ee5e")),
-		),
-	), nil)
-
-	proxy2 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
-				Condition: &projcontour.Condition{
-					Prefix: "/a",
-				},
-				Services: []projcontour.Service{{
-					Name:   "kuard",
-					Port:   80,
-					Weight: 90,
-				}, {
-					Name:   "kuard",
-					Port:   80,
-					Weight: 60,
-				}},
-			}},
-		},
-	}
-
-	rh.OnUpdate(proxy1, proxy2)
-	assertRDS(t, cc, "2", virtualhosts(
-		envoy.VirtualHost("test2.test.com",
-			envoy.Route(envoy.RoutePrefix("/a"), routeweightedcluster(
-				weightedcluster{"default/kuard/80/da39a3ee5e", 60},
-				weightedcluster{"default/kuard/80/da39a3ee5e", 90}),
-			),
-		),
-	), nil)
-}
-
-func TestWebsocketHTTProxy(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ws",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "websocket.hello.world"},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}, {
-				Condition: &projcontour.Condition{
-					Prefix: "/ws-1",
-				},
-				EnableWebsockets: true,
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}, {
-				Condition: &projcontour.Condition{
-					Prefix: "/ws-2",
-				},
-				EnableWebsockets: true,
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}},
-		},
-	})
-
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("websocket.hello.world",
-			envoy.Route(envoy.RoutePrefix("/ws-2"), websocketroute("default/ws/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/ws-1"), websocketroute("default/ws/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/ws/80/da39a3ee5e")),
-		),
-	), nil)
-}
-
-func TestWebsocketHTTPProxy_MultipleUpstreams(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ws",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ws2",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "websocket.hello.world"},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}, {
-				Condition: &projcontour.Condition{
-					Prefix: "/ws-1",
-				},
-				EnableWebsockets: true,
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				},
-					{
-						Name: "ws2",
-						Port: 80,
-					}},
-			}, {
-				Condition: &projcontour.Condition{
-					Prefix: "/ws-2",
-				},
-				EnableWebsockets: true,
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}},
-		},
-	})
-
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("websocket.hello.world",
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/ws/80/da39a3ee5e")),
-		),
-	), nil)
-}
-
-func TestPrefixRewriteHTTPProxy(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ws",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "prefixrewrite.hello.world"},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}, {
-				Condition: &projcontour.Condition{
-					Prefix: "/ws-1",
-				},
-				PrefixRewrite: "/",
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}, {
-				Condition: &projcontour.Condition{
-					Prefix: "/ws-2",
-				},
-				PrefixRewrite: "/",
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}},
-		},
-	})
-
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("prefixrewrite.hello.world",
-			envoy.Route(envoy.RoutePrefix("/ws-2"), prefixrewriteroute("default/ws/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/ws-1"), prefixrewriteroute("default/ws/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/ws/80/da39a3ee5e")),
-		),
-	), nil)
-}
-
-func TestHTTPProxyRouteWithTLS(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-tls",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
-	})
-
-	proxy1 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "test2.test.com",
-				TLS: &projcontour.TLS{
-					SecretName: "example-tls",
-				},
-			},
-			Routes: []projcontour.Route{{
-				Condition: &projcontour.Condition{
-					Prefix: "/a",
-				},
-				Services: []projcontour.Service{{
-					Name: "kuard",
-					Port: 80,
-				}},
-			}},
-		},
-	}
-
-	rh.OnAdd(proxy1)
-
-	// check that ingress_http has been updated.
-	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("test2.test.com",
-					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/a"),
-						Action: envoy.UpgradeHTTPS(),
-					},
-				),
-			),
-			envoy.RouteConfiguration("ingress_https",
-				envoy.VirtualHost("test2.test.com",
-					envoy.Route(envoy.RoutePrefix("/a"), routecluster("default/kuard/80/da39a3ee5e")),
-				),
-			),
-		),
-		TypeUrl: routeType,
-		Nonce:   "1",
-	}, streamRDS(t, cc))
-}
-
-func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "svc2",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-tls",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
-	})
-
-	proxy1 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "test2.test.com",
-				TLS: &projcontour.TLS{
-					SecretName: "example-tls",
-				},
-			},
-			Routes: []projcontour.Route{{
-				Condition: &projcontour.Condition{
-					Prefix: "/insecure",
-				},
-				PermitInsecure: true,
-				Services: []projcontour.Service{{Name: "kuard",
-					Port: 80,
-				}},
-			}, {
-				Condition: &projcontour.Condition{
-					Prefix: "/secure",
-				},
-				Services: []projcontour.Service{{
-					Name: "svc2",
-					Port: 80,
-				}},
-			}},
-		},
-	}
-
-	rh.OnAdd(proxy1)
-
-	// check that ingress_http has been updated.
-	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("test2.test.com",
-					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/secure"),
-						Action: envoy.UpgradeHTTPS(),
-					},
-					envoy.Route(envoy.RoutePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
-				),
-			),
-			envoy.RouteConfiguration("ingress_https",
-				envoy.VirtualHost("test2.test.com",
-					envoy.Route(envoy.RoutePrefix("/secure"), routecluster("default/svc2/80/da39a3ee5e")),
-					envoy.Route(envoy.RoutePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
-				),
-			),
-		),
-		TypeUrl: routeType,
-		Nonce:   "1",
-	}, streamRDS(t, cc))
-}
-
-func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
-		reh.DisablePermitInsecure = true
-	})
-
-	defer done()
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "svc2",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-tls",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
-	})
-
-	proxy1 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "test2.test.com",
-				TLS: &projcontour.TLS{
-					SecretName: "example-tls",
-				},
-			},
-			Routes: []projcontour.Route{{
-				Condition: &projcontour.Condition{
-					Prefix: "/insecure",
-				},
-				PermitInsecure: true,
-				Services: []projcontour.Service{{
-					Name: "kuard",
-					Port: 80,
-				}},
-			}, {
-				Condition: &projcontour.Condition{
-					Prefix: "/secure",
-				},
-				Services: []projcontour.Service{{
-					Name: "svc2",
-					Port: 80,
-				}},
-			}},
-		},
-	}
-
-	rh.OnAdd(proxy1)
-
-	// check that ingress_http has been updated.
-	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("test2.test.com",
-					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/secure"),
-						Action: envoy.UpgradeHTTPS(),
-					},
-					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/insecure"),
-						Action: envoy.UpgradeHTTPS(),
-					},
-				),
-			),
-			envoy.RouteConfiguration("ingress_https",
-				envoy.VirtualHost("test2.test.com",
-					envoy.Route(envoy.RoutePrefix("/secure"), routecluster("default/svc2/80/da39a3ee5e")),
-					envoy.Route(envoy.RoutePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
-				),
-			),
-		),
-		TypeUrl: routeType,
-		Nonce:   "1",
-	}, streamRDS(t, cc))
-}
-
-func TestRDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	svc1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "green",
-			Namespace: "marketing",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	}
-	rh.OnAdd(svc1)
-
-	child := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "blog",
-			Namespace: svc1.Namespace,
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "www.containersteve.com",
-			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
-					Name: svc1.Name,
-					Port: 80,
-				}},
-			}},
-		},
-	}
-	rh.OnAdd(child)
-
-	root := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "root-blog",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "blog.containersteve.com",
-			},
-			Includes: []projcontour.Include{{
-				Name:      child.Name,
-				Namespace: child.Namespace,
-			}},
-		},
-	}
-	rh.OnAdd(root)
-
-	// verify that child's route is present because while it is not possible to
-	// delegate to it, it can host www.containersteve.com.
-	assertEqual(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("www.containersteve.com",
-					envoy.Route(envoy.RoutePrefix("/"), routecluster("marketing/green/80/da39a3ee5e")),
-				),
-			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-		Nonce:   "2",
-	}, streamRDS(t, cc))
-
-}
+//func TestRDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
+//	rh, cc, done := setup(t)
+//	defer done()
+//
+//	svc1 := &v1.Service{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "green",
+//			Namespace: "marketing",
+//		},
+//		Spec: v1.ServiceSpec{
+//			Ports: []v1.ServicePort{{
+//				Name:     "http",
+//				Protocol: "TCP",
+//				Port:     80,
+//			}},
+//		},
+//	}
+//	rh.OnAdd(svc1)
+//
+//	child := &projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "blog",
+//			Namespace: svc1.Namespace,
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{
+//				Fqdn: "www.containersteve.com",
+//			},
+//			Routes: []projcontour.Route{{
+//				Services: []projcontour.Service{{
+//					Name: svc1.Name,
+//					Port: 80,
+//				}},
+//			}},
+//		},
+//	}
+//	rh.OnAdd(child)
+//
+//	root := &projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "root-blog",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{
+//				Fqdn: "blog.containersteve.com",
+//			},
+//			Includes: []projcontour.Include{{
+//				Name:      child.Name,
+//				Namespace: child.Namespace,
+//			}},
+//		},
+//	}
+//	rh.OnAdd(root)
+//
+//	// verify that child's route is present because while it is not possible to
+//	// delegate to it, it can host www.containersteve.com.
+//	assertEqual(t, &v2.DiscoveryResponse{
+//		VersionInfo: "2",
+//		Resources: resources(t,
+//			envoy.RouteConfiguration("ingress_http",
+//				envoy.VirtualHost("www.containersteve.com",
+//					envoy.Route(envoy.RoutePrefix("/"), routecluster("marketing/green/80/da39a3ee5e")),
+//				),
+//			),
+//			envoy.RouteConfiguration("ingress_https"),
+//		),
+//		TypeUrl: routeType,
+//		Nonce:   "2",
+//	}, streamRDS(t, cc))
+//
+//}
 
 // issue 681 Increase the e2e coverage of lb strategies
-func TestHTTPProxyLoadBalancingStrategies(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
+//func TestHTTPProxyLoadBalancingStrategies(t *testing.T) {
+//	rh, cc, done := setup(t)
+//	defer done()
+//
+//	st := v1.Service{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "template",
+//			Namespace: "default",
+//		},
+//		Spec: v1.ServiceSpec{
+//			Ports: []v1.ServicePort{{
+//				Protocol:   "TCP",
+//				Port:       80,
+//				TargetPort: intstr.FromInt(8080),
+//			}},
+//		},
+//	}
+//
+//	services := []struct {
+//		name       string
+//		lbHash     string
+//		lbStrategy string
+//		lbDesc     string
+//	}{
+//		{"s1", "f3b72af6a9", "RoundRobin", "RoundRobin lb algorithm"},
+//		{"s2", "8bf87fefba", "WeightedLeastRequest", "WeightedLeastRequest lb algorithm"},
+//		{"s5", "58d888c08a", "Random", "Random lb algorithm"},
+//		{"s6", "da39a3ee5e", "", "Default lb algorithm"},
+//	}
+//	ss := make([]projcontour.Service, len(services))
+//	wc := make([]weightedcluster, len(services))
+//	for i, x := range services {
+//		s := st
+//		s.ObjectMeta.Name = x.name
+//		rh.OnAdd(&s)
+//		ss[i] = projcontour.Service{
+//			Name:     x.name,
+//			Port:     80,
+//			Strategy: x.lbStrategy,
+//		}
+//		wc[i] = weightedcluster{fmt.Sprintf("default/%s/80/%s", x.name, x.lbHash), 1}
+//	}
+//
+//	proxy1 := &projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
+//			Routes: []projcontour.Route{{
+//				Condition: &projcontour.Condition{
+//					Prefix: "/a",
+//				},
+//				Services: ss,
+//			}},
+//		},
+//	}
+//
+//	rh.OnAdd(proxy1)
+//	want := virtualhosts(
+//		envoy.VirtualHost("test2.test.com",
+//			envoy.Route(envoy.RoutePrefix("/a"), routeweightedcluster(wc...)),
+//		),
+//	)
+//	assertRDS(t, cc, "1", want, nil)
+//}
 
-	st := v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "template",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+//func TestHTTPProxyRouteWithSessionAffinity(t *testing.T) {
+//	rh, cc, done := setup(t)
+//	defer done()
+//
+//	rh.OnAdd(&v1.Service{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "app",
+//			Namespace: "default",
+//		},
+//		Spec: v1.ServiceSpec{
+//			Ports: []v1.ServicePort{{
+//				Protocol:   "TCP",
+//				Port:       80,
+//				TargetPort: intstr.FromInt(8080),
+//			}, {
+//				Protocol:   "TCP",
+//				Port:       8080,
+//				TargetPort: intstr.FromInt(8080),
+//			}},
+//		},
+//	})
+//
+//	// simple single service
+//	proxy1 := &projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
+//			Routes: []projcontour.Route{{
+//				Condition: &projcontour.Condition{
+//					Prefix: "/cart",
+//				},
+//				Services: []projcontour.Service{{
+//					Name:     "app",
+//					Port:     80,
+//					Strategy: "Cookie",
+//				}},
+//			}},
+//		},
+//	}
+//
+//	rh.OnAdd(proxy1)
+//	assertRDS(t, cc, "1", virtualhosts(
+//		envoy.VirtualHost("www.example.com",
+//			envoy.Route(envoy.RoutePrefix("/cart"), withSessionAffinity(routecluster("default/app/80/e4f81994fe"))),
+//		),
+//	), nil)
+//
+//	// two backends
+//	proxy2 := &projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
+//			Routes: []projcontour.Route{{
+//				Condition: &projcontour.Condition{
+//					Prefix: "/cart",
+//				},
+//				Services: []projcontour.Service{{
+//					Name:     "app",
+//					Port:     80,
+//					Strategy: "Cookie",
+//				}, {
+//					Name:     "app",
+//					Port:     8080,
+//					Strategy: "Cookie",
+//				}},
+//			}},
+//		},
+//	}
+//	rh.OnUpdate(proxy1, proxy2)
+//	assertRDS(t, cc, "2", virtualhosts(
+//		envoy.VirtualHost("www.example.com",
+//			envoy.Route(envoy.RoutePrefix("/cart"), withSessionAffinity(
+//				routeweightedcluster(
+//					weightedcluster{"default/app/80/e4f81994fe", 1},
+//					weightedcluster{"default/app/8080/e4f81994fe", 1}),
+//			),
+//			),
+//		),
+//	), nil)
+//
+//	// two mixed backends
+//	proxy3 := &projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
+//			Routes: []projcontour.Route{{
+//				Condition: &projcontour.Condition{
+//					Prefix: "/cart",
+//				},
+//				Services: []projcontour.Service{{
+//					Name:     "app",
+//					Port:     80,
+//					Strategy: "Cookie",
+//				}, {
+//					Name: "app",
+//					Port: 8080,
+//				}},
+//			}, {
+//				Services: []projcontour.Service{{
+//					Name: "app",
+//					Port: 80,
+//				}},
+//			}},
+//		},
+//	}
+//	rh.OnUpdate(proxy2, proxy3)
+//	assertRDS(t, cc, "3", virtualhosts(
+//		envoy.VirtualHost("www.example.com",
+//			envoy.Route(envoy.RoutePrefix("/cart"), withSessionAffinity(
+//				routeweightedcluster(
+//					weightedcluster{"default/app/80/e4f81994fe", 1},
+//					weightedcluster{"default/app/8080/da39a3ee5e", 1},
+//				),
+//			),
+//			),
+//			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/app/80/da39a3ee5e")),
+//		),
+//	), nil)
+//
+//}
 
-	services := []struct {
-		name       string
-		lbHash     string
-		lbStrategy string
-		lbDesc     string
-	}{
-		{"s1", "f3b72af6a9", "RoundRobin", "RoundRobin lb algorithm"},
-		{"s2", "8bf87fefba", "WeightedLeastRequest", "WeightedLeastRequest lb algorithm"},
-		{"s5", "58d888c08a", "Random", "Random lb algorithm"},
-		{"s6", "da39a3ee5e", "", "Default lb algorithm"},
-	}
-	ss := make([]projcontour.Service, len(services))
-	wc := make([]weightedcluster, len(services))
-	for i, x := range services {
-		s := st
-		s.ObjectMeta.Name = x.name
-		rh.OnAdd(&s)
-		ss[i] = projcontour.Service{
-			Name:     x.name,
-			Port:     80,
-			Strategy: x.lbStrategy,
-		}
-		wc[i] = weightedcluster{fmt.Sprintf("default/%s/80/%s", x.name, x.lbHash), 1}
-	}
-
-	proxy1 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
-				Condition: &projcontour.Condition{
-					Prefix: "/a",
-				},
-				Services: ss,
-			}},
-		},
-	}
-
-	rh.OnAdd(proxy1)
-	want := virtualhosts(
-		envoy.VirtualHost("test2.test.com",
-			envoy.Route(envoy.RoutePrefix("/a"), routeweightedcluster(wc...)),
-		),
-	)
-	assertRDS(t, cc, "1", want, nil)
-}
-
-func TestHTTPProxyRouteWithSessionAffinity(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "app",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}, {
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	// simple single service
-	proxy1 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []projcontour.Route{{
-				Condition: &projcontour.Condition{
-					Prefix: "/cart",
-				},
-				Services: []projcontour.Service{{
-					Name:     "app",
-					Port:     80,
-					Strategy: "Cookie",
-				}},
-			}},
-		},
-	}
-
-	rh.OnAdd(proxy1)
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("www.example.com",
-			envoy.Route(envoy.RoutePrefix("/cart"), withSessionAffinity(routecluster("default/app/80/e4f81994fe"))),
-		),
-	), nil)
-
-	// two backends
-	proxy2 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []projcontour.Route{{
-				Condition: &projcontour.Condition{
-					Prefix: "/cart",
-				},
-				Services: []projcontour.Service{{
-					Name:     "app",
-					Port:     80,
-					Strategy: "Cookie",
-				}, {
-					Name:     "app",
-					Port:     8080,
-					Strategy: "Cookie",
-				}},
-			}},
-		},
-	}
-	rh.OnUpdate(proxy1, proxy2)
-	assertRDS(t, cc, "2", virtualhosts(
-		envoy.VirtualHost("www.example.com",
-			envoy.Route(envoy.RoutePrefix("/cart"), withSessionAffinity(
-				routeweightedcluster(
-					weightedcluster{"default/app/80/e4f81994fe", 1},
-					weightedcluster{"default/app/8080/e4f81994fe", 1}),
-			),
-			),
-		),
-	), nil)
-
-	// two mixed backends
-	proxy3 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []projcontour.Route{{
-				Condition: &projcontour.Condition{
-					Prefix: "/cart",
-				},
-				Services: []projcontour.Service{{
-					Name:     "app",
-					Port:     80,
-					Strategy: "Cookie",
-				}, {
-					Name: "app",
-					Port: 8080,
-				}},
-			}, {
-				Services: []projcontour.Service{{
-					Name: "app",
-					Port: 80,
-				}},
-			}},
-		},
-	}
-	rh.OnUpdate(proxy2, proxy3)
-	assertRDS(t, cc, "3", virtualhosts(
-		envoy.VirtualHost("www.example.com",
-			envoy.Route(envoy.RoutePrefix("/cart"), withSessionAffinity(
-				routeweightedcluster(
-					weightedcluster{"default/app/80/e4f81994fe", 1},
-					weightedcluster{"default/app/8080/da39a3ee5e", 1},
-				),
-			),
-			),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/app/80/da39a3ee5e")),
-		),
-	), nil)
-
-}
-
-// issue 815, support for timeoutpolicy in HTTPProxy
-func TestTimeoutPolicyHTTProxyRoute(t *testing.T) {
-	const (
-		durationInfinite  = time.Duration(0)
-		duration10Minutes = 10 * time.Minute
-	)
-
-	rh, cc, done := setup(t)
-	defer done()
-
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
-	rh.OnAdd(s1)
-
-	// proxy1 is an _invalid_ timeout, which we interpret as _infinite_.
-	proxy1 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
-					Name: "backend",
-					Port: 80,
-				}},
-			}},
-		},
-	}
-	rh.OnAdd(proxy1)
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("test2.test.com",
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/backend/80/da39a3ee5e")),
-		),
-	), nil)
-
-	// proxy2 adds an _invalid_ timeout, which we interpret as _infinite_.
-	proxy2 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
-					Request: "600",
-				},
-				Services: []projcontour.Service{{
-					Name: "backend",
-					Port: 80,
-				}},
-			}},
-		},
-	}
-	rh.OnUpdate(proxy1, proxy2)
-	assertRDS(t, cc, "2", virtualhosts(
-		envoy.VirtualHost("test2.test.com",
-			envoy.Route(envoy.RoutePrefix("/"), clustertimeout("default/backend/80/da39a3ee5e", durationInfinite)),
-		),
-	), nil)
-
-	// proxy3 corrects proxy2 to use a proper duration
-	proxy3 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
-					Request: "600s", // 10 * time.Minute
-				},
-				Services: []projcontour.Service{{
-					Name: "backend",
-					Port: 80,
-				}},
-			}},
-		},
-	}
-	rh.OnUpdate(proxy2, proxy3)
-	assertRDS(t, cc, "3", virtualhosts(
-		envoy.VirtualHost("test2.test.com",
-			envoy.Route(envoy.RoutePrefix("/"), clustertimeout("default/backend/80/da39a3ee5e", duration10Minutes)),
-		),
-	), nil)
-
-	// proxy4 updates proxy3 to explicitly request infinite timeout
-	proxy4 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
-					Request: "infinity",
-				},
-				Services: []projcontour.Service{{
-					Name: "backend",
-					Port: 80,
-				}},
-			}},
-		},
-	}
-	rh.OnUpdate(proxy3, proxy4)
-	assertRDS(t, cc, "4", virtualhosts(
-		envoy.VirtualHost("test2.test.com",
-			envoy.Route(envoy.RoutePrefix("/"), clustertimeout("default/backend/80/da39a3ee5e", durationInfinite)),
-		),
-	), nil)
-}
-
-// issue 815, support for retry-on, num-retries, and per-try-timeout in HTTPProxy
-func TestRouteRetryHTTPProxy(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
-	rh.OnAdd(s1)
-
-	proxy1 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
-				RetryPolicy: &projcontour.RetryPolicy{
-					NumRetries:    7,
-					PerTryTimeout: "120ms",
-				},
-				Services: []projcontour.Service{{
-					Name: "backend",
-					Port: 80,
-				}},
-			}},
-		},
-	}
-
-	rh.OnAdd(proxy1)
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("test2.test.com",
-			envoy.Route(envoy.RoutePrefix("/"), routeretry("default/backend/80/da39a3ee5e", "5xx", 7, 120*time.Millisecond)),
-		),
-	), nil)
-}
+//// issue 815, support for timeoutpolicy in HTTPProxy
+//func TestTimeoutPolicyHTTProxyRoute(t *testing.T) {
+//	const (
+//		durationInfinite  = time.Duration(0)
+//		duration10Minutes = 10 * time.Minute
+//	)
+//
+//	rh, cc, done := setup(t)
+//	defer done()
+//
+//	s1 := &v1.Service{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "backend",
+//			Namespace: "default",
+//		},
+//		Spec: v1.ServiceSpec{
+//			Ports: []v1.ServicePort{{
+//				Protocol:   "TCP",
+//				Port:       80,
+//				TargetPort: intstr.FromInt(8080),
+//			}},
+//		},
+//	}
+//	rh.OnAdd(s1)
+//
+//	// proxy1 is an _invalid_ timeout, which we interpret as _infinite_.
+//	proxy1 := &projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
+//			Routes: []projcontour.Route{{
+//				Services: []projcontour.Service{{
+//					Name: "backend",
+//					Port: 80,
+//				}},
+//			}},
+//		},
+//	}
+//	rh.OnAdd(proxy1)
+//	assertRDS(t, cc, "1", virtualhosts(
+//		envoy.VirtualHost("test2.test.com",
+//			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/backend/80/da39a3ee5e")),
+//		),
+//	), nil)
+//
+//	// proxy2 adds an _invalid_ timeout, which we interpret as _infinite_.
+//	proxy2 := &projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
+//			Routes: []projcontour.Route{{
+//				TimeoutPolicy: &projcontour.TimeoutPolicy{
+//					Request: "600",
+//				},
+//				Services: []projcontour.Service{{
+//					Name: "backend",
+//					Port: 80,
+//				}},
+//			}},
+//		},
+//	}
+//	rh.OnUpdate(proxy1, proxy2)
+//	assertRDS(t, cc, "2", virtualhosts(
+//		envoy.VirtualHost("test2.test.com",
+//			envoy.Route(envoy.RoutePrefix("/"), clustertimeout("default/backend/80/da39a3ee5e", durationInfinite)),
+//		),
+//	), nil)
+//
+//	// proxy3 corrects proxy2 to use a proper duration
+//	proxy3 := &projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
+//			Routes: []projcontour.Route{{
+//				TimeoutPolicy: &projcontour.TimeoutPolicy{
+//					Request: "600s", // 10 * time.Minute
+//				},
+//				Services: []projcontour.Service{{
+//					Name: "backend",
+//					Port: 80,
+//				}},
+//			}},
+//		},
+//	}
+//	rh.OnUpdate(proxy2, proxy3)
+//	assertRDS(t, cc, "3", virtualhosts(
+//		envoy.VirtualHost("test2.test.com",
+//			envoy.Route(envoy.RoutePrefix("/"), clustertimeout("default/backend/80/da39a3ee5e", duration10Minutes)),
+//		),
+//	), nil)
+//
+//	// proxy4 updates proxy3 to explicitly request infinite timeout
+//	proxy4 := &projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
+//			Routes: []projcontour.Route{{
+//				TimeoutPolicy: &projcontour.TimeoutPolicy{
+//					Request: "infinity",
+//				},
+//				Services: []projcontour.Service{{
+//					Name: "backend",
+//					Port: 80,
+//				}},
+//			}},
+//		},
+//	}
+//	rh.OnUpdate(proxy3, proxy4)
+//	assertRDS(t, cc, "4", virtualhosts(
+//		envoy.VirtualHost("test2.test.com",
+//			envoy.Route(envoy.RoutePrefix("/"), clustertimeout("default/backend/80/da39a3ee5e", durationInfinite)),
+//		),
+//	), nil)
+//}
+//
+//// issue 815, support for retry-on, num-retries, and per-try-timeout in HTTPProxy
+//func TestRouteRetryHTTPProxy(t *testing.T) {
+//	rh, cc, done := setup(t)
+//	defer done()
+//
+//	s1 := &v1.Service{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "backend",
+//			Namespace: "default",
+//		},
+//		Spec: v1.ServiceSpec{
+//			Ports: []v1.ServicePort{{
+//				Protocol:   "TCP",
+//				Port:       80,
+//				TargetPort: intstr.FromInt(8080),
+//			}},
+//		},
+//	}
+//	rh.OnAdd(s1)
+//
+//	proxy1 := &projcontour.HTTPProxy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "simple",
+//			Namespace: "default",
+//		},
+//		Spec: projcontour.HTTPProxySpec{
+//			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
+//			Routes: []projcontour.Route{{
+//				RetryPolicy: &projcontour.RetryPolicy{
+//					NumRetries:    7,
+//					PerTryTimeout: "120ms",
+//				},
+//				Services: []projcontour.Service{{
+//					Name: "backend",
+//					Port: 80,
+//				}},
+//			}},
+//		},
+//	}
+//
+//	rh.OnAdd(proxy1)
+//	assertRDS(t, cc, "1", virtualhosts(
+//		envoy.VirtualHost("test2.test.com",
+//			envoy.Route(envoy.RoutePrefix("/"), routeretry("default/backend/80/da39a3ee5e", "5xx", 7, 120*time.Millisecond)),
+//		),
+//	), nil)
+//}
 
 func virtualhosts(v ...*envoy_api_v2_route.VirtualHost) []*envoy_api_v2_route.VirtualHost { return v }

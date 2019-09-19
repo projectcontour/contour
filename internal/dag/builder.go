@@ -23,7 +23,7 @@ import (
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
@@ -452,101 +452,101 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		return
 	}
 
-	var enforceTLS, passthrough bool
-	if tls := proxy.Spec.VirtualHost.TLS; tls != nil {
-		// attach secrets to TLS enabled vhosts
-		m := splitSecret(tls.SecretName, proxy.Namespace)
-		sec := b.lookupSecret(m, validSecret)
-		if sec != nil && b.delegationPermitted(m, proxy.Namespace) {
-			svhost := b.lookupSecureVirtualHost(host)
-			svhost.Secret = sec
-			svhost.MinProtoVersion = MinProtoVersion(proxy.Spec.VirtualHost.TLS.MinimumProtocolVersion)
-			enforceTLS = true
-		}
-		// passthrough is true if tls.secretName is not present, and
-		// tls.passthrough is set to true.
-		passthrough = isBlank(tls.SecretName) && tls.Passthrough
-
-		// If not passthrough and secret is invalid, then set status
-		if sec == nil && !passthrough {
-			sw.SetInvalid(fmt.Sprintf("TLS Secret [%s] not found or is malformed", tls.SecretName))
-			return
-		}
-	}
+	//var enforceTLS, passthrough bool
+	//if tls := proxy.Spec.VirtualHost.TLS; tls != nil {
+	//	// attach secrets to TLS enabled vhosts
+	//	m := splitSecret(tls.SecretName, proxy.Namespace)
+	//	sec := b.lookupSecret(m, validSecret)
+	//	if sec != nil && b.delegationPermitted(m, proxy.Namespace) {
+	//		svhost := b.lookupSecureVirtualHost(host)
+	//		svhost.Secret = sec
+	//		svhost.MinProtoVersion = MinProtoVersion(proxy.Spec.VirtualHost.TLS.MinimumProtocolVersion)
+	//		enforceTLS = true
+	//	}
+	//	// passthrough is true if tls.secretName is not present, and
+	//	// tls.passthrough is set to true.
+	//	passthrough = isBlank(tls.SecretName) && tls.Passthrough
+	//
+	//	// If not passthrough and secret is invalid, then set status
+	//	if sec == nil && !passthrough {
+	//		sw.SetInvalid(fmt.Sprintf("TLS Secret [%s] not found or is malformed", tls.SecretName))
+	//		return
+	//	}
+	//}
 
 	// Set default status
 	sw.SetValid()
 
 	// Loop over and process all includes
-	b.processIncludes(sw, proxy, host, nil, enforceTLS, nil)
+	//b.processIncludes(sw, proxy, host, nil, enforceTLS, nil)
 
 	// Process any routes
 	switch {
 	//	case ir.Spec.TCPProxy != nil && (passthrough || enforceTLS):
 	//		b.processTCPProxy(ir, nil, host)
 	case proxy.Spec.Routes != nil:
-		b.processRoutes(sw, proxy, host, nil, enforceTLS)
+		//b.processRoutes(sw, proxy, host, nil, enforceTLS)
 	}
 
 }
 
-// mergeConditions merges any two conditions when they are delegated
-func mergeConditions(delegate, include *projcontour.Condition) *projcontour.Condition {
-	if delegate == nil {
-		return include
-	}
+//// mergeConditions merges any two conditions when they are delegated
+//func mergeConditions(delegate, include *projcontour.Condition) *projcontour.Condition {
+//	if delegate == nil {
+//		return include
+//	}
+//
+//	result := delegate.DeepCopy()
+//	result.Prefix = delegate.Prefix + include.Prefix
+//	return result
+//}
 
-	result := delegate.DeepCopy()
-	result.Prefix = delegate.Prefix + include.Prefix
-	return result
-}
-
-func (b *Builder) processIncludes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, host string, delegatedCondition *projcontour.Condition, enforceTLS bool, visited []*projcontour.HTTPProxy) {
-	visited = append(visited, proxy)
-
-	// Loop over and process all includes
-	for _, include := range proxy.Spec.Includes {
-		if delegatedProxy, ok := b.Source.httpproxies[Meta{name: include.Name, namespace: include.Namespace}]; ok {
-			if delegatedProxy.Spec.VirtualHost != nil {
-				sw.SetInvalid("root httpproxy cannot delegate to another root httpproxy")
-				return
-			}
-
-			var path []string
-			for _, vproxy := range visited {
-				path = append(path, fmt.Sprintf("%s/%s", vproxy.Namespace, vproxy.Name))
-			}
-
-			// Process any routes
-			switch {
-			//	case ir.Spec.TCPProxy != nil && (passthrough || enforceTLS):
-			//		b.processTCPProxy(ir, nil, host)
-			case delegatedProxy.Spec.Routes != nil:
-				sw, commit := sw.WithObject(delegatedProxy)
-				b.processRoutes(sw, delegatedProxy, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS)
-				commit()
-			}
-
-			// Loop over any includes in the delegated httlb
-			if len(delegatedProxy.Spec.Includes) > 0 {
-				for _, vir := range visited {
-					if delegatedProxy.Name == vir.Name && delegatedProxy.Namespace == vir.Namespace {
-						path = append(path, fmt.Sprintf("%s/%s", delegatedProxy.Namespace, delegatedProxy.Name))
-						description := fmt.Sprintf("include creates a delegation cycle: %s", strings.Join(path, " -> "))
-						sw.SetInvalid(description)
-						return
-					}
-				}
-				sw, commit := sw.WithObject(delegatedProxy)
-				b.processIncludes(sw, delegatedProxy, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS, visited)
-				commit()
-			}
-
-			// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
-			delete(b.orphaned, Meta{name: delegatedProxy.Name, namespace: delegatedProxy.Namespace})
-		}
-	}
-}
+//func (b *Builder) processIncludes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, host string, delegatedCondition *projcontour.Condition, enforceTLS bool, visited []*projcontour.HTTPProxy) {
+//	visited = append(visited, proxy)
+//
+//	// Loop over and process all includes
+//	for _, include := range proxy.Spec.Includes {
+//		if delegatedProxy, ok := b.Source.httpproxies[Meta{name: include.Name, namespace: include.Namespace}]; ok {
+//			if delegatedProxy.Spec.VirtualHost != nil {
+//				sw.SetInvalid("root httpproxy cannot delegate to another root httpproxy")
+//				return
+//			}
+//
+//			var path []string
+//			for _, vproxy := range visited {
+//				path = append(path, fmt.Sprintf("%s/%s", vproxy.Namespace, vproxy.Name))
+//			}
+//
+//			// Process any routes
+//			switch {
+//			//	case ir.Spec.TCPProxy != nil && (passthrough || enforceTLS):
+//			//		b.processTCPProxy(ir, nil, host)
+//			case delegatedProxy.Spec.Routes != nil:
+//				sw, commit := sw.WithObject(delegatedProxy)
+//				b.processRoutes(sw, delegatedProxy, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS)
+//				commit()
+//			}
+//
+//			// Loop over any includes in the delegated httlb
+//			if len(delegatedProxy.Spec.Includes) > 0 {
+//				for _, vir := range visited {
+//					if delegatedProxy.Name == vir.Name && delegatedProxy.Namespace == vir.Namespace {
+//						path = append(path, fmt.Sprintf("%s/%s", delegatedProxy.Namespace, delegatedProxy.Name))
+//						description := fmt.Sprintf("include creates a delegation cycle: %s", strings.Join(path, " -> "))
+//						sw.SetInvalid(description)
+//						return
+//					}
+//				}
+//				sw, commit := sw.WithObject(delegatedProxy)
+//				b.processIncludes(sw, delegatedProxy, host, mergeConditions(delegatedCondition, &include.Condition), enforceTLS, visited)
+//				commit()
+//			}
+//
+//			// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
+//			delete(b.orphaned, Meta{name: delegatedProxy.Name, namespace: delegatedProxy.Namespace})
+//		}
+//	}
+//}
 
 // buildDAG returns a *DAG representing the current state of this builder.
 func (b *Builder) buildDAG() *DAG {
@@ -757,66 +757,66 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 	sw.SetValid()
 }
 
-func (b *Builder) processRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, host string, condition *projcontour.Condition, enforceTLS bool) {
-	for _, route := range proxy.Spec.Routes {
-
-		// Cannot support multiple services with websockets (See: https://github.com/projectcontour/contour/issues/732)
-		if len(route.Services) > 1 && route.EnableWebsockets {
-			sw.SetInvalid(fmt.Sprintf("route %q: cannot specify multiple services and enable websockets", conditionPath(route.Condition, condition)))
-			return
-		}
-
-		// base case: The route points to services, so we add them to the vhost
-		if len(route.Services) > 0 {
-			routePath := conditionPath(route.Condition, condition)
-
-			r := &PrefixRoute{
-				Prefix: routePath,
-				Route: Route{
-					Websocket:     route.EnableWebsockets,
-					HTTPSUpgrade:  routeEnforceTLS(enforceTLS, route.PermitInsecure && !b.DisablePermitInsecure),
-					PrefixRewrite: route.PrefixRewrite,
-					TimeoutPolicy: timeoutPolicy(route.TimeoutPolicy),
-					RetryPolicy:   retryPolicy(route.RetryPolicy),
-				},
-			}
-
-			for _, service := range route.Services {
-				if service.Port < 1 || service.Port > 65535 {
-					sw.SetInvalid(fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", routePath, service.Name))
-					return
-				}
-				m := Meta{name: service.Name, namespace: proxy.Namespace}
-				s := b.lookupService(m, intstr.FromInt(service.Port))
-
-				if s == nil {
-					sw.SetInvalid(fmt.Sprintf("Service [%s:%d] is invalid or missing", service.Name, service.Port))
-					return
-				}
-
-				var uv *UpstreamValidation
-				var err error
-				if s.Protocol == "tls" {
-					// we can only validate TLS connections to services that talk TLS
-					uv, err = b.lookupUpstreamValidation(routePath, service.Name, service.UpstreamValidation, proxy.Namespace)
-					if err != nil {
-						sw.SetInvalid(err.Error())
-					}
-				}
-				r.Clusters = append(r.Clusters, &Cluster{
-					Upstream:             s,
-					LoadBalancerStrategy: service.Strategy,
-					Weight:               service.Weight,
-					HealthCheckPolicy:    healthCheckPolicy(service.HealthCheck),
-					UpstreamValidation:   uv,
-				})
-			}
-
-			b.lookupVirtualHost(host).addRoute(r)
-			b.lookupSecureVirtualHost(host).addRoute(r)
-		}
-	}
-}
+//func (b *Builder) processRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, host string, condition *projcontour.Condition, enforceTLS bool) {
+//	for _, route := range proxy.Spec.Routes {
+//
+//		// Cannot support multiple services with websockets (See: https://github.com/projectcontour/contour/issues/732)
+//		if len(route.Services) > 1 && route.EnableWebsockets {
+//			sw.SetInvalid(fmt.Sprintf("route %q: cannot specify multiple services and enable websockets", conditionPath(route.Condition, condition)))
+//			return
+//		}
+//
+//		// base case: The route points to services, so we add them to the vhost
+//		if len(route.Services) > 0 {
+//			routePath := conditionPath(route.Condition, condition)
+//
+//			r := &PrefixRoute{
+//				Prefix: routePath,
+//				Route: Route{
+//					Websocket:     route.EnableWebsockets,
+//					HTTPSUpgrade:  routeEnforceTLS(enforceTLS, route.PermitInsecure && !b.DisablePermitInsecure),
+//					PrefixRewrite: route.PrefixRewrite,
+//					TimeoutPolicy: timeoutPolicy(route.TimeoutPolicy),
+//					RetryPolicy:   retryPolicy(route.RetryPolicy),
+//				},
+//			}
+//
+//			for _, service := range route.Services {
+//				if service.Port < 1 || service.Port > 65535 {
+//					sw.SetInvalid(fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", routePath, service.Name))
+//					return
+//				}
+//				m := Meta{name: service.Name, namespace: proxy.Namespace}
+//				s := b.lookupService(m, intstr.FromInt(service.Port))
+//
+//				if s == nil {
+//					sw.SetInvalid(fmt.Sprintf("Service [%s:%d] is invalid or missing", service.Name, service.Port))
+//					return
+//				}
+//
+//				var uv *UpstreamValidation
+//				var err error
+//				if s.Protocol == "tls" {
+//					// we can only validate TLS connections to services that talk TLS
+//					uv, err = b.lookupUpstreamValidation(routePath, service.Name, service.UpstreamValidation, proxy.Namespace)
+//					if err != nil {
+//						sw.SetInvalid(err.Error())
+//					}
+//				}
+//				r.Clusters = append(r.Clusters, &Cluster{
+//					Upstream:             s,
+//					LoadBalancerStrategy: service.Strategy,
+//					Weight:               service.Weight,
+//					HealthCheckPolicy:    healthCheckPolicy(service.HealthCheck),
+//					UpstreamValidation:   uv,
+//				})
+//			}
+//
+//			b.lookupVirtualHost(host).addRoute(r)
+//			b.lookupSecureVirtualHost(host).addRoute(r)
+//		}
+//	}
+//}
 
 func (b *Builder) lookupUpstreamValidation(match string, serviceName string, uv *projcontour.UpstreamValidation, namespace string) (*UpstreamValidation, error) {
 	if uv == nil {
@@ -907,22 +907,22 @@ func (b *Builder) processTCPProxy(sw *ObjectStatusWriter, ir *ingressroutev1.Ing
 	sw.SetValid()
 }
 
-func conditionPath(routeCondition, includeCondition *projcontour.Condition) string {
-	pathPrefix := ""
-
-	if includeCondition != nil {
-		pathPrefix = includeCondition.Prefix
-	}
-	if routeCondition != nil {
-		pathPrefix += routeCondition.Prefix
-	}
-
-	if pathPrefix == "" {
-		return "/"
-	}
-
-	return pathPrefix
-}
+//func conditionPath(routeCondition, includeCondition *projcontour.Condition) string {
+//	pathPrefix := ""
+//
+//	if includeCondition != nil {
+//		pathPrefix = includeCondition.Prefix
+//	}
+//	if routeCondition != nil {
+//		pathPrefix += routeCondition.Prefix
+//	}
+//
+//	if pathPrefix == "" {
+//		return "/"
+//	}
+//
+//	return pathPrefix
+//}
 
 func externalName(svc *v1.Service) string {
 	if svc.Spec.Type != v1.ServiceTypeExternalName {
