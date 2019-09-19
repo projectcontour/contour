@@ -36,18 +36,30 @@ type Include struct {
 	Name string `json:"name"`
 	// Namespace of the HTTPProxy
 	Namespace string `json:"namespace,omitempty"`
-	// Condition is a set of routing properies that is applied to an HTTPProxy in a namespace.
-	Condition `json:"conditions"`
+	// Conditions are a set of routing properties that is applied to an HTTPProxy in a namespace.
+	Conditions []Condition `json:"conditions"`
 }
 
 // Condition are policies that are applied on top of HTTPProxies.
 type Condition struct {
 	// Prefix defines a prefix match for a request.
 	Prefix string `json:"prefix,omitempty"`
-	// HeadersMatch represent a set of HTTP headers that match the key/value exactly as specified.
-	HeadersMatch map[string][]string `json:"headersMatch,omitempty"`
-	// HeadersContain represent a set of HTTP headers that match the key exactly and the value as a contains.
-	HeadersContain map[string][]string `json:"headersContain,omitempty"`
+	// Header matches only the key of the header ignoring any value supplied in the request.
+	HeaderOnly string `json:"headerOnly,omitempty"`
+	// HeadersContain represent a set of HTTP headers that match the key exactly and the value as a contains.		// HeadersContain represent a set of HTTP headers that match the key and contain the value as specified.
+	HeadersContain *Header `json:"headersContain,omitempty"`
+	// HeadersMatch represent a set of HTTP headers that match the key and match the value as specified exactly.
+	HeadersMatch *Header `json:"headersMatch,omitempty"`
+	// HeadersNotContain represent a set of HTTP headers that match the key and do not contain the value as specified.
+	HeadersNotContain *Header `json:"headersNotContain,omitempty"`
+	// HeadersNotMatch represent a set of HTTP headers that match the key and do not match the value as specified exactly.
+	HeadersNotMatch *Header `json:"headersNotMatch,omitempty"`
+}
+
+// Header represents a header to route on
+type Header struct {
+	Header string `json:"header,"`
+	Value  string `json:"value,omitempty"`
 }
 
 // VirtualHost appears at most once. If it is present, the object is considered
@@ -78,8 +90,8 @@ type TLS struct {
 
 // Route contains the set of routes for a virtual host
 type Route struct {
-	// Condition defines additional routing parameters on the route
-	Condition *Condition `json:"condition,omitempty"`
+	// Conditions are a set of routing properties that is applied to an HTTPProxy in a namespace.
+	Conditions []Condition `json:"conditions"`
 	// Services are the services to proxy traffic
 	Services []Service `json:"services,omitempty"`
 	// Enables websocket support for the route
