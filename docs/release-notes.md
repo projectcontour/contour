@@ -19,11 +19,13 @@ With the introduction of HTTPProxy, IngressRoute CRD is now marked as deprecated
 
 The IngressRoute CRD will be supported in its current state until the Contour 1.0.0 release and will be removed shortly after.
 
-### Envoy logging
+### Logging changes
 
-Contour now supports JSON formatted logs for Envoy.
+By default Envoy emits request logs in its own format.
+See the [Envoy docs](https://www.envoyproxy.io/docs/envoy/v1.5.0/configuration/access_log#config-access-log-default-format) for details.
 
-By default, Contour will log with Envoy's [default logging scheme](https://www.envoyproxy.io/docs/envoy/v1.5.0/configuration/access_log#config-access-log-default-format).
+Contour 1.0.0-beta1 adds support for JSON formatted logs.
+To enable JSON formatted logs, either add `--accesslog-format=json` to your `contour serve` line, or add `accesslog-format: json` to your config file.
 
 Please see the [documention](/docs/structured-logs.md) and [design document](/design/envoy-json-logging.md) for more information.
 
