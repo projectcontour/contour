@@ -45,7 +45,7 @@ type Condition struct {
 	// Prefix defines a prefix match for a request.
 	Prefix string `json:"prefix,omitempty"`
 	// Header matches only the key of the header ignoring any value supplied in the request.
-	HeaderOnly string `json:"headerOnly,omitempty"`
+	HeaderPresent string `json:"headerPresent,omitempty"`
 	// HeadersContain represent a set of HTTP headers that match the key exactly and the value as a contains.		// HeadersContain represent a set of HTTP headers that match the key and contain the value as specified.
 	HeadersContain *Header `json:"headersContain,omitempty"`
 	// HeadersMatch represent a set of HTTP headers that match the key and match the value as specified exactly.
