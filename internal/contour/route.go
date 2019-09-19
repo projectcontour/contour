@@ -14,6 +14,7 @@
 package contour
 
 import (
+	"path"
 	"sort"
 	"sync"
 
@@ -125,23 +126,27 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 					if !ok {
 						return
 					}
-					if len(route.Conditions) < 1 {
-						return
-					}
-					switch cond := route.Conditions[0].(type) {
-					case *dag.PrefixCondition:
-						rr := envoy.Route(envoy.RoutePrefix(cond.Prefix), envoy.RouteRoute(route))
-						if route.HTTPSUpgrade {
-							rr.Action = envoy.UpgradeHTTPS()
+
+					// Check for regex route type
+					for _, c := range route.Conditions {
+						switch cond := c.(type) {
+						case *dag.RegexCondition:
+							rr := envoy.Route(envoy.RouteRegex(cond.Regex), envoy.RouteRoute(route))
+							if route.HTTPSUpgrade {
+								rr.Action = envoy.UpgradeHTTPS()
+							}
+							routes = append(routes, rr)
+							return
 						}
-						routes = append(routes, rr)
-					case *dag.RegexCondition:
-						rr := envoy.Route(envoy.RouteRegex(cond.Regex), envoy.RouteRoute(route))
-						if route.HTTPSUpgrade {
-							rr.Action = envoy.UpgradeHTTPS()
-						}
-						routes = append(routes, rr)
 					}
+
+					// Merge all pathPrefix conditions for this route
+					mergedPathPrefix := mergePathPrefixes(route.Conditions)
+					rr := envoy.Route(envoy.RoutePrefix(mergedPathPrefix), envoy.RouteRoute(route))
+					if route.HTTPSUpgrade {
+						rr.Action = envoy.UpgradeHTTPS()
+					}
+					routes = append(routes, rr)
 				})
 				if len(routes) < 1 {
 					return
@@ -156,21 +161,19 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 					if !ok {
 						return
 					}
-					if len(route.Conditions) < 1 {
-						return
+
+					// Check for regex route type
+					for _, c := range route.Conditions {
+						switch cond := c.(type) {
+						case *dag.RegexCondition:
+							routes = append(routes, envoy.Route(envoy.RouteRegex(cond.Regex), envoy.RouteRoute(route)))
+							return
+						}
 					}
-					switch cond := route.Conditions[0].(type) {
-					case *dag.PrefixCondition:
-						routes = append(
-							routes,
-							envoy.Route(envoy.RoutePrefix(cond.Prefix), envoy.RouteRoute(route)),
-						)
-					case *dag.RegexCondition:
-						routes = append(
-							routes,
-							envoy.Route(envoy.RouteRegex(cond.Regex), envoy.RouteRoute(route)),
-						)
-					}
+
+					// Merge all pathPrefix conditions for this route
+					mergedPathPrefix := mergePathPrefixes(route.Conditions)
+					routes = append(routes, envoy.Route(envoy.RoutePrefix(mergedPathPrefix), envoy.RouteRoute(route)))
 				})
 				if len(routes) < 1 {
 					return
@@ -187,6 +190,17 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 		// recurse
 		vertex.Visit(v.visit)
 	}
+}
+
+func mergePathPrefixes(conditions []dag.Condition) string {
+	mergedPath := "/"
+	for _, c := range conditions {
+		switch cond := c.(type) {
+		case *dag.PrefixCondition:
+			mergedPath = path.Join(mergedPath, cond.Prefix)
+		}
+	}
+	return mergedPath
 }
 
 type virtualHostsByName []*envoy_api_v2_route.VirtualHost
