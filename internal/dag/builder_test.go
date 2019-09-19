@@ -1545,19 +1545,19 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	//s11 := &v1.Service{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "blog",
-	//		Namespace: "it",
-	//	},
-	//	Spec: v1.ServiceSpec{
-	//		Ports: []v1.ServicePort{{
-	//			Name:     "blog",
-	//			Protocol: "TCP",
-	//			Port:     8080,
-	//		}},
-	//	},
-	//}
+	s11 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blog",
+			Namespace: "it",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "blog",
+				Protocol: "TCP",
+				Port:     8080,
+			}},
+		},
+	}
 
 	// ir18 tcp forwards traffic to by TLS pass-throughing
 	// it. It also exposes non HTTP traffic to the the non secure port of the
@@ -1612,284 +1612,305 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	//proxy1 := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "example-com",
-	//		Namespace: "default",
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "example.com",
-	//		},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: "kuard",
-	//				Port: 8080,
-	//			}},
-	//		}},
-	//	},
-	//}
+	proxy1 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
 
-	//proxy1e := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "example-com",
-	//		Namespace: "default",
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "example.com",
-	//		},
-	//		Routes: []projcontour.Route{{
-	//			Condition: &projcontour.Condition{
-	//				Prefix: "/",
-	//			},
-	//			Services: []projcontour.Service{{
-	//				Name: "kuard",
-	//				Port: 8080,
-	//				HealthCheck: &projcontour.HealthCheck{
-	//					Path: "/healthz",
-	//				},
-	//			}},
-	//		}},
-	//	},
-	//}
+	proxy1e := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+					HealthCheck: &projcontour.HealthCheck{
+						Path: "/healthz",
+					},
+				}},
+			}},
+		},
+	}
 
 	// proxy6 has TLS and does not specify min tls version
-	//proxy6 := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "example-com",
-	//		Namespace: "default",
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "foo.com",
-	//			TLS: &projcontour.TLS{
-	//				SecretName: sec1.Name,
-	//			},
-	//		},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: "kuard",
-	//				Port: 8080,
-	//			}},
-	//		}},
-	//	},
-	//}
-	//
-	//proxy17 := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "example-com",
-	//		Namespace: "default",
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "example.com",
-	//		},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: "kuard",
-	//				Port: 8080,
-	//				UpstreamValidation: &projcontour.UpstreamValidation{
-	//					CACertificate: cert1.Name,
-	//					SubjectName:   "example.com",
-	//				},
-	//			}},
-	//		}},
-	//	},
-	//}
+	proxy6 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "foo.com",
+				TLS: &projcontour.TLS{
+					SecretName: sec1.Name,
+				},
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy17 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+					UpstreamValidation: &projcontour.UpstreamValidation{
+						CACertificate: cert1.Name,
+						SubjectName:   "example.com",
+					},
+				}},
+			}},
+		},
+	}
 
 	// proxy10 has a websocket route
-	//proxy10 := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "example-com",
-	//		Namespace: "default",
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "example.com",
-	//		},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: "kuard",
-	//				Port: 8080,
-	//			}},
-	//		}, {
-	//			Condition: &projcontour.Condition{
-	//				Prefix: "/websocket",
-	//			},
-	//			EnableWebsockets: true,
-	//			Services: []projcontour.Service{{
-	//				Name: "kuard",
-	//				Port: 8080,
-	//			}},
-	//		}},
-	//	},
-	//}
+	proxy10 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}, {
+				Conditions: []projcontour.Condition{{
+					Prefix: "/websocket",
+				}},
+				EnableWebsockets: true,
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
 
 	// proxy10b has a websocket route w/multiple upstreams
-	//proxy10b := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "example-com",
-	//		Namespace: "default",
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "example.com",
-	//		},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: "kuard",
-	//				Port: 8080,
-	//			}},
-	//		}, {
-	//			Condition: &projcontour.Condition{
-	//				Prefix: "/websocket",
-	//			},
-	//			EnableWebsockets: true,
-	//			Services: []projcontour.Service{{
-	//				Name: "kuard",
-	//				Port: 8080,
-	//			}, {
-	//				Name: "kuard",
-	//				Port: 8080,
-	//			}},
-	//		}},
-	//	},
-	//}
+	proxy10b := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}, {
+				Conditions: []projcontour.Condition{{
+					Prefix: "/websocket",
+				}},
+				EnableWebsockets: true,
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}, {
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
 
 	// proxy11 has a prefix-rewrite route
-	//proxy11 := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "example-com",
-	//		Namespace: "default",
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "example.com",
-	//		},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: "kuard",
-	//				Port: 8080,
-	//			}},
-	//		}, {
-	//			Condition: &projcontour.Condition{
-	//				Prefix: "/websocket",
-	//			},
-	//			PrefixRewrite: "/",
-	//			Services: []projcontour.Service{{
-	//				Name: "kuard",
-	//				Port: 8080,
-	//			}},
-	//		},
-	//		}},
-	//}
+	proxy11 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}, {
+				Conditions: []projcontour.Condition{{
+					Prefix: "/websocket",
+				}},
+				PrefixRewrite: "/",
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			},
+			}},
+	}
 
-	//proxy100 := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "example-com",
-	//		Namespace: "default",
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "example.com",
-	//		},
-	//		Includes: []projcontour.Include{{
-	//			Name:      "marketingwww",
-	//			Namespace: "marketing",
-	//			Condition: projcontour.Condition{
-	//				Prefix: "/blog",
-	//			},
-	//		}},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: "kuard",
-	//				Port: 8080,
-	//			}},
-	//		}},
-	//	},
-	//}
-	//
-	//proxy100a := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "marketingwww",
-	//		Namespace: "marketing",
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: "blog",
-	//				Port: 8080,
-	//			}},
-	//		}},
-	//	},
-	//}
+	proxy100 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "marketingwww",
+				Namespace: "marketing",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/blog",
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
 
-	//proxy100b := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "marketingwww",
-	//		Namespace: "marketing",
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		Routes: []projcontour.Route{{
-	//			Condition: &projcontour.Condition{
-	//				Prefix: "/infotech",
-	//			},
-	//			Services: []projcontour.Service{{
-	//				Name: "blog",
-	//				Port: 8080,
-	//			}},
-	//		}},
-	//	},
-	//}
+	proxy100a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "marketingwww",
+			Namespace: "marketing",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "blog",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
 
-	//proxy100c := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "marketingwww",
-	//		Namespace: "marketing",
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		Includes: []projcontour.Include{{
-	//			Name:      "marketingit",
-	//			Namespace: "it",
-	//			Condition: projcontour.Condition{
-	//				Prefix: "/it",
-	//			},
-	//		}},
-	//		Routes: []projcontour.Route{{
-	//			Condition: &projcontour.Condition{
-	//				Prefix: "/infotech",
-	//			},
-	//			Services: []projcontour.Service{{
-	//				Name: "blog",
-	//				Port: 8080,
-	//			}},
-	//		}, {
-	//			Services: []projcontour.Service{{
-	//				Name: "blog",
-	//				Port: 8080,
-	//			}},
-	//		}},
-	//	},
-	//}
+	proxy100b := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "marketingwww",
+			Namespace: "marketing",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/infotech",
+				}},
+				Services: []projcontour.Service{{
+					Name: "blog",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
 
-	//proxy100d := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "marketingit",
-	//		Namespace: "it",
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		Routes: []projcontour.Route{{
-	//			Condition: &projcontour.Condition{
-	//				Prefix: "/foo",
-	//			},
-	//			Services: []projcontour.Service{{
-	//				Name: "blog",
-	//				Port: 8080,
-	//			}},
-	//		}},
-	//	},
-	//}
+	proxy100c := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "marketingwww",
+			Namespace: "marketing",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Includes: []projcontour.Include{{
+				Name:      "marketingit",
+				Namespace: "it",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/it",
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/infotech",
+				}},
+				Services: []projcontour.Service{{
+					Name: "blog",
+					Port: 8080,
+				}},
+			}, {
+				Services: []projcontour.Service{{
+					Name: "blog",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy100d := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "marketingit",
+			Namespace: "it",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+				Services: []projcontour.Service{{
+					Name: "blog",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
 
 	tests := map[string]struct {
 		objs                  []interface{}
@@ -3541,259 +3562,272 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		//"insert httproxy": {
-		//	objs: []interface{}{
-		//		proxy1, s1,
-		//	},
-		//	want: listeners(
-		//		&Listener{
-		//			Port: 80,
-		//			VirtualHosts: virtualhosts(
-		//				virtualhost("example.com", prefixroute("/", service(s1))),
-		//			),
-		//		},
-		//	),
-		//},
-		//"insert httpproxy w/ healthcheck": {
-		//	objs: []interface{}{
-		//		proxy1e, s1,
-		//	},
-		//	want: listeners(
-		//		&Listener{
-		//			Port: 80,
-		//			VirtualHosts: virtualhosts(
-		//				virtualhost("example.com",
-		//					routeCluster("/", &Cluster{
-		//						Upstream: service(s1),
-		//						HealthCheckPolicy: &HealthCheckPolicy{
-		//							Path: "/healthz",
-		//						},
-		//					}),
-		//				),
-		//			),
-		//		},
-		//	),
-		//},
-		//"insert httpproxy with websocket route": {
-		//	objs: []interface{}{
-		//		proxy11, s1,
-		//	},
-		//	want: listeners(
-		//		&Listener{
-		//			Port: 80,
-		//			VirtualHosts: virtualhosts(
-		//				virtualhost("example.com",
-		//					prefixroute("/", service(s1)),
-		//					routeRewrite("/websocket", "/", service(s1)),
-		//				),
-		//			),
-		//		},
-		//	),
-		//},
-		//"insert httpproxy with prefix rewrite route": {
-		//	objs: []interface{}{
-		//		proxy10, s1,
-		//	},
-		//	want: listeners(
-		//		&Listener{
-		//			Port: 80,
-		//			VirtualHosts: virtualhosts(
-		//				virtualhost("example.com",
-		//					prefixroute("/", service(s1)),
-		//					routeWebsocket("/websocket", service(s1)),
-		//				),
-		//			),
-		//		},
-		//	),
-		//},
-		//"insert httpproxy with multiple upstreams prefix rewrite route, websocket routes are dropped": {
-		//	objs: []interface{}{
-		//		proxy10b, s1,
-		//	},
-		//	want: listeners(
-		//		&Listener{
-		//			Port: 80,
-		//			VirtualHosts: virtualhosts(
-		//				virtualhost("example.com",
-		//					prefixroute("/", service(s1)),
-		//				),
-		//			),
-		//		},
-		//	),
-		//},
-		//"insert httpproxy and service": {
-		//	objs: []interface{}{
-		//		proxy1, s1,
-		//	},
-		//	want: listeners(
-		//		&Listener{
-		//			Port: 80,
-		//			VirtualHosts: virtualhosts(
-		//				virtualhost("example.com", prefixroute("/", service(s1))),
-		//			),
-		//		},
-		//	),
-		//},
-		//"insert httpproxy without tls version": {
-		//	objs: []interface{}{
-		//		proxy6, s1, sec1,
-		//	},
-		//	want: listeners(
-		//		&Listener{
-		//			Port: 80,
-		//			VirtualHosts: virtualhosts(
-		//				virtualhost("foo.com", routeUpgrade("/", service(s1))),
-		//			),
-		//		}, &Listener{
-		//			Port: 443,
-		//			VirtualHosts: virtualhosts(
-		//				securevirtualhost("foo.com", sec1, routeUpgrade("/", service(s1))),
-		//			),
-		//		},
-		//	),
-		//},
-		//"insert httpproxy expecting verification": {
-		//	objs: []interface{}{
-		//		cert1, proxy17, s1a,
-		//	},
-		//	want: listeners(
-		//		&Listener{
-		//			Port: 80,
-		//			VirtualHosts: virtualhosts(
-		//				virtualhost("example.com",
-		//					routeCluster("/",
-		//						&Cluster{
-		//							Upstream: &Service{
-		//								Name:        s1a.Name,
-		//								Namespace:   s1a.Namespace,
-		//								ServicePort: &s1a.Spec.Ports[0],
-		//								Protocol:    "tls",
-		//							},
-		//							UpstreamValidation: &UpstreamValidation{
-		//								CACertificate: secret(cert1),
-		//								SubjectName:   "example.com",
-		//							},
-		//						},
-		//					),
-		//				),
-		//			),
-		//		},
-		//	),
-		//},
-		//"insert httpproxy with pathPrefix include": {
-		//	objs: []interface{}{
-		//		proxy100, proxy100a, s1, s4,
-		//	},
-		//	want: listeners(
-		//		&Listener{
-		//			Port: 80,
-		//			VirtualHosts: virtualhosts(
-		//				virtualhost("example.com",
-		//					routeCluster("/",
-		//						&Cluster{
-		//							Upstream: &Service{
-		//								Name:        s1.Name,
-		//								Namespace:   s1.Namespace,
-		//								ServicePort: &s1.Spec.Ports[0],
-		//							},
-		//						},
-		//					),
-		//					routeCluster("/blog",
-		//						&Cluster{
-		//							Upstream: &Service{
-		//								Name:        s4.Name,
-		//								Namespace:   s4.Namespace,
-		//								ServicePort: &s4.Spec.Ports[0],
-		//							},
-		//						},
-		//					),
-		//				),
-		//			),
-		//		},
-		//	),
-		//},
-		//"insert httpproxy with pathPrefix include, child adds to pathPrefix": {
-		//	objs: []interface{}{
-		//		proxy100, proxy100b, s1, s4,
-		//	},
-		//	want: listeners(
-		//		&Listener{
-		//			Port: 80,
-		//			VirtualHosts: virtualhosts(
-		//				virtualhost("example.com",
-		//					routeCluster("/",
-		//						&Cluster{
-		//							Upstream: &Service{
-		//								Name:        s1.Name,
-		//								Namespace:   s1.Namespace,
-		//								ServicePort: &s1.Spec.Ports[0],
-		//							},
-		//						},
-		//					),
-		//					routeCluster("/blog/infotech",
-		//						&Cluster{
-		//							Upstream: &Service{
-		//								Name:        s4.Name,
-		//								Namespace:   s4.Namespace,
-		//								ServicePort: &s4.Spec.Ports[0],
-		//							},
-		//						},
-		//					),
-		//				),
-		//			),
-		//		},
-		//	),
-		//},
-		//"insert httpproxy with pathPrefix include, child adds to pathPrefix, delegates again": {
-		//	objs: []interface{}{
-		//		proxy100, proxy100c, proxy100d, s1, s4, s11,
-		//	},
-		//	want: listeners(
-		//		&Listener{
-		//			Port: 80,
-		//			VirtualHosts: virtualhosts(
-		//				virtualhost("example.com",
-		//					routeCluster("/",
-		//						&Cluster{
-		//							Upstream: &Service{
-		//								Name:        s1.Name,
-		//								Namespace:   s1.Namespace,
-		//								ServicePort: &s1.Spec.Ports[0],
-		//							},
-		//						},
-		//					),
-		//					routeCluster("/blog/infotech",
-		//						&Cluster{
-		//							Upstream: &Service{
-		//								Name:        s4.Name,
-		//								Namespace:   s4.Namespace,
-		//								ServicePort: &s4.Spec.Ports[0],
-		//							},
-		//						},
-		//					),
-		//					routeCluster("/blog",
-		//						&Cluster{
-		//							Upstream: &Service{
-		//								Name:        s4.Name,
-		//								Namespace:   s4.Namespace,
-		//								ServicePort: &s4.Spec.Ports[0],
-		//							},
-		//						},
-		//					),
-		//					routeCluster("/blog/it/foo",
-		//						&Cluster{
-		//							Upstream: &Service{
-		//								Name:        s11.Name,
-		//								Namespace:   s11.Namespace,
-		//								ServicePort: &s11.Spec.Ports[0],
-		//							},
-		//						},
-		//					),
-		//				),
-		//			),
-		//		},
-		//	),
-		//},
+		"insert httproxy": {
+			objs: []interface{}{
+				proxy1, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"insert httpproxy w/ healthcheck": {
+			objs: []interface{}{
+				proxy1e, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/", &Cluster{
+								Upstream: service(s1),
+								HealthCheckPolicy: &HealthCheckPolicy{
+									Path: "/healthz",
+								},
+							}),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with websocket route": {
+			objs: []interface{}{
+				proxy11, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							prefixroute("/", service(s1)),
+							routeRewrite("/websocket", "/", service(s1)),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with prefix rewrite route": {
+			objs: []interface{}{
+				proxy10, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							prefixroute("/", service(s1)),
+							routeWebsocket("/websocket", service(s1)),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with multiple upstreams prefix rewrite route, websocket routes are dropped": {
+			objs: []interface{}{
+				proxy10b, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							prefixroute("/", service(s1)),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy and service": {
+			objs: []interface{}{
+				proxy1, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"insert httpproxy without tls version": {
+			objs: []interface{}{
+				proxy6, s1, sec1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("foo.com", routeUpgrade("/", service(s1))),
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("foo.com", sec1, routeUpgrade("/", service(s1))),
+					),
+				},
+			),
+		},
+		"insert httpproxy expecting verification": {
+			objs: []interface{}{
+				cert1, proxy17, s1a,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1a.Name,
+										Namespace:   s1a.Namespace,
+										ServicePort: &s1a.Spec.Ports[0],
+										Protocol:    "tls",
+									},
+									UpstreamValidation: &UpstreamValidation{
+										CACertificate: secret(cert1),
+										SubjectName:   "example.com",
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with pathPrefix include": {
+			objs: []interface{}{
+				proxy100, proxy100a, s1, s4,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+							routeCluster("/blog",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s4.Name,
+										Namespace:   s4.Namespace,
+										ServicePort: &s4.Spec.Ports[0],
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with pathPrefix include, child adds to pathPrefix": {
+			objs: []interface{}{
+				proxy100, proxy100b, s1, s4,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+							&Route{
+								Conditions: conditions(
+									prefixCondition("/blog"),
+									prefixCondition("/infotech"),
+								),
+								Clusters: []*Cluster{{
+									Upstream: &Service{
+										Name:        s4.Name,
+										Namespace:   s4.Namespace,
+										ServicePort: &s4.Spec.Ports[0],
+									},
+								}},
+							},
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with pathPrefix include, child adds to pathPrefix, delegates again": {
+			objs: []interface{}{
+				proxy100, proxy100c, proxy100d, s1, s4, s11,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+							&Route{
+								Conditions: conditions(
+									prefixCondition("/blog"),
+									prefixCondition("/infotech"),
+								),
+								Clusters: []*Cluster{{
+									Upstream: &Service{
+										Name:        s4.Name,
+										Namespace:   s4.Namespace,
+										ServicePort: &s4.Spec.Ports[0],
+									},
+								}},
+							},
+							routeCluster("/blog",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s4.Name,
+										Namespace:   s4.Namespace,
+										ServicePort: &s4.Spec.Ports[0],
+									},
+								},
+							),
+							&Route{
+								Conditions: conditions(
+									prefixCondition("/blog"),
+									prefixCondition("/it"),
+									prefixCondition("/foo"),
+								),
+								Clusters: []*Cluster{{
+									Upstream: &Service{
+										Name:        s11.Name,
+										Namespace:   s11.Namespace,
+										ServicePort: &s11.Spec.Ports[0],
+									},
+								}},
+							},
+						),
+					),
+				},
+			),
+		},
 	}
 
 	for name, tc := range tests {
