@@ -121,18 +121,23 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 			case *dag.VirtualHost:
 				var routes []*envoy_api_v2_route.Route
 				vh.Visit(func(v dag.Vertex) {
-					switch r := v.(type) {
-					case *dag.PrefixRoute:
-						rr := envoy.Route(envoy.RoutePrefix(r.Prefix), envoy.RouteRoute(&r.Route))
-
-						if r.HTTPSUpgrade {
+					route, ok := v.(*dag.Route)
+					if !ok {
+						return
+					}
+					if len(route.Conditions) < 1 {
+						return
+					}
+					switch cond := route.Conditions[0].(type) {
+					case *dag.PrefixCondition:
+						rr := envoy.Route(envoy.RoutePrefix(cond.Prefix), envoy.RouteRoute(route))
+						if route.HTTPSUpgrade {
 							rr.Action = envoy.UpgradeHTTPS()
 						}
 						routes = append(routes, rr)
-					case *dag.RegexRoute:
-						rr := envoy.Route(envoy.RouteRegex(r.Regex), envoy.RouteRoute(&r.Route))
-
-						if r.HTTPSUpgrade {
+					case *dag.RegexCondition:
+						rr := envoy.Route(envoy.RouteRegex(cond.Regex), envoy.RouteRoute(route))
+						if route.HTTPSUpgrade {
 							rr.Action = envoy.UpgradeHTTPS()
 						}
 						routes = append(routes, rr)
@@ -147,16 +152,23 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 			case *dag.SecureVirtualHost:
 				var routes []*envoy_api_v2_route.Route
 				vh.Visit(func(v dag.Vertex) {
-					switch r := v.(type) {
-					case *dag.PrefixRoute:
+					route, ok := v.(*dag.Route)
+					if !ok {
+						return
+					}
+					if len(route.Conditions) < 1 {
+						return
+					}
+					switch cond := route.Conditions[0].(type) {
+					case *dag.PrefixCondition:
 						routes = append(
 							routes,
-							envoy.Route(envoy.RoutePrefix(r.Prefix), envoy.RouteRoute(&r.Route)),
+							envoy.Route(envoy.RoutePrefix(cond.Prefix), envoy.RouteRoute(route)),
 						)
-					case *dag.RegexRoute:
+					case *dag.RegexCondition:
 						routes = append(
 							routes,
-							envoy.Route(envoy.RouteRegex(r.Regex), envoy.RouteRoute(&r.Route)),
+							envoy.Route(envoy.RouteRegex(cond.Regex), envoy.RouteRoute(route)),
 						)
 					}
 				})
