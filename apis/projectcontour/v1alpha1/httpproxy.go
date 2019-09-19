@@ -37,7 +37,7 @@ type Include struct {
 	// Namespace of the HTTPProxy
 	Namespace string `json:"namespace,omitempty"`
 	// Conditions are a set of routing properties that is applied to an HTTPProxy in a namespace.
-	Conditions []Condition `json:"conditions"`
+	Conditions []Condition `json:"conditions,omitempty"`
 }
 
 // Condition are policies that are applied on top of HTTPProxies.
@@ -96,7 +96,7 @@ type TLS struct {
 // Route contains the set of routes for a virtual host
 type Route struct {
 	// Conditions are a set of routing properties that is applied to an HTTPProxy in a namespace.
-	Conditions []Condition `json:"conditions"`
+	Conditions []Condition `json:"conditions,omitempty"`
 	// Services are the services to proxy traffic
 	Services []Service `json:"services,omitempty"`
 	// Enables websocket support for the route
