@@ -667,14 +667,14 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 			}
 
 			permitInsecure := route.PermitInsecure && !b.DisablePermitInsecure
-			r := &PrefixRoute{
-				Prefix: route.Match,
-				Route: Route{
-					Websocket:     route.EnableWebsockets,
-					HTTPSUpgrade:  routeEnforceTLS(enforceTLS, permitInsecure),
-					PrefixRewrite: route.PrefixRewrite,
-					TimeoutPolicy: ingressrouteTimeoutPolicy(route.TimeoutPolicy),
-					RetryPolicy:   retryPolicy(route.RetryPolicy),
+			r := &Route{
+				Websocket:     route.EnableWebsockets,
+				HTTPSUpgrade:  routeEnforceTLS(enforceTLS, permitInsecure),
+				PrefixRewrite: route.PrefixRewrite,
+				TimeoutPolicy: ingressrouteTimeoutPolicy(route.TimeoutPolicy),
+				RetryPolicy:   retryPolicy(route.RetryPolicy),
+				Conditions: []Condition{
+					&PrefixCondition{Prefix: route.Match},
 				},
 			}
 			for _, service := range route.Services {
@@ -932,7 +932,7 @@ func externalName(svc *v1.Service) string {
 }
 
 // route returns a dag.Route for the supplied Ingress.
-func route(ingress *v1beta1.Ingress, path string, service *Service) Vertex {
+func route(ingress *v1beta1.Ingress, path string, service *Service) *Route {
 	var retry *RetryPolicy
 	if retryOn, ok := ingress.Annotations[annotationRetryOn]; ok && len(retryOn) > 0 {
 		// if there is a non empty retry-on annotation, build a RetryPolicy manually.
@@ -958,7 +958,7 @@ func route(ingress *v1beta1.Ingress, path string, service *Service) Vertex {
 	}
 
 	wr := websocketRoutes(ingress)
-	r := Route{
+	r := &Route{
 		HTTPSUpgrade:  tlsRequired(ingress),
 		Websocket:     wr[path],
 		TimeoutPolicy: timeout,
@@ -970,17 +970,12 @@ func route(ingress *v1beta1.Ingress, path string, service *Service) Vertex {
 
 	if strings.ContainsAny(path, "^+*[]%") {
 		// path smells like a regex
-		return &RegexRoute{
-			Regex: path,
-			Route: r,
-		}
+		r.Conditions = append(r.Conditions, &RegexCondition{Regex: path})
+		return r
 	}
 
-	return &PrefixRoute{
-		Prefix: path,
-		Route:  r,
-	}
-
+	r.Conditions = append(r.Conditions, &PrefixCondition{Prefix: path})
+	return r
 }
 
 // isBlank indicates if a string contains nothing but blank characters.

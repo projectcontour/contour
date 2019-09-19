@@ -17,9 +17,10 @@ package dag
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -47,24 +48,35 @@ func (d *DAG) Statuses() map[Meta]Status {
 	return d.statuses
 }
 
-// PrefixRoute defines a Route that matches a path prefix.
-type PrefixRoute struct {
-
-	// Prefix to match.
-	Prefix string
-	Route
+type Condition interface {
+	fmt.Stringer
 }
 
-// RegexRoute defines a Route that matches a regular expression.
-type RegexRoute struct {
+// PrefixCondition matches the start of a URL.
+type PrefixCondition struct {
+	Prefix string
+}
 
-	// Regex to match.
+func (pc *PrefixCondition) String() string {
+	return "prefix: " + pc.Prefix
+}
+
+// RegexCondition matches the URL by regular expression.
+type RegexCondition struct {
 	Regex string
-	Route
+}
+
+func (rc *RegexCondition) String() string {
+	return "regex: " + rc.Regex
 }
 
 // Route defines the properties of a route to a Cluster.
 type Route struct {
+
+	// A list of conditions the incoming request must
+	// match for this route.
+	Conditions []Condition
+
 	Clusters []*Cluster
 
 	// Should this route generate a 301 upgrade if accessed
@@ -131,21 +143,22 @@ type VirtualHost struct {
 	// as defined by RFC 3986.
 	Name string
 
-	routes map[string]Vertex
+	routes map[string]*Route
 }
 
-func (v *VirtualHost) addRoute(route Vertex) {
+func (v *VirtualHost) addRoute(route *Route) {
 	if v.routes == nil {
-		v.routes = make(map[string]Vertex)
+		v.routes = make(map[string]*Route)
 	}
-	switch r := route.(type) {
-	case *PrefixRoute:
-		v.routes[r.Prefix] = r
-	case *RegexRoute:
-		v.routes[r.Regex] = r
-	default:
-		panic(fmt.Sprintf("unexpected route type: %T %#v", r, r))
+	v.routes[conditionsToString(route)] = route
+}
+
+func conditionsToString(r *Route) string {
+	var s []string
+	for _, cond := range r.Conditions {
+		s = append(s, cond.String())
 	}
+	return strings.Join(s, ",")
 }
 
 func (v *VirtualHost) Visit(f func(Vertex)) {
