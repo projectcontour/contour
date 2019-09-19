@@ -41,25 +41,30 @@ type Include struct {
 }
 
 // Condition are policies that are applied on top of HTTPProxies.
+// One of Prefix or Header must be provided.
 type Condition struct {
 	// Prefix defines a prefix match for a request.
 	Prefix string `json:"prefix,omitempty"`
-	// Header matches only the key of the header ignoring any value supplied in the request.
-	HeaderPresent string `json:"headerPresent,omitempty"`
-	// HeadersContain represent a set of HTTP headers that match the key exactly and the value as a contains.		// HeadersContain represent a set of HTTP headers that match the key and contain the value as specified.
-	HeadersContain *Header `json:"headersContain,omitempty"`
-	// HeadersMatch represent a set of HTTP headers that match the key and match the value as specified exactly.
-	HeadersMatch *Header `json:"headersMatch,omitempty"`
-	// HeadersNotContain represent a set of HTTP headers that match the key and do not contain the value as specified.
-	HeadersNotContain *Header `json:"headersNotContain,omitempty"`
-	// HeadersNotMatch represent a set of HTTP headers that match the key and do not match the value as specified exactly.
-	HeadersNotMatch *Header `json:"headersNotMatch,omitempty"`
+
+	// Header specifies the header condition to match.
+	Header *HeaderCondition `json:"header,omitempty"`
 }
 
-// Header represents a header to route on
-type Header struct {
-	Header string `json:"header,"`
-	Value  string `json:"value,omitempty"`
+// HeaderCondition specifies the header condition to match.
+// Name is required. Only one of Present or Contains must
+// be provided.
+type HeaderCondition struct {
+
+	// Name is the name of the header to match on. Name is required.
+	// Header names are case insensitive.
+	Name string `json:"name"`
+
+	// Present is true if the Header is present in the request.
+	Present bool `json:"present,omitempty"`
+
+	// Contains is true if the Header containing this string is present
+	// in the request.
+	Contains string `json:"contains,omitempty"`
 }
 
 // VirtualHost appears at most once. If it is present, the object is considered
