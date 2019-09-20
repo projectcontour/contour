@@ -509,6 +509,27 @@ func httpProxyConditions(conds []projcontour.Condition) []Condition {
 						MatchType: "contains",
 						Invert:    false,
 					})
+				} else if cond.Header.NotContains != "" {
+					c = append(c, &HeaderCondition{
+						Name:      cond.Header.Name,
+						Value:     cond.Header.NotContains,
+						MatchType: "contains",
+						Invert:    true,
+					})
+				} else if cond.Header.Exact != "" {
+					c = append(c, &HeaderCondition{
+						Name:      cond.Header.Name,
+						Value:     cond.Header.Exact,
+						MatchType: "exact",
+						Invert:    false,
+					})
+				} else if cond.Header.NotExact != "" {
+					c = append(c, &HeaderCondition{
+						Name:      cond.Header.Name,
+						Value:     cond.Header.NotExact,
+						MatchType: "exact",
+						Invert:    true,
+					})
 				}
 			}
 		}
