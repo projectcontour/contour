@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/envoy"
 	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
@@ -51,7 +52,7 @@ func TestAddRemoveEndpoints(t *testing.T) {
 	rh.OnAdd(e1)
 
 	// check that it's been translated correctly.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
 			envoy.ClusterLoadAssignment(
@@ -72,7 +73,7 @@ func TestAddRemoveEndpoints(t *testing.T) {
 	// remove e1 and check that the EDS cache is now empty.
 	rh.OnDelete(e1)
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "4",
 		Resources:   resources(t),
 		TypeUrl:     endpointType,
@@ -111,7 +112,7 @@ func TestAddEndpointComplicated(t *testing.T) {
 
 	rh.OnAdd(e1)
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
 			envoy.ClusterLoadAssignment(
@@ -162,7 +163,7 @@ func TestEndpointFilter(t *testing.T) {
 
 	rh.OnAdd(e1)
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
 			envoy.ClusterLoadAssignment(
@@ -174,7 +175,7 @@ func TestEndpointFilter(t *testing.T) {
 		Nonce:   "2",
 	}, streamEDS(t, cc, "default/kuard/foo"))
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		TypeUrl:     endpointType,
 		Resources: resources(t,
@@ -200,7 +201,7 @@ func TestIssue602(t *testing.T) {
 	rh.OnAdd(e1)
 
 	// Assert endpoint was added
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			envoy.ClusterLoadAssignment("default/simple", envoy.SocketAddress("192.168.183.24", 8080)),
@@ -213,7 +214,7 @@ func TestIssue602(t *testing.T) {
 	e2 := endpoints("default", "simple")
 	rh.OnUpdate(e1, e2)
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources:   resources(t),
 		TypeUrl:     endpointType,

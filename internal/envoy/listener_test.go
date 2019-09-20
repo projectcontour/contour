@@ -26,7 +26,7 @@ import (
 	envoy_config_v2_tcpproxy "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
@@ -114,9 +114,7 @@ func TestListener(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := Listener(tc.name, tc.address, tc.port, tc.lf, tc.f...)
-			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -156,9 +154,7 @@ func TestSocketAddress(t *testing.T) {
 			},
 		},
 	}
-	if diff := cmp.Diff(want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
-		t.Fatal(diff)
-	}
+	assert.Equal(t, want, got)
 }
 
 func TestDownstreamTLSContext(t *testing.T) {
@@ -201,9 +197,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			AlpnProtocols: []string{"h2", "http/1.1"},
 		},
 	}
-	if diff := cmp.Diff(want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
-		t.Fatal(diff)
-	}
+	assert.Equal(t, want, got)
 }
 
 func TestHTTPConnectionManager(t *testing.T) {
@@ -264,9 +258,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := HTTPConnectionManager(tc.routename, tc.accesslogger)
-			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -354,9 +346,7 @@ func TestTCPProxy(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := TCPProxy(statPrefix, tc.proxy, FileAccessLogEnvoy(accessLogPath))
-			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
