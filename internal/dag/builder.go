@@ -511,6 +511,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 				sw.SetInvalid("root httpproxy cannot delegate to another root httpproxy")
 				return nil
 			}
+
 			sw, commit := b.WithObject(delegate)
 			routes = append(routes, b.computeRoutes(sw, delegate, append(conditions, include.Conditions...), visited, enforceTLS)...)
 			commit()
@@ -869,23 +870,6 @@ func (b *Builder) processTCPProxy(sw *ObjectStatusWriter, ir *ingressroutev1.Ing
 
 	sw.SetValid()
 }
-
-//func conditionPath(routeCondition, includeCondition *projcontour.Condition) string {
-//	pathPrefix := ""
-//
-//	if includeCondition != nil {
-//		pathPrefix = includeCondition.Prefix
-//	}
-//	if routeCondition != nil {
-//		pathPrefix += routeCondition.Prefix
-//	}
-//
-//	if pathPrefix == "" {
-//		return "/"
-//	}
-//
-//	return pathPrefix
-//}
 
 func externalName(svc *v1.Service) string {
 	if svc.Spec.Type != v1.ServiceTypeExternalName {

@@ -1172,6 +1172,286 @@ func TestRouteVisit(t *testing.T) {
 				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
+		"httpproxy with pathPrefix": {
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}, {
+								Name: "backendtwo",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backendtwo",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/"), &envoy_api_v2_route.Route_Route{
+							Route: &envoy_api_v2_route.RouteAction{
+								ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+									WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+										Clusters: weightedClusters(
+											weightedCluster("default/backend/80/da39a3ee5e", 1),
+											weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
+										),
+										TotalWeight: protobuf.UInt32(2),
+									},
+								},
+							},
+						}),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
+		},
+		"httpproxy with pathPrefix with tls": {
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &projcontour.TLS{
+								SecretName: "secret",
+							},
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}, {
+								Name: "backendtwo",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata("certificate", "key"),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backendtwo",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match: envoy.RoutePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Redirect{
+								Redirect: &envoy_api_v2_route.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_api_v2_route.RedirectAction_HttpsRedirect{
+										HttpsRedirect: true,
+									},
+								},
+							},
+						},
+					),
+				),
+				envoy.RouteConfiguration("ingress_https",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/"), &envoy_api_v2_route.Route_Route{
+							Route: &envoy_api_v2_route.RouteAction{
+								ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+									WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+										Clusters: weightedClusters(
+											weightedCluster("default/backend/80/da39a3ee5e", 1),
+											weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
+										),
+										TotalWeight: protobuf.UInt32(2),
+									},
+								},
+							},
+						}),
+					)),
+			),
+		},
+		"httpproxy with pathPrefix includes": {
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Includes: []projcontour.Include{{
+							Name:      "child",
+							Namespace: "teama",
+							Conditions: []projcontour.Condition{{
+								Prefix: "/blog",
+							}},
+						}},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}, {
+								Name: "backendtwo",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "child",
+						Namespace: "teama",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/info",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "teama",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backendtwo",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/blog/info"), routecluster("teama/backend/80/da39a3ee5e")),
+						envoy.Route(envoy.RoutePrefix("/"), &envoy_api_v2_route.Route_Route{
+							Route: &envoy_api_v2_route.RouteAction{
+								ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+									WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+										Clusters: weightedClusters(
+											weightedCluster("default/backend/80/da39a3ee5e", 1),
+											weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
+										),
+										TotalWeight: protobuf.UInt32(2),
+									},
+								},
+							},
+						}),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
+		},
 	}
 
 	for name, tc := range tests {
