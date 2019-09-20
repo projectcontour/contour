@@ -1245,6 +1245,68 @@ func TestRouteVisit(t *testing.T) {
 				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
+		"httpproxy with mirror policy": {
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}, {
+								Name:   "backendtwo",
+								Port:   80,
+								Mirror: true,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backendtwo",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/"), withMirrorPolicy(routecluster("default/backend/80/da39a3ee5e"), "default/backendtwo/80/da39a3ee5e")),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
+		},
 		"httpproxy with pathPrefix with tls": {
 			objs: []interface{}{
 				&projcontour.HTTPProxy{
@@ -1581,4 +1643,11 @@ func routeConfigurations(rcs ...*v2.RouteConfiguration) map[string]*v2.RouteConf
 		m[rc.Name] = rc
 	}
 	return m
+}
+
+func withMirrorPolicy(route *envoy_api_v2_route.Route_Route, mirror string) *envoy_api_v2_route.Route_Route {
+	route.Route.RequestMirrorPolicy = &envoy_api_v2_route.RouteAction_RequestMirrorPolicy{
+		Cluster: mirror,
+	}
+	return route
 }

@@ -41,3 +41,10 @@ func withIdleTimeout(route *envoy_api_v2_route.Route_Route, timeout time.Duratio
 	route.Route.IdleTimeout = protobuf.Duration(timeout)
 	return route
 }
+
+func withMirrorPolicy(route *envoy_api_v2_route.Route_Route, mirror string) *envoy_api_v2_route.Route_Route {
+	route.Route.RequestMirrorPolicy = &envoy_api_v2_route.RouteAction_RequestMirrorPolicy{
+		Cluster: mirror,
+	}
+	return route
+}
