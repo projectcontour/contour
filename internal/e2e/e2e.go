@@ -27,6 +27,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/projectcontour/contour/apis/generated/clientset/versioned/fake"
 	"github.com/projectcontour/contour/internal/contour"
 	cgrpc "github.com/projectcontour/contour/internal/grpc"
@@ -203,7 +205,7 @@ func check(t *testing.T, err error) {
 
 func resources(t *testing.T, protos ...proto.Message) []*any.Any {
 	t.Helper()
-	anys := make([]*any.Any, 0, len(protos))
+	var anys []*any.Any
 	for _, a := range protos {
 		anys = append(anys, toAny(t, a))
 	}
@@ -285,14 +287,24 @@ func (r *Response) Equals(want *v2.DiscoveryResponse) {
 
 func assertEqual(t *testing.T, want, got *v2.DiscoveryResponse) {
 	t.Helper()
-	m := proto.TextMarshaler{Compact: true, ExpandAny: true}
-	a := m.Text(want)
-	b := m.Text(got)
-	if a != b {
-		m := proto.TextMarshaler{
-			Compact:   false,
-			ExpandAny: true,
-		}
-		t.Fatalf("\nexpected:\n%v\ngot:\n%v", m.Text(want), m.Text(got))
+	opts := []cmp.Option{
+		cmpopts.IgnoreFields(v2.DiscoveryResponse{}, "VersionInfo", "Nonce"),
+		cmpopts.AcyclicTransformer("UnmarshalAny", unmarshalAny),
 	}
+	diff := cmp.Diff(want, got, opts...)
+	if diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func unmarshalAny(a *any.Any) proto.Message {
+	pb, err := ptypes.Empty(a)
+	if err != nil {
+		panic(err.Error())
+	}
+	err = ptypes.UnmarshalAny(a, pb)
+	if err != nil {
+		panic(err.Error())
+	}
+	return pb
 }
