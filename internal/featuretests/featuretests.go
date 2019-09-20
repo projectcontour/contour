@@ -27,9 +27,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/projectcontour/contour/apis/generated/clientset/versioned/fake"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
 	cgrpc "github.com/projectcontour/contour/internal/grpc"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -264,24 +263,5 @@ type Response struct {
 
 func (r *Response) Equals(want *v2.DiscoveryResponse) {
 	r.Helper()
-	opts := []cmp.Option{
-		cmpopts.IgnoreFields(v2.DiscoveryResponse{}, "VersionInfo", "Nonce"),
-		cmpopts.AcyclicTransformer("UnmarshalAny", unmarshalAny),
-	}
-	diff := cmp.Diff(want, r.DiscoveryResponse, opts...)
-	if diff != "" {
-		r.Fatal(diff)
-	}
-}
-
-func unmarshalAny(a *any.Any) proto.Message {
-	pb, err := ptypes.Empty(a)
-	if err != nil {
-		panic(err.Error())
-	}
-	err = ptypes.UnmarshalAny(a, pb)
-	if err != nil {
-		panic(err.Error())
-	}
-	return pb
+	assert.Equal(r.T, want, r.DiscoveryResponse)
 }

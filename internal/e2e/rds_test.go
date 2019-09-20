@@ -24,6 +24,7 @@ import (
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -96,7 +97,7 @@ func TestEditIngress(t *testing.T) {
 	rh.OnAdd(old)
 
 	// check that it's been translated correctly.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -129,7 +130,7 @@ func TestEditIngress(t *testing.T) {
 	})
 
 	// check that ingress_http has been updated.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -198,7 +199,7 @@ func TestIngressPathRouteWithoutHost(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// check that it's been translated correctly.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -270,7 +271,7 @@ func TestEditIngressInPlace(t *testing.T) {
 	}
 	rh.OnAdd(s2)
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -311,7 +312,7 @@ func TestEditIngressInPlace(t *testing.T) {
 		},
 	}
 	rh.OnUpdate(i1, i2)
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -358,7 +359,7 @@ func TestEditIngressInPlace(t *testing.T) {
 		},
 	}
 	rh.OnUpdate(i2, i3)
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "4",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -428,7 +429,7 @@ func TestEditIngressInPlace(t *testing.T) {
 		},
 	}
 	rh.OnUpdate(i3, i4)
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "5",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -972,7 +973,7 @@ func TestRDSFilter(t *testing.T) {
 	}
 	rh.OnAdd(s2)
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "5",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -992,7 +993,7 @@ func TestRDSFilter(t *testing.T) {
 		Nonce:   "5",
 	}, streamRDS(t, cc, "ingress_http"))
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "5",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_https",
@@ -1334,7 +1335,7 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 		},
 	})
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -1393,7 +1394,7 @@ func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
 	// add ingressroute
 	rh.OnAdd(ir1)
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -1448,7 +1449,7 @@ func TestRDSIngressRouteOutsideRootNamespaces(t *testing.T) {
 	// add ingressroute
 	rh.OnAdd(ir1)
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http"),
@@ -1842,7 +1843,7 @@ func TestRouteWithTLS(t *testing.T) {
 	rh.OnAdd(ir1)
 
 	// check that ingress_http has been updated.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -1938,7 +1939,7 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 	rh.OnAdd(ir1)
 
 	// check that ingress_http has been updated.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -2041,7 +2042,7 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 	rh.OnAdd(ir1)
 
 	// check that ingress_http has been updated.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -2399,7 +2400,7 @@ func TestRoutePrefixRouteRegex(t *testing.T) {
 	rh.OnAdd(old)
 
 	// check that it's been translated correctly.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -2476,7 +2477,7 @@ func TestRDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
 
 	// verify that child's route is present because while it is not possible to
 	// delegate to it, it can host www.containersteve.com.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -2494,7 +2495,7 @@ func TestRDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
 
 func assertRDS(t *testing.T, cc *grpc.ClientConn, versioninfo string, ingress_http, ingress_https []*envoy_api_v2_route.VirtualHost) {
 	t.Helper()
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: versioninfo,
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http", ingress_http...),
@@ -2670,7 +2671,7 @@ func TestRDSHTTPProxyOutsideRootNamespaces(t *testing.T) {
 	// add proxy
 	rh.OnAdd(proxy1)
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http"),
@@ -2997,7 +2998,7 @@ func TestHTTPProxyRouteWithTLS(t *testing.T) {
 	rh.OnAdd(proxy1)
 
 	// check that ingress_http has been updated.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -3094,7 +3095,7 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
 	rh.OnAdd(proxy1)
 
 	// check that ingress_http has been updated.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -3197,7 +3198,7 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testin
 	rh.OnAdd(proxy1)
 
 	// check that ingress_http has been updated.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -3281,7 +3282,7 @@ func TestRDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 
 	// verify that child's route is present because while it is not possible to
 	// delegate to it, it can host www.containersteve.com.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",

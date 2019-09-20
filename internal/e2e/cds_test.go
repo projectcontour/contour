@@ -23,6 +23,7 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"google.golang.org/grpc"
@@ -63,7 +64,7 @@ func TestClusterLongServiceName(t *testing.T) {
 	))
 
 	// check that it's been translated correctly.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
 			cluster("default/kbujbkuh-c83ceb/8080/da39a3ee5e", "default/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r", "default_kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r_8080"),
@@ -125,7 +126,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	})
 	rh.OnAdd(s1)
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
@@ -146,7 +147,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	rh.OnUpdate(s1, s2)
 
 	// check that we get two CDS records because the port is now named.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "4",
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
@@ -177,7 +178,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 
 	// check that we get four CDS records. Order is important
 	// because the CDS cache is sorted.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "5",
 		Resources: resources(t,
 			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
@@ -202,7 +203,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 
 	// check that we get two CDS records only, and that the 80 and http
 	// records have been removed even though the service object remains.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "6",
 		Resources: resources(t,
 			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
@@ -262,7 +263,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	)
 
 	rh.OnAdd(s1)
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
 			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
@@ -282,7 +283,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	)
 
 	rh.OnUpdate(s1, s2)
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
 		Resources: resources(t,
 			cluster("default/kuard/443/da39a3ee5e", "default/kuard", "default_kuard_443"),
@@ -293,7 +294,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 
 	// now replace s2 with s1 to check it works in the other direction.
 	rh.OnUpdate(s2, s1)
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "4",
 		Resources: resources(t,
 			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
@@ -305,7 +306,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 
 	// cleanup and check
 	rh.OnDelete(s1)
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "5",
 		Resources:   resources(t),
 		TypeUrl:     clusterType,
@@ -341,7 +342,7 @@ func TestIssue243(t *testing.T) {
 			},
 		)
 		rh.OnAdd(s1)
-		assertEqual(t, &v2.DiscoveryResponse{
+		assert.Equal(t, &v2.DiscoveryResponse{
 			VersionInfo: "2",
 			Resources: resources(t,
 				cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
@@ -384,7 +385,7 @@ func TestIssue247(t *testing.T) {
 		},
 	)
 	rh.OnAdd(s1)
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
@@ -443,7 +444,7 @@ func TestCDSResourceFiltering(t *testing.T) {
 		},
 	)
 	rh.OnAdd(s2)
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
 		Resources: resources(t,
 			// note, resources are sorted by Cluster.Name
@@ -455,7 +456,7 @@ func TestCDSResourceFiltering(t *testing.T) {
 	}, streamCDS(t, cc))
 
 	// assert we can filter on one resource
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
@@ -465,7 +466,7 @@ func TestCDSResourceFiltering(t *testing.T) {
 	}, streamCDS(t, cc, "default/kuard/80/da39a3ee5e"))
 
 	// assert a non matching filter returns a response with no entries.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
 		TypeUrl:     clusterType,
 		Nonce:       "3",
@@ -508,7 +509,7 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// check that it's been translated correctly.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
 			&v2.Cluster{
@@ -554,7 +555,7 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 	rh.OnUpdate(s1, s2)
 
 	// check that it's been translated correctly.
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
 		Resources: resources(t,
 			&v2.Cluster{
@@ -625,7 +626,7 @@ func TestClusterPerServiceParameters(t *testing.T) {
 		},
 	})
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
@@ -680,7 +681,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 		},
 	})
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			&v2.Cluster{
@@ -752,7 +753,7 @@ func TestClusterWithHealthChecks(t *testing.T) {
 		},
 	})
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			clusterWithHealthCheck("default/kuard/80/bc862a33ca", "default/kuard", "default_kuard_80", "/healthz", true),
@@ -801,7 +802,7 @@ func TestClusterServiceTLSBackend(t *testing.T) {
 	}
 	rh.OnAdd(s1)
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
 			tlscluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443", nil, ""),
@@ -864,7 +865,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 
 	rh.OnAdd(ir1)
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
 			tlscluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443", nil, ""),
@@ -896,7 +897,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 
 	rh.OnUpdate(ir1, ir2)
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
 		Resources: resources(t,
 			tlscluster("default/kuard/443/98c0f31c72", "default/kuard/securebackend", "default_kuard_443", []byte("ca"), "subjname"),
@@ -933,7 +934,7 @@ func TestExternalNameService(t *testing.T) {
 	})
 	rh.OnAdd(s1)
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
 			externalnamecluster("default/kuard/80/da39a3ee5e", "default/kuard/", "default_kuard_80", "foo.io", 80),
@@ -987,7 +988,7 @@ func TestUnreferencedService(t *testing.T) {
 		},
 	})
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
@@ -1011,7 +1012,7 @@ func TestUnreferencedService(t *testing.T) {
 		},
 	})
 
-	assertEqual(t, &v2.DiscoveryResponse{
+	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
