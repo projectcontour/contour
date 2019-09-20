@@ -462,229 +462,230 @@ func TestIngressClassAnnotation(t *testing.T) {
 
 	rh.OnDelete(ir7)
 
-	//proxy1 := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "kuard-httpproxy",
-	//		Namespace: svc.Namespace,
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "www.example.com",
-	//		},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: svc.Name,
-	//				Port: int(svc.Spec.Ports[0].Port),
-	//			}},
-	//		}},
-	//	},
-	//}
-	//rh.OnAdd(proxy1)
-	//
-	//c.Request(routeType).Equals(&v2.DiscoveryResponse{
-	//	Resources: resources(t,
-	//		envoy.RouteConfiguration("ingress_http",
-	//			envoy.VirtualHost("www.example.com",
-	//				envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
-	//			),
-	//		),
-	//		envoy.RouteConfiguration("ingress_https"),
-	//	),
-	//	TypeUrl: routeType,
-	//})
-	//
-	//proxy2 := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      proxy1.Name,
-	//		Namespace: proxy1.Namespace,
-	//		Annotations: map[string]string{
-	//			"kubernetes.io/ingress.class": "contour",
-	//		},
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "www.example.com",
-	//		},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: svc.Name,
-	//				Port: int(svc.Spec.Ports[0].Port),
-	//			}},
-	//		}},
-	//	},
-	//}
-	//rh.OnUpdate(proxy1, proxy2)
-	//
-	//// ingress class does not match ingress controller, ignored.
-	//c.Request(routeType).Equals(&v2.DiscoveryResponse{
-	//	Resources: resources(t,
-	//		envoy.RouteConfiguration("ingress_http"),
-	//		envoy.RouteConfiguration("ingress_https"),
-	//	),
-	//	TypeUrl: routeType,
-	//})
-	//
-	//proxy3 := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      proxy2.Name,
-	//		Namespace: proxy2.Namespace,
-	//		Annotations: map[string]string{
-	//			"contour.heptio.com/ingress.class": "contour",
-	//		},
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "www.example.com",
-	//		},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: svc.Name,
-	//				Port: int(svc.Spec.Ports[0].Port),
-	//			}},
-	//		}},
-	//	},
-	//}
-	//rh.OnUpdate(proxy2, proxy3)
-	//
-	//// ingress class does not match ingress controller, ignored.
-	//c.Request(routeType).Equals(&v2.DiscoveryResponse{
-	//	Resources: resources(t,
-	//		envoy.RouteConfiguration("ingress_http"),
-	//		envoy.RouteConfiguration("ingress_https"),
-	//	),
-	//	TypeUrl: routeType,
-	//})
-	//
-	//proxy4 := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      proxy3.Name,
-	//		Namespace: proxy3.Namespace,
-	//		Annotations: map[string]string{
-	//			"contour.heptio.com/ingress.class": "linkerd",
-	//		},
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "www.example.com",
-	//		},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: svc.Name,
-	//				Port: int(svc.Spec.Ports[0].Port),
-	//			}},
-	//		}},
-	//	},
-	//}
-	//rh.OnUpdate(proxy3, proxy4)
-	//
-	//c.Request(routeType).Equals(&v2.DiscoveryResponse{
-	//	Resources: resources(t,
-	//		envoy.RouteConfiguration("ingress_http",
-	//			envoy.VirtualHost(proxy4.Spec.VirtualHost.Fqdn,
-	//				envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
-	//			),
-	//		),
-	//		envoy.RouteConfiguration("ingress_https"),
-	//	),
-	//	TypeUrl: routeType,
-	//})
-	//
-	//proxy5 := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      proxy4.Name,
-	//		Namespace: proxy4.Namespace,
-	//		Annotations: map[string]string{
-	//			"kubernetes.io/ingress.class": "linkerd",
-	//		},
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "www.example.com",
-	//		},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: svc.Name,
-	//				Port: int(svc.Spec.Ports[0].Port),
-	//			}},
-	//		}},
-	//	},
-	//}
-	//
-	//c.Request(routeType).Equals(&v2.DiscoveryResponse{
-	//	Resources: resources(t,
-	//		envoy.RouteConfiguration("ingress_http",
-	//			envoy.VirtualHost(proxy5.Spec.VirtualHost.Fqdn,
-	//				envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
-	//			),
-	//		),
-	//		envoy.RouteConfiguration("ingress_https"),
-	//	),
-	//	TypeUrl: routeType,
-	//})
-	//
-	//proxy6 := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      proxy5.Name,
-	//		Namespace: proxy5.Namespace,
-	//		Annotations: map[string]string{
-	//			"projectcontour.io/ingress.class": "contour",
-	//		},
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "www.example.com",
-	//		},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: svc.Name,
-	//				Port: int(svc.Spec.Ports[0].Port),
-	//			}},
-	//		}},
-	//	},
-	//}
-	//rh.OnUpdate(proxy5, proxy6)
-	//
-	//c.Request(routeType).Equals(&v2.DiscoveryResponse{
-	//	Resources: resources(t,
-	//		envoy.RouteConfiguration("ingress_http"),
-	//		envoy.RouteConfiguration("ingress_https"),
-	//	),
-	//	TypeUrl: routeType,
-	//})
-	//
-	//proxy7 := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      proxy6.Name,
-	//		Namespace: proxy6.Namespace,
-	//		Annotations: map[string]string{
-	//			"projectcontour.io/ingress.class": "linkerd",
-	//		},
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "www.example.com",
-	//		},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: svc.Name,
-	//				Port: int(svc.Spec.Ports[0].Port),
-	//			}},
-	//		}},
-	//	},
-	//}
-	//rh.OnUpdate(proxy6, proxy7)
-	//
-	//c.Request(routeType).Equals(&v2.DiscoveryResponse{
-	//	Resources: resources(t,
-	//		envoy.RouteConfiguration("ingress_http",
-	//			envoy.VirtualHost(proxy5.Spec.VirtualHost.Fqdn,
-	//				envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
-	//			),
-	//		),
-	//		envoy.RouteConfiguration("ingress_https"),
-	//	),
-	//	TypeUrl: routeType,
-	//})
-	//
-	//rh.OnDelete(proxy7)
+	proxy1 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-httpproxy",
+			Namespace: svc.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "www.example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: svc.Name,
+					Port: int(svc.Spec.Ports[0].Port),
+				}},
+			}},
+		},
+	}
+	rh.OnAdd(proxy1)
+
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("www.example.com",
+					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
+				),
+			),
+			envoy.RouteConfiguration("ingress_https"),
+		),
+		TypeUrl: routeType,
+	})
+
+	proxy2 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      proxy1.Name,
+			Namespace: proxy1.Namespace,
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "contour",
+			},
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "www.example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: svc.Name,
+					Port: int(svc.Spec.Ports[0].Port),
+				}},
+			}},
+		},
+	}
+
+	rh.OnUpdate(proxy1, proxy2)
+
+	// ingress class does not match ingress controller, ignored.
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
+		),
+		TypeUrl: routeType,
+	})
+
+	proxy3 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      proxy2.Name,
+			Namespace: proxy2.Namespace,
+			Annotations: map[string]string{
+				"contour.heptio.com/ingress.class": "contour",
+			},
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "www.example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: svc.Name,
+					Port: int(svc.Spec.Ports[0].Port),
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(proxy2, proxy3)
+
+	// ingress class does not match ingress controller, ignored.
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
+		),
+		TypeUrl: routeType,
+	})
+
+	proxy4 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      proxy3.Name,
+			Namespace: proxy3.Namespace,
+			Annotations: map[string]string{
+				"contour.heptio.com/ingress.class": "linkerd",
+			},
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "www.example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: svc.Name,
+					Port: int(svc.Spec.Ports[0].Port),
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(proxy3, proxy4)
+
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost(proxy4.Spec.VirtualHost.Fqdn,
+					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
+				),
+			),
+			envoy.RouteConfiguration("ingress_https"),
+		),
+		TypeUrl: routeType,
+	})
+
+	proxy5 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      proxy4.Name,
+			Namespace: proxy4.Namespace,
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "linkerd",
+			},
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "www.example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: svc.Name,
+					Port: int(svc.Spec.Ports[0].Port),
+				}},
+			}},
+		},
+	}
+
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost(proxy5.Spec.VirtualHost.Fqdn,
+					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
+				),
+			),
+			envoy.RouteConfiguration("ingress_https"),
+		),
+		TypeUrl: routeType,
+	})
+
+	proxy6 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      proxy5.Name,
+			Namespace: proxy5.Namespace,
+			Annotations: map[string]string{
+				"projectcontour.io/ingress.class": "contour",
+			},
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "www.example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: svc.Name,
+					Port: int(svc.Spec.Ports[0].Port),
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(proxy5, proxy6)
+
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
+		),
+		TypeUrl: routeType,
+	})
+
+	proxy7 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      proxy6.Name,
+			Namespace: proxy6.Namespace,
+			Annotations: map[string]string{
+				"projectcontour.io/ingress.class": "linkerd",
+			},
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "www.example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: svc.Name,
+					Port: int(svc.Spec.Ports[0].Port),
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(proxy6, proxy7)
+
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost(proxy5.Spec.VirtualHost.Fqdn,
+					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
+				),
+			),
+			envoy.RouteConfiguration("ingress_https"),
+		),
+		TypeUrl: routeType,
+	})
+
+	rh.OnDelete(proxy7)
 }
