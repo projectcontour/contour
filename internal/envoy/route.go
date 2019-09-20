@@ -15,6 +15,7 @@ package envoy
 import (
 	"fmt"
 	"sort"
+	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -44,6 +45,7 @@ func RouteRoute(r *dag.Route) *envoy_api_v2_route.Route_Route {
 	ra := envoy_api_v2_route.RouteAction{
 		RetryPolicy:   retryPolicy(r),
 		Timeout:       responseTimeout(r),
+		IdleTimeout:   idleTimeout(r),
 		PrefixRewrite: r.PrefixRewrite,
 		HashPolicy:    hashPolicy(r),
 	}
@@ -94,17 +96,33 @@ func responseTimeout(r *dag.Route) *duration.Duration {
 	if r.TimeoutPolicy == nil {
 		return nil
 	}
+	return timeout(r.TimeoutPolicy.ResponseTimeout)
+}
 
-	switch r.TimeoutPolicy.ResponseTimeout {
-	case 0:
+func idleTimeout(r *dag.Route) *duration.Duration {
+	if r.TimeoutPolicy == nil {
+		return nil
+	}
+	return timeout(r.TimeoutPolicy.IdleTimeout)
+}
+
+// timeout interprets a time.Duration with respect to
+// Envoy's timeout logic. Zero durations are interpreted
+// as nil, therefore remaining unset. Negative durations
+// are interpreted as infinity, which is represented as
+// an explicit value of 0. Positive durations behave as
+// expected.
+func timeout(d time.Duration) *duration.Duration {
+	switch {
+	case d == 0:
 		// no timeout specified
 		return nil
-	case -1:
+	case d < 0:
 		// infinite timeout, set timeout value to a pointer to zero which tells
 		// envoy "infinite timeout"
 		return protobuf.Duration(0)
 	default:
-		return protobuf.Duration(r.TimeoutPolicy.ResponseTimeout)
+		return protobuf.Duration(d)
 	}
 }
 

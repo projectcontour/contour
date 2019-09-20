@@ -50,6 +50,7 @@ func timeoutPolicy(tp *projcontour.TimeoutPolicy) *TimeoutPolicy {
 	}
 	return &TimeoutPolicy{
 		ResponseTimeout: parseTimeout(tp.Response),
+		IdleTimeout:     parseTimeout(tp.Idle),
 	}
 }
 
