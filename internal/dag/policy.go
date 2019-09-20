@@ -37,7 +37,10 @@ func ingressrouteTimeoutPolicy(tp *ingressroutev1.TimeoutPolicy) *TimeoutPolicy 
 		return nil
 	}
 	return &TimeoutPolicy{
-		Timeout: parseTimeout(tp.Request),
+		// due to a misunderstanding the name of the field ingressroute is
+		// Request, however the timeout applies to the response resulting from
+		// a request.
+		ResponseTimeout: parseTimeout(tp.Request),
 	}
 }
 
@@ -46,7 +49,7 @@ func timeoutPolicy(tp *projcontour.TimeoutPolicy) *TimeoutPolicy {
 		return nil
 	}
 	return &TimeoutPolicy{
-		Timeout: parseTimeout(tp.Request),
+		ResponseTimeout: parseTimeout(tp.Response),
 	}
 }
 

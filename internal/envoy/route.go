@@ -42,7 +42,7 @@ func Route(match *envoy_api_v2_route.RouteMatch, action *envoy_api_v2_route.Rout
 func RouteRoute(r *dag.Route) *envoy_api_v2_route.Route_Route {
 	ra := envoy_api_v2_route.RouteAction{
 		RetryPolicy:   retryPolicy(r),
-		Timeout:       timeout(r),
+		Timeout:       responseTimeout(r),
 		PrefixRewrite: r.PrefixRewrite,
 		HashPolicy:    hashPolicy(r),
 	}
@@ -89,12 +89,12 @@ func hashPolicy(r *dag.Route) []*envoy_api_v2_route.RouteAction_HashPolicy {
 	return nil
 }
 
-func timeout(r *dag.Route) *duration.Duration {
+func responseTimeout(r *dag.Route) *duration.Duration {
 	if r.TimeoutPolicy == nil {
 		return nil
 	}
 
-	switch r.TimeoutPolicy.Timeout {
+	switch r.TimeoutPolicy.ResponseTimeout {
 	case 0:
 		// no timeout specified
 		return nil
@@ -103,7 +103,7 @@ func timeout(r *dag.Route) *duration.Duration {
 		// envoy "infinite timeout"
 		return protobuf.Duration(0)
 	default:
-		return protobuf.Duration(r.TimeoutPolicy.Timeout)
+		return protobuf.Duration(r.TimeoutPolicy.ResponseTimeout)
 	}
 }
 
