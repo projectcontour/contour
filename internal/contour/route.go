@@ -142,7 +142,8 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 
 					// Merge all pathPrefix conditions for this route
 					mergedPathPrefix := mergePathPrefixes(route.Conditions)
-					rr := envoy.Route(envoy.RoutePrefix(mergedPathPrefix), envoy.RouteRoute(route))
+					mergedHeaders := mergeHeaders(route.Conditions)
+					rr := envoy.Route(envoy.RoutePrefix(mergedPathPrefix, mergedHeaders...), envoy.RouteRoute(route))
 					if route.HTTPSUpgrade {
 						rr.Action = envoy.UpgradeHTTPS()
 					}
@@ -173,7 +174,8 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 
 					// Merge all pathPrefix conditions for this route
 					mergedPathPrefix := mergePathPrefixes(route.Conditions)
-					routes = append(routes, envoy.Route(envoy.RoutePrefix(mergedPathPrefix), envoy.RouteRoute(route)))
+					mergedHeaders := mergeHeaders(route.Conditions)
+					routes = append(routes, envoy.Route(envoy.RoutePrefix(mergedPathPrefix, mergedHeaders...), envoy.RouteRoute(route)))
 				})
 				if len(routes) < 1 {
 					return
@@ -201,6 +203,18 @@ func mergePathPrefixes(conditions []dag.Condition) string {
 		}
 	}
 	return mergedPath
+}
+
+func mergeHeaders(conditions []dag.Condition) []dag.HeaderCondition {
+	var headers []dag.HeaderCondition
+
+	for _, c := range conditions {
+		switch cond := c.(type) {
+		case *dag.HeaderCondition:
+			headers = append(headers, *cond)
+		}
+	}
+	return headers
 }
 
 type virtualHostsByName []*envoy_api_v2_route.VirtualHost
