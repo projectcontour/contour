@@ -490,6 +490,26 @@ func httpProxyConditions(conds []projcontour.Condition) []Condition {
 				Prefix: cond.Prefix,
 			})
 		}
+		if cond.Header != nil {
+			// Header present only
+			if cond.Header.Present {
+				c = append(c, &HeaderCondition{
+					Name:      cond.Header.Name,
+					MatchType: "present",
+					Invert:    false,
+				})
+			} else {
+				// Header contains
+				if cond.Header.Contains != "" {
+					c = append(c, &HeaderCondition{
+						Name:      cond.Header.Name,
+						Value:     cond.Header.Contains,
+						MatchType: "contains",
+						Invert:    false,
+					})
+				}
+			}
+		}
 	}
 	return c
 }

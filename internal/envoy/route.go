@@ -13,6 +13,7 @@
 package envoy
 
 import (
+	"fmt"
 	"sort"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -172,11 +173,12 @@ func RouteRegex(regex string) *envoy_api_v2_route.RouteMatch {
 }
 
 // RoutePrefix returns a prefix matcher.
-func RoutePrefix(prefix string) *envoy_api_v2_route.RouteMatch {
+func RoutePrefix(prefix string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
 	return &envoy_api_v2_route.RouteMatch{
 		PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
 			Prefix: prefix,
 		},
+		Headers: headerMatcher(headers),
 	}
 }
 
@@ -228,4 +230,28 @@ func AppendHeader(key, value string) *envoy_api_v2_core.HeaderValueOption {
 		},
 		Append: protobuf.Bool(true),
 	}
+}
+
+func headerMatcher(headers []dag.HeaderCondition) []*envoy_api_v2_route.HeaderMatcher {
+	var envoyHeaders []*envoy_api_v2_route.HeaderMatcher
+
+	for _, h := range headers {
+		header := &envoy_api_v2_route.HeaderMatcher{
+			Name:        h.Name,
+			InvertMatch: h.Invert,
+		}
+
+		switch h.MatchType {
+		case "exact":
+			header.HeaderMatchSpecifier = &envoy_api_v2_route.HeaderMatcher_ExactMatch{ExactMatch: h.Value}
+		case "contains":
+			header.HeaderMatchSpecifier = &envoy_api_v2_route.HeaderMatcher_RegexMatch{
+				RegexMatch: fmt.Sprintf(".*%s.*", h.Value),
+			}
+		case "present":
+			header.HeaderMatchSpecifier = &envoy_api_v2_route.HeaderMatcher_PresentMatch{PresentMatch: true}
+		}
+		envoyHeaders = append(envoyHeaders, header)
+	}
+	return envoyHeaders
 }
