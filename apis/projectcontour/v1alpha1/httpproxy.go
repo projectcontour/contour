@@ -65,6 +65,18 @@ type HeaderCondition struct {
 	// Contains is true if the Header containing this string is present
 	// in the request.
 	Contains string `json:"contains,omitempty"`
+
+	// NotContains is true if the Header containing this string is not present
+	// in the request.
+	NotContains string `json:"notcontains,omitempty"`
+
+	// Exact is true if the Header containing this string matches exactly
+	// in the request.
+	Exact string `json:"exact,omitempty"`
+
+	// NotExact is true if the Header containing this string doesn't match exactly
+	// in the request.
+	NotExact string `json:"notexact,omitempty"`
 }
 
 // VirtualHost appears at most once. If it is present, the object is considered

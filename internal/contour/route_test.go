@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/projectcontour/contour/internal/dag"
+
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/golang/protobuf/proto"
@@ -1511,6 +1513,288 @@ func TestRouteVisit(t *testing.T) {
 						}),
 					),
 				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
+		},
+		"httpproxy with header contains conditions": {
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{
+								{
+									Prefix: "/",
+								},
+								{
+									Header: &projcontour.HeaderCondition{
+										Name:     "x-header",
+										Contains: "abc",
+									},
+								},
+							},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
+							Name:      "x-header",
+							Value:     "abc",
+							MatchType: "contains",
+						}), routecluster("default/backend/80/da39a3ee5e")),
+					)),
+				envoy.RouteConfiguration("ingress_https"),
+			),
+		},
+		"httpproxy with header notcontains conditions": {
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{
+								{
+									Prefix: "/",
+								},
+								{
+									Header: &projcontour.HeaderCondition{
+										Name:        "x-header",
+										NotContains: "abc",
+									},
+								},
+							},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
+							Name:      "x-header",
+							Value:     "abc",
+							MatchType: "contains",
+							Invert:    true,
+						}), routecluster("default/backend/80/da39a3ee5e")),
+					)),
+				envoy.RouteConfiguration("ingress_https"),
+			),
+		},
+		"httpproxy with header exact match conditions": {
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{
+								{
+									Prefix: "/",
+								},
+								{
+									Header: &projcontour.HeaderCondition{
+										Name:  "x-header",
+										Exact: "abc",
+									},
+								},
+							},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
+							Name:      "x-header",
+							Value:     "abc",
+							MatchType: "exact",
+							Invert:    false,
+						}), routecluster("default/backend/80/da39a3ee5e")),
+					)),
+				envoy.RouteConfiguration("ingress_https"),
+			),
+		},
+		"httpproxy with header exact not match conditions": {
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{
+								{
+									Prefix: "/",
+								},
+								{
+									Header: &projcontour.HeaderCondition{
+										Name:     "x-header",
+										NotExact: "abc",
+									},
+								},
+							},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
+							Name:      "x-header",
+							Value:     "abc",
+							MatchType: "exact",
+							Invert:    true,
+						}), routecluster("default/backend/80/da39a3ee5e")),
+					)),
+				envoy.RouteConfiguration("ingress_https"),
+			),
+		},
+		"httpproxy with header header present conditions": {
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{
+								{
+									Prefix: "/",
+								},
+								{
+									Header: &projcontour.HeaderCondition{
+										Name:    "x-header",
+										Present: true,
+									},
+								},
+							},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
+							Name:      "x-header",
+							MatchType: "present",
+						}), routecluster("default/backend/80/da39a3ee5e")),
+					)),
 				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
