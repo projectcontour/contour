@@ -135,6 +135,8 @@ type Service struct {
 	Strategy string `json:"strategy,omitempty"`
 	// UpstreamValidation defines how to verify the backend service's certificate
 	UpstreamValidation *UpstreamValidation `json:"validation,omitempty"`
+	// If Mirror is true the Service will receive a read only mirror of the traffic for this route.
+	Mirror bool `json:"mirror,omitempty"`
 }
 
 // HealthCheck defines optional healthchecks on the upstream service
@@ -155,7 +157,7 @@ type HealthCheck struct {
 	HealthyThresholdCount uint32 `json:"healthyThresholdCount"`
 }
 
-// TimeoutPolicy define the attributes associated with timeout
+// TimeoutPolicy defines the attributes associated with timeout.
 type TimeoutPolicy struct {
 	// Timeout for receiving a response from the server after processing a request from client.
 	// If not supplied the timeout duration is undefined.
@@ -166,7 +168,7 @@ type TimeoutPolicy struct {
 	Idle string `json:"idle"`
 }
 
-// RetryPolicy define the attributes associated with retrying policy
+// RetryPolicy defines the attributes associated with retrying policy.
 type RetryPolicy struct {
 	// NumRetries is maximum allowed number of retries.
 	// If not supplied, the number of retries is zero.

@@ -474,9 +474,11 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		}
 	}
 
+	insecure := b.lookupVirtualHost(host)
+	secure := b.lookupSecureVirtualHost(host)
 	for _, route := range b.computeRoutes(sw, proxy, nil, nil, enforceTLS) {
-		b.lookupVirtualHost(host).addRoute(route)
-		b.lookupSecureVirtualHost(host).addRoute(route)
+		insecure.addRoute(route)
+		secure.addRoute(route)
 	}
 	sw.SetValid()
 }
@@ -580,13 +582,24 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 				}
 			}
 
-			r.Clusters = append(r.Clusters, &Cluster{
+			c := &Cluster{
 				Upstream:             s,
 				LoadBalancerStrategy: service.Strategy,
 				Weight:               service.Weight,
 				HealthCheckPolicy:    healthCheckPolicy(service.HealthCheck),
 				UpstreamValidation:   uv,
-			})
+			}
+			if service.Mirror && r.MirrorPolicy != nil {
+				sw.SetInvalid("only one service per route may be nominated as mirror")
+				return nil
+			}
+			if service.Mirror {
+				r.MirrorPolicy = &MirrorPolicy{
+					Cluster: c,
+				}
+			} else {
+				r.Clusters = append(r.Clusters, c)
+			}
 		}
 		routes = append(routes, r)
 	}

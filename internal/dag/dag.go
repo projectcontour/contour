@@ -106,6 +106,9 @@ type Route struct {
 
 	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
 	PrefixRewrite string
+
+	// Mirror Policy defines the mirroring policy for this Route.
+	MirrorPolicy *MirrorPolicy
 }
 
 // TimeoutPolicy defines the timeout policy for a route.
@@ -133,6 +136,11 @@ type RetryPolicy struct {
 	// PerTryTimeout specifies the timeout per retry attempt.
 	// Ignored if RetryOn is blank.
 	PerTryTimeout time.Duration
+}
+
+// MirrorPolicy desinges the mirroring policy for a route.
+type MirrorPolicy struct {
+	Cluster *Cluster
 }
 
 // UpstreamValidation defines how to validate the certificate on the upstream service
