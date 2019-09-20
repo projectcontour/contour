@@ -177,6 +177,14 @@ func TestTimeoutPolicy(t *testing.T) {
 				ResponseTimeout: -1,
 			},
 		},
+		"idle timeout": {
+			tp: &projcontour.TimeoutPolicy{
+				Idle: "900s",
+			},
+			want: &TimeoutPolicy{
+				IdleTimeout: 900 * time.Second,
+			},
+		},
 	}
 
 	for name, tc := range tests {

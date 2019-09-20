@@ -115,6 +115,9 @@ type TimeoutPolicy struct {
 	// A timeout of zero implies "use envoy's default"
 	// A timeout of -1 represents "infinity"
 	ResponseTimeout time.Duration
+
+	// IdleTimeout is the timeout applied to idle connections.
+	IdleTimeout time.Duration
 }
 
 // RetryPolicy defines the retry / number / timeout options

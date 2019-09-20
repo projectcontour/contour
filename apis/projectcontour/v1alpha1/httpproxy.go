@@ -159,7 +159,11 @@ type HealthCheck struct {
 type TimeoutPolicy struct {
 	// Timeout for receiving a response from the server after processing a request from client.
 	// If not supplied the timeout duration is undefined.
-	Response string `json:"Response"`
+	Response string `json:"response"`
+
+	// Timeout after which if there are no active requests, the connection between Envoy and the
+	// backend will be closed.
+	Idle string `json:"idle"`
 }
 
 // RetryPolicy define the attributes associated with retrying policy
