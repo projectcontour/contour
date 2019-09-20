@@ -159,7 +159,7 @@ type HealthCheck struct {
 type TimeoutPolicy struct {
 	// Timeout for receiving a response from the server after processing a request from client.
 	// If not supplied the timeout duration is undefined.
-	Request string `json:"request"`
+	Response string `json:"Response"`
 }
 
 // RetryPolicy define the attributes associated with retrying policy

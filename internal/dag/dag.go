@@ -97,13 +97,13 @@ type Route struct {
 	PrefixRewrite string
 }
 
-// TimeoutPolicy defines the timeout request/idle
+// TimeoutPolicy defines the timeout policy for a route.
 type TimeoutPolicy struct {
-	// A timeout applied to requests on this route.
+	// ResponseTimeout is the timeout applied to the response
+	// from the backend server.
 	// A timeout of zero implies "use envoy's default"
 	// A timeout of -1 represents "infinity"
-	// TODO(dfc) should this move to service?
-	Timeout time.Duration
+	ResponseTimeout time.Duration
 }
 
 // RetryPolicy defines the retry / number / timeout options

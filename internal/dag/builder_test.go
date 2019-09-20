@@ -2747,7 +2747,7 @@ func TestDAGInsert(t *testing.T) {
 							Conditions: prefix("/"),
 							Clusters:   clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
-								Timeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
+								ResponseTimeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
 							},
 						}),
 					),
@@ -2767,7 +2767,7 @@ func TestDAGInsert(t *testing.T) {
 							Conditions: prefix("/"),
 							Clusters:   clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
-								Timeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
+								ResponseTimeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
 							},
 						}),
 					),
@@ -2787,7 +2787,7 @@ func TestDAGInsert(t *testing.T) {
 							Conditions: prefix("/"),
 							Clusters:   clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
-								Timeout: 90 * time.Second,
+								ResponseTimeout: 90 * time.Second,
 							},
 						}),
 					),
@@ -2807,7 +2807,7 @@ func TestDAGInsert(t *testing.T) {
 							Conditions: prefix("/"),
 							Clusters:   clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
-								Timeout: 90 * time.Second,
+								ResponseTimeout: 90 * time.Second,
 							},
 						}),
 					),
@@ -2827,7 +2827,7 @@ func TestDAGInsert(t *testing.T) {
 							Conditions: prefix("/"),
 							Clusters:   clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
-								Timeout: -1,
+								ResponseTimeout: -1,
 							},
 						}),
 					),
@@ -2847,7 +2847,7 @@ func TestDAGInsert(t *testing.T) {
 							Conditions: prefix("/"),
 							Clusters:   clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
-								Timeout: -1,
+								ResponseTimeout: -1,
 							},
 						}),
 					),
