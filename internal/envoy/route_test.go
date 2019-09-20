@@ -240,7 +240,7 @@ func TestRouteRoute(t *testing.T) {
 		"timeout 90s": {
 			route: &dag.Route{
 				TimeoutPolicy: &dag.TimeoutPolicy{
-					Timeout: 90 * time.Second,
+					ResponseTimeout: 90 * time.Second,
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
@@ -256,7 +256,7 @@ func TestRouteRoute(t *testing.T) {
 		"timeout infinity": {
 			route: &dag.Route{
 				TimeoutPolicy: &dag.TimeoutPolicy{
-					Timeout: -1,
+					ResponseTimeout: -1,
 				},
 				Clusters: []*dag.Cluster{c1},
 			},

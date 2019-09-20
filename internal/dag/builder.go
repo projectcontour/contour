@@ -912,11 +912,14 @@ func route(ingress *v1beta1.Ingress, path string, service *Service) *Route {
 	}
 
 	var timeout *TimeoutPolicy
-	if request, ok := ingress.Annotations[annotationRequestTimeout]; ok {
+	if response, ok := ingress.Annotations[annotationRequestTimeout]; ok {
 		// if the request timeout annotation is present on this ingress
 		// construct and use the ingressroute timeout policy logic.
+		// Note: due to a misunderstanding the name of the annotation is
+		// request timeout, but it is actually applied as a timeout on
+		// the response body.
 		timeout = timeoutPolicy(&projcontour.TimeoutPolicy{
-			Request: request,
+			Response: response,
 		})
 	}
 
