@@ -480,7 +480,6 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		insecure.addRoute(route)
 		secure.addRoute(route)
 	}
-	sw.SetValid()
 }
 
 // httpProxyConditions converts a list of HTTPProxy conditions to dag Conditions.
@@ -539,8 +538,14 @@ func httpProxyConditions(conds []projcontour.Condition) []Condition {
 
 func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, conditions []projcontour.Condition, visited []*projcontour.HTTPProxy, enforceTLS bool) []*Route {
 	for _, v := range visited {
+		// ensure we are not following an edge that produces a cycle
+		var path []string
+		for _, vir := range visited {
+			path = append(path, fmt.Sprintf("%s/%s", vir.Namespace, vir.Name))
+		}
 		if v.Name == proxy.Name && v.Namespace == proxy.Namespace {
-			sw.SetInvalid("loop")
+			path = append(path, fmt.Sprintf("%s/%s", proxy.Namespace, proxy.Name))
+			sw.SetInvalid(fmt.Sprintf("include creates a delegation cycle: %s", strings.Join(path, " -> ")))
 			return nil
 		}
 	}
@@ -580,7 +585,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 
 		for _, service := range route.Services {
 			if service.Port < 1 || service.Port > 65535 {
-				sw.SetInvalid(fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", "??", service.Name))
+				sw.SetInvalid(fmt.Sprintf("service %q: port must be in the range 1-65535", service.Name))
 				return nil
 			}
 			m := Meta{name: service.Name, namespace: proxy.Namespace}
@@ -624,6 +629,9 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 		}
 		routes = append(routes, r)
 	}
+	// Mark proxy as valid
+	sw.SetValid()
+
 	return routes
 }
 
