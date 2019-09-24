@@ -8,7 +8,7 @@ The goal of the `HTTPProxy` (previously `IngressRoute`) Custom Resource Definiti
 ## Key HTTPProxy Benefits
 
 - Safely supports multi-team Kubernetes clusters, with the ability to limit which Namespaces may configure virtual hosts and TLS credentials.
-- Enables delegation of routing configuration for a path or domain to another Namespace.
+- Enables including of routing configuration for a path or domain from another HTTPProxy, possibly in another Namespace.
 - Accepts multiple services within a single route and load balances traffic across them.
 - Natively allows defining service weighting and load balancing strategy without annotations.
 - Validation of HTTPProxy objects at creation time and status reporting for post-creation validity.
@@ -19,7 +19,7 @@ A minimal Ingress object might look like:
 
 ```yaml
 # ingress.yaml
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: basic
@@ -85,7 +85,7 @@ basic     24s
 Describing HTTPProxy:
 
 ```bash
-$ kubectl describe httpprox basic
+$ kubectl describe httpproxy basic
 Name:         basic
 Namespace:    default
 Labels:       <none>
@@ -118,7 +118,7 @@ httpproxy "basic" deleted
 
 ## HTTPProxy API Specification
 
-TODO(dfc) create example directory
+TODO(youngnick) create example directory
 
 There are a number of [working examples](/examples/example-workload/httpproxy) of HTTPProxy objects in the `examples/example-workload` directory.
 
@@ -162,7 +162,7 @@ spec:
           servicePort: 80
 ```
 
-must be represented by two different HTTPproxy objects:
+must be represented by two different HTTPProxy objects:
 
 ```yaml
 # httpproxy-name.yaml
@@ -250,9 +250,10 @@ If the `tls.secretName` property contains a slash, eg. `somenamespace/somesecret
 See TLS Certificate Delegation below for more information.
 
 The TLS **Minimum Protocol Version** a vhost should negotiate can be specified by setting the `spec.virtualhost.tls.minimumProtocolVersion`:
-  - 1.3
-  - 1.2
-  - 1.1 (Default)
+
+- 1.3
+- 1.2
+- 1.1 (Default)
 
 A HTTPProxy can be configured to permit insecure requests to specific Routes.
 In this example, any request to `foo2.bar.com/blog` will not receive a 301 redirect to HTTPS, but the `/` route will:
@@ -260,29 +261,31 @@ In this example, any request to `foo2.bar.com/blog` will not receive a 301 redir
 ```yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
-metadata: 
+metadata:
   name: tls-example-insecure
   namespace: default
-spec: 
+spec:
   virtualhost:
     fqdn: foo2.bar.com
     tls:
       secretName: testsecret
-  routes: 
+  routes:
     - conditions:
         prefix: /
-      services: 
+      services:
         - name: s1
           port: 80
     - conditions:
         prefix: /blog
       permitInsecure: true
-      services: 
+      services:
         - name: s2
           port: 80
 ```
 
 #### Upstream TLS
+
+TODO(youngnick): Update this per #1506
 
 A HTTPProxy can proxy to an upstream TLS connection by first annotating the upstream Kubernetes service with: `contour.heptio.com/upstream-protocol.tls: "443,https"`.
 This annotation tells Contour which port should be used for the TLS connection.
@@ -365,11 +368,11 @@ In this example, the permission for Contour to reference the Secret `example-com
 
 Each Route entry in a HTTPProxy may contain one or more conditions.
 
-TODO(dfc) document conditions
+TODO(youngnick) document conditions
 
 #### Multiple Routes
 
-HTTPProxy must have at least one route defined.
+HTTPProxy must have at least one route or include defined.
 Paths defined are matched using prefix conditions.
 In this example, any requests to `multi-path.bar.com/blog` or `multi-path.bar.com/blog/*` will be routed to the Service `s2`.
 All other requests to the host `multi-path.bar.com` will be routed to the Service `s1`.
@@ -412,7 +415,7 @@ spec:
   virtualhost:
     fqdn: multi.bar.com
   routes:
-    - conditions: 
+    - conditions:
         prefix: /
       services:
         - name: s1
@@ -484,19 +487,20 @@ spec:
     services:
     - name: s1
       port: 80
-``` 
+```
 
-In this example, requests to `timeout.bar.com/` will have a request timeout policy of 1s. 
-This refers to the time that spans between the point at which complete client request has been processed by the proxy, and when the response from the server has been completely processed. 
+In this example, requests to `timeout.bar.com/` will have a request timeout policy of 1s.
+This refers to the time that spans between the point at which complete client request has been processed by the proxy, and when the response from the server has been completely processed.
 
-- `timeoutPolicy.request` This field can be any positive time period or "infinity". 
-The time period of **0s** will also be treated as infinity. 
+- `timeoutPolicy.response` This field can be any positive time period or "infinity".
+The time period of **0s** will also be treated as infinity.
 By default, Envoy has a 15 second timeout for a backend service to respond.
 More information can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout).
-- `retryPolicy`: A retry will be attempted if the server returns an error code in the 5xx range, or if the server takes more than `retryPolicy.perTryTimeout` to process a request. 
-    - `retryPolicy.count` specifies the maximum number of retries allowed. This parameter is optional and defaults to 1.
-    - `retryPolicy.perTryTimeout` specifies the timeout per retry. If this field is greater than the request timeout, it is ignored. This parameter is optional. 
-    If left unspecified, `timeoutPolicy.request` will be used. 
+- TODO(youngnick): `timeoutPolicy.idle`
+- `retryPolicy`: A retry will be attempted if the server returns an error code in the 5xx range, or if the server takes more than `retryPolicy.perTryTimeout` to process a request.
+  - `retryPolicy.count` specifies the maximum number of retries allowed. This parameter is optional and defaults to 1.
+  - `retryPolicy.perTryTimeout` specifies the timeout per retry. If this field is greater than the request timeout, it is ignored. This parameter is optional.
+  If left unspecified, `timeoutPolicy.request` will be used.
 
 #### Load Balancing Strategy
 
@@ -532,6 +536,7 @@ spec:
           port: 80
           strategy: WeightedLeastRequest
 ```
+
 #### Session Affinity
 
 Session affinity, also known as _sticky sessions_, is a load balancing strategy whereby a sequence of requests from a single client are consitently routed to the same application backend.
@@ -554,15 +559,13 @@ spec:
       port: 8080
       strategy: Cookie
 ```
+
 ##### Limitations
 
 Session affinity is based on the premise that the backend servers are robust, do not change ordering, or grow and shrink according to load.
 None of these properties are guaranteed by a Kubernetes cluster and will be visible to applications that rely heavily on session affinity.
 
-Any pertibation in the set of pods backing a service risks redistributing backends around the hash ring.
-This is an unavoidable consiquence of Envoy's session affinity implementation and the pods-as-cattle approach of Kubernetes.
-
-#### Per-Upstream Active Health Checking
+Any perturbation in the set of pods backing a service risks redistributing backends around the hash ring.
 
 Active health checking can be configured on a per-upstream Service basis.
 Contour supports HTTP health checking and can be configured with various settings to tune the behavior.
@@ -690,7 +693,7 @@ spec:
 HTTPProxy supports routing traffic to service types `ExternalName`.
 Contour looks at the `spec.externalName` field of the service and configures the route to use that DNS name instead of utilizing EDS.
 
-There's nothing specific in the HTTPProxy object that needs configured other than referencing a service of type `ExternalName`.
+There's nothing specific in the HTTPProxy object that needs to be configured other than referencing a service of type `ExternalName`.
 
 NOTE: The ports are required to be specified.
 
@@ -714,8 +717,7 @@ spec:
 
 ## HTTPProxy inclusion
 
-
-TODO(dfc) document inclusion
+TODO(youngnick) document inclusion
 
 ### Orphaned HTTPProxy children
 
