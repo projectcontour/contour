@@ -8,9 +8,7 @@ spec:
   virtualhost:
     fqdn: health.bar.com
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: s1-health
           port: 80
           healthCheck:

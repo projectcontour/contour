@@ -47,7 +47,7 @@ spec:
     fqdn: foo-basic.bar.com
   routes:
     - conditions:
-        prefix: /
+      - prefix: /
       services:
         - name: s1
           port: 80
@@ -173,11 +173,9 @@ spec:
   virtualhost:
     fqdn: foo1.bar.com
   routes:
-    - conditions:
-        prefix: /
-      services:
-        - name: s1
-          port: 80
+    - services:
+      - name: s1
+        port: 80
 ---
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
@@ -188,9 +186,7 @@ spec:
   virtualhost:
     fqdn: bar1.bar.com
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: s2
           port: 80
 ```
@@ -237,9 +233,7 @@ spec:
     tls:
       secretName: testsecret
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: s1
           port: 80
 ```
@@ -276,9 +270,7 @@ spec:
   virtualhost:
     fqdn: www.example.com  
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: service
           port: 8443
           validation:
@@ -325,9 +317,7 @@ spec:
     tls:
       secretName: www-admin/example-com-wildcard
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: s1
           port: 80
 ```
@@ -346,11 +336,11 @@ For `prefix`, this adds a path prefix.
 
 For `header` conditions there is one required field, `name`, and five operator fields: `present`, `contains`, `notcontains`, `exact`, and `notexact`.
 
-`present` is a boolean and checks that the header is present. The value will not be checked.
+- `present` is a boolean and checks that the header is present. The value will not be checked.
 
-`contains` is a string, and checks that the header contains the string. `notcontains` similarly checks that the header does *not* contain the string.
+- `contains` is a string, and checks that the header contains the string. `notcontains` similarly checks that the header does *not* contain the string.
 
-`exact` is a string, and checks that the header exactly matches the whole string. `notexact` checks that the header does *not* exactly match the whole string.
+- `exact` is a string, and checks that the header exactly matches the whole string. `notexact` checks that the header does *not* exactly match the whole string.
 
 #### Multiple Routes
 
@@ -371,12 +361,12 @@ spec:
     fqdn: multi-path.bar.com
   routes:
     - conditions:
-        prefix: / # matches everything else
+      - prefix: / # matches everything else
       services:
         - name: s1
           port: 80
     - conditions:
-        prefix: /blog # matches `multi-path.bar.com/blog` or `multi-path.bar.com/blog/*`
+      - prefix: /blog # matches `multi-path.bar.com/blog` or `multi-path.bar.com/blog/*`
       services:
         - name: s2
           port: 80
@@ -396,23 +386,22 @@ spec:
     fqdn: multi-path.bar.com
   routes:
     - conditions:
-        header:
-            name: "x-os"
-            contains: "ios"
+      - header:
+          name: x-os
+          contains: ios
       services:
         - name: s1
           port: 80
     - conditions:
-        header:
-          name: "x-os"
-          contains: "android"
+      - header:
+          name: x-os
+          contains: android
       services:
         - name: s2
           port: 80
     - services:
         - name: s3
           port: 80
-
 ```
 
 #### Multiple Upstreams
@@ -430,9 +419,7 @@ spec:
   virtualhost:
     fqdn: multi.bar.com
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: s1
           port: 80
         - name: s2
@@ -458,9 +445,7 @@ spec:
   virtualhost:
     fqdn: weights.bar.com
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: s1
           port: 80
           weight: 10
@@ -492,9 +477,7 @@ spec:
   virtualhost:
     fqdn: timeout.bar.com
   routes:
-  - conditions:
-      prefix: /
-    timeoutPolicy:
+  - timeoutPolicy:
       request: 1s
     retryPolicy:
       count: 3
@@ -548,7 +531,7 @@ spec:
     fqdn: strategy.bar.com
   routes:
     - conditions:
-        prefix: /
+      - prefix: /
       services:
         - name: s1-strategy
           port: 80
@@ -573,9 +556,7 @@ spec:
   virtualhost:
     fqdn: httpbin.davecheney.com
   routes:
-  - conditions:
-      prefix: /
-    services:
+  - services:
     - name: httpbin
       port: 8080
       strategy: Cookie
@@ -607,9 +588,7 @@ spec:
   virtualhost:
     fqdn: health.bar.com
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: s1-health
           port: 80
           healthCheck:
@@ -646,13 +625,11 @@ spec:
   virtualhost:
     fqdn: chat.example.com
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: chat-app
           port: 80
     - conditions:
-        prefix: /websocket
+      - prefix: /websocket
       enableWebsockets: true # Setting this to true enables websocket for all paths that match /websocket
       services:
         - name: chat-app
@@ -676,13 +653,11 @@ spec:
   virtualhost:
     fqdn: app.example.com
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: app
           port: 80
     - conditions:
-        prefix: /service2
+      - prefix: /service2
       prefixRewrite: "/" # Setting this rewrites the request from `/service2` to `/`
       services:
         - name: app-service
@@ -706,13 +681,11 @@ spec:
     tls:
       secretName: testsecret
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: s1
           port: 80
     - conditions:
-        prefix: /blog
+      - prefix: /blog
       permitInsecure: true
       services:
         - name: s2

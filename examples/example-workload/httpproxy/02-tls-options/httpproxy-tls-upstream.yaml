@@ -6,9 +6,7 @@ spec:
   virtualhost:
     fqdn: www.example.com  
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: service
           port: 8443
           validation:

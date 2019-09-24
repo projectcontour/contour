@@ -9,7 +9,7 @@ spec:
     fqdn: httpbin.davecheney.com
   routes:
   - conditions:
-      prefix: /
+    - prefix: /
     services:
     - name: httpbin
       port: 8080

@@ -9,16 +9,16 @@ spec:
     fqdn: multi-path.bar.com
   routes:
     - conditions:
-        header:
-          name: "x-os"
-          contains: "ios"
+      - header:
+          name: x-os
+          contains: ios
       services:
         - name: s1
           port: 80
     - conditions:
-        header:
-          name: "x-os"
-          contains: "android"
+      - header:
+          name: x-os
+          contains: android
       services:
         - name: s2
           port: 80

@@ -10,12 +10,12 @@ spec:
       secretName: testsecret
   routes:
     - conditions:
-        prefix: /
+      - prefix: /
       services:
         - name: s1
           port: 80
     - conditions:
-        prefix: /blog
+      - prefix: /blog
       permitInsecure: true
       services:
         - name: s2
