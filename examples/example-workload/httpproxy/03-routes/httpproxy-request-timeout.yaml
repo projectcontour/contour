@@ -9,7 +9,7 @@ spec:
     fqdn: timeout.bar.com
   routes:
   - conditions:
-      prefix: /
+    - prefix: /
     timeoutPolicy:
       request: 1s
     retryPolicy:

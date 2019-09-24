@@ -8,7 +8,7 @@ spec:
     fqdn: foo-basic.bar.com
   routes:
     - conditions:
-        prefix: /
+      - prefix: /
       services:
         - name: s1
           port: 80

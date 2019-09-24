@@ -8,9 +8,7 @@ spec:
   virtualhost:
     fqdn: multi.bar.com
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: s1
           port: 80
         - name: s2

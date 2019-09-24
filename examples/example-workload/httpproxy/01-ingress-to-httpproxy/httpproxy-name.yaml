@@ -9,7 +9,7 @@ spec:
     fqdn: foo1.bar.com
   routes:
     - conditions:
-        prefix: /
+      - prefix: /
       services:
         - name: s1
           port: 80
@@ -24,7 +24,7 @@ spec:
     fqdn: bar1.bar.com
   routes:
     - conditions:
-        prefix: /
+      - prefix: /
       services:
         - name: s2
           port: 80

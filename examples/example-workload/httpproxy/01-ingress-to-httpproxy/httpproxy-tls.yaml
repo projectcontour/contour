@@ -11,7 +11,7 @@ spec:
       secretName: testsecret
   routes:
     - conditions:
-        prefix: /
+      - prefix: /
       services:
         - name: s1
           port: 80

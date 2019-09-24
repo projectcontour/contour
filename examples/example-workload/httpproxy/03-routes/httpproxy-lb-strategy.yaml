@@ -8,9 +8,7 @@ spec:
   virtualhost:
     fqdn: strategy.bar.com
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: s1-strategy
           port: 80
         - name: s2-strategy

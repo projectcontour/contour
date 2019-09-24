@@ -9,12 +9,12 @@ spec:
     fqdn: chat.example.com
   routes:
     - conditions:
-        prefix: /
+      - prefix: /
       services:
         - name: chat-app
           port: 80
     - conditions:
-        prefix: /websocket
+      - prefix: /websocket
       enableWebsockets: true # Setting this to true enables websocket for all paths that match /websocket
       services:
         - name: chat-app
