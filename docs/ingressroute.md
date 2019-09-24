@@ -1,5 +1,13 @@
 # IngressRoute
 
+## Deprecation notice
+
+`IngressRoute` has been deprepcated and will be removed after Contour 1.0.
+Please see the documentation for [`HTTPProxy`](./httpproxy.md) the successor to `IngressRoute`.
+You can also read the [IngressRoute to HTTPProxy upgrade guide](./ingressroute-to-httpproxy.md).
+
+</hr>
+
 The [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) object was added to Kubernetes in version 1.1 to describe properties of a cluster-wide reverse HTTP proxy.
 Since that time, the Ingress object has not progressed beyond the beta stage, and its stagnation inspired an [explosion of annotations](https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md) to express missing properties of HTTP routing.
 
