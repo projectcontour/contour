@@ -43,11 +43,12 @@ func Route(match *envoy_api_v2_route.RouteMatch, action *envoy_api_v2_route.Rout
 // weighted cluster.
 func RouteRoute(r *dag.Route) *envoy_api_v2_route.Route_Route {
 	ra := envoy_api_v2_route.RouteAction{
-		RetryPolicy:   retryPolicy(r),
-		Timeout:       responseTimeout(r),
-		IdleTimeout:   idleTimeout(r),
-		PrefixRewrite: r.PrefixRewrite,
-		HashPolicy:    hashPolicy(r),
+		RetryPolicy:         retryPolicy(r),
+		Timeout:             responseTimeout(r),
+		IdleTimeout:         idleTimeout(r),
+		PrefixRewrite:       r.PrefixRewrite,
+		HashPolicy:          hashPolicy(r),
+		RequestMirrorPolicy: mirrorPolicy(r),
 	}
 
 	if r.Websocket {
@@ -90,6 +91,15 @@ func hashPolicy(r *dag.Route) []*envoy_api_v2_route.RouteAction_HashPolicy {
 		}
 	}
 	return nil
+}
+
+func mirrorPolicy(r *dag.Route) *envoy_api_v2_route.RouteAction_RequestMirrorPolicy {
+	if r.MirrorPolicy == nil {
+		return nil
+	}
+	return &envoy_api_v2_route.RouteAction_RequestMirrorPolicy{
+		Cluster: Clustername(r.MirrorPolicy.Cluster),
+	}
 }
 
 func responseTimeout(r *dag.Route) *duration.Duration {

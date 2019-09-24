@@ -1803,6 +1803,63 @@ func TestDAGInsert(t *testing.T) {
 			}},
 	}
 
+	proxy12 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}, {
+					Name:   s2.Name,
+					Port:   8080,
+					Mirror: true,
+				}},
+			}},
+		},
+	}
+
+	proxy13 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}, {
+					Name:   s2.Name,
+					Port:   8080,
+					Mirror: true,
+				}, {
+					// it is legal to mention a service more that
+					// once, however it is not legal for more than one
+					// service to be marked as mirror.
+					Name:   s2.Name,
+					Port:   8080,
+					Mirror: true,
+				}},
+			}},
+		},
+	}
+
 	proxy100 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -3611,6 +3668,27 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"insert httpproxy with mirroring route": {
+			objs: []interface{}{
+				proxy12, s1, s2,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							withMirror(prefixroute("/", service(s1)), service(s2)),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with two mirrors": {
+			objs: []interface{}{
+				proxy13, s1, s2,
+			},
+			want: listeners(),
+		},
 		"insert httpproxy with prefix rewrite route": {
 			objs: []interface{}{
 				proxy10, s1,
@@ -4533,4 +4611,13 @@ func regexCondition(regex string) Condition   { return &RegexCondition{Regex: re
 
 func conditions(c ...Condition) []Condition {
 	return c
+}
+
+func withMirror(r *Route, mirror *Service) *Route {
+	r.MirrorPolicy = &MirrorPolicy{
+		Cluster: &Cluster{
+			Upstream: mirror,
+		},
+	}
+	return r
 }
