@@ -1,0 +1,20 @@
+# httpproxy-multiple-paths.yaml
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
+metadata:
+  name: multiple-paths
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: multi-path.bar.com
+  routes:
+    - conditions:
+        prefix: / # matches everything else
+      services:
+        - name: s1
+          port: 80
+    - conditions:
+        prefix: /blog # matches `multi-path.bar.com/blog` or `multi-path.bar.com/blog/*`
+      services:
+        - name: s2
+          port: 80

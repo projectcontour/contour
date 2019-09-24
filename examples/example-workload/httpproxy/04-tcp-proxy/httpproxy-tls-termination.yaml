@@ -1,0 +1,18 @@
+# httpproxy-tls-termination.yaml
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
+metadata:
+  name: example
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: tcp.example.com
+    tls:
+      secretName: secret
+  tcpproxy:
+    services:
+    - name: tcpservice
+      port: 8080
+    - name: otherservice
+      port: 9999
+      weight: 20
