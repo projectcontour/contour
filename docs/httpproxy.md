@@ -462,6 +462,34 @@ HTTPProxy weighting follows some specific rules:
 - Weights are relative and do not need to add up to 100. If all weights for a route are specified, then the "total" weight is the sum of those specified. As an example, if weights are 20, 30, 20 for three upstreams, the total weight would be 70. In this example, a weight of 30 would receive approximately 42.9% of traffic (30/70 = .4285).
 - If some weights are specified but others are not, then it's assumed that upstreams without weights have an implicit weight of zero, and thus will not receive traffic.
 
+#### Traffic mirroring
+
+Per route a service can be nominated as a mirror.
+The mirror service will receive a copy of the read traffic sent to any non mirror service.
+The mirror traffic is considered _read only_, any response by the mirror will be discarded.
+
+This service can be useful for recording traffic for later replay or for smoke testing new deployments.
+
+```yaml
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
+metadata:
+  name: traffic-mirror
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: www.example.com
+  routes:
+    - conditions:
+      - prefix: /
+      services:
+        - name: www
+          port: 80
+        - name: www-mirror
+          port: 80
+          mirror: true
+```
+
 #### Request Timeout
 
 Each Route can be configured to have a timeout policy and a retry policy as shown:
