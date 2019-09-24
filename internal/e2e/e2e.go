@@ -28,6 +28,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/apis/generated/clientset/versioned/fake"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
 	cgrpc "github.com/projectcontour/contour/internal/grpc"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -203,7 +204,7 @@ func check(t *testing.T, err error) {
 
 func resources(t *testing.T, protos ...proto.Message) []*any.Any {
 	t.Helper()
-	anys := make([]*any.Any, 0, len(protos))
+	var anys []*any.Any
 	for _, a := range protos {
 		anys = append(anys, toAny(t, a))
 	}
@@ -280,19 +281,5 @@ type Response struct {
 
 func (r *Response) Equals(want *v2.DiscoveryResponse) {
 	r.Helper()
-	assertEqual(r.T, want, r.DiscoveryResponse)
-}
-
-func assertEqual(t *testing.T, want, got *v2.DiscoveryResponse) {
-	t.Helper()
-	m := proto.TextMarshaler{Compact: true, ExpandAny: true}
-	a := m.Text(want)
-	b := m.Text(got)
-	if a != b {
-		m := proto.TextMarshaler{
-			Compact:   false,
-			ExpandAny: true,
-		}
-		t.Fatalf("\nexpected:\n%v\ngot:\n%v", m.Text(want), m.Text(got))
-	}
+	assert.Equal(r.T, want, r.DiscoveryResponse)
 }

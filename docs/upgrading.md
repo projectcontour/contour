@@ -2,6 +2,114 @@
 
 This document describes the changes needed to upgrade your Contour installation.
 
+## Upgrading Contour 0.15 to 1.0.0-beta.1
+
+Contour 1.0.0-beta.1 changes the namespace Contour is deployed to, promotes leader election to on by default, and introduces a new version of the IngressRoute CRD, now called HTTPProxy.
+
+### Beta release
+
+Contour 0.15.0 remains the current stable release.
+The `:latest` tag will continue to point to 0.15.0 until Contour 1.0.0 is released.
+
+### Deprecated deployments
+
+The following deployment examples were deprecated in Contour 0.15 and have been removed:
+
+- `deployment-grpc-v2`
+- `ds-grpc-v2`
+- `ds-hostnet-split`
+- `ds-hostnet`
+
+### IngressRoute v1beta1 deprecation
+
+The IngressRoute v1beta1 CRD has been deprecated and will not receive further updates.
+Contour will continue to recognize IngressRoute v1beta1 through Contour 1.0.0 final, however we anticipate it will be removed completely shortly after that.
+
+The replacement for IngressRoute which we have called HTTPProxy is available in Contour 1.0.0-beta.1 and is anticipated to be declared final by Contour 1.0.0.
+
+**TODO(dfc) link to HTTPProxy documentation**
+
+## The easy way to upgrade
+
+If the following are true for you:
+
+ * Your previous installation is in the `heptio-contour` namespace.
+ * You are using one of the [example](/example/) deployments.
+ * Your cluster can take few minutes of downtime.
+
+Then the simplest way to upgrade to 1.0.0-beta.1 is to delete the `heptio-contour` namespace and reapply the `examples/contour` sample manifest.
+From the root directory of the repository:
+```
+kubectl delete namespace heptio-contour
+
+kubectl apply -f examples/contour
+```
+Note that `examples/contour` now deploys into the `projectcontour` namespace.
+
+If you're using a `LoadBalancer` Service, deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address](./deploy-options.md#get_your_hostname_or_ip_address).
+
+## The less easy way
+
+This section contains information for administrators who wish to apply the Contour 0.15 to 1.0.0-beta.1 changes manually.
+
+### Namespace change
+
+As part of sunsetting the Heptio brand the `heptio-contour` namespace has been renamed to `projectcontour`.
+Contour assumes it will be deployed into the `projectcontour` namespace.
+
+If you deploy Contour into another namespace you will need to pass `contour bootstrap --namespace=<namespace>` and update the `contour.yaml` configuration file's leader election parameters as appropriate.
+
+### Upgrade to Contour 1.0.0-beta.1
+
+As part of sunsetting the Heptio brand Docker images have moved from `gcr.io/heptio-images` to `docker.io/projectcontour`.
+
+Change the Contour image version to `docker.io/projectcontour/contour:v1.0.0-beta.1`.
+
+### Recommended Envoy version
+
+The recommended version of Envoy remains unchanged from Contour 0.15.
+Ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.11.1`.
+
+### Split deployment/daemonset now the default
+
+We have changed the example installation to use a separate pod installation, where Contour is in a Deployment and Envoy is in a Daemonset.
+Separated pod installations separate the lifecyle of Contour and Envoy, increasing operability.
+Because of this, we are marking the single pod install type as officially deprecated.
+If you are still running a single pod install type, please review the [`contour` example](../examples/contour/README.md) and either adapt it or use it directly.
+
+### Leader Election
+
+Contour 1.0.0-beta.1 enables leader election by default.
+No specific configuration is required if you are using the [example deployment](../examples/contour/README.md).
+
+Leader election requires that Contour have write access to a ConfigMap called `leader-elect` in the project-contour namespace.
+This is done with the [contour-leaderelection Role](https://github.com/projectcontour/contour/blob/master/examples/contour/02-rbac.yaml#L71) in the [example RBAC](../examples/contour/02-rbac.yaml).
+The namespace and name of the configmap are configurable via the configuration file.
+
+The leader election no longer blocks serving of gRPC until an instance becomes the leader.
+It's intended that the leader election control writing status back to Contour CRDs (like HTTPProxy and IngressRoute).
+This is not currently implemented.
+Leader election is currently a no-op.
+
+Should you wish to disable leader election, pass `contour serve --disable-leader-election`.
+
+### Envoy pod readiness checks
+
+Update the readiness checks on your Envoy pod's spec to reflect Envoy 1.11.1's `/ready` endpoint
+```yaml
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 8002
+```
+
+### Root namespace restriction
+
+The `contour serve --ingressroute-root-namespaces` flag has been renamed to `--root-namespaces`.
+The previous flag's name will be supported until Contour 1.0.0-rc.1.
+If you use this feature please update your deployments.
+
 ## Upgrading Contour 0.14 to 0.15
 
 Contour 0.15 requires changes to your deployment manifests to explicitly opt in, or opt out of, secure communication between Contour and Envoy.

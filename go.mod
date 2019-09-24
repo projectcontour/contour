@@ -23,21 +23,21 @@ require (
 	github.com/prometheus/client_golang v1.1.0
 	github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4
 	github.com/sirupsen/logrus v1.4.2
-	github.com/spf13/pflag v1.0.3 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/sys v0.0.0-20190825160603-fb81701db80f // indirect
 	golang.org/x/text v0.3.2 // indirect
-	golang.org/x/tools v0.0.0-20190916034716-92af9d69eff2 // indirect
+	golang.org/x/tools v0.0.0-20190918220241-b8f1ca6a929d // indirect
 	google.golang.org/grpc v1.23.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 	honnef.co/go/tools v0.0.1-2019.2.3
-	k8s.io/api v0.0.0-20190620084959-7cf5895f2711
-	k8s.io/apimachinery v0.0.0-20190612205821-1799e75a0719
-	k8s.io/client-go v0.0.0-20190620085101-78d2af792bab
-	k8s.io/code-generator v0.0.0-20190311093542-50b561225d70
-	k8s.io/gengo v0.0.0-20190116091435-f8a0810f38af // indirect
-	k8s.io/klog v0.3.1
+	k8s.io/api v0.0.0-20190918195907-bd6ac527cfd2
+	k8s.io/apimachinery v0.0.0-20190817020851-f2f3a405f61d
+	k8s.io/client-go v0.0.0-20190918200256-06eb1244587a
+	k8s.io/code-generator v0.0.0-20190612205613-18da4a14b22b
+	k8s.io/gengo v0.0.0-20190907103519-ebc107f98eab // indirect
+	k8s.io/klog v0.4.0
 	k8s.io/utils v0.0.0-20190607212802-c55fbcfc754a // indirect
 	mvdan.cc/unparam v0.0.0-20190720180237-d51796306d8f
 )

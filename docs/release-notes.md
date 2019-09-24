@@ -77,6 +77,12 @@ Under certain circumstances it is now possible to combine TLS passthrough on por
 
 For more information see #910 and #1450.
 
+### Per route traffic mirroring
+
+Per route a service can be nominated as a mirror. The mirror service will receive a copy of the read traffic sent to any non mirror service. The mirror traffic is considered _read only_, any response by the mirror will be discarded.
+
+Fixes #459
+
 ### Contour ignores unrelated Secrets
 
 Contour now ignores Secrets which are not related to Ingress, IngressRoute, HTTPProxy, or TLSCertificateDelegation operations.

@@ -73,14 +73,15 @@ var DefaultFields = []string{
 	"x_forwarded_for",
 }
 
-// FileAccessLog returns a new file based access log filter.
-func FileAccessLog(path string) []*accesslog.AccessLog {
+// FileAccessLogEnvoy returns a new file based access log filter
+// that will output Envoy's default access logs.
+func FileAccessLogEnvoy(path string) []*accesslog.AccessLog {
 	return []*accesslog.AccessLog{{
 		Name: wellknown.FileAccessLog,
 		ConfigType: &accesslog.AccessLog_TypedConfig{
 			TypedConfig: toAny(&accesslogv2.FileAccessLog{
 				Path: path,
-				// TODO(dfc) FileAccessLog_Format elided.
+				// AccessLogFormat left blank to defer to Envoy's default log format.
 			}),
 		},
 	}}
