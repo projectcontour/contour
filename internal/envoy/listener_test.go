@@ -26,7 +26,7 @@ import (
 	envoy_config_v2_tcpproxy "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
@@ -46,13 +46,13 @@ func TestListener(t *testing.T) {
 			address: "0.0.0.0",
 			port:    9000,
 			f: []*envoy_api_v2_listener.Filter{
-				HTTPConnectionManager("http", FileAccessLog("/dev/null")),
+				HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null")),
 			},
 			want: &v2.Listener{
 				Name:    "http",
 				Address: SocketAddress("0.0.0.0", 9000),
 				FilterChains: FilterChains(
-					HTTPConnectionManager("http", FileAccessLog("/dev/null")),
+					HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null")),
 				),
 			},
 		},
@@ -64,7 +64,7 @@ func TestListener(t *testing.T) {
 				ProxyProtocol(),
 			},
 			f: []*envoy_api_v2_listener.Filter{
-				HTTPConnectionManager("http-proxy", FileAccessLog("/dev/null")),
+				HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null")),
 			},
 			want: &v2.Listener{
 				Name:    "http-proxy",
@@ -73,7 +73,7 @@ func TestListener(t *testing.T) {
 					ProxyProtocol(),
 				),
 				FilterChains: FilterChains(
-					HTTPConnectionManager("http-proxy", FileAccessLog("/dev/null")),
+					HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null")),
 				),
 			},
 		},
@@ -114,9 +114,7 @@ func TestListener(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := Listener(tc.name, tc.address, tc.port, tc.lf, tc.f...)
-			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -156,9 +154,7 @@ func TestSocketAddress(t *testing.T) {
 			},
 		},
 	}
-	if diff := cmp.Diff(want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
-		t.Fatal(diff)
-	}
+	assert.Equal(t, want, got)
 }
 
 func TestDownstreamTLSContext(t *testing.T) {
@@ -201,9 +197,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			AlpnProtocols: []string{"h2", "http/1.1"},
 		},
 	}
-	if diff := cmp.Diff(want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
-		t.Fatal(diff)
-	}
+	assert.Equal(t, want, got)
 }
 
 func TestHTTPConnectionManager(t *testing.T) {
@@ -214,7 +208,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 	}{
 		"default": {
 			routename:    "default/kuard",
-			accesslogger: FileAccessLog("/dev/stdout"),
+			accesslogger: FileAccessLogEnvoy("/dev/stdout"),
 			want: &envoy_api_v2_listener.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
@@ -251,7 +245,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							// a Host: header. See #537.
 							AcceptHttp_10: true,
 						},
-						AccessLog:                 FileAccessLog("/dev/stdout"),
+						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
 						IdleTimeout:               protobuf.Duration(60 * time.Second),
@@ -264,9 +258,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := HTTPConnectionManager(tc.routename, tc.accesslogger)
-			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -317,7 +309,7 @@ func TestTCPProxy(t *testing.T) {
 						ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
 							Cluster: Clustername(c1),
 						},
-						AccessLog:   FileAccessLog(accessLogPath),
+						AccessLog:   FileAccessLogEnvoy(accessLogPath),
 						IdleTimeout: protobuf.Duration(9001 * time.Second),
 					}),
 				},
@@ -343,7 +335,7 @@ func TestTCPProxy(t *testing.T) {
 								}},
 							},
 						},
-						AccessLog:   FileAccessLog(accessLogPath),
+						AccessLog:   FileAccessLogEnvoy(accessLogPath),
 						IdleTimeout: protobuf.Duration(9001 * time.Second),
 					}),
 				},
@@ -353,10 +345,8 @@ func TestTCPProxy(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := TCPProxy(statPrefix, tc.proxy, FileAccessLog(accessLogPath))
-			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
-				t.Fatal(diff)
-			}
+			got := TCPProxy(statPrefix, tc.proxy, FileAccessLogEnvoy(accessLogPath))
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }

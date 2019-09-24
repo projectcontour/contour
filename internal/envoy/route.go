@@ -13,8 +13,11 @@
 package envoy
 
 import (
+	"fmt"
 	"sort"
+	"time"
 
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/golang/protobuf/ptypes/duration"
@@ -30,9 +33,8 @@ func Routes(routes ...*envoy_api_v2_route.Route) []*envoy_api_v2_route.Route {
 // Route returns a *envoy_api_v2_route.Route for the supplied match and action.
 func Route(match *envoy_api_v2_route.RouteMatch, action *envoy_api_v2_route.Route_Route) *envoy_api_v2_route.Route {
 	return &envoy_api_v2_route.Route{
-		Match:               match,
-		Action:              action,
-		RequestHeadersToAdd: RouteHeaders(),
+		Match:  match,
+		Action: action,
 	}
 }
 
@@ -41,10 +43,12 @@ func Route(match *envoy_api_v2_route.RouteMatch, action *envoy_api_v2_route.Rout
 // weighted cluster.
 func RouteRoute(r *dag.Route) *envoy_api_v2_route.Route_Route {
 	ra := envoy_api_v2_route.RouteAction{
-		RetryPolicy:   retryPolicy(r),
-		Timeout:       timeout(r),
-		PrefixRewrite: r.PrefixRewrite,
-		HashPolicy:    hashPolicy(r),
+		RetryPolicy:         retryPolicy(r),
+		Timeout:             responseTimeout(r),
+		IdleTimeout:         idleTimeout(r),
+		PrefixRewrite:       r.PrefixRewrite,
+		HashPolicy:          hashPolicy(r),
+		RequestMirrorPolicy: mirrorPolicy(r),
 	}
 
 	if r.Websocket {
@@ -89,21 +93,46 @@ func hashPolicy(r *dag.Route) []*envoy_api_v2_route.RouteAction_HashPolicy {
 	return nil
 }
 
-func timeout(r *dag.Route) *duration.Duration {
+func mirrorPolicy(r *dag.Route) *envoy_api_v2_route.RouteAction_RequestMirrorPolicy {
+	if r.MirrorPolicy == nil {
+		return nil
+	}
+	return &envoy_api_v2_route.RouteAction_RequestMirrorPolicy{
+		Cluster: Clustername(r.MirrorPolicy.Cluster),
+	}
+}
+
+func responseTimeout(r *dag.Route) *duration.Duration {
 	if r.TimeoutPolicy == nil {
 		return nil
 	}
+	return timeout(r.TimeoutPolicy.ResponseTimeout)
+}
 
-	switch r.TimeoutPolicy.Timeout {
-	case 0:
+func idleTimeout(r *dag.Route) *duration.Duration {
+	if r.TimeoutPolicy == nil {
+		return nil
+	}
+	return timeout(r.TimeoutPolicy.IdleTimeout)
+}
+
+// timeout interprets a time.Duration with respect to
+// Envoy's timeout logic. Zero durations are interpreted
+// as nil, therefore remaining unset. Negative durations
+// are interpreted as infinity, which is represented as
+// an explicit value of 0. Positive durations behave as
+// expected.
+func timeout(d time.Duration) *duration.Duration {
+	switch {
+	case d == 0:
 		// no timeout specified
 		return nil
-	case -1:
+	case d < 0:
 		// infinite timeout, set timeout value to a pointer to zero which tells
 		// envoy "infinite timeout"
 		return protobuf.Duration(0)
 	default:
-		return protobuf.Duration(r.TimeoutPolicy.Timeout)
+		return protobuf.Duration(d)
 	}
 }
 
@@ -136,13 +165,6 @@ func UpgradeHTTPS() *envoy_api_v2_route.Route_Redirect {
 			},
 		},
 	}
-}
-
-// RouteHeaders returns a list of headers to be applied at the Route level on envoy
-func RouteHeaders() []*envoy_api_v2_core.HeaderValueOption {
-	return headers(
-		appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
-	)
 }
 
 // weightedClusters returns a route.WeightedCluster for multiple services.
@@ -179,11 +201,12 @@ func RouteRegex(regex string) *envoy_api_v2_route.RouteMatch {
 }
 
 // RoutePrefix returns a prefix matcher.
-func RoutePrefix(prefix string) *envoy_api_v2_route.RouteMatch {
+func RoutePrefix(prefix string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
 	return &envoy_api_v2_route.RouteMatch{
 		PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
 			Prefix: prefix,
 		},
+		Headers: headerMatcher(headers),
 	}
 }
 
@@ -200,6 +223,17 @@ func VirtualHost(hostname string, routes ...*envoy_api_v2_route.Route) *envoy_ap
 	}
 }
 
+// RouteConfiguration returns a *v2.RouteConfiguration.
+func RouteConfiguration(name string, virtualhosts ...*envoy_api_v2_route.VirtualHost) *v2.RouteConfiguration {
+	return &v2.RouteConfiguration{
+		Name:         name,
+		VirtualHosts: virtualhosts,
+		RequestHeadersToAdd: Headers(
+			AppendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
+		),
+	}
+}
+
 type clusterWeightByName []*envoy_api_v2_route.WeightedCluster_ClusterWeight
 
 func (c clusterWeightByName) Len() int      { return len(c) }
@@ -212,11 +246,11 @@ func (c clusterWeightByName) Less(i, j int) bool {
 
 }
 
-func headers(first *envoy_api_v2_core.HeaderValueOption, rest ...*envoy_api_v2_core.HeaderValueOption) []*envoy_api_v2_core.HeaderValueOption {
+func Headers(first *envoy_api_v2_core.HeaderValueOption, rest ...*envoy_api_v2_core.HeaderValueOption) []*envoy_api_v2_core.HeaderValueOption {
 	return append([]*envoy_api_v2_core.HeaderValueOption{first}, rest...)
 }
 
-func appendHeader(key, value string) *envoy_api_v2_core.HeaderValueOption {
+func AppendHeader(key, value string) *envoy_api_v2_core.HeaderValueOption {
 	return &envoy_api_v2_core.HeaderValueOption{
 		Header: &envoy_api_v2_core.HeaderValue{
 			Key:   key,
@@ -224,4 +258,28 @@ func appendHeader(key, value string) *envoy_api_v2_core.HeaderValueOption {
 		},
 		Append: protobuf.Bool(true),
 	}
+}
+
+func headerMatcher(headers []dag.HeaderCondition) []*envoy_api_v2_route.HeaderMatcher {
+	var envoyHeaders []*envoy_api_v2_route.HeaderMatcher
+
+	for _, h := range headers {
+		header := &envoy_api_v2_route.HeaderMatcher{
+			Name:        h.Name,
+			InvertMatch: h.Invert,
+		}
+
+		switch h.MatchType {
+		case "exact":
+			header.HeaderMatchSpecifier = &envoy_api_v2_route.HeaderMatcher_ExactMatch{ExactMatch: h.Value}
+		case "contains":
+			header.HeaderMatchSpecifier = &envoy_api_v2_route.HeaderMatcher_RegexMatch{
+				RegexMatch: fmt.Sprintf(".*%s.*", h.Value),
+			}
+		case "present":
+			header.HeaderMatchSpecifier = &envoy_api_v2_route.HeaderMatcher_PresentMatch{PresentMatch: true}
+		}
+		envoyHeaders = append(envoyHeaders, header)
+	}
+	return envoyHeaders
 }

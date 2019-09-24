@@ -1,0 +1,25 @@
+apiVersion: projectcontour.io/v1alpha1
+kind: TLSCertificateDelegation
+metadata:
+  name: example-com-wildcard
+  namespace: default
+spec:
+  delegations:
+    - secretName: example-com-wildcard
+      targetNamespaces:
+      - example-com
+---
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
+metadata:
+  name: www
+  namespace: marketing
+spec:
+  virtualhost:
+    fqdn: foo2.bar.com
+    tls:
+      secretName: www-admin/example-com-wildcard
+  routes:
+    - services:
+        - name: s1
+          port: 80

@@ -62,17 +62,12 @@ func TestIngressClassAnnotation(t *testing.T) {
 	// ingress object without a class matches any ingress controller
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-				VirtualHosts: virtualhosts(
-					envoy.VirtualHost("*",
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-					),
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("*",
+					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
 				),
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			},
+			),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -94,12 +89,8 @@ func TestIngressClassAnnotation(t *testing.T) {
 	// ingress class does not match ingress controller, ignored.
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			},
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -121,12 +112,8 @@ func TestIngressClassAnnotation(t *testing.T) {
 	// ingress class does not match
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			},
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -148,17 +135,12 @@ func TestIngressClassAnnotation(t *testing.T) {
 	// ingress class matches explicitly.
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-				VirtualHosts: virtualhosts(
-					envoy.VirtualHost("*",
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-					),
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("*",
+					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
 				),
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			},
+			),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -180,17 +162,12 @@ func TestIngressClassAnnotation(t *testing.T) {
 	// ingress class matches explicitly.
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-				VirtualHosts: virtualhosts(
-					envoy.VirtualHost("*",
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-					),
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("*",
+					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
 				),
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			},
+			),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -212,12 +189,8 @@ func TestIngressClassAnnotation(t *testing.T) {
 	// ingress class does not match ingress controller, ignored.
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			},
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -239,17 +212,12 @@ func TestIngressClassAnnotation(t *testing.T) {
 	// ingress class matches explicitly.
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-				VirtualHosts: virtualhosts(
-					envoy.VirtualHost("*",
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-					),
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("*",
+					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
 				),
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			},
+			),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -258,12 +226,8 @@ func TestIngressClassAnnotation(t *testing.T) {
 	// gone
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			},
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -290,17 +254,12 @@ func TestIngressClassAnnotation(t *testing.T) {
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-				VirtualHosts: virtualhosts(
-					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-					),
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("www.example.com",
+					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
 				),
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			},
+			),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -330,12 +289,8 @@ func TestIngressClassAnnotation(t *testing.T) {
 	// ingress class does not match ingress controller, ignored.
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			},
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -365,12 +320,9 @@ func TestIngressClassAnnotation(t *testing.T) {
 	// ingress class does not match ingress controller, ignored.
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			}),
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
+		),
 		TypeUrl: routeType,
 	})
 
@@ -399,17 +351,12 @@ func TestIngressClassAnnotation(t *testing.T) {
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-				VirtualHosts: virtualhosts(
-					envoy.VirtualHost(ir4.Spec.VirtualHost.Fqdn,
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-					),
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost(ir4.Spec.VirtualHost.Fqdn,
+					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
 				),
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			},
+			),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -437,16 +384,12 @@ func TestIngressClassAnnotation(t *testing.T) {
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-				VirtualHosts: virtualhosts(
-					envoy.VirtualHost(ir5.Spec.VirtualHost.Fqdn,
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-					),
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost(ir5.Spec.VirtualHost.Fqdn,
+					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
 				),
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https"},
+			),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -476,12 +419,9 @@ func TestIngressClassAnnotation(t *testing.T) {
 	// ingress class does not match ingress controller, ignored.
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			}),
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
+		),
 		TypeUrl: routeType,
 	})
 
@@ -510,16 +450,12 @@ func TestIngressClassAnnotation(t *testing.T) {
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-				VirtualHosts: virtualhosts(
-					envoy.VirtualHost(ir5.Spec.VirtualHost.Fqdn,
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-					),
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost(ir5.Spec.VirtualHost.Fqdn,
+					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
 				),
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https"},
+			),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -547,17 +483,12 @@ func TestIngressClassAnnotation(t *testing.T) {
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-				VirtualHosts: virtualhosts(
-					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-					),
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("www.example.com",
+					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
 				),
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			},
+			),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -582,17 +513,14 @@ func TestIngressClassAnnotation(t *testing.T) {
 			}},
 		},
 	}
+
 	rh.OnUpdate(proxy1, proxy2)
 
 	// ingress class does not match ingress controller, ignored.
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			},
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -622,12 +550,9 @@ func TestIngressClassAnnotation(t *testing.T) {
 	// ingress class does not match ingress controller, ignored.
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			}),
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
+		),
 		TypeUrl: routeType,
 	})
 
@@ -655,17 +580,12 @@ func TestIngressClassAnnotation(t *testing.T) {
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-				VirtualHosts: virtualhosts(
-					envoy.VirtualHost(proxy4.Spec.VirtualHost.Fqdn,
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-					),
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost(proxy4.Spec.VirtualHost.Fqdn,
+					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
 				),
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			},
+			),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -693,16 +613,12 @@ func TestIngressClassAnnotation(t *testing.T) {
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-				VirtualHosts: virtualhosts(
-					envoy.VirtualHost(proxy5.Spec.VirtualHost.Fqdn,
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-					),
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost(proxy5.Spec.VirtualHost.Fqdn,
+					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
 				),
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https"},
+			),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -731,12 +647,8 @@ func TestIngressClassAnnotation(t *testing.T) {
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https",
-			},
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -765,16 +677,12 @@ func TestIngressClassAnnotation(t *testing.T) {
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.RouteConfiguration{
-				Name: "ingress_http",
-				VirtualHosts: virtualhosts(
-					envoy.VirtualHost(proxy5.Spec.VirtualHost.Fqdn,
-						envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
-					),
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost(proxy5.Spec.VirtualHost.Fqdn,
+					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
 				),
-			},
-			&v2.RouteConfiguration{
-				Name: "ingress_https"},
+			),
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})

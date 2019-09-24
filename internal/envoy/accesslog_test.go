@@ -14,19 +14,13 @@
 package envoy
 
 import (
-	"encoding/json"
-	"fmt"
 	"testing"
 
 	accesslog_v2 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v2"
 	envoy_accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
-	any "github.com/golang/protobuf/ptypes/any"
 	_struct "github.com/golang/protobuf/ptypes/struct"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/projectcontour/contour/internal/assert"
 )
 
 func TestFileAccessLog(t *testing.T) {
@@ -48,10 +42,8 @@ func TestFileAccessLog(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := FileAccessLog(tc.path)
-			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
-				t.Fatal(diff)
-			}
+			got := FileAccessLogEnvoy(tc.path)
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -111,26 +103,7 @@ func TestJSONFileAccessLog(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := FileAccessLogJSON(tc.path, tc.headers)
-			output, err := json.Marshal(got)
-			if err != nil {
-				t.Fatal(err)
-			}
-			fmt.Printf("%s\n", output)
-			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
-}
-
-func unmarshalAny(a *any.Any) proto.Message {
-	pb, err := ptypes.Empty(a)
-	if err != nil {
-		panic(err.Error())
-	}
-	err = ptypes.UnmarshalAny(a, pb)
-	if err != nil {
-		panic(err.Error())
-	}
-	return pb
 }

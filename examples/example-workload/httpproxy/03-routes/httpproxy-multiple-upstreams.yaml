@@ -1,0 +1,15 @@
+# httpproxy-multiple-upstreams.yaml
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
+metadata:
+  name: multiple-upstreams
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: multi.bar.com
+  routes:
+    - services:
+        - name: s1
+          port: 80
+        - name: s2
+          port: 80

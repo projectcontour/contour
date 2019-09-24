@@ -121,6 +121,9 @@ updategenerated:
 	@echo Updating CRD generated code...
 	@(bash hack/update-generated-crd-code.sh)
 
+yamllint:
+	docker run --rm -ti -v $(CURDIR):/workdir giantswarm/yamllint examples/ site/examples/ 
+
 gofmt:
 	@echo Checking code is gofmted
 	@test -z "$(shell gofmt -s -l -d -e $(SRCDIRS) | tee /dev/stderr)"

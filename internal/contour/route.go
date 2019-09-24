@@ -14,6 +14,7 @@
 package contour
 
 import (
+	"path"
 	"sort"
 	"sync"
 
@@ -90,13 +91,19 @@ type routeVisitor struct {
 }
 
 func visitRoutes(root dag.Vertex) map[string]*v2.RouteConfiguration {
+	headers := envoy.Headers(
+		envoy.AppendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
+	)
+
 	rv := routeVisitor{
 		routes: map[string]*v2.RouteConfiguration{
 			"ingress_http": {
-				Name: "ingress_http",
+				Name:                "ingress_http",
+				RequestHeadersToAdd: headers,
 			},
 			"ingress_https": {
-				Name: "ingress_https",
+				Name:                "ingress_https",
+				RequestHeadersToAdd: headers,
 			},
 		},
 	}
@@ -115,24 +122,32 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 			case *dag.VirtualHost:
 				var routes []*envoy_api_v2_route.Route
 				vh.Visit(func(v dag.Vertex) {
-					switch r := v.(type) {
-					case *dag.PrefixRoute:
-						rr := envoy.Route(envoy.RoutePrefix(r.Prefix), envoy.RouteRoute(&r.Route))
-
-						if r.HTTPSUpgrade {
-							rr.Action = envoy.UpgradeHTTPS()
-							rr.RequestHeadersToAdd = nil
-						}
-						routes = append(routes, rr)
-					case *dag.RegexRoute:
-						rr := envoy.Route(envoy.RouteRegex(r.Regex), envoy.RouteRoute(&r.Route))
-
-						if r.HTTPSUpgrade {
-							rr.Action = envoy.UpgradeHTTPS()
-							rr.RequestHeadersToAdd = nil
-						}
-						routes = append(routes, rr)
+					route, ok := v.(*dag.Route)
+					if !ok {
+						return
 					}
+
+					// Check for regex route type
+					for _, c := range route.Conditions {
+						switch cond := c.(type) {
+						case *dag.RegexCondition:
+							rr := envoy.Route(envoy.RouteRegex(cond.Regex), envoy.RouteRoute(route))
+							if route.HTTPSUpgrade {
+								rr.Action = envoy.UpgradeHTTPS()
+							}
+							routes = append(routes, rr)
+							return
+						}
+					}
+
+					// Merge all pathPrefix conditions for this route
+					mergedPathPrefix := mergePathPrefixes(route.Conditions)
+					mergedHeaders := mergeHeaders(route.Conditions)
+					rr := envoy.Route(envoy.RoutePrefix(mergedPathPrefix, mergedHeaders...), envoy.RouteRoute(route))
+					if route.HTTPSUpgrade {
+						rr.Action = envoy.UpgradeHTTPS()
+					}
+					routes = append(routes, rr)
 				})
 				if len(routes) < 1 {
 					return
@@ -143,18 +158,24 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 			case *dag.SecureVirtualHost:
 				var routes []*envoy_api_v2_route.Route
 				vh.Visit(func(v dag.Vertex) {
-					switch r := v.(type) {
-					case *dag.PrefixRoute:
-						routes = append(
-							routes,
-							envoy.Route(envoy.RoutePrefix(r.Prefix), envoy.RouteRoute(&r.Route)),
-						)
-					case *dag.RegexRoute:
-						routes = append(
-							routes,
-							envoy.Route(envoy.RouteRegex(r.Regex), envoy.RouteRoute(&r.Route)),
-						)
+					route, ok := v.(*dag.Route)
+					if !ok {
+						return
 					}
+
+					// Check for regex route type
+					for _, c := range route.Conditions {
+						switch cond := c.(type) {
+						case *dag.RegexCondition:
+							routes = append(routes, envoy.Route(envoy.RouteRegex(cond.Regex), envoy.RouteRoute(route)))
+							return
+						}
+					}
+
+					// Merge all pathPrefix conditions for this route
+					mergedPathPrefix := mergePathPrefixes(route.Conditions)
+					mergedHeaders := mergeHeaders(route.Conditions)
+					routes = append(routes, envoy.Route(envoy.RoutePrefix(mergedPathPrefix, mergedHeaders...), envoy.RouteRoute(route)))
 				})
 				if len(routes) < 1 {
 					return
@@ -171,6 +192,29 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 		// recurse
 		vertex.Visit(v.visit)
 	}
+}
+
+func mergePathPrefixes(conditions []dag.Condition) string {
+	mergedPath := "/"
+	for _, c := range conditions {
+		switch cond := c.(type) {
+		case *dag.PrefixCondition:
+			mergedPath = path.Join(mergedPath, cond.Prefix)
+		}
+	}
+	return mergedPath
+}
+
+func mergeHeaders(conditions []dag.Condition) []dag.HeaderCondition {
+	var headers []dag.HeaderCondition
+
+	for _, c := range conditions {
+		switch cond := c.(type) {
+		case *dag.HeaderCondition:
+			headers = append(headers, *cond)
+		}
+	}
+	return headers
 }
 
 type virtualHostsByName []*envoy_api_v2_route.VirtualHost

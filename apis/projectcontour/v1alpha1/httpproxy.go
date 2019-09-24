@@ -36,18 +36,47 @@ type Include struct {
 	Name string `json:"name"`
 	// Namespace of the HTTPProxy
 	Namespace string `json:"namespace,omitempty"`
-	// Condition is a set of routing properies that is applied to an HTTPProxy in a namespace.
-	Condition `json:"conditions"`
+	// Conditions are a set of routing properties that is applied to an HTTPProxy in a namespace.
+	Conditions []Condition `json:"conditions,omitempty"`
 }
 
 // Condition are policies that are applied on top of HTTPProxies.
+// One of Prefix or Header must be provided.
 type Condition struct {
 	// Prefix defines a prefix match for a request.
 	Prefix string `json:"prefix,omitempty"`
-	// HeadersMatch represent a set of HTTP headers that match the key/value exactly as specified.
-	HeadersMatch map[string][]string `json:"headersMatch,omitempty"`
-	// HeadersContain represent a set of HTTP headers that match the key exactly and the value as a contains.
-	HeadersContain map[string][]string `json:"headersContain,omitempty"`
+
+	// Header specifies the header condition to match.
+	Header *HeaderCondition `json:"header,omitempty"`
+}
+
+// HeaderCondition specifies the header condition to match.
+// Name is required. Only one of Present or Contains must
+// be provided.
+type HeaderCondition struct {
+
+	// Name is the name of the header to match on. Name is required.
+	// Header names are case insensitive.
+	Name string `json:"name"`
+
+	// Present is true if the Header is present in the request.
+	Present bool `json:"present,omitempty"`
+
+	// Contains is true if the Header containing this string is present
+	// in the request.
+	Contains string `json:"contains,omitempty"`
+
+	// NotContains is true if the Header containing this string is not present
+	// in the request.
+	NotContains string `json:"notcontains,omitempty"`
+
+	// Exact is true if the Header containing this string matches exactly
+	// in the request.
+	Exact string `json:"exact,omitempty"`
+
+	// NotExact is true if the Header containing this string doesn't match exactly
+	// in the request.
+	NotExact string `json:"notexact,omitempty"`
 }
 
 // VirtualHost appears at most once. If it is present, the object is considered
@@ -78,8 +107,8 @@ type TLS struct {
 
 // Route contains the set of routes for a virtual host
 type Route struct {
-	// Condition defines additional routing parameters on the route
-	Condition *Condition `json:"condition,omitempty"`
+	// Conditions are a set of routing properties that is applied to an HTTPProxy in a namespace.
+	Conditions []Condition `json:"conditions,omitempty"`
 	// Services are the services to proxy traffic
 	Services []Service `json:"services,omitempty"`
 	// Enables websocket support for the route
@@ -118,6 +147,8 @@ type Service struct {
 	Strategy string `json:"strategy,omitempty"`
 	// UpstreamValidation defines how to verify the backend service's certificate
 	UpstreamValidation *UpstreamValidation `json:"validation,omitempty"`
+	// If Mirror is true the Service will receive a read only mirror of the traffic for this route.
+	Mirror bool `json:"mirror,omitempty"`
 }
 
 // HealthCheck defines optional healthchecks on the upstream service
@@ -138,14 +169,18 @@ type HealthCheck struct {
 	HealthyThresholdCount uint32 `json:"healthyThresholdCount"`
 }
 
-// TimeoutPolicy define the attributes associated with timeout
+// TimeoutPolicy defines the attributes associated with timeout.
 type TimeoutPolicy struct {
 	// Timeout for receiving a response from the server after processing a request from client.
 	// If not supplied the timeout duration is undefined.
-	Request string `json:"request"`
+	Response string `json:"response"`
+
+	// Timeout after which if there are no active requests, the connection between Envoy and the
+	// backend will be closed.
+	Idle string `json:"idle"`
 }
 
-// RetryPolicy define the attributes associated with retrying policy
+// RetryPolicy defines the attributes associated with retrying policy.
 type RetryPolicy struct {
 	// NumRetries is maximum allowed number of retries.
 	// If not supplied, the number of retries is zero.

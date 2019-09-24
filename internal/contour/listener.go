@@ -37,7 +37,7 @@ const (
 	DEFAULT_HTTPS_ACCESS_LOG       = "/dev/stdout"
 	DEFAULT_HTTPS_LISTENER_ADDRESS = DEFAULT_HTTP_LISTENER_ADDRESS
 	DEFAULT_HTTPS_LISTENER_PORT    = 8443
-	DEFAULT_ACCESS_LOG_TYPE        = "clf"
+	DEFAULT_ACCESS_LOG_TYPE        = "envoy"
 )
 
 // ListenerVisitorConfig holds configuration parameters for visitListeners.
@@ -74,9 +74,9 @@ type ListenerVisitorConfig struct {
 	// MinimumProtocolVersion defines the min tls protocol version to be used
 	MinimumProtocolVersion envoy_api_v2_auth.TlsParameters_TlsProtocol
 
-	// AccessLogType defines if Envoy logs should be output as CLF or JSON.
-	// Valid values: 'clf', 'json'
-	// If not set, defaults to 'clf'
+	// AccessLogType defines if Envoy logs should be output as Envoy's default or JSON.
+	// Valid values: 'envoy', 'json'
+	// If not set, defaults to 'envoy'
 	AccessLogType string
 
 	// AccessLogFields sets the fields that should be shown in JSON logs.
@@ -162,7 +162,7 @@ func (lvc *ListenerVisitorConfig) newInsecureAccessLog() []*envoy_api_v2_accessl
 	case "json":
 		return envoy.FileAccessLogJSON(lvc.httpAccessLog(), lvc.accesslogFields())
 	default:
-		return envoy.FileAccessLog(lvc.httpAccessLog())
+		return envoy.FileAccessLogEnvoy(lvc.httpAccessLog())
 	}
 }
 
@@ -171,7 +171,7 @@ func (lvc *ListenerVisitorConfig) newSecureAccessLog() []*envoy_api_v2_accesslog
 	case "json":
 		return envoy.FileAccessLogJSON(lvc.httpsAccessLog(), lvc.accesslogFields())
 	default:
-		return envoy.FileAccessLog(lvc.httpsAccessLog())
+		return envoy.FileAccessLogEnvoy(lvc.httpsAccessLog())
 	}
 }
 

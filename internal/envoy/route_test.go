@@ -17,6 +17,8 @@ import (
 	"testing"
 	"time"
 
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/google/go-cmp/cmp"
 	"github.com/projectcontour/contour/internal/dag"
@@ -54,9 +56,8 @@ func TestRoute(t *testing.T) {
 	})
 	got := Route(match, action)
 	want := &envoy_api_v2_route.Route{
-		Match:               match,
-		Action:              action,
-		RequestHeadersToAdd: RouteHeaders(),
+		Match:  match,
+		Action: action,
 	}
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatal(diff)
@@ -239,7 +240,7 @@ func TestRouteRoute(t *testing.T) {
 		"timeout 90s": {
 			route: &dag.Route{
 				TimeoutPolicy: &dag.TimeoutPolicy{
-					Timeout: 90 * time.Second,
+					ResponseTimeout: 90 * time.Second,
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
@@ -255,7 +256,7 @@ func TestRouteRoute(t *testing.T) {
 		"timeout infinity": {
 			route: &dag.Route{
 				TimeoutPolicy: &dag.TimeoutPolicy{
-					Timeout: -1,
+					ResponseTimeout: -1,
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
@@ -265,6 +266,38 @@ func TestRouteRoute(t *testing.T) {
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 					Timeout: protobuf.Duration(0),
+				},
+			},
+		},
+		"idle timeout 10m": {
+			route: &dag.Route{
+				TimeoutPolicy: &dag.TimeoutPolicy{
+					IdleTimeout: 10 * time.Minute,
+				},
+				Clusters: []*dag.Cluster{c1},
+			},
+			want: &envoy_api_v2_route.Route_Route{
+				Route: &envoy_api_v2_route.RouteAction{
+					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					IdleTimeout: protobuf.Duration(600 * time.Second),
+				},
+			},
+		},
+		"idle timeout infinity": {
+			route: &dag.Route{
+				TimeoutPolicy: &dag.TimeoutPolicy{
+					IdleTimeout: -1,
+				},
+				Clusters: []*dag.Cluster{c1},
+			},
+			want: &envoy_api_v2_route.Route_Route{
+				Route: &envoy_api_v2_route.RouteAction{
+					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					IdleTimeout: protobuf.Duration(0),
 				},
 			},
 		},
@@ -480,6 +513,57 @@ func TestWeightedClusters(t *testing.T) {
 	}
 }
 
+func TestRouteConfiguration(t *testing.T) {
+	tests := map[string]struct {
+		name         string
+		virtualhosts []*envoy_api_v2_route.VirtualHost
+		want         *v2.RouteConfiguration
+	}{
+
+		"empty": {
+			name: "ingress_http",
+			want: &v2.RouteConfiguration{
+				Name: "ingress_http",
+				RequestHeadersToAdd: []*envoy_api_v2_core.HeaderValueOption{{
+					Header: &envoy_api_v2_core.HeaderValue{
+						Key:   "x-request-start",
+						Value: "t=%START_TIME(%s.%3f)%",
+					},
+					Append: protobuf.Bool(true),
+				}},
+			},
+		},
+		"one virtualhost": {
+			name: "ingress_https",
+			virtualhosts: virtualhosts(
+				VirtualHost("www.example.com"),
+			),
+			want: &v2.RouteConfiguration{
+				Name: "ingress_https",
+				VirtualHosts: virtualhosts(
+					VirtualHost("www.example.com"),
+				),
+				RequestHeadersToAdd: []*envoy_api_v2_core.HeaderValueOption{{
+					Header: &envoy_api_v2_core.HeaderValue{
+						Key:   "x-request-start",
+						Value: "t=%START_TIME(%s.%3f)%",
+					},
+					Append: protobuf.Bool(true),
+				}},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := RouteConfiguration(tc.name, tc.virtualhosts...)
+			if diff := cmp.Diff(got, tc.want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
 func TestVirtualHost(t *testing.T) {
 	tests := map[string]struct {
 		hostname string
@@ -527,3 +611,5 @@ func TestUpgradeHTTPS(t *testing.T) {
 		t.Fatal(diff)
 	}
 }
+
+func virtualhosts(v ...*envoy_api_v2_route.VirtualHost) []*envoy_api_v2_route.VirtualHost { return v }

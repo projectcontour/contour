@@ -16,12 +16,13 @@ package featuretests
 // envoy helpers
 
 import (
+	"time"
+
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
-func virtualhosts(v ...*envoy_api_v2_route.VirtualHost) []*envoy_api_v2_route.VirtualHost { return v }
-
-func routecluster(cluster string) *envoy_api_v2_route.Route_Route {
+func routeCluster(cluster string) *envoy_api_v2_route.Route_Route {
 	return &envoy_api_v2_route.Route_Route{
 		Route: &envoy_api_v2_route.RouteAction{
 			ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
@@ -29,4 +30,21 @@ func routecluster(cluster string) *envoy_api_v2_route.Route_Route {
 			},
 		},
 	}
+}
+
+func withResponseTimeout(route *envoy_api_v2_route.Route_Route, timeout time.Duration) *envoy_api_v2_route.Route_Route {
+	route.Route.Timeout = protobuf.Duration(timeout)
+	return route
+}
+
+func withIdleTimeout(route *envoy_api_v2_route.Route_Route, timeout time.Duration) *envoy_api_v2_route.Route_Route {
+	route.Route.IdleTimeout = protobuf.Duration(timeout)
+	return route
+}
+
+func withMirrorPolicy(route *envoy_api_v2_route.Route_Route, mirror string) *envoy_api_v2_route.Route_Route {
+	route.Route.RequestMirrorPolicy = &envoy_api_v2_route.RouteAction_RequestMirrorPolicy{
+		Cluster: mirror,
+	}
+	return route
 }
