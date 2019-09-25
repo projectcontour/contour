@@ -1,0 +1,51 @@
+# httpproxy-name.yaml
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
+metadata:
+  name: name-example-foo
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: foo1.bar.com
+  routes:
+    - conditions:
+      - prefix: /
+      services:
+        - name: s1
+          port: 80
+---
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
+metadata:
+  name: name-example-bar
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: bar1.bar.com
+  routes:
+    - conditions:
+      - prefix: /
+      services:
+        - name: s2
+          port: 80
+---
+# # ingress-name.yaml
+# apiVersion: extensions/v1beta1
+# kind: Ingress
+# metadata:
+#   name: name-example
+# spec:
+#   rules:
+#   - host: foo1.bar.com
+#     http:
+#       paths:
+#       - backend:
+#           serviceName: s1
+#           servicePort: 80
+#   - host: bar1.bar.com
+#     http:
+#       paths:
+#       - backend:
+#           serviceName: s2
+#           servicePort: 80
+

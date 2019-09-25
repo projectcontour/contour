@@ -1,0 +1,27 @@
+# httpproxy-multiple-headers.yaml
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
+metadata:
+  name: multiple-paths
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: multi-path.bar.com
+  routes:
+    - conditions:
+      - header:
+          name: x-os
+          contains: ios
+      services:
+        - name: s1
+          port: 80
+    - conditions:
+      - header:
+          name: x-os
+          contains: android
+      services:
+        - name: s2
+          port: 80
+    - services:
+        - name: s3
+          port: 80

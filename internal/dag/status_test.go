@@ -16,9 +16,9 @@ package dag
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,11 +35,118 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		Data: secretdata("certificate", "key"),
 	}
 
+	sec2 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default-ssl-cert",
+			Namespace: "heptio-contour",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata("certificate", "key"),
+	}
+
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: sec1.Namespace,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	s4 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "home",
+			Namespace: s1.Namespace,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     8080,
+			}},
+		},
+	}
+
+	s5 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "parent",
+			Namespace: s1.Namespace,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     8080,
+			}},
+		},
+	}
+
+	s6 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo2",
+			Namespace: s1.Namespace,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     8080,
+			}},
+		},
+	}
+
+	s7 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo3",
+			Namespace: s1.Namespace,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     12345678,
+			}},
+		},
+	}
+
+	s8 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "green",
+			Namespace: "marketing",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	}
+
+	s9 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nginx",
+			Namespace: s1.Namespace,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	}
+
 	// ir1 is a valid ingressroute
 	ir1 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
-			Name:      "example",
+			Name:      s4.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &projcontour.VirtualHost{
@@ -48,7 +155,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
 				Services: []ingressroutev1.Service{{
-					Name: "home",
+					Name: s4.Name,
 					Port: 8080,
 				}},
 			}, {
@@ -63,8 +170,8 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 	// ir2 is invalid because it contains a service with negative port
 	ir2 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
 			Name:      "example",
+			Namespace: s4.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &projcontour.VirtualHost{
@@ -73,7 +180,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
 				Services: []ingressroutev1.Service{{
-					Name: "home",
+					Name: s4.Name,
 					Port: -80,
 				}},
 			}},
@@ -363,78 +470,6 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			}},
 		},
 	}
-
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: ir17.Namespace,
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
-
-	s4 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "home",
-			Namespace: "roots",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
-		},
-	}
-
-	s5 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "parent",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
-		},
-	}
-
-	s6 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "foo2",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
-		},
-	}
-
-	s7 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo3",
-			Namespace: "roots",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     12345678,
-			}},
-		},
-	}
-
 	ir20 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "root-blog",
@@ -517,37 +552,10 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
-	s8 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "green",
-			Namespace: "marketing",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	}
-
-	s9 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "nginx",
-			Namespace: "roots",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	}
-
 	i1 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nginx",
-			Namespace: "roots",
+			Namespace: s9.Namespace,
 		},
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
@@ -564,7 +572,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 	ir24 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nginx",
-			Namespace: "roots",
+			Namespace: s9.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &projcontour.VirtualHost{
@@ -580,15 +588,6 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				}},
 			},
 		},
-	}
-
-	sec2 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "default-ssl-cert",
-			Namespace: "heptio-contour",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: secretdata("certificate", "key"),
 	}
 
 	ir25 := &ingressroutev1.IngressRoute{
@@ -757,6 +756,441 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	// proxy1 is a valid proxy
+	proxy1 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "delegated",
+				Namespace: "roots",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/prefix",
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy2 is invalid because it contains a service with negative port
+	proxy2 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: -80,
+				}},
+			}},
+		},
+	}
+
+	// proxy3 is invalid because it lives outside the roots namespace
+	proxy3 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "finance",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foobar",
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy6 is invalid because it delegates to itself, producing a cycle
+	proxy6 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "self",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "self",
+				Namespace: "roots",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "green",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	// proxy7 delegates to proxy8, which is invalid because proxy8 delegates back to proxy8
+	proxy7 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "parent",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "child",
+				Namespace: "roots",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+			}},
+		},
+	}
+
+	proxy8 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "child",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Includes: []projcontour.Include{{
+				Name:      "child",
+				Namespace: "roots",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+			}},
+		},
+	}
+
+	proxy11 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "validChild",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "foo2",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy13 is invalid because it does not specify and FQDN
+	proxy13 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "parent",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+				Services: []projcontour.Service{{
+					Name: "foo",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy14 delegates tp ir15 but it is invalid because it is missing fqdn
+	proxy14 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "invalidParent",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{},
+			Includes: []projcontour.Include{{
+				Name:      "validChild",
+				Namespace: "roots",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+			}},
+		},
+	}
+
+	// proxy15 is invalid because it contains a wildcarded fqdn
+	proxy15 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.*.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy16 is invalid because it references an invalid service
+	proxy16 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "invalidir",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+				Services: []projcontour.Service{{
+					Name: "invalid",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy17 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy18 reuses the fqdn used in proxy17
+	proxy18 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "other-example",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy20 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "root-blog",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "blog.containersteve.com",
+				TLS: &projcontour.TLS{
+					SecretName: "blog-containersteve-com",
+				},
+			},
+			Includes: []projcontour.Include{{
+				Name:      "blog",
+				Namespace: "marketing",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+			}},
+		},
+	}
+
+	proxy21 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blog",
+			Namespace: s8.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "blog.containersteve.com",
+				TLS: &projcontour.TLS{
+					SecretName: "blog-containersteve-com",
+				},
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s8.Name,
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	proxy22 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "root-blog",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "blog.containersteve.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "blog",
+				Namespace: "marketing",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+			}},
+		},
+	}
+
+	proxy23 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blog",
+			Namespace: s8.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "www.containersteve.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s8.Name,
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	proxy24 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blog",
+			Namespace: s8.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s8.Name,
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	proxy25 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "root-blog",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      proxy24.Name,
+				Namespace: proxy24.Namespace,
+				Conditions: []projcontour.Condition{{
+					Prefix: "/blog",
+				}},
+			}},
+		},
+	}
+
+	proxy26 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "www",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}, {
+					Name: s1.Name,
+					Port: 8080,
+				}, {
+					Name:   s1.Name,
+					Port:   8080,
+					Mirror: true,
+				}},
+			}},
+		},
+	}
+	proxy27 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "www",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}, {
+					Name:   s1.Name,
+					Port:   8080,
+					Mirror: true,
+				}, {
+					Name:   s1.Name,
+					Port:   8080,
+					Mirror: true,
+				}},
+			}},
+		},
+	}
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -1031,6 +1465,176 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				},
 			},
 		},
+		"valid proxy": {
+			objs: []interface{}{proxy1, s4},
+			want: map[Meta]Status{
+				{name: proxy1.Name, namespace: proxy1.Namespace}: {Object: proxy1, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
+			},
+		},
+		"proxy invalid port in service": {
+			objs: []interface{}{proxy2},
+			want: map[Meta]Status{
+				{name: proxy2.Name, namespace: proxy2.Namespace}: {Object: proxy2, Status: "invalid", Description: `service "home": port must be in the range 1-65535`, Vhost: "example.com"},
+			},
+		},
+		"root proxy outside of roots namespace": {
+			objs: []interface{}{proxy3},
+			want: map[Meta]Status{
+				{name: proxy3.Name, namespace: proxy3.Namespace}: {Object: proxy3, Status: "invalid", Description: "root HTTPProxy cannot be defined in this namespace"},
+			},
+		},
+		"root proxy does not specify FQDN": {
+			objs: []interface{}{proxy13},
+			want: map[Meta]Status{
+				{name: proxy13.Name, namespace: proxy13.Namespace}: {Object: proxy13, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
+			},
+		},
+		"proxy self-edge produces a cycle": {
+			objs: []interface{}{proxy6, s1},
+			want: map[Meta]Status{
+				{name: proxy6.Name, namespace: proxy6.Namespace}: {
+					Object:      proxy6,
+					Status:      "invalid",
+					Description: "root httpproxy cannot delegate to another root httpproxy",
+					Vhost:       "example.com",
+				},
+			},
+		},
+		"proxy child delegates to parent, producing a cycle": {
+			objs: []interface{}{proxy7, proxy8},
+			want: map[Meta]Status{
+				{name: proxy7.Name, namespace: proxy7.Namespace}: {
+					Object:      proxy7,
+					Status:      "valid",
+					Description: "valid HTTPProxy",
+					Vhost:       "example.com",
+				},
+				{name: proxy8.Name, namespace: proxy8.Namespace}: {
+					Object:      proxy8,
+					Status:      "invalid",
+					Description: "include creates a delegation cycle: roots/parent -> roots/child -> roots/child",
+				},
+			},
+		},
+		"proxy orphaned route": {
+			objs: []interface{}{proxy8},
+			want: map[Meta]Status{
+				{name: proxy8.Name, namespace: proxy8.Namespace}: {Object: proxy8, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy"},
+			},
+		},
+		"proxy invalid parent orphans children": {
+			objs: []interface{}{proxy14, proxy11},
+			want: map[Meta]Status{
+				{name: proxy14.Name, namespace: proxy14.Namespace}: {Object: proxy14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
+				{name: proxy11.Name, namespace: proxy11.Namespace}: {Object: proxy11, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy"},
+			},
+		},
+		"proxy invalid FQDN contains wildcard": {
+			objs: []interface{}{proxy15},
+			want: map[Meta]Status{
+				{name: proxy15.Name, namespace: proxy15.Namespace}: {Object: proxy15, Status: "invalid", Description: `Spec.VirtualHost.Fqdn "example.*.com" cannot use wildcards`, Vhost: "example.*.com"},
+			},
+		},
+		"proxy missing service shows invalid status": {
+			objs: []interface{}{proxy16},
+			want: map[Meta]Status{
+				{name: proxy16.Name, namespace: proxy16.Namespace}: {
+					Object:      proxy16,
+					Status:      "invalid",
+					Description: `Service [invalid:8080] is invalid or missing`,
+					Vhost:       proxy16.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		"insert conflicting proxies due to fqdn reuse": {
+			objs: []interface{}{proxy17, proxy18},
+			want: map[Meta]Status{
+				{name: proxy17.Name, namespace: proxy17.Namespace}: {
+					Object:      proxy17,
+					Status:      StatusInvalid,
+					Description: `fqdn "example.com" is used in multiple HTTPProxies: roots/example-com, roots/other-example`,
+					Vhost:       "example.com",
+				},
+				{name: proxy18.Name, namespace: proxy18.Namespace}: {
+					Object:      proxy18,
+					Status:      StatusInvalid,
+					Description: `fqdn "example.com" is used in multiple HTTPProxies: roots/example-com, roots/other-example`,
+					Vhost:       "example.com",
+				},
+			},
+		},
+		"root proxy delegating to another root": {
+			objs: []interface{}{proxy20, proxy21},
+			want: map[Meta]Status{
+				{name: proxy20.Name, namespace: proxy20.Namespace}: {
+					Object:      proxy20,
+					Status:      StatusInvalid,
+					Description: `fqdn "blog.containersteve.com" is used in multiple HTTPProxies: marketing/blog, roots/root-blog`,
+					Vhost:       "blog.containersteve.com",
+				},
+				{name: proxy21.Name, namespace: proxy21.Namespace}: {
+					Object:      proxy21,
+					Status:      StatusInvalid,
+					Description: `fqdn "blog.containersteve.com" is used in multiple HTTPProxies: marketing/blog, roots/root-blog`,
+					Vhost:       "blog.containersteve.com",
+				},
+			},
+		},
+		"root proxy delegating to another root w/ different hostname": {
+			objs: []interface{}{proxy22, proxy23, s8},
+			want: map[Meta]Status{
+				{name: proxy22.Name, namespace: proxy22.Namespace}: {
+					Object:      proxy22,
+					Status:      StatusInvalid,
+					Description: "root httpproxy cannot delegate to another root httpproxy",
+					Vhost:       "blog.containersteve.com",
+				},
+				{name: proxy23.Name, namespace: proxy23.Namespace}: {
+					Object:      proxy23,
+					Status:      StatusValid,
+					Description: `valid HTTPProxy`,
+					Vhost:       "www.containersteve.com",
+				},
+			},
+		},
+		"proxy delegate to another": {
+			objs: []interface{}{proxy24, proxy25, s1, s8},
+			want: map[Meta]Status{
+				{name: proxy24.Name, namespace: proxy24.Namespace}: {
+					Object:      proxy24,
+					Status:      "valid",
+					Description: "valid HTTPProxy",
+				},
+				{name: proxy25.Name, namespace: proxy25.Namespace}: {
+					Object:      proxy25,
+					Status:      "valid",
+					Description: "valid HTTPProxy",
+					Vhost:       "example.com",
+				},
+			},
+		},
+		"proxy with mirror": {
+			objs: []interface{}{proxy26, s1},
+			want: map[Meta]Status{
+				{name: proxy26.Name, namespace: proxy26.Namespace}: {
+					Object:      proxy26,
+					Status:      "valid",
+					Description: "valid HTTPProxy",
+					Vhost:       "example.com",
+				},
+			},
+		},
+		"proxy with two mirrors": {
+			objs: []interface{}{proxy27, s1},
+			want: map[Meta]Status{
+				{name: proxy27.Name, namespace: proxy27.Namespace}: {
+					Object:      proxy27,
+					Status:      "invalid",
+					Description: "only one service per route may be nominated as mirror",
+					Vhost:       "example.com",
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -1045,665 +1649,8 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				builder.Source.Insert(o)
 			}
 			dag := builder.Build()
-
 			got := dag.Statuses()
-
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
-
-//func TestDAGHTTPProxyStatus(t *testing.T) {
-//
-//	s1 := &v1.Service{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "green",
-//			Namespace: "roots",
-//		},
-//		Spec: v1.ServiceSpec{
-//			Ports: []v1.ServicePort{{
-//				Name:     "http",
-//				Protocol: "TCP",
-//				Port:     80,
-//			}},
-//		},
-//	}
-//
-//	// proxy1 is a valid proxy
-//	//proxy1 := &projcontour.HTTPProxy{
-//	//	ObjectMeta: metav1.ObjectMeta{
-//	//		Namespace: "roots",
-//	//		Name:      "example",
-//	//	},
-//	//	Spec: projcontour.HTTPProxySpec{
-//	//		VirtualHost: &projcontour.VirtualHost{
-//	//			Fqdn: "example.com",
-//	//		},
-//	//		Includes: []projcontour.Include{{
-//	//			Name:      "delegated",
-//	//			Namespace: "roots",
-//	//			Condition: projcontour.Condition{
-//	//				Prefix: "/prefix",
-//	//			},
-//	//		}},
-//	//		Routes: []projcontour.Route{{
-//	//			Condition: &projcontour.Condition{
-//	//				Prefix: "/foo",
-//	//			},
-//	//			Services: []projcontour.Service{{
-//	//				Name: "home",
-//	//				Port: 8080,
-//	//			}},
-//	//		}},
-//	//	},
-//	//}
-//	//
-//	//// proxy2 is invalid because it contains a service with negative port
-//	//proxy2 := &projcontour.HTTPProxy{
-//	//	ObjectMeta: metav1.ObjectMeta{
-//	//		Namespace: "roots",
-//	//		Name:      "example",
-//	//	},
-//	//	Spec: projcontour.HTTPProxySpec{
-//	//		VirtualHost: &projcontour.VirtualHost{
-//	//			Fqdn: "example.com",
-//	//		},
-//	//		Routes: []projcontour.Route{{
-//	//			Condition: &projcontour.Condition{
-//	//				Prefix: "/foo",
-//	//			},
-//	//			Services: []projcontour.Service{{
-//	//				Name: "home",
-//	//				Port: -80,
-//	//			}},
-//	//		}},
-//	//	},
-//	//}
-//	//
-//	//// proxy3 is invalid because it lives outside the roots namespace
-//	//proxy3 := &projcontour.HTTPProxy{
-//	//	ObjectMeta: metav1.ObjectMeta{
-//	//		Namespace: "finance",
-//	//		Name:      "example",
-//	//	},
-//	//	Spec: projcontour.HTTPProxySpec{
-//	//		VirtualHost: &projcontour.VirtualHost{
-//	//			Fqdn: "example.com",
-//	//		},
-//	//		Routes: []projcontour.Route{{
-//	//			Condition: &projcontour.Condition{
-//	//				Prefix: "/foobar",
-//	//			},
-//	//			Services: []projcontour.Service{{
-//	//				Name: "home",
-//	//				Port: 8080,
-//	//			}},
-//	//		}},
-//	//	},
-//	//}
-//	//
-//	//// proxy6 is invalid because it delegates to itself, producing a cycle
-//	//proxy6 := &projcontour.HTTPProxy{
-//	//	ObjectMeta: metav1.ObjectMeta{
-//	//		Name:      "self",
-//	//		Namespace: "roots",
-//	//	},
-//	//	Spec: projcontour.HTTPProxySpec{
-//	//		VirtualHost: &projcontour.VirtualHost{
-//	//			Fqdn: "example.com",
-//	//		},
-//	//		Includes: []projcontour.Include{{
-//	//			Name:      "self",
-//	//			Namespace: "roots",
-//	//			Condition: projcontour.Condition{
-//	//				Prefix: "/foo",
-//	//			},
-//	//		}},
-//	//		Routes: []projcontour.Route{{
-//	//			Services: []projcontour.Service{{
-//	//				Name: "green",
-//	//				Port: 80,
-//	//			}},
-//	//		}},
-//	//	},
-//	//}
-//	//
-//	//// proxy7 delegates to proxy8, which is invalid because proxy8 delegates back to proxy8
-//	//proxy7 := &projcontour.HTTPProxy{
-//	//	ObjectMeta: metav1.ObjectMeta{
-//	//		Name:      "parent",
-//	//		Namespace: "roots",
-//	//	},
-//	//	Spec: projcontour.HTTPProxySpec{
-//	//		VirtualHost: &projcontour.VirtualHost{
-//	//			Fqdn: "example.com",
-//	//		},
-//	//		Includes: []projcontour.Include{{
-//	//			Name:      "child",
-//	//			Namespace: "roots",
-//	//			Condition: projcontour.Condition{
-//	//				Prefix: "/foo",
-//	//			},
-//	//		}},
-//	//	},
-//	//}
-//	//
-//	//proxy8 := &projcontour.HTTPProxy{
-//	//	ObjectMeta: metav1.ObjectMeta{
-//	//		Name:      "child",
-//	//		Namespace: "roots",
-//	//	},
-//	//	Spec: projcontour.HTTPProxySpec{
-//	//		Includes: []projcontour.Include{{
-//	//			Name:      "child",
-//	//			Namespace: "roots",
-//	//			Condition: projcontour.Condition{
-//	//				Prefix: "/foo",
-//	//			},
-//	//		}},
-//	//	},
-//	//}
-//
-//	//// proxy9 is invalid because it has a route that both delegates and has a list of services
-//	//proxy9 := &projcontour.HTTPProxy{
-//	//	ObjectMeta: metav1.ObjectMeta{
-//	//		Namespace: "roots",
-//	//		Name:      "parent",
-//	//	},
-//	//	Spec: projcontour.HTTPProxySpec{
-//	//		VirtualHost: &projcontour.VirtualHost{
-//	//			Fqdn: "example.com",
-//	//		},
-//	//		Includes: []projcontour.Include{{
-//	//			Name:      "child",
-//	//			Namespace: "roots",
-//	//			Condition: projcontour.Condition{
-//	//				Prefix: "/foo",
-//	//			},
-//	//		}},
-//	//		Routes: []projcontour.Route{{
-//	//			Condition: &projcontour.Condition{
-//	//				Prefix: "/foo",
-//	//			},
-//	//			Services: []projcontour.Service{{
-//	//				Name: "kuard",
-//	//				Port: 8080,
-//	//			}},
-//	//		}},
-//	//	},
-//	//}
-//
-//	//// proxy10 delegates to proxy11 and proxy12.
-//	//proxy10 := &projcontour.HTTPProxy{
-//	//	ObjectMeta: metav1.ObjectMeta{
-//	//		Namespace: "roots",
-//	//		Name:      "parent",
-//	//	},
-//	//	Spec: projcontour.HTTPProxySpec{
-//	//		VirtualHost: &projcontour.VirtualHost{
-//	//			Fqdn: "example.com",
-//	//		},
-//	//		Includes: []projcontour.Include{{
-//	//			Name:      "validChild",
-//	//			Namespace: "roots",
-//	//			Condition: projcontour.Condition{
-//	//				Prefix: "/foo",
-//	//			},
-//	//		}, {
-//	//			Name:      "invalidChild",
-//	//			Namespace: "roots",
-//	//			Condition: projcontour.Condition{
-//	//				Prefix: "/bar",
-//	//			},
-//	//		}},
-//	//	},
-//	//}
-//
-//	proxy11 := &projcontour.HTTPProxy{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "validChild",
-//			Namespace: "roots",
-//		},
-//		Spec: projcontour.HTTPProxySpec{
-//			Routes: []projcontour.Route{{
-//				Services: []projcontour.Service{{
-//					Name: "foo2",
-//					Port: 8080,
-//				}},
-//			}},
-//		},
-//	}
-//
-//	//// proxy12 is invalid because it contains an invalid port
-//	//proxy12 := &projcontour.HTTPProxy{
-//	//	ObjectMeta: metav1.ObjectMeta{
-//	//		Name:      "invalidChild",
-//	//		Namespace: "roots",
-//	//	},
-//	//	Spec: projcontour.HTTPProxySpec{
-//	//		Routes: []projcontour.Route{{
-//	//			Services: []projcontour.Service{{
-//	//				Name: "foo3",
-//	//				Port: 12345678,
-//	//			}},
-//	//		}},
-//	//	},
-//	//}
-//
-//	// proxy13 is invalid because it does not specify and FQDN
-//	//proxy13 := &projcontour.HTTPProxy{
-//	//	ObjectMeta: metav1.ObjectMeta{
-//	//		Namespace: "roots",
-//	//		Name:      "parent",
-//	//	},
-//	//	Spec: projcontour.HTTPProxySpec{
-//	//		VirtualHost: &projcontour.VirtualHost{},
-//	//		Routes: []projcontour.Route{{
-//	//			Condition: &projcontour.Condition{
-//	//				Prefix: "/foo",
-//	//			},
-//	//			Services: []projcontour.Service{{
-//	//				Name: "foo",
-//	//				Port: 8080,
-//	//			}},
-//	//		}},
-//	//	},
-//	//}
-//
-//	// proxy14 delegates tp ir15 but it is invalid because it is missing fqdn
-//	//proxy14 := &projcontour.HTTPProxy{
-//	//	ObjectMeta: metav1.ObjectMeta{
-//	//		Namespace: "roots",
-//	//		Name:      "invalidParent",
-//	//	},
-//	//	Spec: projcontour.HTTPProxySpec{
-//	//		VirtualHost: &projcontour.VirtualHost{},
-//	//		Includes: []projcontour.Include{{
-//	//			Name:      "validChild",
-//	//			Namespace: "roots",
-//	//			Condition: projcontour.Condition{
-//	//				Prefix: "/foo",
-//	//			},
-//	//		}},
-//	//	},
-//	//}
-//
-//	// proxy15 is invalid because it contains a wildcarded fqdn
-//	//proxy15 := &projcontour.HTTPProxy{
-//	//	ObjectMeta: metav1.ObjectMeta{
-//	//		Namespace: "roots",
-//	//		Name:      "example",
-//	//	},
-//	//	Spec: projcontour.HTTPProxySpec{
-//	//		VirtualHost: &projcontour.VirtualHost{
-//	//			Fqdn: "example.*.com",
-//	//		},
-//	//		Routes: []projcontour.Route{{
-//	//			Condition: &projcontour.Condition{
-//	//				Prefix: "/foo",
-//	//			},
-//	//			Services: []projcontour.Service{{
-//	//				Name: "home",
-//	//				Port: 8080,
-//	//			}},
-//	//		}},
-//	//	},
-//	//}
-//
-//	// proxy16 is invalid because it references an invalid service
-//	//proxy16 := &projcontour.HTTPProxy{
-//	//	ObjectMeta: metav1.ObjectMeta{
-//	//		Namespace: "roots",
-//	//		Name:      "invalidir",
-//	//	},
-//	//	Spec: projcontour.HTTPProxySpec{
-//	//		VirtualHost: &projcontour.VirtualHost{
-//	//			Fqdn: "example.com",
-//	//		},
-//	//		Routes: []projcontour.Route{{
-//	//			Condition: &projcontour.Condition{
-//	//				Prefix: "/foo",
-//	//			},
-//	//			Services: []projcontour.Service{{
-//	//				Name: "invalid",
-//	//				Port: 8080,
-//	//			}},
-//	//		}},
-//	//	},
-//	//}
-//
-//	//proxy17 := &projcontour.HTTPProxy{
-//	//	ObjectMeta: metav1.ObjectMeta{
-//	//		Name:      "example-com",
-//	//		Namespace: "roots",
-//	//	},
-//	//	Spec: projcontour.HTTPProxySpec{
-//	//		VirtualHost: &projcontour.VirtualHost{
-//	//			Fqdn: "example.com",
-//	//		},
-//	//		Routes: []projcontour.Route{{
-//	//			Condition: &projcontour.Condition{
-//	//				Prefix: "/foo",
-//	//			},
-//	//			Services: []projcontour.Service{{
-//	//				Name: "kuard",
-//	//				Port: 8080,
-//	//			}},
-//	//		}},
-//	//	},
-//	//}
-//
-//	// proxy18 reuses the fqdn used in proxy17
-//	proxy18 := &projcontour.HTTPProxy{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "other-example",
-//			Namespace: "roots",
-//		},
-//		Spec: projcontour.HTTPProxySpec{
-//			VirtualHost: &projcontour.VirtualHost{
-//				Fqdn: "example.com",
-//			},
-//			Routes: []projcontour.Route{{
-//				Services: []projcontour.Service{{
-//					Name: "kuard",
-//					Port: 8080,
-//				}},
-//			}},
-//		},
-//	}
-//
-//	//proxy20 := &projcontour.HTTPProxy{
-//	//	ObjectMeta: metav1.ObjectMeta{
-//	//		Name:      "root-blog",
-//	//		Namespace: "roots",
-//	//	},
-//	//	Spec: projcontour.HTTPProxySpec{
-//	//		VirtualHost: &projcontour.VirtualHost{
-//	//			Fqdn: "blog.containersteve.com",
-//	//			TLS: &projcontour.TLS{
-//	//				SecretName: "blog-containersteve-com",
-//	//			},
-//	//		},
-//	//		Includes: []projcontour.Include{{
-//	//			Name:      "blog",
-//	//			Namespace: "marketing",
-//	//			Condition: projcontour.Condition{
-//	//				Prefix: "/",
-//	//			},
-//	//		}},
-//	//	},
-//	//}
-//
-//	proxy21 := &projcontour.HTTPProxy{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "blog",
-//			Namespace: "marketing",
-//		},
-//		Spec: projcontour.HTTPProxySpec{
-//			VirtualHost: &projcontour.VirtualHost{
-//				Fqdn: "blog.containersteve.com",
-//				TLS: &projcontour.TLS{
-//					SecretName: "blog-containersteve-com",
-//				},
-//			},
-//			Routes: []projcontour.Route{{
-//				Services: []projcontour.Service{{
-//					Name: "green",
-//					Port: 80,
-//				}},
-//			}},
-//		},
-//	}
-//
-//	//proxy22 := &projcontour.HTTPProxy{
-//	//	ObjectMeta: metav1.ObjectMeta{
-//	//		Name:      "root-blog",
-//	//		Namespace: "roots",
-//	//	},
-//	//	Spec: projcontour.HTTPProxySpec{
-//	//		VirtualHost: &projcontour.VirtualHost{
-//	//			Fqdn: "blog.containersteve.com",
-//	//		},
-//	//		Includes: []projcontour.Include{{
-//	//			Name:      "blog",
-//	//			Namespace: "marketing",
-//	//			Condition: projcontour.Condition{
-//	//				Prefix: "/",
-//	//			},
-//	//		}},
-//	//	},
-//	//}
-//
-//	proxy23 := &projcontour.HTTPProxy{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "blog",
-//			Namespace: "marketing",
-//		},
-//		Spec: projcontour.HTTPProxySpec{
-//			VirtualHost: &projcontour.VirtualHost{
-//				Fqdn: "www.containersteve.com",
-//			},
-//			Routes: []projcontour.Route{{
-//				Services: []projcontour.Service{{
-//					Name: "green",
-//					Port: 80,
-//				}},
-//			}},
-//		},
-//	}
-//
-//	s2 := &v1.Service{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "kuard",
-//			Namespace: "roots",
-//		},
-//		Spec: v1.ServiceSpec{
-//			Ports: []v1.ServicePort{{
-//				Name:     "http",
-//				Protocol: "TCP",
-//				Port:     8080,
-//			}},
-//		},
-//	}
-//
-//	s4 := &v1.Service{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "home",
-//			Namespace: "roots",
-//		},
-//		Spec: v1.ServiceSpec{
-//			Ports: []v1.ServicePort{{
-//				Name:     "http",
-//				Protocol: "TCP",
-//				Port:     8080,
-//			}},
-//		},
-//	}
-//
-//	s8 := &v1.Service{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "green",
-//			Namespace: "marketing",
-//		},
-//		Spec: v1.ServiceSpec{
-//			Ports: []v1.ServicePort{{
-//				Name:     "http",
-//				Protocol: "TCP",
-//				Port:     80,
-//			}},
-//		},
-//	}
-//
-//	tests := map[string]struct {
-//		objs []interface{}
-//		want map[Meta]Status
-//	}{
-//		"valid proxy": {
-//			objs: []interface{}{proxy1, s4},
-//			want: map[Meta]Status{
-//				{name: proxy1.Name, namespace: proxy1.Namespace}: {Object: proxy1, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
-//			},
-//		},
-//		"invalid port in service": {
-//			objs: []interface{}{proxy2},
-//			want: map[Meta]Status{
-//				{name: proxy2.Name, namespace: proxy2.Namespace}: {Object: proxy2, Status: "invalid", Description: `route "/foo": service "home": port must be in the range 1-65535`, Vhost: "example.com"},
-//			},
-//		},
-//		"root proxy outside of roots namespace": {
-//			objs: []interface{}{proxy3},
-//			want: map[Meta]Status{
-//				{name: proxy3.Name, namespace: proxy3.Namespace}: {Object: proxy3, Status: "invalid", Description: "root HTTPProxy cannot be defined in this namespace"},
-//			},
-//		},
-//		"root proxy does not specify FQDN": {
-//			objs: []interface{}{proxy13},
-//			want: map[Meta]Status{
-//				{name: proxy13.Name, namespace: proxy13.Namespace}: {Object: proxy13, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
-//			},
-//		},
-//		"self-edge produces a cycle": {
-//			objs: []interface{}{proxy6, s1},
-//			want: map[Meta]Status{
-//				{name: proxy6.Name, namespace: proxy6.Namespace}: {
-//					Object:      proxy6,
-//					Status:      "invalid",
-//					Description: "root httpproxy cannot delegate to another root httpproxy",
-//					Vhost:       "example.com",
-//				},
-//			},
-//		},
-//		"child delegates to parent, producing a cycle": {
-//			objs: []interface{}{proxy7, proxy8},
-//			want: map[Meta]Status{
-//				{name: proxy7.Name, namespace: proxy7.Namespace}: {
-//					Object:      proxy7,
-//					Status:      "valid",
-//					Description: "valid HTTPProxy",
-//					Vhost:       "example.com",
-//				},
-//				{name: proxy8.Name, namespace: proxy8.Namespace}: {
-//					Object:      proxy8,
-//					Status:      "invalid",
-//					Description: "include creates a delegation cycle: roots/parent -> roots/child -> roots/child",
-//					Vhost:       "example.com",
-//				},
-//			},
-//		},
-//		"orphaned route": {
-//			objs: []interface{}{proxy8},
-//			want: map[Meta]Status{
-//				{name: proxy8.Name, namespace: proxy8.Namespace}: {Object: proxy8, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy"},
-//			},
-//		},
-//		"invalid parent orphans children": {
-//			objs: []interface{}{proxy14, proxy11},
-//			want: map[Meta]Status{
-//				{name: proxy14.Name, namespace: proxy14.Namespace}: {Object: proxy14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
-//				{name: proxy11.Name, namespace: proxy11.Namespace}: {Object: proxy11, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy"},
-//			},
-//		},
-//		"invalid FQDN contains wildcard": {
-//			objs: []interface{}{proxy15},
-//			want: map[Meta]Status{
-//				{name: proxy15.Name, namespace: proxy15.Namespace}: {Object: proxy15, Status: "invalid", Description: `Spec.VirtualHost.Fqdn "example.*.com" cannot use wildcards`, Vhost: "example.*.com"},
-//			},
-//		},
-//		"missing service shows invalid status": {
-//			objs: []interface{}{proxy16},
-//			want: map[Meta]Status{
-//				{name: proxy16.Name, namespace: proxy16.Namespace}: {
-//					Object:      proxy16,
-//					Status:      "invalid",
-//					Description: `Service [invalid:8080] is invalid or missing`,
-//					Vhost:       proxy16.Spec.VirtualHost.Fqdn,
-//				},
-//			},
-//		},
-//		"insert proxy": {
-//			objs: []interface{}{s2, proxy17},
-//			want: map[Meta]Status{
-//				{name: proxy17.Name, namespace: proxy17.Namespace}: {
-//					Object:      proxy17,
-//					Status:      StatusValid,
-//					Description: "valid HTTPProxy",
-//					Vhost:       "example.com",
-//				},
-//			},
-//		},
-//		"insert conflicting proxies due to fqdn reuse": {
-//			objs: []interface{}{proxy17, proxy18},
-//			want: map[Meta]Status{
-//				{name: proxy17.Name, namespace: proxy17.Namespace}: {
-//					Object:      proxy17,
-//					Status:      StatusInvalid,
-//					Description: `fqdn "example.com" is used in multiple HTTPProxies: roots/example-com, roots/other-example`,
-//					Vhost:       "example.com",
-//				},
-//				{name: proxy18.Name, namespace: proxy18.Namespace}: {
-//					Object:      proxy18,
-//					Status:      StatusInvalid,
-//					Description: `fqdn "example.com" is used in multiple HTTPProxies: roots/example-com, roots/other-example`,
-//					Vhost:       "example.com",
-//				},
-//			},
-//		},
-//		"root proxy delegating to another root": {
-//			objs: []interface{}{proxy20, proxy21},
-//			want: map[Meta]Status{
-//				{name: proxy20.Name, namespace: proxy20.Namespace}: {
-//					Object:      proxy20,
-//					Status:      StatusInvalid,
-//					Description: `fqdn "blog.containersteve.com" is used in multiple HTTPProxies: marketing/blog, roots/root-blog`,
-//					Vhost:       "blog.containersteve.com",
-//				},
-//				{name: proxy21.Name, namespace: proxy21.Namespace}: {
-//					Object:      proxy21,
-//					Status:      StatusInvalid,
-//					Description: `fqdn "blog.containersteve.com" is used in multiple HTTPProxies: marketing/blog, roots/root-blog`,
-//					Vhost:       "blog.containersteve.com",
-//				},
-//			},
-//		},
-//		"root ingress delegating to another root w/ different hostname": {
-//			objs: []interface{}{proxy22, proxy23, s8},
-//			want: map[Meta]Status{
-//				{name: proxy22.Name, namespace: proxy22.Namespace}: {
-//					Object:      proxy22,
-//					Status:      StatusInvalid,
-//					Description: "root httpproxy cannot delegate to another root httpproxy",
-//					Vhost:       "blog.containersteve.com",
-//				},
-//				{name: proxy23.Name, namespace: proxy23.Namespace}: {
-//					Object:      proxy23,
-//					Status:      StatusValid,
-//					Description: `valid HTTPProxy`,
-//					Vhost:       "www.containersteve.com",
-//				},
-//			},
-//		},
-//	}
-//
-//	for name, tc := range tests {
-//		t.Run(name, func(t *testing.T) {
-//			builder := Builder{
-//				Source: KubernetesCache{
-//					RootNamespaces: []string{"roots", "marketing"},
-//					FieldLogger:    testLogger(t),
-//				},
-//			}
-//			for _, o := range tc.objs {
-//				builder.Source.Insert(o)
-//			}
-//
-//			dag := builder.Build()
-//			got := dag.Statuses()
-//
-//			if diff := cmp.Diff(tc.want, got); diff != "" {
-//				t.Fatal(diff)
-//			}
-//		})
-//	}
-//}

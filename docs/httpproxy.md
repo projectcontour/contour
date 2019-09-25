@@ -47,7 +47,7 @@ spec:
     fqdn: foo-basic.bar.com
   routes:
     - conditions:
-        prefix: /
+      - prefix: /
       services:
         - name: s1
           port: 80
@@ -118,8 +118,6 @@ httpproxy "basic" deleted
 
 ## HTTPProxy API Specification
 
-TODO(youngnick) create example directory
-
 There are a number of [working examples](/examples/example-workload/httpproxy) of HTTPProxy objects in the `examples/example-workload` directory.
 
 We will use these examples as a mechanism to describe HTTPProxy API functionality.
@@ -175,11 +173,9 @@ spec:
   virtualhost:
     fqdn: foo1.bar.com
   routes:
-    - conditions:
-        prefix: /
-      services:
-        - name: s1
-          port: 80
+    - services:
+      - name: s1
+        port: 80
 ---
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
@@ -190,9 +186,7 @@ spec:
   virtualhost:
     fqdn: bar1.bar.com
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: s2
           port: 80
 ```
@@ -227,7 +221,7 @@ type: kubernetes.io/tls
 The HTTPProxy can be configured to use this secret using `tls.secretName` property:
 
 ```yaml
-# tls.httpproxy.yaml
+# httpproxy-tls.yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
 metadata:
@@ -239,9 +233,7 @@ spec:
     tls:
       secretName: testsecret
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: s1
           port: 80
 ```
@@ -255,37 +247,9 @@ The TLS **Minimum Protocol Version** a vhost should negotiate can be specified b
 - 1.2
 - 1.1 (Default)
 
-A HTTPProxy can be configured to permit insecure requests to specific Routes.
-In this example, any request to `foo2.bar.com/blog` will not receive a 301 redirect to HTTPS, but the `/` route will:
-
-```yaml
-apiVersion: projectcontour.io/v1alpha1
-kind: HTTPProxy
-metadata:
-  name: tls-example-insecure
-  namespace: default
-spec:
-  virtualhost:
-    fqdn: foo2.bar.com
-    tls:
-      secretName: testsecret
-  routes:
-    - conditions:
-        prefix: /
-      services:
-        - name: s1
-          port: 80
-    - conditions:
-        prefix: /blog
-      permitInsecure: true
-      services:
-        - name: s2
-          port: 80
-```
-
 #### Upstream TLS
 
-TODO(youngnick): Update this per #1506
+TODO(youngnick): Update this once #1506 is delivered
 
 A HTTPProxy can proxy to an upstream TLS connection by first annotating the upstream Kubernetes service with: `contour.heptio.com/upstream-protocol.tls: "443,https"`.
 This annotation tells Contour which port should be used for the TLS connection.
@@ -306,9 +270,7 @@ spec:
   virtualhost:
     fqdn: www.example.com  
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: service
           port: 8443
           validation:
@@ -355,9 +317,7 @@ spec:
     tls:
       secretName: www-admin/example-com-wildcard
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: s1
           port: 80
 ```
@@ -367,8 +327,20 @@ In this example, the permission for Contour to reference the Secret `example-com
 ### Conditions
 
 Each Route entry in a HTTPProxy may contain one or more conditions.
+These conditions are combined with an AND operator on the route passed to Envoy.
 
-TODO(youngnick) document conditions
+Conditions can be either a `prefix` or a `header` condition.
+For `prefix`, this adds a path prefix.
+
+#### Header conditions
+
+For `header` conditions there is one required field, `name`, and five operator fields: `present`, `contains`, `notcontains`, `exact`, and `notexact`.
+
+- `present` is a boolean and checks that the header is present. The value will not be checked.
+
+- `contains` is a string, and checks that the header contains the string. `notcontains` similarly checks that the header does *not* contain the string.
+
+- `exact` is a string, and checks that the header exactly matches the whole string. `notexact` checks that the header does *not* exactly match the whole string.
 
 #### Multiple Routes
 
@@ -378,7 +350,7 @@ In this example, any requests to `multi-path.bar.com/blog` or `multi-path.bar.co
 All other requests to the host `multi-path.bar.com` will be routed to the Service `s1`.
 
 ```yaml
-# multiple-paths.httpproxy.yaml
+# httpproxy-multiple-paths.yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
 metadata:
@@ -389,14 +361,46 @@ spec:
     fqdn: multi-path.bar.com
   routes:
     - conditions:
-        prefix: / # matches everything else
+      - prefix: / # matches everything else
       services:
         - name: s1
           port: 80
     - conditions:
-        prefix: /blog # matches `multi-path.bar.com/blog` or `multi-path.bar.com/blog/*`
+      - prefix: /blog # matches `multi-path.bar.com/blog` or `multi-path.bar.com/blog/*`
       services:
         - name: s2
+          port: 80
+```
+
+In the following example, we match on headers and send to different services, with a default route if those do not match.
+
+```yaml
+# httpproxy-multiple-headers.yaml
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
+metadata:
+  name: multiple-paths
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: multi-path.bar.com
+  routes:
+    - conditions:
+      - header:
+          name: x-os
+          contains: ios
+      services:
+        - name: s1
+          port: 80
+    - conditions:
+      - header:
+          name: x-os
+          contains: android
+      services:
+        - name: s2
+          port: 80
+    - services:
+        - name: s3
           port: 80
 ```
 
@@ -405,7 +409,7 @@ spec:
 One of the key HTTPProxy features is the ability to support multiple services for a given path:
 
 ```yaml
-# multiple-upstreams.httpproxy.yaml
+# httpproxy-multiple-upstreams.yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
 metadata:
@@ -415,9 +419,7 @@ spec:
   virtualhost:
     fqdn: multi.bar.com
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: s1
           port: 80
         - name: s2
@@ -433,7 +435,7 @@ Building on multiple upstreams is the ability to define relative weights for ups
 This is commonly used for canary testing of new versions of an application when you want to send a small fraction of traffic to a specific Service.
 
 ```yaml
-# weight-shfiting.httpproxy.yaml
+# httpproxy-weight-shfiting.yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
 metadata:
@@ -443,9 +445,7 @@ spec:
   virtualhost:
     fqdn: weights.bar.com
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: s1
           port: 80
           weight: 10
@@ -462,12 +462,40 @@ HTTPProxy weighting follows some specific rules:
 - Weights are relative and do not need to add up to 100. If all weights for a route are specified, then the "total" weight is the sum of those specified. As an example, if weights are 20, 30, 20 for three upstreams, the total weight would be 70. In this example, a weight of 30 would receive approximately 42.9% of traffic (30/70 = .4285).
 - If some weights are specified but others are not, then it's assumed that upstreams without weights have an implicit weight of zero, and thus will not receive traffic.
 
+#### Traffic mirroring
+
+Per route a service can be nominated as a mirror.
+The mirror service will receive a copy of the read traffic sent to any non mirror service.
+The mirror traffic is considered _read only_, any response by the mirror will be discarded.
+
+This service can be useful for recording traffic for later replay or for smoke testing new deployments.
+
+```yaml
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
+metadata:
+  name: traffic-mirror
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: www.example.com
+  routes:
+    - conditions:
+      - prefix: /
+      services:
+        - name: www
+          port: 80
+        - name: www-mirror
+          port: 80
+          mirror: true
+```
+
 #### Request Timeout
 
 Each Route can be configured to have a timeout policy and a retry policy as shown:
 
 ```yaml
-# request-timeout.httpproxy.yaml
+# httpproxy-request-timeout.yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
 metadata:
@@ -477,9 +505,7 @@ spec:
   virtualhost:
     fqdn: timeout.bar.com
   routes:
-  - conditions:
-      prefix: /
-    timeoutPolicy:
+  - timeoutPolicy:
       request: 1s
     retryPolicy:
       count: 3
@@ -494,9 +520,14 @@ This refers to the time that spans between the point at which complete client re
 
 - `timeoutPolicy.response` This field can be any positive time period or "infinity".
 The time period of **0s** will also be treated as infinity.
-By default, Envoy has a 15 second timeout for a backend service to respond.
+This timeout is for how long it takes for the *backend service* to respond.
+By default, Envoy has a 15 second timeout for this timeout.
 More information can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout).
-- TODO(youngnick): `timeoutPolicy.idle`
+- `timeoutPolicy.idle` This field can be any positive time period or "infinity".
+The time period of **0s** will also be treated as infinity.
+By default, there is no per-route idle timeout.
+Note that the default connection manager timeout of 5 minutes will apply if this is not set.
+More information can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-idle-timeout)
 - `retryPolicy`: A retry will be attempted if the server returns an error code in the 5xx range, or if the server takes more than `retryPolicy.perTryTimeout` to process a request.
   - `retryPolicy.count` specifies the maximum number of retries allowed. This parameter is optional and defaults to 1.
   - `retryPolicy.perTryTimeout` specifies the timeout per retry. If this field is greater than the request timeout, it is ignored. This parameter is optional.
@@ -517,7 +548,7 @@ The following example defines the strategy for Service `s2-strategy` as `Weighte
 Service `s1-strategy` does not have an explicit strategy defined so it will use the strategy of `RoundRobin`.
 
 ```yaml
-# lb-strategy.httpproxy.yaml
+# httpproxy-lb-strategy.yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
 metadata:
@@ -528,7 +559,7 @@ spec:
     fqdn: strategy.bar.com
   routes:
     - conditions:
-        prefix: /
+      - prefix: /
       services:
         - name: s1-strategy
           port: 80
@@ -543,6 +574,7 @@ Session affinity, also known as _sticky sessions_, is a load balancing strategy 
 Contour supports session affinity with the `strategy: Cookie` key on a per service basis.
 
 ```yaml
+# httpproxy-sticky-sessions.yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
 metadata:
@@ -552,9 +584,7 @@ spec:
   virtualhost:
     fqdn: httpbin.davecheney.com
   routes:
-  - conditions:
-      prefix: /
-    services:
+  - services:
     - name: httpbin
       port: 8080
       strategy: Cookie
@@ -576,7 +606,7 @@ The upstream host can return 503 if it wants to immediately notify Envoy to no l
 It is important to note that these are health checks which Envoy implements and are separate from any other system such as those that exist in Kubernetes.
 
 ```yaml
-# health-checks.httpproxy.yaml
+# httpproxy-health-checks.yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
 metadata:
@@ -586,9 +616,7 @@ spec:
   virtualhost:
     fqdn: health.bar.com
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: s1-health
           port: 80
           healthCheck:
@@ -615,6 +643,7 @@ Health check configuration parameters:
 WebSocket support can be enabled on specific routes using the `enableWebsockets` field:
 
 ```yaml
+# httpproxy-websockets.yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
 metadata:
@@ -624,13 +653,11 @@ spec:
   virtualhost:
     fqdn: chat.example.com
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: chat-app
           port: 80
     - conditions:
-        prefix: /websocket
+      - prefix: /websocket
       enableWebsockets: true # Setting this to true enables websocket for all paths that match /websocket
       services:
         - name: chat-app
@@ -644,6 +671,7 @@ This option allows application URLs to be rooted at a different path from those 
 The original path before rewrite will be placed into the into the `x-envoy-original-path` header.
 
 ```yaml
+# httpproxy-prefix-rewrite.yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
 metadata:
@@ -653,13 +681,11 @@ spec:
   virtualhost:
     fqdn: app.example.com
   routes:
-    - conditions:
-        prefix: /
-      services:
+    - services:
         - name: app
           port: 80
     - conditions:
-        prefix: /service2
+      - prefix: /service2
       prefixRewrite: "/" # Setting this rewrites the request from `/service2` to `/`
       services:
         - name: app-service
@@ -668,23 +694,29 @@ spec:
 
 #### Permit Insecure
 
-HTTPProxy support allowing HTTP alongside HTTPS.
-Thus the path responds to insecure requests over HTTP which are normally not permitted when a `virtualhost.tls` block is present.
+A HTTPProxy can be configured to permit insecure requests to specific Routes.
+In this example, any request to `foo2.bar.com/blog` will not receive a 301 redirect to HTTPS, but the `/` route will:
 
 ```yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
 metadata:
-  name: permit-insecure
+  name: tls-example-insecure
+  namespace: default
 spec:
   virtualhost:
-    fqdn: foo-basic.bar.com
+    fqdn: foo2.bar.com
+    tls:
+      secretName: testsecret
   routes:
+    - services:
+        - name: s1
+          port: 80
     - conditions:
-        prefix: /
+      - prefix: /blog
       permitInsecure: true
       services:
-        - name: s1
+        - name: s2
           port: 80
 ```
 
@@ -698,6 +730,7 @@ There's nothing specific in the HTTPProxy object that needs to be configured oth
 NOTE: The ports are required to be specified.
 
 ```yaml
+# httpproxy-externalname.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -753,6 +786,7 @@ This is necessary so that Envoy can use SNI to route the incoming request to the
 If `spec.virtualhost.tls.secretName` is present then that secret will be used to decrypt the TCP traffic at the edge.
 
 ```yaml
+# httpproxy-tls-termination.yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
 metadata:
@@ -780,6 +814,7 @@ If you wish to handle the TLS handshake at the backend service set `spec.virtual
 The backend service is expected to have a key which matches the SNI header received at the edge, and be capable of completing the TLS handshake. This is called SSL/TLS Passthrough.
 
 ```yaml
+# httpproxy-tls-passthrough.yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
 metadata:

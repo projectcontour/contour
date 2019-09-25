@@ -1,0 +1,17 @@
+# httpproxy-tls.yaml
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
+metadata:
+  name: tls-example
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: foo2.bar.com
+    tls:
+      secretName: testsecret
+  routes:
+    - conditions:
+      - prefix: /
+      services:
+        - name: s1
+          port: 80

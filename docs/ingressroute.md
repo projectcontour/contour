@@ -423,7 +423,7 @@ Building on multiple upstreams is the ability to define relative weights for ups
 This is commonly used for canary testing of new versions of an application when you want to send a small fraction of traffic to a specific Service.
 
 ```yaml
-# weight-shfiting.ingressroute.yaml
+# weight-shifting.ingressroute.yaml
 apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 metadata:

@@ -30,6 +30,7 @@ type Assert struct {
 }
 
 func Equal(t *testing.T, want, got interface{}) {
+	t.Helper()
 	Assert{t}.Equal(want, got)
 }
 
