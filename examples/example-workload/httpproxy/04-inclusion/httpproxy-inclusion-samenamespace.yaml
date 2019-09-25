@@ -1,0 +1,39 @@
+# httpproxy-inclusion-samenamespace.yaml
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
+metadata:
+  name: include-root
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: root.bar.com
+  includes:
+  # Includes the /service2 path from service2 in the same namespace
+  - name: www
+    namespace: default
+    conditions:
+    - prefix: /service2
+  routes:
+    - conditions:
+      - prefix: /
+      services:
+        - name: s1
+          port: 80
+---
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
+metadata:
+  name: service2
+  namespace: default
+spec:
+  routes:
+    - conditions:
+      - prefix: / # matches /service2
+      services:
+        - name: s2
+          port: 80
+    - conditions:
+      - prefix: /blog # matches /service2/blog
+      services:
+        - name: blog
+          port: 80

@@ -1,0 +1,32 @@
+# httpproxy-inclusion-across-namespaces.yaml
+---
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
+metadata:
+  name: namespace-delegation-root
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: ns-root.bar.com
+  includes:
+  # delegate the subpath, `/blog` to the IngressRoute object in the marketing namespace with the name `blog`
+  - name: blog
+    namespace: marketing
+    conditions:
+    - prefix: /blog
+  routes:
+    - services:
+        - name: s1
+          port: 80
+
+---
+apiVersion: projectcontour.io/v1alpha1
+kind: HTTPProxy
+metadata:
+  name: blog
+  namespace: marketing
+spec:
+  routes:
+    - services:
+        - name: s2
+          port: 80
