@@ -16,9 +16,9 @@ package dag
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -757,319 +757,6 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
-	tests := map[string]struct {
-		objs []interface{}
-		want map[Meta]Status
-	}{
-		"valid ingressroute": {
-			objs: []interface{}{ir1, s4},
-			want: map[Meta]Status{
-				{name: ir1.Name, namespace: ir1.Namespace}: {Object: ir1, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
-			},
-		},
-		"invalid port in service": {
-			objs: []interface{}{ir2},
-			want: map[Meta]Status{
-				{name: ir2.Name, namespace: ir2.Namespace}: {Object: ir2, Status: "invalid", Description: `route "/foo": service "home": port must be in the range 1-65535`, Vhost: "example.com"},
-			},
-		},
-		"root ingressroute outside of roots namespace": {
-			objs: []interface{}{ir3},
-			want: map[Meta]Status{
-				{name: ir3.Name, namespace: ir3.Namespace}: {Object: ir3, Status: "invalid", Description: "root IngressRoute cannot be defined in this namespace"},
-			},
-		},
-		"delegated route's match prefix does not match parent's prefix": {
-			objs: []interface{}{ir1, ir4, s4},
-			want: map[Meta]Status{
-				{name: ir1.Name, namespace: ir1.Namespace}: {Object: ir1, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
-				{name: ir4.Name, namespace: ir4.Namespace}: {Object: ir4, Status: "invalid", Description: `the path prefix "/doesnotmatch" does not match the parent's path prefix "/prefix"`},
-			},
-		},
-		"root ingressroute does not specify FQDN": {
-			objs: []interface{}{ir13},
-			want: map[Meta]Status{
-				{name: ir13.Name, namespace: ir13.Namespace}: {Object: ir13, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
-			},
-		},
-		"self-edge produces a cycle": {
-			objs: []interface{}{ir6},
-			want: map[Meta]Status{
-				{name: ir6.Name, namespace: ir6.Namespace}: {
-					Object:      ir6,
-					Status:      "invalid",
-					Description: "root ingressroute cannot delegate to another root ingressroute",
-					Vhost:       "example.com",
-				},
-			},
-		},
-		"child delegates to parent, producing a cycle": {
-			objs: []interface{}{ir7, ir8},
-			want: map[Meta]Status{
-				{name: ir7.Name, namespace: ir7.Namespace}: {
-					Object:      ir7,
-					Status:      "valid",
-					Description: "valid IngressRoute",
-					Vhost:       "example.com",
-				},
-				{name: ir8.Name, namespace: ir8.Namespace}: {
-					Object:      ir8,
-					Status:      "invalid",
-					Description: "route creates a delegation cycle: roots/parent -> roots/child -> roots/child",
-				},
-			},
-		},
-		"route has a list of services and also delegates": {
-			objs: []interface{}{ir9},
-			want: map[Meta]Status{
-				{name: ir9.Name, namespace: ir9.Namespace}: {Object: ir9, Status: "invalid", Description: `route "/foo": cannot specify services and delegate in the same route`, Vhost: "example.com"},
-			},
-		},
-		"ingressroute is an orphaned route": {
-			objs: []interface{}{ir8},
-			want: map[Meta]Status{
-				{name: ir8.Name, namespace: ir8.Namespace}: {Object: ir8, Status: "orphaned", Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"},
-			},
-		},
-		"ingressroute delegates to multiple ingressroutes, one is invalid": {
-			objs: []interface{}{ir10, ir11, ir12, s6, s7},
-			want: map[Meta]Status{
-				{name: ir11.Name, namespace: ir11.Namespace}: {Object: ir11, Status: "valid", Description: "valid IngressRoute"},
-				{name: ir12.Name, namespace: ir12.Namespace}: {Object: ir12, Status: "invalid", Description: `route "/bar": service "foo3": port must be in the range 1-65535`},
-				{name: ir10.Name, namespace: ir10.Namespace}: {Object: ir10, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
-			},
-		},
-		"invalid parent orphans children": {
-			objs: []interface{}{ir14, ir11},
-			want: map[Meta]Status{
-				{name: ir14.Name, namespace: ir14.Namespace}: {Object: ir14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
-				{name: ir11.Name, namespace: ir11.Namespace}: {Object: ir11, Status: "orphaned", Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"},
-			},
-		},
-		"multi-parent children is not orphaned when one of the parents is invalid": {
-			objs: []interface{}{ir14, ir11, ir10, s5, s6},
-			want: map[Meta]Status{
-				{name: ir14.Name, namespace: ir14.Namespace}: {Object: ir14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
-				{name: ir11.Name, namespace: ir11.Namespace}: {Object: ir11, Status: "valid", Description: "valid IngressRoute"},
-				{name: ir10.Name, namespace: ir10.Namespace}: {Object: ir10, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
-			},
-		},
-		"invalid FQDN contains wildcard": {
-			objs: []interface{}{ir15},
-			want: map[Meta]Status{
-				{name: ir15.Name, namespace: ir15.Namespace}: {Object: ir15, Status: "invalid", Description: `Spec.VirtualHost.Fqdn "example.*.com" cannot use wildcards`, Vhost: "example.*.com"},
-			},
-		},
-		"missing service shows invalid status": {
-			objs: []interface{}{ir16},
-			want: map[Meta]Status{
-				{name: ir16.Name, namespace: ir16.Namespace}: {
-					Object:      ir16,
-					Status:      "invalid",
-					Description: `Service [invalid:8080] is invalid or missing`,
-					Vhost:       ir16.Spec.VirtualHost.Fqdn,
-				},
-			},
-		},
-		"insert ingressroute": {
-			objs: []interface{}{s1, ir17},
-			want: map[Meta]Status{
-				{name: ir17.Name, namespace: ir17.Namespace}: {
-					Object:      ir17,
-					Status:      StatusValid,
-					Description: "valid IngressRoute",
-					Vhost:       "example.com",
-				},
-			},
-		},
-		"insert conflicting ingressroutes due to fqdn reuse": {
-			objs: []interface{}{ir17, ir18},
-			want: map[Meta]Status{
-				{name: ir17.Name, namespace: ir17.Namespace}: {
-					Object:      ir17,
-					Status:      StatusInvalid,
-					Description: `fqdn "example.com" is used in multiple IngressRoutes: roots/example-com, roots/other-example`,
-					Vhost:       "example.com",
-				},
-				{name: ir18.Name, namespace: ir18.Namespace}: {
-					Object:      ir18,
-					Status:      StatusInvalid,
-					Description: `fqdn "example.com" is used in multiple IngressRoutes: roots/example-com, roots/other-example`,
-					Vhost:       "example.com",
-				},
-			},
-		},
-		"root ingress delegating to another root": {
-			objs: []interface{}{ir20, ir21},
-			want: map[Meta]Status{
-				{name: ir20.Name, namespace: ir20.Namespace}: {
-					Object:      ir20,
-					Status:      StatusInvalid,
-					Description: `fqdn "blog.containersteve.com" is used in multiple IngressRoutes: marketing/blog, roots/root-blog`,
-					Vhost:       "blog.containersteve.com",
-				},
-				{name: ir21.Name, namespace: ir21.Namespace}: {
-					Object:      ir21,
-					Status:      StatusInvalid,
-					Description: `fqdn "blog.containersteve.com" is used in multiple IngressRoutes: marketing/blog, roots/root-blog`,
-					Vhost:       "blog.containersteve.com",
-				},
-			},
-		},
-		"root ingress delegating to another root w/ different hostname": {
-			objs: []interface{}{ir22, ir23, s8},
-			want: map[Meta]Status{
-				{name: ir22.Name, namespace: ir22.Namespace}: {
-					Object:      ir22,
-					Status:      StatusInvalid,
-					Description: "root ingressroute cannot delegate to another root ingressroute",
-					Vhost:       "blog.containersteve.com",
-				},
-				{name: ir23.Name, namespace: ir23.Namespace}: {
-					Object:      ir23,
-					Status:      StatusValid,
-					Description: `valid IngressRoute`,
-					Vhost:       "www.containersteve.com",
-				},
-			},
-		},
-		// issue 1399
-		"service shared across ingress and ingressroute tcpproxy": {
-			objs: []interface{}{
-				sec1, s9, i1, ir24,
-			},
-			want: map[Meta]Status{
-				{name: ir24.Name, namespace: ir24.Namespace}: {
-					Object:      ir24,
-					Status:      StatusValid,
-					Description: `valid IngressRoute`,
-					Vhost:       "example.com",
-				},
-			},
-		},
-		// issue 1347
-		"check status set when tcpproxy combined with tls delegation failure": {
-			objs: []interface{}{
-				sec2,
-				ir25,
-			},
-			want: map[Meta]Status{
-				{name: ir25.Name, namespace: ir25.Namespace}: {
-					Object:      ir25,
-					Status:      StatusInvalid,
-					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
-					Vhost:       ir25.Spec.VirtualHost.Fqdn,
-				},
-			},
-		},
-		// issue 1348
-		"check status set when routes combined with tls delegation failure": {
-			objs: []interface{}{
-				sec2,
-				ir26,
-			},
-			want: map[Meta]Status{
-				{name: ir26.Name, namespace: ir26.Namespace}: {
-					Object:      ir26,
-					Status:      StatusInvalid,
-					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
-					Vhost:       ir26.Spec.VirtualHost.Fqdn,
-				},
-			},
-		},
-		// issue 910
-		"non tls routes can be combined with tcp proxy": {
-			objs: []interface{}{
-				s10,
-				ir27,
-			},
-			want: map[Meta]Status{
-				{name: ir27.Name, namespace: ir27.Namespace}: {
-					Object:      ir27,
-					Status:      StatusValid,
-					Description: `valid IngressRoute`,
-					Vhost:       ir27.Spec.VirtualHost.Fqdn,
-				},
-			},
-		},
-		// issue 1452
-		"ingressroute with missing secret delegation should be invalid": {
-			objs: []interface{}{
-				s10,
-				ir28,
-			},
-			want: map[Meta]Status{
-				{name: ir28.Name, namespace: ir28.Namespace}: {
-					Object:      ir28,
-					Status:      StatusInvalid,
-					Description: "TLS Secret [heptio-contour/ssl-cert] not found or is malformed",
-					Vhost:       ir28.Spec.VirtualHost.Fqdn,
-				},
-			},
-		},
-		"two root ingressroutes delegated to the same object should not conflict on hostname": {
-			objs: []interface{}{
-				s1, ir29, ir30, ir31,
-			},
-			want: map[Meta]Status{
-				{name: ir29.Name, namespace: ir29.Namespace}: {
-					Object:      ir29,
-					Status:      "valid",
-					Description: "valid IngressRoute",
-					Vhost:       "site1.com",
-				},
-				{name: ir30.Name, namespace: ir30.Namespace}: {
-					Object:      ir30,
-					Status:      "valid",
-					Description: "valid IngressRoute",
-					Vhost:       "site2.com",
-				},
-				{name: ir31.Name, namespace: ir31.Namespace}: {
-					Object:      ir31,
-					Status:      "valid",
-					Description: "valid IngressRoute",
-				},
-			},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			builder := Builder{
-				Source: KubernetesCache{
-					RootNamespaces: []string{"roots", "marketing"},
-					FieldLogger:    testLogger(t),
-				},
-			}
-			for _, o := range tc.objs {
-				builder.Source.Insert(o)
-			}
-			dag := builder.Build()
-
-			got := dag.Statuses()
-
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
-		})
-	}
-}
-
-func TestDAGHTTPProxyStatus(t *testing.T) {
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "green",
-			Namespace: "roots",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	}
-
 	// proxy1 is a valid proxy
 	proxy1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1470,45 +1157,287 @@ func TestDAGHTTPProxyStatus(t *testing.T) {
 		},
 	}
 
-	s4 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "home",
-			Namespace: "roots",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
-		},
-	}
-
-	s8 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "green",
-			Namespace: "marketing",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	}
-
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
 	}{
+		"valid ingressroute": {
+			objs: []interface{}{ir1, s4},
+			want: map[Meta]Status{
+				{name: ir1.Name, namespace: ir1.Namespace}: {Object: ir1, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
+			},
+		},
+		"invalid port in service": {
+			objs: []interface{}{ir2},
+			want: map[Meta]Status{
+				{name: ir2.Name, namespace: ir2.Namespace}: {Object: ir2, Status: "invalid", Description: `route "/foo": service "home": port must be in the range 1-65535`, Vhost: "example.com"},
+			},
+		},
+		"root ingressroute outside of roots namespace": {
+			objs: []interface{}{ir3},
+			want: map[Meta]Status{
+				{name: ir3.Name, namespace: ir3.Namespace}: {Object: ir3, Status: "invalid", Description: "root IngressRoute cannot be defined in this namespace"},
+			},
+		},
+		"delegated route's match prefix does not match parent's prefix": {
+			objs: []interface{}{ir1, ir4, s4},
+			want: map[Meta]Status{
+				{name: ir1.Name, namespace: ir1.Namespace}: {Object: ir1, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
+				{name: ir4.Name, namespace: ir4.Namespace}: {Object: ir4, Status: "invalid", Description: `the path prefix "/doesnotmatch" does not match the parent's path prefix "/prefix"`},
+			},
+		},
+		"root ingressroute does not specify FQDN": {
+			objs: []interface{}{ir13},
+			want: map[Meta]Status{
+				{name: ir13.Name, namespace: ir13.Namespace}: {Object: ir13, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
+			},
+		},
+		"self-edge produces a cycle": {
+			objs: []interface{}{ir6},
+			want: map[Meta]Status{
+				{name: ir6.Name, namespace: ir6.Namespace}: {
+					Object:      ir6,
+					Status:      "invalid",
+					Description: "root ingressroute cannot delegate to another root ingressroute",
+					Vhost:       "example.com",
+				},
+			},
+		},
+		"child delegates to parent, producing a cycle": {
+			objs: []interface{}{ir7, ir8},
+			want: map[Meta]Status{
+				{name: ir7.Name, namespace: ir7.Namespace}: {
+					Object:      ir7,
+					Status:      "valid",
+					Description: "valid IngressRoute",
+					Vhost:       "example.com",
+				},
+				{name: ir8.Name, namespace: ir8.Namespace}: {
+					Object:      ir8,
+					Status:      "invalid",
+					Description: "route creates a delegation cycle: roots/parent -> roots/child -> roots/child",
+				},
+			},
+		},
+		"route has a list of services and also delegates": {
+			objs: []interface{}{ir9},
+			want: map[Meta]Status{
+				{name: ir9.Name, namespace: ir9.Namespace}: {Object: ir9, Status: "invalid", Description: `route "/foo": cannot specify services and delegate in the same route`, Vhost: "example.com"},
+			},
+		},
+		"ingressroute is an orphaned route": {
+			objs: []interface{}{ir8},
+			want: map[Meta]Status{
+				{name: ir8.Name, namespace: ir8.Namespace}: {Object: ir8, Status: "orphaned", Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"},
+			},
+		},
+		"ingressroute delegates to multiple ingressroutes, one is invalid": {
+			objs: []interface{}{ir10, ir11, ir12, s6, s7},
+			want: map[Meta]Status{
+				{name: ir11.Name, namespace: ir11.Namespace}: {Object: ir11, Status: "valid", Description: "valid IngressRoute"},
+				{name: ir12.Name, namespace: ir12.Namespace}: {Object: ir12, Status: "invalid", Description: `route "/bar": service "foo3": port must be in the range 1-65535`},
+				{name: ir10.Name, namespace: ir10.Namespace}: {Object: ir10, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
+			},
+		},
+		"invalid parent orphans children": {
+			objs: []interface{}{ir14, ir11},
+			want: map[Meta]Status{
+				{name: ir14.Name, namespace: ir14.Namespace}: {Object: ir14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
+				{name: ir11.Name, namespace: ir11.Namespace}: {Object: ir11, Status: "orphaned", Description: "this IngressRoute is not part of a delegation chain from a root IngressRoute"},
+			},
+		},
+		"multi-parent children is not orphaned when one of the parents is invalid": {
+			objs: []interface{}{ir14, ir11, ir10, s5, s6},
+			want: map[Meta]Status{
+				{name: ir14.Name, namespace: ir14.Namespace}: {Object: ir14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
+				{name: ir11.Name, namespace: ir11.Namespace}: {Object: ir11, Status: "valid", Description: "valid IngressRoute"},
+				{name: ir10.Name, namespace: ir10.Namespace}: {Object: ir10, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
+			},
+		},
+		"invalid FQDN contains wildcard": {
+			objs: []interface{}{ir15},
+			want: map[Meta]Status{
+				{name: ir15.Name, namespace: ir15.Namespace}: {Object: ir15, Status: "invalid", Description: `Spec.VirtualHost.Fqdn "example.*.com" cannot use wildcards`, Vhost: "example.*.com"},
+			},
+		},
+		"missing service shows invalid status": {
+			objs: []interface{}{ir16},
+			want: map[Meta]Status{
+				{name: ir16.Name, namespace: ir16.Namespace}: {
+					Object:      ir16,
+					Status:      "invalid",
+					Description: `Service [invalid:8080] is invalid or missing`,
+					Vhost:       ir16.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		"insert ingressroute": {
+			objs: []interface{}{s1, ir17},
+			want: map[Meta]Status{
+				{name: ir17.Name, namespace: ir17.Namespace}: {
+					Object:      ir17,
+					Status:      StatusValid,
+					Description: "valid IngressRoute",
+					Vhost:       "example.com",
+				},
+			},
+		},
+		"insert conflicting ingressroutes due to fqdn reuse": {
+			objs: []interface{}{ir17, ir18},
+			want: map[Meta]Status{
+				{name: ir17.Name, namespace: ir17.Namespace}: {
+					Object:      ir17,
+					Status:      StatusInvalid,
+					Description: `fqdn "example.com" is used in multiple IngressRoutes: roots/example-com, roots/other-example`,
+					Vhost:       "example.com",
+				},
+				{name: ir18.Name, namespace: ir18.Namespace}: {
+					Object:      ir18,
+					Status:      StatusInvalid,
+					Description: `fqdn "example.com" is used in multiple IngressRoutes: roots/example-com, roots/other-example`,
+					Vhost:       "example.com",
+				},
+			},
+		},
+		"root ingress delegating to another root": {
+			objs: []interface{}{ir20, ir21},
+			want: map[Meta]Status{
+				{name: ir20.Name, namespace: ir20.Namespace}: {
+					Object:      ir20,
+					Status:      StatusInvalid,
+					Description: `fqdn "blog.containersteve.com" is used in multiple IngressRoutes: marketing/blog, roots/root-blog`,
+					Vhost:       "blog.containersteve.com",
+				},
+				{name: ir21.Name, namespace: ir21.Namespace}: {
+					Object:      ir21,
+					Status:      StatusInvalid,
+					Description: `fqdn "blog.containersteve.com" is used in multiple IngressRoutes: marketing/blog, roots/root-blog`,
+					Vhost:       "blog.containersteve.com",
+				},
+			},
+		},
+		"root ingress delegating to another root w/ different hostname": {
+			objs: []interface{}{ir22, ir23, s8},
+			want: map[Meta]Status{
+				{name: ir22.Name, namespace: ir22.Namespace}: {
+					Object:      ir22,
+					Status:      StatusInvalid,
+					Description: "root ingressroute cannot delegate to another root ingressroute",
+					Vhost:       "blog.containersteve.com",
+				},
+				{name: ir23.Name, namespace: ir23.Namespace}: {
+					Object:      ir23,
+					Status:      StatusValid,
+					Description: `valid IngressRoute`,
+					Vhost:       "www.containersteve.com",
+				},
+			},
+		},
+		// issue 1399
+		"service shared across ingress and ingressroute tcpproxy": {
+			objs: []interface{}{
+				sec1, s9, i1, ir24,
+			},
+			want: map[Meta]Status{
+				{name: ir24.Name, namespace: ir24.Namespace}: {
+					Object:      ir24,
+					Status:      StatusValid,
+					Description: `valid IngressRoute`,
+					Vhost:       "example.com",
+				},
+			},
+		},
+		// issue 1347
+		"check status set when tcpproxy combined with tls delegation failure": {
+			objs: []interface{}{
+				sec2,
+				ir25,
+			},
+			want: map[Meta]Status{
+				{name: ir25.Name, namespace: ir25.Namespace}: {
+					Object:      ir25,
+					Status:      StatusInvalid,
+					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
+					Vhost:       ir25.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		// issue 1348
+		"check status set when routes combined with tls delegation failure": {
+			objs: []interface{}{
+				sec2,
+				ir26,
+			},
+			want: map[Meta]Status{
+				{name: ir26.Name, namespace: ir26.Namespace}: {
+					Object:      ir26,
+					Status:      StatusInvalid,
+					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
+					Vhost:       ir26.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		// issue 910
+		"non tls routes can be combined with tcp proxy": {
+			objs: []interface{}{
+				s10,
+				ir27,
+			},
+			want: map[Meta]Status{
+				{name: ir27.Name, namespace: ir27.Namespace}: {
+					Object:      ir27,
+					Status:      StatusValid,
+					Description: `valid IngressRoute`,
+					Vhost:       ir27.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		// issue 1452
+		"ingressroute with missing secret delegation should be invalid": {
+			objs: []interface{}{
+				s10,
+				ir28,
+			},
+			want: map[Meta]Status{
+				{name: ir28.Name, namespace: ir28.Namespace}: {
+					Object:      ir28,
+					Status:      StatusInvalid,
+					Description: "TLS Secret [heptio-contour/ssl-cert] not found or is malformed",
+					Vhost:       ir28.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		"two root ingressroutes delegated to the same object should not conflict on hostname": {
+			objs: []interface{}{
+				s1, ir29, ir30, ir31,
+			},
+			want: map[Meta]Status{
+				{name: ir29.Name, namespace: ir29.Namespace}: {
+					Object:      ir29,
+					Status:      "valid",
+					Description: "valid IngressRoute",
+					Vhost:       "site1.com",
+				},
+				{name: ir30.Name, namespace: ir30.Namespace}: {
+					Object:      ir30,
+					Status:      "valid",
+					Description: "valid IngressRoute",
+					Vhost:       "site2.com",
+				},
+				{name: ir31.Name, namespace: ir31.Namespace}: {
+					Object:      ir31,
+					Status:      "valid",
+					Description: "valid IngressRoute",
+				},
+			},
+		},
 		"valid proxy": {
 			objs: []interface{}{proxy1, s4},
 			want: map[Meta]Status{
 				{name: proxy1.Name, namespace: proxy1.Namespace}: {Object: proxy1, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
 			},
 		},
-		"invalid port in service": {
+		"proxy invalid port in service": {
 			objs: []interface{}{proxy2},
 			want: map[Meta]Status{
 				{name: proxy2.Name, namespace: proxy2.Namespace}: {Object: proxy2, Status: "invalid", Description: `service "home": port must be in the range 1-65535`, Vhost: "example.com"},
@@ -1526,7 +1455,7 @@ func TestDAGHTTPProxyStatus(t *testing.T) {
 				{name: proxy13.Name, namespace: proxy13.Namespace}: {Object: proxy13, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
 			},
 		},
-		"self-edge produces a cycle": {
+		"proxy self-edge produces a cycle": {
 			objs: []interface{}{proxy6, s1},
 			want: map[Meta]Status{
 				{name: proxy6.Name, namespace: proxy6.Namespace}: {
@@ -1537,7 +1466,7 @@ func TestDAGHTTPProxyStatus(t *testing.T) {
 				},
 			},
 		},
-		"child delegates to parent, producing a cycle": {
+		"proxy child delegates to parent, producing a cycle": {
 			objs: []interface{}{proxy7, proxy8},
 			want: map[Meta]Status{
 				{name: proxy7.Name, namespace: proxy7.Namespace}: {
@@ -1553,26 +1482,26 @@ func TestDAGHTTPProxyStatus(t *testing.T) {
 				},
 			},
 		},
-		"orphaned route": {
+		"proxy orphaned route": {
 			objs: []interface{}{proxy8},
 			want: map[Meta]Status{
 				{name: proxy8.Name, namespace: proxy8.Namespace}: {Object: proxy8, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy"},
 			},
 		},
-		"invalid parent orphans children": {
+		"proxy invalid parent orphans children": {
 			objs: []interface{}{proxy14, proxy11},
 			want: map[Meta]Status{
 				{name: proxy14.Name, namespace: proxy14.Namespace}: {Object: proxy14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
 				{name: proxy11.Name, namespace: proxy11.Namespace}: {Object: proxy11, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy"},
 			},
 		},
-		"invalid FQDN contains wildcard": {
+		"proxy invalid FQDN contains wildcard": {
 			objs: []interface{}{proxy15},
 			want: map[Meta]Status{
 				{name: proxy15.Name, namespace: proxy15.Namespace}: {Object: proxy15, Status: "invalid", Description: `Spec.VirtualHost.Fqdn "example.*.com" cannot use wildcards`, Vhost: "example.*.com"},
 			},
 		},
-		"missing service shows invalid status": {
+		"proxy missing service shows invalid status": {
 			objs: []interface{}{proxy16},
 			want: map[Meta]Status{
 				{name: proxy16.Name, namespace: proxy16.Namespace}: {
@@ -1628,7 +1557,7 @@ func TestDAGHTTPProxyStatus(t *testing.T) {
 				},
 			},
 		},
-		"root ingress delegating to another root w/ different hostname": {
+		"root proxy delegating to another root w/ different hostname": {
 			objs: []interface{}{proxy22, proxy23, s8},
 			want: map[Meta]Status{
 				{name: proxy22.Name, namespace: proxy22.Namespace}: {
@@ -1674,13 +1603,9 @@ func TestDAGHTTPProxyStatus(t *testing.T) {
 			for _, o := range tc.objs {
 				builder.Source.Insert(o)
 			}
-
 			dag := builder.Build()
 			got := dag.Statuses()
-
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
