@@ -27,7 +27,7 @@ Contour will continue to recognize IngressRoute v1beta1 through Contour 1.0.0 fi
 
 The replacement for IngressRoute which we have called HTTPProxy is available in Contour 1.0.0-beta.1 and is anticipated to be declared final by Contour 1.0.0.
 
-**TODO(dfc) link to HTTPProxy documentation**
+See the [HTTPProxy documentation](./httpproxy.md) for more information.
 
 ## The easy way to upgrade
 
