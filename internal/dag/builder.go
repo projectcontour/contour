@@ -23,7 +23,6 @@ import (
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
@@ -105,10 +104,10 @@ func (b *Builder) lookupService(m Meta, port intstr.IntOrString) *Service {
 	}
 	for i := range svc.Spec.Ports {
 		p := &svc.Spec.Ports[i]
-		if int(p.Port) == port.IntValue() {
+		switch {
+		case int(p.Port) == port.IntValue():
 			return b.addService(svc, p)
-		}
-		if port.String() == p.Name {
+		case port.String() == p.Name:
 			return b.addService(svc, p)
 		}
 	}
@@ -315,41 +314,44 @@ func (b *Builder) computeIngresses() {
 
 		// rewrite the default ingress to a stock ingress rule.
 		rules := rulesFromSpec(ing.Spec)
-
 		for _, rule := range rules {
-			if strings.Contains(rule.Host, "*") {
-				// reject hosts with wildcard characters.
-				continue
-			}
-			host := rule.Host
-			if host == "" {
-				// if host name is blank, rewrite to Envoy's * default host.
-				host = "*"
-			}
-			for _, httppath := range httppaths(rule) {
-				path := stringOrDefault(httppath.Path, "/")
-				be := httppath.Backend
-				m := Meta{name: be.ServiceName, namespace: ing.Namespace}
-				s := b.lookupService(m, be.ServicePort)
-				if s == nil {
-					continue
-				}
+			b.computeIngressRule(ing, rule)
+		}
+	}
+}
 
-				r := route(ing, path, s)
+func (b *Builder) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1.IngressRule) {
+	host := rule.Host
+	if strings.Contains(host, "*") {
+		// reject hosts with wildcard characters.
+		return
+	}
+	if host == "" {
+		// if host name is blank, rewrite to Envoy's * default host.
+		host = "*"
+	}
+	for _, httppath := range httppaths(rule) {
+		path := stringOrDefault(httppath.Path, "/")
+		be := httppath.Backend
+		m := Meta{name: be.ServiceName, namespace: ing.Namespace}
+		s := b.lookupService(m, be.ServicePort)
+		if s == nil {
+			continue
+		}
 
-				// should we create port 80 routes for this ingress
-				if tlsRequired(ing) || httpAllowed(ing) {
-					b.lookupVirtualHost(host).addRoute(r)
-				}
+		r := route(ing, path, s)
 
-				// computeSecureVirtualhosts will have populated b.securevirtualhosts
-				// with the names of tls enabled ingress objects. If host exists then
-				// it is correctly configured for TLS.
-				svh, ok := b.securevirtualhosts[host]
-				if ok && host != "*" {
-					svh.addRoute(r)
-				}
-			}
+		// should we create port 80 routes for this ingress
+		if tlsRequired(ing) || httpAllowed(ing) {
+			b.lookupVirtualHost(host).addRoute(r)
+		}
+
+		// computeSecureVirtualhosts will have populated b.securevirtualhosts
+		// with the names of tls enabled ingress objects. If host exists then
+		// it is correctly configured for TLS.
+		svh, ok := b.securevirtualhosts[host]
+		if ok && host != "*" {
+			svh.addRoute(r)
 		}
 	}
 }
@@ -476,9 +478,12 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 
 	insecure := b.lookupVirtualHost(host)
 	secure := b.lookupSecureVirtualHost(host)
-	for _, route := range b.computeRoutes(sw, proxy, nil, nil, enforceTLS) {
+	routes := b.computeRoutes(sw, proxy, nil, nil, enforceTLS)
+	for _, route := range routes {
 		insecure.addRoute(route)
-		secure.addRoute(route)
+		if enforceTLS {
+			secure.addRoute(route)
+		}
 	}
 }
 
@@ -629,9 +634,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 		}
 		routes = append(routes, r)
 	}
-	// Mark proxy as valid
 	sw.SetValid()
-
 	return routes
 }
 
@@ -929,8 +932,6 @@ func (b *Builder) processTCPProxy(sw *ObjectStatusWriter, ir *ingressroutev1.Ing
 		b.processTCPProxy(sw, dest, visited, host)
 		commit()
 	}
-
-	sw.SetValid()
 }
 
 func externalName(svc *v1.Service) string {
@@ -940,41 +941,14 @@ func externalName(svc *v1.Service) string {
 	return svc.Spec.ExternalName
 }
 
-// route returns a dag.Route for the supplied Ingress.
+// route builds a dag.Route for the supplied Ingress.
 func route(ingress *v1beta1.Ingress, path string, service *Service) *Route {
-	var retry *RetryPolicy
-	if retryOn, ok := ingress.Annotations[annotationRetryOn]; ok && len(retryOn) > 0 {
-		// if there is a non empty retry-on annotation, build a RetryPolicy manually.
-		retry = &RetryPolicy{
-			RetryOn: retryOn,
-			// TODO(dfc) NumRetries may parse as 0, which is inconsistent with
-			// retryPolicyIngressRoute()'s default value of 1.
-			NumRetries: parseUInt32(ingress.Annotations[annotationNumRetries]),
-			// TODO(dfc) PerTryTimeout will parse to -1, infinite, in the case of
-			// invalid data, this is inconsistent with retryPolicyIngressRoute()'s default value
-			// of 0 duration.
-			PerTryTimeout: parseTimeout(ingress.Annotations[annotationPerTryTimeout]),
-		}
-	}
-
-	var timeout *TimeoutPolicy
-	if response, ok := ingress.Annotations[annotationRequestTimeout]; ok {
-		// if the request timeout annotation is present on this ingress
-		// construct and use the ingressroute timeout policy logic.
-		// Note: due to a misunderstanding the name of the annotation is
-		// request timeout, but it is actually applied as a timeout on
-		// the response body.
-		timeout = timeoutPolicy(&projcontour.TimeoutPolicy{
-			Response: response,
-		})
-	}
-
 	wr := websocketRoutes(ingress)
 	r := &Route{
 		HTTPSUpgrade:  tlsRequired(ingress),
 		Websocket:     wr[path],
-		TimeoutPolicy: timeout,
-		RetryPolicy:   retry,
+		TimeoutPolicy: ingressTimeoutPolicy(ingress),
+		RetryPolicy:   ingressRetryPolicy(ingress),
 		Clusters: []*Cluster{{
 			Upstream: service,
 		}},
@@ -993,20 +967,6 @@ func route(ingress *v1beta1.Ingress, path string, service *Service) *Route {
 // isBlank indicates if a string contains nothing but blank characters.
 func isBlank(s string) bool {
 	return len(strings.TrimSpace(s)) == 0
-}
-
-// MinProtoVersion returns the TLS protocol version specified by an ingress annotation
-// or default if non present.
-func MinProtoVersion(version string) envoy_api_v2_auth.TlsParameters_TlsProtocol {
-	switch version {
-	case "1.3":
-		return envoy_api_v2_auth.TlsParameters_TLSv1_3
-	case "1.2":
-		return envoy_api_v2_auth.TlsParameters_TLSv1_2
-	default:
-		// any other value is interpreted as TLS/1.1
-		return envoy_api_v2_auth.TlsParameters_TLSv1_1
-	}
 }
 
 // splitSecret splits a secretName into its namespace and name components.

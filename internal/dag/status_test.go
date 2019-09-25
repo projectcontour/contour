@@ -35,11 +35,118 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		Data: secretdata("certificate", "key"),
 	}
 
+	sec2 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default-ssl-cert",
+			Namespace: "heptio-contour",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata("certificate", "key"),
+	}
+
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: sec1.Namespace,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	s4 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "home",
+			Namespace: s1.Namespace,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     8080,
+			}},
+		},
+	}
+
+	s5 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "parent",
+			Namespace: s1.Namespace,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     8080,
+			}},
+		},
+	}
+
+	s6 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo2",
+			Namespace: s1.Namespace,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     8080,
+			}},
+		},
+	}
+
+	s7 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo3",
+			Namespace: s1.Namespace,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     12345678,
+			}},
+		},
+	}
+
+	s8 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "green",
+			Namespace: "marketing",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	}
+
+	s9 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nginx",
+			Namespace: s1.Namespace,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol: "TCP",
+				Port:     80,
+			}},
+		},
+	}
+
 	// ir1 is a valid ingressroute
 	ir1 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
-			Name:      "example",
+			Name:      s4.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &projcontour.VirtualHost{
@@ -48,7 +155,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
 				Services: []ingressroutev1.Service{{
-					Name: "home",
+					Name: s4.Name,
 					Port: 8080,
 				}},
 			}, {
@@ -63,8 +170,8 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 	// ir2 is invalid because it contains a service with negative port
 	ir2 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
 			Name:      "example",
+			Namespace: s4.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &projcontour.VirtualHost{
@@ -73,7 +180,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
 				Services: []ingressroutev1.Service{{
-					Name: "home",
+					Name: s4.Name,
 					Port: -80,
 				}},
 			}},
@@ -363,78 +470,6 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			}},
 		},
 	}
-
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: ir17.Namespace,
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
-
-	s4 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "home",
-			Namespace: "roots",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
-		},
-	}
-
-	s5 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "parent",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
-		},
-	}
-
-	s6 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "foo2",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
-		},
-	}
-
-	s7 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo3",
-			Namespace: "roots",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     12345678,
-			}},
-		},
-	}
-
 	ir20 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "root-blog",
@@ -517,37 +552,10 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
-	s8 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "green",
-			Namespace: "marketing",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	}
-
-	s9 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "nginx",
-			Namespace: "roots",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	}
-
 	i1 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nginx",
-			Namespace: "roots",
+			Namespace: s9.Namespace,
 		},
 		Spec: v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{{
@@ -564,7 +572,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 	ir24 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nginx",
-			Namespace: "roots",
+			Namespace: s9.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
 			VirtualHost: &projcontour.VirtualHost{
@@ -580,15 +588,6 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				}},
 			},
 		},
-	}
-
-	sec2 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "default-ssl-cert",
-			Namespace: "heptio-contour",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: secretdata("certificate", "key"),
 	}
 
 	ir25 := &ingressroutev1.IngressRoute{
@@ -1054,7 +1053,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 	proxy21 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog",
-			Namespace: "marketing",
+			Namespace: s8.Namespace,
 		},
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
@@ -1065,7 +1064,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			},
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
-					Name: "green",
+					Name: s8.Name,
 					Port: 80,
 				}},
 			}},
@@ -1094,7 +1093,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 	proxy23 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog",
-			Namespace: "marketing",
+			Namespace: s8.Namespace,
 		},
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
@@ -1102,7 +1101,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			},
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
-					Name: "green",
+					Name: s8.Name,
 					Port: 80,
 				}},
 			}},
@@ -1112,12 +1111,12 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 	proxy24 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog",
-			Namespace: "marketing",
+			Namespace: s8.Namespace,
 		},
 		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
-					Name: "green",
+					Name: s8.Name,
 					Port: 80,
 				}},
 			}},
@@ -1134,8 +1133,8 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Includes: []projcontour.Include{{
-				Name:      "blog",
-				Namespace: "marketing",
+				Name:      proxy24.Name,
+				Namespace: proxy24.Namespace,
 				Conditions: []projcontour.Condition{{
 					Prefix: "/blog",
 				}},
@@ -1143,20 +1142,55 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
-	s2 := &v1.Service{
+	proxy26 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "roots",
+			Name:      "www",
+			Namespace: s1.Namespace,
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}, {
+					Name: s1.Name,
+					Port: 8080,
+				}, {
+					Name:   s1.Name,
+					Port:   8080,
+					Mirror: true,
+				}},
 			}},
 		},
 	}
-
+	proxy27 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "www",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}, {
+					Name:   s1.Name,
+					Port:   8080,
+					Mirror: true,
+				}, {
+					Name:   s1.Name,
+					Port:   8080,
+					Mirror: true,
+				}},
+			}},
+		},
+	}
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -1512,17 +1546,6 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				},
 			},
 		},
-		"insert proxy": {
-			objs: []interface{}{s2, proxy17},
-			want: map[Meta]Status{
-				{name: proxy17.Name, namespace: proxy17.Namespace}: {
-					Object:      proxy17,
-					Status:      StatusValid,
-					Description: "valid HTTPProxy",
-					Vhost:       "example.com",
-				},
-			},
-		},
 		"insert conflicting proxies due to fqdn reuse": {
 			objs: []interface{}{proxy17, proxy18},
 			want: map[Meta]Status{
@@ -1586,6 +1609,28 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Object:      proxy25,
 					Status:      "valid",
 					Description: "valid HTTPProxy",
+					Vhost:       "example.com",
+				},
+			},
+		},
+		"proxy with mirror": {
+			objs: []interface{}{proxy26, s1},
+			want: map[Meta]Status{
+				{name: proxy26.Name, namespace: proxy26.Namespace}: {
+					Object:      proxy26,
+					Status:      "valid",
+					Description: "valid HTTPProxy",
+					Vhost:       "example.com",
+				},
+			},
+		},
+		"proxy with two mirrors": {
+			objs: []interface{}{proxy27, s1},
+			want: map[Meta]Status{
+				{name: proxy27.Name, namespace: proxy27.Namespace}: {
+					Object:      proxy27,
+					Status:      "invalid",
+					Description: "only one service per route may be nominated as mirror",
 					Vhost:       "example.com",
 				},
 			},
