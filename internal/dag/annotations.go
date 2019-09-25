@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"k8s.io/api/extensions/v1beta1"
 )
 
@@ -106,4 +107,18 @@ func ingressClass(o Object) string {
 		return class
 	}
 	return ""
+}
+
+// MinProtoVersion returns the TLS protocol version specified by an ingress annotation
+// or default if non present.
+func MinProtoVersion(version string) envoy_api_v2_auth.TlsParameters_TlsProtocol {
+	switch version {
+	case "1.3":
+		return envoy_api_v2_auth.TlsParameters_TLSv1_3
+	case "1.2":
+		return envoy_api_v2_auth.TlsParameters_TLSv1_2
+	default:
+		// any other value is interpreted as TLS/1.1
+		return envoy_api_v2_auth.TlsParameters_TLSv1_1
+	}
 }
