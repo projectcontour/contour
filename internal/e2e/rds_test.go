@@ -17,8 +17,11 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/projectcontour/contour/internal/dag"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
@@ -2707,7 +2710,7 @@ func TestHTTPProxyRouteWithAServiceWeight(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/a"),
+				Conditions: conditions(prefixCondition("/a")),
 				Services: []projcontour.Service{{
 					Name:   "kuard",
 					Port:   80,
@@ -2732,7 +2735,7 @@ func TestHTTPProxyRouteWithAServiceWeight(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/a"),
+				Conditions: conditions(prefixCondition("/a")),
 				Services: []projcontour.Service{{
 					Name:   "kuard",
 					Port:   80,
@@ -2787,14 +2790,14 @@ func TestWebsocketHTTProxy(t *testing.T) {
 					Port: 80,
 				}},
 			}, {
-				Conditions:       prefixCondition("/ws-1"),
+				Conditions:       conditions(prefixCondition("/ws-1")),
 				EnableWebsockets: true,
 				Services: []projcontour.Service{{
 					Name: "ws",
 					Port: 80,
 				}},
 			}, {
-				Conditions:       prefixCondition("/ws-2"),
+				Conditions:       conditions(prefixCondition("/ws-2")),
 				EnableWebsockets: true,
 				Services: []projcontour.Service{{
 					Name: "ws",
@@ -2809,6 +2812,319 @@ func TestWebsocketHTTProxy(t *testing.T) {
 			envoy.Route(envoy.RoutePrefix("/ws-2"), websocketroute("default/ws/80/da39a3ee5e")),
 			envoy.Route(envoy.RoutePrefix("/ws-1"), websocketroute("default/ws/80/da39a3ee5e")),
 			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/ws/80/da39a3ee5e")),
+		),
+	), nil)
+}
+
+func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "svc1",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "svc2",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "svc3",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	proxy1 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "svc1",
+					Port: 80,
+				}},
+			}, {
+				Conditions: conditions(
+					prefixCondition("/"),
+					headerCondition("x-header", "abc", "contains", false),
+				),
+				Services: []projcontour.Service{{
+					Name: "svc2",
+					Port: 80,
+				}},
+			}, {
+				Conditions: conditions(
+					prefixCondition("/blog"),
+					headerCondition("x-header", "abc", "contains", false),
+				),
+				Services: []projcontour.Service{{
+					Name: "svc3",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnAdd(proxy1)
+
+	assertRDS(t, cc, "1", virtualhosts(
+		envoy.VirtualHost("hello.world",
+			envoy.Route(envoy.RoutePrefix("/blog", dag.HeaderCondition{
+				Name:      "x-header",
+				Value:     "abc",
+				MatchType: "contains",
+				Invert:    false,
+			}), routecluster("default/svc3/80/da39a3ee5e")),
+			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
+				Name:      "x-header",
+				Value:     "abc",
+				MatchType: "contains",
+				Invert:    false,
+			}), routecluster("default/svc2/80/da39a3ee5e")),
+			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
+		),
+	), nil)
+
+	proxy2 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "svc1",
+					Port: 80,
+				}},
+			}, {
+				Conditions: conditions(
+					prefixCondition("/"),
+					headerCondition("x-header", "123", "notcontains", false),
+				),
+				Services: []projcontour.Service{{
+					Name: "svc2",
+					Port: 80,
+				}},
+			}, {
+				Conditions: conditions(
+					prefixCondition("/blog"),
+					headerCondition("x-header", "abc", "notcontains", false),
+				),
+				Services: []projcontour.Service{{
+					Name: "svc3",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	rh.OnUpdate(proxy1, proxy2)
+
+	assertRDS(t, cc, "1", virtualhosts(
+		envoy.VirtualHost("hello.world",
+			envoy.Route(envoy.RoutePrefix("/blog", dag.HeaderCondition{
+				Name:      "x-header",
+				Value:     "abc",
+				MatchType: "contains",
+				Invert:    true,
+			}), routecluster("default/svc3/80/da39a3ee5e")),
+			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
+				Name:      "x-header",
+				Value:     "123",
+				MatchType: "contains",
+				Invert:    true,
+			}), routecluster("default/svc2/80/da39a3ee5e")),
+			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
+		),
+	), nil)
+
+	proxy3 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "svc1",
+					Port: 80,
+				}},
+			}, {
+				Conditions: conditions(
+					prefixCondition("/"),
+					headerCondition("x-header", "abc", "exact", false),
+				),
+				Services: []projcontour.Service{{
+					Name: "svc2",
+					Port: 80,
+				}},
+			}, {
+				Conditions: conditions(
+					prefixCondition("/blog"),
+					headerCondition("x-header", "123", "exact", false),
+				),
+				Services: []projcontour.Service{{
+					Name: "svc3",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	rh.OnUpdate(proxy2, proxy3)
+
+	assertRDS(t, cc, "1", virtualhosts(
+		envoy.VirtualHost("hello.world",
+			envoy.Route(envoy.RoutePrefix("/blog", dag.HeaderCondition{
+				Name:      "x-header",
+				Value:     "123",
+				MatchType: "exact",
+				Invert:    false,
+			}), routecluster("default/svc3/80/da39a3ee5e")),
+			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
+				Name:      "x-header",
+				Value:     "abc",
+				MatchType: "exact",
+				Invert:    false,
+			}), routecluster("default/svc2/80/da39a3ee5e")),
+			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
+		),
+	), nil)
+
+	proxy4 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "svc1",
+					Port: 80,
+				}},
+			}, {
+				Conditions: conditions(
+					prefixCondition("/"),
+					headerCondition("x-header", "abc", "notexact", false),
+				),
+				Services: []projcontour.Service{{
+					Name: "svc2",
+					Port: 80,
+				}},
+			}, {
+				Conditions: conditions(
+					prefixCondition("/blog"),
+					headerCondition("x-header", "123", "notexact", false),
+				),
+				Services: []projcontour.Service{{
+					Name: "svc3",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	rh.OnUpdate(proxy3, proxy4)
+
+	assertRDS(t, cc, "1", virtualhosts(
+		envoy.VirtualHost("hello.world",
+			envoy.Route(envoy.RoutePrefix("/blog", dag.HeaderCondition{
+				Name:      "x-header",
+				Value:     "123",
+				MatchType: "exact",
+				Invert:    true,
+			}), routecluster("default/svc3/80/da39a3ee5e")),
+			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
+				Name:      "x-header",
+				Value:     "abc",
+				MatchType: "exact",
+				Invert:    true,
+			}), routecluster("default/svc2/80/da39a3ee5e")),
+			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
+		),
+	), nil)
+
+	proxy5 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "svc1",
+					Port: 80,
+				}},
+			}, {
+				Conditions: conditions(
+					prefixCondition("/"),
+					headerCondition("x-header", "abc", "", true),
+				),
+				Services: []projcontour.Service{{
+					Name: "svc2",
+					Port: 80,
+				}},
+			}, {
+				Conditions: conditions(
+					prefixCondition("/blog"),
+					headerCondition("x-header", "123", "", true),
+				),
+				Services: []projcontour.Service{{
+					Name: "svc3",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	rh.OnUpdate(proxy4, proxy5)
+
+	assertRDS(t, cc, "1", virtualhosts(
+		envoy.VirtualHost("hello.world",
+			envoy.Route(envoy.RoutePrefix("/blog", dag.HeaderCondition{
+				Name:      "x-header",
+				MatchType: "present",
+				Invert:    false,
+			}), routecluster("default/svc3/80/da39a3ee5e")),
+			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
+				Name:      "x-header",
+				MatchType: "present",
+				Invert:    false,
+			}), routecluster("default/svc2/80/da39a3ee5e")),
+			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
 		),
 	), nil)
 }
@@ -2858,7 +3174,7 @@ func TestWebsocketHTTPProxy_MultipleUpstreams(t *testing.T) {
 					Port: 80,
 				}},
 			}, {
-				Conditions:       prefixCondition("/ws-1"),
+				Conditions:       conditions(prefixCondition("/ws-1")),
 				EnableWebsockets: true,
 				Services: []projcontour.Service{{
 					Name: "ws",
@@ -2868,7 +3184,7 @@ func TestWebsocketHTTPProxy_MultipleUpstreams(t *testing.T) {
 					Port: 80,
 				}},
 			}, {
-				Conditions:       prefixCondition("/ws-2"),
+				Conditions:       conditions(prefixCondition("/ws-2")),
 				EnableWebsockets: true,
 				Services: []projcontour.Service{{
 					Name: "ws",
@@ -2917,14 +3233,14 @@ func TestPrefixRewriteHTTPProxy(t *testing.T) {
 					Port: 80,
 				}},
 			}, {
-				Conditions:    prefixCondition("/ws-1"),
+				Conditions:    conditions(prefixCondition("/ws-1")),
 				PrefixRewrite: "/",
 				Services: []projcontour.Service{{
 					Name: "ws",
 					Port: 80,
 				}},
 			}, {
-				Conditions:    prefixCondition("/ws-2"),
+				Conditions:    conditions(prefixCondition("/ws-2")),
 				PrefixRewrite: "/",
 				Services: []projcontour.Service{{
 					Name: "ws",
@@ -2986,7 +3302,7 @@ func TestHTTPProxyRouteWithTLS(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/a"),
+				Conditions: conditions(prefixCondition("/a")),
 				Services: []projcontour.Service{{
 					Name: "kuard",
 					Port: 80,
@@ -3077,13 +3393,13 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions:     prefixCondition("/insecure"),
+				Conditions:     conditions(prefixCondition("/insecure")),
 				PermitInsecure: true,
 				Services: []projcontour.Service{{Name: "kuard",
 					Port: 80,
 				}},
 			}, {
-				Conditions: prefixCondition("/secure"),
+				Conditions: conditions(prefixCondition("/secure")),
 				Services: []projcontour.Service{{
 					Name: "svc2",
 					Port: 80,
@@ -3179,14 +3495,14 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testin
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions:     prefixCondition("/insecure"),
+				Conditions:     conditions(prefixCondition("/insecure")),
 				PermitInsecure: true,
 				Services: []projcontour.Service{{
 					Name: "kuard",
 					Port: 80,
 				}},
 			}, {
-				Conditions: prefixCondition("/secure"),
+				Conditions: conditions(prefixCondition("/secure")),
 				Services: []projcontour.Service{{
 					Name: "svc2",
 					Port: 80,
@@ -3349,7 +3665,7 @@ func TestHTTPProxyLoadBalancingStrategies(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/a"),
+				Conditions: conditions(prefixCondition("/a")),
 				Services:   ss,
 			}},
 		},
@@ -3395,7 +3711,7 @@ func TestHTTPProxyRouteWithSessionAffinity(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/cart"),
+				Conditions: conditions(prefixCondition("/cart")),
 				Services: []projcontour.Service{{
 					Name:     "app",
 					Port:     80,
@@ -3421,7 +3737,7 @@ func TestHTTPProxyRouteWithSessionAffinity(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/cart"),
+				Conditions: conditions(prefixCondition("/cart")),
 				Services: []projcontour.Service{{
 					Name:     "app",
 					Port:     80,
@@ -3455,7 +3771,7 @@ func TestHTTPProxyRouteWithSessionAffinity(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/cart"),
+				Conditions: conditions(prefixCondition("/cart")),
 				Services: []projcontour.Service{{
 					Name:     "app",
 					Port:     80,
@@ -3537,8 +3853,32 @@ func TestRouteRetryHTTPProxy(t *testing.T) {
 
 func virtualhosts(v ...*envoy_api_v2_route.VirtualHost) []*envoy_api_v2_route.VirtualHost { return v }
 
-func prefixCondition(prefix string) []projcontour.Condition {
-	return []projcontour.Condition{{
+func conditions(c ...projcontour.Condition) []projcontour.Condition { return c }
+
+func prefixCondition(prefix string) projcontour.Condition {
+	return projcontour.Condition{
 		Prefix: prefix,
-	}}
+	}
+}
+
+func headerCondition(name, value, headerType string, present bool) projcontour.Condition {
+	cond := projcontour.Condition{
+		Header: &projcontour.HeaderCondition{
+			Name:    name,
+			Present: present,
+		},
+	}
+
+	switch strings.ToLower(headerType) {
+	case "contains":
+		cond.Header.Contains = value
+	case "notcontains":
+		cond.Header.NotContains = value
+	case "exact":
+		cond.Header.Exact = value
+	case "notexact":
+		cond.Header.NotExact = value
+	}
+
+	return cond
 }

@@ -232,7 +232,10 @@ func (l longestRouteFirst) Less(i, j int) bool {
 	case *envoy_api_v2_route.RouteMatch_Prefix:
 		switch b := l[j].Match.PathSpecifier.(type) {
 		case *envoy_api_v2_route.RouteMatch_Prefix:
-			return a.Prefix > b.Prefix
+			if len(l[i].Match.Headers) == len(l[j].Match.Headers) {
+				return a.Prefix > b.Prefix
+			}
+			return len(l[i].Match.Headers) > len(l[j].Match.Headers)
 		}
 	case *envoy_api_v2_route.RouteMatch_Regex:
 		switch b := l[j].Match.PathSpecifier.(type) {
