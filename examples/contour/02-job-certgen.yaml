@@ -50,7 +50,7 @@ spec:
     spec:
       containers:
       - name: contour
-        image: docker.io/projectcontour/contour:master
+        image: docker.io/projectcontour/contour:v1.0.0-beta.1
         imagePullPolicy: Always
         command:
         - contour
