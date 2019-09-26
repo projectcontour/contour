@@ -18,12 +18,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/golang/protobuf/proto"
-	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -68,9 +68,7 @@ func TestRouteCacheContents(t *testing.T) {
 			var rc RouteCache
 			rc.Update(tc.contents)
 			got := rc.Contents()
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -130,9 +128,7 @@ func TestRouteCacheQuery(t *testing.T) {
 			var rc RouteCache
 			rc.Update(tc.contents)
 			got := rc.Query(tc.query)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -1804,9 +1800,7 @@ func TestRouteVisit(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			root := buildDAG(tc.objs...)
 			got := visitRoutes(root)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -1856,15 +1850,31 @@ func TestSortLongestRouteFirst(t *testing.T) {
 				Match: envoy.RoutePrefix("/"),
 			}},
 		},
+		"more headers sort before less": {
+			routes: []*envoy_api_v2_route.Route{{
+				Match: envoy.RoutePrefix("/"),
+			}, {
+				Match: envoy.RoutePrefix("/", dag.HeaderCondition{
+					Name:      "x-request-id",
+					MatchType: "present",
+				}),
+			}},
+			want: []*envoy_api_v2_route.Route{{
+				Match: envoy.RoutePrefix("/", dag.HeaderCondition{
+					Name:      "x-request-id",
+					MatchType: "present",
+				}),
+			}, {
+				Match: envoy.RoutePrefix("/"),
+			}},
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := append([]*envoy_api_v2_route.Route{}, tc.routes...) // shallow copy
 			sort.Stable(longestRouteFirst(got))
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }

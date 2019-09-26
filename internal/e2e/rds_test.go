@@ -2904,13 +2904,13 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 				MatchType: "contains",
 				Invert:    false,
 			}), routecluster("default/svc3/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
 			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "abc",
 				MatchType: "contains",
 				Invert:    false,
 			}), routecluster("default/svc2/80/da39a3ee5e")),
+			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
 		),
 	), nil)
 
@@ -2958,13 +2958,13 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 				MatchType: "contains",
 				Invert:    true,
 			}), routecluster("default/svc3/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
 			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "123",
 				MatchType: "contains",
 				Invert:    true,
 			}), routecluster("default/svc2/80/da39a3ee5e")),
+			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
 		),
 	), nil)
 
@@ -3012,13 +3012,13 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 				MatchType: "exact",
 				Invert:    false,
 			}), routecluster("default/svc3/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
 			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "abc",
 				MatchType: "exact",
 				Invert:    false,
 			}), routecluster("default/svc2/80/da39a3ee5e")),
+			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
 		),
 	), nil)
 
@@ -3066,13 +3066,13 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 				MatchType: "exact",
 				Invert:    true,
 			}), routecluster("default/svc3/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
 			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "abc",
 				MatchType: "exact",
 				Invert:    true,
 			}), routecluster("default/svc2/80/da39a3ee5e")),
+			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
 		),
 	), nil)
 
@@ -3119,12 +3119,12 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 				MatchType: "present",
 				Invert:    false,
 			}), routecluster("default/svc3/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
 			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
 				Name:      "x-header",
 				MatchType: "present",
 				Invert:    false,
 			}), routecluster("default/svc2/80/da39a3ee5e")),
+			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
 		),
 	), nil)
 }
