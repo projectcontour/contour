@@ -1,4 +1,4 @@
-name: Build and push a release without :latest
+name: Build and push a release
 
 on:
   push:
@@ -6,6 +6,9 @@ on:
       # Although these *look* like regex matches, they're not!
       # They are Go path.Match() expressions.
       # See https://golang.org/pkg/path/#Match for details.
+      - 'v[0-9]*.[0-9]*.[0-9]'
+      - 'v[0-9]*.[0-9]*.[0-9][0-9]'
+      - 'v[0-9]*.[0-9]*.[0-9][0-9][0-9]'
       - 'v[0-9]*.[0-9]*.[0-9]*beta*'
       - 'v[0-9]*.[0-9]*.[0-9]*alpha*'
       - 'v[0-9]*.[0-9]*.[0-9]*rc*'
