@@ -10,7 +10,7 @@ spec:
   routes: 
     - match: / 
       delegate:
-        name: blue # Changing this to `green` will immediately switch to the other ingressroute object
-                   # This can be helpful for testing different ingressroute configs
-                   # or for improved UX doing blue/green application deployments
-
+        name: blue
+        # Changing this to `green` will immediately switch to the other ingressroute object
+        # This can be helpful for testing different ingressroute configs
+        # or for improved UX doing blue/green application deployments

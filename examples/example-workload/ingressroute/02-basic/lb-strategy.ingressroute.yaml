@@ -14,4 +14,4 @@ spec:
           port: 80
         - name: s2-strategy
           port: 80
-          strategy: WeightedLeastRequest # Default LB Algoritm for this Service is overridden
+          strategy: WeightedLeastRequest  # Default LB Algoritm for this Service is overridden

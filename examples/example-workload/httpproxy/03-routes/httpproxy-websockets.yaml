@@ -15,7 +15,7 @@ spec:
           port: 80
     - conditions:
       - prefix: /websocket
-      enableWebsockets: true # Setting this to true enables websocket for all paths that match /websocket
+      enableWebsockets: true  # Setting this to true enables websocket for all paths that match /websocket
       services:
         - name: chat-app
           port: 80

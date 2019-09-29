@@ -36,15 +36,11 @@ rules:
   hyphens:
     max-spaces-after: 1
   indentation:
-    spaces: consistent
-    indent-sequences: true
+    spaces: 2
+    indent-sequences: whatever
     check-multi-line-strings: false
   key-duplicates: enable
   key-ordering: disable
-  line-length:
-    max: 150
-    allow-non-breakable-words: true
-    allow-non-breakable-inline-mappings: true
   new-line-at-end-of-file: enable
   new-lines:
     type: unix

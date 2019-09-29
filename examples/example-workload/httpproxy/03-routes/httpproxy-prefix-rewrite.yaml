@@ -15,7 +15,7 @@ spec:
           port: 80
     - conditions:
       - prefix: /service2
-      prefixRewrite: "/" # Setting this rewrites the request from `/service2` to `/`
+      prefixRewrite: "/"  # Setting this rewrites the request from `/service2` to `/`
       services:
         - name: app-service
           port: 80

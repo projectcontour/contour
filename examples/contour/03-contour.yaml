@@ -89,7 +89,7 @@ spec:
             secretName: contourcert
         - name: cacert
           secret:
-            secretName:   cacert
+            secretName: cacert
         - name: contour-config
           configMap:
             name: contour

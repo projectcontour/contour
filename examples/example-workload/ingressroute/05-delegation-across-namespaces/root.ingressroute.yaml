@@ -12,8 +12,7 @@ spec:
       services: 
         - name: s1
           port: 80
-# delegate the subpath, `/blog` to the IngressRoute object in the marketing namespace with the name `blog`
-    - match: /blog 
+    - match: /blog  # delegate the subpath, `/blog` to the IngressRoute object in the marketing namespace with the name `blog`
       delegate:
         name: blog
         namespace: marketing

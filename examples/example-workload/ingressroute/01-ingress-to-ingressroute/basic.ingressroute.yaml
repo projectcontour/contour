@@ -12,7 +12,7 @@ spec:
       services: 
         - name: s1
           port: 80
-
+---
 # apiVersion: extensions/v1beta1
 # kind: Ingress
 # metadata:
