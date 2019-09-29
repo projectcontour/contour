@@ -3932,7 +3932,6 @@ func TestDAGInsert(t *testing.T) {
 					want[l.Port] = l
 				}
 			}
-
 			opts := []cmp.Option{
 				cmp.AllowUnexported(VirtualHost{}),
 			}
@@ -4078,42 +4077,42 @@ func TestDAGRootNamespaces(t *testing.T) {
 		},
 	}
 
-	//proxy1 := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "example-com",
-	//		Namespace: "allowed1",
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "example.com",
-	//		},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: "kuard",
-	//				Port: 8080,
-	//			}},
-	//		}},
-	//	},
-	//}
+	proxy1 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "allowed1",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
 
-	//// proxy2 is like ir1, but in a different namespace
-	//proxy2 := &projcontour.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "example-com",
-	//		Namespace: "allowed2",
-	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
-	//			Fqdn: "example2.com",
-	//		},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
-	//				Name: "kuard",
-	//				Port: 8080,
-	//			}},
-	//		}},
-	//	},
-	//}
+	// proxy2 is like proxy1, but in a different namespace
+	proxy2 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "allowed2",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example2.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
 
 	s2 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -4186,44 +4185,44 @@ func TestDAGRootNamespaces(t *testing.T) {
 			objs:           []interface{}{ir1, ir2, s3},
 			want:           1,
 		},
-		//"nil root httpproxy namespaces": {
-		//	objs: []interface{}{proxy1, s2},
-		//	want: 1,
-		//},
-		//"empty root httpproxy namespaces": {
-		//	objs: []interface{}{proxy1, s2},
-		//	want: 1,
-		//},
-		//"single root namespace with root httpproxy": {
-		//	rootNamespaces: []string{"allowed1"},
-		//	objs:           []interface{}{proxy1, s2},
-		//	want:           1,
-		//},
-		//"multiple root namespaces, one with a root httpproxy": {
-		//	rootNamespaces: []string{"foo", "allowed1", "bar"},
-		//	objs:           []interface{}{proxy1, s2},
-		//	want:           1,
-		//},
-		//"multiple root namespaces, each with a root httpproxy": {
-		//	rootNamespaces: []string{"foo", "allowed1", "allowed2"},
-		//	objs:           []interface{}{proxy1, proxy2, s2, s3},
-		//	want:           2,
-		//},
-		//"root httpproxy defined outside single root namespaces": {
-		//	rootNamespaces: []string{"foo"},
-		//	objs:           []interface{}{proxy1},
-		//	want:           0,
-		//},
-		//"root httpproxy defined outside multiple root namespaces": {
-		//	rootNamespaces: []string{"foo", "bar"},
-		//	objs:           []interface{}{proxy1},
-		//	want:           0,
-		//},
-		//"two root httpproxy, one inside root namespace, one outside": {
-		//	rootNamespaces: []string{"foo", "allowed2"},
-		//	objs:           []interface{}{proxy1, proxy2, s3},
-		//	want:           1,
-		//},
+		"nil root httpproxy namespaces": {
+			objs: []interface{}{proxy1, s2},
+			want: 1,
+		},
+		"empty root httpproxy namespaces": {
+			objs: []interface{}{proxy1, s2},
+			want: 1,
+		},
+		"single root namespace with root httpproxy": {
+			rootNamespaces: []string{"allowed1"},
+			objs:           []interface{}{proxy1, s2},
+			want:           1,
+		},
+		"multiple root namespaces, one with a root httpproxy": {
+			rootNamespaces: []string{"foo", "allowed1", "bar"},
+			objs:           []interface{}{proxy1, s2},
+			want:           1,
+		},
+		"multiple root namespaces, each with a root httpproxy": {
+			rootNamespaces: []string{"foo", "allowed1", "allowed2"},
+			objs:           []interface{}{proxy1, proxy2, s2, s3},
+			want:           2,
+		},
+		"root httpproxy defined outside single root namespaces": {
+			rootNamespaces: []string{"foo"},
+			objs:           []interface{}{proxy1},
+			want:           0,
+		},
+		"root httpproxy defined outside multiple root namespaces": {
+			rootNamespaces: []string{"foo", "bar"},
+			objs:           []interface{}{proxy1},
+			want:           0,
+		},
+		"two root httpproxy, one inside root namespace, one outside": {
+			rootNamespaces: []string{"foo", "allowed2"},
+			objs:           []interface{}{proxy1, proxy2, s3},
+			want:           1,
+		},
 	}
 
 	for name, tc := range tests {
