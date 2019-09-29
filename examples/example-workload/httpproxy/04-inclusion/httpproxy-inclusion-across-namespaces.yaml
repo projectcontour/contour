@@ -1,6 +1,6 @@
 # httpproxy-inclusion-across-namespaces.yaml
 ---
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: namespace-delegation-root
@@ -20,7 +20,7 @@ spec:
           port: 80
 
 ---
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: blog

@@ -13,6 +13,6 @@
 
 // +k8s:deepcopy-gen=package
 
-// Package v1alpha1 is the v1alpha1 version of the API.
+// Package v1 is the v1 version of the API.
 // +groupName=projectcontour.io
-package v1alpha1
+package v1

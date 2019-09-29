@@ -1,6 +1,6 @@
 # httpproxy-inclusion-multipleroots.yaml
 ---
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: multiple-root
@@ -15,7 +15,7 @@ spec:
       - prefix: /
     
 ---
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: multiple-root-www
@@ -30,7 +30,7 @@ spec:
       - prefix: /
 
 ---
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: main

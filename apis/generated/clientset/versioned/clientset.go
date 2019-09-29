@@ -20,7 +20,7 @@ package versioned
 
 import (
 	contourv1beta1 "github.com/projectcontour/contour/apis/generated/clientset/versioned/typed/contour/v1beta1"
-	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/generated/clientset/versioned/typed/projectcontour/v1alpha1"
+	projectcontourv1 "github.com/projectcontour/contour/apis/generated/clientset/versioned/typed/projectcontour/v1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -29,15 +29,15 @@ import (
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	ContourV1beta1() contourv1beta1.ContourV1beta1Interface
-	ProjectcontourV1alpha1() projectcontourv1alpha1.ProjectcontourV1alpha1Interface
+	ProjectcontourV1() projectcontourv1.ProjectcontourV1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	contourV1beta1         *contourv1beta1.ContourV1beta1Client
-	projectcontourV1alpha1 *projectcontourv1alpha1.ProjectcontourV1alpha1Client
+	contourV1beta1   *contourv1beta1.ContourV1beta1Client
+	projectcontourV1 *projectcontourv1.ProjectcontourV1Client
 }
 
 // ContourV1beta1 retrieves the ContourV1beta1Client
@@ -45,9 +45,9 @@ func (c *Clientset) ContourV1beta1() contourv1beta1.ContourV1beta1Interface {
 	return c.contourV1beta1
 }
 
-// ProjectcontourV1alpha1 retrieves the ProjectcontourV1alpha1Client
-func (c *Clientset) ProjectcontourV1alpha1() projectcontourv1alpha1.ProjectcontourV1alpha1Interface {
-	return c.projectcontourV1alpha1
+// ProjectcontourV1 retrieves the ProjectcontourV1Client
+func (c *Clientset) ProjectcontourV1() projectcontourv1.ProjectcontourV1Interface {
+	return c.projectcontourV1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -70,7 +70,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	if err != nil {
 		return nil, err
 	}
-	cs.projectcontourV1alpha1, err = projectcontourv1alpha1.NewForConfig(&configShallowCopy)
+	cs.projectcontourV1, err = projectcontourv1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
 	cs.contourV1beta1 = contourv1beta1.NewForConfigOrDie(c)
-	cs.projectcontourV1alpha1 = projectcontourv1alpha1.NewForConfigOrDie(c)
+	cs.projectcontourV1 = projectcontourv1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -97,7 +97,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
 	cs.contourV1beta1 = contourv1beta1.New(c)
-	cs.projectcontourV1alpha1 = projectcontourv1alpha1.New(c)
+	cs.projectcontourV1 = projectcontourv1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

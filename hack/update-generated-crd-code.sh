@@ -23,7 +23,7 @@ ${TMP_DIR}/generate-groups.sh \
   all \
   github.com/projectcontour/contour/apis/generated \
   github.com/projectcontour/contour/apis \
-  "contour:v1beta1 projectcontour:v1alpha1" \
+  "contour:v1beta1 projectcontour:v1" \
   --output-base . \
   --go-header-file hack/boilerplate.go.tmpl \
   $@
@@ -32,5 +32,5 @@ ${TMP_DIR}/generate-groups.sh \
 rm -rf apis/generated
 cp -r github.com/projectcontour/contour/apis/generated apis/
 mv github.com/projectcontour/contour/apis/contour/v1beta1/zz_generated.deepcopy.go apis/contour/v1beta1
-mv github.com/projectcontour/contour/apis/projectcontour/v1alpha1/zz_generated.deepcopy.go apis/projectcontour/v1alpha1
+mv github.com/projectcontour/contour/apis/projectcontour/v1/zz_generated.deepcopy.go apis/projectcontour/v1
 rm -rf github.com

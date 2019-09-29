@@ -38,7 +38,7 @@ Implementing similar behavior using an HTTPProxy looks like this:
 
 ```yaml
 # httpproxy.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: basic
@@ -89,13 +89,13 @@ $ kubectl describe httpproxy basic
 Name:         basic
 Namespace:    default
 Labels:       <none>
-API Version:  projectcontour.io/v1alpha1
+API Version:  projectcontour.io/v1
 Kind:         HTTPProxy
 Metadata:
   Cluster Name:
   Creation Timestamp:  2019-07-05T19:26:54Z
   Resource Version:    19373717
-  Self Link:           /apis/projectcontour.io/v1alpha1/namespaces/default/httpproxy/basic
+  Self Link:           /apis/projectcontour.io/v1/namespaces/default/httpproxy/basic
   UID:                 6036a9d7-8089-11e8-ab00-f80f4182762e
 Spec:
   Routes:
@@ -164,7 +164,7 @@ must be represented by two different HTTPProxy objects:
 
 ```yaml
 # httpproxy-name.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: name-example-foo
@@ -177,7 +177,7 @@ spec:
       - name: s1
         port: 80
 ---
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: name-example-bar
@@ -222,7 +222,7 @@ The HTTPProxy can be configured to use this secret using `tls.secretName` proper
 
 ```yaml
 # httpproxy-tls.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: tls-example
@@ -262,7 +262,7 @@ Note: If `spec.routes.services[].validation` is present, `spec.routes.services[]
 ##### Sample YAML
 
 ```yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: secure-backend
@@ -295,7 +295,7 @@ In order to support wildcard certificates, TLS certificates for a `*.somedomain.
 This facility allows the owner of a TLS certificate to delegate, for the purposes of referencing the TLS certificate, permission to Contour to read the Secret object from another namespace.
 
 ```yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: TLSCertificateDelegation
 metadata:
   name: example-com-wildcard
@@ -306,7 +306,7 @@ spec:
       targetNamespaces:
       - example-com
 ---
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: www
@@ -351,7 +351,7 @@ All other requests to the host `multi-path.bar.com` will be routed to the Servic
 
 ```yaml
 # httpproxy-multiple-paths.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: multiple-paths
@@ -376,7 +376,7 @@ In the following example, we match on headers and send to different services, wi
 
 ```yaml
 # httpproxy-multiple-headers.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: multiple-paths
@@ -410,7 +410,7 @@ One of the key HTTPProxy features is the ability to support multiple services fo
 
 ```yaml
 # httpproxy-multiple-upstreams.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: multiple-upstreams
@@ -436,7 +436,7 @@ This is commonly used for canary testing of new versions of an application when 
 
 ```yaml
 # httpproxy-weight-shfiting.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: weight-shifting
@@ -471,7 +471,7 @@ The mirror traffic is considered _read only_, any response by the mirror will be
 This service can be useful for recording traffic for later replay or for smoke testing new deployments.
 
 ```yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: traffic-mirror
@@ -496,7 +496,7 @@ Each Route can be configured to have a timeout policy and a retry policy as show
 
 ```yaml
 # httpproxy-response-timeout.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: response-timeout
@@ -550,7 +550,7 @@ Service `s1-strategy` does not have an explicit strategy defined so it will use 
 
 ```yaml
 # httpproxy-lb-strategy.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: lb-strategy
@@ -576,7 +576,7 @@ Contour supports session affinity with the `strategy: Cookie` key on a per servi
 
 ```yaml
 # httpproxy-sticky-sessions.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: httpbin
@@ -608,7 +608,7 @@ It is important to note that these are health checks which Envoy implements and 
 
 ```yaml
 # httpproxy-health-checks.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: health-check
@@ -645,7 +645,7 @@ WebSocket support can be enabled on specific routes using the `enableWebsockets`
 
 ```yaml
 # httpproxy-websockets.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: chat
@@ -673,7 +673,7 @@ The original path before rewrite will be placed into the into the `x-envoy-origi
 
 ```yaml
 # httpproxy-prefix-rewrite.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: app
@@ -699,7 +699,7 @@ A HTTPProxy can be configured to permit insecure requests to specific Routes.
 In this example, any request to `foo2.bar.com/blog` will not receive a 301 redirect to HTTPS, but the `/` route will:
 
 ```yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: tls-example-insecure
@@ -794,7 +794,7 @@ It's important to note that `service2` HTTPProxy has not defined a `virtualhost`
 
 ```yaml
 # httpproxy-inclusion-samenamespace.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: include-root
@@ -815,7 +815,7 @@ spec:
         - name: s1
           port: 80
 ---
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: service2
@@ -841,7 +841,7 @@ To present the same set of routes under multiple dns entries, for example www.ex
 ```yaml
 # httpproxy-inclusion-multipleroots.yaml
 ---
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: multiple-root
@@ -853,7 +853,7 @@ spec:
   - name: main
     namespace: default
 ---
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: multiple-root-www
@@ -865,7 +865,7 @@ spec:
   - name: main
     namespace: default
 ---
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: main
@@ -887,7 +887,7 @@ In this example, the root HTTPProxy has included configuration for paths matchin
 ```yaml
 # httpproxy-inclusion-across-namespaces.yaml
 ---
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: namespace-include-root
@@ -907,7 +907,7 @@ spec:
           port: 80
 
 ---
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: blog
@@ -954,7 +954,7 @@ If `spec.virtualhost.tls.secretName` is present then that secret will be used to
 
 ```yaml
 # httpproxy-tls-termination.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: example
@@ -982,7 +982,7 @@ The backend service is expected to have a key which matches the SNI header recei
 
 ```yaml
 # httpproxy-tls-passthrough.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: example

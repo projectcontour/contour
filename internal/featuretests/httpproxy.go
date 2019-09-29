@@ -16,7 +16,7 @@ package featuretests
 // HTTPProxy helpers
 
 import (
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
 func prefixCondition(prefix string) []projcontour.Condition {

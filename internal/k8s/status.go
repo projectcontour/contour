@@ -20,7 +20,7 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	clientset "github.com/projectcontour/contour/apis/generated/clientset/versioned"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -103,6 +103,6 @@ func (irs *CRDStatus) setHTTPProxyStatus(existing, updated *projcontour.HTTPProx
 		return err
 	}
 
-	_, err = irs.Client.ProjectcontourV1alpha1().HTTPProxies(existing.GetNamespace()).Patch(existing.GetName(), types.MergePatchType, patchBytes)
+	_, err = irs.Client.ProjectcontourV1().HTTPProxies(existing.GetNamespace()).Patch(existing.GetName(), types.MergePatchType, patchBytes)
 	return err
 }

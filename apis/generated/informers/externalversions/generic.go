@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 	v1beta1 "github.com/projectcontour/contour/apis/contour/v1beta1"
-	v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -59,11 +59,11 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	case v1beta1.SchemeGroupVersion.WithResource("tlscertificatedelegations"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Contour().V1beta1().TLSCertificateDelegations().Informer()}, nil
 
-		// Group=projectcontour.io, Version=v1alpha1
-	case v1alpha1.SchemeGroupVersion.WithResource("httpproxies"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Projectcontour().V1alpha1().HTTPProxies().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("tlscertificatedelegations"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Projectcontour().V1alpha1().TLSCertificateDelegations().Informer()}, nil
+		// Group=projectcontour.io, Version=v1
+	case v1.SchemeGroupVersion.WithResource("httpproxies"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Projectcontour().V1().HTTPProxies().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("tlscertificatedelegations"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Projectcontour().V1().TLSCertificateDelegations().Informer()}, nil
 
 	}
 

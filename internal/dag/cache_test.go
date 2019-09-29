@@ -17,7 +17,7 @@ import (
 	"testing"
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -639,7 +639,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert tls projcontour/v1alpha1.certificate delegation": {
+		"insert tls projcontour/v1.certificatedelegation": {
 			obj: &projcontour.TLSCertificateDelegation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "delegate",

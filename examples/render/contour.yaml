@@ -87,7 +87,7 @@ metadata:
 spec:
   group: projectcontour.io
   versions:
-    - name: v1alpha1
+    - name: v1
       served: true
       storage: true
   scope: Namespaced
@@ -127,7 +127,7 @@ metadata:
     component: tlscertificatedelegation
 spec:
   group: projectcontour.io
-  version: v1alpha1
+  version: v1
   scope: Namespaced
   names:
     plural: tlscertificatedelegations

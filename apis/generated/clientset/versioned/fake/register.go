@@ -20,7 +20,7 @@ package fake
 
 import (
 	contourv1beta1 "github.com/projectcontour/contour/apis/contour/v1beta1"
-	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	projectcontourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -33,7 +33,7 @@ var codecs = serializer.NewCodecFactory(scheme)
 var parameterCodec = runtime.NewParameterCodec(scheme)
 var localSchemeBuilder = runtime.SchemeBuilder{
 	contourv1beta1.AddToScheme,
-	projectcontourv1alpha1.AddToScheme,
+	projectcontourv1.AddToScheme,
 }
 
 // AddToScheme adds all types of this clientset into the given scheme. This allows composition
