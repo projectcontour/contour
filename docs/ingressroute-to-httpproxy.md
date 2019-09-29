@@ -9,7 +9,7 @@ _Note: IngressRoute is deprecated and will be removed after Contour 1.0 ships in
 ## Group, Version and Kind changes
 
 As part of the sunseting of the Heptio brand, `HTTPProxy` has moved to the `projectcontour.io` group.
-For Contour 1.0.0-beta.1 the version is `v1alpha1`.
+For Contour 1.0.0-rc.1 the version is `v1`.
 We expect this to change in forthcoming release candidates.
 
 Before:
@@ -19,7 +19,7 @@ kind: IngressRoute
 ```
 After:
 ```yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 ```
 
@@ -42,7 +42,7 @@ spec:
 ```
 After:
 ```yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: tls-example
@@ -59,7 +59,7 @@ spec:
 No change.
 
 ```yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: tls-example
@@ -77,7 +77,7 @@ spec:
 No change.
 
 ```yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: secure-backend
@@ -114,7 +114,7 @@ spec:
 ```
 After:
 ```yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: TLSCertificateDelegation
 metadata:
   name: example-com-wildcard
@@ -154,7 +154,7 @@ spec:
 ```
 After:
 ```yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: multiple-paths
@@ -207,7 +207,7 @@ spec:
 ```
 After:
 ```yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: request-timeout
@@ -298,7 +298,7 @@ spec:
 ```
 After:
 ```yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: delegation-root
@@ -318,7 +318,7 @@ spec:
         - name: s1
           port: 80
 ---
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: www

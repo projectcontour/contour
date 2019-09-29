@@ -21,7 +21,7 @@ limitations under the License.
 package v1beta1
 
 import (
-	v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -128,7 +128,7 @@ func (in *IngressRouteSpec) DeepCopyInto(out *IngressRouteSpec) {
 	*out = *in
 	if in.VirtualHost != nil {
 		in, out := &in.VirtualHost, &out.VirtualHost
-		*out = new(v1alpha1.VirtualHost)
+		*out = new(v1.VirtualHost)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Routes != nil {
@@ -178,7 +178,7 @@ func (in *Route) DeepCopyInto(out *Route) {
 	}
 	if in.RetryPolicy != nil {
 		in, out := &in.RetryPolicy, &out.RetryPolicy
-		*out = new(v1alpha1.RetryPolicy)
+		*out = new(v1.RetryPolicy)
 		**out = **in
 	}
 	return
@@ -199,12 +199,12 @@ func (in *Service) DeepCopyInto(out *Service) {
 	*out = *in
 	if in.HealthCheck != nil {
 		in, out := &in.HealthCheck, &out.HealthCheck
-		*out = new(v1alpha1.HealthCheck)
+		*out = new(v1.HealthCheck)
 		**out = **in
 	}
 	if in.UpstreamValidation != nil {
 		in, out := &in.UpstreamValidation, &out.UpstreamValidation
-		*out = new(v1alpha1.UpstreamValidation)
+		*out = new(v1.UpstreamValidation)
 		**out = **in
 	}
 	return

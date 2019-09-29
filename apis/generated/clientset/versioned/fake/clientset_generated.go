@@ -22,8 +22,8 @@ import (
 	clientset "github.com/projectcontour/contour/apis/generated/clientset/versioned"
 	contourv1beta1 "github.com/projectcontour/contour/apis/generated/clientset/versioned/typed/contour/v1beta1"
 	fakecontourv1beta1 "github.com/projectcontour/contour/apis/generated/clientset/versioned/typed/contour/v1beta1/fake"
-	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/generated/clientset/versioned/typed/projectcontour/v1alpha1"
-	fakeprojectcontourv1alpha1 "github.com/projectcontour/contour/apis/generated/clientset/versioned/typed/projectcontour/v1alpha1/fake"
+	projectcontourv1 "github.com/projectcontour/contour/apis/generated/clientset/versioned/typed/projectcontour/v1"
+	fakeprojectcontourv1 "github.com/projectcontour/contour/apis/generated/clientset/versioned/typed/projectcontour/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -83,7 +83,7 @@ func (c *Clientset) ContourV1beta1() contourv1beta1.ContourV1beta1Interface {
 	return &fakecontourv1beta1.FakeContourV1beta1{Fake: &c.Fake}
 }
 
-// ProjectcontourV1alpha1 retrieves the ProjectcontourV1alpha1Client
-func (c *Clientset) ProjectcontourV1alpha1() projectcontourv1alpha1.ProjectcontourV1alpha1Interface {
-	return &fakeprojectcontourv1alpha1.FakeProjectcontourV1alpha1{Fake: &c.Fake}
+// ProjectcontourV1 retrieves the ProjectcontourV1Client
+func (c *Clientset) ProjectcontourV1() projectcontourv1.ProjectcontourV1Interface {
+	return &fakeprojectcontourv1.FakeProjectcontourV1{Fake: &c.Fake}
 }

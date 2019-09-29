@@ -1,5 +1,5 @@
 # httpproxy-name.yaml
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: name-example-foo
@@ -14,7 +14,7 @@ spec:
         - name: s1
           port: 80
 ---
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: name-example-bar

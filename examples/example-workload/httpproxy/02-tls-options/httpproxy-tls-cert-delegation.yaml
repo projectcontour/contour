@@ -1,4 +1,4 @@
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: TLSCertificateDelegation
 metadata:
   name: example-com-wildcard
@@ -9,7 +9,7 @@ spec:
       targetNamespaces:
       - example-com
 ---
-apiVersion: projectcontour.io/v1alpha1
+apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
   name: www
