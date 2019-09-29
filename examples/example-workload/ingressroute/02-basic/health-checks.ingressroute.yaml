@@ -18,5 +18,5 @@ spec:
             timeoutSeconds: 2
             unhealthyThresholdCount: 3
             healthyThresholdCount: 5
-        - name: s2-health # no health-check defined for this service
+        - name: s2-health  # no health-check defined for this service
           port: 80

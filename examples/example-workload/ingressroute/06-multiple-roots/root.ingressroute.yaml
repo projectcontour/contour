@@ -7,8 +7,7 @@ spec:
   virtualhost:
     fqdn: bar.com
   routes: 
-# delegate the subpath, `/` to the IngressRoute object in the marketing namespace with the name `main`
-    - match: /
+    - match: /  # delegate the subpath, `/` to the IngressRoute object in the marketing namespace with the name `main`
       delegate:
         name: main
 ---
@@ -20,7 +19,6 @@ spec:
   virtualhost:
     fqdn: www.bar.com
   routes: 
-# delegate the subpath, `/` to the IngressRoute object in the marketing namespace with the name `main`
-    - match: /
+    - match: /  # delegate the subpath, `/` to the IngressRoute object in the marketing namespace with the name `main`
       delegate:
         name: main

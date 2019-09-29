@@ -33,7 +33,7 @@ test-race: | test
 vet: | test
 	go vet $(MODULE)/...
 
-check: test test-race vet gofmt staticcheck misspell unconvert unparam ineffassign
+check: test test-race vet gofmt staticcheck misspell unconvert unparam ineffassign yamllint
 	@echo Checking rendered files are up to date
 	@(cd examples && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 

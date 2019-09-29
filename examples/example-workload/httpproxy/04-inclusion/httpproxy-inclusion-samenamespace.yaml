@@ -28,12 +28,12 @@ metadata:
 spec:
   routes:
     - conditions:
-      - prefix: / # matches /service2
+      - prefix: /  # matches /service2
       services:
         - name: s2
           port: 80
     - conditions:
-      - prefix: /blog # matches /service2/blog
+      - prefix: /blog  # matches /service2/blog
       services:
         - name: blog
           port: 80

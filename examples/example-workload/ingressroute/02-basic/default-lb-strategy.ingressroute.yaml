@@ -7,7 +7,7 @@ metadata:
 spec: 
   virtualhost:
     fqdn: default-strategy.bar.com
-  strategy: RoundRobin # Default LB Algorithm to be applied to services
+  strategy: RoundRobin  # Default LB Algorithm to be applied to services
   routes: 
     - match: /
       services: 

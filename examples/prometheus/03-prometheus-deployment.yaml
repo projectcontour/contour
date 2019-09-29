@@ -105,6 +105,10 @@ spec:
       #   volumeMounts:
       #   - name: blackbox-config
       #     mountPath: /config
+      # black box exporter
+      # - name: blackbox-config
+      #   configMap:
+      #     name: prometheus-blackbox
 
       volumes:
       - name: config-volume
@@ -119,7 +123,3 @@ spec:
       - name: config-volume-alert-rules
         configMap:
           name: prometheus-alert-rules
-      #black box exporter
-      # - name: blackbox-config
-      #   configMap:
-      #     name: prometheus-blackbox

@@ -115,6 +115,6 @@ spec:
             secretName: envoycert
         - name: cacert
           secret:
-            secretName:   cacert
+            secretName: cacert
       restartPolicy: Always
 ---

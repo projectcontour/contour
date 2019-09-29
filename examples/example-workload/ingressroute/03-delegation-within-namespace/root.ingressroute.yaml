@@ -12,8 +12,6 @@ spec:
       services: 
         - name: s1
           port: 80
-# delegate the subpath, `/service2` to the IngressRoute object in this namespace with the name `service2`
-    - match: /service2 
+    - match: /service2  # delegate the subpath, `/service2` to the IngressRoute object in this namespace with the name `service2`
       delegate:
         name: service2
-

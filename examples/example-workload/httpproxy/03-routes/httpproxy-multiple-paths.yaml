@@ -9,12 +9,12 @@ spec:
     fqdn: multi-path.bar.com
   routes:
     - conditions:
-      - prefix: / # matches everything else
+      - prefix: /  # matches everything else
       services:
         - name: s1
           port: 80
     - conditions:
-      - prefix: /blog # matches `multi-path.bar.com/blog` or `multi-path.bar.com/blog/*`
+      - prefix: /blog  # matches `multi-path.bar.com/blog` or `multi-path.bar.com/blog/*`
       services:
         - name: s2
           port: 80
