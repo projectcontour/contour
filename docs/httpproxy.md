@@ -495,18 +495,19 @@ spec:
 Each Route can be configured to have a timeout policy and a retry policy as shown:
 
 ```yaml
-# httpproxy-request-timeout.yaml
+# httpproxy-response-timeout.yaml
 apiVersion: projectcontour.io/v1alpha1
 kind: HTTPProxy
 metadata:
-  name: request-timeout
+  name: response-timeout
   namespace: default
 spec:
   virtualhost:
     fqdn: timeout.bar.com
   routes:
   - timeoutPolicy:
-      request: 1s
+      response: 1s
+      idle: 10s
     retryPolicy:
       count: 3
       perTryTimeout: 150ms
@@ -515,18 +516,18 @@ spec:
       port: 80
 ```
 
-In this example, requests to `timeout.bar.com/` will have a request timeout policy of 1s.
+In this example, requests to `timeout.bar.com/` will have a response timeout policy of 1s.
 This refers to the time that spans between the point at which complete client request has been processed by the proxy, and when the response from the server has been completely processed.
 
 - `timeoutPolicy.response` This field can be any positive time period or "infinity".
 The time period of **0s** will also be treated as infinity.
-This timeout is for how long it takes for the *backend service* to respond.
-By default, Envoy has a 15 second timeout for this timeout.
+This timeout covers the time from the *end of the client request* to the *end of the upstream response*.
+By default, Envoy has a 15 second value for this timeout.
 More information can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout).
 - `timeoutPolicy.idle` This field can be any positive time period or "infinity".
 The time period of **0s** will also be treated as infinity.
 By default, there is no per-route idle timeout.
-Note that the default connection manager timeout of 5 minutes will apply if this is not set.
+Note that the default connection manager idle timeout of 5 minutes will apply if this is not set.
 More information can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-idle-timeout)
 - `retryPolicy`: A retry will be attempted if the server returns an error code in the 5xx range, or if the server takes more than `retryPolicy.perTryTimeout` to process a request.
   - `retryPolicy.count` specifies the maximum number of retries allowed. This parameter is optional and defaults to 1.
