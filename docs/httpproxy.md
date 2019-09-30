@@ -490,7 +490,7 @@ spec:
           mirror: true
 ```
 
-#### Request Timeout
+#### Response Timeout
 
 Each Route can be configured to have a timeout policy and a retry policy as shown:
 
