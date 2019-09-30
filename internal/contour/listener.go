@@ -16,6 +16,7 @@ package contour
 import (
 	"sort"
 	"sync"
+	"time"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
@@ -83,6 +84,9 @@ type ListenerVisitorConfig struct {
 	// Valid entries are the keys from internal/envoy/accesslog.go:jsonheaders
 	// Defaults to a particular set of fields.
 	AccessLogFields []string
+
+	// RequestTimeout configures the request_timeout for all Connection Managers.
+	RequestTimeout time.Duration
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
@@ -173,6 +177,19 @@ func (lvc *ListenerVisitorConfig) newSecureAccessLog() []*envoy_api_v2_accesslog
 	default:
 		return envoy.FileAccessLogEnvoy(lvc.httpsAccessLog())
 	}
+}
+
+// requestTimeout sets any durations in lvc.RequestTimeout <0 to 0 so that Envoy ends up with a positive duration.
+// for the request_timeout value we are passing, there are only two valid values:
+// 0 - disabled
+// >0 duration - the timeout.
+// The value may be unset, but we always set it to 0.
+func (lvc *ListenerVisitorConfig) requestTimeout() time.Duration {
+
+	if lvc.RequestTimeout < 0 {
+		return 0
+	}
+	return lvc.RequestTimeout
 }
 
 // minProtocolVersion returns the requested minimum TLS protocol
@@ -287,7 +304,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 			ENVOY_HTTP_LISTENER,
 			lvc.httpAddress(), lvc.httpPort(),
 			proxyProtocol(lvc.UseProxyProto),
-			envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, lvc.newInsecureAccessLog()),
+			envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, lvc.newInsecureAccessLog(), lvc.requestTimeout()),
 		)
 
 	}
@@ -339,7 +356,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		v.http = true
 	case *dag.SecureVirtualHost:
 		filters := envoy.Filters(
-			envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.ListenerVisitorConfig.newSecureAccessLog()),
+			envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.ListenerVisitorConfig.newSecureAccessLog(), v.ListenerVisitorConfig.requestTimeout()),
 		)
 		alpnProtos := []string{"h2", "http/1.1"}
 		if vh.TCPProxy != nil {
