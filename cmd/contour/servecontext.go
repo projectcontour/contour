@@ -95,6 +95,9 @@ type serveContext struct {
 
 	// LeaderElectionConfig can be set in the config file.
 	LeaderElectionConfig `yaml:"leaderelection,omitempty"`
+
+	// RequestTimeout sets the client request timeout globally for Contour.
+	RequestTimeout time.Duration `yaml:"request-timeout,omitempty"`
 }
 
 // newServeContext returns a serveContext initialized to defaults.

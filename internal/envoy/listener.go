@@ -65,8 +65,9 @@ func Listener(name, address string, port int, lf []*envoy_api_v2_listener.Listen
 }
 
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
-// for the supplied route and access log.
-func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog) *envoy_api_v2_listener.Filter {
+// for the supplied route, access log, and client request timeout.
+func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog, requestTimeout time.Duration) *envoy_api_v2_listener.Filter {
+
 	return &envoy_api_v2_listener.Filter{
 		Name: wellknown.HTTPConnectionManager,
 		ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
@@ -109,7 +110,8 @@ func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog
 				// Sets the idle timeout for HTTP connections to 60 seconds.
 				// This is chosen as a rough default to stop idle connections wasting resources,
 				// without stopping slow connections from being terminated too quickly.
-				IdleTimeout: protobuf.Duration(60 * time.Second),
+				IdleTimeout:    protobuf.Duration(60 * time.Second),
+				RequestTimeout: ptypes.DurationProto(requestTimeout),
 
 				// issue #1487 pass through X-Request-Id if provided.
 				PreserveExternalRequestId: true,

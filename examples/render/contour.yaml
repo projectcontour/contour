@@ -163,6 +163,12 @@ data:
     # path to kubeconfig (if not running inside a k8s cluster)
     # kubeconfig: /path/to/.kube/config
     #
+    # Client request timeout to be passed to Envoy
+    # as the connection manager request_timeout.
+    # Defaults to 0, which Envoy interprets as disabled.
+    # Note that this is the timeout for the whole request,
+    # not an idle timeout.
+    # request-timeout: 0s
     # disable ingressroute permitInsecure field
     disablePermitInsecure: false
     tls:

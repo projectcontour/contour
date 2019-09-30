@@ -145,6 +145,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				AccessLogType:          ctx.AccessLogFormat,
 				AccessLogFields:        ctx.AccessLogFields,
 				MinimumProtocolVersion: dag.MinProtoVersion(ctx.TLSConfig.MinimumProtocolVersion),
+				RequestTimeout:         ctx.RequestTimeout,
 			},
 			ListenerCache: contour.NewListenerCache(ctx.statsAddr, ctx.statsPort),
 			FieldLogger:   log.WithField("context", "CacheHandler"),
