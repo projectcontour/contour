@@ -67,7 +67,6 @@ func Listener(name, address string, port int, lf []*envoy_api_v2_listener.Listen
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
 // for the supplied route and access log.
 func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog) *envoy_api_v2_listener.Filter {
-
 	return &envoy_api_v2_listener.Filter{
 		Name: wellknown.HTTPConnectionManager,
 		ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
