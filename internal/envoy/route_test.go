@@ -20,7 +20,7 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	"github.com/google/go-cmp/cmp"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
@@ -59,9 +59,7 @@ func TestRoute(t *testing.T) {
 		Match:  match,
 		Action: action,
 	}
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatal(diff)
-	}
+	assert.Equal(t, want, got)
 }
 
 func TestRouteRoute(t *testing.T) {
@@ -387,9 +385,7 @@ func TestRouteRoute(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := RouteRoute(tc.route)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -506,9 +502,7 @@ func TestWeightedClusters(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := weightedClusters(tc.clusters)
-			if diff := cmp.Diff(got, tc.want); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -557,9 +551,7 @@ func TestRouteConfiguration(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := RouteConfiguration(tc.name, tc.virtualhosts...)
-			if diff := cmp.Diff(got, tc.want); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -590,9 +582,7 @@ func TestVirtualHost(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := VirtualHost(tc.hostname)
-			if diff := cmp.Diff(got, tc.want); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -607,9 +597,7 @@ func TestUpgradeHTTPS(t *testing.T) {
 		},
 	}
 
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatal(diff)
-	}
+	assert.Equal(t, want, got)
 }
 
 func virtualhosts(v ...*envoy_api_v2_route.VirtualHost) []*envoy_api_v2_route.VirtualHost { return v }

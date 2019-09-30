@@ -14,6 +14,7 @@ package envoy
 
 import (
 	"fmt"
+	"path"
 	"sort"
 	"time"
 
@@ -35,6 +36,42 @@ func Route(match *envoy_api_v2_route.RouteMatch, action *envoy_api_v2_route.Rout
 	return &envoy_api_v2_route.Route{
 		Match:  match,
 		Action: action,
+	}
+}
+
+// RouteMatch creates a *envoy_api_v2_route.RouteMatch for the supplied *dag.Route.
+func RouteMatch(route *dag.Route) *envoy_api_v2_route.RouteMatch {
+	prefix := "/"
+	var headers []*dag.HeaderCondition
+	for _, c := range route.Conditions {
+		switch c := c.(type) {
+		case *dag.RegexCondition:
+			return RouteRegex(c.Regex)
+		case *dag.PrefixCondition:
+			prefix = path.Join(prefix, c.Prefix)
+		case *dag.HeaderCondition:
+			headers = append(headers, c)
+		}
+	}
+	return RoutePrefix(prefix, headers...)
+}
+
+// RouteRegex returns a regex matcher.
+func RouteRegex(regex string) *envoy_api_v2_route.RouteMatch {
+	return &envoy_api_v2_route.RouteMatch{
+		PathSpecifier: &envoy_api_v2_route.RouteMatch_Regex{
+			Regex: regex,
+		},
+	}
+}
+
+// RoutePrefix returns a prefix matcher.
+func RoutePrefix(prefix string, headers ...*dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
+	return &envoy_api_v2_route.RouteMatch{
+		PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
+			Prefix: prefix,
+		},
+		Headers: headerMatcher(headers),
 	}
 }
 
@@ -191,25 +228,6 @@ func weightedClusters(clusters []*dag.Cluster) *envoy_api_v2_route.WeightedClust
 	return &wc
 }
 
-// RouteRegex returns a regex matcher.
-func RouteRegex(regex string) *envoy_api_v2_route.RouteMatch {
-	return &envoy_api_v2_route.RouteMatch{
-		PathSpecifier: &envoy_api_v2_route.RouteMatch_Regex{
-			Regex: regex,
-		},
-	}
-}
-
-// RoutePrefix returns a prefix matcher.
-func RoutePrefix(prefix string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
-	return &envoy_api_v2_route.RouteMatch{
-		PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
-			Prefix: prefix,
-		},
-		Headers: headerMatcher(headers),
-	}
-}
-
 // VirtualHost creates a new route.VirtualHost.
 func VirtualHost(hostname string, routes ...*envoy_api_v2_route.Route) *envoy_api_v2_route.VirtualHost {
 	domains := []string{hostname}
@@ -260,7 +278,7 @@ func AppendHeader(key, value string) *envoy_api_v2_core.HeaderValueOption {
 	}
 }
 
-func headerMatcher(headers []dag.HeaderCondition) []*envoy_api_v2_route.HeaderMatcher {
+func headerMatcher(headers []*dag.HeaderCondition) []*envoy_api_v2_route.HeaderMatcher {
 	var envoyHeaders []*envoy_api_v2_route.HeaderMatcher
 
 	for _, h := range headers {
