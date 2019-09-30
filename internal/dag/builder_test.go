@@ -2801,8 +2801,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							Conditions: prefix("/"),
-							Clusters:   clustermap(s1),
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								ResponseTimeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
 							},
@@ -2821,8 +2821,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							Conditions: prefix("/"),
-							Clusters:   clustermap(s1),
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								ResponseTimeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
 							},
@@ -2841,8 +2841,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							Conditions: prefix("/"),
-							Clusters:   clustermap(s1),
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								ResponseTimeout: 90 * time.Second,
 							},
@@ -2861,8 +2861,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							Conditions: prefix("/"),
-							Clusters:   clustermap(s1),
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								ResponseTimeout: 90 * time.Second,
 							},
@@ -2881,8 +2881,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							Conditions: prefix("/"),
-							Clusters:   clustermap(s1),
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								ResponseTimeout: -1,
 							},
@@ -2901,8 +2901,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							Conditions: prefix("/"),
-							Clusters:   clustermap(s1),
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								ResponseTimeout: -1,
 							},
@@ -3047,8 +3047,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							Conditions: prefix("/"),
-							Clusters:   clustermap(s1),
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "5xx",
 								NumRetries:    6,
@@ -3069,8 +3069,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							Conditions: prefix("/"),
-							Clusters:   clustermap(s1),
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "5xx",
 								NumRetries:    6,
@@ -3092,8 +3092,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							Conditions: prefix("/"),
-							Clusters:   clustermap(s1),
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "5xx",
 								NumRetries:    1,
@@ -3114,8 +3114,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							Conditions: prefix("/"),
-							Clusters:   clustermap(s1),
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "gateway-error",
 								NumRetries:    6,
@@ -3136,8 +3136,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							Conditions: regex("/[^/]+/invoices(/.*|/?)"),
-							Clusters:   clustermap(s1),
+							PathCondition: regex("/[^/]+/invoices(/.*|/?)"),
+							Clusters:      clustermap(s1),
 						}),
 					),
 				},
@@ -3830,10 +3830,7 @@ func TestDAGInsert(t *testing.T) {
 								},
 							),
 							&Route{
-								Conditions: conditions(
-									prefixCondition("/blog"),
-									prefixCondition("/infotech"),
-								),
+								PathCondition: prefix("/blog/infotech"),
 								Clusters: []*Cluster{{
 									Upstream: &Service{
 										Name:        s4.Name,
@@ -3866,10 +3863,7 @@ func TestDAGInsert(t *testing.T) {
 								},
 							),
 							&Route{
-								Conditions: conditions(
-									prefixCondition("/blog"),
-									prefixCondition("/infotech"),
-								),
+								PathCondition: prefix("/blog/infotech"),
 								Clusters: []*Cluster{{
 									Upstream: &Service{
 										Name:        s4.Name,
@@ -3888,11 +3882,7 @@ func TestDAGInsert(t *testing.T) {
 								},
 							),
 							&Route{
-								Conditions: conditions(
-									prefixCondition("/blog"),
-									prefixCondition("/it"),
-									prefixCondition("/foo"),
-								),
+								PathCondition: prefix("/blog/it/foo"),
 								Clusters: []*Cluster{{
 									Upstream: &Service{
 										Name:        s11.Name,
@@ -4506,19 +4496,15 @@ func routes(routes ...*Route) map[string]*Route {
 func prefixroute(prefix string, first *Service, rest ...*Service) *Route {
 	services := append([]*Service{first}, rest...)
 	return &Route{
-		Conditions: conditions(
-			prefixCondition(prefix),
-		),
-		Clusters: clusters(services...),
+		PathCondition: &PrefixCondition{Prefix: prefix},
+		Clusters:      clusters(services...),
 	}
 }
 
 func routeCluster(prefix string, first *Cluster, rest ...*Cluster) *Route {
 	return &Route{
-		Conditions: conditions(
-			prefixCondition(prefix),
-		),
-		Clusters: append([]*Cluster{first}, rest...),
+		PathCondition: &PrefixCondition{Prefix: prefix},
+		Clusters:      append([]*Cluster{first}, rest...),
 	}
 }
 
@@ -4603,14 +4589,8 @@ func listeners(ls ...*Listener) []Vertex {
 	return v
 }
 
-func prefix(prefix string) []Condition        { return conditions(prefixCondition(prefix)) }
-func prefixCondition(prefix string) Condition { return &PrefixCondition{Prefix: prefix} }
-func regex(regex string) []Condition          { return conditions(regexCondition(regex)) }
-func regexCondition(regex string) Condition   { return &RegexCondition{Regex: regex} }
-
-func conditions(c ...Condition) []Condition {
-	return c
-}
+func prefix(prefix string) Condition { return &PrefixCondition{Prefix: prefix} }
+func regex(regex string) Condition   { return &RegexCondition{Regex: regex} }
 
 func withMirror(r *Route, mirror *Service) *Route {
 	r.MirrorPolicy = &MirrorPolicy{

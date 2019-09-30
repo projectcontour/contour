@@ -2898,13 +2898,13 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 
 	assertRDS(t, cc, "1", virtualhosts(
 		envoy.VirtualHost("hello.world",
-			envoy.Route(envoy.RoutePrefix("/blog", &dag.HeaderCondition{
+			envoy.Route(envoy.RoutePrefix("/blog", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "abc",
 				MatchType: "contains",
 				Invert:    false,
 			}), routecluster("default/svc3/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/", &dag.HeaderCondition{
+			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "abc",
 				MatchType: "contains",
@@ -2952,13 +2952,13 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 
 	assertRDS(t, cc, "1", virtualhosts(
 		envoy.VirtualHost("hello.world",
-			envoy.Route(envoy.RoutePrefix("/blog", &dag.HeaderCondition{
+			envoy.Route(envoy.RoutePrefix("/blog", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "abc",
 				MatchType: "contains",
 				Invert:    true,
 			}), routecluster("default/svc3/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/", &dag.HeaderCondition{
+			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "123",
 				MatchType: "contains",
@@ -3006,13 +3006,13 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 
 	assertRDS(t, cc, "1", virtualhosts(
 		envoy.VirtualHost("hello.world",
-			envoy.Route(envoy.RoutePrefix("/blog", &dag.HeaderCondition{
+			envoy.Route(envoy.RoutePrefix("/blog", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "123",
 				MatchType: "exact",
 				Invert:    false,
 			}), routecluster("default/svc3/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/", &dag.HeaderCondition{
+			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "abc",
 				MatchType: "exact",
@@ -3060,13 +3060,13 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 
 	assertRDS(t, cc, "1", virtualhosts(
 		envoy.VirtualHost("hello.world",
-			envoy.Route(envoy.RoutePrefix("/blog", &dag.HeaderCondition{
+			envoy.Route(envoy.RoutePrefix("/blog", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "123",
 				MatchType: "exact",
 				Invert:    true,
 			}), routecluster("default/svc3/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/", &dag.HeaderCondition{
+			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "abc",
 				MatchType: "exact",
@@ -3114,12 +3114,12 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 
 	assertRDS(t, cc, "1", virtualhosts(
 		envoy.VirtualHost("hello.world",
-			envoy.Route(envoy.RoutePrefix("/blog", &dag.HeaderCondition{
+			envoy.Route(envoy.RoutePrefix("/blog", dag.HeaderCondition{
 				Name:      "x-header",
 				MatchType: "present",
 				Invert:    false,
 			}), routecluster("default/svc3/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/", &dag.HeaderCondition{
+			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
 				Name:      "x-header",
 				MatchType: "present",
 				Invert:    false,

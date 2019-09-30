@@ -487,60 +487,6 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 	}
 }
 
-// httpProxyConditions converts a list of HTTPProxy conditions to dag Conditions.
-func httpProxyConditions(conds []projcontour.Condition) []Condition {
-	var c []Condition
-	for _, cond := range conds {
-		if cond.Prefix != "" {
-			c = append(c, &PrefixCondition{
-				Prefix: cond.Prefix,
-			})
-		}
-		if cond.Header != nil {
-			// Header present only
-			if cond.Header.Present {
-				c = append(c, &HeaderCondition{
-					Name:      cond.Header.Name,
-					MatchType: "present",
-					Invert:    false,
-				})
-			} else {
-				// Header contains
-				if cond.Header.Contains != "" {
-					c = append(c, &HeaderCondition{
-						Name:      cond.Header.Name,
-						Value:     cond.Header.Contains,
-						MatchType: "contains",
-						Invert:    false,
-					})
-				} else if cond.Header.NotContains != "" {
-					c = append(c, &HeaderCondition{
-						Name:      cond.Header.Name,
-						Value:     cond.Header.NotContains,
-						MatchType: "contains",
-						Invert:    true,
-					})
-				} else if cond.Header.Exact != "" {
-					c = append(c, &HeaderCondition{
-						Name:      cond.Header.Name,
-						Value:     cond.Header.Exact,
-						MatchType: "exact",
-						Invert:    false,
-					})
-				} else if cond.Header.NotExact != "" {
-					c = append(c, &HeaderCondition{
-						Name:      cond.Header.Name,
-						Value:     cond.Header.NotExact,
-						MatchType: "exact",
-						Invert:    true,
-					})
-				}
-			}
-		}
-	}
-	return c
-}
-
 func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, conditions []projcontour.Condition, visited []*projcontour.HTTPProxy, enforceTLS bool) []*Route {
 	for _, v := range visited {
 		// ensure we are not following an edge that produces a cycle
@@ -580,12 +526,13 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 		}
 
 		r := &Route{
-			Conditions:    httpProxyConditions(append(conditions, route.Conditions...)),
-			Websocket:     route.EnableWebsockets,
-			HTTPSUpgrade:  routeEnforceTLS(enforceTLS, route.PermitInsecure && !b.DisablePermitInsecure),
-			PrefixRewrite: route.PrefixRewrite,
-			TimeoutPolicy: timeoutPolicy(route.TimeoutPolicy),
-			RetryPolicy:   retryPolicy(route.RetryPolicy),
+			PathCondition:    pathCondition(append(conditions, route.Conditions...)),
+			HeaderConditions: headerConditions(append(conditions, route.Conditions...)),
+			Websocket:        route.EnableWebsockets,
+			HTTPSUpgrade:     routeEnforceTLS(enforceTLS, route.PermitInsecure && !b.DisablePermitInsecure),
+			PrefixRewrite:    route.PrefixRewrite,
+			TimeoutPolicy:    timeoutPolicy(route.TimeoutPolicy),
+			RetryPolicy:      retryPolicy(route.RetryPolicy),
 		}
 
 		for _, service := range route.Services {
@@ -758,14 +705,12 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 
 			permitInsecure := route.PermitInsecure && !b.DisablePermitInsecure
 			r := &Route{
+				PathCondition: &PrefixCondition{Prefix: route.Match},
 				Websocket:     route.EnableWebsockets,
 				HTTPSUpgrade:  routeEnforceTLS(enforceTLS, permitInsecure),
 				PrefixRewrite: route.PrefixRewrite,
 				TimeoutPolicy: ingressrouteTimeoutPolicy(route.TimeoutPolicy),
 				RetryPolicy:   retryPolicy(route.RetryPolicy),
-				Conditions: []Condition{
-					&PrefixCondition{Prefix: route.Match},
-				},
 			}
 			for _, service := range route.Services {
 				if service.Port < 1 || service.Port > 65535 {
@@ -956,11 +901,11 @@ func route(ingress *v1beta1.Ingress, path string, service *Service) *Route {
 
 	if strings.ContainsAny(path, "^+*[]%") {
 		// path smells like a regex
-		r.Conditions = append(r.Conditions, &RegexCondition{Regex: path})
+		r.PathCondition = &RegexCondition{Regex: path}
 		return r
 	}
 
-	r.Conditions = append(r.Conditions, &PrefixCondition{Prefix: path})
+	r.PathCondition = &PrefixCondition{Prefix: path}
 	return r
 }
 
