@@ -1633,6 +1633,128 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	proxy1b := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+	proxy1c := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Header: &projcontour.HeaderCondition{
+						Name:    "x-request-id",
+						Present: true,
+					},
+				}, {
+					Prefix: "/kuard",
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:     "e-tag",
+						Contains: "abcdef",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:        "x-timeout",
+						NotContains: "infinity",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:  "digest-auth",
+						Exact: "scott",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:     "digest-password",
+						NotExact: "tiger",
+					},
+				}},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy2a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "kubesystem",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Conditions: []projcontour.Condition{{
+					Header: &projcontour.HeaderCondition{
+						Name:    "x-request-id",
+						Present: true,
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:        "x-timeout",
+						NotContains: "infinity",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:  "digest-auth",
+						Exact: "scott",
+					},
+				}},
+				Name:      "kuard",
+				Namespace: "default",
+			}},
+		},
+	}
+	proxy2b := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/kuard",
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:     "e-tag",
+						Contains: "abcdef",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:     "digest-password",
+						NotExact: "tiger",
+					},
+				}},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	proxy1e := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -3628,6 +3750,65 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"insert httproxy w/o condition": {
+			objs: []interface{}{
+				proxy1b, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"insert httproxy w/ conditions": {
+			objs: []interface{}{
+				proxy1c, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathCondition: &PrefixCondition{Prefix: "/kuard"},
+							HeaderConditions: []HeaderCondition{
+								{Name: "x-request-id", MatchType: "present"},
+								{Name: "e-tag", Value: "abcdef", MatchType: "contains"},
+								{Name: "x-timeout", Value: "infinity", MatchType: "contains", Invert: true},
+								{Name: "digest-auth", Value: "scott", MatchType: "exact"},
+								{Name: "digest-password", Value: "tiger", MatchType: "exact", Invert: true},
+							},
+							Clusters: clusters(service(s1)),
+						}),
+					),
+				},
+			),
+		},
+		"insert httproxy w/ included conditions": {
+			objs: []interface{}{
+				proxy2a, proxy2b, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathCondition: &PrefixCondition{Prefix: "/kuard"},
+							HeaderConditions: []HeaderCondition{
+								{Name: "x-request-id", MatchType: "present"},
+								{Name: "x-timeout", Value: "infinity", MatchType: "contains", Invert: true},
+								{Name: "digest-auth", Value: "scott", MatchType: "exact"},
+								{Name: "e-tag", Value: "abcdef", MatchType: "contains"},
+								{Name: "digest-password", Value: "tiger", MatchType: "exact", Invert: true},
+							},
+							Clusters: clusters(service(s1)),
+						}),
 					),
 				},
 			),
