@@ -14,7 +14,6 @@ package envoy
 
 import (
 	"fmt"
-	"path"
 	"sort"
 	"time"
 
@@ -41,19 +40,20 @@ func Route(match *envoy_api_v2_route.RouteMatch, action *envoy_api_v2_route.Rout
 
 // RouteMatch creates a *envoy_api_v2_route.RouteMatch for the supplied *dag.Route.
 func RouteMatch(route *dag.Route) *envoy_api_v2_route.RouteMatch {
-	prefix := "/"
-	var headers []*dag.HeaderCondition
-	for _, c := range route.Conditions {
-		switch c := c.(type) {
-		case *dag.RegexCondition:
-			return RouteRegex(c.Regex)
-		case *dag.PrefixCondition:
-			prefix = path.Join(prefix, c.Prefix)
-		case *dag.HeaderCondition:
-			headers = append(headers, c)
+	match := &envoy_api_v2_route.RouteMatch{
+		Headers: headerMatcher(route.HeaderConditions),
+	}
+	switch c := route.PathCondition.(type) {
+	case *dag.RegexCondition:
+		match.PathSpecifier = &envoy_api_v2_route.RouteMatch_Regex{
+			Regex: c.Regex,
+		}
+	case *dag.PrefixCondition:
+		match.PathSpecifier = &envoy_api_v2_route.RouteMatch_Prefix{
+			Prefix: c.Prefix,
 		}
 	}
-	return RoutePrefix(prefix, headers...)
+	return match
 }
 
 // RouteRegex returns a regex matcher.
@@ -66,7 +66,7 @@ func RouteRegex(regex string) *envoy_api_v2_route.RouteMatch {
 }
 
 // RoutePrefix returns a prefix matcher.
-func RoutePrefix(prefix string, headers ...*dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
+func RoutePrefix(prefix string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
 	return &envoy_api_v2_route.RouteMatch{
 		PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
 			Prefix: prefix,
@@ -278,7 +278,7 @@ func AppendHeader(key, value string) *envoy_api_v2_core.HeaderValueOption {
 	}
 }
 
-func headerMatcher(headers []*dag.HeaderCondition) []*envoy_api_v2_route.HeaderMatcher {
+func headerMatcher(headers []dag.HeaderCondition) []*envoy_api_v2_route.HeaderMatcher {
 	var envoyHeaders []*envoy_api_v2_route.HeaderMatcher
 
 	for _, h := range headers {

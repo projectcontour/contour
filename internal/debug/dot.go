@@ -54,7 +54,7 @@ func (c *ctx) writeVertex(v dag.Vertex) {
 	case *dag.SecureVirtualHost:
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{https://%s}"]`+"\n", v, v.VirtualHost.Name)
 	case *dag.Route:
-		fmt.Fprintf(c.w, `"%p" [shape=record, label="{%s}"]`+"\n", v, v.Conditions[0].String())
+		fmt.Fprintf(c.w, `"%p" [shape=record, label="{%s}"]`+"\n", v, v.PathCondition.String())
 	case *dag.TCPProxy:
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{tcpproxy}"]`+"\n", v)
 	case *dag.Cluster:

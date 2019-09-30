@@ -84,9 +84,13 @@ func (hc *HeaderCondition) String() string {
 // Route defines the properties of a route to a Cluster.
 type Route struct {
 
-	// A list of conditions the incoming request must
-	// match for this route.
-	Conditions []Condition
+	// PathCondition specifies a Condition to match on the request path.
+	// Must not be nil.
+	PathCondition Condition
+
+	// HeaderConditions specifies a set of additional Conditions to
+	// match on the request headers.
+	HeaderConditions []HeaderCondition
 
 	Clusters []*Cluster
 
@@ -176,8 +180,8 @@ func (v *VirtualHost) addRoute(route *Route) {
 }
 
 func conditionsToString(r *Route) string {
-	var s []string
-	for _, cond := range r.Conditions {
+	s := []string{r.PathCondition.String()}
+	for _, cond := range r.HeaderConditions {
 		s = append(s, cond.String())
 	}
 	return strings.Join(s, ",")

@@ -1559,7 +1559,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/", &dag.HeaderCondition{
+						envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
 							Name:      "x-header",
 							Value:     "abc",
 							MatchType: "contains",
@@ -1615,7 +1615,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/", &dag.HeaderCondition{
+						envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
 							Name:      "x-header",
 							Value:     "abc",
 							MatchType: "contains",
@@ -1672,7 +1672,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/", &dag.HeaderCondition{
+						envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
 							Name:      "x-header",
 							Value:     "abc",
 							MatchType: "exact",
@@ -1729,7 +1729,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/", &dag.HeaderCondition{
+						envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
 							Name:      "x-header",
 							Value:     "abc",
 							MatchType: "exact",
@@ -1786,7 +1786,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
-						envoy.Route(envoy.RoutePrefix("/", &dag.HeaderCondition{
+						envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
 							Name:      "x-header",
 							MatchType: "present",
 						}), routecluster("default/backend/80/da39a3ee5e")),
@@ -1854,13 +1854,13 @@ func TestSortLongestRouteFirst(t *testing.T) {
 			routes: []*envoy_api_v2_route.Route{{
 				Match: envoy.RoutePrefix("/"),
 			}, {
-				Match: envoy.RoutePrefix("/", &dag.HeaderCondition{
+				Match: envoy.RoutePrefix("/", dag.HeaderCondition{
 					Name:      "x-request-id",
 					MatchType: "present",
 				}),
 			}},
 			want: []*envoy_api_v2_route.Route{{
-				Match: envoy.RoutePrefix("/", &dag.HeaderCondition{
+				Match: envoy.RoutePrefix("/", dag.HeaderCondition{
 					Name:      "x-request-id",
 					MatchType: "present",
 				}),
