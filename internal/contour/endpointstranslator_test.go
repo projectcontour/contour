@@ -18,7 +18,7 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/golang/protobuf/proto"
-	"github.com/google/go-cmp/cmp"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/envoy"
 	v1 "k8s.io/api/core/v1"
 )
@@ -51,9 +51,7 @@ func TestEndpointsTranslatorContents(t *testing.T) {
 			var et EndpointsTranslator
 			et.entries = tc.contents
 			got := et.Contents()
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -109,9 +107,7 @@ func TestEndpointCacheQuery(t *testing.T) {
 			var et EndpointsTranslator
 			et.entries = tc.contents
 			got := et.Query(tc.query)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -234,9 +230,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 			}
 			et.OnAdd(tc.ep)
 			got := et.Contents()
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -335,9 +329,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 			tc.setup(et)
 			et.OnDelete(tc.ep)
 			got := et.Contents()
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -404,9 +396,7 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 			var et EndpointsTranslator
 			et.recomputeClusterLoadAssignment(tc.oldep, tc.newep)
 			got := et.Contents()
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -428,9 +418,7 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 	}
 	got := et.Contents()
 
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatal(diff)
-	}
+	assert.Equal(t, want, got)
 
 	// e2 is the same as e1, but without endpoint subsets
 	e2 := endpoints("default", "simple")
@@ -440,9 +428,7 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 	want = nil
 	got = et.Contents()
 
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatal(diff)
-	}
+	assert.Equal(t, want, got)
 }
 
 func ports(eps ...v1.EndpointPort) []v1.EndpointPort {

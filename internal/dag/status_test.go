@@ -32,7 +32,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: "roots",
 		},
 		Type: v1.SecretTypeTLS,
-		Data: secretdata("certificate", "key"),
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
 	sec2 := &v1.Secret{
@@ -41,7 +41,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: "heptio-contour",
 		},
 		Type: v1.SecretTypeTLS,
-		Data: secretdata("certificate", "key"),
+		Data: sec1.Data,
 	}
 
 	s1 := &v1.Service{

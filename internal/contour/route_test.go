@@ -291,7 +291,7 @@ func TestRouteVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -349,7 +349,7 @@ func TestRouteVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -409,7 +409,7 @@ func TestRouteVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -484,7 +484,7 @@ func TestRouteVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -546,7 +546,7 @@ func TestRouteVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1339,7 +1339,7 @@ func TestRouteVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1798,7 +1798,7 @@ func TestRouteVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			root := buildDAG(tc.objs...)
+			root := buildDAG(t, tc.objs...)
 			got := visitRoutes(root)
 			assert.Equal(t, tc.want, got)
 		})

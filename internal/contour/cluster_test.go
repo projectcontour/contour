@@ -22,9 +22,9 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/duration"
-	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
@@ -78,9 +78,7 @@ func TestClusterCacheContents(t *testing.T) {
 			var cc ClusterCache
 			cc.Update(tc.contents)
 			got := cc.Contents()
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -175,9 +173,7 @@ func TestClusterCacheQuery(t *testing.T) {
 			var cc ClusterCache
 			cc.Update(tc.contents)
 			got := cc.Query(tc.query)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -853,11 +849,9 @@ func TestClusterVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			root := buildDAG(tc.objs...)
+			root := buildDAG(t, tc.objs...)
 			got := visitClusters(root)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }

@@ -37,6 +37,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: false,
 		},
@@ -60,6 +61,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: true,
 		},
@@ -99,7 +101,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						}},
 					},
 				},
-
 				&ingressroutev1.TLSCertificateDelegation{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "delegation",
@@ -121,6 +122,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: true,
 		},
@@ -159,6 +161,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: true,
 		},
@@ -184,6 +187,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: true,
 		},
@@ -223,6 +227,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: true,
 		},
@@ -262,6 +267,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: true,
 		},
@@ -288,6 +294,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: true,
 		},
@@ -327,6 +334,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: true,
 		},
@@ -366,6 +374,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: true,
 		},
@@ -376,7 +385,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Data: map[string][]byte{
-					"ca.crt": []byte("ca"),
+					"ca.crt": []byte(CERTIFICATE),
 				},
 			},
 			// TODO(dfc) this should be false because the CA secret is
@@ -416,49 +425,49 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Data: map[string][]byte{
-					"ca.crt": []byte("ca"),
+					"ca.crt": []byte(CERTIFICATE),
 				},
 			},
 			want: true,
 		},
-		/*
-			"insert certificate secret referenced by httpproxy": {
-				pre: []interface{}{
-					&projcontour.HTTPProxy{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "example-com",
-							Namespace: "default",
-						},
-						Spec: projcontour.HTTPProxySpec{
-							VirtualHost: &projcontour.VirtualHost{
-								Fqdn: "example.com",
-							},
-							Routes: []projcontour.Route{{
-								Match: "/",
-								Services: []projcontour.Service{{
-									Name: "kuard",
-									Port: 8080,
-									UpstreamValidation: &projcontour.UpstreamValidation{
-										CACertificate: "ca",
-										SubjectName:   "example.com",
-									},
-								}},
-							}},
-						},
-					},
-				},
-				obj: &v1.Secret{
+		"insert certificate secret referenced by httpproxy": {
+			pre: []interface{}{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "ca",
+						Name:      "example-com",
 						Namespace: "default",
 					},
-					Data: map[string][]byte{
-						"ca.crt": []byte("ca"),
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "example.com",
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "kuard",
+								Port: 8080,
+								UpstreamValidation: &projcontour.UpstreamValidation{
+									CACertificate: "ca",
+									SubjectName:   "example.com",
+								},
+							}},
+						}},
 					},
 				},
-				want: true,
 			},
-		*/
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ca",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					"ca.crt": []byte(CERTIFICATE),
+				},
+			},
+			want: true,
+		},
 		"insert ingress empty ingress class": {
 			obj: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{

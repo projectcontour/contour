@@ -30,6 +30,7 @@ import (
 	"github.com/projectcontour/contour/apis/generated/clientset/versioned/fake"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
+	"github.com/projectcontour/contour/internal/dag"
 	cgrpc "github.com/projectcontour/contour/internal/grpc"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
@@ -87,6 +88,11 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 	rand.Seed(time.Now().Unix())
 
 	eh := &contour.EventHandler{
+		Builder: dag.Builder{
+			Source: dag.KubernetesCache{
+				FieldLogger: log,
+			},
+		},
 		CacheHandler: ch,
 		CRDStatus: &k8s.CRDStatus{
 			Client: fake.NewSimpleClientset(),

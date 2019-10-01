@@ -162,10 +162,7 @@ func TestTLSListener(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
 	// i1 is a tls ingress
@@ -312,10 +309,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
 	svc1 := &v1.Service{
@@ -484,10 +478,7 @@ func TestLDSFilter(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
 	// i1 is a tls ingress
@@ -596,10 +587,7 @@ func TestLDSTLSMinimumProtocolVersion(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 	rh.OnAdd(s1)
 
@@ -786,10 +774,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
 	// i1 is a tls ingress
@@ -891,10 +876,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
 	// i1 is a tls ingress
@@ -993,10 +975,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
 	// i1 is a tls ingress
@@ -1218,10 +1197,7 @@ func TestIngressRouteHTTPS(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
 	// ir1 is an ingressroute that has TLS
@@ -1378,10 +1354,7 @@ func TestLDSIngressRouteTCPForward(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
 	i1 := &ingressroutev1.IngressRoute{
@@ -1461,10 +1434,7 @@ func TestIngressRouteTLSCertificateDelegation(t *testing.T) {
 			Namespace: "secret",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
 	// add a secret object secret/wildcard.
@@ -1658,10 +1628,7 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 	rh.OnAdd(secret1)
 
