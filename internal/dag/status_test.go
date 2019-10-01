@@ -1191,6 +1191,118 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			}},
 		},
 	}
+	// proxy28 is a proxy with duplicated route condition headers
+	proxy28 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:  "x-header",
+						Exact: "abc",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:  "x-header",
+						Exact: "1234",
+					},
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy29 is a proxy with duplicated invalid include condition headers
+	proxy29 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "delegated",
+				Namespace: "roots",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:  "x-header",
+						Exact: "abc",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:  "x-header",
+						Exact: "1234",
+					},
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+	proxy30 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "delegated",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+	// proxy31 is a proxy with duplicated valid route condition headers
+	proxy31 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-header",
+						NotExact: "abc",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-header",
+						NotExact: "1234",
+					},
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
 	proxy32 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "www",
@@ -1727,6 +1839,25 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Status:      "orphaned",
 					Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
 				},
+			},
+		},
+		"duplicate route condition headers": {
+			objs: []interface{}{proxy28, s4},
+			want: map[Meta]Status{
+				{name: proxy28.Name, namespace: proxy28.Namespace}: {Object: proxy28, Status: "invalid", Description: "cannot specify duplicate header 'exact match' conditions in the same route", Vhost: "example.com"},
+			},
+		},
+		"duplicate valid route condition headers": {
+			objs: []interface{}{proxy31, s4},
+			want: map[Meta]Status{
+				{name: proxy31.Name, namespace: proxy31.Namespace}: {Object: proxy31, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
+			},
+		},
+		"duplicate include condition headers": {
+			objs: []interface{}{proxy29, proxy30, s4},
+			want: map[Meta]Status{
+				{name: proxy29.Name, namespace: proxy29.Namespace}: {Object: proxy29, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
+				{name: proxy30.Name, namespace: proxy30.Namespace}: {Object: proxy30, Status: "invalid", Description: "cannot specify duplicate header 'exact match' conditions in the same route", Vhost: ""},
 			},
 		},
 	}
