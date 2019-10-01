@@ -2134,6 +2134,28 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// proxy102 has a wildcard path prefix
+	proxy102 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo/*/bar",
+				}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs                  []interface{}
 		disablePermitInsecure bool
@@ -4152,6 +4174,30 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"insert httpproxy with wildcard route prefix": {
+			objs: []interface{}{
+				proxy102,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeClusterWildcard("/foo/*/bar",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
 	}
 
 	for name, tc := range tests {
@@ -4760,6 +4806,13 @@ func prefixroute(prefix string, first *Service, rest ...*Service) *Route {
 func routeCluster(prefix string, first *Cluster, rest ...*Cluster) *Route {
 	return &Route{
 		PathCondition: &PrefixCondition{Prefix: prefix},
+		Clusters:      append([]*Cluster{first}, rest...),
+	}
+}
+
+func routeClusterWildcard(prefix string, first *Cluster, rest ...*Cluster) *Route {
+	return &Route{
+		PathCondition: &WildcardPathCondition{Prefix: prefix},
 		Clusters:      append([]*Cluster{first}, rest...),
 	}
 }

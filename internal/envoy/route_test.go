@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestRoute(t *testing.T) {
+func TestRoutePrefix(t *testing.T) {
 	service := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -58,6 +58,17 @@ func TestRoute(t *testing.T) {
 	want := &envoy_api_v2_route.Route{
 		Match:  match,
 		Action: action,
+	}
+	assert.Equal(t, want, got)
+}
+
+func TestRouteWildcardPrefix(t *testing.T) {
+	prefix := "/foo/*/bar"
+	got := RouteWilcard(prefix)
+	want := &envoy_api_v2_route.RouteMatch{
+		PathSpecifier: &envoy_api_v2_route.RouteMatch_Regex{
+			Regex: "/foo/[0-9a-zA-Z-]*/bar.*",
+		},
 	}
 	assert.Equal(t, want, got)
 }

@@ -61,6 +61,15 @@ func (pc *PrefixCondition) String() string {
 	return "prefix: " + pc.Prefix
 }
 
+// WildcardPathCondition matches the start of a URL.
+type WildcardPathCondition struct {
+	Prefix string
+}
+
+func (pc *WildcardPathCondition) String() string {
+	return "wildcard path: " + pc.Prefix
+}
+
 // RegexCondition matches the URL by regular expression.
 type RegexCondition struct {
 	Regex string

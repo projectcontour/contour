@@ -64,6 +64,12 @@ func TestPathCondition(t *testing.T) {
 			}},
 			want: &PrefixCondition{Prefix: "/"},
 		},
+		"wildcard condition": {
+			conditions: []projcontour.Condition{{
+				Prefix: "/foo/*/bar",
+			}},
+			want: &WildcardPathCondition{Prefix: "/foo/*/bar"},
+		},
 	}
 
 	for name, tc := range tests {

@@ -15,6 +15,7 @@ package dag
 
 import (
 	"path"
+	"strings"
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
@@ -23,6 +24,12 @@ func pathCondition(conds []projcontour.Condition) Condition {
 	prefix := "/"
 	for _, cond := range conds {
 		prefix = path.Join(prefix, cond.Prefix)
+	}
+
+	if strings.Contains(prefix, "*") {
+		return &WildcardPathCondition{
+			Prefix: prefix,
+		}
 	}
 	return &PrefixCondition{
 		Prefix: prefix,

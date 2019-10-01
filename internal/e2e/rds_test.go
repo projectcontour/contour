@@ -3259,6 +3259,48 @@ func TestPrefixRewriteHTTPProxy(t *testing.T) {
 	), nil)
 }
 
+func TestWildcardPathPrefixHTTPProxy(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ws",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	rh.OnAdd(&projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "wildcardprefix.hello.world"},
+			Routes: []projcontour.Route{{
+				Conditions: conditions(prefixCondition("/foo/*/bar")),
+				Services: []projcontour.Service{{
+					Name: "ws",
+					Port: 80,
+				}},
+			}},
+		},
+	})
+
+	assertRDS(t, cc, "1", virtualhosts(
+		envoy.VirtualHost("wildcardprefix.hello.world",
+			envoy.Route(envoy.RouteWilcard("/foo/*/bar"), routecluster("default/ws/80/da39a3ee5e")),
+		),
+	), nil)
+}
+
 func TestHTTPProxyRouteWithTLS(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
