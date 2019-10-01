@@ -782,7 +782,10 @@ To resolve this Contour applies the following logic.
 ### Configuring inclusion
 
 Inclusion is a top-level part of the HTTPProxy `spec` element.
-It requires two fields, `name` and `namespace`, with the option of including a `conditions` block.
+It requires one field, `name`, and has two optional fields:
+
+- `namespace`. This will assume the included HTTPProxy is in the same namespace if it's not specified.
+- a `conditions` block.
 
 #### Within the same namespace
 
