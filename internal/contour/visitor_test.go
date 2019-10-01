@@ -17,14 +17,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/google/go-cmp/cmp"
 	"github.com/heptio/contour/internal/dag"
 	"github.com/heptio/contour/internal/envoy"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -120,7 +120,7 @@ func TestVisitListeners(t *testing.T) {
 									Name:      "secret",
 									Namespace: "default",
 								},
-								Data: secretdata("certificate", "key"),
+								Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 							},
 						},
 						MinProtoVersion: auth.TlsParameters_TLSv1_1,

@@ -236,7 +236,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -311,7 +311,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -379,7 +379,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -433,7 +433,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -515,7 +515,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 			},
 			want: listenermap(&v2.Listener{
@@ -563,7 +563,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -625,7 +625,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -692,7 +692,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -754,7 +754,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -819,7 +819,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -890,7 +890,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -929,7 +929,7 @@ func TestListenerVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			root := buildDAG(tc.objs...)
+			root := buildDAG(t, tc.objs...)
 			got := visitListeners(root, &tc.ListenerVisitorConfig)
 			if !cmp.Equal(tc.want, got) {
 				t.Fatalf("expected:\n%+v\ngot:\n%+v", tc.want, got)
@@ -939,14 +939,7 @@ func TestListenerVisit(t *testing.T) {
 }
 
 func tlscontext(tlsMinProtoVersion auth.TlsParameters_TlsProtocol, alpnprotos ...string) *auth.DownstreamTlsContext {
-	return envoy.DownstreamTLSContext("default/secret/735ad571c1", tlsMinProtoVersion, alpnprotos...)
-}
-
-func secretdata(cert, key string) map[string][]byte {
-	return map[string][]byte{
-		v1.TLSCertKey:       []byte(cert),
-		v1.TLSPrivateKeyKey: []byte(key),
-	}
+	return envoy.DownstreamTLSContext("default/secret/28337303ac", tlsMinProtoVersion, alpnprotos...)
 }
 
 func listenermap(listeners ...*v2.Listener) map[string]*v2.Listener {

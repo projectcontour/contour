@@ -35,6 +35,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: false,
 		},
@@ -57,6 +59,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: true,
 		},
@@ -73,7 +77,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						}},
 					},
 				},
-
 				&ingressroutev1.TLSCertificateDelegation{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "delegation",
@@ -94,6 +97,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: true,
 		},
@@ -131,6 +136,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: true,
 		},
@@ -156,6 +163,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: true,
 		},
@@ -194,6 +203,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: true,
 		},
@@ -231,6 +242,56 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
+				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+			},
+			want: true,
+		},
+		"insert certificate secret": {
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ca",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					"ca.crt": []byte(CERTIFICATE),
+				},
+			},
+			want: true,
+		},
+		"insert certificate secret referenced by ingressroute": {
+			pre: []interface{}{
+				&ingressroutev1.IngressRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "example-com",
+						Namespace: "default",
+					},
+					Spec: ingressroutev1.IngressRouteSpec{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							Fqdn: "example.com",
+						},
+						Routes: []ingressroutev1.Route{{
+							Match: "/",
+							Services: []ingressroutev1.Service{{
+								Name: "kuard",
+								Port: 8080,
+								UpstreamValidation: &ingressroutev1.UpstreamValidation{
+									CACertificate: "ca",
+									SubjectName:   "example.com",
+								},
+							}},
+						}},
+					},
+				},
+			},
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ca",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					"ca.crt": []byte(CERTIFICATE),
 				},
 			},
 			want: true,
@@ -503,12 +564,16 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			}),
 			obj: &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: true,
 		},
