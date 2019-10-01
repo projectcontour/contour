@@ -505,7 +505,13 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 	var routes []*Route
 	// Loop over and process all includes
 	for _, include := range proxy.Spec.Includes {
-		if delegate, ok := b.Source.httpproxies[Meta{name: include.Name, namespace: include.Namespace}]; ok {
+
+		namespace := include.Namespace
+		if namespace == "" {
+			namespace = proxy.Namespace
+		}
+
+		if delegate, ok := b.Source.httpproxies[Meta{name: include.Name, namespace: namespace}]; ok {
 			if delegate.Spec.VirtualHost != nil {
 				sw.SetInvalid("root httpproxy cannot delegate to another root httpproxy")
 				return nil

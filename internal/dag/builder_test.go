@@ -2091,6 +2091,49 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// proxy101 and proxy101a test inclusion without a specified namespace.
+	proxy101 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name: "kuarder",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/kuarder",
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy101a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuarder",
+			Namespace: proxy101.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s2.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs                  []interface{}
 		disablePermitInsecure bool
@@ -4072,6 +4115,38 @@ func TestDAGInsert(t *testing.T) {
 									},
 								}},
 							},
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with no namespace for include": {
+			objs: []interface{}{
+				proxy101, proxy101a, s1, s2,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+							routeCluster("/kuarder",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s2.Name,
+										Namespace:   s2.Namespace,
+										ServicePort: &s2.Spec.Ports[0],
+									},
+								},
+							),
 						),
 					),
 				},
