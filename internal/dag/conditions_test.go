@@ -279,3 +279,75 @@ func TestConditionsValid(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateHeaderConditions(t *testing.T) {
+	tests := map[string]struct {
+		conditions []projcontour.Condition
+		want       bool
+	}{
+		"empty condition list": {
+			conditions: nil,
+			want:       true,
+		},
+		"valid conditions": {
+			conditions: []projcontour.Condition{
+				{
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-header",
+						Contains: "abc",
+					},
+				},
+			},
+			want: true,
+		},
+		"invalid conditions": {
+			conditions: []projcontour.Condition{
+				{
+					Header: &projcontour.HeaderCondition{
+						Name:  "x-header",
+						Exact: "abc",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:  "x-header",
+						Exact: "123",
+					},
+				},
+			},
+			want: false,
+		},
+		"prefix only": {
+			conditions: []projcontour.Condition{
+				{
+					Prefix: "/blog",
+				},
+			},
+			want: true,
+		},
+		"prefix conditions + valid headers": {
+			conditions: []projcontour.Condition{
+				{
+					Prefix: "/blog",
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:        "x-header",
+						NotContains: "abc",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:        "another-header",
+						NotContains: "123",
+					},
+				},
+			},
+			want: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := headerConditionsAreValid(tc.conditions)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}

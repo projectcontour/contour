@@ -541,9 +541,17 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			return nil
 		}
 
+		conds := append(conditions, route.Conditions...)
+
+		// Look for duplicate exact match headers on this route
+		if !headerConditionsAreValid(conds) {
+			sw.SetInvalid("cannot specify duplicate header 'exact match' conditions in the same route")
+			return nil
+		}
+
 		r := &Route{
-			PathCondition:    pathCondition(append(conditions, route.Conditions...)),
-			HeaderConditions: headerConditions(append(conditions, route.Conditions...)),
+			PathCondition:    pathCondition(conds),
+			HeaderConditions: headerConditions(conds),
 			Websocket:        route.EnableWebsockets,
 			HTTPSUpgrade:     routeEnforceTLS(enforceTLS, route.PermitInsecure && !b.DisablePermitInsecure),
 			PrefixRewrite:    route.PrefixRewrite,

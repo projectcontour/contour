@@ -15,6 +15,7 @@ package dag
 
 import (
 	"path"
+	"strings"
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
@@ -82,4 +83,24 @@ func headerConditions(conds []projcontour.Condition) []HeaderCondition {
 		}
 	}
 	return hc
+}
+
+func headerConditionsAreValid(conditions []projcontour.Condition) bool {
+	// Look for duplicate "exact match" headers on conditions
+	// if found, set error condition on HTTPProxy
+	encountered := map[string]bool{}
+	for _, v := range conditions {
+		if v.Header == nil {
+			continue
+		}
+		switch {
+		case v.Header.Exact != "":
+			headerName := strings.ToLower(v.Header.Name)
+			if encountered[headerName] {
+				return false
+			}
+			encountered[headerName] = true
+		}
+	}
+	return true
 }
