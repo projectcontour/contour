@@ -28,6 +28,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/heptio/contour/apis/generated/clientset/versioned/fake"
 	"github.com/heptio/contour/internal/contour"
+	"github.com/heptio/contour/internal/dag"
 	cgrpc "github.com/heptio/contour/internal/grpc"
 	"github.com/heptio/contour/internal/k8s"
 	"github.com/heptio/contour/internal/metrics"
@@ -88,6 +89,11 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 	rand.Seed(time.Now().Unix())
 
 	eh := &contour.EventHandler{
+		Builder: dag.Builder{
+			Source: dag.KubernetesCache{
+				FieldLogger: log,
+			},
+		},
 		CacheHandler:    ch,
 		Metrics:         ch.Metrics,
 		FieldLogger:     log,

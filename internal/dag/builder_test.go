@@ -31,6 +31,35 @@ func TestDAGInsert(t *testing.T) {
 	// The DAG is sensitive to ordering, adding an ingress, then a service,
 	// should have the same result as adding a service, then an ingress.
 
+	sec1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+	}
+
+	// Invalid cert in the secret
+	sec2 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata("wrong", "wronger"),
+	}
+
+	cert1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ca",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"ca.crt": []byte(CERTIFICATE),
+		},
+	}
+
 	i1 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -620,10 +649,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: v1.SecretTypeTLS,
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
 	s13a := &v1.Service{
@@ -1429,35 +1455,6 @@ func TestDAGInsert(t *testing.T) {
 				Protocol: "TCP",
 				Port:     8080,
 			}},
-		},
-	}
-
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: secretdata("certificate", "key"),
-	}
-
-	// Invalid cert in the secret
-	sec2 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: secretdata("", ""),
-	}
-
-	cert1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ca",
-			Namespace: "default",
-		},
-		Data: map[string][]byte{
-			"ca.crt": []byte("ca"),
 		},
 	}
 
@@ -2996,6 +2993,9 @@ func TestDAGInsert(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
 				DisablePermitInsecure: tc.disablePermitInsecure,
+				Source: KubernetesCache{
+					FieldLogger: testLogger(t),
+				},
 			}
 			for _, o := range tc.objs {
 				if !builder.Source.Insert(o) {
@@ -3046,13 +3046,6 @@ func ingressrulevalue(backend *v1beta1.IngressBackend) v1beta1.IngressRuleValue 
 				Backend: *backend,
 			}},
 		},
-	}
-}
-
-func secretdata(cert, key string) map[string][]byte {
-	return map[string][]byte{
-		v1.TLSCertKey:       []byte(cert),
-		v1.TLSPrivateKeyKey: []byte(key),
 	}
 }
 
@@ -3945,7 +3938,11 @@ func TestDAGIngressRouteUniqueFQDNs(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var builder Builder
+			builder := Builder{
+				Source: KubernetesCache{
+					FieldLogger: testLogger(t),
+				},
+			}
 			for _, o := range tc.objs {
 				builder.Source.Insert(o)
 			}

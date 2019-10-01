@@ -437,10 +437,7 @@ func TestEditIngressInPlace(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
 	// i4 is the same as i3, and includes a TLS spec object to enable ingress_https routes
@@ -671,10 +668,7 @@ func TestSSLRedirectOverlay(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
 	rh.OnAdd(&v1.Service{
@@ -766,10 +760,7 @@ func TestInvalidCertInIngress(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       nil,
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata("wrong", RSA_PRIVATE_KEY),
 	}
 	rh.OnAdd(secret)
 
@@ -829,10 +820,7 @@ func TestInvalidCertInIngress(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("cert"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
 	assertRDS(t, cc, "2", []route.VirtualHost{{ // ingress_http
@@ -1011,10 +999,7 @@ func TestRDSFilter(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
 	s1 := &v1.Service{
@@ -2173,10 +2158,7 @@ func TestRouteWithTLS(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
 	ir1 := &ingressroutev1.IngressRoute{
@@ -2271,10 +2253,7 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
 	ir1 := &ingressroutev1.IngressRoute{
@@ -2392,10 +2371,7 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
 	ir1 := &ingressroutev1.IngressRoute{
