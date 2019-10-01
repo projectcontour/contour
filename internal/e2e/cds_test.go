@@ -840,7 +840,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			envoy.CACertificateKey: []byte("ca"),
+			envoy.CACertificateKey: []byte(CERTIFICATE),
 		},
 	}
 
@@ -900,7 +900,8 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
 		Resources: resources(t,
-			tlscluster("default/kuard/443/98c0f31c72", "default/kuard/securebackend", "default_kuard_443", []byte("ca"), "subjname"),
+			tlscluster("default/kuard/443/98c0f31c72",
+				"default/kuard/securebackend", "default_kuard_443", []byte(CERTIFICATE), "subjname"),
 		),
 		TypeUrl: clusterType,
 		Nonce:   "3",

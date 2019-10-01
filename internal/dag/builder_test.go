@@ -37,7 +37,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: v1.SecretTypeTLS,
-		Data: secretdata("certificate", "key"),
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
 	// Invalid cert in the secret
@@ -47,7 +47,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: v1.SecretTypeTLS,
-		Data: secretdata("", ""),
+		Data: secretdata("wrong", "wronger"),
 	}
 
 	cert1 := &v1.Secret{
@@ -56,7 +56,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			"ca.crt": []byte("ca"),
+			"ca.crt": []byte(CERTIFICATE),
 		},
 	}
 
@@ -694,10 +694,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: v1.SecretTypeTLS,
-		Data: map[string][]byte{
-			v1.TLSCertKey:       []byte("certificate"),
-			v1.TLSPrivateKeyKey: []byte("key"),
-		},
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
 	s13a := &v1.Service{
@@ -4163,9 +4160,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			}
 			for _, o := range tc.objs {
-				if !builder.Source.Insert(o) {
-					t.Logf("insert %v: failed", o)
-				}
+				builder.Source.Insert(o)
 			}
 			dag := builder.Build()
 
@@ -4210,13 +4205,6 @@ func ingressrulevalue(backend *v1beta1.IngressBackend) v1beta1.IngressRuleValue 
 				Backend: *backend,
 			}},
 		},
-	}
-}
-
-func secretdata(cert, key string) map[string][]byte {
-	return map[string][]byte{
-		v1.TLSCertKey:       []byte(cert),
-		v1.TLSPrivateKeyKey: []byte(key),
 	}
 }
 

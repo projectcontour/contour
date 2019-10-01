@@ -16,9 +16,9 @@ package contour
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/metrics"
 	v1 "k8s.io/api/core/v1"
@@ -542,9 +542,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			dag := builder.Build()
 
 			got := calculateIngressRouteMetric(dag.Statuses())
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }

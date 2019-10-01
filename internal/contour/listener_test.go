@@ -20,12 +20,9 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
-	any "github.com/golang/protobuf/ptypes/any"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/envoy"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -62,9 +59,7 @@ func TestListenerCacheContents(t *testing.T) {
 			var lc ListenerCache
 			lc.Update(tc.contents)
 			got := lc.Contents()
-			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -121,9 +116,7 @@ func TestListenerCacheQuery(t *testing.T) {
 			var lc ListenerCache
 			lc.Update(tc.contents)
 			got := lc.Query(tc.query)
-			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -240,7 +233,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -327,7 +320,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -398,7 +391,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -452,7 +445,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -537,7 +530,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -604,7 +597,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -672,7 +665,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -745,7 +738,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -813,7 +806,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -884,7 +877,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -955,7 +948,7 @@ func TestListenerVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: secretdata("certificate", "key"),
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -994,24 +987,15 @@ func TestListenerVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			root := buildDAG(tc.objs...)
+			root := buildDAG(t, tc.objs...)
 			got := visitListeners(root, &tc.ListenerVisitorConfig)
-			if diff := cmp.Diff(tc.want, got, cmpopts.AcyclicTransformer("unmarshalAny", unmarshalAny)); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
 
 func tlscontext(tlsMinProtoVersion envoy_api_v2_auth.TlsParameters_TlsProtocol, alpnprotos ...string) *envoy_api_v2_auth.DownstreamTlsContext {
-	return envoy.DownstreamTLSContext("default/secret/735ad571c1", tlsMinProtoVersion, alpnprotos...)
-}
-
-func secretdata(cert, key string) map[string][]byte {
-	return map[string][]byte{
-		v1.TLSCertKey:       []byte(cert),
-		v1.TLSPrivateKeyKey: []byte(key),
-	}
+	return envoy.DownstreamTLSContext("default/secret/28337303ac", tlsMinProtoVersion, alpnprotos...)
 }
 
 func listenermap(listeners ...*v2.Listener) map[string]*v2.Listener {
@@ -1020,16 +1004,4 @@ func listenermap(listeners ...*v2.Listener) map[string]*v2.Listener {
 		m[l.Name] = l
 	}
 	return m
-}
-
-func unmarshalAny(a *any.Any) proto.Message {
-	pb, err := ptypes.Empty(a)
-	if err != nil {
-		panic(err.Error())
-	}
-	err = ptypes.UnmarshalAny(a, pb)
-	if err != nil {
-		panic(err.Error())
-	}
-	return pb
 }
