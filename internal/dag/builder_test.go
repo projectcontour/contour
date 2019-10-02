@@ -2131,6 +2131,76 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	proxy102 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/v1",
+				}, {
+					Prefix: "/api",
+				}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy103 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "www",
+				Namespace: "teama",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/v1",
+				}, {
+					Prefix: "/api",
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy103a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "www",
+			Namespace: "teama",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/v1",
+				}, {
+					Prefix: "/api",
+				}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs                  []interface{}
 		disablePermitInsecure bool
@@ -4148,6 +4218,18 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 			),
+		},
+		"insert httpproxy with multiple prefix conditions on route": {
+			objs: []interface{}{
+				proxy102, s1,
+			},
+			want: listeners(),
+		},
+		"insert httpproxy with multiple prefix conditions on include": {
+			objs: []interface{}{
+				proxy103, proxy103a, s1,
+			},
+			want: listeners(),
 		},
 	}
 

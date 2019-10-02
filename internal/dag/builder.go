@@ -517,6 +517,11 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 				return nil
 			}
 
+			if !pathConditionsValid(include.Conditions) {
+				sw.SetInvalid("include: cannot specify multiple path conditions in the same include")
+				return nil
+			}
+
 			sw, commit := b.WithObject(delegate)
 			routes = append(routes, b.computeRoutes(sw, delegate, append(conditions, include.Conditions...), visited, enforceTLS)...)
 			commit()
@@ -529,6 +534,11 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 		if len(route.Services) > 1 && route.EnableWebsockets {
 			sw.SetInvalid("route: cannot specify multiple services and enable websockets")
 			continue
+		}
+
+		if !pathConditionsValid(route.Conditions) {
+			sw.SetInvalid("route: cannot specify multiple path conditions in the same route")
+			return nil
 		}
 
 		r := &Route{

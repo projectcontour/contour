@@ -776,7 +776,7 @@ When conditions are combined through inclusion Contour merges the conditions inh
 This may result in duplicates, for example two `prefix:` conditions, or two header match conditions with the same name and value.
 To resolve this Contour applies the following logic.
 
-- `prefix:` conditions are concatenated together in the order they were applied from the root object. For example the conditions, `prefix: /api`, `prefix: /v1` becomes a single `prefix: /api/v1` conditions.
+- `prefix:` conditions are concatenated together in the order they were applied from the root object. For example the conditions, `prefix: /api`, `prefix: /v1` becomes a single `prefix: /api/v1` conditions. Note: Multiple prefixes cannot be supplied on a single set of Route conditions.
 - Repeated identical `header:` conditions (the same fields exactly) are deduplicated to a single `header:` condition in the final Envoy config.
 
 ### Configuring inclusion
@@ -1038,3 +1038,4 @@ Some examples of invalid configurations that Contour provides statuses for:
 - Orphaned route.
 - Delegation chain produces a cycle.
 - Root HTTPProxy does not specify fqdn.
+- Multiple prefixes cannot be specified on the same set of route conditions.
