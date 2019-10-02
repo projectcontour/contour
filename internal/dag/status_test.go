@@ -1191,6 +1191,74 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			}},
 		},
 	}
+	proxy32 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "www",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{
+					{
+						Prefix: "/api",
+					}, {
+						Prefix: "/v1",
+					},
+				},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy33 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "www",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "child",
+				Namespace: "teama",
+				Conditions: []projcontour.Condition{
+					{
+						Prefix: "/api",
+					}, {
+						Prefix: "/v1",
+					},
+				},
+			}},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+	proxy34 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "child",
+			Namespace: "teama",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -1632,6 +1700,32 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Status:      "invalid",
 					Description: "only one service per route may be nominated as mirror",
 					Vhost:       "example.com",
+				},
+			},
+		},
+		"proxy with two prefix conditions on route": {
+			objs: []interface{}{proxy32, s1},
+			want: map[Meta]Status{
+				{name: proxy32.Name, namespace: proxy32.Namespace}: {
+					Object:      proxy32,
+					Status:      "invalid",
+					Description: "route: cannot specify multiple path conditions in the same route",
+					Vhost:       "example.com",
+				},
+			},
+		},
+		"proxy with two prefix conditions as an include": {
+			objs: []interface{}{proxy33, proxy34, s1},
+			want: map[Meta]Status{
+				{name: proxy33.Name, namespace: proxy33.Namespace}: {
+					Object:      proxy33,
+					Status:      "invalid",
+					Description: "include: cannot specify multiple path conditions in the same include",
+					Vhost:       "example.com",
+				}, {name: proxy34.Name, namespace: proxy34.Namespace}: {
+					Object:      proxy34,
+					Status:      "orphaned",
+					Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
 				},
 			},
 		},

@@ -29,6 +29,19 @@ func pathCondition(conds []projcontour.Condition) Condition {
 	}
 }
 
+func pathConditionsValid(conds []projcontour.Condition) bool {
+	found := 0
+	for _, cond := range conds {
+		if cond.Prefix != "" {
+			found++
+		}
+		if found > 1 {
+			return false
+		}
+	}
+	return true
+}
+
 func headerConditions(conds []projcontour.Condition) []HeaderCondition {
 	var hc []HeaderCondition
 	for _, cond := range conds {

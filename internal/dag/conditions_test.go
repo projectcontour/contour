@@ -224,3 +224,58 @@ func TestHeaderConditions(t *testing.T) {
 		})
 	}
 }
+
+func TestConditionsValid(t *testing.T) {
+	tests := map[string]struct {
+		conditions []projcontour.Condition
+		want       bool
+	}{
+		"empty condition list": {
+			conditions: nil,
+			want:       true,
+		},
+		"valid path condition only": {
+			conditions: []projcontour.Condition{{
+				Prefix: "/api",
+			}},
+			want: true,
+		},
+		"valid path condition with headers": {
+			conditions: []projcontour.Condition{{
+				Prefix: "/api",
+				Header: &projcontour.HeaderCondition{
+					Name:     "x-header",
+					Contains: "abc",
+				},
+			}},
+			want: true,
+		},
+		"invalid path conditions": {
+			conditions: []projcontour.Condition{{
+				Prefix: "/api",
+			}, {
+				Prefix: "/v1",
+			}},
+			want: false,
+		},
+		"invalid path condition with headers": {
+			conditions: []projcontour.Condition{{
+				Prefix: "/api",
+				Header: &projcontour.HeaderCondition{
+					Name:     "x-header",
+					Contains: "abc",
+				},
+			}, {
+				Prefix: "/v1",
+			}},
+			want: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := pathConditionsValid(tc.conditions)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
