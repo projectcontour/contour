@@ -48,7 +48,7 @@ spec:
         - name: contour-config
           mountPath: /config
           readOnly: true
-      - image: docker.io/envoyproxy/envoy:v1.11.1
+      - image: docker.io/envoyproxy/envoy:v1.11.2
         name: envoy
         ports:
         - containerPort: 8080
