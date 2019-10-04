@@ -654,38 +654,57 @@ func TestDAGInsert(t *testing.T) {
 
 	s3b := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
+			Name:      s3a.Name,
+			Namespace: s3a.Namespace,
 			Annotations: map[string]string{
 				"contour.heptio.com/upstream-protocol.h2": "80,http",
 			},
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8888),
-			}},
-		},
+		Spec: s3a.Spec,
 	}
 
 	s3c := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
+			Name:      s3b.Name,
+			Namespace: s3b.Namespace,
 			Annotations: map[string]string{
 				"contour.heptio.com/upstream-protocol.tls": "80,http",
 			},
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8888),
-			}},
+		Spec: s3b.Spec,
+	}
+
+	s3d := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      s3b.Name,
+			Namespace: s3b.Namespace,
+			Annotations: map[string]string{
+				"projectcontour.io/upstream-protocol.h2c": "80,http",
+			},
 		},
+		Spec: s3b.Spec,
+	}
+
+	s3e := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      s3b.Name,
+			Namespace: s3b.Namespace,
+			Annotations: map[string]string{
+				"projectcontour.io/upstream-protocol.h2": "80,http",
+			},
+		},
+		Spec: s3b.Spec,
+	}
+
+	s3f := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      s3b.Name,
+			Namespace: s3b.Namespace,
+			Annotations: map[string]string{
+				"projectcontour.io/upstream-protocol.tls": "80,http",
+			},
+		},
+		Spec: s3b.Spec,
 	}
 
 	sec13 := &v1.Secret{
@@ -3414,7 +3433,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"h2c service annotation": {
+		"deprecated h2c service annotation": {
 			objs: []interface{}{
 				i3a, s3a,
 			},
@@ -3434,7 +3453,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"h2 service annotation": {
+		"deprecated h2 service annotation": {
 			objs: []interface{}{
 				i3a, s3b,
 			},
@@ -3454,9 +3473,70 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"tls service annotation": {
+		"deprecated tls service annotation": {
 			objs: []interface{}{
 				i3a, s3c,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*",
+							prefixroute("/", &Service{
+								Name:        s3c.Name,
+								Namespace:   s3c.Namespace,
+								ServicePort: &s3c.Spec.Ports[0],
+								Protocol:    "tls",
+							}),
+						),
+					),
+				},
+			),
+		},
+
+		"h2c service annotation": {
+			objs: []interface{}{
+				i3a, s3d,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*",
+							prefixroute("/", &Service{
+								Name:        s3a.Name,
+								Namespace:   s3a.Namespace,
+								ServicePort: &s3a.Spec.Ports[0],
+								Protocol:    "h2c",
+							}),
+						),
+					),
+				},
+			),
+		},
+		"h2 service annotation": {
+			objs: []interface{}{
+				i3a, s3e,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*",
+							prefixroute("/", &Service{
+								Name:        s3b.Name,
+								Namespace:   s3b.Namespace,
+								ServicePort: &s3b.Spec.Ports[0],
+								Protocol:    "h2",
+							}),
+						),
+					),
+				},
+			),
+		},
+		"tls service annotation": {
+			objs: []interface{}{
+				i3a, s3f,
 			},
 			want: listeners(
 				&Listener{
