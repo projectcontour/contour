@@ -14,10 +14,10 @@
 package dag
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
+	"github.com/projectcontour/contour/internal/assert"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -70,28 +70,28 @@ func TestParseUpstreamProtocols(t *testing.T) {
 			want: map[string]string{},
 		},
 		"empty": {
-			a:    map[string]string{fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): ""},
+			a:    map[string]string{"projectcontour.io/upstream-protocol.h2": ""},
 			want: map[string]string{},
 		},
 		"empty with spaces": {
-			a:    map[string]string{fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): ", ,"},
+			a:    map[string]string{"projectcontour.io/upstream-protocol.h2": ", ,"},
 			want: map[string]string{},
 		},
 		"single value": {
-			a: map[string]string{fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): "80"},
+			a: map[string]string{"projectcontour.io/upstream-protocol.h2": "80"},
 			want: map[string]string{
 				"80": "h2",
 			},
 		},
 		"tls": {
-			a: map[string]string{fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "tls"): "https,80"},
+			a: map[string]string{"projectcontour.io/upstream-protocol.tls": "https,80"},
 			want: map[string]string{
 				"80":    "tls",
 				"https": "tls",
 			},
 		},
 		"multiple value": {
-			a: map[string]string{fmt.Sprintf("%s.%s", annotationUpstreamProtocol, "h2"): "80,http,443,https"},
+			a: map[string]string{"projectcontour.io/upstream-protocol.h2": "80,http,443,https"},
 			want: map[string]string{
 				"80":    "h2",
 				"http":  "h2",
@@ -99,14 +99,26 @@ func TestParseUpstreamProtocols(t *testing.T) {
 				"https": "h2",
 			},
 		},
+		"deprecated multiple values": {
+			a: map[string]string{
+				"contour.heptio.com/upstream-protocol.h2": "80,http,443,https",
+				"projectcontour.io/upstream-protocol.h2c": "8080,http",
+				"projectcontour.io/upstream-protocol.tls": "443,https",
+			},
+			want: map[string]string{
+				"80":    "h2",
+				"8080":  "h2c",
+				"http":  "h2c",
+				"443":   "tls",
+				"https": "tls",
+			},
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := parseUpstreamProtocols(tc.a, annotationUpstreamProtocol, "h2", "tls")
-			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("parseUpstreamProtocols(%q): want: %v, got: %v", tc.a, tc.want, got)
-			}
+			got := parseUpstreamProtocols(tc.a)
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
