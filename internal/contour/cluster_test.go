@@ -412,7 +412,7 @@ func TestClusterVisit(t *testing.T) {
 							Services: []ingressroutev1.Service{{
 								Name: "backend",
 								Port: 80,
-								HealthCheck: &projcontour.HealthCheck{
+								HealthCheck: &ingressroutev1.HealthCheck{
 									Path: "/healthy",
 								},
 							}},
@@ -470,7 +470,7 @@ func TestClusterVisit(t *testing.T) {
 							Services: []ingressroutev1.Service{{
 								Name: "backend",
 								Port: 80,
-								HealthCheck: &projcontour.HealthCheck{
+								HealthCheck: &ingressroutev1.HealthCheck{
 									Host:                    "foo-bar-host",
 									Path:                    "/healthy",
 									TimeoutSeconds:          99,

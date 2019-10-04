@@ -235,7 +235,57 @@ No change.
 
 ### Per upstream health check
 
-No change.
+Per service health check has moved to a per route health check that applies to all services for that route.
+
+Before:
+```yaml
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata:
+  name: health-check
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: health.bar.com
+  routes:
+    - match: /
+      services:
+        - name: s1-health
+          port: 80
+          healthCheck:
+            path: /healthy
+            intervalSeconds: 5
+            timeoutSeconds: 2
+            unhealthyThresholdCount: 3
+            healthyThresholdCount: 5
+        - name: s2-health  # no health-check defined for this service
+          port: 80
+```
+After:
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: health-check
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: health.bar.com
+  routes:
+    - conditions:
+      - prefix: /
+      healthCheckPolicy:
+        path: /healthy
+        intervalSeconds: 5
+        timeoutSeconds: 2
+        unhealthyThresholdCount: 3
+        healthyThresholdCount: 5
+      services:
+        - name: s1-health
+          port: 80
+        - name: s2-health
+          port: 80
+```
 
 ### Websocket support
 

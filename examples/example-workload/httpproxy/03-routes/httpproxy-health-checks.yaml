@@ -8,14 +8,16 @@ spec:
   virtualhost:
     fqdn: health.bar.com
   routes:
-    - services:
+    - conditions:
+      - prefix: /      
+      healthCheckPolicy:
+        path: /healthy
+        intervalSeconds: 5
+        timeoutSeconds: 2
+        unhealthyThresholdCount: 3
+        healthyThresholdCount: 5
+      services:
         - name: s1-health
           port: 80
-          healthCheck:
-            path: /healthy
-            intervalSeconds: 5
-            timeoutSeconds: 2
-            unhealthyThresholdCount: 3
-            healthyThresholdCount: 5
-        - name: s2-health  # no health-check defined for this service
+        - name: s2-health
           port: 80
