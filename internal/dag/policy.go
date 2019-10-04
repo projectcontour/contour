@@ -90,8 +90,21 @@ func timeoutPolicy(tp *projcontour.TimeoutPolicy) *TimeoutPolicy {
 		IdleTimeout:     parseTimeout(tp.Idle),
 	}
 }
+func ingressrouteHealthCheckPolicy(hc *ingressroutev1.HealthCheck) *HealthCheckPolicy {
+	if hc == nil {
+		return nil
+	}
+	return &HealthCheckPolicy{
+		Path:               hc.Path,
+		Host:               hc.Host,
+		Interval:           time.Duration(hc.IntervalSeconds) * time.Second,
+		Timeout:            time.Duration(hc.TimeoutSeconds) * time.Second,
+		UnhealthyThreshold: hc.UnhealthyThresholdCount,
+		HealthyThreshold:   hc.HealthyThresholdCount,
+	}
+}
 
-func healthCheckPolicy(hc *projcontour.HealthCheck) *HealthCheckPolicy {
+func healthCheckPolicy(hc *projcontour.HTTPHealthCheckPolicy) *HealthCheckPolicy {
 	if hc == nil {
 		return nil
 	}

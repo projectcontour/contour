@@ -598,7 +598,9 @@ None of these properties are guaranteed by a Kubernetes cluster and will be visi
 
 Any perturbation in the set of pods backing a service risks redistributing backends around the hash ring.
 
-Active health checking can be configured on a per-upstream Service basis.
+#### Per route health checking
+
+Active health checking can be configured on a per route basis.
 Contour supports HTTP health checking and can be configured with various settings to tune the behavior.
 
 During HTTP health checking Envoy will send an HTTP request to the upstream Endpoints.
@@ -617,17 +619,19 @@ spec:
   virtualhost:
     fqdn: health.bar.com
   routes:
-    - services:
-        - name: s1-health
-          port: 80
-          healthCheck:
-            path: /healthy
-            intervalSeconds: 5
-            timeoutSeconds: 2
-            unhealthyThresholdCount: 3
-            healthyThresholdCount: 5
-        - name: s2-health # no health-check defined for this service
-          port: 80
+  - conditions:
+    - prefix: /
+    healthCheckPolicy:
+      path: /healthy
+      intervalSeconds: 5
+      timeoutSeconds: 2
+      unhealthyThresholdCount: 3
+      healthyThresholdCount: 5
+    services:
+      - name: s1-health
+        port: 80
+      - name: s2-health
+        port: 80
 ```
 
 Health check configuration parameters:

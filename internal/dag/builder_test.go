@@ -948,7 +948,7 @@ func TestDAGInsert(t *testing.T) {
 				Services: []ingressroutev1.Service{{
 					Name: "kuard",
 					Port: 8080,
-					HealthCheck: &projcontour.HealthCheck{
+					HealthCheck: &ingressroutev1.HealthCheck{
 						Path: "/healthz",
 					},
 				}},
@@ -1867,12 +1867,12 @@ func TestDAGInsert(t *testing.T) {
 				Conditions: []projcontour.Condition{{
 					Prefix: "/",
 				}},
+				HealthCheckPolicy: &projcontour.HTTPHealthCheckPolicy{
+					Path: "/healthz",
+				},
 				Services: []projcontour.Service{{
 					Name: "kuard",
 					Port: 8080,
-					HealthCheck: &projcontour.HealthCheck{
-						Path: "/healthz",
-					},
 				}},
 			}},
 		},

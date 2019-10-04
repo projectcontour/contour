@@ -745,7 +745,7 @@ func TestClusterWithHealthChecks(t *testing.T) {
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90,
-					HealthCheck: &projcontour.HealthCheck{
+					HealthCheck: &ingressroutev1.HealthCheck{
 						Path: "/healthz",
 					},
 				}},
