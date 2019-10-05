@@ -18,7 +18,7 @@ RBAC must be enabled on your cluster.
 
 ## Get started
 
-Getting started with Contour is as simple as one command. 
+Getting started with Contour is as simple as one command.
 See the [Getting Started](https://projectcontour.io/getting-started) document.
 
 ## Troubleshooting
