@@ -1,6 +1,9 @@
-# Deployment and testing
+---
+title: Contour Deployment Options
+layout: page
+---
 
-The [README](../README.md#get-started) shows you a simple way to get started with Contour on your cluster.
+The [README]({% link getting-started.md %}) shows you a simple way to get started with Contour on your cluster.
 This topic explains the details and shows you additional options.
 Most of this covers running Contour using a Kubernetes Service of `Type: LoadBalancer`.
 If you don't have a cluster with that capability see the [Running without a Kubernetes LoadBalancer](#running-without-a-kubernetes-loadbalancer) section.
@@ -37,7 +40,7 @@ contour   10.106.53.14   a47761ccbb9ce11e7b27f023b7e83d33-2036788482.ap-southeas
 Depending on your cloud provider, the `EXTERNAL-IP` value is an IP address, or, in the case of Amazon AWS, the DNS name of the ELB created for Contour. Keep a record of this value.
 
 Note that if you are running an Elastic Load Balancer (ELB) on AWS, you must add more details to your configuration to get the remote address of your incoming connections.
-See the [instructions for enabling the PROXY protocol.](proxy-proto.md).
+See the [instructions for enabling the PROXY protocol.]({% link _guides/proxy-proto.md %}).
 
 #### Minikube
 
@@ -146,6 +149,42 @@ In your terminal, use curl with the IP or DNS address of the Contour Service to 
 ```sh
 $ curl -H 'Host: kuard.local' ${CONTOUR_IP}
 ```
+### Test with HTTPProxy
+
+To test your Contour deployment with [HTTPProxy](../../docs/httpproxy.md), run the following command:
+
+```sh
+$ kubectl apply -f https://projectcontour.io/examples/kuard-httpproxy.yaml
+```
+
+Then monitor the progress of the deployment with:
+
+```sh
+$ kubectl get po,svc,httpproxy -l app=kuard
+```
+
+You should see something like:
+
+```sh
+NAME                        READY     STATUS    RESTARTS   AGE
+pod/kuard-bcc7bf7df-9hj8d   1/1       Running   0          1h
+pod/kuard-bcc7bf7df-bkbr5   1/1       Running   0          1h
+pod/kuard-bcc7bf7df-vkbtl   1/1       Running   0          1h
+
+NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+service/kuard   ClusterIP   10.102.239.168   <none>        80/TCP    1h
+
+NAME                                    FQDN                TLS SECRET                  FIRST ROUTE  STATUS  STATUS DESCRIPT
+httpproxy.projectcontour.io/kuard      kuard.local         <SECRET NAME IF TLS USED>                valid   valid HTTPProxy 
+```
+
+... showing that there are three Pods, one Service, and one HTTPProxy .
+
+In your terminal, use curl with the IP or DNS address of the Contour Service to send a request to the demo application:
+
+```sh
+$ curl -H 'Host: kuard.local' ${CONTOUR_IP}
+```
 
 ## Running without a Kubernetes LoadBalancer
 
@@ -155,7 +194,9 @@ If you can't or don't want to use a Service of `type: LoadBalancer` there are ot
 
 If your cluster doesn't have the capability to configure a Kubernetes LoadBalancer,
 or if you want to configure the load balancer outside Kubernetes,
-you can change the Envoy Service in the  `02-service-envoy.yaml` file to set `type` to `NodePort`.
+you can change the Envoy Service in the `02-service-envoy.yaml` file and set `type` to `NodePort`. 
+   * [02-service-envoy.yaml](../../examples/contour/02-service-envoy.yaml)
+
 This will have every node in your cluster listen on the resultant port and forward traffic to Contour.
 That port can be discovered by taking the second number listed in the `PORT` column when listing the service, for example `30274` in `80:30274/TCP`.
 

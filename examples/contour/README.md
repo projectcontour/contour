@@ -34,7 +34,9 @@ kubectl apply -f examples/contour
 
 This will:
 
-- set up RBAC and Contour's CRDs (that is, IngressRoute)
+- set up RBAC and Contour's CRDs (CRDs include IngressRoute, TLSCertificateDelegation, HTTPProxy)
+  * As a note IngressRoute will be removed in a furture release
+  * Users should start transitioning to HTTPProxy to ensure no disruptions in the future   
 - run a Kubernetes Job that will generate one-year validity certs and put them into `projectcontour`
 - Install Contour and Envoy in a Deployment and Daemonset respectively.
 
@@ -42,7 +44,7 @@ This will:
 
 ## Test
 
-1. Install a workload (see the kuard example in the [main deployment guide](../../docs/deploy-options.md#test-with-ingressroute)).
+1. Install a workload (see the kuard example in the [main deployment guide](../../site/_guides/deploy-options.md#test-with-httpproxy)).
 
 ## Deploying with Host Networking enabled for Envoy
 
