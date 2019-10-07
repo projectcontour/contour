@@ -763,55 +763,6 @@ func TestClusterWithHealthChecks(t *testing.T) {
 	}, streamCDS(t, cc))
 }
 
-// Test that contour correctly recognizes the "contour.heptio.com/upstream-protocol.tls"
-// service annotation.
-func TestClusterServiceTLSBackend(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(443),
-			},
-		},
-	}
-	rh.OnAdd(i1)
-
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"contour.heptio.com/upstream-protocol.tls": "securebackend",
-			},
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "securebackend",
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(8888),
-			}},
-		},
-	}
-	rh.OnAdd(s1)
-
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
-		Resources: resources(t,
-			tlscluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443", nil, ""),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "2",
-	}, streamCDS(t, cc))
-}
-
 func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()

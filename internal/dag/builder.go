@@ -132,7 +132,7 @@ func (b *Builder) addService(svc *v1.Service, port *v1.ServicePort) *Service {
 }
 
 func upstreamProtocol(svc *v1.Service, port *v1.ServicePort) string {
-	up := parseUpstreamProtocols(svc.Annotations, annotationUpstreamProtocol, "h2", "h2c", "tls")
+	up := parseUpstreamProtocols(svc.Annotations)
 	protocol := up[port.Name]
 	if protocol == "" {
 		protocol = up[strconv.Itoa(int(port.Port))]
