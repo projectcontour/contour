@@ -50,6 +50,21 @@ func TestDAGInsert(t *testing.T) {
 		Data: secretdata("wrong", "wronger"),
 	}
 
+	// weird secret with a blank ca.crt that
+	// cert manager creates. #1644
+	sec3 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: map[string][]byte{
+			"ca.crt":            []byte(""),
+			v1.TLSCertKey:       []byte(CERTIFICATE),
+			v1.TLSPrivateKeyKey: []byte(RSA_PRIVATE_KEY),
+		},
+	}
+
 	cert1 := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ca",
@@ -1665,6 +1680,27 @@ func TestDAGInsert(t *testing.T) {
 					Port: 443,
 					VirtualHosts: virtualhosts(
 						securevirtualhost("kuard.example.com", sec1, prefixroute("/", httpService(s1))),
+					),
+				},
+			),
+		},
+		"insert service w/ secret with w/ blank ca.crt": {
+			objs: []interface{}{
+				s1,
+				sec3, // issue 1644
+				i3,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.example.com", prefixroute("/", httpService(s1))),
+					),
+				},
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("kuard.example.com", sec3, prefixroute("/", httpService(s1))),
 					),
 				},
 			),
