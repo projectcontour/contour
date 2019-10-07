@@ -218,6 +218,12 @@ func TestClusterVisit(t *testing.T) {
 					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+					CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
+						Thresholds: []*envoy_api_v2_cluster.CircuitBreakers_Thresholds{{
+							MaxConnections: protobuf.UInt32(100000),
+							MaxRequests:    protobuf.UInt32(100000),
+						}},
+					},
 				}),
 		},
 		"single named service": {
@@ -255,6 +261,12 @@ func TestClusterVisit(t *testing.T) {
 					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+					CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
+						Thresholds: []*envoy_api_v2_cluster.CircuitBreakers_Thresholds{{
+							MaxConnections: protobuf.UInt32(100000),
+							MaxRequests:    protobuf.UInt32(100000),
+						}},
+					},
 				}),
 		},
 		"h2c upstream": {
@@ -297,6 +309,12 @@ func TestClusterVisit(t *testing.T) {
 					LbPolicy:             v2.Cluster_ROUND_ROBIN,
 					Http2ProtocolOptions: &envoy_api_v2_core.Http2ProtocolOptions{},
 					CommonLbConfig:       envoy.ClusterCommonLBConfig(),
+					CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
+						Thresholds: []*envoy_api_v2_cluster.CircuitBreakers_Thresholds{{
+							MaxConnections: protobuf.UInt32(100000),
+							MaxRequests:    protobuf.UInt32(100000),
+						}},
+					},
 				},
 			),
 		},
@@ -332,6 +350,12 @@ func TestClusterVisit(t *testing.T) {
 					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+					CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
+						Thresholds: []*envoy_api_v2_cluster.CircuitBreakers_Thresholds{{
+							MaxConnections: protobuf.UInt32(100000),
+							MaxRequests:    protobuf.UInt32(100000),
+						}},
+					},
 				}),
 		},
 		"two service ports": {
@@ -381,6 +405,12 @@ func TestClusterVisit(t *testing.T) {
 					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+					CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
+						Thresholds: []*envoy_api_v2_cluster.CircuitBreakers_Thresholds{{
+							MaxConnections: protobuf.UInt32(100000),
+							MaxRequests:    protobuf.UInt32(100000),
+						}},
+					},
 				},
 				&v2.Cluster{
 					Name:                 "default/backend/8080/da39a3ee5e",
@@ -393,6 +423,12 @@ func TestClusterVisit(t *testing.T) {
 					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+					CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
+						Thresholds: []*envoy_api_v2_cluster.CircuitBreakers_Thresholds{{
+							MaxConnections: protobuf.UInt32(100000),
+							MaxRequests:    protobuf.UInt32(100000),
+						}},
+					},
 				},
 			),
 		},
@@ -451,6 +487,12 @@ func TestClusterVisit(t *testing.T) {
 					}},
 					CommonLbConfig:                envoy.ClusterCommonLBConfig(),
 					DrainConnectionsOnHostRemoval: true,
+					CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
+						Thresholds: []*envoy_api_v2_cluster.CircuitBreakers_Thresholds{{
+							MaxConnections: protobuf.UInt32(100000),
+							MaxRequests:    protobuf.UInt32(100000),
+						}},
+					},
 				},
 			),
 		},
@@ -514,6 +556,12 @@ func TestClusterVisit(t *testing.T) {
 					}},
 					CommonLbConfig:                envoy.ClusterCommonLBConfig(),
 					DrainConnectionsOnHostRemoval: true,
+					CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
+						Thresholds: []*envoy_api_v2_cluster.CircuitBreakers_Thresholds{{
+							MaxConnections: protobuf.UInt32(100000),
+							MaxRequests:    protobuf.UInt32(100000),
+						}},
+					},
 				},
 			),
 		},
@@ -557,6 +605,12 @@ func TestClusterVisit(t *testing.T) {
 					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+					CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
+						Thresholds: []*envoy_api_v2_cluster.CircuitBreakers_Thresholds{{
+							MaxConnections: protobuf.UInt32(100000),
+							MaxRequests:    protobuf.UInt32(100000),
+						}},
+					},
 				},
 			),
 		},
@@ -600,6 +654,12 @@ func TestClusterVisit(t *testing.T) {
 					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 					LbPolicy:       v2.Cluster_LEAST_REQUEST,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+					CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
+						Thresholds: []*envoy_api_v2_cluster.CircuitBreakers_Thresholds{{
+							MaxConnections: protobuf.UInt32(100000),
+							MaxRequests:    protobuf.UInt32(100000),
+						}},
+					},
 				},
 			),
 		},
@@ -643,6 +703,12 @@ func TestClusterVisit(t *testing.T) {
 					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 					LbPolicy:       v2.Cluster_RANDOM,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+					CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
+						Thresholds: []*envoy_api_v2_cluster.CircuitBreakers_Thresholds{{
+							MaxConnections: protobuf.UInt32(100000),
+							MaxRequests:    protobuf.UInt32(100000),
+						}},
+					},
 				},
 			),
 		},
@@ -693,6 +759,12 @@ func TestClusterVisit(t *testing.T) {
 					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 					LbPolicy:       v2.Cluster_RANDOM,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+					CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
+						Thresholds: []*envoy_api_v2_cluster.CircuitBreakers_Thresholds{{
+							MaxConnections: protobuf.UInt32(100000),
+							MaxRequests:    protobuf.UInt32(100000),
+						}},
+					},
 				},
 				&v2.Cluster{
 					Name:                 "default/backend/80/8bf87fefba",
@@ -705,6 +777,12 @@ func TestClusterVisit(t *testing.T) {
 					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 					LbPolicy:       v2.Cluster_LEAST_REQUEST,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+					CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
+						Thresholds: []*envoy_api_v2_cluster.CircuitBreakers_Thresholds{{
+							MaxConnections: protobuf.UInt32(100000),
+							MaxRequests:    protobuf.UInt32(100000),
+						}},
+					},
 				},
 			),
 		},
@@ -748,6 +826,12 @@ func TestClusterVisit(t *testing.T) {
 					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+					CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
+						Thresholds: []*envoy_api_v2_cluster.CircuitBreakers_Thresholds{{
+							MaxConnections: protobuf.UInt32(100000),
+							MaxRequests:    protobuf.UInt32(100000),
+						}},
+					},
 				},
 			),
 		},
@@ -843,6 +927,12 @@ func TestClusterVisit(t *testing.T) {
 					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+					CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
+						Thresholds: []*envoy_api_v2_cluster.CircuitBreakers_Thresholds{{
+							MaxConnections: protobuf.UInt32(100000),
+							MaxRequests:    protobuf.UInt32(100000),
+						}},
+					},
 				}),
 		},
 	}

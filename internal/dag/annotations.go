@@ -37,6 +37,9 @@ const (
 	annotationRetryOn            = "contour.heptio.com/retry-on"
 	annotationNumRetries         = "contour.heptio.com/num-retries"
 	annotationPerTryTimeout      = "contour.heptio.com/per-try-timeout"
+
+	defaultMaxConnections = 100000
+	defaultMaxRequests    = 100000
 )
 
 // parseUInt32 parses the supplied string as if it were a uint32.
@@ -45,6 +48,26 @@ func parseUInt32(s string) uint32 {
 	v, err := strconv.ParseUint(s, 10, 32)
 	if err != nil {
 		return 0
+	}
+	return uint32(v)
+}
+
+// parseMaxConnections parses the supplied string as if it were a uint32.
+// If the value is not present, or malformed, or outside uint32's range, a default value is returned.
+func parseMaxConnections(s string) uint32 {
+	v, err := strconv.ParseUint(s, 10, 32)
+	if err != nil {
+		return defaultMaxConnections
+	}
+	return uint32(v)
+}
+
+// parseMaxRequests parses the supplied string as if it were a uint32.
+// If the value is not present, or malformed, or outside uint32's range, a default value is returned.
+func parseMaxRequests(s string) uint32 {
+	v, err := strconv.ParseUint(s, 10, 32)
+	if err != nil {
+		return defaultMaxRequests
 	}
 	return uint32(v)
 }

@@ -571,6 +571,8 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
 					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
 						MaxPendingRequests: protobuf.UInt32(9999),
+						MaxConnections:     protobuf.UInt32(100000),
+						MaxRequests:        protobuf.UInt32(100000),
 					}},
 				},
 				CommonLbConfig: envoy.ClusterCommonLBConfig(),
@@ -695,6 +697,12 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 				LbPolicy:       v2.Cluster_RANDOM,
 				CommonLbConfig: envoy.ClusterCommonLBConfig(),
+				CircuitBreakers: &envoy_cluster.CircuitBreakers{
+					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
+						MaxConnections: protobuf.UInt32(100000),
+						MaxRequests:    protobuf.UInt32(100000),
+					}},
+				},
 			},
 			&v2.Cluster{
 				Name:                 "default/kuard/80/8bf87fefba",
@@ -707,6 +715,12 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 				LbPolicy:       v2.Cluster_LEAST_REQUEST,
 				CommonLbConfig: envoy.ClusterCommonLBConfig(),
+				CircuitBreakers: &envoy_cluster.CircuitBreakers{
+					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
+						MaxConnections: protobuf.UInt32(100000),
+						MaxRequests:    protobuf.UInt32(100000),
+					}},
+				},
 			},
 		),
 		TypeUrl: clusterType,
@@ -1010,6 +1024,12 @@ func cluster(name, servicename, statName string) *v2.Cluster {
 		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 		LbPolicy:       v2.Cluster_ROUND_ROBIN,
 		CommonLbConfig: envoy.ClusterCommonLBConfig(),
+		CircuitBreakers: &envoy_cluster.CircuitBreakers{
+			Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
+				MaxConnections: protobuf.UInt32(100000),
+				MaxRequests:    protobuf.UInt32(100000),
+			}},
+		},
 	}
 }
 
@@ -1026,6 +1046,12 @@ func externalnamecluster(name, servicename, statName, externalName string, port 
 			Endpoints: envoy.Endpoints(
 				envoy.SocketAddress(externalName, port),
 			),
+		},
+		CircuitBreakers: &envoy_cluster.CircuitBreakers{
+			Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
+				MaxConnections: protobuf.UInt32(100000),
+				MaxRequests:    protobuf.UInt32(100000),
+			}},
 		},
 	}
 }

@@ -18,6 +18,8 @@ package featuretests
 import (
 	"time"
 
+	envoy_api_v2_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
+
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
@@ -47,6 +49,12 @@ func cluster(name, servicename, statName string) *v2.Cluster {
 		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 		LbPolicy:       v2.Cluster_ROUND_ROBIN,
 		CommonLbConfig: envoy.ClusterCommonLBConfig(),
+		CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
+			Thresholds: []*envoy_api_v2_cluster.CircuitBreakers_Thresholds{{
+				MaxConnections: protobuf.UInt32(100000),
+				MaxRequests:    protobuf.UInt32(100000),
+			}},
+		},
 	}
 }
 
