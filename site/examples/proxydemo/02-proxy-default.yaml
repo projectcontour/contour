@@ -1,0 +1,21 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: root
+spec:
+  virtualhost:
+    fqdn: kind.local
+  includes:
+  - name: blogsite
+    namespace: teama
+    conditions:
+    - prefix: /blog
+    - header:
+        name: x-header
+        exact: abc
+  routes:
+  - services:
+    - name: app
+      port: 80
+    conditions:
+      - prefix: /
