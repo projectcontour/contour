@@ -41,6 +41,21 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: false,
 		},
+		"insert secret w/ blank ca.crt": {
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					"ca.crt":            []byte(""),
+					v1.TLSCertKey:       []byte(CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte(RSA_PRIVATE_KEY),
+				},
+			},
+			want: true,
+		},
 		"insert secret referenced by ingress": {
 			pre: []interface{}{
 				&v1beta1.Ingress{
