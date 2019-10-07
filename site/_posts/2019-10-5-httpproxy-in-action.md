@@ -55,5 +55,6 @@ Requests to the following domain + path will be handled by a different service.
 Let’s walk through a simple scenario to quickly demonstrate how these new features work. We’ll start by creating a sample set of applications and services which we will use to set up some routing with HTTPProxy across two namespaces:
 
 ```bash
-$ kubectl apply -f https://projectcontour.io/examples/proxydemo/01-app.yaml 
+$ kubectl apply -f 
+https://projectcontour.io/examples/proxydemo/01-app.yaml 
 ```
