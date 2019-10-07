@@ -52,6 +52,4 @@ GET projectcontour.io/payment → `money:8080` service
 Demo Time!
 Let’s walk through a simple scenario to quickly demonstrate how these new features work. We’ll start by creating a sample set of applications and services which we will use to set up some routing with HTTPProxy across two namespaces:
 
-```bash
-$ kubectl apply -f https://projectcontour.io/examples/proxydemo/01-app.yaml 
-```
+`$ kubectl apply -f https://projectcontour.io/examples/proxydemo/01-app.yaml`
