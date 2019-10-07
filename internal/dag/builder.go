@@ -473,7 +473,11 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		// attach secrets to TLS enabled vhosts
 		m := splitSecret(tls.SecretName, proxy.Namespace)
 		sec := b.lookupSecret(m, validSecret)
-		if sec != nil && b.delegationPermitted(m, proxy.Namespace) {
+		if sec != nil {
+			if !b.delegationPermitted(m, proxy.Namespace) {
+				sw.SetInvalid(fmt.Sprintf("%s: certificate delegation not permitted", tls.SecretName))
+				return
+			}
 			svhost := b.lookupSecureVirtualHost(host)
 			svhost.Secret = sec
 			svhost.MinProtoVersion = MinProtoVersion(proxy.Spec.VirtualHost.TLS.MinimumProtocolVersion)

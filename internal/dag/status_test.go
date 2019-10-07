@@ -1028,6 +1028,27 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	proxy19 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "app-with-tls-delegation",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "app-with-tls-delegation.127.0.0.1.nip.io",
+				TLS: &projcontour.TLS{
+					SecretName: sec2.Namespace + "/" + sec2.Name,
+				},
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "sample-app",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
 	proxy20 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "root-blog",
@@ -1588,6 +1609,21 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Status:      StatusInvalid,
 					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
 					Vhost:       ir26.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		// issue 1348
+		"check status set when httpproxy routes combined with tls delegation failure": {
+			objs: []interface{}{
+				sec2,
+				proxy19,
+			},
+			want: map[Meta]Status{
+				{name: proxy19.Name, namespace: proxy19.Namespace}: {
+					Object:      proxy19,
+					Status:      StatusInvalid,
+					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
+					Vhost:       proxy19.Spec.VirtualHost.Fqdn,
 				},
 			},
 		},
