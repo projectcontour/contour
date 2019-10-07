@@ -229,6 +229,11 @@ func (c *Contour) Request(typeurl string, names ...string) *Response {
 		str, err := rds.StreamRoutes(ctx)
 		c.check(err)
 		st = str
+	case clusterType:
+		cds := v2.NewClusterDiscoveryServiceClient(c.ClientConn)
+		stc, err := cds.StreamClusters(ctx)
+		c.check(err)
+		st = stc
 	default:
 		c.Fatal("unknown typeURL:", typeurl)
 	}
