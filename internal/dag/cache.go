@@ -71,10 +71,11 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		valid, err := isValidSecret(obj)
 		if !valid {
 			if err != nil {
-				kc.WithField("name", obj.Name).
-					WithField("namespace", obj.Namespace).
-					WithField("kind", obj.Kind).
-					WithField("version", obj.APIVersion).
+				om := obj.GetObjectMeta()
+				kc.WithField("name", om.GetName()).
+					WithField("namespace", om.GetNamespace()).
+					WithField("kind", "Secret").
+					WithField("version", "v1").
 					Error(err)
 			}
 			return false

@@ -30,7 +30,6 @@ const (
 
 	annotationRequestTimeout     = "contour.heptio.com/request-timeout"
 	annotationWebsocketRoutes    = "contour.heptio.com/websocket-routes"
-	annotationUpstreamProtocol   = "contour.heptio.com/upstream-protocol"
 	annotationMaxConnections     = "contour.heptio.com/max-connections"
 	annotationMaxPendingRequests = "contour.heptio.com/max-pending-requests"
 	annotationMaxRequests        = "contour.heptio.com/max-requests"
@@ -50,17 +49,24 @@ func parseUInt32(s string) uint32 {
 	return uint32(v)
 }
 
-// parseUpstreamProtocols parses the annotations map for a contour.heptio.com/upstream-protocol.{protocol}
-// where 'protocol' identifies which protocol must be used in the upstream.
-// If the value is not present, or malformed, then an empty map is returned.
-func parseUpstreamProtocols(annotations map[string]string, annotation string, protocols ...string) map[string]string {
+// parseUpstreamProtocols parses the annotations map for contour.heptio.com/upstream-protocol.{protocol}
+// and projectcontour.io/upstream-protocol.{protocol} annotations.
+// 'protocol' identifies which protocol must be used in the upstream.
+func parseUpstreamProtocols(m map[string]string) map[string]string {
+	annotations := []string{
+		"contour.heptio.com/upstream-protocol",
+		"projectcontour.io/upstream-protocol",
+	}
+	protocols := []string{"h2", "h2c", "tls"}
 	up := make(map[string]string)
-	for _, protocol := range protocols {
-		ports := annotations[fmt.Sprintf("%s.%s", annotation, protocol)]
-		for _, v := range strings.Split(ports, ",") {
-			port := strings.TrimSpace(v)
-			if port != "" {
-				up[port] = protocol
+	for _, annotation := range annotations {
+		for _, protocol := range protocols {
+			ports := m[fmt.Sprintf("%s.%s", annotation, protocol)]
+			for _, v := range strings.Split(ports, ",") {
+				port := strings.TrimSpace(v)
+				if port != "" {
+					up[port] = protocol
+				}
 			}
 		}
 	}
