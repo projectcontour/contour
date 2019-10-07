@@ -34,7 +34,7 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 	}
 	for key, data := range secret.Data {
 		switch key {
-		case "ca.crt", v1.TLSCertKey:
+		case v1.TLSCertKey:
 			if err := validateCertificate(data); err != nil {
 				return false, err
 			}
@@ -42,6 +42,8 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 			if err := validatePrivateKey(data); err != nil {
 				return false, err
 			}
+		case "ca.crt":
+			// nothing yet, see #1644
 		}
 	}
 	return true, nil
