@@ -293,6 +293,20 @@ func (b *Builder) delegationPermitted(secret Meta, to string) bool {
 		// secret is in the same namespace as target
 		return true
 	}
+
+	for _, d := range b.Source.httpproxydelegations {
+		if d.Namespace != secret.namespace {
+			continue
+		}
+		for _, d := range d.Spec.Delegations {
+			if contains(d.TargetNamespaces, to) {
+				if secret.name == d.SecretName {
+					return true
+				}
+			}
+		}
+	}
+
 	for _, d := range b.Source.irdelegations {
 		if d.Namespace != secret.namespace {
 			continue

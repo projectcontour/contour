@@ -19,10 +19,14 @@ import (
 	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
+	v1 "k8s.io/api/core/v1"
 )
 
 func routeCluster(cluster string) *envoy_api_v2_route.Route_Route {
@@ -75,4 +79,22 @@ func withMirrorPolicy(route *envoy_api_v2_route.Route_Route, mirror string) *env
 		Cluster: mirror,
 	}
 	return route
+}
+
+func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_listener.Filter, alpn ...string) []*envoy_api_v2_listener.FilterChain {
+	return []*envoy_api_v2_listener.FilterChain{
+		envoy.FilterChainTLS(
+			domain,
+			&dag.Secret{Object: secret},
+			[]*envoy_api_v2_listener.Filter{
+				filter,
+			},
+			envoy_api_v2_auth.TlsParameters_TLSv1_1,
+			alpn...,
+		),
+	}
+}
+
+func staticListener() *v2.Listener {
+	return envoy.StatsListener("0.0.0.0", 8002)
 }

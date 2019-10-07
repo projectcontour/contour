@@ -234,6 +234,11 @@ func (c *Contour) Request(typeurl string, names ...string) *Response {
 		stc, err := cds.StreamClusters(ctx)
 		c.check(err)
 		st = stc
+	case listenerType:
+		lds := v2.NewListenerDiscoveryServiceClient(c.ClientConn)
+		stl, err := lds.StreamListeners(ctx)
+		c.check(err)
+		st = stl
 	default:
 		c.Fatal("unknown typeURL:", typeurl)
 	}
