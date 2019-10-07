@@ -46,10 +46,14 @@ spec:
 ### Requests 
 Requests to the following domain + path will be handled by a different service. 
 
-GET projectcontour.io/ → `default:80` service
-GET projectcontour.io/blog → `blogsite:80` service
-GET projectcontour.io/payment → `money:8080` service
-Demo Time!
+- GET projectcontour.io/ → `default:80` service
+- GET projectcontour.io/blog → `blogsite:80` service
+- GET projectcontour.io/payment → `money:8080` service
+
+## Demo Time!
+
 Let’s walk through a simple scenario to quickly demonstrate how these new features work. We’ll start by creating a sample set of applications and services which we will use to set up some routing with HTTPProxy across two namespaces:
 
-`$ kubectl apply -f https://projectcontour.io/examples/proxydemo/01-app.yaml`
+```bash
+$ kubectl apply -f https://projectcontour.io/examples/proxydemo/01-app.yaml 
+```
