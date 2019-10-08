@@ -535,8 +535,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 				return nil
 			}
 
-			if !pathConditionsValid(include.Conditions) {
-				sw.SetInvalid("include: cannot specify multiple path conditions in the same include")
+			if !pathConditionsValid(sw, include.Conditions, "include") {
 				return nil
 			}
 
@@ -554,8 +553,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			continue
 		}
 
-		if !pathConditionsValid(route.Conditions) {
-			sw.SetInvalid("route: cannot specify multiple path conditions in the same route")
+		if !pathConditionsValid(sw, route.Conditions, "route") {
 			return nil
 		}
 

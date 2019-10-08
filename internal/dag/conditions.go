@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"fmt"
 	"path"
 	"strings"
 
@@ -30,13 +31,20 @@ func pathCondition(conds []projcontour.Condition) Condition {
 	}
 }
 
-func pathConditionsValid(conds []projcontour.Condition) bool {
-	found := 0
+// pathConditionsValid validates a slice of Conditions can be correctly merged.
+// It encodes the business rules about what is allowed for prefix Conditions.
+func pathConditionsValid(sw *ObjectStatusWriter, conds []projcontour.Condition, conditionsContext string) bool {
+	prefixCount := 0
 	for _, cond := range conds {
 		if cond.Prefix != "" {
-			found++
+			prefixCount++
+			if cond.Prefix[0] != '/' {
+				sw.SetInvalid(fmt.Sprintf("%s: Prefix conditions must start with /, %s was supplied", conditionsContext, cond.Prefix))
+				return false
+			}
 		}
-		if found > 1 {
+		if prefixCount > 1 {
+			sw.SetInvalid(fmt.Sprintf("%s: More than one prefix is not allowed in a condition block", conditionsContext))
 			return false
 		}
 	}
