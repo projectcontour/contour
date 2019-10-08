@@ -58,7 +58,7 @@ spec:
 **Line 6-7**: The presence of the `virtualhost` field indicates that this is a root HTTPProxy that is the top level entry point for this domain.
 The `fqdn` field specifies the fully qualified domain name that will be used to match against `Host:` HTTP headers.
 
-**Lines 8-9**: Each HTTPProxy must have one or more `routes`, each of which must have a condition to match against (e.g. `prefix: /`) and then one or more `services` which will handle the HTTP traffic.
+**Lines 8-9**: Each HTTPProxy **must** have one or more routes, each of which **must** have one or more services which will handle the HTTP traffic. In addition, each route **may** have one or more conditions to match against.
 
 **Lines 10-12**: The `services` field is an array of named Service & Port combinations that will be used for this HTTPProxy path.
 HTTP traffic will be sent directly to the Endpoints corresponding to the Service.
@@ -326,11 +326,18 @@ In this example, the permission for Contour to reference the Secret `example-com
 
 ### Conditions
 
-Each Route entry in a HTTPProxy may contain one or more conditions.
+Each Route entry in a HTTPProxy **may** contain one or more conditions.
 These conditions are combined with an AND operator on the route passed to Envoy.
 
 Conditions can be either a `prefix` or a `header` condition.
+
+#### Prefix conditions
+
 For `prefix`, this adds a path prefix.
+
+Up to one prefix condition may be present in any condition block.
+
+Prefix conditions **must** start with a `/` if they are present.
 
 #### Header conditions
 
@@ -771,7 +778,7 @@ Because the path is not necessarily used as the only key, the route space can be
 
 ### Conditions and Inclusion
 
-Like Routes, Inclusion may specify a set of [conditions](#conditions.
+Like Routes, Inclusion may specify a set of [conditions](#conditions).
 These conditions are added to any conditions on the routes included.
 This process is recursive.
 

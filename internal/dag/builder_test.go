@@ -2351,6 +2351,182 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	proxy104 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name: "kuarder",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/kuarder",
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy104a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuarder",
+			Namespace: proxy104.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s2.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy105 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name: "kuarder",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/kuarder",
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy105a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuarder",
+			Namespace: proxy105.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: s2.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy106 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name: "kuarder",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/kuarder/",
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy106a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuarder",
+			Namespace: proxy105.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: s2.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy107 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name: "kuarder",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/kuarder",
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy107a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuarder",
+			Namespace: proxy105.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/withavengeance",
+				}},
+				Services: []projcontour.Service{{
+					Name: s2.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
 	tests := map[string]struct {
 		objs                  []interface{}
 		disablePermitInsecure bool
@@ -4522,6 +4698,134 @@ func TestDAGInsert(t *testing.T) {
 								},
 							),
 							routeCluster("/kuarder",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s2.Name,
+										Namespace:   s2.Namespace,
+										ServicePort: &s2.Spec.Ports[0],
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with include, no prefix condition on included proxy": {
+			objs: []interface{}{
+				proxy104, proxy104a, s1, s2,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+							routeCluster("/kuarder",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s2.Name,
+										Namespace:   s2.Namespace,
+										ServicePort: &s2.Spec.Ports[0],
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with include, / on included proxy": {
+			objs: []interface{}{
+				proxy105, proxy105a, s1, s2,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+							routeCluster("/kuarder/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s2.Name,
+										Namespace:   s2.Namespace,
+										ServicePort: &s2.Spec.Ports[0],
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with include, full prefix on included proxy": {
+			objs: []interface{}{
+				proxy107, proxy107a, s1, s2,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+							routeCluster("/kuarder/withavengeance",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s2.Name,
+										Namespace:   s2.Namespace,
+										ServicePort: &s2.Spec.Ports[0],
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with include ending with /, / on included proxy": {
+			objs: []interface{}{
+				proxy106, proxy106a, s1, s2,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+							routeCluster("/kuarder/",
 								&Cluster{
 									Upstream: &Service{
 										Name:        s2.Name,

@@ -15,17 +15,34 @@ package dag
 
 import (
 	"fmt"
-	"path"
+	"regexp"
 	"strings"
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
-func pathCondition(conds []projcontour.Condition) Condition {
-	prefix := "/"
+// mergePathConditions merges the given slice of prefix Conditions into a single
+// prefix Condition.
+// pathConditionsValid guarantees that if a prefix is present, it will start with a
+// / character, so we can simply concatenate.
+func mergePathConditions(conds []projcontour.Condition) Condition {
+	prefix := ""
 	for _, cond := range conds {
-		prefix = path.Join(prefix, cond.Prefix)
+		prefix = prefix + cond.Prefix
 	}
+
+	re := regexp.MustCompile(`//+`)
+	prefix = re.ReplaceAllString(prefix, `/`)
+
+	// After the merge operation is done, if the string is still empty, then
+	// we need to set the prefix to /.
+	// Remember that this step is done AFTER all the includes have happened.
+	// Setting this to / allows us to pass this prefix to Envoy, as there must
+	// be at least one path, prefix, or regex set on each Envoy route.
+	if prefix == "" {
+		prefix = `/`
+	}
+
 	return &PrefixCondition{
 		Prefix: prefix,
 	}
@@ -51,7 +68,7 @@ func pathConditionsValid(sw *ObjectStatusWriter, conds []projcontour.Condition, 
 	return true
 }
 
-func headerConditions(conds []projcontour.Condition) []HeaderCondition {
+func mergeHeaderConditions(conds []projcontour.Condition) []HeaderCondition {
 	var hc []HeaderCondition
 	for _, cond := range conds {
 		switch {
