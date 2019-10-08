@@ -1028,6 +1028,27 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	proxy19 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "app-with-tls-delegation",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "app-with-tls-delegation.127.0.0.1.nip.io",
+				TLS: &projcontour.TLS{
+					SecretName: sec2.Namespace + "/" + sec2.Name,
+				},
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "sample-app",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
 	proxy20 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "root-blog",
@@ -1371,6 +1392,56 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	proxy35 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "www",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{
+					{
+						Prefix: "api",
+					},
+				},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy36 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "www",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "child",
+				Namespace: "teama",
+				Conditions: []projcontour.Condition{
+					{
+						Prefix: "api",
+					},
+				},
+			}},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -1588,6 +1659,21 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Status:      StatusInvalid,
 					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
 					Vhost:       ir26.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		// issue 1348
+		"check status set when httpproxy routes combined with tls delegation failure": {
+			objs: []interface{}{
+				sec2,
+				proxy19,
+			},
+			want: map[Meta]Status{
+				{name: proxy19.Name, namespace: proxy19.Namespace}: {
+					Object:      proxy19,
+					Status:      StatusInvalid,
+					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
+					Vhost:       proxy19.Spec.VirtualHost.Fqdn,
 				},
 			},
 		},
@@ -1821,7 +1907,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{name: proxy32.Name, namespace: proxy32.Namespace}: {
 					Object:      proxy32,
 					Status:      "invalid",
-					Description: "route: cannot specify multiple path conditions in the same route",
+					Description: "route: More than one prefix is not allowed in a condition block",
 					Vhost:       "example.com",
 				},
 			},
@@ -1832,7 +1918,33 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{name: proxy33.Name, namespace: proxy33.Namespace}: {
 					Object:      proxy33,
 					Status:      "invalid",
-					Description: "include: cannot specify multiple path conditions in the same include",
+					Description: "include: More than one prefix is not allowed in a condition block",
+					Vhost:       "example.com",
+				}, {name: proxy34.Name, namespace: proxy34.Namespace}: {
+					Object:      proxy34,
+					Status:      "orphaned",
+					Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
+				},
+			},
+		},
+		"proxy with prefix conditions on route that does not start with slash": {
+			objs: []interface{}{proxy35, s1},
+			want: map[Meta]Status{
+				{name: proxy35.Name, namespace: proxy35.Namespace}: {
+					Object:      proxy35,
+					Status:      "invalid",
+					Description: "route: Prefix conditions must start with /, api was supplied",
+					Vhost:       "example.com",
+				},
+			},
+		},
+		"proxy with include prefix that does not start with slash": {
+			objs: []interface{}{proxy36, proxy34, s1},
+			want: map[Meta]Status{
+				{name: proxy36.Name, namespace: proxy36.Namespace}: {
+					Object:      proxy36,
+					Status:      "invalid",
+					Description: "include: Prefix conditions must start with /, api was supplied",
 					Vhost:       "example.com",
 				}, {name: proxy34.Name, namespace: proxy34.Namespace}: {
 					Object:      proxy34,

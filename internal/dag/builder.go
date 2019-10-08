@@ -132,7 +132,7 @@ func (b *Builder) addService(svc *v1.Service, port *v1.ServicePort) *Service {
 }
 
 func upstreamProtocol(svc *v1.Service, port *v1.ServicePort) string {
-	up := parseUpstreamProtocols(svc.Annotations, annotationUpstreamProtocol, "h2", "h2c", "tls")
+	up := parseUpstreamProtocols(svc.Annotations)
 	protocol := up[port.Name]
 	if protocol == "" {
 		protocol = up[strconv.Itoa(int(port.Port))]
@@ -293,6 +293,20 @@ func (b *Builder) delegationPermitted(secret Meta, to string) bool {
 		// secret is in the same namespace as target
 		return true
 	}
+
+	for _, d := range b.Source.httpproxydelegations {
+		if d.Namespace != secret.namespace {
+			continue
+		}
+		for _, d := range d.Spec.Delegations {
+			if contains(d.TargetNamespaces, to) {
+				if secret.name == d.SecretName {
+					return true
+				}
+			}
+		}
+	}
+
 	for _, d := range b.Source.irdelegations {
 		if d.Namespace != secret.namespace {
 			continue
@@ -459,7 +473,11 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		// attach secrets to TLS enabled vhosts
 		m := splitSecret(tls.SecretName, proxy.Namespace)
 		sec := b.lookupSecret(m, validSecret)
-		if sec != nil && b.delegationPermitted(m, proxy.Namespace) {
+		if sec != nil {
+			if !b.delegationPermitted(m, proxy.Namespace) {
+				sw.SetInvalid(fmt.Sprintf("%s: certificate delegation not permitted", tls.SecretName))
+				return
+			}
 			svhost := b.lookupSecureVirtualHost(host)
 			svhost.Secret = sec
 			svhost.MinProtoVersion = MinProtoVersion(proxy.Spec.VirtualHost.TLS.MinimumProtocolVersion)
@@ -517,8 +535,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 				return nil
 			}
 
-			if !pathConditionsValid(include.Conditions) {
-				sw.SetInvalid("include: cannot specify multiple path conditions in the same include")
+			if !pathConditionsValid(sw, include.Conditions, "include") {
 				return nil
 			}
 
@@ -536,8 +553,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			continue
 		}
 
-		if !pathConditionsValid(route.Conditions) {
-			sw.SetInvalid("route: cannot specify multiple path conditions in the same route")
+		if !pathConditionsValid(sw, route.Conditions, "route") {
 			return nil
 		}
 
