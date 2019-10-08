@@ -570,8 +570,8 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 		}
 
 		r := &Route{
-			PathCondition:    pathCondition(conds),
-			HeaderConditions: headerConditions(conds),
+			PathCondition:    mergePathConditions(conds),
+			HeaderConditions: mergeHeaderConditions(conds),
 			Websocket:        route.EnableWebsockets,
 			HTTPSUpgrade:     routeEnforceTLS(enforceTLS, route.PermitInsecure && !b.DisablePermitInsecure),
 			PrefixRewrite:    route.PrefixRewrite,

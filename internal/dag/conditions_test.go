@@ -56,8 +56,26 @@ func TestPathCondition(t *testing.T) {
 			conditions: []projcontour.Condition{{
 				Prefix: "/a/",
 			}},
-			// TODO(dfc) issue 1597
-			want: &PrefixCondition{Prefix: "/a"},
+			want: &PrefixCondition{Prefix: "/a/"},
+		},
+		"trailing slash on second prefix condition": {
+			conditions: []projcontour.Condition{{
+				Prefix: "/a",
+			},
+				{
+					Prefix: "/b/",
+				}},
+			want: &PrefixCondition{Prefix: "/a/b/"},
+		},
+		"nothing but slashes": {
+			conditions: []projcontour.Condition{
+				{
+					Prefix: "///",
+				},
+				{
+					Prefix: "/",
+				}},
+			want: &PrefixCondition{Prefix: "/"},
 		},
 		"header condition": {
 			conditions: []projcontour.Condition{{
@@ -69,7 +87,7 @@ func TestPathCondition(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := pathCondition(tc.conditions)
+			got := mergePathConditions(tc.conditions)
 			assert.Equal(t, tc.want, got)
 		})
 	}
@@ -220,7 +238,7 @@ func TestHeaderConditions(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := headerConditions(tc.conditions)
+			got := mergeHeaderConditions(tc.conditions)
 			assert.Equal(t, tc.want, got)
 		})
 	}
