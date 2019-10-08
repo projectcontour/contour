@@ -1732,6 +1732,28 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// proxy1a tcp forwards traffic to default/kuard:8080 by TLS pass-through it.
+	proxy1a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-tcp",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "kuard.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
 	proxy1b := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -3499,7 +3521,6 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-
 		"insert ingress with zero retry count": {
 			objs: []interface{}{
 				ir15b,
@@ -4477,6 +4498,94 @@ func TestDAGInsert(t *testing.T) {
 				proxy103, proxy103a, s1,
 			},
 			want: listeners(),
+		},
+		"insert proxy with tcp forward without TLS termination w/ passthrough": {
+			objs: []interface{}{
+				proxy1a, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "kuard.example.com",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(
+									service(s1),
+								),
+							},
+						},
+					),
+				},
+			),
+		},
+		// issue 1399
+		"service shared across ingress and httpproxy tcpproxy": {
+			objs: []interface{}{
+				sec1,
+				s9,
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "nginx",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							Hosts:      []string{"example.com"},
+							SecretName: s1.Name,
+						}},
+						Rules: []v1beta1.IngressRule{{
+							Host:             "example.com",
+							IngressRuleValue: ingressrulevalue(backend(s9.Name, intstr.FromInt(80))),
+						}},
+					},
+				},
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "nginx",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "example.com",
+							TLS: &projcontour.TLS{
+								SecretName: sec1.Name,
+							},
+						},
+						TCPProxy: &projcontour.TCPProxy{
+							Services: []projcontour.Service{{
+								Name: s9.Name,
+								Port: 80,
+							}},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", prefixroute("/", service(s9))),
+					),
+				},
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "example.com",
+							},
+							MinProtoVersion: envoy_api_v2_auth.TlsParameters_TLSv1_1,
+							Secret:          secret(sec1),
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(service(s9)),
+							},
+						},
+					),
+				},
+			),
 		},
 	}
 

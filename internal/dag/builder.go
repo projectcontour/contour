@@ -494,6 +494,10 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		}
 	}
 
+	if proxy.Spec.TCPProxy != nil && (passthrough || enforceTLS) {
+		b.processTCPProxyHTTPProxy(sw, proxy, host)
+	}
+
 	insecure := b.lookupVirtualHost(host)
 	secure := b.lookupSecureVirtualHost(host)
 	routes := b.computeRoutes(sw, proxy, nil, nil, enforceTLS)
@@ -916,6 +920,26 @@ func (b *Builder) processTCPProxy(sw *ObjectStatusWriter, ir *ingressroutev1.Ing
 		sw, commit := sw.WithObject(dest)
 		b.processTCPProxy(sw, dest, visited, host)
 		commit()
+	}
+}
+
+func (b *Builder) processTCPProxyHTTPProxy(sw *ObjectStatusWriter, httpproxy *projcontour.HTTPProxy, host string) {
+	if len(httpproxy.Spec.TCPProxy.Services) > 0 {
+		var proxy TCPProxy
+		for _, service := range httpproxy.Spec.TCPProxy.Services {
+			m := Meta{name: service.Name, namespace: httpproxy.Namespace}
+			s := b.lookupService(m, intstr.FromInt(service.Port))
+			if s == nil {
+				sw.SetInvalid(fmt.Sprintf("tcpproxy: service %s/%s/%d: not found", httpproxy.Namespace, service.Name, service.Port))
+				return
+			}
+			proxy.Clusters = append(proxy.Clusters, &Cluster{
+				Upstream:             s,
+				LoadBalancerStrategy: service.Strategy,
+			})
+		}
+		b.lookupSecureVirtualHost(host).TCPProxy = &proxy
+		return
 	}
 }
 
