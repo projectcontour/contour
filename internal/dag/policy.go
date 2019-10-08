@@ -52,15 +52,18 @@ func ingressRetryPolicy(ingress *v1beta1.Ingress) *RetryPolicy {
 }
 
 func ingressTimeoutPolicy(ingress *v1beta1.Ingress) *TimeoutPolicy {
-	response, ok := ingress.Annotations[annotationRequestTimeout]
+	response, ok := ingress.Annotations["projectcontour.io/response-timeout"]
 	if !ok {
-		return nil
+		// Note: due to a misunderstanding the name of the annotation is
+		// request timeout, but it is actually applied as a timeout on
+		// the response body.
+		response, ok = ingress.Annotations["contour.heptio.com/request-timeout"]
+		if !ok {
+			return nil
+		}
 	}
 	// if the request timeout annotation is present on this ingress
 	// construct and use the ingressroute timeout policy logic.
-	// Note: due to a misunderstanding the name of the annotation is
-	// request timeout, but it is actually applied as a timeout on
-	// the response body.
 	return timeoutPolicy(&projcontour.TimeoutPolicy{
 		Response: response,
 	})

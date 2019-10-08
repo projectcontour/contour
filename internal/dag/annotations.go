@@ -28,7 +28,6 @@ const (
 
 	// TODO(dfc) remove these deprecated forms after Contour 1.0.
 
-	annotationRequestTimeout     = "contour.heptio.com/request-timeout"
 	annotationWebsocketRoutes    = "contour.heptio.com/websocket-routes"
 	annotationMaxConnections     = "contour.heptio.com/max-connections"
 	annotationMaxPendingRequests = "contour.heptio.com/max-pending-requests"
