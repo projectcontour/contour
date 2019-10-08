@@ -2,11 +2,11 @@
 
 This document describes the changes needed to upgrade your Contour installation.
 
-## Upgrading Contour 0.14 to 0.15
+## Upgrading Contour 0.14.x to 0.15.1
 
-Contour 0.15 requires changes to your deployment manifests to explicitly opt in, or opt out of, secure communication between Contour and Envoy.
+Contour 0.15.1 requires changes to your deployment manifests to explicitly opt in, or opt out of, secure communication between Contour and Envoy.
 
-Contour 0.15 also adds experimental support for leader election which may be useful for installations which have split their Contour and Envoy containers into separate pods.
+Contour 0.15.1 also adds experimental support for leader election which may be useful for installations which have split their Contour and Envoy containers into separate pods.
 A configuration we call _split deployment_.
 
 ### Breaking change
@@ -15,12 +15,9 @@ Contour's `contour serve` now requires that either TLS certificates be available
 
 **If you do not supply TLS details or `--insecure`, `contour serve` will not start.**
 
-### Envoy 1.11.1 upgrade
+### Envoy 1.11.2 upgrade
 
-Due to the recently announced HTTP/2 vulnerabilities Contour 0.15 requires Envoy 1.11.1.
-As of August 2019, Envoy 1.11.1 is the only released version of Envoy that contains the fixes for those vulnerabilities.
-
-Please see the [Envoy Release Notes](https://www.envoyproxy.io/docs/envoy/v1.11.1/intro/version_history) for information about issues fixed in Envoy 1.11.1.
+Please see the [Envoy Release Notes](https://www.envoyproxy.io/docs/envoy/v1.11.2/intro/version_history) for information about issues fixed in Envoy 1.11.2.
 
 ## The easy way to upgrade
 
@@ -30,7 +27,7 @@ If the following are true for you:
  * You are using one of the [example](/example/) deployments.
  * Your cluster can take few minutes of downtime.
 
-Then the simplest way to upgrade to 0.15 is to delete the `heptio-contour` namespace and reapply one of the example configurations.
+Then the simplest way to upgrade to 0.15.1 is to delete the `heptio-contour` namespace and reapply one of the example configurations.
 From the root directory of the repository:
 ```
 kubectl delete namespace heptio-contour
@@ -42,11 +39,11 @@ You'll need to re-check where your DNS names are pointing as well, using [Get yo
 
 ## The less easy way
 
-This section contains information for administrators who wish to apply the Contour 0.14 to 0.15 changes manually.
+This section contains information for administrators who wish to apply the Contour 0.14.x to 0.15.1 changes manually.
 
-### Upgrade to Contour 0.15.0
+### Upgrade to Contour 0.15.1
 
-Change the Contour image version to `gcr.io/heptio-images/contour:v0.15.0`.
+Change the Contour image version to `gcr.io/heptio-images/contour:v0.15.1`.
 
 ### Enabling TLS for gRPC
 
@@ -61,14 +58,14 @@ to Kubernetes as Secrets, ready to be mounted into your Contour and Envoy Deploy
 
 If you would like more detail, see (grpc-tls-howto.md)[./grpc-tls-howto.md], which explains your options.
 
-### Upgrade to Envoy 1.11.1
+### Upgrade to Envoy 1.11.2
 
-Contour 0.15 requires Envoy 1.11.1.
-Change the Envoy image version to `docker.io/envoyproxy/envoy:v1.11.1`.
+Contour 0.15.1 requires Envoy 1.11.2.
+Change the Envoy image version to `docker.io/envoyproxy/envoy:v1.11.2`.
 
 ### Enabling Leader Election
 
-Contour 0.15 adds experimental support for leader election.
+Contour 0.15.1 adds experimental support for leader election.
 Enabling leader election will mean that only one of the Contour pods will actually serve gRPC traffic.
 This will ensure that all Envoy's take their configuration from the same Contour.
 You can enable leader election with the `--enable-leader-election` flag to `contour serve`.
