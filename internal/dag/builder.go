@@ -420,7 +420,7 @@ func (b *Builder) computeIngressRoute(ir *ingressroutev1.IngressRoute) {
 		}
 		// passthrough is true if tls.secretName is not present, and
 		// tls.passthrough is set to true.
-		passthrough = isBlank(tls.SecretName) && tls.Passthrough
+		passthrough = tls.SecretName == "" && tls.Passthrough
 
 		// If not passthrough and secret is invalid, then set status
 		if sec == nil && !passthrough {
