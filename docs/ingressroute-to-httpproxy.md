@@ -225,6 +225,13 @@ spec:
       port: 80
 ```
 
+### Prefix rewriting
+
+The `route.prefixRewrite` field has been removed from HTTPProxy.
+We plan to introduce a replacement in rc.2.
+
+See #899
+
 ### Load balancing strategies
 
 No change.

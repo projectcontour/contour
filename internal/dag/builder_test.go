@@ -2041,37 +2041,6 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	// proxy11 has a prefix-rewrite route
-	proxy11 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-com",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
-					Prefix: "/",
-				}},
-				Services: []projcontour.Service{{
-					Name: "kuard",
-					Port: 8080,
-				}},
-			}, {
-				Conditions: []projcontour.Condition{{
-					Prefix: "/websocket",
-				}},
-				PrefixRewrite: "/",
-				Services: []projcontour.Service{{
-					Name: "kuard",
-					Port: 8080,
-				}},
-			},
-			}},
-	}
-
 	proxy12 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -4254,22 +4223,6 @@ func TestDAGInsert(t *testing.T) {
 									Path: "/healthz",
 								},
 							}),
-						),
-					),
-				},
-			),
-		},
-		"insert httpproxy with websocket route": {
-			objs: []interface{}{
-				proxy11, s1,
-			},
-			want: listeners(
-				&Listener{
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						virtualhost("example.com",
-							prefixroute("/", service(s1)),
-							routeRewrite("/websocket", "/", service(s1)),
 						),
 					),
 				},

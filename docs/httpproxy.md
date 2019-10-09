@@ -669,34 +669,6 @@ spec:
           port: 80
 ```
 
-#### Prefix Rewrite Support
-
-Indicates that during forwarding, the matched prefix (or path) should be swapped with this value.
-This option allows application URLs to be rooted at a different path from those exposed at the reverse proxy layer.
-The original path before rewrite will be placed into the into the `x-envoy-original-path` header.
-
-```yaml
-# httpproxy-prefix-rewrite.yaml
-apiVersion: projectcontour.io/v1
-kind: HTTPProxy
-metadata:
-  name: app
-  namespace: default
-spec:
-  virtualhost:
-    fqdn: app.example.com
-  routes:
-    - services:
-        - name: app
-          port: 80
-    - conditions:
-      - prefix: /service2
-      prefixRewrite: "/" # Setting this rewrites the request from `/service2` to `/`
-      services:
-        - name: app-service
-          port: 80
-```
-
 #### Permit Insecure
 
 A HTTPProxy can be configured to permit insecure requests to specific Routes.

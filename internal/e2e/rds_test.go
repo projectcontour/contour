@@ -2648,63 +2648,6 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 	), nil)
 }
 
-func TestPrefixRewriteHTTPProxy(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ws",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "prefixrewrite.hello.world"},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}, {
-				Conditions:    conditions(prefixCondition("/ws-1")),
-				PrefixRewrite: "/",
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}, {
-				Conditions:    conditions(prefixCondition("/ws-2")),
-				PrefixRewrite: "/",
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}},
-		},
-	})
-
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("prefixrewrite.hello.world",
-			envoy.Route(envoy.RoutePrefix("/ws-2"), prefixrewriteroute("default/ws/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/ws-1"), prefixrewriteroute("default/ws/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/ws/80/da39a3ee5e")),
-		),
-	), nil)
-}
-
 func TestHTTPProxyRouteWithTLS(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
