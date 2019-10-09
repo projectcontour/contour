@@ -34,7 +34,6 @@ const (
 	annotationMaxRequests        = "contour.heptio.com/max-requests"
 	annotationMaxRetries         = "contour.heptio.com/max-retries"
 	annotationRetryOn            = "contour.heptio.com/retry-on"
-	annotationNumRetries         = "contour.heptio.com/num-retries"
 	annotationPerTryTimeout      = "contour.heptio.com/per-try-timeout"
 )
 
@@ -93,6 +92,17 @@ func websocketRoutes(i *v1beta1.Ingress) map[string]bool {
 		}
 	}
 	return routes
+}
+
+// numRetries returns the number of retries specified by the "contour.heptio.com/num-retries"
+// or "projectcontour.io/num-retries" annotation.
+func numRetries(i *v1beta1.Ingress) uint32 {
+	n := parseUInt32(i.Annotations["projectcontour.io/num-retries"])
+	if n == 0 {
+		// fallback to legacy annotation
+		n = parseUInt32(i.Annotations["contour.heptio.com/num-retries"])
+	}
+	return n
 }
 
 // ingressClass returns the first matching ingress class for the following

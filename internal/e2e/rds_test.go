@@ -1988,7 +1988,29 @@ func TestRouteRetryAnnotations(t *testing.T) {
 		},
 	}
 	rh.OnAdd(i1)
+
 	assertRDS(t, cc, "1", virtualhosts(
+		envoy.VirtualHost("*",
+			envoy.Route(envoy.RoutePrefix("/"), routeretry("default/backend/80/da39a3ee5e", "5xx,gateway-error", 7, 120*time.Millisecond)),
+		),
+	), nil)
+
+	i2 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "hello", Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/retry-on":        "5xx,gateway-error",
+				"projectcontour.io/num-retries":      "7",
+				"contour.heptio.com/per-try-timeout": "120ms",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+		},
+	}
+	rh.OnUpdate(i1, i2)
+
+	assertRDS(t, cc, "2", virtualhosts(
 		envoy.VirtualHost("*",
 			envoy.Route(envoy.RoutePrefix("/"), routeretry("default/backend/80/da39a3ee5e", "5xx,gateway-error", 7, 120*time.Millisecond)),
 		),
