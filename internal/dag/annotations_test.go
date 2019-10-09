@@ -14,7 +14,6 @@
 package dag
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/projectcontour/contour/internal/assert"
@@ -131,7 +130,9 @@ func TestWebsocketRoutes(t *testing.T) {
 		"empty": {
 			a: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{annotationWebsocketRoutes: ""},
+					Annotations: map[string]string{
+						"projectcontour.io/websocket-routes": "",
+					},
 				},
 			},
 			want: map[string]bool{},
@@ -139,7 +140,9 @@ func TestWebsocketRoutes(t *testing.T) {
 		"empty with spaces": {
 			a: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{annotationWebsocketRoutes: ", ,"},
+					Annotations: map[string]string{
+						"projectcontour.io/websocket-routes": ", ,",
+					},
 				},
 			},
 			want: map[string]bool{},
@@ -147,7 +150,9 @@ func TestWebsocketRoutes(t *testing.T) {
 		"single value": {
 			a: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{annotationWebsocketRoutes: "/ws1"},
+					Annotations: map[string]string{
+						"projectcontour.io/websocket-routes": "/ws1",
+					},
 				},
 			},
 			want: map[string]bool{
@@ -157,7 +162,9 @@ func TestWebsocketRoutes(t *testing.T) {
 		"multiple values": {
 			a: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{annotationWebsocketRoutes: "/ws1,/ws2"},
+					Annotations: map[string]string{
+						"projectcontour.io/websocket-routes": "/ws1,/ws2",
+					},
 				},
 			},
 			want: map[string]bool{
@@ -168,7 +175,81 @@ func TestWebsocketRoutes(t *testing.T) {
 		"multiple values with spaces and invalid entries": {
 			a: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{annotationWebsocketRoutes: " /ws1, , /ws2 "},
+					Annotations: map[string]string{
+						"projectcontour.io/websocket-routes": " /ws1, , /ws2 ",
+					},
+				},
+			},
+			want: map[string]bool{
+				"/ws1": true,
+				"/ws2": true,
+			},
+		},
+		"legacy empty": {
+			a: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"contour.heptio.com/websocket-routes": "",
+					},
+				},
+			},
+			want: map[string]bool{},
+		},
+		"legacy empty with spaces": {
+			a: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"contour.heptio.com/websocket-routes": ", ,",
+					},
+				},
+			},
+			want: map[string]bool{},
+		},
+		"legacy single value": {
+			a: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"contour.heptio.com/websocket-routes": "/ws1",
+					},
+				},
+			},
+			want: map[string]bool{
+				"/ws1": true,
+			},
+		},
+		"legacy multiple values": {
+			a: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"contour.heptio.com/websocket-routes": "/ws1,/ws2",
+					},
+				},
+			},
+			want: map[string]bool{
+				"/ws1": true,
+				"/ws2": true,
+			},
+		},
+		"legacy multiple values with spaces and invalid entries": {
+			a: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"contour.heptio.com/websocket-routes": " /ws1, , /ws2 ",
+					},
+				},
+			},
+			want: map[string]bool{
+				"/ws1": true,
+				"/ws2": true,
+			},
+		},
+		"mixed": {
+			a: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"contour.heptio.com/websocket-routes": " /ws1,  ",
+						"projectcontour.io/websocket-routes":  " , /ws2 ",
+					},
 				},
 			},
 			want: map[string]bool{
@@ -181,9 +262,7 @@ func TestWebsocketRoutes(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := websocketRoutes(tc.a)
-			if !reflect.DeepEqual(tc.want, got) {
-				t.Fatalf("websocketRoutes(%q): want: %v, got: %v", tc.a, tc.want, got)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
