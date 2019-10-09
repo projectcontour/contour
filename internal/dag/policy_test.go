@@ -101,8 +101,22 @@ func TestRetryPolicyIngress(t *testing.T) {
 				NumRetries: 7,
 			},
 		},
-
 		"no retry count, per try timeout": {
+			i: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"contour.heptio.com/retry-on":       "5xx",
+						"projectcontour.io/per-try-timeout": "10s",
+					},
+				},
+			},
+			want: &RetryPolicy{
+				RetryOn:       "5xx",
+				NumRetries:    0,
+				PerTryTimeout: 10 * time.Second,
+			},
+		},
+		"no retry count, legacy per try timeout": {
 			i: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
@@ -118,6 +132,21 @@ func TestRetryPolicyIngress(t *testing.T) {
 			},
 		},
 		"explicit 0s timeout": {
+			i: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"contour.heptio.com/retry-on":       "5xx",
+						"projectcontour.io/per-try-timeout": "0s",
+					},
+				},
+			},
+			want: &RetryPolicy{
+				RetryOn:       "5xx",
+				NumRetries:    0,
+				PerTryTimeout: 0 * time.Second,
+			},
+		},
+		"legacy explicit 0s timeout": {
 			i: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
