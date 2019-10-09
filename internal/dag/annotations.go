@@ -28,7 +28,6 @@ const (
 
 	// TODO(dfc) remove these deprecated forms after Contour 1.0.
 
-	annotationWebsocketRoutes    = "contour.heptio.com/websocket-routes"
 	annotationMaxConnections     = "contour.heptio.com/max-connections"
 	annotationMaxPendingRequests = "contour.heptio.com/max-pending-requests"
 	annotationMaxRequests        = "contour.heptio.com/max-requests"
@@ -86,7 +85,13 @@ func tlsRequired(i *v1beta1.Ingress) bool {
 
 func websocketRoutes(i *v1beta1.Ingress) map[string]bool {
 	routes := make(map[string]bool)
-	for _, v := range strings.Split(i.Annotations[annotationWebsocketRoutes], ",") {
+	for _, v := range strings.Split(i.Annotations["projectcontour.io/websocket-routes"], ",") {
+		route := strings.TrimSpace(v)
+		if route != "" {
+			routes[route] = true
+		}
+	}
+	for _, v := range strings.Split(i.Annotations["contour.heptio.com/websocket-routes"], ",") {
 		route := strings.TrimSpace(v)
 		if route != "" {
 			routes[route] = true
