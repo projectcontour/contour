@@ -81,6 +81,19 @@ func withMirrorPolicy(route *envoy_api_v2_route.Route_Route, mirror string) *env
 	return route
 }
 
+func withRetryPolicy(route *envoy_api_v2_route.Route_Route, retryOn string, numRetries uint32, perTryTimeout time.Duration) *envoy_api_v2_route.Route_Route {
+	route.Route.RetryPolicy = &envoy_api_v2_route.RetryPolicy{
+		RetryOn: retryOn,
+	}
+	if numRetries > 0 {
+		route.Route.RetryPolicy.NumRetries = protobuf.UInt32(numRetries)
+	}
+	if perTryTimeout > 0 {
+		route.Route.RetryPolicy.PerTryTimeout = protobuf.Duration(perTryTimeout)
+	}
+	return route
+}
+
 func withWebsocket(route *envoy_api_v2_route.Route_Route) *envoy_api_v2_route.Route_Route {
 	route.Route.UpgradeConfigs = append(route.Route.UpgradeConfigs,
 		&envoy_api_v2_route.RouteAction_UpgradeConfig{

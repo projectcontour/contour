@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/projectcontour/contour/internal/dag"
 
@@ -1768,118 +1767,6 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 	}, streamRDS(t, cc))
 }
 
-// issue 665, support for retry-on, num-retries, and per-try-timeout annotations.
-func TestRouteRetryAnnotations(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
-	rh.OnAdd(s1)
-
-	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "hello", Namespace: "default",
-			Annotations: map[string]string{
-				"contour.heptio.com/retry-on":        "5xx,gateway-error",
-				"contour.heptio.com/num-retries":     "7",
-				"contour.heptio.com/per-try-timeout": "120ms",
-			},
-		},
-		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
-		},
-	}
-	rh.OnAdd(i1)
-
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("*",
-			envoy.Route(envoy.RoutePrefix("/"), routeretry("default/backend/80/da39a3ee5e", "5xx,gateway-error", 7, 120*time.Millisecond)),
-		),
-	), nil)
-
-	i2 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "hello", Namespace: "default",
-			Annotations: map[string]string{
-				"contour.heptio.com/retry-on":        "5xx,gateway-error",
-				"projectcontour.io/num-retries":      "7",
-				"contour.heptio.com/per-try-timeout": "120ms",
-			},
-		},
-		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
-		},
-	}
-	rh.OnUpdate(i1, i2)
-
-	assertRDS(t, cc, "2", virtualhosts(
-		envoy.VirtualHost("*",
-			envoy.Route(envoy.RoutePrefix("/"), routeretry("default/backend/80/da39a3ee5e", "5xx,gateway-error", 7, 120*time.Millisecond)),
-		),
-	), nil)
-}
-
-// issue 815, support for retry-on, num-retries, and per-try-timeout in IngressRoute
-func TestRouteRetryIngressRoute(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
-	rh.OnAdd(s1)
-
-	i1 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				RetryPolicy: &projcontour.RetryPolicy{
-					NumRetries:    7,
-					PerTryTimeout: "120ms",
-				},
-				Services: []ingressroutev1.Service{{
-					Name: "backend",
-					Port: 80,
-				}},
-			}},
-		},
-	}
-
-	rh.OnAdd(i1)
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("test2.test.com",
-			envoy.Route(envoy.RoutePrefix("/"), routeretry("default/backend/80/da39a3ee5e", "5xx", 7, 120*time.Millisecond)),
-		),
-	), nil)
-}
-
 func TestRouteWithSessionAffinity(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
@@ -2320,20 +2207,6 @@ func externalnameservice(ns, name, externalname string, ports ...v1.ServicePort)
 			Type:         v1.ServiceTypeExternalName,
 		},
 	}
-}
-
-func routeretry(cluster string, retryOn string, numRetries uint32, perTryTimeout time.Duration) *envoy_api_v2_route.Route_Route {
-	r := routecluster(cluster)
-	r.Route.RetryPolicy = &envoy_api_v2_route.RetryPolicy{
-		RetryOn: retryOn,
-	}
-	if numRetries > 0 {
-		r.Route.RetryPolicy.NumRetries = protobuf.UInt32(numRetries)
-	}
-	if perTryTimeout > 0 {
-		r.Route.RetryPolicy.PerTryTimeout = protobuf.Duration(perTryTimeout)
-	}
-	return r
 }
 
 func TestRDSHTTPProxyOutsideRootNamespaces(t *testing.T) {
@@ -3363,54 +3236,6 @@ func TestHTTPProxyRouteWithSessionAffinity(t *testing.T) {
 			),
 			),
 			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/app/80/da39a3ee5e")),
-		),
-	), nil)
-}
-
-// issue 815, support for retry-on, num-retries, and per-try-timeout in HTTPProxy
-func TestRouteRetryHTTPProxy(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
-	rh.OnAdd(s1)
-
-	proxy1 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
-				RetryPolicy: &projcontour.RetryPolicy{
-					NumRetries:    7,
-					PerTryTimeout: "120ms",
-				},
-				Services: []projcontour.Service{{
-					Name: "backend",
-					Port: 80,
-				}},
-			}},
-		},
-	}
-
-	rh.OnAdd(proxy1)
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("test2.test.com",
-			envoy.Route(envoy.RoutePrefix("/"), routeretry("default/backend/80/da39a3ee5e", "5xx", 7, 120*time.Millisecond)),
 		),
 	), nil)
 }
