@@ -33,22 +33,24 @@ test-race: | test
 vet: | test
 	go vet $(MODULE)/...
 
+check: ## Run tests and CI checks
 check: test test-race vet gofmt staticcheck misspell unconvert unparam ineffassign yamllint
 	@echo Checking rendered files are up to date
 	@(cd examples && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 
-install:
+install: ## Build and install the contour binary
 	go install -mod=readonly -v -tags "oidc gcp" $(MODULE)/cmd/contour
 
 race:
 	go install -mod=readonly -v -race -tags "oidc gcp" $(MODULE)/cmd/contour
 
-download:
+download: ## Download Go modules
 	go mod download
 
-container:
+container: ## Build the Contour container image
 	docker build . -t $(IMAGE):$(VERSION)
 
+push: ## Push the Contour container image to the Docker registry
 push: container
 	docker push $(IMAGE):$(VERSION)
 ifeq ($(TAG_LATEST), true)
@@ -56,7 +58,7 @@ ifeq ($(TAG_LATEST), true)
 	docker push $(IMAGE):latest
 endif
 
-tag-latest:
+tag-latest: ## Tag the Docker registry container image at $LATEST_VERSION as :latest
 ifeq ($(LATEST_VERSION), NOLATEST)
 	@echo "LATEST_VERSION not set, not proceeding"
 else
@@ -130,12 +132,12 @@ render:
 	@echo Rendering example deployment files...
 	@(cd examples && bash render.sh)
 
-updategenerated:
-	@echo Updating CRD generated code...
+updategenerated: ## Update generated CRD code
+	@echo Updating generated CRD code...
 	@(bash hack/update-generated-crd-code.sh)
 
 yamllint:
-	docker run --rm -ti -v $(CURDIR):/workdir giantswarm/yamllint examples/ site/examples/ 
+	docker run --rm -ti -v $(CURDIR):/workdir giantswarm/yamllint examples/ site/examples/
 
 gofmt:
 	@echo Checking code is gofmted
@@ -194,3 +196,9 @@ certs/envoycert.pem: certs/CAkey.pem certs/envoykey.pem
 		-out certs/envoycert.pem \
 		-days 1825 -sha256 \
 		-extfile _integration/cert-envoy.ext
+
+help: ## Display this help
+	@echo Contour high performance Ingress controller for Kubernetes
+	@echo
+	@echo Targets:
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9._-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
