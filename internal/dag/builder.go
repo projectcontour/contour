@@ -574,7 +574,6 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			HeaderConditions: mergeHeaderConditions(conds),
 			Websocket:        route.EnableWebsockets,
 			HTTPSUpgrade:     routeEnforceTLS(enforceTLS, route.PermitInsecure && !b.DisablePermitInsecure),
-			PrefixRewrite:    route.PrefixRewrite,
 			TimeoutPolicy:    timeoutPolicy(route.TimeoutPolicy),
 			RetryPolicy:      retryPolicy(route.RetryPolicy),
 		}
