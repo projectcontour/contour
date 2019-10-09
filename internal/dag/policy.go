@@ -43,7 +43,7 @@ func ingressRetryPolicy(ingress *v1beta1.Ingress) *RetryPolicy {
 		RetryOn: retryOn,
 		// TODO(dfc) NumRetries may parse as 0, which is inconsistent with
 		// retryPolicyIngressRoute()'s default value of 1.
-		NumRetries: parseUInt32(ingress.Annotations[annotationNumRetries]),
+		NumRetries: numRetries(ingress),
 		// TODO(dfc) PerTryTimeout will parse to -1, infinite, in the case of
 		// invalid data, this is inconsistent with retryPolicyIngressRoute()'s default value
 		// of 0 duration.

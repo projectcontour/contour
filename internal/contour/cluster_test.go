@@ -804,6 +804,48 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
+		"projectcontour.io/num-retries annotation": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"projectcontour.io/num-retries": "7",
+							"contour.heptio.com/retry-on":   "gateway-error",
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromString("https"),
+						},
+					},
+				},
+				service("default", "kuard",
+					v1.ServicePort{
+						Name:       "https",
+						Protocol:   "TCP",
+						Port:       443,
+						TargetPort: intstr.FromInt(8443),
+					},
+				),
+			},
+			want: clustermap(
+				&v2.Cluster{
+					Name:                 "default/kuard/443/da39a3ee5e",
+					AltStatName:          "default_kuard_443",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+				}),
+		},
+
 		"contour.heptio.com/num-retries annotation": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
