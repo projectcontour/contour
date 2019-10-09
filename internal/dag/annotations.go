@@ -28,13 +28,11 @@ const (
 
 	// TODO(dfc) remove these deprecated forms after Contour 1.0.
 
-	annotationWebsocketRoutes    = "contour.heptio.com/websocket-routes"
 	annotationMaxConnections     = "contour.heptio.com/max-connections"
 	annotationMaxPendingRequests = "contour.heptio.com/max-pending-requests"
 	annotationMaxRequests        = "contour.heptio.com/max-requests"
 	annotationMaxRetries         = "contour.heptio.com/max-retries"
 	annotationRetryOn            = "contour.heptio.com/retry-on"
-	annotationNumRetries         = "contour.heptio.com/num-retries"
 	annotationPerTryTimeout      = "contour.heptio.com/per-try-timeout"
 )
 
@@ -86,13 +84,30 @@ func tlsRequired(i *v1beta1.Ingress) bool {
 
 func websocketRoutes(i *v1beta1.Ingress) map[string]bool {
 	routes := make(map[string]bool)
-	for _, v := range strings.Split(i.Annotations[annotationWebsocketRoutes], ",") {
+	for _, v := range strings.Split(i.Annotations["projectcontour.io/websocket-routes"], ",") {
+		route := strings.TrimSpace(v)
+		if route != "" {
+			routes[route] = true
+		}
+	}
+	for _, v := range strings.Split(i.Annotations["contour.heptio.com/websocket-routes"], ",") {
 		route := strings.TrimSpace(v)
 		if route != "" {
 			routes[route] = true
 		}
 	}
 	return routes
+}
+
+// numRetries returns the number of retries specified by the "contour.heptio.com/num-retries"
+// or "projectcontour.io/num-retries" annotation.
+func numRetries(i *v1beta1.Ingress) uint32 {
+	n := parseUInt32(i.Annotations["projectcontour.io/num-retries"])
+	if n == 0 {
+		// fallback to legacy annotation
+		n = parseUInt32(i.Annotations["contour.heptio.com/num-retries"])
+	}
+	return n
 }
 
 // ingressClass returns the first matching ingress class for the following

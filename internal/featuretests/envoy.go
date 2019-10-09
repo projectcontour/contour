@@ -81,6 +81,15 @@ func withMirrorPolicy(route *envoy_api_v2_route.Route_Route, mirror string) *env
 	return route
 }
 
+func withWebsocket(route *envoy_api_v2_route.Route_Route) *envoy_api_v2_route.Route_Route {
+	route.Route.UpgradeConfigs = append(route.Route.UpgradeConfigs,
+		&envoy_api_v2_route.RouteAction_UpgradeConfig{
+			UpgradeType: "websocket",
+		},
+	)
+	return route
+}
+
 func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_listener.Filter, alpn ...string) []*envoy_api_v2_listener.FilterChain {
 	return []*envoy_api_v2_listener.FilterChain{
 		envoy.FilterChainTLS(

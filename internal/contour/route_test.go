@@ -846,6 +846,45 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
+							"contour.heptio.com/retry-on":   "5xx,gateway-error",
+							"projectcontour.io/num-retries": "7", // not five or six or eight, but seven.
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: backend("kuard", 8080),
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       8080,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						envoy.Route(envoy.RoutePrefix("/"), routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 7, 0)),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
+		},
+
+		"ingress retry-on, legacy num-retries": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+						Annotations: map[string]string{
 							"contour.heptio.com/retry-on":    "5xx,gateway-error",
 							"contour.heptio.com/num-retries": "7", // not five or six or eight, but seven.
 						},

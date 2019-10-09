@@ -43,7 +43,7 @@ func ingressRetryPolicy(ingress *v1beta1.Ingress) *RetryPolicy {
 		RetryOn: retryOn,
 		// TODO(dfc) NumRetries may parse as 0, which is inconsistent with
 		// retryPolicyIngressRoute()'s default value of 1.
-		NumRetries: parseUInt32(ingress.Annotations[annotationNumRetries]),
+		NumRetries: numRetries(ingress),
 		// TODO(dfc) PerTryTimeout will parse to -1, infinite, in the case of
 		// invalid data, this is inconsistent with retryPolicyIngressRoute()'s default value
 		// of 0 duration.
@@ -90,8 +90,21 @@ func timeoutPolicy(tp *projcontour.TimeoutPolicy) *TimeoutPolicy {
 		IdleTimeout:     parseTimeout(tp.Idle),
 	}
 }
+func ingressrouteHealthCheckPolicy(hc *ingressroutev1.HealthCheck) *HealthCheckPolicy {
+	if hc == nil {
+		return nil
+	}
+	return &HealthCheckPolicy{
+		Path:               hc.Path,
+		Host:               hc.Host,
+		Interval:           time.Duration(hc.IntervalSeconds) * time.Second,
+		Timeout:            time.Duration(hc.TimeoutSeconds) * time.Second,
+		UnhealthyThreshold: hc.UnhealthyThresholdCount,
+		HealthyThreshold:   hc.HealthyThresholdCount,
+	}
+}
 
-func healthCheckPolicy(hc *projcontour.HealthCheck) *HealthCheckPolicy {
+func healthCheckPolicy(hc *projcontour.HTTPHealthCheckPolicy) *HealthCheckPolicy {
 	if hc == nil {
 		return nil
 	}

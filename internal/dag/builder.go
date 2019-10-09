@@ -608,7 +608,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 				Upstream:             s,
 				LoadBalancerStrategy: service.Strategy,
 				Weight:               service.Weight,
-				HealthCheckPolicy:    healthCheckPolicy(service.HealthCheck),
+				HealthCheckPolicy:    healthCheckPolicy(route.HealthCheckPolicy),
 				UpstreamValidation:   uv,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
@@ -782,7 +782,7 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 					Upstream:             s,
 					LoadBalancerStrategy: service.Strategy,
 					Weight:               service.Weight,
-					HealthCheckPolicy:    healthCheckPolicy(service.HealthCheck),
+					HealthCheckPolicy:    ingressrouteHealthCheckPolicy(service.HealthCheck),
 					UpstreamValidation:   uv,
 				})
 			}

@@ -255,7 +255,7 @@ A HTTPProxy can proxy to an upstream TLS connection by first annotating the upst
 This annotation tells Contour which port should be used for the TLS connection.
 In this example, the upstream service is named `https` and uses port `443`.
 Additionally, it is possible for Envoy to verify the backend service's certificate.
-The service of an HTTPProxy can optionally specify a `validation` struct which has a manditory `caSecret` key as well as an mandatory `subjectName`.
+The service of an HTTPProxy can optionally specify a `validation` struct which has a mandatory `caSecret` key as well as an mandatory `subjectName`.
 
 Note: If `spec.routes.services[].validation` is present, `spec.routes.services[].{name,port}` must point to a Service with a matching `projectcontour.io/upstream-protocol.tls` Service annotation.
 
@@ -598,7 +598,9 @@ None of these properties are guaranteed by a Kubernetes cluster and will be visi
 
 Any perturbation in the set of pods backing a service risks redistributing backends around the hash ring.
 
-Active health checking can be configured on a per-upstream Service basis.
+#### Per route health checking
+
+Active health checking can be configured on a per route basis.
 Contour supports HTTP health checking and can be configured with various settings to tune the behavior.
 
 During HTTP health checking Envoy will send an HTTP request to the upstream Endpoints.
@@ -617,17 +619,19 @@ spec:
   virtualhost:
     fqdn: health.bar.com
   routes:
-    - services:
-        - name: s1-health
-          port: 80
-          healthCheck:
-            path: /healthy
-            intervalSeconds: 5
-            timeoutSeconds: 2
-            unhealthyThresholdCount: 3
-            healthyThresholdCount: 5
-        - name: s2-health # no health-check defined for this service
-          port: 80
+  - conditions:
+    - prefix: /
+    healthCheckPolicy:
+      path: /healthy
+      intervalSeconds: 5
+      timeoutSeconds: 2
+      unhealthyThresholdCount: 3
+      healthyThresholdCount: 5
+    services:
+      - name: s1-health
+        port: 80
+      - name: s2-health
+        port: 80
 ```
 
 Health check configuration parameters:

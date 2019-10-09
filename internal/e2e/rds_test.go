@@ -905,192 +905,6 @@ func TestRDSFilter(t *testing.T) {
 	}, streamRDS(t, cc, "ingress_https"))
 }
 
-func TestWebsocketIngress(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ws",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ws",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"contour.heptio.com/websocket-routes": "/",
-			},
-		},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
-				Host: "websocket.hello.world",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "ws",
-								ServicePort: intstr.FromInt(80),
-							},
-						}},
-					},
-				},
-			}},
-		},
-	})
-
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("websocket.hello.world",
-			envoy.Route(
-				envoy.RoutePrefix("/"),
-				websocketroute("default/ws/80/da39a3ee5e"),
-			),
-		),
-	), nil)
-}
-
-func TestWebsocketIngressRoute(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ws",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "websocket.hello.world"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}, {
-				Match:            "/ws-1",
-				EnableWebsockets: true,
-				Services: []ingressroutev1.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}, {
-				Match:            "/ws-2",
-				EnableWebsockets: true,
-				Services: []ingressroutev1.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}},
-		},
-	})
-
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("websocket.hello.world",
-			envoy.Route(envoy.RoutePrefix("/ws-2"), websocketroute("default/ws/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/ws-1"), websocketroute("default/ws/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/ws/80/da39a3ee5e")),
-		),
-	), nil)
-}
-
-func TestWebsocketIngressRoute_MultipleUpstreams(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ws",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ws2",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "websocket.hello.world"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}, {
-				Match:            "/ws-1",
-				EnableWebsockets: true,
-				Services: []ingressroutev1.Service{{
-					Name: "ws",
-					Port: 80,
-				},
-					{
-						Name: "ws2",
-						Port: 80,
-					}},
-			}, {
-				Match:            "/ws-2",
-				EnableWebsockets: true,
-				Services: []ingressroutev1.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}},
-		},
-	})
-
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("websocket.hello.world",
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/ws/80/da39a3ee5e")),
-		),
-	), nil)
-}
-
 func TestPrefixRewriteIngressRoute(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
@@ -1988,7 +1802,29 @@ func TestRouteRetryAnnotations(t *testing.T) {
 		},
 	}
 	rh.OnAdd(i1)
+
 	assertRDS(t, cc, "1", virtualhosts(
+		envoy.VirtualHost("*",
+			envoy.Route(envoy.RoutePrefix("/"), routeretry("default/backend/80/da39a3ee5e", "5xx,gateway-error", 7, 120*time.Millisecond)),
+		),
+	), nil)
+
+	i2 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "hello", Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/retry-on":        "5xx,gateway-error",
+				"projectcontour.io/num-retries":      "7",
+				"contour.heptio.com/per-try-timeout": "120ms",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend("backend", intstr.FromInt(80)),
+		},
+	}
+	rh.OnUpdate(i1, i2)
+
+	assertRDS(t, cc, "2", virtualhosts(
 		envoy.VirtualHost("*",
 			envoy.Route(envoy.RoutePrefix("/"), routeretry("default/backend/80/da39a3ee5e", "5xx,gateway-error", 7, 120*time.Millisecond)),
 		),
@@ -2454,25 +2290,9 @@ func weightedclusters(clusters []weightedcluster) *envoy_api_v2_route.WeightedCl
 	return &wc
 }
 
-func websocketroute(c string) *envoy_api_v2_route.Route_Route {
-	cl := routecluster(c)
-	cl.Route.UpgradeConfigs = append(cl.Route.UpgradeConfigs,
-		&envoy_api_v2_route.RouteAction_UpgradeConfig{
-			UpgradeType: "websocket",
-		},
-	)
-	return cl
-}
-
 func prefixrewriteroute(c string) *envoy_api_v2_route.Route_Route {
 	cl := routecluster(c)
 	cl.Route.PrefixRewrite = "/"
-	return cl
-}
-
-func clustertimeout(c string, timeout time.Duration) *envoy_api_v2_route.Route_Route {
-	cl := routecluster(c)
-	cl.Route.Timeout = protobuf.Duration(timeout)
 	return cl
 }
 
@@ -2638,62 +2458,6 @@ func TestHTTPProxyRouteWithAServiceWeight(t *testing.T) {
 				weightedcluster{"default/kuard/80/da39a3ee5e", 60},
 				weightedcluster{"default/kuard/80/da39a3ee5e", 90}),
 			),
-		),
-	), nil)
-}
-
-func TestWebsocketHTTProxy(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ws",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "websocket.hello.world"},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}, {
-				Conditions:       conditions(prefixCondition("/ws-1")),
-				EnableWebsockets: true,
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}, {
-				Conditions:       conditions(prefixCondition("/ws-2")),
-				EnableWebsockets: true,
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}},
-		},
-	})
-
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("websocket.hello.world",
-			envoy.Route(envoy.RoutePrefix("/ws-2"), websocketroute("default/ws/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/ws-1"), websocketroute("default/ws/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/ws/80/da39a3ee5e")),
 		),
 	), nil)
 }
@@ -3007,79 +2771,6 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 				Invert:    false,
 			}), routecluster("default/svc2/80/da39a3ee5e")),
 			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
-		),
-	), nil)
-}
-
-func TestWebsocketHTTPProxy_MultipleUpstreams(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ws",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ws2",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "websocket.hello.world"},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}, {
-				Conditions:       conditions(prefixCondition("/ws-1")),
-				EnableWebsockets: true,
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}, {
-					Name: "ws2",
-					Port: 80,
-				}},
-			}, {
-				Conditions:       conditions(prefixCondition("/ws-2")),
-				EnableWebsockets: true,
-				Services: []projcontour.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}},
-		},
-	})
-
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("websocket.hello.world",
-			envoy.Route(envoy.RoutePrefix("/ws-2"), websocketroute("default/ws/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/ws/80/da39a3ee5e")),
 		),
 	), nil)
 }

@@ -622,7 +622,33 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	i14 := &v1beta1.Ingress{
+	i14a := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/retry-on":        "gateway-error",
+				"projectcontour.io/num-retries":      "6",
+				"contour.heptio.com/per-try-timeout": "10s",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	i14b := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "timeout",
 			Namespace: "default",
@@ -948,7 +974,7 @@ func TestDAGInsert(t *testing.T) {
 				Services: []ingressroutev1.Service{{
 					Name: "kuard",
 					Port: 8080,
-					HealthCheck: &projcontour.HealthCheck{
+					HealthCheck: &ingressroutev1.HealthCheck{
 						Path: "/healthz",
 					},
 				}},
@@ -1889,12 +1915,12 @@ func TestDAGInsert(t *testing.T) {
 				Conditions: []projcontour.Condition{{
 					Prefix: "/",
 				}},
+				HealthCheckPolicy: &projcontour.HTTPHealthCheckPolicy{
+					Path: "/healthz",
+				},
 				Services: []projcontour.Service{{
 					Name: "kuard",
 					Port: 8080,
-					HealthCheck: &projcontour.HealthCheck{
-						Path: "/healthz",
-					},
 				}},
 			}},
 		},
@@ -3545,7 +3571,29 @@ func TestDAGInsert(t *testing.T) {
 		},
 		"insert ingressroute with retrypolicy": {
 			objs: []interface{}{
-				i14,
+				i14a,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", &Route{
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s1),
+							RetryPolicy: &RetryPolicy{
+								RetryOn:       "gateway-error",
+								NumRetries:    6,
+								PerTryTimeout: 10 * time.Second,
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert ingressroute with legacy retrypolicy": {
+			objs: []interface{}{
+				i14b,
 				s1,
 			},
 			want: listeners(
