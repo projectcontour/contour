@@ -56,7 +56,7 @@ func doBootstrap(ctx *bootstrapContext) {
 		f, err := os.Create(ctx.path)
 		check(err)
 
-		defer check(f.Close())
+		defer f.Close()
 		out = f
 	}
 
