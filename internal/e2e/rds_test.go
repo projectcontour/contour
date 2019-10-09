@@ -2470,12 +2470,6 @@ func prefixrewriteroute(c string) *envoy_api_v2_route.Route_Route {
 	return cl
 }
 
-func clustertimeout(c string, timeout time.Duration) *envoy_api_v2_route.Route_Route {
-	cl := routecluster(c)
-	cl.Route.Timeout = protobuf.Duration(timeout)
-	return cl
-}
-
 func service(ns, name string, ports ...v1.ServicePort) *v1.Service {
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
