@@ -288,7 +288,7 @@ An IngressRoute route can proxy to an upstream TLS connection by first annotatin
 This annotation tells Contour which port should be used for the TLS connection.
 In this example, the upstream service is named `https` and uses port `443`.
 Additionally, it is possible for Envoy to verify the backend service's certificate.
-The service of an `IngressRoute` can optionally specify a `validation` struct which has a manditory `caSecret` key as well as an mandatory `subjectName`.
+The service of an `IngressRoute` can optionally specify a `validation` struct which has a mandatory `caSecret` key as well as an mandatory `subjectName`.
 
 Note: If spec.routes.services[].validation is present, spec.routes.services[].{name,port} must point to a service with a matching contour.heptio.com/upstream-protocol.tls Service annotation.
 
