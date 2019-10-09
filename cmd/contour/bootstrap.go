@@ -14,7 +14,6 @@
 package main
 
 import (
-	"io"
 	"os"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -28,7 +27,7 @@ func registerBootstrap(app *kingpin.Application) (*kingpin.CmdClause, *bootstrap
 	var ctx bootstrapContext
 
 	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")
-	bootstrap.Arg("path", "Configuration file ('-' for standard output)").Required().StringVar(&ctx.path)
+	bootstrap.Arg("path", "Configuration file.").Required().StringVar(&ctx.path)
 	bootstrap.Flag("admin-address", "Envoy admin interface address").StringVar(&ctx.config.AdminAddress)
 	bootstrap.Flag("admin-port", "Envoy admin interface port").IntVar(&ctx.config.AdminPort)
 	bootstrap.Flag("xds-address", "xDS gRPC API address").StringVar(&ctx.config.XDSAddress)
@@ -47,21 +46,11 @@ type bootstrapContext struct {
 
 // doBootstrap writes an Envoy bootstrap configuration file to the supplied path.
 func doBootstrap(ctx *bootstrapContext) {
-	var out io.Writer
-
-	switch ctx.path {
-	case "-":
-		out = os.Stdout
-	default:
-		f, err := os.Create(ctx.path)
-		check(err)
-
-		defer check(f.Close())
-		out = f
-	}
-
+	f, err := os.Create(ctx.path)
+	check(err)
 	bs := envoy.Bootstrap(&ctx.config)
 	m := &jsonpb.Marshaler{OrigName: true}
-	err := m.Marshal(out, bs)
+	err = m.Marshal(f, bs)
 	check(err)
+	check(f.Close())
 }
