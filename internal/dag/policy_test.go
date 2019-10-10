@@ -340,6 +340,53 @@ func TestTimeoutPolicy(t *testing.T) {
 	}
 }
 
+func TestLoadBalancerPolicy(t *testing.T) {
+	tests := map[string]struct {
+		lbp  *projcontour.LoadBalancerPolicy
+		want string
+	}{
+		"nil": {
+			lbp:  nil,
+			want: "",
+		},
+		"empty": {
+			lbp:  &projcontour.LoadBalancerPolicy{},
+			want: "",
+		},
+		"WeightedLeastRequest": {
+			lbp: &projcontour.LoadBalancerPolicy{
+				Strategy: "WeightedLeastRequest",
+			},
+			want: "WeightedLeastRequest",
+		},
+		"Random": {
+			lbp: &projcontour.LoadBalancerPolicy{
+				Strategy: "Random",
+			},
+			want: "Random",
+		},
+		"Cookie": {
+			lbp: &projcontour.LoadBalancerPolicy{
+				Strategy: "Cookie",
+			},
+			want: "Cookie",
+		},
+		"unknown": {
+			lbp: &projcontour.LoadBalancerPolicy{
+				Strategy: "please",
+			},
+			want: "",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := loadBalancerPolicy(tc.lbp)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
 func TestParseTimeout(t *testing.T) {
 	tests := map[string]struct {
 		duration string

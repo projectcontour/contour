@@ -337,7 +337,7 @@ type Cluster struct {
 
 	// The load balancer type to use when picking a host in the cluster.
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cds.proto#envoy-api-enum-cluster-lbpolicy
-	LoadBalancerStrategy string
+	LoadBalancerPolicy string
 
 	// Cluster health check policy.
 	*HealthCheckPolicy

@@ -119,6 +119,24 @@ func healthCheckPolicy(hc *projcontour.HTTPHealthCheckPolicy) *HealthCheckPolicy
 	}
 }
 
+// loadBalancerPolicy returns the load balancer strategy or
+// blank if no valid strategy is supplied.
+func loadBalancerPolicy(lbp *projcontour.LoadBalancerPolicy) string {
+	if lbp == nil {
+		return ""
+	}
+	switch lbp.Strategy {
+	case "WeightedLeastRequest":
+		return "WeightedLeastRequest"
+	case "Random":
+		return "Random"
+	case "Cookie":
+		return "Cookie"
+	default:
+		return ""
+	}
+}
+
 func parseTimeout(timeout string) time.Duration {
 	if timeout == "" {
 		// Blank is interpreted as no timeout specified, use envoy defaults

@@ -13,4 +13,5 @@ spec:
           port: 80
         - name: s2-strategy
           port: 80
-          strategy: WeightedLeastRequest
+      loadBalancerPolicy:
+        strategy: WeightedLeastRequest

@@ -103,6 +103,48 @@ func withWebsocket(route *envoy_api_v2_route.Route_Route) *envoy_api_v2_route.Ro
 	return route
 }
 
+func withSessionAffinity(route *envoy_api_v2_route.Route_Route) *envoy_api_v2_route.Route_Route {
+	route.Route.HashPolicy = append(route.Route.HashPolicy, &envoy_api_v2_route.RouteAction_HashPolicy{
+		PolicySpecifier: &envoy_api_v2_route.RouteAction_HashPolicy_Cookie_{
+			Cookie: &envoy_api_v2_route.RouteAction_HashPolicy_Cookie{
+				Name: "X-Contour-Session-Affinity",
+				Ttl:  protobuf.Duration(0),
+				Path: "/",
+			},
+		},
+	})
+	return route
+}
+
+type weightedCluster struct {
+	name   string
+	weight uint32
+}
+
+func routeWeightedCluster(clusters ...weightedCluster) *envoy_api_v2_route.Route_Route {
+	return &envoy_api_v2_route.Route_Route{
+		Route: &envoy_api_v2_route.RouteAction{
+			ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+				WeightedClusters: weightedClusters(clusters),
+			},
+		},
+	}
+}
+
+func weightedClusters(clusters []weightedCluster) *envoy_api_v2_route.WeightedCluster {
+	var wc envoy_api_v2_route.WeightedCluster
+	var total uint32
+	for _, c := range clusters {
+		total += c.weight
+		wc.Clusters = append(wc.Clusters, &envoy_api_v2_route.WeightedCluster_ClusterWeight{
+			Name:   c.name,
+			Weight: protobuf.UInt32(c.weight),
+		})
+	}
+	wc.TotalWeight = protobuf.UInt32(total)
+	return &wc
+}
+
 func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_listener.Filter, alpn ...string) []*envoy_api_v2_listener.FilterChain {
 	return []*envoy_api_v2_listener.FilterChain{
 		envoy.FilterChainTLS(

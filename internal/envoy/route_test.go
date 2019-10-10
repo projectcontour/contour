@@ -90,7 +90,7 @@ func TestRouteRoute(t *testing.T) {
 			Namespace:   s1.Namespace,
 			ServicePort: &s1.Spec.Ports[0],
 		},
-		LoadBalancerStrategy: "Cookie",
+		LoadBalancerPolicy: "Cookie",
 	}
 
 	tests := map[string]struct {
