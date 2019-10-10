@@ -234,11 +234,51 @@ See #899
 
 ### Load balancing strategies
 
-No change.
+Per service load balancing strategy has moved to a per route strategy that applies to all services for that route.
+
+Before:
+```yaml
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata:
+  name: lb-strategy
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: strategy.bar.com
+  routes:
+    - match: /
+      services:
+        - name: s1-strategy
+          port: 80
+          strategy: WeightedLeastRequest
+        - name: s2-strategy
+          port: 80
+          strategy: WeightedLeastRequest
+```
+After:
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: lb-strategy
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: strategy.bar.com
+  routes:
+    - services:
+        - name: s1-strategy
+          port: 80
+        - name: s2-strategy
+          port: 80
+      loadBalancerStrategy:
+        strategy: WeightedLeastRequest
+```
 
 ### Session affinity
 
-No change.
+See above.
 
 ### Per upstream health check
 

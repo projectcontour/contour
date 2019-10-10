@@ -122,10 +122,14 @@ type Route struct {
 	RetryPolicy *RetryPolicy `json:"retryPolicy,omitempty"`
 	// The health check policy for this route.
 	HealthCheckPolicy *HTTPHealthCheckPolicy `json:"healthCheckPolicy,omitempty"`
+	// The load balancing policy for this route.
+	LoadBalancerPolicy *LoadBalancerPolicy `json:"loadBalancerPolicy,omitempty"`
 }
 
 // TCPProxy contains the set of services to proxy TCP connections.
 type TCPProxy struct {
+	// The load balancing policy for the backend services.
+	LoadBalancerPolicy *LoadBalancerPolicy `json:"loadBalancerPolicy,omitempty"`
 	// Services are the services to proxy traffic
 	Services []Service `json:"services,omitempty"`
 	// Include specifies that this tcpproxy should be delegated to another HTTPProxy.
@@ -141,8 +145,6 @@ type Service struct {
 	Port int `json:"port"`
 	// Weight defines percentage of traffic to balance traffic
 	Weight uint32 `json:"weight,omitempty"`
-	// LB Algorithm to apply.
-	Strategy string `json:"strategy,omitempty"`
 	// UpstreamValidation defines how to verify the backend service's certificate
 	UpstreamValidation *UpstreamValidation `json:"validation,omitempty"`
 	// If Mirror is true the Service will receive a read only mirror of the traffic for this route.
@@ -186,6 +188,11 @@ type RetryPolicy struct {
 	// PerTryTimeout specifies the timeout per retry attempt.
 	// Ignored if NumRetries is not supplied.
 	PerTryTimeout string `json:"perTryTimeout,omitempty"`
+}
+
+// LoadBalancerPolicy defines the load balancing policy.
+type LoadBalancerPolicy struct {
+	Strategy string `json:"strategy,omitempty"`
 }
 
 // UpstreamValidation defines how to verify the backend service's certificate

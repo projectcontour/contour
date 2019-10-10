@@ -604,11 +604,11 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			}
 
 			c := &Cluster{
-				Upstream:             s,
-				LoadBalancerStrategy: service.Strategy,
-				Weight:               service.Weight,
-				HealthCheckPolicy:    healthCheckPolicy(route.HealthCheckPolicy),
-				UpstreamValidation:   uv,
+				Upstream:           s,
+				LoadBalancerPolicy: loadBalancerPolicy(route.LoadBalancerPolicy),
+				Weight:             service.Weight,
+				HealthCheckPolicy:  healthCheckPolicy(route.HealthCheckPolicy),
+				UpstreamValidation: uv,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				sw.SetInvalid("only one service per route may be nominated as mirror")
@@ -778,11 +778,11 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 					}
 				}
 				r.Clusters = append(r.Clusters, &Cluster{
-					Upstream:             s,
-					LoadBalancerStrategy: service.Strategy,
-					Weight:               service.Weight,
-					HealthCheckPolicy:    ingressrouteHealthCheckPolicy(service.HealthCheck),
-					UpstreamValidation:   uv,
+					Upstream:           s,
+					LoadBalancerPolicy: service.Strategy,
+					Weight:             service.Weight,
+					HealthCheckPolicy:  ingressrouteHealthCheckPolicy(service.HealthCheck),
+					UpstreamValidation: uv,
 				})
 			}
 
@@ -878,8 +878,8 @@ func (b *Builder) processTCPProxy(sw *ObjectStatusWriter, ir *ingressroutev1.Ing
 				return
 			}
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
-				Upstream:             s,
-				LoadBalancerStrategy: service.Strategy,
+				Upstream:           s,
+				LoadBalancerPolicy: service.Strategy,
 			})
 		}
 		b.lookupSecureVirtualHost(host).TCPProxy = &proxy
@@ -933,8 +933,8 @@ func (b *Builder) processTCPProxyHTTPProxy(sw *ObjectStatusWriter, httpproxy *pr
 				return
 			}
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
-				Upstream:             s,
-				LoadBalancerStrategy: service.Strategy,
+				Upstream:           s,
+				LoadBalancerPolicy: loadBalancerPolicy(httpproxy.Spec.TCPProxy.LoadBalancerPolicy),
 			})
 		}
 		b.lookupSecureVirtualHost(host).TCPProxy = &proxy

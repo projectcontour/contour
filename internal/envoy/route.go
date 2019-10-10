@@ -115,7 +115,7 @@ func RouteRoute(r *dag.Route) *envoy_api_v2_route.Route_Route {
 // clusters supplied uses the `Cookie` load balancing stategy.
 func hashPolicy(r *dag.Route) []*envoy_api_v2_route.RouteAction_HashPolicy {
 	for _, c := range r.Clusters {
-		if c.LoadBalancerStrategy == "Cookie" {
+		if c.LoadBalancerPolicy == "Cookie" {
 			return []*envoy_api_v2_route.RouteAction_HashPolicy{{
 				PolicySpecifier: &envoy_api_v2_route.RouteAction_HashPolicy_Cookie_{
 					Cookie: &envoy_api_v2_route.RouteAction_HashPolicy_Cookie{
