@@ -35,8 +35,8 @@ func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
 
 // ingressRetryPolicy builds a RetryPolicy from ingress annotations.
 func ingressRetryPolicy(ingress *v1beta1.Ingress) *RetryPolicy {
-	retryOn, ok := ingress.Annotations[annotationRetryOn]
-	if !ok || len(retryOn) < 1 {
+	retryOn := compatAnnotation(ingress, "retry-on")
+	if len(retryOn) < 1 {
 		return nil
 	}
 	// if there is a non empty retry-on annotation, build a RetryPolicy manually.

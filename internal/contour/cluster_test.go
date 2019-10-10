@@ -812,7 +812,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 						Annotations: map[string]string{
 							"projectcontour.io/num-retries": "7",
-							"contour.heptio.com/retry-on":   "gateway-error",
+							"projectcontour.io/retry-on":    "gateway-error",
 						},
 					},
 					Spec: v1beta1.IngressSpec{
@@ -854,7 +854,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 						Annotations: map[string]string{
 							"contour.heptio.com/num-retries": "7",
-							"contour.heptio.com/retry-on":    "gateway-error",
+							"projectcontour.io/retry-on":     "gateway-error",
 						},
 					},
 					Spec: v1beta1.IngressSpec{

@@ -809,7 +809,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"contour.heptio.com/retry-on": "5xx,gateway-error",
+							"projectcontour.io/retry-on": "5xx,gateway-error",
 						},
 					},
 					Spec: v1beta1.IngressSpec{
@@ -846,7 +846,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"contour.heptio.com/retry-on":   "5xx,gateway-error",
+							"projectcontour.io/retry-on":    "5xx,gateway-error",
 							"projectcontour.io/num-retries": "7", // not five or six or eight, but seven.
 						},
 					},
@@ -885,7 +885,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"contour.heptio.com/retry-on":    "5xx,gateway-error",
+							"projectcontour.io/retry-on":     "5xx,gateway-error",
 							"contour.heptio.com/num-retries": "7", // not five or six or eight, but seven.
 						},
 					},
@@ -923,7 +923,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"contour.heptio.com/retry-on":       "5xx,gateway-error",
+							"projectcontour.io/retry-on":        "5xx,gateway-error",
 							"projectcontour.io/per-try-timeout": "150ms",
 						},
 					},
@@ -961,7 +961,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"contour.heptio.com/retry-on":        "5xx,gateway-error",
+							"projectcontour.io/retry-on":         "5xx,gateway-error",
 							"contour.heptio.com/per-try-timeout": "150ms",
 						},
 					},
