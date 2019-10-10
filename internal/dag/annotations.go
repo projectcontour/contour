@@ -29,8 +29,7 @@ const (
 
 	// TODO(dfc) remove these deprecated forms after Contour 1.0.
 
-	annotationMaxRetries = "contour.heptio.com/max-retries"
-	annotationRetryOn    = "contour.heptio.com/retry-on"
+	annotationRetryOn = "contour.heptio.com/retry-on"
 )
 
 // compatAnnotation checks the Object for the given annotation, first with the
@@ -169,4 +168,8 @@ func maxPendingRequests(o Object) uint32 {
 
 func maxRequests(o Object) uint32 {
 	return parseUInt32(compatAnnotation(o, "max-requests"))
+}
+
+func maxRetries(o Object) uint32 {
+	return parseUInt32(compatAnnotation(o, "max-retries"))
 }
