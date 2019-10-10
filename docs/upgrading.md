@@ -34,7 +34,7 @@ See the [HTTPProxy documentation](./httpproxy.md) for more information.
 If the following are true for you:
 
  * Your previous installation is in the `heptio-contour` namespace.
- * You are using one of the [example](/example/) deployments.
+ * You are using one of the [example](/examples/) deployments.
  * Your cluster can take few minutes of downtime.
 
 Then the simplest way to upgrade to 1.0.0-beta.1 is to delete the `heptio-contour` namespace and reapply the `examples/contour` sample manifest.
