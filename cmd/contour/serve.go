@@ -110,6 +110,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 
 	serve.Flag("accesslog-format", "Format for Envoy access logs").StringVar(&ctx.AccessLogFormat)
 	serve.Flag("disable-leader-election", "Disable leader election mechanism").BoolVar(&ctx.DisableLeaderElection)
+
+	serve.Flag("use-extensions-v1beta1-ingress", "Subscribe to the deprecated extensions/v1beta1.Ingress type").BoolVar(&ctx.UseExtensionsV1beta1Ingress)
 	return serve, ctx
 }
 
@@ -168,7 +170,16 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 4. register our resource event handler with the k8s informers.
 	coreInformers.Core().V1().Services().Informer().AddEventHandler(eh)
-	coreInformers.Extensions().V1beta1().Ingresses().Informer().AddEventHandler(eh)
+
+	// After K8s 1.13 the API server will automatically translate extensions/v1beta1.Ingress objects
+	// to networking/v1beta1.Ingress objects so we should only listen for one type or the other.
+	// The default behavior is to listen for networking/v1beta1.Ingress objects and let the API server
+	// transparently upgrade the extensions version for us.
+	if ctx.UseExtensionsV1beta1Ingress {
+		coreInformers.Extensions().V1beta1().Ingresses().Informer().AddEventHandler(eh)
+	} else {
+		coreInformers.Networking().V1beta1().Ingresses().Informer().AddEventHandler(eh)
+	}
 	contourInformers.Contour().V1beta1().IngressRoutes().Informer().AddEventHandler(eh)
 	contourInformers.Contour().V1beta1().TLSCertificateDelegations().Informer().AddEventHandler(eh)
 	contourInformers.Projectcontour().V1().HTTPProxies().Informer().AddEventHandler(eh)

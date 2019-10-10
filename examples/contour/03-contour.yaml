@@ -37,6 +37,7 @@ spec:
       - args:
         - serve
         - --incluster
+        - --use-extensions-v1beta1-ingress
         - --xds-address=0.0.0.0
         - --xds-port=8001
         - --envoy-service-http-port=80
