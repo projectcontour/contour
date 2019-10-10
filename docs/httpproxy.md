@@ -771,7 +771,7 @@ Because the path is not necessarily used as the only key, the route space can be
 
 ### Conditions and Inclusion
 
-Like Routes, Inclusion may specify a set of [conditions](#conditions.
+Like Routes, Inclusion may specify a set of [conditions](#conditions).
 These conditions are added to any conditions on the routes included.
 This process is recursive.
 
