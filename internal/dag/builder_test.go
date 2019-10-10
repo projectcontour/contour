@@ -1558,10 +1558,10 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "kuard",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"projectcontour.io/max-connections":       "9000",
-				"contour.heptio.com/max-pending-requests": "4096",
-				"contour.heptio.com/max-requests":         "404",
-				"contour.heptio.com/max-retries":          "7",
+				"projectcontour.io/max-connections":      "9000",
+				"projectcontour.io/max-pending-requests": "4096",
+				"contour.heptio.com/max-requests":        "404",
+				"contour.heptio.com/max-retries":         "7",
 			},
 		},
 		Spec: v1.ServiceSpec{

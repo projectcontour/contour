@@ -321,57 +321,46 @@ func TestHttpAllowed(t *testing.T) {
 	}
 }
 
-func TestMaxConnections(t *testing.T) {
+func TestAnnotationCompat(t *testing.T) {
 	tests := map[string]struct {
-		svc    *v1.Service
-		maxCon uint32
+		svc   *v1.Service
+		value string
 	}{
-		"no max-connections": {
-			maxCon: 0,
+		"no annotations": {
+			value: "",
 			svc: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{},
 				},
 			},
 		},
-		"invalid max-connections": {
-			maxCon: 0,
+		"contour.heptio.com/annotation": {
+			value: "100",
 			svc: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"projectcontour.io/max-connections":  "foo",
-						"contour.heptio.com/max-connections": "100",
+						"contour.heptio.com/annotation": "100",
 					},
 				},
 			},
 		},
-		"contour.heptio.com/max-connections": {
-			maxCon: 100,
+		"projectcontour.io/annotation": {
+			value: "200",
 			svc: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"contour.heptio.com/max-connections": "100",
-					},
-				},
-			},
-		},
-		"projectcontour.io/max-connections": {
-			maxCon: 200,
-			svc: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"projectcontour.io/max-connections": "200",
+						"projectcontour.io/annotation": "200",
 					},
 				},
 			},
 		},
 		"projectcontour.io takes precedence": {
-			maxCon: 200,
+			value: "200",
 			svc: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"contour.heptio.com/max-connections": "100",
-						"projectcontour.io/max-connections":  "200",
+						"contour.heptio.com/annotation": "100",
+						"projectcontour.io/annotation":  "200",
 					},
 				},
 			},
@@ -380,8 +369,8 @@ func TestMaxConnections(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := maxConnections(tc.svc)
-			want := tc.maxCon
+			got := compatAnnotation(tc.svc, "annotation")
+			want := tc.value
 			if got != want {
 				t.Fatalf("got: %v, want: %v", got, want)
 			}

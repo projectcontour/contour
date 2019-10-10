@@ -29,10 +29,9 @@ const (
 
 	// TODO(dfc) remove these deprecated forms after Contour 1.0.
 
-	annotationMaxPendingRequests = "contour.heptio.com/max-pending-requests"
-	annotationMaxRequests        = "contour.heptio.com/max-requests"
-	annotationMaxRetries         = "contour.heptio.com/max-retries"
-	annotationRetryOn            = "contour.heptio.com/retry-on"
+	annotationMaxRequests = "contour.heptio.com/max-requests"
+	annotationMaxRetries  = "contour.heptio.com/max-retries"
+	annotationRetryOn     = "contour.heptio.com/retry-on"
 )
 
 // compatAnnotation checks the Object for the given annotation, first with the
@@ -163,4 +162,8 @@ func MinProtoVersion(version string) envoy_api_v2_auth.TlsParameters_TlsProtocol
 // '0' is returned if the annotation is absent or unparseable.
 func maxConnections(o Object) uint32 {
 	return parseUInt32(compatAnnotation(o, "max-connections"))
+}
+
+func maxPendingRequests(o Object) uint32 {
+	return parseUInt32(compatAnnotation(o, "max-pending-requests"))
 }

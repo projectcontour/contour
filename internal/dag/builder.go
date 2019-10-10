@@ -122,7 +122,7 @@ func (b *Builder) addService(svc *v1.Service, port *v1.ServicePort) *Service {
 
 		Protocol:           upstreamProtocol(svc, port),
 		MaxConnections:     maxConnections(svc),
-		MaxPendingRequests: parseUInt32(svc.Annotations[annotationMaxPendingRequests]),
+		MaxPendingRequests: maxPendingRequests(svc),
 		MaxRequests:        parseUInt32(svc.Annotations[annotationMaxRequests]),
 		MaxRetries:         parseUInt32(svc.Annotations[annotationMaxRetries]),
 		ExternalName:       externalName(svc),
