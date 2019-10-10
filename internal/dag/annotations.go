@@ -35,6 +35,19 @@ const (
 	annotationRetryOn            = "contour.heptio.com/retry-on"
 )
 
+// compatAnnotation checks the Object for the given annotation, first with the
+// "projectcontour.io/" prefix, and then with the "contour.heptio.com/" prefix
+// if that is not found.
+func compatAnnotation(o Object, key string) string {
+	a := o.GetObjectMeta().GetAnnotations()
+
+	if val, ok := a["projectcontour.io/"+key]; ok {
+		return val
+	}
+
+	return a["contour.heptio.com/"+key]
+}
+
 // parseUInt32 parses the supplied string as if it were a uint32.
 // If the value is not present, or malformed, or outside uint32's range, zero is returned.
 func parseUInt32(s string) uint32 {
@@ -101,20 +114,12 @@ func websocketRoutes(i *v1beta1.Ingress) map[string]bool {
 // numRetries returns the number of retries specified by the "contour.heptio.com/num-retries"
 // or "projectcontour.io/num-retries" annotation.
 func numRetries(i *v1beta1.Ingress) uint32 {
-	n := parseUInt32(i.Annotations["projectcontour.io/num-retries"])
-	if n == 0 {
-		// fallback to legacy annotation
-		n = parseUInt32(i.Annotations["contour.heptio.com/num-retries"])
-	}
-	return n
+	return parseUInt32(compatAnnotation(i, "num-retries"))
 }
 
 // perTryTimeout returns the duration envoy will wait per retry cycle.
 func perTryTimeout(i *v1beta1.Ingress) time.Duration {
-	if d, ok := i.Annotations["projectcontour.io/per-try-timeout"]; ok {
-		return parseTimeout(d)
-	}
-	return parseTimeout(i.Annotations["contour.heptio.com/per-try-timeout"])
+	return parseTimeout(compatAnnotation(i, "per-try-timeout"))
 }
 
 // ingressClass returns the first matching ingress class for the following
@@ -157,11 +162,5 @@ func MinProtoVersion(version string) envoy_api_v2_auth.TlsParameters_TlsProtocol
 //
 // '0' is returned if the annotation is absent or unparseable.
 func maxConnections(o Object) uint32 {
-	a := o.GetObjectMeta().GetAnnotations()
-
-	if m, ok := a["projectcontour.io/max-connections"]; ok {
-		return parseUInt32(m)
-	}
-
-	return parseUInt32(a["contour.heptio.com/max-connections"])
+	return parseUInt32(compatAnnotation(o, "max-connections"))
 }
