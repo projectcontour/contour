@@ -1587,7 +1587,7 @@ func TestDAGInsert(t *testing.T) {
 			Annotations: map[string]string{
 				"projectcontour.io/max-connections":      "9000",
 				"projectcontour.io/max-pending-requests": "4096",
-				"contour.heptio.com/max-requests":        "404",
+				"projectcontour.io/max-requests":         "404",
 				"contour.heptio.com/max-retries":         "7",
 			},
 		},

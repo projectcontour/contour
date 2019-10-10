@@ -236,7 +236,7 @@ func TestCluster(t *testing.T) {
 				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
-		"contour.heptio.com/max-requests": {
+		"projectcontour.io/max-requests": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
 					Name: s1.Name, Namespace: s1.Namespace,
