@@ -358,8 +358,35 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	// i10 specifies a minimum tls version
-	i10 := &v1beta1.Ingress{
+	i10a := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-rules",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"projectcontour.io/tls-minimum-protocol-version": "1.3",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			TLS: []v1beta1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: sec1.Name,
+			}},
+			Rules: []v1beta1.IngressRule{{
+				Host: "b.example.com",
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	i10b := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "two-rules",
 			Namespace: "default",
@@ -3321,7 +3348,36 @@ func TestDAGInsert(t *testing.T) {
 		},
 		"insert ingress w/ tls min proto annotation": {
 			objs: []interface{}{
-				i10,
+				i10a,
+				sec1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("b.example.com", prefixroute("/", service(s1))),
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "b.example.com",
+								routes: routes(
+									prefixroute("/", service(s1)),
+								),
+							},
+							MinProtoVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
+							Secret:          secret(sec1),
+						},
+					),
+				},
+			),
+		},
+		"insert ingress w/ legacy tls min proto annotation": {
+			objs: []interface{}{
+				i10b,
 				sec1,
 				s1,
 			},

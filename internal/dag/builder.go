@@ -268,7 +268,7 @@ func (b *Builder) computeSecureVirtualhosts() {
 				for _, host := range tls.Hosts {
 					svhost := b.lookupSecureVirtualHost(host)
 					svhost.Secret = sec
-					version := ing.Annotations["contour.heptio.com/tls-minimum-protocol-version"]
+					version := compatAnnotation(ing, "tls-minimum-protocol-version")
 					svhost.MinProtoVersion = MinProtoVersion(version)
 				}
 			}

@@ -33,7 +33,8 @@ The `ingress.kubernetes.io/force-ssl-redirect` annotation takes precedence over 
  - `contour.heptio.com/num-retries`: deprecated form of `projectcontour.io/num-retries`.
  - `projetcontour.io/per-try-timeout`: [The timeout per retry attempt](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-field-route-routeaction-retrypolicy-retry-on), if there should be one. Applies only if `contour.heptio.com/retry-on` is specified.
  - `contour.heptio.com/per-try-timeout`: deprecated form of `projectcontour.io/per-try-timeout`.
- - `contour.heptio.com/tls-minimum-protocol-version` : [The minimum TLS protocol version](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/auth/cert.proto#envoy-api-msg-auth-tlsparameters) the TLS listener should support.
+ - `projectcontour.io/tls-minimum-protocol-version`: [The minimum TLS protocol version](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/auth/cert.proto#envoy-api-msg-auth-tlsparameters) the TLS listener should support.
+ - `contour.heptio.com/tls-minimum-protocol-version`: deprecated form of `projectcontour.io/tls-minimum-protocol-version`.
  - `projectcontour.io/websocket-routes`: [The routes supporting websocket protocol](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto#envoy-api-field-route-routeaction-use-websocket), the annotation value contains a list of route paths separated by a comma that must match with the ones defined in the `Ingress` definition. Defaults to Envoy's default behavior which is `use_websocket` to `false`. The IngressRoute API has [first-class support for websockets](ingressroute.md#websocket-support).
  - `contour.heptio.com/websocket-routes`: deprecated form of `projectcontour.io/websocket-routes`.
 
