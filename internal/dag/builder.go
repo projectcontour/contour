@@ -124,7 +124,7 @@ func (b *Builder) addService(svc *v1.Service, port *v1.ServicePort) *Service {
 		MaxConnections:     maxConnections(svc),
 		MaxPendingRequests: maxPendingRequests(svc),
 		MaxRequests:        maxRequests(svc),
-		MaxRetries:         parseUInt32(svc.Annotations[annotationMaxRetries]),
+		MaxRetries:         maxRetries(svc),
 		ExternalName:       externalName(svc),
 	}
 	b.services[s.toMeta()] = s

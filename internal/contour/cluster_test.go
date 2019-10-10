@@ -772,7 +772,7 @@ func TestClusterVisit(t *testing.T) {
 						"projectcontour.io/max-connections":      "9000",
 						"projectcontour.io/max-pending-requests": "4096",
 						"projectcontour.io/max-requests":         "404",
-						"contour.heptio.com/max-retries":         "7",
+						"projectcontour.io/max-retries":          "7",
 					},
 					v1.ServicePort{
 						Protocol: "TCP",
