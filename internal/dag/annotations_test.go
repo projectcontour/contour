@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/projectcontour/contour/internal/assert"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -313,6 +314,74 @@ func TestHttpAllowed(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := httpAllowed(tc.i)
 			want := tc.valid
+			if got != want {
+				t.Fatalf("got: %v, want: %v", got, want)
+			}
+		})
+	}
+}
+
+func TestMaxConnections(t *testing.T) {
+	tests := map[string]struct {
+		svc    *v1.Service
+		maxCon uint32
+	}{
+		"no max-connections": {
+			maxCon: 0,
+			svc: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{},
+				},
+			},
+		},
+		"invalid max-connections": {
+			maxCon: 0,
+			svc: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"projectcontour.io/max-connections":  "foo",
+						"contour.heptio.com/max-connections": "100",
+					},
+				},
+			},
+		},
+		"contour.heptio.com/max-connections": {
+			maxCon: 100,
+			svc: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"contour.heptio.com/max-connections": "100",
+					},
+				},
+			},
+		},
+		"projectcontour.io/max-connections": {
+			maxCon: 200,
+			svc: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"projectcontour.io/max-connections": "200",
+					},
+				},
+			},
+		},
+		"projectcontour.io takes precedence": {
+			maxCon: 200,
+			svc: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"contour.heptio.com/max-connections": "100",
+						"projectcontour.io/max-connections":  "200",
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := maxConnections(tc.svc)
+			want := tc.maxCon
 			if got != want {
 				t.Fatalf("got: %v, want: %v", got, want)
 			}

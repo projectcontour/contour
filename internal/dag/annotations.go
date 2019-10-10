@@ -29,7 +29,6 @@ const (
 
 	// TODO(dfc) remove these deprecated forms after Contour 1.0.
 
-	annotationMaxConnections     = "contour.heptio.com/max-connections"
 	annotationMaxPendingRequests = "contour.heptio.com/max-pending-requests"
 	annotationMaxRequests        = "contour.heptio.com/max-requests"
 	annotationMaxRetries         = "contour.heptio.com/max-retries"
@@ -149,4 +148,20 @@ func MinProtoVersion(version string) envoy_api_v2_auth.TlsParameters_TlsProtocol
 		// any other value is interpreted as TLS/1.1
 		return envoy_api_v2_auth.TlsParameters_TLSv1_1
 	}
+}
+
+// maxConnections returns the value of the first matching max-connections
+// annotation for the following annotations:
+// 1. projectcontour.io/max-connections
+// 2. contour.heptio.com/max-connections
+//
+// '0' is returned if the annotation is absent or unparseable.
+func maxConnections(o Object) uint32 {
+	a := o.GetObjectMeta().GetAnnotations()
+
+	if m, ok := a["projectcontour.io/max-connections"]; ok {
+		return parseUInt32(m)
+	}
+
+	return parseUInt32(a["contour.heptio.com/max-connections"])
 }
