@@ -37,7 +37,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			i: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"contour.heptio.com/retry-on": "5xx",
+						"projectcontour.io/retry-on": "5xx",
 					},
 				},
 			},
@@ -49,7 +49,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			i: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"contour.heptio.com/retry-on":   "5xx",
+						"projectcontour.io/retry-on":    "5xx",
 						"projectcontour.io/num-retries": "0",
 					},
 				},
@@ -63,7 +63,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			i: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"contour.heptio.com/retry-on":    "5xx",
+						"projectcontour.io/retry-on":     "5xx",
 						"contour.heptio.com/num-retries": "0",
 					},
 				},
@@ -77,7 +77,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			i: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"contour.heptio.com/retry-on":   "5xx",
+						"projectcontour.io/retry-on":    "5xx",
 						"projectcontour.io/num-retries": "7",
 					},
 				},
@@ -91,7 +91,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			i: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"contour.heptio.com/retry-on":    "5xx",
+						"projectcontour.io/retry-on":     "5xx",
 						"contour.heptio.com/num-retries": "7",
 					},
 				},
@@ -105,7 +105,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			i: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"contour.heptio.com/retry-on":       "5xx",
+						"projectcontour.io/retry-on":        "5xx",
 						"projectcontour.io/per-try-timeout": "10s",
 					},
 				},
@@ -120,7 +120,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			i: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"contour.heptio.com/retry-on":        "5xx",
+						"projectcontour.io/retry-on":         "5xx",
 						"contour.heptio.com/per-try-timeout": "10s",
 					},
 				},
@@ -135,7 +135,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			i: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"contour.heptio.com/retry-on":       "5xx",
+						"projectcontour.io/retry-on":        "5xx",
 						"projectcontour.io/per-try-timeout": "0s",
 					},
 				},
@@ -150,7 +150,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			i: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"contour.heptio.com/retry-on":        "5xx",
+						"projectcontour.io/retry-on":         "5xx",
 						"contour.heptio.com/per-try-timeout": "0s",
 					},
 				},

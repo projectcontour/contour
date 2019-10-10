@@ -51,7 +51,7 @@ func TestRetryPolicy(t *testing.T) {
 			Name:      "hello",
 			Namespace: s1.Namespace,
 			Annotations: map[string]string{
-				"contour.heptio.com/retry-on":        "5xx,gateway-error",
+				"projectcontour.io/retry-on":         "5xx,gateway-error",
 				"contour.heptio.com/num-retries":     "7",
 				"contour.heptio.com/per-try-timeout": "120ms",
 			},
@@ -78,7 +78,7 @@ func TestRetryPolicy(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "hello", Namespace: "default",
 			Annotations: map[string]string{
-				"contour.heptio.com/retry-on":        "5xx,gateway-error",
+				"projectcontour.io/retry-on":         "5xx,gateway-error",
 				"projectcontour.io/num-retries":      "7",
 				"contour.heptio.com/per-try-timeout": "120ms",
 			},
@@ -105,7 +105,7 @@ func TestRetryPolicy(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "hello", Namespace: "default",
 			Annotations: map[string]string{
-				"contour.heptio.com/retry-on":       "5xx,gateway-error",
+				"projectcontour.io/retry-on":        "5xx,gateway-error",
 				"projectcontour.io/num-retries":     "7",
 				"projectcontour.io/per-try-timeout": "120ms",
 			},

@@ -23,15 +23,6 @@ import (
 	"k8s.io/api/extensions/v1beta1"
 )
 
-const (
-	// set docs/annotations.md for details of how these annotations
-	// are applied by Contour.
-
-	// TODO(dfc) remove these deprecated forms after Contour 1.0.
-
-	annotationRetryOn = "contour.heptio.com/retry-on"
-)
-
 // compatAnnotation checks the Object for the given annotation, first with the
 // "projectcontour.io/" prefix, and then with the "contour.heptio.com/" prefix
 // if that is not found.

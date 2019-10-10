@@ -654,7 +654,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "timeout",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"contour.heptio.com/retry-on":        "gateway-error",
+				"projectcontour.io/retry-on":         "gateway-error",
 				"projectcontour.io/num-retries":      "6",
 				"contour.heptio.com/per-try-timeout": "10s",
 			},
@@ -680,7 +680,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "timeout",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"contour.heptio.com/retry-on":        "gateway-error",
+				"projectcontour.io/retry-on":         "gateway-error",
 				"contour.heptio.com/num-retries":     "6",
 				"contour.heptio.com/per-try-timeout": "10s",
 			},
@@ -706,7 +706,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "timeout",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"contour.heptio.com/retry-on":       "gateway-error",
+				"projectcontour.io/retry-on":        "gateway-error",
 				"projectcontour.io/num-retries":     "6",
 				"projectcontour.io/per-try-timeout": "10s",
 			},
