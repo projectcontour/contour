@@ -184,7 +184,7 @@ func TestCluster(t *testing.T) {
 				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
-		"contour.heptio.com/max-connections": {
+		"projectcontour.io/max-connections": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
 					Name: s1.Name, Namespace: s1.Namespace,
