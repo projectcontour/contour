@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"k8s.io/api/extensions/v1beta1"
@@ -33,7 +34,6 @@ const (
 	annotationMaxRequests        = "contour.heptio.com/max-requests"
 	annotationMaxRetries         = "contour.heptio.com/max-retries"
 	annotationRetryOn            = "contour.heptio.com/retry-on"
-	annotationPerTryTimeout      = "contour.heptio.com/per-try-timeout"
 )
 
 // parseUInt32 parses the supplied string as if it were a uint32.
@@ -108,6 +108,14 @@ func numRetries(i *v1beta1.Ingress) uint32 {
 		n = parseUInt32(i.Annotations["contour.heptio.com/num-retries"])
 	}
 	return n
+}
+
+// perTryTimeout returns the duration envoy will wait per retry cycle.
+func perTryTimeout(i *v1beta1.Ingress) time.Duration {
+	if d, ok := i.Annotations["projectcontour.io/per-try-timeout"]; ok {
+		return parseTimeout(d)
+	}
+	return parseTimeout(i.Annotations["contour.heptio.com/per-try-timeout"])
 }
 
 // ingressClass returns the first matching ingress class for the following

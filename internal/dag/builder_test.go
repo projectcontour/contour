@@ -674,6 +674,32 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+	i14c := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/retry-on":       "gateway-error",
+				"projectcontour.io/num-retries":     "6",
+				"projectcontour.io/per-try-timeout": "10s",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "/",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
 
 	i15 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -3613,6 +3639,29 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"insert ingressroute with timeout policy": {
+			objs: []interface{}{
+				i14c,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", &Route{
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s1),
+							RetryPolicy: &RetryPolicy{
+								RetryOn:       "gateway-error",
+								NumRetries:    6,
+								PerTryTimeout: 10 * time.Second,
+							},
+						}),
+					),
+				},
+			),
+		},
+
 		"insert ingress with regex route": {
 			objs: []interface{}{
 				i15,

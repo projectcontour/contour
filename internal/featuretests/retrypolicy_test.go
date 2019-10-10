@@ -101,7 +101,34 @@ func TestRetryPolicy(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	rh.OnDelete(i2)
+	i3 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "hello", Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/retry-on":       "5xx,gateway-error",
+				"projectcontour.io/num-retries":     "7",
+				"projectcontour.io/per-try-timeout": "120ms",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend(s1),
+		},
+	}
+	rh.OnUpdate(i2, i3)
+
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("*",
+					envoy.Route(envoy.RoutePrefix("/"), withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 7, 120*time.Millisecond)),
+				),
+			),
+			envoy.RouteConfiguration("ingress_https"),
+		),
+		TypeUrl: routeType,
+	})
+
+	rh.OnDelete(i3)
 
 	ir1 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
