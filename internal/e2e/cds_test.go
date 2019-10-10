@@ -497,7 +497,7 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 		map[string]string{
 			"projectcontour.io/max-connections":      "9000",
 			"projectcontour.io/max-pending-requests": "4096",
-			"contour.heptio.com/max-requests":        "404",
+			"projectcontour.io/max-requests":         "404",
 			"contour.heptio.com/max-retries":         "7",
 		},
 		v1.ServicePort{
@@ -543,7 +543,7 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 		"kuard",
 		map[string]string{
 			"projectcontour.io/max-pending-requests": "9999",
-			"contour.heptio.com/max-requests":        "1e6",
+			"projectcontour.io/max-requests":         "1e6",
 			"contour.heptio.com/max-retries":         "0",
 		},
 		v1.ServicePort{
