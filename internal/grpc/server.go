@@ -19,14 +19,20 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/grpc-ecosystem/go-grpc-prometheus"
+
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	loadstats "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
 	"github.com/sirupsen/logrus"
 )
 
+var ServerMetrics = grpc_prometheus.NewServerMetrics()
+
 // NewAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
 func NewAPI(log logrus.FieldLogger, resources map[string]Resource, opts ...grpc.ServerOption) *grpc.Server {
+	opts = append(opts, grpc.StreamInterceptor(ServerMetrics.StreamServerInterceptor()),
+		grpc.UnaryInterceptor(ServerMetrics.UnaryServerInterceptor()))
 	g := grpc.NewServer(opts...)
 	s := &grpcServer{
 		xdsHandler{
@@ -40,6 +46,7 @@ func NewAPI(log logrus.FieldLogger, resources map[string]Resource, opts ...grpc.
 	v2.RegisterListenerDiscoveryServiceServer(g, s)
 	v2.RegisterRouteDiscoveryServiceServer(g, s)
 	discovery.RegisterSecretDiscoveryServiceServer(g, s)
+	ServerMetrics.InitializeMetrics(g)
 	return g
 }
 
