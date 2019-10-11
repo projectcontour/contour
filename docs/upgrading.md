@@ -2,6 +2,140 @@
 
 This document describes the changes needed to upgrade your Contour installation.
 
+## Upgrading Contour 1.0.0-beta.1 to 1.0.0-rc.1
+
+Contour 1.0.0-rc.1 moves HTTPProxy to v1 and continues polishing the release towards the Contour 1.0 release.
+
+### Release candidate
+
+Contour 0.15.1 remains the current stable release.
+The `:latest` tag will continue to point to 0.15.1 until Contour 1.0.0 is released.
+
+### HTTPProxy v1
+
+Contour 1.0.0-rc.1 promotes the HTTPProxy CRD to v1.
+HTTPProxy is now considered stable, there will only be additive changes in the future.
+
+See the [HTTPProxy documentation](./httpproxy.md) for more information.
+
+### `contour.heptio.com` annotations deprecated
+
+All the annotations with the prefix `contour.heptio.com` have been migrated to their respective `projectcontour.io` counterparts.
+The deprecated `contour.heptio.com` annotations will be recognized through the Contour 1.0 release, but are planned to be removed after Contour 1.0.
+
+See the [annotation documentation](./annotations.md) for more information.
+
+## The easy way to upgrade
+
+If the following are true for you:
+
+ * Your previous installation is in the `projectcontour` namespace.
+ * You are using one of the [example](/examples/) deployments.
+ * Your cluster can take few minutes of downtime.
+
+Then the simplest way to upgrade to 1.0.0-rc.1 is to delete the `projectcontour` namespace and reapply the `examples/contour` sample manifest.
+From the root directory of the repository:
+```
+kubectl delete namespace projectcontour
+
+kubectl apply -f examples/contour
+```
+
+If you're using a `LoadBalancer` Service, deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address](./deploy-options.md#get_your_hostname_or_ip_address).
+
+## The less easy way
+
+This section contains information for administrators who wish to apply the Contour 1.0.0-beta.1 to Contour 1.0.0-rc.1 changes manually.
+
+### Upgrade to Contour 1.0.0-rc.1
+
+Change the Contour image version to `docker.io/projectcontour/contour:v1.0.0-rc.1`.
+
+### Recommended Envoy version
+
+The recommended version of Envoy remains unchanged.
+Ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.11.2`.
+
+### projectcontour.io/v1 group version
+
+Contour 1.0.0-rc.1 moves the HTTPProxy CRD from `projectcontour.io/v1alpha1` to `projectcontour.io/v1`.
+Contour will no longer recognize the former group version.
+Please edit your HTTPProxy documents to update their group verision to `projectcontour.io/v1`.
+
+### HTTPProxy v1 schema changes
+
+As part of finalizing the HTTPProxy v1 schema, three breaking changes have been introduced.
+
+#### Per service heath checking has moved to per route
+
+The per service health check key, `healthcheck` has moved to per route and has been renamed `healthCheckPolicy`.
+
+Before:
+```yaml
+spec:
+  routes:
+  - conditions:
+    - prefix: /
+    services:
+    - name: www
+      port: 80
+      healthcheck:
+      - path: /healthy
+        intervalSeconds: 5
+        timeoutSeconds: 2
+        unhealthyThresholdCount: 3
+        healthyThresholdCount: 5
+```
+After:
+```yaml
+spec:
+  routes:
+  - conditions:
+    - prefix: /
+    healthCheckPolicy:
+    - path: /healthy
+      intervalSeconds: 5
+      timeoutSeconds: 2
+      unhealthyThresholdCount: 3
+      healthyThresholdCount: 5
+    services:
+    - name: www
+      port: 80
+```
+#### Per service load balancer strategy has moved to per route
+
+The per service load balancer strategy key, `strategy` has moved to per route and has been renamed `loadBalancerPolicy`.
+
+Before:
+```yaml
+spec:
+  routes:
+  - conditions:
+    - prefix: /
+    services:
+    - name: www
+      port: 80
+      stategy: WeightedLeastRequest
+```
+After:
+```yaml
+spec:
+  routes:
+  - conditions:
+    - prefix: /
+    loadBalancerPolicy:
+      strategy: WeightedLeastRequest
+    services:
+    - name: www
+      port: 80
+```
+#### Per route prefix rewrite has been removed
+
+The per route prefix rewrite key, `prefixRewrite` has been removed.
+
+See #899 for the status of its replacement.
+
 ## Upgrading Contour 0.15.x to 1.0.0-beta.1
 
 Contour 1.0.0-beta.1 changes the namespace Contour is deployed to, promotes leader election to on by default, and introduces a new version of the IngressRoute CRD, now called HTTPProxy.
@@ -68,8 +202,8 @@ Change the Contour image version to `docker.io/projectcontour/contour:v1.0.0-bet
 
 ### Recommended Envoy version
 
-The recommended version of Envoy remains unchanged from Contour 0.15.
-Ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.11.1`.
+The recommended version of Envoy remains unchanged from Contour 0.15.1.
+Ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.11.2`.
 
 ### Split deployment/daemonset now the default
 
