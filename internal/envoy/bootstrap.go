@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package envoy contains APIs for translating between Contour
+// objects and Envoy configuration APIs and types.
 package envoy
 
 import (
