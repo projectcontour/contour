@@ -263,7 +263,7 @@ spec:
     spec:
       containers:
       - name: contour
-        image: docker.io/projectcontour/contour:master
+        image: docker.io/projectcontour/contour:v1.0.0-rc.1
         imagePullPolicy: Always
         command:
         - contour
@@ -483,7 +483,7 @@ spec:
         - --contour-key-file=/certs/tls.key
         - --config-path=/config/contour.yaml
         command: ["contour"]
-        image: docker.io/projectcontour/contour:master
+        image: docker.io/projectcontour/contour:v1.0.0-rc.1
         imagePullPolicy: Always
         name: contour
         ports:
@@ -626,7 +626,7 @@ spec:
         - --envoy-key-file=/certs/tls.key
         command:
         - contour
-        image: docker.io/projectcontour/contour:master
+        image: docker.io/projectcontour/contour:v1.0.0-rc.1
         imagePullPolicy: Always
         name: envoy-initconfig
         volumeMounts:
