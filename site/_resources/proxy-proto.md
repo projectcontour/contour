@@ -1,4 +1,7 @@
-# EC2 ELB PROXY protocol support
+---
+title: PROXY v1/v2 protocol support
+layout: page
+---
 
 If you deploy Contour as a Deployment or Daemonset, you will likely use a `type: LoadBalancer` Service to request an [external load balancer][1] from your hosting provider.
 If you use the Elastic Load Balancer (ELB) service from Amazon's EC2, you need to perform a couple of additional steps to enable the [PROXY][0] protocol. Here's why:

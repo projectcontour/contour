@@ -48,8 +48,12 @@ defaults:
 repository: projectcontour/contour
 
 collections:
-  - contributors
-  - casestudies
+  resources:
+    output: true
+  contributors:
+    output: false
+  casestudies:
+    output: false
 
 # Build settings
 permalink: :title/
@@ -85,6 +89,6 @@ exclude:
   - CNAME
   - Runbook.docx
   - '*.sh'
-  - vendor/
+  - vendor
 redcarpet:
     extensions: ["no_intra_emphasis", "tables", "autolink", "strikethrough", "with_toc_data"]

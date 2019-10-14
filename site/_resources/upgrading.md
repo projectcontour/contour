@@ -1,4 +1,7 @@
-# Upgrading Contour
+---
+title: Upgrading Contour
+layout: page
+---
 
 This document describes the changes needed to upgrade your Contour installation.
 
@@ -16,21 +19,21 @@ The `:latest` tag will continue to point to 0.15.1 until Contour 1.0.0 is releas
 Contour 1.0.0-rc.1 promotes the HTTPProxy CRD to v1.
 HTTPProxy is now considered stable, there will only be additive changes in the future.
 
-See the [HTTPProxy documentation](./httpproxy.md) for more information.
+See the [HTTPProxy documentation]({{ site.github.repository_url }}/blob/v1.0.0-rc.1/docs/httpproxy.md) for more information.
 
 ### `contour.heptio.com` annotations deprecated
 
 All the annotations with the prefix `contour.heptio.com` have been migrated to their respective `projectcontour.io` counterparts.
 The deprecated `contour.heptio.com` annotations will be recognized through the Contour 1.0 release, but are planned to be removed after Contour 1.0.
 
-See the [annotation documentation](./annotations.md) for more information.
+See the [annotation documentation]({{ site.github.repository_url }}/blog/v1.0.0-rc.1/docs/annotations.md) for more information.
 
 ## The easy way to upgrade
 
 If the following are true for you:
 
  * Your previous installation is in the `projectcontour` namespace.
- * You are using one of the [example](/examples/) deployments.
+ * You are using one of the [example]({{ site.github.repository_url }}/blob/v1.0.0-rc.1/examples/) deployments.
  * Your cluster can take few minutes of downtime.
 
 Then the simplest way to upgrade to 1.0.0-rc.1 is to delete the `projectcontour` namespace and reapply the `examples/contour` sample manifest.
@@ -42,7 +45,7 @@ kubectl apply -f examples/contour
 ```
 
 If you're using a `LoadBalancer` Service, deleting and recreating may change the public IP assigned by your cloud provider.
-You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address](./deploy-options.md#get_your_hostname_or_ip_address).
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address]({% link _resources/deploy-options.md %}#get_your_hostname_or_ip_address).
 
 ## The less easy way
 
@@ -72,6 +75,7 @@ As part of finalizing the HTTPProxy v1 schema, three breaking changes have been 
 The per service health check key, `healthcheck` has moved to per route and has been renamed `healthCheckPolicy`.
 
 Before:
+
 ```yaml
 spec:
   routes:
@@ -88,6 +92,7 @@ spec:
         healthyThresholdCount: 5
 ```
 After:
+
 ```yaml
 spec:
   routes:
@@ -108,6 +113,7 @@ spec:
 The per service load balancer strategy key, `strategy` has moved to per route and has been renamed `loadBalancerPolicy`.
 
 Before:
+
 ```yaml
 spec:
   routes:
@@ -119,6 +125,7 @@ spec:
       stategy: WeightedLeastRequest
 ```
 After:
+
 ```yaml
 spec:
   routes:
@@ -161,14 +168,14 @@ Contour will continue to recognize IngressRoute v1beta1 through Contour 1.0.0 fi
 
 The replacement for IngressRoute which we have called HTTPProxy is available in Contour 1.0.0-beta.1 and is anticipated to be declared final by Contour 1.0.0.
 
-See the [HTTPProxy documentation](./httpproxy.md) for more information.
+See the [HTTPProxy documentation]({{ site.github.repository_url }}/blob/v1.0.0-beta.1/docs/httpproxy.md) for more information.
 
 ## The easy way to upgrade
 
 If the following are true for you:
 
  * Your previous installation is in the `heptio-contour` namespace.
- * You are using one of the [example](/examples/) deployments.
+ * You are using one of the [example]({{ site.github.repository_url }}/blob/v1.0.0-beta.1/examples/) deployments.
  * Your cluster can take few minutes of downtime.
 
 Then the simplest way to upgrade to 1.0.0-beta.1 is to delete the `heptio-contour` namespace and reapply the `examples/contour` sample manifest.
@@ -181,7 +188,7 @@ kubectl apply -f examples/contour
 Note that `examples/contour` now deploys into the `projectcontour` namespace.
 
 If you're using a `LoadBalancer` Service, deleting and recreating may change the public IP assigned by your cloud provider.
-You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address](./deploy-options.md#get_your_hostname_or_ip_address).
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address]({% link _resources/deploy-options.md %}#get_your_hostname_or_ip_address).
 
 ## The less easy way
 
@@ -210,7 +217,7 @@ Ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.11.2`.
 We have changed the example installation to use a separate pod installation, where Contour is in a Deployment and Envoy is in a Daemonset.
 Separated pod installations separate the lifecyle of Contour and Envoy, increasing operability.
 Because of this, we are marking the single pod install type as officially deprecated.
-If you are still running a single pod install type, please review the [`contour` example](../examples/contour/README.md) and either adapt it or use it directly.
+If you are still running a single pod install type, please review the [`contour` example]({{ site.github.repository_url }}/blob/v1.0.0-beta.1/examples/contour/README.md) and either adapt it or use it directly.
 
 ### Leader Election
 
@@ -218,7 +225,7 @@ Contour 1.0.0-beta.1 enables leader election by default.
 No specific configuration is required if you are using the [example deployment](../examples/contour/README.md).
 
 Leader election requires that Contour have write access to a ConfigMap called `leader-elect` in the project-contour namespace.
-This is done with the [contour-leaderelection Role](https://github.com/projectcontour/contour/blob/master/examples/contour/02-rbac.yaml#L71) in the [example RBAC](../examples/contour/02-rbac.yaml).
+This is done with the [contour-leaderelection Role]({{ site.github.repository_url }}/blob/v1.0.0-beta.1/examples/contour/02-rbac.yaml#L71) in the [example RBAC]({{ site.github.repository_url }}/blob/v1.0.0-beta.1/examples/contour/02-rbac.yaml).
 The namespace and name of the configmap are configurable via the configuration file.
 
 The leader election no longer blocks serving of gRPC until an instance becomes the leader.
@@ -266,7 +273,7 @@ Please see the [Envoy Release Notes](https://www.envoyproxy.io/docs/envoy/v1.11.
 If the following are true for you:
 
  * Your installation is in the `heptio-contour` namespace.
- * You are using one of the [example](/example/) deployments.
+ * You are using one of the [example]({{ site.github.repository_url }}/blob/v0.15.1/examples/) deployments.
  * Your cluster can take few minutes of downtime.
 
 Then the simplest way to upgrade to 0.15.1 is to delete the `heptio-contour` namespace and reapply one of the example configurations.
@@ -277,7 +284,7 @@ kubectl delete namespace heptio-contour
 kubectl apply -f examples/<your-desired-deployment>
 ```
 If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
-You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address](./deploy-options.md#get_your_hostname_or_ip_address).
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address]({% link _resources/deploy-options.md %}#get_your_hostname_or_ip_address).
 
 ### Note
 
@@ -304,7 +311,7 @@ There is a Job in the `ds-hostnet-split` directory that will use the new `contou
 to generate a CA and then sign Contour and Envoy keypairs, which can also then be saved directly
 to Kubernetes as Secrets, ready to be mounted into your Contour and Envoy Deployments and Daemonsets.
 
-If you would like more detail, see (grpc-tls-howto.md)[./grpc-tls-howto.md], which explains your options.
+If you would like more detail, see [grpc-tls-howto.md]({% link _resources/grpc-tls-howto.md %}), which explains your options.
 
 ### Upgrade to Envoy 1.11.2
 
@@ -330,7 +337,8 @@ In order for leader election to work, you must make the following changes to you
 - The Contour Deployment must have its readiness probe changed too TCP readiness probe
 configured to check port 8001 (the gRPC port), as non-leaders will not serve gRPC, and
 Envoys may not be properly configured if they attempt to connect to a non-leader Contour.
-That is, you will need to change
+That is, you will need to change:
+
 ```
         readinessProbe:
           httpGet:
@@ -338,6 +346,7 @@ That is, you will need to change
             port: 8000
 ```
 to
+
 ```
         readinessProbe:
           tcpSocket:
@@ -349,6 +358,7 @@ inside the Pod spec.
 - The update strategy for the Contour deployment must be changed to `Recreate` instead of
 `RollingUpdate`, as pods will never become Ready (since they won't pass the readiness probe).
 Add
+
 ```
   strategy:
     type: Recreate

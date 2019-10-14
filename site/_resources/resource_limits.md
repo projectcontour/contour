@@ -1,4 +1,7 @@
-# Contour / Envoy Resource Limits
+---
+title: Contour / Envoy Resource Limits
+layout: page
+---
 
 ## Performance Testing Contour / Envoy
 

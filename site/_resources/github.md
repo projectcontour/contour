@@ -1,4 +1,7 @@
-# GitHub workflows
+---
+title: GitHub contribution workflow
+layout: page
+---
 
 This document outlines how we use GitHub.
 
@@ -14,9 +17,12 @@ Issues which are not assigned to the current milestone _should not be worked on_
 
 This project has three levels of priority:
 
-- p0 - Must fix immediately. This is reserved for bugs and security issues. A milestone cannot ship with open p0 issues.
-- p1 - Should be done. p1 issues assigned to a milestone _should_ be completed during that milestone.
-- p2 - May be done. p2 issues assigned to a milestone _may_ be completed during that milestone if time permits. 
+- p0 - Must fix immediately.
+This is reserved for bugs and security issues. A milestone cannot ship with open p0 issues.
+- p1 - Should be done.
+p1 issues assigned to a milestone _should_ be completed during that milestone.
+- p2 - May be done.
+p2 issues assigned to a milestone _may_ be completed during that milestone if time permits. 
 
 Issues without a priority are _unprioritised_. Priority will be assigned by a PM or release manager during issue triage.
 
@@ -70,7 +76,6 @@ All PRs should reference the issue they relate to either by one of the following
 If there is no `Updates` or `Fixes` line in the PR the review will, with the exception of trivial or self evident fixes, be deferred.
 
 [Further reading](https://dave.cheney.net/2019/02/18/talk-then-code)
-
 
 ## Help wanted and good first issues
 

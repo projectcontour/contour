@@ -1,4 +1,7 @@
-# Making a Contour release
+---
+title: Release process
+layout: page
+---
 
 This page documents the process for releasing a new version of Contour.
 
