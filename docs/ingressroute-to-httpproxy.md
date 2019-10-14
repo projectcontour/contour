@@ -69,7 +69,7 @@ spec:
     fqdn: example.com
     tls:
       secretName: tlssecret
-      minimumProtocolVersion: 1.3
+      minimumProtocolVersion: "1.3"
 ```
 
 ### Upstream TLS validation
