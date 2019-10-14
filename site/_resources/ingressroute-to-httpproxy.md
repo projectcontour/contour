@@ -1,8 +1,11 @@
-# IngressRoute to HTTPProxy
+---
+title: IngressRoute to HTTPProxy
+layout: page
+---
 
 This document describes the differences between IngressRoute and HTTPProxy.
 It is intended for Contour users who have existing IngressRoute resources they wish to migrate to HTTPProxy.
-It is not intended a comprehensive documentation of HTTPProxy, for that please see the [`HTTPProxy` documentation](./httpproxy.md).
+It is not intended a comprehensive documentation of HTTPProxy, for that please see the [`HTTPProxy` documentation]({{ site.github.repository_url }}/tree/master/docs/httpproxy.md).
 
 _Note: IngressRoute is deprecated and will be removed after Contour 1.0 ships in November._
 
@@ -18,6 +21,7 @@ apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
 ```
 After:
+
 ```yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
@@ -28,6 +32,7 @@ kind: HTTPProxy
 No change.
 
 Before:
+
 ```yaml
 apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
@@ -41,6 +46,7 @@ spec:
       secretName: tlssecret
 ```
 After:
+
 ```yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
@@ -100,6 +106,7 @@ The group and version of the TLSCertificateDelegation CRD have changed.
 `contour.heptio.com/v1beta1.TLSCertificateDelegation` will be removed after Contour 1.0 ships in November.
 
 Before:
+
 ```yaml
 apiVersion: contour.heptio.com/v1beta1
 kind: TLSCertificateDelegation
@@ -113,6 +120,7 @@ spec:
       - example-com
 ```
 After:
+
 ```yaml
 apiVersion: projectcontour.io/v1
 kind: TLSCertificateDelegation
@@ -130,9 +138,10 @@ spec:
 
 HTTPProxy offers additional ways to match incoming requests to routes.
 This document covers the conversion between the routing offered in IngressRoute and HTTPProxy.
-For a broader discussion of HTTPProxy routing, see the [Routing section of the HTTPProxy documentation](./httpproxy.md#Routing).
+For a broader discussion of HTTPProxy routing, see the [Routing section of the HTTPProxy documentation]({{ site.github.repository_url }}/tree/master/docs/httpproxy.md#Routing).
 
 Before:
+
 ```yaml
 apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
@@ -153,6 +162,7 @@ spec:
           port: 80
 ```
 After:
+
 ```yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
@@ -188,6 +198,7 @@ No change.
 `routes.timeoutPolicy.request` has been renamed to `routes.timeoutPolicy.response` to more accurately reflect is the timeout for the response.
 
 Before:
+
 ```yaml
 apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
@@ -206,6 +217,7 @@ spec:
       port: 80
 ```
 After:
+
 ```yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
@@ -237,6 +249,7 @@ See #899
 Per service load balancing strategy has moved to a per route strategy that applies to all services for that route.
 
 Before:
+
 ```yaml
 apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
@@ -257,6 +270,7 @@ spec:
           strategy: WeightedLeastRequest
 ```
 After:
+
 ```yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
@@ -285,6 +299,7 @@ See above.
 Per service health check has moved to a per route health check that applies to all services for that route.
 
 Before:
+
 ```yaml
 apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
@@ -309,6 +324,7 @@ spec:
           port: 80
 ```
 After:
+
 ```yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
@@ -353,9 +369,10 @@ As we explored the design of the next revision of IngressRoute the tight couplin
 
 This Gordian Knot was severed by decoupling the inclusion of one document into its parent from the facility to place restrictions on what route matching conditions could be specified in that document.
 The former we call _inclusion_, the latter are known as _conditions_.
-This section discusses conversion from delegation to inclusion, please see the [`HTTPProxy` documentation](./httpproxy.md) for a discussion of conditions.
+This section discusses conversion from delegation to inclusion, please see the [`HTTPProxy` documentation]({{ site.github.repository_url }}/tree/master/docs/httpproxy.md) for a discussion of conditions.
 
 Before:
+
 ```yaml
 # root.ingressroute.yaml
 apiVersion: contour.heptio.com/v1beta1
@@ -394,6 +411,7 @@ spec:
           port: 80
 ```
 After:
+
 ```yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
@@ -451,7 +469,7 @@ Orphaned status will be reported on _child_ HTTPProxy objects that are not inclu
 
 The `--ingressroute-root-namespace` flag has been renamed to `--root-namespaces` for obvious reasons.
 The old name is deprecated and will be removed after Contour 1.0 is released.
-See the [upgrading documentation](./upgrading.md) for more information on upgrading from Contour 0.15.0 to 1.0.0-beta.1
+See the [upgrading documentation]({% link _resources/upgrading.md %}) for more information on upgrading from Contour 0.15.0 to 1.0.0-beta.1
 
 ### TCP Proxying
 

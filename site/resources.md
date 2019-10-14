@@ -4,7 +4,13 @@ title: Resources
 description: Contour Resources
 id: resources
 ---
-Here you will find external resources about Contour, such as videos, podcasts, and community articles.
+## Resources
+
+{% for resource in site.resources %}
+- [{{ resource.title }}]({{ resource.url }})
+{% endfor %}
+
+## Presentations
 
 * Contour – High performance ingress controller for Kubernetes (October, 2019)
 
