@@ -1,7 +1,8 @@
 ---
-title: gRPC TLS configuration
+title: Enabling TLS between Envoy and Contour
 layout: page
 ---
+This document describes the steps required to secure communication between Envoy and Contour.
 
 ## Outcomes
 

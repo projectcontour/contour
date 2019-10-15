@@ -1,5 +1,5 @@
 ---
-title: PROXY v1/v2 protocol support
+title: How to Configure PROXY v1/v2 Support
 layout: page
 ---
 

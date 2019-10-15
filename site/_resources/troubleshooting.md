@@ -87,4 +87,4 @@ Replace `contour cli lds` with `contour cli rds` for RDS, `contour cli cds` for 
 
 ## I've deployed on Minikube or kind and nothing seems to work
 
-See [the deployment documentation]({% link _resources/deploy-options.md %}) for some tips on using these two deployment options successfully.
+See [the deployment documentation]({% link _guides/deploy-options.md %}) for some tips on using these two deployment options successfully.

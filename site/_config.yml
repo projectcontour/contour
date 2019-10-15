@@ -48,6 +48,8 @@ defaults:
 repository: projectcontour/contour
 
 collections:
+  guides:
+    output: true
   resources:
     output: true
   contributors:
