@@ -119,7 +119,7 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 		ch.ListenerCache.TypeURL(): &ch.ListenerCache,
 		ch.SecretCache.TypeURL():   &ch.SecretCache,
 		et.TypeURL():               et,
-	})
+	}, r)
 
 	var g workgroup.Group
 

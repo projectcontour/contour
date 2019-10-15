@@ -216,7 +216,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	registry.MustRegister(prometheus.NewGoCollector())
-	registry.MustRegister(cgrpc.ServerMetrics)
 
 	// step 9. create metrics service and register with workgroup.
 	metricsvc := metrics.Service{
@@ -289,7 +288,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			et.TypeURL():                            et,
 		}
 		opts := ctx.grpcOptions()
-		s := cgrpc.NewAPI(log, resources, opts...)
+		s := cgrpc.NewAPI(log, resources, registry, opts...)
 		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
 		l, err := net.Listen("tcp", addr)
 		if err != nil {
