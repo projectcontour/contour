@@ -50,35 +50,63 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 }
 
 func validateCertificate(data []byte) error {
-	cert, err := decodePEM(data)
-	if err != nil {
-		return err
+	var exists bool
+	for len(data) > 0 {
+		var block *pem.Block
+		block, data = pem.Decode(data)
+		if block == nil {
+			return errors.New("failed to parse PEM block")
+		}
+		if block.Type != "CERTIFICATE" {
+			return errors.New("unexpected block type in certificate: " + block.Type)
+		}
+		if _, err := x509.ParseCertificate(block.Bytes); err != nil {
+			return err
+		}
+		exists = true
 	}
-	_, err = x509.ParseCertificate(cert.Bytes)
-	return err
+	if !exists {
+		return errors.New("failed to locate certificate")
+	}
+	return nil
 }
 
 func validatePrivateKey(data []byte) error {
-	key, err := decodePEM(data)
-	if err != nil {
+	var keys int
+	for len(data) > 0 {
+		var block *pem.Block
+		block, data = pem.Decode(data)
+		if block == nil {
+			return errors.New("failed to parse PEM block")
+		}
+		switch block.Type {
+		case "PRIVATE KEY":
+			if _, err := x509.ParsePKCS8PrivateKey(block.Bytes); err == nil {
+				return err
+			}
+			keys++
+		case "RSA PRIVATE KEY":
+			if _, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil {
+				return err
+			}
+			keys++
+		case "EC PRIVATE KEY":
+			if _, err := x509.ParseECPrivateKey(block.Bytes); err != nil {
+				return err
+			}
+			keys++
+		case "EC PARAMETERS":
+			// ignored
+		default:
+			return errors.New("unexpected block type in private key: " + block.Type)
+		}
+	}
+	switch keys {
+	case 0:
+		return errors.New("failed to locate private key")
+	case 1:
 		return nil
+	default:
+		return errors.New("multiple private keys")
 	}
-	if _, err := x509.ParsePKCS1PrivateKey(key.Bytes); err == nil {
-		return nil
-	}
-	if _, err := x509.ParsePKCS8PrivateKey(key.Bytes); err == nil {
-		return nil
-	}
-	if _, err := x509.ParseECPrivateKey(key.Bytes); err == nil {
-		return nil
-	}
-	return errors.New("unknown private key encoding")
-}
-
-func decodePEM(in []byte) (*pem.Block, error) {
-	block, _ := pem.Decode(in)
-	if block == nil {
-		return nil, errors.New("failed to parse PEM")
-	}
-	return block, nil
 }
