@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometheus-alertmanager
-  namespace: contour-monitoring
+  namespace: projectcontour-monitoring
 data:
   alertmanager.yml: |-
     global:
