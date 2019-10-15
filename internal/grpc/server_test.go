@@ -199,13 +199,14 @@ func TestGRPC(t *testing.T) {
 				Metrics:      ch.Metrics,
 				FieldLogger:  log,
 			}
+			r := prometheus.NewRegistry()
 			srv := NewAPI(log, map[string]Resource{
 				ch.ClusterCache.TypeURL():  &ch.ClusterCache,
 				ch.RouteCache.TypeURL():    &ch.RouteCache,
 				ch.ListenerCache.TypeURL(): &ch.ListenerCache,
 				ch.SecretCache.TypeURL():   &ch.SecretCache,
 				et.TypeURL():               et,
-			})
+			}, r)
 			l, err := net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)
 			done := make(chan error, 1)
