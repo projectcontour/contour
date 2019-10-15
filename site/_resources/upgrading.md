@@ -45,7 +45,7 @@ kubectl apply -f examples/contour
 ```
 
 If you're using a `LoadBalancer` Service, deleting and recreating may change the public IP assigned by your cloud provider.
-You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address]({% link _resources/deploy-options.md %}#get_your_hostname_or_ip_address).
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address]({% link _guides/deploy-options.md %}#get_your_hostname_or_ip_address).
 
 ## The less easy way
 
@@ -188,7 +188,7 @@ kubectl apply -f examples/contour
 Note that `examples/contour` now deploys into the `projectcontour` namespace.
 
 If you're using a `LoadBalancer` Service, deleting and recreating may change the public IP assigned by your cloud provider.
-You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address]({% link _resources/deploy-options.md %}#get_your_hostname_or_ip_address).
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address]({% link _guides/deploy-options.md %}#get_your_hostname_or_ip_address).
 
 ## The less easy way
 
@@ -284,7 +284,7 @@ kubectl delete namespace heptio-contour
 kubectl apply -f examples/<your-desired-deployment>
 ```
 If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
-You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address]({% link _resources/deploy-options.md %}#get_your_hostname_or_ip_address).
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address]({% link _guides/deploy-options.md %}#get_your_hostname_or_ip_address).
 
 ### Note
 
@@ -311,7 +311,7 @@ There is a Job in the `ds-hostnet-split` directory that will use the new `contou
 to generate a CA and then sign Contour and Envoy keypairs, which can also then be saved directly
 to Kubernetes as Secrets, ready to be mounted into your Contour and Envoy Deployments and Daemonsets.
 
-If you would like more detail, see [grpc-tls-howto.md]({% link _resources/grpc-tls-howto.md %}), which explains your options.
+If you would like more detail, see [grpc-tls-howto.md]({% link _guides/grpc-tls-howto.md %}), which explains your options.
 
 ### Upgrade to Envoy 1.11.2
 
