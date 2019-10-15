@@ -54,6 +54,8 @@ collections:
     output: false
   casestudies:
     output: false
+  agendas:
+    output: false
 
 # Build settings
 permalink: :title/
