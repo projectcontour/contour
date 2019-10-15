@@ -17,6 +17,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"strings"
 
 	v1 "k8s.io/api/core/v1"
 )
@@ -59,9 +60,9 @@ func validateCertificate(data []byte) error {
 }
 
 func validatePrivateKey(data []byte) error {
-	key, err := decodePEM(data)
+	key, err := decodePEMPrivateKey(data)
 	if err != nil {
-		return nil
+		return err
 	}
 	if _, err := x509.ParsePKCS1PrivateKey(key.Bytes); err == nil {
 		return nil
@@ -81,4 +82,17 @@ func decodePEM(in []byte) (*pem.Block, error) {
 		return nil, errors.New("failed to parse PEM")
 	}
 	return block, nil
+}
+
+func decodePEMPrivateKey(in []byte) (*pem.Block, error) {
+	var block *pem.Block
+	for len(in) > 0 {
+		if block, in = pem.Decode(in); block == nil {
+			return nil, errors.New("failed to parse PEM")
+		}
+		if strings.HasSuffix(block.Type, "PRIVATE KEY") {
+			return block, nil
+		}
+	}
+	return nil, errors.New("failed to locate private key")
 }
