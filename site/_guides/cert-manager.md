@@ -1,4 +1,7 @@
-# Tutorial: Deploy web applications on Kubernetes with Contour and Let's Encrypt
+---
+title: Deploy web applications on Kubernetes with Contour and Let's Encrypt
+layout: page
+---
 
 This tutorial shows you how to securely deploy an HTTPS web application on a Kubernetes cluster, using:
 
@@ -501,6 +504,7 @@ metadata:
    ingress.kubernetes.io/force-ssl-redirect: "true"
 ```
 Now any requests to the insecure HTTP version of your site get an unconditional 301 redirect to the HTTPS version:
+
 ```
 % curl -v http://httpbin.davecheney.com/get
 * Trying 35.189.26.87…
@@ -524,8 +528,8 @@ Now any requests to the insecure HTTP version of your site get an unconditional 
 [1]: https://github.com/jetstack/cert-manager
 [2]: https://letsencrypt.org/docs/rate-limits/
 [3]: http://httpbin.org/
-[kuard]: cert-manager/kuard.png
-[httpbin]: cert-manager/httpbin.png
+[kuard]: /img/cert-manager/kuard.png
+[httpbin]: /img/cert-manager/httpbin.png
 [5]: https://letsencrypt.org/getting-started/
 [6]: #3-deploy-your-first-HTTPS-site
 [7]: ./deploy-options.md#get-your-hostname-or-ip-address
