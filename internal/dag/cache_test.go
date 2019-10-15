@@ -423,6 +423,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "ca",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeOpaque,
 				Data: map[string][]byte{
 					"ca.crt": []byte(CERTIFICATE),
 				},
@@ -463,6 +464,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "ca",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeOpaque,
 				Data: map[string][]byte{
 					"ca.crt": []byte(CERTIFICATE),
 				},
@@ -501,6 +503,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "ca",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeOpaque,
 				Data: map[string][]byte{
 					"ca.crt": []byte(CERTIFICATE),
 				},
@@ -899,6 +902,10 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					Namespace: "default",
 				},
 				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte(RSA_PRIVATE_KEY),
+				},
 			}),
 			obj: &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
