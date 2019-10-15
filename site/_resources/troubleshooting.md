@@ -1,4 +1,7 @@
-# Troubleshooting
+---
+title: Troubleshooting
+layout: page
+---
 
 This document contains suggestions for debugging issues with your Contour installation.
 
@@ -84,4 +87,4 @@ Replace `contour cli lds` with `contour cli rds` for RDS, `contour cli cds` for 
 
 ## I've deployed on Minikube or kind and nothing seems to work
 
-See [the deployment documentation](deploy-options.md) for some tips on using these two deployment options successfully.
+See [the deployment documentation]({% link _guides/deploy-options.md %}) for some tips on using these two deployment options successfully.

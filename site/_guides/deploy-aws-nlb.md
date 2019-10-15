@@ -1,4 +1,7 @@
-# Contour Deployment on AWS with NLB
+---
+title: Deploying Contour on AWS with NLB
+layout: page
+---
 
 This is an advanced deployment guide to configure Contour on AWS with the [Network Load Balancer (NLB)][1].
 This configuration has several advantages:
@@ -36,6 +39,6 @@ You can now test your NLB.
   - Notice that Envoy fills out `X-Forwarded-For`, because it was the first to see the traffic directly from the browser.
 
 [1]: https://aws.amazon.com/blogs/aws/new-network-load-balancer-effortless-scaling-to-millions-of-requests-per-second/
-[2]: deploy-options.md#test
+[2]: {% link _guides/deploy-options.md %}#test
 [3]: https://github.com/kubernetes/kubernetes/issues/52173
-[4]: ../CONTRIBUTING.md
+[4]: {{ site.github.repository_url }}/tree/master/CONTRIBUTING.md

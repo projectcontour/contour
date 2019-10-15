@@ -1,3 +1,8 @@
+---
+title: How we work
+layout: page
+---
+
 This page captures how we work on Contour.
 
 - When you pick up an issue, assign it to yourself.
