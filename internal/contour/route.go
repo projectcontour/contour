@@ -15,6 +15,7 @@ package contour
 
 import (
 	"sort"
+	"strings"
 	"sync"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -53,6 +54,7 @@ func (c *RouteCache) Contents() []proto.Message {
 	return values
 }
 
+// Query searches the RouteCache for the named RouteConfiguration entries.
 func (c *RouteCache) Query(names []string) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -83,6 +85,7 @@ func (r routeConfigurationsByName) Less(i, j int) bool {
 	return r[i].(*v2.RouteConfiguration).Name < r[j].(*v2.RouteConfiguration).Name
 }
 
+// TypeURL returns the string type of RouteCache Resource.
 func (*RouteCache) TypeURL() string { return cache.RouteType }
 
 type routeVisitor struct {
@@ -145,7 +148,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				if len(routes) < 1 {
 					return
 				}
-				sort.Stable(longestRouteFirst(routes))
+				SortRoutes(routes)
 				vhost := envoy.VirtualHost(vh.Name, routes...)
 				v.routes["ingress_http"].VirtualHosts = append(v.routes["ingress_http"].VirtualHosts, vhost)
 			case *dag.SecureVirtualHost:
@@ -164,7 +167,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				if len(routes) < 1 {
 					return
 				}
-				sort.Stable(longestRouteFirst(routes))
+				SortRoutes(routes)
 				vhost := envoy.VirtualHost(vh.VirtualHost.Name, routes...)
 				v.routes["ingress_https"].VirtualHosts = append(v.routes["ingress_https"].VirtualHosts, vhost)
 			default:
@@ -178,11 +181,63 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 	}
 }
 
+type headerMatcherByName []*envoy_api_v2_route.HeaderMatcher
+
+func (h headerMatcherByName) Len() int      { return len(h) }
+func (h headerMatcherByName) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
+
+// Less compares HeaderMatcher objects, first by the header name,
+// then by their matcher conditions (textually).
+func (h headerMatcherByName) Less(i, j int) bool {
+	val := strings.Compare(h[i].Name, h[j].Name)
+	switch val {
+	case -1:
+		return true
+	case 1:
+		return false
+	case 0:
+		return proto.CompactTextString(h[i]) < proto.CompactTextString(h[j])
+	}
+
+	panic("bad compare")
+}
+
 type virtualHostsByName []*envoy_api_v2_route.VirtualHost
 
 func (v virtualHostsByName) Len() int           { return len(v) }
 func (v virtualHostsByName) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
 func (v virtualHostsByName) Less(i, j int) bool { return v[i].Name < v[j].Name }
+
+// SortRoutes sorts the given Route slice in place. Routes are ordered
+// first by longest prefix (or regex), then by the length of the
+// HeaderMatch slice (if any). The HeaderMatch slice is also ordered
+// by the matching header name.
+func SortRoutes(routes []*envoy_api_v2_route.Route) {
+	for _, r := range routes {
+		sort.Stable(headerMatcherByName(r.Match.Headers))
+	}
+
+	sort.Stable(longestRouteFirst(routes))
+}
+
+// longestRouteByHeaders compares the HeaderMatcher slices for lhs and rhs and
+// returns true if lhs is longer.
+func longestRouteByHeaders(lhs, rhs *envoy_api_v2_route.Route) bool {
+	if len(lhs.Match.Headers) == len(rhs.Match.Headers) {
+		pair := make([]*envoy_api_v2_route.HeaderMatcher, 2)
+
+		for i := 0; i < len(lhs.Match.Headers); i++ {
+			pair[0] = lhs.Match.Headers[i]
+			pair[1] = rhs.Match.Headers[i]
+
+			if headerMatcherByName(pair).Less(0, 1) {
+				return true
+			}
+		}
+	}
+
+	return len(lhs.Match.Headers) > len(rhs.Match.Headers)
+}
 
 type longestRouteFirst []*envoy_api_v2_route.Route
 
@@ -193,18 +248,38 @@ func (l longestRouteFirst) Less(i, j int) bool {
 	case *envoy_api_v2_route.RouteMatch_Prefix:
 		switch b := l[j].Match.PathSpecifier.(type) {
 		case *envoy_api_v2_route.RouteMatch_Prefix:
-			if len(l[i].Match.Headers) == len(l[j].Match.Headers) {
-				return a.Prefix > b.Prefix
+			cmp := strings.Compare(a.Prefix, b.Prefix)
+			switch cmp {
+			case 1:
+				// Sort longest prefix first.
+				return true
+			case -1:
+				return false
+			case 0:
+				return longestRouteByHeaders(l[i], l[j])
 			}
-			return len(l[i].Match.Headers) > len(l[j].Match.Headers)
+
+			panic("bad compare")
 		}
 	case *envoy_api_v2_route.RouteMatch_Regex:
 		switch b := l[j].Match.PathSpecifier.(type) {
 		case *envoy_api_v2_route.RouteMatch_Regex:
-			return a.Regex > b.Regex
+			cmp := strings.Compare(a.Regex, b.Regex)
+			switch cmp {
+			case 1:
+				// Sort longest regex first.
+				return true
+			case -1:
+				return false
+			case 0:
+				return longestRouteByHeaders(l[i], l[j])
+			}
+
+			panic("bad compare")
 		case *envoy_api_v2_route.RouteMatch_Prefix:
 			return true
 		}
 	}
+
 	return false
 }
