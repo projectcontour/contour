@@ -3,7 +3,7 @@ title: Contour
 email:
 author: Contour Authors
 description: High performance ingress controller for Kubernetes
-url: projectcontour.io
+url: https://projectcontour.io
 logo: Contour.svg
 twitter:
   username: projectcontour
