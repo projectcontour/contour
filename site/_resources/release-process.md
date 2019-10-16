@@ -20,8 +20,8 @@ The steps for an alpha or beta release are
 - Tag the head of master with the relevant release tag (in this case `alpha.1`), and push
 
 ```sh
-% git tag -a v0.15.0-alpha.1 -m 'contour 0.15.0 alpha 1'
-% git push --tags
+$ git tag -a v0.15.0-alpha.1 -m 'contour 0.15.0 alpha 1'
+$ git push --tags
 ```
 
 Once the tag is present on master, Github Actions will build the tag and push it to Docker Hub for you.
@@ -33,7 +33,7 @@ As contours master branch is under active development, rc and final releases are
 Create a release branch locally, like so
 
 ```sh
-% git checkout -b release-0.15
+$ git checkout -b release-0.15
 ```
 
 If you are doing a patch release on an existing branch, skip this step and just checkout the branch instead.
@@ -53,8 +53,8 @@ The Docker tag should be updated from the previous stable release to this new on
 Tag the head of your release branch with the release tag, and push
 
 ```sh
-% git tag -a v0.15.0 -m 'contour 0.15.0'
-% git push --tags
+$ git tag -a v0.15.0 -m 'contour 0.15.0'
+$ git push --tags
 ```
 
 ## Patch release
@@ -68,8 +68,8 @@ Get any required changes into the release branch by whatever means you choose.
 Tag the head of your release branch with the release tag, and push
 
 ```sh
-% git tag -a v0.15.1 -m 'contour 0.15.1'
-% git push --tags
+$ git tag -a v0.15.1 -m 'contour 0.15.1'
+$ git push --tags
 ```
 
 ## Updating the `:latest` tag
