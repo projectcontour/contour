@@ -12,13 +12,6 @@ If you’re a newcomer, check out the “[Good first issue](https://github.com/p
 
 * Join our Kubernetes Slack channel and talk to over 300 other community members: [#contour​](https://kubernetes.slack.com/messages/C8XRH2R4J/)
 
-* Join the [Contour Community Meetings](https://VMware.zoom.us/j/347232187), every third Tuesday at 6-7PM Eastern Time / 3-4PM Pacific Time / Wednesday at 8-9AM Australian Eastern Time.
-
-## Community Meeting Agendas
-
-Links to past and future community meeting agendas
-
-{% assign agendas = site.agendas | sort: 'date' | reverse %}
-{% for agenda in agendas %}
-- [{{ agenda.title }}]({{ agenda.link }}) _{{ agenda.date | date_to_long_string }}_
-{% endfor %}
+* Join the [Contour Community Meetings](https://vmware.zoom.us/j/347232187), every third Tuesday at 6PM ET / 3PM PT / Wednesday at 8AM Australian Eastern Time.
+  * Meeting notes can be found [here](https://hackmd.io/84Xbl4WBTpm7OBhaOAsSiw).
+  * Meetings are recorded and can be found [here](https://www.youtube.com/playlist?list=PL7bmigfV0EqTBsPrnCkzhu0R4SAWnBjLj).
