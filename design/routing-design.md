@@ -120,8 +120,58 @@ Exact Path based routing makes decisions based upon the path of the request (e.g
 
 ### Wildcard Path Routing
 
-Wildcard path based routing allows for a portion of the path to be dynamic (e.g. /path/*/foo).
-This is useful to allow for many types of request paths to be routed to the same backed without specifying them explicitly up front.
+Certain condition types, for example prefix support wildcard style matching. The specifics depend on the condition type.
+
+#### Prefix condition wildcards
+
+- Can have one or more `*` in prefix value
+- Cannot start or end with a `*` (starting with a `*` is prohibited by the general rule that prefix: must start with a `/`)
+- Prefix conditions with wildcards are merged as per the general rule for merging prefix conditions
+- Wildcard path matches cannot be defined inside an `Include` (see next section)
+
+When interpreting a prefix condition containing wildcards the following rules are applied.
+For the condition prefix: `/api/*/users` (either expressed directly, or formed via merging prefix conditions) the request's URL must meet these criteria:
+
+1. Must start with `/api/`
+2. Following `/api/` there must be one or more characters BUT NOT `/users`. These are considered to be the wildcard characters.
+Following the wildcard characters must be the string `/users`.
+3. Specifically, wildcards match one or more characters; the condition prefix: `/api/*/users` does not match the url `/api/users/foo`
+4. More specific routes have higher priority over wildcard routes (see next section)
+
+#### Proper Delegation
+Since wildcard introduces uncertainty within the exact route that will match, some additional consideration needs to be applied when Contour determines if a route has proper delegation permissions.
+
+For example if we had two includes which have similar path matches, we cannot determine who has authority:
+
+```yaml
+includes:
+- name: blogsite
+  namespace: marketing
+  conditions:
+  - prefix: /blog/*/info
+- name: infosite
+  namespace: infotech
+  conditions:
+  - prefix: /blog/tech/info
+``` 
+
+Another example of an issue if routes are defined on includes and conflict.
+The ordering that Contour places these into will result in the more specific route getting traffic (i.e. `/blog/tech/info`) before the wildcard route:
+
+```yaml
+spec:
+ routes:
+ - conditions:
+   - prefix: /blog/*/info
+   services:
+   - name: s1
+     port: 80
+ - conditions:
+   - prefix: /blog/tech/info
+   services:
+   - name: s2
+     port: 80
+``` 
 
 #### Use Cases
 
@@ -334,11 +384,8 @@ Another style of path matching is a wildcard style which allows for a portion of
 A wildcard match allows for a portion of a path to be dynamic.
 
 For example, we could define a wildcard style path: `/app2/*/foo`, but not `/app2/*`.
-Wildcard paths are be able to delegated without issue as long as the `*` is bounded by paths.
-The previous example ending with `*` has too large of a match to allow for delegation.
+If the path ends with `*` has too large of a match to allow for delegation.
 If this is encountered, Contour will set the status to be error for the corresponding HTTPProxy.
-
-*Note: The type of route match will still need to be specified (e.g. prefix, or path). The examples below show a `prefix` match, but a `path` match would work as well.*
 
 ##### Root HTTPProxy:
 
@@ -352,7 +399,7 @@ spec:
     - name: wildcard
       namespace: prefix
       conditions:
-      - prefix: /app/*/foo   
+      - prefix: /
 ```
 
 ##### Delegate HTTPProxy:
@@ -367,6 +414,8 @@ spec:
   - services:
     - name: wildcard-service
       port: 80
+    conditions:
+    - prefix: /app/*/foo
 ```
 
 ##### Requests
