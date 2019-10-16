@@ -7,9 +7,10 @@ This document describes the steps required to secure communication between Envoy
 ## Outcomes
 
 The outcome of this is that we will have three Secrets available in the `projectcontour` namespace:
-- cacert: contains the CA's public certificate.
-- contourcert: contains Contour's keypair, used for serving TLS secured gRPC. This must be a valid certificate for the name `contour` in order for this to work. This is currently hardcoded by Contour.
-- envoycert: contains Envoy's keypair, used as a client for connecting to Contour.
+
+- **cacert:** contains the CA's public certificate.
+- **contourcert:** contains Contour's keypair, used for serving TLS secured gRPC. This must be a valid certificate for the name `contour` in order for this to work. This is currently hardcoded by Contour.
+- **envoycert:** contains Envoy's keypair, used as a client for connecting to Contour.
 
 ### Ways you can get the certificates into your cluster
 
@@ -29,8 +30,9 @@ This is intended as an example to help you get started. For any real deployment,
 ### Generating a CA keypair
 
 First, we need to generate a keypair:
+
 ```
-openssl req -x509 -new -nodes \
+$ openssl req -x509 -new -nodes \
     -keyout certs/cakey.pem -sha256 \
     -days 1825 -out certs/cacert.pem \
     -subj "/O=Project Contour/CN=Contour CA"
@@ -41,17 +43,19 @@ Then, the new CA key will be stored in `certs/cakey.pem` and the cert in `certs/
 ### Generating Contour's keypair
 
 Then, we need to generate a keypair for Contour. First, we make a new private key:
+
 ```
-openssl genrsa -out certs/contourkey.pem 2048
+$ openssl genrsa -out certs/contourkey.pem 2048
 ```
 
 Then, we create a CSR and have our CA sign the CSR and issue a cert. This uses the file [_integration/cert-contour.ext]({{ site.github.repository_url }}/tree/master/_integration/cert-contour.ext), which ensures that at least one of the valid names of the certificate is the bareword `contour`. This is required for the handshake to succeed, as `contour bootstrap` configures Envoy to pass this as the SNI for the connection.
 
 ```
-openssl req -new -key certs/contourkey.pem \
+$ openssl req -new -key certs/contourkey.pem \
 	-out certs/contour.csr \
 	-subj "/O=Project Contour/CN=contour"
-openssl x509 -req -in certs/contour.csr \
+
+$ openssl x509 -req -in certs/contour.csr \
     -CA certs/cacert.pem \
     -CAkey certs/cakey.pem \
     -CAcreateserial \
@@ -65,16 +69,19 @@ At this point, the contour cert and key are in the files `certs/contourcert.pem`
 ### Generating Envoy's keypair
 
 Next, we generate a keypair for Envoy:
+
 ```
-openssl genrsa -out certs/envoykey.pem 2048
+$ openssl genrsa -out certs/envoykey.pem 2048
 ```
 
 Then, we generated a CSR and have the CA sign it:
+
 ```
-openssl req -new -key certs/envoykey.pem \
+$ openssl req -new -key certs/envoykey.pem \
 	-out certs/envoy.csr \
 	-subj "/O=Project Contour/CN=envoy"
-openssl x509 -req -in certs/envoy.csr \
+
+$ openssl x509 -req -in certs/envoy.csr \
     -CA certs/cacert.pem \
     -CAkey certs/cakey.pem \
     -CAcreateserial \
@@ -90,13 +97,19 @@ Like the contour cert, this CSR uses the file [_integration/cert-envoy.ext]({{ s
 Next, we create the required secrets in the target Kubernetes cluster:
 
 ```
-kubectl create secret -n projectcontour generic cacert --from-file=./certs/cacert.pem
-kubectl create secret -n projectcontour tls contourcert --key=./certs/contourkey.pem --cert=./certs/contourcert.pem
-kubectl create secret -n projectcontour tls envoycert --key=./certs/envoykey.pem --cert=./certs/envoycert.pem
+$ kubectl create secret -n projectcontour generic cacert \
+        --from-file=./certs/cacert.pem
+
+$ kubectl create secret -n projectcontour tls contourcert \
+        --key=./certs/contourkey.pem --cert=./certs/contourcert.pem
+
+$ kubectl create secret -n projectcontour tls envoycert \
+        --key=./certs/envoykey.pem --cert=./certs/envoycert.pem
 ```
 
 Note that we don't put the CA **key** into the cluster, there's no reason for that to be there, and that would create a security problem. That also means that the `cacert` secret can't be a `tls` type secret, as they must be a keypair.
 
- # Conclusion
+# Conclusion
 
-Once this process is done, the certificates will be present as Secrets in the `projectcontour` namespace, as required by `examples/contour`.
+Once this process is done, the certificates will be present as Secrets in the `projectcontour` namespace, as required by
+[examples/contour]({{site.github.repository_url}}/tree/master/examples/contour).

@@ -27,7 +27,7 @@ This creates the `projectcontour` Namespace along with a ServiceAccount, RBAC ru
 You can get the address of your NLB via:
 
 ```
-kubectl get service contour --namespace=projectcontour -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+$ kubectl get service contour --namespace=projectcontour -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
 
 ## Test
