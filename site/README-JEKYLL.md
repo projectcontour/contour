@@ -15,9 +15,8 @@ If you are running a build on Ubuntu you will need the following packages:
 * zlib1g-dev
 * nginx (or apache2)
 
-
 # Local Development
-1. Install Jekyll and plug-ins in one fell swoop. `gem install github-pages`
+1. Install [Jekyll](https://jekyllrb.com) and plug-ins in one fell swoop. `gem install github-pages`
 This mirrors the plug-ins used by GitHub Pages on your local machine including Jekyll, Sass, etc.
 2. Clone down your own fork, or clone the main repo `git clone https://github.com/projectcontour/contour` and add your own remote.
 3. `cd site`
@@ -27,3 +26,7 @@ This mirrors the plug-ins used by GitHub Pages on your local machine including J
 7. View your website at http://127.0.0.1:4000/
 8. Commit any changes and push everything to your fork.
 9. Once you're ready, submit a PR of your changes. Netlify will automatically generate a preview of your changes.
+
+The top-level [Makefile](../Makefile) has a `site-devel` target and
+runs a [Jekyll](https://jekyllrb.com) development server in Docker,
+which is useful for checking local documentation changes..
