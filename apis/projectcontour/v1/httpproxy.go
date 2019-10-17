@@ -105,27 +105,31 @@ type TLS struct {
 	Passthrough bool `json:"passthrough,omitempty"`
 }
 
-// Route contains the set of routes for a virtual host
+// Route contains the set of routes for a virtual host.
 type Route struct {
 	// Conditions are a set of routing properties that is applied to an HTTPProxy in a namespace.
 	Conditions []Condition `json:"conditions,omitempty"`
-	// Services are the services to proxy traffic
+	// Services are the services to proxy traffic.
 	Services []Service `json:"services,omitempty"`
-	// Enables websocket support for the route
+	// Enables websocket support for the route.
 	EnableWebsockets bool `json:"enableWebsockets,omitempty"`
 	// Allow this path to respond to insecure requests over HTTP which are normally
 	// not permitted when a `virtualhost.tls` block is present.
 	PermitInsecure bool `json:"permitInsecure,omitempty"`
-	// Indicates that during forwarding, the matched prefix (or path) should be swapped with this value
-	PrefixRewrite string `json:"prefixRewrite,omitempty"`
-	// The timeout policy for this route
+	// The timeout policy for this route.
 	TimeoutPolicy *TimeoutPolicy `json:"timeoutPolicy,omitempty"`
-	// The retry policy for this route
+	// The retry policy for this route.
 	RetryPolicy *RetryPolicy `json:"retryPolicy,omitempty"`
+	// The health check policy for this route.
+	HealthCheckPolicy *HTTPHealthCheckPolicy `json:"healthCheckPolicy,omitempty"`
+	// The load balancing policy for this route.
+	LoadBalancerPolicy *LoadBalancerPolicy `json:"loadBalancerPolicy,omitempty"`
 }
 
 // TCPProxy contains the set of services to proxy TCP connections.
 type TCPProxy struct {
+	// The load balancing policy for the backend services.
+	LoadBalancerPolicy *LoadBalancerPolicy `json:"loadBalancerPolicy,omitempty"`
 	// Services are the services to proxy traffic
 	Services []Service `json:"services,omitempty"`
 	// Include specifies that this tcpproxy should be delegated to another HTTPProxy.
@@ -141,18 +145,14 @@ type Service struct {
 	Port int `json:"port"`
 	// Weight defines percentage of traffic to balance traffic
 	Weight uint32 `json:"weight,omitempty"`
-	// HealthCheck defines optional healthchecks on the upstream service
-	HealthCheck *HealthCheck `json:"healthCheck,omitempty"`
-	// LB Algorithm to apply.
-	Strategy string `json:"strategy,omitempty"`
 	// UpstreamValidation defines how to verify the backend service's certificate
 	UpstreamValidation *UpstreamValidation `json:"validation,omitempty"`
 	// If Mirror is true the Service will receive a read only mirror of the traffic for this route.
 	Mirror bool `json:"mirror,omitempty"`
 }
 
-// HealthCheck defines optional healthchecks on the upstream service
-type HealthCheck struct {
+// HTTPHealthCheckPolicy defines health checks on the upstream service.
+type HTTPHealthCheckPolicy struct {
 	// HTTP endpoint used to perform health checks on upstream service
 	Path string `json:"path"`
 	// The value of the host header in the HTTP health check request.
@@ -188,6 +188,11 @@ type RetryPolicy struct {
 	// PerTryTimeout specifies the timeout per retry attempt.
 	// Ignored if NumRetries is not supplied.
 	PerTryTimeout string `json:"perTryTimeout,omitempty"`
+}
+
+// LoadBalancerPolicy defines the load balancing policy.
+type LoadBalancerPolicy struct {
+	Strategy string `json:"strategy,omitempty"`
 }
 
 // UpstreamValidation defines how to verify the backend service's certificate

@@ -19,6 +19,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/prometheus/client_golang/prometheus"
+
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	loadstats "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
@@ -26,26 +29,31 @@ import (
 )
 
 // NewAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
-func NewAPI(log logrus.FieldLogger, resources map[string]Resource, opts ...grpc.ServerOption) *grpc.Server {
-	g := grpc.NewServer(opts...)
+func NewAPI(log logrus.FieldLogger, resources map[string]Resource, registry *prometheus.Registry, opts ...grpc.ServerOption) *grpc.Server {
 	s := &grpcServer{
 		xdsHandler{
 			FieldLogger: log,
 			resources:   resources,
 		},
+		grpc_prometheus.NewServerMetrics(),
 	}
-
+	registry.MustRegister(s.metrics)
+	opts = append(opts, grpc.StreamInterceptor(s.metrics.StreamServerInterceptor()),
+		grpc.UnaryInterceptor(s.metrics.UnaryServerInterceptor()))
+	g := grpc.NewServer(opts...)
 	v2.RegisterClusterDiscoveryServiceServer(g, s)
 	v2.RegisterEndpointDiscoveryServiceServer(g, s)
 	v2.RegisterListenerDiscoveryServiceServer(g, s)
 	v2.RegisterRouteDiscoveryServiceServer(g, s)
 	discovery.RegisterSecretDiscoveryServiceServer(g, s)
+	s.metrics.InitializeMetrics(g)
 	return g
 }
 
 // grpcServer implements the LDS, RDS, CDS, and EDS, gRPC endpoints.
 type grpcServer struct {
 	xdsHandler
+	metrics *grpc_prometheus.ServerMetrics
 }
 
 func (s *grpcServer) FetchClusters(_ context.Context, req *v2.DiscoveryRequest) (*v2.DiscoveryResponse, error) {

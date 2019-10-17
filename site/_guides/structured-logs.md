@@ -1,4 +1,7 @@
-# Enabling structured logging
+---
+title: How to enable structured JSON logging
+layout: page
+---
 
 This document describes how to configure structured logging for Envoy via Contour.
 

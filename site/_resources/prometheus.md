@@ -1,4 +1,7 @@
-# Prometheus
+---
+title: Prometheus
+layout: page
+---
 
 Contour and Envoy expose metrics that can be scraped with Prometheus. By
 default, annotations to gather them are in all the `deployment` yamls and they
@@ -57,7 +60,7 @@ $ kubectl apply -f examples/prometheus
 #### Access the Prometheus web UI
 
 ```sh
-$ kubectl -n contour-monitoring port-forward $(kubectl -n contour-monitoring get pods -l app=prometheus -l component=server -o jsonpath='{.items[0].metadata.name}') 9090:9090
+$ kubectl -n projectcontour-monitoring port-forward $(kubectl -n projectcontour-monitoring get pods -l app=prometheus -l component=server -o jsonpath='{.items[0].metadata.name}') 9090:9090
 ```
 
 then go to [http://localhost:9090](http://localhost:9090) in your browser.
@@ -65,7 +68,7 @@ then go to [http://localhost:9090](http://localhost:9090) in your browser.
 #### Access the Alertmanager web UI
 
 ```sh
-$ kubectl -n contour-monitoring port-forward $(kubectl -n contour-monitoring get pods -l app=prometheus -l component=alertmanager -o jsonpath='{.items[0].metadata.name}') 9093:9093
+$ kubectl -n projectcontour-monitoring port-forward $(kubectl -n projectcontour-monitoring get pods -l app=prometheus -l component=alertmanager -o jsonpath='{.items[0].metadata.name}') 9093:9093
 ```
 
 then go to [http://localhost:9093](http://localhost:9093) in your browser.
@@ -81,7 +84,7 @@ A sample deployment of Grafana is provided that uses temporary storage.
 $ kubectl apply -f examples/grafana/
 
 # Create secret with grafana credentials
-$ kubectl create secret generic grafana -n contour-monitoring \
+$ kubectl create secret generic grafana -n projectcontour-monitoring \
     --from-literal=grafana-admin-password=admin \
     --from-literal=grafana-admin-user=admin
 ```
@@ -89,7 +92,7 @@ $ kubectl create secret generic grafana -n contour-monitoring \
 #### Access the Grafana UI
 
 ```sh
-$ kubectl port-forward $(kubectl get pods -l app=grafana -n contour-monitoring -o jsonpath='{.items[0].metadata.name}') 3000 -n contour-monitoring
+$ kubectl port-forward $(kubectl get pods -l app=grafana -n projectcontour-monitoring -o jsonpath='{.items[0].metadata.name}') 3000 -n projectcontour-monitoring
 ```
 
 then go to [http://localhost:3000](http://localhost:3000) in your browser.

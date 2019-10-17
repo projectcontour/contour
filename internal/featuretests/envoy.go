@@ -18,8 +18,15 @@ package featuretests
 import (
 	"time"
 
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
+	v1 "k8s.io/api/core/v1"
 )
 
 func routeCluster(cluster string) *envoy_api_v2_route.Route_Route {
@@ -30,6 +37,31 @@ func routeCluster(cluster string) *envoy_api_v2_route.Route_Route {
 			},
 		},
 	}
+}
+
+func cluster(name, servicename, statName string) *v2.Cluster {
+	return &v2.Cluster{
+		Name:                 name,
+		ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+		AltStatName:          statName,
+		EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+			EdsConfig:   envoy.ConfigSource("contour"),
+			ServiceName: servicename,
+		},
+		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
+		LbPolicy:       v2.Cluster_ROUND_ROBIN,
+		CommonLbConfig: envoy.ClusterCommonLBConfig(),
+	}
+}
+
+func tlsCluster(c *v2.Cluster, ca []byte, subjectName string, alpnProtocols ...string) *v2.Cluster {
+	c.TlsContext = envoy.UpstreamTLSContext(ca, subjectName, alpnProtocols...)
+	return c
+}
+
+func h2cCluster(c *v2.Cluster) *v2.Cluster {
+	c.Http2ProtocolOptions = &envoy_api_v2_core.Http2ProtocolOptions{}
+	return c
 }
 
 func withResponseTimeout(route *envoy_api_v2_route.Route_Route, timeout time.Duration) *envoy_api_v2_route.Route_Route {
@@ -47,4 +79,86 @@ func withMirrorPolicy(route *envoy_api_v2_route.Route_Route, mirror string) *env
 		Cluster: mirror,
 	}
 	return route
+}
+
+func withRetryPolicy(route *envoy_api_v2_route.Route_Route, retryOn string, numRetries uint32, perTryTimeout time.Duration) *envoy_api_v2_route.Route_Route {
+	route.Route.RetryPolicy = &envoy_api_v2_route.RetryPolicy{
+		RetryOn: retryOn,
+	}
+	if numRetries > 0 {
+		route.Route.RetryPolicy.NumRetries = protobuf.UInt32(numRetries)
+	}
+	if perTryTimeout > 0 {
+		route.Route.RetryPolicy.PerTryTimeout = protobuf.Duration(perTryTimeout)
+	}
+	return route
+}
+
+func withWebsocket(route *envoy_api_v2_route.Route_Route) *envoy_api_v2_route.Route_Route {
+	route.Route.UpgradeConfigs = append(route.Route.UpgradeConfigs,
+		&envoy_api_v2_route.RouteAction_UpgradeConfig{
+			UpgradeType: "websocket",
+		},
+	)
+	return route
+}
+
+func withSessionAffinity(route *envoy_api_v2_route.Route_Route) *envoy_api_v2_route.Route_Route {
+	route.Route.HashPolicy = append(route.Route.HashPolicy, &envoy_api_v2_route.RouteAction_HashPolicy{
+		PolicySpecifier: &envoy_api_v2_route.RouteAction_HashPolicy_Cookie_{
+			Cookie: &envoy_api_v2_route.RouteAction_HashPolicy_Cookie{
+				Name: "X-Contour-Session-Affinity",
+				Ttl:  protobuf.Duration(0),
+				Path: "/",
+			},
+		},
+	})
+	return route
+}
+
+type weightedCluster struct {
+	name   string
+	weight uint32
+}
+
+func routeWeightedCluster(clusters ...weightedCluster) *envoy_api_v2_route.Route_Route {
+	return &envoy_api_v2_route.Route_Route{
+		Route: &envoy_api_v2_route.RouteAction{
+			ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+				WeightedClusters: weightedClusters(clusters),
+			},
+		},
+	}
+}
+
+func weightedClusters(clusters []weightedCluster) *envoy_api_v2_route.WeightedCluster {
+	var wc envoy_api_v2_route.WeightedCluster
+	var total uint32
+	for _, c := range clusters {
+		total += c.weight
+		wc.Clusters = append(wc.Clusters, &envoy_api_v2_route.WeightedCluster_ClusterWeight{
+			Name:   c.name,
+			Weight: protobuf.UInt32(c.weight),
+		})
+	}
+	wc.TotalWeight = protobuf.UInt32(total)
+	return &wc
+}
+
+func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_listener.Filter, alpn ...string) []*envoy_api_v2_listener.FilterChain {
+	return []*envoy_api_v2_listener.FilterChain{
+		envoy.FilterChainTLS(
+			domain,
+			&dag.Secret{Object: secret},
+			[]*envoy_api_v2_listener.Filter{
+				filter,
+			},
+			envoy_api_v2_auth.TlsParameters_TLSv1_1,
+			alpn...,
+		),
+	}
+}
+
+func staticListener() *v2.Listener {
+	return envoy.StatsListener("0.0.0.0", 8002)
 }

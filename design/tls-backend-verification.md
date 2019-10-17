@@ -74,7 +74,7 @@ The secret object should contain one entry named `ca.key`, the constents will be
 
 Example:
 ```
-% kubectl create secret generic my-certificate-authority --from-file=./ca.key
+$ kubectl create secret generic my-certificate-authority --from-file=./ca.key
 ```
 
 Contour already subscribes to Secrets in all namespaces so Secrets will be piped through to the `dag.KubernetsCache` automatically.

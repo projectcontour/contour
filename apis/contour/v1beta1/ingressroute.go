@@ -75,11 +75,29 @@ type Service struct {
 	// Weight defines percentage of traffic to balance traffic
 	Weight uint32 `json:"weight,omitempty"`
 	// HealthCheck defines optional healthchecks on the upstream service
-	HealthCheck *projcontour.HealthCheck `json:"healthCheck,omitempty"`
+	HealthCheck *HealthCheck `json:"healthCheck,omitempty"`
 	// LB Algorithm to apply (see https://github.com/projectcontour/contour/blob/master/design/ingressroute-design.md#load-balancing)
 	Strategy string `json:"strategy,omitempty"`
 	// UpstreamValidation defines how to verify the backend service's certificate
 	UpstreamValidation *projcontour.UpstreamValidation `json:"validation,omitempty"`
+}
+
+// HTTPHealthCheckPolicy defines health checks on the upstream service.
+type HealthCheck struct {
+	// HTTP endpoint used to perform health checks on upstream service
+	Path string `json:"path"`
+	// The value of the host header in the HTTP health check request.
+	// If left empty (default value), the name "contour-envoy-healthcheck"
+	// will be used.
+	Host string `json:"host,omitempty"`
+	// The interval (seconds) between health checks
+	IntervalSeconds int64 `json:"intervalSeconds"`
+	// The time to wait (seconds) for a health check response
+	TimeoutSeconds int64 `json:"timeoutSeconds"`
+	// The number of unhealthy health checks required before a host is marked unhealthy
+	UnhealthyThresholdCount uint32 `json:"unhealthyThresholdCount"`
+	// The number of healthy health checks required before a host is marked healthy
+	HealthyThresholdCount uint32 `json:"healthyThresholdCount"`
 }
 
 // Delegate allows for delegating VHosts to other IngressRoutes

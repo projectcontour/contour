@@ -14,7 +14,6 @@
 package contour
 
 import (
-	"sort"
 	"testing"
 	"time"
 
@@ -29,7 +28,7 @@ import (
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -809,7 +808,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"contour.heptio.com/retry-on": "5xx,gateway-error",
+							"projectcontour.io/retry-on": "5xx,gateway-error",
 						},
 					},
 					Spec: v1beta1.IngressSpec{
@@ -846,7 +845,46 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"contour.heptio.com/retry-on":    "5xx,gateway-error",
+							"projectcontour.io/retry-on":    "5xx,gateway-error",
+							"projectcontour.io/num-retries": "7", // not five or six or eight, but seven.
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: backend("kuard", 8080),
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       8080,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						envoy.Route(envoy.RoutePrefix("/"), routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 7, 0)),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
+		},
+
+		"ingress retry-on, legacy num-retries": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"projectcontour.io/retry-on":     "5xx,gateway-error",
 							"contour.heptio.com/num-retries": "7", // not five or six or eight, but seven.
 						},
 					},
@@ -884,7 +922,45 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"contour.heptio.com/retry-on":        "5xx,gateway-error",
+							"projectcontour.io/retry-on":        "5xx,gateway-error",
+							"projectcontour.io/per-try-timeout": "150ms",
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: backend("kuard", 8080),
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       8080,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						envoy.Route(envoy.RoutePrefix("/"), routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 150*time.Millisecond)),
+					),
+				),
+				envoy.RouteConfiguration("ingress_https"),
+			),
+		},
+		"ingress retry-on, legacy per-try-timeout": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"projectcontour.io/retry-on":         "5xx,gateway-error",
 							"contour.heptio.com/per-try-timeout": "150ms",
 						},
 					},
@@ -915,6 +991,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
+
 		"ingressroute no weights defined": {
 			objs: []interface{}{
 				&ingressroutev1.IngressRoute{
@@ -1868,12 +1945,108 @@ func TestSortLongestRouteFirst(t *testing.T) {
 				Match: envoy.RoutePrefix("/"),
 			}},
 		},
+
+		// Verify that longest path sorts before longest
+		// headers. We used to sort by longest header list
+		// first, which does end up with the same net result,
+		// so this isn't strictly necessary.  However, ordering
+		// the path first is arguably more intuitive, and
+		// allows us to avoid comparing the header matches
+		// unless necessary.
+		"longest path before longest headers": {
+			routes: []*envoy_api_v2_route.Route{{
+				Match: envoy.RoutePrefix("/", dag.HeaderCondition{
+					Name:      "x-request-id",
+					MatchType: "present",
+				}),
+			}, {
+				Match: envoy.RoutePrefix("/longest/path/match"),
+			}},
+			want: []*envoy_api_v2_route.Route{{
+				Match: envoy.RoutePrefix("/longest/path/match"),
+			}, {
+				Match: envoy.RoutePrefix("/", dag.HeaderCondition{
+					Name:      "x-request-id",
+					MatchType: "present",
+				}),
+			}},
+		},
+
+		// The path and the length of header condition list are equal,
+		// so we should order lexicographically by header name.
+		"headers sort stably by name": {
+			routes: []*envoy_api_v2_route.Route{{
+				Match: envoy.RoutePrefix("/",
+					dag.HeaderCondition{Name: "zzz-2", MatchType: "present"},
+					dag.HeaderCondition{Name: "zzz-1", MatchType: "present"},
+				),
+			}, {
+				Match: envoy.RoutePrefix("/",
+					dag.HeaderCondition{Name: "aaa-2", MatchType: "present"},
+					dag.HeaderCondition{Name: "aaa-1", MatchType: "present"},
+				),
+			}},
+			want: []*envoy_api_v2_route.Route{{
+				Match: envoy.RoutePrefix("/",
+					dag.HeaderCondition{Name: "aaa-1", MatchType: "present"},
+					dag.HeaderCondition{Name: "aaa-2", MatchType: "present"},
+				),
+			}, {
+				Match: envoy.RoutePrefix("/",
+					dag.HeaderCondition{Name: "zzz-1", MatchType: "present"},
+					dag.HeaderCondition{Name: "zzz-2", MatchType: "present"},
+				),
+			}},
+		},
+
+		// If we have multiple conditions on the same header, ensure
+		// that we order on the match type too.
+		"headers order by match type": {
+			routes: []*envoy_api_v2_route.Route{{
+				Match: envoy.RoutePrefix("/"),
+			}, {
+				Match: envoy.RoutePrefix("/",
+					dag.HeaderCondition{Name: "x-request-1", MatchType: "present"},
+					dag.HeaderCondition{Name: "x-request-2", MatchType: "present", Invert: true},
+					dag.HeaderCondition{Name: "x-request-1", MatchType: "exact", Value: "foo"},
+				),
+			}},
+			want: []*envoy_api_v2_route.Route{{
+				Match: envoy.RoutePrefix("/",
+					dag.HeaderCondition{Name: "x-request-1", MatchType: "exact", Value: "foo"},
+					dag.HeaderCondition{Name: "x-request-1", MatchType: "present"},
+					dag.HeaderCondition{Name: "x-request-2", MatchType: "present", Invert: true},
+				),
+			}, {
+				Match: envoy.RoutePrefix("/"),
+			}},
+		},
+
+		// Verify that we always order the headers, even if
+		// we don't need to compare the header conditions to
+		// order multple routes with the same prefix.
+		"headers order in single route": {
+			routes: []*envoy_api_v2_route.Route{{
+				Match: envoy.RoutePrefix("/",
+					dag.HeaderCondition{Name: "x-request-1", MatchType: "present"},
+					dag.HeaderCondition{Name: "x-request-2", MatchType: "present", Invert: true},
+					dag.HeaderCondition{Name: "x-request-1", MatchType: "exact", Value: "foo"},
+				),
+			}},
+			want: []*envoy_api_v2_route.Route{{
+				Match: envoy.RoutePrefix("/",
+					dag.HeaderCondition{Name: "x-request-1", MatchType: "exact", Value: "foo"},
+					dag.HeaderCondition{Name: "x-request-1", MatchType: "present"},
+					dag.HeaderCondition{Name: "x-request-2", MatchType: "present", Invert: true},
+				),
+			}},
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := append([]*envoy_api_v2_route.Route{}, tc.routes...) // shallow copy
-			sort.Stable(longestRouteFirst(got))
+			SortRoutes(got)
 			assert.Equal(t, tc.want, got)
 		})
 	}

@@ -28,7 +28,7 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -495,10 +495,10 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 		"default",
 		"kuard",
 		map[string]string{
-			"contour.heptio.com/max-connections":      "9000",
-			"contour.heptio.com/max-pending-requests": "4096",
-			"contour.heptio.com/max-requests":         "404",
-			"contour.heptio.com/max-retries":          "7",
+			"projectcontour.io/max-connections":      "9000",
+			"projectcontour.io/max-pending-requests": "4096",
+			"projectcontour.io/max-requests":         "404",
+			"projectcontour.io/max-retries":          "7",
 		},
 		v1.ServicePort{
 			Protocol:   "TCP",
@@ -542,9 +542,9 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 		"default",
 		"kuard",
 		map[string]string{
-			"contour.heptio.com/max-pending-requests": "9999",
-			"contour.heptio.com/max-requests":         "1e6",
-			"contour.heptio.com/max-retries":          "0",
+			"projectcontour.io/max-pending-requests": "9999",
+			"projectcontour.io/max-requests":         "1e6",
+			"projectcontour.io/max-retries":          "0",
 		},
 		v1.ServicePort{
 			Protocol:   "TCP",
@@ -745,7 +745,7 @@ func TestClusterWithHealthChecks(t *testing.T) {
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90,
-					HealthCheck: &projcontour.HealthCheck{
+					HealthCheck: &ingressroutev1.HealthCheck{
 						Path: "/healthz",
 					},
 				}},
@@ -760,55 +760,6 @@ func TestClusterWithHealthChecks(t *testing.T) {
 		),
 		TypeUrl: clusterType,
 		Nonce:   "1",
-	}, streamCDS(t, cc))
-}
-
-// Test that contour correctly recognizes the "contour.heptio.com/upstream-protocol.tls"
-// service annotation.
-func TestClusterServiceTLSBackend(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(443),
-			},
-		},
-	}
-	rh.OnAdd(i1)
-
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"contour.heptio.com/upstream-protocol.tls": "securebackend",
-			},
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "securebackend",
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(8888),
-			}},
-		},
-	}
-	rh.OnAdd(s1)
-
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
-		Resources: resources(t,
-			tlscluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443", nil, ""),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "2",
 	}, streamCDS(t, cc))
 }
 

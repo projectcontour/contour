@@ -58,7 +58,7 @@ spec:
 **Line 6-7**: The presence of the `virtualhost` field indicates that this is a root HTTPProxy that is the top level entry point for this domain.
 The `fqdn` field specifies the fully qualified domain name that will be used to match against `Host:` HTTP headers.
 
-**Lines 8-9**: Each HTTPProxy must have one or more `routes`, each of which must have a condition to match against (e.g. `prefix: /`) and then one or more `services` which will handle the HTTP traffic.
+**Lines 8-9**: Each HTTPProxy **must** have one or more routes, each of which **must** have one or more services which will handle the HTTP traffic. In addition, each route **may** have one or more conditions to match against.
 
 **Lines 10-12**: The `services` field is an array of named Service & Port combinations that will be used for this HTTPProxy path.
 HTTP traffic will be sent directly to the Endpoints corresponding to the Service.
@@ -255,7 +255,7 @@ A HTTPProxy can proxy to an upstream TLS connection by first annotating the upst
 This annotation tells Contour which port should be used for the TLS connection.
 In this example, the upstream service is named `https` and uses port `443`.
 Additionally, it is possible for Envoy to verify the backend service's certificate.
-The service of an HTTPProxy can optionally specify a `validation` struct which has a manditory `caSecret` key as well as an mandatory `subjectName`.
+The service of an HTTPProxy can optionally specify a `validation` struct which has a mandatory `caSecret` key as well as an mandatory `subjectName`.
 
 Note: If `spec.routes.services[].validation` is present, `spec.routes.services[].{name,port}` must point to a Service with a matching `projectcontour.io/upstream-protocol.tls` Service annotation.
 
@@ -326,11 +326,18 @@ In this example, the permission for Contour to reference the Secret `example-com
 
 ### Conditions
 
-Each Route entry in a HTTPProxy may contain one or more conditions.
+Each Route entry in a HTTPProxy **may** contain one or more conditions.
 These conditions are combined with an AND operator on the route passed to Envoy.
 
 Conditions can be either a `prefix` or a `header` condition.
+
+#### Prefix conditions
+
 For `prefix`, this adds a path prefix.
+
+Up to one prefix condition may be present in any condition block.
+
+Prefix conditions **must** start with a `/` if they are present.
 
 #### Header conditions
 
@@ -598,7 +605,9 @@ None of these properties are guaranteed by a Kubernetes cluster and will be visi
 
 Any perturbation in the set of pods backing a service risks redistributing backends around the hash ring.
 
-Active health checking can be configured on a per-upstream Service basis.
+#### Per route health checking
+
+Active health checking can be configured on a per route basis.
 Contour supports HTTP health checking and can be configured with various settings to tune the behavior.
 
 During HTTP health checking Envoy will send an HTTP request to the upstream Endpoints.
@@ -617,17 +626,19 @@ spec:
   virtualhost:
     fqdn: health.bar.com
   routes:
-    - services:
-        - name: s1-health
-          port: 80
-          healthCheck:
-            path: /healthy
-            intervalSeconds: 5
-            timeoutSeconds: 2
-            unhealthyThresholdCount: 3
-            healthyThresholdCount: 5
-        - name: s2-health # no health-check defined for this service
-          port: 80
+  - conditions:
+    - prefix: /
+    healthCheckPolicy:
+      path: /healthy
+      intervalSeconds: 5
+      timeoutSeconds: 2
+      unhealthyThresholdCount: 3
+      healthyThresholdCount: 5
+    services:
+      - name: s1-health
+        port: 80
+      - name: s2-health
+        port: 80
 ```
 
 Health check configuration parameters:
@@ -662,34 +673,6 @@ spec:
       enableWebsockets: true # Setting this to true enables websocket for all paths that match /websocket
       services:
         - name: chat-app
-          port: 80
-```
-
-#### Prefix Rewrite Support
-
-Indicates that during forwarding, the matched prefix (or path) should be swapped with this value.
-This option allows application URLs to be rooted at a different path from those exposed at the reverse proxy layer.
-The original path before rewrite will be placed into the into the `x-envoy-original-path` header.
-
-```yaml
-# httpproxy-prefix-rewrite.yaml
-apiVersion: projectcontour.io/v1
-kind: HTTPProxy
-metadata:
-  name: app
-  namespace: default
-spec:
-  virtualhost:
-    fqdn: app.example.com
-  routes:
-    - services:
-        - name: app
-          port: 80
-    - conditions:
-      - prefix: /service2
-      prefixRewrite: "/" # Setting this rewrites the request from `/service2` to `/`
-      services:
-        - name: app-service
           port: 80
 ```
 
@@ -767,7 +750,7 @@ Because the path is not necessarily used as the only key, the route space can be
 
 ### Conditions and Inclusion
 
-Like Routes, Inclusion may specify a set of [conditions](#conditions.
+Like Routes, Inclusion may specify a set of [conditions](#conditions).
 These conditions are added to any conditions on the routes included.
 This process is recursive.
 

@@ -149,6 +149,7 @@ In your terminal, use curl with the IP or DNS address of the Contour Service to 
 ```sh
 $ curl -H 'Host: kuard.local' ${CONTOUR_IP}
 ```
+
 ### Test with HTTPProxy
 
 To test your Contour deployment with [HTTPProxy](../../docs/httpproxy.md), run the following command:
@@ -186,6 +187,7 @@ In your terminal, use curl with the IP or DNS address of the Contour Service to 
 $ curl -H 'Host: kuard.local' ${CONTOUR_IP}
 ```
 
+
 ## Running without a Kubernetes LoadBalancer
 
 If you can't or don't want to use a Service of `type: LoadBalancer` there are other ways to run Contour.
@@ -194,6 +196,7 @@ If you can't or don't want to use a Service of `type: LoadBalancer` there are ot
 
 If your cluster doesn't have the capability to configure a Kubernetes LoadBalancer,
 or if you want to configure the load balancer outside Kubernetes,
+
 you can change the Envoy Service in the `02-service-envoy.yaml` file and set `type` to `NodePort`. 
    * [02-service-envoy.yaml](../../examples/contour/02-service-envoy.yaml)
 
@@ -224,4 +227,5 @@ To remove Contour from your cluster, delete the namespace:
 
 ```bash
 $ kubectl delete ns projectcontour
+
 ```

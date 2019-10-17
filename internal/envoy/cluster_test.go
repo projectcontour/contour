@@ -22,7 +22,7 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/golang/protobuf/ptypes/wrappers"
-	"github.com/google/go-cmp/cmp"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
@@ -184,7 +184,7 @@ func TestCluster(t *testing.T) {
 				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
-		"contour.heptio.com/max-connections": {
+		"projectcontour.io/max-connections": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
 					Name: s1.Name, Namespace: s1.Namespace,
@@ -210,7 +210,7 @@ func TestCluster(t *testing.T) {
 				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
-		"contour.heptio.com/max-pending-requests": {
+		"projectcontour.io/max-pending-requests": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
 					Name: s1.Name, Namespace: s1.Namespace,
@@ -236,7 +236,7 @@ func TestCluster(t *testing.T) {
 				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
-		"contour.heptio.com/max-requests": {
+		"projectcontour.io/max-requests": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
 					Name: s1.Name, Namespace: s1.Namespace,
@@ -262,7 +262,7 @@ func TestCluster(t *testing.T) {
 				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
-		"contour.heptio.com/max-retries": {
+		"projectcontour.io/max-retries": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
 					Name: s1.Name, Namespace: s1.Namespace,
@@ -290,8 +290,8 @@ func TestCluster(t *testing.T) {
 		},
 		"cluster with random load balancer policy": {
 			cluster: &dag.Cluster{
-				Upstream:             service(s1),
-				LoadBalancerStrategy: "Random",
+				Upstream:           service(s1),
+				LoadBalancerPolicy: "Random",
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/58d888c08a",
@@ -308,8 +308,8 @@ func TestCluster(t *testing.T) {
 		},
 		"cluster with cookie policy": {
 			cluster: &dag.Cluster{
-				Upstream:             service(s1),
-				LoadBalancerStrategy: "Cookie",
+				Upstream:           service(s1),
+				LoadBalancerPolicy: "Cookie",
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/e4f81994fe",
@@ -380,9 +380,7 @@ func TestCluster(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := Cluster(tc.cluster)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -434,7 +432,7 @@ func TestClustername(t *testing.T) {
 						TargetPort: intstr.FromInt(6502),
 					},
 				},
-				LoadBalancerStrategy: "Random",
+				LoadBalancerPolicy: "Random",
 				HealthCheckPolicy: &dag.HealthCheckPolicy{
 					Path:               "/healthz",
 					Interval:           5 * time.Second,
@@ -457,7 +455,7 @@ func TestClustername(t *testing.T) {
 						TargetPort: intstr.FromInt(6502),
 					},
 				},
-				LoadBalancerStrategy: "Random",
+				LoadBalancerPolicy: "Random",
 				UpstreamValidation: &dag.UpstreamValidation{
 					CACertificate: &dag.Secret{
 						Object: &v1.Secret{
@@ -480,9 +478,7 @@ func TestClustername(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := Clustername(tc.cluster)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -501,12 +497,10 @@ func TestLBPolicy(t *testing.T) {
 		"Maglev":   v2.Cluster_ROUND_ROBIN,
 	}
 
-	for strategy, want := range tests {
-		t.Run(strategy, func(t *testing.T) {
-			got := lbPolicy(strategy)
-			if diff := cmp.Diff(want, got); diff != "" {
-				t.Fatal(diff)
-			}
+	for policy, want := range tests {
+		t.Run(policy, func(t *testing.T) {
+			got := lbPolicy(policy)
+			assert.Equal(t, want, got)
 		})
 	}
 }
@@ -566,30 +560,16 @@ func TestTruncate(t *testing.T) {
 }
 
 func TestAnyPositive(t *testing.T) {
-	assert := func(want, got bool) {
-		t.Helper()
-		if want != got {
-			t.Fatal("expected", want, "got", got)
-		}
-	}
-
-	assert(false, anyPositive(0))
-	assert(true, anyPositive(1))
-	assert(false, anyPositive(0, 0))
-	assert(true, anyPositive(1, 0))
-	assert(true, anyPositive(0, 1))
+	assert.Equal(t, false, anyPositive(0))
+	assert.Equal(t, true, anyPositive(1))
+	assert.Equal(t, false, anyPositive(0, 0))
+	assert.Equal(t, true, anyPositive(1, 0))
+	assert.Equal(t, true, anyPositive(0, 1))
 }
 
 func TestU32nil(t *testing.T) {
-	assert := func(want, got *wrappers.UInt32Value) {
-		t.Helper()
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Fatal(diff)
-		}
-	}
-
-	assert(nil, u32nil(0))
-	assert(protobuf.UInt32(1), u32nil(1))
+	assert.Equal(t, (*wrappers.UInt32Value)(nil), u32nil(0))
+	assert.Equal(t, protobuf.UInt32(1), u32nil(1))
 }
 
 func TestClusterCommonLBConfig(t *testing.T) {
@@ -599,9 +579,7 @@ func TestClusterCommonLBConfig(t *testing.T) {
 			Value: 0,
 		},
 	}
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatal(diff)
-	}
+	assert.Equal(t, want, got)
 }
 
 func service(s *v1.Service, protocols ...string) *dag.Service {

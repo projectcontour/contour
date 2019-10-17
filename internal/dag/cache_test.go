@@ -20,7 +20,7 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -40,6 +40,21 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 			},
 			want: false,
+		},
+		"insert secret w/ blank ca.crt": {
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					"ca.crt":            []byte(""),
+					v1.TLSCertKey:       []byte(CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte(RSA_PRIVATE_KEY),
+				},
+			},
+			want: true,
 		},
 		"insert secret referenced by ingress": {
 			pre: []interface{}{

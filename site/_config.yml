@@ -3,7 +3,7 @@ title: Contour
 email:
 author: Contour Authors
 description: High performance ingress controller for Kubernetes
-url: projectcontour.io
+url: https://projectcontour.io
 logo: Contour.svg
 twitter:
   username: projectcontour
@@ -14,12 +14,10 @@ markdown: redcarpet
 hero:
   background-color: dark-blue
 footer:
-  title: Getting Started
-  content: To help you get started, see the documentation.
-  cta_title:
-  cta_url: /docs/
-  cta_text: Documentation
-  vm-link: http://vmware.github.io/
+  title: Ready to try Contour?
+  content: Read our getting started documentation.
+  cta_url: /getting-started/
+  cta_text: Getting Started
 
 footer_social_links:
   Twitter:
@@ -47,11 +45,17 @@ defaults:
     values:
       layout: "default"
 
-repository: heptio/contour
+repository: projectcontour/contour
 
 collections:
-  - contributors
-  - casestudies
+  guides:
+    output: true
+  resources:
+    output: true
+  contributors:
+    output: false
+  casestudies:
+    output: false
 
 # Build settings
 permalink: :title/
@@ -77,6 +81,7 @@ include:
   - README.md
   - _redirects
   - examples
+  - examples/proxydemo
 
 # Exclude these files from your production _site
 exclude:
@@ -87,5 +92,6 @@ exclude:
   - CNAME
   - Runbook.docx
   - '*.sh'
+  - vendor
 redcarpet:
     extensions: ["no_intra_emphasis", "tables", "autolink", "strikethrough", "with_toc_data"]

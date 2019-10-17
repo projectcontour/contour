@@ -18,6 +18,7 @@ import (
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestPathCondition(t *testing.T) {
@@ -55,8 +56,26 @@ func TestPathCondition(t *testing.T) {
 			conditions: []projcontour.Condition{{
 				Prefix: "/a/",
 			}},
-			// TODO(dfc) issue 1597
-			want: &PrefixCondition{Prefix: "/a"},
+			want: &PrefixCondition{Prefix: "/a/"},
+		},
+		"trailing slash on second prefix condition": {
+			conditions: []projcontour.Condition{{
+				Prefix: "/a",
+			},
+				{
+					Prefix: "/b/",
+				}},
+			want: &PrefixCondition{Prefix: "/a/b/"},
+		},
+		"nothing but slashes": {
+			conditions: []projcontour.Condition{
+				{
+					Prefix: "///",
+				},
+				{
+					Prefix: "/",
+				}},
+			want: &PrefixCondition{Prefix: "/"},
 		},
 		"header condition": {
 			conditions: []projcontour.Condition{{
@@ -68,7 +87,7 @@ func TestPathCondition(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := pathCondition(tc.conditions)
+			got := mergePathConditions(tc.conditions)
 			assert.Equal(t, tc.want, got)
 		})
 	}
@@ -219,13 +238,13 @@ func TestHeaderConditions(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := headerConditions(tc.conditions)
+			got := mergeHeaderConditions(tc.conditions)
 			assert.Equal(t, tc.want, got)
 		})
 	}
 }
 
-func TestConditionsValid(t *testing.T) {
+func TestPrefixConditionsValid(t *testing.T) {
 	tests := map[string]struct {
 		conditions []projcontour.Condition
 		want       bool
@@ -250,7 +269,7 @@ func TestConditionsValid(t *testing.T) {
 			}},
 			want: true,
 		},
-		"invalid path conditions": {
+		"two prefix conditions": {
 			conditions: []projcontour.Condition{{
 				Prefix: "/api",
 			}, {
@@ -258,7 +277,7 @@ func TestConditionsValid(t *testing.T) {
 			}},
 			want: false,
 		},
-		"invalid path condition with headers": {
+		"two prefix conditions with headers": {
 			conditions: []projcontour.Condition{{
 				Prefix: "/api",
 				Header: &projcontour.HeaderCondition{
@@ -270,11 +289,37 @@ func TestConditionsValid(t *testing.T) {
 			}},
 			want: false,
 		},
+		"invalid prefix condition": {
+			conditions: []projcontour.Condition{{
+				Prefix: "api",
+			}},
+			want: false,
+		},
+		"invalid prefix condition with headers": {
+			conditions: []projcontour.Condition{{
+				Prefix: "api",
+				Header: &projcontour.HeaderCondition{
+					Name:     "x-header",
+					Contains: "abc",
+				},
+			}},
+			want: false,
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := pathConditionsValid(tc.conditions)
+			// TODO(youngnick) This feels dirty but is required for now.
+			// #1652 covers changing ObjectStatusWriter to an interface
+			// instead.
+			swblank := &ObjectStatusWriter{}
+			sw, _ := swblank.WithObject(&projcontour.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "test",
+				},
+			})
+			got := pathConditionsValid(sw, tc.conditions, "test")
 			assert.Equal(t, tc.want, got)
 		})
 	}

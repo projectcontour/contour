@@ -76,7 +76,7 @@ func cluster(cluster *dag.Cluster) *v2.Cluster {
 		Name:           Clustername(cluster),
 		AltStatName:    altStatName(service),
 		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-		LbPolicy:       lbPolicy(cluster.LoadBalancerStrategy),
+		LbPolicy:       lbPolicy(cluster.LoadBalancerPolicy),
 		CommonLbConfig: ClusterCommonLBConfig(),
 		HealthChecks:   edshealthcheck(cluster),
 	}
@@ -165,7 +165,7 @@ func edshealthcheck(c *dag.Cluster) []*envoy_api_v2_core.HealthCheck {
 // Clustername returns the name of the CDS cluster for this service.
 func Clustername(cluster *dag.Cluster) string {
 	service := cluster.Upstream
-	buf := cluster.LoadBalancerStrategy
+	buf := cluster.LoadBalancerPolicy
 	if hc := cluster.HealthCheckPolicy; hc != nil {
 		if hc.Timeout > 0 {
 			buf += hc.Timeout.String()

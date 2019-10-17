@@ -31,7 +31,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -199,13 +199,14 @@ func TestGRPC(t *testing.T) {
 				Metrics:      ch.Metrics,
 				FieldLogger:  log,
 			}
+			r := prometheus.NewRegistry()
 			srv := NewAPI(log, map[string]Resource{
 				ch.ClusterCache.TypeURL():  &ch.ClusterCache,
 				ch.RouteCache.TypeURL():    &ch.RouteCache,
 				ch.ListenerCache.TypeURL(): &ch.ListenerCache,
 				ch.SecretCache.TypeURL():   &ch.SecretCache,
 				et.TypeURL():               et,
-			})
+			}, r)
 			l, err := net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)
 			done := make(chan error, 1)

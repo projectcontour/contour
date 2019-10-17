@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
@@ -121,10 +121,10 @@ func (b *Builder) addService(svc *v1.Service, port *v1.ServicePort) *Service {
 		ServicePort: port,
 
 		Protocol:           upstreamProtocol(svc, port),
-		MaxConnections:     parseUInt32(svc.Annotations[annotationMaxConnections]),
-		MaxPendingRequests: parseUInt32(svc.Annotations[annotationMaxPendingRequests]),
-		MaxRequests:        parseUInt32(svc.Annotations[annotationMaxRequests]),
-		MaxRetries:         parseUInt32(svc.Annotations[annotationMaxRetries]),
+		MaxConnections:     maxConnections(svc),
+		MaxPendingRequests: maxPendingRequests(svc),
+		MaxRequests:        maxRequests(svc),
+		MaxRetries:         maxRetries(svc),
 		ExternalName:       externalName(svc),
 	}
 	b.services[s.toMeta()] = s
@@ -132,7 +132,7 @@ func (b *Builder) addService(svc *v1.Service, port *v1.ServicePort) *Service {
 }
 
 func upstreamProtocol(svc *v1.Service, port *v1.ServicePort) string {
-	up := parseUpstreamProtocols(svc.Annotations, annotationUpstreamProtocol, "h2", "h2c", "tls")
+	up := parseUpstreamProtocols(svc.Annotations)
 	protocol := up[port.Name]
 	if protocol == "" {
 		protocol = up[strconv.Itoa(int(port.Port))]
@@ -268,7 +268,7 @@ func (b *Builder) computeSecureVirtualhosts() {
 				for _, host := range tls.Hosts {
 					svhost := b.lookupSecureVirtualHost(host)
 					svhost.Secret = sec
-					version := ing.Annotations["contour.heptio.com/tls-minimum-protocol-version"]
+					version := compatAnnotation(ing, "tls-minimum-protocol-version")
 					svhost.MinProtoVersion = MinProtoVersion(version)
 				}
 			}
@@ -293,6 +293,20 @@ func (b *Builder) delegationPermitted(secret Meta, to string) bool {
 		// secret is in the same namespace as target
 		return true
 	}
+
+	for _, d := range b.Source.httpproxydelegations {
+		if d.Namespace != secret.namespace {
+			continue
+		}
+		for _, d := range d.Spec.Delegations {
+			if contains(d.TargetNamespaces, to) {
+				if secret.name == d.SecretName {
+					return true
+				}
+			}
+		}
+	}
+
 	for _, d := range b.Source.irdelegations {
 		if d.Namespace != secret.namespace {
 			continue
@@ -406,7 +420,7 @@ func (b *Builder) computeIngressRoute(ir *ingressroutev1.IngressRoute) {
 		}
 		// passthrough is true if tls.secretName is not present, and
 		// tls.passthrough is set to true.
-		passthrough = isBlank(tls.SecretName) && tls.Passthrough
+		passthrough = tls.SecretName == "" && tls.Passthrough
 
 		// If not passthrough and secret is invalid, then set status
 		if sec == nil && !passthrough {
@@ -459,7 +473,11 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		// attach secrets to TLS enabled vhosts
 		m := splitSecret(tls.SecretName, proxy.Namespace)
 		sec := b.lookupSecret(m, validSecret)
-		if sec != nil && b.delegationPermitted(m, proxy.Namespace) {
+		if sec != nil {
+			if !b.delegationPermitted(m, proxy.Namespace) {
+				sw.SetInvalid(fmt.Sprintf("%s: certificate delegation not permitted", tls.SecretName))
+				return
+			}
 			svhost := b.lookupSecureVirtualHost(host)
 			svhost.Secret = sec
 			svhost.MinProtoVersion = MinProtoVersion(proxy.Spec.VirtualHost.TLS.MinimumProtocolVersion)
@@ -474,6 +492,10 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 			sw.SetInvalid(fmt.Sprintf("TLS Secret [%s] not found or is malformed", tls.SecretName))
 			return
 		}
+	}
+
+	if proxy.Spec.TCPProxy != nil && (passthrough || enforceTLS) {
+		b.processTCPProxyHTTPProxy(sw, proxy, host)
 	}
 
 	insecure := b.lookupVirtualHost(host)
@@ -517,8 +539,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 				return nil
 			}
 
-			if !pathConditionsValid(include.Conditions) {
-				sw.SetInvalid("include: cannot specify multiple path conditions in the same include")
+			if !pathConditionsValid(sw, include.Conditions, "include") {
 				return nil
 			}
 
@@ -536,8 +557,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			continue
 		}
 
-		if !pathConditionsValid(route.Conditions) {
-			sw.SetInvalid("route: cannot specify multiple path conditions in the same route")
+		if !pathConditionsValid(sw, route.Conditions, "route") {
 			return nil
 		}
 
@@ -550,11 +570,10 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 		}
 
 		r := &Route{
-			PathCondition:    pathCondition(conds),
-			HeaderConditions: headerConditions(conds),
+			PathCondition:    mergePathConditions(conds),
+			HeaderConditions: mergeHeaderConditions(conds),
 			Websocket:        route.EnableWebsockets,
 			HTTPSUpgrade:     routeEnforceTLS(enforceTLS, route.PermitInsecure && !b.DisablePermitInsecure),
-			PrefixRewrite:    route.PrefixRewrite,
 			TimeoutPolicy:    timeoutPolicy(route.TimeoutPolicy),
 			RetryPolicy:      retryPolicy(route.RetryPolicy),
 		}
@@ -585,11 +604,11 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			}
 
 			c := &Cluster{
-				Upstream:             s,
-				LoadBalancerStrategy: service.Strategy,
-				Weight:               service.Weight,
-				HealthCheckPolicy:    healthCheckPolicy(service.HealthCheck),
-				UpstreamValidation:   uv,
+				Upstream:           s,
+				LoadBalancerPolicy: loadBalancerPolicy(route.LoadBalancerPolicy),
+				Weight:             service.Weight,
+				HealthCheckPolicy:  healthCheckPolicy(route.HealthCheckPolicy),
+				UpstreamValidation: uv,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				sw.SetInvalid("only one service per route may be nominated as mirror")
@@ -759,11 +778,11 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 					}
 				}
 				r.Clusters = append(r.Clusters, &Cluster{
-					Upstream:             s,
-					LoadBalancerStrategy: service.Strategy,
-					Weight:               service.Weight,
-					HealthCheckPolicy:    healthCheckPolicy(service.HealthCheck),
-					UpstreamValidation:   uv,
+					Upstream:           s,
+					LoadBalancerPolicy: service.Strategy,
+					Weight:             service.Weight,
+					HealthCheckPolicy:  ingressrouteHealthCheckPolicy(service.HealthCheck),
+					UpstreamValidation: uv,
 				})
 			}
 
@@ -859,8 +878,8 @@ func (b *Builder) processTCPProxy(sw *ObjectStatusWriter, ir *ingressroutev1.Ing
 				return
 			}
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
-				Upstream:             s,
-				LoadBalancerStrategy: service.Strategy,
+				Upstream:           s,
+				LoadBalancerPolicy: service.Strategy,
 			})
 		}
 		b.lookupSecureVirtualHost(host).TCPProxy = &proxy
@@ -900,6 +919,26 @@ func (b *Builder) processTCPProxy(sw *ObjectStatusWriter, ir *ingressroutev1.Ing
 		sw, commit := sw.WithObject(dest)
 		b.processTCPProxy(sw, dest, visited, host)
 		commit()
+	}
+}
+
+func (b *Builder) processTCPProxyHTTPProxy(sw *ObjectStatusWriter, httpproxy *projcontour.HTTPProxy, host string) {
+	if len(httpproxy.Spec.TCPProxy.Services) > 0 {
+		var proxy TCPProxy
+		for _, service := range httpproxy.Spec.TCPProxy.Services {
+			m := Meta{name: service.Name, namespace: httpproxy.Namespace}
+			s := b.lookupService(m, intstr.FromInt(service.Port))
+			if s == nil {
+				sw.SetInvalid(fmt.Sprintf("tcpproxy: service %s/%s/%d: not found", httpproxy.Namespace, service.Name, service.Port))
+				return
+			}
+			proxy.Clusters = append(proxy.Clusters, &Cluster{
+				Upstream:           s,
+				LoadBalancerPolicy: loadBalancerPolicy(httpproxy.Spec.TCPProxy.LoadBalancerPolicy),
+			})
+		}
+		b.lookupSecureVirtualHost(host).TCPProxy = &proxy
+		return
 	}
 }
 

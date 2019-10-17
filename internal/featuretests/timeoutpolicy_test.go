@@ -23,7 +23,7 @@ import (
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/envoy"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -54,7 +54,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 			Name:      "kuard-ing",
 			Namespace: svc.Namespace,
 			Annotations: map[string]string{
-				"contour.heptio.com/request-timeout": "1m20s",
+				"projectcontour.io/response-timeout": "1m20s",
 			},
 		},
 		Spec: v1beta1.IngressSpec{
@@ -82,7 +82,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 			Name:      "kuard-ing",
 			Namespace: svc.Namespace,
 			Annotations: map[string]string{
-				"contour.heptio.com/request-timeout": "infinity",
+				"projectcontour.io/response-timeout": "infinity",
 			},
 		},
 		Spec: i1.Spec,
@@ -108,7 +108,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 			Name:      "kuard-ing",
 			Namespace: svc.Namespace,
 			Annotations: map[string]string{
-				"contour.heptio.com/request-timeout": "monday",
+				"projectcontour.io/response-timeout": "monday",
 			},
 		},
 		Spec: i2.Spec,
@@ -128,7 +128,34 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	})
-	rh.OnDelete(i3)
+
+	i4 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-ing",
+			Namespace: svc.Namespace,
+			Annotations: map[string]string{
+				"contour.heptio.com/request-timeout": "90s",
+				"projectcontour.io/response-timeout": "99s",
+			},
+		},
+		Spec: i2.Spec,
+	}
+	rh.OnUpdate(i3, i4)
+
+	// assert that projectcontour.io/response-timeout takes priority.
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("*",
+					envoy.Route(envoy.RoutePrefix("/"),
+						withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 99*time.Second)),
+				),
+			),
+			envoy.RouteConfiguration("ingress_https"),
+		),
+		TypeUrl: routeType,
+	})
+	rh.OnDelete(i4)
 
 	ir1 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{

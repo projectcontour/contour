@@ -28,7 +28,7 @@ import (
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -412,7 +412,7 @@ func TestClusterVisit(t *testing.T) {
 							Services: []ingressroutev1.Service{{
 								Name: "backend",
 								Port: 80,
-								HealthCheck: &projcontour.HealthCheck{
+								HealthCheck: &ingressroutev1.HealthCheck{
 									Path: "/healthy",
 								},
 							}},
@@ -470,7 +470,7 @@ func TestClusterVisit(t *testing.T) {
 							Services: []ingressroutev1.Service{{
 								Name: "backend",
 								Port: 80,
-								HealthCheck: &projcontour.HealthCheck{
+								HealthCheck: &ingressroutev1.HealthCheck{
 									Host:                    "foo-bar-host",
 									Path:                    "/healthy",
 									TimeoutSeconds:          99,
@@ -769,10 +769,10 @@ func TestClusterVisit(t *testing.T) {
 					"default",
 					"kuard",
 					map[string]string{
-						"contour.heptio.com/max-connections":      "9000",
-						"contour.heptio.com/max-pending-requests": "4096",
-						"contour.heptio.com/max-requests":         "404",
-						"contour.heptio.com/max-retries":          "7",
+						"projectcontour.io/max-connections":      "9000",
+						"projectcontour.io/max-pending-requests": "4096",
+						"projectcontour.io/max-requests":         "404",
+						"projectcontour.io/max-retries":          "7",
 					},
 					v1.ServicePort{
 						Protocol: "TCP",
@@ -804,6 +804,48 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
+		"projectcontour.io/num-retries annotation": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"projectcontour.io/num-retries": "7",
+							"projectcontour.io/retry-on":    "gateway-error",
+						},
+					},
+					Spec: v1beta1.IngressSpec{
+						Backend: &v1beta1.IngressBackend{
+							ServiceName: "kuard",
+							ServicePort: intstr.FromString("https"),
+						},
+					},
+				},
+				service("default", "kuard",
+					v1.ServicePort{
+						Name:       "https",
+						Protocol:   "TCP",
+						Port:       443,
+						TargetPort: intstr.FromInt(8443),
+					},
+				),
+			},
+			want: clustermap(
+				&v2.Cluster{
+					Name:                 "default/kuard/443/da39a3ee5e",
+					AltStatName:          "default_kuard_443",
+					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy.ConfigSource("contour"),
+						ServiceName: "default/kuard/https",
+					},
+					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
+					LbPolicy:       v2.Cluster_ROUND_ROBIN,
+					CommonLbConfig: envoy.ClusterCommonLBConfig(),
+				}),
+		},
+
 		"contour.heptio.com/num-retries annotation": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
@@ -812,7 +854,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 						Annotations: map[string]string{
 							"contour.heptio.com/num-retries": "7",
-							"contour.heptio.com/retry-on":    "gateway-error",
+							"projectcontour.io/retry-on":     "gateway-error",
 						},
 					},
 					Spec: v1beta1.IngressSpec{

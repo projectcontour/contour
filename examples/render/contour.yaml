@@ -327,6 +327,14 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - "networking.k8s.io"
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups: ["contour.heptio.com"]
   resources: ["ingressroutes", "tlscertificatedelegations"]
   verbs:
@@ -465,6 +473,7 @@ spec:
       - args:
         - serve
         - --incluster
+        - --use-extensions-v1beta1-ingress
         - --xds-address=0.0.0.0
         - --xds-port=8001
         - --envoy-service-http-port=80
@@ -559,7 +568,7 @@ spec:
         - --log-level info
         command:
         - envoy
-        image: docker.io/envoyproxy/envoy:v1.11.1
+        image: docker.io/envoyproxy/envoy:v1.11.2
         imagePullPolicy: IfNotPresent
         name: envoy
         env:

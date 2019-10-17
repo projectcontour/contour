@@ -5,8 +5,11 @@ metadata:
   labels:
     app: grafana
   name: grafana
-  namespace: contour-monitoring
+  namespace: projectcontour-monitoring
 spec:
+  selector:
+    matchLabels:
+      app: grafana
   replicas: 1
   template:
     metadata:

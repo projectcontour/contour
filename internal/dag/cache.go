@@ -14,8 +14,12 @@
 package dag
 
 import (
+	"bytes"
+	"encoding/json"
+
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
+	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
+	"k8s.io/api/networking/v1beta1"
 	"k8s.io/client-go/tools/cache"
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
@@ -71,10 +75,11 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		valid, err := isValidSecret(obj)
 		if !valid {
 			if err != nil {
-				kc.WithField("name", obj.Name).
-					WithField("namespace", obj.Namespace).
-					WithField("kind", obj.Kind).
-					WithField("version", obj.APIVersion).
+				om := obj.GetObjectMeta()
+				kc.WithField("name", om.GetName()).
+					WithField("namespace", om.GetNamespace()).
+					WithField("kind", "Secret").
+					WithField("version", "v1").
 					Error(err)
 			}
 			return false
@@ -104,6 +109,16 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		}
 		kc.ingresses[m] = obj
 		return true
+	case *extensionsv1beta1.Ingress:
+		ingress := new(v1beta1.Ingress)
+		if err := transposeIngress(obj, ingress); err != nil {
+			om := obj.GetObjectMeta()
+			kc.WithField("name", om.GetName()).
+				WithField("namespace", om.GetNamespace()).
+				Error(err)
+			return false
+		}
+		return kc.Insert(ingress)
 	case *ingressroutev1.IngressRoute:
 		class := ingressClass(obj)
 		if class != "" && class != kc.ingressClass() {
@@ -178,6 +193,11 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		delete(kc.services, m)
 		return ok
 	case *v1beta1.Ingress:
+		m := toMeta(obj)
+		_, ok := kc.ingresses[m]
+		delete(kc.ingresses, m)
+		return ok
+	case *extensionsv1beta1.Ingress:
 		m := toMeta(obj)
 		_, ok := kc.ingresses[m]
 		delete(kc.ingresses, m)
@@ -389,4 +409,16 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 	}
 
 	return false
+}
+
+// transposeIngress transposes extensionis/v1beta1.Ingress objects into
+// networking/v1beta1.Ingress objects.
+func transposeIngress(src *extensionsv1beta1.Ingress, dst *v1beta1.Ingress) error {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	if err := enc.Encode(src); err != nil {
+		return nil
+	}
+	dec := json.NewDecoder(&buf)
+	return dec.Decode(dst)
 }

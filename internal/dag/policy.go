@@ -18,7 +18,7 @@ import (
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/api/networking/v1beta1"
 )
 
 func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
@@ -33,34 +33,38 @@ func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
 	}
 }
 
+// ingressRetryPolicy builds a RetryPolicy from ingress annotations.
 func ingressRetryPolicy(ingress *v1beta1.Ingress) *RetryPolicy {
-	retryOn, ok := ingress.Annotations[annotationRetryOn]
-	if !ok || len(retryOn) < 1 {
+	retryOn := compatAnnotation(ingress, "retry-on")
+	if len(retryOn) < 1 {
 		return nil
 	}
 	// if there is a non empty retry-on annotation, build a RetryPolicy manually.
 	return &RetryPolicy{
 		RetryOn: retryOn,
-		// TODO(dfc) NumRetries may parse as 0, which is inconsistent with
+		// TODO(dfc) numRetries may parse as 0, which is inconsistent with
 		// retryPolicyIngressRoute()'s default value of 1.
-		NumRetries: parseUInt32(ingress.Annotations[annotationNumRetries]),
-		// TODO(dfc) PerTryTimeout will parse to -1, infinite, in the case of
+		NumRetries: numRetries(ingress),
+		// TODO(dfc) perTryTimeout will parse to -1, infinite, in the case of
 		// invalid data, this is inconsistent with retryPolicyIngressRoute()'s default value
 		// of 0 duration.
-		PerTryTimeout: parseTimeout(ingress.Annotations[annotationPerTryTimeout]),
+		PerTryTimeout: perTryTimeout(ingress),
 	}
 }
 
 func ingressTimeoutPolicy(ingress *v1beta1.Ingress) *TimeoutPolicy {
-	response, ok := ingress.Annotations[annotationRequestTimeout]
-	if !ok {
-		return nil
+	response := compatAnnotation(ingress, "response-timeout")
+	if len(response) == 0 {
+		// Note: due to a misunderstanding the name of the annotation is
+		// request timeout, but it is actually applied as a timeout on
+		// the response body.
+		response = compatAnnotation(ingress, "request-timeout")
+		if len(response) == 0 {
+			return nil
+		}
 	}
 	// if the request timeout annotation is present on this ingress
 	// construct and use the ingressroute timeout policy logic.
-	// Note: due to a misunderstanding the name of the annotation is
-	// request timeout, but it is actually applied as a timeout on
-	// the response body.
 	return timeoutPolicy(&projcontour.TimeoutPolicy{
 		Response: response,
 	})
@@ -87,8 +91,7 @@ func timeoutPolicy(tp *projcontour.TimeoutPolicy) *TimeoutPolicy {
 		IdleTimeout:     parseTimeout(tp.Idle),
 	}
 }
-
-func healthCheckPolicy(hc *projcontour.HealthCheck) *HealthCheckPolicy {
+func ingressrouteHealthCheckPolicy(hc *ingressroutev1.HealthCheck) *HealthCheckPolicy {
 	if hc == nil {
 		return nil
 	}
@@ -99,6 +102,38 @@ func healthCheckPolicy(hc *projcontour.HealthCheck) *HealthCheckPolicy {
 		Timeout:            time.Duration(hc.TimeoutSeconds) * time.Second,
 		UnhealthyThreshold: hc.UnhealthyThresholdCount,
 		HealthyThreshold:   hc.HealthyThresholdCount,
+	}
+}
+
+func healthCheckPolicy(hc *projcontour.HTTPHealthCheckPolicy) *HealthCheckPolicy {
+	if hc == nil {
+		return nil
+	}
+	return &HealthCheckPolicy{
+		Path:               hc.Path,
+		Host:               hc.Host,
+		Interval:           time.Duration(hc.IntervalSeconds) * time.Second,
+		Timeout:            time.Duration(hc.TimeoutSeconds) * time.Second,
+		UnhealthyThreshold: hc.UnhealthyThresholdCount,
+		HealthyThreshold:   hc.HealthyThresholdCount,
+	}
+}
+
+// loadBalancerPolicy returns the load balancer strategy or
+// blank if no valid strategy is supplied.
+func loadBalancerPolicy(lbp *projcontour.LoadBalancerPolicy) string {
+	if lbp == nil {
+		return ""
+	}
+	switch lbp.Strategy {
+	case "WeightedLeastRequest":
+		return "WeightedLeastRequest"
+	case "Random":
+		return "Random"
+	case "Cookie":
+		return "Cookie"
+	default:
+		return ""
 	}
 }
 
