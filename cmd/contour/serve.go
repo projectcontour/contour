@@ -288,7 +288,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			et.TypeURL():                            et,
 		}
 		opts := ctx.grpcOptions()
-		s := cgrpc.NewAPI(log, resources, opts...)
+		s := cgrpc.NewAPI(log, resources, registry, opts...)
 		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
 		l, err := net.Listen("tcp", addr)
 		if err != nil {
