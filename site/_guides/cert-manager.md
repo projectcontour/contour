@@ -9,7 +9,7 @@ This tutorial shows you how to securely deploy an HTTPS web application on a Kub
 - Contour, as the Ingress controller
 - [JetStack's cert-manager][1] to provision TLS certificates from [the Let's Encrypt project][5]
 
-**Please note** that this tutorial currently only works with `Ingress` resources. `IngressRoute` support will land when https://github.com/projectcontour/contour/issues/509 is fixed.
+**Please note** that this tutorial currently only works with `Ingress` resources. `IngressRoute` support will land when issue [#509](https://github.com/projectcontour/contour/issues/509) is fixed.
 
 ## Prerequisites
 
@@ -101,7 +101,7 @@ NAME                       READY     STATUS    RESTARTS   AGE
 kuard-67ff6dd458-sfxkb     1/1       Running   0          19d
 ```
 
-Then type the DNS name you set up in the previous step into a web browser, for example http://gke.davecheney.com/. You should see something like:
+Then type the DNS name you set up in the previous step into a web browser, for example `http://gke.davecheney.com/`. You should see something like:
 
 ![KAURD screenshot][kuard]
 
@@ -433,7 +433,7 @@ spec:
     server: https://acme-v02.api.letsencrypt.org/directory
 ```
 
-again replacing user@example.com with your email address.
+again replacing `user@example.com` with your email address.
 
 Deploy:
 
@@ -533,5 +533,5 @@ $ curl -v http://httpbin.davecheney.com/get
 [kuard]: /img/cert-manager/kuard.png
 [httpbin]: /img/cert-manager/httpbin.png
 [5]: https://letsencrypt.org/getting-started/
-[6]: #3-deploy-your-first-HTTPS-site
-[7]: ./deploy-options.md#get-your-hostname-or-ip-address
+[6]: #3-deploy-your-first-https-site
+[7]: {% link _guides/deploy-options.md %}#get-your-hostname-or-ip-address
