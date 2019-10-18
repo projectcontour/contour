@@ -990,6 +990,35 @@ spec:
       weight: 20
 ```
 
+## Upstream Validation
+
+When defining upstream services on a route, it's possible to configure the connection from Envoy to the backend endpoint to communicate over TLS.
+Two configuration items are required, a CA certificate and a `SubjectName` which are both used to verify the backend endpoint's identity.
+
+The CA certificate bundle for the backend service should be supplied in a Kubernetes Secret.
+The referenced Secret must be of type "Opaque" and have a data key named `ca.crt`.
+This data value must be a PEM-encoded certificate bundle.
+
+In addition to the CA certificate and the subject name, the Kubernetes service must also be annotated with a Contour specific annotation: `projectcontour.io/upstream-protocol.tls: <port>` ([see annotations section](annotations.md))
+
+_Note: This annotation is applied to the Service not the Ingress or HTTPProxy object._
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: blog
+  namespace: marketing
+spec:
+  routes:
+    - services:
+        - name: s2
+          port: 80
+          validation:
+            caSecret: foo-ca-cert
+            subjectName: foo.marketing
+```
+
 ## Status Reporting
 
 There are many misconfigurations that could cause an HTTPProxy or delegation to be invalid.
