@@ -15,9 +15,8 @@ package dag
 
 import v1 "k8s.io/api/core/v1"
 
-// sample data from https://8gwifi.org/PemParserFunctions.jsp
-
 const (
+	// sample data from https://8gwifi.org/PemParserFunctions.jsp
 	CERTIFICATE = `-----BEGIN CERTIFICATE-----
 MIIFtTCCA52gAwIBAgIJAO0cq2lJPZZJMA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV
 BAYTAkFVMRMwEQYDVQQIEwpTb21lLVN0YXRlMSEwHwYDVQQKExhJbnRlcm5ldCBX
@@ -103,6 +102,30 @@ KMkcE4BT8IZIHQ+wIMhmYLAdSQCVVv8x78jN0sZCC0fjqVuyPdYQ8sIc3OHsJZcW
 lzewFW72lfsiB/RxWZ/XwXONXeW5Quf+XwbGGboTofyzTxzsYSwn1U9Kt8iaY8zr
 z7Z5SQCSf2Js9V9lJcodYswWlxrdtoRKA/WgrvQkZhGGAePTUVoO5Lab29M8
 -----END RSA PRIVATE KEY-----`
+
+	// sample elliptical curve data generated
+	// openssl ecparam -name prime256v1 -genkey -out ec_key.pem
+	// openssl req -new -x509 -key ec_key.pem -out ec_crt.pem -days 3650
+	EC_CERTIFICATE = `-----BEGIN CERTIFICATE-----
+MIIBbjCCARQCCQCPA0hmRaqduTAKBggqhkjOPQQDAjA/MQswCQYDVQQGEwJVUzEL
+MAkGA1UECAwCQ0ExEjAQBgNVBAcMCVBhbG8gQWx0bzEPMA0GA1UECgwGVk1XYXJl
+MB4XDTE5MTAxNTAzMzkzM1oXDTI5MTAxMjAzMzkzM1owPzELMAkGA1UEBhMCVVMx
+CzAJBgNVBAgMAkNBMRIwEAYDVQQHDAlQYWxvIEFsdG8xDzANBgNVBAoMBlZNV2Fy
+ZTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABFUOHv4hnLcopcYdjojx2j/FmFX6
+MOLVVNsNpZ4SpmcGKN2zGp0SyAQgNhY0gGojC0g+VVYrh8X3GQAXYdvIjfMwCgYI
+KoZIzj0EAwIDSAAwRQIhAJudFacSiwcRtyQ2aNYAPbDJnnwbUTXRCVRlgLysgP5G
+AiALPSbO8d0wa24Z0AU2oXocuNkDaH8qEyp2yhL5LKI3Dw==
+-----END CERTIFICATE-----
+`
+	EC_PRIVATE_KEY = `-----BEGIN EC PARAMETERS-----
+BggqhkjOPQMBBw==
+-----END EC PARAMETERS-----
+-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIOlYOKzXGQTYlKDkuM62/U84DjxEOa8T3XGYlVmycFJroAoGCCqGSM49
+AwEHoUQDQgAEVQ4e/iGctyilxh2OiPHaP8WYVfow4tVU2w2lnhKmZwYo3bManRLI
+BCA2FjSAaiMLSD5VViuHxfcZABdh28iN8w==
+-----END EC PRIVATE KEY-----
+`
 )
 
 func secretdata(cert, key string) map[string][]byte {

@@ -20,7 +20,7 @@ Before you start you will need:
 Run:
 
 ```bash
-kubectl apply -f {{ site.url }}/quickstart/contour.yaml
+$ kubectl apply -f {{ site.url }}/quickstart/contour.yaml
 ```
 
 This command creates:
@@ -40,7 +40,7 @@ If you don't have an application ready to run with Contour, you can explore with
 Run:
 
 ```bash
-kubectl apply -f {{ site.url }}/examples/kuard.yaml
+$ kubectl apply -f {{ site.url }}/examples/kuard.yaml
 ```
 
 This example specifies a default backend for all hosts, so that you can test your Contour install. It's recommended for exploration and testing only, however, because it responds to all requests regardless of the incoming DNS that is mapped. You probably want to run with specific Ingress rules for specific hostnames.

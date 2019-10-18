@@ -5,7 +5,7 @@ layout: page
 
 This document describes the differences between IngressRoute and HTTPProxy.
 It is intended for Contour users who have existing IngressRoute resources they wish to migrate to HTTPProxy.
-It is not intended a comprehensive documentation of HTTPProxy, for that please see the [`HTTPProxy` documentation]({{ site.github.repository_url }}/tree/master/docs/httpproxy.md).
+It is not intended a comprehensive documentation of HTTPProxy, for that please see the [`HTTPProxy` documentation]({% link _docs_1_0/httpproxy.md %}).
 
 _Note: IngressRoute is deprecated and will be removed after Contour 1.0 ships in November._
 
@@ -138,7 +138,7 @@ spec:
 
 HTTPProxy offers additional ways to match incoming requests to routes.
 This document covers the conversion between the routing offered in IngressRoute and HTTPProxy.
-For a broader discussion of HTTPProxy routing, see the [Routing section of the HTTPProxy documentation]({{ site.github.repository_url }}/tree/master/docs/httpproxy.md#Routing).
+For a broader discussion of HTTPProxy routing, see the [Routing section of the HTTPProxy documentation]({% link _docs_1_0/httpproxy.md %}#routing).
 
 Before:
 
@@ -369,7 +369,7 @@ As we explored the design of the next revision of IngressRoute the tight couplin
 
 This Gordian Knot was severed by decoupling the inclusion of one document into its parent from the facility to place restrictions on what route matching conditions could be specified in that document.
 The former we call _inclusion_, the latter are known as _conditions_.
-This section discusses conversion from delegation to inclusion, please see the [`HTTPProxy` documentation]({{ site.github.repository_url }}/tree/master/docs/httpproxy.md) for a discussion of conditions.
+This section discusses conversion from delegation to inclusion, please see the [`HTTPProxy` documentation]({% link _docs_1_0/httpproxy.md %}) for a discussion of conditions.
 
 Before:
 

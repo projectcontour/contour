@@ -14,7 +14,7 @@ Because the HTTP and HTTPS listeners both use the same code, if you have no ingr
 To test whether Contour is correctly deployed you can deploy the kuard example service:
 
 ```sh
-% kubectl apply -f https://projectcontour.io/examples/kuard.yaml
+$ kubectl apply -f https://projectcontour.io/examples/kuard.yaml
 ```
 
 ## Access the Envoy admin interface remotely

@@ -19,14 +19,14 @@ The `:latest` tag will continue to point to 0.15.1 until Contour 1.0.0 is releas
 Contour 1.0.0-rc.1 promotes the HTTPProxy CRD to v1.
 HTTPProxy is now considered stable, there will only be additive changes in the future.
 
-See the [HTTPProxy documentation]({{ site.github.repository_url }}/blob/v1.0.0-rc.1/docs/httpproxy.md) for more information.
+See the [HTTPProxy documentation]({% link _docs_1_0/httpproxy.md %}) for more information.
 
 ### `contour.heptio.com` annotations deprecated
 
 All the annotations with the prefix `contour.heptio.com` have been migrated to their respective `projectcontour.io` counterparts.
 The deprecated `contour.heptio.com` annotations will be recognized through the Contour 1.0 release, but are planned to be removed after Contour 1.0.
 
-See the [annotation documentation]({{ site.github.repository_url }}/blog/v1.0.0-rc.1/docs/annotations.md) for more information.
+See the [annotation documentation]({% link _docs_1_0/annotations.md %}) for more information.
 
 ## The easy way to upgrade
 
@@ -168,7 +168,7 @@ Contour will continue to recognize IngressRoute v1beta1 through Contour 1.0.0 fi
 
 The replacement for IngressRoute which we have called HTTPProxy is available in Contour 1.0.0-beta.1 and is anticipated to be declared final by Contour 1.0.0.
 
-See the [HTTPProxy documentation]({{ site.github.repository_url }}/blob/v1.0.0-beta.1/docs/httpproxy.md) for more information.
+See the [HTTPProxy documentation]({% link _docs_1_0/httpproxy.md %}) for more information.
 
 ## The easy way to upgrade
 

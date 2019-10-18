@@ -52,6 +52,9 @@ collections:
     output: true
   resources:
     output: true
+  docs_1_0:
+    output: true
+    permalink: /docs/1.0/:name
   contributors:
     output: false
   casestudies:
