@@ -35,6 +35,8 @@ vet: | test
 
 check: ## Run tests and CI checks
 check: test test-race vet gofmt staticcheck misspell unconvert unparam ineffassign yamllint
+	@echo Checking CRD YAML files are up to date
+	@(cd examples && bash rendercrds.sh && git diff --exit-code . || (echo "CRD YAML files are out of date" && exit 1))
 	@echo Checking rendered files are up to date
 	@(cd examples && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 
@@ -128,9 +130,13 @@ errcheck:
 	go install github.com/kisielk/errcheck
 	errcheck $(MODULE)/...
 
-render:
+render: rendercrds
 	@echo Rendering example deployment files...
 	@(cd examples && bash render.sh)
+
+rendercrds:
+	@echo Rendering CRDs
+	@(cd examples && bash rendercrds.sh)
 
 updategenerated: ## Update generated CRD code
 	@echo Updating generated CRD code...
