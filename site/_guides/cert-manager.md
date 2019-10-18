@@ -533,5 +533,5 @@ $ curl -v http://httpbin.davecheney.com/get
 [kuard]: /img/cert-manager/kuard.png
 [httpbin]: /img/cert-manager/httpbin.png
 [5]: https://letsencrypt.org/getting-started/
-[6]: #3-deploy-your-first-https-site
+[6]: #3-deploy-your-first-HTTPS-site
 [7]: {% link _guides/deploy-options.md %}#get-your-hostname-or-ip-address
