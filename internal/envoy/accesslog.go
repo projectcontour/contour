@@ -46,6 +46,7 @@ var JSONFields = map[string]string{
 	"upstream_service_time":     "%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%",
 	"user_agent":                "%REQ(USER-AGENT)%",
 	"x_forwarded_for":           "%REQ(X-FORWARDED-FOR)%",
+	"x_trace_id":                "%REQ(X-TRACE-ID)%",
 }
 
 // DefaultFields are fields that will be included by default when JSON logging is enabled.
