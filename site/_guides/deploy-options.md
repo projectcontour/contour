@@ -149,6 +149,42 @@ In your terminal, use curl with the IP or DNS address of the Contour Service to 
 ```sh
 $ curl -H 'Host: kuard.local' ${CONTOUR_IP}
 ```
+### Test with HTTPProxy
+
+To test your Contour deployment with [HTTPProxy](../../docs/httpproxy.md), run the following command:
+
+```sh
+$ kubectl apply -f https://projectcontour.io/examples/kuard-httpproxy.yaml
+```
+
+Then monitor the progress of the deployment with:
+
+```sh
+$ kubectl get po,svc,httpproxy -l app=kuard
+```
+
+You should see something like:
+
+```sh
+NAME                        READY     STATUS    RESTARTS   AGE
+pod/kuard-bcc7bf7df-9hj8d   1/1       Running   0          1h
+pod/kuard-bcc7bf7df-bkbr5   1/1       Running   0          1h
+pod/kuard-bcc7bf7df-vkbtl   1/1       Running   0          1h
+
+NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+service/kuard   ClusterIP   10.102.239.168   <none>        80/TCP    1h
+
+NAME                                    FQDN                TLS SECRET                  FIRST ROUTE  STATUS  STATUS DESCRIPT
+httpproxy.projectcontour.io/kuard      kuard.local         <SECRET NAME IF TLS USED>                valid   valid HTTPProxy 
+```
+
+... showing that there are three Pods, one Service, and one HTTPProxy .
+
+In your terminal, use curl with the IP or DNS address of the Contour Service to send a request to the demo application:
+
+```sh
+$ curl -H 'Host: kuard.local' ${CONTOUR_IP}
+```
 
 ## Running without a Kubernetes LoadBalancer
 
@@ -158,7 +194,8 @@ If you can't or don't want to use a Service of `type: LoadBalancer` there are ot
 
 If your cluster doesn't have the capability to configure a Kubernetes LoadBalancer,
 or if you want to configure the load balancer outside Kubernetes,
-you can change the Envoy Service in the  `02-service-envoy.yaml` file to set `type` to `NodePort`.
+you can change the Envoy Service in the [`02-service-envoy.yaml`](../../examples/contour/02-service-envoy.yaml) file and set `type` to `NodePort`.
+
 This will have every node in your cluster listen on the resultant port and forward traffic to Contour.
 That port can be discovered by taking the second number listed in the `PORT` column when listing the service, for example `30274` in `80:30274/TCP`.
 
