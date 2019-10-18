@@ -227,8 +227,9 @@ func (e *EventHandler) updateDAG() {
 		statuses := dag.Statuses()
 		e.setStatus(statuses)
 
-		metrics := calculateIngressRouteMetric(statuses)
+		metrics, proxymetrics := calculateRouteMetric(statuses)
 		e.Metrics.SetIngressRouteMetric(metrics)
+		e.Metrics.SetHTTPProxyMetric(proxymetrics)
 	default:
 		e.Debug("skipping status update: not the leader")
 	}
