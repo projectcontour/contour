@@ -3,7 +3,7 @@ title: Contour Deployment Options
 layout: page
 ---
 
-The [README]({% link getting-started.md %}) shows you a simple way to get started with Contour on your cluster.
+The [Getting Started]({% link getting-started.md %}) guide shows you a simple way to get started with Contour on your cluster.
 This topic explains the details and shows you additional options.
 Most of this covers running Contour using a Kubernetes Service of `Type: LoadBalancer`.
 If you don't have a cluster with that capability see the [Running without a Kubernetes LoadBalancer](#running-without-a-kubernetes-loadbalancer) section.
@@ -13,12 +13,10 @@ If you don't have a cluster with that capability see the [Running without a Kube
 ### Recommended installation details
 
 The recommended installation of Contour is Contour running in a Deployment and Envoy in a Daemonset with TLS securing the gRPC communication between them.
-The [`contour` example](../examples/contour/README.md) will install this for you.
-A Service of `type: LoadBalancer` is also set up to forward to the Envoy instances.
+The [`contour` example]({{site.github.repository_url}}/tree/master/examples/contour/README.md) will install this for you.
+A Service of `type: LoadBalancer` is also set up to forward traffic to the Envoy instances.
 
-The details of the installation are documented in [`contour`'s README.md](../examples/contour/README.md)
-
-If you wish to use Host Networking please see the [appropriate section](#host-networking) for the details.
+If you wish to use Host Networking, please see the [appropriate section](#host-networking) for the details.
 
 ## Testing your installation
 
@@ -77,7 +75,7 @@ $ kind create cluster --config examples/kind/kind-expose-port.yaml
 
 Then, your CONTOUR_IP (as used below) will just be `localhost:8080`.
 
-_Note: If you change Envoy's ports to bind to 80/443 then it's possible to add entried to your local `/etc/hosts` file and make requests like `http://kuard.local` which matches how it might work on a production installation._
+_Note: If you change Envoy's ports to bind to 80/443 then it's possible to add entries to your local `/etc/hosts` file and make requests like `http://kuard.local` which matches how it might work on a production installation._
 
 ### Test with Ingress
 
@@ -115,7 +113,7 @@ In your browser, navigate your browser to the IP or DNS address of the Contour S
 
 ### Test with IngressRoute
 
-To test your Contour deployment with [IngressRoutes](ingressroute.md), run the following command:
+To test your Contour deployment with [IngressRoutes]({{site.github.repository_url}}/tree/master/docs/ingressroute.md), run the following command:
 
 ```sh
 $ kubectl apply -f https://projectcontour.io/examples/kuard-ingressroute.yaml
@@ -151,7 +149,7 @@ $ curl -H 'Host: kuard.local' ${CONTOUR_IP}
 ```
 ### Test with HTTPProxy
 
-To test your Contour deployment with [HTTPProxy](../../docs/httpproxy.md), run the following command:
+To test your Contour deployment with [HTTPProxy]({{site.github.repository_url}}/tree/master/docs/httpproxy.md), run the following command:
 
 ```sh
 $ kubectl apply -f https://projectcontour.io/examples/kuard-httpproxy.yaml
@@ -194,7 +192,7 @@ If you can't or don't want to use a Service of `type: LoadBalancer` there are ot
 
 If your cluster doesn't have the capability to configure a Kubernetes LoadBalancer,
 or if you want to configure the load balancer outside Kubernetes,
-you can change the Envoy Service in the [`02-service-envoy.yaml`](../../examples/contour/02-service-envoy.yaml) file and set `type` to `NodePort`.
+you can change the Envoy Service in the [`02-service-envoy.yaml`]({{site.github.repository_url}}/tree/master/examples/contour/02-service-envoy.yaml) file and set `type` to `NodePort`.
 
 This will have every node in your cluster listen on the resultant port and forward traffic to Contour.
 That port can be discovered by taking the second number listed in the `PORT` column when listing the service, for example `30274` in `80:30274/TCP`.
@@ -208,7 +206,7 @@ This is done by having the Contour pod run with host networking.
 Do this with `hostNetwork: true` on your pod definition.
 Envoy will listen directly on port 8080 on each host that it is running.
 This is best paired with a DaemonSet (perhaps paired with Node affinity) to ensure that a single instance of Contour runs on each Node.
-See the [AWS NLB tutorial](deploy-aws-nlb.md) as an example.
+See the [AWS NLB tutorial]({% link _guides/deploy-aws-nlb.md %}) as an example.
 
 ## Running Contour in tandem with another ingress controller
 
