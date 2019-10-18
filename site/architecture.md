@@ -11,7 +11,7 @@ The Contour Ingress controller is a collaboration between:
 These containers are deployed separately, Contour as a Deployment and Envoy as a Daemonset, although other configurations are possible.
 
 In the Envoy Pods, Contour runs as an initcontainer in `bootstrap` mode and writes a bootstrap configuration to a temporary volume.
-This volume is passed to the Envoy container and directs Envoy to treat Contour as its [management server](https://github.com/envoyproxy/data-plane-api#terminology).
+This volume is passed to the Envoy container and directs Envoy to treat Contour as its [management server](https://www.envoyproxy.io/docs/envoy/v1.11.2/api-docs/xds_protocol).
 
 After initialisation is complete, the Envoy container starts, retrieves the bootstrap configuration written by Contour's `bootstrap` mode, and starts to poll Contour for configuration.
 
