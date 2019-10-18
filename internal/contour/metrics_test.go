@@ -276,6 +276,272 @@ func TestIngressRouteMetrics(t *testing.T) {
 		},
 	}
 
+	// proxy1 is a valid httpproxy
+	proxy1 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name: "delegated",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/prefix",
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy2 is invalid because it contains a service with negative port
+	proxy2 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: -80,
+				}},
+			}},
+		},
+	}
+
+	// proxy3 is invalid because it lives outside the roots namespace
+	proxy3 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "finance",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foobar",
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	//// proxy4 is invalid because its match prefix does not match its parent's (proxy1)
+	//proxy4 := &projcontour.HTTPProxy{
+	//	ObjectMeta: metav1.ObjectMeta{
+	//		Namespace: "roots",
+	//		Name:      "delegated",
+	//	},
+	//	Spec: projcontour.HTTPProxySpec{
+	//		Routes: []projcontour.Route{{
+	//			Conditions: []projcontour.Condition{{
+	//				Prefix: "/doesnotmatch",
+	//			}},
+	//			Services: []projcontour.Service{{
+	//				Name: "home",
+	//				Port: 8080,
+	//			}},
+	//		}},
+	//	},
+	//}
+
+	// proxy6 is invalid because it delegates to itself, producing a cycle
+	proxy6 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "self",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name: "self",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+			}},
+		},
+	}
+
+	// proxy7 delegates to proxy8, which is invalid because it delegates back to proxy7
+	proxy7 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "parent",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name: "child",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+			}},
+		},
+	}
+
+	proxy8 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "child",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Includes: []projcontour.Include{{
+				Name: "parent",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+			}},
+		},
+	}
+
+	//// proxy9 is invalid because it has a route that both delegates and has a list of services
+	//proxy9 := &projcontour.HTTPProxy{
+	//	ObjectMeta: metav1.ObjectMeta{
+	//		Namespace: "roots",
+	//		Name:      "parent",
+	//	},
+	//	Spec: projcontour.HTTPProxySpec{
+	//		VirtualHost: &projcontour.VirtualHost{
+	//			Fqdn: "example.com",
+	//		},
+	//		Includes: []projcontour.Include{{
+	//			Name: "child",
+	//			Conditions: []projcontour.Condition{{
+	//				Prefix: "/foo",
+	//			}},
+	//		}},
+	//		Routes: []projcontour.Route{{
+	//			Services: []projcontour.Service{{
+	//				Name: "kuard",
+	//				Port: 8080,
+	//			}},
+	//		}},
+	//	},
+	//}
+
+	// proxy10 delegates to proxy11 and proxy12.
+	proxy10 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "parent",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name: "validChild",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+			}, {
+				Name: "invalidChild",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/bar",
+				}},
+			}},
+		},
+	}
+
+	proxy11 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "validChild",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+				Services: []projcontour.Service{{
+					Name: "foo",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy12 is invalid because it contains an invalid port
+	proxy12 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "invalidChild",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/bar",
+				}},
+				Services: []projcontour.Service{{
+					Name: "foo",
+					Port: 12345678,
+				}},
+			}},
+		},
+	}
+
+	// proxy13 is invalid because it does not specify and FQDN
+	proxy13 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "parent",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+				Services: []projcontour.Service{{
+					Name: "foo",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy14 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "invalidParent",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{},
+			Includes: []projcontour.Include{{
+				Name: "validChild",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+			}},
+		},
+	}
+
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
@@ -320,12 +586,229 @@ func TestIngressRouteMetrics(t *testing.T) {
 
 	tests := map[string]struct {
 		objs           []interface{}
-		want           metrics.IngressRouteMetric
+		wantIR         *metrics.RouteMetric
+		wantProxy      *metrics.RouteMetric
 		rootNamespaces []string
 	}{
 		"valid ingressroute": {
 			objs: []interface{}{ir1, s3},
-			want: metrics.IngressRouteMetric{
+			wantIR: &metrics.RouteMetric{
+				Invalid: map[metrics.Meta]int{},
+				Valid: map[metrics.Meta]int{
+					{Namespace: "roots", VHost: "example.com"}: 1,
+				},
+				Orphaned: map[metrics.Meta]int{},
+				Root: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Total: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+			},
+			wantProxy: nil,
+		},
+		"invalid port in service": {
+			objs: []interface{}{ir2},
+			wantIR: &metrics.RouteMetric{
+				Invalid: map[metrics.Meta]int{
+					{Namespace: "roots", VHost: "example.com"}: 1,
+				},
+				Valid:    map[metrics.Meta]int{},
+				Orphaned: map[metrics.Meta]int{},
+				Root: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Total: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+			},
+			wantProxy: nil,
+		},
+		"root ingressroute outside of roots namespace": {
+			objs: []interface{}{ir3},
+			wantIR: &metrics.RouteMetric{
+				Invalid: map[metrics.Meta]int{
+					{Namespace: "finance"}: 1,
+				},
+				Valid:    map[metrics.Meta]int{},
+				Orphaned: map[metrics.Meta]int{},
+				Root: map[metrics.Meta]int{
+					{Namespace: "finance"}: 1,
+				},
+				Total: map[metrics.Meta]int{
+					{Namespace: "finance"}: 1,
+				},
+			},
+			wantProxy:      nil,
+			rootNamespaces: []string{"foo"},
+		},
+		"delegated route's match prefix does not match parent's prefix": {
+			objs: []interface{}{ir1, ir4, s3},
+			wantIR: &metrics.RouteMetric{
+				Invalid: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Valid: map[metrics.Meta]int{
+					{Namespace: "roots", VHost: "example.com"}: 1,
+				},
+				Orphaned: map[metrics.Meta]int{},
+				Root: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Total: map[metrics.Meta]int{
+					{Namespace: "roots"}: 2,
+				},
+			},
+			wantProxy: nil,
+		},
+		"root ingressroute does not specify FQDN": {
+			objs: []interface{}{ir13},
+			wantIR: &metrics.RouteMetric{
+				Invalid: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Valid:    map[metrics.Meta]int{},
+				Orphaned: map[metrics.Meta]int{},
+				Root: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Total: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+			},
+			wantProxy: nil,
+		},
+		"self-edge produces a cycle": {
+			objs: []interface{}{ir6},
+			wantIR: &metrics.RouteMetric{
+				Invalid: map[metrics.Meta]int{
+					{Namespace: "roots", VHost: "example.com"}: 1,
+				},
+				Valid:    map[metrics.Meta]int{},
+				Orphaned: map[metrics.Meta]int{},
+				Root: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Total: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+			},
+			wantProxy: nil,
+		},
+		"child delegates to parent, producing a cycle": {
+			objs: []interface{}{ir7, ir8},
+			wantIR: &metrics.RouteMetric{
+				Invalid: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Valid: map[metrics.Meta]int{
+					{Namespace: "roots", VHost: "example.com"}: 1,
+				},
+				Orphaned: map[metrics.Meta]int{},
+				Root: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Total: map[metrics.Meta]int{
+					{Namespace: "roots"}: 2,
+				},
+			},
+			wantProxy: nil,
+		},
+		"route has a list of services and also delegates": {
+			objs: []interface{}{ir9},
+			wantIR: &metrics.RouteMetric{
+				Invalid: map[metrics.Meta]int{
+					{Namespace: "roots", VHost: "example.com"}: 1,
+				},
+				Valid:    map[metrics.Meta]int{},
+				Orphaned: map[metrics.Meta]int{},
+				Root: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Total: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+			},
+			wantProxy: nil,
+		},
+		"ingressroute is an orphaned route": {
+			objs: []interface{}{ir8},
+			wantIR: &metrics.RouteMetric{
+				Invalid: map[metrics.Meta]int{},
+				Valid:   map[metrics.Meta]int{},
+				Orphaned: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Root: map[metrics.Meta]int{},
+				Total: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+			},
+			wantProxy: nil,
+		},
+		"ingressroute delegates to multiple ingressroutes, one is invalid": {
+			objs: []interface{}{ir10, ir11, ir12, s1, s2},
+			wantIR: &metrics.RouteMetric{
+				Invalid: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Valid: map[metrics.Meta]int{
+					{Namespace: "roots"}:                       1,
+					{Namespace: "roots", VHost: "example.com"}: 1,
+				},
+				Orphaned: map[metrics.Meta]int{},
+				Root: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Total: map[metrics.Meta]int{
+					{Namespace: "roots"}: 3,
+				},
+			},
+			wantProxy: nil,
+		},
+		"invalid parent orphans children": {
+			objs: []interface{}{ir14, ir11},
+			wantIR: &metrics.RouteMetric{
+				Invalid: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Valid: map[metrics.Meta]int{},
+				Orphaned: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Root: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Total: map[metrics.Meta]int{
+					{Namespace: "roots"}: 2,
+				},
+			},
+			wantProxy: nil,
+		},
+		"multi-parent children is not orphaned when one of the parents is invalid": {
+			objs: []interface{}{ir14, ir11, ir10, s2},
+			wantIR: &metrics.RouteMetric{
+				Invalid: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Valid: map[metrics.Meta]int{
+					{Namespace: "roots", VHost: "example.com"}: 1,
+					{Namespace: "roots"}:                       1,
+				},
+				Orphaned: map[metrics.Meta]int{},
+				Root: map[metrics.Meta]int{
+					{Namespace: "roots"}: 2,
+				},
+				Total: map[metrics.Meta]int{
+					{Namespace: "roots"}: 3,
+				},
+			},
+			wantProxy: nil,
+		},
+		"valid proxy": {
+			objs:   []interface{}{proxy1, s3},
+			wantIR: nil,
+			wantProxy: &metrics.RouteMetric{
 				Invalid: map[metrics.Meta]int{},
 				Valid: map[metrics.Meta]int{
 					{Namespace: "roots", VHost: "example.com"}: 1,
@@ -339,9 +822,10 @@ func TestIngressRouteMetrics(t *testing.T) {
 				},
 			},
 		},
-		"invalid port in service": {
-			objs: []interface{}{ir2},
-			want: metrics.IngressRouteMetric{
+		"invalid port in service - proxy": {
+			objs:   []interface{}{proxy2},
+			wantIR: nil,
+			wantProxy: &metrics.RouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "roots", VHost: "example.com"}: 1,
 				},
@@ -355,9 +839,10 @@ func TestIngressRouteMetrics(t *testing.T) {
 				},
 			},
 		},
-		"root ingressroute outside of roots namespace": {
-			objs: []interface{}{ir3},
-			want: metrics.IngressRouteMetric{
+		"root proxy outside of roots namespace": {
+			objs:   []interface{}{proxy3},
+			wantIR: nil,
+			wantProxy: &metrics.RouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "finance"}: 1,
 				},
@@ -372,9 +857,44 @@ func TestIngressRouteMetrics(t *testing.T) {
 			},
 			rootNamespaces: []string{"foo"},
 		},
-		"delegated route's match prefix does not match parent's prefix": {
-			objs: []interface{}{ir1, ir4, s3},
-			want: metrics.IngressRouteMetric{
+		"root proxy does not specify FQDN": {
+			objs:   []interface{}{proxy13},
+			wantIR: nil,
+			wantProxy: &metrics.RouteMetric{
+				Invalid: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Valid:    map[metrics.Meta]int{},
+				Orphaned: map[metrics.Meta]int{},
+				Root: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Total: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+			},
+		},
+		"self-edge produces a cycle - proxy": {
+			objs:   []interface{}{proxy6},
+			wantIR: nil,
+			wantProxy: &metrics.RouteMetric{
+				Invalid: map[metrics.Meta]int{
+					{Namespace: "roots", VHost: "example.com"}: 1,
+				},
+				Valid:    map[metrics.Meta]int{},
+				Orphaned: map[metrics.Meta]int{},
+				Root: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+				Total: map[metrics.Meta]int{
+					{Namespace: "roots"}: 1,
+				},
+			},
+		},
+		"child delegates to parent, producing a cycle - proxy": {
+			objs:   []interface{}{proxy7, proxy8},
+			wantIR: nil,
+			wantProxy: &metrics.RouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "roots"}: 1,
 				},
@@ -390,75 +910,10 @@ func TestIngressRouteMetrics(t *testing.T) {
 				},
 			},
 		},
-		"root ingressroute does not specify FQDN": {
-			objs: []interface{}{ir13},
-			want: metrics.IngressRouteMetric{
-				Invalid: map[metrics.Meta]int{
-					{Namespace: "roots"}: 1,
-				},
-				Valid:    map[metrics.Meta]int{},
-				Orphaned: map[metrics.Meta]int{},
-				Root: map[metrics.Meta]int{
-					{Namespace: "roots"}: 1,
-				},
-				Total: map[metrics.Meta]int{
-					{Namespace: "roots"}: 1,
-				},
-			},
-		},
-		"self-edge produces a cycle": {
-			objs: []interface{}{ir6},
-			want: metrics.IngressRouteMetric{
-				Invalid: map[metrics.Meta]int{
-					{Namespace: "roots", VHost: "example.com"}: 1,
-				},
-				Valid:    map[metrics.Meta]int{},
-				Orphaned: map[metrics.Meta]int{},
-				Root: map[metrics.Meta]int{
-					{Namespace: "roots"}: 1,
-				},
-				Total: map[metrics.Meta]int{
-					{Namespace: "roots"}: 1,
-				},
-			},
-		},
-		"child delegates to parent, producing a cycle": {
-			objs: []interface{}{ir7, ir8},
-			want: metrics.IngressRouteMetric{
-				Invalid: map[metrics.Meta]int{
-					{Namespace: "roots"}: 1,
-				},
-				Valid: map[metrics.Meta]int{
-					{Namespace: "roots", VHost: "example.com"}: 1,
-				},
-				Orphaned: map[metrics.Meta]int{},
-				Root: map[metrics.Meta]int{
-					{Namespace: "roots"}: 1,
-				},
-				Total: map[metrics.Meta]int{
-					{Namespace: "roots"}: 2,
-				},
-			},
-		},
-		"route has a list of services and also delegates": {
-			objs: []interface{}{ir9},
-			want: metrics.IngressRouteMetric{
-				Invalid: map[metrics.Meta]int{
-					{Namespace: "roots", VHost: "example.com"}: 1,
-				},
-				Valid:    map[metrics.Meta]int{},
-				Orphaned: map[metrics.Meta]int{},
-				Root: map[metrics.Meta]int{
-					{Namespace: "roots"}: 1,
-				},
-				Total: map[metrics.Meta]int{
-					{Namespace: "roots"}: 1,
-				},
-			},
-		},
-		"ingressroute is an orphaned route": {
-			objs: []interface{}{ir8},
-			want: metrics.IngressRouteMetric{
+		"proxy is an orphaned route": {
+			objs:   []interface{}{proxy8},
+			wantIR: nil,
+			wantProxy: &metrics.RouteMetric{
 				Invalid: map[metrics.Meta]int{},
 				Valid:   map[metrics.Meta]int{},
 				Orphaned: map[metrics.Meta]int{
@@ -470,9 +925,10 @@ func TestIngressRouteMetrics(t *testing.T) {
 				},
 			},
 		},
-		"ingressroute delegates to multiple ingressroutes, one is invalid": {
-			objs: []interface{}{ir10, ir11, ir12, s1, s2},
-			want: metrics.IngressRouteMetric{
+		"proxy delegates to multiple proxies, one is invalid": {
+			objs:   []interface{}{proxy10, proxy11, proxy12, s1, s2},
+			wantIR: nil,
+			wantProxy: &metrics.RouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "roots"}: 1,
 				},
@@ -489,9 +945,10 @@ func TestIngressRouteMetrics(t *testing.T) {
 				},
 			},
 		},
-		"invalid parent orphans children": {
-			objs: []interface{}{ir14, ir11},
-			want: metrics.IngressRouteMetric{
+		"invalid parent orphans children - proxy": {
+			objs:   []interface{}{proxy14, proxy11},
+			wantIR: nil,
+			wantProxy: &metrics.RouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "roots"}: 1,
 				},
@@ -507,9 +964,10 @@ func TestIngressRouteMetrics(t *testing.T) {
 				},
 			},
 		},
-		"multi-parent children is not orphaned when one of the parents is invalid": {
-			objs: []interface{}{ir14, ir11, ir10, s2},
-			want: metrics.IngressRouteMetric{
+		"multi-parent children is not orphaned when one of the parents is invalid - proxy": {
+			objs:   []interface{}{proxy14, proxy11, proxy10, s2},
+			wantIR: nil,
+			wantProxy: &metrics.RouteMetric{
 				Invalid: map[metrics.Meta]int{
 					{Namespace: "roots"}: 1,
 				},
@@ -541,8 +999,13 @@ func TestIngressRouteMetrics(t *testing.T) {
 			}
 			dag := builder.Build()
 
-			got := calculateIngressRouteMetric(dag.Statuses())
-			assert.Equal(t, tc.want, got)
+			gotIR, gotProxy := calculateRouteMetric(dag.Statuses())
+			if tc.wantIR != nil {
+				assert.Equal(t, *tc.wantIR, gotIR)
+			}
+			if tc.wantProxy != nil {
+				assert.Equal(t, *tc.wantProxy, gotProxy)
+			}
 		})
 	}
 }
