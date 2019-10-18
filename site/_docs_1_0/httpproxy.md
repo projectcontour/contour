@@ -539,12 +539,12 @@ This refers to the time that spans between the point at which complete client re
 The time period of **0s** will also be treated as infinity.
 This timeout covers the time from the *end of the client request* to the *end of the upstream response*.
 By default, Envoy has a 15 second value for this timeout.
-More information can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout).
+More information can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout).
 - `timeoutPolicy.idle` This field can be any positive time period or "infinity".
 The time period of **0s** will also be treated as infinity.
 By default, there is no per-route idle timeout.
 Note that the default connection manager idle timeout of 5 minutes will apply if this is not set.
-More information can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-idle-timeout)
+More information can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-idle-timeout)
 - `retryPolicy`: A retry will be attempted if the server returns an error code in the 5xx range, or if the server takes more than `retryPolicy.perTryTimeout` to process a request.
   - `retryPolicy.count` specifies the maximum number of retries allowed. This parameter is optional and defaults to 1.
   - `retryPolicy.perTryTimeout` specifies the timeout per retry. If this field is greater than the request timeout, it is ignored. This parameter is optional.
@@ -559,7 +559,7 @@ The following list are the options available to choose from:
 - `WeightedLeastRequest`: The least request strategy uses an O(1) algorithm which selects two random healthy Endpoints and picks the Endpoint which has fewer active requests. Note: This algorithm is simple and sufficient for load testing. It should not be used where true weighted least request behavior is desired.
 - `Random`: The random strategy selects a random healthy Endpoints.
 
-More information on the load balancing strategy can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/load_balancing.html).
+More information on the load balancing strategy can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/v1.11.2/intro/arch_overview/upstream/load_balancing/overview).
 
 The following example defines the strategy for Service `s2-strategy` as `WeightedLeastRequest`.
 Service `s1-strategy` does not have an explicit strategy defined so it will use the strategy of `RoundRobin`.
