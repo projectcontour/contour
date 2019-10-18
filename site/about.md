@@ -1,4 +1,7 @@
-# About Contour and Envoy
+---
+title: About Contour and Envoy
+layout: page
+---
 
 At the highest level Contour is a proxy that fulfills the Envoy Cluster Discovery Service (CDS) API by translating Kubernetes Ingress objects and IngressRoute objects into Envoy configuration objects.
 

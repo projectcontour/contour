@@ -5,8 +5,18 @@ description: Contour Documentation / Contour Docs
 id: docs
 ---
 
-Each Contour release has it's own docs, you can view the latest versions here based on their release tags:
+## Contour 1.0 Documentation
 
-{% for repository in site.github.releases limit:5 %}
-  * [{{ repository.tag_name }}]({{ site.github.repository_url }}/tree/{{ repository.tag_name }}/docs)
+{% for doc in site.docs_1_0 %}
+- [{{ doc.title }}]({{ doc.url }})
+{% endfor %}
+
+## Pre Contour 1.0 Documentation
+
+The documentation for older versions of Contour is available on GitHub.
+
+{% for repository in site.github.releases limit:10 %}
+{% if repository.prerelease == false %}
+- [{{ repository.tag_name }}]({{ site.github.repository_url }}/tree/{{ repository.tag_name }}/docs)
+{% endif %}
 {% endfor %}

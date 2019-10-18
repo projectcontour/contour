@@ -1,4 +1,7 @@
-# IngressRoute
+---
+title: IngressRoute Reference
+layout: page
+---
 
 ## Deprecation notice
 
