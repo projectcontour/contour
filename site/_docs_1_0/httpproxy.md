@@ -252,9 +252,7 @@ The TLS **Minimum Protocol Version** a vhost should negotiate can be specified b
 
 #### Upstream TLS
 
-TODO(youngnick): Update this once #1506 is delivered
-
-A HTTPProxy can proxy to an upstream TLS connection by first annotating the upstream Kubernetes service with: `contour.heptio.com/upstream-protocol.tls: "443,https"`.
+A HTTPProxy can proxy to an upstream TLS connection by first annotating the upstream Kubernetes service with: `projectcontour.io/upstream-protocol.tls: "443,https"`.
 This annotation tells Contour which port should be used for the TLS connection.
 In this example, the upstream service is named `https` and uses port `443`.
 Additionally, it is possible for Envoy to verify the backend service's certificate.
