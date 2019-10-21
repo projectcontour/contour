@@ -17,17 +17,14 @@ hero:
     url: https://github.com/projectcontour/contour/releases
   promo1:
     icon: /img/kubernetes-logo.png
-    #url: http://www.example.com?box1
     title: Built for Kubernetes
     content: Quickly deploy cloud-native applications using the flexible and innovative IngressRoute API.
   promo2:
     icon: /img/dynamic-reconfig-icon.svg
-    #url: http://www.example.com?box2
     title: Dynamic Reconfiguration
     content: Update Envoy configurations as the ingress and underlying elements change, without restarting the load balancer.
   promo3:
     icon: /img/secure-ingress-icon.svg
-    #url: http://www.example.com?box3
     title: Secure Ingress Delegation
     content: Safely delegate ingress configuration to protect service access on multi-team Kubernetes clusters.
 secondary_ctas:
@@ -72,7 +69,7 @@ secondary_ctas:
             <figure>
               <img src="{{ page.hero.promo1.icon }}" alt="{{ page.hero.promo1.title }}" />
             </figure>
-            {% if page.hero.promo1.url | size > 0 %}
+            {% if page.hero.promo1.url %}
             <h5><a href="{{ page.hero.promo1.url }}" class="dark">{{ page.hero.promo1.title }}</a></h5>
             {% else %}
             <h5>{{ page.hero.promo1.title }}</h5>
@@ -87,7 +84,7 @@ secondary_ctas:
             <figure>
               <img src="{{ page.hero.promo2.icon }}" alt="{{ page.hero.promo2.title }}" />
             </figure>
-            {% if page.hero.promo2.url | size > 0 %}
+            {% if page.hero.promo2.url %}
             <h5><a href="{{ page.hero.promo2.url }}" class="dark">{{ page.hero.promo2.title }}</a></h5>
             {% else %}
             <h5>{{ page.hero.promo2.title }}</h5>
@@ -102,7 +99,7 @@ secondary_ctas:
             <figure>
               <img src="{{ page.hero.promo3.icon }}" alt="{{ page.hero.promo3.title }}" />
             </figure>
-            {% if page.hero.promo3.url  | size > 0 %}
+            {% if page.hero.promo3.url %}
             <h5><a href="{{ page.hero.promo3.url }}" class="dark">{{ page.hero.promo3.title }}</a></h5>
             {% else %}
             <h5>{{ page.hero.promo3.title }}</h5>
