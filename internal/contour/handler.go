@@ -114,52 +114,22 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 		// yet send to the CacheHandler.
 		outstanding int
 
-		// timer holds the timer that will send on C.
+		// timer holds the timer which will expire after e.HoldoffDelay
 		timer *time.Timer
 
 		// pending is a reference to the current timer's channel.
 		pending <-chan time.Time
 	)
 
-	inc := func() { outstanding++ }
 	reset := func() (v int) {
 		v, outstanding = outstanding, 0
 		return
 	}
 
-	// enqueue starts the holdoff timer
-	enqueue := func() {
-		inc()
-
-		// If there is already a timer running, stop it and clear C.
-		if timer != nil {
-			timer.Stop()
-
-			// nil out C in the case that the timer had already expired.
-			// This effectively clears the notification.
-			pending = nil
-		}
-
-		since := time.Since(e.last)
-		if since > e.HoldoffMaxDelay {
-			// the time since the last update has exceeded the max holdoff delay
-			// so we must update immediately.
-			e.WithField("last_update", since).WithField("outstanding", reset()).Info("forcing update")
-			e.updateDAG() // rebuild dag and send to CacheHandler.
-			e.incSequence()
-			return
-		}
-
-		// If we get here then there is still time remaining before max holdoff so
-		// start a new timer for the holdoff delay.
-		timer = time.NewTimer(e.HoldoffDelay)
-		pending = timer.C
-	}
-
 	for {
 		// In the main loop one of four things can happen.
 		// 1. We're waiting for an event on op, stop, or pending, noting that
-		//    C may be nil if there are no pending events.
+		//    pending may be nil if there are no pending events.
 		// 2. We're processing an event.
 		// 3. The holdoff timer from a previous event has fired and we're
 		//    building a new DAG and sending to the CacheHandler.
@@ -169,7 +139,29 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 		select {
 		case op := <-e.update:
 			if e.onUpdate(op) {
-				enqueue()
+				outstanding++
+				// If there is already a timer running, stop it and clear pending.
+				if timer != nil {
+					timer.Stop()
+
+					// nil out pending in the case that the timer had already expired.
+					// This effectively clears the notification.
+					pending = nil
+				}
+
+				since := time.Since(e.last)
+				if since > e.HoldoffMaxDelay {
+					// the holdoff delay has been exceeded so we must update immediately.
+					e.WithField("last_update", since).WithField("outstanding", reset()).Info("forcing update")
+					e.updateDAG() // rebuild dag and send to CacheHandler.
+					e.incSequence()
+					continue
+				}
+
+				// If we get here then there is still time remaining before max holdoff so
+				// start a new timer for the holdoff delay.
+				timer = time.NewTimer(e.HoldoffDelay)
+				pending = timer.C
 			} else {
 				// notify any watchers that we received the event but chose
 				// not to process it.
