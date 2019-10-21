@@ -46,6 +46,11 @@ type EventHandler struct {
 
 	logrus.FieldLogger
 
+	// IsLeader will become ready to read when this EventHandler becomes
+	// the leader. If IsLeader is not readable, or nil, status events will
+	// be suppressed.
+	IsLeader chan struct{}
+
 	update chan interface{}
 
 	// last holds the last time CacheHandler.OnUpdate was called.
@@ -84,6 +89,11 @@ func (e *EventHandler) OnUpdate(oldObj, newObj interface{}) {
 
 func (e *EventHandler) OnDelete(obj interface{}) {
 	e.update <- opDelete{obj: obj}
+}
+
+// UpdateNow enqueues a DAG update subject to the holdoff timer.
+func (e *EventHandler) UpdateNow() {
+	e.update <- true
 }
 
 // Start initializes the EventHandler and returns a function suitable
@@ -195,6 +205,8 @@ func (e *EventHandler) onUpdate(op interface{}) bool {
 		return remove || insert
 	case opDelete:
 		return e.Builder.Source.Remove(op.obj)
+	case bool:
+		return op
 	default:
 		return false
 	}
@@ -216,11 +228,18 @@ func (e *EventHandler) incSequence() {
 func (e *EventHandler) updateDAG() {
 	dag := e.Builder.Build()
 	e.CacheHandler.OnChange(dag)
-	statuses := dag.Statuses()
-	e.setStatus(statuses)
 
-	metrics := calculateIngressRouteMetric(statuses)
-	e.Metrics.SetIngressRouteMetric(metrics)
+	select {
+	case <-e.IsLeader:
+		// we're the leader, update status and metrics
+		statuses := dag.Statuses()
+		e.setStatus(statuses)
+
+		metrics := calculateIngressRouteMetric(statuses)
+		e.Metrics.SetIngressRouteMetric(metrics)
+	default:
+		e.Debug("skipping status update: not the leader")
+	}
 
 	e.last = time.Now()
 }
