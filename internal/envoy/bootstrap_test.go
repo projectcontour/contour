@@ -73,7 +73,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {}
+        "http2_protocol_options": {},
+        "upstream_connection_options": {
+          "tcp_keepalive": {
+            "keepalive_probes": 3,
+            "keepalive_time": 30,
+            "keepalive_interval": 5
+          }
+        }
       },
       {
         "name": "service-stats",
@@ -189,7 +196,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {}
+        "http2_protocol_options": {},
+        "upstream_connection_options": {
+          "tcp_keepalive": {
+            "keepalive_probes": 3,
+            "keepalive_time": 30,
+            "keepalive_interval": 5
+          }
+        }
       },
       {
         "name": "service-stats",
@@ -304,7 +318,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {}
+        "http2_protocol_options": {},
+        "upstream_connection_options": {
+          "tcp_keepalive": {
+            "keepalive_probes": 3,
+            "keepalive_time": 30,
+            "keepalive_interval": 5
+          }
+        }
       },
       {
         "name": "service-stats",
@@ -420,7 +441,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {}
+        "http2_protocol_options": {},
+        "upstream_connection_options": {
+          "tcp_keepalive": {
+            "keepalive_probes": 3,
+            "keepalive_time": 30,
+            "keepalive_interval": 5
+          }
+        }
       },
       {
         "name": "service-stats",
@@ -534,7 +562,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {}
+        "http2_protocol_options": {},
+        "upstream_connection_options": {
+          "tcp_keepalive": {
+            "keepalive_probes": 3,
+            "keepalive_time": 30,
+            "keepalive_interval": 5
+          }
+        }
       },
       {
         "name": "service-stats",
@@ -652,6 +687,13 @@ func TestBootstrap(t *testing.T) {
           ]
         },
         "http2_protocol_options": {},
+        "upstream_connection_options": {
+          "tcp_keepalive": {
+            "keepalive_probes": 3,
+            "keepalive_time": 30,
+            "keepalive_interval": 5
+          }
+        },
         "tls_context": {
           "common_tls_context": {
               "tls_certificates": [
