@@ -49,6 +49,13 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 						SocketAddress(c.xdsAddress(), c.xdsGRPCPort()),
 					),
 				},
+				UpstreamConnectionOptions: &api.UpstreamConnectionOptions{
+					TcpKeepalive: &envoy_api_v2_core.TcpKeepalive{
+						KeepaliveProbes:   protobuf.UInt32(3),
+						KeepaliveTime:     protobuf.UInt32(30),
+						KeepaliveInterval: protobuf.UInt32(5),
+					},
+				},
 				Http2ProtocolOptions: new(envoy_api_v2_core.Http2ProtocolOptions), // enables http2
 				CircuitBreakers: &clusterv2.CircuitBreakers{
 					Thresholds: []*clusterv2.CircuitBreakers_Thresholds{{
