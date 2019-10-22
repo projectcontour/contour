@@ -15,6 +15,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -22,6 +23,8 @@ import (
 	"strconv"
 	"syscall"
 	"time"
+
+	"k8s.io/client-go/tools/cache"
 
 	contourinformers "github.com/projectcontour/contour/apis/generated/informers/externalversions"
 	"github.com/projectcontour/contour/internal/contour"
@@ -170,29 +173,30 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	// step 4. register our resource event handler with the k8s informers.
-	coreInformers.Core().V1().Services().Informer().AddEventHandler(eh)
+	var informers []cache.SharedIndexInformer
+	informers = registerEventHandler(informers, coreInformers.Core().V1().Services().Informer(), eh)
+	informers = registerEventHandler(informers, contourInformers.Contour().V1beta1().IngressRoutes().Informer(), eh)
+	informers = registerEventHandler(informers, contourInformers.Contour().V1beta1().TLSCertificateDelegations().Informer(), eh)
+	informers = registerEventHandler(informers, contourInformers.Projectcontour().V1().HTTPProxies().Informer(), eh)
+	informers = registerEventHandler(informers, contourInformers.Projectcontour().V1().TLSCertificateDelegations().Informer(), eh)
 
 	// After K8s 1.13 the API server will automatically translate extensions/v1beta1.Ingress objects
 	// to networking/v1beta1.Ingress objects so we should only listen for one type or the other.
 	// The default behavior is to listen for networking/v1beta1.Ingress objects and let the API server
 	// transparently upgrade the extensions version for us.
 	if ctx.UseExtensionsV1beta1Ingress {
-		coreInformers.Extensions().V1beta1().Ingresses().Informer().AddEventHandler(eh)
+		informers = registerEventHandler(informers, coreInformers.Extensions().V1beta1().Ingresses().Informer(), eh)
 	} else {
-		coreInformers.Networking().V1beta1().Ingresses().Informer().AddEventHandler(eh)
+		informers = registerEventHandler(informers, coreInformers.Networking().V1beta1().Ingresses().Informer(), eh)
 	}
-	contourInformers.Contour().V1beta1().IngressRoutes().Informer().AddEventHandler(eh)
-	contourInformers.Contour().V1beta1().TLSCertificateDelegations().Informer().AddEventHandler(eh)
-	contourInformers.Projectcontour().V1().HTTPProxies().Informer().AddEventHandler(eh)
-	contourInformers.Projectcontour().V1().TLSCertificateDelegations().Informer().AddEventHandler(eh)
 
 	// Add informers for each root-ingressroute namespaces
 	for _, inf := range namespacedInformers {
-		inf.Core().V1().Secrets().Informer().AddEventHandler(eh)
+		informers = registerEventHandler(informers, inf.Core().V1().Secrets().Informer(), eh)
 	}
 	// If root-ingressroutes are not defined, then add the informer for all namespaces
 	if len(namespacedInformers) == 0 {
-		coreInformers.Core().V1().Secrets().Informer().AddEventHandler(eh)
+		informers = registerEventHandler(informers, coreInformers.Core().V1().Secrets().Informer(), eh)
 	}
 
 	// step 5. endpoints updates are handled directly by the EndpointsTranslator
@@ -200,7 +204,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	et := &contour.EndpointsTranslator{
 		FieldLogger: log.WithField("context", "endpointstranslator"),
 	}
-	coreInformers.Core().V1().Endpoints().Informer().AddEventHandler(et)
+
+	informers = registerEventHandler(informers, coreInformers.Core().V1().Endpoints().Informer(), eh)
 
 	// step 6. setup workgroup runner and register informers.
 	var g workgroup.Group
@@ -306,6 +311,18 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// step 13. create grpc handler and register with workgroup.
 	g.Add(func(stop <-chan struct{}) error {
 		log := log.WithField("context", "grpc")
+
+		synced := make([]cache.InformerSynced, 0, len(informers))
+		for _, inf := range informers {
+			synced = append(synced, inf.HasSynced)
+		}
+
+		log.Printf("waiting for informer caches to sync")
+		if !cache.WaitForCacheSync(stop, synced...) {
+			return fmt.Errorf("error waiting for cache to sync")
+		}
+		log.Printf("informer caches synced")
+
 		resources := map[string]cgrpc.Resource{
 			eh.CacheHandler.ClusterCache.TypeURL():  &eh.CacheHandler.ClusterCache,
 			eh.CacheHandler.RouteCache.TypeURL():    &eh.CacheHandler.RouteCache,
@@ -354,6 +371,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	return g.Run()
 }
 
+func registerEventHandler(informers []cache.SharedIndexInformer, inf cache.SharedIndexInformer, eh cache.ResourceEventHandler) []cache.SharedIndexInformer {
+	inf.AddEventHandler(eh)
+	return append(informers, inf)
+}
+
 type informer interface {
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 	Start(stopCh <-chan struct{})
@@ -361,10 +383,7 @@ type informer interface {
 
 func startInformer(inf informer, log logrus.FieldLogger) func(stop <-chan struct{}) error {
 	return func(stop <-chan struct{}) error {
-		log.Println("waiting for cache sync")
-		inf.WaitForCacheSync(stop)
-
-		log.Println("started")
+		log.Println("starting")
 		defer log.Println("stopped")
 		inf.Start(stop)
 		<-stop
