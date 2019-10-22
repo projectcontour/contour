@@ -41,7 +41,7 @@ spec:
 ...
 spec:
   containers:
-  - image: docker.io/projectcontour/contour:master
+  - image: docker.io/projectcontour/contour:{{ site.github.latest_release.tag_name }}
     imagePullPolicy: Always
     name: contour
     command: ["contour"]

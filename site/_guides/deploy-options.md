@@ -13,7 +13,7 @@ If you don't have a cluster with that capability see the [Running without a Kube
 ### Recommended installation details
 
 The recommended installation of Contour is Contour running in a Deployment and Envoy in a Daemonset with TLS securing the gRPC communication between them.
-The [`contour` example]({{site.github.repository_url}}/tree/master/examples/contour/README.md) will install this for you.
+The [`contour` example]({{site.github.repository_url}}/blob/{{ site.github.latest_release.tag_name }}/examples/contour/README.md) will install this for you.
 A Service of `type: LoadBalancer` is also set up to forward traffic to the Envoy instances.
 
 If you wish to use Host Networking, please see the [appropriate section](#host-networking) for the details.
@@ -113,7 +113,7 @@ In your browser, navigate your browser to the IP or DNS address of the Contour S
 
 ### Test with IngressRoute
 
-To test your Contour deployment with [IngressRoutes]({{site.github.repository_url}}/tree/master/docs/ingressroute.md), run the following command:
+To test your Contour deployment with [IngressRoutes]({% link _docs_1_0/ingressroute.md %}), run the following command:
 
 ```sh
 $ kubectl apply -f https://projectcontour.io/examples/kuard-ingressroute.yaml
@@ -149,7 +149,7 @@ $ curl -H 'Host: kuard.local' ${CONTOUR_IP}
 ```
 ### Test with HTTPProxy
 
-To test your Contour deployment with [HTTPProxy]({{site.github.repository_url}}/tree/master/docs/httpproxy.md), run the following command:
+To test your Contour deployment with [HTTPProxy]({% link _docs_1_0/httpproxy.md %}), run the following command:
 
 ```sh
 $ kubectl apply -f https://projectcontour.io/examples/kuard-httpproxy.yaml
@@ -192,7 +192,7 @@ If you can't or don't want to use a Service of `type: LoadBalancer` there are ot
 
 If your cluster doesn't have the capability to configure a Kubernetes LoadBalancer,
 or if you want to configure the load balancer outside Kubernetes,
-you can change the Envoy Service in the [`02-service-envoy.yaml`]({{site.github.repository_url}}/tree/master/examples/contour/02-service-envoy.yaml) file and set `type` to `NodePort`.
+you can change the Envoy Service in the [`02-service-envoy.yaml`]({{site.github.repository_url}}/blob/{{ site.github.latest_release.tag_name }}/examples/contour/02-service-envoy.yaml) file and set `type` to `NodePort`.
 
 This will have every node in your cluster listen on the resultant port and forward traffic to Contour.
 That port can be discovered by taking the second number listed in the `PORT` column when listing the service, for example `30274` in `80:30274/TCP`.
