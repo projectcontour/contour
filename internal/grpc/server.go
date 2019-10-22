@@ -42,6 +42,9 @@ func NewAPI(log logrus.FieldLogger, resources map[string]Resource) *grpc.Server 
 		// CDS entry. There doesn't seem to be a penalty for increasing this value,
 		// so set it the limit similar to envoyproxy/go-control-plane#70.
 		grpc.MaxConcurrentStreams(grpcMaxConcurrentStreams),
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			PermitWithoutStream: true,
+		}),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			Time:    60 * time.Second,
 			Timeout: 20 * time.Second,
