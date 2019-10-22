@@ -1442,6 +1442,92 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	// invalid because tcpproxy both includes another httpproxy
+	// and has a list of services.
+	proxy37 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "passthrough.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{
+				Include: &projcontour.TCPProxyInclude{
+					Name:      "foo",
+					Namespace: "roots",
+				},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
+	// proxy38 is invalid when combined with proxy39 as the latter
+	// is a root httpproxy.
+	proxy38 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "passthrough.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{
+				Include: &projcontour.TCPProxyInclude{
+					Name:      "foo",
+					Namespace: s1.Namespace,
+				},
+			},
+		},
+	}
+
+	proxy39 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "www.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
+	proxy40 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -1970,6 +2056,62 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: proxy29.Name, namespace: proxy29.Namespace}: {Object: proxy29, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
 				{name: proxy30.Name, namespace: proxy30.Namespace}: {Object: proxy30, Status: "invalid", Description: "cannot specify duplicate header 'exact match' conditions in the same route", Vhost: ""},
+			},
+		},
+		"httpproxy with invalid tcpproxy": {
+			objs: []interface{}{proxy37, s1},
+			want: map[Meta]Status{
+				{name: proxy37.Name, namespace: proxy37.Namespace}: {
+					Object:      proxy37,
+					Status:      "invalid",
+					Description: "tcpproxy: cannot specify services and include in the same httpproxy",
+					Vhost:       "passthrough.example.com",
+				},
+			},
+		},
+		"httpproxy w/ tcpproxy w/ missing include": {
+			objs: []interface{}{proxy38, s1},
+			want: map[Meta]Status{
+				{name: proxy38.Name, namespace: proxy38.Namespace}: {
+					Object:      proxy38,
+					Status:      "invalid",
+					Description: "tcpproxy: include roots/foo not found",
+					Vhost:       "passthrough.example.com",
+				},
+			},
+		},
+		"httpproxy w/ tcpproxy w/ includes another root": {
+			objs: []interface{}{proxy38, proxy39, s1},
+			want: map[Meta]Status{
+				{name: proxy38.Name, namespace: proxy38.Namespace}: {
+					Object:      proxy38,
+					Status:      "invalid",
+					Description: "root httpproxy cannot delegate to another root httpproxy",
+					Vhost:       "passthrough.example.com",
+				},
+				{name: proxy39.Name, namespace: proxy39.Namespace}: {
+					Object:      proxy39,
+					Status:      "valid",
+					Description: "valid HTTPProxy",
+					Vhost:       "www.example.com",
+				},
+			},
+		},
+		"httpproxy w/ tcpproxy w/ includes valid child": {
+			objs: []interface{}{proxy38, proxy40, s1},
+			want: map[Meta]Status{
+				{name: proxy38.Name, namespace: proxy38.Namespace}: {
+					Object:      proxy38,
+					Status:      "valid",
+					Description: "valid HTTPProxy",
+					Vhost:       "passthrough.example.com",
+				},
+				{name: proxy40.Name, namespace: proxy40.Namespace}: {
+					Object:      proxy40,
+					Status:      "valid",
+					Description: "valid HTTPProxy",
+					Vhost:       "passthrough.example.com",
+				},
 			},
 		},
 	}

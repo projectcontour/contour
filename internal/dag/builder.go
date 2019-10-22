@@ -430,7 +430,7 @@ func (b *Builder) computeIngressRoute(ir *ingressroutev1.IngressRoute) {
 	}
 
 	if ir.Spec.TCPProxy != nil && (passthrough || enforceTLS) {
-		b.processTCPProxy(sw, ir, nil, host)
+		b.processIngressRouteTCPProxy(sw, ir, nil, host)
 	}
 	b.processIngressRoutes(sw, ir, "", nil, host, ir.Spec.TCPProxy == nil && enforceTLS)
 }
@@ -495,7 +495,9 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 	}
 
 	if proxy.Spec.TCPProxy != nil && (passthrough || enforceTLS) {
-		b.processTCPProxyHTTPProxy(sw, proxy, host)
+		if !b.processHTTPProxyTCPProxy(sw, proxy, nil, host) {
+			return
+		}
 	}
 
 	insecure := b.lookupVirtualHost(host)
@@ -858,7 +860,7 @@ func (b *Builder) lookupUpstreamValidation(match string, serviceName string, uv 
 	}, nil
 }
 
-func (b *Builder) processTCPProxy(sw *ObjectStatusWriter, ir *ingressroutev1.IngressRoute, visited []*ingressroutev1.IngressRoute, host string) {
+func (b *Builder) processIngressRouteTCPProxy(sw *ObjectStatusWriter, ir *ingressroutev1.IngressRoute, visited []*ingressroutev1.IngressRoute, host string) {
 	visited = append(visited, ir)
 
 	// tcpproxy cannot both delegate and point to services
@@ -917,29 +919,94 @@ func (b *Builder) processTCPProxy(sw *ObjectStatusWriter, ir *ingressroutev1.Ing
 
 		// follow the link and process the target ingress route
 		sw, commit := sw.WithObject(dest)
-		b.processTCPProxy(sw, dest, visited, host)
+		b.processIngressRouteTCPProxy(sw, dest, visited, host)
 		commit()
 	}
 }
 
-func (b *Builder) processTCPProxyHTTPProxy(sw *ObjectStatusWriter, httpproxy *projcontour.HTTPProxy, host string) {
-	if len(httpproxy.Spec.TCPProxy.Services) > 0 {
+// processHTTPProxyTCPProxy processes the spec.tcpproxy stanza in a HTTPProxy document
+// following the chain of spec.tcpproxy.include references. It returns true if processing
+// was successful, otherwise false if an error was encountered. The details of the error
+// will be recorded on the status of the relevant HTTPProxy object,
+func (b *Builder) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *projcontour.HTTPProxy, visited []*projcontour.HTTPProxy, host string) bool {
+	tcpproxy := httpproxy.Spec.TCPProxy
+	if tcpproxy == nil {
+		// nothing to do
+		return true
+	}
+
+	visited = append(visited, httpproxy)
+
+	if len(tcpproxy.Services) > 0 && tcpproxy.Include != nil {
+		sw.SetInvalid("tcpproxy: cannot specify services and include in the same httpproxy")
+		return false
+	}
+
+	if len(tcpproxy.Services) > 0 {
 		var proxy TCPProxy
 		for _, service := range httpproxy.Spec.TCPProxy.Services {
 			m := Meta{name: service.Name, namespace: httpproxy.Namespace}
 			s := b.lookupService(m, intstr.FromInt(service.Port))
 			if s == nil {
 				sw.SetInvalid(fmt.Sprintf("tcpproxy: service %s/%s/%d: not found", httpproxy.Namespace, service.Name, service.Port))
-				return
+				return false
 			}
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
 				Upstream:           s,
-				LoadBalancerPolicy: loadBalancerPolicy(httpproxy.Spec.TCPProxy.LoadBalancerPolicy),
+				LoadBalancerPolicy: loadBalancerPolicy(tcpproxy.LoadBalancerPolicy),
 			})
 		}
 		b.lookupSecureVirtualHost(host).TCPProxy = &proxy
-		return
+		return true
 	}
+
+	if tcpproxy.Include == nil {
+		// no includes, we're done.
+		return true
+	}
+
+	namespace := tcpproxy.Include.Namespace
+	if namespace == "" {
+		// we are delegating to another HTTPProxy in the same namespace
+		namespace = httpproxy.Namespace
+	}
+
+	m := Meta{name: tcpproxy.Include.Name, namespace: namespace}
+	dest, ok := b.Source.httpproxies[m]
+	if !ok {
+		sw.SetInvalid(fmt.Sprintf("tcpproxy: include %s/%s not found", m.namespace, m.name))
+		return false
+	}
+
+	if dest.Spec.VirtualHost != nil {
+		sw.SetInvalid("root httpproxy cannot delegate to another root httpproxy")
+		return false
+	}
+
+	// dest is no longer an orphan
+	delete(b.orphaned, toMeta(dest))
+
+	// ensure we are not following an edge that produces a cycle
+	var path []string
+	for _, hp := range visited {
+		path = append(path, fmt.Sprintf("%s/%s", hp.Namespace, hp.Name))
+	}
+	for _, hp := range visited {
+		if dest.Name == hp.Name && dest.Namespace == hp.Namespace {
+			path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
+			sw.SetInvalid(fmt.Sprintf("tcpproxy include creates a cycle: %s", strings.Join(path, " -> ")))
+			return false
+		}
+	}
+
+	// follow the link and process the target tcpproxy
+	sw, commit := sw.WithObject(dest)
+	defer commit()
+	ok = b.processHTTPProxyTCPProxy(sw, dest, visited, host)
+	if ok {
+		sw.SetValid()
+	}
+	return ok
 }
 
 func externalName(svc *v1.Service) string {
