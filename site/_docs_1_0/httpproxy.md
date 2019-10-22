@@ -996,6 +996,45 @@ spec:
       weight: 20
 ```
 
+### TCPProxy delegation
+
+There can be at most one TCPProxy stanza per root HTTPProxy, however that TCPProxy does not need to be defined in the root HTTPProxy object.
+HTTPProxy authors can delegate the configuration of a TCPProxy to the TCPProxy configuration defined in a HTTPProxy child object.
+
+```yaml
+# httpproxy-parent-termination.yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: parent
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: tcp.example.com
+    tls:
+      secretName: secret
+  tcpproxy:
+    include:
+      name: child
+      namespace: app
+---
+# httpproxy-child-termination.yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: child
+  namespace: app
+spec:
+  tcpproxy:
+     services:
+    - name: tcpservice
+      port: 8080
+    - name: otherservice
+      port: 9999
+      weight: 20
+```
+In this example `default/parent` delegates the configuration of the TCPProxy services to `app/child`.
+
 ## Upstream Validation
 
 When defining upstream services on a route, it's possible to configure the connection from Envoy to the backend endpoint to communicate over TLS.

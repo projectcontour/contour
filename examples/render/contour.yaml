@@ -789,51 +789,8 @@ spec:
                   description: Include specifies that this tcpproxy should be delegated
                     to another HTTPProxy.
                   properties:
-                    conditions:
-                      description: Conditions are a set of routing properties that
-                        is applied to an HTTPProxy in a namespace.
-                      items:
-                        description: Condition are policies that are applied on top
-                          of HTTPProxies. One of Prefix or Header must be provided.
-                        properties:
-                          header:
-                            description: Header specifies the header condition to
-                              match.
-                            properties:
-                              contains:
-                                description: Contains is true if the Header containing
-                                  this string is present in the request.
-                                type: string
-                              exact:
-                                description: Exact is true if the Header containing
-                                  this string matches exactly in the request.
-                                type: string
-                              name:
-                                description: Name is the name of the header to match
-                                  on. Name is required. Header names are case insensitive.
-                                type: string
-                              notcontains:
-                                description: NotContains is true if the Header containing
-                                  this string is not present in the request.
-                                type: string
-                              notexact:
-                                description: NotExact is true if the Header containing
-                                  this string doesn't match exactly in the request.
-                                type: string
-                              present:
-                                description: Present is true if the Header is present
-                                  in the request.
-                                type: boolean
-                            required:
-                            - name
-                            type: object
-                          prefix:
-                            description: Prefix defines a prefix match for a request.
-                            type: string
-                        type: object
-                      type: array
                     name:
-                      description: Name of the HTTPProxy
+                      description: Name of the child HTTPProxy
                       type: string
                     namespace:
                       description: Namespace of the HTTPProxy to include. Defaults

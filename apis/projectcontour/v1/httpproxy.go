@@ -156,9 +156,19 @@ type TCPProxy struct {
 	LoadBalancerPolicy *LoadBalancerPolicy `json:"loadBalancerPolicy,omitempty"`
 	// Services are the services to proxy traffic
 	Services []Service `json:"services,omitempty"`
+
 	// Include specifies that this tcpproxy should be delegated to another HTTPProxy.
 	// +optional
-	Include Include `json:"includes,omitempty"`
+	Include *TCPProxyInclude `json:"includes,omitempty"`
+}
+
+// TCPProxyInclude describes a target HTTPProxy document which contains the TCPProxy details.
+type TCPProxyInclude struct {
+	// Name of the child HTTPProxy
+	Name string `json:"name"`
+	// Namespace of the HTTPProxy to include. Defaults to the current namespace if not supplied.
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // Service defines an Kubernetes Service to proxy traffic.
