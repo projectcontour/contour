@@ -14,15 +14,17 @@ package grpc
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	loadstats "github.com/envoyproxy/go-control-plane/envoy/service/load_stats/v2"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc/keepalive"
 )
 
 const (
@@ -40,6 +42,10 @@ func NewAPI(log logrus.FieldLogger, resources map[string]Resource) *grpc.Server 
 		// CDS entry. There doesn't seem to be a penalty for increasing this value,
 		// so set it the limit similar to envoyproxy/go-control-plane#70.
 		grpc.MaxConcurrentStreams(grpcMaxConcurrentStreams),
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			Time:    60 * time.Second,
+			Timeout: 20 * time.Second,
+		}),
 	}
 	g := grpc.NewServer(opts...)
 	s := &grpcServer{
