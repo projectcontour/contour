@@ -27,7 +27,7 @@ To customize the logged fields, add a `json-fields` list of strings to your conf
 These strings must be options from the [list of default fields](https://godoc.org/github.com/projectcontour/contour/internal/envoy#DefaultFields).
 Field names not in that list will be silently dropped. (This is not ideal, watch [#1507](https://github.com/projectcontour/contour/issues/1507) for updates.)
 
-The [example config file]({{site.github.repository_url}}/tree/master/examples/contour/01-contour-config.yaml) contains the full list of fields as well.
+The [example config file]({{site.github.repository_url}}/blob/{{ site.github.latest_release.tag_name }}/examples/contour/01-contour-config.yaml) contains the full list of fields as well.
 
 ## Sample configuration file
 

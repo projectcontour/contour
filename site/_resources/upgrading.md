@@ -184,7 +184,7 @@ If you are still running a single pod install type, please review the [`contour`
 ### Verify leader election
 
 Contour 1.0.0 enables leader election by default.
-No additional configuration is required if you are using the [example deployment](../examples/contour/README.md).
+No specific configuration is required if you are using the [example deployment]({{ site.github.repository_url }}/blob/v1.0.0-beta.1/examples/contour/README.md).
 
 Leader election requires that Contour have write access to a ConfigMap
 called `leader-elect` in the project-contour namespace.
