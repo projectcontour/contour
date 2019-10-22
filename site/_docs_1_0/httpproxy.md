@@ -39,7 +39,7 @@ spec:
 This Ingress object, named `basic`, will route incoming HTTP traffic with a `Host:` header for `foo-basic.bar.com` to a Service named `s1` on port `80`.
 Implementing similar behavior using an HTTPProxy looks like this:
 
-```yaml
+{% highlight yaml linenos %}
 # httpproxy.yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
@@ -54,16 +54,16 @@ spec:
       services:
         - name: s1
           port: 80
-```
+{% endhighlight %}
 
-**Lines 1-4**: As with all other Kubernetes objects, an HTTPProxy needs apiVersion, kind, and metadata fields. Note that the HTTPProxy API is currently considered beta.
+**Lines 1-5**: As with all other Kubernetes objects, an HTTPProxy needs apiVersion, kind, and metadata fields. Note that the HTTPProxy API is currently considered beta.
 
-**Line 6-7**: The presence of the `virtualhost` field indicates that this is a root HTTPProxy that is the top level entry point for this domain.
+**Lines 7-8**: The presence of the `virtualhost` field indicates that this is a root HTTPProxy that is the top level entry point for this domain.
 The `fqdn` field specifies the fully qualified domain name that will be used to match against `Host:` HTTP headers.
 
-**Lines 8-9**: Each HTTPProxy **must** have one or more routes, each of which **must** have one or more services which will handle the HTTP traffic. In addition, each route **may** have one or more conditions to match against.
+**Lines 9-14**: Each HTTPProxy **must** have one or more routes, each of which **must** have one or more services which will handle the HTTP traffic. In addition, each route **may** have one or more conditions to match against.
 
-**Lines 10-12**: The `services` field is an array of named Service & Port combinations that will be used for this HTTPProxy path.
+**Lines 12-14**: The `services` field is an array of named Service & Port combinations that will be used for this HTTPProxy path.
 HTTP traffic will be sent directly to the Endpoints corresponding to the Service.
 
 ## Interacting with HTTPProxies
