@@ -198,6 +198,9 @@ func (ctx *serveContext) grpcOptions() []grpc.ServerOption {
 		grpc.MaxConcurrentStreams(1 << 20),
 		// Set gRPC keepalive params.
 		// See https://github.com/projectcontour/contour/issues/1756 for background.
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			PermitWithoutStream: true,
+		}),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			Time:    60 * time.Second,
 			Timeout: 20 * time.Second,
