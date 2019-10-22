@@ -20,7 +20,7 @@
                 <ul class="social-links text-center text-md-left">
                     {% for link in site.footer_social_links %}
                     <li>
-                      {% if(link[1].fa_icon != false) %}
+                      {% if link[1].fa_icon %}
                       <i class="{{ link[1].fa_icon }} fa-lg fa-fw mr-1"></i>
                       {% endif %}
                       <a href="{{ link[1].url }}">{{ link[0] }}</a></li>

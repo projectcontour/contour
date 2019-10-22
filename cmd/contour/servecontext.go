@@ -28,6 +28,7 @@ import (
 	"github.com/projectcontour/contour/internal/contour"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 )
 
 type serveContext struct {
@@ -195,6 +196,12 @@ func (ctx *serveContext) grpcOptions() []grpc.ServerOption {
 		//
 		// Somewhat arbitrary limit to handle many, many, EDS streams.
 		grpc.MaxConcurrentStreams(1 << 20),
+		// Set gRPC keepalive params.
+		// See https://github.com/projectcontour/contour/issues/1756 for background.
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			Time:    60 * time.Second,
+			Timeout: 20 * time.Second,
+		}),
 	}
 	if !ctx.PermitInsecureGRPC {
 		tlsconfig := ctx.tlsconfig()

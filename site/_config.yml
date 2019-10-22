@@ -98,3 +98,7 @@ exclude:
   - vendor
 redcarpet:
     extensions: ["no_intra_emphasis", "tables", "autolink", "strikethrough", "with_toc_data"]
+
+# Fail build on errors
+liquid:
+  error_mode: strict
