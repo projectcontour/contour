@@ -600,4 +600,76 @@ func TestUpgradeHTTPS(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
+func TestHeaderConditions(t *testing.T) {
+	tests := map[string]struct {
+		route *dag.Route
+		want  *envoy_api_v2_route.RouteMatch
+	}{
+		"contains match with dashes": {
+			route: &dag.Route{
+				HeaderConditions: []dag.HeaderCondition{{
+					Name:      "x-header",
+					Value:     "11-22-33-44",
+					MatchType: "contains",
+					Invert:    false,
+				}},
+			},
+			want: &envoy_api_v2_route.RouteMatch{
+				Headers: []*envoy_api_v2_route.HeaderMatcher{{
+					Name:        "x-header",
+					InvertMatch: false,
+					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_RegexMatch{
+						RegexMatch: ".*11-22-33-44.*",
+					},
+				}},
+			},
+		},
+		"contains match with dots": {
+			route: &dag.Route{
+				HeaderConditions: []dag.HeaderCondition{{
+					Name:      "x-header",
+					Value:     "11.22.33.44",
+					MatchType: "contains",
+					Invert:    false,
+				}},
+			},
+			want: &envoy_api_v2_route.RouteMatch{
+				Headers: []*envoy_api_v2_route.HeaderMatcher{{
+					Name:        "x-header",
+					InvertMatch: false,
+					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_RegexMatch{
+						RegexMatch: ".*11\\.22\\.33\\.44.*",
+					},
+				}},
+			},
+		},
+		"contains match with regex group": {
+			route: &dag.Route{
+				HeaderConditions: []dag.HeaderCondition{{
+					Name:      "x-header",
+					Value:     "11.[22].*33.44",
+					MatchType: "contains",
+					Invert:    false,
+				}},
+			},
+			want: &envoy_api_v2_route.RouteMatch{
+				Headers: []*envoy_api_v2_route.HeaderMatcher{{
+					Name:        "x-header",
+					InvertMatch: false,
+					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_RegexMatch{
+						RegexMatch: ".*11\\.\\[22\\]\\.\\*33\\.44.*",
+					},
+				}},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := RouteMatch(tc.route)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
 func virtualhosts(v ...*envoy_api_v2_route.VirtualHost) []*envoy_api_v2_route.VirtualHost { return v }
