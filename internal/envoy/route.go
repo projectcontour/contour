@@ -14,6 +14,7 @@ package envoy
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"time"
 
@@ -291,13 +292,22 @@ func headerMatcher(headers []dag.HeaderCondition) []*envoy_api_v2_route.HeaderMa
 		case "exact":
 			header.HeaderMatchSpecifier = &envoy_api_v2_route.HeaderMatcher_ExactMatch{ExactMatch: h.Value}
 		case "contains":
-			header.HeaderMatchSpecifier = &envoy_api_v2_route.HeaderMatcher_RegexMatch{
-				RegexMatch: fmt.Sprintf(".*%s.*", h.Value),
-			}
+			header.HeaderMatchSpecifier = containsMatch(h.Value)
 		case "present":
 			header.HeaderMatchSpecifier = &envoy_api_v2_route.HeaderMatcher_PresentMatch{PresentMatch: true}
 		}
 		envoyHeaders = append(envoyHeaders, header)
 	}
 	return envoyHeaders
+}
+
+// containsMatch returns a HeaderMatchSpecifier which will match the
+// supplied substring
+func containsMatch(s string) *envoy_api_v2_route.HeaderMatcher_RegexMatch {
+	// convert the substring s into a regular expression that matches s.
+	// note that Envoy expects the expression to match the entire string, not just the substring
+	// formed from s. see [projectcontour/contour/#1751 & envoyproxy/envoy#8283]
+	return &envoy_api_v2_route.HeaderMatcher_RegexMatch{
+		RegexMatch: fmt.Sprintf(".*%s.*", regexp.QuoteMeta(s)),
+	}
 }
