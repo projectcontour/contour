@@ -56,7 +56,7 @@ func TestClusterCacheContents(t *testing.T) {
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				}),
-			want: []proto.Message{
+			want: clusterslice(
 				&v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
 					AltStatName:          "default_kuard_443",
@@ -68,8 +68,7 @@ func TestClusterCacheContents(t *testing.T) {
 					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
-				},
-			},
+				}),
 		},
 	}
 
@@ -104,7 +103,7 @@ func TestClusterCacheQuery(t *testing.T) {
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				}),
 			query: []string{"default/kuard/443/da39a3ee5e"},
-			want: []proto.Message{
+			want: clusterslice(
 				&v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
 					AltStatName:          "default_kuard_443",
@@ -116,8 +115,7 @@ func TestClusterCacheQuery(t *testing.T) {
 					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
-				},
-			},
+				}),
 		},
 		"partial match": {
 			contents: clustermap(
@@ -134,7 +132,7 @@ func TestClusterCacheQuery(t *testing.T) {
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				}),
 			query: []string{"default/kuard/443/da39a3ee5e", "foo/bar/baz"},
-			want: []proto.Message{
+			want: clusterslice(
 				&v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
 					AltStatName:          "default_kuard_443",
@@ -146,8 +144,7 @@ func TestClusterCacheQuery(t *testing.T) {
 					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 					LbPolicy:       v2.Cluster_ROUND_ROBIN,
 					CommonLbConfig: envoy.ClusterCommonLBConfig(),
-				},
-			},
+				}),
 		},
 		"no match": {
 			contents: clustermap(
@@ -918,7 +915,19 @@ func serviceWithAnnotations(ns, name string, annotations map[string]string, port
 func clustermap(clusters ...*v2.Cluster) map[string]*v2.Cluster {
 	m := make(map[string]*v2.Cluster)
 	for _, c := range clusters {
-		m[c.Name] = c
+		m[c.Name] = envoy.DefaultCluster()
+		proto.Merge(m[c.Name], c)
 	}
 	return m
+}
+
+func clusterslice(clusters ...*v2.Cluster) []proto.Message {
+	s := make([]proto.Message, 0, len(clusters))
+
+	for _, c := range clusters {
+		s = append(s, envoy.DefaultCluster())
+		proto.Merge(s[len(s)-1], c)
+	}
+
+	return s
 }

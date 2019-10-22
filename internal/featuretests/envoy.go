@@ -23,6 +23,7 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -40,18 +41,21 @@ func routeCluster(cluster string) *envoy_api_v2_route.Route_Route {
 }
 
 func cluster(name, servicename, statName string) *v2.Cluster {
-	return &v2.Cluster{
-		Name:                 name,
-		ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-		AltStatName:          statName,
-		EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-			EdsConfig:   envoy.ConfigSource("contour"),
-			ServiceName: servicename,
-		},
-		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-		LbPolicy:       v2.Cluster_ROUND_ROBIN,
-		CommonLbConfig: envoy.ClusterCommonLBConfig(),
-	}
+	c := envoy.DefaultCluster()
+
+	proto.Merge(c,
+		&v2.Cluster{
+			Name:                 name,
+			ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+			AltStatName:          statName,
+			EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+				EdsConfig:   envoy.ConfigSource("contour"),
+				ServiceName: servicename,
+			},
+			LbPolicy: v2.Cluster_ROUND_ROBIN,
+		})
+
+	return c
 }
 
 func tlsCluster(c *v2.Cluster, ca []byte, subjectName string, alpnProtocols ...string) *v2.Cluster {

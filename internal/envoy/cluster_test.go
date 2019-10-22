@@ -21,6 +21,7 @@ import (
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
@@ -29,6 +30,27 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+// TestClusterDefaults is a simplistic check that the values from
+// DefaultCluster() are applied when creating new envoy Cluster structs.
+func TestClusterDefaults(t *testing.T) {
+	d := DefaultCluster()
+	c := Cluster(&dag.Cluster{
+		Upstream: &dag.Service{
+			Name:      "backend",
+			Namespace: "default",
+			ServicePort: &v1.ServicePort{
+				Name:     "http",
+				Protocol: "TCP",
+				Port:     80,
+			},
+		},
+	})
+
+	assert.Equal(t, c.ConnectTimeout, d.ConnectTimeout)
+	assert.Equal(t, c.LbPolicy, d.LbPolicy)
+	assert.Equal(t, c.PerConnectionBufferLimitBytes, d.PerConnectionBufferLimitBytes)
+}
 
 func TestCluster(t *testing.T) {
 	s1 := &v1.Service{
@@ -380,7 +402,11 @@ func TestCluster(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := Cluster(tc.cluster)
-			assert.Equal(t, tc.want, got)
+
+			want := DefaultCluster()
+			proto.Merge(want, tc.want)
+
+			assert.Equal(t, want, got)
 		})
 	}
 }

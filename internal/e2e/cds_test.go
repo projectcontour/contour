@@ -21,6 +21,7 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/golang/protobuf/proto"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
@@ -512,26 +513,18 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
-			&v2.Cluster{
-				Name:                 "default/kuard/8080/da39a3ee5e",
-				AltStatName:          "default_kuard_8080",
-				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy.ConfigSource("contour"),
-					ServiceName: "default/kuard",
-				},
-				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-				CircuitBreakers: &envoy_cluster.CircuitBreakers{
+			clusterWithCircuitBreakers(
+				"default/kuard/8080/da39a3ee5e",
+				"default/kuard",
+				"default_kuard_8080",
+				&envoy_cluster.CircuitBreakers{
 					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
 						MaxConnections:     protobuf.UInt32(9000),
 						MaxPendingRequests: protobuf.UInt32(4096),
 						MaxRequests:        protobuf.UInt32(404),
 						MaxRetries:         protobuf.UInt32(7),
 					}},
-				},
-				CommonLbConfig: envoy.ClusterCommonLBConfig(),
-			},
+				}),
 		),
 		TypeUrl: clusterType,
 		Nonce:   "2",
@@ -558,23 +551,15 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
 		Resources: resources(t,
-			&v2.Cluster{
-				Name:                 "default/kuard/8080/da39a3ee5e",
-				AltStatName:          "default_kuard_8080",
-				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy.ConfigSource("contour"),
-					ServiceName: "default/kuard",
-				},
-				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-				CircuitBreakers: &envoy_cluster.CircuitBreakers{
+			clusterWithCircuitBreakers(
+				"default/kuard/8080/da39a3ee5e",
+				"default/kuard",
+				"default_kuard_8080",
+				&envoy_cluster.CircuitBreakers{
 					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
 						MaxPendingRequests: protobuf.UInt32(9999),
 					}},
-				},
-				CommonLbConfig: envoy.ClusterCommonLBConfig(),
-			},
+				}),
 		),
 		TypeUrl: clusterType,
 		Nonce:   "3",
@@ -684,30 +669,8 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
-			&v2.Cluster{
-				Name:                 "default/kuard/80/58d888c08a",
-				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy.ConfigSource("contour"),
-					ServiceName: "default/kuard",
-				},
-				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:       v2.Cluster_RANDOM,
-				CommonLbConfig: envoy.ClusterCommonLBConfig(),
-			},
-			&v2.Cluster{
-				Name:                 "default/kuard/80/8bf87fefba",
-				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy.ConfigSource("contour"),
-					ServiceName: "default/kuard",
-				},
-				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:       v2.Cluster_LEAST_REQUEST,
-				CommonLbConfig: envoy.ClusterCommonLBConfig(),
-			},
+			clusterWithLbPolicy("default/kuard/80/58d888c08a", "default/kuard", "default_kuard_80", v2.Cluster_RANDOM),
+			clusterWithLbPolicy("default/kuard/80/8bf87fefba", "default/kuard", "default_kuard_80", v2.Cluster_LEAST_REQUEST),
 		),
 		TypeUrl: clusterType,
 		Nonce:   "1",
@@ -999,40 +962,58 @@ func streamCDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryRes
 }
 
 func cluster(name, servicename, statName string) *v2.Cluster {
-	return &v2.Cluster{
-		Name:                 name,
-		ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-		AltStatName:          statName,
-		EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-			EdsConfig:   envoy.ConfigSource("contour"),
-			ServiceName: servicename,
-		},
-		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-		LbPolicy:       v2.Cluster_ROUND_ROBIN,
-		CommonLbConfig: envoy.ClusterCommonLBConfig(),
-	}
+	c := envoy.DefaultCluster()
+
+	proto.Merge(c,
+		&v2.Cluster{
+			Name:                 name,
+			ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+			AltStatName:          statName,
+			EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+				EdsConfig:   envoy.ConfigSource("contour"),
+				ServiceName: servicename,
+			},
+			LbPolicy: v2.Cluster_ROUND_ROBIN,
+		})
+
+	return c
 }
 
 func externalnamecluster(name, servicename, statName, externalName string, port int) *v2.Cluster {
-	return &v2.Cluster{
-		Name:                 name,
-		ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
-		AltStatName:          statName,
-		ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
-		LbPolicy:             v2.Cluster_ROUND_ROBIN,
-		CommonLbConfig:       envoy.ClusterCommonLBConfig(),
-		LoadAssignment: &v2.ClusterLoadAssignment{
-			ClusterName: servicename,
-			Endpoints: envoy.Endpoints(
-				envoy.SocketAddress(externalName, port),
-			),
-		},
-	}
+	c := envoy.DefaultCluster()
+
+	proto.Merge(c,
+		&v2.Cluster{
+			Name:                 name,
+			ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
+			AltStatName:          statName,
+			LbPolicy:             v2.Cluster_ROUND_ROBIN,
+			LoadAssignment: &v2.ClusterLoadAssignment{
+				ClusterName: servicename,
+				Endpoints: envoy.Endpoints(
+					envoy.SocketAddress(externalName, port),
+				),
+			},
+		})
+
+	return c
 }
 
 func tlscluster(name, servicename, statsName string, ca []byte, subjectName string) *v2.Cluster {
 	c := cluster(name, servicename, statsName)
 	c.TlsContext = envoy.UpstreamTLSContext(ca, subjectName)
+	return c
+}
+
+func clusterWithLbPolicy(name, servicename, statName string, lb v2.Cluster_LbPolicy) *v2.Cluster {
+	c := cluster(name, servicename, statName)
+	c.LbPolicy = lb
+	return c
+}
+
+func clusterWithCircuitBreakers(name, servicename, statName string, breakers *envoy_cluster.CircuitBreakers) *v2.Cluster {
+	c := cluster(name, servicename, statName)
+	c.CircuitBreakers = breakers
 	return c
 }
 
