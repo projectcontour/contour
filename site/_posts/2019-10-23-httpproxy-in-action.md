@@ -1,6 +1,6 @@
 ---
 title: HTTPProxy in Action
-image: /img/posts/noom-peerapong-2uwFEAGUm6E-unsplash.jpg
+image: /img/posts/proxyinaction.png
 excerpt: This blog post covers a practical demonstration of how HTTPProxy works.
 author_name: Steve Sloka
 author_avatar: /img/contributors/steve-sloka.png
