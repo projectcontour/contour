@@ -251,7 +251,6 @@ type Status struct {
 // +kubebuilder:printcolumn:name="First route",type="string",JSONPath=".spec.routes[0].match",description="First routes defined"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.currentStatus",description="The current status of the HTTPProxy"
 // +kubebuilder:printcolumn:name="Status Description",type="string",JSONPath=".status.description",description="Description of the current status"
-// +kubebuilder:subresource:status
 // +kubebuilder:resource:path=httpproxies,shortName=proxy;proxies,singular=httpproxy
 type HTTPProxy struct {
 	metav1.TypeMeta   `json:",inline"`

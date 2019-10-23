@@ -457,8 +457,7 @@ spec:
     - proxies
     singular: httpproxy
   scope: Namespaced
-  subresources:
-    status: {}
+  subresources: {}
   validation:
     openAPIV3Schema:
       description: HTTPProxy is an Ingress CRD specification
