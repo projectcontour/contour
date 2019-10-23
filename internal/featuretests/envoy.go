@@ -26,11 +26,26 @@ import (
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	envoy_config_v2_tcpproxy "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
 )
+
+// DefaultCluster returns a copy of c, updated with default values.
+func DefaultCluster(c *v2.Cluster) *v2.Cluster {
+	// NOTE: Keep this in sync with envoy.defaultCluster().
+	defaults := &v2.Cluster{
+		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
+		LbPolicy:       v2.Cluster_ROUND_ROBIN,
+		CommonLbConfig: envoy.ClusterCommonLBConfig(),
+	}
+
+	proto.Merge(defaults, c)
+	return defaults
+
+}
 
 func routeCluster(cluster string) *envoy_api_v2_route.Route_Route {
 	return &envoy_api_v2_route.Route_Route{
@@ -43,7 +58,7 @@ func routeCluster(cluster string) *envoy_api_v2_route.Route_Route {
 }
 
 func cluster(name, servicename, statName string) *v2.Cluster {
-	return &v2.Cluster{
+	return DefaultCluster(&v2.Cluster{
 		Name:                 name,
 		ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 		AltStatName:          statName,
@@ -51,10 +66,7 @@ func cluster(name, servicename, statName string) *v2.Cluster {
 			EdsConfig:   envoy.ConfigSource("contour"),
 			ServiceName: servicename,
 		},
-		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-		LbPolicy:       v2.Cluster_ROUND_ROBIN,
-		CommonLbConfig: envoy.ClusterCommonLBConfig(),
-	}
+	})
 }
 
 func tlsCluster(c *v2.Cluster, ca []byte, subjectName string, alpnProtocols ...string) *v2.Cluster {
