@@ -1927,6 +1927,22 @@ func TestSortLongestRouteFirst(t *testing.T) {
 				Match: envoy.RoutePrefix("/"),
 			}},
 		},
+		"prefix sorts before regex wildcard": {
+			routes: []*envoy_api_v2_route.Route{{
+				Match: envoy.RouteRegex("/api/[0-9a-zA-Z-]*/secure.*"),
+			}, {
+				Match: envoy.RoutePrefix("/api/something/secure"),
+			}, {
+				Match: envoy.RoutePrefix("/"),
+			}},
+			want: []*envoy_api_v2_route.Route{{
+				Match: envoy.RoutePrefix("/api/something/secure"),
+			}, {
+				Match: envoy.RouteRegex("/api/[0-9a-zA-Z-]*/secure.*"),
+			}, {
+				Match: envoy.RoutePrefix("/"),
+			}},
+		},
 		"more headers sort before less": {
 			routes: []*envoy_api_v2_route.Route{{
 				Match: envoy.RoutePrefix("/"),
