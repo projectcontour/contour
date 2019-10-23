@@ -107,8 +107,7 @@ spec:
     plural: ingressroutes
     singular: ingressroute
   scope: Namespaced
-  subresources:
-    status: {}
+  subresources: {}
   validation:
     openAPIV3Schema:
       description: IngressRoute is an Ingress CRD specificiation
