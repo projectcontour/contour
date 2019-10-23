@@ -2,11 +2,11 @@
 
 This document describes the changes needed to upgrade your Contour installation.
 
-## Upgrading Contour 0.14.x to 0.15.2
+## Upgrading Contour 0.14.x to 0.15.3
 
-Contour 0.15.2 requires changes to your deployment manifests to explicitly opt in, or opt out of, secure communication between Contour and Envoy.
+Contour 0.15.3 requires changes to your deployment manifests to explicitly opt in, or opt out of, secure communication between Contour and Envoy.
 
-Contour 0.15.2 also adds experimental support for leader election which may be useful for installations which have split their Contour and Envoy containers into separate pods.
+Contour 0.15.3 also adds experimental support for leader election which may be useful for installations which have split their Contour and Envoy containers into separate pods.
 A configuration we call _split deployment_.
 
 ### Breaking change
@@ -27,7 +27,7 @@ If the following are true for you:
  * You are using one of the [example](/example/) deployments.
  * Your cluster can take few minutes of downtime.
 
-Then the simplest way to upgrade to 0.15.2 is to delete the `heptio-contour` namespace and reapply one of the example configurations.
+Then the simplest way to upgrade to 0.15.3 is to delete the `heptio-contour` namespace and reapply one of the example configurations.
 From the root directory of the repository:
 ```
 kubectl delete namespace heptio-contour
@@ -39,11 +39,11 @@ You'll need to re-check where your DNS names are pointing as well, using [Get yo
 
 ## The less easy way
 
-This section contains information for administrators who wish to apply the Contour 0.14.x to 0.15.2 changes manually.
+This section contains information for administrators who wish to apply the Contour 0.14.x to 0.15.3 changes manually.
 
-### Upgrade to Contour 0.15.2
+### Upgrade to Contour 0.15.3
 
-Change the Contour image version to `gcr.io/heptio-images/contour:v0.15.2`.
+Change the Contour image version to `gcr.io/heptio-images/contour:v0.15.3`.
 
 ### Enabling TLS for gRPC
 

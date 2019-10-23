@@ -51,7 +51,7 @@ spec:
     spec:
       containers:
       - name: contour
-        image: gcr.io/heptio-images/contour:v0.15.2
+        image: gcr.io/heptio-images/contour:v0.15.3
         command:
         - contour
         - certgen

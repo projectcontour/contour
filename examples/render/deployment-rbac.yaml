@@ -281,7 +281,7 @@ spec:
         prometheus.io/path: "/stats/prometheus"
     spec:
       containers:
-      - image: gcr.io/heptio-images/contour:v0.15.2
+      - image: gcr.io/heptio-images/contour:v0.15.3
         imagePullPolicy: Always
         name: contour
         command: ["contour"]
@@ -349,7 +349,7 @@ spec:
               - "POST /healthcheck/fail HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
               - '>/dev/tcp/localhost/9001'
       initContainers:
-      - image: gcr.io/heptio-images/contour:v0.15.2
+      - image: gcr.io/heptio-images/contour:v0.15.3
         imagePullPolicy: Always
         name: envoy-initconfig
         command: ["contour"]
