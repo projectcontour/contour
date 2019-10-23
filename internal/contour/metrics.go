@@ -39,12 +39,12 @@ func calculateRouteMetric(statuses map[dag.Meta]dag.Status) (metrics.RouteMetric
 	for _, v := range statuses {
 		switch o := v.Object.(type) {
 		case *ingressroutev1.IngressRoute:
-			calcMetrics(v, irMetricValid, irMetricInvalid, irMetricOrphaned, irMetricRoots, irMetricTotal)
+			calcMetrics(v, irMetricValid, irMetricInvalid, irMetricOrphaned, irMetricTotal)
 			if o.Spec.VirtualHost != nil {
 				irMetricRoots[metrics.Meta{Namespace: v.Object.GetObjectMeta().GetNamespace()}]++
 			}
 		case *projcontour.HTTPProxy:
-			calcMetrics(v, proxyMetricValid, proxyMetricInvalid, proxyMetricOrphaned, proxyMetricRoots, proxyMetricTotal)
+			calcMetrics(v, proxyMetricValid, proxyMetricInvalid, proxyMetricOrphaned, proxyMetricTotal)
 			if o.Spec.VirtualHost != nil {
 				proxyMetricRoots[metrics.Meta{Namespace: v.Object.GetObjectMeta().GetNamespace()}]++
 			}
@@ -67,7 +67,7 @@ func calculateRouteMetric(statuses map[dag.Meta]dag.Status) (metrics.RouteMetric
 		}
 }
 
-func calcMetrics(v dag.Status, metricValid map[metrics.Meta]int, metricInvalid map[metrics.Meta]int, metricOrphaned map[metrics.Meta]int, metricRoots map[metrics.Meta]int, metricTotal map[metrics.Meta]int) {
+func calcMetrics(v dag.Status, metricValid map[metrics.Meta]int, metricInvalid map[metrics.Meta]int, metricOrphaned map[metrics.Meta]int, metricTotal map[metrics.Meta]int) {
 	switch v.Status {
 	case dag.StatusValid:
 		metricValid[metrics.Meta{VHost: v.Vhost, Namespace: v.Object.GetObjectMeta().GetNamespace()}]++
