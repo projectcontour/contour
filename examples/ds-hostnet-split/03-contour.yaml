@@ -43,7 +43,7 @@ spec:
         - --contour-key-file=/certs/tls.key
         - --config-path=/config/contour.yaml
         command: ["contour"]
-        image: gcr.io/heptio-images/contour:v0.15.2
+        image: gcr.io/heptio-images/contour:v0.15.3
         imagePullPolicy: Always
         name: contour
         ports:

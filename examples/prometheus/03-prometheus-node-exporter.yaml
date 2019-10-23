@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: prometheus-node-exporter
-          image: prom/node-exporter:v0.15.2
+          image: prom/node-exporter:v0.15.3
           imagePullPolicy: Always
           args:
             - --path.procfs=/host/proc
