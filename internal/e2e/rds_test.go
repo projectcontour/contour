@@ -2855,6 +2855,184 @@ func TestRDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 	}, streamRDS(t, cc))
 }
 
+func TestWildcardPathPrefixHTTPProxy(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	rh.OnAdd(&v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ws",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	})
+
+	proxy1 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "wildcardprefix.hello.world"},
+			Routes: []projcontour.Route{{
+				Conditions: conditions(prefixCondition("/foo/*/bar")),
+				Services: []projcontour.Service{{
+					Name: "ws",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnAdd(proxy1)
+
+	// Valid
+	assertRDS(t, cc, "1", virtualhosts(
+		envoy.VirtualHost("wildcardprefix.hello.world",
+			envoy.Route(envoy.RouteWildcardPrefix("/foo/*/bar"), routecluster("default/ws/80/da39a3ee5e")),
+		),
+	), nil)
+
+	proxy2 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "wildcardprefix.hello.world"},
+			Routes: []projcontour.Route{{
+				Conditions: conditions(prefixCondition("/foo/*/bar/*")),
+				Services: []projcontour.Service{{
+					Name: "ws",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(proxy1, proxy2)
+
+	// Route is empty because wildcard cannot not end the prefix condition
+	assertRDS(t, cc, "1", virtualhosts(), nil)
+
+	proxy3 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "wildcardprefix.hello.world"},
+			Routes: []projcontour.Route{{
+				Conditions: conditions(prefixCondition("/foo/*/bar/*/zed")),
+				Services: []projcontour.Service{{
+					Name: "ws",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(proxy2, proxy3)
+
+	// Valid
+	assertRDS(t, cc, "1", virtualhosts(
+		envoy.VirtualHost("wildcardprefix.hello.world",
+			envoy.Route(envoy.RouteWildcardPrefix("/foo/*/bar/*/zed"), routecluster("default/ws/80/da39a3ee5e")),
+		),
+	), nil)
+
+	proxy4 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "wildcardprefix.hello.world"},
+			Routes: []projcontour.Route{{
+				Conditions: conditions(prefixCondition("*/foo/*/bar/*/zed")),
+				Services: []projcontour.Service{{
+					Name: "ws",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(proxy3, proxy4)
+
+	// Invalid since the prefix starts with a star
+	assertRDS(t, cc, "1", virtualhosts(), nil)
+
+	proxy5 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "wildcardprefix.hello.world"},
+			Routes: []projcontour.Route{{
+				Conditions: conditions(prefixCondition("/foo/**/bar")),
+				Services: []projcontour.Service{{
+					Name: "ws",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(proxy4, proxy5)
+
+	// Invalid since the prefix contains multiple starts
+	assertRDS(t, cc, "1", virtualhosts(), nil)
+
+	proxy6 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "wildcardprefix.hello.world"},
+			Routes: []projcontour.Route{{
+				Conditions: conditions(prefixCondition("/foo/*/me/d*d*d/bar")),
+				Services: []projcontour.Service{{
+					Name: "ws",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(proxy5, proxy6)
+
+	// Invalid since the prefix contains multiple stars between slashes
+	assertRDS(t, cc, "1", virtualhosts(), nil)
+
+	proxy7 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "wildcardprefix.hello.world"},
+			Routes: []projcontour.Route{{
+				Conditions: conditions(prefixCondition("/foo/*/me/*/bar")),
+				Services: []projcontour.Service{{
+					Name: "ws",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(proxy6, proxy7)
+
+	// Valid
+	assertRDS(t, cc, "1", virtualhosts(
+		envoy.VirtualHost("wildcardprefix.hello.world",
+			envoy.Route(envoy.RouteWildcardPrefix("/foo/*/me/*/bar"), routecluster("default/ws/80/da39a3ee5e")),
+		),
+	), nil)
+}
+
 func virtualhosts(v ...*envoy_api_v2_route.VirtualHost) []*envoy_api_v2_route.VirtualHost { return v }
 
 func conditions(c ...projcontour.Condition) []projcontour.Condition { return c }

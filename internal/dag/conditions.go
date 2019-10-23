@@ -34,6 +34,13 @@ func mergePathConditions(conds []projcontour.Condition) Condition {
 	re := regexp.MustCompile(`//+`)
 	prefix = re.ReplaceAllString(prefix, `/`)
 
+	// Check for wildcard path
+	if strings.Contains(prefix, "*") {
+		return &WildcardPrefixCondition{
+			Prefix: prefix,
+		}
+	}
+
 	// After the merge operation is done, if the string is still empty, then
 	// we need to set the prefix to /.
 	// Remember that this step is done AFTER all the includes have happened.
@@ -58,6 +65,32 @@ func pathConditionsValid(sw *ObjectStatusWriter, conds []projcontour.Condition, 
 			if cond.Prefix[0] != '/' {
 				sw.SetInvalid(fmt.Sprintf("%s: Prefix conditions must start with /, %s was supplied", conditionsContext, cond.Prefix))
 				return false
+			}
+			switch conditionsContext {
+			case "include":
+				if strings.Contains(cond.Prefix, "*") {
+					sw.SetInvalid(fmt.Sprintf("Cannot specify wildcard prefix conditions in an Include"))
+					return false
+				}
+			case "route":
+				if strings.HasSuffix(cond.Prefix, "*") {
+					sw.SetInvalid(fmt.Sprintf("Cannot specify trailing wilcard character, '%s' was supplied", cond.Prefix))
+					return false
+				}
+				if strings.HasPrefix(cond.Prefix, "/*") {
+					sw.SetInvalid(fmt.Sprintf("Cannot specify '/*' as leading wilcard character pattern, '%s' was supplied", cond.Prefix))
+					return false
+				}
+				if strings.Contains(cond.Prefix, "**") {
+					sw.SetInvalid(fmt.Sprintf("Cannot specify '**' character pattern in a wildcard prefix, '%s' was supplied", cond.Prefix))
+					return false
+				}
+				for _, s := range strings.Split(cond.Prefix, "/") {
+					if strings.Count(s, "*") > 1 {
+						sw.SetInvalid(fmt.Sprintf("Cannot specify multiple '*' between slashes in a wildcard prefix, '%s' was supplied", cond.Prefix))
+						return false
+					}
+				}
 			}
 		}
 		if prefixCount > 1 {

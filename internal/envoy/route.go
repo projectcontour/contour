@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strings"
 	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -41,29 +42,45 @@ func Route(match *envoy_api_v2_route.RouteMatch, action *envoy_api_v2_route.Rout
 
 // RouteMatch creates a *envoy_api_v2_route.RouteMatch for the supplied *dag.Route.
 func RouteMatch(route *dag.Route) *envoy_api_v2_route.RouteMatch {
-	match := &envoy_api_v2_route.RouteMatch{
-		Headers: headerMatcher(route.HeaderConditions),
-	}
 	switch c := route.PathCondition.(type) {
 	case *dag.RegexCondition:
-		match.PathSpecifier = &envoy_api_v2_route.RouteMatch_Regex{
-			Regex: c.Regex,
-		}
+		return RouteRegex(c.Regex, route.HeaderConditions...)
 	case *dag.PrefixCondition:
-		match.PathSpecifier = &envoy_api_v2_route.RouteMatch_Prefix{
-			Prefix: c.Prefix,
-		}
+		return RoutePrefix(c.Prefix, route.HeaderConditions...)
+	case *dag.WildcardPrefixCondition:
+		return RouteWildcardPrefix(c.Prefix, route.HeaderConditions...)
 	}
-	return match
+	return nil
 }
 
 // RouteRegex returns a regex matcher.
-func RouteRegex(regex string) *envoy_api_v2_route.RouteMatch {
+func RouteRegex(regex string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
 	return &envoy_api_v2_route.RouteMatch{
 		PathSpecifier: &envoy_api_v2_route.RouteMatch_Regex{
 			Regex: regex,
 		},
+		Headers: headerMatcher(headers),
 	}
+}
+
+// RouteWildcardPrefix returns a regex matcher
+func RouteWildcardPrefix(prefix string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
+	return &envoy_api_v2_route.RouteMatch{
+		PathSpecifier: &envoy_api_v2_route.RouteMatch_Regex{
+			Regex: sanitizeRegex(prefix),
+		},
+		Headers: headerMatcher(headers),
+	}
+}
+
+func sanitizeRegex(prefix string) string {
+	// Since the QuoteMeta will replace the user entered "*" with a "\*",
+	// it makes that character want to match when we want to actually replace
+	// with a custom regex string
+	prefix = strings.ReplaceAll(regexp.QuoteMeta(prefix), "\\*", "*")
+
+	// Replace all "*" with the match-all regex
+	return fmt.Sprintf("%s.*", strings.ReplaceAll(prefix, "*", "[0-9a-zA-Z-]*"))
 }
 
 // RoutePrefix returns a prefix matcher.

@@ -83,6 +83,48 @@ func TestPathCondition(t *testing.T) {
 			}},
 			want: &PrefixCondition{Prefix: "/"},
 		},
+		"wildcard condition": {
+			conditions: []projcontour.Condition{{
+				Prefix: "/foo/*/bar",
+			}},
+			want: &WildcardPrefixCondition{Prefix: "/foo/*/bar"},
+		},
+		"wildcard condition with multiple wildcards": {
+			conditions: []projcontour.Condition{{
+				Prefix: "/foo/*/bar/*/zed",
+			}},
+			want: &WildcardPrefixCondition{Prefix: "/foo/*/bar/*/zed"},
+		},
+		"wildcard condition with prefix conditions": {
+			conditions: []projcontour.Condition{
+				{
+					Prefix: "/api",
+				},
+				{
+					Prefix: "/foo/*/bar",
+				},
+			},
+			want: &WildcardPrefixCondition{Prefix: "/api/foo/*/bar"},
+		},
+		"wildcard trailing slash": {
+			conditions: []projcontour.Condition{
+				{
+					Prefix: "/foo/*/bar/",
+				},
+			},
+			want: &WildcardPrefixCondition{Prefix: "/foo/*/bar/"},
+		},
+		"wildcard trailing slash on second prefix condition": {
+			conditions: []projcontour.Condition{
+				{
+					Prefix: "/api",
+				},
+				{
+					Prefix: "/foo/*/bar/",
+				},
+			},
+			want: &WildcardPrefixCondition{Prefix: "/api/foo/*/bar/"},
+		},
 	}
 
 	for name, tc := range tests {

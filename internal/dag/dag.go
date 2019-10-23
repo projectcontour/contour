@@ -81,6 +81,14 @@ func (hc *HeaderCondition) String() string {
 	return "header: " + hc.Name
 }
 
+type WildcardPrefixCondition struct {
+	Prefix string
+}
+
+func (pc *WildcardPrefixCondition) String() string {
+	return "wildcard path: " + pc.Prefix
+}
+
 // Route defines the properties of a route to a Cluster.
 type Route struct {
 

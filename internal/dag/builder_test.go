@@ -2635,6 +2635,137 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+
+	// proxy108 has a wildcard path prefix
+	proxy108 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo/*/bar",
+				}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy108a has a wildcard path prefix that doesn't start with a slash
+	proxy108a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "foo/*/bar",
+				}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy108b has a wildcard path prefix that ends with a wildcard character
+	proxy108b := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "foo/*/bar/*",
+				}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy108c has a wildcard path prefix defined in an Include
+	proxy108c := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "foo",
+				Namespace: s1.Namespace,
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo/*/bar",
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy108d is a child delegated a wildcard prefix
+	proxy108d := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy109 has multiple wildcards in a path prefix
+	proxy109 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo/*/bar/*/zed",
+				}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs                  []interface{}
 		disablePermitInsecure bool
@@ -5043,6 +5174,100 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: listeners(),
 		},
+		"insert httpproxy with wildcard route prefix": {
+			objs: []interface{}{
+				proxy108,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeClusterWildcard("/foo/*/bar",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with multiple wildcards on route prefix": {
+			objs: []interface{}{
+				proxy109,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeClusterWildcard("/foo/*/bar/*/zed",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with wildcard route prefix and pathprefix": {
+			objs: []interface{}{
+				proxy108,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeClusterWildcard("/foo/*/bar",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1.Name,
+										Namespace:   s1.Namespace,
+										ServicePort: &s1.Spec.Ports[0],
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with wildcard route prefix, doesn't start with slash": {
+			objs: []interface{}{
+				proxy108a,
+				s1,
+			},
+			want: listeners(),
+		},
+		"insert httpproxy with wildcard route prefix, ends with wildcard character": {
+			objs: []interface{}{
+				proxy108b,
+				s1,
+			},
+			want: listeners(),
+		},
+		"insert httpproxy with wildcard route prefix defined in an include": {
+			objs: []interface{}{
+				proxy108c,
+				proxy108d,
+				s1,
+			},
+			want: listeners(),
+		},
 		"insert proxy with tcp forward without TLS termination w/ passthrough": {
 			objs: []interface{}{
 				proxy1a, s1,
@@ -5825,5 +6050,11 @@ func withMirror(r *Route, mirror *Service) *Route {
 		},
 	}
 	return r
+}
 
+func routeClusterWildcard(prefix string, first *Cluster, rest ...*Cluster) *Route {
+	return &Route{
+		PathCondition: &WildcardPrefixCondition{Prefix: prefix},
+		Clusters:      append([]*Cluster{first}, rest...),
+	}
 }

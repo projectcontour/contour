@@ -1528,6 +1528,148 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	// proxy41a has a wildcard path prefix defined in an Include
+	proxy41a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "foo",
+				Namespace: s1.Namespace,
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo/*/bar",
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy41b is a child delegated a wildcard prefix
+	proxy41b := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy42 has a wildcard path prefix ending with a star
+	proxy42 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{Prefix: "/foo/*"}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy42b has a wildcard path prefix starting with a star
+	proxy42b := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{Prefix: "*/foo"}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy42c has a wildcard path prefix starting with a slash star
+	proxy42c := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{Prefix: "/*/foo"}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy42d has a wildcard path prefix containing '**'
+	proxy42d := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{Prefix: "/foo/**/bar"}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy42e has a wildcard path prefix with multiple stars between slashes
+	proxy42e := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{Prefix: "/foo/d*d*d/bar"}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -2112,6 +2254,43 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Description: "valid HTTPProxy",
 					Vhost:       "passthrough.example.com",
 				},
+			},
+		},
+		"wildcard prefix condition in an include": {
+			objs: []interface{}{proxy41a, proxy41b, s1},
+			want: map[Meta]Status{
+				{name: proxy41a.Name, namespace: proxy41a.Namespace}: {Object: proxy41a, Status: "invalid", Description: "Cannot specify wildcard prefix conditions in an Include", Vhost: "example.com"},
+				{name: proxy41b.Name, namespace: proxy41b.Namespace}: {Object: proxy41b, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy", Vhost: ""},
+			},
+		},
+		"wildcard prefix condition ends with star": {
+			objs: []interface{}{proxy42, s1},
+			want: map[Meta]Status{
+				{name: proxy42.Name, namespace: proxy42.Namespace}: {Object: proxy42, Status: "invalid", Description: "Cannot specify trailing wilcard character, '/foo/*' was supplied", Vhost: "example.com"},
+			},
+		},
+		"wildcard prefix condition starts with star": {
+			objs: []interface{}{proxy42b, s1},
+			want: map[Meta]Status{
+				{name: proxy42b.Name, namespace: proxy42b.Namespace}: {Object: proxy42b, Status: "invalid", Description: "route: Prefix conditions must start with /, */foo was supplied", Vhost: "example.com"},
+			},
+		},
+		"wildcard prefix condition starts with a slash star": {
+			objs: []interface{}{proxy42c, s1},
+			want: map[Meta]Status{
+				{name: proxy42c.Name, namespace: proxy42c.Namespace}: {Object: proxy42c, Status: "invalid", Description: "Cannot specify '/*' as leading wilcard character pattern, '/*/foo' was supplied", Vhost: "example.com"},
+			},
+		},
+		"wildcard prefix condition contains '**'": {
+			objs: []interface{}{proxy42d, s1},
+			want: map[Meta]Status{
+				{name: proxy42d.Name, namespace: proxy42d.Namespace}: {Object: proxy42d, Status: "invalid", Description: "Cannot specify '**' character pattern in a wildcard prefix, '/foo/**/bar' was supplied", Vhost: "example.com"},
+			},
+		},
+		"wildcard prefix condition contains multiple stars inside same slashes": {
+			objs: []interface{}{proxy42e, s1},
+			want: map[Meta]Status{
+				{name: proxy42e.Name, namespace: proxy42e.Namespace}: {Object: proxy42e, Status: "invalid", Description: "Cannot specify multiple '*' between slashes in a wildcard prefix, '/foo/d*d*d/bar' was supplied", Vhost: "example.com"},
 			},
 		},
 	}
