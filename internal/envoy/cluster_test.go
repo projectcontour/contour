@@ -21,6 +21,7 @@ import (
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
@@ -78,9 +79,6 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
 		"h2c upstream": {
@@ -95,10 +93,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:             v2.Cluster_ROUND_ROBIN,
 				Http2ProtocolOptions: &envoy_api_v2_core.Http2ProtocolOptions{},
-				CommonLbConfig:       ClusterCommonLBConfig(),
 			},
 		},
 		"h2 upstream": {
@@ -113,11 +108,8 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:             v2.Cluster_ROUND_ROBIN,
 				TlsContext:           UpstreamTLSContext(nil, "", "h2"),
 				Http2ProtocolOptions: &envoy_api_v2_core.Http2ProtocolOptions{},
-				CommonLbConfig:       ClusterCommonLBConfig(),
 			},
 		},
 		"externalName service": {
@@ -129,9 +121,6 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
 				LoadAssignment:       StaticClusterLoadAssignment(service(s2)),
-				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:             v2.Cluster_ROUND_ROBIN,
-				CommonLbConfig:       ClusterCommonLBConfig(),
 			},
 		},
 		"tls upstream": {
@@ -146,10 +135,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-				TlsContext:     UpstreamTLSContext(nil, ""),
-				CommonLbConfig: ClusterCommonLBConfig(),
+				TlsContext: UpstreamTLSContext(nil, ""),
 			},
 		},
 		"verify tls upstream with san": {
@@ -178,10 +164,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-				TlsContext:     UpstreamTLSContext([]byte("cacert"), "foo.bar.io"),
-				CommonLbConfig: ClusterCommonLBConfig(),
+				TlsContext: UpstreamTLSContext([]byte("cacert"), "foo.bar.io"),
 			},
 		},
 		"projectcontour.io/max-connections": {
@@ -200,14 +183,11 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
 					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
 						MaxConnections: protobuf.UInt32(9000),
 					}},
 				},
-				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
 		"projectcontour.io/max-pending-requests": {
@@ -226,14 +206,11 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
 					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
 						MaxPendingRequests: protobuf.UInt32(4096),
 					}},
 				},
-				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
 		"projectcontour.io/max-requests": {
@@ -252,14 +229,11 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
 					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
 						MaxRequests: protobuf.UInt32(404),
 					}},
 				},
-				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
 		"projectcontour.io/max-retries": {
@@ -278,14 +252,11 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
 					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
 						MaxRetries: protobuf.UInt32(7),
 					}},
 				},
-				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
 		"cluster with random load balancer policy": {
@@ -301,9 +272,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:       v2.Cluster_RANDOM,
-				CommonLbConfig: ClusterCommonLBConfig(),
+				LbPolicy: v2.Cluster_RANDOM,
 			},
 		},
 		"cluster with cookie policy": {
@@ -319,9 +288,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:       v2.Cluster_RING_HASH,
-				CommonLbConfig: ClusterCommonLBConfig(),
+				LbPolicy: v2.Cluster_RING_HASH,
 			},
 		},
 
@@ -337,9 +304,6 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:       v2.Cluster_ROUND_ROBIN,
-				CommonLbConfig: ClusterCommonLBConfig(),
 			},
 		},
 		"tcp service with healthcheck": {
@@ -357,9 +321,6 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout:                protobuf.Duration(250 * time.Millisecond),
-				LbPolicy:                      v2.Cluster_ROUND_ROBIN,
-				CommonLbConfig:                ClusterCommonLBConfig(),
 				DrainConnectionsOnHostRemoval: true,
 				HealthChecks: []*envoy_api_v2_core.HealthCheck{{
 					Timeout:            durationOrDefault(0, hcTimeout),
@@ -380,7 +341,11 @@ func TestCluster(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := Cluster(tc.cluster)
-			assert.Equal(t, tc.want, got)
+			want := clusterDefaults()
+
+			proto.Merge(want, tc.want)
+
+			assert.Equal(t, want, got)
 		})
 	}
 }

@@ -33,25 +33,68 @@ import (
 // CACertificateKey stores the key for the TLS validation secret cert
 const CACertificateKey = "ca.crt"
 
+func clusterDefaults() *v2.Cluster {
+	return &v2.Cluster{
+		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
+		CommonLbConfig: ClusterCommonLBConfig(),
+		LbPolicy:       lbPolicy(""),
+	}
+}
+
 // Cluster creates new v2.Cluster from dag.Cluster.
 func Cluster(c *dag.Cluster) *v2.Cluster {
-	cl := cluster(c)
+	service := c.Upstream
+	cluster := clusterDefaults()
+
+	cluster.Name = Clustername(c)
+	cluster.AltStatName = altStatName(service)
+	cluster.LbPolicy = lbPolicy(c.LoadBalancerPolicy)
+	cluster.HealthChecks = edshealthcheck(c)
+
+	switch len(service.ExternalName) {
+	case 0:
+		// external name not set, cluster will be discovered via EDS
+		cluster.ClusterDiscoveryType = ClusterDiscoveryType(v2.Cluster_EDS)
+		cluster.EdsClusterConfig = edsconfig("contour", service)
+	default:
+		// external name set, use hard coded DNS name
+		cluster.ClusterDiscoveryType = ClusterDiscoveryType(v2.Cluster_STRICT_DNS)
+		cluster.LoadAssignment = StaticClusterLoadAssignment(service)
+	}
+
+	// Drain connections immediately if using healthchecks and the endpoint is known to be removed
+	if c.HealthCheckPolicy != nil {
+		cluster.DrainConnectionsOnHostRemoval = true
+	}
+
+	if anyPositive(service.MaxConnections, service.MaxPendingRequests, service.MaxRequests, service.MaxRetries) {
+		cluster.CircuitBreakers = &envoy_cluster.CircuitBreakers{
+			Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
+				MaxConnections:     u32nil(service.MaxConnections),
+				MaxPendingRequests: u32nil(service.MaxPendingRequests),
+				MaxRequests:        u32nil(service.MaxRequests),
+				MaxRetries:         u32nil(service.MaxRetries),
+			}},
+		}
+	}
+
 	switch c.Upstream.Protocol {
 	case "tls":
-		cl.TlsContext = UpstreamTLSContext(
+		cluster.TlsContext = UpstreamTLSContext(
 			upstreamValidationCACert(c),
 			upstreamValidationSubjectAltName(c),
 		)
 	case "h2":
-		cl.TlsContext = UpstreamTLSContext(
+		cluster.TlsContext = UpstreamTLSContext(
 			upstreamValidationCACert(c),
 			upstreamValidationSubjectAltName(c),
 			"h2")
 		fallthrough
 	case "h2c":
-		cl.Http2ProtocolOptions = &envoy_api_v2_core.Http2ProtocolOptions{}
+		cluster.Http2ProtocolOptions = &envoy_api_v2_core.Http2ProtocolOptions{}
 	}
-	return cl
+
+	return cluster
 }
 
 func upstreamValidationCACert(c *dag.Cluster) []byte {
@@ -68,46 +111,6 @@ func upstreamValidationSubjectAltName(c *dag.Cluster) string {
 		return ""
 	}
 	return c.UpstreamValidation.SubjectName
-}
-
-func cluster(cluster *dag.Cluster) *v2.Cluster {
-	service := cluster.Upstream
-	c := &v2.Cluster{
-		Name:           Clustername(cluster),
-		AltStatName:    altStatName(service),
-		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-		LbPolicy:       lbPolicy(cluster.LoadBalancerPolicy),
-		CommonLbConfig: ClusterCommonLBConfig(),
-		HealthChecks:   edshealthcheck(cluster),
-	}
-
-	switch len(service.ExternalName) {
-	case 0:
-		// external name not set, cluster will be discovered via EDS
-		c.ClusterDiscoveryType = ClusterDiscoveryType(v2.Cluster_EDS)
-		c.EdsClusterConfig = edsconfig("contour", service)
-	default:
-		// external name set, use hard coded DNS name
-		c.ClusterDiscoveryType = ClusterDiscoveryType(v2.Cluster_STRICT_DNS)
-		c.LoadAssignment = StaticClusterLoadAssignment(service)
-	}
-
-	// Drain connections immediately if using healthchecks and the endpoint is known to be removed
-	if cluster.HealthCheckPolicy != nil {
-		c.DrainConnectionsOnHostRemoval = true
-	}
-
-	if anyPositive(service.MaxConnections, service.MaxPendingRequests, service.MaxRequests, service.MaxRetries) {
-		c.CircuitBreakers = &envoy_cluster.CircuitBreakers{
-			Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
-				MaxConnections:     u32nil(service.MaxConnections),
-				MaxPendingRequests: u32nil(service.MaxPendingRequests),
-				MaxRequests:        u32nil(service.MaxRequests),
-				MaxRetries:         u32nil(service.MaxRetries),
-			}},
-		}
-	}
-	return c
 }
 
 // StaticClusterLoadAssignment creates a *v2.ClusterLoadAssignment pointing to the external DNS address of the service

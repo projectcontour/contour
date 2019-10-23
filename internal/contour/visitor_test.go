@@ -15,7 +15,6 @@ package contour
 
 import (
 	"testing"
-	"time"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
@@ -24,7 +23,6 @@ import (
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
-	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -69,9 +67,6 @@ func TestVisitClusters(t *testing.T) {
 						EdsConfig:   envoy.ConfigSource("contour"),
 						ServiceName: "default/example",
 					},
-					ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-					LbPolicy:       envoy_api_v2.Cluster_ROUND_ROBIN,
-					CommonLbConfig: envoy.ClusterCommonLBConfig(),
 				},
 			),
 		},
