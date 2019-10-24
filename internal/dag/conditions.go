@@ -74,11 +74,11 @@ func pathConditionsValid(sw *ObjectStatusWriter, conds []projcontour.Condition, 
 				}
 			case "route":
 				if strings.HasSuffix(cond.Prefix, "*") {
-					sw.SetInvalid(fmt.Sprintf("Cannot specify trailing wilcard character, '%s' was supplied", cond.Prefix))
+					sw.SetInvalid(fmt.Sprintf("Cannot specify trailing wildcard character, '%s' was supplied", cond.Prefix))
 					return false
 				}
 				if strings.HasPrefix(cond.Prefix, "/*") {
-					sw.SetInvalid(fmt.Sprintf("Cannot specify '/*' as leading wilcard character pattern, '%s' was supplied", cond.Prefix))
+					sw.SetInvalid(fmt.Sprintf("Cannot specify '/*' as leading wildcard character pattern, '%s' was supplied", cond.Prefix))
 					return false
 				}
 				if strings.Contains(cond.Prefix, "**") {

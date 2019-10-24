@@ -80,7 +80,7 @@ func sanitizeRegex(prefix string) string {
 	prefix = strings.ReplaceAll(regexp.QuoteMeta(prefix), "\\*", "*")
 
 	// Replace all "*" with the match-all regex
-	return fmt.Sprintf("%s.*", strings.ReplaceAll(prefix, "*", "[0-9a-zA-Z-]*"))
+	return fmt.Sprintf("%s.*", strings.ReplaceAll(prefix, "*", "[0-9a-zA-Z-]+"))
 }
 
 // RoutePrefix returns a prefix matcher.
