@@ -12,9 +12,10 @@ annotations.
 
 However, Contour still supports a number of annotations on the Ingress resources.
 
-## Deprecation notice
-
-The `contour.heptio.com` annotations are deprecated, please use the `projectcontour.io` form going forward.
+<p class="alert-deprecation">
+<b>Deprecation Notice</b></br>
+The <code>contour.heptio.com</code> annotations are deprecated, please use the <code>projectcontour.io</code> form going forward.
+</p>
 
 ## Standard Kubernetes Ingress annotations
 
