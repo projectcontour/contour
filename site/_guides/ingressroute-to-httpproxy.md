@@ -1,5 +1,5 @@
 ---
-title: IngressRoute to HTTPProxy
+title: Migrating from IngressRoute to HTTPProxy
 layout: page
 ---
 
@@ -16,6 +16,7 @@ For Contour 1.0.0-rc.1 the version is `v1`.
 We expect this to change in forthcoming release candidates.
 
 Before:
+
 ```yaml
 apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
@@ -45,6 +46,7 @@ spec:
     tls:
       secretName: tlssecret
 ```
+
 After:
 
 ```yaml
@@ -161,6 +163,7 @@ spec:
         - name: s2
           port: 80
 ```
+
 After:
 
 ```yaml
@@ -216,6 +219,7 @@ spec:
     - name: s1
       port: 80
 ```
+
 After:
 
 ```yaml
@@ -269,6 +273,7 @@ spec:
           port: 80
           strategy: WeightedLeastRequest
 ```
+
 After:
 
 ```yaml
@@ -323,6 +328,7 @@ spec:
         - name: s2-health  # no health-check defined for this service
           port: 80
 ```
+
 After:
 
 ```yaml
@@ -410,6 +416,7 @@ spec:
         - name: blog
           port: 80
 ```
+
 After:
 
 ```yaml

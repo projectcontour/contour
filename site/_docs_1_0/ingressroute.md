@@ -7,7 +7,7 @@ layout: page
 
 `IngressRoute` has been deprecated and will be removed after Contour 1.0.
 Please see the documentation for [`HTTPProxy`](./httpproxy.md) the successor to `IngressRoute`.
-You can also read the [IngressRoute to HTTPProxy upgrade guide](./ingressroute-to-httpproxy.md).
+You can also read the [IngressRoute to HTTPProxy upgrade guide]({% link _guides/ingressroute-to-httpproxy.md %}).
 
 </hr>
 
