@@ -3,6 +3,8 @@ title: IngressRoute Reference
 layout: page
 ---
 
+<div id="toc"></div>
+
 ## Deprecation notice
 
 `IngressRoute` has been deprecated and will be removed after Contour 1.0.
