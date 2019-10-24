@@ -3,6 +3,8 @@ title: Annotation Reference
 layout: page
 ---
 
+<div id="toc"></div>
+
 Annotations are used in Ingress Controllers to configure features that are not covered by the Kubernetes Ingress API.
 
 Some of the features that have been historically configured via annotations are supported as first-class features in Contour's [IngressRoute API]({% link _docs_1_0/ingressroute.md %}), which provides a more robust configuration interface over

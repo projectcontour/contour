@@ -44,7 +44,7 @@ The intent of making this change now is to prepare HTTPProxy as a stable CRD for
 With this goal in mind the IngressRoute CRD, having never made it out of beta, should be considered deprecated.
 Contour will continue to support the IngressRoute CRD up to the 1.0 release of Contour in November, however no further enhancements or bug fixes will be made over this period unless absolutely necessary.
 The plan at this stage is to remove support for the IngressRoute CRD after Contour 1.0 ships.
-We've [written a guide](https://github.com/projectcontour/contour/blob/v1.0.0-beta.1/docs/ingressroute-to-httpproxy.md) to help you transition your IngressRoute objects to HTTPProxy.
+We've [written a guide]({% link _guides/ingressroute-to-httpproxy.md %}) to help you transition your IngressRoute objects to HTTPProxy.
 
 The next blog post in this series will delve into how to use inclusion and conditions.
 Stay tuned for that. 
