@@ -11,8 +11,8 @@ Contour 1.0.0-rc.2 is the second release candidate for Contour 1.0.
 
 ### Release candidate
 
-Contour 0.15.2 remains the current stable release.
-The `:latest` tag will continue to point to 0.15.2 until Contour 1.0.0 is released.
+Contour 0.15.3 remains the current stable release.
+The `:latest` tag will continue to point to 0.15.3 until Contour 1.0.0 is released.
 
 ## The easy way to upgrade
 
@@ -59,8 +59,8 @@ Contour 1.0.0-rc.1 moves HTTPProxy to v1 and continues polishing the release tow
 
 ### Release candidate
 
-Contour 0.15.2 remains the current stable release.
-The `:latest` tag will continue to point to 0.15.2 until Contour 1.0.0 is released.
+Contour 0.15.3 remains the current stable release.
+The `:latest` tag will continue to point to 0.15.3 until Contour 1.0.0 is released.
 
 ### HTTPProxy v1
 
@@ -257,7 +257,7 @@ Change the Contour image version to `docker.io/projectcontour/contour:v1.0.0-bet
 
 ### Recommended Envoy version
 
-The recommended version of Envoy remains unchanged from Contour 0.15.2.
+The recommended version of Envoy remains unchanged from Contour 0.15.3.
 Ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.11.2`.
 
 ### Split deployment/daemonset now the default
@@ -299,11 +299,11 @@ The `contour serve --ingressroute-root-namespaces` flag has been renamed to `--r
 The previous flag's name will be supported until Contour 1.0.0-rc.1.
 If you use this feature please update your deployments.
 
-## Upgrading Contour 0.14.x to 0.15.2
+## Upgrading Contour 0.14.x to 0.15.3
 
-Contour 0.15.2 requires changes to your deployment manifests to explicitly opt in, or opt out of, secure communication between Contour and Envoy.
+Contour 0.15.3 requires changes to your deployment manifests to explicitly opt in, or opt out of, secure communication between Contour and Envoy.
 
-Contour 0.15.2 also adds experimental support for leader election which may be useful for installations which have split their Contour and Envoy containers into separate pods.
+Contour 0.15.3 also adds experimental support for leader election which may be useful for installations which have split their Contour and Envoy containers into separate pods.
 A configuration we call _split deployment_.
 
 ### Breaking change
@@ -321,10 +321,10 @@ Please see the [Envoy Release Notes](https://www.envoyproxy.io/docs/envoy/v1.11.
 If the following are true for you:
 
  * Your installation is in the `heptio-contour` namespace.
- * You are using one of the [example]({{ site.github.repository_url }}/blob/v0.15.2/examples/) deployments.
+ * You are using one of the [example]({{ site.github.repository_url }}/blob/v0.15.3/examples/) deployments.
  * Your cluster can take few minutes of downtime.
 
-Then the simplest way to upgrade to 0.15.2 is to delete the `heptio-contour` namespace and reapply one of the example configurations.
+Then the simplest way to upgrade to 0.15.3 is to delete the `heptio-contour` namespace and reapply one of the example configurations.
 From the root directory of the repository:
 ```
 kubectl delete namespace heptio-contour
@@ -340,13 +340,13 @@ If you deployed Contour into a different namespace than heptio-contour with a st
 
 ## The less easy way
 
-This section contains information for administrators who wish to apply the Contour 0.14.x to 0.15.2 changes manually.
+This section contains information for administrators who wish to apply the Contour 0.14.x to 0.15.3 changes manually.
 
-### Upgrade to Contour 0.15.2
+### Upgrade to Contour 0.15.3
 
 Due to the sun setting on the Heptio brand, from v0.15.0 onwards our images are now served from the docker hub repository [`docker.io/projectcontour/contour`](https://hub.docker.com/r/projectcontour/contour)
 
-Change the Contour image version to `docker.io/projectcontour/contour:v0.15.2`.
+Change the Contour image version to `docker.io/projectcontour/contour:v0.15.3`.
 
 ### Enabling TLS for gRPC
 
@@ -363,12 +363,12 @@ If you would like more detail, see [grpc-tls-howto.md]({% link _guides/grpc-tls-
 
 ### Upgrade to Envoy 1.11.2
 
-Contour 0.15.2 requires Envoy 1.11.2.
+Contour 0.15.3 requires Envoy 1.11.2.
 Change the Envoy image version to `docker.io/envoyproxy/envoy:v1.11.2`.
 
 ### Enabling Leader Election
 
-Contour 0.15.2 adds experimental support for leader election.
+Contour 0.15.3 adds experimental support for leader election.
 Enabling leader election will mean that only one of the Contour pods will actually serve gRPC traffic.
 This will ensure that all Envoy's take their configuration from the same Contour.
 You can enable leader election with the `--enable-leader-election` flag to `contour serve`.
