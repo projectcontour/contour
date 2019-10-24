@@ -51,3 +51,15 @@
 
 <script src="/js/jquery.matchHeight.js?{{site.time | date: '%s%N'}}"></script>
 <script src="/js/scripts.js?{{site.time | date: '%s%N'}}"></script>
+<script src="/js/toc.js?{{site.time | date: '%s%N'}}"></script>
+
+<!-- https://github.com/ghiculescu/jekyll-table-of-contents -->
+<script type="text/javascript">
+$(document).ready(function() {
+    $('#toc').toc({
+        headers: 'h1, h2, h3',
+        title: '',
+        listType: 'ul',
+    });
+});
+</script>
