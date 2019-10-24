@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometheus
-  namespace: contour-monitoring
+  namespace: projectcontour-monitoring
 data:
   prometheus.yml: |-
     # A scrape configuration for running Prometheus on a Kubernetes cluster.
@@ -316,7 +316,7 @@ data:
         bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
         relabel_configs:
         - source_labels: [__meta_kubernetes_namespace]
-          regex: contour-monitoring
+          regex: projectcontour-monitoring
           action: keep
         - source_labels: [__meta_kubernetes_pod_label_app]
           regex: prometheus

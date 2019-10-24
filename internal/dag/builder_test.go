@@ -2151,6 +2151,92 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// invalid because tcpproxy both includes another and
+	// has a list of services.
+	proxy37 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "passthrough.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{
+				Include: &projcontour.TCPProxyInclude{
+					Name:      "foo",
+					Namespace: "roots",
+				},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
+	// proxy38 is invalid when combined with proxy39
+	// as the latter is a root.
+	proxy38 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "passthrough.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{
+				Include: &projcontour.TCPProxyInclude{
+					Name:      "foo",
+					Namespace: s1.Namespace,
+				},
+			},
+		},
+	}
+
+	proxy39 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "www.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
+	proxy40 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
 	proxy100 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -4616,6 +4702,54 @@ func TestDAGInsert(t *testing.T) {
 								},
 							),
 						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with invalid tcpproxy": {
+			objs: []interface{}{proxy37, s1},
+			want: listeners(),
+		},
+		"insert httpproxy w/ tcpproxy w/ missing include": {
+			objs: []interface{}{proxy38, s1},
+			want: listeners(),
+		},
+		"insert httpproxy w/ tcpproxy w/ includes another root": {
+			objs: []interface{}{proxy38, proxy39, s1},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "www.example.com", // this is proxy39, not proxy38
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(
+									service(s1),
+								),
+							},
+						},
+					),
+				},
+			),
+		},
+		"insert httpproxy w/ tcpproxy w/ includes valid child": {
+			objs: []interface{}{proxy38, proxy40, s1},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "passthrough.example.com",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(
+									service(s1),
+								),
+							},
+						},
 					),
 				},
 			),

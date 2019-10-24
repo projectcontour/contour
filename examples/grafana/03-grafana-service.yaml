@@ -5,7 +5,7 @@ metadata:
   labels:
     app: grafana
   name: grafana
-  namespace: contour-monitoring
+  namespace: projectcontour-monitoring
 spec:
   ports:
     - name: http

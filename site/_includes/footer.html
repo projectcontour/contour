@@ -20,7 +20,7 @@
                 <ul class="social-links text-center text-md-left">
                     {% for link in site.footer_social_links %}
                     <li>
-                      {% if(link[1].fa_icon != false) %}
+                      {% if link[1].fa_icon %}
                       <i class="{{ link[1].fa_icon }} fa-lg fa-fw mr-1"></i>
                       {% endif %}
                       <a href="{{ link[1].url }}">{{ link[0] }}</a></li>
@@ -51,3 +51,15 @@
 
 <script src="/js/jquery.matchHeight.js?{{site.time | date: '%s%N'}}"></script>
 <script src="/js/scripts.js?{{site.time | date: '%s%N'}}"></script>
+<script src="/js/toc.js?{{site.time | date: '%s%N'}}"></script>
+
+<!-- https://github.com/ghiculescu/jekyll-table-of-contents -->
+<script type="text/javascript">
+$(document).ready(function() {
+    $('#toc').toc({
+        headers: 'h1, h2, h3',
+        title: '',
+        listType: 'ul',
+    });
+});
+</script>

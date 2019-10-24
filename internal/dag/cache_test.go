@@ -80,6 +80,30 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
+		"insert secret referenced by ingress with multiple pem blocks": {
+			pre: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "www",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						TLS: []v1beta1.IngressTLS{{
+							SecretName: "secret",
+						}},
+					},
+				},
+			},
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(EC_CERTIFICATE, EC_PRIVATE_KEY),
+			},
+			want: true,
+		},
 		"insert secret w/ wrong type referenced by ingress": {
 			pre: []interface{}{
 				&v1beta1.Ingress{
@@ -399,6 +423,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "ca",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeOpaque,
 				Data: map[string][]byte{
 					"ca.crt": []byte(CERTIFICATE),
 				},
@@ -439,6 +464,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "ca",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeOpaque,
 				Data: map[string][]byte{
 					"ca.crt": []byte(CERTIFICATE),
 				},
@@ -477,6 +503,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "ca",
 					Namespace: "default",
 				},
+				Type: v1.SecretTypeOpaque,
 				Data: map[string][]byte{
 					"ca.crt": []byte(CERTIFICATE),
 				},
@@ -875,6 +902,10 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					Namespace: "default",
 				},
 				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte(RSA_PRIVATE_KEY),
+				},
 			}),
 			obj: &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{

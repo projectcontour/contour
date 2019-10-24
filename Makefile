@@ -8,6 +8,11 @@ LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
 PHONY = gencerts
 
+# The version of Jekyll is pinned in site/Gemfile.lock.
+# https://docs.netlify.com/configure-builds/common-configurations/#jekyll
+JEKYLL_IMAGE := jekyll/jekyll:3.8.5
+JEKYLL_PORT := 4000
+
 TAG_LATEST ?= false
 # Used to supply a local Envoy docker container an IP to connect to that is running
 # 'contour serve'. On MacOS this will work, but may not on other OSes. Defining
@@ -35,6 +40,8 @@ vet: | test
 
 check: ## Run tests and CI checks
 check: test test-race vet gofmt staticcheck misspell unconvert unparam ineffassign yamllint
+	@echo Checking CRD YAML files are up to date
+	@(cd examples && bash rendercrds.sh && git diff --exit-code . || (echo "CRD YAML files are out of date" && exit 1))
 	@echo Checking rendered files are up to date
 	@(cd examples && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
 
@@ -128,9 +135,13 @@ errcheck:
 	go install github.com/kisielk/errcheck
 	errcheck $(MODULE)/...
 
-render:
+render: rendercrds
 	@echo Rendering example deployment files...
 	@(cd examples && bash render.sh)
+
+rendercrds:
+	@echo Rendering CRDs
+	@(cd examples && bash rendercrds.sh)
 
 updategenerated: ## Update generated CRD code
 	@echo Updating generated CRD code...
@@ -196,6 +207,11 @@ certs/envoycert.pem: certs/CAkey.pem certs/envoykey.pem
 		-out certs/envoycert.pem \
 		-days 1825 -sha256 \
 		-extfile _integration/cert-envoy.ext
+
+.PHONY: site-devel
+site-devel: ## Launch the website in a Docker container
+	docker run --publish $(JEKYLL_PORT):$(JEKYLL_PORT) -v $$(pwd)/site:/site -it $(JEKYLL_IMAGE) \
+		bash -c "cd /site && bundle install && bundle exec jekyll serve --host 0.0.0.0 --port $(JEKYLL_PORT) --livereload"
 
 help: ## Display this help
 	@echo Contour high performance Ingress controller for Kubernetes

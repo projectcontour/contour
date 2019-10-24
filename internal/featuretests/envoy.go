@@ -16,6 +16,7 @@ package featuretests
 // envoy helpers
 
 import (
+	"testing"
 	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -23,6 +24,8 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	envoy_config_v2_tcpproxy "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
+	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -156,6 +159,22 @@ func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_liste
 			envoy_api_v2_auth.TlsParameters_TLSv1_1,
 			alpn...,
 		),
+	}
+}
+
+func tcpproxy(t *testing.T, statPrefix, cluster string) *envoy_api_v2_listener.Filter {
+	return &envoy_api_v2_listener.Filter{
+		Name: wellknown.TCPProxy,
+		ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
+			TypedConfig: toAny(t, &envoy_config_v2_tcpproxy.TcpProxy{
+				StatPrefix: statPrefix,
+				ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
+					Cluster: cluster,
+				},
+				AccessLog:   envoy.FileAccessLogEnvoy("/dev/stdout"),
+				IdleTimeout: protobuf.Duration(9001 * time.Second),
+			}),
+		},
 	}
 }
 
