@@ -25,7 +25,7 @@ $ kubectl apply -f {{ site.url }}/quickstart/contour.yaml
 
 This command creates:
 
-- A new namespace `projectcontour` with two instances of Contour in the namespace
+- A new namespace `heptio-contour` with two instances of Contour in the namespace
 - A Service of `type: LoadBalancer` that points to the Contour instances
 - Depending on your configuration, new cloud resources -- for example, ELBs in AWS
 
@@ -50,7 +50,7 @@ This example specifies a default backend for all hosts, so that you can test you
 Now you can retrieve the external address of Contour's load balancer:
 
 ```bash
-$ kubectl get -n projectcontour service contour -o wide
+$ kubectl get -n heptio-contour service contour -o wide
 NAME      CLUSTER-IP     EXTERNAL-IP                                                                    PORT(S)        AGE       SELECTOR
 contour   10.106.53.14   a47761ccbb9ce11e7b27f023b7e83d33-2036788482.ap-southeast-2.elb.amazonaws.com   80:30274/TCP   3h        app=contour
 ```
