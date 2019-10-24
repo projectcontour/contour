@@ -170,7 +170,7 @@ func (kc *KubernetesCache) ingressClass() string {
 }
 
 // Remove removes obj from the KubernetesCache.
-// Remove returns a boolean indiciating if the cache changed after the remove operation.
+// Remove returns a boolean indicating if the cache changed after the remove operation.
 func (kc *KubernetesCache) Remove(obj interface{}) bool {
 	switch obj := obj.(type) {
 	default:

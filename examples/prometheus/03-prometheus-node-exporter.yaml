@@ -6,8 +6,12 @@ metadata:
     app: prometheus
     component: node-exporter
   name: prometheus-node-exporter
-  namespace: contour-monitoring
+  namespace: projectcontour-monitoring
 spec:
+  selector:
+    matchLabels:
+      app: prometheus
+      component: node-exporter
   updateStrategy:
     type: OnDelete
   template:
@@ -48,7 +52,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: prometheus-node-exporter
-  namespace: contour-monitoring
+  namespace: projectcontour-monitoring
   annotations:
     prometheus.io/scrape: "true"
   labels:

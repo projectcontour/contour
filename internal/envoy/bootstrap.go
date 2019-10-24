@@ -11,6 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package envoy contains APIs for translating between Contour
+// objects and Envoy configuration APIs and types.
 package envoy
 
 import (
@@ -46,6 +48,13 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 					Endpoints: Endpoints(
 						SocketAddress(c.xdsAddress(), c.xdsGRPCPort()),
 					),
+				},
+				UpstreamConnectionOptions: &api.UpstreamConnectionOptions{
+					TcpKeepalive: &envoy_api_v2_core.TcpKeepalive{
+						KeepaliveProbes:   protobuf.UInt32(3),
+						KeepaliveTime:     protobuf.UInt32(30),
+						KeepaliveInterval: protobuf.UInt32(5),
+					},
 				},
 				Http2ProtocolOptions: new(envoy_api_v2_core.Http2ProtocolOptions), // enables http2
 				CircuitBreakers: &clusterv2.CircuitBreakers{

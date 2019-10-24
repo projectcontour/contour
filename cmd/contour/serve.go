@@ -37,6 +37,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
 	coreinformers "k8s.io/client-go/informers"
+	"k8s.io/client-go/tools/leaderelection"
 )
 
 // registerServe registers the serve subcommand and flags
@@ -242,8 +243,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 11. if enabled, register leader election
 	if !ctx.DisableLeaderElection {
-		log := log.WithField("context", "leaderelection")
-		le, _, deposed := newLeaderElector(log, ctx, client, coordinationClient)
+		var le *leaderelection.LeaderElector
+		var deposed chan struct{}
+		le, eh.IsLeader, deposed = newLeaderElector(log, ctx, client, coordinationClient)
 
 		g.AddContext(func(electionCtx context.Context) {
 			log.WithFields(logrus.Fields{
@@ -253,6 +255,25 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 			le.Run(electionCtx)
 			log.Info("stopped")
+		})
+
+		g.Add(func(stop <-chan struct{}) error {
+			log := log.WithField("context", "leaderelection-elected")
+			leader := eh.IsLeader
+			for {
+				select {
+				case <-stop:
+					// shut down
+					log.Info("stopped")
+					return nil
+				case <-leader:
+					log.Info("elected as leader, triggering rebuild")
+					eh.UpdateNow()
+
+					// disable this case
+					leader = nil
+				}
+			}
 		})
 
 		g.Add(func(stop <-chan struct{}) error {
@@ -269,6 +290,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		})
 	} else {
 		log.Info("Leader election disabled")
+
+		// leadership election disabled, hardwire IsLeader to be always readable.
+		leader := make(chan struct{})
+		close(leader)
+		eh.IsLeader = leader
 	}
 
 	// step 12. register our custom metrics and plumb into cache handler
@@ -288,7 +314,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			et.TypeURL():                            et,
 		}
 		opts := ctx.grpcOptions()
-		s := cgrpc.NewAPI(log, resources, opts...)
+		s := cgrpc.NewAPI(log, resources, registry, opts...)
 		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
 		l, err := net.Listen("tcp", addr)
 		if err != nil {

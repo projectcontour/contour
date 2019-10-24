@@ -17,7 +17,7 @@ This configuration has several advantages:
   - `contourcert`: be a Secret of type `kubernetes.io/tls` and must contain `tls.crt` and `tls.key` keys that contain a certificate and key for Contour. The certificate must be valid for the name `contour` either via CN or SAN.
   - `envoycert`: be a Secret of type `kubernetes.io/tls` and must contain `tls.crt` and `tls.key` keys that contain a certificate and key for Envoy.
 
-For detailed instructions on how to configure the required certs manually, see the [step-by-step TLS HOWTO](../../docs/grpc-tls-howto.md).
+For detailed instructions on how to configure the required certs manually, see the [step-by-step TLS HOWTO](https://projectcontour.io/guides/grpc-tls-howto).
 
 ## Deploy Contour
 
@@ -34,7 +34,9 @@ kubectl apply -f examples/contour
 
 This will:
 
-- set up RBAC and Contour's CRDs (that is, IngressRoute)
+- set up RBAC and Contour's CRDs (CRDs include IngressRoute, TLSCertificateDelegation, HTTPProxy)
+  * IngressRoute is deprecated and will be removed in a furture release.
+  * Users should start transitioning to HTTPProxy to ensure no disruptions in the future.
 - run a Kubernetes Job that will generate one-year validity certs and put them into `projectcontour`
 - Install Contour and Envoy in a Deployment and Daemonset respectively.
 
@@ -42,7 +44,7 @@ This will:
 
 ## Test
 
-1. Install a workload (see the kuard example in the [main deployment guide](../../docs/deploy-options.md#test-with-ingressroute)).
+1. Install a workload (see the kuard example in the [main deployment guide](https://projectcontour.io/guides/deploy-options/#test-with-httpproxy)).
 
 ## Deploying with Host Networking enabled for Envoy
 

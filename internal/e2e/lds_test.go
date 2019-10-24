@@ -16,7 +16,6 @@ package e2e
 import (
 	"context"
 	"testing"
-	"time"
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -24,13 +23,10 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-	envoy_config_v2_tcpproxy "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
-	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
-	"github.com/projectcontour/contour/internal/protobuf"
 	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -1151,145 +1147,6 @@ func TestIngressRouteHTTPS(t *testing.T) {
 	}, streamLDS(t, cc))
 }
 
-// Assert that when a spec.vhost.tls spec is present with tls.passthrough
-// set to true we configure envoy to forward the TLS session to the cluster
-// after using SNI to determine the target.
-func TestLDSIngressRouteTCPProxyTLSPassthrough(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	i1 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "kuard-tcp.example.com",
-				TLS: &projcontour.TLS{
-					Passthrough: true,
-				},
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: "wrong-backend",
-					Port: 80,
-				}},
-			}},
-			TCPProxy: &ingressroutev1.TCPProxy{
-				Services: []ingressroutev1.Service{{
-					Name: "correct-backend",
-					Port: 80,
-				}},
-			},
-		},
-	}
-	svc := service("default", "correct-backend", v1.ServicePort{
-		Protocol:   "TCP",
-		Port:       80,
-		TargetPort: intstr.FromInt(8080),
-	})
-	rh.OnAdd(svc)
-	rh.OnAdd(i1)
-
-	ingressHTTPS := &v2.Listener{
-		Name:    "ingress_https",
-		Address: envoy.SocketAddress("0.0.0.0", 8443),
-		FilterChains: []*envoy_api_v2_listener.FilterChain{{
-			Filters: envoy.Filters(
-				tcpproxy(t, "ingress_https", "default/correct-backend/80/da39a3ee5e"),
-			),
-			FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
-				ServerNames: []string{"kuard-tcp.example.com"},
-			},
-		}},
-		ListenerFilters: envoy.ListenerFilters(
-			envoy.TLSInspector(),
-		),
-	}
-
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
-		Resources: resources(t,
-			ingressHTTPS,
-			staticListener(),
-		),
-		TypeUrl: listenerType,
-		Nonce:   "1",
-	}, streamLDS(t, cc))
-}
-
-func TestLDSIngressRouteTCPForward(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-	}
-
-	i1 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "kuard-tcp.example.com",
-				TLS: &projcontour.TLS{
-					SecretName: "secret",
-				},
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: "wrong-backend",
-					Port: 80,
-				}},
-			}},
-			TCPProxy: &ingressroutev1.TCPProxy{
-				Services: []ingressroutev1.Service{{
-					Name: "correct-backend",
-					Port: 80,
-				}},
-			},
-		},
-	}
-	rh.OnAdd(s1)
-	svc := service("default", "correct-backend", v1.ServicePort{
-		Protocol:   "TCP",
-		Port:       80,
-		TargetPort: intstr.FromInt(8080),
-	})
-	rh.OnAdd(svc)
-	rh.OnAdd(i1)
-
-	ingressHTTPS := &v2.Listener{
-		Name:         "ingress_https",
-		Address:      envoy.SocketAddress("0.0.0.0", 8443),
-		FilterChains: filterchaintls("kuard-tcp.example.com", s1, tcpproxy(t, "ingress_https", "default/correct-backend/80/da39a3ee5e")),
-		ListenerFilters: envoy.ListenerFilters(
-			envoy.TLSInspector(),
-		),
-	}
-
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
-		Resources: resources(t,
-			ingressHTTPS,
-			staticListener(),
-		),
-		TypeUrl: listenerType,
-		Nonce:   "1",
-	}, streamLDS(t, cc))
-}
-
 func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
 		reh.CacheHandler.MinimumProtocolVersion = envoy_api_v2_auth.TlsParameters_TLSv1_2
@@ -1537,22 +1394,6 @@ func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_liste
 			envoy_api_v2_auth.TlsParameters_TLSv1_1,
 			alpn...,
 		),
-	}
-}
-
-func tcpproxy(t *testing.T, statPrefix, cluster string) *envoy_api_v2_listener.Filter {
-	return &envoy_api_v2_listener.Filter{
-		Name: wellknown.TCPProxy,
-		ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
-			TypedConfig: toAny(t, &envoy_config_v2_tcpproxy.TcpProxy{
-				StatPrefix: statPrefix,
-				ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
-					Cluster: cluster,
-				},
-				AccessLog:   envoy.FileAccessLogEnvoy("/dev/stdout"),
-				IdleTimeout: protobuf.Duration(9001 * time.Second),
-			}),
-		},
 	}
 }
 

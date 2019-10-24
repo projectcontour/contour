@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -98,4 +99,3 @@ spec:
             items:
             - key: contour.yaml
               path: contour.yaml
----

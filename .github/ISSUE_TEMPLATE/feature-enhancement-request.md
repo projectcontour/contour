@@ -1,21 +1,7 @@
 ---
 name: Feature enhancement request
 about: Suggest an idea for this project
-
 ---
 
-**Describe the solution you'd like**
-[A clear and concise description of what you want to happen.]
-
-
-**Anything else you would like to add:**
-[Miscellaneous information that will assist in solving the issue.]
-
-
-**Environment:**
-
-- Contour version:
-- Kubernetes version: (use `kubectl version`):
-- Kubernetes installer & version:
-- Cloud provider or hardware configuration:
-- OS (e.g. from `/etc/os-release`):
+**Please describe the problem you have**
+[A clear, concise, description of the problem you are facing. What is the _problem_ that feature X would solve for you?]

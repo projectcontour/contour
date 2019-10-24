@@ -103,7 +103,7 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 		ch.ListenerCache.TypeURL(): &ch.ListenerCache,
 		ch.SecretCache.TypeURL():   &ch.SecretCache,
 		et.TypeURL():               et,
-	})
+	}, r)
 
 	var g workgroup.Group
 
@@ -196,11 +196,16 @@ func resources(t *testing.T, protos ...proto.Message) []*any.Any {
 	t.Helper()
 	anys := make([]*any.Any, 0, len(protos))
 	for _, pb := range protos {
-		a, err := ptypes.MarshalAny(pb)
-		check(t, err)
-		anys = append(anys, a)
+		anys = append(anys, toAny(t, pb))
 	}
 	return anys
+}
+
+func toAny(t *testing.T, pb proto.Message) *any.Any {
+	t.Helper()
+	a, err := ptypes.MarshalAny(pb)
+	check(t, err)
+	return a
 }
 
 type grpcStream interface {
