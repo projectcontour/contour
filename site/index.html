@@ -9,12 +9,6 @@ hero:
   banner: /img/heroes/contour.svg
   headline:  High performance ingress controller for Kubernetes
   content: Contour is an open source Kubernetes ingress controller providing the control plane for the Envoy edge and service proxy.​ Contour supports dynamic configuration updates and multi-team ingress delegation out of the box while maintaining a lightweight profile.
-  cta_link1:
-    text: Get Started with Contour
-    url: /getting-started
-  cta_link2:
-    text: Download Latest Release
-    url: https://github.com/projectcontour/contour/releases
   promo1:
     icon: /img/kubernetes-logo.png
     title: Built for Kubernetes
@@ -54,8 +48,8 @@ secondary_ctas:
         <p>{{ page.hero.content }}</p>
       </div>
       <div class="hero-cta mt-4">
-        <a href="{{ page.hero.cta_link1.url }}" class="btn btn-primary mb-3 mb-sm-0">{{ page.hero.cta_link1.text }}</a>
-        <a href="{{ page.hero.cta_link2.url }}" class="btn btn-outline-light">{{ page.hero.cta_link2.text }}</a>
+        <a href="{% link getting-started.md %}" class="btn btn-primary mb-3 mb-sm-0">Get started using Contour</a>
+        <a href="{{ site.github.latest_release.html_url }}" class="btn btn-outline-light">Download Latest Release</a>
       </div>
     </div>
   </div>
