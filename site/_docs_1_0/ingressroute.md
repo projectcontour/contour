@@ -5,20 +5,19 @@ layout: page
 
 <div id="toc"></div>
 
-## Deprecation notice
-
-`IngressRoute` has been deprecated and will be removed after Contour 1.0.
-Please see the documentation for [`HTTPProxy`]({% link _docs_1_0/httpproxy.md %}) the successor to `IngressRoute`.
-You can also read the [IngressRoute to HTTPProxy upgrade guide]({% link _guides/ingressroute-to-httpproxy.md %}).
-
-</hr>
-
 The [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) object was added to Kubernetes in version 1.1 to describe properties of a cluster-wide reverse HTTP proxy.
 Since that time, the Ingress object has not progressed beyond the beta stage, and its stagnation inspired an [explosion of annotations](https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md) to express missing properties of HTTP routing.
 
 The goal of the `IngressRoute` Custom Resource Definition (CRD) is to expand upon the functionality of the Ingress API to allow for a richer user experience as well as solve shortcomings in the original design.
 
 At this time, Contour is the only Kubernetes Ingress Controller to support the IngressRoute CRD, though there is nothing that inherently prevents other controllers from supporting the design.
+
+<p class="alert-deprecation">
+<b>Deprecation Notice</b></br>
+<code>IngressRoute</code> has been deprecated and will be removed after Contour 1.0.
+Please see the documentation for <a href="/docs/1.0/httpproxy"><code>HTTPProxy</code></a> the successor to <code>IngressRoute</code>.
+You can also read the <a href="/guides/ingressroute-to-httpproxy">IngressRoute to HTTPProxy upgrade guide</a>.
+</p>
 
 ## Key IngressRoute Benefits
 
