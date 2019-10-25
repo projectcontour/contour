@@ -205,7 +205,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		FieldLogger: log.WithField("context", "endpointstranslator"),
 	}
 
-	informers = registerEventHandler(informers, coreInformers.Core().V1().Endpoints().Informer(), eh)
+	informers = registerEventHandler(informers, coreInformers.Core().V1().Endpoints().Informer(), et)
 
 	// step 6. setup workgroup runner and register informers.
 	var g workgroup.Group
