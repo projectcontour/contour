@@ -83,6 +83,10 @@ const (
 
 // NewMetrics creates a new set of metrics and registers them with
 // the supplied registry.
+//
+// NOTE: when adding new metrics, update Zero() and run
+// `./hack/generate-metrics-doc.go` using `make metrics-docs`
+// to regenerate the metrics documentation.
 func NewMetrics(registry *prometheus.Registry) *Metrics {
 	m := Metrics{
 		ingressRouteMetricCache: &RouteMetric{},
@@ -90,88 +94,88 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 		ingressRouteTotalGauge: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: IngressRouteTotalGauge,
-				Help: "Total number of IngressRoutes",
+				Help: "Total number of IngressRoutes that exist regardless of status",
 			},
 			[]string{"namespace"},
 		),
 		ingressRouteRootTotalGauge: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: IngressRouteRootTotalGauge,
-				Help: "Total number of root IngressRoutes",
+				Help: "Total number of root IngressRoutes. Note there will only be a single root IngressRoute per vhost.",
 			},
 			[]string{"namespace"},
 		),
 		ingressRouteInvalidGauge: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: IngressRouteInvalidGauge,
-				Help: "Total number of invalid IngressRoutes",
+				Help: "Total number of invalid IngressRoutes.",
 			},
 			[]string{"namespace", "vhost"},
 		),
 		ingressRouteValidGauge: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: IngressRouteValidGauge,
-				Help: "Total number of valid IngressRoutes",
+				Help: "Total number of valid IngressRoutes.",
 			},
 			[]string{"namespace", "vhost"},
 		),
 		ingressRouteOrphanedGauge: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: IngressRouteOrphanedGauge,
-				Help: "Total number of orphaned IngressRoutes",
+				Help: "Total number of orphaned IngressRoutes which have no root delegating to them.",
 			},
 			[]string{"namespace"},
 		),
 		proxyTotalGauge: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: HTTPProxyTotalGauge,
-				Help: "Total number of HTTPProxies",
+				Help: "Total number of HTTPProxies that exist regardless of status.",
 			},
 			[]string{"namespace"},
 		),
 		proxyRootTotalGauge: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: HTTPProxyRootTotalGauge,
-				Help: "Total number of root HTTPProxies",
+				Help: "Total number of root HTTPProxies. Note there will only be a single root HTTPProxy per vhost.",
 			},
 			[]string{"namespace"},
 		),
 		proxyInvalidGauge: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: HTTPProxyInvalidGauge,
-				Help: "Total number of invalid HTTPProxies",
+				Help: "Total number of invalid HTTPProxies.",
 			},
 			[]string{"namespace", "vhost"},
 		),
 		proxyValidGauge: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: HTTPProxyValidGauge,
-				Help: "Total number of valid HTTPProxies",
+				Help: "Total number of valid HTTPProxies.",
 			},
 			[]string{"namespace", "vhost"},
 		),
 		proxyOrphanedGauge: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: HTTPProxyOrphanedGauge,
-				Help: "Total number of orphaned HTTPProxies",
+				Help: "Total number of orphaned HTTPProxies which have no root delegating to them.",
 			},
 			[]string{"namespace"},
 		),
 		dagRebuildGauge: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: DAGRebuildGauge,
-				Help: "Timestamp of the last DAG rebuild",
+				Help: "Timestamp of the last DAG rebuild.",
 			},
 			[]string{},
 		),
 		CacheHandlerOnUpdateSummary: prometheus.NewSummary(prometheus.SummaryOpts{
 			Name:       cacheHandlerOnUpdateSummary,
-			Help:       "Histogram for the runtime of xDS cache regeneration",
+			Help:       "Histogram for the runtime of xDS cache regeneration.",
 			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
 		}),
 		ResourceEventHandlerSummary: prometheus.NewSummaryVec(prometheus.SummaryOpts{
 			Name:       resourceEventHandlerSummary,
-			Help:       "Histogram for the runtime of k8s watcher events",
+			Help:       "Histogram for the runtime of k8s watcher events.",
 			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
 		},
 			[]string{"op"},
@@ -198,6 +202,32 @@ func (m *Metrics) register(registry *prometheus.Registry) {
 		m.CacheHandlerOnUpdateSummary,
 		m.ResourceEventHandlerSummary,
 	)
+}
+
+// Zero sets zero values for all the registered metrics. This is needed
+// for generating metrics documentation. The prometheus.Registry()
+// won't emit the metric metadata until the metric has been set.
+func (m *Metrics) Zero() {
+	meta := Meta{
+		VHost:     "",
+		Namespace: "",
+	}
+
+	zeroes := RouteMetric{
+		Total:    map[Meta]int{meta: 0},
+		Valid:    map[Meta]int{meta: 0},
+		Invalid:  map[Meta]int{meta: 0},
+		Orphaned: map[Meta]int{meta: 0},
+		Root:     map[Meta]int{meta: 0},
+	}
+
+	m.SetDAGLastRebuilt(time.Now())
+	m.SetIngressRouteMetric(zeroes)
+	m.SetHTTPProxyMetric(zeroes)
+
+	defer prometheus.NewTimer(m.CacheHandlerOnUpdateSummary).ObserveDuration()
+
+	// TODO(jpeach) add ResourceEventHandlerSummary when it gets used
 }
 
 // SetDAGLastRebuilt records the last time the DAG was rebuilt.

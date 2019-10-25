@@ -39,11 +39,16 @@ vet: | test
 	go vet $(MODULE)/...
 
 check: ## Run tests and CI checks
-check: test test-race vet gofmt staticcheck misspell unconvert unparam ineffassign yamllint
-	@echo Checking CRD YAML files are up to date
-	@(cd examples && bash rendercrds.sh && git diff --exit-code . || (echo "CRD YAML files are out of date" && exit 1))
-	@echo Checking rendered files are up to date
-	@(cd examples && bash render.sh && git diff --exit-code . || (echo "rendered files are out of date" && exit 1))
+check: test test-race vet gofmt staticcheck misspell unconvert unparam ineffassign yamllint check-stale
+
+.PHONY: check-stale
+check-stale: ## Check for stale generated content
+check-stale: metrics-docs render rendercrds
+	@if git status -s site/_metrics examples/render examples/contour 2>&1 | grep -E -q '^\s+[MADRCU]'; then \
+		echo Uncommitted changes in generated sources: ; \
+		git status -s site/_metrics examples/render examples/contour; \
+		exit 1; \
+	fi
 
 install: ## Build and install the contour binary
 	go install -mod=readonly -v -tags "oidc gcp" $(MODULE)/cmd/contour
@@ -135,12 +140,12 @@ errcheck:
 	go install github.com/kisielk/errcheck
 	errcheck $(MODULE)/...
 
-render: rendercrds
+render:
 	@echo Rendering example deployment files...
 	@(cd examples && bash render.sh)
 
 rendercrds:
-	@echo Rendering CRDs
+	@echo Rendering CRDs...
 	@(cd examples && bash rendercrds.sh)
 
 updategenerated: ## Update generated CRD code
@@ -212,6 +217,11 @@ certs/envoycert.pem: certs/CAkey.pem certs/envoykey.pem
 site-devel: ## Launch the website in a Docker container
 	docker run --publish $(JEKYLL_PORT):$(JEKYLL_PORT) -v $$(pwd)/site:/site -it $(JEKYLL_IMAGE) \
 		bash -c "cd /site && bundle install && bundle exec jekyll serve --host 0.0.0.0 --port $(JEKYLL_PORT) --livereload"
+
+.PHONY: metrics-docs
+metrics-docs: ## Regenerate documentation for metrics
+	@echo Generating metrics documentation...
+	@cd site/_metrics && rm -f *.md && go run ../../hack/generate-metrics-doc.go
 
 help: ## Display this help
 	@echo Contour high performance Ingress controller for Kubernetes
