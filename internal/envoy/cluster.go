@@ -35,9 +35,10 @@ const CACertificateKey = "ca.crt"
 
 func clusterDefaults() *v2.Cluster {
 	return &v2.Cluster{
-		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-		CommonLbConfig: ClusterCommonLBConfig(),
-		LbPolicy:       lbPolicy(""),
+		ConnectTimeout:                protobuf.Duration(250 * time.Millisecond),
+		CommonLbConfig:                ClusterCommonLBConfig(),
+		LbPolicy:                      lbPolicy(""),
+		PerConnectionBufferLimitBytes: protobuf.UInt32(32768), // 32KiB per connection. Soft limit.
 	}
 }
 

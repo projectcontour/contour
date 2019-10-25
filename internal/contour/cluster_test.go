@@ -850,9 +850,10 @@ func serviceWithAnnotations(ns, name string, annotations map[string]string, port
 func cluster(c *v2.Cluster) *v2.Cluster {
 	// NOTE: Keep this in sync with envoy.defaultCluster().
 	defaults := &v2.Cluster{
-		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-		CommonLbConfig: envoy.ClusterCommonLBConfig(),
-		LbPolicy:       v2.Cluster_ROUND_ROBIN,
+		ConnectTimeout:                protobuf.Duration(250 * time.Millisecond),
+		CommonLbConfig:                envoy.ClusterCommonLBConfig(),
+		LbPolicy:                      v2.Cluster_ROUND_ROBIN,
+		PerConnectionBufferLimitBytes: protobuf.UInt32(32768), // 32KiB per connection. Soft limit.
 	}
 
 	proto.Merge(defaults, c)

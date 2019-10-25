@@ -991,9 +991,10 @@ func streamCDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryRes
 
 func cluster(name, servicename, statName string) *v2.Cluster {
 	return featuretests.DefaultCluster(&v2.Cluster{
-		Name:                 name,
-		ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-		AltStatName:          statName,
+		Name:                          name,
+		ClusterDiscoveryType:          envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+		AltStatName:                   statName,
+		PerConnectionBufferLimitBytes: protobuf.UInt32(32768), // 32KiB per connection. Soft limit.
 		EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 			EdsConfig:   envoy.ConfigSource("contour"),
 			ServiceName: servicename,

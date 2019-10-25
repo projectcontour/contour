@@ -37,9 +37,10 @@ import (
 func DefaultCluster(c *v2.Cluster) *v2.Cluster {
 	// NOTE: Keep this in sync with envoy.defaultCluster().
 	defaults := &v2.Cluster{
-		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-		LbPolicy:       v2.Cluster_ROUND_ROBIN,
-		CommonLbConfig: envoy.ClusterCommonLBConfig(),
+		ConnectTimeout:                protobuf.Duration(250 * time.Millisecond),
+		LbPolicy:                      v2.Cluster_ROUND_ROBIN,
+		CommonLbConfig:                envoy.ClusterCommonLBConfig(),
+		PerConnectionBufferLimitBytes: protobuf.UInt32(32768), // 32KiB per connection. Soft limit.
 	}
 
 	proto.Merge(defaults, c)
