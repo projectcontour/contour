@@ -434,10 +434,6 @@ spec:
     description: Secret with TLS credentials
     name: TLS Secret
     type: string
-  - JSONPath: .spec.routes[0].match
-    description: First routes defined
-    name: First route
-    type: string
   - JSONPath: .status.currentStatus
     description: The current status of the HTTPProxy
     name: Status
