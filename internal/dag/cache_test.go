@@ -56,6 +56,42 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
+		"insert CA secret w/ explanatory text": {
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Type: v1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					"ca.crt": []byte(CERTIFICATE_WITH_TEXT),
+				},
+			},
+			want: true,
+		},
+		"insert CA bundle secret w/ non-PEM data": {
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Type: v1.SecretTypeOpaque,
+				Data: caBundleData(CERTIFICATE, CERTIFICATE, CERTIFICATE, CERTIFICATE),
+			},
+			want: true,
+		},
+		"insert CA bundle secret w/ non-PEM data and no certificates": {
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Type: v1.SecretTypeOpaque,
+				Data: caBundleData(),
+			},
+			want: false,
+		},
+
 		"insert secret referenced by ingress": {
 			pre: []interface{}{
 				&v1beta1.Ingress{

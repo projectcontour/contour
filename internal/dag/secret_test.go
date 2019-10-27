@@ -13,7 +13,11 @@
 
 package dag
 
-import v1 "k8s.io/api/core/v1"
+import (
+	"fmt"
+
+	v1 "k8s.io/api/core/v1"
+)
 
 const (
 	// sample data from https://8gwifi.org/PemParserFunctions.jsp
@@ -50,6 +54,24 @@ T74gsJLB6wacN4Ue6zPtIvrK93DABAfRUmrAWmH8+7MJolSC/rabJF3E2CeBTYqZ
 R5M5azDV1CIhIeOTiPA/mq5fL1UrgVbB+IATIsUAQfuWivDyoeu96LB/QswyHAWG
 8k2fPbA2QVWJpcnryesCy3qtzwbHSYbshQ==
 -----END CERTIFICATE-----`
+
+	// Sample certificate from https://tools.ietf.org/html/rfc7468#section-5.2
+	CERTIFICATE_WITH_TEXT = `
+Subject: CN=Atlantis
+Issuer: CN=Atlantis
+Validity: from 7/9/2012 3:10:38 AM UTC to 7/9/2013 3:10:37 AM UTC
+-----BEGIN CERTIFICATE-----
+MIIBmTCCAUegAwIBAgIBKjAJBgUrDgMCHQUAMBMxETAPBgNVBAMTCEF0bGFudGlz
+MB4XDTEyMDcwOTAzMTAzOFoXDTEzMDcwOTAzMTAzN1owEzERMA8GA1UEAxMIQXRs
+YW50aXMwXDANBgkqhkiG9w0BAQEFAANLADBIAkEAu+BXo+miabDIHHx+yquqzqNh
+Ryn/XtkJIIHVcYtHvIX+S1x5ErgMoHehycpoxbErZmVR4GCq1S2diNmRFZCRtQID
+AQABo4GJMIGGMAwGA1UdEwEB/wQCMAAwIAYDVR0EAQH/BBYwFDAOMAwGCisGAQQB
+gjcCARUDAgeAMB0GA1UdJQQWMBQGCCsGAQUFBwMCBggrBgEFBQcDAzA1BgNVHQEE
+LjAsgBA0jOnSSuIHYmnVryHAdywMoRUwEzERMA8GA1UEAxMIQXRsYW50aXOCASow
+CQYFKw4DAh0FAANBAKi6HRBaNEL5R0n56nvfclQNaXiDT174uf+lojzA4lhVInc0
+ILwpnZ1izL4MlI9eCSHhVQBHEp2uQdXJB+d5Byg=
+-----END CERTIFICATE-----
+` + "\t\r\n"
 
 	RSA_PRIVATE_KEY = `-----BEGIN RSA PRIVATE KEY-----
 MIIJKQIBAAKCAgEAsgzs6vN2sveHVraXV0zdoVyhWUHWNQ0xnhHTPhjt5ggHmSvr
@@ -132,5 +154,28 @@ func secretdata(cert, key string) map[string][]byte {
 	return map[string][]byte{
 		v1.TLSCertKey:       []byte(cert),
 		v1.TLSPrivateKeyKey: []byte(key),
+	}
+}
+
+// caBundleData returns a CA certificate bundle map whose value is
+// the given set of PEM certificates intermingled with some non-PEM
+// data.
+//
+// See also: https://tools.ietf.org/html/rfc7468#section-5.2
+func caBundleData(cert ...string) map[string][]byte {
+	var data string
+
+	data += "start of CA bundle\n"
+
+	for n, c := range cert {
+		data += fmt.Sprintf("certificate %d\n", n)
+		data += c
+		data += "\n"
+	}
+
+	data += "end of CA bundle\n"
+
+	return map[string][]byte{
+		"ca.crt": []byte(data),
 	}
 }
