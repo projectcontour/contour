@@ -2855,6 +2855,144 @@ func TestRDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 	}, streamRDS(t, cc))
 }
 
+func TestRDSHTTPProxyDuplicateIncludeConditions(t *testing.T) {
+	rh, cc, done := setup(t)
+	defer done()
+
+	svc1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(svc1)
+
+	svc2 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "teama",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(svc2)
+
+	svc3 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "teamb",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(svc3)
+
+	proxyRoot := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "root",
+			Namespace: svc1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "blogteama",
+				Namespace: "teama",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/blog",
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-header",
+						Contains: "abc",
+					},
+				}},
+			}, {
+				Name:      "blogteama",
+				Namespace: "teamb",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/blog",
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-header",
+						Contains: "abc",
+					},
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: svc1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxyChildA := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blogteama",
+			Namespace: "teama",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: svc2.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxyChildB := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blogteamb",
+			Namespace: "teamb",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: svc3.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+	rh.OnAdd(proxyRoot)
+	rh.OnAdd(proxyChildA)
+	rh.OnAdd(proxyChildB)
+
+	assert.Equal(t, &v2.DiscoveryResponse{
+		VersionInfo: "2",
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
+		),
+		TypeUrl: routeType,
+		Nonce:   "2",
+	}, streamRDS(t, cc))
+}
+
 func virtualhosts(v ...*envoy_api_v2_route.VirtualHost) []*envoy_api_v2_route.VirtualHost { return v }
 
 func conditions(c ...projcontour.Condition) []projcontour.Condition { return c }

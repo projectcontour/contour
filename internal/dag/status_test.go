@@ -142,6 +142,36 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	s11 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "teama",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	s12 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "teamb",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
 	// ir1 is a valid ingressroute
 	ir1 := &ingressroutev1.IngressRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1546,6 +1576,163 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	// proxy41 is a proxy with conflicting include conditions
+	proxy41 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "blogteama",
+				Namespace: "teama",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/blog",
+				}},
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/blog",
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy42 is a proxy with conflicting include header conditions
+	proxy42 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "blogteama",
+				Namespace: "teama",
+				Conditions: []projcontour.Condition{{
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-header",
+						Contains: "abc",
+					},
+				}},
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+				Conditions: []projcontour.Condition{{
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-header",
+						Contains: "abc",
+					},
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy43 is a proxy with conflicting include header conditions
+	proxy43 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "blogteama",
+				Namespace: "teama",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/blog",
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-header",
+						Contains: "abc",
+					},
+				}},
+			}, {
+				Name:      "blogteamb",
+				Namespace: "teamb",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/blog",
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-header",
+						Contains: "abc",
+					},
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy41a is a child of proxy41
+	proxy41a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "blogteama",
+			Name:      "teama",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/blog",
+				}},
+				Services: []projcontour.Service{{
+					Name: s11.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy41a is a child of proxy41
+	proxy41b := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "blogteamb",
+			Name:      "teamb",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/blog",
+				}},
+				Services: []projcontour.Service{{
+					Name: s12.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -2074,6 +2261,30 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: proxy29.Name, namespace: proxy29.Namespace}: {Object: proxy29, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
 				{name: proxy30.Name, namespace: proxy30.Namespace}: {Object: proxy30, Status: "invalid", Description: "cannot specify duplicate header 'exact match' conditions in the same route", Vhost: ""},
+			},
+		},
+		"duplicate path conditions on an include": {
+			objs: []interface{}{proxy41, proxy41a, proxy41b, s4, s11, s12},
+			want: map[Meta]Status{
+				{name: proxy41.Name, namespace: proxy41.Namespace}:   {Object: proxy41, Status: "invalid", Description: "duplicate conditions defined on an include", Vhost: "example.com"},
+				{name: proxy41a.Name, namespace: proxy41a.Namespace}: {Object: proxy41a, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy", Vhost: ""},
+				{name: proxy41b.Name, namespace: proxy41b.Namespace}: {Object: proxy41b, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy", Vhost: ""},
+			},
+		},
+		"duplicate header conditions on an include": {
+			objs: []interface{}{proxy42, proxy41a, proxy41b, s4, s11, s12},
+			want: map[Meta]Status{
+				{name: proxy42.Name, namespace: proxy42.Namespace}:   {Object: proxy42, Status: "invalid", Description: "duplicate conditions defined on an include", Vhost: "example.com"},
+				{name: proxy41a.Name, namespace: proxy41a.Namespace}: {Object: proxy41a, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy", Vhost: ""},
+				{name: proxy41b.Name, namespace: proxy41b.Namespace}: {Object: proxy41b, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy", Vhost: ""},
+			},
+		},
+		"duplicate header+path conditions on an include": {
+			objs: []interface{}{proxy43, proxy41a, proxy41b, s4, s11, s12},
+			want: map[Meta]Status{
+				{name: proxy43.Name, namespace: proxy43.Namespace}:   {Object: proxy43, Status: "invalid", Description: "duplicate conditions defined on an include", Vhost: "example.com"},
+				{name: proxy41a.Name, namespace: proxy41a.Namespace}: {Object: proxy41a, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy", Vhost: ""},
+				{name: proxy41b.Name, namespace: proxy41b.Namespace}: {Object: proxy41b, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy", Vhost: ""},
 			},
 		},
 		"httpproxy with invalid tcpproxy": {

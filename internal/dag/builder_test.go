@@ -1737,6 +1737,36 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	s12 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "teama",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	s13 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "teamb",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
 	// ir18 tcp forwards traffic to by TLS pass-throughing
 	// it. It also exposes non HTTP traffic to the the non secure port of the
 	// application so it can give an informational message
@@ -2653,6 +2683,79 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+
+	proxy108 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "root",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name:      "blogteama",
+				Namespace: "teama",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/blog",
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-header",
+						Contains: "abc",
+					},
+				}},
+			}, {
+				Name:      "blogteama",
+				Namespace: "teamb",
+				Conditions: []projcontour.Condition{{
+					Prefix: "/blog",
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-header",
+						Contains: "abc",
+					},
+				}},
+			}},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy108a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blogteama",
+			Namespace: "teama",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s12.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	proxy108b := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blogteamb",
+			Namespace: "teamb",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s13.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs                  []interface{}
 		disablePermitInsecure bool
@@ -5062,6 +5165,12 @@ func TestDAGInsert(t *testing.T) {
 		"insert httpproxy with multiple prefix conditions on include": {
 			objs: []interface{}{
 				proxy103, proxy103a, s1,
+			},
+			want: listeners(),
+		},
+		"insert httpproxy duplicate conditions on include": {
+			objs: []interface{}{
+				proxy108, proxy108a, proxy108b, s1, s12, s13,
 			},
 			want: listeners(),
 		},
