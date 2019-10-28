@@ -13,7 +13,7 @@ This post explains the path from IngressRoute to HTTPProxy and why the change is
 ## IngressRoute is dead, long live HTTPProxy
 
 More than a year ago Contour 0.6 introduced a new CRD, IngressRoute.
-IngressRoute was our attempt to address the issues preventing Kubernetes developers from utilising modern web deployment patterns in multi tenant Kubernetes clusters.
+IngressRoute was our attempt to address the issues preventing Kubernetes developers from utilizing modern web deployment patterns in multi tenant Kubernetes clusters.
 
 Fast forward to July of this year where plans to move Contour out of the _0.whatever_ doldrums were being set in motion.
 We knew that stamping a 1.0 release on Contour required us to do the same for IngressRoute, which had at that point been in beta for a period of time that would make a Google product blush.

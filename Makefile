@@ -120,7 +120,7 @@ misspell:
 		-i clas \
 		-locale US \
 		-error \
-		cmd/* internal/* docs/* design/* *.md
+		cmd/* internal/* docs/* design/* site/*.md site/_{guides,posts,resources} *.md
 
 unconvert:
 	go install github.com/mdempsky/unconvert
