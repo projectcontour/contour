@@ -1,6 +1,6 @@
 ---
-title: New GitHub Organisation, Who Dis?
-excerpt: Contour has moved to a new GitHub organisation
+title: New GitHub Organization, Who Dis?
+excerpt: Contour has moved to a new GitHub organization
 author_name: Dave Cheney
 author_avatar: /img/contributors/dave-cheney.png
 categories: [kubernetes]
