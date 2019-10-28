@@ -23,6 +23,7 @@ import (
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
@@ -527,9 +528,15 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 
 	visited = append(visited, proxy)
 	var routes []*Route
+
+	// Check for duplicate conditions on the includes
+	if includeConditionsIdentical(proxy.Spec.Includes) {
+		sw.SetInvalid("duplicate conditions defined on an include")
+		return nil
+	}
+
 	// Loop over and process all includes
 	for _, include := range proxy.Spec.Includes {
-
 		namespace := include.Namespace
 		if namespace == "" {
 			namespace = proxy.Namespace
@@ -628,6 +635,22 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 	}
 	sw.SetValid()
 	return routes
+}
+
+func includeConditionsIdentical(includes []projcontour.Include) bool {
+	j := 0
+	for i := 1; i < len(includes); i++ {
+		// Now compare each include's set of conditions
+		for _, cA := range includes[i].Conditions {
+			for _, cB := range includes[j].Conditions {
+				if (cA.Prefix == cB.Prefix) && cmp.Equal(cA.Header, cB.Header) {
+					return true
+				}
+			}
+		}
+		j++
+	}
+	return false
 }
 
 // buildDAG returns a *DAG representing the current state of this builder.
