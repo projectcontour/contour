@@ -1469,6 +1469,24 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	// Invalid because tcpproxy neither includes another httpproxy
+	// nor has a list of services.
+	proxy37a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "passthrough.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{},
+		},
+	}
+
 	// proxy38 is invalid when combined with proxy39 as the latter
 	// is a root httpproxy.
 	proxy38 := &projcontour.HTTPProxy{
@@ -2065,6 +2083,17 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Object:      proxy37,
 					Status:      "invalid",
 					Description: "tcpproxy: cannot specify services and include in the same httpproxy",
+					Vhost:       "passthrough.example.com",
+				},
+			},
+		},
+		"httpproxy with empty tcpproxy": {
+			objs: []interface{}{proxy37a, s1},
+			want: map[Meta]Status{
+				{name: proxy37a.Name, namespace: proxy37a.Namespace}: {
+					Object:      proxy37a,
+					Status:      "invalid",
+					Description: "tcpproxy: either services or inclusion must be specified",
 					Vhost:       "passthrough.example.com",
 				},
 			},
