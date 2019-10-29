@@ -17,13 +17,16 @@
 
 .post-single-hero {
   background-color: map-get($field-backgrounds, 'med-blue'); // default
-  padding-bottom: 105px;  
+  padding-bottom: 105px;
   h1,
   h2,
   h3 {
     color: $white;
     font-weight: $font-weight-light;
     text-align: center;
+  }
+  &.post-single-hero-short {
+    padding-bottom: 0;
   }
 }
 

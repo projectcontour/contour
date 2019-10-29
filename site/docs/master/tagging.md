@@ -1,8 +1,3 @@
----
-title: Image tagging policy
-layout: page
----
-
 This document describes Contour's image tagging policy.
 
 ## Released versions

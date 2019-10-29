@@ -1,5 +1,5 @@
 ---
-title: How we work
+title: How We Work
 layout: page
 ---
 

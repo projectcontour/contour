@@ -1,8 +1,3 @@
----
-title: IngressRoute Reference
-layout: page
----
-
 <div id="toc"></div>
 
 The [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) object was added to Kubernetes in version 1.1 to describe properties of a cluster-wide reverse HTTP proxy.
@@ -15,7 +10,7 @@ At this time, Contour is the only Kubernetes Ingress Controller to support the I
 <p class="alert-deprecation">
 <b>Deprecation Notice</b></br>
 <code>IngressRoute</code> has been deprecated and will be removed after Contour 1.0.
-Please see the documentation for <a href="/docs/1.0/httpproxy"><code>HTTPProxy</code></a> the successor to <code>IngressRoute</code>.
+Please see the documentation for <a href="/docs/v1.0.0/httpproxy"><code>HTTPProxy</code></a> the successor to <code>IngressRoute</code>.
 You can also read the <a href="/guides/ingressroute-to-httpproxy">IngressRoute to HTTPProxy upgrade guide</a>.
 </p>
 

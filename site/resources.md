@@ -4,11 +4,6 @@ title: Resources
 description: Contour Resources
 id: resources
 ---
-## Resources
-
-{% for resource in site.resources %}
-- [{{ resource.title }}]({{ resource.url }})
-{% endfor %}
 
 ## Presentations
 

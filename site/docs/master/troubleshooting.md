@@ -1,8 +1,3 @@
----
-title: Troubleshooting
-layout: page
----
-
 This document contains suggestions for debugging issues with your Contour installation.
 
 ## Envoy container not listening on port 8080 or 8443
@@ -87,4 +82,4 @@ Replace `contour cli lds` with `contour cli rds` for RDS, `contour cli cds` for 
 
 ## I've deployed on Minikube or kind and nothing seems to work
 
-See [the deployment documentation]({% link _guides/deploy-options.md %}) for some tips on using these two deployment options successfully.
+See [the deployment documentation](/docs/v1.0.0/deploy-options) for some tips on using these two deployment options successfully.

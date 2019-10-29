@@ -1,13 +1,8 @@
----
-title: Annotation Reference
-layout: page
----
-
 <div id="toc"></div>
 
 Annotations are used in Ingress Controllers to configure features that are not covered by the Kubernetes Ingress API.
 
-Some of the features that have been historically configured via annotations are supported as first-class features in Contour's [IngressRoute API]({% link _docs_1_0/ingressroute.md %}), which provides a more robust configuration interface over
+Some of the features that have been historically configured via annotations are supported as first-class features in Contour's [IngressRoute API](/docs/v1.0.0/ingressroute), which provides a more robust configuration interface over
 annotations.
 
 However, Contour still supports a number of annotations on the Ingress resources.
@@ -19,8 +14,6 @@ The <code>contour.heptio.com</code> annotations are deprecated, please use the <
 
 ## Standard Kubernetes Ingress annotations
 
-The following Kubernetes annotions are supported on [`Ingress`](https://kubernetes.io/docs/concepts/services-networking/ingress/) objects:
-
  - `kubernetes.io/ingress.class`: The Ingress class that should interpret and serve the Ingress. If not set, then all Ingress controllers serve the Ingress. If specified as `kubernetes.io/ingress.class: contour`, then Contour serves the Ingress. If any other value, Contour ignores the Ingress definition. You can override the default class `contour` with the `--ingress-class-name` flag at runtime. This can be useful while you are migrating from another controller, or if you need multiple instances of Contour.
  - `ingress.kubernetes.io/force-ssl-redirect`: Requires TLS/SSL for the Ingress to Envoy by setting the [Envoy virtual host option require_tls](https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-virtualhost-require-tls).
  - `kubernetes.io/ingress.allow-http`: Instructs Contour to not create an Envoy HTTP route for the virtual host. The Ingress exists only for HTTPS requests. Specify `"false"` for Envoy to mark the endpoint as HTTPS only. All other values are ignored.
@@ -29,15 +22,13 @@ The `ingress.kubernetes.io/force-ssl-redirect` annotation takes precedence over 
 
 ## Contour specific Ingress annotations
 
-The following Contour annotions are supported on [`Ingress`](https://kubernetes.io/docs/concepts/services-networking/ingress/) objects:
-
  - `projectcontour.io/ingress.class`: The Ingress class that should interpret and serve the Ingress. If not set, then all Ingress controllers serve the Ingress. If specified as `projectcontour.io/ingress.class: contour`, then Contour serves the Ingress. If any other value, Contour ignores the Ingress definition. You can override the default class `contour` with the `--ingress-class-name` flag at runtime. This can be useful while you are migrating from another controller, or if you need multiple instances of Contour.
  - `projectcontour.io/num-retries`: [The maximum number of retries](https://www.envoyproxy.io/docs/envoy/v1.11.2/configuration/http_filters/router_filter.html#config-http-filters-router-x-envoy-max-retries) Envoy should make before abandoning and returning an error to the client. Applies only if `projectcontour.io/retry-on` is specified.
  - `projectcontour.io/per-try-timeout`: [The timeout per retry attempt](https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto#envoy-api-field-route-routeaction-retrypolicy-retry-on), if there should be one. Applies only if `projectcontour.io/retry-on` is specified.
  - `projectcontour.io/response-timeout`: [The Envoy HTTP route timeout](https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout), specified as a [golang duration](https://golang.org/pkg/time/#ParseDuration). By default, Envoy has a 15 second timeout for a backend service to respond. Set this to `infinity` to specify that Envoy should never timeout the connection to the backend. Note that the value `0s` / zero has special semantics for Envoy.
  - `projectcontour.io/retry-on`: [The conditions for Envoy to retry a request](https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto#envoy-api-field-route-routeaction-retrypolicy-retry-on). See also [possible values and their meanings for `retry-on`](https://www.envoyproxy.io/docs/envoy/v1.11.2/configuration/http_filters/router_filter.html#config-http-filters-router-x-envoy-retry-on).
  - `projectcontour.io/tls-minimum-protocol-version`: [The minimum TLS protocol version](https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/auth/cert.proto#envoy-api-msg-auth-tlsparameters) the TLS listener should support.
- - `projectcontour.io/websocket-routes`: [The routes supporting websocket protocol](https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto#envoy-api-field-route-routeaction-use-websocket), the annotation value contains a list of route paths separated by a comma that must match with the ones defined in the `Ingress` definition. Defaults to Envoy's default behavior which is `use_websocket` to `false`. The IngressRoute API has [first-class support for websockets]({% link _docs_1_0/ingressroute.md %}#websocket-support).
+ - `projectcontour.io/websocket-routes`: [The routes supporting websocket protocol](https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto#envoy-api-field-route-routeaction-use-websocket), the annotation value contains a list of route paths separated by a comma that must match with the ones defined in the `Ingress` definition. Defaults to Envoy's default behavior which is `use_websocket` to `false`.
  - `contour.heptio.com/ingress.class`: deprecated form of `projectcontour.io/ingress.class`.
  - `contour.heptio.com/num-retries`: deprecated form of `projectcontour.io/num-retries`.
  - `contour.heptio.com/per-try-timeout`: deprecated form of `projectcontour.io/per-try-timeout`.

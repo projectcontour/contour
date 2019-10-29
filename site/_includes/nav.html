@@ -3,7 +3,7 @@
   can be overridden, using toc-mapping.yml -->
   {% assign tocTemplateName = site.data.toc-mapping[page.version] %}
   {% if tocTemplateName == null %}
-    {% assign tocTemplateName = 'default' %}
+  {% assign tocTemplateName = 'default' %}
   {% endif %}
   {% assign toc = site.data[tocTemplateName].toc %}
 
@@ -13,9 +13,11 @@
     {% for entry in item.subfolderitems %}
     <li>
       {% if entry.github %}
-        <a href="{{ entry.url | prepend: page.gh }}" target="_blank">{{ entry.page }}</a>
+      <a href="{{ entry.url | prepend: page.gh }}" target="_blank">{{ entry.page }}</a>
+      {% elsif entry.url %}
+      <a href="{{ entry.url | prepend: page.version | prepend: "/docs/" | relative_url }}">{{ entry.page }}</a>
       {% else %}
-        <a href="{{ entry.url | prepend: page.version | prepend: "/docs/" | relative_url }}">{{ entry.page }}</a>
+      <a href="{{ entry.link | prepend: page.link }}">{{ entry.page }}</a>
       {% endif %}
     </li>
     {% endfor %}
