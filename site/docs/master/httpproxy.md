@@ -1,8 +1,3 @@
----
-title: HTTPProxy Reference
-layout: page
----
-
 <div id="toc"></div>
 
 The [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) object was added to Kubernetes in version 1.1 to describe properties of a cluster-wide reverse HTTP proxy.
@@ -123,7 +118,7 @@ httpproxy "basic" deleted
 
 ## HTTPProxy API Specification
 
-There are a number of [working examples][2] of HTTPProxy objects in the `examples/example-workload` directory.
+There are a number of [working examples](https://github.com/projectcontour/contour/tree/v1.0.0/examples/example-workload/httpproxy) of HTTPProxy objects in the `examples/example-workload` directory.
 
 We will use these examples as a mechanism to describe HTTPProxy API functionality.
 
@@ -546,11 +541,6 @@ More information can be found in [Envoy's documentation](https://www.envoyproxy.
 The time period of **0s** will also be treated as infinity.
 By default, there is no per-route idle timeout.
 Note that the default connection manager idle timeout of 5 minutes will apply if this is not set.
-
-TimeoutPolicy durations are expressed as per the format specified in the [ParseDuration documentation](https://godoc.org/time#ParseDuration).
-Example input values: "300ms", "5s", "1m". Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
-The string 'infinity' is also a valid input and specifies no timeout.
-
 More information can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-idle-timeout)
 - `retryPolicy`: A retry will be attempted if the server returns an error code in the 5xx range, or if the server takes more than `retryPolicy.perTryTimeout` to process a request.
   - `retryPolicy.count` specifies the maximum number of retries allowed. This parameter is optional and defaults to 1.
@@ -938,7 +928,7 @@ HTTPProxy with a defined `virtualhost` field that are not in one of the allowed 
 
 Additionally, when defined, Contour will only watch for Kubernetes secrets in these namespaces ignoring changes in all other namespaces.
 Proper RBAC rules should also be created to restrict what namespaces Contour has access matching the namespaces passed to the command line flag.
-An example of this is included in the [examples directory][1] and shows how you might create a namespace called `root-httproxies`.
+An example of this is included in the [examples directory](https://github.com/projectcontour/contour/tree/v1.0.0/examples/root-rbac) and shows how you might create a namespace called `root-httproxies`.
 
 > **NOTE: The restricted root namespace feature is only supported for HTTPProxy CRDs.
 > `--root-namespaces` does not affect the operation of `v1beta1.Ingress` objects**
@@ -1051,7 +1041,7 @@ The CA certificate bundle for the backend service should be supplied in a Kubern
 The referenced Secret must be of type "Opaque" and have a data key named `ca.crt`.
 This data value must be a PEM-encoded certificate bundle.
 
-In addition to the CA certificate and the subject name, the Kubernetes service must also be annotated with a Contour specific annotation: `projectcontour.io/upstream-protocol.tls: <port>` ([see annotations section]({% link _docs_1_0/annotations.md %}))
+In addition to the CA certificate and the subject name, the Kubernetes service must also be annotated with a Contour specific annotation: `projectcontour.io/upstream-protocol.tls: <port>` ([see annotations section](annotations.md))
 
 _Note: This annotation is applied to the Service not the Ingress or HTTPProxy object._
 
@@ -1107,7 +1097,3 @@ Some examples of invalid configurations that Contour provides statuses for:
 - Root HTTPProxy does not specify fqdn.
 - Multiple prefixes cannot be specified on the same set of route conditions.
 - Multiple header conditions of type "exact match" with the same header key.
-
-
-[1]: {{ site.github.repository_url }}/blob/master/examples/root-rbac/rbac.yaml
-[2]: {{ site.github.repository_url }}/tree/master/examples/example-workload/httpproxy

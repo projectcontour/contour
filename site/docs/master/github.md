@@ -1,8 +1,3 @@
----
-title: GitHub contribution workflow
-layout: page
----
-
 This document outlines how we use GitHub.
 
 ## Milestones

@@ -1,5 +1,5 @@
 ---
-title: Release process
+title: Contour Release Process
 layout: page
 ---
 

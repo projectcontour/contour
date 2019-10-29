@@ -1,8 +1,3 @@
----
-title: Contour architecture
-layout: page
----
-
 The Contour Ingress controller is a collaboration between:
 
 * Envoy, which provides the high performance reverse proxy.
