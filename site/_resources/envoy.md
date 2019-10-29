@@ -3,7 +3,7 @@ title: Envoy compatibility matrix
 layout: page
 ---
 
-Due to the agressive deprecation cycle of Envoy's xDS API, not all versions of Contour will work with all versions of Envoy, and vice versa.
+Due to the aggressive deprecation cycle of Envoy's xDS API, not all versions of Contour will work with all versions of Envoy, and vice versa.
 
 This page describes the compatibility matrix of Contour and Envoy versions.
 
