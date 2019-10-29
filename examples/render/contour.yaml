@@ -1030,7 +1030,7 @@ spec:
       containers:
       - name: contour
         image: docker.io/projectcontour/contour:master
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         command:
         - contour
         - certgen
@@ -1250,7 +1250,7 @@ spec:
         - --config-path=/config/contour.yaml
         command: ["contour"]
         image: docker.io/projectcontour/contour:master
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: contour
         ports:
         - containerPort: 8001
@@ -1393,7 +1393,7 @@ spec:
         command:
         - contour
         image: docker.io/projectcontour/contour:master
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: envoy-initconfig
         volumeMounts:
         - name: envoy-config
