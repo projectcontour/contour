@@ -914,8 +914,10 @@ spec:
     kind: TLSCertificateDelegation
     listKind: TLSCertificateDelegationList
     plural: tlscertificatedelegations
+    shortNames:
+    - tlscerts
     singular: tlscertificatedelegation
-  scope: ""
+  scope: Namespaced
   validation:
     openAPIV3Schema:
       description: TLSCertificateDelegation is an TLS Certificate Delegation CRD specificiation.
