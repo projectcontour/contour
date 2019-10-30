@@ -2,3 +2,17 @@
   base = "site/"
   command = "jekyll build"
   publish = "site/_site"
+[build.processing]
+  skip_processing = false # -> Enable processing
+[build.processing.css]
+  bundle = true # -> Concatenate consecutive CSS files together to reduce HTTP requests.
+  minify = true # -> Run CSS through a minifier to reduce file size.
+[build.processing.js]
+  bundle = true # -> Concatenate consecutive JS files together to reduce HTTP requests.
+  minify = true # -> Run JS through a minifier to reduce file size.
+[build.processing.images]
+  compress = true # -> Run all images through lossless image compression.
+
+# Reference documentation
+# Optimization blog post: https://www.netlify.com/blog/2019/08/05/control-your-asset-optimization-settings-from-netlify.toml/
+# How to guide: https://docs.netlify.com/configure-builds/file-based-configuration/#post-processing
