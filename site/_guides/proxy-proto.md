@@ -12,7 +12,12 @@ The former cannot be used to load balance TLS traffic, because your cloud provid
 However this leads to a situation where the remote IP address of the client is reported as the inside address of your cloud provider's load balancer.
 To rectify the situation, you can add annotations to your service and flags to your Contour Deployment or DaemonSet to enable the [PROXY][0] protocol which forwards the original client IP details to Envoy. 
 
-## Enable PROXY protocol on your service
+## Enable PROXY protocol on your service in GKE
+
+In GKE clusters a `type: LoadBalancer` Service is provisioned as a Network Load Balancer and will forward traffic to your Envoy instances with their client addresses intact.
+Your services should see the addresses in the `X-Forwarded-For` or `X-Envoy-External-Address` headers without having to enable a PROXY protocol.
+
+## Enable PROXY protocol on your service in AWS
 
 To instruct EC2 to place the ELB into `tcp`+`PROXY` mode, add the following annotations to the `contour` Service:
 
