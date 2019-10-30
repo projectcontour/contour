@@ -3,7 +3,6 @@
 vendor/
 .vs/
 .idea/
-.DS_Store
 # TODO(youngnick): Move these out of the repo root.
 localenvoyconfig.yaml
 securelocalenvoyconfig.yaml
@@ -18,10 +17,10 @@ node_modules
 _site
 .jekyll
 .jekyll-metadata
-.jekyll-cache
 .bundle
 .vscode
 bundler
+.jekyll-cache
 *.log
 *.js.map
 *.css.map

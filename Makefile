@@ -10,7 +10,7 @@ PHONY = gencerts
 
 # The version of Jekyll is pinned in site/Gemfile.lock.
 # https://docs.netlify.com/configure-builds/common-configurations/#jekyll
-JEKYLL_IMAGE ?= jekyll/jekyll:3.8.5
+JEKYLL_IMAGE := jekyll/jekyll:4
 JEKYLL_PORT := 4000
 JEKYLL_LIVERELOAD_PORT := 35729
 

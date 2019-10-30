@@ -10,7 +10,7 @@ twitter:
   card: summary
 vm_logo: vm-logo.png
 gh_repo: https://github.com/projectcontour/contour
-markdown: redcarpet
+markdown: kramdown
 hero:
   background-color: dark-blue
 footer:
@@ -112,7 +112,7 @@ plugins:
   - jekyll-titles-from-headings # pull the page title from the first Markdown heading when none is specified.
   - jekyll-paginate # pagination object for collections (e.g. posts)
   - jekyll-github-metadata
-  - jekyll-seo-tag  
+  - jekyll-seo-tag
 
 # Include these subdirectories
 include:
@@ -140,6 +140,7 @@ exclude:
 
 redcarpet:
     extensions: ["no_intra_emphasis", "tables", "autolink", "strikethrough", "with_toc_data"]
+
 
 # Fail build on errors
 liquid:
