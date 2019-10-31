@@ -28,17 +28,21 @@ import (
 )
 
 func TestDAGInsert(t *testing.T) {
+	f := NewFixtures()
+
 	// The DAG is sensitive to ordering, adding an ingress, then a service,
 	// should have the same result as adding a service, then an ingress.
 
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-	}
+	sec1 := f.Secret("sec1")
+
+	// sec1 := &v1.Secret{
+	// 	ObjectMeta: metav1.ObjectMeta{
+	// 		Name:      "secret",
+	// 		Namespace: "default",
+	// 	},
+	// 	Type: v1.SecretTypeTLS,
+	// 	Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+	// }
 
 	// Invalid cert in the secret
 	sec2 := &v1.Secret{

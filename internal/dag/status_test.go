@@ -26,14 +26,18 @@ import (
 )
 
 func TestDAGIngressRouteStatus(t *testing.T) {
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ssl-cert",
-			Namespace: "roots",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-	}
+	f := NewFixtures()
+
+	sec1 := f.Secret("sec1")
+
+	// sec1 := &v1.Secret{
+	// 	ObjectMeta: metav1.ObjectMeta{
+	// 		Name:      "ssl-cert",
+	// 		Namespace: "roots",
+	// 	},
+	// 	Type: v1.SecretTypeTLS,
+	// 	Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+	// }
 
 	sec2 := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
