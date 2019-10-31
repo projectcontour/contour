@@ -672,20 +672,20 @@ data:
                 "stack": false,
                 "steppedLine": false,
                 "targets": [{
-                        "expr": "envoy_http_rds_ingress_http_update_success",
+                        "expr": "envoy_http_rds_update_success",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{kubernetes_pod_name}} (Success)",
                         "refId": "A"
                     }, {
-                        "expr": "envoy_http_rds_ingress_http_update_failure",
+                        "expr": "envoy_http_rds_update_failure",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{kubernetes_pod_name}} (Failure)",
                         "refId": "B"
                     },
                     {
-                        "expr": "envoy_http_rds_ingress_http_update_rejected",
+                        "expr": "envoy_http_rds_update_rejected",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{kubernetes_pod_name}} (Rejected)",
@@ -1475,20 +1475,20 @@ data:
                 "stack": false,
                 "steppedLine": false,
                 "targets": [{
-                        "expr": "envoy_http_rds_ingress_http_update_success",
+                        "expr": "envoy_http_rds_update_success",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{kubernetes_pod_name}} (Success)",
                         "refId": "A"
                     }, {
-                        "expr": "envoy_http_rds_ingress_http_update_failure",
+                        "expr": "envoy_http_rds_update_failure",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{kubernetes_pod_name}} (Failure)",
                         "refId": "B"
                     },
                     {
-                        "expr": "envoy_http_rds_ingress_http_update_rejected",
+                        "expr": "envoy_http_rds_update_rejected",
                         "format": "time_series",
                         "intervalFactor": 2,
                         "legendFormat": "{{kubernetes_pod_name}} (Rejected)",

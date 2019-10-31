@@ -890,7 +890,9 @@ func (b *Builder) processIngressRouteTCPProxy(sw *ObjectStatusWriter, ir *ingres
 	}
 
 	if tcpproxy.Delegate == nil {
-		// not a delegate tcpproxy
+		// Not a delegate tcpproxy. Note that we allow a TCPProxy to be
+		// empty (no services and no delegates) for IngressRoute backwards
+		// compatibility. This is not allowed in HTTPProxy.
 		return
 	}
 
@@ -961,8 +963,9 @@ func (b *Builder) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *pr
 	}
 
 	if tcpproxy.Include == nil {
-		// no includes, we're done.
-		return true
+		// We don't allow an empty TCPProxy object.
+		sw.SetInvalid("tcpproxy: either services or inclusion must be specified")
+		return false
 	}
 
 	namespace := tcpproxy.Include.Namespace

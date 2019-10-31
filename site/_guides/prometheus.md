@@ -1,7 +1,9 @@
 ---
-title: Prometheus
+title: Collecting Metrics with Prometheus
 layout: page
 ---
+
+<div id="toc"></div>
 
 Contour and Envoy expose metrics that can be scraped with Prometheus. By
 default, annotations to gather them are in all the `deployment` yamls and they
@@ -22,19 +24,7 @@ port `8002`.
 Contour exposes a Prometheus-compatible `/metrics` endpoint on port `8000` with
 the following metrics:
 
-- **contour_ingressroute_total (gauge):** Total number of IngressRoutes objects that exist regardless of status (i.e. Valid / Invalid / Orphaned, etc). This metric should match the sum of `Orphaned` + `Valid` + `Invalid` IngressRoutes.
-  - namespace
-- **contour_ingressroute_orphaned_total (gauge):**  Number of `Orphaned` IngressRoute objects which have no root delegating to them
-  - namespace
-- **contour_ingressroute_root_total (gauge):**  Number of `Root` IngressRoute objects (Note: There will only be a single `Root` IngressRoute per vhost)
-  - namespace
-- **contour_ingressroute_valid_total (gauge):**  Number of `Valid` IngressRoute objects
-  - namespace
-  - vhost
-- **contour_ingressroute_invalid_total (gauge):**  Number of `Invalid` IngressRoute objects
-  - namespace
-  - vhost
-- **contour_ingressroute_dagrebuild_timestamp (gauge):** Timestamp of the last DAG rebuild
+{% include metrics.html %}
 
 ## Sample Deployment
 

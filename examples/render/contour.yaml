@@ -914,8 +914,10 @@ spec:
     kind: TLSCertificateDelegation
     listKind: TLSCertificateDelegationList
     plural: tlscertificatedelegations
+    shortNames:
+    - tlscerts
     singular: tlscertificatedelegation
-  scope: ""
+  scope: Namespaced
   validation:
     openAPIV3Schema:
       description: TLSCertificateDelegation is an TLS Certificate Delegation CRD specificiation.
@@ -1030,7 +1032,7 @@ spec:
       containers:
       - name: contour
         image: docker.io/projectcontour/contour:v1.0.0-rc.2
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         command:
         - contour
         - certgen
@@ -1250,7 +1252,7 @@ spec:
         - --config-path=/config/contour.yaml
         command: ["contour"]
         image: docker.io/projectcontour/contour:v1.0.0-rc.2
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: contour
         ports:
         - containerPort: 8001
@@ -1393,7 +1395,7 @@ spec:
         command:
         - contour
         image: docker.io/projectcontour/contour:v1.0.0-rc.2
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: envoy-initconfig
         volumeMounts:
         - name: envoy-config
