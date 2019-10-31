@@ -37,8 +37,8 @@ After you've been through the steps the first time, you don't need to repeat dep
 
 Run:
 
-```
-$ kubectl apply -f https://j.hept.io/contour-deployment-rbac
+```bash
+$ kubectl apply -f {{ site.url }}/quickstart/contour.yaml
 ```
 
 to set up Contour as a deployment in its own namespace, `projectcontour`, and tell the cloud provider to provision an external IP that is forwarded to the Contour pods.
@@ -89,8 +89,8 @@ You must deploy at least one Ingress object before Contour can serve traffic. No
 
 To deploy KUARD to your cluster, run this command:
 
-```
-$ kubectl apply -f https://j.hept.io/contour-kuard-example
+```bash
+$ kubectl apply -f {{ site.url }}/examples/kuard.yaml
 ```
 
 Check that the pod is running:
@@ -107,8 +107,8 @@ Then type the DNS name you set up in the previous step into a web browser, for e
 
 You can delete the KUARD service now, or at any time, by running:
 
-```
-$ kubectl delete -f https://j.hept.io/contour-kuard-example
+```bash
+$ kubectl delete -f {{ site.url }}/examples/kuard.yaml
 ```
 
 ## 2. Deploy jetstack/cert-manager
