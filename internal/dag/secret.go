@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"bytes"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
@@ -80,9 +81,39 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 	return true, nil
 }
 
+// containsPEMHeader returns true if the given slice contains a string
+// that looks like a PEM header block. The problem is that pem.Decode
+// does not give us a way to distinguish between a missing PEM block
+// and an invalid PEM block. This means that if there is any non-PEM
+// data at the end of a byte slice, we would normally detect it as an
+// error. However, users of the OpenSSL API check for the
+// `PEM_R_NO_START_LINE` error code and would accept files with
+// trailing non-PEM data.
+func containsPEMHeader(data []byte) bool {
+	// A PEM header starts with the begin token.
+	start := bytes.Index(data, []byte("-----BEGIN"))
+	if start == -1 {
+		return false
+	}
+
+	// And ends with the end token.
+	end := bytes.Index(data[start+10:], []byte("-----"))
+	if end == -1 {
+		return false
+	}
+
+	// And must be on a single line.
+	if bytes.Contains(data[start:start+end], []byte("\n")) {
+		return false
+	}
+
+	return true
+}
+
 func validateCertificate(data []byte) error {
 	var exists bool
-	for len(data) > 0 {
+
+	for containsPEMHeader(data) {
 		var block *pem.Block
 		block, data = pem.Decode(data)
 		if block == nil {
@@ -96,15 +127,18 @@ func validateCertificate(data []byte) error {
 		}
 		exists = true
 	}
+
 	if !exists {
 		return errors.New("failed to locate certificate")
 	}
+
 	return nil
 }
 
 func validatePrivateKey(data []byte) error {
 	var keys int
-	for len(data) > 0 {
+
+	for containsPEMHeader(data) {
 		var block *pem.Block
 		block, data = pem.Decode(data)
 		if block == nil {
@@ -132,6 +166,7 @@ func validatePrivateKey(data []byte) error {
 			return fmt.Errorf("unexpected block type '%s'", block.Type)
 		}
 	}
+
 	switch keys {
 	case 0:
 		return errors.New("failed to locate private key")

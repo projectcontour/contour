@@ -2178,6 +2178,24 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// Invalid because tcpproxy neither includes another httpproxy
+	// nor has a list of services.
+	proxy37a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "passthrough.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{},
+		},
+	}
+
 	// proxy38 is invalid when combined with proxy39
 	// as the latter is a root.
 	proxy38 := &projcontour.HTTPProxy{
@@ -4708,6 +4726,10 @@ func TestDAGInsert(t *testing.T) {
 		},
 		"insert httpproxy with invalid tcpproxy": {
 			objs: []interface{}{proxy37, s1},
+			want: listeners(),
+		},
+		"insert httpproxy with empty tcpproxy": {
+			objs: []interface{}{proxy37a, s1},
 			want: listeners(),
 		},
 		"insert httpproxy w/ tcpproxy w/ missing include": {
