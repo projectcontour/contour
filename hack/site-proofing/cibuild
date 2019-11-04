@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -e # halt script on error
+
+# Builds and checks the website for broken links.
+
+readonly HERE="$(cd $(dirname $0) && pwd)"
+cd ${HERE}/../../site
+
+gem install bundler
+gem install html-proofer
+gem install jekyll -v 3.8.5
+bundle install
+bundle exec jekyll build
+htmlproofer ./_site \
+    --empty-alt-ignore \
+    --assume-extension \
+    --allow-missing-href \
+    --allow-hash-href

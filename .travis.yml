@@ -1,17 +1,32 @@
-language: go
+matrix:
+  include:
+    - language: go
+      name: test make process
+      go:
+        - 1.13.x
+      sudo: false
+      cache:
+        directories:
+          - /home/travis/.cache/go-build
+          - /home/travis/gopath/pkg/mod
+      env:
+        - GOPROXY=https://proxy.golang.org/
+      script:
+        - make check
 
-go:
-  - 1.13.x
-
-sudo: false
-
-cache:
-  directories:
-  - /home/travis/.cache/go-build
-  - /home/travis/gopath/pkg/mod
-
-env:
-  - GOPROXY=https://proxy.golang.org/
-
-script:
-  - make check
+    - language: ruby
+      rvm: 2.6
+      name: Site Proofing
+      sudo: false # route your build to the container-based infrastructure for a faster build
+      cache: bundler
+      env:
+        - NOKOGIRI_USE_SYSTEM_LIBRARIES=true # speeds up installation of html-proofer
+        - SEARCH_DIRECTORIES="site"
+      addons:
+        apt:
+          packages:
+            - libcurl4-openssl-dev
+      install:
+        - ./hack/travis/travis-check-files-changed.sh $SEARCH_DIRECTORIES ; RETURN_CODE=$? ; if [ $RETURN_CODE -eq 137 ]; then travis_terminate 0; elif [ $RETURN_CODE -ne 0 ]; then travis_terminate $RETURN_CODE; fi
+      script:
+        - ./hack/site-proofing/cibuild
