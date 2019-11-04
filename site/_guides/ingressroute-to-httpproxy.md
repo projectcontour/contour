@@ -140,7 +140,7 @@ spec:
 
 HTTPProxy offers additional ways to match incoming requests to routes.
 This document covers the conversion between the routing offered in IngressRoute and HTTPProxy.
-For a broader discussion of HTTPProxy routing, see the [Routing section of the HTTPProxy documentation]({% link _docs_1_0/httpproxy.md %}#routing).
+For a broader discussion of HTTPProxy routing, see the [Routing section of the HTTPProxy documentation]({% link _docs_1_0/httpproxy.md %}).
 
 Before:
 

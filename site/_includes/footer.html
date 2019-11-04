@@ -23,18 +23,18 @@
                       {% if link[1].fa_icon %}
                       <i class="{{ link[1].fa_icon }} fa-lg fa-fw mr-1"></i>
                       {% endif %}
-                      <a href="{{ link[1].url }}">{{ link[0] }}</a></li>
+                      <a href="{{ link[1].url }}" alt="{{ link[1].url }}">{{ link[0] }}</a></li>
                     {% endfor %}
                 </ul>
             </div>
             <div class="col-12 col-md-7 text-center text-md-right">
-              <a href="/" alt="Homepage"><img src="/img/{{ site.logo }}" class="logo" /></a>
+              <a href="/" alt="Homepage"><img src="/img/{{ site.logo }}" class="logo" alt="Contour logo" /></a>
             </div>
         </div>
         <div class="row align-items-center">
           <div class="col copyright text-center text-md-right mt-4">
             &copy; {{ site.time | date: '%Y' }} {{ site.author }}.
-            <a href="{{ site.footer.vm-link }}" class="vm-logo">A VMware-backed project. <img src="/img/{{ site.vm_logo }}" /></a>
+            <a href="{{ site.footer.vm-link }}" class="vm-logo">A VMware-backed project. <img src="/img/{{ site.vm_logo }}" alt="VMware logo" /></a>
           </div>
         </div>
     </div>

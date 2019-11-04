@@ -123,7 +123,7 @@ httpproxy "basic" deleted
 
 ## HTTPProxy API Specification
 
-There are a number of [working examples](/examples/example-workload/httpproxy) of HTTPProxy objects in the `examples/example-workload` directory.
+There are a number of [working examples][2] of HTTPProxy objects in the `examples/example-workload` directory.
 
 We will use these examples as a mechanism to describe HTTPProxy API functionality.
 
@@ -933,7 +933,7 @@ HTTPProxy with a defined `virtualhost` field that are not in one of the allowed 
 
 Additionally, when defined, Contour will only watch for Kubernetes secrets in these namespaces ignoring changes in all other namespaces.
 Proper RBAC rules should also be created to restrict what namespaces Contour has access matching the namespaces passed to the command line flag.
-An example of this is included in the [examples directory](../examples/root-rbac) and shows how you might create a namespace called `root-httproxies`.
+An example of this is included in the [examples directory][1] and shows how you might create a namespace called `root-httproxies`.
 
 > **NOTE: The restricted root namespace feature is only supported for HTTPProxy CRDs.
 > `--root-namespaces` does not affect the operation of `v1beta1.Ingress` objects**
@@ -1046,7 +1046,7 @@ The CA certificate bundle for the backend service should be supplied in a Kubern
 The referenced Secret must be of type "Opaque" and have a data key named `ca.crt`.
 This data value must be a PEM-encoded certificate bundle.
 
-In addition to the CA certificate and the subject name, the Kubernetes service must also be annotated with a Contour specific annotation: `projectcontour.io/upstream-protocol.tls: <port>` ([see annotations section](annotations.md))
+In addition to the CA certificate and the subject name, the Kubernetes service must also be annotated with a Contour specific annotation: `projectcontour.io/upstream-protocol.tls: <port>` ([see annotations section]({% link _docs_1_0/annotations.md %}))
 
 _Note: This annotation is applied to the Service not the Ingress or HTTPProxy object._
 
@@ -1102,3 +1102,7 @@ Some examples of invalid configurations that Contour provides statuses for:
 - Root HTTPProxy does not specify fqdn.
 - Multiple prefixes cannot be specified on the same set of route conditions.
 - Multiple header conditions of type "exact match" with the same header key.
+
+
+[1]: {{ site.github.repository_url }}/blob/master/examples/root-rbac/rbac.yaml
+[2]: {{ site.github.repository_url }}/tree/master/examples/example-workload/httpproxy

@@ -33,4 +33,6 @@ data:
       # configmap-namespace: leader-elect
 ```
 
-_Note:_ The default example `contour` includes this [file](`../examples/contour/01-contour-config.yaml`) for easy deployment of Contour.
+_Note:_ The default example `contour` includes this [file][1] for easy deployment of Contour.
+
+[1]: {{ site.github.repository_url }}/blob/master/examples/contour/01-contour-config.yaml

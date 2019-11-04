@@ -10,7 +10,7 @@ PHONY = gencerts
 
 # The version of Jekyll is pinned in site/Gemfile.lock.
 # https://docs.netlify.com/configure-builds/common-configurations/#jekyll
-JEKYLL_IMAGE := jekyll/jekyll:3.8.5
+JEKYLL_IMAGE ?= jekyll/jekyll:3.8.5
 JEKYLL_PORT := 4000
 
 TAG_LATEST ?= false
@@ -217,6 +217,10 @@ certs/envoycert.pem: certs/CAkey.pem certs/envoykey.pem
 site-devel: ## Launch the website in a Docker container
 	docker run --publish $(JEKYLL_PORT):$(JEKYLL_PORT) -v $$(pwd)/site:/site -it $(JEKYLL_IMAGE) \
 		bash -c "cd /site && bundle install && bundle exec jekyll serve --host 0.0.0.0 --port $(JEKYLL_PORT) --livereload"
+
+site-check: ## Test the site's links
+	docker run  -v $$(pwd)/site:/site -it $(JEKYLL_IMAGE) \
+		bash -c "cd /site && bundle install && bundle exec jekyll build && htmlproofer --assume-extension /site/_site"
 
 .PHONY: metrics-docs
 metrics-docs: ## Regenerate documentation for metrics

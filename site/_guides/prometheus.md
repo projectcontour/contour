@@ -53,7 +53,7 @@ $ kubectl apply -f examples/prometheus
 $ kubectl -n projectcontour-monitoring port-forward $(kubectl -n projectcontour-monitoring get pods -l app=prometheus -l component=server -o jsonpath='{.items[0].metadata.name}') 9090:9090
 ```
 
-then go to [http://localhost:9090](http://localhost:9090) in your browser.
+then go to `http://localhost:9090` in your browser.
 
 #### Access the Alertmanager web UI
 
@@ -61,7 +61,7 @@ then go to [http://localhost:9090](http://localhost:9090) in your browser.
 $ kubectl -n projectcontour-monitoring port-forward $(kubectl -n projectcontour-monitoring get pods -l app=prometheus -l component=alertmanager -o jsonpath='{.items[0].metadata.name}') 9093:9093
 ```
 
-then go to [http://localhost:9093](http://localhost:9093) in your browser.
+then go to `http://localhost:9093` in your browser.
 
 ### Deploy Grafana
 
@@ -85,5 +85,5 @@ $ kubectl create secret generic grafana -n projectcontour-monitoring \
 $ kubectl port-forward $(kubectl get pods -l app=grafana -n projectcontour-monitoring -o jsonpath='{.items[0].metadata.name}') 3000 -n projectcontour-monitoring
 ```
 
-then go to [http://localhost:3000](http://localhost:3000) in your browser.
+then go to `http://localhost:3000` in your browser.
 The username and password are from when you defined the Grafana secret in the previous step.
