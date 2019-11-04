@@ -58,6 +58,11 @@ spec:
         - certgen
         - --incluster
         - --kube
+        env:
+        - name: CONTOUR_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
       restartPolicy: Never
       serviceAccountName: contour-certgen
   parallelism: 1
