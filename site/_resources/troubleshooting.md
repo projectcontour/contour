@@ -31,7 +31,7 @@ ENVOY_POD=$(kubectl -n projectcontour get pod -l app=envoy -o name | head -1)
 kubectl -n projectcontour port-forward $ENVOY_POD 9001
 ```
 
-Then navigate to [http://127.0.0.1:9001/](http://127.0.0.1:9001/) to access the admin interface for the Envoy container running on that pod.
+Then navigate to `http://127.0.0.1:9001/` to access the admin interface for the Envoy container running on that pod.
 
 ## Accessing Contour's /debug/pprof service
 
@@ -65,7 +65,7 @@ curl localhost:6060/debug/dag | dot -T png > contour-dag.png
 The following is an example of a DAG that maps `http://kuard.local:80/` to the
 `kuard` service in the `default` namespace:
 
-![Sample DAG](./dag-img/kuard-dag.png "Sample DAG")
+![Sample DAG](/img/kuard-dag.png "Sample DAG")
 
 ## Interrogate Contour's gRPC API
 

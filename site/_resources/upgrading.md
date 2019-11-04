@@ -47,7 +47,7 @@ $ kubectl apply -f examples/contour
 
 This will remove both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
 If you're using a `LoadBalancer` Service, deleting and recreating may change the public IP assigned by your cloud provider.
-You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address]({% link _guides/deploy-options.md %}#get_your_hostname_or_ip_address).
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address]({% link _guides/deploy-options.md %}).
 
 ## The less easy way
 
@@ -247,7 +247,7 @@ $ kubectl apply -f examples/<your-desired-deployment>
 ```
 
 If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
-You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address]({% link _guides/deploy-options.md %}#get_your_hostname_or_ip_address).
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address]({% link _guides/deploy-options.md %}).
 
 **Note:** If you deployed Contour into a different namespace than heptio-contour with a standard example, please delete that namespace.
 Then in your editor of choice do a search and replace for `heptio-contour` and replace it with your preferred name space and apply the updated manifest.

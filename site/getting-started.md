@@ -76,11 +76,11 @@ We've also got [a FAQ][4] for short-answer questions and conceptual stuff that d
 
 If you encounter issues, review the [troubleshooting docs][5], [file an issue][6], or talk to us on the [#contour channel](https://kubernetes.slack.com/messages/contour) on the Kubernetes Slack server.
 
-[1]: {{ site.github.repository_url }}/tree/master/docs/deploy-options.md
-[2]: {{ site.github.repository_url }}/tree/master/docs/httpproxy.md
-[3]: {{ site.github.repository_url }}/tree/master/docs/
-[4]: {{ site.github.repository_url }}/tree/master/docs/FAQ.md
-[5]: {{ site.github.repository_url }}/tree/master/docs/troubleshooting.md
+[1]: /guides/deploy-options
+[2]: /docs/1.0/httpproxy
+[3]: /docs
+[4]: {{ site.github.repository_url }}/tree/master/FAQ.md
+[5]: /resources/troubleshooting
 [6]: {{ site.github.repository_url }}/issues
-[7]: {{ site.github.repository_url }}/tree/master/docs/tls.md
-[8]: {{ site.github.repository_url }}/tree/master/docs/grpc-tls-howto.md
+[7]: /guides/tls
+[8]: /guides/grpc-tls-howto

@@ -31,7 +31,7 @@ This tutorial walks you through deploying:
 
 **NOTE:** If you encounter failures related to permissions, make sure the user you are operating as has administrator permissions.
 
-After you've been through the steps the first time, you don't need to repeat deploying Contour and cert-manager for subsequent application deployments. Instead, you can [skip to step 3][6].
+After you've been through the steps the first time, you don't need to repeat deploying Contour and cert-manager for subsequent application deployments. Instead, you can skip to step 3].
 
 ## 1. Deploy Contour
 
@@ -533,5 +533,4 @@ $ curl -v http://httpbin.davecheney.com/get
 [kuard]: /img/cert-manager/kuard.png
 [httpbin]: /img/cert-manager/httpbin.png
 [5]: https://letsencrypt.org/getting-started/
-[6]: #3-deploy-your-first-HTTPS-site
 [7]: {% link _guides/deploy-options.md %}#get-your-hostname-or-ip-address
