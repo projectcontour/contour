@@ -1,8 +1,3 @@
----
-title: Contour Deployment Options
-layout: page
----
-
 The [Getting Started]({% link getting-started.md %}) guide shows you a simple way to get started with Contour on your cluster.
 This topic explains the details and shows you additional options.
 Most of this covers running Contour using a Kubernetes Service of `Type: LoadBalancer`.
@@ -113,7 +108,7 @@ In your browser, navigate your browser to the IP or DNS address of the Contour S
 
 ### Test with IngressRoute
 
-To test your Contour deployment with [IngressRoutes]({% link _docs_1_0/ingressroute.md %}), run the following command:
+To test your Contour deployment with [IngressRoutes](/docs/v1.0.0/ingressroute), run the following command:
 
 ```sh
 $ kubectl apply -f https://projectcontour.io/examples/kuard-ingressroute.yaml
@@ -149,7 +144,7 @@ $ curl -H 'Host: kuard.local' ${CONTOUR_IP}
 ```
 ### Test with HTTPProxy
 
-To test your Contour deployment with [HTTPProxy]({% link _docs_1_0/httpproxy.md %}), run the following command:
+To test your Contour deployment with [HTTPProxy](/docs/v1.0.0/httpproxy), run the following command:
 
 ```sh
 $ kubectl apply -f https://projectcontour.io/examples/kuard-httpproxy.yaml
