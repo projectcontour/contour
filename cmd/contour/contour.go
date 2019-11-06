@@ -56,7 +56,7 @@ func main() {
 	cds.Arg("resources", "CDS resource filter").StringsVar(&resources)
 	eds := cli.Command("eds", "watch endpoints.")
 	eds.Arg("resources", "EDS resource filter").StringsVar(&resources)
-	lds := cli.Command("lds", "watch listerners.")
+	lds := cli.Command("lds", "watch listeners.")
 	lds.Arg("resources", "LDS resource filter").StringsVar(&resources)
 	rds := cli.Command("rds", "watch routes.")
 	rds.Arg("resources", "RDS resource filter").StringsVar(&resources)
