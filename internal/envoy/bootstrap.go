@@ -32,10 +32,7 @@ import (
 // Bootstrap creates a new v2 Bootstrap configuration.
 func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 	b := &bootstrap.Bootstrap{
-		DynamicResources: &bootstrap.Bootstrap_DynamicResources{
-			LdsConfig: ConfigSource("contour"),
-			CdsConfig: ConfigSource("contour"),
-		},
+		DynamicResources: &bootstrap.Bootstrap_DynamicResources{},
 		StaticResources: &bootstrap.Bootstrap_StaticResources{
 			Clusters: []*api.Cluster{{
 				Name:                 "contour",
@@ -90,6 +87,15 @@ func Bootstrap(c *BootstrapConfig) *bootstrap.Bootstrap {
 			AccessLogPath: c.adminAccessLogPath(),
 			Address:       SocketAddress(c.adminAddress(), c.adminPort()),
 		},
+	}
+
+	if c.DisableADS {
+		b.DynamicResources.LdsConfig = ConfigSource("contour")
+		b.DynamicResources.CdsConfig = ConfigSource("contour")
+	} else {
+		b.DynamicResources.AdsConfig = ConfigSource("contour").GetApiConfigSource()
+		b.DynamicResources.LdsConfig = ConfigSourceADS()
+		b.DynamicResources.CdsConfig = ConfigSourceADS()
 	}
 
 	if c.GrpcClientCert != "" || c.GrpcClientKey != "" || c.GrpcCABundle != "" {
@@ -171,6 +177,8 @@ type BootstrapConfig struct {
 
 	// GrpcClientKey is the filename that contains a client key for secure gRPC with TLS.
 	GrpcClientKey string
+
+	DisableADS bool
 }
 
 func (c *BootstrapConfig) xdsAddress() string   { return stringOrDefault(c.XDSAddress, "127.0.0.1") }

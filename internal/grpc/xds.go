@@ -70,12 +70,13 @@ func (xh *xdsHandler) stream(st grpcStream) error {
 		return err
 	}
 
-	ch := make(chan int, 1)
+	// Track the nonce (update generation) by type URL. If we
+	// are dealing with an ADS stream, the xDS client can request
+	// different resources on each loop iteration, and we have to
+	// track the nonces separately.
+	nonces := map[string]int{}
 
-	// internally all registration values start at zero so sending
-	// a last that is less than zero will guarantee that each stream
-	// will generate a response immediately, then wait.
-	last := -1
+	ch := make(chan int, 1)
 	ctx := st.Context()
 
 	// now stick in this loop until the client disconnects.
@@ -87,8 +88,19 @@ func (xh *xdsHandler) stream(st grpcStream) error {
 			return done(log, err)
 		}
 
+		// Internally, all registration values start at zero so sending
+		// a current nonce that is less than zero will
+		// guarantee that each stream will generate a response
+		// immediately, then wait.
+		current_nonce := -1
+		if n, ok := nonces[req.TypeUrl]; ok {
+			current_nonce = n
+		}
+
 		// note: redeclare log in this scope so the next time around the loop all is forgotten.
-		log := log.WithField("version_info", req.VersionInfo).WithField("response_nonce", req.ResponseNonce)
+		log := log.WithField("version_info", req.VersionInfo).
+			WithField("response_nonce", req.ResponseNonce).
+			WithField("current_nonce", current_nonce)
 		if req.Node != nil {
 			log = log.WithField("node_id", req.Node.Id).WithField("node_version", req.Node.BuildVersion)
 		}
@@ -111,43 +123,53 @@ func (xh *xdsHandler) stream(st grpcStream) error {
 
 		// now we wait for a notification, if this is the first request received on this
 		// connection last will be less than zero and that will trigger a response immediately.
-		r.Register(ch, last, req.ResourceNames...)
+		r.Register(ch, current_nonce, req.ResourceNames...)
+
+		// Since the channel we registered with the resource
+		// has a buffer of 1, we must drain it immediately
+		// after calling (*Cond).Register so that we don't
+		// deadlock other goroutines that are also trying to
+		// register. (*Cond).Register and (*Cond).Notify can
+		// both deadlock when they hold an internal lock and
+		// try to send on a channel with a full buffer.
 		select {
-		case last = <-ch:
-			// boom, something in the cache has changed.
-			// TODO(dfc) the thing that has changed may not be in the scope of the filter
-			// so we're going to be sending an update that is a no-op. See #426
-
-			var resources []proto.Message
-			switch len(req.ResourceNames) {
-			case 0:
-				// no resource hints supplied, return the full
-				// contents of the resource
-				resources = r.Contents()
-			default:
-				// resource hints supplied, return exactly those
-				resources = r.Query(req.ResourceNames)
-			}
-
-			any, err := toAny(r.TypeURL(), resources)
-			if err != nil {
-				return done(log, err)
-			}
-
-			resp := &envoy_api_v2.DiscoveryResponse{
-				VersionInfo: strconv.Itoa(last),
-				Resources:   any,
-				TypeUrl:     r.TypeURL(),
-				Nonce:       strconv.Itoa(last),
-			}
-
-			if err := st.Send(resp); err != nil {
-				return done(log, err)
-			}
-
+		case current_nonce = <-ch:
+			// Boom, something in the cache has changed.
 		case <-ctx.Done():
 			return done(log, ctx.Err())
 		}
+
+		// TODO(dfc) the thing that has changed may not be
+		// in the scope of the filter so we're going to be
+		// sending an update that is a no-op. See #426
+		var resources []proto.Message
+		switch len(req.ResourceNames) {
+		case 0:
+			// no resource hints supplied, return the full
+			// contents of the resource
+			resources = r.Contents()
+		default:
+			// resource hints supplied, return exactly those
+			resources = r.Query(req.ResourceNames)
+		}
+
+		any, err := toAny(r.TypeURL(), resources)
+		if err != nil {
+			return done(log, err)
+		}
+
+		resp := &envoy_api_v2.DiscoveryResponse{
+			VersionInfo: strconv.Itoa(current_nonce),
+			Resources:   any,
+			TypeUrl:     r.TypeURL(),
+			Nonce:       strconv.Itoa(current_nonce),
+		}
+
+		if err := st.Send(resp); err != nil {
+			return done(log, err)
+		}
+
+		nonces[req.TypeUrl] = current_nonce
 	}
 }
 

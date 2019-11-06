@@ -39,16 +39,23 @@ func NewAPI(log logrus.FieldLogger, resources map[string]Resource, registry *pro
 		},
 		grpc_prometheus.NewServerMetrics(),
 	}
+
 	registry.MustRegister(s.metrics)
+
 	opts = append(opts, grpc.StreamInterceptor(s.metrics.StreamServerInterceptor()),
 		grpc.UnaryInterceptor(s.metrics.UnaryServerInterceptor()))
+
 	g := grpc.NewServer(opts...)
+
 	v2.RegisterClusterDiscoveryServiceServer(g, s)
 	v2.RegisterEndpointDiscoveryServiceServer(g, s)
 	v2.RegisterListenerDiscoveryServiceServer(g, s)
 	v2.RegisterRouteDiscoveryServiceServer(g, s)
 	discovery.RegisterSecretDiscoveryServiceServer(g, s)
+	discovery.RegisterAggregatedDiscoveryServiceServer(g, s)
+
 	s.metrics.InitializeMetrics(g)
+
 	return g
 }
 
@@ -110,6 +117,10 @@ func (s *grpcServer) DeltaRoutes(v2.RouteDiscoveryService_DeltaRoutesServer) err
 	return status.Errorf(codes.Unimplemented, "IncrementalRoutes unimplemented")
 }
 
+func (s *grpcServer) DeltaAggregatedResources(srv discovery.AggregatedDiscoveryService_DeltaAggregatedResourcesServer) error {
+	return status.Errorf(codes.Unimplemented, "DeltaAggregatedResources unimplemented")
+}
+
 func (s *grpcServer) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) error {
 	return s.stream(srv)
 }
@@ -119,5 +130,9 @@ func (s *grpcServer) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServe
 }
 
 func (s *grpcServer) StreamSecrets(srv discovery.SecretDiscoveryService_StreamSecretsServer) error {
+	return s.stream(srv)
+}
+
+func (s *grpcServer) StreamAggregatedResources(srv discovery.AggregatedDiscoveryService_StreamAggregatedResourcesServer) error {
 	return s.stream(srv)
 }

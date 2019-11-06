@@ -307,6 +307,16 @@ func ConfigSource(cluster string) *envoy_api_v2_core.ConfigSource {
 	}
 }
 
+// ConfigSourceADS returns a *envoy_api_v2_core.ConfigSource that
+// directs the resource to ADS.
+func ConfigSourceADS() *envoy_api_v2_core.ConfigSource {
+	return &envoy_api_v2_core.ConfigSource{
+		ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_Ads{
+			Ads: &envoy_api_v2_core.AggregatedConfigSource{},
+		},
+	}
+}
+
 // ClusterDiscoveryType returns the type of a ClusterDiscovery as a Cluster_type.
 func ClusterDiscoveryType(t v2.Cluster_DiscoveryType) *v2.Cluster_Type {
 	return &v2.Cluster_Type{Type: t}

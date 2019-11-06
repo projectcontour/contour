@@ -28,8 +28,11 @@ func TestBootstrap(t *testing.T) {
 		want   string
 	}{
 		"default configuration": {
-			config: BootstrapConfig{Namespace: "testing-ns"},
-			want: `{
+			config: BootstrapConfig{
+				Namespace: "testing-ns",
+			},
+			want: `
+{
   "static_resources": {
     "clusters": [
       {
@@ -89,8 +92,8 @@ func TestBootstrap(t *testing.T) {
         "connect_timeout": "0.250s",
         "load_assignment": {
           "cluster_name": "service-stats",
-          "endpoints": [   
-            {                          
+          "endpoints": [
+            {
               "lb_endpoints": [
                 {
                   "endpoint": {
@@ -98,11 +101,11 @@ func TestBootstrap(t *testing.T) {
                       "socket_address": {
                         "address": "127.0.0.1",
                         "port_value": 9001
-                      }    
-                    }     
+                      }
+                    }
                   }
-                }          
-              ]                        
+                }
+              ]
             }
           ]
         }
@@ -111,28 +114,20 @@ func TestBootstrap(t *testing.T) {
   },
   "dynamic_resources": {
     "lds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour"
-            }
-          }
-        ]
-      }
+      "ads": {}
     },
     "cds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour"
-            }
+      "ads": {}
+    },
+    "ads_config": {
+      "api_type": "GRPC",
+      "grpc_services": [
+        {
+          "envoy_grpc": {
+            "cluster_name": "contour"
           }
-        ]
-      }
+        }
+      ]
     }
   },
   "admin": {
@@ -146,8 +141,9 @@ func TestBootstrap(t *testing.T) {
   }
 }`,
 		},
-		"--admin-address=8.8.8.8 --admin-port=9200": {
+		"--admin-address=8.8.8.8 --admin-port=9200 --disable-ads": {
 			config: BootstrapConfig{
+				DisableADS:   true,
 				AdminAddress: "8.8.8.8",
 				AdminPort:    9200,
 				Namespace:    "testing-ns",
@@ -269,8 +265,9 @@ func TestBootstrap(t *testing.T) {
   }
 }`,
 		},
-		"AdminAccessLogPath": { // TODO(dfc) doesn't appear to be exposed via contour bootstrap
+		"AdminAccessLogPath --disable-ads": { // TODO(dfc) doesn't appear to be exposed via contour bootstrap
 			config: BootstrapConfig{
+				DisableADS:         true,
 				AdminAccessLogPath: "/var/log/admin.log",
 				Namespace:          "testing-ns",
 			},
@@ -391,8 +388,9 @@ func TestBootstrap(t *testing.T) {
   }
 }`,
 		},
-		"--xds-address=8.8.8.8 --xds-port=9200": {
+		"--xds-address=8.8.8.8 --xds-port=9200 --disable-ads": {
 			config: BootstrapConfig{
+				DisableADS:  true,
 				XDSAddress:  "8.8.8.8",
 				XDSGRPCPort: 9200,
 				Namespace:   "testing-ns",
@@ -514,9 +512,10 @@ func TestBootstrap(t *testing.T) {
   }
 }`,
 		},
-		"--stats-address=8.8.8.8 --stats-port=9200": {
+		"--stats-address=8.8.8.8 --stats-port=9200 --disable-ads": {
 			config: BootstrapConfig{
-				Namespace: "testing-ns",
+				DisableADS: true,
+				Namespace:  "testing-ns",
 			},
 			want: `{
   "static_resources": {
@@ -635,8 +634,9 @@ func TestBootstrap(t *testing.T) {
   }
 }`,
 		},
-		"--envoy-cafile=CA.cert --envoy-client-cert=client.cert --envoy-client-key=client.key": {
+		"--envoy-cafile=CA.cert --envoy-client-cert=client.cert --envoy-client-key=client.key --disable-ads": {
 			config: BootstrapConfig{
+				DisableADS:     true,
 				Namespace:      "testing-ns",
 				GrpcCABundle:   "CA.cert",
 				GrpcClientCert: "client.cert",
