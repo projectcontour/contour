@@ -546,6 +546,11 @@ More information can be found in [Envoy's documentation](https://www.envoyproxy.
 The time period of **0s** will also be treated as infinity.
 By default, there is no per-route idle timeout.
 Note that the default connection manager idle timeout of 5 minutes will apply if this is not set.
+
+TimeoutPolicy durations are expressed as per the format specified in the [ParseDuration documentation](https://godoc.org/time#ParseDuration).
+Example input values: "300ms", "5s", "1m". Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+The string 'infinity' is also a valid input and specifies no timeout.
+
 More information can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-idle-timeout)
 - `retryPolicy`: A retry will be attempted if the server returns an error code in the 5xx range, or if the server takes more than `retryPolicy.perTryTimeout` to process a request.
   - `retryPolicy.count` specifies the maximum number of retries allowed. This parameter is optional and defaults to 1.

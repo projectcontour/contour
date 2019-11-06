@@ -212,6 +212,10 @@ type HTTPHealthCheckPolicy struct {
 
 // TimeoutPolicy defines the attributes associated with timeout.
 type TimeoutPolicy struct {
+	// TimeoutPolicy durations are expressed as per the format specified in the ParseDuration documentation: https://godoc.org/time#ParseDuration
+	// Example input values: "300ms", "5s", "1m". Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	// The string 'infinity' is also a valid input and specifies no timeout.
+
 	// Timeout for receiving a response from the server after processing a request from client.
 	// If not supplied the timeout duration is undefined.
 	Response string `json:"response"`
