@@ -1,5 +1,5 @@
 ---
-title: Deploy web applications on Kubernetes with Contour and Let's Encrypt
+title: Deploying HTTPS services with Contour and cert-manager
 layout: page
 ---
 
@@ -9,8 +9,6 @@ This tutorial shows you how to securely deploy an HTTPS web application on a Kub
 - Contour, as the Ingress controller
 - [JetStack's cert-manager][1] to provision TLS certificates from [the Let's Encrypt project][5]
 
-**Please note** that this tutorial currently only works with `Ingress` resources. `IngressRoute` support will land when issue [#509](https://github.com/projectcontour/contour/issues/509) is fixed.
-
 ## Prerequisites
 
 - A Kubernetes cluster deployed in either a data center or a cloud provider with a Kubernetes as a service offering. This tutorial was developed on a GKE cluster running Kubernetes 1.14
@@ -19,7 +17,7 @@ This tutorial shows you how to securely deploy an HTTPS web application on a Kub
 - A DNS domain that you control, where you host your web application
 - Administrator permissions for all deployment steps
 
-**NOTE:** To use a local cluster like `minikube` or `kind`, see the instructions in [the deployment docs][7].
+**NOTE:** To use a local cluster like `minikube` or `kind`, see the instructions in [the deployment guide][7].
 
 ## Summary
 
@@ -27,11 +25,11 @@ This tutorial walks you through deploying:
 
 1. [Contour][0]
 2. [Jetstack cert-manager][1]
-3. A sample web application
+3. A sample web application using HTTPProxy
 
 **NOTE:** If you encounter failures related to permissions, make sure the user you are operating as has administrator permissions.
 
-After you've been through the steps the first time, you don't need to repeat deploying Contour and cert-manager for subsequent application deployments. Instead, you can skip to step 3].
+After you've been through the steps the first time, you don't need to repeat deploying Contour and cert-manager for subsequent application deployments. Instead, you can skip to step 3.
 
 ## 1. Deploy Contour
 
@@ -55,12 +53,12 @@ After all the `contour` pods reach `Running` status, move on to the next step.
 
 ### Access your cluster
 
-Retrieve the external address of the load balancer assigned to Contour by your cloud provider:
+Retrieve the external address of the load balancer assigned to Contour's Envoys by your cloud provider:
 
 ```
-$ kubectl get -n projectcontour service contour -o wide
+$ kubectl get -n projectcontour service envoy -o wide
 NAME      TYPE           CLUSTER-IP     EXTERNAL-IP    PORT(S)                      AGE       SELECTOR
-contour   LoadBalancer   10.51.245.99   35.189.26.87   80:30111/TCP,443:30933/TCP   38d       app=contour
+envoy   LoadBalancer   10.51.245.99   35.189.26.87   80:30111/TCP,443:30933/TCP   38d       app=envoy
 ```
 
 The value of `EXTERNAL-IP` varies by cloud provider. In this example GKE gives a bare IP address; AWS gives you a long DNS name.
@@ -85,66 +83,73 @@ In your own data center, you need to arrange for traffic from a public IP addres
 
 ### Testing connectivity
 
-You must deploy at least one Ingress object before Contour can serve traffic. Note that as a security feature, Contour does not expose a port to the internet unless there's a reason it should. A great way to test your Contour installation is to deploy the _Kubernetes Up And Running_ demonstration application (KUARD).
+You must deploy at least one Ingress object before Contour can configure Envoy to serve traffic.
+Note that as a security feature, Contour does not configure Envoy to expose a port to the internet unless there's a reason it should.
+For this tutorial we deploy a version of Kenneth Reitz's [httpbin.org service][3].
 
-To deploy KUARD to your cluster, run this command:
+To deploy httpbin to your cluster, run this command:
 
 ```bash
-$ kubectl apply -f {{ site.url }}/examples/kuard.yaml
+$ kubectl apply -f {{ site.url }}/examples/httpbin.yaml
 ```
 
 Check that the pod is running:
 
 ```
-$ kubectl get po -l app=kuard
+$ kubectl get po -l app=httpbin
 NAME                       READY     STATUS    RESTARTS   AGE
-kuard-67ff6dd458-sfxkb     1/1       Running   0          19d
+httpbin-67ff6dd458-sfxkb     1/1       Running   0          19d
 ```
 
 Then type the DNS name you set up in the previous step into a web browser, for example `http://gke.davecheney.com/`. You should see something like:
 
-![KAURD screenshot][kuard]
+![httpbin screenshot][httpbinhomepage]
 
-You can delete the KUARD service now, or at any time, by running:
+You can delete the httpbin service now, or at any time, by running:
 
 ```bash
-$ kubectl delete -f {{ site.url }}/examples/kuard.yaml
+$ kubectl delete -f {{ site.url }}/examples/httpbin.yaml
 ```
 
 ## 2. Deploy jetstack/cert-manager
 
 **NOTE:** cert-manager is a powerful product that provides more functionality than this tutorial demonstrates.
-There are plenty of other ways to deploy cert-manager, but they are out of scope.
+There are plenty of [other ways to deploy cert-manager][4], but they are out of scope.
 
 ### Fetch the source manager deployment manifest
 
-To keep things simple, we skip cert-manager's Helm installation, and use the supplied YAML manifests:
+To keep things simple, we skip cert-manager's Helm installation, and use the [supplied YAML manifests][5]. Note that the deployment YAMLs don't create the namespace for you, so you must do that first.
 
-```
-$ kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v0.8.0/cert-manager.yaml
+Also, the apply command can have `--validate=false` removed for Kubernetes versions > 1.15.
+Without this flag, on those versions, the apply command will receive a validation error relating to the CustomResourceDefinition resources. See the [cert-manager deployment guide][4] for more information.
+
+```sh
+$ kubectl create namespace cert-manager
+$ kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.11.0/cert-manager.yaml
 ```
 
 When cert-manager is up and running you should see something like:
 
 ```
 $ kubectl -n cert-manager get all
-NAME                                          READY   STATUS    RESTARTS   AGE
-pod/cert-manager-54f645f7d6-fhpx2             1/1     Running   0          40s
-pod/cert-manager-cainjector-79b7fc64f-zt97m   1/1     Running   0          40s
-pod/cert-manager-webhook-6484955794-jf9l8     1/1     Running   0          40s
+NAME                                           READY   STATUS    RESTARTS   AGE
+pod/cert-manager-cainjector-74bb68d67c-8lb2f   1/1     Running   0          40s
+pod/cert-manager-f7f8bf74d-65ld9               1/1     Running   0          40s
+pod/cert-manager-webhook-645b8bdb7-2h5t6       1/1     Running   0          40s
 
-NAME                           TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
-service/cert-manager-webhook   ClusterIP   10.98.100.245   <none>        443/TCP   41s
+NAME                           TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+service/cert-manager           ClusterIP   10.48.13.252   <none>        9402/TCP   40s
+service/cert-manager-webhook   ClusterIP   10.48.7.220    <none>        443/TCP    40s
 
 NAME                                      READY   UP-TO-DATE   AVAILABLE   AGE
 deployment.apps/cert-manager              1/1     1            1           40s
-deployment.apps/cert-manager-cainjector   1/1     1            1           41s
+deployment.apps/cert-manager-cainjector   1/1     1            1           40s
 deployment.apps/cert-manager-webhook      1/1     1            1           40s
 
-NAME                                                DESIRED   CURRENT   READY   AGE
-replicaset.apps/cert-manager-54f645f7d6             1         1         1       40s
-replicaset.apps/cert-manager-cainjector-79b7fc64f   1         1         1       40s
-replicaset.apps/cert-manager-webhook-6484955794     1         1         1       40s
+NAME                                                 DESIRED   CURRENT   READY   AGE
+replicaset.apps/cert-manager-cainjector-74bb68d67c   1         1         1       40s
+replicaset.apps/cert-manager-f7f8bf74d               1         1         1       40s
+replicaset.apps/cert-manager-webhook-645b8bdb7       1         1         1       40s
 ```
 
 ### Deploy the Let's Encrypt cluster issuer
@@ -155,7 +160,7 @@ and a `ClusterIssuer`, which is cluster-wide.
 For Contour to be able to serve HTTPS traffic for an Ingress in any namespace, use `ClusterIssuer`.
 Create a file called `letsencrypt-staging.yaml` with the following contents:
 
-```
+```yaml
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: ClusterIssuer
 metadata:
@@ -164,10 +169,13 @@ metadata:
 spec:
   acme:
     email: user@example.com
-    http01: {}
     privateKeySecretRef:
       name: letsencrypt-staging
     server: https://acme-staging-v02.api.letsencrypt.org/directory
+    solvers:
+    - http01:
+        ingress:
+          class: contour
 ```
 
 replacing `user@example.com` with your email address.
@@ -194,13 +202,13 @@ I0220 02:32:52.552107 1 helpers.go:122] Setting lastTransitionTime for ClusterIs
 I0220 02:32:52.560665 1 controller.go:152] clusterissuers controller: Finished processing work item "letsencrypt-staging"
 ```
 
-## 3. Deploy your first HTTPS site
+## 3. Deploy your first HTTPS site using Ingress
 
 For this tutorial we deploy a version of Kenneth Reitz's [httpbin.org service][3].
 We start with the deployment.
 Copy the following to a file called `deployment.yaml`:
 
-```
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -242,7 +250,7 @@ Deploy to your cluster:
 ```
 $ kubectl apply -f deployment.yaml
 deployment "httpbin" created
-$ kubectl get po -l app=httpbin
+$ kubectl get pod -l app=httpbin
 NAME                       READY     STATUS    RESTARTS   AGE
 httpbin-67fd96d97c-8j2rr   1/1       Running   0          56m
 ```
@@ -250,7 +258,7 @@ httpbin-67fd96d97c-8j2rr   1/1       Running   0          56m
 Expose the deployment to the world with a Service. Create a file called `service.yaml` with
 the following contents:
 
-```
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -269,16 +277,16 @@ and deploy:
 ```
 $ kubectl apply -f service.yaml
 service "httpbin" created
-$ kubectl get svc httpbin
-NAME      TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-httpbin   NodePort   10.51.250.182   <none>        8080:31205/TCP   57m
+$ kubectl get service httpbin
+NAME      TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)     AGE
+httpbin   ClusterIP   10.48.6.155   <none>        8080/TCP   57m
 ```
 
 Expose the Service to the world with Contour and an Ingress object. Create a file called `ingress.yaml` with
 the following contents:
 
-```
-apiVersion: extensions/v1beta1
+```yaml
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: httpbin
@@ -292,7 +300,8 @@ spec:
           servicePort: 8080
 ```
 
-The host name, `httpbin.davecheney.com` is a `CNAME` to the `gke.davecheney.com` record that was created in the first section.
+The host name, `httpbin.davecheney.com` is a `CNAME` to the `gke.davecheney.com` record that was created in the first section, and must be created in the same place as the `gke.davecheney.com` record was.
+That is, in your cloud provider.
 This lets requests to `httpbin.davecheney.com` resolve to the external IP address of the Contour service.
 They are then forwarded to the Contour pods running in the cluster:
 
@@ -307,7 +316,7 @@ Change the value of `spec.rules.host` to something that you control, and deploy 
 ```
 $ kubectl apply -f ingress.yaml
 ingress "httpbin" created
-$ kubectl get ing httpbin
+$ kubectl get ingress httpbin
 NAME      HOSTS                    ADDRESS   PORTS     AGE
 httpbin   httpbin.davecheney.com             80        58m
 ```
@@ -336,16 +345,27 @@ Excellent, it looks like everything is up and running serving traffic over HTTP.
 ### Request a TLS certificate from Let's Encrypt
 
 Now it's time to use cert-manager to request a TLS certificate from Let's Encrypt.
-Do this by adding two annotations and a `tls:` section to the Ingress spec.
+Do this by adding some annotations and a `tls:` section to the Ingress spec.
 
-```
-apiVersion: extensions/v1beta1
+We need to add the following annotations:
+
+- `cert-manager.io/cluster-issuer: letsencrypt-staging`: tells cert-manager to use the `letsencrypt-staging` cluster issuer you just created.
+- `kubernetes.io/tls-acme: "true"`: Tells cert-manager to do ACME TLS (what Let's Encrypt uses).
+- `ingress.kubernetes.io/force-ssl-redirect: "true"`: tells Contour to redirect HTTP requests to the HTTPS site.
+- `kubernetes.io/ingress.class: contour`: Tells Contour that it should handle this Ingress object.
+
+Using `kubectl edit ingress httpbin`:
+
+```yaml
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: httpbin
   annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+    ingress.kubernetes.io/force-ssl-redirect: "true"
+    kubernetes.io/ingress.class: contour
     kubernetes.io/tls-acme: "true"
-    certmanager.k8s.io/cluster-issuer: "letsencrypt-staging"
 spec:
   tls:
   - secretName: httpbin
@@ -360,30 +380,36 @@ spec:
           servicePort: 8080
 ```
 
-The `kubernetes.io/tls-acme: "true"` annotation tells cert-manager to use the `letsencrypt-staging` cluster-wide issuer we created earlier to request a certificate from Let's Encrypt's staging servers.
-
 The certificate is issued in the name of the hosts listed in the `tls:` section, `httpbin.davecheney.com` and stored in the secret `httpbin`.
-Behind the scenes, cert-manager creates a certificate CRD to manage the lifecycle of the certificate.
+Behind the scenes, cert-manager creates a certificate CRD to manage the lifecycle of the certificate, and then a series of other CRDs to handle the challenge process.
+
 You can watch the progress of the certificate as it's issued:
 
 ```
-$ kubectl describe certificate httpbin | tail -n 6
-  Normal   PresentChallenge       1m               cert-manager-controller  Presenting http-01 challenge for domain httpbin.davecheney.com
-  Normal   SelfCheck              1m               cert-manager-controller  Performing self-check for domain httpbin.davecheney.com
-  Normal   ObtainAuthorization    1m               cert-manager-controller  Obtained authorization for domain httpbin.davecheney.com
-  Normal   IssueCertificate       1m               cert-manager-controller  Issuing certificate...
-  Normal   CeritifcateIssued      1m               cert-manager-controller  Certificated issued successfully
-  Normal   RenewalScheduled       1m (x3 over 1m)  cert-manager-controller  Certificate scheduled for renewal in 1438 hours
+$ kubectl describe certificate httpbin | tail -n 12
+Status:
+  Conditions:
+    Last Transition Time:  2019-11-07T00:37:55Z
+    Message:               Waiting for CertificateRequest "httpbinproxy-1925286939" to complete
+    Reason:                InProgress
+    Status:                False
+    Type:                  Ready
+Events:
+  Type    Reason        Age   From          Message
+  ----    ------        ----  ----          -------
+  Normal  GeneratedKey  26s   cert-manager  Generated a new private key
+  Normal  Requested     26s   cert-manager  Created new CertificateRequest resource "httpbinproxy-1925286939"
 ```
 
 Wait for the certificate to be issued:
 
 ```
-$ kubectl describe certificate httpbin | grep -C3 CertIssued
+$ kubectl describe certificate httpbin | grep -C3 "Certificate is up to date"
+Status:
   Conditions:
-    Last Transition Time:  2018-02-26T01:26:30Z
-    Message:               Certificate issued successfully
-    Reason:                CertIssueSuccess
+    Last Transition Time:  2019-11-06T23:47:50Z
+    Message:               Certificate is up to date and has not expired
+    Reason:                Ready
     Status:                True
     Type:                  Ready
 ```
@@ -393,7 +419,7 @@ A `kubernetes.io/tls` secret is created with the `secretName` specified in the `
 ```
 $ kubectl get secret httpbin
 NAME      TYPE                DATA      AGE
-httpbin   kubernetes.io/tls   2         3m
+httpbin   kubernetes.io/tls   3         3m
 ```
 
 cert-manager manages the contents of the secret as long as the Ingress is present in your cluster.
@@ -418,19 +444,23 @@ To request a properly signed certificate from the Let's Encrypt production serve
 
 Create a file called `letsencrypt-prod.yaml` with the following contents:
 
-```
+```yaml
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: ClusterIssuer
 metadata:
   name: letsencrypt-prod
   namespace: cert-manager
 spec:
+spec:
   acme:
     email: user@example.com
-    http01: {}
     privateKeySecretRef:
       name: letsencrypt-prod
     server: https://acme-v02.api.letsencrypt.org/directory
+    solvers:
+    - http01:
+        ingress:
+          class: contour
 ```
 
 again replacing `user@example.com` with your email address.
@@ -442,10 +472,10 @@ $ kubectl apply -f letsencrypt-prod.yaml
 clusterissuer "letsencrypt-prod" created
 ```
 
-Now we use `kubectl edit ing httpbin` to edit our Ingress to ask for a real certificate from `letsencrypt-prod`:
+Now we use `kubectl edit ingress httpbin` to edit our Ingress to ask for a real certificate from `letsencrypt-prod`:
 
-```
-apiVersion: extensions/v1beta1
+```yaml
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: httpbin
@@ -487,11 +517,100 @@ $ curl https://httpbin.davecheney.com/get
 
 ![httpbin.davecheney.com screenshot][httpbin]
 
+## Making cert-manager work with HTTPProxy
+
+cert-manager currently does not have a way to interact with HTTPProxy objects in order to respond to the HTTP01 challenge correctly.
+(See [#950](https://github.com/projectcontour/contour/issues/950) and [#951](https://github.com/projectcontour/contour/issues/951) for details.)
+cert-manager does this by creating a new, temporary Ingress object that will direct requests from Let's Encrypt to temporary pods called 'solver pods'.
+These pods know how to respond to Let's Encrypt's challenge process for verifying you control the domain you're issuing certificates for.
+This means that cert-manager can't be *directly* used for generating certificates for HTTPProxy configuration.
+
+However, we can create a dummy Ingress object that will have cert-manager provision the certificate Secret, so that we can consume it in a HTTPProxy.
+This works because Contour expects the Secrets to look the same anyway.
+
+To do this, we need to create our HTTPProxy and Ingress objects.
+
+This example uses the hostname `httpbinproxy.davecheney.com`, remember to create that name before starting.
+
+Firstly, the HTTPProxy:
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: httpbinproxy
+spec:
+  virtualhost:
+    fqdn: httpbinproxy.davecheney.com
+    tls:
+      secretName: httpbin
+  routes:
+  - services:
+    - name: httpbin
+      port: 8080
+```
+
+This object will be marked as Invalid by Contour, since the TLS secret doesn't exist yet.
+Once that's done, create the dummy Ingress object:
+
+```yaml
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    ingress.kubernetes.io/force-ssl-redirect: "true"
+    kubernetes.io/tls-acme: "true"
+  name: httpbinproxy
+  namespace: default
+spec:
+  rules:
+  - host: httpbinproxy.davecheney.com
+    http:
+      paths:
+      - backend:
+          serviceName: httpbin
+          servicePort: 8080
+  tls:
+  - hosts:
+    - httpbinproxy.davecheney.com
+    secretName: httpbinproxy
+```
+
+Once cert-manager has done its thing, you will have a `httpbinproxy` secret, that will contain the keypair.
+Contour will detect that the Secret exists and generate the HTTPProxy config.
+
+After that, you should be able to curl the new site:
+
+```sh
+$ curl https://httpbinproxy.davecheney.com/get
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Content-Length": "0",
+    "Host": "httpbinproxy.davecheney.com",
+    "User-Agent": "curl/7.54.0",
+    "X-Envoy-Expected-Rq-Timeout-Ms": "15000",
+    "X-Envoy-External-Address": "122.106.57.183"
+  },
+  "origin": "122.106.57.183",
+  "url": "https://httpbinproxy.davecheney.com/get"
+}
+```
+
+### Caveats
+
+This method is a workaround until we can deliver the changes in [#950](https://github.com/projectcontour/contour/issues/950) and [#951](https://github.com/projectcontour/contour/issues/951).
+
+The dummy Ingress record exists only to hold the annotations `ingress-shim` requires.
+Because it does not include the `ingress-class: contour` annotation, Contour will not see it and so the configuration of the Ingress does not matter, except that it is valid enough for ingress-shim to use.
+
 ## Wrapping up
 
 Now that you've deployed your first HTTPS site using Contour and Let's Encrypt, deploying additional TLS enabled services is much simpler.
-Remember that for each HTTPS website you deploy, you create a Certificate CRD that provides the domain name and the name of the target Secret.
-After the Secret is created, you add a `tls` field to the Ingress object for your site.
+Remember that for each HTTPS website you deploy, cert-manager will  create a Certificate CRD that provides the domain name and the name of the target Secret.
+The TLS functionality will be enabled when the HTTPProxy contains the `tls:` stanza, and the referenced secret contains a valid keypair.
 
 ## Bonus points
 
@@ -530,7 +649,9 @@ $ curl -v http://httpbin.davecheney.com/get
 [1]: https://github.com/jetstack/cert-manager
 [2]: https://letsencrypt.org/docs/rate-limits/
 [3]: http://httpbin.org/
-[kuard]: /img/cert-manager/kuard.png
+[4]: https://docs.cert-manager.io/en/latest/getting-started/install/kubernetes.html
+[5]: https://github.com/jetstack/cert-manager/releases/download/v0.11.0/cert-manager.yaml
+[httpbinhomepage]: /img/cert-manager/httpbinhomepage.png
 [httpbin]: /img/cert-manager/httpbin.png
 [5]: https://letsencrypt.org/getting-started/
 [7]: {% link docs/v1.0.0/deploy-options.md %}#get-your-hostname-or-ip-address
