@@ -600,7 +600,7 @@ func TestUpgradeHTTPS(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
-func TestHeaderConditions(t *testing.T) {
+func TestRouteMatch(t *testing.T) {
 	tests := map[string]struct {
 		route *dag.Route
 		want  *envoy_api_v2_route.RouteMatch
@@ -660,6 +660,33 @@ func TestHeaderConditions(t *testing.T) {
 						RegexMatch: ".*11\\.\\[22\\]\\.\\*33\\.44.*",
 					},
 				}},
+			},
+		},
+		"path prefix": {
+			route: &dag.Route{
+				PathCondition: &dag.PrefixCondition{
+					Prefix: "/foo",
+				},
+			},
+			want: &envoy_api_v2_route.RouteMatch{
+				PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
+					Prefix: "/foo",
+				},
+			},
+		},
+		"path regex": {
+			route: &dag.Route{
+				PathCondition: &dag.RegexCondition{
+					Regex: "/v.1/*",
+				},
+			},
+			want: &envoy_api_v2_route.RouteMatch{
+				PathSpecifier: &envoy_api_v2_route.RouteMatch_Regex{
+					// note, unlike header conditions this is not a quoted regex because
+					// the value comes directly from the Ingress.Paths.Path value which
+					// is permitted to be a bare regex.
+					Regex: "/v.1/*",
+				},
 			},
 		},
 	}
