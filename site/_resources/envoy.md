@@ -10,16 +10,20 @@ This page describes the compatibility matrix of Contour and Envoy versions.
 
 ## Supported Envoy versions
 
-|              | Contour 1.0.0 | 
+|              | Contour 1.0.0 |
 | ------------ | :-----------:|
 | Envoy 1.11.0 | Not supported<sup>1</sup> |
 | Envoy 1.11.1 | Not supported<sup>2</sup> |
 | Envoy 1.11.2 |  Supported | 
+| Envoy 1.12.0 | Not supported<sup>3</sup> |
+| Envoy 1.12.1 | Not supported<sup>4</sup> |
 
 #### Notes
 
 1. [CVE-2019-9512, CVE-2019-9513, CVE-2019-9514, CVE-2019-9515, CVE-2019-9518][1] 
 2. [CVE-2019-15225, CVE-2019-15226][2]
+3. [CVE-2019-18836][3]. n.b. Only Envoy 1.12.0 is affected by this vulernability.
+4. Support for Envoy 1.12.1 is planned for Contour 1.1.
 
 ## Envoy extensions
 
@@ -37,3 +41,4 @@ If you are providing your own Envoy it must be compiled with the following exten
 
 [1]: https://groups.google.com/forum/#!topic/envoy-announce/ZLchtraPYVk
 [2]: https://groups.google.com/forum/#!topic/envoy-announce/Zo3ZEFuPWec
+[3]: https://groups.google.com/d/msg/envoy-announce/3-8S992PUV4/t-egdelVDwAJ
