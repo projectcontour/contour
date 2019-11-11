@@ -20,6 +20,7 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -618,8 +619,15 @@ func TestRouteMatch(t *testing.T) {
 				Headers: []*envoy_api_v2_route.HeaderMatcher{{
 					Name:        "x-header",
 					InvertMatch: false,
-					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_RegexMatch{
-						RegexMatch: ".*11-22-33-44.*",
+					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_SafeRegexMatch{
+						SafeRegexMatch: &matcher.RegexMatcher{
+							EngineType: &matcher.RegexMatcher_GoogleRe2{
+								GoogleRe2: &matcher.RegexMatcher_GoogleRE2{
+									MaxProgramSize: protobuf.UInt32(15),
+								},
+							},
+							Regex: ".*11-22-33-44.*",
+						},
 					},
 				}},
 			},
@@ -637,8 +645,15 @@ func TestRouteMatch(t *testing.T) {
 				Headers: []*envoy_api_v2_route.HeaderMatcher{{
 					Name:        "x-header",
 					InvertMatch: false,
-					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_RegexMatch{
-						RegexMatch: ".*11\\.22\\.33\\.44.*",
+					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_SafeRegexMatch{
+						SafeRegexMatch: &matcher.RegexMatcher{
+							EngineType: &matcher.RegexMatcher_GoogleRe2{
+								GoogleRe2: &matcher.RegexMatcher_GoogleRE2{
+									MaxProgramSize: protobuf.UInt32(18),
+								},
+							},
+							Regex: ".*11\\.22\\.33\\.44.*",
+						},
 					},
 				}},
 			},
@@ -656,8 +671,15 @@ func TestRouteMatch(t *testing.T) {
 				Headers: []*envoy_api_v2_route.HeaderMatcher{{
 					Name:        "x-header",
 					InvertMatch: false,
-					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_RegexMatch{
-						RegexMatch: ".*11\\.\\[22\\]\\.\\*33\\.44.*",
+					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_SafeRegexMatch{
+						SafeRegexMatch: &matcher.RegexMatcher{
+							EngineType: &matcher.RegexMatcher_GoogleRe2{
+								GoogleRe2: &matcher.RegexMatcher_GoogleRE2{
+									MaxProgramSize: protobuf.UInt32(24),
+								},
+							},
+							Regex: ".*11\\.\\[22\\]\\.\\*33\\.44.*",
+						},
 					},
 				}},
 			},
