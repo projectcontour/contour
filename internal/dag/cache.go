@@ -65,11 +65,59 @@ func toMeta(obj Object) Meta {
 	}
 }
 
+// The API machinery doesn't populate the metav1.TypeMeta field for
+// objects, so we have to use a type assertion to detect kinds that
+// we care about.
+func toKind(o Object) string {
+	switch o.(type) {
+	case *v1.Secret:
+		return "Secret"
+	case *v1.Service:
+		return "Service"
+	case *v1beta1.Ingress:
+		return "Ingress"
+	case *extensionsv1beta1.Ingress:
+		return "Ingress"
+	case *ingressroutev1.IngressRoute:
+		return "IngressRoute"
+	case *projectcontour.HTTPProxy:
+		return "HTTPProxy"
+	case *ingressroutev1.TLSCertificateDelegation:
+		return "TLSCertificateDelegation"
+	case *projectcontour.TLSCertificateDelegation:
+		return "TLSCertificateDelegation"
+	default:
+		return ""
+	}
+}
+
 // Insert inserts obj into the KubernetesCache.
 // Insert returns true if the cache accepted the object, or false if the value
 // is not interesting to the cache. If an object with a matching type, name,
 // and namespace exists, it will be overwritten.
 func (kc *KubernetesCache) Insert(obj interface{}) bool {
+	if obj, ok := obj.(Object); ok {
+		kind := toKind(obj)
+		for key := range obj.GetObjectMeta().GetAnnotations() {
+			// Emit a warning if this is a known annotation that has
+			// been applied to an invalid object kind. Note that we
+			// only warn for known annotations because we want to
+			// allow users to add arbitrary orthogonal annotations
+			// to object that we inspect.
+			if annotationIsKnown(key) && !validAnnotationForKind(kind, key) {
+				// TODO(jpeach): this should be exposed
+				// to the user as a status condition.
+				om := obj.GetObjectMeta()
+				kc.WithField("name", om.GetName()).
+					WithField("namespace", om.GetNamespace()).
+					WithField("kind", kind).
+					WithField("version", "v1").
+					WithField("annotation", key).
+					Error("ignoring invalid or unsupported annotation")
+			}
+		}
+	}
+
 	switch obj := obj.(type) {
 	case *v1.Secret:
 		valid, err := isValidSecret(obj)

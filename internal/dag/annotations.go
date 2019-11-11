@@ -23,6 +23,76 @@ import (
 	"k8s.io/api/networking/v1beta1"
 )
 
+func annotationIsKnown(key string) bool {
+	// We should know about everything with a Contour prefix.
+	if strings.HasPrefix(key, "projectcontour.io/") ||
+		strings.HasPrefix(key, "contour.heptio.com/") {
+		return true
+	}
+
+	// We could reasonably be expected to know about all Ingress
+	// annotations.
+	if strings.HasPrefix(key, "ingress.kubernetes.io/") {
+		return true
+	}
+
+	switch key {
+	case "kubernetes.io/ingress.class",
+		"kubernetes.io/ingress.allow-http",
+		"kubernetes.io/ingress.global-static-ip-name":
+		return true
+	default:
+		return false
+	}
+}
+
+var annotationsByKind = map[string]map[string]struct{}{
+	"Ingress": {
+		"ingress.kubernetes.io/force-ssl-redirect":       {},
+		"kubernetes.io/ingress.allow-http":               {},
+		"kubernetes.io/ingress.class":                    {},
+		"projectcontour.io/ingress.class":                {},
+		"projectcontour.io/num-retries":                  {},
+		"projectcontour.io/response-timeout":             {},
+		"projectcontour.io/retry-on":                     {},
+		"projectcontour.io/tls-minimum-protocol-version": {},
+		"projectcontour.io/websocket-routes":             {},
+	},
+	"Service": {
+		"projectcontour.io/max-connections":       {},
+		"projectcontour.io/max-pending-requests":  {},
+		"projectcontour.io/max-requests":          {},
+		"projectcontour.io/max-retries":           {},
+		"projectcontour.io/upstream-protocol.h2":  {},
+		"projectcontour.io/upstream-protocol.h2c": {},
+		"projectcontour.io/upstream-protocol.tls": {},
+	},
+	"HTTPProxy": {
+		"projectcontour.io/ingress.class": {},
+	},
+	"IngressRoute": {
+		"projectcontour.io/ingress.class": {},
+	},
+}
+
+func validAnnotationForKind(kind string, key string) bool {
+	if a, ok := annotationsByKind[kind]; ok {
+		// Canonicalize the name while we still have legacy support.
+		key = strings.Replace(key, "contour.heptio.com/", "projectcontour.io/", -1)
+		_, ok := a[key]
+		return ok
+	}
+
+	// We should know about every kind with a Contour annotation prefix.
+	if strings.HasPrefix(key, "projectcontour.io/") ||
+		strings.HasPrefix(key, "contour.heptio.com/") {
+		return false
+	}
+
+	// This isn't a kind we know about so assume it is valid.
+	return true
+}
+
 // compatAnnotation checks the Object for the given annotation, first with the
 // "projectcontour.io/" prefix, and then with the "contour.heptio.com/" prefix
 // if that is not found.

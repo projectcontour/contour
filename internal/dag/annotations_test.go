@@ -14,10 +14,14 @@
 package dag
 
 import (
+	"fmt"
 	"testing"
 
+	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
+	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	v1 "k8s.io/api/core/v1"
+	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -373,6 +377,86 @@ func TestAnnotationCompat(t *testing.T) {
 			want := tc.value
 			if got != want {
 				t.Fatalf("got: %v, want: %v", got, want)
+			}
+		})
+	}
+}
+
+func TestAnnotationKindValidation(t *testing.T) {
+	type status struct {
+		known bool
+		valid bool
+	}
+	tests := map[string]struct {
+		obj         Object
+		annotations map[string]status
+	}{
+		"service": {
+			obj: &v1.Service{},
+			annotations: map[string]status{
+				"foo.heptio.com/annotation": {
+					known: false, valid: false,
+				},
+				"contour.heptio.com/annotation": {
+					known: true, valid: false,
+				},
+				"projectcontour.io/annotation": {
+					known: true, valid: false,
+				},
+			},
+		},
+		"httpproxy": {
+			obj: &projectcontour.HTTPProxy{},
+			annotations: map[string]status{
+				// Valid only on Service.
+				"projectcontour.io/max-requests": {
+					known: true, valid: false,
+				},
+				// Valid only on Ingress.
+				"projectcontour.io/websocket-routes": {
+					known: true, valid: false,
+				},
+			},
+		},
+		"secrets": {
+			obj: &v1.Secret{},
+			annotations: map[string]status{
+				// In our namespace but not valid on this kind.
+				"projectcontour.io/ingress.class": {
+					known: true, valid: false,
+				},
+				// Unknown, so potentially valid.
+				"foo.io/secret-sauce": {
+					known: false, valid: true,
+				},
+			},
+		},
+	}
+
+	// Trivially check that everything specified in the global
+	// table is valid.
+	for _, kind := range []string{
+		toKind(&v1.Service{}),
+		toKind(&v1beta1.Ingress{}),
+		toKind(&extensionsv1beta1.Ingress{}),
+		toKind(&ingressroutev1.IngressRoute{}),
+		toKind(&projectcontour.HTTPProxy{}),
+	} {
+		for key := range annotationsByKind[kind] {
+			t.Run(fmt.Sprintf("%s is known and valid for %s", key, kind),
+				func(t *testing.T) {
+					assert.Equal(t, true, annotationIsKnown(key))
+					assert.Equal(t, true, validAnnotationForKind(kind, key))
+				})
+		}
+	}
+
+	// Check corner case combinations for different types.
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			for k, s := range tc.annotations {
+				assert.Equal(t, s.known, annotationIsKnown(k))
+				assert.Equal(t, s.valid, validAnnotationForKind(toKind(tc.obj), k))
 			}
 		})
 	}
