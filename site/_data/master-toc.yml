@@ -49,6 +49,8 @@ toc:
         link: /resources/how-we-work
       - page: Release Process
         link: /resources/release-process
+      - page: Frequently Asked Questions
+        link: /resources/faq
       - page: Support
         link: /resources/support
   - title: Contribute
