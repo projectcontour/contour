@@ -41,28 +41,25 @@ func Route(match *envoy_api_v2_route.RouteMatch, action *envoy_api_v2_route.Rout
 
 // RouteMatch creates a *envoy_api_v2_route.RouteMatch for the supplied *dag.Route.
 func RouteMatch(route *dag.Route) *envoy_api_v2_route.RouteMatch {
-	match := &envoy_api_v2_route.RouteMatch{
-		Headers: headerMatcher(route.HeaderConditions),
-	}
 	switch c := route.PathCondition.(type) {
 	case *dag.RegexCondition:
-		match.PathSpecifier = &envoy_api_v2_route.RouteMatch_Regex{
-			Regex: c.Regex,
-		}
+		return RouteRegex(c.Regex, route.HeaderConditions...)
 	case *dag.PrefixCondition:
-		match.PathSpecifier = &envoy_api_v2_route.RouteMatch_Prefix{
-			Prefix: c.Prefix,
+		return RoutePrefix(c.Prefix, route.HeaderConditions...)
+	default:
+		return &envoy_api_v2_route.RouteMatch{
+			Headers: headerMatcher(route.HeaderConditions),
 		}
 	}
-	return match
 }
 
 // RouteRegex returns a regex matcher.
-func RouteRegex(regex string) *envoy_api_v2_route.RouteMatch {
+func RouteRegex(regex string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
 	return &envoy_api_v2_route.RouteMatch{
 		PathSpecifier: &envoy_api_v2_route.RouteMatch_Regex{
 			Regex: regex,
 		},
+		Headers: headerMatcher(headers),
 	}
 }
 
