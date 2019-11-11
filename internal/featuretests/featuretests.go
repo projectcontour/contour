@@ -30,6 +30,7 @@ import (
 	"github.com/projectcontour/contour/apis/generated/clientset/versioned/fake"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
+	"github.com/projectcontour/contour/internal/dag"
 	cgrpc "github.com/projectcontour/contour/internal/grpc"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
@@ -86,6 +87,11 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 		Sequence:        make(chan int, 1),
 		HoldoffDelay:    time.Duration(rand.Intn(100)) * time.Millisecond,
 		HoldoffMaxDelay: time.Duration(rand.Intn(500)) * time.Millisecond,
+		Builder: dag.Builder{
+			Source: dag.KubernetesCache{
+				FieldLogger: log,
+			},
+		},
 	}
 
 	for _, opt := range opts {
