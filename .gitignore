@@ -18,9 +18,10 @@ node_modules
 _site
 .jekyll
 .jekyll-metadata
+.jekyll-cache
 .bundle
 .vscode
-
+bundler
 *.log
 *.js.map
 *.css.map

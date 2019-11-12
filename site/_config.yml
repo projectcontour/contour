@@ -120,6 +120,12 @@ exclude:
   - Runbook.docx
   - '*.sh'
   - vendor
+  - bundler/bundle/
+  - bundler/cache/
+  - bundler/gems/
+  - bundler/ruby/
+  - node_modules
+
 redcarpet:
     extensions: ["no_intra_emphasis", "tables", "autolink", "strikethrough", "with_toc_data"]
 
