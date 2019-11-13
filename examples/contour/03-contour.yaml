@@ -85,6 +85,10 @@ spec:
               fieldPath: metadata.name
       dnsPolicy: ClusterFirst
       serviceAccountName: contour
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
       volumes:
         - name: contourcert
           secret:

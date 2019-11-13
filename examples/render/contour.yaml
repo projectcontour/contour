@@ -1072,6 +1072,10 @@ spec:
               fieldPath: metadata.namespace
       restartPolicy: Never
       serviceAccountName: contour-certgen
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
   parallelism: 1
   completions: 1
   backoffLimit: 1
@@ -1320,6 +1324,10 @@ spec:
               fieldPath: metadata.name
       dnsPolicy: ClusterFirst
       serviceAccountName: contour
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
       volumes:
         - name: contourcert
           secret:
