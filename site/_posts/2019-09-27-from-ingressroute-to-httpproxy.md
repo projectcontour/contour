@@ -7,7 +7,7 @@ categories: [kubernetes]
 tags: ['IngressRoute', 'HTTPProxy', 'ingress', 'Dave Cheney']
 ---
 
-As part of the preparations to deliver Contour 1.0 at KubeCon US, [Contour 1.0.0-beta.1 (available now!)](https://github.com/projectcontour/contour/releases/tag/v1.0.0-beta.1) renamed the [IngressRoute](https://github.com/projectcontour/contour/blob/v1.0.0-beta.1/docs/ingressroute.md) CRD to [HTTPProxy](https://github.com/projectcontour/contour/blob/v1.0.0-beta.1/docs/httpproxy.md).
+As part of the preparations to deliver Contour 1.0 at KubeCon US, [Contour 1.0.0-beta.1 (available now!)][1] renamed the [IngressRoute][2] CRD to [HTTPProxy][3].
 This post explains the path from IngressRoute to HTTPProxy and why the change isn't a revolution but an evolution.
 
 ## IngressRoute is dead, long live HTTPProxy
@@ -38,13 +38,13 @@ Collectively Kubernetes cloud natives might call the configuration for our HTTP 
 The name _HTTPProxy_ reflects the desire to clarify Contour's role in the crowded Kubernetes networking space.
 
 The final issue is addressing the limitations in the IngressRoute--now HTTPProxy--object which we felt could not be solved in an backwards compatible way once we committed to a v1 of the object.
-HTTPProxy brings with it two new concepts--[inclusion](https://github.com/projectcontour/contour/blob/v1.0.0-beta.1/docs/httpproxy.md#httpproxy-inclusion) and [conditions](https://github.com/projectcontour/contour/blob/v1.0.0-beta.1/docs/httpproxy.md#conditions)--which, like the transition from IngressRoute to HTTPProxy, represent the respective evaluations of the delegation model and our limited support for prefix based routing.
+HTTPProxy brings with it two new concepts--[inclusion][4] and [conditions][5]--which, like the transition from IngressRoute to HTTPProxy, represent the respective evaluations of the delegation model and our limited support for prefix based routing.
 
 The intent of making this change now is to prepare HTTPProxy as a stable CRD for Contour users following the same backwards compatibility goals as Contour 1.0.
 With this goal in mind the IngressRoute CRD, having never made it out of beta, should be considered deprecated.
 Contour will continue to support the IngressRoute CRD up to the 1.0 release of Contour in November, however no further enhancements or bug fixes will be made over this period unless absolutely necessary.
 The plan at this stage is to remove support for the IngressRoute CRD after Contour 1.0 ships.
-We've [written a guide]({% link _guides/ingressroute-to-httpproxy.md %}) to help you transition your IngressRoute objects to HTTPProxy.
+We've [written a guide][6] to help you transition your IngressRoute objects to HTTPProxy.
 
 The next blog post in this series will delve into how to use inclusion and conditions.
 Stay tuned for that. 
@@ -54,3 +54,10 @@ Stay tuned for that.
 The final question that should be answered is, with the focus on layer 7 HTTP proxying, what is the future of Contour's TCP proxying feature?
 The short answer is Contour's layer 3/4 TCP proxying feature is not going away.
 Despite the cognitive dissonance, we're committed to supporting and enhancing Contour's TCP proxying abilities via the HTTPProxy CRD for the long term.
+
+[1]: {{site.github.repository_url}}/releases/tag/v1.0.0-beta.1
+[2]: {{site.github.repository_url}}/blob/v1.0.0-beta.1/docs/ingressroute.md
+[3]: {{site.github.repository_url}}/blob/v1.0.0-beta.1/docs/httpproxy.md
+[4]: {{site.github.repository_url}}/blob/v1.0.0-beta.1/docs/httpproxy.md#httpproxy-inclusion
+[5]: {{site.github.repository_url}}/blob/v1.0.0-beta.1/docs/httpproxy.md#conditions
+[6]: {% link _guides/ingressroute-to-httpproxy.md %}

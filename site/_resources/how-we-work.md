@@ -22,7 +22,7 @@ Your aim is to give feedback, not land the as soon as you are asked to review it
 - The smaller the change, the better the PR process works.
 Everything flows from this statement.
 
-- [Talk about what you intend to do, then do the thing you talked about.](https://dave.cheney.net/2019/02/18/talk-then-code)
+- [Talk about what you intend to do, then do the thing you talked about.][1]
 GitHub review tools suck for extended debate, if you find you’re taking past your reviewer, its a sign that more design is needed.
 
 - Log an issue or it didn’t happen. 
@@ -32,4 +32,7 @@ GitHub review tools suck for extended debate, if you find you’re taking past y
 - Before you add a feature, write a test so someone else doesn’t break your feature by accident. 
 
 - You are permitted to refactor as much as you like to achieve these goals.
-As Kent beck said, ["make the change easy, then make the easy change."](https://twitter.com/kentbeck/status/250733358307500032?lang=en)
+As Kent beck said, ["make the change easy, then make the easy change."][2]
+
+[1]: https://dave.cheney.net/2019/02/18/talk-then-code
+[2]: https://twitter.com/kentbeck/status/250733358307500032?lang=en

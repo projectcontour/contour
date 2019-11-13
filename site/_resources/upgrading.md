@@ -17,9 +17,8 @@ Contour 1.0.0 is the current stable release.
 The <code>IngressRoute</code> CRD has been deprecated and will not receive further updates. Contour 1.0.0 continues to support the IngressRoute API, however we anticipate it will be removed in the future.
 <p>
 </p>
-Please see the documentation for <a href="/docs/v1.0.0/httpproxy"><code>HTTPProxy</code></a>, which is the successor to <code>IngressRoute</code>.
+Please see the documentation for <a href="{% link docs/v1.0.0/httpproxy.md %}"><code>HTTPProxy</code></a>, which is the successor to <code>IngressRoute</code>.
 You can also read the <a href="{% link _guides/ingressroute-to-httpproxy.md %}">IngressRoute to HTTPProxy upgrade</a> guide.
-</p>
 </div>
 
 &nbsp;
@@ -34,7 +33,7 @@ Ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.11.2`.
 If the following are true for you:
 
  * Your previous installation is in the `projectcontour` namespace.
- * You are using one of the [example]({{ site.github.repository_url }}/blob/v1.0.0/examples/) deployments.
+ * You are using one of the [example][1] deployments.
  * Your cluster can take few minutes of downtime.
 
 Then the simplest way to upgrade is to delete the `projectcontour` namespace and reapply the `examples/contour` sample manifest.
@@ -47,7 +46,7 @@ $ kubectl apply -f examples/contour
 
 This will remove both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
 If you're using a `LoadBalancer` Service, deleting and recreating may change the public IP assigned by your cloud provider.
-You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address](/docs/v1.0.0/deploy-options).
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][2].
 
 ## The less easy way
 
@@ -65,7 +64,7 @@ Contour 1.0.0 ships with updated OpenAPIv3 validation schemas.
 
 Contour 1.0.0 promotes the HTTPProxy CRD to v1.
 HTTPProxy is now considered stable, and there will only be additive, compatible changes in the future.
-See the [HTTPProxy documentation](/docs/v1.0.0/httpproxy) for more information.
+See the [HTTPProxy documentation][3] for more information.
 
 ```
 $ kubectl apply -f examples/contour/01-crds.yaml
@@ -76,7 +75,7 @@ $ kubectl apply -f examples/contour/01-crds.yaml
 All the annotations with the prefix `contour.heptio.com` have been migrated to their respective `projectcontour.io` counterparts.
 The deprecated `contour.heptio.com` annotations will be recognized through the Contour 1.0 release, but are scheduled to be removed after Contour 1.0.
 
-See the [annotation documentation](/docs/v1.0.0/annotations) for more information.
+See the [annotation documentation][4] for more information.
 
 ### Update old `projectcontour.io/v1alpha1` group versions
 
@@ -90,7 +89,7 @@ As part of finalizing the HTTPProxy v1 schema, three breaking changes have been 
 If you are upgrading a cluster that you previously installed a Contour 1.0.0 release candidate, you may need to edit HTTPProxy object to conform to the upgraded schema.
 
 * The per-route prefix rewrite key, `prefixRewrite` has been removed.
-  See [#899](https://github.com/projectcontour/contour/issues/899) for the status of its replacement.
+  See [#899][5] for the status of its replacement.
 
 * The per-service health check key, `healthcheck` has moved to per-route and has been renamed `healthCheckPolicy`.
 
@@ -171,24 +170,24 @@ spec:
 As part of sunsetting the Heptio brand the `heptio-contour` namespace has been renamed to `projectcontour`.
 Contour assumes it will be deployed into the `projectcontour` namespace.
 
-If you deploy Contour into a different namespace you will need to pass `contour bootstrap --namespace=<namespace>` and update the leader election parameters in the [`contour.yaml` configuration](/docs/v1.0.0/configuration)
+If you deploy Contour into a different namespace you will need to pass `contour bootstrap --namespace=<namespace>` and update the leader election parameters in the [`contour.yaml` configuration][6]
 as appropriate.
 
 ### Split deployment/daemonset now the default
 
 We have changed the example installation to use a separate pod installation, where Contour is in a Deployment and Envoy is in a Daemonset.
-Separated pod installations separate the lifecyle of Contour and Envoy, increasing operability.
+Separated pod installations separate the lifecycle of Contour and Envoy, increasing operability.
 Because of this, we are marking the single pod install type as officially deprecated.
-If you are still running a single pod install type, please review the [`contour` example]({{ site.github.repository_url }}/blob/v1.0.0-beta.1/examples/contour/README.md) and either adapt it or use it directly.
+If you are still running a single pod install type, please review the [`contour` example][7] and either adapt it or use it directly.
 
 ### Verify leader election
 
 Contour 1.0.0 enables leader election by default.
-No specific configuration is required if you are using the [example deployment]({{ site.github.repository_url }}/blob/v1.0.0-beta.1/examples/contour/README.md).
+No specific configuration is required if you are using the [example deployment][7].
 
 Leader election requires that Contour have write access to a ConfigMap
 called `leader-elect` in the project-contour namespace.
-This is done with the [contour-leaderelection Role]({{ site.github.repository_url }}/blob/v1.0.0/examples/contour/02-rbac.yaml#L71) in the [example RBAC]({{ site.github.repository_url }}/blob/v1.0.0/examples/contour/02-rbac.yaml).
+This is done with the [contour-leaderelection Role][8] in the [example RBAC][9].
 The namespace and name of the configmap are configurable via the configuration file.
 
 The leader election mechanism no longer blocks serving of gRPC until an instance becomes the leader.
@@ -228,14 +227,14 @@ Contour's `contour serve` now requires that either TLS certificates be available
 
 All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.11.2`.
 
-Please see the [Envoy Release Notes](https://www.envoyproxy.io/docs/envoy/v1.11.2/intro/version_history) for information about issues fixed in Envoy 1.11.2.
+Please see the [Envoy Release Notes][10] for information about issues fixed in Envoy 1.11.2.
 
 ## The easy way to upgrade
 
 If the following are true for you:
 
  * Your installation is in the `heptio-contour` namespace.
- * You are using one of the [example]({{ site.github.repository_url }}/blob/v0.15.3/examples/) deployments.
+ * You are using one of the [example][11] deployments.
  * Your cluster can take few minutes of downtime.
 
 Then the simplest way to upgrade to 0.15.3 is to delete the `heptio-contour` namespace and reapply one of the example configurations.
@@ -247,7 +246,7 @@ $ kubectl apply -f examples/<your-desired-deployment>
 ```
 
 If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
-You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address](/docs/v1.0.0/deploy-options).
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][12].
 
 **Note:** If you deployed Contour into a different namespace than heptio-contour with a standard example, please delete that namespace.
 Then in your editor of choice do a search and replace for `heptio-contour` and replace it with your preferred name space and apply the updated manifest.
@@ -258,7 +257,7 @@ This section contains information for administrators who wish to apply the Conto
 
 ### Upgrade to Contour 0.15.3
 
-Due to the sun setting on the Heptio brand, from v0.15.0 onwards our images are now served from the docker hub repository [`docker.io/projectcontour/contour`](https://hub.docker.com/r/projectcontour/contour)
+Due to the sun setting on the Heptio brand, from v0.15.0 onwards our images are now served from the docker hub repository [`docker.io/projectcontour/contour`][13]
 
 Change the Contour image version to `docker.io/projectcontour/contour:v0.15.3`.
 
@@ -271,7 +270,7 @@ If you are running using the `ds-hostnet-split` example or a derivative, we stro
 
 There is a Job in the `ds-hostnet-split` directory that will use the new `contour certgen` command to generate a CA and then sign Contour and Envoy keypairs, which can also then be saved directly to Kubernetes as Secrets, ready to be mounted into your Contour and Envoy Deployments and Daemonsets.
 
-If you would like more detail, see [grpc-tls-howto.md](/docs/v1.0.0/grpc-tls-howto), which explains your options.
+If you would like more detail, see [grpc-tls-howto.md][14], which explains your options.
 
 ### Upgrade to Envoy 1.11.2
 
@@ -336,3 +335,18 @@ and checking the annotations that store exact details using
 ```
 $ kubectl get configmap -n heptio-contour -o yaml contour
 ```
+
+[1]: {{site.github.repository_url}}/blob/v1.0.0/examples
+[2]: {% link docs/v1.0.0/deploy-options.md %}
+[3]: {% link docs/v1.0.0/httpproxy.md %}
+[4]: {% link docs/v1.0.0/annotations.md %}
+[5]: {{site.github.repository_url}}/issues/899
+[6]: {% link docs/v1.0.0/configuration.md %}
+[7]: {{site.github.repository_url}}/blob/v1.0.0/examples/contour/README.md
+[8]: {{site.github.repository_url}}/blob/v1.0.0/examples/contour/02-rbac.yaml#L71
+[9]: {{site.github.repository_url}}/blob/v1.0.0/examples/contour/02-rbac.yaml
+[10]: https://www.envoyproxy.io/docs/envoy/v1.11.2/intro/version_history
+[11]: {{site.github.repository_url}}/blob/v0.15.3/examples/
+[12]: {% link docs/v1.0.0/deploy-options.md %}
+[13]: https://hub.docker.com/r/projectcontour/contour
+[14]: {% link docs/v1.0.0/grpc-tls-howto.md %}

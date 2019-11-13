@@ -25,4 +25,6 @@ Furthermore, as it stands today, the Ingress API is not suitable for clusters th
 
 The HTTPProxy custom resource is an attempt to solve these issues with an API that focuses on providing first-class support for HTTP(S) routing configuration instead of using annotations.
 More importantly, the HTTPProxy CRD is designed with inclusion in mind, a feature that enables administrators to configure top-level ingress settings (for example, which virtual hosts are available to each team), while delegating the lower-level configuration (for example, the mapping between paths and backend services) to each development team.
-More information about the HTTPProxy API can be found [in the HTTPProxy documentation]({% link docs/v1.0.0/httpproxy.md %}).
+More information about the HTTPProxy API can be found [in the HTTPProxy documentation][1].
+
+[1]: {% link docs/v1.0.0/httpproxy.md %}

@@ -70,9 +70,11 @@ All PRs should reference the issue they relate to either by one of the following
 
 If there is no `Updates` or `Fixes` line in the PR the review will, with the exception of trivial or self evident fixes, be deferred.
 
-[Further reading](https://dave.cheney.net/2019/02/18/talk-then-code)
+[Further reading][1]
 
 ## Help wanted and good first issues
 
 The `help wanted` and `good first issue` tags _may_ be assigned to issues _in the current milestone_.
 To limit the amount of work in progress, `help wanted` and `good first issue` should not be used for issues outside the current milestone.
+
+[1]: https://dave.cheney.net/2019/02/18/talk-then-code

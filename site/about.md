@@ -68,5 +68,3 @@ Envoy provides two mechanisms for reconfiguration: CDS and hot reload. Hot reloa
 ## Security Concerns
 
 Contour implicitly trusts any Ingress object on the API. We are considering a check that the Ingress and Service objects point to valid cluster resources -- in other words, that someone hasn't dumped an Ingress in there to siphon traffic out of the cluster.
-
-

@@ -14,7 +14,7 @@ The outcome of this is that we will have three Secrets available in the `project
 
 ### Ways you can get the certificates into your cluster
 
-- Deploy the Job from [certgen.yaml]({{ site.github.repository_url }}/tree/master/examples/contour/02-job-certgen.yaml).
+- Deploy the Job from [certgen.yaml][1].
 This will run `contour certgen --kube` for you.
 - Run `contour certgen --kube` locally.
 - Run the manual procedure below.
@@ -48,7 +48,7 @@ Then, we need to generate a keypair for Contour. First, we make a new private ke
 $ openssl genrsa -out certs/contourkey.pem 2048
 ```
 
-Then, we create a CSR and have our CA sign the CSR and issue a cert. This uses the file [_integration/cert-contour.ext]({{ site.github.repository_url }}/tree/master/_integration/cert-contour.ext), which ensures that at least one of the valid names of the certificate is the bareword `contour`. This is required for the handshake to succeed, as `contour bootstrap` configures Envoy to pass this as the SNI for the connection.
+Then, we create a CSR and have our CA sign the CSR and issue a cert. This uses the file [_integration/cert-contour.ext][2], which ensures that at least one of the valid names of the certificate is the bareword `contour`. This is required for the handshake to succeed, as `contour bootstrap` configures Envoy to pass this as the SNI for the connection.
 
 ```
 $ openssl req -new -key certs/contourkey.pem \
@@ -90,7 +90,7 @@ $ openssl x509 -req -in certs/envoy.csr \
     -extfile _integration/cert-envoy.ext
 ```
 
-Like the contour cert, this CSR uses the file [_integration/cert-envoy.ext]({{ site.github.repository_url }}/tree/master/_integration/cert-envoy.ext). However, in this case, there are no special names required.
+Like the contour cert, this CSR uses the file [_integration/cert-envoy.ext][3]. However, in this case, there are no special names required.
 
 ### Putting the certs in the cluster
 
@@ -112,4 +112,9 @@ Note that we don't put the CA **key** into the cluster, there's no reason for th
 # Conclusion
 
 Once this process is done, the certificates will be present as Secrets in the `projectcontour` namespace, as required by
-[examples/contour]({{site.github.repository_url}}/tree/master/examples/contour).
+[examples/contour][4].
+
+[1]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/02-job-certgen.yaml
+[2]: {{site.github.repository_url}}/tree/{{page.version}}/_integration/cert-contour.ext
+[3]: {{site.github.repository_url}}/tree/{{page.version}}/_integration/cert-envoy.ext
+[4]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour

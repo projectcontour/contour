@@ -11,8 +11,8 @@ Contour allows you to choose from a set of JSON fields that will be expanded int
 There is a default set of fields if you enable JSON logging, and you may customize which fields you log.
 Custom fields are not currently possible, however, we welcome PRs on the field list.
 
-The canonical location for the current field list is at [JSONFields]( https://godoc.org/github.com/projectcontour/contour/internal/envoy#JSONFields).
-The default list of fields is available at [DefaultFields](https://godoc.org/github.com/projectcontour/contour/internal/envoy#DefaultFields)
+The canonical location for the current field list is at [JSONFields][1].
+The default list of fields is available at [DefaultFields][2]
 
 ## Enabling the feature
 
@@ -24,10 +24,10 @@ To enable the feature you have two options:
 ## Customizing logged fields
 
 To customize the logged fields, add a `json-fields` list of strings to your config file.
-These strings must be options from the [list of default fields](https://godoc.org/github.com/projectcontour/contour/internal/envoy#DefaultFields).
-Field names not in that list will be silently dropped. (This is not ideal, watch [#1507](https://github.com/projectcontour/contour/issues/1507) for updates.)
+These strings must be options from the [list of default fields][2].
+Field names not in that list will be silently dropped. (This is not ideal, watch [#1507][3] for updates.)
 
-The [example config file]({{site.github.repository_url}}/blob/{{ site.github.latest_release.tag_name }}/examples/contour/01-contour-config.yaml) contains the full list of fields as well.
+The [example config file][4] contains the full list of fields as well.
 
 ## Sample configuration file
 
@@ -58,3 +58,8 @@ json-fields:
   - "user_agent"
   - "x_forwarded_for"
 ```
+
+[1]: https://godoc.org/github.com/projectcontour/contour/internal/envoy#JSONFields
+[2]: https://godoc.org/github.com/projectcontour/contour/internal/envoy#DefaultFields
+[3]: {{site.github.repository_url}}/issues/1507
+[4]: {{site.github.repository_url}}/blob/{{site.github.latest_release.tag_name}}/examples/contour/01-contour-config.yaml

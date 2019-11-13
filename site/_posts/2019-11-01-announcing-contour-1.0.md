@@ -10,7 +10,7 @@ tags: ['Contour Team', 'release']
 
 _Authored by Dave Cheney, Steve Sloka, Nick Young, and James Peach_
 
-Exactly two years ago, we launched a [new open-source ingress controller](https://github.com/projectcontour/contour/commit/788feabc67c4da76cd1ae3c9ac1998b43cb0e2f3). Contour was the first ingress controller to take advantage of the growing popularity of Envoy to create a layer 7 load-balancing solution for Kubernetes users. Contour was also the first Ingress controller to make use of Envoy’s gRPC API, which allowed changes to be streamed directly from Kubernetes.
+Exactly two years ago, we launched a [new open-source ingress controller][1]. Contour was the first ingress controller to take advantage of the growing popularity of Envoy to create a layer 7 load-balancing solution for Kubernetes users. Contour was also the first Ingress controller to make use of Envoy’s gRPC API, which allowed changes to be streamed directly from Kubernetes.
 
 Today, we are very happy to announce **Contour 1.0**. We’ve come a long way since that first commit two years ago! This blog post takes stock of our journey to Contour 1.0 and describes some of the new features in this milestone release.
 
@@ -57,7 +57,7 @@ We’re also mindful of the ever-present feature backlog we’ve accrued during 
 
 We’re immensely grateful for all the community contributions that help make Contour even better! The lifeblood of any open source project is its community.
 
-![Contour 1.0 stats](/img/contour-1.0/contour-1.0-stats.png)
+![Contour 1.0 stats][2]
 
 The sign of a strong community is how users communicate through Slack and GitHub Issues as well as make contributions back to the project. We couldn’t have made it to 1.0 without you. **Thank you!**
 
@@ -140,9 +140,5 @@ The sign of a strong community is how users communicate through Slack and GitHub
 
 _**Note**: Stats above were taken on  Oct. 31, 2019._
 
-## Join the Contour Community!
-
-* Join the [Contour Community Meetings](https://projectcontour.io/community/), every third Tuesday at 6 PM Eastern Time / 3 PM Pacific Time / Wednesday at 8 AM Australian Eastern Time.
-* Get updates on Twitter ([@projectcontour](https://twitter.com/projectcontour))
-* Chat with us in [#contour on the Kubernetes Slack](https://kubernetes.slack.com/messages/contour)
-* Collaborate with us on [GitHub](https://github.com/projectcontour/contour)
+[1]: {{site.github.repository_url}}/commit/788feabc67c4da76cd1ae3c9ac1998b43cb0e2f3
+[2]: {% link img/contour-1.0/contour-1.0-stats.png %}

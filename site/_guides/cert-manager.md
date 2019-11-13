@@ -7,7 +7,7 @@ This tutorial shows you how to securely deploy an HTTPS web application on a Kub
 
 - Kubernetes
 - Contour, as the Ingress controller
-- [JetStack's cert-manager][1] to provision TLS certificates from [the Let's Encrypt project][5]
+- [JetStack's cert-manager][1] to provision TLS certificates from [the Let's Encrypt project][6]
 
 ## Prerequisites
 
@@ -103,7 +103,7 @@ httpbin-67ff6dd458-sfxkb     1/1       Running   0          19d
 
 Then type the DNS name you set up in the previous step into a web browser, for example `http://gke.davecheney.com/`. You should see something like:
 
-![httpbin screenshot][httpbinhomepage]
+![httpbin screenshot][8]
 
 You can delete the httpbin service now, or at any time, by running:
 
@@ -515,12 +515,12 @@ $ curl https://httpbin.davecheney.com/get
 }
 ```
 
-![httpbin.davecheney.com screenshot][httpbin]
+![httpbin.davecheney.com screenshot][9]
 
 ## Making cert-manager work with HTTPProxy
 
 cert-manager currently does not have a way to interact with HTTPProxy objects in order to respond to the HTTP01 challenge correctly.
-(See [#950](https://github.com/projectcontour/contour/issues/950) and [#951](https://github.com/projectcontour/contour/issues/951) for details.)
+(See [#950][10] and [#951][11] for details.)
 cert-manager does this by creating a new, temporary Ingress object that will direct requests from Let's Encrypt to temporary pods called 'solver pods'.
 These pods know how to respond to Let's Encrypt's challenge process for verifying you control the domain you're issuing certificates for.
 This means that cert-manager can't be *directly* used for generating certificates for HTTPProxy configuration.
@@ -601,7 +601,7 @@ $ curl https://httpbinproxy.davecheney.com/get
 
 ### Caveats
 
-This method is a workaround until we can deliver the changes in [#950](https://github.com/projectcontour/contour/issues/950) and [#951](https://github.com/projectcontour/contour/issues/951).
+This method is a workaround until we can deliver the changes in [#950][10] and [#951][11].
 
 The dummy Ingress record exists only to hold the annotations `ingress-shim` requires.
 Because it does not include the `ingress-class: contour` annotation, Contour will not see it and so the configuration of the Ingress does not matter, except that it is valid enough for ingress-shim to use.
@@ -645,13 +645,15 @@ $ curl -v http://httpbin.davecheney.com/get
 * Connection #0 to host httpbin.davecheney.com left intact
 ```
 
-[0]: https://github.com/projectcontour/contour/
+[0]: {{site.github.repository_url}}
 [1]: https://github.com/jetstack/cert-manager
 [2]: https://letsencrypt.org/docs/rate-limits/
 [3]: http://httpbin.org/
 [4]: https://docs.cert-manager.io/en/latest/getting-started/install/kubernetes.html
 [5]: https://github.com/jetstack/cert-manager/releases/download/v0.11.0/cert-manager.yaml
-[httpbinhomepage]: /img/cert-manager/httpbinhomepage.png
-[httpbin]: /img/cert-manager/httpbin.png
-[5]: https://letsencrypt.org/getting-started/
-[7]: {% link docs/v1.0.0/deploy-options.md %}#get-your-hostname-or-ip-address
+[6]: https://letsencrypt.org/getting-started/
+[7]: /docs/{{site.latest}}/deploy-options/#get-your-hostname-or-ip-address
+[8]: {% link /img/cert-manager/httpbinhomepage.png %}
+[9]: {% link /img/cert-manager/httpbin.png %}
+[10]: {{site.github.repository_url}}/issues/950
+[11]: {{site.github.repository_url}}/issues/951
