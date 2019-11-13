@@ -161,7 +161,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-      automountServiceAccountToken: false
+      serviceAccountName: envoy
       volumes:
         - name: envoy-config
           emptyDir: {}
