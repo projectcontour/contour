@@ -13,6 +13,7 @@ Enabling TLS support requires Contour version 0.3 or later. You must also add an
 
 ## Configuring TLS with Contour on an ELB
 
-If you deploy behind an AWS Elastic Load Balancer, see [EC2 ELB PROXY protocol support]({% link _guides/proxy-proto.md %}) for special instructions.
+If you deploy behind an AWS Elastic Load Balancer, see [EC2 ELB PROXY protocol support][2] for special instructions.
 
-[1]: {{ site.github.repository_url }}/blob/master/examples/contour/03-contour.yaml#L45
+[1]: {{site.github.repository_url}}/blob/{{site.github.latest_release.tag_name}}/examples/contour/03-contour.yaml/#L45
+[2]: {% link _guides/proxy-proto.md %}

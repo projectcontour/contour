@@ -1,7 +1,7 @@
 <div id="toc"></div>
 
-The [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) object was added to Kubernetes in version 1.1 to describe properties of a cluster-wide reverse HTTP proxy.
-Since that time, the Ingress object has not progressed beyond the beta stage, and its stagnation inspired an [explosion of annotations](https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md) to express missing properties of HTTP routing.
+The [Ingress][1] object was added to Kubernetes in version 1.1 to describe properties of a cluster-wide reverse HTTP proxy.
+Since that time, the Ingress object has not progressed beyond the beta stage, and its stagnation inspired an [explosion of annotations][2] to express missing properties of HTTP routing.
 
 The goal of the `IngressRoute` Custom Resource Definition (CRD) is to expand upon the functionality of the Ingress API to allow for a richer user experience as well as solve shortcomings in the original design.
 
@@ -126,7 +126,7 @@ ingressroute "basic" deleted
 
 ## IngressRoute API Specification
 
-There are a number of [working examples](https://github.com/projectcontour/contour/blob/{{ site.github.latest_release.tag_name }}/examples/example-workload/ingressroute) of IngressRoute objects in the `examples/example-workload` directory.
+There are a number of [working examples][3] of IngressRoute objects in the `examples/example-workload` directory.
 We will use these examples as a mechanism to describe IngressRoute API functionality.
 
 ### Virtual Host Configuration
@@ -482,7 +482,7 @@ This refers to the time that spans between the point at which complete client re
 - `timeoutPolicy.request` This field can be any positive time period or "infinity". 
 The time period of **0s** will also be treated as infinity. 
 By default, Envoy has a 15 second timeout for a backend service to respond.
-More information can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout).
+More information can be found in [Envoy's documentation][4].
 
 - `retryPolicy`: A retry will be attempted if the server returns an error code in the 5xx range, or if the server takes more than `retryPolicy.perTryTimeout` to process a request. 
     - `retryPolicy.count` specifies the maximum number of retries allowed. This parameter is optional and defaults to 1.
@@ -499,7 +499,7 @@ The following list are the options available to choose from:
 - `WeightedLeastRequest`: The least request strategy uses an O(1) algorithm which selects two random healthy Endpoints and picks the Endpoint which has fewer active requests. Note: This algorithm is simple and sufficient for load testing. It should not be used where true weighted least request behavior is desired.
 - `Random`: The random strategy selects a random healthy Endpoints.
 
-More information on the load balancing strategy can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/v1.11.2/intro/arch_overview/upstream/load_balancing/overview).
+More information on the load balancing strategy can be found in [Envoy's documentation][5].
 
 The following example IngressRoute defines the strategy for Service `s2-strategy` as `WeightedLeastRequest`.
 Service `s1-strategy` does not have an explicit strategy defined so it will use the strategy of `RoundRobin`.
@@ -891,7 +891,7 @@ IngressRoutes with a defined `virtualhost` field that are not in one of the allo
 
 Additionally, when defined, Contour will only watch for Kubernetes secrets in these namespaces ignoring changes in all other namespaces.
 Proper RBAC rules should also be created to restrict what namespaces Contour has access matching the namespaces passed to the command line flag.
-An example of this is included in the [examples directory][1] and shows how you might create a namespace called `root-ingressroutes`.
+An example of this is included in the [examples directory][6] and shows how you might create a namespace called `root-ingressroutes`.
 
 > **NOTE: The restricted root namespace feature is only supported for IngressRoute CRDs.
 > `--ingressroute-root-namespaces` does not affect the operation of `v1beta1.Ingress` objects**
@@ -1005,4 +1005,9 @@ Some examples of invalid configurations that Contour provides statuses for:
 - Delegation chain produces a cycle.
 - Root IngressRoute does not specify fqdn.
 
-[1]: {{ site.github.repository_url }}/blob/master/examples/root-rbac
+[1]: https://kubernetes.io/docs/concepts/services-networking/ingress/
+[2]: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
+[3]: {{site.github.repository_url}}/tree/{{page.version}}/examples/example-workload/ingressroute
+[4]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout
+[5]: https://www.envoyproxy.io/docs/envoy/v1.11.2/intro/arch_overview/upstream/load_balancing/overview
+[6]: {{site.github.repository_url}}/tree/{{page.version}}/examples/root-rbac

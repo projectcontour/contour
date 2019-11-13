@@ -5,13 +5,13 @@ layout: page
 
 This document describes the differences between IngressRoute and HTTPProxy.
 It is intended for Contour users who have existing IngressRoute resources they wish to migrate to HTTPProxy.
-It is not intended a comprehensive documentation of HTTPProxy, for that please see the [`HTTPProxy` documentation](/docs/v1.0.0/httpproxy).
+It is not intended a comprehensive documentation of HTTPProxy, for that please see the [`HTTPProxy` documentation][1].
 
 _Note: IngressRoute is deprecated and will be removed after Contour 1.0 ships in November._
 
 ## Group, Version and Kind changes
 
-As part of the sunseting of the Heptio brand, `HTTPProxy` has moved to the `projectcontour.io` group.
+As part of the sunsetting of the Heptio brand, `HTTPProxy` has moved to the `projectcontour.io` group.
 For Contour 1.0.0-rc.1 the version is `v1`.
 We expect this to change in forthcoming release candidates.
 
@@ -140,7 +140,7 @@ spec:
 
 HTTPProxy offers additional ways to match incoming requests to routes.
 This document covers the conversion between the routing offered in IngressRoute and HTTPProxy.
-For a broader discussion of HTTPProxy routing, see the [Routing section of the HTTPProxy documentation](/docs/v1.0.0/httpproxy).
+For a broader discussion of HTTPProxy routing, see the [HTTPProxy documentation][1].
 
 Before:
 
@@ -375,7 +375,7 @@ As we explored the design of the next revision of IngressRoute the tight couplin
 
 This Gordian Knot was severed by decoupling the inclusion of one document into its parent from the facility to place restrictions on what route matching conditions could be specified in that document.
 The former we call _inclusion_, the latter are known as _conditions_.
-This section discusses conversion from delegation to inclusion, please see the [`HTTPProxy` documentation](/docs/v1.0.0/httpproxy) for a discussion of conditions.
+This section discusses conversion from delegation to inclusion, please see the [HTTPProxy documentation][1] for a discussion of conditions.
 
 Before:
 
@@ -493,3 +493,5 @@ No change.
 ### Status reporting
 
 Status reporting on HTTPProxy objects is similar in scope and function to IngressRoute status.
+
+[1]: {% link /docs/v1.0.0/httpproxy.md %}

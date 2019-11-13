@@ -37,8 +37,8 @@ A sample deployment of Prometheus and Alertmanager is provided that uses tempora
 
 #### Stateful Deployment
 
- A stateful deployment of Prometheus should use persistent storage with [Persistent Volumes and Persistent Volume Claims](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) to maintain a correlation between a data volume and the Prometheus Pod. 
- Persistent volumes can be static or dynamic and depends on the backend storage implementation utilized in environment in which the cluster is deployed. For more information, see the [Kubernetes documentation on types of persistent volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes).
+ A stateful deployment of Prometheus should use persistent storage with [Persistent Volumes and Persistent Volume Claims][1] to maintain a correlation between a data volume and the Prometheus Pod.
+ Persistent volumes can be static or dynamic and depends on the backend storage implementation utilized in environment in which the cluster is deployed. For more information, see the [Kubernetes documentation on types of persistent volumes][2].
 
 #### Quick start
 
@@ -87,3 +87,6 @@ $ kubectl port-forward $(kubectl get pods -l app=grafana -n projectcontour-monit
 
 then go to `http://localhost:3000` in your browser.
 The username and password are from when you defined the Grafana secret in the previous step.
+
+[1]: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+[2]: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes

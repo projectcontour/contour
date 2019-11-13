@@ -1,7 +1,7 @@
 <div id="toc"></div>
 
-The [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) object was added to Kubernetes in version 1.1 to describe properties of a cluster-wide reverse HTTP proxy.
-Since that time, the Ingress object has not progressed beyond the beta stage, and its stagnation inspired an [explosion of annotations](https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md) to express missing properties of HTTP routing.
+The [Ingress][1] object was added to Kubernetes in version 1.1 to describe properties of a cluster-wide reverse HTTP proxy.
+Since that time, the Ingress object has not progressed beyond the beta stage, and its stagnation inspired an [explosion of annotations][2] to express missing properties of HTTP routing.
 
 The goal of the `HTTPProxy` (previously `IngressRoute`) Custom Resource Definition (CRD) is to expand upon the functionality of the Ingress API to allow for a richer user experience as well addressing the limitations of the latter's use in multi tenent environments.
 
@@ -118,7 +118,7 @@ httpproxy "basic" deleted
 
 ## HTTPProxy API Specification
 
-There are a number of [working examples][2] of HTTPProxy objects in the `examples/example-workload` directory.
+There are a number of [working examples][3] of HTTPProxy objects in the `examples/example-workload` directory.
 
 We will use these examples as a mechanism to describe HTTPProxy API functionality.
 
@@ -536,17 +536,17 @@ This refers to the time that spans between the point at which complete client re
 The time period of **0s** will also be treated as infinity.
 This timeout covers the time from the *end of the client request* to the *end of the upstream response*.
 By default, Envoy has a 15 second value for this timeout.
-More information can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout).
+More information can be found in [Envoy's documentation][4].
 - `timeoutPolicy.idle` This field can be any positive time period or "infinity".
 The time period of **0s** will also be treated as infinity.
 By default, there is no per-route idle timeout.
 Note that the default connection manager idle timeout of 5 minutes will apply if this is not set.
 
-TimeoutPolicy durations are expressed as per the format specified in the [ParseDuration documentation](https://godoc.org/time#ParseDuration).
+TimeoutPolicy durations are expressed as per the format specified in the [ParseDuration documentation][5].
 Example input values: "300ms", "5s", "1m". Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
 The string 'infinity' is also a valid input and specifies no timeout.
 
-More information can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-idle-timeout)
+More information can be found in [Envoy's documentation][6]
 - `retryPolicy`: A retry will be attempted if the server returns an error code in the 5xx range, or if the server takes more than `retryPolicy.perTryTimeout` to process a request.
   - `retryPolicy.count` specifies the maximum number of retries allowed. This parameter is optional and defaults to 1.
   - `retryPolicy.perTryTimeout` specifies the timeout per retry. If this field is greater than the request timeout, it is ignored. This parameter is optional.
@@ -561,7 +561,7 @@ The following list are the options available to choose from:
 - `WeightedLeastRequest`: The least request strategy uses an O(1) algorithm which selects two random healthy Endpoints and picks the Endpoint which has fewer active requests. Note: This algorithm is simple and sufficient for load testing. It should not be used where true weighted least request behavior is desired.
 - `Random`: The random strategy selects a random healthy Endpoints.
 
-More information on the load balancing strategy can be found in [Envoy's documentation](https://www.envoyproxy.io/docs/envoy/v1.11.2/intro/arch_overview/upstream/load_balancing/overview).
+More information on the load balancing strategy can be found in [Envoy's documentation][7].
 
 The following example defines the strategy for Service `s2-strategy` as `WeightedLeastRequest`.
 Service `s1-strategy` does not have an explicit strategy defined so it will use the strategy of `RoundRobin`.
@@ -761,7 +761,7 @@ Because the path is not necessarily used as the only key, the route space can be
 
 ### Conditions and Inclusion
 
-Like Routes, Inclusion may specify a set of [conditions](#conditions).
+Like Routes, Inclusion may specify a set of [conditions][8].
 These conditions are added to any conditions on the routes included.
 This process is recursive.
 
@@ -1046,7 +1046,7 @@ The CA certificate bundle for the backend service should be supplied in a Kubern
 The referenced Secret must be of type "Opaque" and have a data key named `ca.crt`.
 This data value must be a PEM-encoded certificate bundle.
 
-In addition to the CA certificate and the subject name, the Kubernetes service must also be annotated with a Contour specific annotation: `projectcontour.io/upstream-protocol.tls: <port>` ([see annotations section](/docs/v1.0.0/annotations))
+In addition to the CA certificate and the subject name, the Kubernetes service must also be annotated with a Contour specific annotation: `projectcontour.io/upstream-protocol.tls: <port>` ([see annotations section][9])
 
 _Note: This annotation is applied to the Service not the Ingress or HTTPProxy object._
 
@@ -1104,5 +1104,12 @@ Some examples of invalid configurations that Contour provides statuses for:
 - Multiple header conditions of type "exact match" with the same header key.
 
 
-[1]: {{ site.github.repository_url }}/blob/master/examples/root-rbac/rbac.yaml
-[2]: {{ site.github.repository_url }}/tree/master/examples/example-workload/httpproxy
+ [1]: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ [2]: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
+ [3]: {{site.github.repository_url}}/tree/{{page.version}}/examples/example-workload/httpproxy
+ [4]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout
+ [5]: https://godoc.org/time#ParseDuration
+ [6]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-idle-timeout
+ [7]: https://www.envoyproxy.io/docs/envoy/v1.11.2/intro/arch_overview/upstream/load_balancing/overview
+ [8]: #conditions
+ [9]: {% link docs/v1.0.0/annotations.md %}

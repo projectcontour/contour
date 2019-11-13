@@ -28,7 +28,7 @@ This page describes the compatibility matrix of Contour and Envoy versions.
 ## Envoy extensions
 
 Contour requires the following extensions.
-If you are using the image recommended in our [example deployment](https://github.com/projectcontour/contour/tree/{{ site.github.latest_release.tag_name }}/examples/contour) no action is required.
+If you are using the image recommended in our [example deployment][4] no action is required.
 If you are providing your own Envoy it must be compiled with the following extensions:
 
 - `access_loggers`: `envoy.file_access_log`,`envoy.http_grpc_access_log`,`envoy.tcp_grpc_access_log`
@@ -42,3 +42,4 @@ If you are providing your own Envoy it must be compiled with the following exten
 [1]: https://groups.google.com/forum/#!topic/envoy-announce/ZLchtraPYVk
 [2]: https://groups.google.com/forum/#!topic/envoy-announce/Zo3ZEFuPWec
 [3]: https://groups.google.com/d/msg/envoy-announce/3-8S992PUV4/t-egdelVDwAJ
+[4]: {{site.github.repository_url}}/tree/{{site.github.latest_release.tag_name}}/examples/contour

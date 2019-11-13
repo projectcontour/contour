@@ -11,7 +11,7 @@ This page will help you get up and running with Contour.
 
 Before you start you will need:
 
-- A Kubernetes cluster that supports Service objects of `type: LoadBalancer` ([AWS Quickstart cluster](https://aws.amazon.com/quickstart/architecture/vmware-kubernetes/) or Minikube, for example)
+- A Kubernetes cluster that supports Service objects of `type: LoadBalancer` ([AWS Quickstart cluster][0] or Minikube, for example)
 - `kubectl` configured with admin access to your cluster
 - RBAC must be enabled on your cluster.
 
@@ -35,7 +35,7 @@ For information on configuring TLS for gRPC between Contour and Envoy, see [our 
 
 ### Example workload
 
-If you don't have an application ready to run with Contour, you can explore with [kuard](https://github.com/kubernetes-up-and-running/kuard).
+If you don't have an application ready to run with Contour, you can explore with [kuard][9].
 
 Run:
 
@@ -66,7 +66,7 @@ How you configure DNS depends on your platform:
 
 For more deployment options, including uninstalling Contour, see the [deployment documentation][1].
 
-See also the Kubernetes documentation for [Services](https://kubernetes.io/docs/concepts/services-networking/service/), [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/), and [HTTPProxy][2].
+See also the Kubernetes documentation for [Services][10], [Ingress][11], and [HTTPProxy][2].
 
 The [detailed documentation][3] provides additional information, including an introduction to Envoy and an explanation of how Contour maps key Envoy concepts to Kubernetes.
 
@@ -74,13 +74,18 @@ We've also got [a FAQ][4] for short-answer questions and conceptual stuff that d
 
 ## Troubleshooting
 
-If you encounter issues, review the [troubleshooting docs][5], [file an issue][6], or talk to us on the [#contour channel](https://kubernetes.slack.com/messages/contour) on the Kubernetes Slack server.
+If you encounter issues, review the [troubleshooting docs][5], [file an issue][6], or talk to us on the [#contour channel][12] on the Kubernetes Slack server.
 
-[1]: /docs/v1.0.0/deploy-options
-[2]: /docs/v1.0.0/httpproxy
+[0]: https://aws.amazon.com/quickstart/architecture/vmware-kubernetes
+[1]: {% link docs/v1.0.0/deploy-options.md %}
+[2]: {% link docs/v1.0.0/httpproxy.md %}
 [3]: /docs
 [4]: {% link _resources/faq.md %}
-[5]: /docs/v1.0.0/troubleshooting
-[6]: {{ site.github.repository_url }}/issues
-[7]: /guides/tls
-[8]: /docs/v1.0.0/grpc-tls-howto
+[5]: {% link docs/v1.0.0/troubleshooting.md %}
+[6]: {{site.github.repository_url}}/issues
+[7]: {% link _guides/tls.md %}
+[8]: {% link docs/v1.0.0/grpc-tls-howto.md %}
+[9]: https://github.com/kubernetes-up-and-running/kuard
+[10]:https://kubernetes.io/docs/concepts/services-networking/service
+[11]:https://kubernetes.io/docs/concepts/services-networking/ingress
+[12]: {{site.footer_social_links.Slack.url}}

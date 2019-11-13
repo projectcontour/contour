@@ -9,17 +9,17 @@ categories: [kubernetes]
 tags: ['Contour Team', 'Steve Sloka', 'tutorial']
 ---
 
-In our previous [blog post](https://projectcontour.io/from-ingressroute-to-httpproxy/), Dave Cheney walked through Contour’s evolution from `IngressRoute` to `HTTPProxy` and explained how & why the move happened.
+In our previous [blog post][1], Dave Cheney walked through Contour’s evolution from `IngressRoute` to `HTTPProxy` and explained how & why the move happened.
 
 Now with `HTTPProxy`, Contour allows for additional routing configuration outside of just supporting a `path prefix`.
 
 This post demonstrates a practical implementation of `HTTPProxy` and reviews some examples that explain how you can use it in your cluster today. 
 
-[![img](/img/posts/kind-contour-video.png)](https://youtu.be/YA82A4Rcs_A)  
+[![img][2]][3]
 *Here's a quick video demonstration walking through the rest of the blog post.*
 
 ## Prerequisites
-If you’d like to follow along in your own cluster, you’ll need a working Kubernetes cluster as well as Contour deployed. There are a number of ways to get these up and working. A simple way to test this locally is to use Kubernetes in Docker (Kind); you can check out our previous blog post on how to get this up and running on your local machine: [https://projectcontour.io/kindly-running-contour/][https://projectcontour.io/kindly-running-contour/]
+If you’d like to follow along in your own cluster, you’ll need a working Kubernetes cluster as well as Contour deployed. There are a number of ways to get these up and working. A simple way to test this locally is to use Kubernetes in Docker (Kind); you can check out our previous blog post on how to get this up and running on your local machine: [https://projectcontour.io/kindly-running-contour/][4]
 
 ## Demo Time
 Let’s walk through a simple scenario to quickly demonstrate how these new features work with `HTTPProxy`. This demo will progress through various features of `HTTPProxy` by starting off with a set of prerequisite services and deployments. Then it will move to implement `conditions` on routes to further specify request route matching. Finally, we’ll introduce `includes`, which will allow us to delegate path and header conditions to other `HTTPProxy` resources in different namespaces. 
@@ -350,12 +350,7 @@ Request:
     http://local.projectcontour.io/blog/info
 ```
 
-## Join the Contour Community!
-Please reach out in one of the following ways and let us know how you are using Contour, if you run into a problem, or want to do more:
-
-- Get updates on Twitter [@projectcontour](https://twitter.com/projectcontour)
-- Chat with us in [#contour on the Kubernetes Slack](https://kubernetes.slack.com/messages/contour)
-- Collaborate with us on [GitHub](https://github.com/projectcontour/contour)
-
-
-[https://projectcontour.io/kindly-running-contour/]: https://projectcontour.io/kindly-running-contour/
+[1]: {% post_url 2019-09-27-from-ingressroute-to-httpproxy %}
+[2]: {% link img/posts/kind-contour-video.png %}
+[3]: https://youtu.be/YA82A4Rcs_A
+[4]: {% post_url 2019-07-11-kindly-running-contour %}

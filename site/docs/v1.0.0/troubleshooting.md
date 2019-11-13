@@ -30,7 +30,7 @@ Then navigate to `http://127.0.0.1:9001/` to access the admin interface for the 
 
 ## Accessing Contour's /debug/pprof service
 
-Contour exposes the [net/http/pprof](https://golang.org/pkg/net/http/pprof/) handlers for `go tool pprof` and `go tool trace` by default on `127.0.0.1:6060`.
+Contour exposes the [net/http/pprof][1]handlers for `go tool pprof` and `go tool trace` by default on `127.0.0.1:6060`.
 This service is useful for profiling Contour.
 To access it from your workstation use `kubectl port-forward` like so,
 
@@ -43,8 +43,8 @@ kubectl -n projectcontour port-forward $CONTOUR_POD 6060
 
 ## Visualizing Contour's internal directed acyclic graph (DAG)
 
-Contour models its configuration using a DAG, which can be visualized through a debug endpoint that outputs the DAG in [DOT](https://en.wikipedia.org/wiki/DOT_(graph_description_language)) format.
-To visualize the graph, you must have [`graphviz`](https://graphviz.gitlab.io/) installed on your system.
+Contour models its configuration using a DAG, which can be visualized through a debug endpoint that outputs the DAG in [DOT][2] format.
+To visualize the graph, you must have [`graphviz`][3] installed on your system.
 
 To download the graph and save it as a PNG:
 
@@ -60,7 +60,7 @@ curl localhost:6060/debug/dag | dot -T png > contour-dag.png
 The following is an example of a DAG that maps `http://kuard.local:80/` to the
 `kuard` service in the `default` namespace:
 
-![Sample DAG](/img/kuard-dag.png "Sample DAG")
+![Sample DAG][4]
 
 ## Interrogate Contour's gRPC API
 
@@ -82,4 +82,10 @@ Replace `contour cli lds` with `contour cli rds` for RDS, `contour cli cds` for 
 
 ## I've deployed on Minikube or kind and nothing seems to work
 
-See [the deployment documentation](/docs/v1.0.0/deploy-options) for some tips on using these two deployment options successfully.
+See [the deployment documentation][5] for some tips on using these two deployment options successfully.
+
+[1]: https://golang.org/pkg/net/http/pprof
+[2]: https://en.wikipedia.org/wiki/DOT
+[3]: https://graphviz.gitlab.io/
+[4]: {% link img/kuard-dag.png %}
+[5]: {% link docs/v1.0.0/deploy-options.md %}

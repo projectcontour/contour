@@ -39,6 +39,6 @@ You can now test your NLB.
   - Notice that Envoy fills out `X-Forwarded-For`, because it was the first to see the traffic directly from the browser.
 
 [1]: https://aws.amazon.com/blogs/aws/new-network-load-balancer-effortless-scaling-to-millions-of-requests-per-second/
-[2]: {% link docs/v1.0.0/deploy-options.md %}#testing-your-installation
+[2]: /docs/{{site.latest}}/deploy-options/#testing-your-installation
 [3]: https://github.com/kubernetes/kubernetes/issues/52173
-[4]: {{ site.github.repository_url }}/blob/{{ site.github.latest_release.tag_name }}/CONTRIBUTING.md
+[4]: {{site.github.repository_url}}/blob/{{site.github.latest_release.tag_name}}/CONTRIBUTING.md

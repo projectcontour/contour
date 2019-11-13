@@ -9,7 +9,7 @@ This document describes which versions of Contour are supported by the Contour t
 
 Only the latest stable release is supported.
 
-The latest stable release is identified by the [Docker tag `:latest`](/docs/v1.0.0/tagging).
+The latest stable release is identified by the [Docker tag `:latest`][1].
 `:latest` is an alias for {{ site.github.latest_release.tag_name }} which is the current stable release.
 
 When required we may release a patch release to address security issues, serious problems with no suitable workaround, or documentation issues.
@@ -19,3 +19,5 @@ For example, prior to a patch release version Contour 1.0.0 was the `:latest` st
 If Contour 1.0.1 is release, the `:latest` tag will move to that version.
 
 No support is offered for major, minor, or patch releases older than the `:latest` stable release.
+
+[1]: {% link docs/v1.0.0/tagging.md %}
