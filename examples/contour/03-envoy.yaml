@@ -1,4 +1,58 @@
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: envoy
+  namespace: projectcontour
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  creationTimestamp: null
+  name: contour-envoy
+spec:
+  hostPorts:
+  - min: 80
+    max: 80
+  - min: 443
+    max: 443
+  fsGroup:
+    rule: RunAsAny
+  runAsUser:
+    rule: RunAsAny
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: RunAsAny
+  volumes:
+  - emptyDir
+  - secret
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: contour-envoy
+rules:
+- apiGroups: ['policy']
+  resources: ['podsecuritypolicies']
+  verbs:     ['use']
+  resourceNames:
+  - contour-envoy
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: contour-envoy
+  namespace: projectcontour
+roleRef:
+  kind: ClusterRole
+  name: contour-envoy
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: envoy
+  namespace: projectcontour
+---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
