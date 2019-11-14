@@ -70,7 +70,7 @@ See also the Kubernetes documentation for [Services](https://kubernetes.io/docs/
 
 The [detailed documentation][3] provides additional information, including an introduction to Envoy and an explanation of how Contour maps key Envoy concepts to Kubernetes.
 
-We've also got [a FAQ][4] for short-answer questions and conceptual stuff that doesn't quite belong in the docs.
+We've also got a [FAQ][4] for short-answer questions and conceptual stuff that doesn't quite belong in the docs.
 
 ## Troubleshooting
 
