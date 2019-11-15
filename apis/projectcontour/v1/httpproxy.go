@@ -147,6 +147,19 @@ type Route struct {
 	// The load balancing policy for this route.
 	// +optional
 	LoadBalancerPolicy *LoadBalancerPolicy `json:"loadBalancerPolicy,omitempty"`
+	// The policy for rewriting the path of the request URL
+	// after the request has been routed to a Service.
+	//
+	// +kubebuilder:validation:Optional
+	PathRewrite *PathRewritePolicy `json:"pathRewritePolicy,omitempty"`
+}
+
+func (r *Route) GetPrefixReplacements() []ReplacePrefix {
+	if r.PathRewrite != nil {
+		return r.PathRewrite.ReplacePrefix
+	}
+
+	return nil
 }
 
 // TCPProxy contains the set of services to proxy TCP connections.
@@ -234,6 +247,44 @@ type RetryPolicy struct {
 	// PerTryTimeout specifies the timeout per retry attempt.
 	// Ignored if NumRetries is not supplied.
 	PerTryTimeout string `json:"perTryTimeout,omitempty"`
+}
+
+// ReplacePrefix describes a path prefix replacement.
+type ReplacePrefix struct {
+	// Prefix specifies the URL path prefix to be replaced.
+	//
+	// If Prefix is specified, it must exactly match the Condition
+	// prefix that is rendered by the chain of including HTTPProxies
+	// and only that path prefix will be replaced by Replacement.
+	// This allows HTTPProxies that are included through multiple
+	// roots to only replace specific path prefixes, leaving others
+	// unmodified.
+	//
+	// If Prefix is not specified, all routing prefixes rendered
+	// by the include chain will be replaced.
+	//
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MinLength=1
+	Prefix string `json:"prefix,omitempty"`
+
+	// Replacement is the string that the routing path prefix
+	// will be replaced with. This must not be empty.
+	//
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Replacement string `json:"replacement"`
+}
+
+// PathRewritePolicy specifies how a request URL path should be
+// rewritten. This rewriting takes place after a request is routed
+// and has no subsequent effects on the proxy's routing decision.
+// No HTTP headers or body content is rewritten.
+//
+// Exactly one field in this struct may be specified.
+type PathRewritePolicy struct {
+	// ReplacePrefix describes how the path prefix should be replaced.
+	// +kubebuilder:validation:Optional
+	ReplacePrefix []ReplacePrefix `json:"replacePrefix,omitempty"`
 }
 
 // LoadBalancerPolicy defines the load balancing policy.
