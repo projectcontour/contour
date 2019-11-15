@@ -623,6 +623,39 @@ spec:
                       strategy:
                         type: string
                     type: object
+                  pathRewritePolicy:
+                    description: The policy for rewriting the path of the request
+                      URL after the request has been routed to a Service.
+                    properties:
+                      replacePrefix:
+                        description: ReplacePrefix describes how the path prefix should
+                          be replaced.
+                        items:
+                          description: ReplacePrefix describes a path prefix replacement.
+                          properties:
+                            prefix:
+                              description: "Prefix specifies the URL path prefix to
+                                be replaced. \n If Prefix is specified, it must exactly
+                                match the Condition prefix that is rendered by the
+                                chain of including HTTPProxies and only that path
+                                prefix will be replaced by Replacement. This allows
+                                HTTPProxies that are included through multiple roots
+                                to only replace specific path prefixes, leaving others
+                                unmodified. \n If Prefix is not specified, all routing
+                                prefixes rendered by the include chain will be replaced."
+                              minLength: 1
+                              type: string
+                            replacement:
+                              description: Replacement is the string that the routing
+                                path prefix will be replaced with. This must not be
+                                empty.
+                              minLength: 1
+                              type: string
+                          required:
+                          - replacement
+                          type: object
+                        type: array
+                    type: object
                   permitInsecure:
                     description: Allow this path to respond to insecure requests over
                       HTTP which are normally not permitted when a `virtualhost.tls`
