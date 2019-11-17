@@ -796,13 +796,6 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
-				Name:      "delegated",
-				Namespace: "roots",
-				Conditions: []projcontour.Condition{{
-					Prefix: "/prefix",
-				}},
-			}},
 			Routes: []projcontour.Route{{
 				Conditions: []projcontour.Condition{{
 					Prefix: "/foo",
@@ -1733,6 +1726,22 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	// proxy44's include is missing
+	proxy44 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Includes: []projcontour.Include{{
+				Name: "child",
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -2351,6 +2360,17 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Status:      "valid",
 					Description: "valid HTTPProxy",
 					Vhost:       "passthrough.example.com",
+				},
+			},
+		},
+		"httpproxy w/ missing include": {
+			objs: []interface{}{proxy44, s1},
+			want: map[Meta]Status{
+				{name: proxy44.Name, namespace: proxy44.Namespace}: {
+					Object:      proxy44,
+					Status:      "invalid",
+					Description: "include roots/child not found",
+					Vhost:       "example.com",
 				},
 			},
 		},
