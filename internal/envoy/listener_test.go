@@ -247,10 +247,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 							// a Host: header. See #537.
 							AcceptHttp_10: true,
 						},
+						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
+							IdleTimeout: protobuf.Duration(60 * time.Second),
+						},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
-						IdleTimeout:               protobuf.Duration(60 * time.Second),
 						RequestTimeout:            protobuf.Duration(0),
 						PreserveExternalRequestId: true,
 					}),
@@ -297,10 +299,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 							// a Host: header. See #537.
 							AcceptHttp_10: true,
 						},
+						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
+							IdleTimeout: protobuf.Duration(60 * time.Second),
+						},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
-						IdleTimeout:               protobuf.Duration(60 * time.Second),
 						RequestTimeout:            protobuf.Duration(10 * time.Second),
 						PreserveExternalRequestId: true,
 					}),
