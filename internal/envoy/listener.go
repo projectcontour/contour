@@ -99,6 +99,12 @@ func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog
 				}, {
 					Name: wellknown.Router,
 				}},
+				CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
+					// Sets the idle timeout for HTTP connections to 60 seconds.
+					// This is chosen as a rough default to stop idle connections wasting resources,
+					// without stopping slow connections from being terminated too quickly.
+					IdleTimeout: protobuf.Duration(60 * time.Second),
+				},
 				HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
 					// Enable support for HTTP/1.0 requests that carry
 					// a Host: header. See #537.
@@ -107,11 +113,7 @@ func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog
 				AccessLog:        accesslogger,
 				UseRemoteAddress: protobuf.Bool(true),
 				NormalizePath:    protobuf.Bool(true),
-				// Sets the idle timeout for HTTP connections to 60 seconds.
-				// This is chosen as a rough default to stop idle connections wasting resources,
-				// without stopping slow connections from being terminated too quickly.
-				IdleTimeout:    protobuf.Duration(60 * time.Second),
-				RequestTimeout: ptypes.DurationProto(requestTimeout),
+				RequestTimeout:   protobuf.Duration(requestTimeout),
 
 				// issue #1487 pass through X-Request-Id if provided.
 				PreserveExternalRequestId: true,
