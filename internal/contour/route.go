@@ -148,7 +148,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				if len(routes) < 1 {
 					return
 				}
-				SortRoutes(routes)
+				sortRoutes(routes)
 				vhost := envoy.VirtualHost(vh.Name, routes...)
 				v.routes["ingress_http"].VirtualHosts = append(v.routes["ingress_http"].VirtualHosts, vhost)
 			case *dag.SecureVirtualHost:
@@ -167,7 +167,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				if len(routes) < 1 {
 					return
 				}
-				SortRoutes(routes)
+				sortRoutes(routes)
 				vhost := envoy.VirtualHost(vh.VirtualHost.Name, routes...)
 				v.routes["ingress_https"].VirtualHosts = append(v.routes["ingress_https"].VirtualHosts, vhost)
 			default:
@@ -208,11 +208,11 @@ func (v virtualHostsByName) Len() int           { return len(v) }
 func (v virtualHostsByName) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
 func (v virtualHostsByName) Less(i, j int) bool { return v[i].Name < v[j].Name }
 
-// SortRoutes sorts the given Route slice in place. Routes are ordered
+// sortRoutes sorts the given Route slice in place. Routes are ordered
 // first by longest prefix (or regex), then by the length of the
 // HeaderMatch slice (if any). The HeaderMatch slice is also ordered
 // by the matching header name.
-func SortRoutes(routes []*envoy_api_v2_route.Route) {
+func sortRoutes(routes []*envoy_api_v2_route.Route) {
 	for _, r := range routes {
 		sort.Stable(headerMatcherByName(r.Match.Headers))
 	}

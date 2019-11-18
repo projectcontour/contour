@@ -2046,7 +2046,7 @@ func TestSortLongestRouteFirst(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := append([]*envoy_api_v2_route.Route{}, tc.routes...) // shallow copy
-			SortRoutes(got)
+			sortRoutes(got)
 			assert.Equal(t, tc.want, got)
 		})
 	}
