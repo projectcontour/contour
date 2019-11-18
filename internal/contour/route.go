@@ -255,27 +255,23 @@ func (l longestRouteFirst) Less(i, j int) bool {
 				return true
 			case -1:
 				return false
-			case 0:
+			default:
 				return longestRouteByHeaders(l[i], l[j])
 			}
-
-			panic("bad compare")
 		}
-	case *envoy_api_v2_route.RouteMatch_Regex:
+	case *envoy_api_v2_route.RouteMatch_SafeRegex:
 		switch b := l[j].Match.PathSpecifier.(type) {
-		case *envoy_api_v2_route.RouteMatch_Regex:
-			cmp := strings.Compare(a.Regex, b.Regex)
+		case *envoy_api_v2_route.RouteMatch_SafeRegex:
+			cmp := strings.Compare(a.SafeRegex.Regex, b.SafeRegex.Regex)
 			switch cmp {
 			case 1:
 				// Sort longest regex first.
 				return true
 			case -1:
 				return false
-			case 0:
+			default:
 				return longestRouteByHeaders(l[i], l[j])
 			}
-
-			panic("bad compare")
 		case *envoy_api_v2_route.RouteMatch_Prefix:
 			return true
 		}

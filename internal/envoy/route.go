@@ -21,7 +21,6 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -57,8 +56,8 @@ func RouteMatch(route *dag.Route) *envoy_api_v2_route.RouteMatch {
 // RouteRegex returns a regex matcher.
 func RouteRegex(regex string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
 	return &envoy_api_v2_route.RouteMatch{
-		PathSpecifier: &envoy_api_v2_route.RouteMatch_Regex{
-			Regex: regex,
+		PathSpecifier: &envoy_api_v2_route.RouteMatch_SafeRegex{
+			SafeRegex: SafeRegexMatch(regex),
 		},
 		Headers: headerMatcher(headers),
 	}
@@ -133,6 +132,7 @@ func mirrorPolicy(r *dag.Route) *envoy_api_v2_route.RouteAction_RequestMirrorPol
 	if r.MirrorPolicy == nil {
 		return nil
 	}
+
 	return &envoy_api_v2_route.RouteAction_RequestMirrorPolicy{
 		Cluster: Clustername(r.MirrorPolicy.Cluster),
 	}
@@ -308,13 +308,6 @@ func containsMatch(s string) *envoy_api_v2_route.HeaderMatcher_SafeRegexMatch {
 	regex := fmt.Sprintf(".*%s.*", regexp.QuoteMeta(s))
 
 	return &envoy_api_v2_route.HeaderMatcher_SafeRegexMatch{
-		SafeRegexMatch: &matcher.RegexMatcher{
-			EngineType: &matcher.RegexMatcher_GoogleRe2{
-				GoogleRe2: &matcher.RegexMatcher_GoogleRE2{
-					MaxProgramSize: protobuf.UInt32(uint32(len(regex))),
-				},
-			},
-			Regex: regex,
-		},
+		SafeRegexMatch: SafeRegexMatch(regex),
 	}
 }
