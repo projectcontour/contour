@@ -56,11 +56,16 @@ nodes:
 - role: control-plane
 - role: worker
   extraPortMappings:
+<<<<<<< HEAD
   - containerPort: 80
     hostPort: 80
     listenAddress: "0.0.0.0"
   - containerPort: 443
     hostPort: 443
+=======
+  - containerPort: 8080
+    hostPort: 8080
+>>>>>>> f75a2f7... updated moved deploy-options.md
     listenAddress: "0.0.0.0"
 ```
 
@@ -71,6 +76,7 @@ This file is in the `examples/kind` directory:
 $ kind create cluster --config examples/kind/kind-expose-port.yaml
 ```
 
+<<<<<<< HEAD
 Then, your CONTOUR_IP (as used below) will just be `localhost:80`.
 
 _Note: If you change Envoy's ports to bind to 80/443 then it's possible to add entries to your local `/etc/hosts` file and make requests like `http://kuard.local` which matches how it might work on a production installation._
@@ -81,6 +87,12 @@ Finally, install Contour, by applying all yaml files in the `examples/contour` d
 $ kubectl apply -f examples/contour
 ```
 
+=======
+Then, your CONTOUR_IP (as used below) will just be `localhost:8080`.
+
+_Note: If you change Envoy's ports to bind to 80/443 then it's possible to add entries to your local `/etc/hosts` file and make requests like `http://kuard.local` which matches how it might work on a production installation._
+
+>>>>>>> f75a2f7... updated moved deploy-options.md
 ### Test with Ingress
 
 The Contour repository contains an example deployment of the Kubernetes Up and Running demo application, [kuard](https://github.com/kubernetes-up-and-running/kuard).
@@ -159,12 +171,15 @@ To test your Contour deployment with [HTTPProxy](/docs/v1.0.0/httpproxy), run th
 $ kubectl apply -f https://projectcontour.io/examples/kuard-httpproxy.yaml
 ```
 
+<<<<<<< HEAD
 or, in the repo
 
 ```bash
 $ kubectl apply -f site/examples/kuard-httproxy.yaml
 ```
 
+=======
+>>>>>>> f75a2f7... updated moved deploy-options.md
 Then monitor the progress of the deployment with:
 
 ```sh
