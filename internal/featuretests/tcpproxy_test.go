@@ -402,3 +402,92 @@ func TestTCPProxyTLSPassthrough(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 }
+
+// issue 1916. Assert that tcp proxying to backends using
+// projectcontour.io/upstream-protocol.tls configure envoy
+// to use TLS between envoy and the backend pod.
+func TestTCPProxyTLSBackend(t *testing.T) {
+	rh, c, done := setup(t)
+	defer done()
+
+	s1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "k8s-tls",
+			Namespace: "default",
+		},
+		Type: "kubernetes.io/tls",
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+	}
+
+	svc := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubernetes",
+			Namespace: s1.Namespace,
+			Annotations: map[string]string{
+				"projectcontour.io/upstream-protocol.tls": "https,443",
+			},
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "https",
+				Protocol:   "TCP",
+				Port:       443,
+				TargetPort: intstr.FromInt(6443),
+			}},
+		},
+	}
+
+	hp1 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubernetesb",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "k8s.run.ubisoft.org",
+				TLS: &projcontour.TLS{
+					SecretName: s1.Name,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name: svc.Name,
+					Port: 443,
+				}},
+			},
+		},
+	}
+
+	rh.OnAdd(s1)
+	rh.OnAdd(svc)
+	rh.OnAdd(hp1)
+
+	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			&v2.Listener{
+				Name:    "ingress_https",
+				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				FilterChains: filterchaintls(
+					"k8s.run.ubisoft.org",
+					s1,
+					tcpproxy(t,
+						"ingress_https",
+						svc.Namespace+"/"+svc.Name+"/443/da39a3ee5e",
+					)),
+				ListenerFilters: envoy.ListenerFilters(
+					envoy.TLSInspector(),
+				),
+			}),
+		TypeUrl: listenerType,
+	})
+	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			tlsCluster(cluster(
+				svc.Namespace+"/"+svc.Name+"/443/da39a3ee5e",
+				svc.Namespace+"/"+svc.Name+"/https",
+				svc.Namespace+"_"+svc.Name+"_443",
+			), nil, ""),
+		),
+		TypeUrl: clusterType,
+	})
+}

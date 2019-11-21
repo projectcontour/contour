@@ -29,26 +29,24 @@ LATEST_VERSION ?= NOLATEST
 
 export GO111MODULE=on
 
-test: install
-	go test -mod=readonly $(MODULE)/...
+Check_Targets := \
+	check-test \
+	check-test-race \
+	check-vet \
+	check-gofmt \
+	check-staticcheck \
+	check-misspell \
+	check-unconvert \
+	check-unparam \
+	check-ineffassign \
+	check-yamllint \
+	check-stale \
 
-test-race: | test
-	go test -race -mod=readonly $(MODULE)/...
+.PHONY: check
+check: install $(Check_Targets) ## Run tests and CI checks
 
-vet: | test
-	go vet $(MODULE)/...
-
-check: ## Run tests and CI checks
-check: test test-race vet gofmt staticcheck misspell unconvert unparam ineffassign yamllint check-stale
-
-.PHONY: check-stale
-check-stale: ## Check for stale generated content
-check-stale: metrics-docs render rendercrds
-	@if git status -s site/_metrics examples/render examples/contour 2>&1 | grep -E -q '^\s+[MADRCU]'; then \
-		echo Uncommitted changes in generated sources: ; \
-		git status -s site/_metrics examples/render examples/contour; \
-		exit 1; \
-	fi
+.PHONY: pedantic
+pedantic: check check-errcheck ## Run pedantic CI checks
 
 install: ## Build and install the contour binary
 	go install -mod=readonly -v -tags "oidc gcp" $(MODULE)/cmd/contour
@@ -79,6 +77,72 @@ else
 	docker push $(IMAGE):latest
 endif
 
+.PHONY: check-test
+check-test:
+	go test -cover -mod=readonly $(MODULE)/...
+
+.PHONY: check-test-race
+check-test-race: | check-test
+	go test -race -mod=readonly $(MODULE)/...
+
+.PHONY: check-stale
+check-stale: ## Check for stale generated content
+check-stale: metrics-docs render rendercrds
+	@if git status -s site/_metrics examples/render examples/contour 2>&1 | grep -E -q '^\s+[MADRCU]'; then \
+		echo Uncommitted changes in generated sources: ; \
+		git status -s site/_metrics examples/render examples/contour; \
+		exit 1; \
+	fi
+
+.PHONY: check-staticcheck
+check-staticcheck:
+	go install honnef.co/go/tools/cmd/staticcheck
+	staticcheck \
+		-checks all,-ST1003 \
+		$(MODULE)/{cmd,internal}/...
+
+.PHONY: check-misspell
+check-misspell:
+	go install github.com/client9/misspell/cmd/misspell
+	misspell \
+		-i clas \
+		-locale US \
+		-error \
+		cmd/* internal/* docs/* design/* site/*.md site/_{guides,posts,resources} *.md
+
+.PHONY: check-unconvert
+check-unconvert:
+	go install github.com/mdempsky/unconvert
+	unconvert -v $(MODULE)/{cmd,internal}/...
+
+.PHONY: check-ineffassign
+check-ineffassign:
+	go install github.com/gordonklaus/ineffassign
+	find $(SRCDIRS) -name '*.go' | xargs ineffassign
+
+.PHONY: check-unparam
+check-unparam:
+	go install mvdan.cc/unparam
+	unparam -exported $(MODULE)/{cmd,internal}/...
+
+.PHONY: check-errcheck
+check-errcheck:
+	go install github.com/kisielk/errcheck
+	errcheck $(MODULE)/...
+
+.PHONY: check-yamllint
+check-yamllint:
+	docker run --rm -ti -v $(CURDIR):/workdir giantswarm/yamllint examples/ site/examples/
+
+.PHONY: check-gofmt
+check-gofmt:
+	@echo Checking code is gofmted
+	@test -z "$(shell gofmt -s -l -d -e $(SRCDIRS) | tee /dev/stderr)"
+
+.PHONY: check-vet
+check-vet: | check-test
+	go vet $(MODULE)/...
+
 # TODO(youngnick): Move these local bootstrap config files out of the repo root dir.
 $(LOCAL_BOOTSTRAP_CONFIG): install
 	contour bootstrap --xds-address $(LOCALIP) --xds-port=8001 $@
@@ -108,38 +172,6 @@ local: $(LOCAL_BOOTSTRAP_CONFIG)
 		--service-node node0 \
 		--service-cluster cluster0
 
-staticcheck:
-	go install honnef.co/go/tools/cmd/staticcheck
-	staticcheck \
-		-checks all,-ST1003 \
-		$(MODULE)/{cmd,internal}/...
-
-misspell:
-	go install github.com/client9/misspell/cmd/misspell
-	misspell \
-		-i clas \
-		-locale US \
-		-error \
-		cmd/* internal/* docs/* design/* site/*.md site/_{guides,posts,resources} *.md
-
-unconvert:
-	go install github.com/mdempsky/unconvert
-	unconvert -v $(MODULE)/{cmd,internal}/...
-
-ineffassign:
-	go install github.com/gordonklaus/ineffassign
-	find $(SRCDIRS) -name '*.go' | xargs ineffassign
-
-pedantic: check errcheck
-
-unparam:
-	go install mvdan.cc/unparam
-	unparam -exported $(MODULE)/{cmd,internal}/...
-
-errcheck:
-	go install github.com/kisielk/errcheck
-	errcheck $(MODULE)/...
-
 render:
 	@echo Rendering example deployment files...
 	@(cd examples && bash render.sh)
@@ -151,13 +183,6 @@ rendercrds:
 updategenerated: ## Update generated CRD code
 	@echo Updating generated CRD code...
 	@(bash hack/update-generated-crd-code.sh)
-
-yamllint:
-	docker run --rm -ti -v $(CURDIR):/workdir giantswarm/yamllint examples/ site/examples/
-
-gofmt:
-	@echo Checking code is gofmted
-	@test -z "$(shell gofmt -s -l -d -e $(SRCDIRS) | tee /dev/stderr)"
 
 gencerts: certs/contourcert.pem certs/envoycert.pem
 	@echo "certs are generated."
@@ -218,6 +243,7 @@ site-devel: ## Launch the website in a Docker container
 	docker run --rm --publish $(JEKYLL_PORT):$(JEKYLL_PORT) -v $$(pwd)/site:/site -it $(JEKYLL_IMAGE) \
 		bash -c "cd /site && bundle install --path bundler/cache && bundle exec jekyll serve --host 0.0.0.0 --port $(JEKYLL_PORT) --livereload"
 
+.PHONY: site-check
 site-check: ## Test the site's links
 	docker run --rm -v $$(pwd)/site:/site -it $(JEKYLL_IMAGE) \
 		bash -c "cd /site && bundle install --path bundler/cache && bundle exec jekyll build && htmlproofer --assume-extension /site/_site"
