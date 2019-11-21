@@ -286,12 +286,6 @@ func TestIngressRouteMetrics(t *testing.T) {
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
-				Name: "delegated",
-				Conditions: []projcontour.Condition{{
-					Prefix: "/prefix",
-				}},
-			}},
 			Routes: []projcontour.Route{{
 				Conditions: []projcontour.Condition{{
 					Prefix: "/foo",
@@ -969,11 +963,11 @@ func TestIngressRouteMetrics(t *testing.T) {
 			wantIR: nil,
 			wantProxy: &metrics.RouteMetric{
 				Invalid: map[metrics.Meta]int{
-					{Namespace: "roots"}: 1,
+					{Namespace: "roots"}:                       1,
+					{Namespace: "roots", VHost: "example.com"}: 1,
 				},
 				Valid: map[metrics.Meta]int{
-					{Namespace: "roots", VHost: "example.com"}: 1,
-					{Namespace: "roots"}:                       1,
+					{Namespace: "roots"}: 1,
 				},
 				Orphaned: map[metrics.Meta]int{},
 				Root: map[metrics.Meta]int{
