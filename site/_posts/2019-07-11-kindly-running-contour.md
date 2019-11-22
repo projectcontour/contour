@@ -25,7 +25,7 @@ There are a number of ways to [install kind](https://github.com/kubernetes-sigs/
 *Note: You may want to update some portions of the commands to match your local operating system and configuration.*
 
 ```bash
-$ curl -Lo ./kind-darwin-amd64 https://github.com/kubernetes-sigs/kind/releases/download/v0.4.0/kind-darwin-amd64
+$ curl -Lo ./kind-darwin-amd64 https://github.com/kubernetes-sigs/kind/releases/download/v0.6.0/kind-darwin-amd64
 $ chmod +x ./kind-darwin-amd64
 $ sudo mv ./kind-darwin-amd64 /usr/local/bin/kind
 ```
@@ -68,7 +68,7 @@ After the cluster comes up, you should have two nodes in the cluster, a worker n
 
 Next, we’ll deploy Contour into our freshly created cluster. We are going to use a "split" deployment, which configures [Envoy](https://envoyproxy.io) as a DaemonSet. 
 
-Contour is the configuration server for Envoy --- Contour, that is, exposes an xDS API for Envoy. Contour watches the Kubernetes cluster for changes to services, end points, secrets, ingress, and IngressRoute. Contour generates a set of configurations that is streamed to Envoy via the xDS gRPC connection. All data travels through Envoy, which is running on every node in the cluster (a single node in our example).
+Contour is the configuration server for Envoy --- Contour, that is, exposes an xDS API for Envoy. Contour watches the Kubernetes cluster for changes to services, end points, secrets, ingress, and HTTPProxies. Contour generates a set of configurations that is streamed to Envoy via the xDS gRPC connection. All data travels through Envoy, which is running on every node in the cluster (a single node in our example).
 
 Additionally, the Envoy DaemonSet will be configured to use `HostNetworking` to bind Envoy's ports directly to the worker node.
 
@@ -76,7 +76,7 @@ Deploy contour:
 
 ```bash
 $ git clone https://github.com/projectcontour/contour.git
-$ kubectl apply -f contour/examples/ds-hostnet-split
+$ kubectl apply -f contour/examples/contour
 ```
 
 Since our deployment of kind is binding ports 80 and 443 to our laptop, when we curl `localhost:80` or `localhost:443`, the request will arrive at the Envoy pod. But to enable Envoy to route these requests, we need to deploy some ingress resources, which we will do as part of deploying the sample application. 
@@ -88,24 +88,25 @@ Finally, we’ll deploy a sample application to to verify the network ingress pa
 Deploy the application:
 
 ```bash
-$ kubectl apply -f contour/examples/example-workload/kuard-ingressroute.yaml
+$ kubectl apply -f https://projectcontour.io/examples/kuard-httpproxy.yaml
 ```
 
 Now that the application is up and running, we need a way to route to it. The sample we just deployed uses `kuard.local` for the domain name.
 
 ```yaml
-apiVersion: contour.heptio.com/v1beta1
-kind: IngressRoute
-metadata:
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata: 
   labels:
     app: kuard
   name: kuard
   namespace: default
-spec:
+spec: 
   virtualhost:
     fqdn: kuard.local
-  routes:
-    - match: /
+  routes: 
+    - conditions:
+      - path: /
       services:
         - name: kuard
           port: 80
