@@ -3830,25 +3830,7 @@ func TestDAGInsert(t *testing.T) {
 			objs: []interface{}{
 				ir17, s1a,
 			},
-			want: listeners(
-				&Listener{
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						virtualhost("example.com",
-							routeCluster("/",
-								&Cluster{
-									Upstream: &Service{
-										Name:        s1a.Name,
-										Namespace:   s1a.Namespace,
-										ServicePort: &s1a.Spec.Ports[0],
-										Protocol:    "tls",
-									},
-								},
-							),
-						),
-					),
-				},
-			),
+			want: listeners(), // no listeners, missing certificate
 		},
 		"insert ingressroute expecting verification": {
 			objs: []interface{}{

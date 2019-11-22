@@ -804,6 +804,7 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 					uv, err = b.lookupUpstreamValidation(route.Match, service.Name, service.UpstreamValidation, ir.Namespace)
 					if err != nil {
 						sw.SetInvalid(err.Error())
+						return
 					}
 				}
 				r.Clusters = append(r.Clusters, &Cluster{
