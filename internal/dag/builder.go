@@ -542,24 +542,28 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			namespace = proxy.Namespace
 		}
 
-		if delegate, ok := b.Source.httpproxies[Meta{name: include.Name, namespace: namespace}]; ok {
-			if delegate.Spec.VirtualHost != nil {
-				sw.SetInvalid("root httpproxy cannot delegate to another root httpproxy")
-				return nil
-			}
-
-			if !pathConditionsValid(sw, include.Conditions, "include") {
-				return nil
-			}
-
-			sw, commit := b.WithObject(delegate)
-			routes = append(routes, b.computeRoutes(sw, delegate, append(conditions, include.Conditions...), visited, enforceTLS)...)
-			commit()
-
-			// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
-			delete(b.orphaned, Meta{name: delegate.Name, namespace: delegate.Namespace})
+		delegate, ok := b.Source.httpproxies[Meta{name: include.Name, namespace: namespace}]
+		if !ok {
+			sw.SetInvalid(fmt.Sprintf("include %s/%s not found", namespace, include.Name))
+			return nil
 		}
+		if delegate.Spec.VirtualHost != nil {
+			sw.SetInvalid("root httpproxy cannot delegate to another root httpproxy")
+			return nil
+		}
+
+		if !pathConditionsValid(sw, include.Conditions, "include") {
+			return nil
+		}
+
+		sw, commit := b.WithObject(delegate)
+		routes = append(routes, b.computeRoutes(sw, delegate, append(conditions, include.Conditions...), visited, enforceTLS)...)
+		commit()
+
+		// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
+		delete(b.orphaned, Meta{name: delegate.Name, namespace: delegate.Namespace})
 	}
+
 	for _, route := range proxy.Spec.Routes {
 		if len(route.Services) > 1 && route.EnableWebsockets {
 			sw.SetInvalid("route: cannot specify multiple services and enable websockets")
@@ -800,6 +804,7 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 					uv, err = b.lookupUpstreamValidation(route.Match, service.Name, service.UpstreamValidation, ir.Namespace)
 					if err != nil {
 						sw.SetInvalid(err.Error())
+						return
 					}
 				}
 				r.Clusters = append(r.Clusters, &Cluster{

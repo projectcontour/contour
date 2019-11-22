@@ -79,7 +79,7 @@ If you encounter issues, review the [troubleshooting docs][5], [file an issue][6
 [1]: /docs/v1.0.0/deploy-options
 [2]: /docs/v1.0.0/httpproxy
 [3]: /docs
-[4]: {{ site.github.repository_url }}/tree/master/FAQ.md
+[4]: {% link _resources/faq.md %}
 [5]: /docs/v1.0.0/troubleshooting
 [6]: {{ site.github.repository_url }}/issues
 [7]: /guides/tls
