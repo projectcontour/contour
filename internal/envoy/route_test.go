@@ -20,7 +20,6 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -620,14 +619,7 @@ func TestRouteMatch(t *testing.T) {
 					Name:        "x-header",
 					InvertMatch: false,
 					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_SafeRegexMatch{
-						SafeRegexMatch: &matcher.RegexMatcher{
-							EngineType: &matcher.RegexMatcher_GoogleRe2{
-								GoogleRe2: &matcher.RegexMatcher_GoogleRE2{
-									MaxProgramSize: protobuf.UInt32(15),
-								},
-							},
-							Regex: ".*11-22-33-44.*",
-						},
+						SafeRegexMatch: SafeRegexMatch(".*11-22-33-44.*"),
 					},
 				}},
 			},
@@ -646,14 +638,7 @@ func TestRouteMatch(t *testing.T) {
 					Name:        "x-header",
 					InvertMatch: false,
 					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_SafeRegexMatch{
-						SafeRegexMatch: &matcher.RegexMatcher{
-							EngineType: &matcher.RegexMatcher_GoogleRe2{
-								GoogleRe2: &matcher.RegexMatcher_GoogleRE2{
-									MaxProgramSize: protobuf.UInt32(18),
-								},
-							},
-							Regex: ".*11\\.22\\.33\\.44.*",
-						},
+						SafeRegexMatch: SafeRegexMatch(".*11\\.22\\.33\\.44.*"),
 					},
 				}},
 			},
@@ -672,14 +657,7 @@ func TestRouteMatch(t *testing.T) {
 					Name:        "x-header",
 					InvertMatch: false,
 					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_SafeRegexMatch{
-						SafeRegexMatch: &matcher.RegexMatcher{
-							EngineType: &matcher.RegexMatcher_GoogleRe2{
-								GoogleRe2: &matcher.RegexMatcher_GoogleRE2{
-									MaxProgramSize: protobuf.UInt32(24),
-								},
-							},
-							Regex: ".*11\\.\\[22\\]\\.\\*33\\.44.*",
-						},
+						SafeRegexMatch: SafeRegexMatch(".*11\\.\\[22\\]\\.\\*33\\.44.*"),
 					},
 				}},
 			},
@@ -703,11 +681,11 @@ func TestRouteMatch(t *testing.T) {
 				},
 			},
 			want: &envoy_api_v2_route.RouteMatch{
-				PathSpecifier: &envoy_api_v2_route.RouteMatch_Regex{
+				PathSpecifier: &envoy_api_v2_route.RouteMatch_SafeRegex{
 					// note, unlike header conditions this is not a quoted regex because
 					// the value comes directly from the Ingress.Paths.Path value which
 					// is permitted to be a bare regex.
-					Regex: "/v.1/*",
+					SafeRegex: SafeRegexMatch("/v.1/*"),
 				},
 			},
 		},

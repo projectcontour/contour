@@ -148,7 +148,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				if len(routes) < 1 {
 					return
 				}
-				SortRoutes(routes)
+				sortRoutes(routes)
 				vhost := envoy.VirtualHost(vh.Name, routes...)
 				v.routes["ingress_http"].VirtualHosts = append(v.routes["ingress_http"].VirtualHosts, vhost)
 			case *dag.SecureVirtualHost:
@@ -167,7 +167,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 				if len(routes) < 1 {
 					return
 				}
-				SortRoutes(routes)
+				sortRoutes(routes)
 				vhost := envoy.VirtualHost(vh.VirtualHost.Name, routes...)
 				v.routes["ingress_https"].VirtualHosts = append(v.routes["ingress_https"].VirtualHosts, vhost)
 			default:
@@ -208,11 +208,11 @@ func (v virtualHostsByName) Len() int           { return len(v) }
 func (v virtualHostsByName) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
 func (v virtualHostsByName) Less(i, j int) bool { return v[i].Name < v[j].Name }
 
-// SortRoutes sorts the given Route slice in place. Routes are ordered
+// sortRoutes sorts the given Route slice in place. Routes are ordered
 // first by longest prefix (or regex), then by the length of the
 // HeaderMatch slice (if any). The HeaderMatch slice is also ordered
 // by the matching header name.
-func SortRoutes(routes []*envoy_api_v2_route.Route) {
+func sortRoutes(routes []*envoy_api_v2_route.Route) {
 	for _, r := range routes {
 		sort.Stable(headerMatcherByName(r.Match.Headers))
 	}
@@ -255,27 +255,23 @@ func (l longestRouteFirst) Less(i, j int) bool {
 				return true
 			case -1:
 				return false
-			case 0:
+			default:
 				return longestRouteByHeaders(l[i], l[j])
 			}
-
-			panic("bad compare")
 		}
-	case *envoy_api_v2_route.RouteMatch_Regex:
+	case *envoy_api_v2_route.RouteMatch_SafeRegex:
 		switch b := l[j].Match.PathSpecifier.(type) {
-		case *envoy_api_v2_route.RouteMatch_Regex:
-			cmp := strings.Compare(a.Regex, b.Regex)
+		case *envoy_api_v2_route.RouteMatch_SafeRegex:
+			cmp := strings.Compare(a.SafeRegex.Regex, b.SafeRegex.Regex)
 			switch cmp {
 			case 1:
 				// Sort longest regex first.
 				return true
 			case -1:
 				return false
-			case 0:
+			default:
 				return longestRouteByHeaders(l[i], l[j])
 			}
-
-			panic("bad compare")
 		case *envoy_api_v2_route.RouteMatch_Prefix:
 			return true
 		}
