@@ -103,7 +103,7 @@ func TestEditIngress(t *testing.T) {
 		VersionInfo: "1",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("*", envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/80/da39a3ee5e"))),
+				envoy.VirtualHost("*", envoy.Route(routePrefix("/"), routecluster("default/kuard/80/da39a3ee5e"))),
 			),
 			envoy.RouteConfiguration("ingress_https"),
 		),
@@ -136,7 +136,7 @@ func TestEditIngress(t *testing.T) {
 		VersionInfo: "2",
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("*", envoy.Route(envoy.RoutePrefix("/testing"), routecluster("default/kuard/80/da39a3ee5e"))),
+				envoy.VirtualHost("*", envoy.Route(routePrefix("/testing"), routecluster("default/kuard/80/da39a3ee5e"))),
 			),
 			envoy.RouteConfiguration("ingress_https"),
 		),
@@ -206,7 +206,7 @@ func TestIngressPathRouteWithoutHost(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("*",
-					envoy.Route(envoy.RoutePrefix("/hello"), routecluster("default/hello/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/hello"), routecluster("default/hello/80/da39a3ee5e")),
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -278,7 +278,7 @@ func TestEditIngressInPlace(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.example.com",
-					envoy.Route(envoy.RoutePrefix("/"), routecluster("default/wowie/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/"), routecluster("default/wowie/80/da39a3ee5e")),
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -319,8 +319,8 @@ func TestEditIngressInPlace(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.example.com",
-					envoy.Route(envoy.RoutePrefix("/whoop"), routecluster("default/kerpow/9000/da39a3ee5e")),
-					envoy.Route(envoy.RoutePrefix("/"), routecluster("default/wowie/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/whoop"), routecluster("default/kerpow/9000/da39a3ee5e")),
+					envoy.Route(routePrefix("/"), routecluster("default/wowie/80/da39a3ee5e")),
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -367,11 +367,11 @@ func TestEditIngressInPlace(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.example.com",
 					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/whoop"),
+						Match:  routePrefix("/whoop"),
 						Action: envoy.UpgradeHTTPS(),
 					},
 					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/"),
+						Match:  routePrefix("/"),
 						Action: envoy.UpgradeHTTPS(),
 					},
 				),
@@ -434,19 +434,19 @@ func TestEditIngressInPlace(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.example.com",
 					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/whoop"),
+						Match:  routePrefix("/whoop"),
 						Action: envoy.UpgradeHTTPS(),
 					},
 					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/"),
+						Match:  routePrefix("/"),
 						Action: envoy.UpgradeHTTPS(),
 					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https",
 				envoy.VirtualHost("hello.example.com",
-					envoy.Route(envoy.RoutePrefix("/whoop"), routecluster("default/kerpow/9000/da39a3ee5e")),
-					envoy.Route(envoy.RoutePrefix("/"), routecluster("default/wowie/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/whoop"), routecluster("default/kerpow/9000/da39a3ee5e")),
+					envoy.Route(routePrefix("/"), routecluster("default/wowie/80/da39a3ee5e")),
 				),
 			),
 		),
@@ -557,22 +557,22 @@ func TestSSLRedirectOverlay(t *testing.T) {
 	assertRDS(t, cc, "5", virtualhosts(
 		envoy.VirtualHost("example.com",
 			envoy.Route(
-				envoy.RoutePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+				routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 				routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
 			),
 			&envoy_api_v2_route.Route{
-				Match:  envoy.RoutePrefix("/"), // match all
+				Match:  routePrefix("/"), // match all
 				Action: envoy.UpgradeHTTPS(),
 			},
 		),
 	), virtualhosts(
 		envoy.VirtualHost("example.com",
 			envoy.Route(
-				envoy.RoutePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+				routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 				routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
 			),
 			envoy.Route(
-				envoy.RoutePrefix("/"), // match all
+				routePrefix("/"), // match all
 				routecluster("default/app-service/8080/da39a3ee5e"),
 			),
 		),
@@ -635,7 +635,7 @@ func TestInvalidCertInIngress(t *testing.T) {
 
 	assertRDS(t, cc, "1", virtualhosts(
 		envoy.VirtualHost("kuard.io",
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
+			envoy.Route(routePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
 		),
 	), nil)
 
@@ -651,11 +651,11 @@ func TestInvalidCertInIngress(t *testing.T) {
 
 	assertRDS(t, cc, "2", virtualhosts(
 		envoy.VirtualHost("kuard.io",
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
+			envoy.Route(routePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
 		),
 	), virtualhosts(
 		envoy.VirtualHost("kuard.io",
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
+			envoy.Route(routePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
 		),
 	))
 }
@@ -712,7 +712,7 @@ func TestIssue257(t *testing.T) {
 
 	assertRDS(t, cc, "2", virtualhosts(
 		envoy.VirtualHost("*",
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
+			envoy.Route(routePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
 		),
 	), nil)
 
@@ -762,7 +762,7 @@ func TestIssue257(t *testing.T) {
 
 	assertRDS(t, cc, "3", virtualhosts(
 		envoy.VirtualHost("kuard.db.gd-ms.com",
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
+			envoy.Route(routePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
 		),
 	), nil)
 }
@@ -872,11 +872,11 @@ func TestRDSFilter(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("example.com",
 					envoy.Route(
-						envoy.RoutePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+						routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 						routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
 					),
 					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/"), // match all
+						Match:  routePrefix("/"), // match all
 						Action: envoy.UpgradeHTTPS(),
 					},
 				),
@@ -892,10 +892,10 @@ func TestRDSFilter(t *testing.T) {
 			envoy.RouteConfiguration("ingress_https",
 				envoy.VirtualHost("example.com",
 					envoy.Route(
-						envoy.RoutePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+						routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 						routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
 					),
-					envoy.Route(envoy.RoutePrefix("/"), routecluster("default/app-service/8080/da39a3ee5e")),
+					envoy.Route(routePrefix("/"), routecluster("default/app-service/8080/da39a3ee5e")),
 				),
 			),
 		),
@@ -955,9 +955,9 @@ func TestPrefixRewriteIngressRoute(t *testing.T) {
 
 	assertRDS(t, cc, "1", virtualhosts(
 		envoy.VirtualHost("prefixrewrite.hello.world",
-			envoy.Route(envoy.RoutePrefix("/ws-2"), prefixrewriteroute("default/ws/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/ws-1"), prefixrewriteroute("default/ws/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/ws/80/da39a3ee5e")),
+			envoy.Route(routePrefix("/ws-2"), prefixrewriteroute("default/ws/80/da39a3ee5e")),
+			envoy.Route(routePrefix("/ws-1"), prefixrewriteroute("default/ws/80/da39a3ee5e")),
+			envoy.Route(routePrefix("/"), routecluster("default/ws/80/da39a3ee5e")),
 		),
 	), nil)
 }
@@ -1047,11 +1047,11 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("*",
-					envoy.Route(envoy.RoutePrefix("/kuard"), routecluster("default/kuard/8080/da39a3ee5e")),
-					envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/kuard"), routecluster("default/kuard/8080/da39a3ee5e")),
+					envoy.Route(routePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
 				),
 				envoy.VirtualHost("test-gui",
-					envoy.Route(envoy.RoutePrefix("/"), routecluster("default/test-gui/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/"), routecluster("default/test-gui/80/da39a3ee5e")),
 				),
 			),
 		),
@@ -1106,7 +1106,7 @@ func TestRDSIngressRouteInsideRootNamespaces(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("example.com",
-					envoy.Route(envoy.RoutePrefix("/"), routecluster("roots/kuard/8080/da39a3ee5e")),
+					envoy.Route(routePrefix("/"), routecluster("roots/kuard/8080/da39a3ee5e")),
 				),
 			),
 		),
@@ -1204,7 +1204,7 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	rh.OnAdd(i1)
 	assertRDS(t, cc, "1", virtualhosts(
 		envoy.VirtualHost("*",
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+			envoy.Route(routePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
 		),
 	), nil)
 
@@ -1262,7 +1262,7 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	rh.OnUpdate(i3, i4)
 	assertRDS(t, cc, "3", virtualhosts(
 		envoy.VirtualHost("*",
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+			envoy.Route(routePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
 		),
 	), nil)
 
@@ -1284,7 +1284,7 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	rh.OnUpdate(i4, i5)
 	assertRDS(t, cc, "4", virtualhosts(
 		envoy.VirtualHost("*",
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
+			envoy.Route(routePrefix("/"), routecluster("default/kuard/8080/da39a3ee5e")),
 		),
 	), nil)
 
@@ -1414,7 +1414,7 @@ func TestRDSIngressSpecMissingHTTPKey(t *testing.T) {
 
 	assertRDS(t, cc, "2", virtualhosts(
 		envoy.VirtualHost("test2.test.com",
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/network-test/9001/da39a3ee5e")),
+			envoy.Route(routePrefix("/"), routecluster("default/network-test/9001/da39a3ee5e")),
 		),
 	), nil)
 }
@@ -1458,7 +1458,7 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 	rh.OnAdd(ir1)
 	assertRDS(t, cc, "1", virtualhosts(
 		envoy.VirtualHost("test2.test.com",
-			envoy.Route(envoy.RoutePrefix("/a"), routecluster("default/kuard/80/da39a3ee5e")),
+			envoy.Route(routePrefix("/a"), routecluster("default/kuard/80/da39a3ee5e")),
 		),
 	), nil)
 
@@ -1487,7 +1487,7 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 	rh.OnUpdate(ir1, ir2)
 	assertRDS(t, cc, "2", virtualhosts(
 		envoy.VirtualHost("test2.test.com",
-			envoy.Route(envoy.RoutePrefix("/a"), routeweightedcluster(
+			envoy.Route(routePrefix("/a"), routeweightedcluster(
 				weightedcluster{"default/kuard/80/da39a3ee5e", 60},
 				weightedcluster{"default/kuard/80/da39a3ee5e", 90}),
 			),
@@ -1553,14 +1553,14 @@ func TestRouteWithTLS(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/a"),
+						Match:  routePrefix("/a"),
 						Action: envoy.UpgradeHTTPS(),
 					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https",
 				envoy.VirtualHost("test2.test.com",
-					envoy.Route(envoy.RoutePrefix("/a"), routecluster("default/kuard/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/a"), routecluster("default/kuard/80/da39a3ee5e")),
 				),
 			),
 		),
@@ -1646,16 +1646,16 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/secure"),
+						Match:  routePrefix("/secure"),
 						Action: envoy.UpgradeHTTPS(),
 					},
-					envoy.Route(envoy.RoutePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
 				),
 			),
 			envoy.RouteConfiguration("ingress_https",
 				envoy.VirtualHost("test2.test.com",
-					envoy.Route(envoy.RoutePrefix("/secure"), routecluster("default/svc2/80/da39a3ee5e")),
-					envoy.Route(envoy.RoutePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/secure"), routecluster("default/svc2/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
 				),
 			),
 		),
@@ -1746,19 +1746,19 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/secure"),
+						Match:  routePrefix("/secure"),
 						Action: envoy.UpgradeHTTPS(),
 					},
 					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/insecure"),
+						Match:  routePrefix("/insecure"),
 						Action: envoy.UpgradeHTTPS(),
 					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https",
 				envoy.VirtualHost("test2.test.com",
-					envoy.Route(envoy.RoutePrefix("/secure"), routecluster("default/svc2/80/da39a3ee5e")),
-					envoy.Route(envoy.RoutePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/secure"), routecluster("default/svc2/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
 				),
 			),
 		),
@@ -1828,7 +1828,7 @@ func TestLoadBalancingStrategies(t *testing.T) {
 	rh.OnAdd(ir)
 	want := virtualhosts(
 		envoy.VirtualHost("test2.test.com",
-			envoy.Route(envoy.RoutePrefix("/a"), routeweightedcluster(wc...)),
+			envoy.Route(routePrefix("/a"), routeweightedcluster(wc...)),
 		),
 	)
 	assertRDS(t, cc, "1", want, nil)
@@ -1888,8 +1888,8 @@ func TestRoutePrefixRouteRegex(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("*",
-					envoy.Route(envoy.RouteRegex("/[^/]+/invoices(/.*|/?)"), routecluster("default/kuard/80/da39a3ee5e")),
-					envoy.Route(envoy.RoutePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
+					envoy.Route(routeRegex("/[^/]+/invoices(/.*|/?)"), routecluster("default/kuard/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/"), routecluster("default/kuard/80/da39a3ee5e")),
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -1965,7 +1965,7 @@ func TestRDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("www.containersteve.com",
-					envoy.Route(envoy.RoutePrefix("/"), routecluster("marketing/green/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/"), routecluster("marketing/green/80/da39a3ee5e")),
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -2003,6 +2003,24 @@ func streamRDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryRes
 type weightedcluster struct {
 	name   string
 	weight uint32
+}
+
+func routeRegex(regex string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
+	return envoy.RouteMatch(&dag.Route{
+		PathCondition: &dag.RegexCondition{
+			Regex: regex,
+		},
+		HeaderConditions: headers,
+	})
+}
+
+func routePrefix(prefix string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
+	return envoy.RouteMatch(&dag.Route{
+		PathCondition: &dag.PrefixCondition{
+			Prefix: prefix,
+		},
+		HeaderConditions: headers,
+	})
 }
 
 func routecluster(cluster string) *envoy_api_v2_route.Route_Route {
@@ -2160,7 +2178,7 @@ func TestHTTPProxyRouteWithAServiceWeight(t *testing.T) {
 	rh.OnAdd(proxy1)
 	assertRDS(t, cc, "1", virtualhosts(
 		envoy.VirtualHost("test2.test.com",
-			envoy.Route(envoy.RoutePrefix("/a"), routecluster("default/kuard/80/da39a3ee5e")),
+			envoy.Route(routePrefix("/a"), routecluster("default/kuard/80/da39a3ee5e")),
 		),
 	), nil)
 
@@ -2189,7 +2207,7 @@ func TestHTTPProxyRouteWithAServiceWeight(t *testing.T) {
 	rh.OnUpdate(proxy1, proxy2)
 	assertRDS(t, cc, "2", virtualhosts(
 		envoy.VirtualHost("test2.test.com",
-			envoy.Route(envoy.RoutePrefix("/a"), routeweightedcluster(
+			envoy.Route(routePrefix("/a"), routeweightedcluster(
 				weightedcluster{"default/kuard/80/da39a3ee5e", 60},
 				weightedcluster{"default/kuard/80/da39a3ee5e", 90}),
 			),
@@ -2279,19 +2297,19 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 
 	assertRDS(t, cc, "1", virtualhosts(
 		envoy.VirtualHost("hello.world",
-			envoy.Route(envoy.RoutePrefix("/blog", dag.HeaderCondition{
+			envoy.Route(routePrefix("/blog", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "abc",
 				MatchType: "contains",
 				Invert:    false,
 			}), routecluster("default/svc3/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
+			envoy.Route(routePrefix("/", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "abc",
 				MatchType: "contains",
 				Invert:    false,
 			}), routecluster("default/svc2/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
+			envoy.Route(routePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
 		),
 	), nil)
 
@@ -2333,19 +2351,19 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 
 	assertRDS(t, cc, "1", virtualhosts(
 		envoy.VirtualHost("hello.world",
-			envoy.Route(envoy.RoutePrefix("/blog", dag.HeaderCondition{
+			envoy.Route(routePrefix("/blog", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "abc",
 				MatchType: "contains",
 				Invert:    true,
 			}), routecluster("default/svc3/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
+			envoy.Route(routePrefix("/", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "123",
 				MatchType: "contains",
 				Invert:    true,
 			}), routecluster("default/svc2/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
+			envoy.Route(routePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
 		),
 	), nil)
 
@@ -2387,19 +2405,19 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 
 	assertRDS(t, cc, "1", virtualhosts(
 		envoy.VirtualHost("hello.world",
-			envoy.Route(envoy.RoutePrefix("/blog", dag.HeaderCondition{
+			envoy.Route(routePrefix("/blog", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "123",
 				MatchType: "exact",
 				Invert:    false,
 			}), routecluster("default/svc3/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
+			envoy.Route(routePrefix("/", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "abc",
 				MatchType: "exact",
 				Invert:    false,
 			}), routecluster("default/svc2/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
+			envoy.Route(routePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
 		),
 	), nil)
 
@@ -2441,19 +2459,19 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 
 	assertRDS(t, cc, "1", virtualhosts(
 		envoy.VirtualHost("hello.world",
-			envoy.Route(envoy.RoutePrefix("/blog", dag.HeaderCondition{
+			envoy.Route(routePrefix("/blog", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "123",
 				MatchType: "exact",
 				Invert:    true,
 			}), routecluster("default/svc3/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
+			envoy.Route(routePrefix("/", dag.HeaderCondition{
 				Name:      "x-header",
 				Value:     "abc",
 				MatchType: "exact",
 				Invert:    true,
 			}), routecluster("default/svc2/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
+			envoy.Route(routePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
 		),
 	), nil)
 
@@ -2495,17 +2513,17 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 
 	assertRDS(t, cc, "1", virtualhosts(
 		envoy.VirtualHost("hello.world",
-			envoy.Route(envoy.RoutePrefix("/blog", dag.HeaderCondition{
+			envoy.Route(routePrefix("/blog", dag.HeaderCondition{
 				Name:      "x-header",
 				MatchType: "present",
 				Invert:    false,
 			}), routecluster("default/svc3/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/", dag.HeaderCondition{
+			envoy.Route(routePrefix("/", dag.HeaderCondition{
 				Name:      "x-header",
 				MatchType: "present",
 				Invert:    false,
 			}), routecluster("default/svc2/80/da39a3ee5e")),
-			envoy.Route(envoy.RoutePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
+			envoy.Route(routePrefix("/"), routecluster("default/svc1/80/da39a3ee5e")),
 		),
 	), nil)
 }
@@ -2568,14 +2586,14 @@ func TestHTTPProxyRouteWithTLS(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/a"),
+						Match:  routePrefix("/a"),
 						Action: envoy.UpgradeHTTPS(),
 					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https",
 				envoy.VirtualHost("test2.test.com",
-					envoy.Route(envoy.RoutePrefix("/a"), routecluster("default/kuard/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/a"), routecluster("default/kuard/80/da39a3ee5e")),
 				),
 			),
 		),
@@ -2662,16 +2680,16 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/secure"),
+						Match:  routePrefix("/secure"),
 						Action: envoy.UpgradeHTTPS(),
 					},
-					envoy.Route(envoy.RoutePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
 				),
 			),
 			envoy.RouteConfiguration("ingress_https",
 				envoy.VirtualHost("test2.test.com",
-					envoy.Route(envoy.RoutePrefix("/secure"), routecluster("default/svc2/80/da39a3ee5e")),
-					envoy.Route(envoy.RoutePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/secure"), routecluster("default/svc2/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
 				),
 			),
 		),
@@ -2762,19 +2780,19 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testin
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/secure"),
+						Match:  routePrefix("/secure"),
 						Action: envoy.UpgradeHTTPS(),
 					},
 					&envoy_api_v2_route.Route{
-						Match:  envoy.RoutePrefix("/insecure"),
+						Match:  routePrefix("/insecure"),
 						Action: envoy.UpgradeHTTPS(),
 					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https",
 				envoy.VirtualHost("test2.test.com",
-					envoy.Route(envoy.RoutePrefix("/secure"), routecluster("default/svc2/80/da39a3ee5e")),
-					envoy.Route(envoy.RoutePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/secure"), routecluster("default/svc2/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/insecure"), routecluster("default/kuard/80/da39a3ee5e")),
 				),
 			),
 		),
@@ -2845,7 +2863,7 @@ func TestRDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("www.containersteve.com",
-					envoy.Route(envoy.RoutePrefix("/"), routecluster("marketing/green/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/"), routecluster("marketing/green/80/da39a3ee5e")),
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
