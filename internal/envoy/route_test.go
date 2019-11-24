@@ -50,10 +50,14 @@ func TestRoute(t *testing.T) {
 			ServicePort: &service.Spec.Ports[0],
 		},
 	}
-	match := RoutePrefix("/")
-	action := RouteRoute(&dag.Route{
+	route := &dag.Route{
+		PathCondition: &dag.PrefixCondition{
+			Prefix: "/",
+		},
 		Clusters: []*dag.Cluster{cluster},
-	})
+	}
+	match := RouteMatch(route)
+	action := RouteRoute(route)
 	got := Route(match, action)
 	want := &envoy_api_v2_route.Route{
 		Match:  match,

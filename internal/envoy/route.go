@@ -44,33 +44,23 @@ func Route(match *envoy_api_v2_route.RouteMatch, action *envoy_api_v2_route.Rout
 func RouteMatch(route *dag.Route) *envoy_api_v2_route.RouteMatch {
 	switch c := route.PathCondition.(type) {
 	case *dag.RegexCondition:
-		return RouteRegex(c.Regex, route.HeaderConditions...)
+		return &envoy_api_v2_route.RouteMatch{
+			PathSpecifier: &envoy_api_v2_route.RouteMatch_SafeRegex{
+				SafeRegex: SafeRegexMatch(c.Regex),
+			},
+			Headers: headerMatcher(route.HeaderConditions),
+		}
 	case *dag.PrefixCondition:
-		return RoutePrefix(c.Prefix, route.HeaderConditions...)
+		return &envoy_api_v2_route.RouteMatch{
+			PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
+				Prefix: c.Prefix,
+			},
+			Headers: headerMatcher(route.HeaderConditions),
+		}
 	default:
 		return &envoy_api_v2_route.RouteMatch{
 			Headers: headerMatcher(route.HeaderConditions),
 		}
-	}
-}
-
-// RouteRegex returns a regex matcher.
-func RouteRegex(regex string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
-	return &envoy_api_v2_route.RouteMatch{
-		PathSpecifier: &envoy_api_v2_route.RouteMatch_SafeRegex{
-			SafeRegex: SafeRegexMatch(regex),
-		},
-		Headers: headerMatcher(headers),
-	}
-}
-
-// RoutePrefix returns a prefix matcher.
-func RoutePrefix(prefix string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
-	return &envoy_api_v2_route.RouteMatch{
-		PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
-			Prefix: prefix,
-		},
-		Headers: headerMatcher(headers),
 	}
 }
 

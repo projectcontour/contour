@@ -73,7 +73,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("www.example.com",
-					envoy.Route(envoy.RoutePrefix("/cart"), withSessionAffinity(routeCluster("default/app/80/e4f81994fe"))),
+					envoy.Route(routePrefix("/cart"), withSessionAffinity(routeCluster("default/app/80/e4f81994fe"))),
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -109,7 +109,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("www.example.com",
-					envoy.Route(envoy.RoutePrefix("/cart"), withSessionAffinity(
+					envoy.Route(routePrefix("/cart"), withSessionAffinity(
 						routeWeightedCluster(
 							weightedCluster{"default/app/80/e4f81994fe", 1},
 							weightedCluster{"default/app/8080/e4f81994fe", 1},
@@ -155,13 +155,13 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("www.example.com",
-					envoy.Route(envoy.RoutePrefix("/cart"), withSessionAffinity(
+					envoy.Route(routePrefix("/cart"), withSessionAffinity(
 						routeWeightedCluster(
 							weightedCluster{"default/app/80/e4f81994fe", 1},
 							weightedCluster{"default/app/8080/da39a3ee5e", 1},
 						),
 					)),
-					envoy.Route(envoy.RoutePrefix("/"), routeCluster("default/app/80/da39a3ee5e")),
+					envoy.Route(routePrefix("/"), routeCluster("default/app/80/da39a3ee5e")),
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -197,7 +197,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("www.example.com",
-					envoy.Route(envoy.RoutePrefix("/cart"), withSessionAffinity(routeCluster("default/app/80/e4f81994fe"))),
+					envoy.Route(routePrefix("/cart"), withSessionAffinity(routeCluster("default/app/80/e4f81994fe"))),
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -234,7 +234,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("www.example.com",
-					envoy.Route(envoy.RoutePrefix("/cart"), withSessionAffinity(
+					envoy.Route(routePrefix("/cart"), withSessionAffinity(
 						routeWeightedCluster(
 							weightedCluster{"default/app/80/e4f81994fe", 1},
 							weightedCluster{"default/app/8080/e4f81994fe", 1},

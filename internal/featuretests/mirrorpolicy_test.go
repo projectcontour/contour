@@ -80,7 +80,7 @@ func TestMirrorPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost(p1.Spec.VirtualHost.Fqdn,
-					envoy.Route(envoy.RoutePrefix("/"),
+					envoy.Route(routePrefix("/"),
 						withMirrorPolicy(routeCluster("default/kuard/8080/da39a3ee5e"), "default/kuarder/8080/da39a3ee5e")),
 				),
 			),
