@@ -33,23 +33,17 @@ import (
 // CACertificateKey stores the key for the TLS validation secret cert
 const CACertificateKey = "ca.crt"
 
-func clusterDefaults() *v2.Cluster {
-	return &v2.Cluster{
-		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-		CommonLbConfig: ClusterCommonLBConfig(),
-		LbPolicy:       lbPolicy(""),
-	}
-}
-
 // Cluster creates new v2.Cluster from dag.Cluster.
 func Cluster(c *dag.Cluster) *v2.Cluster {
 	service := c.Upstream
-	cluster := clusterDefaults()
-
-	cluster.Name = Clustername(c)
-	cluster.AltStatName = altStatName(service)
-	cluster.LbPolicy = lbPolicy(c.LoadBalancerPolicy)
-	cluster.HealthChecks = edshealthcheck(c)
+	cluster := &v2.Cluster{
+		Name:           Clustername(c),
+		AltStatName:    altStatName(c.Upstream),
+		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
+		CommonLbConfig: ClusterCommonLBConfig(),
+		LbPolicy:       lbPolicy(c.LoadBalancerPolicy),
+		HealthChecks:   edshealthcheck(c),
+	}
 
 	switch len(service.ExternalName) {
 	case 0:

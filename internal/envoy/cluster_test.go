@@ -21,7 +21,6 @@ import (
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
@@ -75,6 +74,8 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
+				CommonLbConfig:       ClusterCommonLBConfig(),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -89,6 +90,8 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
+				CommonLbConfig:       ClusterCommonLBConfig(),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -104,6 +107,8 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
+				CommonLbConfig:       ClusterCommonLBConfig(),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -120,6 +125,8 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
+				CommonLbConfig:       ClusterCommonLBConfig(),
+				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
 				LoadAssignment:       StaticClusterLoadAssignment(service(s2)),
 			},
 		},
@@ -131,6 +138,8 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
+				CommonLbConfig:       ClusterCommonLBConfig(),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -160,6 +169,8 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/3ac4e90987",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
+				CommonLbConfig:       ClusterCommonLBConfig(),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -179,6 +190,8 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
+				CommonLbConfig:       ClusterCommonLBConfig(),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -202,6 +215,8 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
+				CommonLbConfig:       ClusterCommonLBConfig(),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -225,6 +240,8 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
+				CommonLbConfig:       ClusterCommonLBConfig(),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -248,6 +265,8 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
+				CommonLbConfig:       ClusterCommonLBConfig(),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -268,6 +287,8 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/58d888c08a",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
+				CommonLbConfig:       ClusterCommonLBConfig(),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -284,6 +305,8 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/e4f81994fe",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
+				CommonLbConfig:       ClusterCommonLBConfig(),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -300,6 +323,8 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
+				CommonLbConfig:       ClusterCommonLBConfig(),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -317,6 +342,8 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/bc862a33ca",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
+				CommonLbConfig:       ClusterCommonLBConfig(),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
@@ -341,11 +368,7 @@ func TestCluster(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := Cluster(tc.cluster)
-			want := clusterDefaults()
-
-			proto.Merge(want, tc.want)
-
-			assert.Equal(t, want, got)
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
