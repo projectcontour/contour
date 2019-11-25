@@ -8,6 +8,7 @@ $black: #000;
 $white: #FFFFFF;
 $light: $white;
 $pink:    #A41458;
+$darkest-blue: #1D428A;
 
 // Bootstrap overrides
 
@@ -52,7 +53,7 @@ $header-foreground-selected: $black;
 // Footer
 $footer-foreground: #808080;
 $footer-link-color: #474747;
-$footer-copyright: #777777;
+$footer-copyright: $black;
 
 // Sections
 
@@ -101,16 +102,16 @@ $field-backgrounds: (
 // Buttons
 
 $button-primary-background: $white;
-$button-primary-background-hover: #0091DA;
-$button-primary-foreground: #1D428A;
-$button-primary-border: $button-primary-background;
-$button-primary-border-hover: $button-primary-background;
+$button-primary-background-hover: $darkest-blue;
+$button-primary-foreground: $darkest-blue;
+$button-primary-border: $white;
+$button-primary-border-hover: $white;
 
-$button-secondary-background: #0091DA;
+$button-secondary-background: $darkest-blue;
 $button-secondary-background-hover: $white;
 $button-secondary-foreground: $white;
 $button-secondary-border: $white;
-$button-secondary-border-hover: $button-secondary-background;
+$button-secondary-border-hover: $darkest-blue;
 
 // Posts
 $post-hero-gradient-start: #fafafa;
