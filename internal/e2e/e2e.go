@@ -94,8 +94,8 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 			},
 		},
 		CacheHandler: ch,
-		CRDStatus: &k8s.CRDStatus{
-			Client: fake.NewSimpleClientset(),
+		CRDStatus: &k8s.Status{
+			CRDClient: fake.NewSimpleClientset(),
 		},
 		Metrics:         ch.Metrics,
 		FieldLogger:     log,

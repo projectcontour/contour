@@ -103,6 +103,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("root-namespaces", "Restrict contour to searching these namespaces for root ingress routes").StringVar(&ctx.rootNamespaces)
 
 	serve.Flag("ingress-class-name", "Contour IngressClass name").StringVar(&ctx.ingressClass)
+	serve.Flag("envoy-service-name", "Defines which Envoy service name handles ingress traffic for this instance of Contour").StringVar(&ctx.envoyServiceName)
+	serve.Flag("envoy-service-namespace", "Defines which Envoy service namespace handles ingress traffic for this instance of Contour").StringVar(&ctx.envoyServiceNamespace)
 
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log").StringVar(&ctx.httpAccessLog)
 	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log").StringVar(&ctx.httpsAccessLog)
@@ -124,6 +126,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 1. establish k8s client connection
 	client, contourClient, coordinationClient := newClient(ctx.Kubeconfig, ctx.InCluster)
+
+	// step 1b. get current namespace that Contour is running inside if not defined
+	if ctx.envoyServiceNamespace == "" {
+		ctx.envoyServiceNamespace = getCurrentNamespace()
+	}
 
 	// step 2. create informers
 	// note: 0 means resync timers are disabled
@@ -158,8 +165,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		},
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
-		CRDStatus: &k8s.CRDStatus{
-			Client: contourClient,
+		CRDStatus: &k8s.Status{
+			CRDClient: contourClient,
+			K8sClient: client,
 		},
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
@@ -168,6 +176,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				FieldLogger:    log.WithField("context", "KubernetesCache"),
 			},
 			DisablePermitInsecure: ctx.DisablePermitInsecure,
+			EnvoyNamespaceName:    ctx.envoyServiceNamespace,
 		},
 		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}

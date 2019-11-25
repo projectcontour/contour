@@ -17,15 +17,19 @@ import (
 	"fmt"
 	"testing"
 
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/networking/v1beta1"
+
 	ingressroutev1beta1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	"github.com/projectcontour/contour/apis/generated/clientset/versioned/fake"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	k8sfake "k8s.io/client-go/kubernetes/fake"
 	k8stesting "k8s.io/client-go/testing"
 )
 
-func TestSetStatus(t *testing.T) {
+func TestSetCRDStatus(t *testing.T) {
 	tests := map[string]struct {
 		msg           string
 		desc          string
@@ -96,8 +100,8 @@ func TestSetStatus(t *testing.T) {
 					return true, tc.existing, nil
 				}
 			})
-			irs := CRDStatus{
-				Client: client,
+			irs := Status{
+				CRDClient: client,
 			}
 			if err := irs.SetStatus(tc.msg, tc.desc, tc.existing); err != nil {
 				t.Fatal(err)
@@ -109,6 +113,63 @@ func TestSetStatus(t *testing.T) {
 
 			if tc.expectedPatch != string(gotPatchBytes) {
 				t.Fatalf("expected patch: %s, got: %s", tc.expectedPatch, string(gotPatchBytes))
+			}
+		})
+	}
+}
+
+func TestSetIngressStatus(t *testing.T) {
+	tests := map[string]struct {
+		existing      *v1beta1.Ingress
+		lbIngress     []v1.LoadBalancerIngress
+		expectedVerbs []string
+	}{
+		"simple update with host": {
+			existing: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+			},
+			lbIngress: []v1.LoadBalancerIngress{{
+				Hostname: "site.test.local",
+			}},
+			expectedVerbs: []string{"put"},
+		},
+		"simple update with IP": {
+			existing: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+			},
+			lbIngress: []v1.LoadBalancerIngress{{
+				IP: "192.168.0.1",
+			}},
+			expectedVerbs: []string{"put"},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			client := k8sfake.NewSimpleClientset(tc.existing)
+			irs := Status{
+				K8sClient: client,
+			}
+			if err := irs.SetIngressStatus(tc.lbIngress, tc.existing); err != nil {
+				t.Fatal(err)
+			}
+
+			if len(client.Actions()) != len(tc.expectedVerbs) {
+				t.Fatalf("Expected verbs mismatch: want: %d, got: %d", len(tc.expectedVerbs), len(client.Actions()))
+			}
+			got, err := irs.K8sClient.NetworkingV1beta1().Ingresses(tc.existing.Namespace).Get(tc.existing.Name, metav1.GetOptions{})
+			if err != nil {
+				t.Fatalf("Err getting ingress from client: %v", err)
+			}
+			if got.Status.LoadBalancer.Ingress[0].Hostname != tc.lbIngress[0].Hostname &&
+				got.Status.LoadBalancer.Ingress[0].IP != tc.lbIngress[0].IP {
+				t.Fatalf("Expected status mismatch: want: %v, got: %v", tc.lbIngress, got.Status.LoadBalancer.Ingress)
 			}
 		})
 	}

@@ -16,6 +16,8 @@ package dag
 import (
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,12 +27,20 @@ const (
 	StatusOrphaned = "orphaned"
 )
 
+type Status interface {
+}
+
 // Status contains the status for an IngressRoute (valid / invalid / orphan, etc)
-type Status struct {
+type ObjectStatus struct {
 	Object      Object
 	Status      string
 	Description string
 	Vhost       string
+}
+
+type IngressStatus struct {
+	Object              v1beta1.Ingress
+	LoadBalancerIngress []v1.LoadBalancerIngress
 }
 
 type StatusWriter struct {
@@ -47,12 +57,18 @@ type ObjectStatusWriter struct {
 	values map[string]string
 }
 
-// WithObject returns an ObjectStatusWriter that can be used to set the state of
+type IngressStatusWriter struct {
+	sw     *StatusWriter
+	obj    v1beta1.Ingress
+	values []v1.LoadBalancerIngress
+}
+
+// WithObject returns an StatusWriter that can be used to set the state of
 // the Object. The state can be set as many times as necessary. The state of the
-// object can be made perminent by calling the commit function returned from WithObject.
-// The caller should pass the ObjectStatusWriter to functions interested in writing status,
+// object can be made permanent by calling the commit function returned from WithObject.
+// The caller should pass the StatusWriter to functions interested in writing status,
 // but keep the commit function for itself. The commit function should be either called
-// via a defer, or directly if statuses are being set in a loop (as defers will not fire
+// via a defer, or directly if objStatuses are being set in a loop (as defers will not fire
 // until the end of the function).
 func (sw *StatusWriter) WithObject(obj Object) (_ *ObjectStatusWriter, commit func()) {
 	osw := &ObjectStatusWriter{
@@ -62,6 +78,24 @@ func (sw *StatusWriter) WithObject(obj Object) (_ *ObjectStatusWriter, commit fu
 	}
 	return osw, func() {
 		sw.commit(osw)
+	}
+}
+
+// WithObject returns an StatusWriter that can be used to set the state of
+// the Object. The state can be set as many times as necessary. The state of the
+// object can be made permanent by calling the commit function returned from WithObject.
+// The caller should pass the StatusWriter to functions interested in writing status,
+// but keep the commit function for itself. The commit function should be either called
+// via a defer, or directly if objStatuses are being set in a loop (as defers will not fire
+// until the end of the function).
+func (sw *StatusWriter) WithIngressObject(obj v1beta1.Ingress) (_ *IngressStatusWriter, commit func()) {
+	isw := &IngressStatusWriter{
+		sw:     sw,
+		obj:    obj,
+		values: []v1.LoadBalancerIngress{},
+	}
+	return isw, func() {
+		sw.commitIngress(isw)
 	}
 }
 
@@ -77,7 +111,7 @@ func (sw *StatusWriter) commit(osw *ObjectStatusWriter) {
 	}
 	if _, ok := sw.statuses[m]; !ok {
 		// only record the first status event
-		sw.statuses[m] = Status{
+		sw.statuses[m] = ObjectStatus{
 			Object:      osw.obj,
 			Status:      osw.values["status"],
 			Description: osw.values["description"],
@@ -85,6 +119,31 @@ func (sw *StatusWriter) commit(osw *ObjectStatusWriter) {
 		}
 	}
 }
+
+func (sw *StatusWriter) commitIngress(isw *IngressStatusWriter) {
+	if len(isw.values) == 0 {
+		// nothing to commit
+		return
+	}
+
+	m := Meta{
+		name:      isw.obj.GetObjectMeta().GetName(),
+		namespace: isw.obj.GetObjectMeta().GetNamespace(),
+	}
+	if _, ok := sw.statuses[m]; !ok {
+		// only record the first status event
+		sw.statuses[m] = IngressStatus{
+			Object:              isw.obj,
+			LoadBalancerIngress: isw.values,
+		}
+	}
+}
+
+func (isw *IngressStatusWriter) SetLBStatus(lb []v1.LoadBalancerIngress) *IngressStatusWriter {
+	isw.values = lb
+	return isw
+}
+
 func (osw *ObjectStatusWriter) WithValue(key, val string) *ObjectStatusWriter {
 	osw.values[key] = val
 	return osw
@@ -105,8 +164,8 @@ func (osw *ObjectStatusWriter) SetValid() {
 	}
 }
 
-// WithObject returns a new ObjectStatusWriter with a copy of the current
-// ObjectStatusWriter's values, including its status if set. This is convenient if
+// WithObject returns a new StatusWriter with a copy of the current
+// StatusWriter's values, including its status if set. This is convenient if
 // the object shares a relationship with its parent. The caller should arrange for
 // the commit function to be called to write the final status of the object.
 func (osw *ObjectStatusWriter) WithObject(obj Object) (_ *ObjectStatusWriter, commit func()) {

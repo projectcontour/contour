@@ -40,7 +40,7 @@ type EventHandler struct {
 
 	HoldoffDelay, HoldoffMaxDelay time.Duration
 
-	CRDStatus *k8s.CRDStatus
+	CRDStatus *k8s.Status
 
 	*metrics.Metrics
 
@@ -239,32 +239,43 @@ func (e *EventHandler) updateDAG() {
 
 // setStatus updates the status of objects.
 func (e *EventHandler) setStatus(statuses map[dag.Meta]dag.Status) {
-	for _, st := range statuses {
-		switch obj := st.Object.(type) {
-		case *ingressroutev1.IngressRoute:
-			err := e.CRDStatus.SetStatus(st.Status, st.Description, obj)
+	for _, status := range statuses {
+		switch st := status.(type) {
+		case dag.ObjectStatus:
+			switch obj := st.Object.(type) {
+			case *ingressroutev1.IngressRoute:
+				err := e.CRDStatus.SetStatus(st.Status, st.Description, obj)
+				if err != nil {
+					e.WithError(err).
+						WithField("status", st.Status).
+						WithField("desc", st.Description).
+						WithField("name", obj.Name).
+						WithField("namespace", obj.Namespace).
+						Error("failed to set status")
+				}
+			case *projcontour.HTTPProxy:
+				err := e.CRDStatus.SetStatus(st.Status, st.Description, obj)
+				if err != nil {
+					e.WithError(err).
+						WithField("status", st.Status).
+						WithField("desc", st.Description).
+						WithField("name", obj.Name).
+						WithField("namespace", obj.Namespace).
+						Error("failed to set status")
+				}
+			default:
+				e.WithField("namespace", obj.GetObjectMeta().GetNamespace()).
+					WithField("name", obj.GetObjectMeta().GetName()).
+					Error("set status: unknown object type")
+			}
+		case dag.IngressStatus:
+			err := e.CRDStatus.SetIngressStatus(st.LoadBalancerIngress, &st.Object)
 			if err != nil {
 				e.WithError(err).
-					WithField("status", st.Status).
-					WithField("desc", st.Description).
-					WithField("name", obj.Name).
-					WithField("namespace", obj.Namespace).
+					WithField("name", st.Object.GetName()).
+					WithField("namespace", st.Object.Namespace).
 					Error("failed to set status")
 			}
-		case *projcontour.HTTPProxy:
-			err := e.CRDStatus.SetStatus(st.Status, st.Description, obj)
-			if err != nil {
-				e.WithError(err).
-					WithField("status", st.Status).
-					WithField("desc", st.Description).
-					WithField("name", obj.Name).
-					WithField("namespace", obj.Namespace).
-					Error("failed to set status")
-			}
-		default:
-			e.WithField("namespace", obj.GetObjectMeta().GetNamespace()).
-				WithField("name", obj.GetObjectMeta().GetName()).
-				Error("set status: unknown object type")
 		}
 	}
 }

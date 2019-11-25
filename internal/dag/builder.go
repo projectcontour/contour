@@ -35,6 +35,9 @@ type Builder struct {
 	// from which to build a DAG.
 	Source KubernetesCache
 
+	// EnvoyNamespaceName is the Kubernetes name+namespace where Envoy's service is deployed
+	EnvoyNamespaceName string
+
 	// DisablePermitInsecure disables the use of the
 	// permitInsecure field in IngressRoute.
 	DisablePermitInsecure bool
@@ -324,6 +327,10 @@ func (b *Builder) delegationPermitted(secret Meta, to string) bool {
 }
 
 func (b *Builder) computeIngresses() {
+
+	// holds the list of external lbs associated with the Envoy service
+	externalLB := GetExternalLB(b.EnvoyNamespaceName, b.Source.services)
+
 	// deconstruct each ingress into routes and virtualhost entries
 	for _, ing := range b.Source.ingresses {
 
@@ -332,7 +339,24 @@ func (b *Builder) computeIngresses() {
 		for _, rule := range rules {
 			b.computeIngressRule(ing, rule)
 		}
+
+		// Write status info to Ingress resource
+		sw, commit := b.WithIngressObject(*ing)
+		sw.SetLBStatus(externalLB)
+		commit()
 	}
+}
+
+func GetExternalLB(namespaceName string, services map[Meta]*v1.Service) []v1.LoadBalancerIngress {
+	var externalLB []v1.LoadBalancerIngress
+	// Lookup external lb information
+	for _, svc := range services {
+		// If this service has external status set and matches the Envoy service instance
+		if len(svc.Status.LoadBalancer.Ingress) > 0 && fmt.Sprintf("%s/%s", svc.GetNamespace(), svc.GetName()) == namespaceName {
+			externalLB = svc.Status.LoadBalancer.Ingress
+		}
+	}
+	return externalLB
 }
 
 func (b *Builder) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1.IngressRule) {

@@ -339,7 +339,7 @@ func (m *Metrics) SetHTTPProxyMetric(metrics RouteMetric) {
 type Service struct {
 	httpsvc.Service
 	*prometheus.Registry
-	Client *kubernetes.Clientset
+	Client kubernetes.Interface
 }
 
 // Start fulfills the g.Start contract.
@@ -352,10 +352,10 @@ func (svc *Service) Start(stop <-chan struct{}) error {
 	return svc.Service.Start(stop)
 }
 
-func registerHealthCheck(mux *http.ServeMux, client *kubernetes.Clientset) {
+func registerHealthCheck(mux *http.ServeMux, client kubernetes.Interface) {
 	healthCheckHandler := func(w http.ResponseWriter, r *http.Request) {
 		// Try and lookup Kubernetes server version as a quick and dirty check
-		_, err := client.ServerVersion()
+		_, err := client.Discovery().ServerVersion()
 		if err != nil {
 			msg := fmt.Sprintf("Failed Kubernetes Check: %v", err)
 			http.Error(w, msg, http.StatusServiceUnavailable)

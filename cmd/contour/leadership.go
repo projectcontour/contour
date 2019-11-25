@@ -27,7 +27,7 @@ import (
 
 // newLeaderElector creates a new leaderelection.LeaderElector and associated
 // channels by which to observe elections and depositions.
-func newLeaderElector(log logrus.FieldLogger, ctx *serveContext, client *kubernetes.Clientset, coordinationClient *coordinationv1.CoordinationV1Client) (*leaderelection.LeaderElector, chan struct{}, chan struct{}) {
+func newLeaderElector(log logrus.FieldLogger, ctx *serveContext, client kubernetes.Interface, coordinationClient *coordinationv1.CoordinationV1Client) (*leaderelection.LeaderElector, chan struct{}, chan struct{}) {
 
 	// leaderOK will block gRPC startup until it's closed.
 	leaderOK := make(chan struct{})
@@ -64,7 +64,7 @@ func newLeaderElector(log logrus.FieldLogger, ctx *serveContext, client *kuberne
 
 // newResourceLock creates a new resourcelock.Interface based on the Pod's name,
 // or a uuid if the name cannot be determined.
-func newResourceLock(ctx *serveContext, client *kubernetes.Clientset, coordinationClient *coordinationv1.CoordinationV1Client) resourcelock.Interface {
+func newResourceLock(ctx *serveContext, client kubernetes.Interface, coordinationClient *coordinationv1.CoordinationV1Client) resourcelock.Interface {
 	resourceLockID, found := os.LookupEnv("POD_NAME")
 	if !found {
 		resourceLockID = uuid.New().String()

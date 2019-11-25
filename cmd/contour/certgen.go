@@ -106,7 +106,7 @@ func GenerateCerts(certConfig *certgenConfig) (map[string][]byte, error) {
 
 // OutputCerts outputs the certs in certs as directed by config.
 func OutputCerts(config *certgenConfig,
-	kubeclient *kubernetes.Clientset,
+	kubeclient kubernetes.Interface,
 	certs map[string][]byte) {
 
 	if config.OutputPEM {

@@ -99,7 +99,17 @@ func main() {
 	}
 }
 
-func newClient(kubeconfig string, inCluster bool) (*kubernetes.Clientset, *clientset.Clientset, *coordinationv1.CoordinationV1Client) {
+// Returns the current namespace in which the controller is running
+// If error returns empty string
+func getCurrentNamespace() string {
+	ns, _, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(clientcmd.NewDefaultClientConfigLoadingRules(), &clientcmd.ConfigOverrides{}).Namespace()
+	if err != nil {
+		return "projectcontour"
+	}
+	return ns
+}
+
+func newClient(kubeconfig string, inCluster bool) (kubernetes.Interface, *clientset.Clientset, *coordinationv1.CoordinationV1Client) {
 	var err error
 	var config *rest.Config
 	if kubeconfig != "" && !inCluster {
@@ -112,6 +122,7 @@ func newClient(kubeconfig string, inCluster bool) (*kubernetes.Clientset, *clien
 
 	client, err := kubernetes.NewForConfig(config)
 	check(err)
+
 	contourClient, err := clientset.NewForConfig(config)
 	check(err)
 	coordinationClient, err := coordinationv1.NewForConfig(config)

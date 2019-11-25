@@ -55,6 +55,12 @@ type serveContext struct {
 	// ingress class
 	ingressClass string
 
+	// envoyServiceName
+	envoyServiceName string
+
+	// envoyServiceNamespace
+	envoyServiceNamespace string
+
 	// envoy's stats listener parameters
 	statsAddr string
 	statsPort int
@@ -164,6 +170,7 @@ func newServeContext() *serveContext {
 			Name:          "leader-elect",
 		},
 		UseExtensionsV1beta1Ingress: false,
+		envoyServiceName:            "envoy",
 	}
 }
 

@@ -75,7 +75,7 @@ func WriteSecretsYAML(outputDir, namespace string, certdata map[string][]byte) e
 
 // WriteSecretsKube writes all the keypairs out to Kube Secrets in the
 // passed Kube context.
-func WriteSecretsKube(client *kubernetes.Clientset, namespace string, certdata map[string][]byte) error {
+func WriteSecretsKube(client kubernetes.Interface, namespace string, certdata map[string][]byte) error {
 	err := writeCACertKube(client, namespace, certdata["cacert.pem"])
 	if err != nil {
 		return err
@@ -99,7 +99,7 @@ func writeCACertSecret(outputDir, namespace string, cert []byte) error {
 	return checkFile(filename, writeSecret(f, secret))
 }
 
-func writeCACertKube(client *kubernetes.Clientset, namespace string, cert []byte) error {
+func writeCACertKube(client kubernetes.Interface, namespace string, cert []byte) error {
 	secret := newCertOnlySecret("cacert", namespace, "cacert.pem", cert)
 	_, err := client.CoreV1().Secrets(namespace).Create(secret)
 	if err != nil {
@@ -123,7 +123,7 @@ func writeKeyPairSecret(outputDir, service, namespace string, cert, key []byte) 
 	return checkFile(filepath, err)
 }
 
-func writeKeyPairKube(client *kubernetes.Clientset, service, namespace string, cert, key []byte) error {
+func writeKeyPairKube(client kubernetes.Interface, service, namespace string, cert, key []byte) error {
 	secretname := service + "cert"
 	secret := newTLSSecret(secretname, namespace, key, cert)
 	_, err := client.CoreV1().Secrets(namespace).Create(secret)
