@@ -70,7 +70,9 @@ func cluster(name, servicename, statName string) *v2.Cluster {
 }
 
 func tlsCluster(c *v2.Cluster, ca []byte, subjectName string, alpnProtocols ...string) *v2.Cluster {
-	c.TlsContext = envoy.UpstreamTLSContext(ca, subjectName, alpnProtocols...)
+	c.TransportSocket = envoy.UpstreamTLSTransportSocket(
+		envoy.UpstreamTLSContext(ca, subjectName, alpnProtocols...),
+	)
 	return c
 }
 

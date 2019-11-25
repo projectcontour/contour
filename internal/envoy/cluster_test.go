@@ -108,7 +108,9 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				TlsContext:           UpstreamTLSContext(nil, "", "h2"),
+				TransportSocket: UpstreamTLSTransportSocket(
+					UpstreamTLSContext(nil, "", "h2"),
+				),
 				Http2ProtocolOptions: &envoy_api_v2_core.Http2ProtocolOptions{},
 			},
 		},
@@ -135,7 +137,9 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				TlsContext: UpstreamTLSContext(nil, ""),
+				TransportSocket: UpstreamTLSTransportSocket(
+					UpstreamTLSContext(nil, ""),
+				),
 			},
 		},
 		"verify tls upstream with san": {
@@ -164,7 +168,9 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				TlsContext: UpstreamTLSContext([]byte("cacert"), "foo.bar.io"),
+				TransportSocket: UpstreamTLSTransportSocket(
+					UpstreamTLSContext([]byte("cacert"), "foo.bar.io"),
+				),
 			},
 		},
 		"projectcontour.io/max-connections": {

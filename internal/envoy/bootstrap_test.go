@@ -19,7 +19,7 @@ import (
 	bootstrap "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"github.com/google/go-cmp/cmp"
+	"github.com/projectcontour/contour/internal/assert"
 )
 
 func TestBootstrap(t *testing.T) {
@@ -694,8 +694,11 @@ func TestBootstrap(t *testing.T) {
             "keepalive_interval": 5
           }
         },
-        "tls_context": {
-          "common_tls_context": {
+        "transport_socket": {
+          "name":"tls",
+          "typed_config": {
+            "@type":"type.googleapis.com/envoy.api.v2.auth.UpstreamTlsContext",
+            "common_tls_context": {
               "tls_certificates": [
                 {
                   "certificate_chain": {
@@ -715,6 +718,7 @@ func TestBootstrap(t *testing.T) {
                 ]
               }
             }
+          }
         }
       },
       {
@@ -787,9 +791,7 @@ func TestBootstrap(t *testing.T) {
 			got := Bootstrap(&tc.config)
 			want := new(bootstrap.Bootstrap)
 			unmarshal(t, tc.want, want)
-			if diff := cmp.Diff(got, want); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, want, got)
 		})
 	}
 }
