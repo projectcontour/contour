@@ -1017,7 +1017,9 @@ func externalnamecluster(name, servicename, statName, externalName string, port 
 
 func tlscluster(name, servicename, statsName string, ca []byte, subjectName string) *v2.Cluster {
 	c := cluster(name, servicename, statsName)
-	c.TlsContext = envoy.UpstreamTLSContext(ca, subjectName)
+	c.TransportSocket = envoy.UpstreamTLSTransportSocket(
+		envoy.UpstreamTLSContext(ca, subjectName),
+	)
 	return c
 }
 
