@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"fmt"
 	"time"
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
@@ -168,4 +169,23 @@ func max(a, b uint32) uint32 {
 		return a
 	}
 	return b
+}
+
+func prefixReplacementsAreValid(replacements []projcontour.ReplacePrefix) error {
+	prefixes := map[string]bool{}
+
+	for _, r := range replacements {
+		if prefixes[r.Prefix] {
+			if len(r.Prefix) > 0 {
+				// The replacements are not valid if there are duplicates.
+				return fmt.Errorf("duplicate replacement prefix '%s'", r.Prefix)
+			}
+			// Can't replace the empty prefix multiple times.
+			return fmt.Errorf("ambiguous prefix replacement")
+		}
+
+		prefixes[r.Prefix] = true
+	}
+
+	return nil
 }

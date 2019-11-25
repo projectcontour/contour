@@ -115,6 +115,18 @@ type Route struct {
 	MirrorPolicy *MirrorPolicy
 }
 
+// HasPathPrefix returns whether this route has a PrefixPathCondition.
+func (r *Route) HasPathPrefix() bool {
+	_, ok := r.PathCondition.(*PrefixCondition)
+	return ok
+}
+
+// HasPathRegex returns whether this route has a RegexPathCondition.
+func (r *Route) HasPathRegex() bool {
+	_, ok := r.PathCondition.(*RegexCondition)
+	return ok
+}
+
 // TimeoutPolicy defines the timeout policy for a route.
 type TimeoutPolicy struct {
 	// ResponseTimeout is the timeout applied to the response

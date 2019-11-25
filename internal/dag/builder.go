@@ -527,6 +527,97 @@ func addRoutes(vhost vhost, routes []*Route) {
 	}
 }
 
+// expandPrefixMatches adds new Routes to account for the difference
+// between prefix replacement when matching on '/foo' and '/foo/'.
+//
+// The table below shows the behavior of Envoy prefix rewrite. If we
+// match on only `/foo` or `/foo/`, then the unwanted rewrites marked
+// with X can result. This means that we need to generate separate
+// prefix matches (and replacements) for these cases.
+//
+// | Matching Prefix | Replacement | Client Path | Rewritten Path |
+// |-----------------|-------------|-------------|----------------|
+// | `/foo`          | `/bar`      | `/foosball` |   `/barsball`  |
+// | `/foo`          | `/`         | `/foo/v1`   | X `//v1`       |
+// | `/foo/`         | `/bar`      | `/foo/type` | X `/bartype`   |
+// | `/foo`          | `/bar/`     | `/foosball` | X `/bar/sball` |
+// | `/foo/`         | `/bar/`     | `/foo/type` |   `/bar/type`  |
+func expandPrefixMatches(routes []*Route) []*Route {
+	prefixedRoutes := map[string][]*Route{}
+
+	expandedRoutes := []*Route{}
+
+	// First, we group the Routes by their slash-consistent prefix match condition.
+	for _, r := range routes {
+		// If there is no path prefix, we won't do any expansion, so skip it.
+		if !r.HasPathPrefix() {
+			expandedRoutes = append(expandedRoutes, r)
+		}
+
+		routingPrefix := r.PathCondition.(*PrefixCondition).Prefix
+
+		if routingPrefix != "/" {
+			routingPrefix = strings.TrimRight(routingPrefix, "/")
+		}
+
+		prefixedRoutes[routingPrefix] = append(prefixedRoutes[routingPrefix], r)
+	}
+
+	for prefix, routes := range prefixedRoutes {
+		// Propagate the Routes into the expanded set. Since
+		// we have a slice of pointers, we can propagate here
+		// prior to any Route modifications.
+		expandedRoutes = append(expandedRoutes, routes...)
+
+		switch len(routes) {
+		case 1:
+			// Don't modify if we are not doing a replacement.
+			if len(routes[0].PrefixRewrite) == 0 {
+				continue
+			}
+
+			routingPrefix := routes[0].PathCondition.(*PrefixCondition).Prefix
+
+			// There's no alternate forms for '/' :)
+			if routingPrefix == "/" {
+				continue
+			}
+
+			// Shallow copy the Route. TODO(jpeach) deep copying would be more robust.
+			newRoute := *routes[0]
+
+			// Now, make the original route handle '/foo' and the new route handle '/foo'.
+			routes[0].PrefixRewrite = strings.TrimRight(routes[0].PrefixRewrite, "/")
+			routes[0].PathCondition = &PrefixCondition{Prefix: prefix}
+
+			newRoute.PrefixRewrite = routes[0].PrefixRewrite + "/"
+			newRoute.PathCondition = &PrefixCondition{Prefix: prefix + "/"}
+
+			// Since we trimmed trailing '/', it's possible that
+			// we made the replacement empty. There's no such
+			// thing as an empty rewrite; it's the same as
+			// rewriting to '/'.
+			if len(routes[0].PrefixRewrite) == 0 {
+				routes[0].PrefixRewrite = "/"
+			}
+
+			expandedRoutes = append(expandedRoutes, &newRoute)
+		case 2:
+			// This group routes on both '/foo' and
+			// '/foo/' so we can't add any implicit prefix
+			// matches. This is why we didn't filter out
+			// routes that don't have replacements earlier.
+			continue
+		default:
+			// This can't happen unless there are routes
+			// with duplicate prefix paths.
+		}
+
+	}
+
+	return expandedRoutes
+}
+
 func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, conditions []projcontour.Condition, visited []*projcontour.HTTPProxy, enforceTLS bool) []*Route {
 	for _, v := range visited {
 		// ensure we are not following an edge that produces a cycle
@@ -606,6 +697,43 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			RetryPolicy:      retryPolicy(route.RetryPolicy),
 		}
 
+		if len(route.GetPrefixReplacements()) > 0 {
+			if !r.HasPathPrefix() {
+				sw.SetInvalid("cannot specify prefix replacements without a prefix condition")
+				return nil
+			}
+
+			if err := prefixReplacementsAreValid(route.GetPrefixReplacements()); err != nil {
+				sw.SetInvalid(err.Error())
+				return nil
+			}
+
+			// Note that we are guaranteed to always have a prefix
+			// condition. Even if the CRD user didn't specify a
+			// prefix condition, mergePathConditions() guarantees
+			// a prefix of '/'.
+			routingPrefix := r.PathCondition.(*PrefixCondition).Prefix
+
+			// First, try to apply an exact prefix match.
+			for _, prefix := range route.GetPrefixReplacements() {
+				if len(prefix.Prefix) > 0 && routingPrefix == prefix.Prefix {
+					r.PrefixRewrite = prefix.Replacement
+					break
+				}
+			}
+
+			// If there wasn't a match, we can apply the default replacement.
+			if len(r.PrefixRewrite) == 0 {
+				for _, prefix := range route.GetPrefixReplacements() {
+					if len(prefix.Prefix) == 0 {
+						r.PrefixRewrite = prefix.Replacement
+						break
+					}
+				}
+			}
+
+		}
+
 		for _, service := range route.Services {
 			if service.Port < 1 || service.Port > 65535 {
 				sw.SetInvalid(fmt.Sprintf("service %q: port must be in the range 1-65535", service.Name))
@@ -652,6 +780,9 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 		}
 		routes = append(routes, r)
 	}
+
+	routes = expandPrefixMatches(routes)
+
 	sw.SetValid()
 	return routes
 }
