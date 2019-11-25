@@ -114,6 +114,11 @@ func withMirrorPolicy(route *envoy_api_v2_route.Route_Route, mirror string) *env
 	return route
 }
 
+func withPrefixRewrite(route *envoy_api_v2_route.Route_Route, replacement string) *envoy_api_v2_route.Route_Route {
+	route.Route.PrefixRewrite = replacement
+	return route
+}
+
 func withRetryPolicy(route *envoy_api_v2_route.Route_Route, retryOn string, numRetries uint32, perTryTimeout time.Duration) *envoy_api_v2_route.Route_Route {
 	route.Route.RetryPolicy = &envoy_api_v2_route.RetryPolicy{
 		RetryOn: retryOn,

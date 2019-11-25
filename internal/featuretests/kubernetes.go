@@ -16,8 +16,12 @@ package featuretests
 // kubernetes helpers
 
 import (
+	"fmt"
+	"strings"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -122,5 +126,18 @@ func secretdata(cert, key string) map[string][]byte {
 	return map[string][]byte{
 		v1.TLSCertKey:       []byte(cert),
 		v1.TLSPrivateKeyKey: []byte(key),
+	}
+}
+
+func meta(name string) metav1.ObjectMeta {
+	v := strings.SplitN(name, "/", 2)
+	switch len(v) {
+	case 2:
+		return metav1.ObjectMeta{
+			Name:      v[1],
+			Namespace: v[0],
+		}
+	default:
+		panic(fmt.Sprintf("object name '%s' omits namespace", name))
 	}
 }
