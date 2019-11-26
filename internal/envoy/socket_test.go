@@ -44,3 +44,27 @@ func TestUpstreamTLSTransportSocket(t *testing.T) {
 		})
 	}
 }
+
+func TestDownstreamTLSTransportSocket(t *testing.T) {
+	tests := map[string]struct {
+		ctxt *envoy_api_v2_auth.DownstreamTlsContext
+		want *envoy_api_v2_core.TransportSocket
+	}{
+		"default/tls": {
+			ctxt: DownstreamTLSContext("default/tls", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+			want: &envoy_api_v2_core.TransportSocket{
+				Name: "tls",
+				ConfigType: &envoy_api_v2_core.TransportSocket_TypedConfig{
+					TypedConfig: toAny(DownstreamTLSContext("default/tls", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1")),
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := DownstreamTLSTransportSocket(tc.ctxt)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}

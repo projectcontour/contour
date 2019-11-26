@@ -18,8 +18,10 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -126,10 +128,18 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 		ListenerFilters: envoy.ListenerFilters(
 			envoy.TLSInspector(),
 		),
-		FilterChains: filterchaintls("kuard.example.com", sec1, envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0), "h2", "http/1.1"),
+		FilterChains: []*envoy_api_v2_listener.FilterChain{
+			envoy.FilterChainTLS(
+				"kuard.example.com",
+				&dag.Secret{Object: sec1},
+				envoy.Filters(
+					envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
+				),
+				envoy_api_v2_auth.TlsParameters_TLSv1_3,
+				"h2", "http/1.1",
+			),
+		},
 	}
-	// easier to patch this up than add more params to filterchaintls
-	l1.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = envoy_api_v2_auth.TlsParameters_TLSv1_3
 
 	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
