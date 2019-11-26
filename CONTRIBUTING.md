@@ -1,8 +1,10 @@
 # Contributing
 
-Thanks for taking the time to join our community and start contributing. 
+Thanks for taking the time to join our community and start contributing.
 These guidelines will help you get started with the Contour project.
 Please note that we require [DCO sign off](#dco-sign-off).  
+
+Read this document for website specific guildlines: [Site Contribution Guidelines](/SITE_CONTRIBUTION.md). Guidelines in this document still apply to website contributions.
 
 ## Building from source
 
