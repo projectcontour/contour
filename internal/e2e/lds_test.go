@@ -392,8 +392,6 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		FilterChains: filterchaintls("kuard.example.com", secret1, envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0), "h2", "http/1.1"),
 	}
 
-	l1.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = envoy_api_v2_auth.TlsParameters_TLSv1_1
-
 	// add service
 	rh.OnAdd(svc1)
 
@@ -438,10 +436,18 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		ListenerFilters: envoy.ListenerFilters(
 			envoy.TLSInspector(),
 		),
-		FilterChains: filterchaintls("kuard.example.com", secret1, envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0), "h2", "http/1.1"),
+		FilterChains: []*envoy_api_v2_listener.FilterChain{
+			envoy.FilterChainTLS(
+				"kuard.example.com",
+				&dag.Secret{Object: secret1},
+				envoy.Filters(
+					envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
+				),
+				envoy_api_v2_auth.TlsParameters_TLSv1_3,
+				"h2", "http/1.1",
+			),
+		},
 	}
-
-	l2.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = envoy_api_v2_auth.TlsParameters_TLSv1_3
 
 	// add ingress and assert the existence of ingress_http and ingres_https
 	rh.OnAdd(i2)
@@ -1211,9 +1217,18 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 		ListenerFilters: envoy.ListenerFilters(
 			envoy.TLSInspector(),
 		),
-		FilterChains: filterchaintls("kuard.example.com", secret1, envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0), "h2", "http/1.1"),
+		FilterChains: []*envoy_api_v2_listener.FilterChain{
+			envoy.FilterChainTLS(
+				"kuard.example.com",
+				&dag.Secret{Object: secret1},
+				envoy.Filters(
+					envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
+				),
+				envoy_api_v2_auth.TlsParameters_TLSv1_2,
+				"h2", "http/1.1",
+			),
+		},
 	}
-	l1.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = envoy_api_v2_auth.TlsParameters_TLSv1_2
 
 	// verify that i1's TLS 1.1 minimum has been upgraded to 1.2
 	assert.Equal(t, &v2.DiscoveryResponse{
@@ -1264,9 +1279,18 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 		ListenerFilters: envoy.ListenerFilters(
 			envoy.TLSInspector(),
 		),
-		FilterChains: filterchaintls("kuard.example.com", secret1, envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0), "h2", "http/1.1"),
+		FilterChains: []*envoy_api_v2_listener.FilterChain{
+			envoy.FilterChainTLS(
+				"kuard.example.com",
+				&dag.Secret{Object: secret1},
+				envoy.Filters(
+					envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
+				),
+				envoy_api_v2_auth.TlsParameters_TLSv1_3,
+				"h2", "http/1.1",
+			),
+		},
 	}
-	l2.FilterChains[0].TlsContext.CommonTlsContext.TlsParams.TlsMinimumProtocolVersion = envoy_api_v2_auth.TlsParameters_TLSv1_3
 
 	// verify that i2's TLS 1.3 minimum has NOT been downgraded to 1.2
 	assert.Equal(t, &v2.DiscoveryResponse{
@@ -1388,9 +1412,7 @@ func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_liste
 		envoy.FilterChainTLS(
 			domain,
 			&dag.Secret{Object: secret},
-			[]*envoy_api_v2_listener.Filter{
-				filter,
-			},
+			envoy.Filters(filter),
 			envoy_api_v2_auth.TlsParameters_TLSv1_1,
 			alpn...,
 		),

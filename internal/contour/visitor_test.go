@@ -129,8 +129,8 @@ func TestVisitListeners(t *testing.T) {
 						FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 							ServerNames: []string{"tcpproxy.example.com"},
 						},
-						TlsContext: tlscontext(envoy_api_v2_auth.TlsParameters_TLSv1_1),
-						Filters:    envoy.Filters(envoy.TCPProxy(ENVOY_HTTPS_LISTENER, p1, envoy.FileAccessLogEnvoy(DEFAULT_HTTPS_ACCESS_LOG))),
+						TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1),
+						Filters:         envoy.Filters(envoy.TCPProxy(ENVOY_HTTPS_LISTENER, p1, envoy.FileAccessLogEnvoy(DEFAULT_HTTPS_ACCESS_LOG))),
 					}},
 					ListenerFilters: envoy.ListenerFilters(
 						envoy.TLSInspector(),

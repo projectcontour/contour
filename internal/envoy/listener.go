@@ -251,7 +251,9 @@ func FilterChainTLS(domain string, secret *dag.Secret, filters []*envoy_api_v2_l
 	}
 	// attach certificate data to this listener if provided.
 	if secret != nil {
-		fc.TlsContext = DownstreamTLSContext(Secretname(secret), tlsMinProtoVersion, alpnProtos...)
+		fc.TransportSocket = DownstreamTLSTransportSocket(
+			DownstreamTLSContext(Secretname(secret), tlsMinProtoVersion, alpnProtos...),
+		)
 	}
 	return fc
 }
