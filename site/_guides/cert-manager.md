@@ -161,7 +161,7 @@ For Contour to be able to serve HTTPS traffic for an Ingress in any namespace, u
 Create a file called `letsencrypt-staging.yaml` with the following contents:
 
 ```yaml
-apiVersion: certmanager.k8s.io/v1alpha1
+apiVersion: cert-manager.io/v1alpha2
 kind: ClusterIssuer
 metadata:
   name: letsencrypt-staging
@@ -445,7 +445,7 @@ To request a properly signed certificate from the Let's Encrypt production serve
 Create a file called `letsencrypt-prod.yaml` with the following contents:
 
 ```yaml
-apiVersion: certmanager.k8s.io/v1alpha1
+apiVersion: cert-manager.io/v1alpha2
 kind: ClusterIssuer
 metadata:
   name: letsencrypt-prod
@@ -480,7 +480,7 @@ kind: Ingress
 metadata:
   name: httpbin
   annotations:
-    certmanager.k8s.io/cluster-issuer: letsencrypt-prod
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ...
 ```
