@@ -67,7 +67,7 @@ collections:
     permalink: /docs/1.0/:name
   contributors:
     output: false
-  casestudies:
+  features:
     output: false
   metrics:
     output: false
