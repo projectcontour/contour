@@ -66,6 +66,13 @@ func routePrefix(prefix string, headers ...dag.HeaderCondition) *envoy_api_v2_ro
 	})
 }
 
+func upgradeHTTPS(match *envoy_api_v2_route.RouteMatch) *envoy_api_v2_route.Route {
+	return &envoy_api_v2_route.Route{
+		Match:  match,
+		Action: envoy.UpgradeHTTPS(),
+	}
+}
+
 func cluster(name, servicename, statName string) *v2.Cluster {
 	return DefaultCluster(&v2.Cluster{
 		Name:                 name,
