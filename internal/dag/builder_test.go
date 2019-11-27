@@ -5244,6 +5244,120 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		// issue 1954
+		"httpproxy tcpproxy + permitinsecure": {
+			objs: []interface{}{
+				sec1,
+				s9,
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "nginx",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "example.com",
+							TLS: &projcontour.TLS{
+								SecretName: sec1.Name,
+							},
+						},
+						Routes: []projcontour.Route{{
+							PermitInsecure: true,
+							Services: []projcontour.Service{{
+								Name: s9.Name,
+								Port: 80,
+							}},
+						}},
+						TCPProxy: &projcontour.TCPProxy{
+							Services: []projcontour.Service{{
+								Name: s9.Name,
+								Port: 80,
+							}},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						// not upgraded because the route is permitInsecure: true
+						virtualhost("example.com", prefixroute("/", service(s9))),
+					),
+				},
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "example.com",
+							},
+							MinProtoVersion: envoy_api_v2_auth.TlsParameters_TLSv1_1,
+							Secret:          secret(sec1),
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(service(s9)),
+							},
+						},
+					),
+				},
+			),
+		},
+		// issue 1954
+		"httpproxy tcpproxy + tlspassthrough + permitinsecure": {
+			objs: []interface{}{
+				s9,
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "nginx",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "example.com",
+							TLS: &projcontour.TLS{
+								Passthrough: true,
+							},
+						},
+						Routes: []projcontour.Route{{
+							PermitInsecure: true,
+							Services: []projcontour.Service{{
+								Name: s9.Name,
+								Port: 80,
+							}},
+						}},
+						TCPProxy: &projcontour.TCPProxy{
+							Services: []projcontour.Service{{
+								Name: s9.Name,
+								Port: 80,
+							}},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						// not upgraded because the route is permitInsecure: true
+						virtualhost("example.com", prefixroute("/", service(s9))),
+					),
+				},
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "example.com",
+							},
+							MinProtoVersion: envoy_api_v2_auth.TlsParameters_TLS_AUTO,
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(service(s9)),
+							},
+						},
+					),
+				},
+			),
+		},
 	}
 
 	for name, tc := range tests {
