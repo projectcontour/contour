@@ -29,7 +29,7 @@ toc:
         link: /guides/deploy-aws-nlb/
       - page: AWS PROXY v1/v2 Support
         link: /guides/proxy-proto/
-      - page: Migrating to HTPPProxy
+      - page: Migrating to HTTPProxy
         link: /guides/ingressroute-to-httpproxy/
       - page: Prometheus Metrics
         link: /guides/prometheus/
