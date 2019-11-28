@@ -495,9 +495,16 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		}
 	}
 
-	if proxy.Spec.TCPProxy != nil && (passthrough || enforceTLS) {
-		if !b.processHTTPProxyTCPProxy(sw, proxy, nil, host) {
+	if proxy.Spec.TCPProxy != nil {
+		tls := proxy.Spec.VirtualHost.TLS
+		if tls == nil {
+			sw.SetInvalid("tcpproxy: missing tls.passthrough or tls.secretName")
 			return
+		}
+		if passthrough || enforceTLS {
+			if !b.processHTTPProxyTCPProxy(sw, proxy, nil, host) {
+				return
+			}
 		}
 	}
 
