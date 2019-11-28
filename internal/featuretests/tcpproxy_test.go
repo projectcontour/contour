@@ -996,3 +996,128 @@ func TestTCPProxyTLSPassthroughAndHTTPServicePermitInsecure(t *testing.T) {
 		TypeUrl: routeType,
 	})
 }
+
+// Assert that TCPProxy with a missing tls key, and/or missing passthrough or secretname
+// does not generate a tcpproxy configuration.
+func TestTCPProxyMissingTLS(t *testing.T) {
+	rh, c, done := setup(t)
+	defer done()
+
+	s1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Type: "kubernetes.io/tls",
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+	}
+
+	svc := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "backend",
+			Namespace: s1.Name,
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	hp1 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: svc.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "tcpproxy.example.com",
+				// missing TLS:
+			},
+			Routes: []projcontour.Route{{
+				Conditions: prefixCondition("/"),
+				Services: []projcontour.Service{{
+					Name: svc.Name,
+					Port: 80,
+				}},
+			}},
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name: svc.Name,
+					Port: 80,
+				}},
+			},
+		},
+	}
+	rh.OnAdd(s1)
+	rh.OnAdd(svc)
+	rh.OnAdd(hp1)
+
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			// ingress_http and ingress_https should be missing
+			// as hp1 is not valid.
+			staticListener(),
+		),
+		TypeUrl: listenerType,
+	})
+
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			// ingress_http and ingress_https should be empty
+			// as hp1 is not valid.
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
+		),
+		TypeUrl: routeType,
+	})
+
+	hp2 := &projcontour.HTTPProxy{
+		ObjectMeta: hp1.ObjectMeta,
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "tcpproxy.example.com",
+				TLS: &projcontour.TLS{
+					// invalid, one of Passthrough or SecretName must be provided.
+					Passthrough: false,
+					SecretName:  "",
+				},
+			},
+			Routes: []projcontour.Route{{
+				Conditions: prefixCondition("/"),
+				Services: []projcontour.Service{{
+					Name: svc.Name,
+					Port: 80,
+				}},
+			}},
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name: svc.Name,
+					Port: 80,
+				}},
+			},
+		},
+	}
+	rh.OnUpdate(hp1, hp2)
+
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			// ingress_http and ingress_https should be missing
+			// as hp2 is not valid.
+			staticListener(),
+		),
+		TypeUrl: listenerType,
+	})
+
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			// ingress_http and ingress_https should be empty
+			// as hp2 is not valid.
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
+		),
+		TypeUrl: routeType,
+	})
+}
