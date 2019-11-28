@@ -1742,6 +1742,27 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	proxy45 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "missing-tcp-proxy-service",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "tcpproxy.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name: "not-found",
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -2371,6 +2392,17 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Status:      "invalid",
 					Description: "include roots/child not found",
 					Vhost:       "example.com",
+				},
+			},
+		},
+		"httpproxy w/ tcpproxy w/ missing service": {
+			objs: []interface{}{proxy45},
+			want: map[Meta]Status{
+				{name: proxy45.Name, namespace: proxy45.Namespace}: {
+					Object:      proxy45,
+					Status:      "invalid",
+					Description: "tcpproxy: service roots/not-found/8080: not found",
+					Vhost:       "tcpproxy.example.com",
 				},
 			},
 		},
