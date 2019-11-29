@@ -469,8 +469,12 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		return
 	}
 
-	var enforceTLS, passthrough bool
+	var tlsValid bool
 	if tls := proxy.Spec.VirtualHost.TLS; tls != nil {
+
+		// tls is valid if passthrough == true XOR secretName != ""
+		tlsValid = tls.Passthrough != !isBlank(tls.SecretName)
+
 		// attach secrets to TLS enabled vhosts
 		m := splitSecret(tls.SecretName, proxy.Namespace)
 		sec := b.lookupSecret(m, validSecret)
@@ -482,40 +486,31 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 			svhost := b.lookupSecureVirtualHost(host)
 			svhost.Secret = sec
 			svhost.MinProtoVersion = MinProtoVersion(proxy.Spec.VirtualHost.TLS.MinimumProtocolVersion)
-			enforceTLS = true
 		}
-		// passthrough is true if tls.secretName is not present, and
-		// tls.passthrough is set to true.
-		passthrough = isBlank(tls.SecretName) && tls.Passthrough
 
-		// If not passthrough and secret is invalid, then set status
-		if sec == nil && !passthrough {
+		if sec == nil && !tls.Passthrough {
 			sw.SetInvalid(fmt.Sprintf("TLS Secret [%s] not found or is malformed", tls.SecretName))
 			return
 		}
 	}
 
 	if proxy.Spec.TCPProxy != nil {
-		tls := proxy.Spec.VirtualHost.TLS
-		if tls == nil {
+		if !tlsValid {
 			sw.SetInvalid("tcpproxy: missing tls.passthrough or tls.secretName")
 			return
 		}
-		if passthrough || enforceTLS {
-			if !b.processHTTPProxyTCPProxy(sw, proxy, nil, host) {
-				return
-			}
+		if !b.processHTTPProxyTCPProxy(sw, proxy, nil, host) {
+			return
 		}
 	}
 
-	routes := b.computeRoutes(sw, proxy, nil, nil, enforceTLS)
+	routes := b.computeRoutes(sw, proxy, nil, nil, tlsValid)
 	insecure := b.lookupVirtualHost(host)
 	addRoutes(insecure, routes)
 
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
 	// then add routes to the secure virtualhost definition.
-	// TODO(dfc) enforceTLS is poorly named, it should be something like tlsEnabled.
-	if enforceTLS && proxy.Spec.TCPProxy == nil {
+	if tlsValid && proxy.Spec.TCPProxy == nil {
 		secure := b.lookupSecureVirtualHost(host)
 		addRoutes(secure, routes)
 	}

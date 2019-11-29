@@ -1926,6 +1926,65 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// proxy1d tcp forwards secure traffic to default/kuard:8080 by TLS pass-through it,
+	// insecure traffic is 301 upgraded.
+	proxy1d := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-tcp",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "kuard.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
+	// proxy1e tcp forwards secure traffic to default/kuard:8080 by TLS pass-through it,
+	// insecure traffic is not 301 upgraded because of the permitInsecure: true annotation.
+	proxy1e := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-tcp",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "kuard.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			Routes: []projcontour.Route{{
+				PermitInsecure: true,
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
 	proxy2a := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -1985,7 +2044,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy1e := &projcontour.HTTPProxy{
+	proxy2c := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
@@ -4680,7 +4739,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		"insert httpproxy w/ healthcheck": {
 			objs: []interface{}{
-				proxy1e, s1,
+				proxy2c, s1,
 			},
 			want: listeners(
 				&Listener{
@@ -5178,6 +5237,68 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		// issue 1952
+		"insert proxy with tcp forward without TLS termination w/ passthrough and 301 upgrade of port 80": {
+			objs: []interface{}{
+				proxy1d, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.example.com",
+							routeUpgrade("/", service(s1)),
+						),
+					),
+				},
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "kuard.example.com",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(
+									service(s1),
+								),
+							},
+						},
+					),
+				},
+			),
+		},
+		"insert proxy with tcp forward without TLS termination w/ passthrough without 301 upgrade of port 80": {
+			objs: []interface{}{
+				proxy1e, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.example.com",
+							prefixroute("/", service(s1)),
+						),
+					),
+				},
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "kuard.example.com",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(
+									service(s1),
+								),
+							},
+						},
+					),
+				},
+			),
+		},
+
 		// issue 1399
 		"service shared across ingress and httpproxy tcpproxy": {
 			objs: []interface{}{

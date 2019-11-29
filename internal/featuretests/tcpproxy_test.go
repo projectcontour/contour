@@ -863,12 +863,11 @@ func TestTCPProxyTLSPassthroughAndHTTPService(t *testing.T) {
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
-				// BUG(dfc) issue 1952, route: / is not marked permitInsecure: true
-				// this should be a 301 upgrade
+				// 301 upgrade because permitInsecure is false, thus
+				// the route is present on port 80, but unconditionally
+				// upgrades to HTTPS.
 				envoy.VirtualHost("kuard-tcp.example.com",
-					envoy.Route(routePrefix("/"),
-						routeCluster("default/backend/80/da39a3ee5e"),
-					),
+					upgradeHTTPS(routePrefix("/")),
 				),
 			),
 			// ingress_https should be empty.
