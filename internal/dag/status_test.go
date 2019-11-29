@@ -1781,6 +1781,32 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	proxy47 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "missing-route-service",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "tcpproxy.example.com",
+				TLS: &projcontour.TLS{
+					SecretName: sec1.Name,
+				},
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{
+					{Name: "missing", Port: 9000},
+				},
+			}},
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -2431,6 +2457,17 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 					Object:      proxy46,
 					Status:      "invalid",
 					Description: "tcpproxy: missing tls.passthrough or tls.secretName",
+					Vhost:       "tcpproxy.example.com",
+				},
+			},
+		},
+		"httpproxy w/ tcpproxy missing service": {
+			objs: []interface{}{sec1, s1, proxy47},
+			want: map[Meta]Status{
+				{name: proxy47.Name, namespace: proxy47.Namespace}: {
+					Object:      proxy47,
+					Status:      "invalid",
+					Description: "Service [missing:9000] is invalid or missing",
 					Vhost:       "tcpproxy.example.com",
 				},
 			},
