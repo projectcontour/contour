@@ -508,14 +508,27 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		}
 	}
 
-	insecure := b.lookupVirtualHost(host)
-	secure := b.lookupSecureVirtualHost(host)
 	routes := b.computeRoutes(sw, proxy, nil, nil, enforceTLS)
+	insecure := b.lookupVirtualHost(host)
+	addRoutes(insecure, routes)
+
+	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
+	// then add routes to the secure virtualhost definition.
+	// TODO(dfc) enforceTLS is poorly named, it should be something like tlsEnabled.
+	if enforceTLS && proxy.Spec.TCPProxy == nil {
+		secure := b.lookupSecureVirtualHost(host)
+		addRoutes(secure, routes)
+	}
+}
+
+type vhost interface {
+	addRoute(*Route)
+}
+
+// addRoutes adds all routes to the vhost supplied.
+func addRoutes(vhost vhost, routes []*Route) {
 	for _, route := range routes {
-		insecure.addRoute(route)
-		if enforceTLS {
-			secure.addRoute(route)
-		}
+		vhost.addRoute(route)
 	}
 }
 

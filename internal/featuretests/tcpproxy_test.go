@@ -661,14 +661,8 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 					upgradeHTTPS(routePrefix("/")),
 				),
 			),
-			// BUG(dfc): issue 1954, the route should not be present if tcpproxy is in use
-			envoy.RouteConfiguration("ingress_https",
-				envoy.VirtualHost("kuard-tcp.example.com",
-					envoy.Route(routePrefix("/"),
-						routeCluster("default/backend/80/da39a3ee5e"),
-					),
-				),
-			),
+			// no route should not be present as tcpproxy is in use
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -775,14 +769,8 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 					),
 				),
 			),
-			// BUG(dfc) issue 1954, the route should not be present if tcpproxy is in use
-			envoy.RouteConfiguration("ingress_https",
-				envoy.VirtualHost("kuard-tcp.example.com",
-					envoy.Route(routePrefix("/"),
-						routeCluster("default/backend/80/da39a3ee5e"),
-					),
-				),
-			),
+			// no route should not be present as tcpproxy is in use
+			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
