@@ -158,7 +158,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		},
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
-		CRDStatus: &k8s.CRDStatus{
+		StatusClient: &k8s.StatusWriter{
 			Client: contourClient,
 		},
 		Builder: dag.Builder{

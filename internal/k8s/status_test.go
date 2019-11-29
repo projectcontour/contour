@@ -96,7 +96,7 @@ func TestSetStatus(t *testing.T) {
 					return true, tc.existing, nil
 				}
 			})
-			irs := CRDStatus{
+			irs := StatusWriter{
 				Client: client,
 			}
 			if err := irs.SetStatus(tc.msg, tc.desc, tc.existing); err != nil {
