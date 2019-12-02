@@ -355,7 +355,7 @@ For `header` conditions there is one required field, `name`, and five operator f
 
 - `exact` is a string, and checks that the header exactly matches the whole string. `notexact` checks that the header does *not* exactly match the whole string.
 
-#### Multiple Routes
+### Routes
 
 HTTPProxy must have at least one route or include defined.
 Paths defined are matched using prefix conditions.
@@ -715,7 +715,65 @@ spec:
           port: 80
 ```
 
-#### ExternalName
+#### Path Rewriting
+
+HTTPProxy supports rewriting the HTTP request URL path prior to delivering the request to the backend service.
+Rewriting is performed after a routing decision has been made, and never changes the request destination.
+
+The `pathRewritePolicy` field specifies how the path prefix should be rewritten.
+The `replacePrefix` rewrite policy specifies a replacement string for a HTTP request path prefix match.
+When this field is present, the path prefix that the request matched is replaced by the text specified in the `replacement` field.
+If the HTTP request path is longer than the matched prefix, the remainder of the path is unchanged.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: rewrite-example
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: rewrite.bar.com
+  routes:
+  - services:
+    - name: s1
+      port: 80
+    pathRewritePolicy:
+      replacePrefix:
+      - replacement: /new/prefix
+```
+
+The `replacePrefix` field accepts an array of possible replacements.
+When more than one `replacePrefix` array element is present, the `prefix` field can be used to disambiguate which replacement to apply.
+
+If no `prefix` field is present, the replacement is applied to all prefix matches made against the route.
+If a `prefix` field is present, the replacement is applied only to routes that have an exactly matching [prefix condition](#prefix-conditions).
+Specifying more than one `replacePrefix` entry is mainly useful when a HTTPProxy document is included into multiple parent documents.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: rewrite-example
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: rewrite.bar.com
+  routes:
+  - services:
+    - name: s1
+      port: 80
+    conditions:
+    - prefix: /v1/api
+    pathRewritePolicy:
+      replacePrefix:
+      - prefix: /v1/api
+        replacement: /app/api/v1
+      - prefix: /
+        replacement: /app
+```
+
+### ExternalName
 
 HTTPProxy supports routing traffic to service types `ExternalName`.
 Contour looks at the `spec.externalName` field of the service and configures the route to use that DNS name instead of utilizing EDS.
