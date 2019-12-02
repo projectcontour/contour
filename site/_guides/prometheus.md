@@ -3,7 +3,7 @@ title: Collecting Metrics with Prometheus
 layout: page
 ---
 
-<div id="toc"></div>
+<div id="toc" class="navigation"></div>
 
 Contour and Envoy expose metrics that can be scraped with Prometheus. By
 default, annotations to gather them are in all the `deployment` yamls and they
