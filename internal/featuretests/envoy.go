@@ -44,7 +44,20 @@ func DefaultCluster(c *v2.Cluster) *v2.Cluster {
 
 	proto.Merge(defaults, c)
 	return defaults
+}
 
+func externalNameCluster(name, servicename, statName, externalName string, port int) *v2.Cluster {
+	return DefaultCluster(&v2.Cluster{
+		Name:                 name,
+		ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
+		AltStatName:          statName,
+		LoadAssignment: &v2.ClusterLoadAssignment{
+			ClusterName: servicename,
+			Endpoints: envoy.Endpoints(
+				envoy.SocketAddress(externalName, port),
+			),
+		},
+	})
 }
 
 func routeCluster(cluster string) *envoy_api_v2_route.Route_Route {

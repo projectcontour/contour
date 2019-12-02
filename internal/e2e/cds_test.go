@@ -850,43 +850,6 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	}, streamCDS(t, cc))
 }
 
-// Test processing a service type ExternalName
-func TestExternalNameService(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(80),
-			},
-		},
-	}
-	rh.OnAdd(i1)
-
-	// s1 is a simple tcp 80 -> 8080 service.
-	s1 := externalnameservice("default", "kuard", "foo.io", v1.ServicePort{
-		Protocol:   "TCP",
-		Port:       80,
-		TargetPort: intstr.FromInt(8080),
-	})
-	rh.OnAdd(s1)
-
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
-		Resources: resources(t,
-			externalnamecluster("default/kuard/80/da39a3ee5e", "default/kuard/", "default_kuard_80", "foo.io", 80),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "2",
-	}, streamCDS(t, cc))
-}
-
 // Test processing a service that exists but is not referenced
 func TestUnreferencedService(t *testing.T) {
 	rh, cc, done := setup(t)
@@ -997,20 +960,6 @@ func cluster(name, servicename, statName string) *v2.Cluster {
 		EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
 			EdsConfig:   envoy.ConfigSource("contour"),
 			ServiceName: servicename,
-		},
-	})
-}
-
-func externalnamecluster(name, servicename, statName, externalName string, port int) *v2.Cluster {
-	return featuretests.DefaultCluster(&v2.Cluster{
-		Name:                 name,
-		ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
-		AltStatName:          statName,
-		LoadAssignment: &v2.ClusterLoadAssignment{
-			ClusterName: servicename,
-			Endpoints: envoy.Endpoints(
-				envoy.SocketAddress(externalName, port),
-			),
 		},
 	})
 }

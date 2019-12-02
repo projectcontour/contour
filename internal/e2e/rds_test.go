@@ -2075,20 +2075,6 @@ func service(ns, name string, ports ...v1.ServicePort) *v1.Service {
 	}
 }
 
-func externalnameservice(ns, name, externalname string, ports ...v1.ServicePort) *v1.Service {
-	return &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: ns,
-		},
-		Spec: v1.ServiceSpec{
-			Ports:        ports,
-			ExternalName: externalname,
-			Type:         v1.ServiceTypeExternalName,
-		},
-	}
-}
-
 func TestRDSHTTPProxyOutsideRootNamespaces(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
 		reh.Builder.Source.RootNamespaces = []string{"roots"}
