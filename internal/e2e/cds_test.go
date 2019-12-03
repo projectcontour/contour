@@ -754,102 +754,6 @@ func TestClusterWithHealthChecks(t *testing.T) {
 	}, streamCDS(t, cc))
 }
 
-func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"contour.heptio.com/upstream-protocol.tls": "securebackend,443",
-			},
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "securebackend",
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	secret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo",
-			Namespace: "default",
-		},
-		Data: map[string][]byte{
-			envoy.CACertificateKey: []byte(CERTIFICATE),
-		},
-	}
-
-	rh.OnAdd(secret)
-
-	ir1 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/a",
-				Services: []ingressroutev1.Service{{
-					Name: "kuard",
-					Port: 443,
-				}},
-			}},
-		},
-	}
-
-	rh.OnAdd(ir1)
-
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
-		Resources: resources(t,
-			tlscluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443", nil, ""),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "2",
-	}, streamCDS(t, cc))
-
-	ir2 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/a",
-				Services: []ingressroutev1.Service{{
-					Name: "kuard",
-					Port: 443,
-					UpstreamValidation: &projcontour.UpstreamValidation{
-						CACertificate: secret.Name,
-						SubjectName:   "subjname",
-					},
-				}},
-			}},
-		},
-	}
-
-	rh.OnUpdate(ir1, ir2)
-
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
-		Resources: resources(t,
-			tlscluster("default/kuard/443/98c0f31c72",
-				"default/kuard/securebackend", "default_kuard_443", []byte(CERTIFICATE), "subjname"),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "3",
-	}, streamCDS(t, cc))
-}
-
 // Test processing a service that exists but is not referenced
 func TestUnreferencedService(t *testing.T) {
 	rh, cc, done := setup(t)
@@ -962,14 +866,6 @@ func cluster(name, servicename, statName string) *v2.Cluster {
 			ServiceName: servicename,
 		},
 	})
-}
-
-func tlscluster(name, servicename, statsName string, ca []byte, subjectName string) *v2.Cluster {
-	c := cluster(name, servicename, statsName)
-	c.TransportSocket = envoy.UpstreamTLSTransportSocket(
-		envoy.UpstreamTLSContext(ca, subjectName),
-	)
-	return c
 }
 
 func clusterWithHealthCheck(name, servicename, statName, healthCheckPath string, drainConnOnHostRemoval bool) *v2.Cluster {
