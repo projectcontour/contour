@@ -399,9 +399,6 @@ spec:
               type: string
             description:
               type: string
-          required:
-          - currentStatus
-          - description
           type: object
       required:
       - metadata
@@ -916,9 +913,6 @@ spec:
               type: string
             description:
               type: string
-          required:
-          - currentStatus
-          - description
           type: object
       required:
       - metadata

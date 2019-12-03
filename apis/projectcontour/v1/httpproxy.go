@@ -302,8 +302,10 @@ type UpstreamValidation struct {
 
 // Status reports the current state of the HTTPProxy.
 type Status struct {
-	CurrentStatus string `json:"currentStatus"`
-	Description   string `json:"description"`
+	// +optional
+	CurrentStatus string `json:"currentStatus,omitempty"`
+	// +optional
+	Description string `json:"description,omitempty"`
 }
 
 // +genclient
@@ -322,7 +324,7 @@ type HTTPProxy struct {
 
 	Spec HTTPProxySpec `json:"spec"`
 	// +optional
-	Status `json:"status"`
+	Status Status `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
