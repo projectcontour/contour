@@ -20,6 +20,7 @@ import (
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
 )
 
@@ -69,11 +70,11 @@ func calculateRouteMetric(statuses map[dag.Meta]dag.Status) (metrics.RouteMetric
 
 func calcMetrics(v dag.Status, metricValid map[metrics.Meta]int, metricInvalid map[metrics.Meta]int, metricOrphaned map[metrics.Meta]int, metricTotal map[metrics.Meta]int) {
 	switch v.Status {
-	case dag.StatusValid:
+	case k8s.StatusValid:
 		metricValid[metrics.Meta{VHost: v.Vhost, Namespace: v.Object.GetObjectMeta().GetNamespace()}]++
-	case dag.StatusInvalid:
+	case k8s.StatusInvalid:
 		metricInvalid[metrics.Meta{VHost: v.Vhost, Namespace: v.Object.GetObjectMeta().GetNamespace()}]++
-	case dag.StatusOrphaned:
+	case k8s.StatusOrphaned:
 		metricOrphaned[metrics.Meta{Namespace: v.Object.GetObjectMeta().GetNamespace()}]++
 	}
 	metricTotal[metrics.Meta{Namespace: v.Object.GetObjectMeta().GetNamespace()}]++

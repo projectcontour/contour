@@ -19,6 +19,7 @@ import (
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
+	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1926,7 +1927,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: ir17.Name, namespace: ir17.Namespace}: {
 					Object:      ir17,
-					Status:      StatusValid,
+					Status:      k8s.StatusValid,
 					Description: "valid IngressRoute",
 					Vhost:       "example.com",
 				},
@@ -1937,13 +1938,13 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: ir17.Name, namespace: ir17.Namespace}: {
 					Object:      ir17,
-					Status:      StatusInvalid,
+					Status:      k8s.StatusInvalid,
 					Description: `fqdn "example.com" is used in multiple IngressRoutes: roots/example-com, roots/other-example`,
 					Vhost:       "example.com",
 				},
 				{name: ir18.Name, namespace: ir18.Namespace}: {
 					Object:      ir18,
-					Status:      StatusInvalid,
+					Status:      k8s.StatusInvalid,
 					Description: `fqdn "example.com" is used in multiple IngressRoutes: roots/example-com, roots/other-example`,
 					Vhost:       "example.com",
 				},
@@ -1954,13 +1955,13 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: ir20.Name, namespace: ir20.Namespace}: {
 					Object:      ir20,
-					Status:      StatusInvalid,
+					Status:      k8s.StatusInvalid,
 					Description: `fqdn "blog.containersteve.com" is used in multiple IngressRoutes: marketing/blog, roots/root-blog`,
 					Vhost:       "blog.containersteve.com",
 				},
 				{name: ir21.Name, namespace: ir21.Namespace}: {
 					Object:      ir21,
-					Status:      StatusInvalid,
+					Status:      k8s.StatusInvalid,
 					Description: `fqdn "blog.containersteve.com" is used in multiple IngressRoutes: marketing/blog, roots/root-blog`,
 					Vhost:       "blog.containersteve.com",
 				},
@@ -1971,13 +1972,13 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: ir22.Name, namespace: ir22.Namespace}: {
 					Object:      ir22,
-					Status:      StatusInvalid,
+					Status:      k8s.StatusInvalid,
 					Description: "root ingressroute cannot delegate to another root ingressroute",
 					Vhost:       "blog.containersteve.com",
 				},
 				{name: ir23.Name, namespace: ir23.Namespace}: {
 					Object:      ir23,
-					Status:      StatusValid,
+					Status:      k8s.StatusValid,
 					Description: `valid IngressRoute`,
 					Vhost:       "www.containersteve.com",
 				},
@@ -1991,7 +1992,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: ir24.Name, namespace: ir24.Namespace}: {
 					Object:      ir24,
-					Status:      StatusValid,
+					Status:      k8s.StatusValid,
 					Description: `valid IngressRoute`,
 					Vhost:       "example.com",
 				},
@@ -2006,7 +2007,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: ir25.Name, namespace: ir25.Namespace}: {
 					Object:      ir25,
-					Status:      StatusInvalid,
+					Status:      k8s.StatusInvalid,
 					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
 					Vhost:       ir25.Spec.VirtualHost.Fqdn,
 				},
@@ -2021,7 +2022,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: ir26.Name, namespace: ir26.Namespace}: {
 					Object:      ir26,
-					Status:      StatusInvalid,
+					Status:      k8s.StatusInvalid,
 					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
 					Vhost:       ir26.Spec.VirtualHost.Fqdn,
 				},
@@ -2036,7 +2037,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: proxy19.Name, namespace: proxy19.Namespace}: {
 					Object:      proxy19,
-					Status:      StatusInvalid,
+					Status:      k8s.StatusInvalid,
 					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
 					Vhost:       proxy19.Spec.VirtualHost.Fqdn,
 				},
@@ -2051,7 +2052,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: ir27.Name, namespace: ir27.Namespace}: {
 					Object:      ir27,
-					Status:      StatusValid,
+					Status:      k8s.StatusValid,
 					Description: `valid IngressRoute`,
 					Vhost:       ir27.Spec.VirtualHost.Fqdn,
 				},
@@ -2066,7 +2067,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: ir28.Name, namespace: ir28.Namespace}: {
 					Object:      ir28,
-					Status:      StatusInvalid,
+					Status:      k8s.StatusInvalid,
 					Description: "TLS Secret [heptio-contour/ssl-cert] not found or is malformed",
 					Vhost:       ir28.Spec.VirtualHost.Fqdn,
 				},
@@ -2182,13 +2183,13 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: proxy17.Name, namespace: proxy17.Namespace}: {
 					Object:      proxy17,
-					Status:      StatusInvalid,
+					Status:      k8s.StatusInvalid,
 					Description: `fqdn "example.com" is used in multiple HTTPProxies: roots/example-com, roots/other-example`,
 					Vhost:       "example.com",
 				},
 				{name: proxy18.Name, namespace: proxy18.Namespace}: {
 					Object:      proxy18,
-					Status:      StatusInvalid,
+					Status:      k8s.StatusInvalid,
 					Description: `fqdn "example.com" is used in multiple HTTPProxies: roots/example-com, roots/other-example`,
 					Vhost:       "example.com",
 				},
@@ -2199,13 +2200,13 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: proxy20.Name, namespace: proxy20.Namespace}: {
 					Object:      proxy20,
-					Status:      StatusInvalid,
+					Status:      k8s.StatusInvalid,
 					Description: `fqdn "blog.containersteve.com" is used in multiple HTTPProxies: marketing/blog, roots/root-blog`,
 					Vhost:       "blog.containersteve.com",
 				},
 				{name: proxy21.Name, namespace: proxy21.Namespace}: {
 					Object:      proxy21,
-					Status:      StatusInvalid,
+					Status:      k8s.StatusInvalid,
 					Description: `fqdn "blog.containersteve.com" is used in multiple HTTPProxies: marketing/blog, roots/root-blog`,
 					Vhost:       "blog.containersteve.com",
 				},
@@ -2216,13 +2217,13 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: proxy22.Name, namespace: proxy22.Namespace}: {
 					Object:      proxy22,
-					Status:      StatusInvalid,
+					Status:      k8s.StatusInvalid,
 					Description: "root httpproxy cannot delegate to another root httpproxy",
 					Vhost:       "blog.containersteve.com",
 				},
 				{name: proxy23.Name, namespace: proxy23.Namespace}: {
 					Object:      proxy23,
-					Status:      StatusValid,
+					Status:      k8s.StatusValid,
 					Description: `valid HTTPProxy`,
 					Vhost:       "www.containersteve.com",
 				},

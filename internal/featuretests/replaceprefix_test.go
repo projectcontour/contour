@@ -21,6 +21,7 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -92,7 +93,9 @@ func basic(t *testing.T) {
 			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
-	})
+	}).Status(vhost).Like(
+		projcontour.Status{CurrentStatus: k8s.StatusValid},
+	)
 
 	// Update the vhost to make the replacement ambiguous. This should remove the generated config.
 	vhost = update(rh, vhost,
@@ -110,6 +113,9 @@ func basic(t *testing.T) {
 			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
+	}).Status(vhost).Equals(projcontour.Status{
+		CurrentStatus: k8s.StatusInvalid,
+		Description:   "ambiguous prefix replacement",
 	})
 
 	// The replacement isn't ambiguous any more because only one of the prefixes matches.
@@ -139,7 +145,9 @@ func basic(t *testing.T) {
 			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
-	})
+	}).Status(vhost).Like(
+		projcontour.Status{CurrentStatus: k8s.StatusValid},
+	)
 
 	// But having duplicate prefixes in the replacements makes
 	// it ambigious again.
@@ -158,6 +166,9 @@ func basic(t *testing.T) {
 			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
+	}).Status(vhost).Equals(projcontour.Status{
+		CurrentStatus: k8s.StatusInvalid,
+		Description:   "duplicate replacement prefix '/foo'",
 	})
 
 	// The "/api" prefix should have precedence over the empty prefix.
@@ -187,7 +198,9 @@ func basic(t *testing.T) {
 			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
-	})
+	}).Status(vhost).Like(
+		projcontour.Status{CurrentStatus: k8s.StatusValid},
+	)
 
 	// If we remove the prefix match condition, the implicit '/' prefix
 	// will be used. So we expect that the default replacement prefix
@@ -210,7 +223,9 @@ func basic(t *testing.T) {
 			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
-	})
+	}).Status(vhost).Like(
+		projcontour.Status{CurrentStatus: k8s.StatusValid},
+	)
 }
 
 func multiInclude(t *testing.T) {
@@ -301,7 +316,11 @@ func multiInclude(t *testing.T) {
 			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
-	})
+	}).Status(vhost1).Like(
+		projcontour.Status{CurrentStatus: k8s.StatusValid},
+	).Status(vhost2).Like(
+		projcontour.Status{CurrentStatus: k8s.StatusValid},
+	)
 
 	// Remove one of the replacements, and one cluster loses the rewrite.
 	update(rh, app,
@@ -332,7 +351,11 @@ func multiInclude(t *testing.T) {
 			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
-	})
+	}).Status(vhost1).Like(
+		projcontour.Status{CurrentStatus: k8s.StatusValid},
+	).Status(vhost2).Like(
+		projcontour.Status{CurrentStatus: k8s.StatusValid},
+	)
 }
 
 func replaceWithSlash(t *testing.T) {
@@ -421,7 +444,11 @@ func replaceWithSlash(t *testing.T) {
 			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
-	})
+	}).Status(vhost1).Like(
+		projcontour.Status{CurrentStatus: k8s.StatusValid},
+	).Status(vhost2).Like(
+		projcontour.Status{CurrentStatus: k8s.StatusValid},
+	)
 
 	// Not swap the routing and replacement prefixes. Because the routing
 	// prefix is '/', the replacement should just end up being prepended
@@ -456,7 +483,11 @@ func replaceWithSlash(t *testing.T) {
 			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
-	})
+	}).Status(vhost1).Like(
+		projcontour.Status{CurrentStatus: k8s.StatusValid},
+	).Status(vhost2).Like(
+		projcontour.Status{CurrentStatus: k8s.StatusValid},
+	)
 }
 
 // artifactoryDocker simulates an Artifactory Docker registry service.

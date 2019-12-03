@@ -26,6 +26,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/k8s"
 )
 
 // Builder builds a DAG.
@@ -816,14 +817,14 @@ func (b *Builder) buildDAG() *DAG {
 		ir, ok := b.Source.ingressroutes[meta]
 		if ok {
 			sw, commit := b.WithObject(ir)
-			sw.WithValue("status", StatusOrphaned).
+			sw.WithValue("status", k8s.StatusOrphaned).
 				WithValue("description", "this IngressRoute is not part of a delegation chain from a root IngressRoute")
 			commit()
 		}
 		proxy, ok := b.Source.httpproxies[meta]
 		if ok {
 			sw, commit := b.WithObject(proxy)
-			sw.WithValue("status", StatusOrphaned).
+			sw.WithValue("status", k8s.StatusOrphaned).
 				WithValue("description", "this HTTPProxy is not part of a delegation chain from a root HTTPProxy")
 			commit()
 		}
