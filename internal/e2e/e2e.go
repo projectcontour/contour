@@ -27,7 +27,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
-	"github.com/projectcontour/contour/apis/generated/clientset/versioned/fake"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
@@ -93,10 +92,8 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 				FieldLogger: log,
 			},
 		},
-		CacheHandler: ch,
-		CRDStatus: &k8s.CRDStatus{
-			Client: fake.NewSimpleClientset(),
-		},
+		CacheHandler:    ch,
+		StatusClient:    &k8s.StatusCacher{},
 		Metrics:         ch.Metrics,
 		FieldLogger:     log,
 		Sequence:        make(chan int, 1),

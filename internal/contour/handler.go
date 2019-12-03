@@ -40,7 +40,7 @@ type EventHandler struct {
 
 	HoldoffDelay, HoldoffMaxDelay time.Duration
 
-	CRDStatus *k8s.CRDStatus
+	StatusClient k8s.StatusClient
 
 	*metrics.Metrics
 
@@ -242,7 +242,7 @@ func (e *EventHandler) setStatus(statuses map[dag.Meta]dag.Status) {
 	for _, st := range statuses {
 		switch obj := st.Object.(type) {
 		case *ingressroutev1.IngressRoute:
-			err := e.CRDStatus.SetStatus(st.Status, st.Description, obj)
+			err := e.StatusClient.SetStatus(st.Status, st.Description, obj)
 			if err != nil {
 				e.WithError(err).
 					WithField("status", st.Status).
@@ -252,7 +252,7 @@ func (e *EventHandler) setStatus(statuses map[dag.Meta]dag.Status) {
 					Error("failed to set status")
 			}
 		case *projcontour.HTTPProxy:
-			err := e.CRDStatus.SetStatus(st.Status, st.Description, obj)
+			err := e.StatusClient.SetStatus(st.Status, st.Description, obj)
 			if err != nil {
 				e.WithError(err).
 					WithField("status", st.Status).

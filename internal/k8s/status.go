@@ -16,6 +16,8 @@ package k8s
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 
 	jsonpatch "github.com/evanphx/json-patch"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
@@ -24,13 +26,81 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// CRDStatus allows for updating the object's Status field
-type CRDStatus struct {
-	Client clientset.Interface
+// StatusClient updates the Status on a Kubernetes object.
+type StatusClient interface {
+	SetStatus(status string, desc string, obj interface{}) error
+	GetStatus(obj interface{}) (*projcontour.Status, error)
+}
+
+// StatusCacher keeps a cache of the latest status updates for Kubernetes objects.
+type StatusCacher struct {
+	objectStatus map[string]projcontour.Status
+}
+
+func objectKey(obj interface{}) string {
+	switch obj := obj.(type) {
+	case *ingressroutev1.IngressRoute:
+		return fmt.Sprintf("%s/%s/%s",
+			KindOf(obj),
+			obj.GetObjectMeta().GetNamespace(),
+			obj.GetObjectMeta().GetName())
+	case *projcontour.HTTPProxy:
+		return fmt.Sprintf("%s/%s/%s",
+			KindOf(obj),
+			obj.GetObjectMeta().GetNamespace(),
+			obj.GetObjectMeta().GetName())
+	default:
+		panic(fmt.Sprintf("status caching not supported for object type %T", obj))
+	}
+}
+
+// Delete removes an object from the status cache.
+func (c *StatusCacher) Delete(obj interface{}) {
+	if c.objectStatus != nil {
+		delete(c.objectStatus, objectKey(obj))
+	}
+}
+
+// GetStatus returns the status (if any) for this given object.
+func (c *StatusCacher) GetStatus(obj interface{}) (*projcontour.Status, error) {
+	if c.objectStatus == nil {
+		c.objectStatus = make(map[string]projcontour.Status)
+	}
+
+	s, ok := c.objectStatus[objectKey(obj)]
+	if !ok {
+		return nil, fmt.Errorf("no status for key '%s'", objectKey(obj))
+	}
+
+	return &s, nil
 }
 
 // SetStatus sets the IngressRoute status field to an Valid or Invalid status
-func (irs *CRDStatus) SetStatus(status, desc string, existing interface{}) error {
+func (c *StatusCacher) SetStatus(status, desc string, obj interface{}) error {
+	if c.objectStatus == nil {
+		c.objectStatus = make(map[string]projcontour.Status)
+	}
+
+	c.objectStatus[objectKey(obj)] = projcontour.Status{
+		CurrentStatus: status,
+		Description:   desc,
+	}
+
+	return nil
+}
+
+// StatusWriter updates the object's Status field.
+type StatusWriter struct {
+	Client clientset.Interface
+}
+
+// GetStatus is not implemented for StatusWriter.
+func (irs *StatusWriter) GetStatus(obj interface{}) (*projcontour.Status, error) {
+	return nil, errors.New("not implemented")
+}
+
+// SetStatus sets the IngressRoute status field to an Valid or Invalid status
+func (irs *StatusWriter) SetStatus(status, desc string, existing interface{}) error {
 	switch exist := existing.(type) {
 	case *ingressroutev1.IngressRoute:
 		// Check if update needed by comparing status & desc
@@ -56,14 +126,14 @@ func (irs *CRDStatus) SetStatus(status, desc string, existing interface{}) error
 	return nil
 }
 
-func (irs *CRDStatus) updateNeeded(status, desc string, existing projcontour.Status) bool {
+func (irs *StatusWriter) updateNeeded(status, desc string, existing projcontour.Status) bool {
 	if existing.CurrentStatus != status || existing.Description != desc {
 		return true
 	}
 	return false
 }
 
-func (irs *CRDStatus) setIngressRouteStatus(existing, updated *ingressroutev1.IngressRoute) error {
+func (irs *StatusWriter) setIngressRouteStatus(existing, updated *ingressroutev1.IngressRoute) error {
 	existingBytes, err := json.Marshal(existing)
 	if err != nil {
 		return err
@@ -85,7 +155,7 @@ func (irs *CRDStatus) setIngressRouteStatus(existing, updated *ingressroutev1.In
 	return err
 }
 
-func (irs *CRDStatus) setHTTPProxyStatus(existing, updated *projcontour.HTTPProxy) error {
+func (irs *StatusWriter) setHTTPProxyStatus(existing, updated *projcontour.HTTPProxy) error {
 	existingBytes, err := json.Marshal(existing)
 	if err != nil {
 		return err

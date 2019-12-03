@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/projectcontour/contour/internal/k8s"
+
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
@@ -436,11 +438,11 @@ func TestAnnotationKindValidation(t *testing.T) {
 	// Trivially check that everything specified in the global
 	// table is valid.
 	for _, kind := range []string{
-		toKind(&v1.Service{}),
-		toKind(&v1beta1.Ingress{}),
-		toKind(&extensionsv1beta1.Ingress{}),
-		toKind(&ingressroutev1.IngressRoute{}),
-		toKind(&projectcontour.HTTPProxy{}),
+		k8s.KindOf(&v1.Service{}),
+		k8s.KindOf(&v1beta1.Ingress{}),
+		k8s.KindOf(&extensionsv1beta1.Ingress{}),
+		k8s.KindOf(&ingressroutev1.IngressRoute{}),
+		k8s.KindOf(&projectcontour.HTTPProxy{}),
 	} {
 		for key := range annotationsByKind[kind] {
 			t.Run(fmt.Sprintf("%s is known and valid for %s", key, kind),
@@ -456,7 +458,7 @@ func TestAnnotationKindValidation(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			for k, s := range tc.annotations {
 				assert.Equal(t, s.known, annotationIsKnown(k))
-				assert.Equal(t, s.valid, validAnnotationForKind(toKind(tc.obj), k))
+				assert.Equal(t, s.valid, validAnnotationForKind(k8s.KindOf(tc.obj), k))
 			}
 		})
 	}
