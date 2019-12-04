@@ -62,7 +62,7 @@ func TestMirrorPolicy(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "example.com"},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/"),
+				Conditions: conditions(prefixCondition("/")),
 				Services: []projcontour.Service{{
 					Name: svc1.Name,
 					Port: 8080,

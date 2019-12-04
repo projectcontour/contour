@@ -180,7 +180,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/cart"),
+				Conditions: conditions(prefixCondition("/cart")),
 				LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
 					Strategy: "Cookie",
 				},
@@ -214,7 +214,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/cart"),
+				Conditions: conditions(prefixCondition("/cart")),
 				LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
 					Strategy: "Cookie",
 				},

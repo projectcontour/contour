@@ -123,7 +123,7 @@ func TestTCPProxy(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/"),
+				Conditions: conditions(prefixCondition("/")),
 				Services: []projcontour.Service{{
 					Name: "wrong-backend",
 					Port: 80,
@@ -416,7 +416,7 @@ func TestTCPProxyTLSPassthrough(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/"),
+				Conditions: conditions(prefixCondition("/")),
 				Services: []projcontour.Service{{
 					Name: "wrong-backend",
 					Port: 80,
@@ -606,7 +606,7 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/"),
+				Conditions: conditions(prefixCondition("/")),
 				Services: []projcontour.Service{{
 					Name: svc.Name,
 					Port: 80,
@@ -710,7 +710,7 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions:     prefixCondition("/"),
+				Conditions:     conditions(prefixCondition("/")),
 				PermitInsecure: true,
 				Services: []projcontour.Service{{
 					Name: svc.Name,
@@ -809,7 +809,7 @@ func TestTCPProxyTLSPassthroughAndHTTPService(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/"),
+				Conditions: conditions(prefixCondition("/")),
 				Services: []projcontour.Service{{
 					Name: svc.Name,
 					Port: 80,
@@ -911,7 +911,7 @@ func TestTCPProxyTLSPassthroughAndHTTPServicePermitInsecure(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions:     prefixCondition("/"),
+				Conditions:     conditions(prefixCondition("/")),
 				PermitInsecure: true,
 				Services: []projcontour.Service{{
 					Name: svc.Name,
@@ -1024,7 +1024,7 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 				// missing TLS:
 			},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/"),
+				Conditions: conditions(prefixCondition("/")),
 				Services: []projcontour.Service{{
 					Name: svc.Name,
 					Port: 80,
@@ -1073,7 +1073,7 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/"),
+				Conditions: conditions(prefixCondition("/")),
 				Services: []projcontour.Service{{
 					Name: svc.Name,
 					Port: 80,
