@@ -19,8 +19,57 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
-func prefixCondition(prefix string) []projcontour.Condition {
-	return []projcontour.Condition{{
+func conditions(first projcontour.Condition, rest ...projcontour.Condition) []projcontour.Condition {
+	return append([]projcontour.Condition{first}, rest...)
+}
+
+func prefixCondition(prefix string) projcontour.Condition {
+	return projcontour.Condition{
 		Prefix: prefix,
-	}}
+	}
+}
+
+func headerContainsCondition(name, value string) projcontour.Condition {
+	return projcontour.Condition{
+		Header: &projcontour.HeaderCondition{
+			Name:     name,
+			Contains: value,
+		},
+	}
+}
+
+func headerNotContainsCondition(name, value string) projcontour.Condition {
+	return projcontour.Condition{
+		Header: &projcontour.HeaderCondition{
+			Name:        name,
+			NotContains: value,
+		},
+	}
+}
+
+func headerExactCondition(name, value string) projcontour.Condition {
+	return projcontour.Condition{
+		Header: &projcontour.HeaderCondition{
+			Name:  name,
+			Exact: value,
+		},
+	}
+}
+
+func headerNotExactCondition(name, value string) projcontour.Condition {
+	return projcontour.Condition{
+		Header: &projcontour.HeaderCondition{
+			Name:     name,
+			NotExact: value,
+		},
+	}
+}
+
+func headerPresentCondition(name string) projcontour.Condition {
+	return projcontour.Condition{
+		Header: &projcontour.HeaderCondition{
+			Name:    name,
+			Present: true,
+		},
+	}
 }

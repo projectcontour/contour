@@ -265,7 +265,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/"),
+				Conditions: conditions(prefixCondition("/")),
 				TimeoutPolicy: &projcontour.TimeoutPolicy{
 					Response: "600", // not 600s
 				},
@@ -297,7 +297,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/"),
+				Conditions: conditions(prefixCondition("/")),
 				TimeoutPolicy: &projcontour.TimeoutPolicy{
 					Response: "3m",
 				},
@@ -329,7 +329,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/"),
+				Conditions: conditions(prefixCondition("/")),
 				TimeoutPolicy: &projcontour.TimeoutPolicy{
 					Response: "infinty",
 				},
@@ -386,7 +386,7 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/"),
+				Conditions: conditions(prefixCondition("/")),
 				TimeoutPolicy: &projcontour.TimeoutPolicy{
 					Idle: "600", // not 600s
 				},
@@ -418,7 +418,7 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/"),
+				Conditions: conditions(prefixCondition("/")),
 				TimeoutPolicy: &projcontour.TimeoutPolicy{
 					Idle: "3m",
 				},
@@ -450,7 +450,7 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/"),
+				Conditions: conditions(prefixCondition("/")),
 				TimeoutPolicy: &projcontour.TimeoutPolicy{
 					Idle: "infinty",
 				},

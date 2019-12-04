@@ -164,7 +164,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/a"),
+				Conditions: conditions(prefixCondition("/a")),
 				Services: []projcontour.Service{{
 					Name: svc.Name,
 					Port: 443,

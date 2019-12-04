@@ -57,7 +57,7 @@ func basic(t *testing.T) {
 				Fqdn: "kuard.projectcontour.io",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: prefixCondition("/api"),
+				Conditions: conditions(prefixCondition("/api")),
 				Services: []projcontour.Service{{
 					Name: "kuard",
 					Port: 8080,
@@ -237,7 +237,7 @@ func multiInclude(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:       "app",
 				Namespace:  "default",
-				Conditions: prefixCondition("/v1"),
+				Conditions: conditions(prefixCondition("/v1")),
 			}},
 		},
 	}
@@ -251,7 +251,7 @@ func multiInclude(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:       "app",
 				Namespace:  "default",
-				Conditions: prefixCondition("/v2"),
+				Conditions: conditions(prefixCondition("/v2")),
 			}},
 		},
 	}
@@ -361,7 +361,7 @@ func replaceWithSlash(t *testing.T) {
 					Name: "kuard",
 					Port: 8080,
 				}},
-				Conditions: prefixCondition("/foo"),
+				Conditions: conditions(prefixCondition("/foo")),
 				PathRewrite: &projcontour.PathRewritePolicy{
 					ReplacePrefix: []projcontour.ReplacePrefix{
 						{Replacement: "/"},
@@ -382,7 +382,7 @@ func replaceWithSlash(t *testing.T) {
 					Name: "kuard",
 					Port: 8080,
 				}},
-				Conditions: prefixCondition("/bar/"),
+				Conditions: conditions(prefixCondition("/bar/")),
 				PathRewrite: &projcontour.PathRewritePolicy{
 					ReplacePrefix: []projcontour.ReplacePrefix{
 						{Replacement: "/"},
@@ -428,7 +428,7 @@ func replaceWithSlash(t *testing.T) {
 	// to whatever the client URL is. No special handling of trailing '/'.
 	update(rh, vhost2,
 		func(vhost *projcontour.HTTPProxy) {
-			vhost.Spec.Routes[0].Conditions = prefixCondition("/")
+			vhost.Spec.Routes[0].Conditions = conditions(prefixCondition("/"))
 			vhost.Spec.Routes[0].PathRewrite = &projcontour.PathRewritePolicy{
 				ReplacePrefix: []projcontour.ReplacePrefix{
 					{Replacement: "/bar"},
@@ -507,10 +507,10 @@ func artifactoryDocker(t *testing.T) {
 				Fqdn: "artifactory.projectcontour.io",
 			},
 			Includes: []projcontour.Include{
-				{Name: "routes", Conditions: prefixCondition("/v2/container-sandbox")},
-				{Name: "routes", Conditions: prefixCondition("/v2/container-release")},
-				{Name: "routes", Conditions: prefixCondition("/v2/container-external")},
-				{Name: "routes", Conditions: prefixCondition("/v2/container-public")},
+				{Name: "routes", Conditions: conditions(prefixCondition("/v2/container-sandbox"))},
+				{Name: "routes", Conditions: conditions(prefixCondition("/v2/container-release"))},
+				{Name: "routes", Conditions: conditions(prefixCondition("/v2/container-external"))},
+				{Name: "routes", Conditions: conditions(prefixCondition("/v2/container-public"))},
 			},
 		},
 	})
