@@ -795,6 +795,18 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	i17 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				Host:             "example.com",
+				IngressRuleValue: ingressrulevalue(backend("kuard", intstr.FromInt(8080))),
+			}},
+		},
+	}
 	// s3a and b have http/2 protocol annotations
 	s3a := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1030,6 +1042,25 @@ func TestDAGInsert(t *testing.T) {
 					HealthCheck: &ingressroutev1.HealthCheck{
 						Path: "/healthz",
 					},
+				}},
+			}},
+		},
+	}
+
+	ir1f := &ingressroutev1.IngressRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: ingressroutev1.IngressRouteSpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []ingressroutev1.Route{{
+				Match: "/",
+				Services: []ingressroutev1.Service{{
+					Name: "kuarder",
+					Port: 8080,
 				}},
 			}},
 		},
@@ -1616,6 +1647,24 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+
+	// s2a is like s1 but with a different name again.
+	// used in testing override priority.
+	s2a := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuardest",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
 	// s3 is like s1 but has a different port
 	s3 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1985,6 +2034,28 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	//proxy1f is identical to proxy1 and ir1, except for a different service.
+	// Used to test priority when importing ir then httproxy.
+	proxy1f := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: s2a.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
 	proxy2a := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -5475,6 +5546,56 @@ func TestDAGInsert(t *testing.T) {
 								Clusters: clusters(service(s9)),
 							},
 						},
+					),
+				},
+			),
+		},
+		// Assert that a route in IngressRoute takes precedence over Ingress.
+		// The service is different in proxy1f so we can tell which one gets priority.
+		"Ingress then IngressRoute with identical details, except referencing s2": {
+			objs: []interface{}{
+				i17,
+				ir1f,
+				s1,
+				s2,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", prefixroute("/", service(s2))),
+					),
+				},
+			),
+		},
+		"IngressRoute then HTTPProxy with identical details, except referencing s2a": {
+			objs: []interface{}{
+				ir1f,
+				proxy1f,
+				s2,
+				s2a,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", prefixroute("/", service(s2a))),
+					),
+				},
+			),
+		},
+		"Ingress then HTTPProxy with identical details, except referencing s2a": {
+			objs: []interface{}{
+				i17,
+				proxy1f,
+				s1,
+				s2a,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", prefixroute("/", service(s2a))),
 					),
 				},
 			),
