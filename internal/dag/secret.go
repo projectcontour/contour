@@ -19,6 +19,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"strings"
 
 	v1 "k8s.io/api/core/v1"
 )
@@ -122,9 +123,15 @@ func validateCertificate(data []byte) error {
 		if block.Type != "CERTIFICATE" {
 			return fmt.Errorf("unexpected block type '%s'", block.Type)
 		}
-		if _, err := x509.ParseCertificate(block.Bytes); err != nil {
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
 			return err
 		}
+
+		if !hasCommonName(cert) && !hasSubjectAltNames(cert) {
+			return errors.New("certificate has no common name or subject alt name")
+		}
+
 		exists = true
 	}
 
@@ -133,6 +140,14 @@ func validateCertificate(data []byte) error {
 	}
 
 	return nil
+}
+
+func hasCommonName(c *x509.Certificate) bool {
+	return strings.TrimSpace(c.Subject.CommonName) != ""
+}
+
+func hasSubjectAltNames(c *x509.Certificate) bool {
+	return len(c.DNSNames) > 0 || len(c.IPAddresses) > 0
 }
 
 func validatePrivateKey(data []byte) error {
