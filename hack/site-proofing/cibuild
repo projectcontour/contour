@@ -4,6 +4,8 @@ set -e # halt script on error
 
 # Builds and checks the website for broken links.
 
+cd ./site
+
 gem install bundler
 gem install html-proofer
 gem install jekyll -v 3.8.5
