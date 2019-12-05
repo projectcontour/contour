@@ -50,7 +50,7 @@ You'll need to re-check where your DNS names are pointing as well, using [Get yo
 
 ## The less easy way
 
-This section contains information for administrators who wish to manually upgrade from Contour 1.5.3 to Contour 1.0.0.
+This section contains information for administrators who wish to manually upgrade from Contour 0.15.3 to Contour 1.0.0.
 
 ### Upgrade to Contour 1.0.0
 
