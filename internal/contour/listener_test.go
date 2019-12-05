@@ -1068,7 +1068,7 @@ func TestListenerVisit(t *testing.T) {
 
 func transportSocket(tlsMinProtoVersion envoy_api_v2_auth.TlsParameters_TlsProtocol, alpnprotos ...string) *envoy_api_v2_core.TransportSocket {
 	return envoy.DownstreamTLSTransportSocket(
-		envoy.DownstreamTLSContext("default/secret/28337303ac", tlsMinProtoVersion, alpnprotos...),
+		envoy.DownstreamTLSContext("default/secret/68621186db", tlsMinProtoVersion, alpnprotos...),
 	)
 }
 

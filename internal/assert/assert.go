@@ -40,6 +40,10 @@ func (a Assert) Equal(want, got interface{}) {
 	opts := []cmp.Option{
 		cmpopts.IgnoreFields(v2.DiscoveryResponse{}, "VersionInfo", "Nonce"),
 		cmpopts.AcyclicTransformer("UnmarshalAny", unmarshalAny),
+		// errors to be equal only if both are nil or both are non-nil.
+		cmp.Comparer(func(x, y error) bool {
+			return (x == nil) == (y == nil)
+		}),
 	}
 	diff := cmp.Diff(want, got, opts...)
 	if diff != "" {
