@@ -54,6 +54,11 @@ defaults:
     values:
       version: v1.0.0
       layout: "docs"
+  - scope:
+      path: docs/v1.1.0
+    values:
+      version: v1.1.0
+      layout: "docs"
 
 repository: projectcontour/contour
 
@@ -65,6 +70,9 @@ collections:
   docs_1_0:
     output: true
     permalink: /docs/1.0/:name
+  docs_1_1:
+    output: true
+    permalink: /docs/1.1/:name
   contributors:
     output: false
   features:
@@ -73,10 +81,11 @@ collections:
     output: false
 
 versioning: true
-latest: v1.0.0
+latest: v1.1.0
 versions:
   - master
   - v1.0.0
+  - v1.1.0
 
 # Build settings
 permalink: :title/
