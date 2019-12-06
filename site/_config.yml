@@ -41,9 +41,9 @@ defaults:
       layout: "posts"
   - scope:
       path: ""
-      type: "pages"
     values:
       layout: "default"
+      toc: "h2, h3" # Default TOC levels, see _includes/footer.html.
   - scope:
       path: docs/master
     values:
