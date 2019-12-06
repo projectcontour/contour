@@ -720,17 +720,16 @@ spec:
                     description: The timeout policy for this route.
                     properties:
                       idle:
-                        description: Timeout after which if there are no active requests,
-                          the connection between Envoy and the backend will be closed.
+                        description: Timeout after which if there are no active requests
+                          for this route, the connection between Envoy and the backend
+                          will be closed. If not specified, there is no per-route
+                          idle timeout.
                         type: string
                       response:
                         description: Timeout for receiving a response from the server
                           after processing a request from client. If not supplied
                           the timeout duration is undefined.
                         type: string
-                    required:
-                    - idle
-                    - response
                     type: object
                 type: object
               type: array
