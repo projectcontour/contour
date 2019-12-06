@@ -231,11 +231,13 @@ type TimeoutPolicy struct {
 
 	// Timeout for receiving a response from the server after processing a request from client.
 	// If not supplied the timeout duration is undefined.
-	Response string `json:"response"`
+	// +optional
+	Response string `json:"response,omitempty"`
 
-	// Timeout after which if there are no active requests, the connection between Envoy and the
-	// backend will be closed.
-	Idle string `json:"idle"`
+	// Timeout after which if there are no active requests for this route, the connection between
+	// Envoy and the backend will be closed. If not specified, there is no per-route idle timeout.
+	// +optional
+	Idle string `json:"idle,omitempty"`
 }
 
 // RetryPolicy defines the attributes associated with retrying policy.
