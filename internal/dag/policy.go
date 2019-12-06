@@ -15,6 +15,7 @@ package dag
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
@@ -32,6 +33,26 @@ func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
 		NumRetries:    max(1, rp.NumRetries),
 		PerTryTimeout: perTryTimeout,
 	}
+}
+
+func headerPolicy(policy *projcontour.HeadersPolicy) *HeadersPolicy {
+	if policy == nil {
+		return nil
+	}
+
+	for _, rp := range policy.Set {
+		// Value must be defined
+		// TODO(sas): Set status for empty value
+		if rp.Value == "" {
+			continue
+		}
+
+		// Only host rewrite is currently supported
+		if strings.EqualFold(rp.Name, "Host") {
+			return &HeadersPolicy{HostRewrite: rp.Value}
+		}
+	}
+	return nil
 }
 
 // ingressRetryPolicy builds a RetryPolicy from ingress annotations.

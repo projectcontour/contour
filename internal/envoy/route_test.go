@@ -346,6 +346,22 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"host header rewrite": {
+			route: &dag.Route{
+				RequestHeadersPolicy: &dag.HeadersPolicy{
+					HostRewrite: "bar.com",
+				},
+				Clusters: []*dag.Cluster{c1},
+			},
+			want: &envoy_api_v2_route.Route_Route{
+				Route: &envoy_api_v2_route.RouteAction{
+					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					HostRewriteSpecifier: &envoy_api_v2_route.RouteAction_HostRewrite{HostRewrite: "bar.com"},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {

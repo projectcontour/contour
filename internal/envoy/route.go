@@ -64,6 +64,13 @@ func RouteRoute(r *dag.Route) *envoy_api_v2_route.Route_Route {
 		RequestMirrorPolicy: mirrorPolicy(r),
 	}
 
+	// Check for host header policy and set if found
+	if val := hostReplaceHeader(r.RequestHeadersPolicy); val != "" {
+		ra.HostRewriteSpecifier = &envoy_api_v2_route.RouteAction_HostRewrite{
+			HostRewrite: val,
+		}
+	}
+
 	if r.Websocket {
 		ra.UpgradeConfigs = append(ra.UpgradeConfigs,
 			&envoy_api_v2_route.RouteAction_UpgradeConfig{
@@ -114,6 +121,13 @@ func mirrorPolicy(r *dag.Route) *envoy_api_v2_route.RouteAction_RequestMirrorPol
 	return &envoy_api_v2_route.RouteAction_RequestMirrorPolicy{
 		Cluster: Clustername(r.MirrorPolicy.Cluster),
 	}
+}
+
+func hostReplaceHeader(hp *dag.HeadersPolicy) string {
+	if hp == nil {
+		return ""
+	}
+	return hp.HostRewrite
 }
 
 func responseTimeout(r *dag.Route) *duration.Duration {

@@ -64,7 +64,7 @@ func TestUpstreamProtocolTLS(t *testing.T) {
 
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(cluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443"), nil, ""),
+			tlsCluster(cluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443"), nil, "", ""),
 		),
 		TypeUrl: clusterType,
 	})
@@ -83,7 +83,7 @@ func TestUpstreamProtocolTLS(t *testing.T) {
 
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(cluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443"), nil, ""),
+			tlsCluster(cluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443"), nil, "", ""),
 		),
 		TypeUrl: clusterType,
 	})
@@ -196,7 +196,7 @@ func TestUpstreamProtocolH2(t *testing.T) {
 
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			h2cCluster(tlsCluster(cluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443"), nil, "", "h2")),
+			h2cCluster(tlsCluster(cluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443"), nil, "", "", "h2")),
 		),
 		TypeUrl: clusterType,
 	})
@@ -215,7 +215,7 @@ func TestUpstreamProtocolH2(t *testing.T) {
 
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			h2cCluster(tlsCluster(cluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443"), nil, "", "h2")),
+			h2cCluster(tlsCluster(cluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443"), nil, "", "", "h2")),
 		),
 		TypeUrl: clusterType,
 	})

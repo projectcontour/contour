@@ -685,12 +685,13 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 		}
 
 		r := &Route{
-			PathCondition:    mergePathConditions(conds),
-			HeaderConditions: mergeHeaderConditions(conds),
-			Websocket:        route.EnableWebsockets,
-			HTTPSUpgrade:     routeEnforceTLS(enforceTLS, route.PermitInsecure && !b.DisablePermitInsecure),
-			TimeoutPolicy:    timeoutPolicy(route.TimeoutPolicy),
-			RetryPolicy:      retryPolicy(route.RetryPolicy),
+			PathCondition:        mergePathConditions(conds),
+			HeaderConditions:     mergeHeaderConditions(conds),
+			Websocket:            route.EnableWebsockets,
+			HTTPSUpgrade:         routeEnforceTLS(enforceTLS, route.PermitInsecure && !b.DisablePermitInsecure),
+			TimeoutPolicy:        timeoutPolicy(route.TimeoutPolicy),
+			RetryPolicy:          retryPolicy(route.RetryPolicy),
+			RequestHeadersPolicy: headerPolicy(route.RequestHeadersPolicy),
 		}
 
 		if len(route.GetPrefixReplacements()) > 0 {

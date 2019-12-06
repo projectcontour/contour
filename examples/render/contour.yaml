@@ -732,6 +732,31 @@ spec:
                       HTTP which are normally not permitted when a `virtualhost.tls`
                       block is present.
                     type: boolean
+                  requestHeadersPolicy:
+                    description: The policy for managing headers during proxying
+                    properties:
+                      set:
+                        description: Set specifies a list of HTTP header values that
+                          will be set in the HTTP header
+                        items:
+                          description: HeaderValue represents a header name/value
+                            pair
+                          properties:
+                            name:
+                              description: Name represents a key of a header
+                              minLength: 1
+                              type: string
+                            value:
+                              description: Value represents the value of a header
+                                specified by a key
+                              minLength: 1
+                              type: string
+                          required:
+                          - name
+                          - value
+                          type: object
+                        type: array
+                    type: object
                   retryPolicy:
                     description: The retry policy for this route.
                     properties:

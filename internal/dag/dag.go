@@ -113,6 +113,9 @@ type Route struct {
 
 	// Mirror Policy defines the mirroring policy for this Route.
 	MirrorPolicy *MirrorPolicy
+
+	// RequestHeadersPolicy defines how headers are managed during forwarding
+	RequestHeadersPolicy *HeadersPolicy
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.
@@ -154,9 +157,22 @@ type RetryPolicy struct {
 	PerTryTimeout time.Duration
 }
 
-// MirrorPolicy desinges the mirroring policy for a route.
+// MirrorPolicy defines the mirroring policy for a route.
 type MirrorPolicy struct {
 	Cluster *Cluster
+}
+
+// HeadersPolicy defines how headers are managed during forwarding
+type HeadersPolicy struct {
+	// HostRewrite defines if a host should be rewritten on upstream requests
+	HostRewrite string
+}
+
+type HeaderValue struct {
+	// Name represents a key of a header
+	Key string
+	// Value represents the value of a header specified by a key
+	Value string
 }
 
 // UpstreamValidation defines how to validate the certificate on the upstream service
