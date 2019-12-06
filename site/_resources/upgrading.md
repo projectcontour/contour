@@ -1,7 +1,11 @@
 ---
 title: Upgrading Contour
 layout: page
+# NOTE(jpeach): we have to use 'h1,h2' here, because the TOC is not generated at all if we just use 'h1'.
+toc: h1,h2
 ---
+
+<div id="toc" class="navigation"></div>
 
 <!-- NOTE: this document should be formatted with one sentence per line to made reviewing easier. -->
 

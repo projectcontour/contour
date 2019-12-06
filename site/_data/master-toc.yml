@@ -5,21 +5,19 @@ toc:
         url: /architecture
   - title: Configuration
     subfolderitems:
-      - page: Annotations
+      - page: Annotations Reference
         url: /annotations
-      - page: Config File
-        url: /configuration
-  - title: Use
-    subfolderitems:
-      - page: HTTPProxy
+      - page: HTTPProxy Reference
         url: /httpproxy
-      - page: IngressRoute
+      - page: IngressRoute Reference
         url: /ingressroute
+      - page: Contour Configuration
+        url: /configuration
   - title: Deploy
     subfolderitems:
-      - page: Deployment
+      - page: Deployment Options
         url: /deploy-options
-      - page: Upgrade
+      - page: Upgrading Contour
         link: /resources/upgrading
   - title: Guides
     subfolderitems:
@@ -27,7 +25,7 @@ toc:
         link: /guides/cert-manager/
       - page: AWS with NLB
         link: /guides/deploy-aws-nlb/
-      - page: AWS PROXY v1/v2 Support
+      - page: PROXY Protocol Support
         link: /guides/proxy-proto/
       - page: Migrating to HTTPProxy
         link: /guides/ingressroute-to-httpproxy/
@@ -43,17 +41,17 @@ toc:
         url: /troubleshooting
   - title: Resources
     subfolderitems:
+      - page: Support Policy
+        link: /resources/support
       - page: Envoy Support Matrix
         link: /resources/envoy
-      - page: How We Work
-        link: /resources/how-we-work
       - page: Release Process
         link: /resources/release-process
       - page: Frequently Asked Questions
         link: /resources/faq
-      - page: Support
-        link: /resources/support
   - title: Contribute
     subfolderitems:
       - page: Start Contributing
         url: /start-contributing
+      - page: How We Work
+        link: /resources/how-we-work
