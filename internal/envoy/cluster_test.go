@@ -63,6 +63,22 @@ func TestCluster(t *testing.T) {
 		},
 	}
 
+	svcExternal := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			ExternalName: "projectcontour.local",
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       443,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		cluster *dag.Cluster
 		want    *v2.Cluster
@@ -109,7 +125,7 @@ func TestCluster(t *testing.T) {
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "", "h2"),
+					UpstreamTLSContext(nil, "", "", "h2"),
 				),
 				Http2ProtocolOptions: &envoy_api_v2_core.Http2ProtocolOptions{},
 			},
@@ -138,7 +154,21 @@ func TestCluster(t *testing.T) {
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, ""),
+					UpstreamTLSContext(nil, "", ""),
+				),
+			},
+		},
+		"tls upstream - external name": {
+			cluster: &dag.Cluster{
+				Upstream: service(svcExternal, "tls"),
+			},
+			want: &v2.Cluster{
+				Name:                 "default/kuard/443/da39a3ee5e",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
+				LoadAssignment:       StaticClusterLoadAssignment(service(svcExternal, "tls")),
+				TransportSocket: UpstreamTLSTransportSocket(
+					UpstreamTLSContext(nil, "", "projectcontour.local"),
 				),
 			},
 		},
@@ -169,7 +199,7 @@ func TestCluster(t *testing.T) {
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext([]byte("cacert"), "foo.bar.io"),
+					UpstreamTLSContext([]byte("cacert"), "foo.bar.io", ""),
 				),
 			},
 		},

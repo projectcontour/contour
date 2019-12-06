@@ -578,6 +578,79 @@ in the request.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.HeaderValue">HeaderValue
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.HeadersPolicy">HeadersPolicy</a>)
+</p>
+<p>
+<p>HeaderValue represents a header name/value pair</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name represents a key of a header</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>value</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Value represents the value of a header specified by a key</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.HeadersPolicy">HeadersPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+<p>HeadersPolicy defines how headers are managed during forwarding</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>set</code></br>
+<em>
+<a href="#projectcontour.io/v1.HeaderValue">
+[]HeaderValue
+</a>
+</em>
+</td>
+<td>
+<p>Set specifies a list of HTTP header values that will be set in the HTTP header</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.Include">Include
 </h3>
 <p>
@@ -931,6 +1004,19 @@ PathRewritePolicy
 <td>
 <p>The policy for rewriting the path of the request URL
 after the request has been routed to a Service.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>requestHeadersPolicy</code></br>
+<em>
+<a href="#projectcontour.io/v1.HeadersPolicy">
+HeadersPolicy
+</a>
+</em>
+</td>
+<td>
+<p>The policy for managing headers during proxying</p>
 </td>
 </tr>
 </tbody>

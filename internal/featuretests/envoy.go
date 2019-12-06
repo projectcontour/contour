@@ -79,6 +79,15 @@ func routePrefix(prefix string, headers ...dag.HeaderCondition) *envoy_api_v2_ro
 	})
 }
 
+func routeHostRewrite(cluster, newHostName string) *envoy_api_v2_route.Route_Route {
+	return &envoy_api_v2_route.Route_Route{
+		Route: &envoy_api_v2_route.RouteAction{
+			ClusterSpecifier:     &envoy_api_v2_route.RouteAction_Cluster{Cluster: cluster},
+			HostRewriteSpecifier: &envoy_api_v2_route.RouteAction_HostRewrite{HostRewrite: newHostName},
+		},
+	}
+}
+
 func upgradeHTTPS(match *envoy_api_v2_route.RouteMatch) *envoy_api_v2_route.Route {
 	return &envoy_api_v2_route.Route{
 		Match:  match,
@@ -98,9 +107,9 @@ func cluster(name, servicename, statName string) *v2.Cluster {
 	})
 }
 
-func tlsCluster(c *v2.Cluster, ca []byte, subjectName string, alpnProtocols ...string) *v2.Cluster {
+func tlsCluster(c *v2.Cluster, ca []byte, subjectName string, sni string, alpnProtocols ...string) *v2.Cluster {
 	c.TransportSocket = envoy.UpstreamTLSTransportSocket(
-		envoy.UpstreamTLSContext(ca, subjectName, alpnProtocols...),
+		envoy.UpstreamTLSContext(ca, subjectName, sni, alpnProtocols...),
 	)
 	return c
 }

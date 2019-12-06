@@ -2880,6 +2880,119 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	proxyReplaceHostHeader := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				RequestHeadersPolicy: &projcontour.HeadersPolicy{
+					Set: []projcontour.HeaderValue{{
+						Name:  "Host",
+						Value: "bar.com",
+					}},
+				},
+			}},
+		},
+	}
+
+	proxyReplaceHostHeaderMultiple := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				RequestHeadersPolicy: &projcontour.HeadersPolicy{
+					Set: []projcontour.HeaderValue{{
+						Name:  "Host",
+						Value: "bar.com",
+					}, {
+						Name:  "x-header",
+						Value: "bar.com",
+					}, {
+						Name:  "y-header",
+						Value: "zed.com",
+					}},
+				},
+			}},
+		},
+	}
+
+	proxyReplaceNonHostHeader := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				RequestHeadersPolicy: &projcontour.HeadersPolicy{
+					Set: []projcontour.HeaderValue{{
+						Name:  "x-header",
+						Value: "bar.com",
+					}},
+				},
+			}},
+		},
+	}
+
+	proxyReplaceHeaderEmptyValue := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				RequestHeadersPolicy: &projcontour.HeadersPolicy{
+					Set: []projcontour.HeaderValue{{
+						Name: "x-header",
+					}},
+				},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs                  []interface{}
 		disablePermitInsecure bool
@@ -5592,6 +5705,82 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", prefixroute("/", service(s2a))),
+					),
+				},
+			),
+		},
+		"insert proxy with replace header policy - host header": {
+			objs: []interface{}{
+				proxyReplaceHostHeader,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s9),
+							RequestHeadersPolicy: &HeadersPolicy{
+								HostRewrite: "bar.com",
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with replace header policy - host header multiple": {
+			objs: []interface{}{
+				proxyReplaceHostHeaderMultiple,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s9),
+							RequestHeadersPolicy: &HeadersPolicy{
+								HostRewrite: "bar.com",
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with replace header policy - not host header": {
+			objs: []interface{}{
+				proxyReplaceNonHostHeader,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathCondition:        prefix("/"),
+							Clusters:             clustermap(s9),
+							RequestHeadersPolicy: nil, // No header policy since only Host is supported
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with replace header policy - empty value": {
+			objs: []interface{}{
+				proxyReplaceHeaderEmptyValue,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathCondition:        prefix("/"),
+							Clusters:             clustermap(s9),
+							RequestHeadersPolicy: nil, // No header policy since only Host is supported
+						}),
 					),
 				},
 			),

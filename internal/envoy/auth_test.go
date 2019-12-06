@@ -26,6 +26,7 @@ func TestUpstreamTLSContext(t *testing.T) {
 		ca            []byte
 		subjectName   string
 		alpnProtocols []string
+		externalName  string
 		want          *envoy_api_v2_auth.UpstreamTlsContext
 	}{
 		"no alpn, no validation": {
@@ -71,11 +72,18 @@ func TestUpstreamTLSContext(t *testing.T) {
 				},
 			},
 		},
+		"external name sni": {
+			externalName: "projectcontour.local",
+			want: &envoy_api_v2_auth.UpstreamTlsContext{
+				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{},
+				Sni:              "projectcontour.local",
+			},
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := UpstreamTLSContext(tc.ca, tc.subjectName, tc.alpnProtocols...)
+			got := UpstreamTLSContext(tc.ca, tc.subjectName, tc.externalName, tc.alpnProtocols...)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}

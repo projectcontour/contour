@@ -47,11 +47,12 @@ var (
 // UpstreamTLSContext creates an envoy_api_v2_auth.UpstreamTlsContext. By default
 // UpstreamTLSContext returns a HTTP/1.1 TLS enabled context. A list of
 // additional ALPN protocols can be provided.
-func UpstreamTLSContext(ca []byte, subjectName string, alpnProtocols ...string) *envoy_api_v2_auth.UpstreamTlsContext {
+func UpstreamTLSContext(ca []byte, subjectName string, sni string, alpnProtocols ...string) *envoy_api_v2_auth.UpstreamTlsContext {
 	context := &envoy_api_v2_auth.UpstreamTlsContext{
 		CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
 			AlpnProtocols: alpnProtocols,
 		},
+		Sni: sni,
 	}
 
 	// we have to do explicitly assign the value from validationContext

@@ -152,13 +152,15 @@ type Route struct {
 	//
 	// +kubebuilder:validation:Optional
 	PathRewritePolicy *PathRewritePolicy `json:"pathRewritePolicy,omitempty"`
+	// The policy for managing headers during proxying
+	// +kubebuilder:validation:Optional
+	RequestHeadersPolicy *HeadersPolicy `json:"requestHeadersPolicy,omitempty"`
 }
 
 func (r *Route) GetPrefixReplacements() []ReplacePrefix {
 	if r.PathRewritePolicy != nil {
 		return r.PathRewritePolicy.ReplacePrefix
 	}
-
 	return nil
 }
 
@@ -292,6 +294,25 @@ type PathRewritePolicy struct {
 // LoadBalancerPolicy defines the load balancing policy.
 type LoadBalancerPolicy struct {
 	Strategy string `json:"strategy,omitempty"`
+}
+
+// HeadersPolicy defines how headers are managed during forwarding
+type HeadersPolicy struct {
+	// Set specifies a list of HTTP header values that will be set in the HTTP header
+	// +kubebuilder:validation:Optional
+	Set []HeaderValue `json:"set,omitempty"`
+}
+
+// HeaderValue represents a header name/value pair
+type HeaderValue struct {
+	// Name represents a key of a header
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+	// Value represents the value of a header specified by a key
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Value string `json:"value"`
 }
 
 // UpstreamValidation defines how to verify the backend service's certificate
