@@ -223,8 +223,8 @@ $ kubectl delete ns projectcontour
 [3]: #host-networking
 [4]: {% link _guides/proxy-proto.md %}
 [5]: https://github.com/kubernetes-up-and-running/kuard
-[6]: /docs/{{page.version}}/ingressroute
+[6]: ingressroute.md
 [7]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/02-service-envoy.yaml
 [8]: {% link getting-started.md %}
-[9]: {% link docs/master/httpproxy.md %}
+[9]: httpproxy.md
 [10]: {% link _guides/deploy-aws-nlb.md %}
