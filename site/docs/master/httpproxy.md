@@ -556,7 +556,7 @@ More information can be found in [Envoy's documentation][6]
 
 #### Load Balancing Strategy
 
-Each upstream service can have a load balancing strategy applied to determine which of its Endpoints is selected for the request.
+Each route can have a load balancing strategy applied to determine which of its Endpoints is selected for the request.
 The following list are the options available to choose from:
 
 - `RoundRobin`: Each healthy upstream Endpoint is selected in round robin order (Default strategy if none selected).
@@ -565,8 +565,7 @@ The following list are the options available to choose from:
 
 More information on the load balancing strategy can be found in [Envoy's documentation][7].
 
-The following example defines the strategy for Service `s2-strategy` as `WeightedLeastRequest`.
-Service `s1-strategy` does not have an explicit strategy defined so it will use the strategy of `RoundRobin`.
+The following example defines the strategy for the route `/` as `WeightedLeastRequest`.
 
 ```yaml
 # httpproxy-lb-strategy.yaml
@@ -586,13 +585,14 @@ spec:
           port: 80
         - name: s2-strategy
           port: 80
-          strategy: WeightedLeastRequest
+      loadBalancerPolicy:
+        strategy: WeightedLeastRequest
 ```
 
 #### Session Affinity
 
 Session affinity, also known as _sticky sessions_, is a load balancing strategy whereby a sequence of requests from a single client are consitently routed to the same application backend.
-Contour supports session affinity with the `strategy: Cookie` key on a per service basis.
+Contour supports session affinity on a per route basis with `loadBalancerPolocy` `strategy: Cookie`.
 
 ```yaml
 # httpproxy-sticky-sessions.yaml
@@ -608,6 +608,7 @@ spec:
   - services:
     - name: httpbin
       port: 8080
+    loadBalancerPolicy:
       strategy: Cookie
 ```
 
@@ -993,7 +994,7 @@ HTTPProxy with a defined `virtualhost` field that are not in one of the allowed 
 
 Additionally, when defined, Contour will only watch for Kubernetes secrets in these namespaces ignoring changes in all other namespaces.
 Proper RBAC rules should also be created to restrict what namespaces Contour has access matching the namespaces passed to the command line flag.
-An example of this is included in the [examples directory](https://github.com/projectcontour/contour/tree/v1.0.0/examples/root-rbac) and shows how you might create a namespace called `root-httproxies`.
+An example of this is included in the [examples directory][1] and shows how you might create a namespace called `root-httproxies`.
 
 > **NOTE: The restricted root namespace feature is only supported for HTTPProxy CRDs.
 > `--root-namespaces` does not affect the operation of `v1beta1.Ingress` objects**
