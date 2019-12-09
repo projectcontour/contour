@@ -94,6 +94,10 @@ func (osw *ObjectStatusWriter) SetInvalid(desc string) {
 	osw.WithValue("description", desc).WithValue("status", StatusInvalid)
 }
 
+func (osw *ObjectStatusWriter) IsValid() bool {
+	return osw.values["status"] == StatusValid
+}
+
 func (osw *ObjectStatusWriter) SetValid() {
 	switch osw.obj.(type) {
 	case *projcontour.HTTPProxy:

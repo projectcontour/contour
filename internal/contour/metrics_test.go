@@ -890,11 +890,10 @@ func TestIngressRouteMetrics(t *testing.T) {
 			wantIR: nil,
 			wantProxy: &metrics.RouteMetric{
 				Invalid: map[metrics.Meta]int{
-					{Namespace: "roots"}: 1,
-				},
-				Valid: map[metrics.Meta]int{
+					{Namespace: "roots"}:                       1,
 					{Namespace: "roots", VHost: "example.com"}: 1,
 				},
+				Valid:    map[metrics.Meta]int{},
 				Orphaned: map[metrics.Meta]int{},
 				Root: map[metrics.Meta]int{
 					{Namespace: "roots"}: 1,

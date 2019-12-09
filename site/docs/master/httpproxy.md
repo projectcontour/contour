@@ -359,8 +359,8 @@ For `header` conditions there is one required field, `name`, and five operator f
 
 ### Routes
 
-HTTPProxy must have at least one route or include defined.
-Paths defined are matched using prefix conditions.
+HTTPProxy must have either a [TCPProxy](#tcp-proxying) field, or at least one Routes or [Includes](#httpproxy-inclusion) field.
+HTTP request paths can be matched to Routes using prefix conditions.
 In this example, any requests to `multi-path.bar.com/blog` or `multi-path.bar.com/blog/*` will be routed to the Service `s2`.
 All other requests to the host `multi-path.bar.com` will be routed to the Service `s1`.
 

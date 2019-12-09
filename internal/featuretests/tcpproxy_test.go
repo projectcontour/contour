@@ -16,6 +16,8 @@ package featuretests
 import (
 	"testing"
 
+	"github.com/projectcontour/contour/internal/dag"
+
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
@@ -1106,5 +1108,32 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
+	})
+}
+
+func TestTCPProxyOrRoutesRequired(t *testing.T) {
+	rh, c, done := setup(t)
+	defer done()
+
+	vhost := &projcontour.HTTPProxy{
+		ObjectMeta: meta("default/simple"),
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "kuard-tcp.example.com",
+			},
+		},
+	}
+
+	rh.OnAdd(vhost)
+
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
+		),
+		TypeUrl: routeType,
+	}).Status(vhost).Equals(projcontour.Status{
+		CurrentStatus: dag.StatusInvalid,
+		Description:   "Spec does not produce any routes",
 	})
 }

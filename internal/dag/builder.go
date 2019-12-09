@@ -514,6 +514,16 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		secure := b.lookupSecureVirtualHost(host)
 		addRoutes(secure, routes)
 	}
+
+	// HTTPProxy object must have either a TCPProxy spec, or
+	// some combination of Include and Route specs that result
+	// routes being generated.
+	if sw.IsValid() {
+		if proxy.Spec.TCPProxy == nil && len(routes) == 0 {
+			sw.SetInvalid("Spec does not produce any routes")
+			return
+		}
+	}
 }
 
 type vhost interface {

@@ -2136,8 +2136,8 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: proxy7.Name, namespace: proxy7.Namespace}: {
 					Object:      proxy7,
-					Status:      "valid",
-					Description: "valid HTTPProxy",
+					Status:      "invalid",
+					Description: "Spec does not produce any routes",
 					Vhost:       "example.com",
 				},
 				{name: proxy8.Name, namespace: proxy8.Namespace}: {
