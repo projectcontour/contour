@@ -1,3 +1,5 @@
+# Annotations Reference
+
 <div id="toc" class="navigation"></div>
 
 Annotations are used in Ingress Controllers to configure features that are not covered by the Kubernetes Ingress API.

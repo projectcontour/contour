@@ -1,3 +1,5 @@
+# HTTPProxy Reference
+
 <div id="toc" class="navigation"></div>
 
 The [Ingress][1] object was added to Kubernetes in version 1.1 to describe properties of a cluster-wide reverse HTTP proxy.
@@ -355,7 +357,7 @@ For `header` conditions there is one required field, `name`, and five operator f
 
 - `exact` is a string, and checks that the header exactly matches the whole string. `notexact` checks that the header does *not* exactly match the whole string.
 
-#### Multiple Routes
+### Routes
 
 HTTPProxy must have at least one route or include defined.
 Paths defined are matched using prefix conditions.
@@ -554,7 +556,7 @@ More information can be found in [Envoy's documentation][6]
 
 #### Load Balancing Strategy
 
-Each upstream service can have a load balancing strategy applied to determine which of its Endpoints is selected for the request.
+Each route can have a load balancing strategy applied to determine which of its Endpoints is selected for the request.
 The following list are the options available to choose from:
 
 - `RoundRobin`: Each healthy upstream Endpoint is selected in round robin order (Default strategy if none selected).
@@ -563,8 +565,7 @@ The following list are the options available to choose from:
 
 More information on the load balancing strategy can be found in [Envoy's documentation][7].
 
-The following example defines the strategy for Service `s2-strategy` as `WeightedLeastRequest`.
-Service `s1-strategy` does not have an explicit strategy defined so it will use the strategy of `RoundRobin`.
+The following example defines the strategy for the route `/` as `WeightedLeastRequest`.
 
 ```yaml
 # httpproxy-lb-strategy.yaml
@@ -584,13 +585,14 @@ spec:
           port: 80
         - name: s2-strategy
           port: 80
-          strategy: WeightedLeastRequest
+      loadBalancerPolicy:
+        strategy: WeightedLeastRequest
 ```
 
 #### Session Affinity
 
 Session affinity, also known as _sticky sessions_, is a load balancing strategy whereby a sequence of requests from a single client are consitently routed to the same application backend.
-Contour supports session affinity with the `strategy: Cookie` key on a per service basis.
+Contour supports session affinity on a per route basis with `loadBalancerPolocy` `strategy: Cookie`.
 
 ```yaml
 # httpproxy-sticky-sessions.yaml
@@ -606,6 +608,7 @@ spec:
   - services:
     - name: httpbin
       port: 8080
+    loadBalancerPolicy:
       strategy: Cookie
 ```
 
@@ -715,7 +718,65 @@ spec:
           port: 80
 ```
 
-#### ExternalName
+#### Path Rewriting
+
+HTTPProxy supports rewriting the HTTP request URL path prior to delivering the request to the backend service.
+Rewriting is performed after a routing decision has been made, and never changes the request destination.
+
+The `pathRewritePolicy` field specifies how the path prefix should be rewritten.
+The `replacePrefix` rewrite policy specifies a replacement string for a HTTP request path prefix match.
+When this field is present, the path prefix that the request matched is replaced by the text specified in the `replacement` field.
+If the HTTP request path is longer than the matched prefix, the remainder of the path is unchanged.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: rewrite-example
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: rewrite.bar.com
+  routes:
+  - services:
+    - name: s1
+      port: 80
+    pathRewritePolicy:
+      replacePrefix:
+      - replacement: /new/prefix
+```
+
+The `replacePrefix` field accepts an array of possible replacements.
+When more than one `replacePrefix` array element is present, the `prefix` field can be used to disambiguate which replacement to apply.
+
+If no `prefix` field is present, the replacement is applied to all prefix matches made against the route.
+If a `prefix` field is present, the replacement is applied only to routes that have an exactly matching [prefix condition](#prefix-conditions).
+Specifying more than one `replacePrefix` entry is mainly useful when a HTTPProxy document is included into multiple parent documents.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: rewrite-example
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: rewrite.bar.com
+  routes:
+  - services:
+    - name: s1
+      port: 80
+    conditions:
+    - prefix: /v1/api
+    pathRewritePolicy:
+      replacePrefix:
+      - prefix: /v1/api
+        replacement: /app/api/v1
+      - prefix: /
+        replacement: /app
+```
+
+### ExternalName
 
 HTTPProxy supports routing traffic to service types `ExternalName`.
 Contour looks at the `spec.externalName` field of the service and configures the route to use that DNS name instead of utilizing EDS.
@@ -933,7 +994,7 @@ HTTPProxy with a defined `virtualhost` field that are not in one of the allowed 
 
 Additionally, when defined, Contour will only watch for Kubernetes secrets in these namespaces ignoring changes in all other namespaces.
 Proper RBAC rules should also be created to restrict what namespaces Contour has access matching the namespaces passed to the command line flag.
-An example of this is included in the [examples directory](https://github.com/projectcontour/contour/tree/v1.0.0/examples/root-rbac) and shows how you might create a namespace called `root-httproxies`.
+An example of this is included in the [examples directory][1] and shows how you might create a namespace called `root-httproxies`.
 
 > **NOTE: The restricted root namespace feature is only supported for HTTPProxy CRDs.
 > `--root-namespaces` does not affect the operation of `v1beta1.Ingress` objects**
