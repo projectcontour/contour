@@ -35,8 +35,8 @@ func registerCertGen(app *kingpin.Application) (*kingpin.CmdClause, *certgenConf
 	certgenApp.Flag("incluster", "use in cluster configuration.").BoolVar(&certgenConfig.InCluster)
 	certgenApp.Flag("kubeconfig", "path to kubeconfig (if not in running inside a cluster)").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).StringVar(&certgenConfig.KubeConfig)
 	certgenApp.Flag("namespace", "Kubernetes namespace, used for Kube objects").Default("projectcontour").Envar("CONTOUR_NAMESPACE").StringVar(&certgenConfig.Namespace)
+	certgenApp.Flag("expirydays", "Duration in days how long the certificates shall be valid").Default("365").UintVar(&certgenConfig.ExpiryDays)
 	certgenApp.Arg("outputdir", "Directory to output any files to").Default("certs").StringVar(&certgenConfig.OutputDir)
-
 	return certgenApp, &certgenConfig
 }
 
@@ -63,13 +63,16 @@ type certgenConfig struct {
 
 	// OutputPEM means that the certs generated will be output as PEM files in the current directory.
 	OutputPEM bool
+
+	// ExpiryDays is the duration in days how long certificates will be valid.
+	ExpiryDays uint
 }
 
 // GenerateCerts performs the actual cert generation steps and then returns the certs for the output function.
 func GenerateCerts(certConfig *certgenConfig) (map[string][]byte, error) {
 
 	now := time.Now()
-	expiry := now.Add(24 * 365 * time.Hour)
+	expiry := now.Add(24 * time.Duration(certConfig.ExpiryDays) * time.Hour)
 	caCertPEM, caKeyPEM, err := certgen.NewCA("Project Contour", expiry)
 	if err != nil {
 		return nil, err
