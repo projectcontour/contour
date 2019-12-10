@@ -11,14 +11,10 @@ toc: h1,h2
 
 This document describes the changes needed to upgrade your Contour installation.
 
-# Upgrading Contour 0.15.3 to 1.0.0
-
-Contour 1.0.0 is the current stable release.
-
 <div class="alert-deprecation">
 <b>Deprecation Notice</b></br>
 <p>
-The <code>IngressRoute</code> CRD has been deprecated and will not receive further updates. Contour 1.0.0 continues to support the IngressRoute API, however we anticipate it will be removed in the future.
+The <code>IngressRoute</code> CRD has been deprecated and will not receive further updates. Contour continues to support the IngressRoute API, however we anticipate it will be removed in the future.
 <p>
 </p>
 Please see the documentation for <a href="{% link docs/v1.0.0/httpproxy.md %}"><code>HTTPProxy</code></a>, which is the successor to <code>IngressRoute</code>.
@@ -26,6 +22,34 @@ You can also read the <a href="{% link _guides/ingressroute-to-httpproxy.md %}">
 </div>
 
 &nbsp;
+
+# Upgrading Contour 1.0.0 to 1.0.1
+
+Contour 1.0.1 is the current stable release.
+
+## The easy way to upgrade
+
+If you are running Contour 1.0.0, the easy way to upgrade to Contour 1.0.1 is to reapply the [quickstart yaml][16].
+
+```bash
+$ kubectl apply -f {{ site.url }}/quickstart/contour.yaml
+```
+
+## The less easy way
+
+This section contains information for administrators who wish to manually upgrade from Contour 1.0.0 to Contour 1.0.1.
+
+### Contour version
+
+Ensure the Contour image version is `docker.io/projectcontour/contour:v1.0.1`.
+
+### Envoy version
+
+Ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.12.2`.
+
+Please see the [Envoy Release Notes][15] for information about issues fixed in Envoy 1.12.2.
+
+# Upgrading Contour 0.15.3 to 1.0.0
 
 ## Recommended Envoy version
 
@@ -354,3 +378,5 @@ $ kubectl get configmap -n heptio-contour -o yaml contour
 [12]: {% link docs/v1.0.0/deploy-options.md %}
 [13]: https://hub.docker.com/r/projectcontour/contour
 [14]: {% link docs/v1.0.0/grpc-tls-howto.md %}
+[15]: https://www.envoyproxy.io/docs/envoy/v1.12.2/intro/version_history
+[16]: {% link getting-started.md %}
