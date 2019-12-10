@@ -27,6 +27,20 @@ $ git push --tags
 Once the tag is present on master, Github Actions will build the tag and push it to Docker Hub for you.
 Then, you are done until we are ready to branch for an rc or final release.
 
+## Update Docs Site
+
+The documentation site (projectcontour.io) has versioned documentation. The following steps can be followed to update the site to create the new release:
+
+- In: `site/_data`
+  - Make new yml file for version (e.g. v1-1-0-toc.yaml)
+  - Add yml file to site/_data/toc-mapping.yml
+- Copy `master` directory to the new version (e.g. v1.1.0)
+- In: `site/_config.yml`
+  - Update `defaults and add new version
+  - Update `collections` to add new version
+  - Update `versions` to add new version
+  - Update `latest` to change previous version to new version
+
 ## Branch for release
 
 As contours master branch is under active development, rc and final releases are made from a branch.
