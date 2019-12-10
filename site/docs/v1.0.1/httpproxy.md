@@ -554,7 +554,7 @@ More information can be found in [Envoy's documentation][6]
 
 #### Load Balancing Strategy
 
-Each upstream service can have a load balancing strategy applied to determine which of its Endpoints is selected for the request.
+Each route can have a load balancing strategy applied to determine which of its Endpoints is selected for the request.
 The following list are the options available to choose from:
 
 - `RoundRobin`: Each healthy upstream Endpoint is selected in round robin order (Default strategy if none selected).
@@ -563,8 +563,7 @@ The following list are the options available to choose from:
 
 More information on the load balancing strategy can be found in [Envoy's documentation][7].
 
-The following example defines the strategy for Service `s2-strategy` as `WeightedLeastRequest`.
-Service `s1-strategy` does not have an explicit strategy defined so it will use the strategy of `RoundRobin`.
+The following example defines the strategy for the route `/` as `WeightedLeastRequest`.
 
 ```yaml
 # httpproxy-lb-strategy.yaml
@@ -584,13 +583,14 @@ spec:
           port: 80
         - name: s2-strategy
           port: 80
-          strategy: WeightedLeastRequest
+      loadBalancerPolicy:
+        strategy: WeightedLeastRequest
 ```
 
 #### Session Affinity
 
 Session affinity, also known as _sticky sessions_, is a load balancing strategy whereby a sequence of requests from a single client are consitently routed to the same application backend.
-Contour supports session affinity with the `strategy: Cookie` key on a per service basis.
+Contour supports session affinity on a per route basis with `loadBalancerPolocy` `strategy: Cookie`.
 
 ```yaml
 # httpproxy-sticky-sessions.yaml
@@ -606,6 +606,7 @@ spec:
   - services:
     - name: httpbin
       port: 8080
+    loadBalancerPolicy:
       strategy: Cookie
 ```
 
@@ -1102,7 +1103,6 @@ Some examples of invalid configurations that Contour provides statuses for:
 - Root HTTPProxy does not specify fqdn.
 - Multiple prefixes cannot be specified on the same set of route conditions.
 - Multiple header conditions of type "exact match" with the same header key.
-
 
  [1]: https://kubernetes.io/docs/concepts/services-networking/ingress/
  [2]: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
