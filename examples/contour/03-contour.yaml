@@ -48,7 +48,7 @@ spec:
         - --contour-key-file=/certs/tls.key
         - --config-path=/config/contour.yaml
         command: ["contour"]
-        image: docker.io/projectcontour/contour:v1.0.0
+        image: docker.io/projectcontour/contour:v1.0.1
         imagePullPolicy: Always
         name: contour
         ports:

@@ -90,7 +90,7 @@ spec:
         - --envoy-key-file=/certs/tls.key
         command:
         - contour
-        image: docker.io/projectcontour/contour:v1.0.0
+        image: docker.io/projectcontour/contour:v1.0.1
         imagePullPolicy: Always
         name: envoy-initconfig
         volumeMounts:
