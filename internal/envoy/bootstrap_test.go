@@ -695,7 +695,7 @@ func TestBootstrap(t *testing.T) {
           }
         },
         "transport_socket": {
-          "name":"tls",
+          "name": "envoy.transport_sockets.tls",
           "typed_config": {
             "@type":"type.googleapis.com/envoy.api.v2.auth.UpstreamTlsContext",
             "common_tls_context": {
