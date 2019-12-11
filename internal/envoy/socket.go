@@ -21,7 +21,7 @@ import (
 // UpstreamTLSTransportSocket returns a custom transport socket using the UpstreamTlsContext provided.
 func UpstreamTLSTransportSocket(tls *envoy_api_v2_auth.UpstreamTlsContext) *envoy_api_v2_core.TransportSocket {
 	return &envoy_api_v2_core.TransportSocket{
-		Name: "tls",
+		Name: "envoy.transport_sockets.tls",
 		ConfigType: &envoy_api_v2_core.TransportSocket_TypedConfig{
 			TypedConfig: toAny(tls),
 		},
@@ -31,7 +31,7 @@ func UpstreamTLSTransportSocket(tls *envoy_api_v2_auth.UpstreamTlsContext) *envo
 // DownstreamTLSTransportSocket returns a custom transport socket using the DownstreamTlsContext provided.
 func DownstreamTLSTransportSocket(tls *envoy_api_v2_auth.DownstreamTlsContext) *envoy_api_v2_core.TransportSocket {
 	return &envoy_api_v2_core.TransportSocket{
-		Name: "tls",
+		Name: "envoy.transport_sockets.tls",
 		ConfigType: &envoy_api_v2_core.TransportSocket_TypedConfig{
 			TypedConfig: toAny(tls),
 		},
