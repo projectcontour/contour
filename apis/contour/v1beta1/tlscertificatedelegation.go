@@ -42,6 +42,8 @@ type CertificateDelegation struct {
 
 // TLSCertificateDelegation is an TLS Certificate Delegation CRD specificiation.
 // See design/tls-certificate-delegation.md for details.
+// +k8s:openapi-gen=true
+// +kubebuilder:resource:scope=Namespaced,path=tlscertificatedelegations,singular=tlscertificatedelegation
 type TLSCertificateDelegation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`

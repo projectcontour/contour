@@ -140,7 +140,7 @@ type Delegate struct {
 // +kubebuilder:printcolumn:name="First route",type="string",JSONPath=".spec.routes[0].match",description="First routes defined"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.currentStatus",description="The current status of the HTTPProxy"
 // +kubebuilder:printcolumn:name="Status Description",type="string",JSONPath=".status.description",description="Description of the current status"
-// +kubebuilder:resource:path=ingressroutes,singular=ingressroute
+// +kubebuilder:resource:scope=Namespaced,path=ingressroutes,singular=ingressroute
 type IngressRoute struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
