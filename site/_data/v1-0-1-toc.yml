@@ -21,6 +21,8 @@ toc:
         url: /deploy-options
       - page: Upgrade
         link: /resources/upgrading
+      - page: Enabling TLS between Envoy and Contour
+        url: /grpc-tls-howto
   - title: Guides
     subfolderitems:
       - page: Cert-Manager
