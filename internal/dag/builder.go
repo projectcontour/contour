@@ -671,11 +671,6 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 	}
 
 	for _, route := range proxy.Spec.Routes {
-		if len(route.Services) > 1 && route.EnableWebsockets {
-			sw.SetInvalid("route: cannot specify multiple services and enable websockets")
-			continue
-		}
-
 		if !pathConditionsValid(sw, route.Conditions, "route") {
 			return nil
 		}
@@ -905,12 +900,6 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 		// route cannot both delegate and point to services
 		if len(route.Services) > 0 && route.Delegate != nil {
 			sw.SetInvalid(fmt.Sprintf("route %q: cannot specify services and delegate in the same route", route.Match))
-			return
-		}
-
-		// Cannot support multiple services with websockets (See: https://github.com/projectcontour/contour/issues/732)
-		if len(route.Services) > 1 && route.EnableWebsockets {
-			sw.SetInvalid(fmt.Sprintf("route %q: cannot specify multiple services and enable websockets", route.Match))
 			return
 		}
 

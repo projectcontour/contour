@@ -267,15 +267,15 @@ func TestWebsocketIngressRoute_MultipleUpstreams(t *testing.T) {
 	}
 	rh.OnAdd(ir1)
 
-	// ws-1 is rejected because envoy cannot combine route_weightedcluster and websockets.
-	// envoyproxy/envoy#3684
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("websocket.hello.world",
-					// BUG /ws-2 should appear here but it does not.
-					// however ingressroute is legacy so we won't be fixing it.
-					// envoy.Route(routePrefix("/ws-2"), withWebsocket(routeCluster("default/ws/80/da39a3ee5e"))),
+					envoy.Route(routePrefix("/ws-2"), withWebsocket(routeCluster("default/ws/80/da39a3ee5e"))),
+					envoy.Route(routePrefix("/ws-1"), withWebsocket(routeWeightedCluster(
+						weightedCluster{"default/ws/80/da39a3ee5e", 1},
+						weightedCluster{"default/ws2/80/da39a3ee5e", 1},
+					))),
 					envoy.Route(routePrefix("/"), routeCluster("default/ws/80/da39a3ee5e")),
 				),
 			),
@@ -400,13 +400,15 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 	}
 	rh.OnUpdate(hp1, hp2)
 
-	// ws-1 is rejected because envoy cannot combine route_weightedcluster and websockets.
-	// envoyproxy/envoy#3684
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("websocket.hello.world",
 					envoy.Route(routePrefix("/ws-2"), withWebsocket(routeCluster("default/ws/80/da39a3ee5e"))),
+					envoy.Route(routePrefix("/ws-1"), withWebsocket(routeWeightedCluster(
+						weightedCluster{"default/ws/80/da39a3ee5e", 1},
+						weightedCluster{"default/ws2/80/da39a3ee5e", 1},
+					))),
 					envoy.Route(routePrefix("/"), routeCluster("default/ws/80/da39a3ee5e")),
 				),
 			),
