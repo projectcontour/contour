@@ -1,18 +1,13 @@
----
-title: Enabling TLS between Envoy and Contour
-layout: page
----
+# Enabling TLS between Envoy and Contour
+
 This document describes the steps required to secure communication between Envoy and Contour.
-
-## Outcomes
-
 The outcome of this is that we will have three Secrets available in the `projectcontour` namespace:
 
 - **cacert:** contains the CA's public certificate.
 - **contourcert:** contains Contour's keypair, used for serving TLS secured gRPC. This must be a valid certificate for the name `contour` in order for this to work. This is currently hardcoded by Contour.
 - **envoycert:** contains Envoy's keypair, used as a client for connecting to Contour.
 
-### Ways you can get the certificates into your cluster
+## Ways you can get the certificates into your cluster
 
 - Deploy the Job from [certgen.yaml][1].
 This will run `contour certgen --kube` for you.
