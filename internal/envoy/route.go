@@ -27,19 +27,6 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 )
 
-// Routes returns a []*envoy_api_v2_route.Route for the supplied routes.
-func Routes(routes ...*envoy_api_v2_route.Route) []*envoy_api_v2_route.Route {
-	return routes
-}
-
-// Route returns a *envoy_api_v2_route.Route for the supplied match and action.
-func Route(match *envoy_api_v2_route.RouteMatch, action *envoy_api_v2_route.Route_Route) *envoy_api_v2_route.Route {
-	return &envoy_api_v2_route.Route{
-		Match:  match,
-		Action: action,
-	}
-}
-
 // RouteMatch creates a *envoy_api_v2_route.RouteMatch for the supplied *dag.Route.
 func RouteMatch(route *dag.Route) *envoy_api_v2_route.RouteMatch {
 	switch c := route.PathCondition.(type) {

@@ -18,6 +18,7 @@ import (
 	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -66,7 +67,10 @@ func TestRetryPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("*",
-					envoy.Route(routePrefix("/"), withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 7, 120*time.Millisecond)),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 7, 120*time.Millisecond),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -93,7 +97,10 @@ func TestRetryPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("*",
-					envoy.Route(routePrefix("/"), withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 7, 120*time.Millisecond)),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 7, 120*time.Millisecond),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -120,7 +127,10 @@ func TestRetryPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("*",
-					envoy.Route(routePrefix("/"), withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 7, 120*time.Millisecond)),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 7, 120*time.Millisecond),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -156,7 +166,10 @@ func TestRetryPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost(ir1.Spec.VirtualHost.Fqdn,
-					envoy.Route(routePrefix("/"), withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx", 6, 125*time.Millisecond)),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx", 6, 125*time.Millisecond),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -191,7 +204,10 @@ func TestRetryPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost(hp1.Spec.VirtualHost.Fqdn,
-					envoy.Route(routePrefix("/"), withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx", 5, 105*time.Second)),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx", 5, 105*time.Second),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),

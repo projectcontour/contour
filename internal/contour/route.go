@@ -129,19 +129,18 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 						return
 					}
 
-					match := envoy.RouteMatch(route)
 					if route.HTTPSUpgrade {
 						// TODO(dfc) if we ensure the builder never returns a dag.Route connected
 						// to a SecureVirtualHost that requires upgrade, this logic can move to
 						// envoy.RouteRoute.
 						routes = append(routes, &envoy_api_v2_route.Route{
-							Match:  match,
+							Match:  envoy.RouteMatch(route),
 							Action: envoy.UpgradeHTTPS(),
 						})
 						return
 					}
 					routes = append(routes, &envoy_api_v2_route.Route{
-						Match:  match,
+						Match:  envoy.RouteMatch(route),
 						Action: envoy.RouteRoute(route),
 					})
 				})
