@@ -14,6 +14,8 @@
 package dag
 
 import (
+	"fmt"
+
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -85,8 +87,8 @@ func (osw *ObjectStatusWriter) WithValue(key, val string) *ObjectStatusWriter {
 	return osw
 }
 
-func (osw *ObjectStatusWriter) SetInvalid(desc string) {
-	osw.WithValue("description", desc).WithValue("status", k8s.StatusInvalid)
+func (osw *ObjectStatusWriter) SetInvalid(format string, args ...interface{}) {
+	osw.WithValue("description", fmt.Sprintf(format, args...)).WithValue("status", k8s.StatusInvalid)
 }
 
 func (osw *ObjectStatusWriter) SetValid() {
