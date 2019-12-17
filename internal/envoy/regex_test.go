@@ -31,7 +31,7 @@ func TestSafeRegexMatch(t *testing.T) {
 			want: &matcher.RegexMatcher{
 				EngineType: &matcher.RegexMatcher_GoogleRe2{
 					GoogleRe2: &matcher.RegexMatcher_GoogleRE2{
-						MaxProgramSize: protobuf.UInt32(0),
+						MaxProgramSize: protobuf.UInt32(maxRegexProgramSize),
 					},
 				},
 			},
@@ -41,7 +41,7 @@ func TestSafeRegexMatch(t *testing.T) {
 			want: &matcher.RegexMatcher{
 				EngineType: &matcher.RegexMatcher_GoogleRe2{
 					GoogleRe2: &matcher.RegexMatcher_GoogleRE2{
-						MaxProgramSize: protobuf.UInt32(6),
+						MaxProgramSize: protobuf.UInt32(maxRegexProgramSize),
 					},
 				},
 				Regex: "chrome",
@@ -52,7 +52,7 @@ func TestSafeRegexMatch(t *testing.T) {
 			want: &matcher.RegexMatcher{
 				EngineType: &matcher.RegexMatcher_GoogleRe2{
 					GoogleRe2: &matcher.RegexMatcher_GoogleRE2{
-						MaxProgramSize: protobuf.UInt32(7),
+						MaxProgramSize: protobuf.UInt32(maxRegexProgramSize),
 					},
 				},
 				Regex: "[a-z]+$", // meta characters are not escaped.

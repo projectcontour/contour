@@ -2473,6 +2473,13 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				},
 			},
 		},
+		"ingressroute first, then identical httpproxy": {
+			objs: []interface{}{ir1, proxy1, s4},
+			want: map[Meta]Status{
+				{name: ir1.Name, namespace: ir1.Namespace}:       {Object: ir1, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
+				{name: proxy1.Name, namespace: proxy1.Namespace}: {Object: proxy1, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
+			},
+		},
 	}
 
 	for name, tc := range tests {

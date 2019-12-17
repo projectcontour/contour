@@ -1,11 +1,6 @@
----
-title: Enabling TLS between Envoy and Contour
-layout: page
----
+# Enabling TLS between Envoy and Contour
+
 This document describes the steps required to secure communication between Envoy and Contour.
-
-## Outcomes
-
 The outcome of this is that we will have three Secrets available in the `projectcontour` namespace:
 
 - **cacert:** contains the CA's public certificate.

@@ -87,7 +87,7 @@ check-test-race: | check-test
 
 .PHONY: check-stale
 check-stale: ## Check for stale generated content
-check-stale: metrics-docs render rendercrds
+check-stale: metrics-docs rendercrds render
 	@if git status -s site/_metrics examples/render examples/contour 2>&1 | grep -E -q '^\s+[MADRCU]'; then \
 		echo Uncommitted changes in generated sources: ; \
 		git status -s site/_metrics examples/render examples/contour; \
@@ -155,7 +155,7 @@ secure-local: $(SECURE_LOCAL_BOOTSTRAP_CONFIG)
 		-it \
 		--mount type=bind,source=$(CURDIR),target=/config \
 		--net bridge \
-		docker.io/envoyproxy/envoy:v1.11.2 \
+		docker.io/envoyproxy/envoy:v1.12.2 \
 		envoy \
 		--config-path /config/$< \
 		--service-node node0 \
@@ -166,7 +166,7 @@ local: $(LOCAL_BOOTSTRAP_CONFIG)
 		-it \
 		--mount type=bind,source=$(CURDIR),target=/config \
 		--net bridge \
-		docker.io/envoyproxy/envoy:v1.11.2 \
+		docker.io/envoyproxy/envoy:v1.12.2 \
 		envoy \
 		--config-path /config/$< \
 		--service-node node0 \

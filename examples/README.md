@@ -28,4 +28,4 @@ If you have your own Grafana and Prometheus deployment already, the supplied [Co
 
 ## `kind`, `root-rbac`
 
-Both of these examples are fragments used in other documentation ([deploy-options](../docs/deploy-options.md) and [ingressroute](../docs/ingressroute.md) respectively.)
+Both of these examples are fragments used in other documentation ([deploy-options](https://projectcontour.io/docs/master/deploy-options) and [ingressroute](https://projectcontour.io/docs/master/ingressroute) respectively.)

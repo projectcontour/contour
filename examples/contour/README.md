@@ -17,7 +17,7 @@ This configuration has several advantages:
   - `contourcert`: be a Secret of type `kubernetes.io/tls` and must contain `tls.crt` and `tls.key` keys that contain a certificate and key for Contour. The certificate must be valid for the name `contour` either via CN or SAN.
   - `envoycert`: be a Secret of type `kubernetes.io/tls` and must contain `tls.crt` and `tls.key` keys that contain a certificate and key for Envoy.
 
-For detailed instructions on how to configure the required certs manually, see the [step-by-step TLS HOWTO](https://projectcontour.io/guides/grpc-tls-howto).
+For detailed instructions on how to configure the required certs manually, see the [step-by-step TLS HOWTO](https://projectcontour.io/docs/master/grpc-tls-howto).
 
 ## Deploy Contour
 
@@ -44,7 +44,7 @@ This will:
 
 ## Test
 
-1. Install a workload (see the kuard example in the [main deployment guide](https://projectcontour.io/guides/deploy-options/#test-with-httpproxy)).
+1. Install a workload (see the kuard example in the [main deployment guide](https://projectcontour.io/docs/master/deploy-options/#test-with-httpproxy)).
 
 ## Deploying with Host Networking enabled for Envoy
 
