@@ -26,7 +26,7 @@ $ kubectl apply -f {{ site.url }}/quickstart/contour.yaml
 This command creates:
 
 - A new namespace `projectcontour` with two instances of Contour in the namespace
-- A Service of `type: LoadBalancer` that points to the Contour instances
+- A Service of `type: LoadBalancer` that points to the Contour's Envoy instances
 - Depending on your configuration, new cloud resources -- for example, ELBs in AWS
 
 See also [TLS support][7] for details on configuring TLS support for the services behind Contour.
@@ -47,12 +47,12 @@ This example specifies a default backend for all hosts, so that you can test you
 
 ## Access your cluster
 
-Now you can retrieve the external address of Contour's load balancer:
+Now you can retrieve the external address of Contour's Envoy load balancer:
 
 ```bash
-$ kubectl get -n projectcontour service contour -o wide
-NAME      CLUSTER-IP     EXTERNAL-IP                                                                    PORT(S)        AGE       SELECTOR
-contour   10.106.53.14   a47761ccbb9ce11e7b27f023b7e83d33-2036788482.ap-southeast-2.elb.amazonaws.com   80:30274/TCP   3h        app=contour
+$ kubectl get -n projectcontour service envoy -o wide
+NAME    TYPE           CLUSTER-IP       EXTERNAL-IP                                                               PORT(S)                      AGE     SELECTOR
+envoy   LoadBalancer   10.100.161.248   a9be40da020a011eab39e0ab1af7de84-1808936165.eu-west-1.elb.amazonaws.com   80:30724/TCP,443:32097/TCP   4m58s   app=envoy
 ```
 
 ## Configuring DNS
