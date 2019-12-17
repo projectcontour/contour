@@ -28,14 +28,14 @@ Add a new type: `HeaderPolicy` that captures setting and removing headers.
 type HeaderPolicy struct {
 	// Set sets the specified headers replacing any existing values associated with the header names.
 	// +optional
-	Set []HeaderAddition `json:"set,omitempty"`
+	Set []HeaderValue `json:"set,omitempty"`
 	// Remove removes any headers whose name matches those specified.
 	// +optional
 	Remove []string `json:"remove,omitempty"`
 }
 
-// HeaderAddition defines a header key/value pair to be added to those sent to or return from a service.
-type HeaderAddition struct {
+// HeaderValue defines a header key/value pair to be added to those sent to or return from a service.
+type HeaderValue struct {
 	// Name is the header key to add.
 	Name string `json:"name"`
 	// Value is the header value to add.
@@ -72,6 +72,21 @@ There are two notable exceptions to this translation:
 There were a few alternatives discussed around API shapes for general header manipulation in #70, but this shape was chosen to address the various scenarios raised there (e.g. request/response).
 
 There was some discussion of API shapes for `Host` rewriting in #1982.
+
+
+There was significant discussion (in slack) of naming.  Two threads in particular:
+1. `HeaderPolicy` vs. `HeaderRewritePolicy` for both the type name, and as part of the field names.  The decision was ultimately to avoid pigeonholing future extensions of this policy with the "rewrite" qualification.  In the context of the field name, it was also felt that the verbs sufficiently disambiguated intent, e.g.
+```yaml
+requestHeaderPolicy:
+  set:
+  - name: Foo
+    value: bar
+  remove:
+  - Baz
+  - Blah
+```
+
+2. Whether to suffix the field with `Policy`, or just the Go type.  The decision was to bias towards consistency with other applications of the `Policy`-style throughout the Contour API, which were already present in the "v1" API surface and impossible to change without revving the API version.  In general, there was some loose agreement that it might have been better to name fields without the suffix, but the Go types with the suffix.  However, the prevailing sentiment was that API consistency was more important.
 
 
 ## Security Considerations
