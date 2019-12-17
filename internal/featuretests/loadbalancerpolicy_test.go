@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -73,7 +74,10 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("www.example.com",
-					envoy.Route(routePrefix("/cart"), withSessionAffinity(routeCluster("default/app/80/e4f81994fe"))),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/cart"),
+						Action: withSessionAffinity(routeCluster("default/app/80/e4f81994fe")),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -109,12 +113,15 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("www.example.com",
-					envoy.Route(routePrefix("/cart"), withSessionAffinity(
-						routeWeightedCluster(
-							weightedCluster{"default/app/80/e4f81994fe", 1},
-							weightedCluster{"default/app/8080/e4f81994fe", 1},
+					&envoy_api_v2_route.Route{
+						Match: routePrefix("/cart"),
+						Action: withSessionAffinity(
+							routeWeightedCluster(
+								weightedCluster{"default/app/80/e4f81994fe", 1},
+								weightedCluster{"default/app/8080/e4f81994fe", 1},
+							),
 						),
-					)),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -155,13 +162,19 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("www.example.com",
-					envoy.Route(routePrefix("/cart"), withSessionAffinity(
-						routeWeightedCluster(
-							weightedCluster{"default/app/80/e4f81994fe", 1},
-							weightedCluster{"default/app/8080/da39a3ee5e", 1},
+					&envoy_api_v2_route.Route{
+						Match: routePrefix("/cart"),
+						Action: withSessionAffinity(
+							routeWeightedCluster(
+								weightedCluster{"default/app/80/e4f81994fe", 1},
+								weightedCluster{"default/app/8080/da39a3ee5e", 1},
+							),
 						),
-					)),
-					envoy.Route(routePrefix("/"), routeCluster("default/app/80/da39a3ee5e")),
+					},
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/app/80/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -197,7 +210,10 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("www.example.com",
-					envoy.Route(routePrefix("/cart"), withSessionAffinity(routeCluster("default/app/80/e4f81994fe"))),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/cart"),
+						Action: withSessionAffinity(routeCluster("default/app/80/e4f81994fe")),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -234,12 +250,15 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("www.example.com",
-					envoy.Route(routePrefix("/cart"), withSessionAffinity(
-						routeWeightedCluster(
-							weightedCluster{"default/app/80/e4f81994fe", 1},
-							weightedCluster{"default/app/8080/e4f81994fe", 1},
+					&envoy_api_v2_route.Route{
+						Match: routePrefix("/cart"),
+						Action: withSessionAffinity(
+							routeWeightedCluster(
+								weightedCluster{"default/app/80/e4f81994fe", 1},
+								weightedCluster{"default/app/8080/e4f81994fe", 1},
+							),
 						),
-					)),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),

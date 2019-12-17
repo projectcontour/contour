@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
@@ -64,7 +65,10 @@ func TestIngressClassAnnotation(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("*",
-					envoy.Route(routePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -137,7 +141,10 @@ func TestIngressClassAnnotation(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("*",
-					envoy.Route(routePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -164,7 +171,10 @@ func TestIngressClassAnnotation(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("*",
-					envoy.Route(routePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -214,7 +224,10 @@ func TestIngressClassAnnotation(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("*",
-					envoy.Route(routePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -256,7 +269,10 @@ func TestIngressClassAnnotation(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("www.example.com",
-					envoy.Route(routePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -353,7 +369,10 @@ func TestIngressClassAnnotation(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost(ir4.Spec.VirtualHost.Fqdn,
-					envoy.Route(routePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -386,7 +405,10 @@ func TestIngressClassAnnotation(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost(ir5.Spec.VirtualHost.Fqdn,
-					envoy.Route(routePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -452,7 +474,10 @@ func TestIngressClassAnnotation(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost(ir5.Spec.VirtualHost.Fqdn,
-					envoy.Route(routePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -485,7 +510,10 @@ func TestIngressClassAnnotation(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("www.example.com",
-					envoy.Route(routePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -582,7 +610,10 @@ func TestIngressClassAnnotation(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost(proxy4.Spec.VirtualHost.Fqdn,
-					envoy.Route(routePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -615,7 +646,10 @@ func TestIngressClassAnnotation(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost(proxy5.Spec.VirtualHost.Fqdn,
-					envoy.Route(routePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -679,7 +713,10 @@ func TestIngressClassAnnotation(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost(proxy5.Spec.VirtualHost.Fqdn,
-					envoy.Route(routePrefix("/"), routeCluster("default/kuard/8080/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
