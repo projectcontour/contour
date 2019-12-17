@@ -1,0 +1,7 @@
+# This file is documented at https://git-scm.com/docs/gitattributes.
+# Linguist-specific attributes are documented at
+# https://github.com/github/linguist.
+
+# Collapse generated code in code reviews.
+**/zz_generated.*.go linguist-generated=true
+/apis/generated/** linguist-generated=true
