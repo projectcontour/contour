@@ -87,7 +87,7 @@ check-test-race: | check-test
 
 .PHONY: check-stale
 check-stale: ## Check for stale generated content
-check-stale: metrics-docs rendercrds render
+check-stale: metrics-docs rendercrds render render-refdocs
 	@if git status -s site/_metrics examples/render examples/contour 2>&1 | grep -E -q '^\s+[MADRCU]'; then \
 		echo Uncommitted changes in generated sources: ; \
 		git status -s site/_metrics examples/render examples/contour; \
@@ -179,6 +179,12 @@ render:
 rendercrds:
 	@echo Rendering CRDs...
 	@(cd examples && bash rendercrds.sh)
+
+render-refdocs: ## Update API reference documentation
+render-refdocs: site/docs/master/api-reference.html
+
+site/docs/master/api-reference.html: hack/generate-refdocs.sh $(shell ls site/_data/template/*.tpl) $(shell ls apis/projectcontour/*/*.go)
+	./hack/generate-refdocs.sh
 
 updategenerated: ## Update generated CRD code
 	@echo Updating generated CRD code...
