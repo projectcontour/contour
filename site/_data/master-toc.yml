@@ -13,6 +13,8 @@ toc:
         url: /ingressroute
       - page: Contour Configuration
         url: /configuration
+      - page: API Reference
+        url: /api
   - title: Deploy
     subfolderitems:
       - page: Deployment Options
