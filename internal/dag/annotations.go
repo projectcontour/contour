@@ -20,6 +20,7 @@ import (
 	"time"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 )
 
@@ -119,16 +120,45 @@ func parseUInt32(s string) uint32 {
 // parseUpstreamProtocols parses the annotations map for contour.heptio.com/upstream-protocol.{protocol}
 // and projectcontour.io/upstream-protocol.{protocol} annotations.
 // 'protocol' identifies which protocol must be used in the upstream.
-func parseUpstreamProtocols(m map[string]string) map[string]string {
+func parseUpstreamProtocols(svc *v1.Service) map[string]string {
+	up := make(map[string]string)
+	if svc == nil {
+		return up
+	}
+
+	// A heuristic to perform protocol selection based on a heuristic involving port names.
+	// https://istio.io/docs/ops/configuration/traffic-management/protocol-selection/
+	prefixToProtocol := map[string]string{
+		"http2": "h2c",
+		"tls":   "tls",
+	}
+	for _, port := range svc.Spec.Ports {
+		if protocol, ok := prefixToProtocol[port.Name]; ok {
+			up[port.Name] = protocol
+			up[fmt.Sprintf("%d", port.Port)] = protocol
+			continue
+		}
+		index := strings.Index(port.Name, "-")
+		if index == -1 {
+			continue
+		}
+		prefix := port.Name[:index]
+		if protocol, ok := prefixToProtocol[prefix]; ok {
+			up[port.Name] = protocol
+			up[fmt.Sprintf("%d", port.Port)] = protocol
+			continue
+		}
+	}
+
+	// We do annotations second, so that they trump the port name-based heuristic above.
 	annotations := []string{
 		"contour.heptio.com/upstream-protocol",
 		"projectcontour.io/upstream-protocol",
 	}
 	protocols := []string{"h2", "h2c", "tls"}
-	up := make(map[string]string)
 	for _, annotation := range annotations {
 		for _, protocol := range protocols {
-			ports := m[fmt.Sprintf("%s.%s", annotation, protocol)]
+			ports := svc.Annotations[fmt.Sprintf("%s.%s", annotation, protocol)]
 			for _, v := range strings.Split(ports, ",") {
 				port := strings.TrimSpace(v)
 				if port != "" {
@@ -137,6 +167,7 @@ func parseUpstreamProtocols(m map[string]string) map[string]string {
 			}
 		}
 	}
+
 	return up
 }
 

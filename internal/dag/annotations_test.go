@@ -68,7 +68,7 @@ func TestParseUint32(t *testing.T) {
 
 func TestParseUpstreamProtocols(t *testing.T) {
 	tests := map[string]struct {
-		a    map[string]string
+		a    *v1.Service
 		want map[string]string
 	}{
 		"nada": {
@@ -76,28 +76,48 @@ func TestParseUpstreamProtocols(t *testing.T) {
 			want: map[string]string{},
 		},
 		"empty": {
-			a:    map[string]string{"projectcontour.io/upstream-protocol.h2": ""},
+			a: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{"projectcontour.io/upstream-protocol.h2": ""},
+				},
+			},
 			want: map[string]string{},
 		},
 		"empty with spaces": {
-			a:    map[string]string{"projectcontour.io/upstream-protocol.h2": ", ,"},
+			a: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{"projectcontour.io/upstream-protocol.h2": ", ,"},
+				},
+			},
 			want: map[string]string{},
 		},
 		"single value": {
-			a: map[string]string{"projectcontour.io/upstream-protocol.h2": "80"},
+			a: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{"projectcontour.io/upstream-protocol.h2": "80"},
+				},
+			},
 			want: map[string]string{
 				"80": "h2",
 			},
 		},
 		"tls": {
-			a: map[string]string{"projectcontour.io/upstream-protocol.tls": "https,80"},
+			a: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{"projectcontour.io/upstream-protocol.tls": "https,80"},
+				},
+			},
 			want: map[string]string{
 				"80":    "tls",
 				"https": "tls",
 			},
 		},
 		"multiple value": {
-			a: map[string]string{"projectcontour.io/upstream-protocol.h2": "80,http,443,https"},
+			a: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{"projectcontour.io/upstream-protocol.h2": "80,http,443,https"},
+				},
+			},
 			want: map[string]string{
 				"80":    "h2",
 				"http":  "h2",
@@ -106,10 +126,14 @@ func TestParseUpstreamProtocols(t *testing.T) {
 			},
 		},
 		"deprecated multiple values": {
-			a: map[string]string{
-				"contour.heptio.com/upstream-protocol.h2": "80,http,443,https",
-				"projectcontour.io/upstream-protocol.h2c": "8080,http",
-				"projectcontour.io/upstream-protocol.tls": "443,https",
+			a: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"contour.heptio.com/upstream-protocol.h2": "80,http,443,https",
+						"projectcontour.io/upstream-protocol.h2c": "8080,http",
+						"projectcontour.io/upstream-protocol.tls": "443,https",
+					},
+				},
 			},
 			want: map[string]string{
 				"80":    "h2",
@@ -117,6 +141,61 @@ func TestParseUpstreamProtocols(t *testing.T) {
 				"http":  "h2c",
 				"443":   "tls",
 				"https": "tls",
+			},
+		},
+		"port names": {
+			a: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					// Override the http prefix below.
+					Annotations: map[string]string{
+						"projectcontour.io/upstream-protocol.h2c": "8084",
+						"projectcontour.io/upstream-protocol.tls": "8088",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{{
+						Name: "http",
+						Port: 8080,
+					}, {
+						Name: "http2",
+						Port: 8081,
+					}, {
+						Name: "http2-something",
+						Port: 8082,
+					}, {
+						// This isn't a valid prefix.
+						Name: "http2something",
+						Port: 8083,
+					}, {
+						Name: "http-is-actually-http2",
+						Port: 8084,
+					}, {
+						Name: "tls",
+						Port: 8085,
+					}, {
+						Name: "tls-something",
+						Port: 8086,
+					}, {
+						// This isn't a valid prefix.
+						Name: "tlssomething",
+						Port: 8087,
+					}, {
+						Name: "http-is-actually-tls",
+						Port: 8088,
+					}},
+				},
+			},
+			want: map[string]string{
+				"8081":            "h2c",
+				"http2":           "h2c",
+				"8082":            "h2c",
+				"http2-something": "h2c",
+				"8084":            "h2c",
+				"8085":            "tls",
+				"tls":             "tls",
+				"8086":            "tls",
+				"tls-something":   "tls",
+				"8088":            "tls",
 			},
 		},
 	}
