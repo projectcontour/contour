@@ -26,6 +26,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+const (
+	StatusValid    = "valid"
+	StatusInvalid  = "invalid"
+	StatusOrphaned = "orphaned"
+)
+
 // StatusClient updates the Status on a Kubernetes object.
 type StatusClient interface {
 	SetStatus(status string, desc string, obj interface{}) error

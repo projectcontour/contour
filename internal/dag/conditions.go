@@ -14,7 +14,6 @@
 package dag
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -56,12 +55,12 @@ func pathConditionsValid(sw *ObjectStatusWriter, conds []projcontour.Condition, 
 		if cond.Prefix != "" {
 			prefixCount++
 			if cond.Prefix[0] != '/' {
-				sw.SetInvalid(fmt.Sprintf("%s: Prefix conditions must start with /, %s was supplied", conditionsContext, cond.Prefix))
+				sw.SetInvalid("%s: Prefix conditions must start with /, %s was supplied", conditionsContext, cond.Prefix)
 				return false
 			}
 		}
 		if prefixCount > 1 {
-			sw.SetInvalid(fmt.Sprintf("%s: More than one prefix is not allowed in a condition block", conditionsContext))
+			sw.SetInvalid("%s: More than one prefix is not allowed in a condition block", conditionsContext)
 			return false
 		}
 	}

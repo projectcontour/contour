@@ -14,15 +14,12 @@
 package dag
 
 import (
+	"fmt"
+
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	StatusValid    = "valid"
-	StatusInvalid  = "invalid"
-	StatusOrphaned = "orphaned"
 )
 
 // Status contains the status for an IngressRoute (valid / invalid / orphan, etc)
@@ -90,16 +87,16 @@ func (osw *ObjectStatusWriter) WithValue(key, val string) *ObjectStatusWriter {
 	return osw
 }
 
-func (osw *ObjectStatusWriter) SetInvalid(desc string) {
-	osw.WithValue("description", desc).WithValue("status", StatusInvalid)
+func (osw *ObjectStatusWriter) SetInvalid(format string, args ...interface{}) {
+	osw.WithValue("description", fmt.Sprintf(format, args...)).WithValue("status", k8s.StatusInvalid)
 }
 
 func (osw *ObjectStatusWriter) SetValid() {
 	switch osw.obj.(type) {
 	case *projcontour.HTTPProxy:
-		osw.WithValue("description", "valid HTTPProxy").WithValue("status", StatusValid)
+		osw.WithValue("description", "valid HTTPProxy").WithValue("status", k8s.StatusValid)
 	case *ingressroutev1.IngressRoute:
-		osw.WithValue("description", "valid IngressRoute").WithValue("status", StatusValid)
+		osw.WithValue("description", "valid IngressRoute").WithValue("status", k8s.StatusValid)
 	default:
 		// not a supported type
 	}

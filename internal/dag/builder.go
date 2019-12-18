@@ -26,6 +26,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/k8s"
 )
 
 // Builder builds a DAG.
@@ -401,7 +402,7 @@ func (b *Builder) computeIngressRoute(ir *ingressroutev1.IngressRoute) {
 	sw.WithValue("vhost", host)
 
 	if strings.Contains(host, "*") {
-		sw.SetInvalid(fmt.Sprintf("Spec.VirtualHost.Fqdn %q cannot use wildcards", host))
+		sw.SetInvalid("Spec.VirtualHost.Fqdn %q cannot use wildcards", host)
 		return
 	}
 
@@ -411,7 +412,7 @@ func (b *Builder) computeIngressRoute(ir *ingressroutev1.IngressRoute) {
 		sec := b.lookupSecret(m, validSecret)
 		if sec != nil {
 			if !b.delegationPermitted(m, ir.Namespace) {
-				sw.SetInvalid(fmt.Sprintf("%s: certificate delegation not permitted", tls.SecretName))
+				sw.SetInvalid("%s: certificate delegation not permitted", tls.SecretName)
 				return
 			}
 			svhost := b.lookupSecureVirtualHost(ir.Spec.VirtualHost.Fqdn)
@@ -425,7 +426,7 @@ func (b *Builder) computeIngressRoute(ir *ingressroutev1.IngressRoute) {
 
 		// If not passthrough and secret is invalid, then set status
 		if sec == nil && !passthrough {
-			sw.SetInvalid(fmt.Sprintf("TLS Secret [%s] not found or is malformed", tls.SecretName))
+			sw.SetInvalid("TLS Secret [%s] not found or is malformed", tls.SecretName)
 			return
 		}
 	}
@@ -465,7 +466,7 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 	}
 	sw = sw.WithValue("vhost", host)
 	if strings.Contains(host, "*") {
-		sw.SetInvalid(fmt.Sprintf("Spec.VirtualHost.Fqdn %q cannot use wildcards", host))
+		sw.SetInvalid("Spec.VirtualHost.Fqdn %q cannot use wildcards", host)
 		return
 	}
 
@@ -480,7 +481,7 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		sec := b.lookupSecret(m, validSecret)
 		if sec != nil {
 			if !b.delegationPermitted(m, proxy.Namespace) {
-				sw.SetInvalid(fmt.Sprintf("%s: certificate delegation not permitted", tls.SecretName))
+				sw.SetInvalid("%s: certificate delegation not permitted", tls.SecretName)
 				return
 			}
 			svhost := b.lookupSecureVirtualHost(host)
@@ -489,7 +490,7 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		}
 
 		if sec == nil && !tls.Passthrough {
-			sw.SetInvalid(fmt.Sprintf("TLS Secret [%s] not found or is malformed", tls.SecretName))
+			sw.SetInvalid("TLS Secret [%s] not found or is malformed", tls.SecretName)
 			return
 		}
 	}
@@ -627,7 +628,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 		}
 		if v.Name == proxy.Name && v.Namespace == proxy.Namespace {
 			path = append(path, fmt.Sprintf("%s/%s", proxy.Namespace, proxy.Name))
-			sw.SetInvalid(fmt.Sprintf("include creates a delegation cycle: %s", strings.Join(path, " -> ")))
+			sw.SetInvalid("include creates a delegation cycle: %s", strings.Join(path, " -> "))
 			return nil
 		}
 	}
@@ -650,7 +651,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 
 		delegate, ok := b.Source.httpproxies[Meta{name: include.Name, namespace: namespace}]
 		if !ok {
-			sw.SetInvalid(fmt.Sprintf("include %s/%s not found", namespace, include.Name))
+			sw.SetInvalid("include %s/%s not found", namespace, include.Name)
 			return nil
 		}
 		if delegate.Spec.VirtualHost != nil {
@@ -671,11 +672,6 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 	}
 
 	for _, route := range proxy.Spec.Routes {
-		if len(route.Services) > 1 && route.EnableWebsockets {
-			sw.SetInvalid("route: cannot specify multiple services and enable websockets")
-			continue
-		}
-
 		if !pathConditionsValid(sw, route.Conditions, "route") {
 			return nil
 		}
@@ -736,15 +732,14 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 
 		for _, service := range route.Services {
 			if service.Port < 1 || service.Port > 65535 {
-				sw.SetInvalid(fmt.Sprintf("service %q: port must be in the range 1-65535", service.Name))
+				sw.SetInvalid("service %q: port must be in the range 1-65535", service.Name)
 				return nil
 			}
 			m := Meta{name: service.Name, namespace: proxy.Namespace}
 			s := b.lookupService(m, intstr.FromInt(service.Port))
 
 			if s == nil {
-				msg := fmt.Sprintf("Service [%s:%d] is invalid or missing", service.Name, service.Port)
-				sw.SetInvalid(msg)
+				sw.SetInvalid("Service [%s:%d] is invalid or missing", service.Name, service.Port)
 				return nil
 			}
 
@@ -821,14 +816,14 @@ func (b *Builder) buildDAG() *DAG {
 		ir, ok := b.Source.ingressroutes[meta]
 		if ok {
 			sw, commit := b.WithObject(ir)
-			sw.WithValue("status", StatusOrphaned).
+			sw.WithValue("status", k8s.StatusOrphaned).
 				WithValue("description", "this IngressRoute is not part of a delegation chain from a root IngressRoute")
 			commit()
 		}
 		proxy, ok := b.Source.httpproxies[meta]
 		if ok {
 			sw, commit := b.WithObject(proxy)
-			sw.WithValue("status", StatusOrphaned).
+			sw.WithValue("status", k8s.StatusOrphaned).
 				WithValue("description", "this HTTPProxy is not part of a delegation chain from a root HTTPProxy")
 			commit()
 		}
@@ -904,20 +899,14 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 	for _, route := range ir.Spec.Routes {
 		// route cannot both delegate and point to services
 		if len(route.Services) > 0 && route.Delegate != nil {
-			sw.SetInvalid(fmt.Sprintf("route %q: cannot specify services and delegate in the same route", route.Match))
-			return
-		}
-
-		// Cannot support multiple services with websockets (See: https://github.com/projectcontour/contour/issues/732)
-		if len(route.Services) > 1 && route.EnableWebsockets {
-			sw.SetInvalid(fmt.Sprintf("route %q: cannot specify multiple services and enable websockets", route.Match))
+			sw.SetInvalid("route %q: cannot specify services and delegate in the same route", route.Match)
 			return
 		}
 
 		// base case: The route points to services, so we add them to the vhost
 		if len(route.Services) > 0 {
 			if !matchesPathPrefix(route.Match, prefixMatch) {
-				sw.SetInvalid(fmt.Sprintf("the path prefix %q does not match the parent's path prefix %q", route.Match, prefixMatch))
+				sw.SetInvalid("the path prefix %q does not match the parent's path prefix %q", route.Match, prefixMatch)
 				return
 			}
 
@@ -932,14 +921,14 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 			}
 			for _, service := range route.Services {
 				if service.Port < 1 || service.Port > 65535 {
-					sw.SetInvalid(fmt.Sprintf("route %q: service %q: port must be in the range 1-65535", route.Match, service.Name))
+					sw.SetInvalid("route %q: service %q: port must be in the range 1-65535", route.Match, service.Name)
 					return
 				}
 				m := Meta{name: service.Name, namespace: ir.Namespace}
 				s := b.lookupService(m, intstr.FromInt(service.Port))
 
 				if s == nil {
-					sw.SetInvalid(fmt.Sprintf("Service [%s:%d] is invalid or missing", service.Name, service.Port))
+					sw.SetInvalid("Service [%s:%d] is invalid or missing", service.Name, service.Port)
 					return
 				}
 
@@ -997,7 +986,7 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 			for _, vir := range visited {
 				if dest.Name == vir.Name && dest.Namespace == vir.Namespace {
 					path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
-					sw.SetInvalid(fmt.Sprintf("route creates a delegation cycle: %s", strings.Join(path, " -> ")))
+					sw.SetInvalid("route creates a delegation cycle: %s", strings.Join(path, " -> "))
 					return
 				}
 			}
@@ -1050,7 +1039,7 @@ func (b *Builder) processIngressRouteTCPProxy(sw *ObjectStatusWriter, ir *ingres
 			m := Meta{name: service.Name, namespace: ir.Namespace}
 			s := b.lookupService(m, intstr.FromInt(service.Port))
 			if s == nil {
-				sw.SetInvalid(fmt.Sprintf("tcpproxy: service %s/%s/%d: not found", ir.Namespace, service.Name, service.Port))
+				sw.SetInvalid("tcpproxy: service %s/%s/%d: not found", ir.Namespace, service.Name, service.Port)
 				return
 			}
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
@@ -1088,7 +1077,7 @@ func (b *Builder) processIngressRouteTCPProxy(sw *ObjectStatusWriter, ir *ingres
 		for _, vir := range visited {
 			if dest.Name == vir.Name && dest.Namespace == vir.Namespace {
 				path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
-				sw.SetInvalid(fmt.Sprintf("tcpproxy creates a delegation cycle: %s", strings.Join(path, " -> ")))
+				sw.SetInvalid("tcpproxy creates a delegation cycle: %s", strings.Join(path, " -> "))
 				return
 			}
 		}
@@ -1124,7 +1113,7 @@ func (b *Builder) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *pr
 			m := Meta{name: service.Name, namespace: httpproxy.Namespace}
 			s := b.lookupService(m, intstr.FromInt(service.Port))
 			if s == nil {
-				sw.SetInvalid(fmt.Sprintf("tcpproxy: service %s/%s/%d: not found", httpproxy.Namespace, service.Name, service.Port))
+				sw.SetInvalid("tcpproxy: service %s/%s/%d: not found", httpproxy.Namespace, service.Name, service.Port)
 				return false
 			}
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
@@ -1151,7 +1140,7 @@ func (b *Builder) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *pr
 	m := Meta{name: tcpproxy.Include.Name, namespace: namespace}
 	dest, ok := b.Source.httpproxies[m]
 	if !ok {
-		sw.SetInvalid(fmt.Sprintf("tcpproxy: include %s/%s not found", m.namespace, m.name))
+		sw.SetInvalid("tcpproxy: include %s/%s not found", m.namespace, m.name)
 		return false
 	}
 
@@ -1171,7 +1160,7 @@ func (b *Builder) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *pr
 	for _, hp := range visited {
 		if dest.Name == hp.Name && dest.Namespace == hp.Namespace {
 			path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
-			sw.SetInvalid(fmt.Sprintf("tcpproxy include creates a cycle: %s", strings.Join(path, " -> ")))
+			sw.SetInvalid("tcpproxy include creates a cycle: %s", strings.Join(path, " -> "))
 			return false
 		}
 	}

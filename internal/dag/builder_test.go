@@ -1293,9 +1293,6 @@ func TestDAGInsert(t *testing.T) {
 				Services: []ingressroutev1.Service{{
 					Name: "kuard",
 					Port: 8080,
-				}, {
-					Name: "kuard",
-					Port: 8080,
 				}},
 			}},
 		},
@@ -2244,9 +2241,6 @@ func TestDAGInsert(t *testing.T) {
 				}},
 				EnableWebsockets: true,
 				Services: []projcontour.Service{{
-					Name: "kuard",
-					Port: 8080,
-				}, {
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -3508,7 +3502,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert ingressroute with multiple upstreams prefix rewrite route, websocket routes are dropped": {
+		"insert ingressroute with multiple upstreams prefix rewrite route with websockets on a single upstream": {
 			objs: []interface{}{
 				ir10b, s1,
 			},
@@ -3518,6 +3512,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							prefixroute("/", service(s1)),
+							routeWebsocket("/websocket", service(s1)),
 						),
 					),
 				},
@@ -4865,7 +4860,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httpproxy with multiple upstreams prefix rewrite route, websocket routes are dropped": {
+		"insert httpproxy with multiple upstreams prefix rewrite route and websockets along one path": {
 			objs: []interface{}{
 				proxy10b, s1,
 			},
@@ -4875,6 +4870,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							prefixroute("/", service(s1)),
+							routeWebsocket("/websocket", service(s1)),
 						),
 					),
 				},
