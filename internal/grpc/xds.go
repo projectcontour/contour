@@ -55,19 +55,20 @@ type grpcStream interface {
 }
 
 // stream processes a stream of DiscoveryRequests.
-func (xh *xdsHandler) stream(st grpcStream) (err error) {
+func (xh *xdsHandler) stream(st grpcStream) error {
 	// bump connection counter and set it as a field on the logger
 	log := xh.WithField("connection", xh.connections.next())
 
-	// set up some nice function exit handling which notifies if the
-	// stream terminated on error or not.
-	defer func() {
+	// Notify whether the stream terminated on error.
+	done := func(log *logrus.Entry, err error) error {
 		if err != nil {
 			log.WithError(err).Error("stream terminated")
 		} else {
 			log.Info("stream terminated")
 		}
-	}()
+
+		return err
+	}
 
 	ch := make(chan int, 1)
 
@@ -83,27 +84,28 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 		// the xDS protocol.
 		req, err := st.Recv()
 		if err != nil {
-			return err
+			return done(log, err)
 		}
 
 		// note: redeclare log in this scope so the next time around the loop all is forgotten.
 		log := log.WithField("version_info", req.VersionInfo).WithField("response_nonce", req.ResponseNonce)
 		if req.Node != nil {
-			log = log.WithField("node_id", req.Node.Id)
+			log = log.WithField("node_id", req.Node.Id).WithField("node_version", req.Node.BuildVersion)
 		}
 
-		if err := req.ErrorDetail; err != nil {
+		if status := req.ErrorDetail; status != nil {
 			// if Envoy rejected the last update log the details here.
 			// TODO(dfc) issue 1176: handle xDS ACK/NACK
-			log.WithField("code", err.Code).Error(err.Message)
+			log.WithField("code", status.Code).Error(status.Message)
 		}
 
 		// from the request we derive the resource to stream which have
 		// been registered according to the typeURL.
 		r, ok := xh.resources[req.TypeUrl]
 		if !ok {
-			return fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl)
+			return done(log, fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl))
 		}
+
 		log = log.WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl)
 		log.Info("stream_wait")
 
@@ -129,7 +131,7 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 
 			any, err := toAny(r.TypeURL(), resources)
 			if err != nil {
-				return err
+				return done(log, err)
 			}
 
 			resp := &envoy_api_v2.DiscoveryResponse{
@@ -138,12 +140,13 @@ func (xh *xdsHandler) stream(st grpcStream) (err error) {
 				TypeUrl:     r.TypeURL(),
 				Nonce:       strconv.Itoa(last),
 			}
+
 			if err := st.Send(resp); err != nil {
-				return err
+				return done(log, err)
 			}
-			log.WithField("count", len(resources)).Info("response")
+
 		case <-ctx.Done():
-			return ctx.Err()
+			return done(log, ctx.Err())
 		}
 	}
 }

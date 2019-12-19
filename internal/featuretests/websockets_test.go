@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -77,10 +78,10 @@ func TestWebsocketsIngress(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("websocket.hello.world",
-					envoy.Route(
-						routePrefix("/"),
-						withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
-					),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -120,10 +121,10 @@ func TestWebsocketsIngress(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("websocket.hello.world",
-					envoy.Route(
-						routePrefix("/ws2"),
-						withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
-					),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/ws2"),
+						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -187,9 +188,18 @@ func TestWebsocketIngressRoute(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("websocket.hello.world",
-					envoy.Route(routePrefix("/ws-2"), withWebsocket(routeCluster("default/ws/80/da39a3ee5e"))),
-					envoy.Route(routePrefix("/ws-1"), withWebsocket(routeCluster("default/ws/80/da39a3ee5e"))),
-					envoy.Route(routePrefix("/"), routeCluster("default/ws/80/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/ws-2"),
+						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
+					},
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/ws-1"),
+						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
+					},
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/ws/80/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -271,12 +281,21 @@ func TestWebsocketIngressRoute_MultipleUpstreams(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("websocket.hello.world",
-					envoy.Route(routePrefix("/ws-2"), withWebsocket(routeCluster("default/ws/80/da39a3ee5e"))),
-					envoy.Route(routePrefix("/ws-1"), withWebsocket(routeWeightedCluster(
-						weightedCluster{"default/ws/80/da39a3ee5e", 1},
-						weightedCluster{"default/ws2/80/da39a3ee5e", 1},
-					))),
-					envoy.Route(routePrefix("/"), routeCluster("default/ws/80/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/ws-2"),
+						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
+					},
+					&envoy_api_v2_route.Route{
+						Match: routePrefix("/ws-1"),
+						Action: withWebsocket(routeWeightedCluster(
+							weightedCluster{"default/ws/80/da39a3ee5e", 1},
+							weightedCluster{"default/ws2/80/da39a3ee5e", 1},
+						)),
+					},
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/ws/80/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -355,9 +374,18 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("websocket.hello.world",
-					envoy.Route(routePrefix("/ws-2"), withWebsocket(routeCluster("default/ws/80/da39a3ee5e"))),
-					envoy.Route(routePrefix("/ws-1"), withWebsocket(routeCluster("default/ws/80/da39a3ee5e"))),
-					envoy.Route(routePrefix("/"), routeCluster("default/ws/80/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/ws-2"),
+						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
+					},
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/ws-1"),
+						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
+					},
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/ws/80/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
@@ -404,12 +432,21 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("websocket.hello.world",
-					envoy.Route(routePrefix("/ws-2"), withWebsocket(routeCluster("default/ws/80/da39a3ee5e"))),
-					envoy.Route(routePrefix("/ws-1"), withWebsocket(routeWeightedCluster(
-						weightedCluster{"default/ws/80/da39a3ee5e", 1},
-						weightedCluster{"default/ws2/80/da39a3ee5e", 1},
-					))),
-					envoy.Route(routePrefix("/"), routeCluster("default/ws/80/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/ws-2"),
+						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
+					},
+					&envoy_api_v2_route.Route{
+						Match: routePrefix("/ws-1"),
+						Action: withWebsocket(routeWeightedCluster(
+							weightedCluster{"default/ws/80/da39a3ee5e", 1},
+							weightedCluster{"default/ws2/80/da39a3ee5e", 1},
+						)),
+					},
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/ws/80/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),

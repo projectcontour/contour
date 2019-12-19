@@ -18,6 +18,7 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -762,11 +763,12 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("kuard-tcp.example.com",
-					envoy.Route(routePrefix("/"),
+					&envoy_api_v2_route.Route{
+						Match: routePrefix("/"),
 						// this is a regular route cluster, not a 301 upgrade as
 						// permitInsecure: true was set.
-						routeCluster("default/backend/80/da39a3ee5e"),
-					),
+						Action: routeCluster("default/backend/80/da39a3ee5e"),
+					},
 				),
 			),
 			// no route should not be present as tcpproxy is in use
@@ -971,10 +973,11 @@ func TestTCPProxyTLSPassthroughAndHTTPServicePermitInsecure(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("kuard-tcp.example.com",
-					envoy.Route(routePrefix("/"),
+					&envoy_api_v2_route.Route{
+						Match: routePrefix("/"),
 						// not a 301 upgrade because permitInsecure: true is in use.
-						routeCluster("default/backend/80/da39a3ee5e"),
-					),
+						Action: routeCluster("default/backend/80/da39a3ee5e"),
+					},
 				),
 			),
 			// ingress_https should be empty.

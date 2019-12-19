@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -80,8 +81,10 @@ func TestMirrorPolicy(t *testing.T) {
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost(p1.Spec.VirtualHost.Fqdn,
-					envoy.Route(routePrefix("/"),
-						withMirrorPolicy(routeCluster("default/kuard/8080/da39a3ee5e"), "default/kuarder/8080/da39a3ee5e")),
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: withMirrorPolicy(routeCluster("default/kuard/8080/da39a3ee5e"), "default/kuarder/8080/da39a3ee5e"),
+					},
 				),
 			),
 			envoy.RouteConfiguration("ingress_https"),
