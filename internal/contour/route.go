@@ -123,6 +123,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 			switch vh := vertex.(type) {
 			case *dag.VirtualHost:
 				var routes []*envoy_api_v2_route.Route
+
 				vh.Visit(func(v dag.Vertex) {
 					route, ok := v.(*dag.Route)
 					if !ok {
@@ -137,16 +138,18 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 							Match:  envoy.RouteMatch(route),
 							Action: envoy.UpgradeHTTPS(),
 						})
-						return
+					} else {
+						routes = append(routes, &envoy_api_v2_route.Route{
+							Match:  envoy.RouteMatch(route),
+							Action: envoy.RouteRoute(route),
+						})
 					}
-					routes = append(routes, &envoy_api_v2_route.Route{
-						Match:  envoy.RouteMatch(route),
-						Action: envoy.RouteRoute(route),
-					})
 				})
+
 				if len(routes) < 1 {
 					return
 				}
+
 				sortRoutes(routes)
 				vhost := envoy.VirtualHost(vh.Name, routes...)
 				v.routes["ingress_http"].VirtualHosts = append(v.routes["ingress_http"].VirtualHosts, vhost)
