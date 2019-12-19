@@ -3033,6 +3033,28 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+	protocol := "h2c"
+	proxy110 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name:     "kuard",
+					Port:     8080,
+					Protocol: &protocol,
+				}},
+			}},
+		},
+	}
 
 	tests := map[string]struct {
 		objs                  []interface{}
@@ -4128,6 +4150,7 @@ func TestDAGInsert(t *testing.T) {
 										ServicePort: &s1a.Spec.Ports[0],
 										Protocol:    "tls",
 									},
+									Protocol: "tls",
 									UpstreamValidation: &UpstreamValidation{
 										CACertificate: secret(cert1),
 										SubjectName:   "example.com",
@@ -4397,9 +4420,9 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", &Service{
-								Name:        s3a.Name,
-								Namespace:   s3a.Namespace,
-								ServicePort: &s3a.Spec.Ports[0],
+								Name:        s3d.Name,
+								Namespace:   s3d.Namespace,
+								ServicePort: &s3d.Spec.Ports[0],
 								Protocol:    "h2c",
 							}),
 						),
@@ -4417,9 +4440,9 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", &Service{
-								Name:        s3b.Name,
-								Namespace:   s3b.Namespace,
-								ServicePort: &s3b.Spec.Ports[0],
+								Name:        s3e.Name,
+								Namespace:   s3e.Namespace,
+								ServicePort: &s3e.Spec.Ports[0],
 								Protocol:    "h2",
 							}),
 						),
@@ -4437,9 +4460,9 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", &Service{
-								Name:        s3c.Name,
-								Namespace:   s3c.Namespace,
-								ServicePort: &s3c.Spec.Ports[0],
+								Name:        s3f.Name,
+								Namespace:   s3f.Namespace,
+								ServicePort: &s3f.Spec.Ports[0],
 								Protocol:    "tls",
 							}),
 						),
@@ -5030,6 +5053,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
 		"insert httpproxy and service": {
 			objs: []interface{}{
 				proxy1, s1,
@@ -5043,6 +5067,22 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+
+		"insert httpproxy with protocol and service": {
+			objs: []interface{}{
+				proxy110, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeProtocol("/", protocol, service(s1))),
+					),
+				},
+			),
+		},
+
 		"insert httpproxy without tls version": {
 			objs: []interface{}{
 				proxy6, s1, sec1,
@@ -5078,6 +5118,7 @@ func TestDAGInsert(t *testing.T) {
 										ServicePort: &s1a.Spec.Ports[0],
 										Protocol:    "tls",
 									},
+									Protocol: "tls",
 									UpstreamValidation: &UpstreamValidation{
 										CACertificate: secret(cert1),
 										SubjectName:   "example.com",
@@ -6562,6 +6603,19 @@ func prefixroute(prefix string, first *Service, rest ...*Service) *Route {
 	}
 }
 
+func routeProtocol(prefix string, protocol string, first *Service, rest ...*Service) *Route {
+	services := append([]*Service{first}, rest...)
+
+	cs := clusters(services...)
+	for _, c := range cs {
+		c.Protocol = protocol
+	}
+	return &Route{
+		PathCondition: &PrefixCondition{Prefix: prefix},
+		Clusters:      cs,
+	}
+}
+
 func routeCluster(prefix string, first *Cluster, rest ...*Cluster) *Route {
 	return &Route{
 		PathCondition: &PrefixCondition{Prefix: prefix},
@@ -6604,6 +6658,7 @@ func clusters(services ...*Service) (c []*Cluster) {
 	for _, s := range services {
 		c = append(c, &Cluster{
 			Upstream: s,
+			Protocol: s.Protocol,
 		})
 	}
 	return c

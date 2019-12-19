@@ -196,6 +196,10 @@ type Service struct {
 	Name string `json:"name"`
 	// Port (defined as Integer) to proxy traffic to since a service can have multiple defined.
 	Port int `json:"port"`
+	// Protocol may be used to specify (or override) the protocol used to reach this Service.
+	// Values may be tls, h2, h2c.  It ommitted protocol-selection falls back on Service annotations.
+	// +optional
+	Protocol *string `json:"protocol,omitempty"`
 	// Weight defines percentage of traffic to balance traffic
 	// +optional
 	Weight uint32 `json:"weight,omitempty"`

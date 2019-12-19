@@ -100,6 +100,7 @@ func TestCluster(t *testing.T) {
 		"h2c upstream": {
 			cluster: &dag.Cluster{
 				Upstream: service(s1, "h2c"),
+				Protocol: "h2c",
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -115,6 +116,7 @@ func TestCluster(t *testing.T) {
 		"h2 upstream": {
 			cluster: &dag.Cluster{
 				Upstream: service(s1, "h2"),
+				Protocol: "h2",
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -144,6 +146,7 @@ func TestCluster(t *testing.T) {
 		"tls upstream": {
 			cluster: &dag.Cluster{
 				Upstream: service(s1, "tls"),
+				Protocol: "tls",
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -161,6 +164,7 @@ func TestCluster(t *testing.T) {
 		"tls upstream - external name": {
 			cluster: &dag.Cluster{
 				Upstream: service(svcExternal, "tls"),
+				Protocol: "tls",
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -175,6 +179,7 @@ func TestCluster(t *testing.T) {
 		"verify tls upstream with san": {
 			cluster: &dag.Cluster{
 				Upstream: service(s1, "tls"),
+				Protocol: "tls",
 				UpstreamValidation: &dag.UpstreamValidation{
 					CACertificate: &dag.Secret{
 						Object: &v1.Secret{
