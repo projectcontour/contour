@@ -366,6 +366,9 @@ type Cluster struct {
 	// The relative weight of this Cluster compared to its siblings.
 	Weight uint32
 
+	// The protocol to use to speak to this cluster.
+	Protocol string
+
 	// UpstreamValidation defines how to verify the backend service's certificate
 	UpstreamValidation *UpstreamValidation
 
