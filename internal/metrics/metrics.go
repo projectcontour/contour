@@ -79,6 +79,10 @@ const (
 	DAGRebuildGauge             = "contour_dagrebuild_timestamp"
 	cacheHandlerOnUpdateSummary = "contour_cachehandler_onupdate_duration_seconds"
 	resourceEventHandlerSummary = "contour_resourceeventhandler_duration_seconds"
+
+	healthzHitsGauge         = "contour_healthz_hits"
+	healthzSuccessfulGauge   = "contour_healthz_successful"
+	healthzUnsuccessfulGauge = "contour_healthz_unsuccessful"
 )
 
 // NewMetrics creates a new set of metrics and registers them with
@@ -346,21 +350,52 @@ type Service struct {
 // When stop is closed the http server will shutdown.
 func (svc *Service) Start(stop <-chan struct{}) error {
 
-	registerHealthCheck(&svc.ServeMux, svc.Client)
+	registerHealthCheck(&svc.ServeMux, svc.Client, svc.Registry)
 	registerMetrics(&svc.ServeMux, svc.Registry)
 
 	return svc.Service.Start(stop)
 }
 
-func registerHealthCheck(mux *http.ServeMux, client *kubernetes.Clientset) {
+func registerHealthCheck(mux *http.ServeMux, client kubernetes.Interface, registry *prometheus.Registry) {
+	hitsGauge := prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: healthzHitsGauge,
+			Help: "Total number of hits to the healthz endpoint.",
+		},
+	)
+
+	successGauge := prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: healthzSuccessfulGauge,
+			Help: "Total number of successful responses from the healthz endpoint.",
+		},
+	)
+
+	failureGauge := prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: healthzUnsuccessfulGauge,
+			Help: "Total number of unsuccessful responses from the healthz endpoint.",
+		},
+	)
+
+	registry.MustRegister(
+		hitsGauge,
+		successGauge,
+		failureGauge,
+	)
+
 	healthCheckHandler := func(w http.ResponseWriter, r *http.Request) {
+		hitsGauge.Inc()
+
 		// Try and lookup Kubernetes server version as a quick and dirty check
-		_, err := client.ServerVersion()
+		_, err := client.Discovery().ServerVersion()
 		if err != nil {
+			failureGauge.Inc()
 			msg := fmt.Sprintf("Failed Kubernetes Check: %v", err)
 			http.Error(w, msg, http.StatusServiceUnavailable)
 			return
 		}
+		successGauge.Inc()
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, "OK")
 	}

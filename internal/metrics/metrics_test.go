@@ -14,13 +14,16 @@
 package metrics
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"testing"
 	"time"
 
-	io_prometheus_client "github.com/prometheus/client_model/go"
-
 	"github.com/prometheus/client_golang/prometheus"
+	io_prometheus_client "github.com/prometheus/client_model/go"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 type testMetric struct {
@@ -1363,6 +1366,117 @@ func TestRemoveProxyMetric(t *testing.T) {
 			}
 			if !reflect.DeepEqual(gotRoot, tc.rootWant) {
 				t.Fatalf("write metric orphaned metric failed, want: %v got: %v", tc.rootWant, gotRoot)
+			}
+		})
+	}
+}
+
+func TestHealthzMetrics(t *testing.T) {
+	val0 := func() *float64 { i := float64(0); return &i }
+	val1 := func() *float64 { i := float64(1); return &i }
+
+	tests := map[string]struct {
+		client       func() kubernetes.Interface
+		statusCode   int
+		total        testMetric
+		successful   testMetric
+		unsuccessful testMetric
+	}{
+		// TODO: implement unsuccessful: I don't think we really want to implement the entire
+		// kubernetes.Clientset interface but I don't know another way to do this (at the moment).
+		"successful": {
+			client: func() kubernetes.Interface {
+				return fake.NewSimpleClientset()
+			},
+			statusCode: http.StatusOK,
+			total: testMetric{
+				metric: healthzHitsGauge,
+				want: []*io_prometheus_client.Metric{
+					{
+						Label: []*io_prometheus_client.LabelPair{},
+						Gauge: &io_prometheus_client.Gauge{
+							Value: val1(),
+						},
+					},
+				},
+			},
+			successful: testMetric{
+				metric: healthzSuccessfulGauge,
+				want: []*io_prometheus_client.Metric{
+					{
+						Label: []*io_prometheus_client.LabelPair{},
+						Gauge: &io_prometheus_client.Gauge{
+							Value: val1(),
+						},
+					},
+				},
+			},
+			unsuccessful: testMetric{
+				metric: healthzUnsuccessfulGauge,
+				want: []*io_prometheus_client.Metric{
+					{
+						Label: []*io_prometheus_client.LabelPair{},
+						Gauge: &io_prometheus_client.Gauge{
+							Value: val0(),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			r := prometheus.NewRegistry()
+			mux := http.NewServeMux()
+
+			registerHealthCheck(mux, tc.client(), r)
+
+			ts := httptest.NewServer(mux)
+			defer ts.Close()
+
+			// health and healthz use the same handler so we really only need to hit the one.
+			res, err := http.Get(ts.URL + "/healthz")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if res.StatusCode != tc.statusCode {
+				t.Fatalf("expected status code, want: %d, got: %d", tc.statusCode, res.StatusCode)
+			}
+
+			gatherers := prometheus.Gatherers{
+				r,
+				prometheus.DefaultGatherer,
+			}
+
+			gathering, err := gatherers.Gather()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			total := []*io_prometheus_client.Metric{}
+			successful := []*io_prometheus_client.Metric{}
+			unsuccessful := []*io_prometheus_client.Metric{}
+			for _, mf := range gathering {
+				switch mf.GetName() {
+				case tc.total.metric:
+					total = mf.Metric
+				case tc.successful.metric:
+					successful = mf.Metric
+				case tc.unsuccessful.metric:
+					unsuccessful = mf.Metric
+				}
+			}
+
+			if !reflect.DeepEqual(total, tc.total.want) {
+				t.Fatalf("healthz metrics total metric failed, want: %v got: %v", tc.total.want, total)
+			}
+			if !reflect.DeepEqual(successful, tc.successful.want) {
+				t.Fatalf("healthz metrics successful failed, want: %v got: %v", tc.successful.want, successful)
+			}
+			if !reflect.DeepEqual(unsuccessful, tc.unsuccessful.want) {
+				t.Fatalf("healthz metrics unsuccessful failed, want %v got: %v", tc.unsuccessful.want, unsuccessful)
 			}
 		})
 	}
