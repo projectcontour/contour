@@ -30,7 +30,7 @@ func TestEndpointsTranslatorContents(t *testing.T) {
 	}{
 		"empty": {
 			contents: nil,
-			want:     nil,
+			want:     []proto.Message{},
 		},
 		"simple": {
 			contents: clusterloadassignments(
@@ -256,6 +256,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 					port("", 8080),
 				),
 			}),
+			want: []proto.Message{},
 		},
 		"remove different": {
 			setup: func(et *EndpointsTranslator) {
@@ -284,6 +285,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 					port("", 8080),
 				),
 			}),
+			want: []proto.Message{},
 		},
 		"remove long name": {
 			setup: func(et *EndpointsTranslator) {
@@ -317,6 +319,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 					),
 				},
 			),
+			want: []proto.Message{},
 		},
 	}
 
@@ -389,8 +392,10 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 					port("", 8080),
 				),
 			}),
+			want: []proto.Message{},
 		},
 	}
+
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			var et EndpointsTranslator
@@ -425,7 +430,7 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 	et.OnUpdate(e1, e2)
 
 	// Assert endpoints are removed
-	want = nil
+	want = []proto.Message{}
 	got = et.Contents()
 
 	assert.Equal(t, want, got)
