@@ -79,7 +79,7 @@ func (e *EndpointsTranslator) Contents() []proto.Message {
 func (e *EndpointsTranslator) Query(names []string) []proto.Message {
 	e.clusterLoadAssignmentCache.mu.Lock()
 	defer e.clusterLoadAssignmentCache.mu.Unlock()
-	var values []proto.Message
+	values := make([]proto.Message, 0, len(names))
 	for _, n := range names {
 		v, ok := e.entries[n]
 		if !ok {
@@ -220,7 +220,7 @@ func (c *clusterLoadAssignmentCache) Remove(name string) {
 func (c *clusterLoadAssignmentCache) Contents() []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []proto.Message
+	values := make([]proto.Message, 0, len(c.entries))
 	for _, v := range c.entries {
 		values = append(values, v)
 	}
