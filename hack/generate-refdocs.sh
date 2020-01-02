@@ -1,29 +1,29 @@
 #! /usr/bin/env bash
 
+set -o errexit
+
 GOPATH=${GOPATH:-$(go env GOPATH)}
+
+# "go env" doesn't print anything if GOBIN is the default, so we
+# have to manually default it.
+GOBIN=${GOBIN:-$(go env GOBIN)}
+GOBIN=${GOBIN:-${GOPATH}/bin}
 
 readonly HERE=$(cd $(dirname $0) && pwd)
 readonly REPO=$(cd ${HERE}/.. && pwd)
 
-readonly GENDOC="${GOPATH}/src/github.com/ahmetb/gen-crd-api-reference-docs"
-
 gendoc::build() {
-    go get -u -d github.com/ahmetb/gen-crd-api-reference-docs
-
-    (
-        cd $GENDOC
-        go build .
-    )
+    go install github.com/ahmetb/gen-crd-api-reference-docs
 }
 
 # Exec the doc generator. Note that we use custom templates to inject
 # the CSS styles that make the output look better on the Contour site.
 gendoc::exec() {
-    local readonly prefix=${GENDOC}
+    local readonly confdir="${REPO}/site/_data/refdocs"
 
-    $prefix/gen-crd-api-reference-docs \
-        -template-dir $REPO/site/_data/template \
-        -config $prefix/example-config.json \
+    ${GOBIN}/gen-crd-api-reference-docs \
+        -template-dir ${confdir} \
+        -config ${confdir}/config.json \
         "$@"
 }
 

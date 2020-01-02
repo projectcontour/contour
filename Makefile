@@ -183,8 +183,8 @@ rendercrds:
 render-refdocs: ## Update API reference documentation
 render-refdocs: site/docs/master/api-reference.html
 
-site/docs/master/api-reference.html: hack/generate-refdocs.sh $(shell ls site/_data/template/*.tpl) $(shell ls apis/projectcontour/*/*.go)
-	./hack/generate-refdocs.sh
+site/docs/master/api-reference.html: hack/generate-refdocs.sh $(shell ls site/_data/refdocs/*.tpl) $(shell ls apis/projectcontour/*/*.go)
+	@./hack/generate-refdocs.sh
 
 updategenerated: ## Update generated CRD code
 	@echo Updating generated CRD code...

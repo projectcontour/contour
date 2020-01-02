@@ -3,6 +3,7 @@
 package tools
 
 import (
+	_ "github.com/ahmetb/gen-crd-api-reference-docs"
 	_ "github.com/client9/misspell/cmd/misspell"
 	_ "github.com/gordonklaus/ineffassign"
 	_ "github.com/kisielk/errcheck"
