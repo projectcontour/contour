@@ -3,6 +3,7 @@ module github.com/projectcontour/contour
 go 1.13
 
 require (
+	github.com/ahmetb/gen-crd-api-reference-docs v0.1.5
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4 // indirect
 	github.com/client9/misspell v0.3.4
@@ -33,8 +34,8 @@ require (
 	k8s.io/apimachinery v0.0.0-20190913080033-27d36303b655
 	k8s.io/client-go v0.0.0-20190918200256-06eb1244587a
 	k8s.io/code-generator v0.0.0-20190912054826-cd179ad6a269
-	k8s.io/gengo v0.0.0-20190907103519-ebc107f98eab // indirect
-	k8s.io/klog v0.4.0
+	k8s.io/gengo v0.0.0-20191120174120-e74f70b9b27e // indirect
+	k8s.io/klog v1.0.0
 	mvdan.cc/unparam v0.0.0-20190720180237-d51796306d8f
 	sigs.k8s.io/controller-tools v0.2.2-0.20191004105652-6eef39898e44
 )
