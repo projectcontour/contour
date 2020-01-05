@@ -151,12 +151,12 @@ type Route struct {
 	// after the request has been routed to a Service.
 	//
 	// +kubebuilder:validation:Optional
-	PathRewrite *PathRewritePolicy `json:"pathRewritePolicy,omitempty"`
+	PathRewritePolicy *PathRewritePolicy `json:"pathRewritePolicy,omitempty"`
 }
 
 func (r *Route) GetPrefixReplacements() []ReplacePrefix {
-	if r.PathRewrite != nil {
-		return r.PathRewrite.ReplacePrefix
+	if r.PathRewritePolicy != nil {
+		return r.PathRewritePolicy.ReplacePrefix
 	}
 
 	return nil
