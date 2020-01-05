@@ -64,7 +64,7 @@ func basic(t *testing.T) {
 					Name: "kuard",
 					Port: 8080,
 				}},
-				PathRewrite: &projcontour.PathRewritePolicy{
+				PathRewritePolicy: &projcontour.PathRewritePolicy{
 					ReplacePrefix: []projcontour.ReplacePrefix{
 						{
 							Replacement: "/api/v1",
@@ -101,7 +101,7 @@ func basic(t *testing.T) {
 	// Update the vhost to make the replacement ambiguous. This should remove the generated config.
 	vhost = update(rh, vhost,
 		func(vhost *projcontour.HTTPProxy) {
-			vhost.Spec.Routes[0].PathRewrite.ReplacePrefix =
+			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
 				[]projcontour.ReplacePrefix{
 					{Replacement: "/api/v1"},
 					{Replacement: "/api/v2"},
@@ -122,7 +122,7 @@ func basic(t *testing.T) {
 	// The replacement isn't ambiguous any more because only one of the prefixes matches.
 	vhost = update(rh, vhost,
 		func(vhost *projcontour.HTTPProxy) {
-			vhost.Spec.Routes[0].PathRewrite.ReplacePrefix =
+			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
 				[]projcontour.ReplacePrefix{
 					{Prefix: "/foo", Replacement: "/api/v1"},
 					{Prefix: "/api", Replacement: "/api/v2"},
@@ -154,7 +154,7 @@ func basic(t *testing.T) {
 	// it ambigious again.
 	vhost = update(rh, vhost,
 		func(vhost *projcontour.HTTPProxy) {
-			vhost.Spec.Routes[0].PathRewrite.ReplacePrefix =
+			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
 				[]projcontour.ReplacePrefix{
 					{Prefix: "/foo", Replacement: "/api/v1"},
 					{Prefix: "/foo", Replacement: "/api/v2"},
@@ -175,7 +175,7 @@ func basic(t *testing.T) {
 	// The "/api" prefix should have precedence over the empty prefix.
 	vhost = update(rh, vhost,
 		func(vhost *projcontour.HTTPProxy) {
-			vhost.Spec.Routes[0].PathRewrite.ReplacePrefix =
+			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
 				[]projcontour.ReplacePrefix{
 					{Prefix: "/api", Replacement: "/api/full"},
 					{Prefix: "", Replacement: "/api/empty"},
@@ -280,7 +280,7 @@ func multiInclude(t *testing.T) {
 					Name: "kuard",
 					Port: 8080,
 				}},
-				PathRewrite: &projcontour.PathRewritePolicy{
+				PathRewritePolicy: &projcontour.PathRewritePolicy{
 					ReplacePrefix: []projcontour.ReplacePrefix{
 						{Prefix: "/v2", Replacement: "/api/v2"},
 						{Prefix: "/v1", Replacement: "/api/v1"},
@@ -330,7 +330,7 @@ func multiInclude(t *testing.T) {
 	// Remove one of the replacements, and one cluster loses the rewrite.
 	update(rh, app,
 		func(app *projcontour.HTTPProxy) {
-			app.Spec.Routes[0].PathRewrite.ReplacePrefix =
+			app.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
 				[]projcontour.ReplacePrefix{
 					{Prefix: "/v1", Replacement: "/api/v1"},
 				}
@@ -393,7 +393,7 @@ func replaceWithSlash(t *testing.T) {
 					Port: 8080,
 				}},
 				Conditions: conditions(prefixCondition("/foo")),
-				PathRewrite: &projcontour.PathRewritePolicy{
+				PathRewritePolicy: &projcontour.PathRewritePolicy{
 					ReplacePrefix: []projcontour.ReplacePrefix{
 						{Replacement: "/"},
 					},
@@ -414,7 +414,7 @@ func replaceWithSlash(t *testing.T) {
 					Port: 8080,
 				}},
 				Conditions: conditions(prefixCondition("/bar/")),
-				PathRewrite: &projcontour.PathRewritePolicy{
+				PathRewritePolicy: &projcontour.PathRewritePolicy{
 					ReplacePrefix: []projcontour.ReplacePrefix{
 						{Replacement: "/"},
 					},
@@ -468,7 +468,7 @@ func replaceWithSlash(t *testing.T) {
 	update(rh, vhost2,
 		func(vhost *projcontour.HTTPProxy) {
 			vhost.Spec.Routes[0].Conditions = conditions(prefixCondition("/"))
-			vhost.Spec.Routes[0].PathRewrite = &projcontour.PathRewritePolicy{
+			vhost.Spec.Routes[0].PathRewritePolicy = &projcontour.PathRewritePolicy{
 				ReplacePrefix: []projcontour.ReplacePrefix{
 					{Replacement: "/bar"},
 				},
@@ -534,7 +534,7 @@ func artifactoryDocker(t *testing.T) {
 					Name: "service",
 					Port: 8080,
 				}},
-				PathRewrite: &projcontour.PathRewritePolicy{
+				PathRewritePolicy: &projcontour.PathRewritePolicy{
 					ReplacePrefix: []projcontour.ReplacePrefix{
 						{Prefix: "/v2/container-sandbox", Replacement: "/artifactory/api/docker/container-sandbox/v2"},
 						{Prefix: "/v2/container-release", Replacement: "/artifactory/api/docker/container-release/v2"},

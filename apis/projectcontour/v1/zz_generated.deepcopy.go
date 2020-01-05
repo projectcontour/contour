@@ -328,8 +328,8 @@ func (in *Route) DeepCopyInto(out *Route) {
 		*out = new(LoadBalancerPolicy)
 		**out = **in
 	}
-	if in.PathRewrite != nil {
-		in, out := &in.PathRewrite, &out.PathRewrite
+	if in.PathRewritePolicy != nil {
+		in, out := &in.PathRewritePolicy, &out.PathRewritePolicy
 		*out = new(PathRewritePolicy)
 		(*in).DeepCopyInto(*out)
 	}
