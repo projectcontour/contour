@@ -92,32 +92,50 @@ func main() {
 		_, err := app.Parse(args)
 		check(err)
 		log.Infof("args: %v", args)
-		doServe(log, serveCtx)
+		check(doServe(log, serveCtx))
 	default:
 		app.Usage(args)
 		os.Exit(2)
 	}
 }
 
-func newClient(kubeconfig string, inCluster bool) (*kubernetes.Clientset, *clientset.Clientset, *coordinationv1.CoordinationV1Client) {
+type kubernetesClients struct {
+	core         *kubernetes.Clientset
+	contour      *clientset.Clientset
+	coordination *coordinationv1.CoordinationV1Client
+}
+
+func newKubernetesClients(kubeconfig string, inCluster bool) (kubernetesClients, error) {
 	var err error
 	var config *rest.Config
+	var clients kubernetesClients
+
 	if kubeconfig != "" && !inCluster {
 		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-		check(err)
 	} else {
 		config, err = rest.InClusterConfig()
-		check(err)
 	}
 
-	client, err := kubernetes.NewForConfig(config)
-	check(err)
-	contourClient, err := clientset.NewForConfig(config)
-	check(err)
-	coordinationClient, err := coordinationv1.NewForConfig(config)
-	check(err)
+	if err != nil {
+		return clients, err
+	}
 
-	return client, contourClient, coordinationClient
+	clients.core, err = kubernetes.NewForConfig(config)
+	if err != nil {
+		return clients, err
+	}
+
+	clients.contour, err = clientset.NewForConfig(config)
+	if err != nil {
+		return clients, err
+	}
+
+	clients.coordination, err = coordinationv1.NewForConfig(config)
+	if err != nil {
+		return clients, err
+	}
+
+	return clients, nil
 }
 
 func check(err error) {
