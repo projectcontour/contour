@@ -121,19 +121,21 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 
 // doServe runs the contour serve subcommand.
 func doServe(log logrus.FieldLogger, ctx *serveContext) error {
-
 	// step 1. establish k8s client connection
-	client, contourClient, coordinationClient := newClient(ctx.Kubeconfig, ctx.InCluster)
+	clients, err := newKubernetesClients(ctx.Kubeconfig, ctx.InCluster)
+	if err != nil {
+		return fmt.Errorf("failed to create Kubernetes client: %w", err)
+	}
 
 	// step 2. create informers
 	// note: 0 means resync timers are disabled
-	coreInformers := coreinformers.NewSharedInformerFactory(client, 0)
-	contourInformers := contourinformers.NewSharedInformerFactory(contourClient, 0)
+	coreInformers := coreinformers.NewSharedInformerFactory(clients.core, 0)
+	contourInformers := contourinformers.NewSharedInformerFactory(clients.contour, 0)
 
 	// Create a set of SharedInformerFactories for each root-ingressroute namespace (if defined)
 	var namespacedInformers []coreinformers.SharedInformerFactory
 	for _, namespace := range ctx.ingressRouteRootNamespaces() {
-		inf := coreinformers.NewSharedInformerFactoryWithOptions(client, 0, coreinformers.WithNamespace(namespace))
+		inf := coreinformers.NewSharedInformerFactoryWithOptions(clients.core, 0, coreinformers.WithNamespace(namespace))
 		namespacedInformers = append(namespacedInformers, inf)
 	}
 
@@ -159,7 +161,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		StatusClient: &k8s.StatusWriter{
-			Client: contourClient,
+			Client: clients.contour,
 		},
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
@@ -230,7 +232,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			Port:        ctx.metricsPort,
 			FieldLogger: log.WithField("context", "metricsvc"),
 		},
-		Client:   client,
+		Client:   clients.core,
 		Registry: registry,
 	}
 	g.Add(metricsvc.Start)
@@ -250,7 +252,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	if !ctx.DisableLeaderElection {
 		var le *leaderelection.LeaderElector
 		var deposed chan struct{}
-		le, eh.IsLeader, deposed = newLeaderElector(log, ctx, client, coordinationClient)
+		le, eh.IsLeader, deposed = newLeaderElector(log, ctx, clients.core, clients.coordination)
 
 		g.AddContext(func(electionCtx context.Context) {
 			log.WithFields(logrus.Fields{

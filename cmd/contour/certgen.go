@@ -128,6 +128,11 @@ func OutputCerts(config *certgenConfig,
 func doCertgen(config *certgenConfig) {
 	generatedCerts, err := GenerateCerts(config)
 	check(err)
-	kubeclient, _, _ := newClient(config.KubeConfig, config.InCluster)
-	OutputCerts(config, kubeclient, generatedCerts)
+
+	clients, err := newKubernetesClients(config.KubeConfig, config.InCluster)
+	if err != nil {
+		check(fmt.Errorf("failed to create Kubernetes client: %w", err))
+	}
+
+	OutputCerts(config, clients.core, generatedCerts)
 }
