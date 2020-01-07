@@ -55,6 +55,8 @@ toc:
         link: /resources/faq
       - page: Support
         link: /resources/support
+      - page: Tagging
+        link: /resources/tagging
   - title: Contribute
     subfolderitems:
       - page: Start Contributing
