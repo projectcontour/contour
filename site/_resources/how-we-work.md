@@ -29,7 +29,9 @@ GitHub review tools suck for extended debate, if you find you’re taking past y
 
 - Before you fix a bug, write a test to show you fixed it.
 
-- Before you add a feature, write a test so someone else doesn’t break your feature by accident. 
+- Before you add a feature, write a test so someone else doesn’t break your feature by accident.
+
+- When submitting a PR add the appropriate release milestone and also add the Github label "release note" if this PR warrants getting called out in the next release.
 
 - You are permitted to refactor as much as you like to achieve these goals.
 As Kent beck said, ["make the change easy, then make the easy change."][2]

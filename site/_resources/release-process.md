@@ -127,7 +127,10 @@ This is controlled by a line in `site/_redirects`. If the definition of `:latest
 
 ### Do the Github release and write release notes
 
-Now you have a tag pushed to Github, go to the release tab on github, select the tag and write up your release notes. For patch releases, include the previous release notes below the new ones.
+Now you have a tag pushed to Github, go to the release tab on github, select the tag and write up your release notes.
+For patch releases, include the previous release notes below the new ones.
+
+_Note: Filter on the Github label "release note" and Github milestone which should include any PRs which should be called out in the release notes._ 
 
 ### Toot your horn
 
