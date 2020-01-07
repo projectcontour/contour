@@ -20,4 +20,4 @@ If Contour 1.0.1 is release, the `:latest` tag will move to that version.
 
 No support is offered for major, minor, or patch releases older than the `:latest` stable release.
 
-[1]: {% link docs/v1.0.0/tagging.md %}
+[1]: {% link _resources/tagging.md %}
