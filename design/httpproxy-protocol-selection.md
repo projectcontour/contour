@@ -48,6 +48,8 @@ Require downstream consumers to annotate K8s Services with Contour annotations (
 
 Adopt a port-naming convention like the one defined by [Istio](https://istio.io/docs/ops/configuration/traffic-management/protocol-selection/).
 
+Waiting for [KEP 1422](https://github.com/kubernetes/enhancements/pull/1422), which proposes building similar hints into the Kubernetes service itself.  Realistically this is over a year away from being a viable alternative.
+
 ## Security Considerations
 
 None at this time.
