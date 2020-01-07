@@ -81,8 +81,8 @@ versioning: true
 latest: v1.0.1
 versions:
   - master
-  - v1.0.0
   - v1.0.1
+  - v1.0.0
 
 # Build settings
 permalink: :title/
