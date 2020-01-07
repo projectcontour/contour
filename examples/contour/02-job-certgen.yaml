@@ -44,6 +44,7 @@ metadata:
   name: contour-certgen
   namespace: projectcontour
 spec:
+  ttlSecondsAfterFinished: 0
   template:
     metadata:
       labels:
@@ -51,7 +52,7 @@ spec:
     spec:
       containers:
       - name: contour
-        image: docker.io/projectcontour/contour:master
+        image: docker.io/projectcontour/contour:latest
         imagePullPolicy: Always
         command:
         - contour
