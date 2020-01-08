@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -2880,6 +2881,159 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	proxyReplaceHostHeader := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				RequestHeadersPolicy: &projcontour.HeadersPolicy{
+					Set: []projcontour.HeaderValue{{
+						Name:  "Host",
+						Value: "bar.com",
+					}},
+				},
+			}},
+		},
+	}
+
+	proxyReplaceHostHeaderMultiple := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				RequestHeadersPolicy: &projcontour.HeadersPolicy{
+					Set: []projcontour.HeaderValue{{
+						Name:  "Host",
+						Value: "bar.com",
+					}, {
+						Name:  "x-header",
+						Value: "bar.com",
+					}, {
+						Name:  "y-header",
+						Value: "zed.com",
+					}},
+				},
+			}},
+		},
+	}
+
+	proxyReplaceNonHostHeader := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				RequestHeadersPolicy: &projcontour.HeadersPolicy{
+					Set: []projcontour.HeaderValue{{
+						Name:  "x-header",
+						Value: "bar.com",
+					}},
+				},
+			}},
+		},
+	}
+
+	proxyReplaceHeaderEmptyValue := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				RequestHeadersPolicy: &projcontour.HeadersPolicy{
+					Set: []projcontour.HeaderValue{{
+						Name: "x-header",
+					}},
+				},
+			}},
+		},
+	}
+
+	// proxy109 has a route that rewrites headers.
+	proxy109 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+				RequestHeadersPolicy: &projcontour.HeadersPolicy{
+					Set: []projcontour.HeaderValue{{
+						Name:  "In-Foo",
+						Value: "bar",
+					}},
+					Remove: []string{
+						"In-Baz",
+					},
+				},
+				ResponseHeadersPolicy: &projcontour.HeadersPolicy{
+					Set: []projcontour.HeaderValue{{
+						Name:  "Out-Foo",
+						Value: "bar",
+					}},
+					Remove: []string{
+						"Out-Baz",
+					},
+				},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs                  []interface{}
 		disablePermitInsecure bool
@@ -5366,6 +5520,26 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 
+		"insert httpproxy with route-level header manipulation": {
+			objs: []interface{}{
+				proxy109, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeHeaders("/", map[string]string{
+								"In-Foo": "bar",
+							}, []string{"In-Baz"}, map[string]string{
+								"Out-Foo": "bar",
+							}, []string{"Out-Baz"}, service(s1)),
+						),
+					),
+				},
+			),
+		},
+
 		// issue 1399
 		"service shared across ingress and httpproxy tcpproxy": {
 			objs: []interface{}{
@@ -5592,6 +5766,94 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", prefixroute("/", service(s2a))),
+					),
+				},
+			),
+		},
+		"insert proxy with replace header policy - host header": {
+			objs: []interface{}{
+				proxyReplaceHostHeader,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s9),
+							RequestHeadersPolicy: &HeadersPolicy{
+								HostRewrite: "bar.com",
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with replace header policy - host header multiple": {
+			objs: []interface{}{
+				proxyReplaceHostHeaderMultiple,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s9),
+							RequestHeadersPolicy: &HeadersPolicy{
+								HostRewrite: "bar.com",
+								Set: map[string]string{
+									"X-Header": "bar.com",
+									"Y-Header": "zed.com",
+								},
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with replace header policy - not host header": {
+			objs: []interface{}{
+				proxyReplaceNonHostHeader,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s9),
+							RequestHeadersPolicy: &HeadersPolicy{
+								Set: map[string]string{
+									"X-Header": "bar.com",
+								},
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with replace header policy - empty value": {
+			objs: []interface{}{
+				proxyReplaceHeaderEmptyValue,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathCondition: prefix("/"),
+							Clusters:      clustermap(s9),
+							RequestHeadersPolicy: &HeadersPolicy{
+								Set: map[string]string{
+									"X-Header": "",
+								},
+							},
+						}),
 					),
 				},
 			),
@@ -6083,6 +6345,7 @@ func TestHttpPaths(t *testing.T) {
 		})
 	}
 }
+
 func TestEnforceRoute(t *testing.T) {
 	tests := map[string]struct {
 		tlsEnabled     bool
@@ -6173,6 +6436,113 @@ func TestSplitSecret(t *testing.T) {
 	}
 }
 
+func TestValidateHeaderAlteration(t *testing.T) {
+	tests := []struct {
+		name    string
+		in      *projcontour.HeadersPolicy
+		want    *HeadersPolicy
+		wantErr error
+	}{{
+		name: "empty is fine",
+	}, {
+		name: "set two, remove one",
+		in: &projcontour.HeadersPolicy{
+			Set: []projcontour.HeaderValue{{
+				Name:  "K-Foo",
+				Value: "bar",
+			}, {
+				Name:  "k-baz", // This gets canonicalized
+				Value: "blah",
+			}},
+			Remove: []string{"K-Nada"},
+		},
+		want: &HeadersPolicy{
+			Set: map[string]string{
+				"K-Foo": "bar",
+				"K-Baz": "blah",
+			},
+			Remove: []string{"K-Nada"},
+		},
+	}, {
+		name: "duplicate set",
+		in: &projcontour.HeadersPolicy{
+			Set: []projcontour.HeaderValue{{
+				Name:  "K-Foo",
+				Value: "bar",
+			}, {
+				Name:  "k-foo", // This gets canonicalized
+				Value: "blah",
+			}},
+		},
+		wantErr: errors.New(`duplicate header addition: "K-Foo"`),
+	}, {
+		name: "duplicate remove",
+		in: &projcontour.HeadersPolicy{
+			Remove: []string{"K-Foo", "k-foo"},
+		},
+		wantErr: errors.New(`duplicate header removal: "K-Foo"`),
+	}, {
+		name: "invalid set header",
+		in: &projcontour.HeadersPolicy{
+			Set: []projcontour.HeaderValue{{
+				Name:  "  K-Foo",
+				Value: "bar",
+			}},
+		},
+		wantErr: errors.New(`invalid set header "  K-Foo": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`),
+	}, {
+		name: "invalid remove header",
+		in: &projcontour.HeadersPolicy{
+			Remove: []string{"  K-Foo"},
+		},
+		wantErr: errors.New(`invalid remove header "  K-Foo": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`),
+	}, {
+		name: "invalid set header (special headers)",
+		in: &projcontour.HeadersPolicy{
+			Set: []projcontour.HeaderValue{{
+				Name:  "Host",
+				Value: "bar",
+			}},
+		},
+		wantErr: errors.New(`rewriting "Host" header is not supported`),
+	}, {
+		name: "percents are escaped",
+		in: &projcontour.HeadersPolicy{
+			Set: []projcontour.HeaderValue{{
+				Name:  "K-Foo",
+				Value: "100%",
+			}, {
+				Name:  "Lot-Of-Percents",
+				Value: "%%%%%",
+			}, {
+				Name:  "k-baz", // This gets canonicalized
+				Value: "%DOWNSTREAM_LOCAL_ADDRESS%",
+			}},
+		},
+		want: &HeadersPolicy{
+			Set: map[string]string{
+				"K-Foo":           "100%%",
+				"K-Baz":           "%%DOWNSTREAM_LOCAL_ADDRESS%%",
+				"Lot-Of-Percents": "%%%%%%%%%%",
+			},
+		},
+	}}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, gotErr := headersPolicy(test.in, false)
+			if !cmp.Equal(test.want, got) {
+				t.Errorf("set (-want, +got) = %s", cmp.Diff(test.want, got))
+			}
+			if (test.wantErr != nil) != (gotErr != nil) {
+				t.Errorf("err = %v, wanted %v", gotErr, test.wantErr)
+			} else if test.wantErr != nil && gotErr != nil && test.wantErr.Error() != gotErr.Error() {
+				t.Errorf("err = %v, wanted %v", gotErr, test.wantErr)
+			}
+		})
+	}
+}
+
 func routes(routes ...*Route) map[string]*Route {
 	if len(routes) == 0 {
 		return nil
@@ -6214,6 +6584,19 @@ func routeRewrite(prefix, rewrite string, first *Service, rest ...*Service) *Rou
 func routeWebsocket(prefix string, first *Service, rest ...*Service) *Route {
 	r := prefixroute(prefix, first, rest...)
 	r.Websocket = true
+	return r
+}
+
+func routeHeaders(prefix string, requestSet map[string]string, requestRemove []string, responseSet map[string]string, responseRemove []string, first *Service, rest ...*Service) *Route {
+	r := prefixroute(prefix, first, rest...)
+	r.RequestHeadersPolicy = &HeadersPolicy{
+		Set:    requestSet,
+		Remove: requestRemove,
+	}
+	r.ResponseHeadersPolicy = &HeadersPolicy{
+		Set:    responseSet,
+		Remove: responseRemove,
+	}
 	return r
 }
 

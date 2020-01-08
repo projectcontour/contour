@@ -84,6 +84,7 @@ func Cluster(c *dag.Cluster) *v2.Cluster {
 			UpstreamTLSContext(
 				upstreamValidationCACert(c),
 				upstreamValidationSubjectAltName(c),
+				service.ExternalName,
 			),
 		)
 	case "h2":
@@ -91,6 +92,7 @@ func Cluster(c *dag.Cluster) *v2.Cluster {
 			UpstreamTLSContext(
 				upstreamValidationCACert(c),
 				upstreamValidationSubjectAltName(c),
+				service.ExternalName,
 				"h2",
 			),
 		)

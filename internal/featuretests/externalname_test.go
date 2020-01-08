@@ -124,4 +124,48 @@ func TestExternalNameService(t *testing.T) {
 		),
 		TypeUrl: clusterType,
 	})
+
+	hp2 := &projcontour.HTTPProxy{
+		ObjectMeta: i1.ObjectMeta,
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "kuard.projectcontour.io",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 80,
+				}},
+				RequestHeadersPolicy: &projcontour.HeadersPolicy{
+					Set: []projcontour.HeaderValue{{
+						Name:  "Host",
+						Value: "external.address",
+					}},
+				},
+			}},
+		},
+	}
+	rh.OnAdd(hp2)
+
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("kuard.projectcontour.io",
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeHostRewrite("default/kuard/80/da39a3ee5e", "external.address"),
+					},
+				),
+			),
+			envoy.RouteConfiguration("ingress_https"),
+		),
+		TypeUrl: routeType,
+	})
+
+	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard/", "default_kuard_80", "foo.io", 80),
+		),
+		TypeUrl: clusterType,
+	})
 }

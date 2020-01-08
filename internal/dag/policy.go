@@ -15,11 +15,14 @@ package dag
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"k8s.io/api/networking/v1beta1"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
@@ -32,6 +35,58 @@ func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
 		NumRetries:    max(1, rp.NumRetries),
 		PerTryTimeout: perTryTimeout,
 	}
+}
+
+func headersPolicy(policy *projcontour.HeadersPolicy, allowHostRewrite bool) (*HeadersPolicy, error) {
+	if policy == nil {
+		return nil, nil
+	}
+
+	set := make(map[string]string, len(policy.Set))
+	hostRewrite := ""
+	for _, entry := range policy.Set {
+		key := http.CanonicalHeaderKey(entry.Name)
+		if _, ok := set[key]; ok {
+			return nil, fmt.Errorf("duplicate header addition: %q", key)
+		}
+		if key == "Host" {
+			if !allowHostRewrite {
+				return nil, fmt.Errorf("rewriting %q header is not supported", key)
+			}
+			hostRewrite = entry.Value
+			continue
+		}
+		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
+			return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
+		}
+		set[key] = escapeHeaderValue(entry.Value)
+	}
+
+	remove := sets.NewString()
+	for _, entry := range policy.Remove {
+		key := http.CanonicalHeaderKey(entry)
+		if remove.Has(key) {
+			return nil, fmt.Errorf("duplicate header removal: %q", key)
+		}
+		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
+			return nil, fmt.Errorf("invalid remove header %q: %v", key, msgs)
+		}
+		remove.Insert(key)
+	}
+	rl := remove.List()
+
+	if len(set) == 0 {
+		set = nil
+	}
+	if len(rl) == 0 {
+		rl = nil
+	}
+
+	return &HeadersPolicy{
+		Set:         set,
+		HostRewrite: hostRewrite,
+		Remove:      rl,
+	}, nil
 }
 
 // ingressRetryPolicy builds a RetryPolicy from ingress annotations.

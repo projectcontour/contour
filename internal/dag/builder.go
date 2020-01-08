@@ -684,13 +684,27 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			return nil
 		}
 
+		reqHP, err := headersPolicy(route.RequestHeadersPolicy, true /* allow Host */)
+		if err != nil {
+			sw.SetInvalid(err.Error())
+			return nil
+		}
+
+		respHP, err := headersPolicy(route.ResponseHeadersPolicy, false /* allow Host */)
+		if err != nil {
+			sw.SetInvalid(err.Error())
+			return nil
+		}
+
 		r := &Route{
-			PathCondition:    mergePathConditions(conds),
-			HeaderConditions: mergeHeaderConditions(conds),
-			Websocket:        route.EnableWebsockets,
-			HTTPSUpgrade:     routeEnforceTLS(enforceTLS, route.PermitInsecure && !b.DisablePermitInsecure),
-			TimeoutPolicy:    timeoutPolicy(route.TimeoutPolicy),
-			RetryPolicy:      retryPolicy(route.RetryPolicy),
+			PathCondition:         mergePathConditions(conds),
+			HeaderConditions:      mergeHeaderConditions(conds),
+			Websocket:             route.EnableWebsockets,
+			HTTPSUpgrade:          routeEnforceTLS(enforceTLS, route.PermitInsecure && !b.DisablePermitInsecure),
+			TimeoutPolicy:         timeoutPolicy(route.TimeoutPolicy),
+			RetryPolicy:           retryPolicy(route.RetryPolicy),
+			RequestHeadersPolicy:  reqHP,
+			ResponseHeadersPolicy: respHP,
 		}
 
 		if len(route.GetPrefixReplacements()) > 0 {
@@ -754,12 +768,26 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 				}
 			}
 
+			reqHP, err := headersPolicy(service.RequestHeadersPolicy, false /* allow Host */)
+			if err != nil {
+				sw.SetInvalid(err.Error())
+				return nil
+			}
+
+			respHP, err := headersPolicy(service.ResponseHeadersPolicy, false /* allow Host */)
+			if err != nil {
+				sw.SetInvalid(err.Error())
+				return nil
+			}
+
 			c := &Cluster{
-				Upstream:           s,
-				LoadBalancerPolicy: loadBalancerPolicy(route.LoadBalancerPolicy),
-				Weight:             service.Weight,
-				HealthCheckPolicy:  healthCheckPolicy(route.HealthCheckPolicy),
-				UpstreamValidation: uv,
+				Upstream:              s,
+				LoadBalancerPolicy:    loadBalancerPolicy(route.LoadBalancerPolicy),
+				Weight:                service.Weight,
+				HealthCheckPolicy:     healthCheckPolicy(route.HealthCheckPolicy),
+				UpstreamValidation:    uv,
+				RequestHeadersPolicy:  reqHP,
+				ResponseHeadersPolicy: respHP,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				sw.SetInvalid("only one service per route may be nominated as mirror")
@@ -780,6 +808,12 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 
 	sw.SetValid()
 	return routes
+}
+
+func escapeHeaderValue(value string) string {
+	// Envoy supports %-encoded variables, so literal %'s in the header's value must be escaped.  See:
+	// https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/headers#custom-request-response-headers
+	return strings.Replace(value, "%", "%%", -1)
 }
 
 func includeConditionsIdentical(includes []projcontour.Include) bool {

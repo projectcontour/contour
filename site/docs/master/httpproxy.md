@@ -268,7 +268,7 @@ metadata:
   name: secure-backend
 spec:
   virtualhost:
-    fqdn: www.example.com  
+    fqdn: www.example.com
   routes:
     - services:
         - name: service
@@ -308,7 +308,7 @@ spec:
   delegations:
     - secretName: example-com-wildcard
       targetNamespaces:
-      - example-com 
+      - example-com
     - secretName: another-com-wildcard
       targetNamespaces:
       - "*"
@@ -477,6 +477,72 @@ HTTPProxy weighting follows some specific rules:
 - Weights are relative and do not need to add up to 100. If all weights for a route are specified, then the "total" weight is the sum of those specified. As an example, if weights are 20, 30, 20 for three upstreams, the total weight would be 70. In this example, a weight of 30 would receive approximately 42.9% of traffic (30/70 = .4285).
 - If some weights are specified but others are not, then it's assumed that upstreams without weights have an implicit weight of zero, and thus will not receive traffic.
 
+#### Request and Response Header Policies
+
+Manipulating headers is also supported per-Service or per-Route.  Headers can be set or
+removed from the request or response as follows:
+
+per-Service:
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: header-manipulation
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: headers.bar.com
+  routes:
+    - services:
+        - name: s1
+          port: 80
+          requestHeaderPolicy:
+            set:
+              - name: X-Foo
+                value: bar
+            remove:
+              - X-Baz
+          responseHeaderPolicy:
+            set:
+              - name: X-Service-Name
+                value: s1
+            remove:
+              - X-Internal-Secret
+```
+
+
+per-Route
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: header-manipulation
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: headers.bar.com
+  routes:
+    - services:
+        - name: s1
+          port: 80
+      requestHeadersPolicy:
+        set:
+          - name: X-Foo
+            value: bar
+        remove:
+          - X-Baz
+      responseHeadersPolicy:
+        set:
+          - name: X-Service-Name
+            value: s1
+        remove:
+          - X-Internal-Secret
+```
+
+In these examples we are setting the header `X-Foo` with value `baz` on requests
+and stripping `X-Baz`.  We are then setting `X-Service-Name` on the response with
+value `s1`, and removing `X-Internal-Secret`.
+
 #### Traffic mirroring
 
 Per route a service can be nominated as a mirror.
@@ -591,8 +657,8 @@ spec:
 
 #### Session Affinity
 
-Session affinity, also known as _sticky sessions_, is a load balancing strategy whereby a sequence of requests from a single client are consitently routed to the same application backend.
-Contour supports session affinity on a per route basis with `loadBalancerPolocy` `strategy: Cookie`.
+Session affinity, also known as _sticky sessions_, is a load balancing strategy whereby a sequence of requests from a single client are consistently routed to the same application backend.
+Contour supports session affinity on a per route basis with `loadBalancerPolicy` `strategy: Cookie`.
 
 ```yaml
 # httpproxy-sticky-sessions.yaml
@@ -776,6 +842,31 @@ spec:
         replacement: /app
 ```
 
+### Header Policy
+
+HTTPProxy supports rewriting the `Host` header after first handling a request and before proxying to an upstream service.
+A common use-case for this is to use Contour to proxy to a resource outside the cluster referenced by an `externalName` service.
+
+The `requestHeaderPolicy` supports a list of `Set` options that currently only supports rewriting `Host` headers defined via a `name` and `value`.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: header-rewrite-example
+spec:
+  virtualhost:
+    fqdn: header.bar.com
+  routes:
+  - services:
+    - name: s1
+      port: 80
+    requestHeaderPolicy:
+      set:
+      - name: Host
+        value: external.dev
+```
+
 ### ExternalName
 
 HTTPProxy supports routing traffic to service types `ExternalName`.
@@ -803,6 +894,12 @@ spec:
     targetPort: 80
   type: ExternalName
 ```
+
+#### Proxy to external resource
+
+To proxy to another resource outside the cluster (e.g. A hosted object store bucket for example), configure that external resource in a service type `externalName`.
+Then define a `headerRequestPolicy` which replaces the `Host` header with the value of the external name service defined previously.
+Finally, if the upstream service is served over TLS, annotate the external name service with: `projectcontour.io/upstream-protocol.tls: 443,https` assuming your service had a port 443 & name `https`.
 
 ## HTTPProxy inclusion
 
