@@ -53,6 +53,10 @@ toc:
         link: /resources/release-process
       - page: Frequently Asked Questions
         link: /resources/faq
+      - page: Frequently Asked Questions
+        link: /resources/faq
+      - page: Tagging
+        link: /resources/tagging
   - title: Contribute
     subfolderitems:
       - page: Start Contributing
