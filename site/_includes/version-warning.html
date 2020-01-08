@@ -1,4 +1,11 @@
 {% if page.version != site.latest %}
+  {% assign latest_url = page.url | replace: page.version, site.latest | relative_url %}
+  {% assign target_page = site.pages | where: "url", latest_url | first %}
+  {% unless target_page %}
+    {% assign target_prefix = page.url | split: page.version | first %}
+    {% assign latest_url = target_prefix | append: site.latest | append: '/' | relative_url %}
+  {% endunless %}
+
 <div class="alert alert-primary" role="alert">
   {% if page.version == 'master' %}
   <p>
