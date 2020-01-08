@@ -23,6 +23,7 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/golang/protobuf/ptypes/duration"
+	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 )
@@ -79,12 +80,11 @@ func RouteRoute(r *dag.Route) *envoy_api_v2_route.Route_Route {
 		)
 	}
 
-	switch len(r.Clusters) {
-	case 1:
+	if singleSimpleCluster(r.Clusters) {
 		ra.ClusterSpecifier = &envoy_api_v2_route.RouteAction_Cluster{
 			Cluster: Clustername(r.Clusters[0]),
 		}
-	default:
+	} else {
 		ra.ClusterSpecifier = &envoy_api_v2_route.RouteAction_WeightedClusters{
 			WeightedClusters: weightedClusters(r.Clusters),
 		}
@@ -195,16 +195,74 @@ func UpgradeHTTPS() *envoy_api_v2_route.Route_Redirect {
 	}
 }
 
+// HeaderValueList creates a list of Envoy HeaderValueOptions from the provided map.
+func HeaderValueList(hvm map[string]string, app bool) (hvs []*envoy_api_v2_core.HeaderValueOption) {
+	for key, value := range hvm {
+		hvs = append(hvs, &envoy_api_v2_core.HeaderValueOption{
+			Header: &envoy_api_v2_core.HeaderValue{
+				Key:   key,
+				Value: value,
+			},
+			Append: &wrappers.BoolValue{
+				Value: app,
+			},
+		})
+	}
+	sort.Slice(hvs, func(i, j int) bool {
+		return hvs[i].Header.Key < hvs[j].Header.Key
+	})
+	return
+}
+
+// singleSimpleCluster determines whether we can use a RouteAction_Cluster
+// or must use a RouteAction_WeighedCluster to encode additional routing data.
+func singleSimpleCluster(clusters []*dag.Cluster) bool {
+	// If there are multiple clusters, than we cannot simply dispatch
+	// to it by name.
+	if len(clusters) != 1 {
+		return false
+	}
+	cluster := clusters[0]
+
+	// If the target cluster performs any kind of header manipulation,
+	// then we should use a WeightedCluster to encode the additional
+	// configuration.
+	if cluster.RequestHeadersPolicy == nil {
+		// no request headers policy
+	} else if len(cluster.RequestHeadersPolicy.Set) != 0 ||
+		len(cluster.RequestHeadersPolicy.Remove) != 0 {
+		return false
+	}
+	if cluster.ResponseHeadersPolicy == nil {
+		// no response headers policy
+	} else if len(cluster.ResponseHeadersPolicy.Set) != 0 ||
+		len(cluster.ResponseHeadersPolicy.Remove) != 0 {
+		return false
+	}
+
+	return true
+}
+
 // weightedClusters returns a route.WeightedCluster for multiple services.
 func weightedClusters(clusters []*dag.Cluster) *envoy_api_v2_route.WeightedCluster {
 	var wc envoy_api_v2_route.WeightedCluster
 	var total uint32
 	for _, cluster := range clusters {
 		total += cluster.Weight
-		wc.Clusters = append(wc.Clusters, &envoy_api_v2_route.WeightedCluster_ClusterWeight{
+
+		c := &envoy_api_v2_route.WeightedCluster_ClusterWeight{
 			Name:   Clustername(cluster),
 			Weight: protobuf.UInt32(cluster.Weight),
-		})
+		}
+		if cluster.RequestHeadersPolicy != nil {
+			c.RequestHeadersToAdd = HeaderValueList(cluster.RequestHeadersPolicy.Set, false)
+			c.RequestHeadersToRemove = cluster.RequestHeadersPolicy.Remove
+		}
+		if cluster.ResponseHeadersPolicy != nil {
+			c.ResponseHeadersToAdd = HeaderValueList(cluster.ResponseHeadersPolicy.Set, false)
+			c.ResponseHeadersToRemove = cluster.ResponseHeadersPolicy.Remove
+		}
+		wc.Clusters = append(wc.Clusters, c)
 	}
 	// Check if no weights were defined, if not default to even distribution
 	if total == 0 {

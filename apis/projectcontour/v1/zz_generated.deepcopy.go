@@ -223,6 +223,11 @@ func (in *HeadersPolicy) DeepCopyInto(out *HeadersPolicy) {
 		*out = make([]HeaderValue, len(*in))
 		copy(*out, *in)
 	}
+	if in.Remove != nil {
+		in, out := &in.Remove, &out.Remove
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 
@@ -375,6 +380,11 @@ func (in *Route) DeepCopyInto(out *Route) {
 		*out = new(HeadersPolicy)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.ResponseHeadersPolicy != nil {
+		in, out := &in.ResponseHeadersPolicy, &out.ResponseHeadersPolicy
+		*out = new(HeadersPolicy)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 
@@ -395,6 +405,16 @@ func (in *Service) DeepCopyInto(out *Service) {
 		in, out := &in.UpstreamValidation, &out.UpstreamValidation
 		*out = new(UpstreamValidation)
 		**out = **in
+	}
+	if in.RequestHeadersPolicy != nil {
+		in, out := &in.RequestHeadersPolicy, &out.RequestHeadersPolicy
+		*out = new(HeadersPolicy)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.ResponseHeadersPolicy != nil {
+		in, out := &in.ResponseHeadersPolicy, &out.ResponseHeadersPolicy
+		*out = new(HeadersPolicy)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }

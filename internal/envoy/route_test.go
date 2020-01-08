@@ -20,6 +20,7 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -155,6 +156,76 @@ func TestRouteRoute(t *testing.T) {
 								Weight: protobuf.UInt32(90),
 							}},
 							TotalWeight: protobuf.UInt32(90),
+						},
+					},
+					UpgradeConfigs: []*envoy_api_v2_route.RouteAction_UpgradeConfig{{
+						UpgradeType: "websocket",
+					}},
+				},
+			},
+		},
+		"single with header manipulations": {
+			route: &dag.Route{
+				Websocket: true,
+				Clusters: []*dag.Cluster{{
+					Upstream: &dag.Service{
+						Name:        s1.Name,
+						Namespace:   s1.Namespace,
+						ServicePort: &s1.Spec.Ports[0],
+					},
+
+					RequestHeadersPolicy: &dag.HeadersPolicy{
+						Set: map[string]string{
+							"K-Foo":   "bar",
+							"K-Sauce": "spicy",
+						},
+						Remove: []string{"K-Bar"},
+					},
+					ResponseHeadersPolicy: &dag.HeadersPolicy{
+						Set: map[string]string{
+							"K-Blah": "boo",
+						},
+						Remove: []string{"K-Baz"},
+					},
+				}},
+			},
+			want: &envoy_api_v2_route.Route_Route{
+				Route: &envoy_api_v2_route.RouteAction{
+					ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+						WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+							Clusters: []*envoy_api_v2_route.WeightedCluster_ClusterWeight{{
+								Name:   "default/kuard/8080/da39a3ee5e",
+								Weight: protobuf.UInt32(1),
+								RequestHeadersToAdd: []*envoy_api_v2_core.HeaderValueOption{{
+									Header: &envoy_api_v2_core.HeaderValue{
+										Key:   "K-Foo",
+										Value: "bar",
+									},
+									Append: &wrappers.BoolValue{
+										Value: false,
+									},
+								}, {
+									Header: &envoy_api_v2_core.HeaderValue{
+										Key:   "K-Sauce",
+										Value: "spicy",
+									},
+									Append: &wrappers.BoolValue{
+										Value: false,
+									},
+								}},
+								RequestHeadersToRemove: []string{"K-Bar"},
+								ResponseHeadersToAdd: []*envoy_api_v2_core.HeaderValueOption{{
+									Header: &envoy_api_v2_core.HeaderValue{
+										Key:   "K-Blah",
+										Value: "boo",
+									},
+									Append: &wrappers.BoolValue{
+										Value: false,
+									},
+								}},
+								ResponseHeadersToRemove: []string{"K-Baz"},
+							}},
+							TotalWeight: protobuf.UInt32(1),
 						},
 					},
 					UpgradeConfigs: []*envoy_api_v2_route.RouteAction_UpgradeConfig{{

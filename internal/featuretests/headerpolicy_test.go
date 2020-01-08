@@ -14,7 +14,9 @@
 package featuretests
 
 import (
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/envoy"
 	v1 "k8s.io/api/core/v1"
 
@@ -81,7 +83,7 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	// Unsupported header (i.e. not `Host`)
+	// Non-Host header
 	rh.OnAdd(&projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
@@ -111,6 +113,15 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/svc1/80/da39a3ee5e"),
+						RequestHeadersToAdd: []*envoy_api_v2_core.HeaderValueOption{{
+							Header: &envoy_api_v2_core.HeaderValue{
+								Key:   "X-Header",
+								Value: "goodbye.planet",
+							},
+							Append: &wrappers.BoolValue{
+								Value: false,
+							},
+						}},
 					},
 				),
 			),

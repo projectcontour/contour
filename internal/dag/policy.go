@@ -15,12 +15,14 @@ package dag
 
 import (
 	"fmt"
-	"strings"
+	"net/http"
 	"time"
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"k8s.io/api/networking/v1beta1"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
@@ -35,24 +37,56 @@ func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
 	}
 }
 
-func headerPolicy(policy *projcontour.HeadersPolicy) *HeadersPolicy {
+func headersPolicy(policy *projcontour.HeadersPolicy, allowHostRewrite bool) (*HeadersPolicy, error) {
 	if policy == nil {
-		return nil
+		return nil, nil
 	}
 
-	for _, rp := range policy.Set {
-		// Value must be defined
-		// TODO(sas): Set status for empty value
-		if rp.Value == "" {
+	set := make(map[string]string, len(policy.Set))
+	hostRewrite := ""
+	for _, entry := range policy.Set {
+		key := http.CanonicalHeaderKey(entry.Name)
+		if _, ok := set[key]; ok {
+			return nil, fmt.Errorf("duplicate header addition: %q", key)
+		}
+		if key == "Host" {
+			if !allowHostRewrite {
+				return nil, fmt.Errorf("rewriting %q header is not supported", key)
+			}
+			hostRewrite = entry.Value
 			continue
 		}
-
-		// Only host rewrite is currently supported
-		if strings.EqualFold(rp.Name, "Host") {
-			return &HeadersPolicy{HostRewrite: rp.Value}
+		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
+			return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
 		}
+		set[key] = escapeHeaderValue(entry.Value)
 	}
-	return nil
+
+	remove := sets.NewString()
+	for _, entry := range policy.Remove {
+		key := http.CanonicalHeaderKey(entry)
+		if remove.Has(key) {
+			return nil, fmt.Errorf("duplicate header removal: %q", key)
+		}
+		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
+			return nil, fmt.Errorf("invalid remove header %q: %v", key, msgs)
+		}
+		remove.Insert(key)
+	}
+	rl := remove.List()
+
+	if len(set) == 0 {
+		set = nil
+	}
+	if len(rl) == 0 {
+		rl = nil
+	}
+
+	return &HeadersPolicy{
+		Set:         set,
+		HostRewrite: hostRewrite,
+		Remove:      rl,
+	}, nil
 }
 
 // ingressRetryPolicy builds a RetryPolicy from ingress annotations.
