@@ -116,6 +116,9 @@ type Route struct {
 
 	// RequestHeadersPolicy defines how headers are managed during forwarding
 	RequestHeadersPolicy *HeadersPolicy
+
+	// ResponseHeadersPolicy defines how headers are managed during forwarding
+	ResponseHeadersPolicy *HeadersPolicy
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.
@@ -166,6 +169,9 @@ type MirrorPolicy struct {
 type HeadersPolicy struct {
 	// HostRewrite defines if a host should be rewritten on upstream requests
 	HostRewrite string
+
+	Set    map[string]string
+	Remove []string
 }
 
 type HeaderValue struct {
@@ -369,6 +375,12 @@ type Cluster struct {
 
 	// Cluster health check policy.
 	*HealthCheckPolicy
+
+	// RequestHeadersPolicy defines how headers are managed during forwarding
+	RequestHeadersPolicy *HeadersPolicy
+
+	// ResponseHeadersPolicy defines how headers are managed during forwarding
+	ResponseHeadersPolicy *HeadersPolicy
 }
 
 func (c Cluster) Visit(f func(Vertex)) {

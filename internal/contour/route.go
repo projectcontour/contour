@@ -139,10 +139,19 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 							Action: envoy.UpgradeHTTPS(),
 						})
 					} else {
-						routes = append(routes, &envoy_api_v2_route.Route{
+						rt := &envoy_api_v2_route.Route{
 							Match:  envoy.RouteMatch(route),
 							Action: envoy.RouteRoute(route),
-						})
+						}
+						if route.RequestHeadersPolicy != nil {
+							rt.RequestHeadersToAdd = envoy.HeaderValueList(route.RequestHeadersPolicy.Set, false)
+							rt.RequestHeadersToRemove = route.RequestHeadersPolicy.Remove
+						}
+						if route.ResponseHeadersPolicy != nil {
+							rt.ResponseHeadersToAdd = envoy.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
+							rt.ResponseHeadersToRemove = route.ResponseHeadersPolicy.Remove
+						}
+						routes = append(routes, rt)
 					}
 				})
 
@@ -161,10 +170,19 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 						return
 					}
 
-					routes = append(routes, &envoy_api_v2_route.Route{
+					rt := &envoy_api_v2_route.Route{
 						Match:  envoy.RouteMatch(route),
 						Action: envoy.RouteRoute(route),
-					})
+					}
+					if route.RequestHeadersPolicy != nil {
+						rt.RequestHeadersToAdd = envoy.HeaderValueList(route.RequestHeadersPolicy.Set, false)
+						rt.RequestHeadersToRemove = route.RequestHeadersPolicy.Remove
+					}
+					if route.ResponseHeadersPolicy != nil {
+						rt.ResponseHeadersToAdd = envoy.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
+						rt.ResponseHeadersToRemove = route.ResponseHeadersPolicy.Remove
+					}
+					routes = append(routes, rt)
 				})
 				if len(routes) < 1 {
 					return

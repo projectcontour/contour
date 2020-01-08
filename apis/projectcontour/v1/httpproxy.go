@@ -152,9 +152,12 @@ type Route struct {
 	//
 	// +kubebuilder:validation:Optional
 	PathRewritePolicy *PathRewritePolicy `json:"pathRewritePolicy,omitempty"`
-	// The policy for managing headers during proxying
+	// The policy for managing request headers during proxying
 	// +kubebuilder:validation:Optional
 	RequestHeadersPolicy *HeadersPolicy `json:"requestHeadersPolicy,omitempty"`
+	// The policy for managing response headers during proxying
+	// +kubebuilder:validation:Optional
+	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeadersPolicy,omitempty"`
 }
 
 func (r *Route) GetPrefixReplacements() []ReplacePrefix {
@@ -201,6 +204,12 @@ type Service struct {
 	UpstreamValidation *UpstreamValidation `json:"validation,omitempty"`
 	// If Mirror is true the Service will receive a read only mirror of the traffic for this route.
 	Mirror bool `json:"mirror,omitempty"`
+	// The policy for managing request headers during proxying
+	// +kubebuilder:validation:Optional
+	RequestHeadersPolicy *HeadersPolicy `json:"requestHeadersPolicy,omitempty"`
+	// The policy for managing response headers during proxying
+	// +kubebuilder:validation:Optional
+	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeadersPolicy,omitempty"`
 }
 
 // HTTPHealthCheckPolicy defines health checks on the upstream service.
@@ -301,6 +310,9 @@ type HeadersPolicy struct {
 	// Set specifies a list of HTTP header values that will be set in the HTTP header
 	// +kubebuilder:validation:Optional
 	Set []HeaderValue `json:"set,omitempty"`
+	// Remove specifies a list of HTTP header names to remove
+	// +kubebuilder:validation:Optional
+	Remove []string `json:"remove,omitempty"`
 }
 
 // HeaderValue represents a header name/value pair
