@@ -1089,6 +1089,19 @@ int
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>protocol</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Protocol may be used to specify (or override) the protocol used to reach this Service.
+Values may be tls, h2, h2c.  It ommitted protocol-selection falls back on Service annotations.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>weight</code></br>
 <em>
 uint32
