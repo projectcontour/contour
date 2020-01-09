@@ -483,6 +483,7 @@ Manipulating headers is also supported per-Service or per-Route.  Headers can be
 removed from the request or response as follows:
 
 per-Service:
+
 ```yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
@@ -510,8 +511,8 @@ spec:
               - X-Internal-Secret
 ```
 
+per-Route:
 
-per-Route
 ```yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
