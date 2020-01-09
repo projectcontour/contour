@@ -619,7 +619,7 @@ func expandPrefixMatches(routes []*Route) []*Route {
 	return expandedRoutes
 }
 
-func (b *Builder) getProtocol(sw *ObjectStatusWriter, service projcontour.Service, s *Service) (string, error) {
+func getProtocol(service projcontour.Service, s *Service) (string, error) {
 	// Determine the protocol to use to speak to this Cluster.
 	var protocol string
 	if service.Protocol != nil {
@@ -775,7 +775,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			}
 
 			// Determine the protocol to use to speak to this Cluster.
-			protocol, err := b.getProtocol(sw, service, s)
+			protocol, err := getProtocol(service, s)
 			if err != nil {
 				sw.SetInvalid(err.Error())
 				return nil
