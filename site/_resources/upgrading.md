@@ -11,7 +11,7 @@ This document describes the changes needed to upgrade your Contour installation.
 
 # Upgrading Contour 1.0.1 to 1.1.0
 
-Contour  1.1.0 is the current stable release.
+Contour 1.1.0 is the current stable release.
 
 <div class="alert-deprecation">
 <b>Deprecation Notice</b></br>
@@ -19,7 +19,7 @@ Contour  1.1.0 is the current stable release.
 The <code>IngressRoute</code> CRD has been deprecated and will not receive further updates. Contour 1.1.0 continues to support the IngressRoute API, however we anticipate it will be removed in the future.
 <p>
 </p>
-Please see the documentation for <a href="{% link docs/v1.0.0/httpproxy.md %}"><code>HTTPProxy</code></a>, which is the successor to <code>IngressRoute</code>.
+Please see the documentation for <a href="{% link docs/v1.1.0/httpproxy.md %}"><code>HTTPProxy</code></a>, which is the successor to <code>IngressRoute</code>.
 You can also read the <a href="{% link _guides/ingressroute-to-httpproxy.md %}">IngressRoute to HTTPProxy upgrade</a> guide.
 </div>
 
@@ -117,7 +117,7 @@ $ kubectl apply -f examples/contour
 
 This will remove both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
 If you're using a `LoadBalancer` Service, deleting and recreating may change the public IP assigned by your cloud provider.
-You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][2].
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][12].
 
 ## The less easy way
 
@@ -407,19 +407,18 @@ and checking the annotations that store exact details using
 $ kubectl get configmap -n heptio-contour -o yaml contour
 ```
 
-[1]: {{site.github.repository_url}}/blob/v1.0.0/examples
-[2]: {% link docs/v1.0.0/deploy-options.md %}
-[3]: {% link docs/v1.0.0/httpproxy.md %}
-[4]: {% link docs/v1.0.0/annotations.md %}
+[1]: {{site.github.repository_url}}/blob/{{site.latest}}/examples
+[3]: /docs/{{site.latest}}/httpproxy
+[4]: /docs/{{site.latest}}/annotations
 [5]: {{site.github.repository_url}}/issues/899
-[6]: {% link docs/v1.0.0/configuration.md %}
-[7]: {{site.github.repository_url}}/blob/v1.0.0/examples/contour/README.md
-[8]: {{site.github.repository_url}}/blob/v1.0.0/examples/contour/02-rbac.yaml#L71
-[9]: {{site.github.repository_url}}/blob/v1.0.0/examples/contour/02-rbac.yaml
+[6]: /docs/{{site.latest}}/configuration
+[7]: {{site.github.repository_url}}/blob/{{site.latest}}/examples/contour/README.md
+[8]: {{site.github.repository_url}}/blob/{{site.latest}}/examples/contour/02-rbac.yaml#L71
+[9]: {{site.github.repository_url}}/blob/{{site.latest}}/examples/contour/02-rbac.yaml
 [10]: https://www.envoyproxy.io/docs/envoy/v1.11.2/intro/version_history
 [11]: {{site.github.repository_url}}/blob/v0.15.3/examples/
-[12]: {% link docs/v1.0.0/deploy-options.md %}
+[12]: /docs/{{site.latest}}/deploy-options
 [13]: https://hub.docker.com/r/projectcontour/contour
-[14]: {% link docs/v1.0.0/grpc-tls-howto.md %}
+[14]: /docs/{{site.latest}}/grpc-tls-howto
 [15]: https://www.envoyproxy.io/docs/envoy/v1.12.2/intro/version_history
 [16]: {% link getting-started.md %}

@@ -77,15 +77,15 @@ We've also got [a FAQ][4] for short-answer questions and conceptual stuff that d
 If you encounter issues, review the [troubleshooting docs][5], [file an issue][6], or talk to us on the [#contour channel][12] on the Kubernetes Slack server.
 
 [0]: https://aws.amazon.com/quickstart/architecture/vmware-kubernetes
-[1]: {% link docs/v1.0.0/deploy-options.md %}
-[2]: {% link docs/v1.0.0/httpproxy.md %}
+[1]: /docs/{{site.latest}}/deploy-options
+[2]: /docs/{{site.latest}}/httpproxy
 [3]: /docs
 [4]: {% link _resources/faq.md %}
-[5]: {% link docs/v1.0.0/troubleshooting.md %}
+[5]: /docs/{{site.latest}}/troubleshooting
 [6]: {{site.github.repository_url}}/issues
 [7]: {% link _guides/tls.md %}
-[8]: {% link docs/v1.0.0/grpc-tls-howto.md %}
+[8]: /docs/{{site.latest}}/grpc-tls-howto
 [9]: https://github.com/kubernetes-up-and-running/kuard
-[10]:https://kubernetes.io/docs/concepts/services-networking/service
-[11]:https://kubernetes.io/docs/concepts/services-networking/ingress
+[10]: https://kubernetes.io/docs/concepts/services-networking/service
+[11]: https://kubernetes.io/docs/concepts/services-networking/ingress
 [12]: {{site.footer_social_links.Slack.url}}
