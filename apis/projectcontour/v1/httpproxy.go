@@ -150,13 +150,13 @@ type Route struct {
 	// The policy for rewriting the path of the request URL
 	// after the request has been routed to a Service.
 	//
-	// +kubebuilder:validation:Optional
+	// +optional
 	PathRewritePolicy *PathRewritePolicy `json:"pathRewritePolicy,omitempty"`
 	// The policy for managing request headers during proxying
-	// +kubebuilder:validation:Optional
+	// +optional
 	RequestHeadersPolicy *HeadersPolicy `json:"requestHeadersPolicy,omitempty"`
 	// The policy for managing response headers during proxying
-	// +kubebuilder:validation:Optional
+	// +optional
 	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeadersPolicy,omitempty"`
 }
 
@@ -209,10 +209,10 @@ type Service struct {
 	// If Mirror is true the Service will receive a read only mirror of the traffic for this route.
 	Mirror bool `json:"mirror,omitempty"`
 	// The policy for managing request headers during proxying
-	// +kubebuilder:validation:Optional
+	// +optional
 	RequestHeadersPolicy *HeadersPolicy `json:"requestHeadersPolicy,omitempty"`
 	// The policy for managing response headers during proxying
-	// +kubebuilder:validation:Optional
+	// +optional
 	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeadersPolicy,omitempty"`
 }
 
@@ -280,7 +280,7 @@ type ReplacePrefix struct {
 	// If Prefix is not specified, all routing prefixes rendered
 	// by the include chain will be replaced.
 	//
-	// +kubebuilder:validation:Optional
+	// +optional
 	// +kubebuilder:validation:MinLength=1
 	Prefix string `json:"prefix,omitempty"`
 
@@ -300,7 +300,7 @@ type ReplacePrefix struct {
 // Exactly one field in this struct may be specified.
 type PathRewritePolicy struct {
 	// ReplacePrefix describes how the path prefix should be replaced.
-	// +kubebuilder:validation:Optional
+	// +optional
 	ReplacePrefix []ReplacePrefix `json:"replacePrefix,omitempty"`
 }
 
@@ -312,10 +312,10 @@ type LoadBalancerPolicy struct {
 // HeadersPolicy defines how headers are managed during forwarding
 type HeadersPolicy struct {
 	// Set specifies a list of HTTP header values that will be set in the HTTP header
-	// +kubebuilder:validation:Optional
+	// +optional
 	Set []HeaderValue `json:"set,omitempty"`
 	// Remove specifies a list of HTTP header names to remove
-	// +kubebuilder:validation:Optional
+	// +optional
 	Remove []string `json:"remove,omitempty"`
 }
 
