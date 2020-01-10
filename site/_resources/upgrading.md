@@ -36,7 +36,7 @@ Please see the [Envoy Release Notes][15] for information about issues fixed in E
 If the following are true for you:
 
  * Your installation is in the `projectcontour` namespace.
- * You are using one of the [example][11] deployments.
+ * You are using one of the [example][1] deployments.
  * Your cluster can take few minutes of downtime.
 
 Then the simplest way to upgrade to 1.1.0 is to delete the `projectcontour` namespace and reapply one of the example configurations.
@@ -112,7 +112,7 @@ Ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.11.2`.
 If the following are true for you:
 
  * Your previous installation is in the `projectcontour` namespace.
- * You are using one of the [example][1] deployments.
+ * You are using one of the [example][2] deployments.
  * Your cluster can take few minutes of downtime.
 
 Then the simplest way to upgrade is to delete the `projectcontour` namespace and reapply the `examples/contour` sample manifest.
@@ -416,6 +416,7 @@ $ kubectl get configmap -n heptio-contour -o yaml contour
 ```
 
 [1]: {{site.github.repository_url}}/blob/{{site.latest}}/examples
+[2]: {{site.github.repository_url}}/blob/v1.0.0/examples
 [3]: /docs/{{site.latest}}/httpproxy
 [4]: /docs/{{site.latest}}/annotations
 [5]: {{site.github.repository_url}}/issues/899
