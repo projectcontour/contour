@@ -54,6 +54,14 @@ You'll need to re-check where your DNS names are pointing as well, using [Get yo
 **Note:** If you deployed Contour into a different namespace than `projectcontour` with a standard example, please delete that namespace.
 Then in your editor of choice do a search and replace for `projectcontour` and replace it with your preferred name space and apply the updated manifest.
 
+**Note:** If you are deploying to a cluster where you have previously installed alpha versions of the Contour API, applying the Contour CRDs in `examples/contour` may fail with a message similar to `Invalid value: "v1alpha1": must appear in spec.versions`. In this case, you need to delete the old CRDs and apply the new ones.
+
+```
+$ kubectl delete namespace projectcontour
+$ kubectl get crd  | awk '/projectcontour.io|contour.heptio.com/{print $1}' | xargs kubectl delete crd
+$ kubectl apply -f examples/<your-desired-deployment>
+```
+
 ## The less easy way
 
 This section contains information for administrators who wish to apply the Contour 1.0.1 to 1.1.0 changes manually.
