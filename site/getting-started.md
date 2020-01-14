@@ -11,9 +11,9 @@ This page will help you get up and running with Contour.
 
 Before you start you will need:
 
-- A Kubernetes cluster that supports Service objects of `type: LoadBalancer` ([AWS Quickstart cluster][0] or Minikube, for example)
+- A Kubernetes cluster (See [Deployment Options][1] for provider specific details)
 - `kubectl` configured with admin access to your cluster
-- RBAC must be enabled on your cluster.
+- RBAC must be enabled on your cluster
 
 ## Add Contour to your cluster
 
@@ -25,13 +25,11 @@ $ kubectl apply -f {{ site.url }}/quickstart/contour.yaml
 
 This command creates:
 
-- A new namespace `projectcontour` with two instances of Contour in the namespace
+- A new namespace `projectcontour` 
+- Two instances of Contour in the namespace
+- A Kubernetes Daemonset running Envoy on each node in the cluster listening on host ports 80/443
 - A Service of `type: LoadBalancer` that points to the Contour's Envoy instances
-- Depending on your configuration, new cloud resources -- for example, ELBs in AWS
-
-See also [TLS support][7] for details on configuring TLS support for the services behind Contour.
-
-For information on configuring TLS for gRPC between Contour and Envoy, see [our gRPC TLS documentation][8].
+- Depending on your deployment environment, new cloud resources -- for example, a cloud load balancer
 
 ### Example workload
 
@@ -43,28 +41,40 @@ Run:
 $ kubectl apply -f {{ site.url }}/examples/kuard.yaml
 ```
 
-This example specifies a default backend for all hosts, so that you can test your Contour install. It's recommended for exploration and testing only, however, because it responds to all requests regardless of the incoming DNS that is mapped. You probably want to run with specific Ingress rules for specific hostnames.
+This example specifies a default backend for all hosts, so that you can test your Contour install.
+It's recommended for exploration and testing only, however, because it responds to all requests regardless of the incoming DNS that is mapped.
 
-## Access your cluster
+## Send requests to application
 
-Now you can retrieve the external address of Contour's Envoy load balancer:
+There are a number of ways to validate everything is working.
+The first way is to use the external address of the Envoy service and the second is to port-forward to an Envoy pod:
+ 
+### External Address
+
+Retrieve the external address of Contour's Envoy load balancer:
 
 ```bash
 $ kubectl get -n projectcontour service envoy -o wide
-NAME    TYPE           CLUSTER-IP       EXTERNAL-IP                                                               PORT(S)                      AGE     SELECTOR
-envoy   LoadBalancer   10.100.161.248   a9be40da020a011eab39e0ab1af7de84-1808936165.eu-west-1.elb.amazonaws.com   80:30724/TCP,443:32097/TCP   4m58s   app=envoy
+NAME    TYPE           CLUSTER-IP       EXTERNAL-IP                                                               PORT(S)
+envoy   LoadBalancer   10.100.161.248   a9be.eu-west-1.elb.amazonaws.com   80:30724/TCP,443:32097/TCP   4m58s   app=envoy
 ```
-
-## Configuring DNS
 
 How you configure DNS depends on your platform:
 
 - On AWS, create a CNAME record that maps the host in your Ingress object to the ELB address.
 - If you have an IP address instead (on GCE, for example), create an A record.
 
+### Port-forward to an Envoy pod:
+
+```bash
+$ kubectl port-forward -n projectcontour svc/envoy 80:80
+```
+
 ### What's next?
 
-For more deployment options, including uninstalling Contour, see the [deployment documentation][1].
+You probably want to run with specific Ingress rules for specific hostnames.
+
+For more deployment options, see the [deployment documentation][1] which includes information about .
 
 See also the Kubernetes documentation for [Services][10], [Ingress][11], and [HTTPProxy][2].
 
@@ -83,8 +93,6 @@ If you encounter issues, review the [troubleshooting docs][5], [file an issue][6
 [4]: {% link _resources/faq.md %}
 [5]: /docs/{{site.latest}}/troubleshooting
 [6]: {{site.github.repository_url}}/issues
-[7]: {% link _guides/tls.md %}
-[8]: /docs/{{site.latest}}/grpc-tls-howto
 [9]: https://github.com/kubernetes-up-and-running/kuard
 [10]: https://kubernetes.io/docs/concepts/services-networking/service
 [11]: https://kubernetes.io/docs/concepts/services-networking/ingress

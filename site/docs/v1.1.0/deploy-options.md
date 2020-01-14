@@ -22,7 +22,7 @@ If you wish to use Host Networking, please see the [appropriate section][3] for 
 To retrieve the IP address or DNS name assigned to your Contour deployment, run:
 
 ```bash
-$ kubectl get -n projectcontour service contour -o wide
+$ kubectl get -n projectcontour service envoy -o wide
 ```
 
 On AWS, for example, the response looks like:
@@ -42,24 +42,27 @@ See the [instructions for enabling the PROXY protocol.][9].
 On Minikube, to get the IP address of the Contour service run:
 
 ```bash
-$ minikube service -n projectcontour contour --url
+$ minikube service -n projectcontour envoy --url
 ```
 
 The response is always an IP address, for example `http://192.168.99.100:30588`. This is used as CONTOUR_IP in the rest of the documentation.
 
 #### kind
 
-When creating the cluster on Kind, pass a custom configuration to allow Kind to expose port 8080 to your local host:
+When creating the cluster on Kind, pass a custom configuration to allow Kind to expose port 80/443 to your local host:
 
 ```yaml
 kind: Cluster
-apiVersion: kind.sigs.k8s.io/v1alpha3
+apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
 - role: worker
   extraPortMappings:
-  - containerPort: 8080
-    hostPort: 8080
+  - containerPort: 80
+    hostPort: 80
+    listenAddress: "0.0.0.0"  
+  - containerPort: 443
+    hostPort: 443
     listenAddress: "0.0.0.0"
 ```
 
@@ -70,9 +73,9 @@ This file is in the `examples/kind` directory:
 $ kind create cluster --config examples/kind/kind-expose-port.yaml
 ```
 
-Then, your CONTOUR_IP (as used below) will just be `localhost:8080`.
+Then, your CONTOUR_IP (as used below) will just be `localhost:80`.
 
-_Note: If you change Envoy's ports to bind to 80/443 then it's possible to add entries to your local `/etc/hosts` file and make requests like `http://kuard.local` which matches how it might work on a production installation._
+_Note: We've created a public DNS record (`local.projectcontour.io`) which is configured to resolve to `127.0.0.1``. This allows you to use a real domain name in your kind cluster._
 
 ### Test with Ingress
 
