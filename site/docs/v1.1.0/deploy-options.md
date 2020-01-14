@@ -170,7 +170,7 @@ NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
 service/kuard   ClusterIP   10.102.239.168   <none>        80/TCP    1h
 
 NAME                                    FQDN                TLS SECRET                  FIRST ROUTE  STATUS  STATUS DESCRIPT
-httpproxy.projectcontour.io/kuard      kuard.local         <SECRET NAME IF TLS USED>                valid   valid HTTPProxy
+httpproxy.projectcontour.io/kuard      kuard.local         <SECRET NAME IF TLS USED>                valid   valid HTTPProxy 
 ```
 
 ... showing that there are three Pods, one Service, and one HTTPProxy .
@@ -200,7 +200,7 @@ Now you can point your browser at the specified port on any node in your cluster
 
 You can run Contour without a Kubernetes Service at all.
 This is done by having the Contour pod run with host networking.
-Do this with `hostNetwork: true` and `dnsPolicy: ClusterFirstWithHostNet` on your pod definition.
+Do this with `hostNetwork: true` on your pod definition.
 Envoy will listen directly on port 8080 on each host that it is running.
 This is best paired with a DaemonSet (perhaps paired with Node affinity) to ensure that a single instance of Contour runs on each Node.
 See the [AWS NLB tutorial][10] as an example.
