@@ -152,11 +152,11 @@ check-vet: | check-test
 # the first rule.
 .PHONY: check-flags
 check-flags:
-	@if git grep --extended-regexp '[.]Flag\("[^"]+", "([^A-Zxg][^"]+|[^"]+[^.])"' cmd/contour; then \
+	@if git --no-pager grep --extended-regexp '[.]Flag\("[^"]+", "([^A-Zxg][^"]+|[^"]+[^.])"' cmd/contour; then \
 		echo "ERROR: CLI flag help strings must start with a capital and end with a period."; \
 		exit 2; \
 	fi
-	@if git grep --extended-regexp '[.]Command\("[^"]+", "([^A-Z][^"]+|[^"]+[^.])"' cmd/contour; then \
+	@if git --no-pager grep --extended-regexp '[.]Command\("[^"]+", "([^A-Z][^"]+|[^"]+[^.])"' cmd/contour; then \
 		echo "ERROR: CLI flag help strings must start with a capital and end with a period."; \
 		exit 2; \
 	fi
