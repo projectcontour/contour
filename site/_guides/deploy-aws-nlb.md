@@ -12,22 +12,26 @@ This configuration has several advantages:
 
 ## Moving parts
 
-- We run Contour as a DaemonSet across the cluster.
-- The Contour pod runs with host networking and binds to port 8080 and 8443 on the node.
-- Host networking means that traffic hits Envoy without transitioning through any other fancy networking hops.
+- We run Envoy as a DaemonSet across the cluster and Contour as a deployment
+- The Envoy pod runs on host ports 80 and 443 on the node
+- Host networking means that traffic hits Envoy without transitioning through any other fancy networking hops
 - Contour also binds to 8001 for Envoy->Contour config traffic.
 
 ## Deploying Contour
 
-1. [Clone the Contour repository][4] and cd into the repo.
-2. Run `kubectl apply -f examples/contour/`
+1. [Clone the Contour repository][4] and cd into the repo 
+2. Edit the Envoy service (`03-service-envoy.yaml`) in the `examples/contour` directory:
+    - Remove the existing annotation: `service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp`
+    - Add the following annotation: `service.beta.kubernetes.io/aws-load-balancer-type: nlb`
+3. Run `kubectl apply -f examples/contour`
 
-This creates the `projectcontour` Namespace along with a ServiceAccount, RBAC rules, and the DaemonSet itself.  It also creates the NLB based loadbalancer for you.
+This creates the `projectcontour` Namespace along with a ServiceAccount, RBAC rules, Contour Deployment and an Envoy DaemonSet. 
+It also creates the NLB based loadbalancer for you.
 
 You can get the address of your NLB via:
 
 ```
-$ kubectl get service contour --namespace=projectcontour -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+$ kubectl get service envoy --namespace=projectcontour -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
 
 ## Test
@@ -41,4 +45,4 @@ You can now test your NLB.
 [1]: https://aws.amazon.com/blogs/aws/new-network-load-balancer-effortless-scaling-to-millions-of-requests-per-second/
 [2]: /docs/{{site.latest}}/deploy-options/#testing-your-installation
 [3]: https://github.com/kubernetes/kubernetes/issues/52173
-[4]: {{site.github.repository_url}}/blob/{{site.github.latest_release.tag_name}}/CONTRIBUTING.md
+[4]: {{site.github.repository_url}}/tree/{{site.github.latest_release.tag_name}}
