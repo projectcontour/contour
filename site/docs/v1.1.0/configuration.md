@@ -26,8 +26,8 @@ data:
       # minimumProtocolVersion: "1.1"
     # The following config shows the defaults for the leader election.
     # leaderelection:
-      # configmap-name: contour
-      # configmap-namespace: leader-elect
+      # configmap-name: leader-elect
+      # configmap-namespace: projectcontour
 ```
 
 _Note:_ The default example `contour` includes this [file][1] for easy deployment of Contour.
