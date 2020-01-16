@@ -37,7 +37,7 @@ spec:
     - services:
         - name: s1
           port: 80
-          requestHeaderPolicy:
+          requestHeadersPolicy:
             set:
               - name: X-Foo
                 value: bar
@@ -86,7 +86,7 @@ Contour supports routing traffic to `ExternalName` service types. This kind of t
 
 Some users encountered a problem with this feature, in that the host header that the externalName service received was the same host header as in the original request. This problem potentially leads to routing in the external name service to fail. 
 
-To solve this issue, you can set a `requestHeaderPolicy` and define the `Host` header to match the value of the externalName; here’s an example:  
+To solve this issue, you can set a `requestHeadersPolicy` and define the `Host` header to match the value of the externalName; here’s an example:  
 
 ```yaml
 apiVersion: projectcontour.io/v1
@@ -100,7 +100,7 @@ spec:
   - services:
     - name: s1
       port: 80
-    requestHeaderPolicy:
+    requestHeadersPolicy:
       set:
       - name: Host
         value: external.dev

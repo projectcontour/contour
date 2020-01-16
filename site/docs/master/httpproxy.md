@@ -497,7 +497,7 @@ spec:
     - services:
         - name: s1
           port: 80
-          requestHeaderPolicy:
+          requestHeadersPolicy:
             set:
               - name: X-Foo
                 value: bar
@@ -848,7 +848,7 @@ spec:
 HTTPProxy supports rewriting the `Host` header after first handling a request and before proxying to an upstream service.
 A common use-case for this is to use Contour to proxy to a resource outside the cluster referenced by an `externalName` service.
 
-The `requestHeaderPolicy` supports a list of `Set` options that currently only supports rewriting `Host` headers defined via a `name` and `value`.
+The `requestHeadersPolicy` supports a list of `Set` options that currently only supports rewriting `Host` headers defined via a `name` and `value`.
 
 ```yaml
 apiVersion: projectcontour.io/v1
@@ -862,7 +862,7 @@ spec:
   - services:
     - name: s1
       port: 80
-    requestHeaderPolicy:
+    requestHeadersPolicy:
       set:
       - name: Host
         value: external.dev
