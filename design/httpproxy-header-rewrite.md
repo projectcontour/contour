@@ -77,7 +77,7 @@ There was some discussion of API shapes for `Host` rewriting in #1982.
 There was significant discussion (in slack) of naming.  Two threads in particular:
 1. `HeaderPolicy` vs. `HeaderRewritePolicy` for both the type name, and as part of the field names.  The decision was ultimately to avoid pigeonholing future extensions of this policy with the "rewrite" qualification.  In the context of the field name, it was also felt that the verbs sufficiently disambiguated intent, e.g.
 ```yaml
-requestHeaderPolicy:
+requestHeadersPolicy:
   set:
   - name: Foo
     value: bar
