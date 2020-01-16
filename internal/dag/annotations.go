@@ -68,9 +68,11 @@ var annotationsByKind = map[string]map[string]struct{}{
 		"projectcontour.io/upstream-protocol.tls": {},
 	},
 	"HTTPProxy": {
+		"kubernetes.io/ingress.class":     {},
 		"projectcontour.io/ingress.class": {},
 	},
 	"IngressRoute": {
+		"kubernetes.io/ingress.class":     {},
 		"projectcontour.io/ingress.class": {},
 	},
 }
