@@ -110,7 +110,7 @@ check-misspell:
 		-i clas \
 		-locale US \
 		-error \
-		cmd/* internal/* docs/* design/* site/*.md site/_{guides,posts,resources} *.md
+		cmd/* internal/* design/* site/*.md site/_{guides,posts,resources} site/docs/**/* *.md
 
 .PHONY: check-unconvert
 check-unconvert:
