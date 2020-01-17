@@ -755,7 +755,7 @@ spec:
                         protocol:
                           description: Protocol may be used to specify (or override)
                             the protocol used to reach this Service. Values may be
-                            tls, h2, h2c.  It ommitted protocol-selection falls back
+                            tls, h2, h2c.  It omitted protocol-selection falls back
                             on Service annotations.
                           type: string
                         requestHeadersPolicy:
@@ -909,7 +909,7 @@ spec:
                       protocol:
                         description: Protocol may be used to specify (or override)
                           the protocol used to reach this Service. Values may be tls,
-                          h2, h2c.  It ommitted protocol-selection falls back on Service
+                          h2, h2c.  It omitted protocol-selection falls back on Service
                           annotations.
                         type: string
                       requestHeadersPolicy:
