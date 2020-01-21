@@ -32,7 +32,7 @@ func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
 	perTryTimeout, _ := time.ParseDuration(rp.PerTryTimeout)
 	return &RetryPolicy{
 		RetryOn:       "5xx",
-		NumRetries:    max(1, rp.NumRetries),
+		NumRetries:    max(1, uint32(rp.NumRetries)),
 		PerTryTimeout: perTryTimeout,
 	}
 }
@@ -156,8 +156,8 @@ func ingressrouteHealthCheckPolicy(hc *ingressroutev1.HealthCheck) *HTTPHealthCh
 		Host:               hc.Host,
 		Interval:           time.Duration(hc.IntervalSeconds) * time.Second,
 		Timeout:            time.Duration(hc.TimeoutSeconds) * time.Second,
-		UnhealthyThreshold: hc.UnhealthyThresholdCount,
-		HealthyThreshold:   hc.HealthyThresholdCount,
+		UnhealthyThreshold: uint32(hc.UnhealthyThresholdCount),
+		HealthyThreshold:   uint32(hc.HealthyThresholdCount),
 	}
 }
 
@@ -170,8 +170,8 @@ func httpHealthCheckPolicy(hc *projcontour.HTTPHealthCheckPolicy) *HTTPHealthChe
 		Host:               hc.Host,
 		Interval:           time.Duration(hc.IntervalSeconds) * time.Second,
 		Timeout:            time.Duration(hc.TimeoutSeconds) * time.Second,
-		UnhealthyThreshold: hc.UnhealthyThresholdCount,
-		HealthyThreshold:   hc.HealthyThresholdCount,
+		UnhealthyThreshold: uint32(hc.UnhealthyThresholdCount),
+		HealthyThreshold:   uint32(hc.HealthyThresholdCount),
 	}
 }
 
