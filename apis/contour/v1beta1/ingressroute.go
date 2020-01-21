@@ -86,7 +86,8 @@ type Service struct {
 	Port int `json:"port"`
 	// Weight defines percentage of traffic to balance traffic
 	// +optional
-	Weight uint32 `json:"weight,omitempty"`
+	// +kubebuilder:validation:Minimum=0
+	Weight int64 `json:"weight,omitempty"`
 	// HealthCheck defines optional healthchecks on the upstream service
 	// +optional
 	HealthCheck *HealthCheck `json:"healthCheck,omitempty"`
@@ -115,10 +116,12 @@ type HealthCheck struct {
 	TimeoutSeconds int64 `json:"timeoutSeconds"`
 	// The number of unhealthy health checks required before a host is marked unhealthy
 	// +optional
-	UnhealthyThresholdCount uint32 `json:"unhealthyThresholdCount"`
+	// +kubebuilder:validation:Minimum=0
+	UnhealthyThresholdCount int64 `json:"unhealthyThresholdCount"`
 	// The number of healthy health checks required before a host is marked healthy
 	// +optional
-	HealthyThresholdCount uint32 `json:"healthyThresholdCount"`
+	// +kubebuilder:validation:Minimum=0
+	HealthyThresholdCount int64 `json:"healthyThresholdCount"`
 }
 
 // Delegate allows for delegating VHosts to other IngressRoutes
