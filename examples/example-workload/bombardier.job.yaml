@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    workload: bombardier
+  generateName: bombardier-
+spec:
+  backoffLimit: 6
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        workload: bombardier
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: workload
+                operator: In
+                values:
+                - bombardier
+            topologyKey: kubernetes.io/hostname
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - sysctl -w net.ipv4.ip_local_port_range="1024 65535"
+        image: alpine:3.6
+        imagePullPolicy: IfNotPresent
+        name: sysctl-set
+        securityContext:
+          privileged: true
+      containers:
+      - args: ["-c", "1000", "-d", "300s", "-l", "http://envoy.projectcontour"]
+        image: alpine/bombardier
+        imagePullPolicy: Always
+        name: bombardier
+      nodeSelector:
+        workload: bombardier
+      restartPolicy: OnFailure
+
+
+# 1. Get node labels: kubectl get nodes --show-labels
+# 2. Label a node to run the load test workload: kubectl label nodes <nodename> workload=bombardier
+# 3. Label nodes to run the envoy workload: kubectl label nodes <nodename>  workload=envoy
