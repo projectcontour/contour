@@ -32,7 +32,7 @@ func TestHealthCheck(t *testing.T) {
 		// when hc is nil, so if hc is not nil, at least one of the parameters on it must be set.
 		"blank healthcheck": {
 			cluster: &dag.Cluster{
-				HealthCheckPolicy: new(dag.HealthCheckPolicy),
+				HTTPHealthCheckPolicy: new(dag.HTTPHealthCheckPolicy),
 			},
 			want: &envoy_api_v2_core.HealthCheck{
 				Timeout:            protobuf.Duration(hcTimeout),
@@ -49,7 +49,7 @@ func TestHealthCheck(t *testing.T) {
 		},
 		"healthcheck path only": {
 			cluster: &dag.Cluster{
-				HealthCheckPolicy: &dag.HealthCheckPolicy{
+				HTTPHealthCheckPolicy: &dag.HTTPHealthCheckPolicy{
 					Path: "/healthy",
 				},
 			},
@@ -68,7 +68,7 @@ func TestHealthCheck(t *testing.T) {
 		},
 		"explicit healthcheck": {
 			cluster: &dag.Cluster{
-				HealthCheckPolicy: &dag.HealthCheckPolicy{
+				HTTPHealthCheckPolicy: &dag.HTTPHealthCheckPolicy{
 					Host:               "foo-bar-host",
 					Path:               "/healthy",
 					Timeout:            99 * time.Second,
@@ -94,7 +94,7 @@ func TestHealthCheck(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := healthCheck(tc.cluster)
+			got := httpHealthCheck(tc.cluster)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}

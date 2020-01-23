@@ -809,7 +809,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 				Upstream:              s,
 				LoadBalancerPolicy:    loadBalancerPolicy(route.LoadBalancerPolicy),
 				Weight:                service.Weight,
-				HealthCheckPolicy:     healthCheckPolicy(route.HealthCheckPolicy),
+				HTTPHealthCheckPolicy: httpHealthCheckPolicy(route.HealthCheckPolicy),
 				UpstreamValidation:    uv,
 				RequestHeadersPolicy:  reqHP,
 				ResponseHeadersPolicy: respHP,
@@ -1004,12 +1004,12 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 				}
 
 				r.Clusters = append(r.Clusters, &Cluster{
-					Upstream:           s,
-					LoadBalancerPolicy: service.Strategy,
-					Weight:             service.Weight,
-					HealthCheckPolicy:  ingressrouteHealthCheckPolicy(service.HealthCheck),
-					UpstreamValidation: uv,
-					Protocol:           s.Protocol,
+					Upstream:              s,
+					LoadBalancerPolicy:    service.Strategy,
+					Weight:                service.Weight,
+					HTTPHealthCheckPolicy: ingressrouteHealthCheckPolicy(service.HealthCheck),
+					UpstreamValidation:    uv,
+					Protocol:              s.Protocol,
 				})
 			}
 
@@ -1180,9 +1180,10 @@ func (b *Builder) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *pr
 				return false
 			}
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
-				Upstream:           s,
-				LoadBalancerPolicy: loadBalancerPolicy(tcpproxy.LoadBalancerPolicy),
-				Protocol:           s.Protocol,
+				Upstream:             s,
+				Protocol:             s.Protocol,
+				LoadBalancerPolicy:   loadBalancerPolicy(tcpproxy.LoadBalancerPolicy),
+				TCPHealthCheckPolicy: tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy),
 			})
 		}
 		b.lookupSecureVirtualHost(host).TCPProxy = &proxy

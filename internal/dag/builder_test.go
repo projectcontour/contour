@@ -3569,7 +3569,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("example.com",
 							routeCluster("/", &Cluster{
 								Upstream: service(s1),
-								HealthCheckPolicy: &HealthCheckPolicy{
+								HTTPHealthCheckPolicy: &HTTPHealthCheckPolicy{
 									Path: "/healthz",
 								},
 							}),
@@ -4991,7 +4991,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("example.com",
 							routeCluster("/", &Cluster{
 								Upstream: service(s1),
-								HealthCheckPolicy: &HealthCheckPolicy{
+								HTTPHealthCheckPolicy: &HTTPHealthCheckPolicy{
 									Path: "/healthz",
 								},
 							}),

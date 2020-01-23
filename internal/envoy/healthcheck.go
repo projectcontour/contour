@@ -32,9 +32,9 @@ const (
 	hcHost               = "contour-envoy-healthcheck"
 )
 
-// healthCheck returns a *envoy_api_v2_core.HealthCheck value.
-func healthCheck(cluster *dag.Cluster) *envoy_api_v2_core.HealthCheck {
-	hc := cluster.HealthCheckPolicy
+// httpHealthCheck returns a *envoy_api_v2_core.HealthCheck value for HTTP Routes
+func httpHealthCheck(cluster *dag.Cluster) *envoy_api_v2_core.HealthCheck {
+	hc := cluster.HTTPHealthCheckPolicy
 	host := hcHost
 	if hc.Host != "" {
 		host = hc.Host
@@ -52,6 +52,21 @@ func healthCheck(cluster *dag.Cluster) *envoy_api_v2_core.HealthCheck {
 				Path: hc.Path,
 				Host: host,
 			},
+		},
+	}
+}
+
+// tcpHealthCheck returns a *envoy_api_v2_core.HealthCheck value for TCPProxies
+func tcpHealthCheck(cluster *dag.Cluster) *envoy_api_v2_core.HealthCheck {
+	hc := cluster.TCPHealthCheckPolicy
+
+	return &envoy_api_v2_core.HealthCheck{
+		Timeout:            durationOrDefault(hc.Timeout, hcTimeout),
+		Interval:           durationOrDefault(hc.Interval, hcInterval),
+		UnhealthyThreshold: countOrDefault(hc.UnhealthyThreshold, hcUnhealthyThreshold),
+		HealthyThreshold:   countOrDefault(hc.HealthyThreshold, hcHealthyThreshold),
+		HealthChecker: &envoy_api_v2_core.HealthCheck_TcpHealthCheck_{
+			TcpHealthCheck: &envoy_api_v2_core.HealthCheck_TcpHealthCheck{},
 		},
 	}
 }
