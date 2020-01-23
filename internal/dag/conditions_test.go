@@ -18,7 +18,6 @@ import (
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestPathCondition(t *testing.T) {
@@ -309,18 +308,8 @@ func TestPrefixConditionsValid(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// TODO(youngnick) This feels dirty but is required for now.
-			// #1652 covers changing ObjectStatusWriter to an interface
-			// instead.
-			swblank := &ObjectStatusWriter{}
-			sw, _ := swblank.WithObject(&projcontour.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: "test",
-				},
-			})
-			got := pathConditionsValid(sw, tc.conditions, "test")
-			assert.Equal(t, tc.want, got)
+			err := pathConditionsValid(tc.conditions)
+			assert.Equal(t, tc.want, err == nil)
 		})
 	}
 }

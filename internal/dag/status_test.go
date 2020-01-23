@@ -2273,7 +2273,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{name: proxy32.Name, namespace: proxy32.Namespace}: {
 					Object:      proxy32,
 					Status:      "invalid",
-					Description: "route: More than one prefix is not allowed in a condition block",
+					Description: "route: more than one prefix is not allowed in a condition block",
 					Vhost:       "example.com",
 				},
 			},
@@ -2284,7 +2284,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{name: proxy33.Name, namespace: proxy33.Namespace}: {
 					Object:      proxy33,
 					Status:      "invalid",
-					Description: "include: More than one prefix is not allowed in a condition block",
+					Description: "include: more than one prefix is not allowed in a condition block",
 					Vhost:       "example.com",
 				}, {name: proxy34.Name, namespace: proxy34.Namespace}: {
 					Object:      proxy34,
@@ -2299,7 +2299,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{name: proxy35.Name, namespace: proxy35.Namespace}: {
 					Object:      proxy35,
 					Status:      "invalid",
-					Description: "route: Prefix conditions must start with /, api was supplied",
+					Description: "route: prefix conditions must start with /, api was supplied",
 					Vhost:       "example.com",
 				},
 			},
@@ -2310,7 +2310,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{name: proxy36.Name, namespace: proxy36.Namespace}: {
 					Object:      proxy36,
 					Status:      "invalid",
-					Description: "include: Prefix conditions must start with /, api was supplied",
+					Description: "include: prefix conditions must start with /, api was supplied",
 					Vhost:       "example.com",
 				}, {name: proxy34.Name, namespace: proxy34.Namespace}: {
 					Object:      proxy34,

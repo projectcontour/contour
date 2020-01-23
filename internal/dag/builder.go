@@ -676,7 +676,8 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			return nil
 		}
 
-		if !pathConditionsValid(sw, include.Conditions, "include") {
+		if err := pathConditionsValid(include.Conditions); err != nil {
+			sw.SetInvalid("include: %s", err)
 			return nil
 		}
 
@@ -689,7 +690,8 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 	}
 
 	for _, route := range proxy.Spec.Routes {
-		if !pathConditionsValid(sw, route.Conditions, "route") {
+		if err := pathConditionsValid(route.Conditions); err != nil {
+			sw.SetInvalid("route: %s", err)
 			return nil
 		}
 
