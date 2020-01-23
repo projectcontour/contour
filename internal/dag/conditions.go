@@ -14,6 +14,8 @@
 package dag
 
 import (
+	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -49,22 +51,22 @@ func mergePathConditions(conds []projcontour.Condition) Condition {
 
 // pathConditionsValid validates a slice of Conditions can be correctly merged.
 // It encodes the business rules about what is allowed for prefix Conditions.
-func pathConditionsValid(sw *ObjectStatusWriter, conds []projcontour.Condition, conditionsContext string) bool {
+func pathConditionsValid(conds []projcontour.Condition) error {
 	prefixCount := 0
+
 	for _, cond := range conds {
 		if cond.Prefix != "" {
 			prefixCount++
 			if cond.Prefix[0] != '/' {
-				sw.SetInvalid("%s: Prefix conditions must start with /, %s was supplied", conditionsContext, cond.Prefix)
-				return false
+				return fmt.Errorf("prefix conditions must start with /, %s was supplied", cond.Prefix)
 			}
 		}
 		if prefixCount > 1 {
-			sw.SetInvalid("%s: More than one prefix is not allowed in a condition block", conditionsContext)
-			return false
+			return errors.New("more than one prefix is not allowed in a condition block")
 		}
 	}
-	return true
+
+	return nil
 }
 
 func mergeHeaderConditions(conds []projcontour.Condition) []HeaderCondition {
