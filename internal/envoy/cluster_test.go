@@ -350,12 +350,15 @@ func TestCluster(t *testing.T) {
 		"tcp service with healthcheck": {
 			cluster: &dag.Cluster{
 				Upstream: service(s1),
-				HealthCheckPolicy: &dag.HealthCheckPolicy{
-					Path: "/healthz",
+				TCPHealthCheckPolicy: &dag.TCPHealthCheckPolicy{
+					Timeout:            2,
+					Interval:           10,
+					UnhealthyThreshold: 3,
+					HealthyThreshold:   2,
 				},
 			},
 			want: &v2.Cluster{
-				Name:                 "default/kuard/443/bc862a33ca",
+				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
 				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
@@ -364,15 +367,12 @@ func TestCluster(t *testing.T) {
 				},
 				DrainConnectionsOnHostRemoval: true,
 				HealthChecks: []*envoy_api_v2_core.HealthCheck{{
-					Timeout:            durationOrDefault(0, hcTimeout),
-					Interval:           durationOrDefault(0, hcInterval),
-					UnhealthyThreshold: countOrDefault(0, hcUnhealthyThreshold),
-					HealthyThreshold:   countOrDefault(0, hcHealthyThreshold),
-					HealthChecker: &envoy_api_v2_core.HealthCheck_HttpHealthCheck_{
-						HttpHealthCheck: &envoy_api_v2_core.HealthCheck_HttpHealthCheck{
-							Host: hcHost,
-							Path: "/healthz",
-						},
+					Timeout:            durationOrDefault(2, hcTimeout),
+					Interval:           durationOrDefault(10, hcInterval),
+					UnhealthyThreshold: countOrDefault(3, hcUnhealthyThreshold),
+					HealthyThreshold:   countOrDefault(2, hcHealthyThreshold),
+					HealthChecker: &envoy_api_v2_core.HealthCheck_TcpHealthCheck_{
+						TcpHealthCheck: &envoy_api_v2_core.HealthCheck_TcpHealthCheck{},
 					},
 				}},
 			},
@@ -439,7 +439,7 @@ func TestClustername(t *testing.T) {
 					},
 				},
 				LoadBalancerPolicy: "Random",
-				HealthCheckPolicy: &dag.HealthCheckPolicy{
+				HTTPHealthCheckPolicy: &dag.HTTPHealthCheckPolicy{
 					Path:               "/healthz",
 					Interval:           5 * time.Second,
 					Timeout:            30 * time.Second,
