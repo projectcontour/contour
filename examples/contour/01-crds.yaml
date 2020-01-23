@@ -868,6 +868,28 @@ spec:
             tcpproxy:
               description: TCPProxy holds TCP proxy information.
               properties:
+                healthCheckPolicy:
+                  description: The health check policy for this tcp proxy
+                  properties:
+                    healthyThresholdCount:
+                      description: The number of healthy health checks required before
+                        a host is marked healthy
+                      format: int32
+                      type: integer
+                    intervalSeconds:
+                      description: The interval (seconds) between health checks
+                      format: int64
+                      type: integer
+                    timeoutSeconds:
+                      description: The time to wait (seconds) for a health check response
+                      format: int64
+                      type: integer
+                    unhealthyThresholdCount:
+                      description: The number of unhealthy health checks required
+                        before a host is marked unhealthy
+                      format: int32
+                      type: integer
+                  type: object
                 includes:
                   description: Include specifies that this tcpproxy should be delegated
                     to another HTTPProxy.

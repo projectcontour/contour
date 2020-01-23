@@ -174,10 +174,12 @@ type TCPProxy struct {
 	LoadBalancerPolicy *LoadBalancerPolicy `json:"loadBalancerPolicy,omitempty"`
 	// Services are the services to proxy traffic
 	Services []Service `json:"services,omitempty"`
-
 	// Include specifies that this tcpproxy should be delegated to another HTTPProxy.
 	// +optional
 	Include *TCPProxyInclude `json:"includes,omitempty"`
+	// The health check policy for this tcp proxy
+	// +optional
+	HealthCheckPolicy *TCPHealthCheckPolicy `json:"healthCheckPolicy,omitempty"`
 }
 
 // TCPProxyInclude describes a target HTTPProxy document which contains the TCPProxy details.
@@ -224,6 +226,22 @@ type HTTPHealthCheckPolicy struct {
 	// If left empty (default value), the name "contour-envoy-healthcheck"
 	// will be used.
 	Host string `json:"host,omitempty"`
+	// The interval (seconds) between health checks
+	// +optional
+	IntervalSeconds int64 `json:"intervalSeconds"`
+	// The time to wait (seconds) for a health check response
+	// +optional
+	TimeoutSeconds int64 `json:"timeoutSeconds"`
+	// The number of unhealthy health checks required before a host is marked unhealthy
+	// +optional
+	UnhealthyThresholdCount uint32 `json:"unhealthyThresholdCount"`
+	// The number of healthy health checks required before a host is marked healthy
+	// +optional
+	HealthyThresholdCount uint32 `json:"healthyThresholdCount"`
+}
+
+// TCPHealthCheckPolicy defines health checks on the upstream service.
+type TCPHealthCheckPolicy struct {
 	// The interval (seconds) between health checks
 	// +optional
 	IntervalSeconds int64 `json:"intervalSeconds"`
