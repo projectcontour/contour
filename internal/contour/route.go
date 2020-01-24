@@ -93,20 +93,10 @@ type routeVisitor struct {
 }
 
 func visitRoutes(root dag.Vertex) map[string]*v2.RouteConfiguration {
-	headers := envoy.Headers(
-		envoy.AppendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
-	)
-
 	rv := routeVisitor{
 		routes: map[string]*v2.RouteConfiguration{
-			"ingress_http": {
-				Name:                "ingress_http",
-				RequestHeadersToAdd: headers,
-			},
-			"ingress_https": {
-				Name:                "ingress_https",
-				RequestHeadersToAdd: headers,
-			},
+			"ingress_http":  envoy.RouteConfiguration("ingress_http"),
+			"ingress_https": envoy.RouteConfiguration("ingress_https"),
 		},
 	}
 	rv.visit(root)
