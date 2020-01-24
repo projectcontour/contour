@@ -2881,7 +2881,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyReplaceHostHeader := &projcontour.HTTPProxy{
+	proxyReplaceHostHeaderRoute := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
@@ -2904,6 +2904,33 @@ func TestDAGInsert(t *testing.T) {
 						Value: "bar.com",
 					}},
 				},
+			}},
+		},
+	}
+
+	proxyReplaceHostHeaderService := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "nginx",
+					Port: 80,
+					RequestHeadersPolicy: &projcontour.HeadersPolicy{
+						Set: []projcontour.HeaderValue{{
+							Name:  "Host",
+							Value: "bar.com",
+						}},
+					},
+				}},
 			}},
 		},
 	}
@@ -3030,6 +3057,60 @@ func TestDAGInsert(t *testing.T) {
 						"Out-Baz",
 					},
 				},
+			}},
+		},
+	}
+	// proxy111 has a route that rewrites headers.
+	proxy111 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+				ResponseHeadersPolicy: &projcontour.HeadersPolicy{
+					Set: []projcontour.HeaderValue{{
+						Name:  "Host",
+						Value: "bar.baz",
+					}},
+				},
+			}},
+		},
+	}
+	// proxy112 has a route that rewrites headers.
+	proxy112 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+					ResponseHeadersPolicy: &projcontour.HeadersPolicy{
+						Set: []projcontour.HeaderValue{{
+							Name:  "Host",
+							Value: "bar.baz",
+						}},
+					},
+				}},
 			}},
 		},
 	}
@@ -5560,7 +5641,6 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-
 		"insert httpproxy with route-level header manipulation": {
 			objs: []interface{}{
 				proxy109, s1,
@@ -5811,9 +5891,9 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert proxy with replace header policy - host header": {
+		"insert proxy with replace header policy - route - host header": {
 			objs: []interface{}{
-				proxyReplaceHostHeader,
+				proxyReplaceHostHeaderRoute,
 				s9,
 			},
 			want: listeners(
@@ -5830,6 +5910,42 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 			),
+		},
+		"insert proxy with replace header policy - service - host header": {
+			objs: []interface{}{
+				proxyReplaceHostHeaderService,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathCondition: prefix("/"),
+							Clusters: []*Cluster{{
+								Upstream: service(s9),
+								RequestHeadersPolicy: &HeadersPolicy{
+									HostRewrite: "bar.com",
+								},
+							}},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with response header policy - route - host header": {
+			objs: []interface{}{
+				proxy111,
+				s9,
+			},
+			want: listeners(),
+		},
+		"insert proxy with response header policy - service - host header": {
+			objs: []interface{}{
+				proxy112,
+				s9,
+			},
+			want: listeners(),
 		},
 		"insert proxy with replace header policy - host header multiple": {
 			objs: []interface{}{
@@ -5855,7 +5971,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert proxy with replace header policy - not host header": {
+		"insert proxy with request headers policy - not host header": {
 			objs: []interface{}{
 				proxyReplaceNonHostHeader,
 				s9,
@@ -5877,7 +5993,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert proxy with replace header policy - empty value": {
+		"insert proxy with request headers policy - empty value": {
 			objs: []interface{}{
 				proxyReplaceHeaderEmptyValue,
 				s9,
