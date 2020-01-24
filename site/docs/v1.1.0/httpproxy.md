@@ -900,7 +900,7 @@ spec:
 
 To proxy to another resource outside the cluster (e.g. A hosted object store bucket for example), configure that external resource in a service type `externalName`.
 Then define a `headerRequestPolicy` which replaces the `Host` header with the value of the external name service defined previously.
-Finally, if the upstream service is served over TLS, annotate the external name service with: `projectcontour.io/upstream-protocol.tls: 443,https` assuming your service had a port 443 & name `https`.
+Finally, if the upstream service is served over TLS, set the `protocol` field on the service to `tls` or annotate the external name service with: `projectcontour.io/upstream-protocol.tls: 443,https` assuming your service had a port 443 and name `https`.
 
 ## HTTPProxy inclusion
 
