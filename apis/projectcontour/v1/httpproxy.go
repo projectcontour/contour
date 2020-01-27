@@ -197,7 +197,8 @@ type Service struct {
 	// Port (defined as Integer) to proxy traffic to since a service can have multiple defined.
 	Port int `json:"port"`
 	// Protocol may be used to specify (or override) the protocol used to reach this Service.
-	// Values may be tls, h2, h2c.  It omitted protocol-selection falls back on Service annotations.
+	// Values may be tls, h2, h2c. If omitted, protocol-selection falls back on Service annotations.
+	// +kubebuilder:validation:Enum=h2;h2c;tls
 	// +optional
 	Protocol *string `json:"protocol,omitempty"`
 	// Weight defines percentage of traffic to balance traffic
