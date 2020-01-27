@@ -433,6 +433,37 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"mirror": {
+			route: &dag.Route{
+				Clusters: []*dag.Cluster{{
+					Upstream: &dag.Service{
+						Name:        s1.Name,
+						Namespace:   s1.Namespace,
+						ServicePort: &s1.Spec.Ports[0],
+					},
+					Weight: 90,
+				}},
+				MirrorPolicy: &dag.MirrorPolicy{
+					Cluster: &dag.Cluster{
+						Upstream: &dag.Service{
+							Name:        s1.Name,
+							Namespace:   s1.Namespace,
+							ServicePort: &s1.Spec.Ports[0],
+						},
+					},
+				},
+			},
+			want: &envoy_api_v2_route.Route_Route{
+				Route: &envoy_api_v2_route.RouteAction{
+					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					RequestMirrorPolicies: []*envoy_api_v2_route.RouteAction_RequestMirrorPolicy{{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					}},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
