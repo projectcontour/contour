@@ -130,9 +130,9 @@ func withIdleTimeout(route *envoy_api_v2_route.Route_Route, timeout time.Duratio
 }
 
 func withMirrorPolicy(route *envoy_api_v2_route.Route_Route, mirror string) *envoy_api_v2_route.Route_Route {
-	route.Route.RequestMirrorPolicy = &envoy_api_v2_route.RouteAction_RequestMirrorPolicy{
+	route.Route.RequestMirrorPolicies = []*envoy_api_v2_route.RouteAction_RequestMirrorPolicy{{
 		Cluster: mirror,
-	}
+	}}
 	return route
 }
 
