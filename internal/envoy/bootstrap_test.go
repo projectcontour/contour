@@ -713,8 +713,10 @@ func TestBootstrap(t *testing.T) {
                 "trusted_ca": {
                   "filename": "CA.cert"
                 },
-                "verify_subject_alt_name": [
-                  "contour"
+		"match_subject_alt_names": [
+		  {
+		    "exact": "contour"
+		  }
                 ]
               }
             }

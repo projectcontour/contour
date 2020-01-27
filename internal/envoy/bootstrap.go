@@ -26,6 +26,7 @@ import (
 	clusterv2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	bootstrap "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
 	"github.com/projectcontour/contour/internal/protobuf"
 )
 
@@ -128,7 +129,11 @@ func upstreamFileTLSContext(cafile, certfile, keyfile string) *envoy_api_v2_auth
 						},
 					},
 					// TODO(youngnick): Does there need to be a flag wired down to here?
-					VerifySubjectAltName: []string{"contour"},
+					MatchSubjectAltNames: []*matcher.StringMatcher{{
+						MatchPattern: &matcher.StringMatcher_Exact{
+							Exact: "contour",
+						}},
+					},
 				},
 			},
 		},

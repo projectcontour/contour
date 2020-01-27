@@ -16,6 +16,7 @@ package envoy
 import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
 )
 
 var (
@@ -87,7 +88,11 @@ func validationContext(ca []byte, subjectName string) *envoy_api_v2_auth.CommonT
 					InlineBytes: ca,
 				},
 			},
-			VerifySubjectAltName: []string{subjectName},
+			MatchSubjectAltNames: []*matcher.StringMatcher{{
+				MatchPattern: &matcher.StringMatcher_Exact{
+					Exact: subjectName,
+				}},
+			},
 		},
 	}
 }
