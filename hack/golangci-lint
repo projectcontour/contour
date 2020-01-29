@@ -1,0 +1,23 @@
+#! /usr/bin/env bash
+
+readonly PROGNAME="golangci-lint"
+
+if command -v ${PROGNAME} >/dev/null; then
+	# TODO(jpeach): check this won't self-exec ...
+	exec ${PROGNAME} "$@"
+fi
+
+if command -v docker >/dev/null; then
+	exec docker run \
+		--rm \
+		--volume $(pwd):/app \
+		--workdir /app \
+		golangci/golangci-lint:latest ${PROGNAME} "$@"
+fi
+
+cat <<EOF
+Unable to run golang-ci. Please check installation instructions:
+	https://github.com/golangci/golangci-lint#install
+EOF
+
+exit 69 # EX_UNAVAILABLE

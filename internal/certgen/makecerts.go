@@ -131,7 +131,7 @@ func newSerial(now time.Time) *big.Int {
 
 func bigIntHash(n *big.Int) []byte {
 	h := sha1.New()
-	h.Write(n.Bytes())
+	h.Write(n.Bytes()) // nolint:errcheck
 	return h.Sum(nil)
 }
 

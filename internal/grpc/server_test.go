@@ -212,7 +212,7 @@ func TestGRPC(t *testing.T) {
 			done := make(chan error, 1)
 			stop := make(chan struct{})
 			run := eh.Start()
-			go run(stop)
+			go run(stop) // nolint:errcheck
 			go func() {
 				done <- srv.Serve(l)
 			}()
