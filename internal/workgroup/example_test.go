@@ -109,5 +109,5 @@ func ExampleGroup_Run_multipleListeners() {
 		return http.Serve(l, mux)
 	})
 
-	g.Run()
+	g.Run() // nolint:errcheck
 }

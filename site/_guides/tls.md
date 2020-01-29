@@ -5,7 +5,9 @@ layout: page
 
 # TLS support
 
-Contour 0.3 adds support for HTTPS (TLS/SSL) ingress by integrating Envoy's SNI support.
+Contour supports HTTPS (TLS/SSL) ingress by integrating Envoy's SNI support.
+Certificates must be provisioned which are saved as Kubernetes secrets and get passed to Envoy.
+A common way to implement this is to use [JetStack's Cert Manager][3].
 
 ## Enabling TLS support
 
@@ -17,3 +19,4 @@ If you deploy behind an AWS Elastic Load Balancer, see [EC2 ELB PROXY protocol s
 
 [1]: {{site.github.repository_url}}/blob/{{site.github.latest_release.tag_name}}/examples/contour/03-contour.yaml/#L45
 [2]: {% link _guides/proxy-proto.md %}
+[3]: {% link _guides/cert-manager.md %}

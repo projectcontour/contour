@@ -33,22 +33,14 @@ export GO111MODULE=on
 Check_Targets := \
 	check-test \
 	check-test-race \
-	check-vet \
-	check-gofmt \
-	check-staticcheck \
+	check-golint \
 	check-misspell \
-	check-unconvert \
-	check-unparam \
-	check-ineffassign \
 	check-yamllint \
 	check-stale \
 	check-flags
 
 .PHONY: check
 check: install $(Check_Targets) ## Run tests and CI checks
-
-.PHONY: pedantic
-pedantic: check check-errcheck ## Run pedantic CI checks
 
 install: ## Build and install the contour binary
 	go install -mod=readonly -v -tags "oidc gcp" $(MODULE)/cmd/contour
@@ -96,55 +88,23 @@ check-stale: metrics-docs rendercrds render render-refdocs
 		exit 1; \
 	fi
 
-.PHONY: check-staticcheck
-check-staticcheck:
-	go install honnef.co/go/tools/cmd/staticcheck
-	staticcheck \
-		-checks all,-ST1003 \
-		$(MODULE)/{cmd,internal}/...
-
 .PHONY: check-misspell
 check-misspell:
-	go install github.com/client9/misspell/cmd/misspell
-	misspell \
-		-i clas \
+	@echo Running spell checker ...
+	@go run github.com/client9/misspell/cmd/misspell \
 		-locale US \
 		-error \
-		cmd/* internal/* design/* site/*.md site/_{guides,posts,resources} site/docs/**/* *.md
+		design/* site/*.md site/_{guides,posts,resources} site/docs/**/* *.md
 
-.PHONY: check-unconvert
-check-unconvert:
-	go install github.com/mdempsky/unconvert
-	unconvert -v $(MODULE)/{cmd,internal}/...
-
-.PHONY: check-ineffassign
-check-ineffassign:
-	go install github.com/gordonklaus/ineffassign
-	find $(SRCDIRS) -name '*.go' | xargs ineffassign
-
-.PHONY: check-unparam
-check-unparam:
-	go install mvdan.cc/unparam
-	unparam -exported $(MODULE)/{cmd,internal}/...
-
-.PHONY: check-errcheck
-check-errcheck:
-	go install github.com/kisielk/errcheck
-	errcheck $(MODULE)/...
+.PHONY: check-golint
+check-golint: ## Run Go static analysis checks
+	@echo Running Go linter ...
+	@./hack/golangci-lint run
 
 .PHONY: check-yamllint
 check-yamllint:
-	docker run --rm -ti -v $(CURDIR):/workdir giantswarm/yamllint examples/ site/examples/
-
-.PHONY: check-gofmt
-check-gofmt:
-	@echo Checking code is gofmted
-	@test -z "$(shell gofmt -s -l -d -e $(SRCDIRS) | tee /dev/stderr)"
-
-.PHONY: check-vet
-check-vet: | check-test
-	go vet $(MODULE)/...
-
+	@echo Running YAML linter ...
+	@docker run --rm -ti -v $(CURDIR):/workdir giantswarm/yamllint examples/ site/examples/
 
 # Check that CLI flags are formatted consistently. We are checking
 # for calls to Kingping Flags() and Command() APIs where the 2nd
@@ -192,11 +152,11 @@ local: $(LOCAL_BOOTSTRAP_CONFIG)
 		--service-cluster cluster0
 
 render:
-	@echo Rendering example deployment files...
+	@echo Rendering example deployment files ...
 	@(cd examples && bash render.sh)
 
 rendercrds:
-	@echo Rendering CRDs...
+	@echo Rendering CRDs ...
 	@(cd examples && bash rendercrds.sh)
 
 render-refdocs: ## Update API reference documentation
@@ -275,7 +235,7 @@ site-check: ## Test the site's links
 
 .PHONY: metrics-docs
 metrics-docs: ## Regenerate documentation for metrics
-	@echo Generating metrics documentation...
+	@echo Generating metrics documentation ...
 	@cd site/_metrics && rm -f *.md && go run ../../hack/generate-metrics-doc.go
 
 help: ## Display this help

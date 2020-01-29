@@ -709,7 +709,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			return nil
 		}
 
-		respHP, err := headersPolicy(route.ResponseHeadersPolicy, false /* allow Host */)
+		respHP, err := headersPolicy(route.ResponseHeadersPolicy, false /* disallow Host */)
 		if err != nil {
 			sw.SetInvalid(err.Error())
 			return nil
@@ -793,13 +793,13 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 				}
 			}
 
-			reqHP, err := headersPolicy(service.RequestHeadersPolicy, false /* allow Host */)
+			reqHP, err := headersPolicy(service.RequestHeadersPolicy, true /* allow Host */)
 			if err != nil {
 				sw.SetInvalid(err.Error())
 				return nil
 			}
 
-			respHP, err := headersPolicy(service.ResponseHeadersPolicy, false /* allow Host */)
+			respHP, err := headersPolicy(service.ResponseHeadersPolicy, false /* disallow Host */)
 			if err != nil {
 				sw.SetInvalid(err.Error())
 				return nil

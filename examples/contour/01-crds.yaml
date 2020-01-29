@@ -755,8 +755,12 @@ spec:
                         protocol:
                           description: Protocol may be used to specify (or override)
                             the protocol used to reach this Service. Values may be
-                            tls, h2, h2c.  It omitted protocol-selection falls back
+                            tls, h2, h2c. If omitted, protocol-selection falls back
                             on Service annotations.
+                          enum:
+                          - h2
+                          - h2c
+                          - tls
                           type: string
                         requestHeadersPolicy:
                           description: The policy for managing request headers during
@@ -931,8 +935,12 @@ spec:
                       protocol:
                         description: Protocol may be used to specify (or override)
                           the protocol used to reach this Service. Values may be tls,
-                          h2, h2c.  It omitted protocol-selection falls back on Service
+                          h2, h2c. If omitted, protocol-selection falls back on Service
                           annotations.
+                        enum:
+                        - h2
+                        - h2c
+                        - tls
                         type: string
                       requestHeadersPolicy:
                         description: The policy for managing request headers during

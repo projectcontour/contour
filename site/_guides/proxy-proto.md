@@ -7,7 +7,8 @@ If you deploy Contour as a Deployment or Daemonset, you will likely use a `type:
 If you use the Elastic Load Balancer (ELB) service from Amazon's EC2, you need to perform a couple of additional steps to enable the [PROXY][0] protocol. Here's why:
 
 External load balancers typically operate in one of two modes: a layer 7 HTTP proxy, or a layer 4 TCP proxy.
-The former cannot be used to load balance TLS traffic, because your cloud provider attempts HTTP negotiation on port 443. So the latter must be used when Contour handles HTTP and HTTPS traffic.
+The former cannot be used to load balance TLS traffic, because your cloud provider attempts HTTP negotiation on port 443.
+So the latter must be used when Contour handles HTTP and HTTPS traffic.
 
 However this leads to a situation where the remote IP address of the client is reported as the inside address of your cloud provider's load balancer.
 To rectify the situation, you can add annotations to your service and flags to your Contour Deployment or DaemonSet to enable the [PROXY][0] protocol which forwards the original client IP details to Envoy. 

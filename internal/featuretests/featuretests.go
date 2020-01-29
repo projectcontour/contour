@@ -44,7 +44,7 @@ import (
 )
 
 const (
-	endpointType = envoy.EndpointType
+	endpointType = envoy.EndpointType // nolint:varcheck,deadcode
 	clusterType  = envoy.ClusterType
 	routeType    = envoy.RouteType
 	listenerType = envoy.ListenerType

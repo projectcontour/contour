@@ -57,12 +57,12 @@ func RouteMatch(route *dag.Route) *envoy_api_v2_route.RouteMatch {
 // weighted cluster.
 func RouteRoute(r *dag.Route) *envoy_api_v2_route.Route_Route {
 	ra := envoy_api_v2_route.RouteAction{
-		RetryPolicy:         retryPolicy(r),
-		Timeout:             responseTimeout(r),
-		IdleTimeout:         idleTimeout(r),
-		PrefixRewrite:       r.PrefixRewrite,
-		HashPolicy:          hashPolicy(r),
-		RequestMirrorPolicy: mirrorPolicy(r),
+		RetryPolicy:           retryPolicy(r),
+		Timeout:               responseTimeout(r),
+		IdleTimeout:           idleTimeout(r),
+		PrefixRewrite:         r.PrefixRewrite,
+		HashPolicy:            hashPolicy(r),
+		RequestMirrorPolicies: mirrorPolicy(r),
 	}
 
 	// Check for host header policy and set if found
@@ -113,14 +113,14 @@ func hashPolicy(r *dag.Route) []*envoy_api_v2_route.RouteAction_HashPolicy {
 	return nil
 }
 
-func mirrorPolicy(r *dag.Route) *envoy_api_v2_route.RouteAction_RequestMirrorPolicy {
+func mirrorPolicy(r *dag.Route) []*envoy_api_v2_route.RouteAction_RequestMirrorPolicy {
 	if r.MirrorPolicy == nil {
 		return nil
 	}
 
-	return &envoy_api_v2_route.RouteAction_RequestMirrorPolicy{
+	return []*envoy_api_v2_route.RouteAction_RequestMirrorPolicy{{
 		Cluster: Clustername(r.MirrorPolicy.Cluster),
-	}
+	}}
 }
 
 func hostReplaceHeader(hp *dag.HeadersPolicy) string {
