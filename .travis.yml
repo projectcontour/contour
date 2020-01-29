@@ -11,8 +11,31 @@ matrix:
           - /home/travis/gopath/pkg/mod
       env:
         - GOPROXY=https://proxy.golang.org/
-      script:
-        - make check
+      jobs:
+        include:
+          - stage: static code checks
+          - script: make -f hack/checks/errcheck.mk
+            name: Go errcheck
+          - script: make -f hack/checks/flags-formatting.mk
+            name: CLI flags formatting
+          - script: make -f hack/checks/gofmt.mk
+            name: Go fmt
+          - script: make -f hack/checks/govet.mk
+            name: Go vet
+          - script: make -f hack/checks/ineffassign.mk
+            name: Go ineffassign
+          - script: make -f hack/checks/misspell.mk
+            name: Spelling
+          - script: make -f hack/checks/staticcheck.mk
+            name: Go staticcheck
+          - script: make -f hack/checks/unconvert.mk
+            name: Go unconvert
+          - script: make -f hack/checks/unparam.mk
+            name: Go unparam
+          - script: make -f hack/checks/yamllint.mk
+            name: YAML Lint
+          - stage: tests
+          - script: make check-test
 
     - language: ruby
       rvm: 2.6
