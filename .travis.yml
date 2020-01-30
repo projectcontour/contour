@@ -5,6 +5,8 @@ matrix:
       go:
         - 1.13.x
       sudo: false
+      services:
+        - docker
       cache:
         directories:
           - /home/travis/.cache/go-build
@@ -12,7 +14,12 @@ matrix:
       env:
         - GOPROXY=https://proxy.golang.org/
       script:
+        - go mod vendor
         - make check
+        - make check-coverage
+
+      after_success:
+        - CODECOV_NAME=coverage.out bash <(curl -s https://codecov.io/bash)
 
     - language: ruby
       rvm: 2.6

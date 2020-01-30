@@ -28,33 +28,27 @@ VERSION ?= $(GIT_REF)
 # set outside this Makefile, as a safety valve.
 LATEST_VERSION ?= NOLATEST
 
+GO_TAGS := -tags "oidc gcp"
+
 export GO111MODULE=on
 
 Check_Targets := \
 	check-test \
 	check-test-race \
-	check-vet \
-	check-gofmt \
-	check-staticcheck \
+	check-golint \
 	check-misspell \
-	check-unconvert \
-	check-unparam \
-	check-ineffassign \
 	check-yamllint \
-	check-stale \
+	check-generate \
 	check-flags
 
 .PHONY: check
 check: install $(Check_Targets) ## Run tests and CI checks
 
-.PHONY: pedantic
-pedantic: check check-errcheck ## Run pedantic CI checks
-
 install: ## Build and install the contour binary
-	go install -mod=readonly -v -tags "oidc gcp" $(MODULE)/cmd/contour
+	go install -mod=readonly -v $(GO_TAGS) $(MODULE)/cmd/contour
 
 race:
-	go install -mod=readonly -v -race -tags "oidc gcp" $(MODULE)/cmd/contour
+	go install -mod=readonly -v -race $(GO_TAGS) $(MODULE)/cmd/contour
 
 download: ## Download Go modules
 	go mod download
@@ -81,70 +75,41 @@ endif
 
 .PHONY: check-test
 check-test:
-	go test -cover -mod=readonly $(MODULE)/...
+	go test $(GO_TAGS) -cover -mod=readonly $(MODULE)/...
 
 .PHONY: check-test-race
 check-test-race: | check-test
-	go test -race -mod=readonly $(MODULE)/...
+	go test $(GO_TAGS) -race -mod=readonly $(MODULE)/...
 
-.PHONY: check-stale
-check-stale: ## Check for stale generated content
-check-stale: metrics-docs rendercrds render render-refdocs
-	@if git status -s site/_metrics examples/render examples/contour 2>&1 | grep -E -q '^\s+[MADRCU]'; then \
-		echo Uncommitted changes in generated sources: ; \
-		git status -s site/_metrics examples/render examples/contour; \
-		exit 1; \
-	fi
-
-.PHONY: check-staticcheck
-check-staticcheck:
-	go install honnef.co/go/tools/cmd/staticcheck
-	staticcheck \
-		-checks all,-ST1003 \
-		$(MODULE)/{cmd,internal}/...
+.PHONY: check-coverage
+check-coverage: ## Run tests to generate code coverage
+	@go test \
+		$(GO_TAGS) \
+		-race \
+		-mod=readonly \
+		-covermode=atomic \
+		-coverprofile=coverage.out \
+		-coverpkg=./cmd/...,./internal/... \
+		$(MODULE)/...
+	@go tool cover -html=coverage.out -o coverage.html
 
 .PHONY: check-misspell
 check-misspell:
-	go install github.com/client9/misspell/cmd/misspell
-	misspell \
-		-i clas \
+	@echo Running spell checker ...
+	@go run github.com/client9/misspell/cmd/misspell \
 		-locale US \
 		-error \
-		cmd/* internal/* design/* site/*.md site/_{guides,posts,resources} site/docs/**/* *.md
+		design/* site/*.md site/_{guides,posts,resources} site/docs/**/* *.md
 
-.PHONY: check-unconvert
-check-unconvert:
-	go install github.com/mdempsky/unconvert
-	unconvert -v $(MODULE)/{cmd,internal}/...
-
-.PHONY: check-ineffassign
-check-ineffassign:
-	go install github.com/gordonklaus/ineffassign
-	find $(SRCDIRS) -name '*.go' | xargs ineffassign
-
-.PHONY: check-unparam
-check-unparam:
-	go install mvdan.cc/unparam
-	unparam -exported $(MODULE)/{cmd,internal}/...
-
-.PHONY: check-errcheck
-check-errcheck:
-	go install github.com/kisielk/errcheck
-	errcheck $(MODULE)/...
+.PHONY: check-golint
+check-golint: ## Run Go static analysis checks
+	@echo Running Go linter ...
+	@./hack/golangci-lint run
 
 .PHONY: check-yamllint
 check-yamllint:
-	docker run --rm -ti -v $(CURDIR):/workdir giantswarm/yamllint examples/ site/examples/
-
-.PHONY: check-gofmt
-check-gofmt:
-	@echo Checking code is gofmted
-	@test -z "$(shell gofmt -s -l -d -e $(SRCDIRS) | tee /dev/stderr)"
-
-.PHONY: check-vet
-check-vet: | check-test
-	go vet $(MODULE)/...
-
+	@echo Running YAML linter ...
+	@docker run --rm -ti -v $(CURDIR):/workdir giantswarm/yamllint examples/ site/examples/
 
 # Check that CLI flags are formatted consistently. We are checking
 # for calls to Kingping Flags() and Command() APIs where the 2nd
@@ -160,6 +125,44 @@ check-flags:
 	@if git --no-pager grep --extended-regexp '[.]Command\("[^"]+", "([^A-Z][^"]+|[^"]+[^.])"' cmd/contour; then \
 		echo "ERROR: CLI flag help strings must start with a capital and end with a period."; \
 		exit 2; \
+	fi
+
+.PHONY: generate
+generate: ## Re-generate generated code and documentation
+generate: generate-deployment generate-crd-yaml generate-crd-clients generate-api-docs generate-metrics-docs
+
+.PHONY: generate-deployment
+generate-deployment:
+	@echo Generating example deployment files ...
+	@./hack/generate-deployment.sh
+
+.PHONY: generate-crd-yaml
+generate-crd-yaml:
+	@echo Generating CRD YAML documents ...
+	@./hack/generate-crd-yaml.sh
+
+.PHONY: generate-crd-clients
+generate-crd-clients:
+	@echo Updating generated CRD client API code ...
+	@./hack/generate-crd-clients.sh
+
+.PHONY: generate-api-docs
+generate-api-docs:
+	@echo Generating API documentation ...
+	@./hack/generate-api-docs.sh
+
+.PHONY: generate-metrics-docs
+generate-metrics-docs:
+	@echo Generating metrics documentation ...
+	@cd site/_metrics && rm -f *.md && go run ../../hack/generate-metrics-doc.go
+
+.PHONY: check-generate
+check-generate: ## Check for stale generated content
+check-generate: generate
+	@if git status -s site/_metrics examples/render examples/contour 2>&1 | grep -E -q '^\s+[MADRCU]'; then \
+		echo Uncommitted changes in generated sources: ; \
+		git status -s site/_metrics examples/render examples/contour; \
+		exit 1; \
 	fi
 
 # TODO(youngnick): Move these local bootstrap config files out of the repo root dir.
@@ -190,24 +193,6 @@ local: $(LOCAL_BOOTSTRAP_CONFIG)
 		--config-path /config/$< \
 		--service-node node0 \
 		--service-cluster cluster0
-
-render:
-	@echo Rendering example deployment files...
-	@(cd examples && bash render.sh)
-
-rendercrds:
-	@echo Rendering CRDs...
-	@(cd examples && bash rendercrds.sh)
-
-render-refdocs: ## Update API reference documentation
-render-refdocs: site/docs/master/api-reference.html
-
-site/docs/master/api-reference.html: hack/generate-refdocs.sh $(shell ls site/_data/refdocs/*.tpl) $(shell ls apis/projectcontour/*/*.go)
-	@./hack/generate-refdocs.sh
-
-updategenerated: ## Update generated CRD code
-	@echo Updating generated CRD code...
-	@(bash hack/update-generated-crd-code.sh)
 
 gencerts: certs/contourcert.pem certs/envoycert.pem
 	@echo "certs are generated."
@@ -272,11 +257,6 @@ site-devel: ## Launch the website in a Docker container
 site-check: ## Test the site's links
 	docker run --rm -v $$(pwd)/site:/site -it $(JEKYLL_IMAGE) \
 		bash -c "cd /site && bundle install --path bundler/cache && bundle exec jekyll build && htmlproofer --assume-extension /site/_site"
-
-.PHONY: metrics-docs
-metrics-docs: ## Regenerate documentation for metrics
-	@echo Generating metrics documentation...
-	@cd site/_metrics && rm -f *.md && go run ../../hack/generate-metrics-doc.go
 
 help: ## Display this help
 	@echo Contour high performance Ingress controller for Kubernetes

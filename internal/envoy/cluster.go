@@ -63,7 +63,7 @@ func Cluster(c *dag.Cluster) *v2.Cluster {
 	}
 
 	// Drain connections immediately if using healthchecks and the endpoint is known to be removed
-	if c.HealthCheckPolicy != nil {
+	if c.HTTPHealthCheckPolicy != nil || c.TCPHealthCheckPolicy != nil {
 		cluster.DrainConnectionsOnHostRemoval = true
 	}
 
@@ -164,11 +164,18 @@ func lbPolicy(strategy string) v2.Cluster_LbPolicy {
 }
 
 func edshealthcheck(c *dag.Cluster) []*envoy_api_v2_core.HealthCheck {
-	if c.HealthCheckPolicy == nil {
+	if c.HTTPHealthCheckPolicy == nil && c.TCPHealthCheckPolicy == nil {
 		return nil
 	}
-	return []*envoy_api_v2_core.HealthCheck{
-		healthCheck(c),
+
+	if c.HTTPHealthCheckPolicy != nil {
+		return []*envoy_api_v2_core.HealthCheck{
+			httpHealthCheck(c),
+		}
+	} else {
+		return []*envoy_api_v2_core.HealthCheck{
+			tcpHealthCheck(c),
+		}
 	}
 }
 
@@ -176,7 +183,7 @@ func edshealthcheck(c *dag.Cluster) []*envoy_api_v2_core.HealthCheck {
 func Clustername(cluster *dag.Cluster) string {
 	service := cluster.Upstream
 	buf := cluster.LoadBalancerPolicy
-	if hc := cluster.HealthCheckPolicy; hc != nil {
+	if hc := cluster.HTTPHealthCheckPolicy; hc != nil {
 		if hc.Timeout > 0 {
 			buf += hc.Timeout.String()
 		}
