@@ -28,6 +28,8 @@ VERSION ?= $(GIT_REF)
 # set outside this Makefile, as a safety valve.
 LATEST_VERSION ?= NOLATEST
 
+GO_TAGS := -tags "oidc gcp"
+
 export GO111MODULE=on
 
 Check_Targets := \
@@ -43,10 +45,10 @@ Check_Targets := \
 check: install $(Check_Targets) ## Run tests and CI checks
 
 install: ## Build and install the contour binary
-	go install -mod=readonly -v -tags "oidc gcp" $(MODULE)/cmd/contour
+	go install -mod=readonly -v $(GO_TAGS) $(MODULE)/cmd/contour
 
 race:
-	go install -mod=readonly -v -race -tags "oidc gcp" $(MODULE)/cmd/contour
+	go install -mod=readonly -v -race $(GO_TAGS) $(MODULE)/cmd/contour
 
 download: ## Download Go modules
 	go mod download
@@ -73,11 +75,23 @@ endif
 
 .PHONY: check-test
 check-test:
-	go test -cover -mod=readonly $(MODULE)/...
+	go test $(GO_TAGS) -cover -mod=readonly $(MODULE)/...
 
 .PHONY: check-test-race
 check-test-race: | check-test
-	go test -race -mod=readonly $(MODULE)/...
+	go test $(GO_TAGS) -race -mod=readonly $(MODULE)/...
+
+.PHONY: check-coverage
+check-coverage: ## Run tests to generate code coverage
+	@go test \
+		$(GO_TAGS) \
+		-race \
+		-mod=readonly \
+		-covermode=atomic \
+		-coverprofile=coverage.out \
+		-coverpkg=./cmd/...,./internal/... \
+		$(MODULE)/...
+	@go tool cover -html=coverage.out -o coverage.html
 
 .PHONY: check-misspell
 check-misspell:
