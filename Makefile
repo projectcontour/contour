@@ -32,17 +32,8 @@ GO_TAGS := -tags "oidc gcp"
 
 export GO111MODULE=on
 
-Check_Targets := \
-	check-test \
-	check-test-race \
-	check-golint \
-	check-misspell \
-	check-yamllint \
-	check-generate \
-	check-flags
-
 .PHONY: check
-check: install $(Check_Targets) ## Run tests and CI checks
+check: install check-test check-test-race ## Install and run tests
 
 install: ## Build and install the contour binary
 	go install -mod=readonly -v $(GO_TAGS) $(MODULE)/cmd/contour
@@ -93,6 +84,10 @@ check-coverage: ## Run tests to generate code coverage
 		$(MODULE)/...
 	@go tool cover -html=coverage.out -o coverage.html
 
+.PHONY: lint
+lint: ## Run lint checks
+lint: check-golint check-yamllint check-flags check-misspell
+
 .PHONY: check-misspell
 check-misspell:
 	@echo Running spell checker ...
@@ -102,7 +97,7 @@ check-misspell:
 		design/* site/*.md site/_{guides,posts,resources} site/docs/**/* *.md
 
 .PHONY: check-golint
-check-golint: ## Run Go static analysis checks
+check-golint:
 	@echo Running Go linter ...
 	@./hack/golangci-lint run
 
@@ -155,15 +150,6 @@ generate-api-docs:
 generate-metrics-docs:
 	@echo Generating metrics documentation ...
 	@cd site/_metrics && rm -f *.md && go run ../../hack/generate-metrics-doc.go
-
-.PHONY: check-generate
-check-generate: ## Check for stale generated content
-check-generate: generate
-	@if git status -s site/_metrics examples/render examples/contour 2>&1 | grep -E -q '^\s+[MADRCU]'; then \
-		echo Uncommitted changes in generated sources: ; \
-		git status -s site/_metrics examples/render examples/contour; \
-		exit 1; \
-	fi
 
 # TODO(youngnick): Move these local bootstrap config files out of the repo root dir.
 $(LOCAL_BOOTSTRAP_CONFIG): install
