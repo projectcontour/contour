@@ -24,9 +24,15 @@ import (
 	"syscall"
 	"time"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/dynamic/dynamicinformer"
+
+	"k8s.io/client-go/dynamic"
+
 	"k8s.io/client-go/tools/cache"
 
-	contourinformers "github.com/projectcontour/contour/apis/generated/informers/externalversions"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/debug"
@@ -121,6 +127,13 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 
 // doServe runs the contour serve subcommand.
 func doServe(log logrus.FieldLogger, ctx *serveContext) error {
+
+	// step 0. get kube config
+	config, err := restConfig(ctx.Kubeconfig, ctx.InCluster)
+	if err != nil {
+		return fmt.Errorf("failed to get Kubernetes config: %w", err)
+	}
+
 	// step 1. establish k8s client connection
 	clients, err := newKubernetesClients(ctx.Kubeconfig, ctx.InCluster)
 	if err != nil {
@@ -129,8 +142,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 2. create informers
 	// note: 0 means resync timers are disabled
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return fmt.Errorf("failed to create dynamic interface client: %w", err)
+	}
+
 	coreInformers := coreinformers.NewSharedInformerFactory(clients.core, 0)
-	contourInformers := contourinformers.NewSharedInformerFactory(clients.contour, 0)
 
 	// Create a set of SharedInformerFactories for each root-ingressroute namespace (if defined)
 	namespacedInformers := map[string]coreinformers.SharedInformerFactory{}
@@ -164,7 +181,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		StatusClient: &k8s.StatusWriter{
-			Client: clients.contour,
+			Client: dynamicClient,
 		},
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
@@ -179,11 +196,19 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 4. register our resource event handler with the k8s informers.
 	var informers []cache.SharedIndexInformer
+	dynamicFactory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(dynamicClient, 0, v1.NamespaceAll, nil)
+
+	dynamicClient.Resource(schema.GroupVersionResource{Group: "projectcontour.io", Version: "v1", Resource: "httpproxies"})
+	ingressRouteInformer := dynamicFactory.ForResource(schema.GroupVersionResource{Group: "contour.heptio.com", Version: "v1beta1", Resource: "ingressroutes"})
+	tlscertIRInformer := dynamicFactory.ForResource(schema.GroupVersionResource{Group: "contour.heptio.com", Version: "v1beta1", Resource: "tlscertificatedelegations"})
+	httpProxyInformer := dynamicFactory.ForResource(schema.GroupVersionResource{Group: "projectcontour.io", Version: "v1", Resource: "httpproxies"})
+	tlscertProxyInformer := dynamicFactory.ForResource(schema.GroupVersionResource{Group: "projectcontour.io", Version: "v1", Resource: "tlscertificatedelegations"})
+
+	informers = registerEventHandler(informers, ingressRouteInformer.Informer(), eh)
+	informers = registerEventHandler(informers, tlscertIRInformer.Informer(), eh)
+	informers = registerEventHandler(informers, httpProxyInformer.Informer(), eh)
+	informers = registerEventHandler(informers, tlscertProxyInformer.Informer(), eh)
 	informers = registerEventHandler(informers, coreInformers.Core().V1().Services().Informer(), eh)
-	informers = registerEventHandler(informers, contourInformers.Contour().V1beta1().IngressRoutes().Informer(), eh)
-	informers = registerEventHandler(informers, contourInformers.Contour().V1beta1().TLSCertificateDelegations().Informer(), eh)
-	informers = registerEventHandler(informers, contourInformers.Projectcontour().V1().HTTPProxies().Informer(), eh)
-	informers = registerEventHandler(informers, contourInformers.Projectcontour().V1().TLSCertificateDelegations().Informer(), eh)
 
 	// After K8s 1.13 the API server will automatically translate extensions/v1beta1.Ingress objects
 	// to networking/v1beta1.Ingress objects so we should only listen for one type or the other.
@@ -215,8 +240,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 6. setup workgroup runner and register informers.
 	var g workgroup.Group
+	g.Add(startDynamicInformer(ingressRouteInformer.Informer(), log.WithField("context", "ingressrouteinformer")))
+	g.Add(startDynamicInformer(tlscertIRInformer.Informer(), log.WithField("context", "tlscertingressrouteinformer")))
+	g.Add(startDynamicInformer(httpProxyInformer.Informer(), log.WithField("context", "httpproxyinformer")))
+	g.Add(startDynamicInformer(tlscertProxyInformer.Informer(), log.WithField("context", "tlscertproxyinformer")))
 	g.Add(startInformer(coreInformers, log.WithField("context", "coreinformers")))
-	g.Add(startInformer(contourInformers, log.WithField("context", "contourinformers")))
+
 	for ns, inf := range namespacedInformers {
 		g.Add(startInformer(inf, log.WithField("context", "corenamespacedinformers").WithField("namespace", ns)))
 	}
@@ -392,6 +421,16 @@ func startInformer(inf informer, log logrus.FieldLogger) func(stop <-chan struct
 		log.Println("started informer")
 		defer log.Println("stopped informer")
 		inf.Start(stop)
+		<-stop
+		return nil
+	}
+}
+
+func startDynamicInformer(inf cache.SharedIndexInformer, log logrus.FieldLogger) func(stop <-chan struct{}) error {
+	return func(stop <-chan struct{}) error {
+		log.Println("starting")
+		defer log.Println("stopped")
+		inf.Run(stop)
 		<-stop
 		return nil
 	}
