@@ -18,7 +18,6 @@ import (
 	"os"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
-	clientset "github.com/projectcontour/contour/apis/generated/clientset/versioned"
 	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	"k8s.io/client-go/kubernetes"
@@ -101,31 +100,32 @@ func main() {
 
 type kubernetesClients struct {
 	core         *kubernetes.Clientset
-	contour      *clientset.Clientset
 	coordination *coordinationv1.CoordinationV1Client
 }
 
-func newKubernetesClients(kubeconfig string, inCluster bool) (kubernetesClients, error) {
-	var err error
+func restConfig(kubeconfig string, inCluster bool) (*rest.Config, error) {
 	var config *rest.Config
-	var clients kubernetesClients
+	var err error
 
 	if kubeconfig != "" && !inCluster {
 		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
 	} else {
 		config, err = rest.InClusterConfig()
 	}
+	return config, err
+}
+
+func newKubernetesClients(kubeconfig string, inCluster bool) (kubernetesClients, error) {
+	var err error
+	var clients kubernetesClients
+
+	config, err := restConfig(kubeconfig, inCluster)
 
 	if err != nil {
 		return clients, err
 	}
 
 	clients.core, err = kubernetes.NewForConfig(config)
-	if err != nil {
-		return clients, err
-	}
-
-	clients.contour, err = clientset.NewForConfig(config)
 	if err != nil {
 		return clients, err
 	}

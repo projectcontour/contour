@@ -346,7 +346,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-
 		"insert secret referenced by httpproxy": {
 			pre: []interface{}{
 				&projcontour.HTTPProxy{

@@ -35,6 +35,9 @@ export GO111MODULE=on
 .PHONY: check
 check: install check-test check-test-race ## Install and run tests
 
+#.PHONY: steve
+#steve: install check-test check-test-race lint check-misspell check-flags ## Install and run tests
+
 install: ## Build and install the contour binary
 	go install -mod=readonly -v $(GO_TAGS) $(MODULE)/cmd/contour
 

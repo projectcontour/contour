@@ -46,7 +46,7 @@ type ObjectStatusWriter struct {
 
 // WithObject returns an ObjectStatusWriter that can be used to set the state of
 // the Object. The state can be set as many times as necessary. The state of the
-// object can be made perminent by calling the commit function returned from WithObject.
+// object can be made permanent by calling the commit function returned from WithObject.
 // The caller should pass the ObjectStatusWriter to functions interested in writing status,
 // but keep the commit function for itself. The commit function should be either called
 // via a defer, or directly if statuses are being set in a loop (as defers will not fire
