@@ -585,7 +585,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": new(KubernetesCache).ingressClass(),
+						"kubernetes.io/ingress.class": DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
@@ -597,7 +597,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"contour.heptio.com/ingress.class": new(KubernetesCache).ingressClass(),
+						"contour.heptio.com/ingress.class": DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
@@ -642,7 +642,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "kuard",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"contour.heptio.com/ingress.class": new(KubernetesCache).ingressClass(),
+						"contour.heptio.com/ingress.class": DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
@@ -654,7 +654,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "kuard",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": new(KubernetesCache).ingressClass(),
+						"kubernetes.io/ingress.class": DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
@@ -699,7 +699,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "kuard",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"contour.heptio.com/ingress.class": new(KubernetesCache).ingressClass(),
+						"contour.heptio.com/ingress.class": DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
@@ -711,7 +711,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "kuard",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": new(KubernetesCache).ingressClass(),
+						"kubernetes.io/ingress.class": DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
