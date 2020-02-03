@@ -168,7 +168,8 @@ spec:
                       count:
                         description: NumRetries is maximum allowed number of retries.
                           If not supplied, the number of retries is one.
-                        format: int32
+                        format: int64
+                        minimum: 0
                         type: integer
                       perTryTimeout:
                         description: PerTryTimeout specifies the timeout per retry
@@ -187,7 +188,8 @@ spec:
                             healthyThresholdCount:
                               description: The number of healthy health checks required
                                 before a host is marked healthy
-                              format: int32
+                              format: int64
+                              minimum: 0
                               type: integer
                             host:
                               description: The value of the host header in the HTTP
@@ -210,7 +212,8 @@ spec:
                             unhealthyThresholdCount:
                               description: The number of unhealthy health checks required
                                 before a host is marked unhealthy
-                              format: int32
+                              format: int64
+                              minimum: 0
                               type: integer
                           required:
                           - path
@@ -246,7 +249,8 @@ spec:
                         weight:
                           description: Weight defines percentage of traffic to balance
                             traffic
-                          format: int32
+                          format: int64
+                          minimum: 0
                           type: integer
                       required:
                       - name
@@ -295,7 +299,8 @@ spec:
                           healthyThresholdCount:
                             description: The number of healthy health checks required
                               before a host is marked healthy
-                            format: int32
+                            format: int64
+                            minimum: 0
                             type: integer
                           host:
                             description: The value of the host header in the HTTP
@@ -318,7 +323,8 @@ spec:
                           unhealthyThresholdCount:
                             description: The number of unhealthy health checks required
                               before a host is marked unhealthy
-                            format: int32
+                            format: int64
+                            minimum: 0
                             type: integer
                         required:
                         - path
@@ -354,7 +360,8 @@ spec:
                       weight:
                         description: Weight defines percentage of traffic to balance
                           traffic
-                        format: int32
+                        format: int64
+                        minimum: 0
                         type: integer
                     required:
                     - name
@@ -660,7 +667,8 @@ spec:
                       healthyThresholdCount:
                         description: The number of healthy health checks required
                           before a host is marked healthy
-                        format: int32
+                        format: int64
+                        minimum: 0
                         type: integer
                       host:
                         description: The value of the host header in the HTTP health
@@ -683,7 +691,8 @@ spec:
                       unhealthyThresholdCount:
                         description: The number of unhealthy health checks required
                           before a host is marked unhealthy
-                        format: int32
+                        format: int64
+                        minimum: 0
                         type: integer
                     required:
                     - path
@@ -800,7 +809,8 @@ spec:
                       count:
                         description: NumRetries is maximum allowed number of retries.
                           If not supplied, the number of retries is one.
-                        format: int32
+                        format: int64
+                        minimum: 0
                         type: integer
                       perTryTimeout:
                         description: PerTryTimeout specifies the timeout per retry
@@ -919,7 +929,8 @@ spec:
                         weight:
                           description: Weight defines percentage of traffic to balance
                             traffic
-                          format: int32
+                          format: int64
+                          minimum: 0
                           type: integer
                       required:
                       - name
@@ -1099,7 +1110,8 @@ spec:
                       weight:
                         description: Weight defines percentage of traffic to balance
                           traffic
-                        format: int32
+                        format: int64
+                        minimum: 0
                         type: integer
                     required:
                     - name

@@ -808,7 +808,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			c := &Cluster{
 				Upstream:              s,
 				LoadBalancerPolicy:    loadBalancerPolicy(route.LoadBalancerPolicy),
-				Weight:                service.Weight,
+				Weight:                uint32(service.Weight),
 				HTTPHealthCheckPolicy: httpHealthCheckPolicy(route.HealthCheckPolicy),
 				UpstreamValidation:    uv,
 				RequestHeadersPolicy:  reqHP,
@@ -1006,7 +1006,7 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 				r.Clusters = append(r.Clusters, &Cluster{
 					Upstream:              s,
 					LoadBalancerPolicy:    service.Strategy,
-					Weight:                service.Weight,
+					Weight:                uint32(service.Weight),
 					HTTPHealthCheckPolicy: ingressrouteHealthCheckPolicy(service.HealthCheck),
 					UpstreamValidation:    uv,
 					Protocol:              s.Protocol,

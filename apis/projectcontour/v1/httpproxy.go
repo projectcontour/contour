@@ -205,7 +205,8 @@ type Service struct {
 	Protocol *string `json:"protocol,omitempty"`
 	// Weight defines percentage of traffic to balance traffic
 	// +optional
-	Weight uint32 `json:"weight,omitempty"`
+	// +kubebuilder:validation:Minimum=0
+	Weight int64 `json:"weight,omitempty"`
 	// UpstreamValidation defines how to verify the backend service's certificate
 	// +optional
 	UpstreamValidation *UpstreamValidation `json:"validation,omitempty"`
@@ -235,10 +236,12 @@ type HTTPHealthCheckPolicy struct {
 	TimeoutSeconds int64 `json:"timeoutSeconds"`
 	// The number of unhealthy health checks required before a host is marked unhealthy
 	// +optional
-	UnhealthyThresholdCount uint32 `json:"unhealthyThresholdCount"`
+	// +kubebuilder:validation:Minimum=0
+	UnhealthyThresholdCount int64 `json:"unhealthyThresholdCount"`
 	// The number of healthy health checks required before a host is marked healthy
 	// +optional
-	HealthyThresholdCount uint32 `json:"healthyThresholdCount"`
+	// +kubebuilder:validation:Minimum=0
+	HealthyThresholdCount int64 `json:"healthyThresholdCount"`
 }
 
 // TCPHealthCheckPolicy defines health checks on the upstream service.
@@ -279,7 +282,8 @@ type RetryPolicy struct {
 	// NumRetries is maximum allowed number of retries.
 	// If not supplied, the number of retries is one.
 	// +optional
-	NumRetries uint32 `json:"count"`
+	// +kubebuilder:validation:Minimum=0
+	NumRetries int64 `json:"count"`
 	// PerTryTimeout specifies the timeout per retry attempt.
 	// Ignored if NumRetries is not supplied.
 	PerTryTimeout string `json:"perTryTimeout,omitempty"`

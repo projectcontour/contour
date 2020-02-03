@@ -1,39 +1,51 @@
-matrix:
+os: linux
+dist: bionic
+language: go
+go: 1.13.x
+services:
+- docker
+cache:
+  directories:
+  - /home/travis/.cache/go-build
+  - /home/travis/gopath/pkg/mod
+env:
+  global:
+  - GOPROXY=https://proxy.golang.org/
+  - NOKOGIRI_USE_SYSTEM_LIBRARIES=true # speeds up installation of html-proofer
+
+jobs:
   include:
-    - language: go
-      name: test make process
-      go:
-        - 1.13.x
-      sudo: false
-      services:
-        - docker
-      cache:
-        directories:
-          - /home/travis/.cache/go-build
-          - /home/travis/gopath/pkg/mod
-      env:
-        - GOPROXY=https://proxy.golang.org/
-      script:
-        - go mod vendor
-        - make check
-        - make check-coverage
+  - name: test
+    install:
+    - go mod vendor
+    script:
+    - make install
+    - make check-coverage
+    after_success:
+    - CODECOV_NAME=coverage.out bash <(curl -s https://codecov.io/bash)
 
-      after_success:
-        - CODECOV_NAME=coverage.out bash <(curl -s https://codecov.io/bash)
+  - name: lint
+    install:
+    - go mod vendor
+    script:
+    - make lint
 
-    - language: ruby
-      rvm: 2.6
-      name: Site Proofing
-      sudo: false # route your build to the container-based infrastructure for a faster build
-      cache: bundler
-      env:
-        - NOKOGIRI_USE_SYSTEM_LIBRARIES=true # speeds up installation of html-proofer
-        - SEARCH_DIRECTORIES="site"
-      addons:
-        apt:
-          packages:
-            - libcurl4-openssl-dev
-      install:
-        - ./hack/travis/travis-check-files-changed.sh $SEARCH_DIRECTORIES ; RETURN_CODE=$? ; if [ $RETURN_CODE -eq 137 ]; then travis_terminate 0; elif [ $RETURN_CODE -ne 0 ]; then travis_terminate $RETURN_CODE; fi
-      script:
-        - ./hack/site-proofing/cibuild
+  - name: codegen
+    install:
+    - go mod vendor
+    script:
+    - make generate
+    - ./hack/travis/check-uncommitted-codegen.sh
+
+  - name: site proof
+    language: ruby
+    rvm: 2.6
+    cache: bundler
+    addons:
+      apt:
+        packages:
+        - libcurl4-openssl-dev
+    install:
+    - ./hack/travis/travis-check-files-changed.sh ./site ; RETURN_CODE=$? ; if [ $RETURN_CODE -eq 137 ]; then travis_terminate 0; elif [ $RETURN_CODE -ne 0 ]; then travis_terminate $RETURN_CODE; fi
+    script:
+    - ./hack/site-proofing/cibuild
