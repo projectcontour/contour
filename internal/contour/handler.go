@@ -106,8 +106,8 @@ func (e *EventHandler) Start() func(<-chan struct{}) error {
 
 // run is the main event handling loop.
 func (e *EventHandler) run(stop <-chan struct{}) error {
-	e.Info("started")
-	defer e.Info("stopped")
+	e.Info("started event handler")
+	defer e.Info("stopped event handler")
 
 	var (
 		// outstanding counts the number of events received but not
