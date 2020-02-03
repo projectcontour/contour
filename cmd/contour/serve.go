@@ -133,10 +133,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	contourInformers := contourinformers.NewSharedInformerFactory(clients.contour, 0)
 
 	// Create a set of SharedInformerFactories for each root-ingressroute namespace (if defined)
-	var namespacedInformers []coreinformers.SharedInformerFactory
+	namespacedInformers := map[string]coreinformers.SharedInformerFactory{}
+
 	for _, namespace := range ctx.ingressRouteRootNamespaces() {
-		inf := coreinformers.NewSharedInformerFactoryWithOptions(clients.core, 0, coreinformers.WithNamespace(namespace))
-		namespacedInformers = append(namespacedInformers, inf)
+		if _, ok := namespacedInformers[namespace]; !ok {
+			namespacedInformers[namespace] = coreinformers.NewSharedInformerFactoryWithOptions(
+				clients.core, 0, coreinformers.WithNamespace(namespace))
+		}
 	}
 
 	// step 3. build our mammoth Kubernetes event handler.
@@ -196,6 +199,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	for _, inf := range namespacedInformers {
 		informers = registerEventHandler(informers, inf.Core().V1().Secrets().Informer(), eh)
 	}
+
 	// If root-ingressroutes are not defined, then add the informer for all namespaces
 	if len(namespacedInformers) == 0 {
 		informers = registerEventHandler(informers, coreInformers.Core().V1().Secrets().Informer(), eh)
@@ -213,8 +217,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	var g workgroup.Group
 	g.Add(startInformer(coreInformers, log.WithField("context", "coreinformers")))
 	g.Add(startInformer(contourInformers, log.WithField("context", "contourinformers")))
-	for _, inf := range namespacedInformers {
-		g.Add(startInformer(inf, log.WithField("context", "corenamespacedinformers")))
+	for ns, inf := range namespacedInformers {
+		g.Add(startInformer(inf, log.WithField("context", "corenamespacedinformers").WithField("namespace", ns)))
 	}
 
 	// step 7. register our event handler with the workgroup
@@ -258,10 +262,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			log.WithFields(logrus.Fields{
 				"configmapname":      ctx.LeaderElectionConfig.Name,
 				"configmapnamespace": ctx.LeaderElectionConfig.Namespace,
-			}).Info("started")
+			}).Info("started leader election")
 
 			le.Run(electionCtx)
-			log.Info("stopped")
+			log.Info("stopped leader election")
 		})
 
 		g.Add(func(stop <-chan struct{}) error {
@@ -271,7 +275,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				select {
 				case <-stop:
 					// shut down
-					log.Info("stopped")
+					log.Info("stopped leader election")
 					return nil
 				case <-leader:
 					log.Info("elected as leader, triggering rebuild")
@@ -289,7 +293,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			select {
 			case <-stop:
 				// shut down
-				log.Info("stopped")
+				log.Info("stopped leader election")
 			case <-deposed:
 				log.Info("deposed as leader, shutting down")
 			}
@@ -345,8 +349,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			log = log.WithField("insecure", true)
 		}
 
-		log.Info("started")
-		defer log.Info("stopped")
+		log.Info("started xDS server")
+		defer log.Info("stopped xDS server")
 
 		go func() {
 			<-stop
@@ -385,8 +389,8 @@ type informer interface {
 
 func startInformer(inf informer, log logrus.FieldLogger) func(stop <-chan struct{}) error {
 	return func(stop <-chan struct{}) error {
-		log.Println("starting")
-		defer log.Println("stopped")
+		log.Println("started informer")
+		defer log.Println("stopped informer")
 		inf.Start(stop)
 		<-stop
 		return nil
