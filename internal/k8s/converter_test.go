@@ -11,17 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contour
+package k8s
 
 import (
+	"errors"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	v1 "k8s.io/api/core/v1"
-
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/projectcontour/contour/internal/assert"
@@ -29,8 +29,9 @@ import (
 
 func TestConvertUnstructured(t *testing.T) {
 	type testcase struct {
-		obj  interface{}
-		want interface{}
+		obj       interface{}
+		want      interface{}
+		wantError error
 	}
 
 	run := func(t *testing.T, name string, tc testcase) {
@@ -39,11 +40,11 @@ func TestConvertUnstructured(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Helper()
 
-			eh := EventHandler{}
-			got := eh.ConvertUnstructured(tc.obj)
-			if tc.want != got {
-				assert.Equal(t, tc.want, got)
-			}
+			converter := NewUnstructuredConverter()
+			got, err := converter.Convert(tc.obj)
+
+			assert.Equal(t, tc.wantError, err)
+			assert.Equal(t, tc.want, got)
 		})
 	}
 
@@ -88,20 +89,6 @@ func TestConvertUnstructured(t *testing.T) {
 					Name: "home",
 					Port: 8080,
 				}},
-			}},
-		},
-	}
-
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "foo",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     12345678,
 			}},
 		},
 	}
@@ -227,53 +214,84 @@ func TestConvertUnstructured(t *testing.T) {
 		},
 	}
 
-	run(t, "ingressroute", testcase{
-		obj:  ir1,
-		want: ir1,
-	})
+	unknownUnstructured := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "invalid/-1",
+			"kind":       "Broken",
+			"metadata": map[string]interface{}{
+				"name":      "invalid",
+				"namespace": "example",
+			},
+			"spec": map[string]interface{}{
+				"unknown": "field",
+			},
+		},
+	}
 
-	run(t, "proxy", testcase{
-		obj:  proxy1,
-		want: proxy1,
-	})
-
-	run(t, "service", testcase{
-		obj:  s1,
-		want: s1,
-	})
-
-	run(t, "irtlscertificatedelegation", testcase{
-		obj:  irTLSCert1,
-		want: irTLSCert1,
-	})
-
-	run(t, "proxytlscertificatedelegation", testcase{
-		obj:  proxyTLSCert1,
-		want: proxyTLSCert1,
-	})
-
-	run(t, "secret", testcase{
-		obj:  secret("default/secret-a/68621186db", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
-		want: secret("default/secret-a/68621186db", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
-	})
+	proxyInvalidUnstructured := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "projectcontour.io/v1",
+			"kind":       "HTTPProxy",
+			"metadata": map[string]interface{}{
+				"name":      "example",
+				"namespace": "roots",
+			},
+			"spec": map[string]interface{}{
+				"virtualhost": map[string]interface{}{
+					"fqdn": "example.com",
+				},
+				"routes": []map[string]interface{}{{
+					"services": []map[string]interface{}{{
+						"name": 8080,
+						"port": "bad",
+					}},
+					"conditions": []map[string]interface{}{{
+						"prefix": "/foo",
+					}},
+				}},
+			},
+		},
+	}
 
 	run(t, "proxyunstructured", testcase{
-		obj:  proxyUnstructured,
-		want: proxy1,
+		obj:       proxyUnstructured,
+		want:      proxy1,
+		wantError: nil,
 	})
 
 	run(t, "irunstructured", testcase{
-		obj:  irUnstructured,
-		want: ir1,
+		obj:       irUnstructured,
+		want:      ir1,
+		wantError: nil,
 	})
 
 	run(t, "irtlscertunstructured", testcase{
-		obj:  irTLSCertUnstructured,
-		want: irTLSCert1,
+		obj:       irTLSCertUnstructured,
+		want:      irTLSCert1,
+		wantError: nil,
 	})
 
 	run(t, "proxytlscertunstructured", testcase{
-		obj:  proxyTLSCertUnstructured,
-		want: proxyTLSCert1,
+		obj:       proxyTLSCertUnstructured,
+		want:      proxyTLSCert1,
+		wantError: nil,
+	})
+
+	run(t, "unknownunstructured", testcase{
+		obj:       unknownUnstructured,
+		want:      nil,
+		wantError: errors.New("unsupported object type: *unstructured.Unstructured"),
+	})
+
+	run(t, "invalidunstructured", testcase{
+		obj:       proxyInvalidUnstructured,
+		want:      &projectcontour.HTTPProxy{},
+		wantError: errors.New("unable to convert unstructured object to projectcontour.io/v1, Kind=HTTPProxy: cannot convert int to string"),
+	})
+
+	run(t, "notunstructured", testcase{
+		obj:       proxy1,
+		want:      nil,
+		wantError: errors.New("unable to convert unstructured object to projectcontour.io/v1, Kind=HTTPProxy: cannot convert int to string"),
 	})
 }

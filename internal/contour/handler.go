@@ -19,27 +19,16 @@ package contour
 import (
 	"time"
 
-	"k8s.io/apimachinery/pkg/runtime"
-
-	"k8s.io/apimachinery/pkg/runtime/schema"
-
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-// Group Version for projectcontour.io/v1
-var projectcontourv1GV = schema.GroupVersion{Group: "projectcontour.io", Version: "v1"}
-var ingressroutev1beta1GV = schema.GroupVersion{Group: "contour.heptio.com", Version: "v1beta1"}
 
 // EventHandler implements cache.ResourceEventHandler, filters k8s events towards
 // a dag.Builder and calls through to the CacheHandler to notify it that a new DAG
@@ -77,8 +66,7 @@ type EventHandler struct {
 	// an event has been received.
 	seq int
 
-	// scheme holds an initializer for converting Unstructured to a type
-	scheme *runtime.Scheme
+	k8s.Converter
 }
 
 type opAdd struct {
@@ -94,18 +82,46 @@ type opDelete struct {
 }
 
 func (e *EventHandler) OnAdd(obj interface{}) {
-	obj = e.ConvertUnstructured(obj)
+	if e.Converter.CanConvert(obj) {
+		var err error
+		obj, err = e.Converter.Convert(obj)
+		if err != nil {
+			e.Error(err)
+			return
+		}
+	}
 	e.update <- opAdd{obj: obj}
 }
 
 func (e *EventHandler) OnUpdate(oldObj, newObj interface{}) {
-	oldObj = e.ConvertUnstructured(oldObj)
-	newObj = e.ConvertUnstructured(newObj)
+	if e.Converter.CanConvert(oldObj) {
+		var err error
+		oldObj, err = e.Converter.Convert(oldObj)
+		if err != nil {
+			e.Error(err)
+			return
+		}
+	}
+	if e.Converter.CanConvert(newObj) {
+		var err error
+		newObj, err = e.Converter.Convert(newObj)
+		if err != nil {
+			e.Error(err)
+			return
+		}
+	}
 	e.update <- opUpdate{oldObj: oldObj, newObj: newObj}
 }
 
 func (e *EventHandler) OnDelete(obj interface{}) {
-	obj = e.ConvertUnstructured(obj)
+	if e.Converter.CanConvert(obj) {
+		var err error
+		obj, err = e.Converter.Convert(obj)
+		if err != nil {
+			e.Error(err)
+			return
+		}
+	}
 	e.update <- opDelete{obj: obj}
 }
 
@@ -120,80 +136,6 @@ func (e *EventHandler) Start() func(<-chan struct{}) error {
 	e.update = make(chan interface{})
 	e.last = time.Now()
 	return e.run
-}
-
-func (e *EventHandler) ConvertUnstructured(obj interface{}) interface{} {
-	if e.scheme == nil {
-		e.scheme = runtime.NewScheme()
-
-		// Setup converter to understand custom CRD types
-		metav1.AddToGroupVersion(e.scheme, projectcontourv1GV)
-		metav1.AddToGroupVersion(e.scheme, ingressroutev1beta1GV)
-		e.scheme.AddKnownTypes(projectcontourv1GV, &projectcontour.HTTPProxy{})
-		e.scheme.AddKnownTypes(projectcontourv1GV, &projectcontour.TLSCertificateDelegation{})
-		e.scheme.AddKnownTypes(ingressroutev1beta1GV, &ingressroutev1.IngressRoute{})
-		e.scheme.AddKnownTypes(ingressroutev1beta1GV, &ingressroutev1.TLSCertificateDelegation{})
-	}
-
-	switch obj := obj.(type) {
-	case *unstructured.Unstructured:
-		switch obj.GetKind() {
-		case "HTTPProxy":
-			proxy := &projectcontour.HTTPProxy{}
-			err := e.scheme.Convert(obj, proxy, nil)
-			if err != nil {
-				e.WithField("name", obj.GetName()).
-					WithField("namespace", obj.GetNamespace()).
-					WithField("kind", obj.GetKind()).
-					WithField("version", obj.GetAPIVersion()).
-					Error(err)
-				return nil
-			}
-			return proxy
-		case "IngressRoute":
-			ir := &ingressroutev1.IngressRoute{}
-			err := e.scheme.Convert(obj, ir, nil)
-			if err != nil {
-				e.WithField("name", obj.GetName()).
-					WithField("namespace", obj.GetNamespace()).
-					WithField("kind", obj.GetKind()).
-					WithField("version", obj.GetAPIVersion()).
-					Error(err)
-				return nil
-			}
-			return ir
-		case "TLSCertificateDelegation":
-			switch obj.GroupVersionKind().Group {
-			case "contour.heptio.com":
-				cert := &ingressroutev1.TLSCertificateDelegation{}
-				err := e.scheme.Convert(obj, cert, nil)
-				if err != nil {
-					e.WithField("name", obj.GetName()).
-						WithField("namespace", obj.GetNamespace()).
-						WithField("kind", obj.GetKind()).
-						WithField("version", obj.GetAPIVersion()).
-						Error(err)
-					return false
-				}
-				return cert
-			case "projectcontour.io":
-				cert := &projectcontour.TLSCertificateDelegation{}
-				err := e.scheme.Convert(obj, cert, nil)
-				if err != nil {
-					e.WithField("name", obj.GetName()).
-						WithField("namespace", obj.GetNamespace()).
-						WithField("kind", obj.GetKind()).
-						WithField("version", obj.GetAPIVersion()).
-						Error(err)
-					return false
-				}
-				return cert
-			}
-		default:
-			return nil
-		}
-	}
-	return obj
 }
 
 // run is the main event handling loop.

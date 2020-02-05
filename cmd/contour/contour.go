@@ -28,7 +28,7 @@ import (
 )
 
 func init() {
-	// even thought we don't use it directly, some of our dependencies use klog
+	// even though we don't use it directly, some of our dependencies use klog
 	// so we must initialize it here to ensure that klog is set to log to stderr
 	// and not to a file.
 	// yes, this is gross, the klog authors are monsters.
@@ -104,26 +104,15 @@ type kubernetesClients struct {
 }
 
 func restConfig(kubeconfig string, inCluster bool) (*rest.Config, error) {
-	var config *rest.Config
-	var err error
-
 	if kubeconfig != "" && !inCluster {
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-	} else {
-		config, err = rest.InClusterConfig()
+		return clientcmd.BuildConfigFromFlags("", kubeconfig)
 	}
-	return config, err
+	return rest.InClusterConfig()
 }
 
-func newKubernetesClients(kubeconfig string, inCluster bool) (kubernetesClients, error) {
+func newKubernetesClients(config *rest.Config) (kubernetesClients, error) {
 	var err error
 	var clients kubernetesClients
-
-	config, err := restConfig(kubeconfig, inCluster)
-
-	if err != nil {
-		return clients, err
-	}
 
 	clients.core, err = kubernetes.NewForConfig(config)
 	if err != nil {

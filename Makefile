@@ -35,9 +35,6 @@ export GO111MODULE=on
 .PHONY: check
 check: install check-test check-test-race ## Install and run tests
 
-#.PHONY: steve
-#steve: install check-test check-test-race lint check-misspell check-flags ## Install and run tests
-
 install: ## Build and install the contour binary
 	go install -mod=readonly -v $(GO_TAGS) $(MODULE)/cmd/contour
 
@@ -127,7 +124,12 @@ check-flags:
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
-generate: generate-deployment generate-crd-yaml generate-crd-clients generate-api-docs generate-metrics-docs
+generate: generate-crd-deepcopy generate-deployment generate-crd-yaml generate-api-docs generate-metrics-docs
+
+.PHONY: generate-crd-deepcopy
+generate-crd-deepcopy:
+	@echo Updating generated CRD deep-copy API code ...
+	@./hack/generate-crd-deepcopy.sh
 
 .PHONY: generate-deployment
 generate-deployment:
@@ -138,11 +140,6 @@ generate-deployment:
 generate-crd-yaml:
 	@echo Generating CRD YAML documents ...
 	@./hack/generate-crd-yaml.sh
-
-.PHONY: generate-crd-clients
-generate-crd-clients:
-	@echo Updating generated CRD client API code ...
-	@./hack/generate-crd-clients.sh
 
 .PHONY: generate-api-docs
 generate-api-docs:
