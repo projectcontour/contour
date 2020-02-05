@@ -19,8 +19,6 @@ import (
 	"errors"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime/schema"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	jsonpatch "github.com/evanphx/json-patch"
@@ -173,8 +171,7 @@ func (irs *StatusWriter) setIngressRouteStatus(existing, updated *ingressroutev1
 		return err
 	}
 
-	irGVR := schema.GroupVersionResource{Group: "contour.heptio.com", Version: "v1beta1", Resource: "ingressroutes"}
-	_, err = irs.Client.Resource(irGVR).Namespace(existing.GetNamespace()).Patch(existing.GetName(), types.MergePatchType, patchBytes, metav1.PatchOptions{})
+	_, err = irs.Client.Resource(ingressroutev1.IngressRouteGVR).Namespace(existing.GetNamespace()).Patch(existing.GetName(), types.MergePatchType, patchBytes, metav1.PatchOptions{})
 	return err
 }
 
@@ -196,7 +193,6 @@ func (irs *StatusWriter) setHTTPProxyStatus(existing, updated *projcontour.HTTPP
 		return err
 	}
 
-	proxyGVR := schema.GroupVersionResource{Group: "projectcontour.io", Version: "v1", Resource: "httpproxies"}
-	_, err = irs.Client.Resource(proxyGVR).Namespace(existing.GetNamespace()).Patch(existing.GetName(), types.MergePatchType, patchBytes, metav1.PatchOptions{})
+	_, err = irs.Client.Resource(projcontour.HTTPProxyGVR).Namespace(existing.GetNamespace()).Patch(existing.GetName(), types.MergePatchType, patchBytes, metav1.PatchOptions{})
 	return err
 }

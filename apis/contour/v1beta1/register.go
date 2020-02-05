@@ -24,23 +24,17 @@ const (
 	GroupName = "contour.heptio.com"
 )
 
-var (
-	// SchemeBuilder collects the scheme builder functions for the Contour API
-	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
-
-	// AddToScheme applies the SchemeBuilder functions to a specified scheme
-	AddToScheme = SchemeBuilder.AddToScheme
-)
-
 // SchemeGroupVersion is the GroupVersion for the Contour API
 var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1beta1"}
+var IngressRouteGVR = SchemeGroupVersion.WithResource("ingressroutes")
+var TLSCertificateDelegationGVR = SchemeGroupVersion.WithResource("tlscertificatedelegations")
 
 // Resource gets an Contour GroupResource for a specified resource
 func Resource(resource string) schema.GroupResource {
 	return SchemeGroupVersion.WithResource(resource).GroupResource()
 }
 
-func addKnownTypes(scheme *runtime.Scheme) error {
+func AddKnownTypes(scheme *runtime.Scheme) {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&IngressRoute{},
 		&IngressRouteList{},
@@ -48,5 +42,4 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&TLSCertificateDelegationList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
-	return nil
 }
