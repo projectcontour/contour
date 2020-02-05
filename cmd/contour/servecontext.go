@@ -18,8 +18,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -217,26 +217,47 @@ func (ctx *serveContext) grpcOptions() []grpc.ServerOption {
 // tlsconfig returns a new *tls.Config. If the context is not properly configured
 // for tls communication, tlsconfig returns nil.
 func (ctx *serveContext) tlsconfig() *tls.Config {
-
 	err := ctx.verifyTLSFlags()
 	check(err)
 
-	cert, err := tls.LoadX509KeyPair(ctx.contourCert, ctx.contourKey)
-	check(err)
+	// Define a closure that lazily loads certificates and key at TLS handshake
+	// to ensure that latest certificates are used in case they have been rotated.
+	loadConfig := func() (*tls.Config, error) {
+		cert, err := tls.LoadX509KeyPair(ctx.contourCert, ctx.contourKey)
+		if err != nil {
+			return nil, err
+		}
 
-	ca, err := ioutil.ReadFile(ctx.caFile)
-	check(err)
+		ca, err := ioutil.ReadFile(ctx.caFile)
+		if err != nil {
+			return nil, err
+		}
 
-	certPool := x509.NewCertPool()
-	if ok := certPool.AppendCertsFromPEM(ca); !ok {
-		log.Fatalf("unable to append certificate in %s to CA pool", ctx.caFile)
+		certPool := x509.NewCertPool()
+		if ok := certPool.AppendCertsFromPEM(ca); !ok {
+			return nil, fmt.Errorf("unable to append certificate in %s to CA pool", ctx.caFile)
+		}
+
+		return &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			ClientAuth:   tls.RequireAndVerifyClientCert,
+			ClientCAs:    certPool,
+			Rand:         rand.Reader,
+		}, nil
 	}
 
+	// Attempt to load certificates and key to catch configuration errors early.
+	_, err = loadConfig()
+	check(err)
+
 	return &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		ClientAuth:   tls.RequireAndVerifyClientCert,
-		ClientCAs:    certPool,
-		Rand:         rand.Reader,
+		ClientAuth: tls.RequireAndVerifyClientCert,
+		Rand:       rand.Reader,
+		GetConfigForClient: func(*tls.ClientHelloInfo) (*tls.Config, error) {
+			config, err := loadConfig()
+			check(err)
+			return config, err
+		},
 	}
 }
 
