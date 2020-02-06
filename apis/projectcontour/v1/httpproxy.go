@@ -98,14 +98,14 @@ type VirtualHost struct {
 	// The fully qualified domain name of the root of the ingress tree
 	// all leaves of the DAG rooted at this object relate to the fqdn
 	Fqdn string `json:"fqdn"`
-	// If present describes tls properties. The CNI names that will be matched on
+	// If present describes tls properties. The SNI names that will be matched on
 	// are described in fqdn, the tls.secretName secret must contain a
 	// matching certificate
 	// +optional
 	TLS *TLS `json:"tls,omitempty"`
 }
 
-// TLS describes tls properties. The CNI names that will be matched on
+// TLS describes tls properties. The SNI names that will be matched on
 // are described in fqdn, the tls.secretName secret must contain a
 // matching certificate unless tls.passthrough is set to true.
 type TLS struct {
