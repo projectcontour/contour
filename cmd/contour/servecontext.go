@@ -111,6 +111,13 @@ type serveContext struct {
 	// If the value is true, Contour will register for extensions/v1beta1.Ingress type and do
 	// the rewrite itself.
 	UseExtensionsV1beta1Ingress bool `yaml:"-"`
+
+	// Should Contour register to watch the new service-apis types?
+	// By default this value is false, meaning Contour will not do anything with any of the new
+	// types.
+	// If the value is true, Contour will register for all the service-apis types
+	// (GatewayClass, Gateway, HTTPRoute, TCPRoute, and any more as they are added)
+	UseExperimentalServiceAPITypes bool `yaml:"-"`
 }
 
 // newServeContext returns a serveContext initialized to defaults.
@@ -166,7 +173,8 @@ func newServeContext() *serveContext {
 			Namespace:     "projectcontour",
 			Name:          "leader-elect",
 		},
-		UseExtensionsV1beta1Ingress: false,
+		UseExtensionsV1beta1Ingress:    false,
+		UseExperimentalServiceAPITypes: false,
 	}
 }
 

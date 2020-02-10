@@ -22,6 +22,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
 )
 
 func TestKubernetesCacheInsert(t *testing.T) {
@@ -896,6 +897,42 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
+		"insert service-apis Gatewayclass": {
+			obj: &serviceapis.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "gatewayclass",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert service-apis Gateway": {
+			obj: &serviceapis.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "gateway",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert service-apis HTTPRoute": {
+			obj: &serviceapis.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httproute",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert service-apis TcPRoute": {
+			obj: &serviceapis.TcpRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tcproute",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
 	}
 
 	for name, tc := range tests {
@@ -1073,6 +1110,66 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				},
 			},
 			want: false,
+		},
+		"remove service-apis Gatewayclass": {
+			cache: cache(&serviceapis.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "gatewayclass",
+					Namespace: "default",
+				},
+			}),
+			obj: &serviceapis.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "gatewayclass",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"remove service-apis Gateway": {
+			cache: cache(&serviceapis.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "gateway",
+					Namespace: "default",
+				},
+			}),
+			obj: &serviceapis.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "gateway",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"remove service-apis HTTPRoute": {
+			cache: cache(&serviceapis.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httproute",
+					Namespace: "default",
+				},
+			}),
+			obj: &serviceapis.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "httproute",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"remove service-apis TcpRoute": {
+			cache: cache(&serviceapis.TcpRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tcproute",
+					Namespace: "default",
+				},
+			}),
+			obj: &serviceapis.TcpRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tcproute",
+					Namespace: "default",
+				},
+			},
+			want: true,
 		},
 		"remove unknown": {
 			cache: cache("not an object"),
