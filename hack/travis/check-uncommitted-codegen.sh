@@ -5,7 +5,7 @@ set -o nounset
 set -o pipefail
 
 readonly HERE=$(cd $(dirname $0) && pwd)
-readonly REPO=$(cd ${HERE}/.. && pwd)
+readonly REPO=$(cd ${HERE}/../.. && pwd)
 
 declare -r -a DIRS=(
 	${REPO}/apis
