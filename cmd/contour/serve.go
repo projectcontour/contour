@@ -377,7 +377,20 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	return g.Run()
 }
 
+var recorder k8s.RecordingHandlerFactory
+
 func registerEventHandler(informers []cache.SharedIndexInformer, inf cache.SharedIndexInformer, eh cache.ResourceEventHandler) []cache.SharedIndexInformer {
+	if recorder == nil {
+		var err error
+
+		recorder, err = k8s.NewEventRecorder()
+		if err != nil {
+			panic(err.Error())
+		}
+
+		eh = recorder.NewHandler(eh)
+	}
+
 	inf.AddEventHandler(eh)
 	return append(informers, inf)
 }
