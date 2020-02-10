@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/cache"
+	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
 )
 
 // DynamicClientHandler converts *unstructured.Unstructured from the
@@ -94,7 +95,7 @@ type UnstructuredConverter struct {
 }
 
 // NewUnstructuredConverter returns a new UnstructuredConverter initialized
-func NewUnstructuredConverter() *UnstructuredConverter {
+func NewUnstructuredConverter() (*UnstructuredConverter, error) {
 	uc := &UnstructuredConverter{
 		scheme: runtime.NewScheme(),
 	}
@@ -103,7 +104,12 @@ func NewUnstructuredConverter() *UnstructuredConverter {
 	projectcontour.AddKnownTypes(uc.scheme)
 	ingressroutev1.AddKnownTypes(uc.scheme)
 
-	return uc
+	// The kubebuilder tools' contract here is different, yay.
+	if err := serviceapis.AddToScheme(uc.scheme); err != nil {
+		return nil, err
+	}
+
+	return uc, nil
 }
 
 func (c *UnstructuredConverter) CanConvert(obj interface{}) bool {
@@ -139,6 +145,22 @@ func (c *UnstructuredConverter) Convert(obj interface{}) (interface{}, error) {
 		default:
 			return nil, fmt.Errorf("unsupported object type: %T", obj)
 		}
+	case "GatewayClass":
+		gc := &serviceapis.GatewayClass{}
+		err := c.scheme.Convert(obj, gc, nil)
+		return gc, err
+	case "Gateway":
+		g := &serviceapis.Gateway{}
+		err := c.scheme.Convert(obj, g, nil)
+		return g, err
+	case "HTTPRoute":
+		hr := &serviceapis.HTTPRoute{}
+		err := c.scheme.Convert(obj, hr, nil)
+		return hr, err
+	case "TcpRoute":
+		tr := &serviceapis.TcpRoute{}
+		err := c.scheme.Convert(obj, tr, nil)
+		return tr, err
 	default:
 		return nil, fmt.Errorf("unsupported object type: %T", obj)
 	}
