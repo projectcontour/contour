@@ -20,4 +20,11 @@ If Contour 1.0.1 is release, the `:latest` tag will move to that version.
 
 No support is offered for major, minor, or patch releases older than the `:latest` stable release.
 
+### Additional Resources
+
+- [Envoy Support Matrix][2]
+- [Kubernetes Support Matrix][3]
+
 [1]: {% link _resources/tagging.md %}
+[2]: {% link _resources/envoy.md %}
+[3]: {% link _resources/kubernetes.md %}
