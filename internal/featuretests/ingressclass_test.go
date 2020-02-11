@@ -22,6 +22,7 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -725,4 +726,81 @@ func TestIngressClassAnnotation(t *testing.T) {
 	})
 
 	rh.OnDelete(proxy7)
+}
+
+// TestIngressClassUpdate verifies that if an object changes its ingress
+// class, we stop paying attention to it.
+func TestIngressClassUpdate(t *testing.T) {
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {
+		reh.Builder.Source.IngressClass = "contour"
+	})
+	defer done()
+
+	svc := &v1.Service{
+		ObjectMeta: meta("default/kuard"),
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(svc)
+
+	vhost := &projcontour.HTTPProxy{
+		ObjectMeta: meta("default/kuard"),
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "kuard.projectcontour.io",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// With the configured ingress class, a virtual show should be added.
+	vhost.ObjectMeta.Annotations = map[string]string{
+		"kubernetes.io/ingress.class": "contour",
+	}
+
+	rh.OnAdd(vhost)
+
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("kuard.projectcontour.io",
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
+				),
+			),
+			envoy.RouteConfiguration("ingress_https"),
+		),
+		TypeUrl: routeType,
+	}).Status(vhost).Like(
+		projcontour.Status{CurrentStatus: k8s.StatusValid},
+	)
+
+	// Updating to the non-configured ingress class should remove the
+	// vhost.
+	orig := vhost.DeepCopy()
+	vhost.ObjectMeta.Annotations = map[string]string{
+		"kubernetes.io/ingress.class": "not-contour",
+	}
+
+	rh.OnUpdate(orig, vhost)
+
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http"),
+			envoy.RouteConfiguration("ingress_https"),
+		),
+		TypeUrl: routeType,
+	}).NoStatus(vhost)
 }

@@ -27,7 +27,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
@@ -174,6 +173,10 @@ type resourceEventHandler struct {
 }
 
 func (r *resourceEventHandler) OnAdd(obj interface{}) {
+	if r.statusCache.IsCacheable(obj) {
+		r.statusCache.Delete(obj)
+	}
+
 	switch obj.(type) {
 	case *v1.Endpoints:
 		r.EndpointsTranslator.OnAdd(obj)
@@ -184,6 +187,11 @@ func (r *resourceEventHandler) OnAdd(obj interface{}) {
 }
 
 func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
+	// Ensure that tests don't sample stale status.
+	if r.statusCache.IsCacheable(oldObj) {
+		r.statusCache.Delete(oldObj)
+	}
+
 	switch newObj.(type) {
 	case *v1.Endpoints:
 		r.EndpointsTranslator.OnUpdate(oldObj, newObj)
@@ -196,10 +204,7 @@ func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 func (r *resourceEventHandler) OnDelete(obj interface{}) {
 	// Delete this object from the status cache before we make
 	// the deletion visible.
-	switch obj.(type) {
-	case *ingressroutev1.IngressRoute:
-		r.statusCache.Delete(obj)
-	case *projcontour.HTTPProxy:
+	if r.statusCache.IsCacheable(obj) {
 		r.statusCache.Delete(obj)
 	}
 
@@ -307,6 +312,15 @@ func (c *Contour) Status(obj interface{}) *statusResult {
 		Err:     err,
 		Have:    s,
 	}
+}
+
+// NoStatus asserts that the given object did not get any status set.
+func (c *Contour) NoStatus(obj interface{}) *Contour {
+	if _, err := c.statusCache.GetStatus(obj); err == nil {
+		c.T.Errorf("found cached object status, wanted no status")
+	}
+
+	return c
 }
 
 func (c *Contour) Request(typeurl string, names ...string) *Response {

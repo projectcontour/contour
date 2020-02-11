@@ -60,6 +60,17 @@ func objectKey(obj interface{}) string {
 	}
 }
 
+// IsCacheable returns whether this type of object can be stored in
+// the status cache.
+func (c *StatusCacher) IsCacheable(obj interface{}) bool {
+	switch obj.(type) {
+	case *ingressroutev1.IngressRoute, *projcontour.HTTPProxy:
+		return true
+	default:
+		return false
+	}
+}
+
 // Delete removes an object from the status cache.
 func (c *StatusCacher) Delete(obj interface{}) {
 	if c.objectStatus != nil {

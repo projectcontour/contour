@@ -104,7 +104,7 @@ PR will probably save you some time.
 Updates #NNNN
 Fixes #MMMM
 
-Signed-off-by: Your Name you@youremail.com
+Signed-off-by: Your Name <you@youremail.com>
 
 <longer change description/justification>
 
@@ -117,7 +117,7 @@ internal\contour: Add quux functions
 
 Fixes #xxyyz
 
-Signed-off-by: Your Name you@youremail.com
+Signed-off-by: Your Name <you@youremail.com>
 
 To implement the quux functions from #xxyyz, we need to
 florble the greep dots, then ensure that the florble is

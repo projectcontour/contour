@@ -1196,6 +1196,44 @@ spec:
 ```
 In this example `default/parent` delegates the configuration of the TCPProxy services to `app/child`.
 
+#### TCP Proxy health checking
+
+Active health checking can be configured on a per route basis.
+Contour supports TCP health checking and can be configured with various settings to tune the behavior.
+
+During TCP health checking Envoy will send a connect-only health check to the upstream Endpoints.
+It is important to note that these are health checks which Envoy implements and are separate from any 
+other system such as those that exist in Kubernetes.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: tcp-health-check
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: health.bar.com
+  tcpproxy:
+    healthCheckPolicy:
+      intervalSeconds: 5
+      timeoutSeconds: 2
+      unhealthyThresholdCount: 3
+      healthyThresholdCount: 5
+    services:
+      - name: s1-health
+        port: 80
+      - name: s2-health
+        port: 80
+```
+
+TCP Health check policy configuration parameters:
+
+- `intervalSeconds`: The interval (seconds) between health checks. Defaults to 5 seconds if not set.
+- `timeoutSeconds`: The time to wait (seconds) for a health check response. If the timeout is reached the health check attempt will be considered a failure. Defaults to 2 seconds if not set.
+- `unhealthyThresholdCount`: The number of unhealthy health checks required before a host is marked unhealthy. Note that for http health checking if a host responds with 503 this threshold is ignored and the host is considered unhealthy immediately. Defaults to 3 if not defined.
+- `healthyThresholdCount`: The number of healthy health checks required before a host is marked healthy. Note that during startup, only a single successful health check is required to mark a host healthy.
+
 ## Upstream Validation
 
 When defining upstream services on a route, it's possible to configure the connection from Envoy to the backend endpoint to communicate over TLS.
