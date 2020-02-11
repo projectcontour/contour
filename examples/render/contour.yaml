@@ -379,7 +379,7 @@ spec:
                     to the fqdn
                   type: string
                 tls:
-                  description: If present describes tls properties. The CNI names
+                  description: If present describes tls properties. The SNI names
                     that will be matched on are described in fqdn, the tls.secretName
                     secret must contain a matching certificate
                   properties:
@@ -1129,7 +1129,7 @@ spec:
                     to the fqdn
                   type: string
                 tls:
-                  description: If present describes tls properties. The CNI names
+                  description: If present describes tls properties. The SNI names
                     that will be matched on are described in fqdn, the tls.secretName
                     secret must contain a matching certificate
                   properties:
