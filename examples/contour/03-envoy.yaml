@@ -29,7 +29,7 @@ spec:
         args:
           - envoy
           - shutdown-manager
-        image: stevesloka/contour:dev
+        image: docker.io/projectcontour/contour:master
         imagePullPolicy: Always
         lifecycle:
           preStop:
