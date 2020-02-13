@@ -208,6 +208,13 @@ Envoy will listen directly on port 8080 on each host that it is running.
 This is best paired with a DaemonSet (perhaps paired with Node affinity) to ensure that a single instance of Contour runs on each Node.
 See the [AWS NLB tutorial][10] as an example.
 
+### Upgrading Contour/Envoy
+
+At times it's needed to upgrade Contour, the version of Envoy, or both.
+The included `shutdown-manager` can assist with watching Envoy for open connections while draining and give signal back to Kubernetes as to when it's fine to delete Envoy pods during this process.
+
+See the [redeploy envoy][11] docs for more information.
+
 ## Running Contour in tandem with another ingress controller
 
 If you're running multiple ingress controllers, or running on a cloudprovider that natively handles ingress,
@@ -233,3 +240,4 @@ $ kubectl delete ns projectcontour
 [8]: {% link getting-started.md %}
 [9]: httpproxy.md
 [10]: {% link _guides/deploy-aws-nlb.md %}
+[11]: redeploy-envoy.md
