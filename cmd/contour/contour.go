@@ -69,7 +69,7 @@ func main() {
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
 	case shutdownManager.FullCommand():
-		check(doShutdownManager(shutdownManagerCtx))
+		doShutdownManager(shutdownManagerCtx)
 	case bootstrap.FullCommand():
 		doBootstrap(bootstrapCtx)
 	case certgenApp.FullCommand():
