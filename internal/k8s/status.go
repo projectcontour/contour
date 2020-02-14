@@ -19,11 +19,14 @@ import (
 	"errors"
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	jsonpatch "github.com/evanphx/json-patch"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
-	clientset "github.com/projectcontour/contour/apis/generated/clientset/versioned"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
+
+	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
 const (
@@ -57,6 +60,17 @@ func objectKey(obj interface{}) string {
 			obj.GetObjectMeta().GetName())
 	default:
 		panic(fmt.Sprintf("status caching not supported for object type %T", obj))
+	}
+}
+
+// IsCacheable returns whether this type of object can be stored in
+// the status cache.
+func (c *StatusCacher) IsCacheable(obj interface{}) bool {
+	switch obj.(type) {
+	case *ingressroutev1.IngressRoute, *projcontour.HTTPProxy:
+		return true
+	default:
+		return false
 	}
 }
 
@@ -97,7 +111,7 @@ func (c *StatusCacher) SetStatus(status, desc string, obj interface{}) error {
 
 // StatusWriter updates the object's Status field.
 type StatusWriter struct {
-	Client clientset.Interface
+	Client dynamic.Interface
 }
 
 // GetStatus is not implemented for StatusWriter.
@@ -157,7 +171,7 @@ func (irs *StatusWriter) setIngressRouteStatus(existing, updated *ingressroutev1
 		return err
 	}
 
-	_, err = irs.Client.ContourV1beta1().IngressRoutes(existing.GetNamespace()).Patch(existing.GetName(), types.MergePatchType, patchBytes)
+	_, err = irs.Client.Resource(ingressroutev1.IngressRouteGVR).Namespace(existing.GetNamespace()).Patch(existing.GetName(), types.MergePatchType, patchBytes, metav1.PatchOptions{})
 	return err
 }
 
@@ -179,6 +193,6 @@ func (irs *StatusWriter) setHTTPProxyStatus(existing, updated *projcontour.HTTPP
 		return err
 	}
 
-	_, err = irs.Client.ProjectcontourV1().HTTPProxies(existing.GetNamespace()).Patch(existing.GetName(), types.MergePatchType, patchBytes)
+	_, err = irs.Client.Resource(projcontour.HTTPProxyGVR).Namespace(existing.GetNamespace()).Patch(existing.GetName(), types.MergePatchType, patchBytes, metav1.PatchOptions{})
 	return err
 }

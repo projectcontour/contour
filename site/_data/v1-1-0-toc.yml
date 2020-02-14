@@ -49,10 +49,10 @@ toc:
         link: /resources/support
       - page: Envoy Support Matrix
         link: /resources/envoy
+      - page: Kubernetes Support Matrix
+        link: /resources/kubernetes
       - page: Release Process
         link: /resources/release-process
-      - page: Frequently Asked Questions
-        link: /resources/faq
       - page: Frequently Asked Questions
         link: /resources/faq
       - page: Tagging

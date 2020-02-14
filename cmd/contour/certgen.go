@@ -134,7 +134,12 @@ func doCertgen(config *certgenConfig) {
 	generatedCerts, err := GenerateCerts(config)
 	check(err)
 
-	clients, err := newKubernetesClients(config.KubeConfig, config.InCluster)
+	restconfig, err := restConfig(config.KubeConfig, config.InCluster)
+	if err != nil {
+		check(fmt.Errorf("failed to get Kubernetes restconfig: %w", err))
+	}
+
+	clients, err := newKubernetesClients(restconfig)
 	if err != nil {
 		check(fmt.Errorf("failed to create Kubernetes client: %w", err))
 	}

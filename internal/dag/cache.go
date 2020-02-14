@@ -67,6 +67,34 @@ func toMeta(obj Object) Meta {
 	}
 }
 
+// matchesIngressClass returns true if the given Kubernetes object
+// belongs to the Ingress class that this cache is using.
+func (kc *KubernetesCache) matchesIngressClass(obj Object) bool {
+	objectClass := ingressClass(obj)
+	targetClass := stringOrDefault(kc.IngressClass, DEFAULT_INGRESS_CLASS)
+
+	switch objectClass {
+	// Unspecified ingress class always matches.
+	case "":
+		return true
+		// Specifying our ingress class also matches.
+	case targetClass:
+		return true
+	// Any other ingress class fails to match.
+	default:
+		kind := k8s.KindOf(obj)
+		om := obj.GetObjectMeta()
+
+		kc.WithField("name", om.GetName()).
+			WithField("namespace", om.GetNamespace()).
+			WithField("kind", kind).
+			WithField("ingress.class", objectClass).
+			Debug("ignoring object with unmatched ingress class")
+
+		return false
+	}
+}
+
 // Insert inserts obj into the KubernetesCache.
 // Insert returns true if the cache accepted the object, or false if the value
 // is not interesting to the cache. If an object with a matching type, name,
@@ -123,48 +151,44 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		kc.services[m] = obj
 		return kc.serviceTriggersRebuild(obj)
 	case *v1beta1.Ingress:
-		class := ingressClass(obj)
-		if class != "" && class != kc.ingressClass() {
-			return false
+		if kc.matchesIngressClass(obj) {
+			m := toMeta(obj)
+			if kc.ingresses == nil {
+				kc.ingresses = make(map[Meta]*v1beta1.Ingress)
+			}
+			kc.ingresses[m] = obj
+			return true
 		}
-		m := toMeta(obj)
-		if kc.ingresses == nil {
-			kc.ingresses = make(map[Meta]*v1beta1.Ingress)
-		}
-		kc.ingresses[m] = obj
-		return true
 	case *extensionsv1beta1.Ingress:
-		ingress := new(v1beta1.Ingress)
-		if err := transposeIngress(obj, ingress); err != nil {
-			om := obj.GetObjectMeta()
-			kc.WithField("name", om.GetName()).
-				WithField("namespace", om.GetNamespace()).
-				Error(err)
-			return false
+		if kc.matchesIngressClass(obj) {
+			ingress := new(v1beta1.Ingress)
+			if err := transposeIngress(obj, ingress); err != nil {
+				om := obj.GetObjectMeta()
+				kc.WithField("name", om.GetName()).
+					WithField("namespace", om.GetNamespace()).
+					Error(err)
+				return false
+			}
+			return kc.Insert(ingress)
 		}
-		return kc.Insert(ingress)
 	case *ingressroutev1.IngressRoute:
-		class := ingressClass(obj)
-		if class != "" && class != kc.ingressClass() {
-			return false
+		if kc.matchesIngressClass(obj) {
+			m := toMeta(obj)
+			if kc.ingressroutes == nil {
+				kc.ingressroutes = make(map[Meta]*ingressroutev1.IngressRoute)
+			}
+			kc.ingressroutes[m] = obj
+			return true
 		}
-		m := toMeta(obj)
-		if kc.ingressroutes == nil {
-			kc.ingressroutes = make(map[Meta]*ingressroutev1.IngressRoute)
-		}
-		kc.ingressroutes[m] = obj
-		return true
 	case *projectcontour.HTTPProxy:
-		class := ingressClass(obj)
-		if class != "" && class != kc.ingressClass() {
-			return false
+		if kc.matchesIngressClass(obj) {
+			m := toMeta(obj)
+			if kc.httpproxies == nil {
+				kc.httpproxies = make(map[Meta]*projectcontour.HTTPProxy)
+			}
+			kc.httpproxies[m] = obj
+			return true
 		}
-		m := toMeta(obj)
-		if kc.httpproxies == nil {
-			kc.httpproxies = make(map[Meta]*projectcontour.HTTPProxy)
-		}
-		kc.httpproxies[m] = obj
-		return true
 	case *ingressroutev1.TLSCertificateDelegation:
 		m := toMeta(obj)
 		if kc.irdelegations == nil {
@@ -185,12 +209,8 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		kc.WithField("object", obj).Error("insert unknown object")
 		return false
 	}
-}
 
-// ingressClass returns the IngressClass
-// or DEFAULT_INGRESS_CLASS if not configured.
-func (kc *KubernetesCache) ingressClass() string {
-	return stringOrDefault(kc.IngressClass, DEFAULT_INGRESS_CLASS)
+	return false
 }
 
 // Remove removes obj from the KubernetesCache.

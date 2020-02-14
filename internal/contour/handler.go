@@ -65,6 +65,8 @@ type EventHandler struct {
 	// seq is the sequence counter of the number of times
 	// an event has been received.
 	seq int
+
+	k8s.Converter
 }
 
 type opAdd struct {
@@ -80,14 +82,46 @@ type opDelete struct {
 }
 
 func (e *EventHandler) OnAdd(obj interface{}) {
+	if e.Converter.CanConvert(obj) {
+		var err error
+		obj, err = e.Converter.Convert(obj)
+		if err != nil {
+			e.Error(err)
+			return
+		}
+	}
 	e.update <- opAdd{obj: obj}
 }
 
 func (e *EventHandler) OnUpdate(oldObj, newObj interface{}) {
+	if e.Converter.CanConvert(oldObj) {
+		var err error
+		oldObj, err = e.Converter.Convert(oldObj)
+		if err != nil {
+			e.Error(err)
+			return
+		}
+	}
+	if e.Converter.CanConvert(newObj) {
+		var err error
+		newObj, err = e.Converter.Convert(newObj)
+		if err != nil {
+			e.Error(err)
+			return
+		}
+	}
 	e.update <- opUpdate{oldObj: oldObj, newObj: newObj}
 }
 
 func (e *EventHandler) OnDelete(obj interface{}) {
+	if e.Converter.CanConvert(obj) {
+		var err error
+		obj, err = e.Converter.Convert(obj)
+		if err != nil {
+			e.Error(err)
+			return
+		}
+	}
 	e.update <- opDelete{obj: obj}
 }
 
@@ -106,8 +140,8 @@ func (e *EventHandler) Start() func(<-chan struct{}) error {
 
 // run is the main event handling loop.
 func (e *EventHandler) run(stop <-chan struct{}) error {
-	e.Info("started")
-	defer e.Info("stopped")
+	e.Info("started event handler")
+	defer e.Info("stopped event handler")
 
 	var (
 		// outstanding counts the number of events received but not

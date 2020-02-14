@@ -124,7 +124,12 @@ check-flags:
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
-generate: generate-deployment generate-crd-yaml generate-crd-clients generate-api-docs generate-metrics-docs
+generate: generate-crd-deepcopy generate-deployment generate-crd-yaml generate-api-docs generate-metrics-docs
+
+.PHONY: generate-crd-deepcopy
+generate-crd-deepcopy:
+	@echo Updating generated CRD deep-copy API code ...
+	@./hack/generate-crd-deepcopy.sh
 
 .PHONY: generate-deployment
 generate-deployment:
@@ -135,11 +140,6 @@ generate-deployment:
 generate-crd-yaml:
 	@echo Generating CRD YAML documents ...
 	@./hack/generate-crd-yaml.sh
-
-.PHONY: generate-crd-clients
-generate-crd-clients:
-	@echo Updating generated CRD client API code ...
-	@./hack/generate-crd-clients.sh
 
 .PHONY: generate-api-docs
 generate-api-docs:

@@ -20,6 +20,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/projectcontour/contour/internal/k8s"
+
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
@@ -198,6 +200,7 @@ func TestGRPC(t *testing.T) {
 				CacheHandler: &ch,
 				Metrics:      ch.Metrics,
 				FieldLogger:  log,
+				Converter:    k8s.NewUnstructuredConverter(),
 			}
 			r := prometheus.NewRegistry()
 			srv := NewAPI(log, map[string]Resource{

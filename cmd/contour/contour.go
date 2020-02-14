@@ -18,7 +18,6 @@ import (
 	"os"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
-	clientset "github.com/projectcontour/contour/apis/generated/clientset/versioned"
 	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	"k8s.io/client-go/kubernetes"
@@ -29,7 +28,7 @@ import (
 )
 
 func init() {
-	// even thought we don't use it directly, some of our dependencies use klog
+	// even though we don't use it directly, some of our dependencies use klog
 	// so we must initialize it here to ensure that klog is set to log to stderr
 	// and not to a file.
 	// yes, this is gross, the klog authors are monsters.
@@ -101,31 +100,21 @@ func main() {
 
 type kubernetesClients struct {
 	core         *kubernetes.Clientset
-	contour      *clientset.Clientset
 	coordination *coordinationv1.CoordinationV1Client
 }
 
-func newKubernetesClients(kubeconfig string, inCluster bool) (kubernetesClients, error) {
+func restConfig(kubeconfig string, inCluster bool) (*rest.Config, error) {
+	if kubeconfig != "" && !inCluster {
+		return clientcmd.BuildConfigFromFlags("", kubeconfig)
+	}
+	return rest.InClusterConfig()
+}
+
+func newKubernetesClients(config *rest.Config) (kubernetesClients, error) {
 	var err error
-	var config *rest.Config
 	var clients kubernetesClients
 
-	if kubeconfig != "" && !inCluster {
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-	} else {
-		config, err = rest.InClusterConfig()
-	}
-
-	if err != nil {
-		return clients, err
-	}
-
 	clients.core, err = kubernetes.NewForConfig(config)
-	if err != nil {
-		return clients, err
-	}
-
-	clients.contour, err = clientset.NewForConfig(config)
 	if err != nil {
 		return clients, err
 	}

@@ -10,7 +10,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package v1
 
 import (
@@ -24,23 +23,17 @@ const (
 	GroupName = "projectcontour.io"
 )
 
-var (
-	// SchemeBuilder collects the scheme builder functions for the Contour API
-	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
-
-	// AddToScheme applies the SchemeBuilder functions to a specified scheme
-	AddToScheme = SchemeBuilder.AddToScheme
-)
-
 // SchemeGroupVersion is the GroupVersion for the Contour API
 var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1"}
+var HTTPProxyGVR = SchemeGroupVersion.WithResource("httpproxies")
+var TLSCertificateDelegationGVR = SchemeGroupVersion.WithResource("tlscertificatedelegations")
 
 // Resource gets an Contour GroupResource for a specified resource
 func Resource(resource string) schema.GroupResource {
 	return SchemeGroupVersion.WithResource(resource).GroupResource()
 }
 
-func addKnownTypes(scheme *runtime.Scheme) error {
+func AddKnownTypes(scheme *runtime.Scheme) {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&HTTPProxy{},
 		&HTTPProxyList{},
@@ -48,5 +41,4 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&TLSCertificateDelegationList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
-	return nil
 }
