@@ -25,7 +25,6 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -41,8 +40,6 @@ type EventHandler struct {
 	HoldoffDelay, HoldoffMaxDelay time.Duration
 
 	StatusClient k8s.StatusClient
-
-	*metrics.Metrics
 
 	logrus.FieldLogger
 
