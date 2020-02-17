@@ -9,8 +9,6 @@ This page describes the compatibility matrix of Contour and Envoy versions.
 
 ## Supported Envoy versions
 
-<center>
-
 | Envoy version | Contour v1.0.0<sup>5</sup> | Contour v1.0.1<sup>6</sup> | Contour v1.1.0 | Contour v1.2.0 |
 | ------------ | :-----------: | :-----------: | :----------: | :----------: |
 | 1.11.0 | Not supported<sup>1</sup> | Not supported<sup>1</sup> | Not supported<sup>1</sup> | Not supported<sup>1</sup> |
@@ -20,8 +18,6 @@ This page describes the compatibility matrix of Contour and Envoy versions.
 | 1.12.1 | Not supported<sup>4</sup> | Not supported<sup>4</sup> | Not supported<sup>4</sup> | Not supported<sup>4</sup> |
 | 1.12.2 | Not supported | *Supported*<sup>6</sup> | *Supported* | Not supported |
 | 1.13.0 | Not supported | Not supported | Not supported | *Supported* |
-
-</center>
 
 #### Notes
 
