@@ -503,7 +503,7 @@ spec:
                 value: bar
             remove:
               - X-Baz
-          responseHeaderPolicy:
+          responseHeadersPolicy:
             set:
               - name: X-Service-Name
                 value: s1
