@@ -17,7 +17,6 @@ The `client-go` package includes a [compatibility matrix][2] as to what Kubernet
 | 1.16.x | Supported | Supported | Supported |
 | 1.17.x | Supported | Supported | Supported | 
 | 1.18.x | Not Supported<sup>1</sup>  | Not Supported<sup>1</sup> | Not Supported <sup>1</sup> |
-<br>
 
 ### Notes
 
