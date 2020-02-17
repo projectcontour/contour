@@ -83,7 +83,6 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 		IsLeader:        make(chan struct{}),
 		CacheHandler:    ch,
 		StatusClient:    statusCache,
-		Metrics:         ch.Metrics,
 		FieldLogger:     log,
 		Sequence:        make(chan int, 1),
 		HoldoffDelay:    time.Duration(rand.Intn(100)) * time.Millisecond,

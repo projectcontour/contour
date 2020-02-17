@@ -198,7 +198,6 @@ func TestGRPC(t *testing.T) {
 			}
 			eh = &contour.EventHandler{
 				CacheHandler: &ch,
-				Metrics:      ch.Metrics,
 				FieldLogger:  log,
 				Converter:    k8s.NewUnstructuredConverter(),
 			}
