@@ -25,8 +25,9 @@ import (
 // units of program size. AFAIK, there's no obvious correlation
 // between regex size and execution time.
 //
-// https://github.com/envoyproxy/envoy/pull/9171#discussion_r351974033
-const maxRegexProgramSize = 1000
+// See also https://github.com/envoyproxy/envoy/pull/9171#discussion_r351974033
+// and https://github.com/projectcontour/contour/issues/2240
+const maxRegexProgramSize = 1 << 20
 
 // SafeRegexMatch retruns a matcher.RegexMatcher for the supplied regex.
 // SafeRegexMatch does not escape regex meta characters.
