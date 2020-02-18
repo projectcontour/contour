@@ -39,7 +39,7 @@ func (e *EventRecorder) OnAdd(obj interface{}) {
 }
 
 func (e *EventRecorder) OnUpdate(oldObj, newObj interface{}) {
-	e.recordOperation("update", newObj) // the api server guarentees that an object's kind cannot be updated
+	e.recordOperation("update", newObj) // the api server guarantees that an object's kind cannot be updated
 	e.Next.OnUpdate(oldObj, newObj)
 }
 
