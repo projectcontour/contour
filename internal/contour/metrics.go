@@ -22,7 +22,39 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus"
+	"k8s.io/client-go/tools/cache"
 )
+
+// EventRecorder records the count and kind of events forwarded
+// to another ResourceEventHandler.
+type EventRecorder struct {
+	Next    cache.ResourceEventHandler
+	Counter *prometheus.GaugeVec
+}
+
+func (e *EventRecorder) OnAdd(obj interface{}) {
+	e.recordOperation("add", obj)
+	e.Next.OnAdd(obj)
+}
+
+func (e *EventRecorder) OnUpdate(oldObj, newObj interface{}) {
+	e.recordOperation("update", newObj) // the api server guarentees that an object's kind cannot be updated
+	e.Next.OnUpdate(oldObj, newObj)
+}
+
+func (e *EventRecorder) OnDelete(obj interface{}) {
+	e.recordOperation("delete", obj)
+	e.Next.OnDelete(obj)
+}
+
+func (e *EventRecorder) recordOperation(op string, obj interface{}) {
+	kind := k8s.KindOf(obj)
+	if kind == "" {
+		kind = "unknown"
+	}
+	e.Counter.WithLabelValues(op, kind).Inc()
+}
 
 func calculateRouteMetric(statuses map[dag.Meta]dag.Status) (metrics.RouteMetric, metrics.RouteMetric) {
 	irMetricTotal := make(map[metrics.Meta]int)
