@@ -176,7 +176,7 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 		EventHandlerOperations: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: eventHandlerOperations,
-				Help: "Total number of ResourceEventHandler operations by operation and object kind",
+				Help: "Total number of Kubernetes object changes Contour has received by operation and object kind.",
 			},
 			[]string{"op", "kind"},
 		),
@@ -225,13 +225,7 @@ func (m *Metrics) Zero() {
 	m.SetIngressRouteMetric(zeroes)
 	m.SetHTTPProxyMetric(zeroes)
 
-	ops := []string{"add", "update", "delete"}
-	kinds := []string{"Secret", "Service", "Ingress", "IngressRoute", "HTTPProxy", "TLSCertificateDelegation"}
-	for _, op := range ops {
-		for _, kind := range kinds {
-			m.EventHandlerOperations.WithLabelValues(op, kind).Add(0)
-		}
-	}
+	m.EventHandlerOperations.WithLabelValues("add", "Secret").Inc()
 
 	prometheus.NewTimer(m.CacheHandlerOnUpdateSummary).ObserveDuration()
 }
