@@ -204,7 +204,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// wrap eventHandler in an EventRecorder which tracks API server events.
 	eventRecorder := &contour.EventRecorder{
 		Next:    eventHandler,
-		Counter: eventHandler.Metrics.EventHandlerOperationGauge,
+		Counter: eventHandler.Metrics.EventHandlerOperations,
 	}
 
 	// wrap eventRecorder in a converter for objects from the dynamic client.

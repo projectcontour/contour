@@ -30,7 +30,7 @@ import (
 // to another ResourceEventHandler.
 type EventRecorder struct {
 	Next    cache.ResourceEventHandler
-	Counter *prometheus.GaugeVec
+	Counter *prometheus.CounterVec
 }
 
 func (e *EventRecorder) OnAdd(obj interface{}) {

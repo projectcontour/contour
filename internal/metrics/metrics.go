@@ -42,7 +42,7 @@ type Metrics struct {
 
 	dagRebuildGauge             *prometheus.GaugeVec
 	CacheHandlerOnUpdateSummary prometheus.Summary
-	EventHandlerOperationGauge  *prometheus.GaugeVec
+	EventHandlerOperations      *prometheus.CounterVec
 
 	// Keep a local cache of metrics for comparison on updates
 	ingressRouteMetricCache *RouteMetric
@@ -78,7 +78,7 @@ const (
 
 	DAGRebuildGauge             = "contour_dagrebuild_timestamp"
 	cacheHandlerOnUpdateSummary = "contour_cachehandler_onupdate_duration_seconds"
-	eventHandlerOperationGauge  = "contour_eventhandler_operation_total"
+	eventHandlerOperations      = "contour_eventhandler_operation_total"
 )
 
 // NewMetrics creates a new set of metrics and registers them with
@@ -173,10 +173,10 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 			Help:       "Histogram for the runtime of xDS cache regeneration.",
 			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
 		}),
-		EventHandlerOperationGauge: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: eventHandlerOperationGauge,
-				Help: "Total number of eventHandler operations received by operation and object kind",
+		EventHandlerOperations: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: eventHandlerOperations,
+				Help: "Total number of ResourceEventHandler operations by operation and object kind",
 			},
 			[]string{"op", "kind"},
 		),
@@ -200,7 +200,7 @@ func (m *Metrics) register(registry *prometheus.Registry) {
 		m.proxyOrphanedGauge,
 		m.dagRebuildGauge,
 		m.CacheHandlerOnUpdateSummary,
-		m.EventHandlerOperationGauge,
+		m.EventHandlerOperations,
 	)
 }
 
@@ -225,9 +225,13 @@ func (m *Metrics) Zero() {
 	m.SetIngressRouteMetric(zeroes)
 	m.SetHTTPProxyMetric(zeroes)
 
-	m.EventHandlerOperationGauge.WithLabelValues("onAdd", "unknown").Set(0)
-	m.EventHandlerOperationGauge.WithLabelValues("onUpdate", "unknown").Set(0)
-	m.EventHandlerOperationGauge.WithLabelValues("onDelete", "unknown").Set(0)
+	ops := []string{"add", "update", "delete"}
+	kinds := []string{"Secret", "Service", "Ingress", "IngressRoute", "HTTPProxy", "TLSCertificateDelegation"}
+	for _, op := range ops {
+		for _, kind := range kinds {
+			m.EventHandlerOperations.WithLabelValues(op, kind).Add(0)
+		}
+	}
 
 	prometheus.NewTimer(m.CacheHandlerOnUpdateSummary).ObserveDuration()
 }
