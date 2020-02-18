@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/tools/cache"
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -295,3 +296,5 @@ func TestConvertUnstructured(t *testing.T) {
 		wantError: errors.New("unable to convert unstructured object to projectcontour.io/v1, Kind=HTTPProxy: cannot convert int to string"),
 	})
 }
+
+var _ cache.ResourceEventHandler = &DynamicClientHandler{}
