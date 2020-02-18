@@ -15,13 +15,72 @@ package k8s
 
 import (
 	"fmt"
-	"reflect"
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/cache"
 )
+
+// DynamicClientHandler converts *unstructured.Unstructured from the
+// k8s dynamic client to the types registered with the supplied Converter
+// and forwards them to the next Handler in the chain.
+type DynamicClientHandler struct {
+
+	// Next is the next handler in the chain.
+	Next cache.ResourceEventHandler
+
+	// Converter is the registered converter.
+	Converter Converter
+
+	Logger logrus.FieldLogger
+}
+
+func (d *DynamicClientHandler) OnAdd(obj interface{}) {
+	if d.Converter.CanConvert(obj) {
+		var err error
+		obj, err = d.Converter.Convert(obj)
+		if err != nil {
+			d.Logger.Error(err)
+			return
+		}
+	}
+	d.Next.OnAdd(obj)
+}
+
+func (d *DynamicClientHandler) OnUpdate(oldObj, newObj interface{}) {
+	if d.Converter.CanConvert(oldObj) {
+		var err error
+		oldObj, err = d.Converter.Convert(oldObj)
+		if err != nil {
+			d.Logger.Error(err)
+			return
+		}
+	}
+	if d.Converter.CanConvert(newObj) {
+		var err error
+		newObj, err = d.Converter.Convert(newObj)
+		if err != nil {
+			d.Logger.Error(err)
+			return
+		}
+	}
+	d.Next.OnUpdate(oldObj, newObj)
+}
+
+func (d *DynamicClientHandler) OnDelete(obj interface{}) {
+	if d.Converter.CanConvert(obj) {
+		var err error
+		obj, err = d.Converter.Convert(obj)
+		if err != nil {
+			d.Logger.Error(err)
+			return
+		}
+	}
+	d.Next.OnDelete(obj)
+}
 
 type Converter interface {
 	Convert(obj interface{}) (interface{}, error)
@@ -56,7 +115,7 @@ func (c *UnstructuredConverter) CanConvert(obj interface{}) bool {
 func (c *UnstructuredConverter) Convert(obj interface{}) (interface{}, error) {
 	unstructured, ok := obj.(*unstructured.Unstructured)
 	if !ok {
-		return nil, fmt.Errorf("unsupported object type: %v", reflect.TypeOf(obj))
+		return nil, fmt.Errorf("unsupported object type: %T", obj)
 	}
 	switch unstructured.GetKind() {
 	case "HTTPProxy":
@@ -77,9 +136,10 @@ func (c *UnstructuredConverter) Convert(obj interface{}) (interface{}, error) {
 			cert := &projectcontour.TLSCertificateDelegation{}
 			err := c.scheme.Convert(obj, cert, nil)
 			return cert, err
+		default:
+			return nil, fmt.Errorf("unsupported object type: %T", obj)
 		}
 	default:
-		return nil, fmt.Errorf("unsupported object type: %v", reflect.TypeOf(obj))
+		return nil, fmt.Errorf("unsupported object type: %T", obj)
 	}
-	return obj, nil
 }

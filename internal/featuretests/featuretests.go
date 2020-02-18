@@ -92,7 +92,6 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 				FieldLogger: log,
 			},
 		},
-		Converter: k8s.NewUnstructuredConverter(),
 	}
 
 	for _, opt := range opts {

@@ -193,16 +193,22 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			DisablePermitInsecure: ctx.DisablePermitInsecure,
 		},
 		FieldLogger: log.WithField("context", "contourEventHandler"),
-		Converter:   k8s.NewUnstructuredConverter(),
+	}
+
+	// wrap event handler in a converter for objects from the dynamic client.
+	dynamicHandler := &k8s.DynamicClientHandler{
+		Next:      eh,
+		Converter: k8s.NewUnstructuredConverter(),
+		Logger:    log.WithField("context", "dynamicHandler"),
 	}
 
 	// step 4. register our resource event handler with the k8s informers.
 	var informers []cache.SharedIndexInformer
 
-	informers = registerEventHandler(informers, dynamicInformers.ForResource(ingressroutev1.IngressRouteGVR).Informer(), eh)
-	informers = registerEventHandler(informers, dynamicInformers.ForResource(ingressroutev1.TLSCertificateDelegationGVR).Informer(), eh)
-	informers = registerEventHandler(informers, dynamicInformers.ForResource(projectcontour.HTTPProxyGVR).Informer(), eh)
-	informers = registerEventHandler(informers, dynamicInformers.ForResource(projectcontour.TLSCertificateDelegationGVR).Informer(), eh)
+	informers = registerEventHandler(informers, dynamicInformers.ForResource(ingressroutev1.IngressRouteGVR).Informer(), dynamicHandler)
+	informers = registerEventHandler(informers, dynamicInformers.ForResource(ingressroutev1.TLSCertificateDelegationGVR).Informer(), dynamicHandler)
+	informers = registerEventHandler(informers, dynamicInformers.ForResource(projectcontour.HTTPProxyGVR).Informer(), dynamicHandler)
+	informers = registerEventHandler(informers, dynamicInformers.ForResource(projectcontour.TLSCertificateDelegationGVR).Informer(), dynamicHandler)
 	informers = registerEventHandler(informers, coreInformers.Core().V1().Services().Informer(), eh)
 
 	// After K8s 1.13 the API server will automatically translate extensions/v1beta1.Ingress objects
