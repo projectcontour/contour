@@ -439,12 +439,14 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		FilterChains: []*envoy_api_v2_listener.FilterChain{
 			envoy.FilterChainTLS(
 				"kuard.example.com",
-				&dag.Secret{Object: secret1},
+				envoy.DownstreamTLSContext(
+					&dag.Secret{Object: secret1},
+					envoy_api_v2_auth.TlsParameters_TLSv1_3,
+					nil,
+					"h2", "http/1.1"),
 				envoy.Filters(
 					envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				envoy_api_v2_auth.TlsParameters_TLSv1_3,
-				"h2", "http/1.1",
 			),
 		},
 	}
@@ -1102,12 +1104,14 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 		FilterChains: []*envoy_api_v2_listener.FilterChain{
 			envoy.FilterChainTLS(
 				"kuard.example.com",
-				&dag.Secret{Object: secret1},
+				envoy.DownstreamTLSContext(
+					&dag.Secret{Object: secret1},
+					envoy_api_v2_auth.TlsParameters_TLSv1_2,
+					nil,
+					"h2", "http/1.1"),
 				envoy.Filters(
 					envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				envoy_api_v2_auth.TlsParameters_TLSv1_2,
-				"h2", "http/1.1",
 			),
 		},
 	}
@@ -1164,12 +1168,14 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 		FilterChains: []*envoy_api_v2_listener.FilterChain{
 			envoy.FilterChainTLS(
 				"kuard.example.com",
-				&dag.Secret{Object: secret1},
+				envoy.DownstreamTLSContext(
+					&dag.Secret{Object: secret1},
+					envoy_api_v2_auth.TlsParameters_TLSv1_3,
+					nil,
+					"h2", "http/1.1"),
 				envoy.Filters(
 					envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				envoy_api_v2_auth.TlsParameters_TLSv1_3,
-				"h2", "http/1.1",
 			),
 		},
 	}
@@ -1293,10 +1299,12 @@ func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_liste
 	return []*envoy_api_v2_listener.FilterChain{
 		envoy.FilterChainTLS(
 			domain,
-			&dag.Secret{Object: secret},
+			envoy.DownstreamTLSContext(
+				&dag.Secret{Object: secret},
+				envoy_api_v2_auth.TlsParameters_TLSv1_1,
+				nil,
+				alpn...),
 			envoy.Filters(filter),
-			envoy_api_v2_auth.TlsParameters_TLSv1_1,
-			alpn...,
 		),
 	}
 }

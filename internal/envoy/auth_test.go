@@ -20,12 +20,25 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
 	"github.com/google/go-cmp/cmp"
+	"github.com/projectcontour/contour/internal/dag"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestUpstreamTLSContext(t *testing.T) {
+	secret := &dag.Secret{
+		Object: &v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "secret",
+				Namespace: "default",
+			},
+			Type: v1.SecretTypeTLS,
+			Data: map[string][]byte{dag.CACertificateKey: []byte("ca")},
+		},
+	}
+
 	tests := map[string]struct {
-		ca            []byte
-		subjectName   string
+		validation    *dag.PeerValidationContext
 		alpnProtocols []string
 		externalName  string
 		want          *envoy_api_v2_auth.UpstreamTlsContext
@@ -44,20 +57,26 @@ func TestUpstreamTLSContext(t *testing.T) {
 			},
 		},
 		"no alpn, missing altname": {
-			ca: []byte("ca"),
+			validation: &dag.PeerValidationContext{
+				CACertificate: secret,
+			},
 			want: &envoy_api_v2_auth.UpstreamTlsContext{
 				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{},
 			},
 		},
 		"no alpn, missing ca": {
-			subjectName: "www.example.com",
+			validation: &dag.PeerValidationContext{
+				SubjectName: "www.example.com",
+			},
 			want: &envoy_api_v2_auth.UpstreamTlsContext{
 				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{},
 			},
 		},
 		"no alpn, ca and altname": {
-			ca:          []byte("ca"),
-			subjectName: "www.example.com",
+			validation: &dag.PeerValidationContext{
+				CACertificate: secret,
+				SubjectName:   "www.example.com",
+			},
 			want: &envoy_api_v2_auth.UpstreamTlsContext{
 				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
 					ValidationContextType: &envoy_api_v2_auth.CommonTlsContext_ValidationContext{
@@ -88,7 +107,7 @@ func TestUpstreamTLSContext(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := UpstreamTLSContext(tc.ca, tc.subjectName, tc.externalName, tc.alpnProtocols...)
+			got := UpstreamTLSContext(tc.validation, tc.externalName, tc.alpnProtocols...)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}

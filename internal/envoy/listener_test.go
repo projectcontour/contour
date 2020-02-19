@@ -30,6 +30,7 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -158,46 +159,141 @@ func TestSocketAddress(t *testing.T) {
 }
 
 func TestDownstreamTLSContext(t *testing.T) {
-	const secretName = "default/tls-cert"
+	const subjectName = "client-subject-name"
+	ca := []byte("client-ca-cert")
 
-	got := DownstreamTLSContext(secretName, envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1")
-	want := &envoy_api_v2_auth.DownstreamTlsContext{
-		CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
-			TlsParams: &envoy_api_v2_auth.TlsParameters{
-				TlsMinimumProtocolVersion: envoy_api_v2_auth.TlsParameters_TLSv1_1,
-				TlsMaximumProtocolVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
-				CipherSuites: []string{
-					"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
-					"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
-					"ECDHE-ECDSA-AES128-SHA",
-					"ECDHE-RSA-AES128-SHA",
-					"ECDHE-ECDSA-AES256-GCM-SHA384",
-					"ECDHE-RSA-AES256-GCM-SHA384",
-					"ECDHE-ECDSA-AES256-SHA",
-					"ECDHE-RSA-AES256-SHA",
-				},
+	serverSecret := &dag.Secret{
+		Object: &v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "tls-cert",
+				Namespace: "default",
 			},
-			TlsCertificateSdsSecretConfigs: []*envoy_api_v2_auth.SdsSecretConfig{{
-				Name: secretName,
-				SdsConfig: &envoy_api_v2_core.ConfigSource{
-					ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
-						ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
-							ApiType: envoy_api_v2_core.ApiConfigSource_GRPC,
-							GrpcServices: []*envoy_api_v2_core.GrpcService{{
-								TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
-									EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
-										ClusterName: "contour",
-									},
-								},
-							}},
-						},
-					},
-				},
-			}},
-			AlpnProtocols: []string{"h2", "http/1.1"},
+			Data: map[string][]byte{
+				v1.TLSCertKey:       []byte("cert"),
+				v1.TLSPrivateKeyKey: []byte("key"),
+			},
 		},
 	}
-	assert.Equal(t, want, got)
+
+	tlsParams := &envoy_api_v2_auth.TlsParameters{
+		TlsMinimumProtocolVersion: envoy_api_v2_auth.TlsParameters_TLSv1_1,
+		TlsMaximumProtocolVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
+		CipherSuites: []string{
+			"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
+			"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+			"ECDHE-ECDSA-AES128-SHA",
+			"ECDHE-RSA-AES128-SHA",
+			"ECDHE-ECDSA-AES256-GCM-SHA384",
+			"ECDHE-RSA-AES256-GCM-SHA384",
+			"ECDHE-ECDSA-AES256-SHA",
+			"ECDHE-RSA-AES256-SHA",
+		},
+	}
+
+	tlsCertificateSdsSecretConfigs := []*envoy_api_v2_auth.SdsSecretConfig{{
+		Name: Secretname(serverSecret),
+		SdsConfig: &envoy_api_v2_core.ConfigSource{
+			ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
+				ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
+					ApiType: envoy_api_v2_core.ApiConfigSource_GRPC,
+					GrpcServices: []*envoy_api_v2_core.GrpcService{{
+						TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
+							EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
+								ClusterName: "contour",
+							},
+						},
+					}},
+				},
+			},
+		},
+	}}
+
+	alpnProtocols := []string{"h2", "http/1.1"}
+	validationContext := &envoy_api_v2_auth.CommonTlsContext_ValidationContext{
+		ValidationContext: &envoy_api_v2_auth.CertificateValidationContext{
+			TrustedCa: &envoy_api_v2_core.DataSource{
+				Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+					InlineBytes: ca,
+				},
+			},
+		},
+	}
+
+	peerValidationContext := &dag.PeerValidationContext{
+		CACertificate: &dag.Secret{
+			Object: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					dag.CACertificateKey: ca,
+				},
+			},
+		},
+	}
+
+	// Negative test case: downstream validation should not contain subjectname.
+	peerValidationContextWithSubjectName := &dag.PeerValidationContext{
+		CACertificate: &dag.Secret{
+			Object: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					dag.CACertificateKey: ca,
+				},
+			},
+		},
+		SubjectName: subjectName,
+	}
+
+	tests := map[string]struct {
+		got  *envoy_api_v2_auth.DownstreamTlsContext
+		want *envoy_api_v2_auth.DownstreamTlsContext
+	}{
+		"TLS context without client authentication": {
+			DownstreamTLSContext(serverSecret, envoy_api_v2_auth.TlsParameters_TLSv1_1, nil, "h2", "http/1.1"),
+			&envoy_api_v2_auth.DownstreamTlsContext{
+				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
+					TlsParams:                      tlsParams,
+					TlsCertificateSdsSecretConfigs: tlsCertificateSdsSecretConfigs,
+					AlpnProtocols:                  alpnProtocols,
+				},
+			},
+		},
+		"TLS context with client authentication": {
+			DownstreamTLSContext(serverSecret, envoy_api_v2_auth.TlsParameters_TLSv1_1, peerValidationContext, "h2", "http/1.1"),
+			&envoy_api_v2_auth.DownstreamTlsContext{
+				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
+					TlsParams:                      tlsParams,
+					TlsCertificateSdsSecretConfigs: tlsCertificateSdsSecretConfigs,
+					AlpnProtocols:                  alpnProtocols,
+					ValidationContextType:          validationContext,
+				},
+				RequireClientCertificate: protobuf.Bool(true),
+			},
+		},
+		"Downstream validation shall not support subjectName validation": {
+			DownstreamTLSContext(serverSecret, envoy_api_v2_auth.TlsParameters_TLSv1_1, peerValidationContextWithSubjectName, "h2", "http/1.1"),
+			&envoy_api_v2_auth.DownstreamTlsContext{
+				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
+					TlsParams:                      tlsParams,
+					TlsCertificateSdsSecretConfigs: tlsCertificateSdsSecretConfigs,
+					AlpnProtocols:                  alpnProtocols,
+					ValidationContextType:          validationContext,
+				},
+				RequireClientCertificate: protobuf.Bool(true),
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, tc.got)
+		})
+	}
 }
 
 func TestHTTPConnectionManager(t *testing.T) {

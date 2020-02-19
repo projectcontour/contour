@@ -15,6 +15,9 @@ package dag
 
 import (
 	"testing"
+
+	"github.com/projectcontour/contour/internal/assert"
+	v1 "k8s.io/api/core/v1"
 )
 
 func TestVirtualHostValid(t *testing.T) {
@@ -71,6 +74,28 @@ func TestSecureVirtualHostValid(t *testing.T) {
 		TCPProxy: new(TCPProxy),
 	}
 	assert.True(vh.Valid())
+}
+
+func TestPeerValidationContext(t *testing.T) {
+	pvc1 := PeerValidationContext{
+		CACertificate: &Secret{
+			Object: &v1.Secret{
+				Data: map[string][]byte{
+					CACertificateKey: []byte("cacert"),
+				},
+			},
+		},
+		SubjectName: "subject",
+	}
+	pvc2 := PeerValidationContext{}
+	var pvc3 *PeerValidationContext
+
+	assert.Equal(t, pvc1.GetSubjectName(), "subject")
+	assert.Equal(t, pvc1.GetCACertificate(), []byte("cacert"))
+	assert.Equal(t, pvc2.GetSubjectName(), "")
+	assert.Equal(t, pvc2.GetCACertificate(), []byte(nil))
+	assert.Equal(t, pvc3.GetSubjectName(), "")
+	assert.Equal(t, pvc3.GetCACertificate(), []byte(nil))
 }
 
 type Assert struct {

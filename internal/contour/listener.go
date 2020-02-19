@@ -366,12 +366,24 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			alpnProtos = nil // do not offer ALPN
 		}
 
+		var downstreamTLS *envoy_api_v2_auth.DownstreamTlsContext
+
+		// Secret is provided when TLS is terminated and nil when TLS passthrough is used.
+		if vh.Secret != nil {
+			// Choose the higher of the configured or requested TLS version.
+			vers := max(v.ListenerVisitorConfig.minProtoVersion(), vh.MinProtoVersion)
+
+			downstreamTLS = envoy.DownstreamTLSContext(
+				vh.Secret,
+				vers,
+				vh.DownstreamValidation,
+				alpnProtos...)
+		}
+
 		fc := envoy.FilterChainTLS(
 			vh.VirtualHost.Name,
-			vh.Secret,
+			downstreamTLS,
 			filters,
-			max(v.ListenerVisitorConfig.minProtoVersion(), vh.MinProtoVersion), // choose the higher of the configured or requested tls version
-			alpnProtos...,
 		)
 
 		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains, fc)

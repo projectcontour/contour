@@ -79,6 +79,17 @@ func TestCluster(t *testing.T) {
 		},
 	}
 
+	secret := &dag.Secret{
+		Object: &v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "secret",
+				Namespace: "default",
+			},
+			Type: v1.SecretTypeTLS,
+			Data: map[string][]byte{dag.CACertificateKey: []byte("cacert")},
+		},
+	}
+
 	tests := map[string]struct {
 		cluster *dag.Cluster
 		want    *v2.Cluster
@@ -127,7 +138,7 @@ func TestCluster(t *testing.T) {
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "", "", "h2"),
+					UpstreamTLSContext(nil, "", "h2"),
 				),
 				Http2ProtocolOptions: &envoy_api_v2_core.Http2ProtocolOptions{},
 			},
@@ -157,7 +168,7 @@ func TestCluster(t *testing.T) {
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "", ""),
+					UpstreamTLSContext(nil, ""),
 				),
 			},
 		},
@@ -172,7 +183,7 @@ func TestCluster(t *testing.T) {
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
 				LoadAssignment:       StaticClusterLoadAssignment(service(svcExternal, "tls")),
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "", "projectcontour.local"),
+					UpstreamTLSContext(nil, "projectcontour.local"),
 				),
 			},
 		},
@@ -180,19 +191,9 @@ func TestCluster(t *testing.T) {
 			cluster: &dag.Cluster{
 				Upstream: service(s1, "tls"),
 				Protocol: "tls",
-				UpstreamValidation: &dag.UpstreamValidation{
-					CACertificate: &dag.Secret{
-						Object: &v1.Secret{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "secret",
-								Namespace: "default",
-							},
-							Data: map[string][]byte{
-								dag.CACertificateKey: []byte("cacert"),
-							},
-						},
-					},
-					SubjectName: "foo.bar.io",
+				UpstreamValidation: &dag.PeerValidationContext{
+					CACertificate: secret,
+					SubjectName:   "foo.bar.io",
 				},
 			},
 			want: &v2.Cluster{
@@ -204,7 +205,12 @@ func TestCluster(t *testing.T) {
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext([]byte("cacert"), "foo.bar.io", ""),
+					UpstreamTLSContext(
+						&dag.PeerValidationContext{
+							CACertificate: secret,
+							SubjectName:   "foo.bar.io",
+						},
+						""),
 				),
 			},
 		},
@@ -462,7 +468,7 @@ func TestClustername(t *testing.T) {
 					},
 				},
 				LoadBalancerPolicy: "Random",
-				UpstreamValidation: &dag.UpstreamValidation{
+				UpstreamValidation: &dag.PeerValidationContext{
 					CACertificate: &dag.Secret{
 						Object: &v1.Secret{
 							ObjectMeta: metav1.ObjectMeta{
