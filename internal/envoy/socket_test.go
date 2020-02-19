@@ -19,6 +19,9 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/projectcontour/contour/internal/assert"
+	"github.com/projectcontour/contour/internal/dag"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestUpstreamTLSTransportSocket(t *testing.T) {
@@ -46,16 +49,28 @@ func TestUpstreamTLSTransportSocket(t *testing.T) {
 }
 
 func TestDownstreamTLSTransportSocket(t *testing.T) {
+	serverSecret := &dag.Secret{
+		Object: &v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "tls-cert",
+				Namespace: "default",
+			},
+			Data: map[string][]byte{
+				v1.TLSCertKey:       []byte("cert"),
+				v1.TLSPrivateKeyKey: []byte("key"),
+			},
+		},
+	}
 	tests := map[string]struct {
 		ctxt *envoy_api_v2_auth.DownstreamTlsContext
 		want *envoy_api_v2_core.TransportSocket
 	}{
 		"default/tls": {
-			ctxt: DownstreamTLSContext("default/tls", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+			ctxt: DownstreamTLSContext(serverSecret, envoy_api_v2_auth.TlsParameters_TLSv1_1, nil, "client-subject-name", "h2", "http/1.1"),
 			want: &envoy_api_v2_core.TransportSocket{
 				Name: "envoy.transport_sockets.tls",
 				ConfigType: &envoy_api_v2_core.TransportSocket_TypedConfig{
-					TypedConfig: toAny(DownstreamTLSContext("default/tls", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1")),
+					TypedConfig: toAny(DownstreamTLSContext(serverSecret, envoy_api_v2_auth.TlsParameters_TLSv1_1, nil, "client-subject-name", "h2", "http/1.1")),
 				},
 			},
 		},

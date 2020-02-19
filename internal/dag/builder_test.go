@@ -4309,7 +4309,7 @@ func TestDAGInsert(t *testing.T) {
 										Protocol:    "tls",
 									},
 									Protocol: "tls",
-									UpstreamValidation: &UpstreamValidation{
+									UpstreamValidation: &PeerValidationContext{
 										CACertificate: secret(cert1),
 										SubjectName:   "example.com",
 									},
@@ -5259,7 +5259,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httpproxy expecting verification": {
+		"insert httpproxy expecting upstream verification": {
 			objs: []interface{}{
 				cert1, proxy17, s1a,
 			},
@@ -5277,7 +5277,7 @@ func TestDAGInsert(t *testing.T) {
 										Protocol:    "tls",
 									},
 									Protocol: "tls",
-									UpstreamValidation: &UpstreamValidation{
+									UpstreamValidation: &PeerValidationContext{
 										CACertificate: secret(cert1),
 										SubjectName:   "example.com",
 									},

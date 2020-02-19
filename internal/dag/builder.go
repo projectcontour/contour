@@ -789,7 +789,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 				return nil
 			}
 
-			var uv *UpstreamValidation
+			var uv *PeerValidationContext
 			if protocol == "tls" {
 				// we can only validate TLS connections to services that talk TLS
 				uv, err = b.lookupUpstreamValidation(service.UpstreamValidation, proxy.Namespace)
@@ -999,7 +999,7 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 					return
 				}
 
-				var uv *UpstreamValidation
+				var uv *PeerValidationContext
 				var err error
 				if s.Protocol == "tls" {
 					// we can only validate TLS connections to services that talk TLS
@@ -1070,7 +1070,7 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 	sw.SetValid()
 }
 
-func (b *Builder) lookupUpstreamValidation(uv *projcontour.UpstreamValidation, namespace string) (*UpstreamValidation, error) {
+func (b *Builder) lookupUpstreamValidation(uv *projcontour.UpstreamValidation, namespace string) (*PeerValidationContext, error) {
 	if uv == nil {
 		// no upstream validation requested, nothing to do
 		return nil, nil
@@ -1087,7 +1087,7 @@ func (b *Builder) lookupUpstreamValidation(uv *projcontour.UpstreamValidation, n
 		return nil, errors.New("missing subject alternative name")
 	}
 
-	return &UpstreamValidation{
+	return &PeerValidationContext{
 		CACertificate: cacert,
 		SubjectName:   uv.SubjectName,
 	}, nil

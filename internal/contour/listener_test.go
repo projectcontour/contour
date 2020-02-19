@@ -24,6 +24,7 @@ import (
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
+	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -1067,8 +1068,18 @@ func TestListenerVisit(t *testing.T) {
 }
 
 func transportSocket(tlsMinProtoVersion envoy_api_v2_auth.TlsParameters_TlsProtocol, alpnprotos ...string) *envoy_api_v2_core.TransportSocket {
+	secret := &dag.Secret{
+		Object: &v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "secret",
+				Namespace: "default",
+			},
+			Type: v1.SecretTypeTLS,
+			Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		},
+	}
 	return envoy.DownstreamTLSTransportSocket(
-		envoy.DownstreamTLSContext("default/secret/68621186db", tlsMinProtoVersion, alpnprotos...),
+		envoy.DownstreamTLSContext(secret, tlsMinProtoVersion, nil, alpnprotos...),
 	)
 }
 
