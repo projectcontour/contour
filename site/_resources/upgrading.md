@@ -14,13 +14,10 @@ This document describes the changes needed to upgrade your Contour installation.
 Contour 1.1.0 is the current stable release.
 
 <div class="alert-deprecation">
-<b>Deprecation Notice</b></br>
-<p>
-The <code>IngressRoute</code> CRD has been deprecated and will not receive further updates. Contour 1.1.0 continues to support the IngressRoute API, however we anticipate it will be removed in the future.
-<p>
-</p>
-Please see the documentation for <a href="{% link docs/v1.1.0/httpproxy.md %}"><code>HTTPProxy</code></a>, which is the successor to <code>IngressRoute</code>.
-You can also read the <a href="{% link _guides/ingressroute-to-httpproxy.md %}">IngressRoute to HTTPProxy upgrade</a> guide.
+<h3><b>Deprecation Notice</b></h3>
+<p>The <code>IngressRoute</code> CRD has been deprecated and will not receive further updates. Contour 1.1.0 continues to support the IngressRoute API, however we anticipate it will be removed in the future.</p>
+<p>Please see the documentation for <a href="{% link docs/v1.1.0/httpproxy.md %}"><code>HTTPProxy</code></a>, which is the successor to <code>IngressRoute</code>.
+You can also read the <a href="{% link _guides/ingressroute-to-httpproxy.md %}">IngressRoute to HTTPProxy upgrade</a> guide.</p>
 </div>
 
 &nbsp;
