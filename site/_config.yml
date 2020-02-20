@@ -50,6 +50,11 @@ defaults:
       version: master
       layout: "docs"
   - scope:
+      path: docs/v1.2.0
+    values:
+      version: v1.2.0
+      layout: "docs"
+  - scope:
       path: docs/v1.1.0
     values:
       version: v1.1.0
@@ -86,6 +91,7 @@ versioning: true
 latest: v1.1.0
 versions:
   - master
+  - v1.2.0
   - v1.1.0
   - v1.0.1
   - v1.0.0
