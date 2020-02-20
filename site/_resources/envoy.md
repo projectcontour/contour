@@ -34,13 +34,12 @@ Contour requires the following extensions.
 If you are using the image recommended in our [example deployment][4] no action is required.
 If you are providing your own Envoy it must be compiled with the following extensions:
 
-- `access_loggers`: `envoy.file_access_log`,`envoy.http_grpc_access_log`,`envoy.tcp_grpc_access_log`
-- `filters.http`: `envoy.buffer`,`envoy.cors`,`envoy.csrf`,`envoy.ext_authz`,`envoy.fault`,`envoy.filters.http.adaptive_concurrency`,`envoy.filters.http.dynamic_forward_proxy`,`envoy.filters.http.grpc_http1_reverse_bridge`,`envoy.filters.http.grpc_stats`,`envoy.filters.http.header_to_metadata`,`envoy.filters.http.jwt_authn`,`envoy.filters.http.original_src`,`envoy.filters.http.rbac`,`envoy.filters.http.tap`,`envoy.grpc_http1_bridge`,`envoy.grpc_json_transcoder`,`envoy.grpc_web`,`envoy.gzip`,`envoy.health_check`,`envoy.ip_tagging`,`envoy.rate_limit`,`envoy.router`,`envoy.squash`
+- `access_loggers`: `envoy.access_loggers.file`,`envoy.access_loggers.http_grpc`,`envoy.access_loggers.tcp_grpc`
+- `filters.http`: `envoy.buffer`,`envoy.cors`,`envoy.csrf`,`envoy.fault`,`envoy.filters.http.adaptive_concurrency`,`envoy.filters.http.dynamic_forward_proxy`,`envoy.filters.http.grpc_http1_reverse_bridge`,`envoy.filters.http.grpc_stats`,`envoy.filters.http.header_to_metadata`,`envoy.filters.http.original_src`,`envoy.grpc_http1_bridge`,`envoy.grpc_json_transcoder`,`envoy.grpc_web`,`envoy.gzip`,`envoy.health_check`,`envoy.ip_tagging`,`envoy.router`
 - `filters.listener`: `envoy.listener.http_inspector`,`envoy.listener.original_dst`,`envoy.listener.original_src`,`envoy.listener.proxy_protocol`,`envoy.listener.tls_inspector`
-- `filters.network`: `envoy.client_ssl_auth`,`envoy.echo`,`envoy.ext_authz`,`envoy.filters.network.sni_cluster`,`envoy.http_connection_manager`,`envoy.ratelimit`,`envoy.tcp_proxy`
-- `stat_sinks`: `envoy.metrics_service`,`envoy.statsd`
-- `transport_sockets.downstream`: `envoy.transport_sockets.alts`,`envoy.transport_sockets.raw_buffer`,`envoy.transport_sockets.tls`,`raw_buffer`,`tls`
-- `transport_sockets.upstream`: `envoy.transport_sockets.alts`,`envoy.transport_sockets.raw_buffer`,`envoy.transport_sockets.tls`,`raw_buffer`,`tls`
+- `filters.network`: `envoy.echo`,`envoy.filters.network.sni_cluster`,`envoy.http_connection_manager`,`envoy.tcp_proxy`
+- `stat_sinks`: `envoy.metrics_service`
+- `transport_sockets`: `envoy.transport_sockets.alts`, `envoy.transport_sockets.raw_buffer`
 
 [1]: https://groups.google.com/forum/#!topic/envoy-announce/ZLchtraPYVk
 [2]: https://groups.google.com/forum/#!topic/envoy-announce/Zo3ZEFuPWec
