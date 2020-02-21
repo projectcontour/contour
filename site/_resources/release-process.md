@@ -20,7 +20,7 @@ The steps for an alpha or beta release are
 - Tag the head of master with the relevant release tag (in this case `alpha.1`), and push
 
 ```sh
-$ git tag -a v0.15.0-alpha.1 -m 'contour 0.15.0 alpha 1'
+$ git tag -a v0.15.0-alpha.1 -m 'contour 1.2.0 alpha 1'
 $ git push --tags
 ```
 
@@ -67,7 +67,7 @@ The Docker tag should be updated from the previous stable release to this new on
 Tag the head of your release branch with the release tag, and push
 
 ```sh
-$ git tag -a v0.15.0 -m 'contour 0.15.0'
+$ git tag -a v1.2.0 -m 'contour 1.2.0'
 $ git push --tags
 ```
 
@@ -82,7 +82,7 @@ Get any required changes into the release branch by whatever means you choose.
 Tag the head of your release branch with the release tag, and push
 
 ```sh
-$ git tag -a v0.15.1 -m 'contour 0.15.1'
+$ git tag -a v1.2.1 -m 'contour 1.2.1'
 $ git push --tags
 ```
 
@@ -103,14 +103,14 @@ Authenticating with existing credentials...
 Login Succeeded
 # The make target will do what you need
 # If you don't set the version, it will be a noop
-$ env LATEST_VERSION=v1.0.0 make tag-latest
-docker pull projectcontour/contour:v1.0.0
-v1.0.0: Pulling from projectcontour/contour
+$ make tag-latest REGISTRY=docker.io/projectcontour LATEST_VERSION=v1.0.0
+docker pull docker.io/projectcontour/contour:v1.0.0
+v1.0.0: Pulling from docker.io/projectcontour/contour
 Digest: sha256:7af8d77b3fcdbebec31abd1059aedacc119b3561b933976402c87f31a309ec53
 Status: Image is up to date for projectcontour/contour:v1.0.0
 docker.io/projectcontour/contour:v1.0.0
-docker tag projectcontour/contour:v1.0.0 projectcontour/contour:latest
-docker push projectcontour/contour:latest
+docker tag docker.io/projectcontour/contour:v1.0.0 docker.io/projectcontour/contour:latest
+docker push docker.io/projectcontour/contour:latest
 The push refers to repository [docker.io/projectcontour/contour]
 43ef43ac3a59: Layer already exists
 latest: digest: sha256:7af8d77b3fcdbebec31abd1059aedacc119b3561b933976402c87f31a309ec53 size: 527
@@ -120,10 +120,12 @@ latest: digest: sha256:7af8d77b3fcdbebec31abd1059aedacc119b3561b933976402c87f31a
 
 If you've made a production release (that is, a final release or a patch release), you have a couple of things left to do.
 
-### Updating quickstart URL
+### Updating site details
 
 The quickstart url, https://projectcontour.io/quickstart/contour.yaml redirects to the current stable release.
 This is controlled by a line in `site/_redirects`. If the definition of `:latest` has changed, update the quickstart redirector to match.
+
+You also need to set the variable `latest` in `site/_config.yml` to the released version for the site to work correctly.
 
 ### Do the Github release and write release notes
 
