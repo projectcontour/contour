@@ -862,6 +862,7 @@ spec:
                       - name
                       - port
                       type: object
+                    minItems: 1
                     type: array
                   timeoutPolicy:
                     description: The timeout policy for this route.
@@ -878,6 +879,8 @@ spec:
                           the timeout duration is undefined.
                         type: string
                     type: object
+                required:
+                - services
                 type: object
               type: array
             tcpproxy:
@@ -1043,7 +1046,10 @@ spec:
                     - name
                     - port
                     type: object
+                  minItems: 1
                   type: array
+              required:
+              - services
               type: object
             virtualhost:
               description: Virtualhost appears at most once. If it is present, the
