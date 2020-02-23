@@ -127,7 +127,9 @@ type Route struct {
 	// +optional
 	Conditions []Condition `json:"conditions,omitempty"`
 	// Services are the services to proxy traffic.
-	Services []Service `json:"services,omitempty"`
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:Required
+	Services []Service `json:"services"`
 	// Enables websocket support for the route.
 	// +optional
 	EnableWebsockets bool `json:"enableWebsockets,omitempty"`
@@ -173,7 +175,9 @@ type TCPProxy struct {
 	// +optional
 	LoadBalancerPolicy *LoadBalancerPolicy `json:"loadBalancerPolicy,omitempty"`
 	// Services are the services to proxy traffic
-	Services []Service `json:"services,omitempty"`
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:Required
+	Services []Service `json:"services"`
 	// Include specifies that this tcpproxy should be delegated to another HTTPProxy.
 	// +optional
 	Include *TCPProxyInclude `json:"includes,omitempty"`
