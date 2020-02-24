@@ -3,12 +3,13 @@
 The rate limit service configuration specifies the global rate limit service Envoy should talk to when it needs to make global rate limit decisions.
 If no rate limit service is configured, a “null” service will be used which will always return OK if called.
 
-Envoy's support of RateLimiting requires a rate limiting service to be exposed and support the gRPC IDL specified in [rls.proto](https://www.envoyproxy.io/docs/envoy/v1.9.0/api-v2/service/ratelimit/v2/rls.proto#envoy-api-file-envoy-service-ratelimit-v2-rls-proto).
+Envoy's support of RateLimiting requires a rate limiting service to be exposed and support the gRPC IDL specified in [rls.proto](https://www.envoyproxy.io/docs/envoy/v1.13.0/api-v2/service/ratelimit/v2/rls.proto#envoy-api-file-envoy-service-ratelimit-v2-rls-proto).
 
 ## Goals
 
 - Allow RateLimits to be applied to routes
-- Use Lyft's [ratelimiting implementation](https://github.com/lyft/ratelimit)
+- Use Lyft's [ratelimiting implementation](https://github.com/lyft/ratelimit) as an example
+    - Allow integration to other implementations if users desire
 
 ## Non-goals
 
@@ -24,13 +25,13 @@ Contour will require configuration to enable the rate limiting HTTP filter as we
 The reference implementation from Lyft relies on an instance of Redis to be available. 
 A simple example will be provided but it will be an integration item to determine how available the Redis cluster needs to be based upon business requirements.
 Envoy v1.8.0 or higher will be required since it has functionality enabled for dynamic rate limiting configuration (envoyproxy/envoy#4669 & envoyproxy/envoy#5242).
-The `IngressRoute` spec will be modified to allow for enabling rate limiting per Route.
+The `HTTPProxy` spec will be modified to allow for enabling rate limiting per Route.
 In addition, a set of annotations will be added to allow for enabling rate limiting when using `Ingress` resource.
 
 Initially support a subset of the rate limiting features available by looking to implement rate limiting via a `key` which will be automatically determined by Contour for that route.
 Contour will support rate limiting via the `remote_address` presented to Envoy generically as well as allowing users to specify an IP address which will allow for blocking specific IPs (by defining a `requests_per_unit` of zero).
 
-In the event a user defines `rateLimits` via IngressRoute, but are not enabled, the status field of that object will be updated to reflect the error.
+In the event a user defines `rateLimits` via HTTPProxy, but are not enabled, the status field of that object will be updated to reflect the error.
 If an Ingress object has the appropriate annotation, a log message will be written which will explain the error encountered.
 
 ## Detailed Design
@@ -41,13 +42,32 @@ ___Note: Much of the following documentation is from Lyft's implementation [gith
 
 The rate limit service is a Go/gRPC service designed to enable generic rate limit scenarios from different types of applications. Applications request a rate limit decision based on a domain and a set of descriptors. The service reads the configuration from disk via runtime, composes a cache key, and talks to the Redis cache. A decision is then returned to the caller.
 
-New arguments to Contour:
+New Contour configuration file additions:
 
-- Contour will configure the domain it uses to be `contour` by default, but a new argument will be added which will allow users to customize this value (`--rate-limit-domain`)
-- RateLimit service dns or IP and port to use, see cluster example below (`--rate-limit-service-name` & `--rate-limit-service-port`)
-- In the event the rate limiting service does not respond back. When set to true, allow traffic in case of communication failure between rate limiting service and the proxy (`--rate-limit-failure-mode-deny`)
-- RateLimiting Stage to use, defaults to `0` (--rate-limit-stage`)
+- **domain**: [OPTIONAL,string] Domain ratelimiting will use (Defaults to `contour`)
+- **service-name**: [REQUIRED,string] RateLimit service dns or IP to ratelimiting implementation
+- **service-port**: [REQUIRED,int] RateLimit service port for ratelimiting implementation
+- **failure-mode-deny**: [OPTIONAL,bool] In the event the rate limiting service does not respond back. When set to true, allow traffic in case of communication failure between rate limiting service and Envoy (Defaults to `true`)
+- **stage**: [OPTIONAL,int] RateLimiting Stage to use (Defaults to `0`)
 
+Example Config file:
+
+```yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: contour
+  namespace: projectcontour
+data:
+  contour.yaml: |
+    ratelimit:
+      domain: contour
+      service-name: lyftrl
+      service-port: 8081
+      failure-mode-deny: false
+      stage: 0
+```
 
 #### Example of cluster added for rate limit service configured via args above:
 ```
@@ -64,7 +84,8 @@ New arguments to Contour:
 
 #### Descriptor list definition
 
-Each configuration contains a top level descriptor list and potentially multiple nested lists beneath that. The format is:
+Each configuration contains a top level descriptor list and potentially multiple nested lists beneath that.
+The format is:
 
 ```
 domain: <unique domain ID>
@@ -96,7 +117,7 @@ Limit all requests based upon a defined key:
 domain: contour
 descriptors:
   - key: generic_key
-    value: apis  # This key will be configured in the annotation or IngressRoute
+    value: apis  # This key will be configured in the annotation or HTTPProxy
     rate_limit:
       unit: minute
       requests_per_unit: 1
@@ -125,25 +146,24 @@ descriptors:
       requests_per_unit: 0
 ```
 
-### IngressRoute Design
+### HTTPProxy Design
 
-The `IngressRoute` spec will be modified to allow specific routes to enable rate limiting.
+The `HTTPProxy` spec will be modified to allow specific routes to enable rate limiting.
 A new struct will be added to allow users to define what type of rate limiting should be applied to the route.
 
 The `rateLimit` struct will have a key/value list where users can customize whatever values are required by the RateLimit backend of their choice.
 
 #### Configure rate limit via generic_key:
 ```
-apiVersion: contour.heptio.com/v1beta1
-kind: IngressRoute
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
 metadata:
   name: ratelimited-key
 spec:
   virtualhost:
     fqdn: foo-basic.bar.com
   routes:
-    - match: /
-      rateLimit:
+    - rateLimit:
         - type: generic_key
         - value: apis
       services:
@@ -153,16 +173,15 @@ spec:
 
 #### Configure rate limit via remote_address:
 ```
-apiVersion: contour.heptio.com/v1beta1
-kind: IngressRoute
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
 metadata:
   name: ratelimited-ip
 spec:
   virtualhost:
     fqdn: foo-basic.bar.com
   routes:
-    - match: /
-      rateLimit:
+    - rateLimit:
         - type: remote_address
       services:
         - name: s1
@@ -171,5 +190,13 @@ spec:
 
 ### Ingress Annotation
 
-- `contour.heptio.com/rate-limit.generic_key: Specifies that a generic_key will be used. The annotation value is the `value` that should match the RateLimit service
-- `contour.heptio.com/rate-limit.remote_address: Specifies that a generic_key will be used. The annotation value is the `value` that should match the RateLimit service
+- `projectcontour.io/rate-limit.generic_key: Specifies that a generic_key will be used. The annotation value is the `value` that should match the RateLimit service
+- `projectcontour.io/rate-limit.remote_address: Specifies that a generic_key will be used. The annotation value is the `value` that should match the RateLimit service
+
+## Support Contract
+
+Contour is adding this integration to allow users to extend the functionality of their edge proxy capabilities when using Contour.
+Due to the differing nature of the external rate limiting implementations, it's difficult to support all types of integrations.
+Support and issues around any RateLimiting implementation will be limited to the integration touch points only.
+
+ 
