@@ -180,7 +180,13 @@ type TCPProxy struct {
 	Services []Service `json:"services"`
 	// Include specifies that this tcpproxy should be delegated to another HTTPProxy.
 	// +optional
-	Include *TCPProxyInclude `json:"includes,omitempty"`
+	Include *TCPProxyInclude `json:"include,omitempty"`
+	// IncludesDeprecated allow for specific routing configuration to be appended to another HTTPProxy in another namespace.
+	//
+	// Exists due to a mistake when developing HTTPProxy and the field was marked plural
+	// when it should have been singular. This field should stay to not break backwards compatibility to v1 users.
+	// +optional
+	IncludesDeprecated *TCPProxyInclude `json:"includes,omitempty"`
 	// The health check policy for this tcp proxy
 	// +optional
 	HealthCheckPolicy *TCPHealthCheckPolicy `json:"healthCheckPolicy,omitempty"`
