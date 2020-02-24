@@ -31,8 +31,6 @@ import (
 
 	"k8s.io/client-go/dynamic"
 
-	"k8s.io/client-go/tools/cache"
-
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/debug"
@@ -214,33 +212,35 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		Logger:    log.WithField("context", "dynamicHandler"),
 	}
 
-	// step 4. register our resource event handler with the k8s informers.
-	var informers []cache.SharedIndexInformer
+	// step 4. register our resource event handler with the k8s informers,
+	// using the SyncList to keep track of what to sync later.
+	var informerSyncList k8s.InformerSyncList
 
-	informers = registerEventHandler(informers, dynamicInformers.ForResource(ingressroutev1.IngressRouteGVR).Informer(), dynamicHandler)
-	informers = registerEventHandler(informers, dynamicInformers.ForResource(ingressroutev1.TLSCertificateDelegationGVR).Informer(), dynamicHandler)
-	informers = registerEventHandler(informers, dynamicInformers.ForResource(projectcontour.HTTPProxyGVR).Informer(), dynamicHandler)
-	informers = registerEventHandler(informers, dynamicInformers.ForResource(projectcontour.TLSCertificateDelegationGVR).Informer(), dynamicHandler)
-	informers = registerEventHandler(informers, coreInformers.Core().V1().Services().Informer(), eventRecorder)
+	informerSyncList.Add(dynamicInformers.ForResource(ingressroutev1.IngressRouteGVR).Informer()).AddEventHandler(dynamicHandler)
+	informerSyncList.Add(dynamicInformers.ForResource(ingressroutev1.TLSCertificateDelegationGVR).Informer()).AddEventHandler(dynamicHandler)
+	informerSyncList.Add(dynamicInformers.ForResource(projectcontour.HTTPProxyGVR).Informer()).AddEventHandler(dynamicHandler)
+	informerSyncList.Add(dynamicInformers.ForResource(projectcontour.TLSCertificateDelegationGVR).Informer()).AddEventHandler(dynamicHandler)
+
+	informerSyncList.Add(coreInformers.Core().V1().Services().Informer()).AddEventHandler(eventRecorder)
 
 	// After K8s 1.13 the API server will automatically translate extensions/v1beta1.Ingress objects
 	// to networking/v1beta1.Ingress objects so we should only listen for one type or the other.
 	// The default behavior is to listen for networking/v1beta1.Ingress objects and let the API server
 	// transparently upgrade the extensions version for us.
 	if ctx.UseExtensionsV1beta1Ingress {
-		informers = registerEventHandler(informers, coreInformers.Extensions().V1beta1().Ingresses().Informer(), eventRecorder)
+		informerSyncList.Add(coreInformers.Extensions().V1beta1().Ingresses().Informer()).AddEventHandler(eventRecorder)
 	} else {
-		informers = registerEventHandler(informers, coreInformers.Networking().V1beta1().Ingresses().Informer(), eventRecorder)
+		informerSyncList.Add(coreInformers.Networking().V1beta1().Ingresses().Informer()).AddEventHandler(eventRecorder)
 	}
 
 	// Add informers for each root-ingressroute namespaces
 	for _, inf := range namespacedInformers {
-		informers = registerEventHandler(informers, inf.Core().V1().Secrets().Informer(), eventRecorder)
+		informerSyncList.Add(inf.Core().V1().Secrets().Informer()).AddEventHandler(eventRecorder)
 	}
 
 	// If root-ingressroutes are not defined, then add the informer for all namespaces
 	if len(namespacedInformers) == 0 {
-		informers = registerEventHandler(informers, coreInformers.Core().V1().Secrets().Informer(), eventRecorder)
+		informerSyncList.Add(coreInformers.Core().V1().Secrets().Informer()).AddEventHandler(eventRecorder)
 	}
 
 	// step 5. endpoints updates are handled directly by the EndpointsTranslator
@@ -249,7 +249,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		FieldLogger: log.WithField("context", "endpointstranslator"),
 	}
 
-	informers = registerEventHandler(informers, coreInformers.Core().V1().Endpoints().Informer(), et)
+	informerSyncList.Add(coreInformers.Core().V1().Endpoints().Informer()).AddEventHandler(et)
 
 	// step 6. setup workgroup runner and register informers.
 	var g workgroup.Group
@@ -346,14 +346,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	g.Add(func(stop <-chan struct{}) error {
 		log := log.WithField("context", "grpc")
 
-		synced := make([]cache.InformerSynced, 0, len(informers))
-		for _, inf := range informers {
-			synced = append(synced, inf.HasSynced)
-		}
-
 		log.Printf("waiting for informer caches to sync")
-		if !cache.WaitForCacheSync(stop, synced...) {
-			return fmt.Errorf("error waiting for cache to sync")
+		if err := informerSyncList.WaitForSync(stop); err != nil {
+			return err
 		}
 		log.Printf("informer caches synced")
 
@@ -403,11 +398,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 14. GO!
 	return g.Run()
-}
-
-func registerEventHandler(informers []cache.SharedIndexInformer, inf cache.SharedIndexInformer, handler cache.ResourceEventHandler) []cache.SharedIndexInformer {
-	inf.AddEventHandler(handler)
-	return append(informers, inf)
 }
 
 type informer interface {
