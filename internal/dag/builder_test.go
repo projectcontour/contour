@@ -2395,6 +2395,64 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// proxy39broot is a valid TCPProxy which includes to another TCPProxy
+	proxy39broot := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "root",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "www.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{
+				Include: &projcontour.TCPProxyInclude{
+					Name:      "foo",
+					Namespace: s1.Namespace,
+				},
+			},
+		},
+	}
+
+	proxy39brootplural := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "root",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "www.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{
+				IncludesDeprecated: &projcontour.TCPProxyInclude{
+					Name:      "foo",
+					Namespace: s1.Namespace,
+				},
+			},
+		},
+	}
+
+	proxy39bchild := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
 	proxy40 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
@@ -5232,6 +5290,47 @@ func TestDAGInsert(t *testing.T) {
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
 								Name: "www.example.com", // this is proxy39, not proxy38
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(
+									service(s1),
+								),
+							},
+						},
+					),
+				},
+			),
+		},
+		"insert httpproxy w/tcpproxy w/include": {
+			objs: []interface{}{proxy39broot, proxy39bchild, s1},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "www.example.com",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(
+									service(s1),
+								),
+							},
+						},
+					),
+				},
+			),
+		},
+		// Issue #2218
+		"insert httpproxy w/tcpproxy w/include plural": {
+			objs: []interface{}{proxy39brootplural, proxy39bchild, s1},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "www.example.com",
 							},
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(

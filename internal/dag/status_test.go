@@ -1808,6 +1808,63 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	proxy48root := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "validtcpproxy",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "tcpproxy.example.com",
+				TLS: &projcontour.TLS{
+					SecretName: sec1.Name,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{
+				Include: &projcontour.TCPProxyInclude{
+					Name:      "child",
+					Namespace: s1.Namespace,
+				},
+			},
+		},
+	}
+
+	proxy48rootplural := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "validtcpproxy",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "tcpproxy.example.com",
+				TLS: &projcontour.TLS{
+					SecretName: sec1.Name,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{
+				IncludesDeprecated: &projcontour.TCPProxyInclude{
+					Name:      "child",
+					Namespace: s1.Namespace,
+				},
+			},
+		},
+	}
+
+	proxy48child := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "child",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -2478,6 +2535,20 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: ir1.Name, namespace: ir1.Namespace}:       {Object: ir1, Status: "valid", Description: "valid IngressRoute", Vhost: "example.com"},
 				{name: proxy1.Name, namespace: proxy1.Namespace}: {Object: proxy1, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
+			},
+		},
+		"valid HTTPProxy.TCPProxy": {
+			objs: []interface{}{proxy48root, proxy48child, s1, sec1},
+			want: map[Meta]Status{
+				{name: proxy48root.Name, namespace: proxy48root.Namespace}:   {Object: proxy48root, Status: "valid", Description: "valid HTTPProxy", Vhost: "tcpproxy.example.com"},
+				{name: proxy48child.Name, namespace: proxy48child.Namespace}: {Object: proxy48child, Status: "valid", Description: "valid HTTPProxy", Vhost: "tcpproxy.example.com"},
+			},
+		},
+		"valid HTTPProxy.TCPProxy - plural": {
+			objs: []interface{}{proxy48rootplural, proxy48child, s1, sec1},
+			want: map[Meta]Status{
+				{name: proxy48rootplural.Name, namespace: proxy48rootplural.Namespace}: {Object: proxy48rootplural, Status: "valid", Description: "valid HTTPProxy", Vhost: "tcpproxy.example.com"},
+				{name: proxy48child.Name, namespace: proxy48child.Namespace}:           {Object: proxy48child, Status: "valid", Description: "valid HTTPProxy", Vhost: "tcpproxy.example.com"},
 			},
 		},
 	}
