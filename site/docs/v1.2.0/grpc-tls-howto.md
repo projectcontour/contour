@@ -104,6 +104,28 @@ $ kubectl create secret -n projectcontour tls envoycert \
 
 Note that we don't put the CA **key** into the cluster, there's no reason for that to be there, and that would create a security problem. That also means that the `cacert` secret can't be a `tls` type secret, as they must be a keypair.
 
+## Rotating Certificates
+
+Eventually the certificates that Contour & Envoy use will need to be rotated.
+The following steps can be taken to change the certificates that Contour / Envoy are using with new ones.
+The high-level 
+
+1. Delete the secret that holds the gRPC TLS keypair
+2. Generate new secrets
+3. Contour will automatically rotate its certificate
+4. Restart all Envoy pods
+
+### Rotate using the contour-cergen job
+
+If using the built-in Contour certificate generation the following steps can be taken:
+
+1. Delete the secret that holds the gRPC TLS keypair
+  - `kubectl delete secret cacert contourcert envoycert -n projectcontour`
+2. Delete the contour-certgen job
+ - `kubectl delete job contour-certgen -n projectcontour`
+3. Reapply the contour-certgen job from [certgen.yaml][1]
+4. Restart all Envoy pods
+
 # Conclusion
 
 Once this process is done, the certificates will be present as Secrets in the `projectcontour` namespace, as required by
