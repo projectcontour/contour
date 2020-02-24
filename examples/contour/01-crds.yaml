@@ -914,9 +914,26 @@ spec:
                       format: int32
                       type: integer
                   type: object
-                includes:
+                include:
                   description: Include specifies that this tcpproxy should be delegated
                     to another HTTPProxy.
+                  properties:
+                    name:
+                      description: Name of the child HTTPProxy
+                      type: string
+                    namespace:
+                      description: Namespace of the HTTPProxy to include. Defaults
+                        to the current namespace if not supplied.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                includes:
+                  description: "IncludesDeprecated allow for specific routing configuration
+                    to be appended to another HTTPProxy in another namespace. \n Exists
+                    due to a mistake when developing HTTPProxy and the field was marked
+                    plural when it should have been singular. This field should stay
+                    to not break backwards compatibility to v1 users."
                   properties:
                     name:
                       description: Name of the child HTTPProxy

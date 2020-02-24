@@ -486,6 +486,11 @@ func (in *TCPProxy) DeepCopyInto(out *TCPProxy) {
 		*out = new(TCPProxyInclude)
 		**out = **in
 	}
+	if in.IncludesDeprecated != nil {
+		in, out := &in.IncludesDeprecated, &out.IncludesDeprecated
+		*out = new(TCPProxyInclude)
+		**out = **in
+	}
 	if in.HealthCheckPolicy != nil {
 		in, out := &in.HealthCheckPolicy, &out.HealthCheckPolicy
 		*out = new(TCPHealthCheckPolicy)
