@@ -24,13 +24,6 @@ linters-settings:
     check-exported: false
 
 issues:
-  exclude-rules:
-  - path: apis/generated/
-    linters:
-    - deadcode
-    - unparam
-    - unused
-    - varcheck
   exclude:
   # TODO(jpeach): exclude unparam warnings about functions that always recieve
   # the same arguments. We should clean those up some time.
