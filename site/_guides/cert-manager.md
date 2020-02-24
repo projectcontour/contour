@@ -574,7 +574,7 @@ spec:
   tls:
   - hosts:
     - httpbinproxy.davecheney.com
-    secretName: httpbinproxy
+    secretName: httpbin
 ```
 
 Once cert-manager has done its thing, you will have a `httpbinproxy` secret, that will contain the keypair.

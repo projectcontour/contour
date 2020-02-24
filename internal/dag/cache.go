@@ -27,6 +27,7 @@ import (
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/sirupsen/logrus"
+	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
 )
 
 const DEFAULT_INGRESS_CLASS = "contour"
@@ -50,6 +51,10 @@ type KubernetesCache struct {
 	irdelegations        map[Meta]*ingressroutev1.TLSCertificateDelegation
 	httpproxydelegations map[Meta]*projectcontour.TLSCertificateDelegation
 	services             map[Meta]*v1.Service
+	gatewayclasses       map[Meta]*serviceapis.GatewayClass
+	gateways             map[Meta]*serviceapis.Gateway
+	httproutes           map[Meta]*serviceapis.HTTPRoute
+	tcproutes            map[Meta]*serviceapis.TcpRoute
 
 	logrus.FieldLogger
 }
@@ -203,6 +208,46 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		}
 		kc.httpproxydelegations[m] = obj
 		return true
+	case *serviceapis.GatewayClass:
+		m := toMeta(obj)
+		if kc.gatewayclasses == nil {
+			kc.gatewayclasses = make(map[Meta]*serviceapis.GatewayClass)
+		}
+		// TODO(youngnick): Remove this once service-apis actually have behavior
+		// other than being added to the cache.
+		kc.WithField("experimental", "service-apis").WithField("name", m.name).WithField("namespace", m.namespace).Debug("Adding GatewayClass")
+		kc.gatewayclasses[m] = obj
+		return true
+	case *serviceapis.Gateway:
+		m := toMeta(obj)
+		if kc.gateways == nil {
+			kc.gateways = make(map[Meta]*serviceapis.Gateway)
+		}
+		// TODO(youngnick): Remove this once service-apis actually have behavior
+		// other than being added to the cache.
+		kc.WithField("experimental", "service-apis").WithField("name", m.name).WithField("namespace", m.namespace).Debug("Adding Gateway")
+		kc.gateways[m] = obj
+		return true
+	case *serviceapis.HTTPRoute:
+		m := toMeta(obj)
+		if kc.httproutes == nil {
+			kc.httproutes = make(map[Meta]*serviceapis.HTTPRoute)
+		}
+		// TODO(youngnick): Remove this once service-apis actually have behavior
+		// other than being added to the cache.
+		kc.WithField("experimental", "service-apis").WithField("name", m.name).WithField("namespace", m.namespace).Debug("Adding HTTPRoute")
+		kc.httproutes[m] = obj
+		return true
+	case *serviceapis.TcpRoute:
+		m := toMeta(obj)
+		if kc.tcproutes == nil {
+			kc.tcproutes = make(map[Meta]*serviceapis.TcpRoute)
+		}
+		// TODO(youngnick): Remove this once service-apis actually have behavior
+		// other than being added to the cache.
+		kc.WithField("experimental", "service-apis").WithField("name", m.name).WithField("namespace", m.namespace).Debug("Adding TcpRoute")
+		kc.tcproutes[m] = obj
+		return true
 
 	default:
 		// not an interesting object
@@ -266,6 +311,39 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		_, ok := kc.httpproxydelegations[m]
 		delete(kc.httpproxydelegations, m)
 		return ok
+	case *serviceapis.GatewayClass:
+		m := toMeta(obj)
+		_, ok := kc.gatewayclasses[m]
+		// TODO(youngnick): Remove this once service-apis actually have behavior
+		// other than being removed from the cache.
+		kc.WithField("experimental", "service-apis").WithField("name", m.name).WithField("namespace", m.namespace).Debug("Removing GatewayClass")
+		delete(kc.gatewayclasses, m)
+		return ok
+	case *serviceapis.Gateway:
+		m := toMeta(obj)
+		_, ok := kc.gateways[m]
+		// TODO(youngnick): Remove this once service-apis actually have behavior
+		// other than being removed from the cache.
+		kc.WithField("experimental", "service-apis").WithField("name", m.name).WithField("namespace", m.namespace).Debug("Removing Gateway")
+		delete(kc.gateways, m)
+		return ok
+	case *serviceapis.HTTPRoute:
+		m := toMeta(obj)
+		_, ok := kc.httproutes[m]
+		// TODO(youngnick): Remove this once service-apis actually have behavior
+		// other than being removed from the cache.
+		kc.WithField("experimental", "service-apis").WithField("name", m.name).WithField("namespace", m.namespace).Debug("Removing HTTPRoute")
+		delete(kc.httproutes, m)
+		return ok
+	case *serviceapis.TcpRoute:
+		m := toMeta(obj)
+		_, ok := kc.tcproutes[m]
+		// TODO(youngnick): Remove this once service-apis actually have behavior
+		// other than being removed from the cache.
+		kc.WithField("experimental", "service-apis").WithField("name", m.name).WithField("namespace", m.namespace).Debug("Removing TcpRoute")
+		delete(kc.tcproutes, m)
+		return ok
+
 	default:
 		// not interesting
 		kc.WithField("object", obj).Error("remove unknown object")

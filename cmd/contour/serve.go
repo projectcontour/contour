@@ -29,6 +29,8 @@ import (
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 
+	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
+
 	"k8s.io/client-go/dynamic"
 
 	"github.com/projectcontour/contour/internal/contour"
@@ -120,6 +122,9 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.DisableLeaderElection)
 
 	serve.Flag("use-extensions-v1beta1-ingress", "Subscribe to the deprecated extensions/v1beta1.Ingress type.").BoolVar(&ctx.UseExtensionsV1beta1Ingress)
+
+	serve.Flag("debug", "Enable debug logging.").Short('d').BoolVar(&ctx.Debug)
+	serve.Flag("experimental-service-apis", "Subscribe to the new service-apis types.").BoolVar(&ctx.UseExperimentalServiceAPITypes)
 	return serve, ctx
 }
 
@@ -162,6 +167,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	registry.MustRegister(prometheus.NewGoCollector())
+
+	// Before we can build the event handler, we need to initialize the converter we'll
+	// use to convert from Unstructured. Thanks to kubebuilder types from service-apis, this now can
+	// return an error.
+	converter, err := k8s.NewUnstructuredConverter()
+	check(err)
 
 	// step 3. build our mammoth Kubernetes event handler.
 	eventHandler := &contour.EventHandler{
@@ -208,7 +219,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// wrap eventRecorder in a converter for objects from the dynamic client.
 	dynamicHandler := &k8s.DynamicClientHandler{
 		Next:      eventRecorder,
-		Converter: k8s.NewUnstructuredConverter(),
+		Converter: converter,
 		Logger:    log.WithField("context", "dynamicHandler"),
 	}
 
@@ -222,6 +233,14 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	informerSyncList.Add(dynamicInformers.ForResource(projectcontour.TLSCertificateDelegationGVR).Informer()).AddEventHandler(dynamicHandler)
 
 	informerSyncList.Add(coreInformers.Core().V1().Services().Informer()).AddEventHandler(eventRecorder)
+
+	if ctx.UseExperimentalServiceAPITypes {
+		log.Info("Enabling Experimental Service APIs types")
+		informerSyncList.Add(dynamicInformers.ForResource(serviceapis.GroupVersion.WithResource("gatewayclasses")).Informer()).AddEventHandler(dynamicHandler)
+		informerSyncList.Add(dynamicInformers.ForResource(serviceapis.GroupVersion.WithResource("gateways")).Informer()).AddEventHandler(dynamicHandler)
+		informerSyncList.Add(dynamicInformers.ForResource(serviceapis.GroupVersion.WithResource("httproutes")).Informer()).AddEventHandler(dynamicHandler)
+		informerSyncList.Add(dynamicInformers.ForResource(serviceapis.GroupVersion.WithResource("tcproutes")).Informer()).AddEventHandler(dynamicHandler)
+	}
 
 	// After K8s 1.13 the API server will automatically translate extensions/v1beta1.Ingress objects
 	// to networking/v1beta1.Ingress objects so we should only listen for one type or the other.
