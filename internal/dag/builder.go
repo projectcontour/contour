@@ -1165,7 +1165,14 @@ func (b *Builder) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *pr
 
 	visited = append(visited, httpproxy)
 
-	if len(tcpproxy.Services) > 0 && tcpproxy.Include != nil {
+	// #2218 Allow support for both plural and singular "Include" for TCPProxy for the v1 API Spec
+	// Prefer configurations for singular over the plural version
+	tcpProxyInclude := tcpproxy.Include
+	if tcpproxy.Include == nil {
+		tcpProxyInclude = tcpproxy.IncludesDeprecated
+	}
+
+	if len(tcpproxy.Services) > 0 && tcpProxyInclude != nil {
 		sw.SetInvalid("tcpproxy: cannot specify services and include in the same httpproxy")
 		return false
 	}
@@ -1190,19 +1197,19 @@ func (b *Builder) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *pr
 		return true
 	}
 
-	if tcpproxy.Include == nil {
+	if tcpProxyInclude == nil {
 		// We don't allow an empty TCPProxy object.
 		sw.SetInvalid("tcpproxy: either services or inclusion must be specified")
 		return false
 	}
 
-	namespace := tcpproxy.Include.Namespace
+	namespace := tcpProxyInclude.Namespace
 	if namespace == "" {
 		// we are delegating to another HTTPProxy in the same namespace
 		namespace = httpproxy.Namespace
 	}
 
-	m := Meta{name: tcpproxy.Include.Name, namespace: namespace}
+	m := Meta{name: tcpProxyInclude.Name, namespace: namespace}
 	dest, ok := b.Source.httpproxies[m]
 	if !ok {
 		sw.SetInvalid("tcpproxy: include %s/%s not found", m.namespace, m.name)
