@@ -32,6 +32,9 @@ import (
 )
 
 type serveContext struct {
+	// Enable debug logging
+	Debug bool
+
 	// contour's kubernetes client parameters
 	InCluster  bool   `yaml:"incluster,omitempty"`
 	Kubeconfig string `yaml:"kubeconfig,omitempty"`
