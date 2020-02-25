@@ -332,7 +332,7 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		_, ok := kc.httproutes[m]
 		// TODO(youngnick): Remove this once service-apis actually have behavior
 		// other than being removed from the cache.
-		kc.WithField("experimental", "service-apis").WithField("name", m.name).WithField("namespace", m.namespace).Debug("Removing HTTPProxy")
+		kc.WithField("experimental", "service-apis").WithField("name", m.name).WithField("namespace", m.namespace).Debug("Removing HTTPRoute")
 		delete(kc.httproutes, m)
 		return ok
 	case *serviceapis.TcpRoute:
