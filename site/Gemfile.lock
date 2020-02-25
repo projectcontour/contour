@@ -1,5 +1,5 @@
 GIT
-  remote: git://github.com/jekyll/github-metadata.git
+  remote: https://github.com/jekyll/github-metadata.git
   revision: c0d0fa8057c02bb5de23af90b4b8c27e529350d7
   specs:
     jekyll-github-metadata (2.13.0)
@@ -78,9 +78,9 @@ GEM
     mercenary (0.3.6)
     mini_portile2 (2.4.0)
     multipart-post (2.1.1)
-    nokogiri (1.10.5)
+    nokogiri (1.10.8)
       mini_portile2 (~> 2.4.0)
-    octokit (4.15.0)
+    octokit (4.16.0)
       faraday (>= 0.9)
       sawyer (~> 0.8.0, >= 0.5.3)
     parallel (1.18.0)
