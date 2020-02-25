@@ -194,6 +194,7 @@ func TestGRPC(t *testing.T) {
 			ch := contour.CacheHandler{
 				Metrics: metrics.NewMetrics(prometheus.NewRegistry()),
 			}
+
 			eh = &contour.EventHandler{
 				CacheHandler: &ch,
 				FieldLogger:  log,

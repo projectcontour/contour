@@ -140,24 +140,15 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 				// If there is already a timer running, stop it and clear pending.
 				if timer != nil {
 					timer.Stop()
-
-					// nil out pending in the case that the timer had already expired.
-					// This effectively clears the notification.
-					pending = nil
 				}
 
-				since := time.Since(e.last)
-				if since > e.HoldoffMaxDelay {
-					// the holdoff delay has been exceeded so we must update immediately.
-					e.WithField("last_update", since).WithField("outstanding", reset()).Info("forcing update")
-					e.updateDAG() // rebuild dag and send to CacheHandler.
-					e.incSequence()
-					continue
+				delay := e.HoldoffDelay
+				if time.Since(e.last) > e.HoldoffMaxDelay {
+					// the maximum holdoff delay has been exceeded so schedule the update
+					// immediately by delaying for 0ns.
+					delay = 0
 				}
-
-				// If we get here then there is still time remaining before max holdoff so
-				// start a new timer for the holdoff delay.
-				timer = time.NewTimer(e.HoldoffDelay)
+				timer = time.NewTimer(delay)
 				pending = timer.C
 			} else {
 				// notify any watchers that we received the event but chose
