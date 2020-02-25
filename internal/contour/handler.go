@@ -50,9 +50,6 @@ type EventHandler struct {
 
 	update chan interface{}
 
-	// last holds the last time CacheHandler.OnUpdate was called.
-	last time.Time
-
 	// Sequence is a channel that receives a incrementing sequence number
 	// for each update processed. The updates may be processed immediately, or
 	// delayed by a holdoff timer. In each case a non blocking send to Sequence
@@ -97,7 +94,6 @@ func (e *EventHandler) UpdateNow() {
 // for registration with a workgroup.Group.
 func (e *EventHandler) Start() func(<-chan struct{}) error {
 	e.update = make(chan interface{})
-	e.last = time.Now()
 	return e.run
 }
 
@@ -116,6 +112,12 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 
 		// pending is a reference to the current timer's channel.
 		pending <-chan time.Time
+
+		// lastDAGUpdate holds the last time updateDAG was called.
+		// lastDAGUpdate is seeded to the current time on entry to
+		// run to allow the holdoff timer to batch the updates from
+		// the API informers.
+		lastDAGUpdate = time.Now()
 	)
 
 	reset := func() (v int) {
@@ -137,13 +139,13 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 		case op := <-e.update:
 			if e.onUpdate(op) {
 				outstanding++
-				// If there is already a timer running, stop it and clear pending.
+				// If there is already a timer running, stop it.
 				if timer != nil {
 					timer.Stop()
 				}
 
 				delay := e.HoldoffDelay
-				if time.Since(e.last) > e.HoldoffMaxDelay {
+				if time.Since(lastDAGUpdate) > e.HoldoffMaxDelay {
 					// the maximum holdoff delay has been exceeded so schedule the update
 					// immediately by delaying for 0ns.
 					delay = 0
@@ -156,9 +158,10 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 				e.incSequence()
 			}
 		case <-pending:
-			e.WithField("last_update", time.Since(e.last)).WithField("outstanding", reset()).Info("performing delayed update")
+			e.WithField("last_update", time.Since(lastDAGUpdate)).WithField("outstanding", reset()).Info("performing delayed update")
 			e.updateDAG()
 			e.incSequence()
+			lastDAGUpdate = time.Now()
 		case <-stop:
 			// shutdown
 			return nil
@@ -222,8 +225,6 @@ func (e *EventHandler) updateDAG() {
 	default:
 		e.Debug("skipping status update: not the leader")
 	}
-
-	e.last = time.Now()
 }
 
 // setStatus updates the status of objects.
