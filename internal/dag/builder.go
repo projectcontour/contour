@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -786,9 +787,10 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			var uv *UpstreamValidation
 			if protocol == "tls" {
 				// we can only validate TLS connections to services that talk TLS
-				uv, err = b.lookupUpstreamValidation("??", service.Name, service.UpstreamValidation, proxy.Namespace)
+				uv, err = b.lookupUpstreamValidation(service.UpstreamValidation, proxy.Namespace)
 				if err != nil {
-					sw.SetInvalid(err.Error())
+					sw.SetInvalid("Service [%s:%d] TLS upstream validation policy error: %s",
+						service.Name, service.Port, err)
 					return nil
 				}
 			}
@@ -996,9 +998,10 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 				var err error
 				if s.Protocol == "tls" {
 					// we can only validate TLS connections to services that talk TLS
-					uv, err = b.lookupUpstreamValidation(route.Match, service.Name, service.UpstreamValidation, ir.Namespace)
+					uv, err = b.lookupUpstreamValidation(service.UpstreamValidation, ir.Namespace)
 					if err != nil {
-						sw.SetInvalid(err.Error())
+						sw.SetInvalid("Service [%s:%d] TLS upstream validation policy error: %s",
+							service.Name, service.Port, err)
 						return
 					}
 				}
@@ -1062,7 +1065,7 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 	sw.SetValid()
 }
 
-func (b *Builder) lookupUpstreamValidation(match string, serviceName string, uv *projcontour.UpstreamValidation, namespace string) (*UpstreamValidation, error) {
+func (b *Builder) lookupUpstreamValidation(uv *projcontour.UpstreamValidation, namespace string) (*UpstreamValidation, error) {
 	if uv == nil {
 		// no upstream validation requested, nothing to do
 		return nil, nil
@@ -1071,12 +1074,12 @@ func (b *Builder) lookupUpstreamValidation(match string, serviceName string, uv 
 	cacert := b.lookupSecret(Meta{name: uv.CACertificate, namespace: namespace}, validCA)
 	if cacert == nil {
 		// UpstreamValidation is requested, but cert is missing or not configured
-		return nil, fmt.Errorf("route %q: service %q: upstreamValidation requested but secret not found or misconfigured", match, serviceName)
+		return nil, errors.New("secret not found or misconfigured")
 	}
 
 	if uv.SubjectName == "" {
 		// UpstreamValidation is requested, but SAN is not provided
-		return nil, fmt.Errorf("route %q: service %q: upstreamValidation requested but subject alt name not found or misconfigured", match, serviceName)
+		return nil, errors.New("missing subject alternative name")
 	}
 
 	return &UpstreamValidation{
