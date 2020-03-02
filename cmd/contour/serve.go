@@ -121,8 +121,6 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("accesslog-format", "Format for Envoy access logs.").StringVar(&ctx.AccessLogFormat)
 	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.DisableLeaderElection)
 
-	serve.Flag("use-extensions-v1beta1-ingress", "Subscribe to the deprecated extensions/v1beta1.Ingress type.").BoolVar(&ctx.UseExtensionsV1beta1Ingress)
-
 	serve.Flag("debug", "Enable debug logging.").Short('d').BoolVar(&ctx.Debug)
 	serve.Flag("experimental-service-apis", "Subscribe to the new service-apis types.").BoolVar(&ctx.UseExperimentalServiceAPITypes)
 	return serve, ctx
@@ -233,6 +231,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	informerSyncList.Add(dynamicInformers.ForResource(projectcontour.TLSCertificateDelegationGVR).Informer()).AddEventHandler(dynamicHandler)
 
 	informerSyncList.Add(coreInformers.Core().V1().Services().Informer()).AddEventHandler(eventRecorder)
+	informerSyncList.Add(coreInformers.Networking().V1beta1().Ingresses().Informer()).AddEventHandler(eventRecorder)
 
 	if ctx.UseExperimentalServiceAPITypes {
 		log.Info("Enabling Experimental Service APIs types")
@@ -240,16 +239,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		informerSyncList.Add(dynamicInformers.ForResource(serviceapis.GroupVersion.WithResource("gateways")).Informer()).AddEventHandler(dynamicHandler)
 		informerSyncList.Add(dynamicInformers.ForResource(serviceapis.GroupVersion.WithResource("httproutes")).Informer()).AddEventHandler(dynamicHandler)
 		informerSyncList.Add(dynamicInformers.ForResource(serviceapis.GroupVersion.WithResource("tcproutes")).Informer()).AddEventHandler(dynamicHandler)
-	}
-
-	// After K8s 1.13 the API server will automatically translate extensions/v1beta1.Ingress objects
-	// to networking/v1beta1.Ingress objects so we should only listen for one type or the other.
-	// The default behavior is to listen for networking/v1beta1.Ingress objects and let the API server
-	// transparently upgrade the extensions version for us.
-	if ctx.UseExtensionsV1beta1Ingress {
-		informerSyncList.Add(coreInformers.Extensions().V1beta1().Ingresses().Informer()).AddEventHandler(eventRecorder)
-	} else {
-		informerSyncList.Add(coreInformers.Networking().V1beta1().Ingresses().Informer()).AddEventHandler(eventRecorder)
 	}
 
 	// Add informers for each root-ingressroute namespaces
@@ -322,7 +311,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		})
 
 		g.Add(func(stop <-chan struct{}) error {
-			log := log.WithField("context", "leaderelection-elected")
+			log := log.WithField("context", "leaderelection")
 			leader := eventHandler.IsLeader
 			for {
 				select {
@@ -336,21 +325,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 					// disable this case
 					leader = nil
+				case <-deposed:
+					// If we get deposed as leader, shut it down.
+					log.Info("deposed as leader, shutting down")
+					return nil
 				}
 			}
-		})
-
-		g.Add(func(stop <-chan struct{}) error {
-			// If we get deposed as leader, shut it down.
-			log := log.WithField("context", "leaderelection-deposer")
-			select {
-			case <-stop:
-				// shut down
-				log.Info("stopped leader election")
-			case <-deposed:
-				log.Info("deposed as leader, shutting down")
-			}
-			return nil
 		})
 	} else {
 		log.Info("Leader election disabled")
