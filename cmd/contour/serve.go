@@ -311,7 +311,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		})
 
 		g.Add(func(stop <-chan struct{}) error {
-			log := log.WithField("context", "leadership")
+			log := log.WithField("context", "leaderelection")
 			leader := eventHandler.IsLeader
 			for {
 				select {
