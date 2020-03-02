@@ -23,7 +23,6 @@ import (
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	v1 "k8s.io/api/core/v1"
-	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -440,7 +439,6 @@ func TestAnnotationKindValidation(t *testing.T) {
 	for _, kind := range []string{
 		k8s.KindOf(&v1.Service{}),
 		k8s.KindOf(&v1beta1.Ingress{}),
-		k8s.KindOf(&extensionsv1beta1.Ingress{}),
 		k8s.KindOf(&ingressroutev1.IngressRoute{}),
 		k8s.KindOf(&projectcontour.HTTPProxy{}),
 	} {
