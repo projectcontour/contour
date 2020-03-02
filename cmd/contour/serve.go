@@ -311,7 +311,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		})
 
 		g.Add(func(stop <-chan struct{}) error {
-			log := log.WithField("context", "leaderelection-elected")
+			log := log.WithField("context", "leadership")
 			leader := eventHandler.IsLeader
 			for {
 				select {
@@ -325,21 +325,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 					// disable this case
 					leader = nil
+				case <-deposed:
+					// If we get deposed as leader, shut it down.
+					log.Info("deposed as leader, shutting down")
+					return nil
 				}
 			}
-		})
-
-		g.Add(func(stop <-chan struct{}) error {
-			// If we get deposed as leader, shut it down.
-			log := log.WithField("context", "leaderelection-deposer")
-			select {
-			case <-stop:
-				// shut down
-				log.Info("stopped leader election")
-			case <-deposed:
-				log.Info("deposed as leader, shutting down")
-			}
-			return nil
 		})
 	} else {
 		log.Info("Leader election disabled")
