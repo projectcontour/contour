@@ -247,7 +247,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// The default behavior is to listen for networking/v1beta1.Ingress objects and let the API server
 	// transparently upgrade the extensions version for us.
 	if ctx.UseExtensionsV1beta1Ingress {
-		informerSyncList.Add(coreInformers.Extensions().V1beta1().Ingresses().Informer()).AddEventHandler(eventRecorder)
+		translator := &k8s.ExtensionsIngressTranslator{
+			Next:   eventRecorder,
+			Logger: log.WithField("context", "extensionsIngressTranslator"),
+		}
+		informerSyncList.Add(coreInformers.Extensions().V1beta1().Ingresses().Informer()).AddEventHandler(translator)
 	} else {
 		informerSyncList.Add(coreInformers.Networking().V1beta1().Ingresses().Informer()).AddEventHandler(eventRecorder)
 	}
