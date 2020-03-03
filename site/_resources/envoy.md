@@ -9,15 +9,16 @@ This page describes the compatibility matrix of Contour and Envoy versions.
 
 ## Supported Envoy versions
 
-| Envoy version | Contour v1.0.0<sup>5</sup> | Contour v1.0.1<sup>6</sup> | Contour v1.1.0 | Contour v1.2.0 |
-| ------------ | :-----------: | :-----------: | :----------: | :----------: |
-| 1.11.0 | Not supported<sup>1</sup> | Not supported<sup>1</sup> | Not supported<sup>1</sup> | Not supported<sup>1</sup> |
-| 1.11.1 | Not supported<sup>2</sup> | Not supported<sup>2</sup> | Not supported<sup>2</sup> | Not supported<sup>2</sup> |
-| 1.11.2 | *Supported*<sup>5</sup> | Not supported | Not supported | Not supported |
-| 1.12.0 | Not supported<sup>3</sup> | Not supported<sup>3</sup> | Not supported<sup>3</sup> | Not supported<sup>3</sup> |
-| 1.12.1 | Not supported<sup>4</sup> | Not supported<sup>4</sup> | Not supported<sup>4</sup> | Not supported<sup>4</sup> |
-| 1.12.2 | Not supported | *Supported*<sup>6</sup> | *Supported* | Not supported |
-| 1.13.0 | Not supported | Not supported | Not supported | *Supported* |
+| Envoy version | Contour v1.0.0<sup>5</sup> | Contour v1.0.1<sup>6</sup> | Contour v1.1.0<sup>7</sup> | Contour v1.2.0<sup>8</sup> | Contour v1.2.1 |
+| ------------ | :-----------: | :-----------: | :----------: | :----------: | :--------: |
+| 1.11.0 | Not supported<sup>1</sup> | Not supported<sup>1</sup> | Not supported<sup>1</sup> | Not supported<sup>1</sup> | Not supported<sup>1</sup> |
+| 1.11.1 | Not supported<sup>2</sup> | Not supported<sup>2</sup> | Not supported<sup>2</sup> | Not supported<sup>2</sup> | Not supported<sup>2</sup> |
+| 1.11.2 | *Supported*<sup>5</sup> | Not supported | Not supported | Not supported | Not supported |
+| 1.12.0 | Not supported<sup>3</sup> | Not supported<sup>3</sup> | Not supported<sup>3</sup> | Not supported<sup>3</sup> | Not supported<sup>3</sup> |
+| 1.12.1 | Not supported<sup>4</sup> | Not supported<sup>4</sup> | Not supported<sup>4</sup> | Not supported<sup>4</sup> | Not supported<sup>4</sup> |
+| 1.12.2 | Not supported | *Supported*<sup>6</sup> | *Supported*<sup>7</sup> | Not supported | Not supported |
+| 1.13.0 | Not supported<sup>9</sup> | Not supported<sup>9</sup> | Not Supported<sup>9</sup> | Not supported<sup>8,9</sup> | Not Supported<sup>9</sup> |
+| 1.13.1 | Not supported | Not Supported | Not supported | Not supported | *Supported* | 
 
 #### Notes
 
@@ -27,6 +28,9 @@ This page describes the compatibility matrix of Contour and Envoy versions.
 4. [CVE-2019-18801. CVE-1019-18802, CVE-1019-18838][6]
 5. Contour v1.0.0 is no longer supported.
 6. Contour v1.0.1 is no longer supported.
+7. Contour v1.1.0 is no longer supported.
+8. Contour v1.2.0 is no longer supported.
+9. [CVE-2020-8659, CVE-2020-8661, CVE-2020-8664, CVE-2020-8660][7]
 
 ## Envoy extensions
 
@@ -47,3 +51,4 @@ If you are providing your own Envoy it must be compiled with the following exten
 [4]: {{site.github.repository_url}}/tree/{{site.github.latest_release.tag_name}}/examples/contour
 [5]: {% link _resources/support.md %}
 [6]: https://groups.google.com/d/msg/envoy-announce/BjgUTDTKAu8/DTfMMSyCAgAJ
+[7]: https://groups.google.com/forum/#!msg/envoy-announce/sVqmxy0un2s/8aq430xiHAAJ
