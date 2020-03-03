@@ -14,7 +14,7 @@ If you’re a newcomer, check out the “[Good first issue][1]” and “[Help w
 
 * Join the [Project Contour Announce][8] mailing list for release notifications and other important news.
 
-* Join the [Contour Community Meetings](https://projectcontour.io/community/)
+* Join the [Contour Community Meetings][5] on Zoom
   * For Australia time zones:
     * Every second Tuesday at 6:30 PM Eastern Time / 3:30 PM Pacific Time / Wednesday at 8:30 AM Australian Eastern Time.
   * For Americas time zones:
