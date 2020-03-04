@@ -14,7 +14,7 @@ Contour continues to add new features to help you better manage Contour operatio
 
 A few releases ago, Contour enabled secure communication between Contour and Envoy. This new feature ensured that any communication between Contour and Envoy over its gRPC connection would be secure, mainly securing the communication using TLS certificate keys.
 
-This was just the first step, however, and we understood that it wouldn’t solve all of our users’ problems. Thanks to [@tssarni](https://github.com/tssarni), we now have support for Contour to rotate its certificates without the need to restart the Contour process.
+This was just the first step, however, and we understood that it wouldn’t solve all of our users’ problems. Thanks to [@tsaarni](https://github.com/tsaarni), we now have support for Contour to rotate its certificates without the need to restart the Contour process.
 
 Future work includes enabling this same functionality for Envoy. This currently has some [open issues that need to be solved in Envoy first](https://github.com/envoyproxy/envoy/issues/9359).
 
@@ -51,7 +51,7 @@ We’re immensely grateful for all the community contributions that help make Co
 [@SDBrett](https://github.com/SDBrett)  
 [@uablrek](https://github.com/uablrek)  
 [@rohandvora](https://github.com/rohandvora)  
-[@tsaarni](https://github.com/tsaarni)  
+[@tsaarni](https://github.com/tsaarni)
 [@shyaamsn](https://github.com/shyaamsn)  
 [@idealhack](https://github.com/idealhack)  
 [@dbason](https://github.com/dbason)  
