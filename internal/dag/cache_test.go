@@ -50,7 +50,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				},
 				Type: v1.SecretTypeTLS,
 				Data: map[string][]byte{
-					"ca.crt":            []byte(""),
+					CACertificateKey:    []byte(""),
 					v1.TLSCertKey:       []byte(CERTIFICATE),
 					v1.TLSPrivateKeyKey: []byte(RSA_PRIVATE_KEY),
 				},
@@ -65,7 +65,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				},
 				Type: v1.SecretTypeOpaque,
 				Data: map[string][]byte{
-					"ca.crt": []byte(CERTIFICATE_WITH_TEXT),
+					CACertificateKey: []byte(CERTIFICATE_WITH_TEXT),
 				},
 			},
 			want: true,
@@ -461,7 +461,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				},
 				Type: v1.SecretTypeOpaque,
 				Data: map[string][]byte{
-					"ca.crt": []byte(CERTIFICATE),
+					CACertificateKey: []byte(CERTIFICATE),
 				},
 			},
 			// TODO(dfc) this should be false because the CA secret is
@@ -502,7 +502,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				},
 				Type: v1.SecretTypeOpaque,
 				Data: map[string][]byte{
-					"ca.crt": []byte(CERTIFICATE),
+					CACertificateKey: []byte(CERTIFICATE),
 				},
 			},
 			want: true,
@@ -541,7 +541,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				},
 				Type: v1.SecretTypeOpaque,
 				Data: map[string][]byte{
-					"ca.crt": []byte(CERTIFICATE),
+					CACertificateKey: []byte(CERTIFICATE),
 				},
 			},
 			want: true,

@@ -188,7 +188,7 @@ func TestCluster(t *testing.T) {
 								Namespace: "default",
 							},
 							Data: map[string][]byte{
-								"ca.crt": []byte("cacert"),
+								dag.CACertificateKey: []byte("cacert"),
 							},
 						},
 					},
@@ -470,7 +470,7 @@ func TestClustername(t *testing.T) {
 								Namespace: "default",
 							},
 							Data: map[string][]byte{
-								"ca.crt": []byte("somethingsecret"),
+								dag.CACertificateKey: []byte("somethingsecret"),
 							},
 						},
 					},

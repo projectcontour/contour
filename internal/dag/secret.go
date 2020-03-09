@@ -24,6 +24,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+// CaCertificateKey is the key name for accessing TLS CA certificate bundles in Kubernetes Secrets.
+const CACertificateKey = "ca.crt"
+
 // isValidSecret returns true if the secret is interesting and well
 // formed. TLS certificate/key pairs must be secrets of type
 // "kubernetes.io/tls". Certificate bundles may be "kubernetes.io/tls"
@@ -60,7 +63,7 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 			return false, nil
 		}
 
-		if data := secret.Data["ca.crt"]; len(data) == 0 {
+		if data := secret.Data[CACertificateKey]; len(data) == 0 {
 			return false, nil
 		}
 
@@ -73,7 +76,7 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 	// validate that it is PEM certificate(s). Note that the
 	// CA bundle on TLS secrets is allowed to be an empty string
 	// (see https://github.com/projectcontour/contour/issues/1644).
-	if data := secret.Data["ca.crt"]; len(data) > 0 {
+	if data := secret.Data[CACertificateKey]; len(data) > 0 {
 		if err := validateCertificate(data); err != nil {
 			return false, fmt.Errorf("invalid CA certificate bundle: %v", err)
 		}
