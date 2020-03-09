@@ -30,9 +30,6 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 )
 
-// CACertificateKey stores the key for the TLS validation secret cert
-const CACertificateKey = "ca.crt"
-
 func clusterDefaults() *v2.Cluster {
 	return &v2.Cluster{
 		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
@@ -109,7 +106,7 @@ func upstreamValidationCACert(c *dag.Cluster) []byte {
 		// No validation required
 		return nil
 	}
-	return c.UpstreamValidation.CACertificate.Object.Data[CACertificateKey]
+	return c.UpstreamValidation.CACertificate.Object.Data[dag.CACertificateKey]
 }
 
 func upstreamValidationSubjectAltName(c *dag.Cluster) string {

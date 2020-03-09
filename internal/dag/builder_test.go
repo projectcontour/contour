@@ -60,7 +60,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Type: v1.SecretTypeTLS,
 		Data: map[string][]byte{
-			"ca.crt":            []byte(""),
+			CACertificateKey:    []byte(""),
 			v1.TLSCertKey:       []byte(CERTIFICATE),
 			v1.TLSPrivateKeyKey: []byte(RSA_PRIVATE_KEY),
 		},
@@ -72,7 +72,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			"ca.crt": []byte(CERTIFICATE),
+			CACertificateKey: []byte(CERTIFICATE),
 		},
 	}
 
