@@ -4,7 +4,8 @@
 {{ if not (hiddenMember .)}}
 <tr>
     <td style="white-space:nowrap">
-        <code>{{ fieldName . }}</code></br>
+        <code>{{ fieldName . }}</code>
+        <br>
         <em>
             {{ if linkForType .Type }}
                 <a href="{{ linkForType .Type}}">
@@ -34,8 +35,8 @@
     {{ end }}
 
     {{ if or (eq (fieldName .) "spec") }}
-        <br/>
-        <br/>
+        <br>
+        <br>
         <table style="border:none">
             {{ template "members" .Type }}
         </table>
