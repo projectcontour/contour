@@ -230,6 +230,6 @@ func caBundleData(cert ...string) map[string][]byte {
 	data += "end of CA bundle\n"
 
 	return map[string][]byte{
-		"ca.crt": []byte(data),
+		CACertificateKey: []byte(data),
 	}
 }

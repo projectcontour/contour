@@ -1345,7 +1345,7 @@ func validSecret(s *v1.Secret) bool {
 }
 
 func validCA(s *v1.Secret) bool {
-	return len(s.Data["ca.crt"]) > 0
+	return len(s.Data[CACertificateKey]) > 0
 }
 
 // routeEnforceTLS determines if the route should redirect the user to a secure TLS listener
