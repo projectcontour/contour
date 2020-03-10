@@ -10,7 +10,7 @@ annotations.
 However, Contour still supports a number of annotations on the Ingress resources.
 
 <p class="alert-deprecation">
-<b>Deprecation Notice</b></br>
+<b>Deprecation Notice</b><br>
 The <code>contour.heptio.com</code> annotations are deprecated, please use the <code>projectcontour.io</code> form going forward.
 </p>
 
