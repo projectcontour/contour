@@ -403,7 +403,7 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 // or IngressRoute object in this cache. If the secret is not in the same namespace
 // it must be mentioned by a TLSCertificateDelegation.
 func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
-	if _, isCA := secret.Data["ca.crt"]; isCA {
+	if _, isCA := secret.Data[CACertificateKey]; isCA {
 		// locating a secret validation usage involves traversing each
 		// ingressroute object, determining if there is a valid delegation,
 		// and if the reference the secret as a certificate. The DAG already
