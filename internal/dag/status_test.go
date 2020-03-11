@@ -1865,6 +1865,25 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	// issue 2309, each route must have at least one service
+	proxy49 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "missing-service",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "missing-service.example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: nil, // missing
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs []interface{}
 		want map[Meta]Status
@@ -2549,6 +2568,18 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			want: map[Meta]Status{
 				{name: proxy48rootplural.Name, namespace: proxy48rootplural.Namespace}: {Object: proxy48rootplural, Status: "valid", Description: "valid HTTPProxy", Vhost: "tcpproxy.example.com"},
 				{name: proxy48child.Name, namespace: proxy48child.Namespace}:           {Object: proxy48child, Status: "valid", Description: "valid HTTPProxy", Vhost: "tcpproxy.example.com"},
+			},
+		},
+		// issue 2309, each route must have at least one service
+		"invalid HTTPProxy due to empty route.service": {
+			objs: []interface{}{proxy49, s1},
+			want: map[Meta]Status{
+				{name: proxy49.Name, namespace: proxy49.Namespace}: {
+					Object:      proxy49,
+					Status:      "invalid",
+					Description: "route.services must have at least one entry",
+					Vhost:       "missing-service.example.com",
+				},
 			},
 		},
 	}

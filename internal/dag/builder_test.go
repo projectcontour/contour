@@ -2468,6 +2468,25 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// issue 2309, each route must have at least one service
+	proxy41 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "missing-service",
+			Namespace: s1.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "missing-service.example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: nil, // missing
+			}},
+		},
+	}
+
 	proxy100 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -5361,6 +5380,10 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 			),
+		},
+		"insert httproxy w/ route w/ no services": {
+			objs: []interface{}{proxy41, s1},
+			want: listeners(), // expect empty, route is invalid so vhost is invalid
 		},
 		"insert httpproxy with pathPrefix include": {
 			objs: []interface{}{
