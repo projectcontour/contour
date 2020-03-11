@@ -58,36 +58,37 @@ type Condition struct {
 	Header *HeaderCondition `json:"header,omitempty"`
 }
 
-// HeaderCondition specifies the header condition to match.
-// Name is required. Only one of Present or Contains must
-// be provided.
+// HeaderCondition specifies how to conditionally match against HTTP
+// headers. The Name field is required, but only one of the remaining
+// fields should be be provided.
 type HeaderCondition struct {
-
-	// Name is the name of the header to match on. Name is required.
+	// Name is the name of the header to match against. Name is required.
 	// Header names are case insensitive.
 	Name string `json:"name"`
 
-	// Present is true if the Header is present in the request.
+	// Present specifies that condition is true when the named header
+	// is present, regardless of its value. Note that setting Present
+	// to false does not make the condition true if the named header
+	// is absent.
 	// +optional
 	Present bool `json:"present,omitempty"`
 
-	// Contains is true if the Header containing this string is present
-	// in the request.
+	// Contains specifies a substring that must be present in
+	// the header value.
 	// +optional
 	Contains string `json:"contains,omitempty"`
 
-	// NotContains is true if the Header containing this string is not present
-	// in the request.
+	// NotContains specifies a substring that must not be present
+	// in the header value.
 	// +optional
 	NotContains string `json:"notcontains,omitempty"`
 
-	// Exact is true if the Header containing this string matches exactly
-	// in the request.
+	// Exact specifies a string that the header value must be equal to.
 	// +optional
 	Exact string `json:"exact,omitempty"`
 
-	// NotExact is true if the Header containing this string doesn't match exactly
-	// in the request.
+	// NoExact specifies a string that the header value must not be
+	// equal to. The condition is true if the header has any other value.
 	// +optional
 	NotExact string `json:"notexact,omitempty"`
 }
