@@ -19,6 +19,7 @@ import (
 
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/projectcontour/contour/internal/build"
+	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	"k8s.io/klog"
@@ -36,8 +37,8 @@ func main() {
 	log := logrus.StandardLogger()
 	app := kingpin.New("contour", "Contour Kubernetes ingress controller.")
 
-	envoy := app.Command("envoy", "Sub-command for envoy actions.")
-	shutdownManager, shutdownManagerCtx := registerShutdownManager(envoy, log)
+	envoyCmd := app.Command("envoy", "Sub-command for envoy actions.")
+	shutdownManager, shutdownManagerCtx := registerShutdownManager(envoyCmd, log)
 
 	bootstrap, bootstrapCtx := registerBootstrap(app)
 	certgenApp, certgenConfig := registerCertGen(app)
@@ -69,7 +70,7 @@ func main() {
 	case shutdownManager.FullCommand():
 		doShutdownManager(shutdownManagerCtx)
 	case bootstrap.FullCommand():
-		doBootstrap(bootstrapCtx)
+		check(envoy.WriteBootstrap(bootstrapCtx))
 	case certgenApp.FullCommand():
 		doCertgen(certgenConfig)
 	case cds.FullCommand():
