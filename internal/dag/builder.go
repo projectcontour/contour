@@ -716,6 +716,11 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			return nil
 		}
 
+		if len(route.Services) < 1 {
+			sw.SetInvalid("route.services must have at least one entry")
+			return nil
+		}
+
 		r := &Route{
 			PathCondition:         mergePathConditions(conds),
 			HeaderConditions:      mergeHeaderConditions(conds),
