@@ -791,6 +791,12 @@ string
 </em>
 </td>
 <td>
+<p>Strategy specifies the policy used to balance requests
+across the pool of backend pods. Valid policy names are
+<code>Random</code>, <code>RoundRobin</code>, <code>WeightedLeastRequest</code>, <code>Random</code>
+and <code>Cookie</code>. If an unknown strategy name is specified
+or no policy is supplied, the default <code>RoundRobin</code> policy
+is used.</p>
 </td>
 </tr>
 </tbody>

@@ -639,6 +639,12 @@ spec:
                     description: The load balancing policy for this route.
                     properties:
                       strategy:
+                        description: Strategy specifies the policy used to balance
+                          requests across the pool of backend pods. Valid policy names
+                          are `Random`, `RoundRobin`, `WeightedLeastRequest`, `Random`
+                          and `Cookie`. If an unknown strategy name is specified or
+                          no policy is supplied, the default `RoundRobin` policy is
+                          used.
                         type: string
                     type: object
                   pathRewritePolicy:
@@ -955,6 +961,11 @@ spec:
                   description: The load balancing policy for the backend services.
                   properties:
                     strategy:
+                      description: Strategy specifies the policy used to balance requests
+                        across the pool of backend pods. Valid policy names are `Random`,
+                        `RoundRobin`, `WeightedLeastRequest`, `Random` and `Cookie`.
+                        If an unknown strategy name is specified or no policy is supplied,
+                        the default `RoundRobin` policy is used.
                       type: string
                   type: object
                 services:
