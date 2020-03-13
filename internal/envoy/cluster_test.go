@@ -493,6 +493,7 @@ func TestLBPolicy(t *testing.T) {
 	tests := map[string]v2.Cluster_LbPolicy{
 		"WeightedLeastRequest": v2.Cluster_LEAST_REQUEST,
 		"Random":               v2.Cluster_RANDOM,
+		"RoundRobin":           v2.Cluster_ROUND_ROBIN,
 		"":                     v2.Cluster_ROUND_ROBIN,
 		"unknown":              v2.Cluster_ROUND_ROBIN,
 		"Cookie":               v2.Cluster_RING_HASH,

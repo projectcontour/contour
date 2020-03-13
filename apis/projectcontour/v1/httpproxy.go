@@ -340,6 +340,12 @@ type PathRewritePolicy struct {
 
 // LoadBalancerPolicy defines the load balancing policy.
 type LoadBalancerPolicy struct {
+	// Strategy specifies the policy used to balance requests
+	// across the pool of backend pods. Valid policy names are
+	// `Random`, `RoundRobin`, `WeightedLeastRequest`, `Random`
+	// and `Cookie`. If an unknown strategy name is specified
+	// or no policy is supplied, the default `RoundRobin` policy
+	// is used.
 	Strategy string `json:"strategy,omitempty"`
 }
 
