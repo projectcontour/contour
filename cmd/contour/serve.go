@@ -126,21 +126,21 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 1. establish k8s core & dynamic client connections
-	clients, err := newKubernetesClients(ctx.Kubeconfig, ctx.InCluster)
+	clients, err := k8s.NewClients(ctx.Kubeconfig, ctx.InCluster)
 	if err != nil {
 		return fmt.Errorf("failed to create Kubernetes clients: %w", err)
 	}
 
 	// step 2. create informer factories
-	informerFactory := clients.newInformerFactory()
-	dynamicInformerFactory := clients.newDynamicInformerFactory()
+	informerFactory := clients.NewInformerFactory()
+	dynamicInformerFactory := clients.NewDynamicInformerFactory()
 
 	// Create a set of SharedInformerFactories for each root-ingressroute namespace (if defined)
 	namespacedInformerFactories := map[string]coreinformers.SharedInformerFactory{}
 
 	for _, namespace := range ctx.ingressRouteRootNamespaces() {
 		if _, ok := namespacedInformerFactories[namespace]; !ok {
-			namespacedInformerFactories[namespace] = clients.newInformerFactoryForNamespace(namespace)
+			namespacedInformerFactories[namespace] = clients.NewInformerFactoryForNamespace(namespace)
 		}
 	}
 
@@ -180,7 +180,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		StatusClient: &k8s.StatusWriter{
-			Client: clients.dynamic,
+			Client: clients.DynamicClient(),
 		},
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
@@ -263,7 +263,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			Port:        ctx.metricsPort,
 			FieldLogger: log.WithField("context", "metricsvc"),
 		},
-		Client:   clients.core,
+		Client:   clients.ClientSet(),
 		Registry: registry,
 	}
 	g.Add(metricsvc.Start)
@@ -283,7 +283,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	if !ctx.DisableLeaderElection {
 		var le *leaderelection.LeaderElector
 		var deposed chan struct{}
-		le, eventHandler.IsLeader, deposed = newLeaderElector(log, ctx, clients.core, clients.coordination)
+		le, eventHandler.IsLeader, deposed = newLeaderElector(log, ctx, clients.ClientSet(), clients.CoordinationClient())
 
 		g.AddContext(func(electionCtx context.Context) {
 			log.WithFields(logrus.Fields{
