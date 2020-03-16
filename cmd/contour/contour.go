@@ -20,10 +20,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
-	"k8s.io/client-go/kubernetes"
-	coordinationv1 "k8s.io/client-go/kubernetes/typed/coordination/v1"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 )
 
@@ -103,35 +99,6 @@ func main() {
 		app.Usage(args)
 		os.Exit(2)
 	}
-}
-
-type kubernetesClients struct {
-	core         *kubernetes.Clientset
-	coordination *coordinationv1.CoordinationV1Client
-}
-
-func restConfig(kubeconfig string, inCluster bool) (*rest.Config, error) {
-	if kubeconfig != "" && !inCluster {
-		return clientcmd.BuildConfigFromFlags("", kubeconfig)
-	}
-	return rest.InClusterConfig()
-}
-
-func newKubernetesClients(config *rest.Config) (kubernetesClients, error) {
-	var err error
-	var clients kubernetesClients
-
-	clients.core, err = kubernetes.NewForConfig(config)
-	if err != nil {
-		return clients, err
-	}
-
-	clients.coordination, err = coordinationv1.NewForConfig(config)
-	if err != nil {
-		return clients, err
-	}
-
-	return clients, nil
 }
 
 func check(err error) {

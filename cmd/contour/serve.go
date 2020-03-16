@@ -23,15 +23,11 @@ import (
 	"syscall"
 	"time"
 
-	"k8s.io/client-go/dynamic/dynamicinformer"
-
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 
 	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
-
-	"k8s.io/client-go/dynamic"
 
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
@@ -129,35 +125,22 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 // doServe runs the contour serve subcommand.
 func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
-	// step 0. get kube config
-	config, err := restConfig(ctx.Kubeconfig, ctx.InCluster)
-	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes config: %w", err)
-	}
-
 	// step 1. establish k8s core & dynamic client connections
-	clients, err := newKubernetesClients(config)
+	clients, err := newKubernetesClients(ctx.Kubeconfig, ctx.InCluster)
 	if err != nil {
-		return fmt.Errorf("failed to create Kubernetes client: %w", err)
+		return fmt.Errorf("failed to create Kubernetes clients: %w", err)
 	}
 
-	dynamicClient, err := dynamic.NewForConfig(config)
-	if err != nil {
-		return fmt.Errorf("failed to create dynamic interface client: %w", err)
-	}
-
-	// step 2. create informers
-	// note: 0 means resync timers are disabled
-	coreInformers := coreinformers.NewSharedInformerFactory(clients.core, 0)
-	dynamicInformers := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClient, 0)
+	// step 2. create informer factories
+	informerFactory := clients.newInformerFactory()
+	dynamicInformerFactory := clients.newDynamicInformerFactory()
 
 	// Create a set of SharedInformerFactories for each root-ingressroute namespace (if defined)
-	namespacedInformers := map[string]coreinformers.SharedInformerFactory{}
+	namespacedInformerFactories := map[string]coreinformers.SharedInformerFactory{}
 
 	for _, namespace := range ctx.ingressRouteRootNamespaces() {
-		if _, ok := namespacedInformers[namespace]; !ok {
-			namespacedInformers[namespace] = coreinformers.NewSharedInformerFactoryWithOptions(
-				clients.core, 0, coreinformers.WithNamespace(namespace))
+		if _, ok := namespacedInformerFactories[namespace]; !ok {
+			namespacedInformerFactories[namespace] = clients.newInformerFactoryForNamespace(namespace)
 		}
 	}
 
@@ -170,7 +153,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// use to convert from Unstructured. Thanks to kubebuilder types from service-apis, this now can
 	// return an error.
 	converter, err := k8s.NewUnstructuredConverter()
-	check(err)
+	if err != nil {
+		return err
+	}
 
 	// step 3. build our mammoth Kubernetes event handler.
 	eventHandler := &contour.EventHandler{
@@ -195,7 +180,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		StatusClient: &k8s.StatusWriter{
-			Client: dynamicClient,
+			Client: clients.dynamic,
 		},
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
@@ -225,30 +210,30 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// using the SyncList to keep track of what to sync later.
 	var informerSyncList k8s.InformerSyncList
 
-	informerSyncList.Add(dynamicInformers.ForResource(ingressroutev1.IngressRouteGVR).Informer()).AddEventHandler(dynamicHandler)
-	informerSyncList.Add(dynamicInformers.ForResource(ingressroutev1.TLSCertificateDelegationGVR).Informer()).AddEventHandler(dynamicHandler)
-	informerSyncList.Add(dynamicInformers.ForResource(projectcontour.HTTPProxyGVR).Informer()).AddEventHandler(dynamicHandler)
-	informerSyncList.Add(dynamicInformers.ForResource(projectcontour.TLSCertificateDelegationGVR).Informer()).AddEventHandler(dynamicHandler)
+	informerSyncList.Add(dynamicInformerFactory.ForResource(ingressroutev1.IngressRouteGVR).Informer()).AddEventHandler(dynamicHandler)
+	informerSyncList.Add(dynamicInformerFactory.ForResource(ingressroutev1.TLSCertificateDelegationGVR).Informer()).AddEventHandler(dynamicHandler)
+	informerSyncList.Add(dynamicInformerFactory.ForResource(projectcontour.HTTPProxyGVR).Informer()).AddEventHandler(dynamicHandler)
+	informerSyncList.Add(dynamicInformerFactory.ForResource(projectcontour.TLSCertificateDelegationGVR).Informer()).AddEventHandler(dynamicHandler)
 
-	informerSyncList.Add(coreInformers.Core().V1().Services().Informer()).AddEventHandler(eventRecorder)
-	informerSyncList.Add(coreInformers.Networking().V1beta1().Ingresses().Informer()).AddEventHandler(eventRecorder)
+	informerSyncList.Add(informerFactory.Core().V1().Services().Informer()).AddEventHandler(eventRecorder)
+	informerSyncList.Add(informerFactory.Networking().V1beta1().Ingresses().Informer()).AddEventHandler(eventRecorder)
 
 	if ctx.UseExperimentalServiceAPITypes {
 		log.Info("Enabling Experimental Service APIs types")
-		informerSyncList.Add(dynamicInformers.ForResource(serviceapis.GroupVersion.WithResource("gatewayclasses")).Informer()).AddEventHandler(dynamicHandler)
-		informerSyncList.Add(dynamicInformers.ForResource(serviceapis.GroupVersion.WithResource("gateways")).Informer()).AddEventHandler(dynamicHandler)
-		informerSyncList.Add(dynamicInformers.ForResource(serviceapis.GroupVersion.WithResource("httproutes")).Informer()).AddEventHandler(dynamicHandler)
-		informerSyncList.Add(dynamicInformers.ForResource(serviceapis.GroupVersion.WithResource("tcproutes")).Informer()).AddEventHandler(dynamicHandler)
+		informerSyncList.Add(dynamicInformerFactory.ForResource(serviceapis.GroupVersion.WithResource("gatewayclasses")).Informer()).AddEventHandler(dynamicHandler)
+		informerSyncList.Add(dynamicInformerFactory.ForResource(serviceapis.GroupVersion.WithResource("gateways")).Informer()).AddEventHandler(dynamicHandler)
+		informerSyncList.Add(dynamicInformerFactory.ForResource(serviceapis.GroupVersion.WithResource("httproutes")).Informer()).AddEventHandler(dynamicHandler)
+		informerSyncList.Add(dynamicInformerFactory.ForResource(serviceapis.GroupVersion.WithResource("tcproutes")).Informer()).AddEventHandler(dynamicHandler)
 	}
 
 	// Add informers for each root-ingressroute namespaces
-	for _, inf := range namespacedInformers {
-		informerSyncList.Add(inf.Core().V1().Secrets().Informer()).AddEventHandler(eventRecorder)
+	for _, factory := range namespacedInformerFactories {
+		informerSyncList.Add(factory.Core().V1().Secrets().Informer()).AddEventHandler(eventRecorder)
 	}
 
 	// If root-ingressroutes are not defined, then add the informer for all namespaces
-	if len(namespacedInformers) == 0 {
-		informerSyncList.Add(coreInformers.Core().V1().Secrets().Informer()).AddEventHandler(eventRecorder)
+	if len(namespacedInformerFactories) == 0 {
+		informerSyncList.Add(informerFactory.Core().V1().Secrets().Informer()).AddEventHandler(eventRecorder)
 	}
 
 	// step 5. endpoints updates are handled directly by the EndpointsTranslator
@@ -257,15 +242,15 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		FieldLogger: log.WithField("context", "endpointstranslator"),
 	}
 
-	informerSyncList.Add(coreInformers.Core().V1().Endpoints().Informer()).AddEventHandler(et)
+	informerSyncList.Add(informerFactory.Core().V1().Endpoints().Informer()).AddEventHandler(et)
 
 	// step 6. setup workgroup runner and register informers.
 	var g workgroup.Group
-	g.Add(startInformer(dynamicInformers, log.WithField("context", "contourinformers")))
-	g.Add(startInformer(coreInformers, log.WithField("context", "coreinformers")))
+	g.Add(startInformer(dynamicInformerFactory, log.WithField("context", "contourinformers")))
+	g.Add(startInformer(informerFactory, log.WithField("context", "coreinformers")))
 
-	for ns, inf := range namespacedInformers {
-		g.Add(startInformer(inf, log.WithField("context", "corenamespacedinformers").WithField("namespace", ns)))
+	for ns, factory := range namespacedInformerFactories {
+		g.Add(startInformer(factory, log.WithField("context", "corenamespacedinformers").WithField("namespace", ns)))
 	}
 
 	// step 7. register our event handler with the workgroup
