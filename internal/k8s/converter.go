@@ -40,52 +40,39 @@ type DynamicClientHandler struct {
 }
 
 func (d *DynamicClientHandler) OnAdd(obj interface{}) {
-	if d.Converter.CanConvert(obj) {
-		var err error
-		obj, err = d.Converter.Convert(obj)
-		if err != nil {
-			d.Logger.Error(err)
-			return
-		}
+	obj, err := d.Converter.Convert(obj)
+	if err != nil {
+		d.Logger.Error(err)
+		return
 	}
 	d.Next.OnAdd(obj)
 }
 
 func (d *DynamicClientHandler) OnUpdate(oldObj, newObj interface{}) {
-	if d.Converter.CanConvert(oldObj) {
-		var err error
-		oldObj, err = d.Converter.Convert(oldObj)
-		if err != nil {
-			d.Logger.Error(err)
-			return
-		}
+	oldObj, err := d.Converter.Convert(oldObj)
+	if err != nil {
+		d.Logger.Error(err)
+		return
 	}
-	if d.Converter.CanConvert(newObj) {
-		var err error
-		newObj, err = d.Converter.Convert(newObj)
-		if err != nil {
-			d.Logger.Error(err)
-			return
-		}
+	newObj, err = d.Converter.Convert(newObj)
+	if err != nil {
+		d.Logger.Error(err)
+		return
 	}
 	d.Next.OnUpdate(oldObj, newObj)
 }
 
 func (d *DynamicClientHandler) OnDelete(obj interface{}) {
-	if d.Converter.CanConvert(obj) {
-		var err error
-		obj, err = d.Converter.Convert(obj)
-		if err != nil {
-			d.Logger.Error(err)
-			return
-		}
+	obj, err := d.Converter.Convert(obj)
+	if err != nil {
+		d.Logger.Error(err)
+		return
 	}
 	d.Next.OnDelete(obj)
 }
 
 type Converter interface {
 	Convert(obj interface{}) (interface{}, error)
-	CanConvert(obj interface{}) bool
 }
 
 // UnstructuredConverter handles conversions between unstructured.Unstructured and Contour types
@@ -112,16 +99,12 @@ func NewUnstructuredConverter() (*UnstructuredConverter, error) {
 	return uc, nil
 }
 
-func (c *UnstructuredConverter) CanConvert(obj interface{}) bool {
-	_, ok := obj.(*unstructured.Unstructured)
-	return ok
-}
-
-// Convert converts an unstructured.Unstructured to typed struct
+// Convert converts an unstructured.Unstructured to typed struct. If obj
+// is not an unstructured.Unstructured it is returned without further processing.
 func (c *UnstructuredConverter) Convert(obj interface{}) (interface{}, error) {
 	unstructured, ok := obj.(*unstructured.Unstructured)
 	if !ok {
-		return nil, fmt.Errorf("unsupported object type: %T", obj)
+		return obj, nil
 	}
 	switch unstructured.GetKind() {
 	case "HTTPProxy":
