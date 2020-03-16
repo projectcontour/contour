@@ -193,15 +193,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}
 
-	// wrap eventHandler in an EventRecorder which tracks API server events.
-	eventRecorder := &contour.EventRecorder{
-		Next:    eventHandler,
-		Counter: eventHandler.Metrics.EventHandlerOperations,
-	}
-
-	// wrap eventRecorder in a converter for objects from the dynamic client.
+	// wrap eventHandler in a converter for objects from the dynamic client.
+	// and an EventRecorder which tracks API server events.
 	dynamicHandler := &k8s.DynamicClientHandler{
-		Next:      eventRecorder,
+		Next: &contour.EventRecorder{
+			Next:    eventHandler,
+			Counter: eventHandler.Metrics.EventHandlerOperations,
+		},
 		Converter: converter,
 		Logger:    log.WithField("context", "dynamicHandler"),
 	}
@@ -215,8 +213,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	informerSyncList.Add(dynamicInformerFactory.ForResource(projectcontour.HTTPProxyGVR).Informer()).AddEventHandler(dynamicHandler)
 	informerSyncList.Add(dynamicInformerFactory.ForResource(projectcontour.TLSCertificateDelegationGVR).Informer()).AddEventHandler(dynamicHandler)
 
-	informerSyncList.Add(informerFactory.Core().V1().Services().Informer()).AddEventHandler(eventRecorder)
-	informerSyncList.Add(informerFactory.Networking().V1beta1().Ingresses().Informer()).AddEventHandler(eventRecorder)
+	informerSyncList.Add(informerFactory.Core().V1().Services().Informer()).AddEventHandler(dynamicHandler)
+	informerSyncList.Add(informerFactory.Networking().V1beta1().Ingresses().Informer()).AddEventHandler(dynamicHandler)
 
 	if ctx.UseExperimentalServiceAPITypes {
 		log.Info("Enabling Experimental Service APIs types")
@@ -228,12 +226,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Add informers for each root-ingressroute namespaces
 	for _, factory := range namespacedInformerFactories {
-		informerSyncList.Add(factory.Core().V1().Secrets().Informer()).AddEventHandler(eventRecorder)
+		informerSyncList.Add(factory.Core().V1().Secrets().Informer()).AddEventHandler(dynamicHandler)
 	}
 
 	// If root-ingressroutes are not defined, then add the informer for all namespaces
 	if len(namespacedInformerFactories) == 0 {
-		informerSyncList.Add(informerFactory.Core().V1().Secrets().Informer()).AddEventHandler(eventRecorder)
+		informerSyncList.Add(informerFactory.Core().V1().Secrets().Informer()).AddEventHandler(dynamicHandler)
 	}
 
 	// step 5. endpoints updates are handled directly by the EndpointsTranslator
