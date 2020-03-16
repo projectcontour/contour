@@ -16,9 +16,9 @@ If you’re a newcomer, check out the “[Good first issue][1]” and “[Help w
 
 * Join the [Contour Community Meetings][5] on Zoom
   * For Australia time zones:
-    * Every second Tuesday at 6:30 PM Eastern Time / 3:30 PM Pacific Time / Wednesday at 8:30 AM Australian Eastern Time.
+    * Every first and third Tuesday at 6:30 PM Eastern Time / 3:30 PM Pacific Time / Wednesday at 9:30 AM Australian Eastern Time.
   * For Americas time zones:
-    * Every second Tuesday at 1 PM Eastern Time / 10 AM Pacific Time
+    * Every second and fourth Tuesday at 1 PM Eastern Time / 10 AM Pacific Time
   * Meeting notes can be found [here][6].
   * Meetings are recorded and can be found [here][7].
   * Join the [mailing list](https://groups.google.com/forum/#!forum/projectcontour-announce) to get an automated invitation to the meeting.
