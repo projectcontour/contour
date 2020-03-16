@@ -12,7 +12,7 @@ if command -v docker >/dev/null; then
 		--rm \
 		--volume $(pwd):/app \
 		--workdir /app \
-		golangci/golangci-lint:latest ${PROGNAME} "$@"
+		golangci/golangci-lint:v1.23.8 ${PROGNAME} "$@"
 fi
 
 cat <<EOF
