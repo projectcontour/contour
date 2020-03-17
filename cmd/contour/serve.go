@@ -368,10 +368,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// step 13. Setup SIGTERM handler
 	g.Add(func(stop <-chan struct{}) error {
 		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGTERM)
+		signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
 		select {
-		case <-c:
-			log.WithField("context", "sigterm-handler").Info("received SIGTERM, shutting down")
+		case sig := <-c:
+			log.WithField("context", "sigterm-handler").WithField("signal", sig).Info("shutting down")
 		case <-stop:
 			// Do nothing. The group is shutting down.
 		}
