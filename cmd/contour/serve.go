@@ -14,7 +14,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"os"
@@ -42,7 +41,6 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
 	coreinformers "k8s.io/client-go/informers"
-	"k8s.io/client-go/tools/leaderelection"
 )
 
 // registerServe registers the serve subcommand and flags
@@ -279,52 +277,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 	g.Add(debugsvc.Start)
 
-	// step 10. if enabled, register leader election
-	if !ctx.DisableLeaderElection {
-		var le *leaderelection.LeaderElector
-		var deposed chan struct{}
-		le, eventHandler.IsLeader, deposed = newLeaderElector(log, ctx, clients.ClientSet(), clients.CoordinationClient())
-
-		g.AddContext(func(electionCtx context.Context) {
-			log.WithFields(logrus.Fields{
-				"configmapname":      ctx.LeaderElectionConfig.Name,
-				"configmapnamespace": ctx.LeaderElectionConfig.Namespace,
-			}).Info("started leader election")
-
-			le.Run(electionCtx)
-			log.Info("stopped leader election")
-		})
-
-		g.Add(func(stop <-chan struct{}) error {
-			log := log.WithField("context", "leaderelection")
-			leader := eventHandler.IsLeader
-			for {
-				select {
-				case <-stop:
-					// shut down
-					log.Info("stopped leader election")
-					return nil
-				case <-leader:
-					log.Info("elected as leader, triggering rebuild")
-					eventHandler.UpdateNow()
-
-					// disable this case
-					leader = nil
-				case <-deposed:
-					// If we get deposed as leader, shut it down.
-					log.Info("deposed as leader, shutting down")
-					return nil
-				}
-			}
-		})
-	} else {
-		log.Info("Leader election disabled")
-
-		// leadership election disabled, hardwire IsLeader to be always readable.
-		leader := make(chan struct{})
-		close(leader)
-		eventHandler.IsLeader = leader
-	}
+	// step 10. register leadership election
+	eventHandler.IsLeader = setupLeadershipElection(&g, log, ctx, clients, eventHandler.UpdateNow)
 
 	// step 12. create grpc handler and register with workgroup.
 	g.Add(func(stop <-chan struct{}) error {
