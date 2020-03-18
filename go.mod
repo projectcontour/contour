@@ -23,7 +23,7 @@ require (
 	golang.org/x/tools v0.0.0-20190929041059-e7abfedfabcf // indirect
 	google.golang.org/grpc v1.25.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
-	gopkg.in/yaml.v2 v2.2.5
+	gopkg.in/yaml.v2 v2.2.7
 	k8s.io/api v0.17.0
 	k8s.io/apimachinery v0.17.0
 	k8s.io/client-go v0.17.0
@@ -31,5 +31,6 @@ require (
 	k8s.io/gengo v0.0.0-20191120174120-e74f70b9b27e // indirect
 	k8s.io/klog v1.0.0
 	sigs.k8s.io/controller-tools v0.2.4
+	sigs.k8s.io/kustomize/kyaml v0.1.1
 	sigs.k8s.io/service-apis v0.0.0-20200213014236-51691dd89266
 )
