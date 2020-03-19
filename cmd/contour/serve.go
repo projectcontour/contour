@@ -34,6 +34,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
+	v1 "k8s.io/api/core/v1"
 	coreinformers "k8s.io/client-go/informers"
 )
 
@@ -104,6 +105,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("envoy-service-https-address", "Kubernetes Service address for HTTPS requests.").StringVar(&ctx.httpsAddr)
 	serve.Flag("envoy-service-http-port", "Kubernetes Service port for HTTP requests.").IntVar(&ctx.httpPort)
 	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests.").IntVar(&ctx.httpsPort)
+	serve.Flag("envoy-service-name", "Envoy Service Name.").StringVar(&ctx.envoyServiceName)
+	serve.Flag("envoy-service-namespace", "Envoy Service Namespace.").StringVar(&ctx.envoyServiceNamespace)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners.").BoolVar(&ctx.useProxyProto)
 
 	serve.Flag("accesslog-format", "Format for Envoy access logs.").StringVar(&ctx.AccessLogFormat)
@@ -265,7 +268,24 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// step 10. register leadership election
 	eventHandler.IsLeader = setupLeadershipElection(&g, log, ctx, clients, eventHandler.UpdateNow)
 
-	// step 12. create grpc handler and register with workgroup.
+	// step 11. set up ingress status writer
+	isw := ingressStatusWriter{
+		log:      log.WithField("context", "ingressStatusWriter"),
+		clients:  clients,
+		isLeader: eventHandler.IsLeader,
+		lbStatus: make(chan v1.LoadBalancerStatus, 1),
+	}
+	g.Add(isw.Start)
+
+	// step 12. register an informer to watch envoy's service.
+	ssw := &k8s.ServiceStatusLoadBalancerWatcher{
+		ServiceName: ctx.envoyServiceName,
+		LBStatus:    isw.lbStatus,
+	}
+	factory := clients.NewInformerFactoryForNamespace(ctx.envoyServiceNamespace)
+	factory.Core().V1().Services().Informer().AddEventHandler(ssw)
+	g.Add(startInformer(factory, log.WithField("context", "serviceStatusLoadBalancerWatcher")))
+
 	g.Add(func(stop <-chan struct{}) error {
 		log := log.WithField("context", "grpc")
 
@@ -306,7 +326,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return s.Serve(l)
 	})
 
-	// step 13. Setup SIGTERM handler
+	// step 14. Setup SIGTERM handler
 	g.Add(func(stop <-chan struct{}) error {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
@@ -319,7 +339,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return nil
 	})
 
-	// step 14. GO!
+	// GO!
 	return g.Run()
 }
 

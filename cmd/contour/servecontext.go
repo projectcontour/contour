@@ -109,6 +109,14 @@ type serveContext struct {
 	// If the value is true, Contour will register for all the service-apis types
 	// (GatewayClass, Gateway, HTTPRoute, TCPRoute, and any more as they are added)
 	UseExperimentalServiceAPITypes bool `yaml:"-"`
+
+	// envoy service details
+
+	// Namespace of the envoy service
+	envoyServiceNamespace string `yaml:"-"`
+
+	// Name of the envoy service
+	envoyServiceName string `yaml:"-"`
 }
 
 // newServeContext returns a serveContext initialized to defaults.
@@ -165,6 +173,8 @@ func newServeContext() *serveContext {
 			Name:          "leader-elect",
 		},
 		UseExperimentalServiceAPITypes: false,
+		envoyServiceName:               "envoy",
+		envoyServiceNamespace:          "projectcontour",
 	}
 }
 
