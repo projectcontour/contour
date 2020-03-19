@@ -33,7 +33,7 @@ A request to `projectcontour.io/blog` gets routed via a load balancer to an inst
 ![architectural overview][2]{: .center-image }
 
 
-![architectural overview 2][3]{: .center-image }
+![architectural overview 2][3]{: .center-image .width="854px" }
 
 [1]: https://www.envoyproxy.io/docs/envoy/v1.13.0/api-docs/xds_protocol
 [2]: ../img/archoverview.png
