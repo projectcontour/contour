@@ -97,6 +97,7 @@ lint-misspell:
 	@go run github.com/client9/misspell/cmd/misspell \
 		-locale US \
 		-error \
+		-i mitre \
 		design/* site/*.md site/_{guides,posts,resources} site/docs/**/* *.md
 
 .PHONY: check-golint
