@@ -43,7 +43,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - extensions
+  - "networking.k8s.io"
   resources:
   - ingresses
   verbs:
@@ -53,11 +53,13 @@ rules:
 - apiGroups:
   - "networking.k8s.io"
   resources:
-  - ingresses
+  - "ingresses/status"
   verbs:
   - get
   - list
   - watch
+  - patch 
+  - post
 - apiGroups: ["contour.heptio.com"]
   resources: ["ingressroutes", "tlscertificatedelegations"]
   verbs:
