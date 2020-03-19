@@ -40,7 +40,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
-	v1 "k8s.io/api/core/v1"
 	coreinformers "k8s.io/client-go/informers"
 )
 
@@ -278,15 +277,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 10. register leadership election
 	eventHandler.IsLeader = setupLeadershipElection(&g, log, ctx, clients, eventHandler.UpdateNow)
-
-	// step 11. set up ingress status writer
-	isw := ingressStatusWriter{
-		log:      log.WithField("context", "ingressStatusWriter"),
-		clients:  clients,
-		isLeader: eventHandler.IsLeader,
-		lbStatus: make(chan v1.LoadBalancerStatus, 1),
-	}
-	g.Add(isw.Start)
 
 	// step 12. create grpc handler and register with workgroup.
 	g.Add(func(stop <-chan struct{}) error {
