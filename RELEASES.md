@@ -13,7 +13,7 @@ Patch releases are based on the major/minor release branch. There is no specific
 ### Release Support Matrix
 We support only the latest Contour [release](https://github.com/projectcontour/contour/releases). The can find the Contour Support Policy [here](https://projectcontour.io/resources/support/) 
 * [Envoy Support Matrix](https://projectcontour.io/resources/envoy/)
-* [Kubernetes Supprot Matrix](https://projectcontour.io/resources/kubernetes/)
+* [Kubernetes Support Matrix](https://projectcontour.io/resources/kubernetes/)
 
 ### Upgrade path 
 The upgrade path for Contour, including upgrade instructions, is documented [here](https://projectcontour.io/resources/upgrading/). Each Contour version also requires a specific release of Envoy, documented in the upgrading portion of our website.
