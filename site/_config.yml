@@ -18,7 +18,6 @@ footer:
   content: Read our getting started documentation.
   cta_url: /getting-started/
   cta_text: Getting Started
-
 footer_social_links:
   Twitter:
     fa_icon: fab fa-twitter
@@ -32,51 +31,53 @@ footer_social_links:
   GitHub:
     fa_icon: fab fa-github
     url: https://github.com/projectcontour/contour
-
 defaults:
-  - scope:
-      path: "" # an empty string here means all files in the project
-      type: "posts"
-    values:
-      layout: "posts"
-  - scope:
-      path: ""
-    values:
-      layout: "default"
-      toc: "h2, h3" # Default TOC levels, see _includes/footer.html.
-  - scope:
-      path: docs/master
-    values:
-      version: master
-      layout: "docs"
-  - scope:
-      path: docs/v1.2.1
-    values:
-      version: v1.2.1
-      layout: "docs"
-  - scope:
-      path: docs/v1.2.0
-    values:
-      version: v1.2.0
-      layout: "docs"
-  - scope:
-      path: docs/v1.1.0
-    values:
-      version: v1.1.0
-      layout: "docs"
-  - scope:
-      path: docs/v1.0.0
-    values:
-      version: v1.0.0
-      layout: "docs"
-  - scope:
-      path: docs/v1.0.1
-    values:
-      version: v1.0.1
-      layout: "docs"
-
+- scope:
+    path: "" # an empty string here means all files in the project
+    type: "posts"
+  values:
+    layout: "posts"
+- scope:
+    path: ""
+  values:
+    layout: "default"
+    toc: "h2, h3" # Default TOC levels, see _includes/footer.html.
+- scope:
+    path: docs/master
+  values:
+    version: master
+    layout: "docs"
+- scope:
+    path: docs/v1.2.1
+  values:
+    version: v1.2.1
+    layout: "docs"
+- scope:
+    path: docs/v1.2.0
+  values:
+    version: v1.2.0
+    layout: "docs"
+- scope:
+    path: docs/v1.1.0
+  values:
+    version: v1.1.0
+    layout: "docs"
+- scope:
+    path: docs/v1.0.0
+  values:
+    version: v1.0.0
+    layout: "docs"
+- scope:
+    path: docs/v1.0.1
+  values:
+    version: v1.0.1
+    layout: "docs"
+- scope:
+    path: docs/v1.3.0
+  values:
+    version: v1.3.0
+    layout: "docs"
 repository: projectcontour/contour
-
 collections:
   guides:
     output: true
@@ -91,69 +92,61 @@ collections:
     output: false
   metrics:
     output: false
-
 versioning: true
-latest: v1.2.1
+latest: v1.3.0
 versions:
-  - master
-  - v1.2.1
-  - v1.2.0
-  - v1.1.0
-  - v1.0.1
-  - v1.0.0
-
+- master
+- v1.3.0
+- v1.2.1
+- v1.2.0
+- v1.1.0
+- v1.0.1
+- v1.0.0
 # Build settings
 permalink: :title/
 sass:
   sass_dir: css
   style: :compressed
-
 page_gen:
-  - data: shortlinks
-    template: redirect
-    name: key
-    dir: docs
-
+- data: shortlinks
+  template: redirect
+  name: key
+  dir: docs
 # Use the following plug-ins
 plugins:
-  - jekyll-sitemap # Create a sitemap using the official Jekyll sitemap gem
-  - jekyll-feed # Create an Atom feed using the official Jekyll feed gem
-  - jekyll-relative-links # Used to auto generate md links to html links
-  - jekyll-optional-front-matter # Parse Markdown files that do not have front-matter callouts
-  - jekyll-readme-index # use README.md as index.html
-  - jekyll-titles-from-headings # pull the page title from the first Markdown heading when none is specified.
-  - jekyll-paginate # pagination object for collections (e.g. posts)
-  - jekyll-github-metadata
-  - jekyll-seo-tag
-
+- jekyll-sitemap # Create a sitemap using the official Jekyll sitemap gem
+- jekyll-feed # Create an Atom feed using the official Jekyll feed gem
+- jekyll-relative-links # Used to auto generate md links to html links
+- jekyll-optional-front-matter # Parse Markdown files that do not have front-matter callouts
+- jekyll-readme-index # use README.md as index.html
+- jekyll-titles-from-headings # pull the page title from the first Markdown heading when none is specified.
+- jekyll-paginate # pagination object for collections (e.g. posts)
+- jekyll-github-metadata
+- jekyll-seo-tag
 # Include these subdirectories
 include:
-  - CONTRIBUTING.md
-  - README.md
-  - _redirects
-  - examples
-  - examples/proxydemo
-
+- CONTRIBUTING.md
+- README.md
+- _redirects
+- examples
+- examples/proxydemo
 # Exclude these files from your production _site
 exclude:
-  - Gemfile
-  - Gemfile.lock
-  - README-JEKYLL.md
-  - LICENSE
-  - CNAME
-  - Runbook.docx
-  - '*.sh'
-  - vendor
-  - bundler/bundle/
-  - bundler/cache/
-  - bundler/gems/
-  - bundler/ruby/
-  - node_modules
-
+- Gemfile
+- Gemfile.lock
+- README-JEKYLL.md
+- LICENSE
+- CNAME
+- Runbook.docx
+- '*.sh'
+- vendor
+- bundler/bundle/
+- bundler/cache/
+- bundler/gems/
+- bundler/ruby/
+- node_modules
 redcarpet:
-    extensions: ["no_intra_emphasis", "tables", "autolink", "strikethrough", "with_toc_data"]
-
-
+  extensions: ["no_intra_emphasis", "tables", "autolink", "strikethrough", "with_toc_data"]
 # Fail build on errors
 liquid:
   error_mode: strict
