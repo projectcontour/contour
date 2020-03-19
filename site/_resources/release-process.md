@@ -41,11 +41,11 @@ The documentation site (projectcontour.io) has versioned documentation. The foll
   - Update `versions` to add new version
   - Update `latest` to change previous version to new version
 
-These changes can be automatically performed by the `hack/prepare-release.go` tool.
+These changes can be automatically performed by the `hack/release/prepare-release.go` tool.
 For example:
 
 ```sh
-$ go run ./hack/prepare-release.go v9.9.9
+$ go run ./hack/release/prepare-release.go v9.9.9
 ```
 
 ## Branch for release
@@ -78,11 +78,11 @@ $ git tag -a v1.2.0 -m 'contour 1.2.0'
 $ git push --tags
 ```
 
-These two steps can be automatically performed by the `hack/make-release-tag.sh` tool.
+These two steps can be automatically performed by the `hack/release/make-release-tag.sh` tool.
 For example:
 
 ```sh
-$ ./hack/make-release-tag.sh v1.2.1 v1.3.1
+$ ./hack/release/make-release-tag.sh v1.2.1 v1.3.1
 ```
 
 ## Patch release
