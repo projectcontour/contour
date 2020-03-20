@@ -9,16 +9,16 @@ This page describes the compatibility matrix of Contour and Envoy versions.
 
 ## Supported Envoy versions
 
-| Envoy version | Contour v1.0.0<sup>5</sup> | Contour v1.0.1<sup>6</sup> | Contour v1.1.0<sup>7</sup> | Contour v1.2.0<sup>8</sup> | Contour v1.2.1 |
-| ------------ | :-----------: | :-----------: | :----------: | :----------: | :--------: |
-| 1.11.0 | Not supported<sup>1</sup> | Not supported<sup>1</sup> | Not supported<sup>1</sup> | Not supported<sup>1</sup> | Not supported<sup>1</sup> |
-| 1.11.1 | Not supported<sup>2</sup> | Not supported<sup>2</sup> | Not supported<sup>2</sup> | Not supported<sup>2</sup> | Not supported<sup>2</sup> |
-| 1.11.2 | *Supported*<sup>5</sup> | Not supported | Not supported | Not supported | Not supported |
-| 1.12.0 | Not supported<sup>3</sup> | Not supported<sup>3</sup> | Not supported<sup>3</sup> | Not supported<sup>3</sup> | Not supported<sup>3</sup> |
-| 1.12.1 | Not supported<sup>4</sup> | Not supported<sup>4</sup> | Not supported<sup>4</sup> | Not supported<sup>4</sup> | Not supported<sup>4</sup> |
-| 1.12.2 | Not supported | *Supported*<sup>6</sup> | *Supported*<sup>7</sup> | Not supported | Not supported |
-| 1.13.0 | Not supported<sup>9</sup> | Not supported<sup>9</sup> | Not Supported<sup>9</sup> | Not supported<sup>8,9</sup> | Not Supported<sup>9</sup> |
-| 1.13.1 | Not supported | Not Supported | Not supported | Not supported | *Supported* | 
+| Envoy version | Contour v1.0.0<sup>5</sup>| Contour v1.0.1<sup>6</sup>| Contour v1.1.0<sup>7</sup>| Contour v1.2.0<sup>8</sup>| Contour v1.2.1            | Contour v1.3.0            |
+| ------------- | :-----------------------: | :-----------------------: | :-----------------------: | :-----------------------: | :-----------------------: | :-----------------------: |
+| 1.11.0        | Not supported<sup>1</sup> | Not supported<sup>1</sup> | Not supported<sup>1</sup> | Not supported<sup>1</sup> | Not supported<sup>1</sup> | Not supported<sup>1</sup> |
+| 1.11.1        | Not supported<sup>2</sup> | Not supported<sup>2</sup> | Not supported<sup>2</sup> | Not supported<sup>2</sup> | Not supported<sup>2</sup> | Not supported<sup>2</sup> |
+| 1.11.2        | *Supported*<sup>5</sup>   | Not supported             | Not supported             | Not supported             | Not supported             | Not supported             |
+| 1.12.0        | Not supported<sup>3</sup> | Not supported<sup>3</sup> | Not supported<sup>3</sup> | Not supported<sup>3</sup> | Not supported<sup>3</sup> | Not supported<sup>3</sup> |
+| 1.12.1        | Not supported<sup>4</sup> | Not supported<sup>4</sup> | Not supported<sup>4</sup> | Not supported<sup>4</sup> | Not supported<sup>4</sup> | Not supported<sup>4</sup> |
+| 1.12.2        | Not supported             | *Supported*<sup>6</sup>   | *Supported*<sup>7</sup>   | Not supported             | Not supported             | Not supported             |
+| 1.13.0        | Not supported<sup>9</sup> | Not supported<sup>9</sup> | Not Supported<sup>9</sup> | Not supported<sup>8,9</sup> | Not Supported<sup>9</sup>> | Not Supported<sup>9</sup> |
+| 1.13.1        | Not supported             | Not Supported             | Not supported             | Not supported             | *Supported*               | *Supported*               |
 
 #### Notes
 
