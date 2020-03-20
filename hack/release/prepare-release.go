@@ -62,12 +62,13 @@ func updateMappingForTOC(filePath string, vers string, toc string) error {
 	return ioutil.WriteFile(filePath, []byte(rn.MustString()), 0644)
 }
 
-// List yaml.ElementAppender except it inserts after the named node.
+// InsertAfter is like yaml.ElementAppender except it inserts after the named node.
 type InsertAfter struct {
 	After string
 	Node  *yaml.Node
 }
 
+// Filter ...
 func (a InsertAfter) Filter(rn *yaml.RNode) (*yaml.RNode, error) {
 	if err := yaml.ErrorIfInvalid(rn, yaml.SequenceNode); err != nil {
 		return nil, err
@@ -148,8 +149,8 @@ func main() {
 	status := capture([]string{"git", "status", "--short"})
 	for _, line := range strings.Split(status, "\n") {
 		// See https://git-scm.com/docs/git-status#_short_format.
-		if strings.IndexAny(line, "MADRCU") != -1 {
-			log.Fatal("uncommitted changes in respository")
+		if strings.ContainsAny(line, "MADRCU") {
+			log.Fatal("uncommitted changes in repository")
 		}
 	}
 
