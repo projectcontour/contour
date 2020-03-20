@@ -26,11 +26,14 @@ For Contour, a liveness probe checks the `/healthz` running on the Pod's metrics
 Readiness probe is a TCP check that the gRPC port is open.
 
 ## Diagram
-Below is a high level architectural diagram of how Contour works inside a Kubernetes cluster as well as showing the data path of a request to a backend pod.
+Below are a couple of high level architectural diagrams of how Contour works inside a Kubernetes cluster as well as showing the data path of a request to a backend pod.
 
 A request to `projectcontour.io/blog` gets routed via a load balancer to an instance of an Envoy proxy which then sends the request to a pod.
 
 ![architectural overview][2]{: .center-image }
 
+![architectural overview 2][3]{: .center-image }
+
 [1]: https://www.envoyproxy.io/docs/envoy/v1.13.0/api-docs/xds_protocol
 [2]: ../img/archoverview.png
+[3]: ../img/contour_deployment_in_k8s.png
