@@ -58,7 +58,7 @@ Change the Contour image version to `docker.io/projectcontour/contour:v1.2.1`.
 
 ### Upgrade to Envoy 1.13.1
 
-Contour 1.2.1 requires Envoy 1.13.1`.
+Contour 1.2.1 requires Envoy 1.13.1.
 Change the Envoy image version to `docker.io/envoyproxy/envoy:v1.13.1`.
 
 _Note: Envoy 1.13.1 includes fixes to a number of [CVEs][19]_
