@@ -35,8 +35,7 @@ If the following are true for you:
  * You are using our [quickstart example][18] deployments.
  * Your cluster can take few minutes of downtime.
 
-Then the simplest way to upgrade to 1.2.1 is to delete the `projectcontour` namespace and reapply one of the example configurations.
-From the root directory of the repository:
+Then the simplest way to upgrade to 1.3.0 is to delete the `projectcontour` namespace and reapply one of the example configurations:
 
 ```
 $ kubectl delete namespace projectcontour
@@ -56,7 +55,7 @@ This section contains information for administrators who wish to apply the Conto
 
 ### Upgrade to Contour 1.3.0
 
-Change the Contour image version to `docker.io/projectcontour/contour:v1.3.0
+Change the Contour image version to `docker.io/projectcontour/contour:v1.3.0`
 
 # Upgrading Contour 1.2.0 to 1.2.1
 
