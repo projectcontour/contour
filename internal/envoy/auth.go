@@ -59,11 +59,12 @@ func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni st
 	}
 
 	if peerValidationContext.GetCACertificate() != nil && len(peerValidationContext.GetSubjectName()) > 0 {
-		// We have to do explicitly assign the value from validationContext
-		// to context.CommonTlsContext.ValidationContextType because the latter
-		// is an interface, returning nil from validationContext directly into
-		// this field boxes the nil into the unexported type of this grpc OneOf field
-		// which causes proto marshaling to explode later on. Not happy Jan.
+		// We have to explicitly assign the value from validationContext
+		// to context.CommonTlsContext.ValidationContextType because the
+		// latter is an interface. Returning nil from validationContext
+		// directly into this field boxes the nil into the unexported
+		// type of this grpc OneOf field which causes proto marshaling
+		// to explode later on.
 		vc := validationContext(peerValidationContext.GetCACertificate(), peerValidationContext.GetSubjectName())
 		if vc != nil {
 			context.CommonTlsContext.ValidationContextType = vc
