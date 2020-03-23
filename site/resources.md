@@ -5,6 +5,10 @@ description: Contour Resources
 id: resources
 ---
 
+## Demos and Deep Dives
+
+We have a YouTube playlist for Contour demos and code deep dives, [check it out here](https://www.youtube.com/playlist?list=PL7bmigfV0EqRTmmjwWm4SxuCZwNvze7se).
+
 ## Presentations
 
 #### Take Envoy Beyond a K8s Service Mesh - to Legacy Bare Metal & VMs + More
