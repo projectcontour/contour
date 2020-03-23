@@ -22,12 +22,6 @@ import (
 	"syscall"
 	"time"
 
-	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
-
-	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
-
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/debug"
@@ -206,30 +200,26 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// using the SyncList to keep track of what to sync later.
 	var informerSyncList k8s.InformerSyncList
 
-	informerSyncList.Add(dynamicInformerFactory.ForResource(ingressroutev1.IngressRouteGVR).Informer()).AddEventHandler(dynamicHandler)
-	informerSyncList.Add(dynamicInformerFactory.ForResource(ingressroutev1.TLSCertificateDelegationGVR).Informer()).AddEventHandler(dynamicHandler)
-	informerSyncList.Add(dynamicInformerFactory.ForResource(projectcontour.HTTPProxyGVR).Informer()).AddEventHandler(dynamicHandler)
-	informerSyncList.Add(dynamicInformerFactory.ForResource(projectcontour.TLSCertificateDelegationGVR).Informer()).AddEventHandler(dynamicHandler)
+	iset := k8s.DefaultInformerSet(dynamicInformerFactory, ctx.UseExperimentalServiceAPITypes)
 
-	informerSyncList.Add(informerFactory.Core().V1().Services().Informer()).AddEventHandler(dynamicHandler)
-	informerSyncList.Add(informerFactory.Networking().V1beta1().Ingresses().Informer()).AddEventHandler(dynamicHandler)
+	// TODO(youngnick): Add in filtering the iset map by enabled apiserver types (#2219) using the discovery library.
 
-	if ctx.UseExperimentalServiceAPITypes {
-		log.Info("Enabling Experimental Service APIs types")
-		informerSyncList.Add(dynamicInformerFactory.ForResource(serviceapis.GroupVersion.WithResource("gatewayclasses")).Informer()).AddEventHandler(dynamicHandler)
-		informerSyncList.Add(dynamicInformerFactory.ForResource(serviceapis.GroupVersion.WithResource("gateways")).Informer()).AddEventHandler(dynamicHandler)
-		informerSyncList.Add(dynamicInformerFactory.ForResource(serviceapis.GroupVersion.WithResource("httproutes")).Informer()).AddEventHandler(dynamicHandler)
-		informerSyncList.Add(dynamicInformerFactory.ForResource(serviceapis.GroupVersion.WithResource("tcproutes")).Informer()).AddEventHandler(dynamicHandler)
+	for _, inf := range iset.Informers {
+		informerSyncList.RegisterInformer(inf, dynamicHandler)
 	}
+
+	// We need to register this separately for now, as the core stuff uses a non-dynamic InformerFactory.
+	informerSyncList.RegisterInformer(informerFactory.Core().V1().Services().Informer(), dynamicHandler)
+	informerSyncList.RegisterInformer(informerFactory.Networking().V1beta1().Ingresses().Informer(), dynamicHandler)
 
 	// Add informers for each root-ingressroute namespaces
 	for _, factory := range namespacedInformerFactories {
-		informerSyncList.Add(factory.Core().V1().Secrets().Informer()).AddEventHandler(dynamicHandler)
+		informerSyncList.RegisterInformer(factory.Core().V1().Secrets().Informer(), dynamicHandler)
 	}
 
 	// If root-ingressroutes are not defined, then add the informer for all namespaces
 	if len(namespacedInformerFactories) == 0 {
-		informerSyncList.Add(informerFactory.Core().V1().Secrets().Informer()).AddEventHandler(dynamicHandler)
+		informerSyncList.RegisterInformer(informerFactory.Core().V1().Secrets().Informer(), dynamicHandler)
 	}
 
 	// step 5. endpoints updates are handled directly by the EndpointsTranslator
@@ -238,7 +228,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		FieldLogger: log.WithField("context", "endpointstranslator"),
 	}
 
-	informerSyncList.Add(informerFactory.Core().V1().Endpoints().Informer()).AddEventHandler(et)
+	informerSyncList.RegisterInformer(informerFactory.Core().V1().Endpoints().Informer(), et)
 
 	// step 6. setup workgroup runner and register informers.
 	var g workgroup.Group
