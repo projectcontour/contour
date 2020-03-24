@@ -84,7 +84,6 @@ func TestWebsocketsIngress(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -127,7 +126,6 @@ func TestWebsocketsIngress(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -202,7 +200,6 @@ func TestWebsocketIngressRoute(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -298,7 +295,6 @@ func TestWebsocketIngressRoute_MultipleUpstreams(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -388,7 +384,6 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -449,7 +444,6 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})

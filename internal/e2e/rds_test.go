@@ -17,24 +17,33 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"path"
+	"sort"
 	"testing"
-
-	"github.com/projectcontour/contour/internal/dag"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	"github.com/golang/protobuf/ptypes/any"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
+	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/sorter"
 	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+// routeResources returns the given routes as a slice of any.Any, appropriately sorted.
+func routeResources(t *testing.T, routes ...*v2.RouteConfiguration) []*any.Any {
+	sort.Stable(sorter.For(routes))
+	return resources(t, protobuf.AsMessages(routes)...)
+}
 
 // heptio/contour#172. Updating an object from
 //
@@ -100,14 +109,13 @@ func TestEditIngress(t *testing.T) {
 	// check that it's been translated correctly.
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("*", &envoy_api_v2_route.Route{
 					Match:  routePrefix("/"),
 					Action: routecluster("default/kuard/80/da39a3ee5e"),
 				}),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 		Nonce:   "1",
@@ -136,14 +144,13 @@ func TestEditIngress(t *testing.T) {
 	// check that ingress_http has been updated.
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("*", &envoy_api_v2_route.Route{
 					Match:  routePrefix("/testing"),
 					Action: routecluster("default/kuard/80/da39a3ee5e"),
 				}),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 		Nonce:   "2",
@@ -208,7 +215,7 @@ func TestIngressPathRouteWithoutHost(t *testing.T) {
 	// check that it's been translated correctly.
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("*",
 					&envoy_api_v2_route.Route{
@@ -217,7 +224,6 @@ func TestIngressPathRouteWithoutHost(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 		Nonce:   "2",
@@ -283,7 +289,7 @@ func TestEditIngressInPlace(t *testing.T) {
 
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.example.com",
 					&envoy_api_v2_route.Route{
@@ -292,7 +298,6 @@ func TestEditIngressInPlace(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 		Nonce:   "2",
@@ -327,7 +332,7 @@ func TestEditIngressInPlace(t *testing.T) {
 	rh.OnUpdate(i1, i2)
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "3",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.example.com",
 					&envoy_api_v2_route.Route{
@@ -340,7 +345,6 @@ func TestEditIngressInPlace(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 		Nonce:   "3",
@@ -380,7 +384,7 @@ func TestEditIngressInPlace(t *testing.T) {
 	rh.OnUpdate(i2, i3)
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "4",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.example.com",
 					&envoy_api_v2_route.Route{
@@ -393,7 +397,6 @@ func TestEditIngressInPlace(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 		Nonce:   "4",
@@ -447,7 +450,7 @@ func TestEditIngressInPlace(t *testing.T) {
 	rh.OnUpdate(i3, i4)
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "5",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.example.com",
 					&envoy_api_v2_route.Route{
@@ -460,7 +463,7 @@ func TestEditIngressInPlace(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https",
+			envoy.RouteConfiguration("https/hello.example.com",
 				envoy.VirtualHost("hello.example.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/whoop"),
@@ -906,7 +909,7 @@ func TestRDSFilter(t *testing.T) {
 
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "5",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("example.com",
 					&envoy_api_v2_route.Route{
@@ -926,8 +929,8 @@ func TestRDSFilter(t *testing.T) {
 
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "5",
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_https",
+		Resources: routeResources(t,
+			envoy.RouteConfiguration("https/example.com",
 				envoy.VirtualHost("example.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
@@ -942,7 +945,7 @@ func TestRDSFilter(t *testing.T) {
 		),
 		TypeUrl: routeType,
 		Nonce:   "5",
-	}, streamRDS(t, cc, "ingress_https"))
+	}, streamRDS(t, cc, "https/example.com"))
 }
 
 func TestPrefixRewriteIngressRoute(t *testing.T) {
@@ -1094,7 +1097,7 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("*",
 					&envoy_api_v2_route.Route{
@@ -1522,16 +1525,16 @@ func TestRouteWithTLS(t *testing.T) {
 	// check that ingress_http has been updated.
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/a"),
 						Action: envoy.UpgradeHTTPS(),
+						Match:  routePrefix("/a"),
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https",
+			envoy.RouteConfiguration("https/test2.test.com",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/a"),
@@ -1544,6 +1547,7 @@ func TestRouteWithTLS(t *testing.T) {
 		Nonce:   "1",
 	}, streamRDS(t, cc))
 }
+
 func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
@@ -1618,7 +1622,7 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 	// check that ingress_http has been updated.
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
@@ -1631,7 +1635,7 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https",
+			envoy.RouteConfiguration("https/test2.test.com",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/secure"),
@@ -1727,7 +1731,7 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 	// check that ingress_http has been updated.
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
@@ -1740,7 +1744,7 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https",
+			envoy.RouteConfiguration("https/test2.test.com",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/secure"),
@@ -1879,7 +1883,7 @@ func TestRoutePrefixRouteRegex(t *testing.T) {
 	// check that it's been translated correctly.
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("*",
 					&envoy_api_v2_route.Route{
@@ -1892,7 +1896,6 @@ func TestRoutePrefixRouteRegex(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 		Nonce:   "1",
@@ -1962,7 +1965,7 @@ func TestRDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
 	// delegate to it, it can host www.containersteve.com.
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("www.containersteve.com",
 					&envoy_api_v2_route.Route{
@@ -1971,7 +1974,6 @@ func TestRDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 		Nonce:   "2",
@@ -1981,14 +1983,21 @@ func TestRDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
 
 func assertRDS(t *testing.T, cc *grpc.ClientConn, versioninfo string, ingress_http, ingress_https []*envoy_api_v2_route.VirtualHost) {
 	t.Helper()
+
+	routes := []*v2.RouteConfiguration{
+		envoy.RouteConfiguration("ingress_http", ingress_http...),
+	}
+
+	for _, vh := range ingress_https {
+		routes = append(routes,
+			envoy.RouteConfiguration(path.Join("https", vh.Name), vh))
+	}
+
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: versioninfo,
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http", ingress_http...),
-			envoy.RouteConfiguration("ingress_https", ingress_https...),
-		),
-		TypeUrl: routeType,
-		Nonce:   versioninfo,
+		Resources:   routeResources(t, routes...),
+		TypeUrl:     routeType,
+		Nonce:       versioninfo,
 	}, streamRDS(t, cc))
 }
 
@@ -2213,7 +2222,7 @@ func TestHTTPProxyRouteWithTLS(t *testing.T) {
 	// check that ingress_http has been updated.
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
@@ -2222,7 +2231,7 @@ func TestHTTPProxyRouteWithTLS(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https",
+			envoy.RouteConfiguration("https/test2.test.com",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/a"),
@@ -2310,7 +2319,7 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
 	// check that ingress_http has been updated.
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
@@ -2323,7 +2332,7 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https",
+			envoy.RouteConfiguration("https/test2.test.com",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/secure"),
@@ -2419,7 +2428,7 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testin
 	// check that ingress_http has been updated.
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
@@ -2432,7 +2441,7 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testin
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https",
+			envoy.RouteConfiguration("https/test2.test.com",
 				envoy.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/secure"),
@@ -2509,7 +2518,7 @@ func TestRDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 	// delegate to it, it can host www.containersteve.com.
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("www.containersteve.com",
 					&envoy_api_v2_route.Route{
@@ -2518,7 +2527,6 @@ func TestRDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 		Nonce:   "2",
@@ -2654,9 +2662,8 @@ func TestRDSHTTPProxyDuplicateIncludeConditions(t *testing.T) {
 
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 		Nonce:   "2",

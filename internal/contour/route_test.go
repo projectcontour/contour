@@ -142,7 +142,6 @@ func TestRouteVisit(t *testing.T) {
 			objs: nil,
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"one http only ingress with service": {
@@ -179,7 +178,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"one http only ingress with regex match": {
@@ -228,7 +226,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"one http only ingressroute": {
@@ -274,7 +271,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"default backend ingress with secret": {
@@ -323,7 +319,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"vhost ingress with secret": {
@@ -385,7 +380,7 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https",
+				envoy.RouteConfiguration("https/www.example.com",
 					envoy.VirtualHost("www.example.com",
 						&envoy_api_v2_route.Route{
 							Match:  routePrefix("/"),
@@ -456,7 +451,7 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https",
+				envoy.RouteConfiguration("https/www.example.com",
 					envoy.VirtualHost("www.example.com",
 						&envoy_api_v2_route.Route{
 							Match:  routePrefix("/"),
@@ -521,7 +516,7 @@ func TestRouteVisit(t *testing.T) {
 			},
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https",
+				envoy.RouteConfiguration("https/www.example.com",
 					envoy.VirtualHost("www.example.com",
 						&envoy_api_v2_route.Route{
 							Match:  routePrefix("/"),
@@ -599,7 +594,7 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https",
+				envoy.RouteConfiguration("https/www.example.com",
 					envoy.VirtualHost("www.example.com",
 						&envoy_api_v2_route.Route{
 							Match:  routePrefix("/"),
@@ -670,7 +665,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"ingress invalid timeout": {
@@ -710,7 +704,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"ingress infinite timeout": {
@@ -750,7 +743,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"ingress 90 second timeout": {
@@ -790,7 +782,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"vhost name exceeds 60 chars": { // heptio/contour#25
@@ -841,7 +832,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"ingress retry-on": {
@@ -881,7 +871,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"ingress retry-on, num-retries": {
@@ -922,7 +911,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 
@@ -964,7 +952,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"ingress retry-on, per-try-timeout": {
@@ -1005,7 +992,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"ingress retry-on, legacy per-try-timeout": {
@@ -1046,7 +1032,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 
@@ -1121,7 +1106,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"ingressroute one weight defined": {
@@ -1196,7 +1180,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"ingressroute all weights defined": {
@@ -1272,7 +1255,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"ingressroute w/ missing fqdn": {
@@ -1309,7 +1291,6 @@ func TestRouteVisit(t *testing.T) {
 			},
 			want: routeConfigurations(
 				envoy.RouteConfiguration("ingress_http"), // should be blank, no fqdn defined.
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"httpproxy with pathPrefix": {
@@ -1385,7 +1366,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"httpproxy with mirror policy": {
@@ -1450,7 +1430,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"httpproxy with pathPrefix with tls": {
@@ -1531,7 +1510,7 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https",
+				envoy.RouteConfiguration("https/www.example.com",
 					envoy.VirtualHost("www.example.com",
 						&envoy_api_v2_route.Route{
 							Match: routePrefix("/"),
@@ -1666,7 +1645,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"httpproxy with header contains conditions": {
@@ -1722,7 +1700,6 @@ func TestRouteVisit(t *testing.T) {
 							Action: routecluster("default/backend/80/da39a3ee5e"),
 						},
 					)),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"httpproxy with header notcontains conditions": {
@@ -1782,7 +1759,6 @@ func TestRouteVisit(t *testing.T) {
 							Action: routecluster("default/backend/80/da39a3ee5e"),
 						},
 					)),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"httpproxy with header exact match conditions": {
@@ -1842,7 +1818,6 @@ func TestRouteVisit(t *testing.T) {
 							Action: routecluster("default/backend/80/da39a3ee5e"),
 						},
 					)),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"httpproxy with header exact not match conditions": {
@@ -1902,7 +1877,6 @@ func TestRouteVisit(t *testing.T) {
 							Action: routecluster("default/backend/80/da39a3ee5e"),
 						},
 					)),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"httpproxy with header header present conditions": {
@@ -1960,7 +1934,6 @@ func TestRouteVisit(t *testing.T) {
 							Action: routecluster("default/backend/80/da39a3ee5e"),
 						},
 					)),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 		"httpproxy with route-level header manipulation": {
@@ -2052,7 +2025,6 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 		},
 	}
