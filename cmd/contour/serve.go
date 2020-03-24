@@ -208,10 +208,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		informerSyncList.RegisterInformer(inf, dynamicHandler)
 	}
 
-	// We need to register this separately for now, as the core stuff uses a non-dynamic InformerFactory.
-	informerSyncList.RegisterInformer(informerFactory.Core().V1().Services().Informer(), dynamicHandler)
-	informerSyncList.RegisterInformer(informerFactory.Networking().V1beta1().Ingresses().Informer(), dynamicHandler)
-
+	// TODO(youngnick): Move this logic out to internal/k8s/informers.go somehow.
 	// Add informers for each root-ingressroute namespaces
 	for _, factory := range namespacedInformerFactories {
 		informerSyncList.RegisterInformer(factory.Core().V1().Secrets().Informer(), dynamicHandler)

@@ -17,9 +17,11 @@ import (
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
+	"k8s.io/api/networking/v1beta1"
 
 	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/tools/cache"
@@ -41,6 +43,8 @@ func DefaultInformerSet(inffactory dynamicinformer.DynamicSharedInformerFactory,
 		ingressroutev1.TLSCertificateDelegationGVR,
 		projectcontour.HTTPProxyGVR,
 		projectcontour.TLSCertificateDelegationGVR,
+		corev1.SchemeGroupVersion.WithResource("services"),
+		v1beta1.SchemeGroupVersion.WithResource("ingresses"),
 	}
 
 	// TODO(youngnick): Remove this boolean once we have autodetection of available types (Further work on #2219).
