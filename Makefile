@@ -35,6 +35,9 @@ export GO111MODULE=on
 .PHONY: check
 check: install check-test check-test-race ## Install and run tests
 
+.PHONY: checkall
+checkall: check lint check-generate
+
 install: ## Build and install the contour binary
 	go install -mod=readonly -v $(GO_TAGS) $(MODULE)/cmd/contour
 
@@ -86,23 +89,24 @@ check-coverage: ## Run tests to generate code coverage
 
 .PHONY: lint
 lint: ## Run lint checks
-lint: check-golint check-yamllint check-flags check-misspell
+lint: lint-golint lint-yamllint lint-flags lint-misspell
 
 .PHONY: check-misspell
-check-misspell:
+lint-misspell:
 	@echo Running spell checker ...
 	@go run github.com/client9/misspell/cmd/misspell \
 		-locale US \
 		-error \
+		-i mitre \
 		design/* site/*.md site/_{guides,posts,resources} site/docs/**/* *.md
 
 .PHONY: check-golint
-check-golint:
+lint-golint:
 	@echo Running Go linter ...
 	@./hack/golangci-lint run
 
 .PHONY: check-yamllint
-check-yamllint:
+lint-yamllint:
 	@echo Running YAML linter ...
 	@docker run --rm -ti -v $(CURDIR):/workdir giantswarm/yamllint examples/ site/examples/
 
@@ -112,7 +116,7 @@ check-yamllint:
 # or doesn't end with a period. "xDS" and "gRPC" are exceptions to
 # the first rule.
 .PHONY: check-flags
-check-flags:
+lint-flags:
 	@if git --no-pager grep --extended-regexp '[.]Flag\("[^"]+", "([^A-Zxg][^"]+|[^"]+[^.])"' cmd/contour; then \
 		echo "ERROR: CLI flag help strings must start with a capital and end with a period."; \
 		exit 2; \
@@ -150,6 +154,10 @@ generate-api-docs:
 generate-metrics-docs:
 	@echo Generating metrics documentation ...
 	@cd site/_metrics && rm -f *.md && go run ../../hack/generate-metrics-doc.go
+
+.PHONY: check-generate
+check-generate: generate
+	@./hack/travis/check-uncommitted-codegen.sh
 
 # TODO(youngnick): Move these local bootstrap config files out of the repo root dir.
 $(LOCAL_BOOTSTRAP_CONFIG): install

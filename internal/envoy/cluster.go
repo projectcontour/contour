@@ -30,9 +30,6 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 )
 
-// CACertificateKey stores the key for the TLS validation secret cert
-const CACertificateKey = "ca.crt"
-
 func clusterDefaults() *v2.Cluster {
 	return &v2.Cluster{
 		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
@@ -82,16 +79,14 @@ func Cluster(c *dag.Cluster) *v2.Cluster {
 	case "tls":
 		cluster.TransportSocket = UpstreamTLSTransportSocket(
 			UpstreamTLSContext(
-				upstreamValidationCACert(c),
-				upstreamValidationSubjectAltName(c),
+				c.UpstreamValidation,
 				service.ExternalName,
 			),
 		)
 	case "h2":
 		cluster.TransportSocket = UpstreamTLSTransportSocket(
 			UpstreamTLSContext(
-				upstreamValidationCACert(c),
-				upstreamValidationSubjectAltName(c),
+				c.UpstreamValidation,
 				service.ExternalName,
 				"h2",
 			),
@@ -102,22 +97,6 @@ func Cluster(c *dag.Cluster) *v2.Cluster {
 	}
 
 	return cluster
-}
-
-func upstreamValidationCACert(c *dag.Cluster) []byte {
-	if c.UpstreamValidation == nil {
-		// No validation required
-		return nil
-	}
-	return c.UpstreamValidation.CACertificate.Object.Data[CACertificateKey]
-}
-
-func upstreamValidationSubjectAltName(c *dag.Cluster) string {
-	if c.UpstreamValidation == nil {
-		// No validation required
-		return ""
-	}
-	return c.UpstreamValidation.SubjectName
 }
 
 // StaticClusterLoadAssignment creates a *v2.ClusterLoadAssignment pointing to the external DNS address of the service

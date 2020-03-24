@@ -181,14 +181,32 @@ type HeaderValue struct {
 	Value string
 }
 
-// UpstreamValidation defines how to validate the certificate on the upstream service
-type UpstreamValidation struct {
+// PeerValidationContext defines how to validate the certificate on the upstream service.
+type PeerValidationContext struct {
 	// CACertificate holds a reference to the Secret containing the CA to be used to
 	// verify the upstream connection.
 	CACertificate *Secret
 	// SubjectName holds an optional subject name which Envoy will check against the
 	// certificate presented by the upstream.
 	SubjectName string
+}
+
+// GetCACertificate returns the CA certificate from PeerValidationContext.
+func (pvc *PeerValidationContext) GetCACertificate() []byte {
+	if pvc == nil || pvc.CACertificate == nil {
+		// No validation required.
+		return nil
+	}
+	return pvc.CACertificate.Object.Data[CACertificateKey]
+}
+
+// GetSubjectName returns the SubjectName from PeerValidationContext.
+func (pvc *PeerValidationContext) GetSubjectName() string {
+	if pvc == nil {
+		// No validation required.
+		return ""
+	}
+	return pvc.SubjectName
 }
 
 func (r *Route) Visit(f func(Vertex)) {
@@ -244,6 +262,9 @@ type SecureVirtualHost struct {
 
 	// Service to TCP proxy all incoming connections.
 	*TCPProxy
+
+	// DownstreamValidation defines how to verify the client's certificate.
+	DownstreamValidation *PeerValidationContext
 }
 
 func (s *SecureVirtualHost) Visit(f func(Vertex)) {
@@ -370,7 +391,7 @@ type Cluster struct {
 	Protocol string
 
 	// UpstreamValidation defines how to verify the backend service's certificate
-	UpstreamValidation *UpstreamValidation
+	UpstreamValidation *PeerValidationContext
 
 	// The load balancer type to use when picking a host in the cluster.
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cds.proto#envoy-api-enum-cluster-lbpolicy

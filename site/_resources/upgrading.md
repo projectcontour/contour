@@ -9,23 +9,23 @@ toc: h1,h2
 
 This document describes the changes needed to upgrade your Contour installation.
 
-# Upgrading Contour 1.1.0 to 1.2.0
+# Upgrading Contour 1.2.1 to 1.3.0
 
-Contour 1.2.0 is the current stable release.
+Contour 1.3.0 is the current stable release.
 
 <div class="alert-deprecation">
-<h3>Deprecation Notice</h3>
-<p>The <code>IngressRoute</code> CRD has been deprecated and will not receive further updates. Contour 1.2.0 continues to support the IngressRoute API, however we anticipate it will be removed in the future.</p>
-<p>Please see the documentation for <a href="{% link docs/{{site.latest}}/httpproxy.md %}"><code>HTTPProxy</code></a>, which is the successor to <code>IngressRoute</code>. You can also read the <a href="{% link _guides/ingressroute-to-httpproxy.md %}">IngressRoute to HTTPProxy upgrade</a> guide.</p>
+<b>Deprecation Notice</b><br>
+The <code>IngressRoute</code> CRD has been deprecated and will not receive further updates.
+Contour 1.3.0 continues to support the IngressRoute API, however we anticipate it will be removed in the future.
+Please see the documentation for <a href="{% link docs/{{site.latest}}/httpproxy.md %}"><code>HTTPProxy</code></a>, which is the successor to <code>IngressRoute</code>.
+You can also read the <a href="{% link _guides/ingressroute-to-httpproxy.md %}">IngressRoute to HTTPProxy upgrade</a> guide.
 </div>
 
-&nbsp;
+## Required Envoy version
 
-## Recommended Envoy version
+All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.13.1`.
 
-All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.13.0`.
-
-Please see the [Envoy Release Notes][17] for information about issues fixed in Envoy 1.13.0.
+Please see the [Envoy Release Notes][17] for information about issues fixed in Envoy 1.13.1.
 
 ## The easy way to upgrade
 
@@ -35,7 +35,45 @@ If the following are true for you:
  * You are using our [quickstart example][18] deployments.
  * Your cluster can take few minutes of downtime.
 
-Then the simplest way to upgrade to 1.2.0 is to delete the `projectcontour` namespace and reapply one of the example configurations.
+Then the simplest way to upgrade to 1.3.0 is to delete the `projectcontour` namespace and reapply one of the example configurations:
+
+```
+$ kubectl delete namespace projectcontour
+$ kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
+```
+
+This will remove both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
+If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][12].
+
+**Note:** If you deployed Contour into a different namespace than `projectcontour` with a standard example, please delete that namespace.
+Then in your editor of choice do a search and replace for `projectcontour` and replace it with your preferred name space and apply the updated manifest.
+
+## The less easy way
+
+This section contains information for administrators who wish to apply the Contour 1.2.1 to 1.3.0 changes manually.
+
+### Upgrade to Contour 1.3.0
+
+Change the Contour image version to `docker.io/projectcontour/contour:v1.3.0`
+
+# Upgrading Contour 1.2.0 to 1.2.1
+
+## Required Envoy version
+
+All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.13.1`.
+
+Please see the [Envoy Release Notes][17] for information about issues fixed in Envoy 1.13.1.
+
+## The easy way to upgrade
+
+If the following are true for you:
+
+ * Your installation is in the `projectcontour` namespace.
+ * You are using our [quickstart example][18] deployments.
+ * Your cluster can take few minutes of downtime.
+
+Then the simplest way to upgrade to 1.2.1 is to delete the `projectcontour` namespace and reapply one of the example configurations.
 From the root directory of the repository:
 
 ```
@@ -52,25 +90,71 @@ Then in your editor of choice do a search and replace for `projectcontour` and r
 
 ## The less easy way
 
-This section contains information for administrators who wish to apply the Contour 1.1.0 to 1.2.0 changes manually.
+This section contains information for administrators who wish to apply the Contour 1.2.0 to 1.2.1 changes manually.
 
-### Upgrade to Contour 1.2.0
+### Upgrade to Contour 1.2.1
 
-Change the Contour image version to `docker.io/projectcontour/contour:v1.2.0`.
+Change the Contour image version to `docker.io/projectcontour/contour:v1.2.1`.
 
-### Upgrade to Envoy 1.13.0
+### Upgrade to Envoy 1.13.1
 
-Contour 1.2.0 requires Envoy 1.13.0.
+Contour 1.2.1 requires Envoy 1.13.1.
+Change the Envoy image version to `docker.io/envoyproxy/envoy:v1.13.1`.
+
+_Note: Envoy 1.13.1 includes fixes to a number of [CVEs][19]_
+
+# Upgrading Contour 1.1.0 to 1.2.1
+
+## Required Envoy version
+
+All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.13.1`.
+
+Please see the [Envoy Release Notes][17] for information about issues fixed in Envoy 1.13.1.
+
+## The easy way to upgrade
+
+If the following are true for you:
+
+ * Your installation is in the `projectcontour` namespace.
+ * You are using our [quickstart example][18] deployments.
+ * Your cluster can take few minutes of downtime.
+
+Then the simplest way to upgrade to 1.2.1 is to delete the `projectcontour` namespace and reapply one of the example configurations.
+From the root directory of the repository:
+
+```
+$ kubectl delete namespace projectcontour
+$ kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
+```
+
+This will remove both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
+If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][12].
+
+**Note:** If you deployed Contour into a different namespace than `projectcontour` with a standard example, please delete that namespace.
+Then in your editor of choice do a search and replace for `projectcontour` and replace it with your preferred name space and apply the updated manifest.
+
+## The less easy way
+
+This section contains information for administrators who wish to apply the Contour 1.1.0 to 1.2.1 changes manually.
+
+### Upgrade to Contour 1.2.1
+
+Change the Contour image version to `docker.io/projectcontour/contour:v1.2.1`.
+
+### Upgrade to Envoy 1.13.1
+
+Contour 1.2.1 requires Envoy 1.13.1.
 Change the Envoy image version to `docker.io/envoyproxy/envoy:v1.13.0`.
 
 ### Envoy shutdown manager
 
-Contour 1.2.0 introduces a new sidecar to aid graceful shutdown of the Envoy pod.
-Consult [shutdown manager]({% link docs/v1.2.0/redeploy-envoy.md %}) documentation for installation instructions.
+Contour 1.2.1 introduces a new sidecar to aid graceful shutdown of the Envoy pod.
+Consult [shutdown manager]({% link docs/v1.2.1/redeploy-envoy.md %}) documentation for installation instructions.
 
 # Upgrading Contour 1.0.1 to 1.1.0
 
-## Recommended Envoy version
+## Required Envoy version
 
 All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.12.2`.
 
@@ -147,9 +231,9 @@ Please see the [Envoy Release Notes][15] for information about issues fixed in E
 
 # Upgrading Contour 0.15.3 to 1.0.0
 
-## Recommended Envoy version
+## Required Envoy version
 
-The recommended version of Envoy remains unchanged.
+The required version of Envoy remains unchanged.
 Ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.11.2`.
 
 ## The easy way to upgrade
@@ -476,5 +560,6 @@ $ kubectl get configmap -n heptio-contour -o yaml contour
 [14]: /docs/{{site.latest}}/grpc-tls-howto
 [15]: https://www.envoyproxy.io/docs/envoy/v1.12.2/intro/version_history
 [16]: {% link getting-started.md %}
-[17]: https://www.envoyproxy.io/docs/envoy/v1.13.0/intro/version_history
+[17]: https://www.envoyproxy.io/docs/envoy/v1.13.1/intro/version_history
 [18]: https://projectcontour.io/quickstart/contour.yaml
+[19]: https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!msg/envoy-announce/sVqmxy0un2s/8aq430xiHAAJ

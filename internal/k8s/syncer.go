@@ -23,11 +23,11 @@ type InformerSyncList struct {
 	syncers []cache.InformerSynced
 }
 
-// Add adds the sync function from an informer to InformerSyncList and returns the informer
-// so that .AddEventHandler() can be called on it.
-func (sl *InformerSyncList) Add(inf cache.SharedIndexInformer) cache.SharedIndexInformer {
+// RegisterInformer adds the sync function from an informer to InformerSyncList and calls the informers
+// AddEventHandler method.
+func (sl *InformerSyncList) RegisterInformer(inf cache.SharedIndexInformer, handler cache.ResourceEventHandler) {
 	sl.syncers = append(sl.syncers, inf.HasSynced)
-	return inf
+	inf.AddEventHandler(handler)
 }
 
 // WaitForSync ensures that all the informers in the InformerSyncList are synced before returning.

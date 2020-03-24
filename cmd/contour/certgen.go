@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/projectcontour/contour/internal/certgen"
+	"github.com/projectcontour/contour/internal/k8s"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	"k8s.io/client-go/kubernetes"
 )
@@ -134,15 +135,10 @@ func doCertgen(config *certgenConfig) {
 	generatedCerts, err := GenerateCerts(config)
 	check(err)
 
-	restconfig, err := restConfig(config.KubeConfig, config.InCluster)
-	if err != nil {
-		check(fmt.Errorf("failed to get Kubernetes restconfig: %w", err))
-	}
-
-	clients, err := newKubernetesClients(restconfig)
+	clients, err := k8s.NewClients(config.KubeConfig, config.InCluster)
 	if err != nil {
 		check(fmt.Errorf("failed to create Kubernetes client: %w", err))
 	}
 
-	OutputCerts(config, clients.core, generatedCerts)
+	OutputCerts(config, clients.ClientSet(), generatedCerts)
 }

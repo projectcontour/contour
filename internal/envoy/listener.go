@@ -242,18 +242,17 @@ func FilterChains(filters ...*envoy_api_v2_listener.Filter) []*envoy_api_v2_list
 }
 
 // FilterChainTLS returns a TLS enabled envoy_api_v2_listener.FilterChain,
-func FilterChainTLS(domain string, secret *dag.Secret, filters []*envoy_api_v2_listener.Filter, tlsMinProtoVersion envoy_api_v2_auth.TlsParameters_TlsProtocol, alpnProtos ...string) *envoy_api_v2_listener.FilterChain {
+func FilterChainTLS(domain string, downstream *envoy_api_v2_auth.DownstreamTlsContext, filters []*envoy_api_v2_listener.Filter) *envoy_api_v2_listener.FilterChain {
 	fc := &envoy_api_v2_listener.FilterChain{
 		Filters: filters,
 		FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 			ServerNames: []string{domain},
 		},
 	}
-	// attach certificate data to this listener if provided.
-	if secret != nil {
-		fc.TransportSocket = DownstreamTLSTransportSocket(
-			DownstreamTLSContext(Secretname(secret), tlsMinProtoVersion, alpnProtos...),
-		)
+	// Attach TLS data to this listener if provided.
+	if downstream != nil {
+		fc.TransportSocket = DownstreamTLSTransportSocket(downstream)
+
 	}
 	return fc
 }

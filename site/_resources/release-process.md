@@ -36,10 +36,17 @@ The documentation site (projectcontour.io) has versioned documentation. The foll
   - Add yml file to site/_data/toc-mapping.yml
 - Copy `master` directory to the new version (e.g. v1.1.0)
 - In: `site/_config.yml`
-  - Update `defaults and add new version
+  - Update `defaults` and add new version
   - Update `collections` to add new version
   - Update `versions` to add new version
   - Update `latest` to change previous version to new version
+
+These changes can be automatically performed by the `hack/release/prepare-release.go` tool.
+For example:
+
+```sh
+$ go run ./hack/release/prepare-release.go v9.9.9
+```
 
 ## Branch for release
 
@@ -69,6 +76,13 @@ Tag the head of your release branch with the release tag, and push
 ```sh
 $ git tag -a v1.2.0 -m 'contour 1.2.0'
 $ git push --tags
+```
+
+These two steps can be automatically performed by the `hack/release/make-release-tag.sh` tool.
+For example:
+
+```sh
+$ ./hack/release/make-release-tag.sh v1.2.1 v1.3.1
 ```
 
 ## Patch release

@@ -19,8 +19,11 @@ import (
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/sirupsen/logrus"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
 )
@@ -40,52 +43,39 @@ type DynamicClientHandler struct {
 }
 
 func (d *DynamicClientHandler) OnAdd(obj interface{}) {
-	if d.Converter.CanConvert(obj) {
-		var err error
-		obj, err = d.Converter.Convert(obj)
-		if err != nil {
-			d.Logger.Error(err)
-			return
-		}
+	obj, err := d.Converter.Convert(obj)
+	if err != nil {
+		d.Logger.Error(err)
+		return
 	}
 	d.Next.OnAdd(obj)
 }
 
 func (d *DynamicClientHandler) OnUpdate(oldObj, newObj interface{}) {
-	if d.Converter.CanConvert(oldObj) {
-		var err error
-		oldObj, err = d.Converter.Convert(oldObj)
-		if err != nil {
-			d.Logger.Error(err)
-			return
-		}
+	oldObj, err := d.Converter.Convert(oldObj)
+	if err != nil {
+		d.Logger.Error(err)
+		return
 	}
-	if d.Converter.CanConvert(newObj) {
-		var err error
-		newObj, err = d.Converter.Convert(newObj)
-		if err != nil {
-			d.Logger.Error(err)
-			return
-		}
+	newObj, err = d.Converter.Convert(newObj)
+	if err != nil {
+		d.Logger.Error(err)
+		return
 	}
 	d.Next.OnUpdate(oldObj, newObj)
 }
 
 func (d *DynamicClientHandler) OnDelete(obj interface{}) {
-	if d.Converter.CanConvert(obj) {
-		var err error
-		obj, err = d.Converter.Convert(obj)
-		if err != nil {
-			d.Logger.Error(err)
-			return
-		}
+	obj, err := d.Converter.Convert(obj)
+	if err != nil {
+		d.Logger.Error(err)
+		return
 	}
 	d.Next.OnDelete(obj)
 }
 
 type Converter interface {
 	Convert(obj interface{}) (interface{}, error)
-	CanConvert(obj interface{}) bool
 }
 
 // UnstructuredConverter handles conversions between unstructured.Unstructured and Contour types
@@ -104,6 +94,16 @@ func NewUnstructuredConverter() (*UnstructuredConverter, error) {
 	projectcontour.AddKnownTypes(uc.scheme)
 	ingressroutev1.AddKnownTypes(uc.scheme)
 
+	// Add the core types we need
+	if err := scheme.AddToScheme(uc.scheme); err != nil {
+		return nil, err
+	}
+
+	// Setup converter to understand Ingress types
+	if err := v1beta1.AddToScheme(uc.scheme); err != nil {
+		return nil, err
+	}
+
 	// The kubebuilder tools' contract here is different, yay.
 	if err := serviceapis.AddToScheme(uc.scheme); err != nil {
 		return nil, err
@@ -112,18 +112,25 @@ func NewUnstructuredConverter() (*UnstructuredConverter, error) {
 	return uc, nil
 }
 
-func (c *UnstructuredConverter) CanConvert(obj interface{}) bool {
-	_, ok := obj.(*unstructured.Unstructured)
-	return ok
-}
-
-// Convert converts an unstructured.Unstructured to typed struct
+// Convert converts an unstructured.Unstructured to typed struct. If obj
+// is not an unstructured.Unstructured it is returned without further processing.
 func (c *UnstructuredConverter) Convert(obj interface{}) (interface{}, error) {
 	unstructured, ok := obj.(*unstructured.Unstructured)
 	if !ok {
-		return nil, fmt.Errorf("unsupported object type: %T", obj)
+		return obj, nil
 	}
 	switch unstructured.GetKind() {
+	case "Ingress":
+		// TODO(youngnick): Have this check for v1 or v1beta1
+		// Currently we have no support for v1.
+		// unstructured.GetObjectKind().GroupVersionKind() will probably be useful.
+		i := &v1beta1.Ingress{}
+		err := c.scheme.Convert(obj, i, nil)
+		return i, err
+	case "Service":
+		s := &v1.Service{}
+		err := c.scheme.Convert(obj, s, nil)
+		return s, err
 	case "HTTPProxy":
 		proxy := &projectcontour.HTTPProxy{}
 		err := c.scheme.Convert(obj, proxy, nil)

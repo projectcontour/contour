@@ -14,7 +14,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"os"
@@ -22,16 +21,6 @@ import (
 	"strconv"
 	"syscall"
 	"time"
-
-	"k8s.io/client-go/dynamic/dynamicinformer"
-
-	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
-
-	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
-
-	"k8s.io/client-go/dynamic"
 
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
@@ -46,7 +35,6 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
 	coreinformers "k8s.io/client-go/informers"
-	"k8s.io/client-go/tools/leaderelection"
 )
 
 // registerServe registers the serve subcommand and flags
@@ -121,8 +109,6 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("accesslog-format", "Format for Envoy access logs.").StringVar(&ctx.AccessLogFormat)
 	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.DisableLeaderElection)
 
-	serve.Flag("use-extensions-v1beta1-ingress", "Subscribe to the deprecated extensions/v1beta1.Ingress type.").BoolVar(&ctx.UseExtensionsV1beta1Ingress)
-
 	serve.Flag("debug", "Enable debug logging.").Short('d').BoolVar(&ctx.Debug)
 	serve.Flag("experimental-service-apis", "Subscribe to the new service-apis types.").BoolVar(&ctx.UseExperimentalServiceAPITypes)
 	return serve, ctx
@@ -131,35 +117,22 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 // doServe runs the contour serve subcommand.
 func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
-	// step 0. get kube config
-	config, err := restConfig(ctx.Kubeconfig, ctx.InCluster)
-	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes config: %w", err)
-	}
-
 	// step 1. establish k8s core & dynamic client connections
-	clients, err := newKubernetesClients(config)
+	clients, err := k8s.NewClients(ctx.Kubeconfig, ctx.InCluster)
 	if err != nil {
-		return fmt.Errorf("failed to create Kubernetes client: %w", err)
+		return fmt.Errorf("failed to create Kubernetes clients: %w", err)
 	}
 
-	dynamicClient, err := dynamic.NewForConfig(config)
-	if err != nil {
-		return fmt.Errorf("failed to create dynamic interface client: %w", err)
-	}
-
-	// step 2. create informers
-	// note: 0 means resync timers are disabled
-	coreInformers := coreinformers.NewSharedInformerFactory(clients.core, 0)
-	dynamicInformers := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClient, 0)
+	// step 2. create informer factories
+	informerFactory := clients.NewInformerFactory()
+	dynamicInformerFactory := clients.NewDynamicInformerFactory()
 
 	// Create a set of SharedInformerFactories for each root-ingressroute namespace (if defined)
-	namespacedInformers := map[string]coreinformers.SharedInformerFactory{}
+	namespacedInformerFactories := map[string]coreinformers.SharedInformerFactory{}
 
 	for _, namespace := range ctx.ingressRouteRootNamespaces() {
-		if _, ok := namespacedInformers[namespace]; !ok {
-			namespacedInformers[namespace] = coreinformers.NewSharedInformerFactoryWithOptions(
-				clients.core, 0, coreinformers.WithNamespace(namespace))
+		if _, ok := namespacedInformerFactories[namespace]; !ok {
+			namespacedInformerFactories[namespace] = clients.NewInformerFactoryForNamespace(namespace)
 		}
 	}
 
@@ -172,7 +145,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// use to convert from Unstructured. Thanks to kubebuilder types from service-apis, this now can
 	// return an error.
 	converter, err := k8s.NewUnstructuredConverter()
-	check(err)
+	if err != nil {
+		return err
+	}
 
 	// step 3. build our mammoth Kubernetes event handler.
 	eventHandler := &contour.EventHandler{
@@ -197,7 +172,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		StatusClient: &k8s.StatusWriter{
-			Client: dynamicClient,
+			Client: clients.DynamicClient(),
 		},
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
@@ -210,15 +185,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}
 
-	// wrap eventHandler in an EventRecorder which tracks API server events.
-	eventRecorder := &contour.EventRecorder{
-		Next:    eventHandler,
-		Counter: eventHandler.Metrics.EventHandlerOperations,
-	}
-
-	// wrap eventRecorder in a converter for objects from the dynamic client.
+	// wrap eventHandler in a converter for objects from the dynamic client.
+	// and an EventRecorder which tracks API server events.
 	dynamicHandler := &k8s.DynamicClientHandler{
-		Next:      eventRecorder,
+		Next: &contour.EventRecorder{
+			Next:    eventHandler,
+			Counter: eventHandler.Metrics.EventHandlerOperations,
+		},
 		Converter: converter,
 		Logger:    log.WithField("context", "dynamicHandler"),
 	}
@@ -227,39 +200,23 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// using the SyncList to keep track of what to sync later.
 	var informerSyncList k8s.InformerSyncList
 
-	informerSyncList.Add(dynamicInformers.ForResource(ingressroutev1.IngressRouteGVR).Informer()).AddEventHandler(dynamicHandler)
-	informerSyncList.Add(dynamicInformers.ForResource(ingressroutev1.TLSCertificateDelegationGVR).Informer()).AddEventHandler(dynamicHandler)
-	informerSyncList.Add(dynamicInformers.ForResource(projectcontour.HTTPProxyGVR).Informer()).AddEventHandler(dynamicHandler)
-	informerSyncList.Add(dynamicInformers.ForResource(projectcontour.TLSCertificateDelegationGVR).Informer()).AddEventHandler(dynamicHandler)
+	iset := k8s.DefaultInformerSet(dynamicInformerFactory, ctx.UseExperimentalServiceAPITypes)
 
-	informerSyncList.Add(coreInformers.Core().V1().Services().Informer()).AddEventHandler(eventRecorder)
+	// TODO(youngnick): Add in filtering the iset map by enabled apiserver types (#2219) using the discovery library.
 
-	if ctx.UseExperimentalServiceAPITypes {
-		log.Info("Enabling Experimental Service APIs types")
-		informerSyncList.Add(dynamicInformers.ForResource(serviceapis.GroupVersion.WithResource("gatewayclasses")).Informer()).AddEventHandler(dynamicHandler)
-		informerSyncList.Add(dynamicInformers.ForResource(serviceapis.GroupVersion.WithResource("gateways")).Informer()).AddEventHandler(dynamicHandler)
-		informerSyncList.Add(dynamicInformers.ForResource(serviceapis.GroupVersion.WithResource("httproutes")).Informer()).AddEventHandler(dynamicHandler)
-		informerSyncList.Add(dynamicInformers.ForResource(serviceapis.GroupVersion.WithResource("tcproutes")).Informer()).AddEventHandler(dynamicHandler)
+	for _, inf := range iset.Informers {
+		informerSyncList.RegisterInformer(inf, dynamicHandler)
 	}
 
-	// After K8s 1.13 the API server will automatically translate extensions/v1beta1.Ingress objects
-	// to networking/v1beta1.Ingress objects so we should only listen for one type or the other.
-	// The default behavior is to listen for networking/v1beta1.Ingress objects and let the API server
-	// transparently upgrade the extensions version for us.
-	if ctx.UseExtensionsV1beta1Ingress {
-		informerSyncList.Add(coreInformers.Extensions().V1beta1().Ingresses().Informer()).AddEventHandler(eventRecorder)
-	} else {
-		informerSyncList.Add(coreInformers.Networking().V1beta1().Ingresses().Informer()).AddEventHandler(eventRecorder)
-	}
-
+	// TODO(youngnick): Move this logic out to internal/k8s/informers.go somehow.
 	// Add informers for each root-ingressroute namespaces
-	for _, inf := range namespacedInformers {
-		informerSyncList.Add(inf.Core().V1().Secrets().Informer()).AddEventHandler(eventRecorder)
+	for _, factory := range namespacedInformerFactories {
+		informerSyncList.RegisterInformer(factory.Core().V1().Secrets().Informer(), dynamicHandler)
 	}
 
 	// If root-ingressroutes are not defined, then add the informer for all namespaces
-	if len(namespacedInformers) == 0 {
-		informerSyncList.Add(coreInformers.Core().V1().Secrets().Informer()).AddEventHandler(eventRecorder)
+	if len(namespacedInformerFactories) == 0 {
+		informerSyncList.RegisterInformer(informerFactory.Core().V1().Secrets().Informer(), dynamicHandler)
 	}
 
 	// step 5. endpoints updates are handled directly by the EndpointsTranslator
@@ -268,15 +225,15 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		FieldLogger: log.WithField("context", "endpointstranslator"),
 	}
 
-	informerSyncList.Add(coreInformers.Core().V1().Endpoints().Informer()).AddEventHandler(et)
+	informerSyncList.RegisterInformer(informerFactory.Core().V1().Endpoints().Informer(), et)
 
 	// step 6. setup workgroup runner and register informers.
 	var g workgroup.Group
-	g.Add(startInformer(dynamicInformers, log.WithField("context", "contourinformers")))
-	g.Add(startInformer(coreInformers, log.WithField("context", "coreinformers")))
+	g.Add(startInformer(dynamicInformerFactory, log.WithField("context", "contourinformers")))
+	g.Add(startInformer(informerFactory, log.WithField("context", "coreinformers")))
 
-	for ns, inf := range namespacedInformers {
-		g.Add(startInformer(inf, log.WithField("context", "corenamespacedinformers").WithField("namespace", ns)))
+	for ns, factory := range namespacedInformerFactories {
+		g.Add(startInformer(factory, log.WithField("context", "corenamespacedinformers").WithField("namespace", ns)))
 	}
 
 	// step 7. register our event handler with the workgroup
@@ -289,7 +246,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			Port:        ctx.metricsPort,
 			FieldLogger: log.WithField("context", "metricsvc"),
 		},
-		Client:   clients.core,
+		Client:   clients.ClientSet(),
 		Registry: registry,
 	}
 	g.Add(metricsvc.Start)
@@ -305,61 +262,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 	g.Add(debugsvc.Start)
 
-	// step 10. if enabled, register leader election
-	if !ctx.DisableLeaderElection {
-		var le *leaderelection.LeaderElector
-		var deposed chan struct{}
-		le, eventHandler.IsLeader, deposed = newLeaderElector(log, ctx, clients.core, clients.coordination)
-
-		g.AddContext(func(electionCtx context.Context) {
-			log.WithFields(logrus.Fields{
-				"configmapname":      ctx.LeaderElectionConfig.Name,
-				"configmapnamespace": ctx.LeaderElectionConfig.Namespace,
-			}).Info("started leader election")
-
-			le.Run(electionCtx)
-			log.Info("stopped leader election")
-		})
-
-		g.Add(func(stop <-chan struct{}) error {
-			log := log.WithField("context", "leaderelection-elected")
-			leader := eventHandler.IsLeader
-			for {
-				select {
-				case <-stop:
-					// shut down
-					log.Info("stopped leader election")
-					return nil
-				case <-leader:
-					log.Info("elected as leader, triggering rebuild")
-					eventHandler.UpdateNow()
-
-					// disable this case
-					leader = nil
-				}
-			}
-		})
-
-		g.Add(func(stop <-chan struct{}) error {
-			// If we get deposed as leader, shut it down.
-			log := log.WithField("context", "leaderelection-deposer")
-			select {
-			case <-stop:
-				// shut down
-				log.Info("stopped leader election")
-			case <-deposed:
-				log.Info("deposed as leader, shutting down")
-			}
-			return nil
-		})
-	} else {
-		log.Info("Leader election disabled")
-
-		// leadership election disabled, hardwire IsLeader to be always readable.
-		leader := make(chan struct{})
-		close(leader)
-		eventHandler.IsLeader = leader
-	}
+	// step 10. register leadership election
+	eventHandler.IsLeader = setupLeadershipElection(&g, log, ctx, clients, eventHandler.UpdateNow)
 
 	// step 12. create grpc handler and register with workgroup.
 	g.Add(func(stop <-chan struct{}) error {
@@ -405,10 +309,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// step 13. Setup SIGTERM handler
 	g.Add(func(stop <-chan struct{}) error {
 		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGTERM)
+		signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
 		select {
-		case <-c:
-			log.WithField("context", "sigterm-handler").Info("received SIGTERM, shutting down")
+		case sig := <-c:
+			log.WithField("context", "sigterm-handler").WithField("signal", sig).Info("shutting down")
 		case <-stop:
 			// Do nothing. The group is shutting down.
 		}

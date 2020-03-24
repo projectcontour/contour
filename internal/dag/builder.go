@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -715,6 +716,11 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			return nil
 		}
 
+		if len(route.Services) < 1 {
+			sw.SetInvalid("route.services must have at least one entry")
+			return nil
+		}
+
 		r := &Route{
 			PathCondition:         mergePathConditions(conds),
 			HeaderConditions:      mergeHeaderConditions(conds),
@@ -783,12 +789,13 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 				return nil
 			}
 
-			var uv *UpstreamValidation
+			var uv *PeerValidationContext
 			if protocol == "tls" {
 				// we can only validate TLS connections to services that talk TLS
-				uv, err = b.lookupUpstreamValidation("??", service.Name, service.UpstreamValidation, proxy.Namespace)
+				uv, err = b.lookupUpstreamValidation(service.UpstreamValidation, proxy.Namespace)
 				if err != nil {
-					sw.SetInvalid(err.Error())
+					sw.SetInvalid("Service [%s:%d] TLS upstream validation policy error: %s",
+						service.Name, service.Port, err)
 					return nil
 				}
 			}
@@ -992,13 +999,14 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 					return
 				}
 
-				var uv *UpstreamValidation
+				var uv *PeerValidationContext
 				var err error
 				if s.Protocol == "tls" {
 					// we can only validate TLS connections to services that talk TLS
-					uv, err = b.lookupUpstreamValidation(route.Match, service.Name, service.UpstreamValidation, ir.Namespace)
+					uv, err = b.lookupUpstreamValidation(service.UpstreamValidation, ir.Namespace)
 					if err != nil {
-						sw.SetInvalid(err.Error())
+						sw.SetInvalid("Service [%s:%d] TLS upstream validation policy error: %s",
+							service.Name, service.Port, err)
 						return
 					}
 				}
@@ -1062,7 +1070,7 @@ func (b *Builder) processIngressRoutes(sw *ObjectStatusWriter, ir *ingressroutev
 	sw.SetValid()
 }
 
-func (b *Builder) lookupUpstreamValidation(match string, serviceName string, uv *projcontour.UpstreamValidation, namespace string) (*UpstreamValidation, error) {
+func (b *Builder) lookupUpstreamValidation(uv *projcontour.UpstreamValidation, namespace string) (*PeerValidationContext, error) {
 	if uv == nil {
 		// no upstream validation requested, nothing to do
 		return nil, nil
@@ -1071,15 +1079,15 @@ func (b *Builder) lookupUpstreamValidation(match string, serviceName string, uv 
 	cacert := b.lookupSecret(Meta{name: uv.CACertificate, namespace: namespace}, validCA)
 	if cacert == nil {
 		// UpstreamValidation is requested, but cert is missing or not configured
-		return nil, fmt.Errorf("route %q: service %q: upstreamValidation requested but secret not found or misconfigured", match, serviceName)
+		return nil, errors.New("secret not found or misconfigured")
 	}
 
 	if uv.SubjectName == "" {
 		// UpstreamValidation is requested, but SAN is not provided
-		return nil, fmt.Errorf("route %q: service %q: upstreamValidation requested but subject alt name not found or misconfigured", match, serviceName)
+		return nil, errors.New("missing subject alternative name")
 	}
 
-	return &UpstreamValidation{
+	return &PeerValidationContext{
 		CACertificate: cacert,
 		SubjectName:   uv.SubjectName,
 	}, nil
@@ -1165,7 +1173,14 @@ func (b *Builder) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *pr
 
 	visited = append(visited, httpproxy)
 
-	if len(tcpproxy.Services) > 0 && tcpproxy.Include != nil {
+	// #2218 Allow support for both plural and singular "Include" for TCPProxy for the v1 API Spec
+	// Prefer configurations for singular over the plural version
+	tcpProxyInclude := tcpproxy.Include
+	if tcpproxy.Include == nil {
+		tcpProxyInclude = tcpproxy.IncludesDeprecated
+	}
+
+	if len(tcpproxy.Services) > 0 && tcpProxyInclude != nil {
 		sw.SetInvalid("tcpproxy: cannot specify services and include in the same httpproxy")
 		return false
 	}
@@ -1190,19 +1205,19 @@ func (b *Builder) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *pr
 		return true
 	}
 
-	if tcpproxy.Include == nil {
+	if tcpProxyInclude == nil {
 		// We don't allow an empty TCPProxy object.
 		sw.SetInvalid("tcpproxy: either services or inclusion must be specified")
 		return false
 	}
 
-	namespace := tcpproxy.Include.Namespace
+	namespace := tcpProxyInclude.Namespace
 	if namespace == "" {
 		// we are delegating to another HTTPProxy in the same namespace
 		namespace = httpproxy.Namespace
 	}
 
-	m := Meta{name: tcpproxy.Include.Name, namespace: namespace}
+	m := Meta{name: tcpProxyInclude.Name, namespace: namespace}
 	dest, ok := b.Source.httpproxies[m]
 	if !ok {
 		sw.SetInvalid("tcpproxy: include %s/%s not found", m.namespace, m.name)
@@ -1335,7 +1350,7 @@ func validSecret(s *v1.Secret) bool {
 }
 
 func validCA(s *v1.Secret) bool {
-	return len(s.Data["ca.crt"]) > 0
+	return len(s.Data[CACertificateKey]) > 0
 }
 
 // routeEnforceTLS determines if the route should redirect the user to a secure TLS listener

@@ -3,6 +3,8 @@ toc:
     subfolderitems:
       - page: Contour Architecture
         url: /architecture
+      - page: Contour Philosophy
+        link: /resources/philosophy
   - title: Configuration
     subfolderitems:
       - page: Annotations Reference

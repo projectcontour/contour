@@ -106,80 +106,89 @@ func visitRoutes(root dag.Vertex) map[string]*v2.RouteConfiguration {
 	return rv.routes
 }
 
+func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
+	var routes []*envoy_api_v2_route.Route
+
+	vh.Visit(func(v dag.Vertex) {
+		route, ok := v.(*dag.Route)
+		if !ok {
+			return
+		}
+
+		if route.HTTPSUpgrade {
+			// TODO(dfc) if we ensure the builder never returns a dag.Route connected
+			// to a SecureVirtualHost that requires upgrade, this logic can move to
+			// envoy.RouteRoute.
+			routes = append(routes, &envoy_api_v2_route.Route{
+				Match:  envoy.RouteMatch(route),
+				Action: envoy.UpgradeHTTPS(),
+			})
+		} else {
+			rt := &envoy_api_v2_route.Route{
+				Match:  envoy.RouteMatch(route),
+				Action: envoy.RouteRoute(route),
+			}
+			if route.RequestHeadersPolicy != nil {
+				rt.RequestHeadersToAdd = envoy.HeaderValueList(route.RequestHeadersPolicy.Set, false)
+				rt.RequestHeadersToRemove = route.RequestHeadersPolicy.Remove
+			}
+			if route.ResponseHeadersPolicy != nil {
+				rt.ResponseHeadersToAdd = envoy.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
+				rt.ResponseHeadersToRemove = route.ResponseHeadersPolicy.Remove
+			}
+			routes = append(routes, rt)
+		}
+	})
+
+	if len(routes) > 0 {
+		sortRoutes(routes)
+
+		v.routes["ingress_http"].VirtualHosts = append(v.routes["ingress_http"].VirtualHosts,
+			envoy.VirtualHost(vh.Name, routes...))
+	}
+}
+
+func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
+	var routes []*envoy_api_v2_route.Route
+
+	svh.Visit(func(v dag.Vertex) {
+		route, ok := v.(*dag.Route)
+		if !ok {
+			return
+		}
+
+		rt := &envoy_api_v2_route.Route{
+			Match:  envoy.RouteMatch(route),
+			Action: envoy.RouteRoute(route),
+		}
+		if route.RequestHeadersPolicy != nil {
+			rt.RequestHeadersToAdd = envoy.HeaderValueList(route.RequestHeadersPolicy.Set, false)
+			rt.RequestHeadersToRemove = route.RequestHeadersPolicy.Remove
+		}
+		if route.ResponseHeadersPolicy != nil {
+			rt.ResponseHeadersToAdd = envoy.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
+			rt.ResponseHeadersToRemove = route.ResponseHeadersPolicy.Remove
+		}
+		routes = append(routes, rt)
+	})
+
+	if len(routes) > 0 {
+		sortRoutes(routes)
+
+		v.routes["ingress_https"].VirtualHosts = append(v.routes["ingress_https"].VirtualHosts,
+			envoy.VirtualHost(svh.VirtualHost.Name, routes...))
+	}
+}
+
 func (v *routeVisitor) visit(vertex dag.Vertex) {
 	switch l := vertex.(type) {
 	case *dag.Listener:
 		l.Visit(func(vertex dag.Vertex) {
 			switch vh := vertex.(type) {
 			case *dag.VirtualHost:
-				var routes []*envoy_api_v2_route.Route
-
-				vh.Visit(func(v dag.Vertex) {
-					route, ok := v.(*dag.Route)
-					if !ok {
-						return
-					}
-
-					if route.HTTPSUpgrade {
-						// TODO(dfc) if we ensure the builder never returns a dag.Route connected
-						// to a SecureVirtualHost that requires upgrade, this logic can move to
-						// envoy.RouteRoute.
-						routes = append(routes, &envoy_api_v2_route.Route{
-							Match:  envoy.RouteMatch(route),
-							Action: envoy.UpgradeHTTPS(),
-						})
-					} else {
-						rt := &envoy_api_v2_route.Route{
-							Match:  envoy.RouteMatch(route),
-							Action: envoy.RouteRoute(route),
-						}
-						if route.RequestHeadersPolicy != nil {
-							rt.RequestHeadersToAdd = envoy.HeaderValueList(route.RequestHeadersPolicy.Set, false)
-							rt.RequestHeadersToRemove = route.RequestHeadersPolicy.Remove
-						}
-						if route.ResponseHeadersPolicy != nil {
-							rt.ResponseHeadersToAdd = envoy.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
-							rt.ResponseHeadersToRemove = route.ResponseHeadersPolicy.Remove
-						}
-						routes = append(routes, rt)
-					}
-				})
-
-				if len(routes) < 1 {
-					return
-				}
-
-				sortRoutes(routes)
-				vhost := envoy.VirtualHost(vh.Name, routes...)
-				v.routes["ingress_http"].VirtualHosts = append(v.routes["ingress_http"].VirtualHosts, vhost)
+				v.onVirtualHost(vh)
 			case *dag.SecureVirtualHost:
-				var routes []*envoy_api_v2_route.Route
-				vh.Visit(func(v dag.Vertex) {
-					route, ok := v.(*dag.Route)
-					if !ok {
-						return
-					}
-
-					rt := &envoy_api_v2_route.Route{
-						Match:  envoy.RouteMatch(route),
-						Action: envoy.RouteRoute(route),
-					}
-					if route.RequestHeadersPolicy != nil {
-						rt.RequestHeadersToAdd = envoy.HeaderValueList(route.RequestHeadersPolicy.Set, false)
-						rt.RequestHeadersToRemove = route.RequestHeadersPolicy.Remove
-					}
-					if route.ResponseHeadersPolicy != nil {
-						rt.ResponseHeadersToAdd = envoy.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
-						rt.ResponseHeadersToRemove = route.ResponseHeadersPolicy.Remove
-					}
-					routes = append(routes, rt)
-				})
-				if len(routes) < 1 {
-					return
-				}
-				sortRoutes(routes)
-				vhost := envoy.VirtualHost(vh.VirtualHost.Name, routes...)
-				v.routes["ingress_https"].VirtualHosts = append(v.routes["ingress_https"].VirtualHosts, vhost)
+				v.onSecureVirtualHost(vh)
 			default:
 				// recurse
 				vertex.Visit(v.visit)

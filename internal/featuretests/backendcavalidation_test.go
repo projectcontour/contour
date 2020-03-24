@@ -19,6 +19,7 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,7 +36,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			envoy.CACertificateKey: []byte(CERTIFICATE),
+			dag.CACertificateKey: []byte(CERTIFICATE),
 		},
 	}
 

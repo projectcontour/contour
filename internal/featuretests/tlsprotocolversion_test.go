@@ -131,12 +131,14 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 		FilterChains: []*envoy_api_v2_listener.FilterChain{
 			envoy.FilterChainTLS(
 				"kuard.example.com",
-				&dag.Secret{Object: sec1},
+				envoy.DownstreamTLSContext(
+					&dag.Secret{Object: sec1},
+					envoy_api_v2_auth.TlsParameters_TLSv1_3,
+					nil,
+					"h2", "http/1.1"),
 				envoy.Filters(
 					envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				envoy_api_v2_auth.TlsParameters_TLSv1_3,
-				"h2", "http/1.1",
 			),
 		},
 	}

@@ -10,10 +10,10 @@ The goal of the `IngressRoute` Custom Resource Definition (CRD) is to expand upo
 At this time, Contour is the only Kubernetes Ingress Controller to support the IngressRoute CRD, though there is nothing that inherently prevents other controllers from supporting the design.
 
 <p class="alert-deprecation">
-<b>Deprecation Notice</b></br>
-<code>IngressRoute</code> has been deprecated and will be removed after Contour 1.0.
-Please see the documentation for <a href="/docs/v1.0.0/httpproxy"><code>HTTPProxy</code></a> the successor to <code>IngressRoute</code>.
-You can also read the <a href="/guides/ingressroute-to-httpproxy">IngressRoute to HTTPProxy upgrade guide</a>.
+<b>Deprecation Notice</b><br>
+The <code>IngressRoute</code> CRD has been deprecated and will be removed in the near future.
+Please see the documentation for <a href="{% link docs/{{site.latest}}/httpproxy.md %}"><code>HTTPProxy</code></a>, which is the successor to <code>IngressRoute</code>.
+You can also read the <a href="{% link _guides/ingressroute-to-httpproxy.md %}">IngressRoute to HTTPProxy upgrade</a> guide.
 </p>
 
 ## Key IngressRoute Benefits

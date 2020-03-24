@@ -18,16 +18,65 @@ import (
 	"os"
 
 	"github.com/google/uuid"
+	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/sirupsen/logrus"
-	"k8s.io/client-go/kubernetes"
-	coordinationv1 "k8s.io/client-go/kubernetes/typed/coordination/v1"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 )
 
+// setupLeadershipElection registers leadership workers with the group and returns
+// a channel which will become ready when this process becomes the leader, or, in the
+// event that leadership election is disabled, the channel will be ready immediately.
+func setupLeadershipElection(g *workgroup.Group, log logrus.FieldLogger, ctx *serveContext, clients *k8s.Clients, updateNow func()) chan struct{} {
+	if ctx.DisableLeaderElection {
+		log.Info("Leader election disabled")
+
+		leader := make(chan struct{})
+		close(leader)
+		return leader
+	}
+
+	le, leader, deposed := newLeaderElector(log, ctx, clients)
+
+	g.AddContext(func(electionCtx context.Context) {
+		log.WithFields(logrus.Fields{
+			"configmapname":      ctx.LeaderElectionConfig.Name,
+			"configmapnamespace": ctx.LeaderElectionConfig.Namespace,
+		}).Info("started leader election")
+
+		le.Run(electionCtx)
+		log.Info("stopped leader election")
+	})
+
+	g.Add(func(stop <-chan struct{}) error {
+		log := log.WithField("context", "leaderelection")
+		for {
+			select {
+			case <-stop:
+				// shut down
+				log.Info("stopped leader election")
+				return nil
+			case <-leader:
+				log.Info("elected as leader, triggering rebuild")
+				updateNow()
+
+				// disable this case
+				leader = nil
+			case <-deposed:
+				// If we get deposed as leader, shut it down.
+				log.Info("deposed as leader, shutting down")
+				return nil
+			}
+		}
+	})
+
+	return leader
+}
+
 // newLeaderElector creates a new leaderelection.LeaderElector and associated
 // channels by which to observe elections and depositions.
-func newLeaderElector(log logrus.FieldLogger, ctx *serveContext, client *kubernetes.Clientset, coordinationClient *coordinationv1.CoordinationV1Client) (*leaderelection.LeaderElector, chan struct{}, chan struct{}) {
+func newLeaderElector(log logrus.FieldLogger, ctx *serveContext, clients *k8s.Clients) (*leaderelection.LeaderElector, chan struct{}, chan struct{}) {
 
 	// leaderOK will block gRPC startup until it's closed.
 	leaderOK := make(chan struct{})
@@ -35,7 +84,7 @@ func newLeaderElector(log logrus.FieldLogger, ctx *serveContext, client *kuberne
 	// we are deposed as leader so that we can clean up.
 	deposed := make(chan struct{})
 
-	rl := newResourceLock(ctx, client, coordinationClient)
+	rl := newResourceLock(ctx, clients)
 
 	// Make the leader elector, ready to be used in the Workgroup.
 	le, err := leaderelection.NewLeaderElector(leaderelection.LeaderElectionConfig{
@@ -64,7 +113,7 @@ func newLeaderElector(log logrus.FieldLogger, ctx *serveContext, client *kuberne
 
 // newResourceLock creates a new resourcelock.Interface based on the Pod's name,
 // or a uuid if the name cannot be determined.
-func newResourceLock(ctx *serveContext, client *kubernetes.Clientset, coordinationClient *coordinationv1.CoordinationV1Client) resourcelock.Interface {
+func newResourceLock(ctx *serveContext, clients *k8s.Clients) resourcelock.Interface {
 	resourceLockID, found := os.LookupEnv("POD_NAME")
 	if !found {
 		resourceLockID = uuid.New().String()
@@ -78,8 +127,8 @@ func newResourceLock(ctx *serveContext, client *kubernetes.Clientset, coordinati
 		resourcelock.ConfigMapsResourceLock,
 		ctx.LeaderElectionConfig.Namespace,
 		ctx.LeaderElectionConfig.Name,
-		client.CoreV1(),
-		coordinationClient,
+		clients.ClientSet().CoreV1(),
+		clients.CoordinationClient(),
 		resourcelock.ResourceLockConfig{
 			Identity: resourceLockID,
 		},
