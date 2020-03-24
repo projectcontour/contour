@@ -26,6 +26,7 @@ import (
 	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/sorter"
 )
 
 // RouteMatch creates a *envoy_api_v2_route.RouteMatch for the supplied *dag.Route.
@@ -196,7 +197,9 @@ func UpgradeHTTPS() *envoy_api_v2_route.Route_Redirect {
 }
 
 // HeaderValueList creates a list of Envoy HeaderValueOptions from the provided map.
-func HeaderValueList(hvm map[string]string, app bool) (hvs []*envoy_api_v2_core.HeaderValueOption) {
+func HeaderValueList(hvm map[string]string, app bool) []*envoy_api_v2_core.HeaderValueOption {
+	var hvs []*envoy_api_v2_core.HeaderValueOption
+
 	for key, value := range hvm {
 		hvs = append(hvs, &envoy_api_v2_core.HeaderValueOption{
 			Header: &envoy_api_v2_core.HeaderValue{
@@ -208,10 +211,12 @@ func HeaderValueList(hvm map[string]string, app bool) (hvs []*envoy_api_v2_core.
 			},
 		})
 	}
+
 	sort.Slice(hvs, func(i, j int) bool {
 		return hvs[i].Header.Key < hvs[j].Header.Key
 	})
-	return
+
+	return hvs
 }
 
 // singleSimpleCluster determines whether we can use a RouteAction_Cluster
@@ -273,7 +278,7 @@ func weightedClusters(clusters []*dag.Cluster) *envoy_api_v2_route.WeightedClust
 	}
 	wc.TotalWeight = protobuf.UInt32(total)
 
-	sort.Stable(clusterWeightByName(wc.Clusters))
+	sort.Stable(sorter.For(wc.Clusters))
 	return &wc
 }
 
@@ -299,18 +304,6 @@ func RouteConfiguration(name string, virtualhosts ...*envoy_api_v2_route.Virtual
 			AppendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
 		),
 	}
-}
-
-type clusterWeightByName []*envoy_api_v2_route.WeightedCluster_ClusterWeight
-
-func (c clusterWeightByName) Len() int      { return len(c) }
-func (c clusterWeightByName) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
-func (c clusterWeightByName) Less(i, j int) bool {
-	if c[i].Name == c[j].Name {
-		return c[i].Weight.Value < c[j].Weight.Value
-	}
-	return c[i].Name < c[j].Name
-
 }
 
 func Headers(first *envoy_api_v2_core.HeaderValueOption, rest ...*envoy_api_v2_core.HeaderValueOption) []*envoy_api_v2_core.HeaderValueOption {

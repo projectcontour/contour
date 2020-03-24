@@ -17,9 +17,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/projectcontour/contour/internal/assert"
-	"github.com/projectcontour/contour/internal/dag"
-
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
@@ -27,6 +24,8 @@ import (
 	"github.com/golang/protobuf/ptypes/wrappers"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/assert"
+	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
