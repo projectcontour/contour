@@ -44,7 +44,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 
 	// The precedence of configuration for contour serve is as follows:
 	// config file, overridden by env vars, overridden by cli flags.
-	// however, as -c is a cli flag, we don't know its valye til cli flags
+	// however, as -c is a cli flag, we don't know its value til cli flags
 	// have been parsed. To correct this ordering we assign a post parse
 	// action to -c, then parse cli flags twice (see main.main). On the second
 	// parse our action will return early, resulting in the precedence order
