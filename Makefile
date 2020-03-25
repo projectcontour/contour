@@ -28,7 +28,20 @@ VERSION ?= $(GIT_REF)
 # set outside this Makefile, as a safety valve.
 LATEST_VERSION ?= NOLATEST
 
+# Sets the current Git sha
+BUILD_SHA = $(shell git rev-parse --verify HEAD)
+# Sets the current branch
+BUILD_BRANCH = $(shell git branch --show-current)
+# Sets the current tagged git version
+BUILD_VERSION = $(VERSION)
+
+GO_BUILD_VARS = \
+	github.com/projectcontour/contour/internal/build.Version=${BUILD_VERSION} \
+	github.com/projectcontour/contour/internal/build.Sha=${BUILD_SHA} \
+	github.com/projectcontour/contour/internal/build.Branch=${BUILD_BRANCH}
+
 GO_TAGS := -tags "oidc gcp"
+GO_LDFLAGS := -s $(patsubst %,-X %, $(GO_BUILD_VARS))
 
 export GO111MODULE=on
 
@@ -39,7 +52,7 @@ check: install check-test check-test-race ## Install and run tests
 checkall: check lint check-generate
 
 install: ## Build and install the contour binary
-	go install -mod=readonly -v $(GO_TAGS) $(MODULE)/cmd/contour
+	go install -mod=readonly -v -ldflags="$(GO_LDFLAGS)" $(GO_TAGS) $(MODULE)/cmd/contour
 
 race:
 	go install -mod=readonly -v -race $(GO_TAGS) $(MODULE)/cmd/contour
@@ -48,7 +61,7 @@ download: ## Download Go modules
 	go mod download
 
 container: ## Build the Contour container image
-	docker build . -t $(IMAGE):$(VERSION)
+	docker build --build-arg BUILD_VERSION=$(BUILD_VERSION) --build-arg BUILD_BRANCH=$(BUILD_BRANCH) --build-arg BUILD_SHA=$(BUILD_SHA) . -t $(IMAGE):$(VERSION)
 
 push: ## Push the Contour container image to the Docker registry
 push: container

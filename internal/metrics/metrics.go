@@ -21,6 +21,7 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/projectcontour/contour/internal/build"
 	"github.com/projectcontour/contour/internal/httpsvc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -28,6 +29,7 @@ import (
 
 // Metrics provide Prometheus metrics for the app
 type Metrics struct {
+	buildInfoGauge             *prometheus.GaugeVec
 	ingressRouteTotalGauge     *prometheus.GaugeVec
 	ingressRouteRootTotalGauge *prometheus.GaugeVec
 	ingressRouteInvalidGauge   *prometheus.GaugeVec
@@ -64,6 +66,7 @@ type Meta struct {
 }
 
 const (
+	BuildInfoGauge             = "contour_build_info"
 	IngressRouteTotalGauge     = "contour_ingressroute_total"
 	IngressRouteRootTotalGauge = "contour_ingressroute_root_total"
 	IngressRouteInvalidGauge   = "contour_ingressroute_invalid_total"
@@ -89,6 +92,13 @@ const (
 // to regenerate the metrics documentation.
 func NewMetrics(registry *prometheus.Registry) *Metrics {
 	m := Metrics{
+		buildInfoGauge: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: BuildInfoGauge,
+				Help: "Build information for Contour. Labels include the branch and git SHA that Contour was built from, and the Contour version.",
+			},
+			[]string{"branch", "revision", "version"},
+		),
 		ingressRouteMetricCache: &RouteMetric{},
 		proxyMetricCache:        &RouteMetric{},
 		ingressRouteTotalGauge: prometheus.NewGaugeVec(
@@ -181,6 +191,7 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 			[]string{"op", "kind"},
 		),
 	}
+	m.buildInfoGauge.WithLabelValues(build.Branch, build.Sha, build.Version).Set(1)
 	m.register(registry)
 	return &m
 }
@@ -188,6 +199,7 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 // register registers the Metrics with the supplied registry.
 func (m *Metrics) register(registry *prometheus.Registry) {
 	registry.MustRegister(
+		m.buildInfoGauge,
 		m.ingressRouteTotalGauge,
 		m.ingressRouteRootTotalGauge,
 		m.ingressRouteInvalidGauge,
