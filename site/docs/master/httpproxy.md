@@ -1202,7 +1202,7 @@ Active health checking can be configured on a per route basis.
 Contour supports TCP health checking and can be configured with various settings to tune the behavior.
 
 During TCP health checking Envoy will send a connect-only health check to the upstream Endpoints.
-It is important to note that these are health checks which Envoy implements and are separate from any 
+It is important to note that these are health checks which Envoy implements and are separate from any
 other system such as those that exist in Kubernetes.
 
 ```yaml
@@ -1262,6 +1262,34 @@ spec:
             caSecret: foo-ca-cert
             subjectName: foo.marketing
 ```
+
+## Client Certificate Validation
+
+It is possible to protect the backend service from unauthorized external clients by requiring the client to present a valid TLS certificate.
+Envoy will validate the client certificate by verifying that it is not expired and that a a chain of trust can be established to the configured trusted root CA certificate.
+Only those requests with a valid client certificate will be accepted and forwarded to the backend service.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: with-client-auth
+spec:
+  virtualhost:
+    fqdn: www.example.com
+    tls:
+      secretName: secret
+      clientValidation:
+        caSecret: client-root-ca
+  routes:
+    - services:
+        - name: s1
+          port: 80
+```
+
+The preceding example enables validation by setting the optional `clientValidation` attribute.
+Its mandatory attribute `caSecret` contains a name of an existing Kubernetes Secret that must be of type "Opaque" and have a data key named `ca.crt`.
+The data value of the key `ca.crt` must be a PEM-encoded certificate bundle and it must contain all the trusted CA certificates that are to be used for validating the client certificate.
 
 ## Status Reporting
 
