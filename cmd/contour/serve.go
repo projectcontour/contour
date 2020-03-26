@@ -268,19 +268,19 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// step 10. register leadership election
 	eventHandler.IsLeader = setupLeadershipElection(&g, log, ctx, clients, eventHandler.UpdateNow)
 
-	// step 11. set up ingress status writer
-	isw := ingressStatusWriter{
-		log:      log.WithField("context", "ingressStatusWriter"),
+	// step 11. set up ingress load balancer status writer
+	lbsw := loadBalancerStatusWriter{
+		log:      log.WithField("context", "loadBalancerStatusWriter"),
 		clients:  clients,
 		isLeader: eventHandler.IsLeader,
 		lbStatus: make(chan v1.LoadBalancerStatus, 1),
 	}
-	g.Add(isw.Start)
+	g.Add(lbsw.Start)
 
 	// step 12. register an informer to watch envoy's service.
 	ssw := &k8s.ServiceStatusLoadBalancerWatcher{
 		ServiceName: ctx.envoyServiceName,
-		LBStatus:    isw.lbStatus,
+		LBStatus:    lbsw.lbStatus,
 	}
 	factory := clients.NewInformerFactoryForNamespace(ctx.envoyServiceNamespace)
 	factory.Core().V1().Services().Informer().AddEventHandler(ssw)

@@ -60,6 +60,7 @@ rules:
   - watch
   - patch 
   - post
+  - update
 - apiGroups: ["contour.heptio.com"]
   resources: ["ingressroutes", "tlscertificatedelegations"]
   verbs:

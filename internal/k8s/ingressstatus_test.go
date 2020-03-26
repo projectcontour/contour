@@ -54,14 +54,14 @@ func TestServiceStatusLoadBalancerWatcherOnAdd(t *testing.T) {
 
 	// assert adding a service with the correct name generates a notification
 	svc.Name = sw.ServiceName
-	svc.Status.LoadBalancer.Ingress = []v1.LoadBalancerIngress{{Hostname: "vmware.com"}}
+	svc.Status.LoadBalancer.Ingress = []v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}}
 	sw.OnAdd(&svc)
 	got, ok := recv()
 	if !ok {
 		t.Fatalf("expected result when adding a service with the correct name")
 	}
 	want := v1.LoadBalancerStatus{
-		Ingress: []v1.LoadBalancerIngress{{Hostname: "vmware.com"}},
+		Ingress: []v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}},
 	}
 	assert.Equal(t, got, want)
 }
@@ -102,14 +102,14 @@ func TestServiceStatusLoadBalancerWatcherOnUpdate(t *testing.T) {
 	// assert updating a service with the correct name generates a notification
 	var svc v1.Service
 	svc.Name = sw.ServiceName
-	svc.Status.LoadBalancer.Ingress = []v1.LoadBalancerIngress{{Hostname: "vmware.com"}}
+	svc.Status.LoadBalancer.Ingress = []v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}}
 	sw.OnUpdate(&oldSvc, &svc)
 	got, ok := recv()
 	if !ok {
 		t.Fatalf("expected result when updating a service with the correct name")
 	}
 	want := v1.LoadBalancerStatus{
-		Ingress: []v1.LoadBalancerIngress{{Hostname: "vmware.com"}},
+		Ingress: []v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}},
 	}
 	assert.Equal(t, got, want)
 }
@@ -148,7 +148,7 @@ func TestServiceStatusLoadBalancerWatcherOnDelete(t *testing.T) {
 
 	// assert deleting a service with the correct name generates a blank notification
 	svc.Name = sw.ServiceName
-	svc.Status.LoadBalancer.Ingress = []v1.LoadBalancerIngress{{Hostname: "vmware.com"}}
+	svc.Status.LoadBalancer.Ingress = []v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}}
 	sw.OnDelete(&svc)
 	got, ok := recv()
 	if !ok {

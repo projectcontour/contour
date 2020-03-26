@@ -174,7 +174,7 @@ func newServeContext() *serveContext {
 		},
 		UseExperimentalServiceAPITypes: false,
 		envoyServiceName:               "envoy",
-		envoyServiceNamespace:          "projectcontour",
+		envoyServiceNamespace:          getEnv("CONTOUR_NAMESPACE", "projectcontour"),
 	}
 }
 

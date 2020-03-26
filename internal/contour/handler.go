@@ -223,7 +223,7 @@ func (e *EventHandler) updateDAG() {
 		e.Metrics.SetIngressRouteMetric(metrics)
 		e.Metrics.SetHTTPProxyMetric(proxymetrics)
 	default:
-		e.Debug("skipping status update: not the leader")
+		e.Debug("skipping metrics and CRD status update, not leader")
 	}
 }
 
