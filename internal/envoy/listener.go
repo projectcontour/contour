@@ -30,6 +30,7 @@ import (
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/sorter"
 )
 
 // TLSInspector returns a new TLS inspector listener filter.
@@ -157,7 +158,7 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 				Weight: weight,
 			})
 		}
-		sort.Stable(clustersByNameAndWeight(clusters))
+		sort.Stable(sorter.For(clusters))
 		return &envoy_api_v2_listener.Filter{
 			Name: wellknown.TCPProxy,
 			ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
@@ -174,17 +175,6 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 			},
 		}
 	}
-}
-
-type clustersByNameAndWeight []*tcp.TcpProxy_WeightedCluster_ClusterWeight
-
-func (c clustersByNameAndWeight) Len() int      { return len(c) }
-func (c clustersByNameAndWeight) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
-func (c clustersByNameAndWeight) Less(i, j int) bool {
-	if c[i].Name == c[j].Name {
-		return c[i].Weight < c[j].Weight
-	}
-	return c[i].Name < c[j].Name
 }
 
 // SocketAddress creates a new TCP envoy_api_v2_core.Address.

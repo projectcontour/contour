@@ -18,15 +18,16 @@ import (
 	"sync"
 	"time"
 
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	envoy_api_v2_accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
-
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/sorter"
 )
 
 const (
@@ -232,15 +233,15 @@ func (c *ListenerCache) Update(v map[string]*v2.Listener) {
 func (c *ListenerCache) Contents() []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []proto.Message
+	var values []*v2.Listener
 	for _, v := range c.values {
 		values = append(values, v)
 	}
 	for _, v := range c.staticValues {
 		values = append(values, v)
 	}
-	sort.Stable(listenersByName(values))
-	return values
+	sort.Stable(sorter.For(values))
+	return protobuf.AsMessages(values)
 }
 
 // Query returns the proto.Messages in the ListenerCache that match
@@ -248,7 +249,7 @@ func (c *ListenerCache) Contents() []proto.Message {
 func (c *ListenerCache) Query(names []string) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []proto.Message
+	var values []*v2.Listener
 	for _, n := range names {
 		v, ok := c.values[n]
 		if !ok {
@@ -264,16 +265,8 @@ func (c *ListenerCache) Query(names []string) []proto.Message {
 		}
 		values = append(values, v)
 	}
-	sort.Stable(listenersByName(values))
-	return values
-}
-
-type listenersByName []proto.Message
-
-func (l listenersByName) Len() int      { return len(l) }
-func (l listenersByName) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
-func (l listenersByName) Less(i, j int) bool {
-	return l[i].(*v2.Listener).Name < l[j].(*v2.Listener).Name
+	sort.Stable(sorter.For(values))
+	return protobuf.AsMessages(values)
 }
 
 func (*ListenerCache) TypeURL() string { return cache.ListenerType }
@@ -315,13 +308,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 	} else {
 		// there's some https listeners, we need to sort the filter chains
 		// to ensure that the LDS entries are identical.
-		sort.SliceStable(lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains,
-			func(i, j int) bool {
-				// The ServerNames field will only ever have a single entry
-				// in our FilterChain config, so it's okay to only sort
-				// on the first slice entry.
-				return lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains[i].FilterChainMatch.ServerNames[0] < lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains[j].FilterChainMatch.ServerNames[0]
-			})
+		sort.Stable(sorter.For(lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains))
 	}
 
 	return lv.listeners
