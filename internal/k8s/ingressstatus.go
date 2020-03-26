@@ -23,13 +23,13 @@ import (
 // StatusLoadbalancerUpdater observes informer OnAdd events and
 // updates the ingress.status.loadBalancer field on all Ingress
 // objects that match the ingress class (if used).
-type StatusLoadBalancerUpdater struct {
+type IngressStatusUpdater struct {
 	Client clientset.Interface
 	Logger logrus.FieldLogger
 	Status v1.LoadBalancerStatus
 }
 
-func (s *StatusLoadBalancerUpdater) OnAdd(obj interface{}) {
+func (s *IngressStatusUpdater) OnAdd(obj interface{}) {
 	ing := obj.(*v1beta1.Ingress).DeepCopy()
 
 	// TODO(dfc) check ingress class
@@ -44,7 +44,7 @@ func (s *StatusLoadBalancerUpdater) OnAdd(obj interface{}) {
 	}
 }
 
-func (s *StatusLoadBalancerUpdater) OnUpdate(oldObj, newObj interface{}) {
+func (s *IngressStatusUpdater) OnUpdate(oldObj, newObj interface{}) {
 	// Ignoring OnUpdate allows us to avoid the message generated
 	// from the status update.
 
@@ -55,7 +55,7 @@ func (s *StatusLoadBalancerUpdater) OnUpdate(oldObj, newObj interface{}) {
 	// of scope.
 }
 
-func (s *StatusLoadBalancerUpdater) OnDelete(obj interface{}) {
+func (s *IngressStatusUpdater) OnDelete(obj interface{}) {
 	// we don't need to update the status on resources that
 	// have been deleted.
 }
