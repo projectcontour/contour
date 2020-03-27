@@ -30,9 +30,7 @@ import (
 )
 
 func TestTimeoutPolicyRequestTimeout(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.Source.IngressClass = "linkerd"
-	})
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
 	defer done()
 
 	svc := &v1.Service{
@@ -64,7 +62,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
-	// check annotation with explicit timeout is propogated
+	// check annotation with explicit timeout is propagated
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -379,9 +377,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 }
 
 func TestTimeoutPolicyIdleTimeout(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.Source.IngressClass = "linkerd"
-	})
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
 	defer done()
 
 	svc := &v1.Service{

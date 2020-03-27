@@ -1146,6 +1146,9 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard-ing",
 			Namespace: "default",
+			Annotations: map[string]string{
+				"contour.heptio.com/ingress.class": "linkerd",
+			},
 		},
 		Spec: v1beta1.IngressSpec{
 			Backend: &v1beta1.IngressBackend{
