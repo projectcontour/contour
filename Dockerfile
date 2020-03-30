@@ -8,7 +8,18 @@ RUN go mod download
 COPY cmd cmd
 COPY internal internal
 COPY apis apis
-RUN CGO_ENABLED=0 GOOS=linux GOFLAGS=-ldflags=-w go build -o /go/bin/contour -ldflags=-s -v github.com/projectcontour/contour/cmd/contour
+COPY Makefile Makefile
+
+ARG BUILD_BRANCH
+ARG BUILD_SHA
+ARG BUILD_VERSION
+
+RUN make install \
+	    CGO_ENABLED=0 \
+	    GOOS=linux \
+	    BUILD_VERSION=${BUILD_VERSION} \
+	    BUILD_SHA=${BUILD_SHA} \
+	    BUILD_BRANCH=${BUILD_BRANCH}
 
 FROM scratch AS final
 COPY --from=build /go/bin/contour /bin/contour
