@@ -13,6 +13,17 @@
 
 package build
 
+import (
+	"gopkg.in/yaml.v2"
+)
+
+// BuildInfo is a struct for build information.
+type BuildInfo struct {
+	Branch  string `yaml:"branch,omitempty"`
+	Sha     string `yaml:"sha,omitempty"`
+	Version string `yaml:"version,omitempty"`
+}
+
 // Branch allows for a queryable branch name set at build time.
 var Branch string
 
@@ -21,3 +32,13 @@ var Sha string
 
 // Version allows for a queryable version set at build time.
 var Version string
+
+// PrintBuildInfo prints the build information.
+func PrintBuildInfo() string {
+	buildInfo := &BuildInfo{Branch, Sha, Version}
+	out, err := yaml.Marshal(buildInfo)
+	if err != nil {
+		panic(err)
+	}
+	return string(out)
+}

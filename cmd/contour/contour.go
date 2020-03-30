@@ -18,6 +18,7 @@ import (
 	"os"
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
+	"github.com/projectcontour/contour/internal/build"
 	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	"k8s.io/klog"
@@ -61,6 +62,7 @@ func main() {
 	sds.Arg("resources", "SDS resource filter").StringsVar(&resources)
 
 	serve, serveCtx := registerServe(app)
+	version := app.Command("version", "Build information for Contour.")
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
@@ -95,10 +97,13 @@ func main() {
 		}
 		log.Infof("args: %v", args)
 		check(doServe(log, serveCtx))
+	case version.FullCommand():
+		println(build.PrintBuildInfo())
 	default:
 		app.Usage(args)
 		os.Exit(2)
 	}
+
 }
 
 func check(err error) {
