@@ -41,7 +41,7 @@ GO_BUILD_VARS = \
 	github.com/projectcontour/contour/internal/build.Branch=${BUILD_BRANCH}
 
 GO_TAGS := -tags "oidc gcp"
-GO_LDFLAGS := -s $(patsubst %,-X %, $(GO_BUILD_VARS))
+GO_LDFLAGS := -s -w $(patsubst %,-X %, $(GO_BUILD_VARS))
 
 export GO111MODULE=on
 
