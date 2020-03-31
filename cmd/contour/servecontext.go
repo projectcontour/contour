@@ -161,7 +161,7 @@ func newServeContext() *serveContext {
 			LeaseDuration: time.Second * 15,
 			RenewDeadline: time.Second * 10,
 			RetryPeriod:   time.Second * 2,
-			Namespace:     "projectcontour",
+			Namespace:     getEnv("CONTOUR_NAMESPACE", "projectcontour"),
 			Name:          "leader-elect",
 		},
 		UseExperimentalServiceAPITypes: false,
@@ -285,4 +285,12 @@ func (ctx *serveContext) ingressRouteRootNamespaces() []string {
 		ns = append(ns, strings.TrimSpace(s))
 	}
 	return ns
+}
+
+// Simple helper function to read an environment or return a default value
+func getEnv(key string, defaultVal string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return defaultVal
 }
