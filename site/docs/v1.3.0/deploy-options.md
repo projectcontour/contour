@@ -202,9 +202,10 @@ Now you can point your browser at the specified port on any node in your cluster
 ### Host Networking
 
 You can run Contour without a Kubernetes Service at all.
-This is done by having the Contour pod run with host networking.
-Do this with `hostNetwork: true` and `dnsPolicy: ClusterFirstWithHostNet` on your pod definition.
-Envoy will listen directly on port 8080 on each host that it is running.
+This is done by having the Envoy pod run with host networking.
+Contour's examples utilize this model in the `/examples` directory.
+To configure, set: `hostNetwork: true` and `dnsPolicy: ClusterFirstWithHostNet` on your Envoy pod definition.
+Next, pass `--envoy-service-http-port=80 --envoy-service-https-port=443` to the contour `serve` command which instructs Envoy to listen directly on port 80/443 on each host that it is running.
 This is best paired with a DaemonSet (perhaps paired with Node affinity) to ensure that a single instance of Contour runs on each Node.
 See the [AWS NLB tutorial][10] as an example.
 
