@@ -151,6 +151,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 
 		// issue #1487 pass through X-Request-Id if provided.
 		PreserveExternalRequestId: true,
+		MergeSlashes:              true,
 	}
 
 	if len(b.accessLoggers) > 0 {
