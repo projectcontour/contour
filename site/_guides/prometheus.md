@@ -21,8 +21,11 @@ port `8002`.
 
 ## Contour Metrics
 
-Contour exposes a Prometheus-compatible `/metrics` endpoint on port `8000` with
-the following metrics:
+Contour exposes a Prometheus-compatible `/metrics` endpoint that defaults to listening on port 8000. This can be configured by using the `--http-address` and `--http-port` flags for the `serve` command.
+
+**Note:** the `Service` deployment manifest when installing Contour must be updated to represent the same port as the configured flag.
+
+The metrics endpoint exposes the following metrics:
 
 {% include metrics.html %}
 

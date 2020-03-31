@@ -16,6 +16,7 @@ package main
 import (
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
@@ -26,6 +27,7 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/debug"
 	cgrpc "github.com/projectcontour/contour/internal/grpc"
+	"github.com/projectcontour/contour/internal/health"
 	"github.com/projectcontour/contour/internal/httpsvc"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
@@ -85,8 +87,10 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("debug-http-address", "Address the debug http endpoint will bind to.").StringVar(&ctx.debugAddr)
 	serve.Flag("debug-http-port", "Port the debug http endpoint will bind to.").IntVar(&ctx.debugPort)
 
-	serve.Flag("http-address", "Address the metrics http endpoint will bind to.").StringVar(&ctx.metricsAddr)
-	serve.Flag("http-port", "Port the metrics http endpoint will bind to.").IntVar(&ctx.metricsPort)
+	serve.Flag("http-address", "Address the metrics HTTP endpoint will bind to.").StringVar(&ctx.metricsAddr)
+	serve.Flag("http-port", "Port the metrics HTTP endpoint will bind to.").IntVar(&ctx.metricsPort)
+	serve.Flag("health-address", "Address the health HTTP endpoint will bind to.").StringVar(&ctx.healthAddr)
+	serve.Flag("health-port", "Port the health HTTP endpoint will bind to.").IntVar(&ctx.healthPort)
 
 	serve.Flag("contour-cafile", "CA bundle file name for serving gRPC with TLS.").Envar("CONTOUR_CAFILE").StringVar(&ctx.caFile)
 	serve.Flag("contour-cert-file", "Contour certificate file name for serving gRPC over TLS.").Envar("CONTOUR_CERT_FILE").StringVar(&ctx.contourCert)
@@ -240,18 +244,39 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	g.Add(eventHandler.Start())
 
 	// step 8. create metrics service and register with workgroup.
-	metricsvc := metrics.Service{
-		Service: httpsvc.Service{
-			Addr:        ctx.metricsAddr,
-			Port:        ctx.metricsPort,
-			FieldLogger: log.WithField("context", "metricsvc"),
-		},
-		Client:   clients.ClientSet(),
-		Registry: registry,
+	metricsvc := httpsvc.Service{
+		Addr:        ctx.metricsAddr,
+		Port:        ctx.metricsPort,
+		FieldLogger: log.WithField("context", "metricsvc"),
+		ServeMux:    http.ServeMux{},
 	}
+
+	metricsvc.ServeMux.Handle("/metrics", metrics.Handler(registry))
+
+	if ctx.healthAddr == ctx.metricsAddr && ctx.healthPort == ctx.metricsPort {
+		h := health.Handler(clients.ClientSet())
+		metricsvc.ServeMux.Handle("/health", h)
+		metricsvc.ServeMux.Handle("/healthz", h)
+	}
+
 	g.Add(metricsvc.Start)
 
-	// step 9. create debug service and register with workgroup.
+	// step 9. create a separate health service if required.
+	if ctx.healthAddr != ctx.metricsAddr || ctx.healthPort != ctx.metricsPort {
+		healthsvc := httpsvc.Service{
+			Addr:        ctx.healthAddr,
+			Port:        ctx.healthPort,
+			FieldLogger: log.WithField("context", "healthsvc"),
+		}
+
+		h := health.Handler(clients.ClientSet())
+		healthsvc.ServeMux.Handle("/health", h)
+		healthsvc.ServeMux.Handle("/healthz", h)
+
+		g.Add(healthsvc.Start)
+	}
+
+	// step 10. create debug service and register with workgroup.
 	debugsvc := debug.Service{
 		Service: httpsvc.Service{
 			Addr:        ctx.debugAddr,
@@ -262,7 +287,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 	g.Add(debugsvc.Start)
 
-	// step 10. register leadership election
+	// step 11. register leadership election.
 	eventHandler.IsLeader = setupLeadershipElection(&g, log, ctx, clients, eventHandler.UpdateNow)
 
 	// step 12. create grpc handler and register with workgroup.
