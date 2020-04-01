@@ -14,6 +14,7 @@
 package contour
 
 import (
+	"path"
 	"sort"
 	"sync"
 	"time"
@@ -284,25 +285,35 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 		listeners: map[string]*v2.Listener{
 			ENVOY_HTTPS_LISTENER: envoy.Listener(
 				ENVOY_HTTPS_LISTENER,
-				lvc.httpsAddress(), lvc.httpsPort(),
+				lvc.httpsAddress(),
+				lvc.httpsPort(),
 				secureProxyProtocol(lvc.UseProxyProto),
 			),
 		},
 	}
+
 	lv.visit(root)
 
-	// add a listener if there are vhosts bound to http.
+	// Add a listener if there are vhosts bound to http.
 	if lv.http {
+		cm := envoy.HTTPConnectionManagerBuilder().
+			RouteConfigName(ENVOY_HTTP_LISTENER).
+			MetricsPrefix(ENVOY_HTTP_LISTENER).
+			AccessLoggers(lvc.newInsecureAccessLog()).
+			RequestTimeout(lvc.requestTimeout()).
+			Get()
+
 		lv.listeners[ENVOY_HTTP_LISTENER] = envoy.Listener(
 			ENVOY_HTTP_LISTENER,
-			lvc.httpAddress(), lvc.httpPort(),
+			lvc.httpAddress(),
+			lvc.httpPort(),
 			proxyProtocol(lvc.UseProxyProto),
-			envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, lvc.newInsecureAccessLog(), lvc.requestTimeout()),
+			cm,
 		)
 
 	}
 
-	// remove the https listener if there are no vhosts bound to it.
+	// Remove the https listener if there are no vhosts bound to it.
 	if len(lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains) == 0 {
 		delete(lv.listeners, ENVOY_HTTPS_LISTENER)
 	} else {
@@ -342,15 +353,37 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		// the listener properly.
 		v.http = true
 	case *dag.SecureVirtualHost:
-		filters := envoy.Filters(
-			envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.ListenerVisitorConfig.newSecureAccessLog(), v.ListenerVisitorConfig.requestTimeout()),
-		)
-		alpnProtos := []string{"h2", "http/1.1"}
-		if vh.TCPProxy != nil {
+		var alpnProtos []string
+		var filters []*envoy_api_v2_listener.Filter
+
+		if vh.TCPProxy == nil {
+			// Create a uniquely named HTTP connection manager for
+			// this vhost, so that the SNI name the client requests
+			// only grants access to that host. See RFC 6066 for
+			// security advice. Note that we still use the generic
+			// metrics prefix to keep compatibility with previous
+			// Contour versions since the metrics prefix will be
+			// coded into monitoring dashboards.
 			filters = envoy.Filters(
-				envoy.TCPProxy(ENVOY_HTTPS_LISTENER, vh.TCPProxy, v.ListenerVisitorConfig.newSecureAccessLog()),
+				envoy.HTTPConnectionManagerBuilder().
+					RouteConfigName(path.Join("https", vh.VirtualHost.Name)).
+					MetricsPrefix(ENVOY_HTTPS_LISTENER).
+					AccessLoggers(v.ListenerVisitorConfig.newSecureAccessLog()).
+					RequestTimeout(v.ListenerVisitorConfig.requestTimeout()).
+					Get(),
 			)
-			alpnProtos = nil // do not offer ALPN
+
+			alpnProtos = []string{"h2", "http/1.1"}
+		} else {
+			filters = envoy.Filters(
+				envoy.TCPProxy(ENVOY_HTTPS_LISTENER,
+					vh.TCPProxy,
+					v.ListenerVisitorConfig.newSecureAccessLog()),
+			)
+
+			// Do not offer ALPN for TCP proxying, since
+			// the protocols will be provided by the TCP
+			// backend in its ServerHello.
 		}
 
 		var downstreamTLS *envoy_api_v2_auth.DownstreamTlsContext
@@ -367,13 +400,9 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 				alpnProtos...)
 		}
 
-		fc := envoy.FilterChainTLS(
-			vh.VirtualHost.Name,
-			downstreamTLS,
-			filters,
-		)
+		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains,
+			envoy.FilterChainTLS(vh.VirtualHost.Name, downstreamTLS, filters))
 
-		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains, fc)
 	default:
 		// recurse
 		vertex.Visit(v.visit)

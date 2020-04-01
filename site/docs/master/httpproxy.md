@@ -198,11 +198,14 @@ spec:
 HTTPProxy follows a similar pattern to Ingress for configuring TLS credentials.
 
 You can secure a HTTPProxy by specifying a Secret that contains TLS private key and certificate information.
-Contour (via Envoy) uses the SNI TLS extension to handle this behavior.
-If multiple HTTPProxy's utilize the same Secret, the certificate must include the necessary Subject Authority Name (SAN) for each fqdn.
+If multiple HTTPProxies utilize the same Secret, the certificate must include the necessary Subject Authority Name (SAN) for each fqdn.
+
+Contour (via Envoy) requires that clients send the Server Name Indication (SNI) TLS extension so that requests can be routed to the correct virtual host.
+Virtual hosts are strongly bound to SNI names.
+This means that the Host header in HTTP requests must match the SNI name that was sent at the start of the TLS session.
 
 Contour also follows a "secure first" approach.
-When TLS is enabled for a virtual host any request to the insecure port is redirected to the secure interface with a 301 redirect.
+When TLS is enabled for a virtual host, any request to the insecure port is redirected to the secure interface with a 301 redirect.
 Specific routes can be configured to override this behavior and handle insecure requests by enabling the `spec.routes.permitInsecure` parameter on a Route.
 
 The TLS secret must contain keys named tls.crt and tls.key that contain the certificate and private key to use for TLS, e.g.:

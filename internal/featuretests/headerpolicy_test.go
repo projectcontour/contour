@@ -78,7 +78,6 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -125,7 +124,6 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -162,7 +160,6 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -221,7 +218,7 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 	})
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
@@ -235,7 +232,7 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 						},
 					}),
 			),
-			envoy.RouteConfiguration("ingress_https",
+			envoy.RouteConfiguration("https/hello.world",
 				envoy.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),

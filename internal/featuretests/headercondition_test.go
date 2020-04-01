@@ -134,7 +134,6 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -203,7 +202,6 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -272,7 +270,6 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -341,7 +338,6 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -408,7 +404,6 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
