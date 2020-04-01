@@ -86,7 +86,6 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -110,7 +109,6 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		c.Request(routeType).Equals(&v2.DiscoveryResponse{
 			Resources: resources(t,
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -130,7 +128,6 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		c.Request(routeType).Equals(&v2.DiscoveryResponse{
 			Resources: resources(t,
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -148,7 +145,6 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -159,7 +155,6 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		c.Request(routeType).Equals(&v2.DiscoveryResponse{
 			Resources: resources(t,
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -202,7 +197,6 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -234,7 +228,6 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		c.Request(routeType).Equals(&v2.DiscoveryResponse{
 			Resources: resources(t,
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -266,7 +259,6 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		c.Request(routeType).Equals(&v2.DiscoveryResponse{
 			Resources: resources(t,
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -284,7 +276,6 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -295,7 +286,6 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		c.Request(routeType).Equals(&v2.DiscoveryResponse{
 			Resources: resources(t,
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -337,7 +327,6 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -370,7 +359,6 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		c.Request(routeType).Equals(&v2.DiscoveryResponse{
 			Resources: resources(t,
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -400,7 +388,6 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		c.Request(routeType).Equals(&v2.DiscoveryResponse{
 			Resources: resources(t,
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -418,7 +405,6 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -429,7 +415,6 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		c.Request(routeType).Equals(&v2.DiscoveryResponse{
 			Resources: resources(t,
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -484,7 +469,6 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -515,7 +499,6 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -538,7 +521,6 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 		c.Request(routeType).Equals(&v2.DiscoveryResponse{
 			Resources: resources(t,
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -556,7 +538,6 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -567,7 +548,6 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 		c.Request(routeType).Equals(&v2.DiscoveryResponse{
 			Resources: resources(t,
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -607,7 +587,6 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -647,7 +626,6 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -679,7 +657,6 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 		c.Request(routeType).Equals(&v2.DiscoveryResponse{
 			Resources: resources(t,
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -697,7 +674,6 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -708,7 +684,6 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 		c.Request(routeType).Equals(&v2.DiscoveryResponse{
 			Resources: resources(t,
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -747,7 +722,6 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -786,7 +760,6 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -819,7 +792,6 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 		c.Request(routeType).Equals(&v2.DiscoveryResponse{
 			Resources: resources(t,
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -837,7 +809,6 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 						},
 					),
 				),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -848,7 +819,6 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 		c.Request(routeType).Equals(&v2.DiscoveryResponse{
 			Resources: resources(t,
 				envoy.RouteConfiguration("ingress_http"),
-				envoy.RouteConfiguration("ingress_https"),
 			),
 			TypeUrl: routeType,
 		})
@@ -907,7 +877,6 @@ func TestIngressClassUpdate(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
@@ -926,7 +895,6 @@ func TestIngressClassUpdate(t *testing.T) {
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	}).NoStatus(vhost)
