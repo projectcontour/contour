@@ -72,28 +72,29 @@ func toMeta(obj Object) Meta {
 // belongs to the Ingress class that this cache is using.
 func (kc *KubernetesCache) matchesIngressClass(obj Object) bool {
 	objectClass := ingressClass(obj)
-	targetClass := stringOrDefault(kc.IngressClass, DEFAULT_INGRESS_CLASS)
 
 	switch objectClass {
-	// Unspecified ingress class always matches.
-	case "":
+	case kc.IngressClass:
+		// Handles kc.IngressClass == "" and kc.IngressClass == "custom".
 		return true
-		// Specifying our ingress class also matches.
-	case targetClass:
-		return true
-	// Any other ingress class fails to match.
-	default:
-		kind := k8s.KindOf(obj)
-		om := obj.GetObjectMeta()
-
-		kc.WithField("name", om.GetName()).
-			WithField("namespace", om.GetNamespace()).
-			WithField("kind", kind).
-			WithField("ingress.class", objectClass).
-			Debug("ignoring object with unmatched ingress class")
-
-		return false
+	case DEFAULT_INGRESS_CLASS:
+		// kc.IngressClass == "" implicitly matches the default too.
+		if kc.IngressClass == "" {
+			return true
+		}
 	}
+
+	// Any other ingress class fails to match.
+	kind := k8s.KindOf(obj)
+	om := obj.GetObjectMeta()
+
+	kc.WithField("name", om.GetName()).
+		WithField("namespace", om.GetNamespace()).
+		WithField("kind", kind).
+		WithField("ingress.class", objectClass).
+		Debug("ignoring object with unmatched ingress class")
+
+	return false
 }
 
 // Insert inserts obj into the KubernetesCache.

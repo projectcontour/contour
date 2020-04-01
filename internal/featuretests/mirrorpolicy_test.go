@@ -27,9 +27,7 @@ import (
 )
 
 func TestMirrorPolicy(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.Source.IngressClass = "linkerd"
-	})
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
 	defer done()
 
 	svc1 := &v1.Service{
@@ -87,7 +85,6 @@ func TestMirrorPolicy(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})

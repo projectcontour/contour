@@ -108,7 +108,6 @@ func TestRootNamespaces(t *testing.T) {
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -158,7 +157,6 @@ func TestRootNamespaces(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -199,7 +197,6 @@ func TestRootNamespaces(t *testing.T) {
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -251,7 +248,6 @@ func TestRootNamespaces(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})

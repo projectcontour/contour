@@ -34,6 +34,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
+	v1 "k8s.io/api/core/v1"
 	coreinformers "k8s.io/client-go/informers"
 )
 
@@ -44,7 +45,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 
 	// The precedence of configuration for contour serve is as follows:
 	// config file, overridden by env vars, overridden by cli flags.
-	// however, as -c is a cli flag, we don't know its valye til cli flags
+	// however, as -c is a cli flag, we don't know its value til cli flags
 	// have been parsed. To correct this ordering we assign a post parse
 	// action to -c, then parse cli flags twice (see main.main). On the second
 	// parse our action will return early, resulting in the precedence order
@@ -104,6 +105,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("envoy-service-https-address", "Kubernetes Service address for HTTPS requests.").StringVar(&ctx.httpsAddr)
 	serve.Flag("envoy-service-http-port", "Kubernetes Service port for HTTP requests.").IntVar(&ctx.httpPort)
 	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests.").IntVar(&ctx.httpsPort)
+	serve.Flag("envoy-service-name", "Envoy Service Name.").StringVar(&ctx.envoyServiceName)
+	serve.Flag("envoy-service-namespace", "Envoy Service Namespace.").StringVar(&ctx.envoyServiceNamespace)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners.").BoolVar(&ctx.useProxyProto)
 
 	serve.Flag("accesslog-format", "Format for Envoy access logs.").StringVar(&ctx.AccessLogFormat)
@@ -265,7 +268,24 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// step 10. register leadership election
 	eventHandler.IsLeader = setupLeadershipElection(&g, log, ctx, clients, eventHandler.UpdateNow)
 
-	// step 12. create grpc handler and register with workgroup.
+	// step 11. set up ingress load balancer status writer
+	lbsw := loadBalancerStatusWriter{
+		log:      log.WithField("context", "loadBalancerStatusWriter"),
+		clients:  clients,
+		isLeader: eventHandler.IsLeader,
+		lbStatus: make(chan v1.LoadBalancerStatus, 1),
+	}
+	g.Add(lbsw.Start)
+
+	// step 12. register an informer to watch envoy's service.
+	ssw := &k8s.ServiceStatusLoadBalancerWatcher{
+		ServiceName: ctx.envoyServiceName,
+		LBStatus:    lbsw.lbStatus,
+	}
+	factory := clients.NewInformerFactoryForNamespace(ctx.envoyServiceNamespace)
+	factory.Core().V1().Services().Informer().AddEventHandler(ssw)
+	g.Add(startInformer(factory, log.WithField("context", "serviceStatusLoadBalancerWatcher")))
+
 	g.Add(func(stop <-chan struct{}) error {
 		log := log.WithField("context", "grpc")
 
@@ -306,7 +326,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return s.Serve(l)
 	})
 
-	// step 13. Setup SIGTERM handler
+	// step 14. Setup SIGTERM handler
 	g.Add(func(stop <-chan struct{}) error {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
@@ -319,7 +339,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return nil
 	})
 
-	// step 14. GO!
+	// GO!
 	return g.Run()
 }
 

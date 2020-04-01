@@ -14,6 +14,7 @@
 package contour
 
 import (
+	"path"
 	"sort"
 	"sync"
 
@@ -91,16 +92,23 @@ type routeVisitor struct {
 }
 
 func visitRoutes(root dag.Vertex) map[string]*v2.RouteConfiguration {
+	// Collect the route configurations for all the routes we can
+	// find. For HTTP hosts, the routes will all be collected on the
+	// well-known ENVOY_HTTP_LISTENER, but for HTTPS hosts, we will
+	// generate a per-vhost collection. This lets us keep different
+	// SNI names disjoint when we later configure the listener.
 	rv := routeVisitor{
 		routes: map[string]*v2.RouteConfiguration{
-			"ingress_http":  envoy.RouteConfiguration("ingress_http"),
-			"ingress_https": envoy.RouteConfiguration("ingress_https"),
+			ENVOY_HTTP_LISTENER: envoy.RouteConfiguration(ENVOY_HTTP_LISTENER),
 		},
 	}
+
 	rv.visit(root)
+
 	for _, v := range rv.routes {
 		sort.Stable(sorter.For(v.VirtualHosts))
 	}
+
 	return rv.routes
 }
 
@@ -141,7 +149,7 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 	if len(routes) > 0 {
 		sortRoutes(routes)
 
-		v.routes["ingress_http"].VirtualHosts = append(v.routes["ingress_http"].VirtualHosts,
+		v.routes[ENVOY_HTTP_LISTENER].VirtualHosts = append(v.routes[ENVOY_HTTP_LISTENER].VirtualHosts,
 			envoy.VirtualHost(vh.Name, routes...))
 	}
 }
@@ -173,7 +181,13 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 	if len(routes) > 0 {
 		sortRoutes(routes)
 
-		v.routes["ingress_https"].VirtualHosts = append(v.routes["ingress_https"].VirtualHosts,
+		name := path.Join("https", svh.VirtualHost.Name)
+
+		if _, ok := v.routes[name]; !ok {
+			v.routes[name] = envoy.RouteConfiguration(name)
+		}
+
+		v.routes[name].VirtualHosts = append(v.routes[name].VirtualHosts,
 			envoy.VirtualHost(svh.VirtualHost.Name, routes...))
 	}
 }
