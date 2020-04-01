@@ -73,7 +73,6 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -101,7 +100,6 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -129,7 +127,6 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -158,7 +155,6 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -196,7 +192,6 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -230,7 +225,6 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -264,7 +258,6 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -302,7 +295,6 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -336,7 +328,6 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -370,7 +361,6 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -427,7 +417,6 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -461,7 +450,6 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -495,7 +483,6 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})

@@ -18,6 +18,7 @@ import (
 	"context"
 	"math/rand"
 	"net"
+	"sort"
 	"testing"
 	"time"
 
@@ -34,6 +35,8 @@ import (
 	cgrpc "github.com/projectcontour/contour/internal/grpc"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
+	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -221,6 +224,13 @@ func check(t *testing.T, err error) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+// routeResources returns the given routes as a slice of any.Any
+// resources, appropriately sorted.
+func routeResources(t *testing.T, routes ...*v2.RouteConfiguration) []*any.Any {
+	sort.Stable(sorter.For(routes))
+	return resources(t, protobuf.AsMessages(routes)...)
 }
 
 func resources(t *testing.T, protos ...proto.Message) []*any.Any {
