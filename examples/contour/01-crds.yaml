@@ -311,6 +311,23 @@ spec:
                     that will be matched on are described in fqdn, the tls.secretName
                     secret must contain a matching certificate
                   properties:
+                    clientValidation:
+                      description: 'ClientValidation defines how to verify the client
+                        certificate when an external client establishes a TLS connection
+                        to Envoy. This setting: 1. Enables TLS client certificate
+                        validation. 2. Requires clients to present a TLS certificate
+                        (i.e. not optional validation). 3. Specifies how the client
+                        certificate will be validated.'
+                      properties:
+                        caSecret:
+                          description: Name of a Kubernetes secret that contains a
+                            CA certificate bundle. The client certificate must validate
+                            against the certificates in the bundle.
+                          minLength: 1
+                          type: string
+                      required:
+                      - caSecret
+                      type: object
                     minimumProtocolVersion:
                       description: Minimum TLS version this vhost should negotiate
                       type: string
@@ -1105,6 +1122,23 @@ spec:
                     that will be matched on are described in fqdn, the tls.secretName
                     secret must contain a matching certificate
                   properties:
+                    clientValidation:
+                      description: 'ClientValidation defines how to verify the client
+                        certificate when an external client establishes a TLS connection
+                        to Envoy. This setting: 1. Enables TLS client certificate
+                        validation. 2. Requires clients to present a TLS certificate
+                        (i.e. not optional validation). 3. Specifies how the client
+                        certificate will be validated.'
+                      properties:
+                        caSecret:
+                          description: Name of a Kubernetes secret that contains a
+                            CA certificate bundle. The client certificate must validate
+                            against the certificates in the bundle.
+                          minLength: 1
+                          type: string
+                      required:
+                      - caSecret
+                      type: object
                     minimumProtocolVersion:
                       description: Minimum TLS version this vhost should negotiate
                       type: string
