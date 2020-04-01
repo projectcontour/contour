@@ -219,14 +219,14 @@ func weightedClusters(clusters []weightedCluster) *envoy_api_v2_route.WeightedCl
 	return &wc
 }
 
-func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_listener.Filter, alpn ...string) []*envoy_api_v2_listener.FilterChain {
+func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_listener.Filter, peerValidationContext *dag.PeerValidationContext, alpn ...string) []*envoy_api_v2_listener.FilterChain {
 	return []*envoy_api_v2_listener.FilterChain{
 		envoy.FilterChainTLS(
 			domain,
 			envoy.DownstreamTLSContext(
 				&dag.Secret{Object: secret},
 				envoy_api_v2_auth.TlsParameters_TLSv1_1,
-				nil,
+				peerValidationContext,
 				alpn...),
 			envoy.Filters(filter),
 		),

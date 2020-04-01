@@ -517,6 +517,19 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 			svhost := b.lookupSecureVirtualHost(host)
 			svhost.Secret = sec
 			svhost.MinProtoVersion = annotation.MinProtoVersion(proxy.Spec.VirtualHost.TLS.MinimumProtocolVersion)
+
+			// Fill in DownstreamValidation when external client validation is enabled.
+			if tls.ClientValidation != nil {
+				dv, err := b.lookupDownstreamValidation(tls.ClientValidation, proxy.Namespace)
+				if err != nil {
+					sw.SetInvalid("Spec.VirtualHost.TLS client validation is invalid: %s", err)
+					return
+				}
+				svhost.DownstreamValidation = dv
+			}
+		} else if tls.ClientValidation != nil {
+			sw.SetInvalid("Spec.VirtualHost.TLS passthrough cannot be combined with tls.clientValidation")
+			return
 		}
 	}
 
@@ -1115,6 +1128,19 @@ func (b *Builder) lookupUpstreamValidation(uv *projcontour.UpstreamValidation, n
 	return &PeerValidationContext{
 		CACertificate: cacert,
 		SubjectName:   uv.SubjectName,
+	}, nil
+}
+
+func (b *Builder) lookupDownstreamValidation(vc *projcontour.DownstreamValidation, namespace string) (*PeerValidationContext, error) {
+	secretName := k8s.FullName{Name: vc.CACertificate, Namespace: namespace}
+	cacert, err := b.lookupSecret(secretName, validCA)
+	if err != nil {
+		// PeerValidationContext is requested, but cert is missing or not configured.
+		return nil, fmt.Errorf("invalid CA Secret %q: %s", secretName, err)
+	}
+
+	return &PeerValidationContext{
+		CACertificate: cacert,
 	}, nil
 }
 
