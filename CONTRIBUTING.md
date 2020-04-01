@@ -4,7 +4,8 @@ Thanks for taking the time to join our community and start contributing.
 These guidelines will help you get started with the Contour project.
 Please note that we require [DCO sign off](#dco-sign-off).  
 
-Read this document for website specific guildlines: [Site Contribution Guidelines](/SITE_CONTRIBUTION.md). Guidelines in this document still apply to website contributions.
+Read this document for website specific guildlines: [Site Contribution Guidelines](/SITE_CONTRIBUTION.md).
+Guidelines in this document still apply to website contributions.
 
 ## Building from source
 
@@ -14,7 +15,7 @@ This section describes how to build Contour from source.
 
 1. *Install Go*
 
-    Contour requires [Go 1.12][1] or later.
+    Contour requires [Go 1.13][1] or later.
     We also assume that you're familiar with Go's [`GOPATH` workspace][3] convention, and have the appropriate environment variables set.
 
 ### Fetch the source
@@ -82,48 +83,57 @@ A proposal template is [available here](https://github.com/projectcontour/contou
 
 - Have a short subject on the first line and a body. The body can be empty.
 - Use the imperative mood (ie "If applied, this commit will (subject)" should make sense).
-- There must be a DCO line ("Signed-off-by: David Cheney <cheneyd@vmware.com>"), see [DCO Sign Off](#dco-sign-off) below
+- There must be a DCO line ("Signed-off-by: David Cheney <cheneyd@vmware.com>"), see [DCO Sign Off](#dco-sign-off) below.
 - Put a summary of the main area affected by the commit at the start,
 with a colon as delimiter. For example 'docs:', 'internal/(packagename):', 'design:' or something similar.
-- Try to keep your number of commits in a PR low. Generally we
-tend to squash before opening the PR, then have PR feedback as
-extra commits.
 - Do not merge commits that don't relate to the affected issue (e.g. "Updating from PR comments", etc). Should
 the need to cherrypick a commit or rollback arise, it should be clear what a specific commit's purpose is.
 - If master has moved on, you'll need to rebase before we can merge,
 so merging upstream master or rebasing from upstream before opening your
 PR will probably save you some time.
-- PRs *must* include a `Fixes #NNNN` or `Updates #NNNN` comment. Remember that
-`Fixes` will close the associated issue, and `Updates` will link the PR to it.
+
+Pull requests *must* include a `Fixes #NNNN` or `Updates #NNNN` comment.
+Remember that `Fixes` will close the associated issue, and `Updates` will link the PR to it.
 
 #### Commit message template
 
 ```
 <packagename>: <imperative mood short description>
 
+<longer change description/justification>
+
 Updates #NNNN
 Fixes #MMMM
 
 Signed-off-by: Your Name <you@youremail.com>
-
-<longer change description/justification>
-
 ```
 
 #### Sample commit message
 
 ```
-internal\contour: Add quux functions
+internal/contour: Add quux functions
+
+To implement the quux functions from #xxyyz, we need to
+florble the greep dots, then ensure that the florble is
+warbed.
 
 Fixes #xxyyz
 
 Signed-off-by: Your Name <you@youremail.com>
 
-To implement the quux functions from #xxyyz, we need to
-florble the greep dots, then ensure that the florble is
-warbed.
 ```
 
+### Merging commits
+
+Maintainers should prefer to merge pull requests with the [Squash and merge](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-request-merges#squash-and-merge-your-pull-request-commits) option.
+This option is preferred for a number of reasons.
+First, it causes GitHub to insert the pull request number in the commit subject which makes it easier to track which PR changes landed in.
+Second, it gives maintainers an opportunity to edit the commit message to conform to Contour standards and general [good practice](https://chris.beams.io/posts/git-commit/).
+Finally, a one-to-one correspondence between pull requests and commits makes it easier to manage reverting changes and increases the reliability of bisecting the tree (since CI runs at a pull request granularity).
+
+At a maintainer's discretion, pull requests with multiple commits can be merged with the [Create a merge commit](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-request-merges) option.
+Merging pull requests with multiple commits can make sense in cases where a change involves code generation or mechanical changes that can be cleanly separated from semantic changes.
+The maintainer should review commit messages for each commit and make sure that each commit builds and passes tests.
 
 ### Pre commit CI
 
@@ -218,5 +228,5 @@ By making a contribution to this project, I certify that:
 [4]: https://golang.org/pkg/testing/
 [5]: https://developercertificate.org/
 [6]: https://github.com/projectcontour/contour/issues
-[6]: docs/tagging.md
-[7]: docs/deploy-options.md
+[6]: site/_resources/tagging.md
+[7]: site/docs/master/deploy-options.md
