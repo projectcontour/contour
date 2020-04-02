@@ -22,6 +22,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -4401,7 +4402,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert ingress with invalid perTryTimeout": {
+		"insert ingress with invalid PerTryTimeout": {
 			objs: []interface{}{
 				ir15a,
 				s1,
@@ -6211,34 +6212,34 @@ func TestBuilderLookupService(t *testing.T) {
 			}},
 		},
 	}
-	services := map[Meta]*v1.Service{
-		{name: "service1", namespace: "default"}: s1,
+	services := map[k8s.FullName]*v1.Service{
+		{Name: "service1", Namespace: "default"}: s1,
 	}
 
 	tests := map[string]struct {
-		Meta
+		k8s.FullName
 		port intstr.IntOrString
 		want *Service
 	}{
 		"lookup service by port number": {
-			Meta: Meta{name: "service1", namespace: "default"},
-			port: intstr.FromInt(8080),
-			want: service(s1),
+			FullName: k8s.FullName{Name: "service1", Namespace: "default"},
+			port:     intstr.FromInt(8080),
+			want:     service(s1),
 		},
 		"lookup service by port name": {
-			Meta: Meta{name: "service1", namespace: "default"},
-			port: intstr.FromString("http"),
-			want: service(s1),
+			FullName: k8s.FullName{Name: "service1", Namespace: "default"},
+			port:     intstr.FromString("http"),
+			want:     service(s1),
 		},
 		"lookup service by port number (as string)": {
-			Meta: Meta{name: "service1", namespace: "default"},
-			port: intstr.Parse("8080"),
-			want: service(s1),
+			FullName: k8s.FullName{Name: "service1", Namespace: "default"},
+			port:     intstr.Parse("8080"),
+			want:     service(s1),
 		},
 		"lookup service by port number (from string)": {
-			Meta: Meta{name: "service1", namespace: "default"},
-			port: intstr.FromString("8080"),
-			want: service(s1),
+			FullName: k8s.FullName{Name: "service1", Namespace: "default"},
+			port:     intstr.FromString("8080"),
+			want:     service(s1),
 		},
 	}
 
@@ -6251,7 +6252,7 @@ func TestBuilderLookupService(t *testing.T) {
 				},
 			}
 			b.reset()
-			got := b.lookupService(tc.Meta, tc.port)
+			got := b.lookupService(tc.FullName, tc.port)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}
@@ -6666,38 +6667,38 @@ func TestEnforceRoute(t *testing.T) {
 func TestSplitSecret(t *testing.T) {
 	tests := map[string]struct {
 		secret, defns string
-		want          Meta
+		want          k8s.FullName
 	}{
 		"no namespace": {
 			secret: "secret",
 			defns:  "default",
-			want: Meta{
-				name:      "secret",
-				namespace: "default",
+			want: k8s.FullName{
+				Name:      "secret",
+				Namespace: "default",
 			},
 		},
 		"with namespace": {
 			secret: "ns1/secret",
 			defns:  "default",
-			want: Meta{
-				name:      "secret",
-				namespace: "ns1",
+			want: k8s.FullName{
+				Name:      "secret",
+				Namespace: "ns1",
 			},
 		},
 		"missing namespace": {
 			secret: "/secret",
 			defns:  "default",
-			want: Meta{
-				name:      "secret",
-				namespace: "default",
+			want: k8s.FullName{
+				Name:      "secret",
+				Namespace: "default",
 			},
 		},
 		"missing secret name": {
 			secret: "secret/",
 			defns:  "default",
-			want: Meta{
-				name:      "",
-				namespace: "secret",
+			want: k8s.FullName{
+				Name:      "",
+				Namespace: "secret",
 			},
 		},
 	}
@@ -6706,7 +6707,7 @@ func TestSplitSecret(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := splitSecret(tc.secret, tc.defns)
 			opts := []cmp.Option{
-				cmp.AllowUnexported(Meta{}),
+				cmp.AllowUnexported(k8s.FullName{}),
 			}
 			if diff := cmp.Diff(tc.want, got, opts...); diff != "" {
 				t.Fatal(diff)

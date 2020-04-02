@@ -24,7 +24,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// CaCertificateKey is the key name for accessing TLS CA certificate bundles in Kubernetes Secrets.
+// CACertificateKey is the key name for accessing TLS CA certificate bundles in Kubernetes Secrets.
 const CACertificateKey = "ca.crt"
 
 // isValidSecret returns true if the secret is interesting and well
