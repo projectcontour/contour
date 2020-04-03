@@ -228,7 +228,7 @@ func (e *EventHandler) updateDAG() {
 }
 
 // setStatus updates the status of objects.
-func (e *EventHandler) setStatus(statuses map[dag.Meta]dag.Status) {
+func (e *EventHandler) setStatus(statuses map[k8s.FullName]dag.Status) {
 	for _, st := range statuses {
 		switch obj := st.Object.(type) {
 		case *ingressroutev1.IngressRoute:
