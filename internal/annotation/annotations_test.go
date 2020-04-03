@@ -11,17 +11,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dag
+package annotation
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/projectcontour/contour/internal/k8s"
-
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
+	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -122,7 +121,7 @@ func TestParseUpstreamProtocols(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := parseUpstreamProtocols(tc.a)
+			got := ParseUpstreamProtocols(tc.a)
 			assert.Equal(t, tc.want, got)
 		})
 	}
@@ -267,7 +266,7 @@ func TestWebsocketRoutes(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := websocketRoutes(tc.a)
+			got := WebsocketRoutes(tc.a)
 			assert.Equal(t, tc.want, got)
 		})
 	}
@@ -317,7 +316,7 @@ func TestHttpAllowed(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := httpAllowed(tc.i)
+			got := HTTPAllowed(tc.i)
 			want := tc.valid
 			if got != want {
 				t.Fatalf("got: %v, want: %v", got, want)
@@ -374,7 +373,7 @@ func TestAnnotationCompat(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := compatAnnotation(tc.svc, "annotation")
+			got := CompatAnnotation(tc.svc, "annotation")
 			want := tc.value
 			if got != want {
 				t.Fatalf("got: %v, want: %v", got, want)
@@ -389,7 +388,7 @@ func TestAnnotationKindValidation(t *testing.T) {
 		valid bool
 	}
 	tests := map[string]struct {
-		obj         Object
+		obj         k8s.Object
 		annotations map[string]status
 	}{
 		"service": {
@@ -445,8 +444,8 @@ func TestAnnotationKindValidation(t *testing.T) {
 		for key := range annotationsByKind[kind] {
 			t.Run(fmt.Sprintf("%s is known and valid for %s", key, kind),
 				func(t *testing.T) {
-					assert.Equal(t, true, annotationIsKnown(key))
-					assert.Equal(t, true, validAnnotationForKind(kind, key))
+					assert.Equal(t, true, IsKnown(key))
+					assert.Equal(t, true, ValidForKind(kind, key))
 				})
 		}
 	}
@@ -455,9 +454,16 @@ func TestAnnotationKindValidation(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			for k, s := range tc.annotations {
-				assert.Equal(t, s.known, annotationIsKnown(k))
-				assert.Equal(t, s.valid, validAnnotationForKind(k8s.KindOf(tc.obj), k))
+				assert.Equal(t, s.known, IsKnown(k))
+				assert.Equal(t, s.valid, ValidForKind(k8s.KindOf(tc.obj), k))
 			}
 		})
+	}
+}
+
+func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
+	return &v1beta1.IngressBackend{
+		ServiceName: name,
+		ServicePort: port,
 	}
 }

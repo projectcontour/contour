@@ -28,7 +28,42 @@ VERSION ?= $(GIT_REF)
 # set outside this Makefile, as a safety valve.
 LATEST_VERSION ?= NOLATEST
 
+# Stash the ISO 8601 date. Note that the GMT offset is missing the :
+# separator, but there doesn't seem to be a way to do that without
+# depending on GNU date.
+ISO_8601_DATE = $(shell TZ=GMT date '+%Y-%m-%dT%R:%S%z')
+
+# Sets the current Git sha
+BUILD_SHA = $(shell git rev-parse --verify HEAD)
+# Sets the current branch
+BUILD_BRANCH = $(shell git branch --show-current)
+# Sets the current tagged git version
+BUILD_VERSION = $(VERSION)
+
+GO_BUILD_VARS = \
+	github.com/projectcontour/contour/internal/build.Version=${BUILD_VERSION} \
+	github.com/projectcontour/contour/internal/build.Sha=${BUILD_SHA} \
+	github.com/projectcontour/contour/internal/build.Branch=${BUILD_BRANCH}
+
 GO_TAGS := -tags "oidc gcp"
+GO_LDFLAGS := -s -w $(patsubst %,-X %, $(GO_BUILD_VARS))
+
+# Docker labels to be applied to the Contour image. We don't transform
+# this with make because it's not worth pulling the tricks needed to handle
+# the embedded whitespace.
+#
+# See https://github.com/opencontainers/image-spec/blob/master/annotations.md
+DOCKER_BUILD_LABELS = \
+	--label "org.opencontainers.image.created=${ISO_8601_DATE}" \
+	--label "org.opencontainers.image.url=https://projectcontour.io/" \
+	--label "org.opencontainers.image.documentation=https://projectcontour.io/" \
+	--label "org.opencontainers.image.source=https://github.com/projectcontour/contour/archive/${BUILD_VERSION}.tar.gz" \
+	--label "org.opencontainers.image.version=${BUILD_VERSION}" \
+	--label "org.opencontainers.image.revision=${BUILD_SHA}" \
+	--label "org.opencontainers.image.vendor=Project Contour" \
+	--label "org.opencontainers.image.licenses=Apache-2.0" \
+	--label "org.opencontainers.image.title=Contour" \
+	--label "org.opencontainers.image.description=High performance ingress controller for Kubernetes"
 
 export GO111MODULE=on
 
@@ -39,7 +74,7 @@ check: install check-test check-test-race ## Install and run tests
 checkall: check lint check-generate
 
 install: ## Build and install the contour binary
-	go install -mod=readonly -v $(GO_TAGS) $(MODULE)/cmd/contour
+	go install -mod=readonly -v -ldflags="$(GO_LDFLAGS)" $(GO_TAGS) $(MODULE)/cmd/contour
 
 race:
 	go install -mod=readonly -v -race $(GO_TAGS) $(MODULE)/cmd/contour
@@ -48,7 +83,13 @@ download: ## Download Go modules
 	go mod download
 
 container: ## Build the Contour container image
-	docker build . -t $(IMAGE):$(VERSION)
+	docker build \
+		--build-arg BUILD_VERSION=$(BUILD_VERSION) \
+		--build-arg BUILD_BRANCH=$(BUILD_BRANCH) \
+		--build-arg BUILD_SHA=$(BUILD_SHA) \
+		$(DOCKER_BUILD_LABELS) \
+		$(shell pwd) \
+		--tag $(IMAGE):$(VERSION)
 
 push: ## Push the Contour container image to the Docker registry
 push: container

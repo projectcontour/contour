@@ -223,12 +223,12 @@ func (e *EventHandler) updateDAG() {
 		e.Metrics.SetIngressRouteMetric(metrics)
 		e.Metrics.SetHTTPProxyMetric(proxymetrics)
 	default:
-		e.Debug("skipping status update: not the leader")
+		e.Debug("skipping metrics and CRD status update, not leader")
 	}
 }
 
 // setStatus updates the status of objects.
-func (e *EventHandler) setStatus(statuses map[dag.Meta]dag.Status) {
+func (e *EventHandler) setStatus(statuses map[k8s.FullName]dag.Status) {
 	for _, st := range statuses {
 		switch obj := st.Object.(type) {
 		case *ingressroutev1.IngressRoute:

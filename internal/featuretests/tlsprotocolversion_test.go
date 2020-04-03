@@ -21,6 +21,7 @@ import (
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	v1 "k8s.io/api/core/v1"
@@ -89,7 +90,13 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
-				FilterChains: filterchaintls("kuard.example.com", sec1, envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0), "h2", "http/1.1"),
+				FilterChains: filterchaintls("kuard.example.com", sec1,
+					envoy.HTTPConnectionManagerBuilder().
+						RouteConfigName("https/kuard.example.com").
+						MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
+						AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
+						Get(),
+					"h2", "http/1.1"),
 			},
 		),
 		TypeUrl: listenerType,
@@ -137,7 +144,11 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 					nil,
 					"h2", "http/1.1"),
 				envoy.Filters(
-					envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
+					envoy.HTTPConnectionManagerBuilder().
+						RouteConfigName("https/kuard.example.com").
+						MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
+						AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
+						Get(),
 				),
 			),
 		},

@@ -80,7 +80,6 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -124,7 +123,6 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -177,7 +175,6 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -216,7 +213,6 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -261,7 +257,6 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})

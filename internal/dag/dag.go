@@ -21,6 +21,7 @@ import (
 	"time"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -32,7 +33,7 @@ type DAG struct {
 	roots []Vertex
 
 	// status computed while building this dag.
-	statuses map[Meta]Status
+	statuses map[k8s.FullName]Status
 }
 
 // Visit calls fn on each root of this DAG.
@@ -44,7 +45,7 @@ func (d *DAG) Visit(fn func(Vertex)) {
 
 // Statuses returns a slice of Status objects associated with
 // the computation of this DAG.
-func (d *DAG) Statuses() map[Meta]Status {
+func (d *DAG) Statuses() map[k8s.FullName]Status {
 	return d.statuses
 }
 
@@ -364,7 +365,7 @@ type servicemeta struct {
 	port      int32
 }
 
-func (s *Service) toMeta() servicemeta {
+func (s *Service) ToFullName() servicemeta {
 	return servicemeta{
 		name:      s.Name,
 		namespace: s.Namespace,

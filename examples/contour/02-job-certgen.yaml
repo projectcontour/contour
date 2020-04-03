@@ -59,6 +59,7 @@ spec:
         - certgen
         - --incluster
         - --kube
+        - --namespace=$(CONTOUR_NAMESPACE)
         env:
         - name: CONTOUR_NAMESPACE
           valueFrom:

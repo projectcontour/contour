@@ -1369,6 +1369,7 @@ spec:
         - certgen
         - --incluster
         - --kube
+        - --namespace=$(CONTOUR_NAMESPACE)
         env:
         - name: CONTOUR_NAMESPACE
           valueFrom:
@@ -1428,7 +1429,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - extensions
+  - "networking.k8s.io"
   resources:
   - ingresses
   verbs:
@@ -1438,11 +1439,14 @@ rules:
 - apiGroups:
   - "networking.k8s.io"
   resources:
-  - ingresses
+  - "ingresses/status"
   verbs:
   - get
   - list
   - watch
+  - patch 
+  - post
+  - update
 - apiGroups: ["contour.heptio.com"]
   resources: ["ingressroutes", "tlscertificatedelegations"]
   verbs:
@@ -1629,6 +1633,11 @@ spec:
             mountPath: /config
             readOnly: true
         env:
+        - name: CONTOUR_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
         - name: POD_NAME
           valueFrom:
             fieldRef:
