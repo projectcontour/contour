@@ -56,7 +56,7 @@ func (e *EventRecorder) recordOperation(op string, obj interface{}) {
 	e.Counter.WithLabelValues(op, kind).Inc()
 }
 
-func calculateRouteMetric(statuses map[dag.Meta]dag.Status) (metrics.RouteMetric, metrics.RouteMetric) {
+func calculateRouteMetric(statuses map[k8s.FullName]dag.Status) (metrics.RouteMetric, metrics.RouteMetric) {
 	irMetricTotal := make(map[metrics.Meta]int)
 	irMetricValid := make(map[metrics.Meta]int)
 	irMetricInvalid := make(map[metrics.Meta]int)

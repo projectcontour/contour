@@ -20,6 +20,7 @@ import (
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
+	"github.com/projectcontour/contour/internal/k8s"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -412,7 +413,7 @@ func TestParseTimeout(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := parseTimeout(tc.duration)
+			got := k8s.ParseTimeout(tc.duration)
 			assert.Equal(t, tc.want, got)
 		})
 	}
