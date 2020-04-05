@@ -33,11 +33,12 @@ LATEST_VERSION ?= NOLATEST
 # depending on GNU date.
 ISO_8601_DATE = $(shell TZ=GMT date '+%Y-%m-%dT%R:%S%z')
 
-# Sets the current Git sha
+# Sets the current Git sha.
 BUILD_SHA = $(shell git rev-parse --verify HEAD)
-# Sets the current branch
-BUILD_BRANCH = $(shell git branch --show-current)
-# Sets the current tagged git version
+# Sets the current branch. If we are on a detached header, filter it out so the
+# branch will be empty. This is similar to --show-current.
+BUILD_BRANCH = $(shell git branch | grep -v detached | awk '$$1=="*"{print $$2}')
+# Sets the current tagged git version.
 BUILD_VERSION = $(VERSION)
 
 GO_BUILD_VARS = \
