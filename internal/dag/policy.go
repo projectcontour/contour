@@ -21,7 +21,6 @@ import (
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
-	"github.com/projectcontour/contour/internal/k8s"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -136,7 +135,7 @@ func ingressrouteTimeoutPolicy(tp *ingressroutev1.TimeoutPolicy) *TimeoutPolicy 
 		// due to a misunderstanding the name of the field ingressroute is
 		// Request, however the timeout applies to the response resulting from
 		// a request.
-		ResponseTimeout: k8s.ParseTimeout(tp.Request),
+		ResponseTimeout: annotation.ParseTimeout(tp.Request),
 	}
 }
 
@@ -145,8 +144,8 @@ func timeoutPolicy(tp *projcontour.TimeoutPolicy) *TimeoutPolicy {
 		return nil
 	}
 	return &TimeoutPolicy{
-		ResponseTimeout: k8s.ParseTimeout(tp.Response),
-		IdleTimeout:     k8s.ParseTimeout(tp.Idle),
+		ResponseTimeout: annotation.ParseTimeout(tp.Response),
+		IdleTimeout:     annotation.ParseTimeout(tp.Idle),
 	}
 }
 func ingressrouteHealthCheckPolicy(hc *ingressroutev1.HealthCheck) *HTTPHealthCheckPolicy {

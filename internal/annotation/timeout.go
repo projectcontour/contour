@@ -11,9 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package k8s
+package annotation
 
 import "time"
+
+// TODO(youngnick): This needs to move to another package, but we need to be careful
+// about the import graph, this must stay a leaf node.
 
 // ParseTimeout parses timeouts we pass in various places in a standard way.
 func ParseTimeout(timeout string) time.Duration {

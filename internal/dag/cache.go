@@ -27,9 +27,6 @@ import (
 	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
 )
 
-// DEFAULT_INGRESS_CLASS is the Contour default.
-const DEFAULT_INGRESS_CLASS = "contour"
-
 // A KubernetesCache holds Kubernetes objects and associated configuration and produces
 // DAG values.
 type KubernetesCache struct {
@@ -60,30 +57,21 @@ type KubernetesCache struct {
 // matchesIngressClass returns true if the given Kubernetes object
 // belongs to the Ingress class that this cache is using.
 func (kc *KubernetesCache) matchesIngressClass(obj k8s.Object) bool {
-	objectClass := annotation.IngressClass(obj)
 
-	switch objectClass {
-	case kc.IngressClass:
-		// Handles kc.IngressClass == "" and kc.IngressClass == "custom".
-		return true
-	case DEFAULT_INGRESS_CLASS:
-		// kc.IngressClass == "" implicitly matches the default too.
-		if kc.IngressClass == "" {
-			return true
-		}
+	if !annotation.MatchesIngressClass(obj, kc.IngressClass) {
+		kind := k8s.KindOf(obj)
+		om := obj.GetObjectMeta()
+
+		kc.WithField("name", om.GetName()).
+			WithField("namespace", om.GetNamespace()).
+			WithField("kind", kind).
+			WithField("ingress.class", annotation.IngressClass(obj)).
+			Debug("ignoring object with unmatched ingress class")
+		return false
 	}
 
-	// Any other ingress class fails to match.
-	kind := k8s.KindOf(obj)
-	om := obj.GetObjectMeta()
+	return true
 
-	kc.WithField("name", om.GetName()).
-		WithField("namespace", om.GetNamespace()).
-		WithField("kind", kind).
-		WithField("ingress.class", objectClass).
-		Debug("ignoring object with unmatched ingress class")
-
-	return false
 }
 
 // Insert inserts obj into the KubernetesCache.

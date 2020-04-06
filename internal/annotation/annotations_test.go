@@ -20,7 +20,6 @@ import (
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
-	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -388,7 +387,7 @@ func TestAnnotationKindValidation(t *testing.T) {
 		valid bool
 	}
 	tests := map[string]struct {
-		obj         k8s.Object
+		obj         metav1.ObjectMetaAccessor
 		annotations map[string]status
 	}{
 		"service": {
@@ -436,10 +435,10 @@ func TestAnnotationKindValidation(t *testing.T) {
 	// Trivially check that everything specified in the global
 	// table is valid.
 	for _, kind := range []string{
-		k8s.KindOf(&v1.Service{}),
-		k8s.KindOf(&v1beta1.Ingress{}),
-		k8s.KindOf(&ingressroutev1.IngressRoute{}),
-		k8s.KindOf(&projectcontour.HTTPProxy{}),
+		kindOf(&v1.Service{}),
+		kindOf(&v1beta1.Ingress{}),
+		kindOf(&ingressroutev1.IngressRoute{}),
+		kindOf(&projectcontour.HTTPProxy{}),
 	} {
 		for key := range annotationsByKind[kind] {
 			t.Run(fmt.Sprintf("%s is known and valid for %s", key, kind),
@@ -455,15 +454,127 @@ func TestAnnotationKindValidation(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			for k, s := range tc.annotations {
 				assert.Equal(t, s.known, IsKnown(k))
-				assert.Equal(t, s.valid, ValidForKind(k8s.KindOf(tc.obj), k))
+				assert.Equal(t, s.valid, ValidForKind(kindOf(tc.obj), k))
 			}
 		})
 	}
 }
 
+func TestMatchIngressClass(t *testing.T) {
+
+	// This is a matrix test, we are testing the annotation parser
+	// across various annotations, with two options:
+	// ingress class is empty
+	// ingress class is not empty.
+	tests := map[string]struct {
+		fixture metav1.ObjectMetaAccessor
+		// these are results for empty and "contour" ingress class
+		// respectively.
+		want []bool
+	}{
+		"ingress nginx kubernetes.io/ingress.class": {
+			fixture: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "incorrect",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"kubernetes.io/ingress.class": "nginx",
+					},
+				},
+			},
+			want: []bool{false, false},
+		},
+		"ingress nginx contour.heptio.com/ingress.class": {
+			fixture: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "incorrect",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"contour.heptio.com/ingress.class": "nginx",
+					},
+				},
+			},
+			want: []bool{false, false},
+		},
+		"ingress contour kubernetes.io/ingress.class": {
+			fixture: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "incorrect",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"kubernetes.io/ingress.class": DEFAULT_INGRESS_CLASS,
+					},
+				},
+			},
+			want: []bool{true, true},
+		},
+		"ingress contour contour.heptio.com/ingress.class": {
+			fixture: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "incorrect",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"contour.heptio.com/ingress.class": DEFAULT_INGRESS_CLASS,
+					},
+				},
+			},
+			want: []bool{true, true},
+		},
+		"no annotation": {
+			fixture: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "noannotation",
+					Namespace: "default",
+				},
+			},
+			want: []bool{true, false},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			cases := []string{"", DEFAULT_INGRESS_CLASS}
+			for i := 0; i < len(cases); i++ {
+				got := MatchesIngressClass(tc.fixture, cases[i])
+				if tc.want[i] != got {
+					t.Errorf("matching %v against ingress class %q: expected %v, got %v", tc.fixture, cases[i], tc.want[i], got)
+				}
+			}
+
+		})
+	}
+}
 func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
 	return &v1beta1.IngressBackend{
 		ServiceName: name,
 		ServicePort: port,
+	}
+}
+
+// kindOf returns the kind string for the given Kubernetes object.
+//
+// The API machinery doesn't populate the metav1.TypeMeta field for
+// objects, so we have to use a type assertion to detect kinds that
+// we care about.
+// TODO(youngnick): This is a straight copy from internal/k8s/kind.go
+// Needs to be moved to a separate module somewhere.
+func kindOf(obj interface{}) string {
+	switch obj.(type) {
+	case *v1.Secret:
+		return "Secret"
+	case *v1.Service:
+		return "Service"
+	case *v1beta1.Ingress:
+		return "Ingress"
+	case *ingressroutev1.IngressRoute:
+		return "IngressRoute"
+	case *projectcontour.HTTPProxy:
+		return "HTTPProxy"
+	case *ingressroutev1.TLSCertificateDelegation:
+		return "TLSCertificateDelegation"
+	case *projectcontour.TLSCertificateDelegation:
+		return "TLSCertificateDelegation"
+	default:
+		return ""
 	}
 }
