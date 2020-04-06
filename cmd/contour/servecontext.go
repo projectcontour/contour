@@ -109,6 +109,14 @@ type serveContext struct {
 	// If the value is true, Contour will register for all the service-apis types
 	// (GatewayClass, Gateway, HTTPRoute, TCPRoute, and any more as they are added)
 	UseExperimentalServiceAPITypes bool `yaml:"-"`
+
+	// envoy service details
+
+	// Namespace of the envoy service
+	envoyServiceNamespace string `yaml:"-"`
+
+	// Name of the envoy service
+	envoyServiceName string `yaml:"-"`
 }
 
 // newServeContext returns a serveContext initialized to defaults.
@@ -161,10 +169,12 @@ func newServeContext() *serveContext {
 			LeaseDuration: time.Second * 15,
 			RenewDeadline: time.Second * 10,
 			RetryPeriod:   time.Second * 2,
-			Namespace:     "projectcontour",
+			Namespace:     getEnv("CONTOUR_NAMESPACE", "projectcontour"),
 			Name:          "leader-elect",
 		},
 		UseExperimentalServiceAPITypes: false,
+		envoyServiceName:               "envoy",
+		envoyServiceNamespace:          getEnv("CONTOUR_NAMESPACE", "projectcontour"),
 	}
 }
 
@@ -285,4 +295,12 @@ func (ctx *serveContext) ingressRouteRootNamespaces() []string {
 		ns = append(ns, strings.TrimSpace(s))
 	}
 	return ns
+}
+
+// Simple helper function to read an environment or return a default value
+func getEnv(key string, defaultVal string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return defaultVal
 }

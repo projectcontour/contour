@@ -91,7 +91,6 @@ func basic(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
@@ -111,7 +110,6 @@ func basic(t *testing.T) {
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Equals(projcontour.Status{
@@ -143,7 +141,6 @@ func basic(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
@@ -164,7 +161,6 @@ func basic(t *testing.T) {
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Equals(projcontour.Status{
@@ -196,7 +192,6 @@ func basic(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
@@ -221,7 +216,6 @@ func basic(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
@@ -318,7 +312,6 @@ func multiInclude(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	}).Status(vhost1).Like(
@@ -356,7 +349,6 @@ func multiInclude(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	}).Status(vhost1).Like(
@@ -453,7 +445,6 @@ func replaceWithSlash(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	}).Status(vhost1).Like(
@@ -495,7 +486,6 @@ func replaceWithSlash(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	}).Status(vhost1).Like(
@@ -608,7 +598,6 @@ func artifactoryDocker(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})

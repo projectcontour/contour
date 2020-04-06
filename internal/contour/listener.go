@@ -14,19 +14,21 @@
 package contour
 
 import (
+	"path"
 	"sort"
 	"sync"
 	"time"
 
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	envoy_api_v2_accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
-
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/sorter"
 )
 
 const (
@@ -232,15 +234,15 @@ func (c *ListenerCache) Update(v map[string]*v2.Listener) {
 func (c *ListenerCache) Contents() []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []proto.Message
+	var values []*v2.Listener
 	for _, v := range c.values {
 		values = append(values, v)
 	}
 	for _, v := range c.staticValues {
 		values = append(values, v)
 	}
-	sort.Stable(listenersByName(values))
-	return values
+	sort.Stable(sorter.For(values))
+	return protobuf.AsMessages(values)
 }
 
 // Query returns the proto.Messages in the ListenerCache that match
@@ -248,7 +250,7 @@ func (c *ListenerCache) Contents() []proto.Message {
 func (c *ListenerCache) Query(names []string) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []proto.Message
+	var values []*v2.Listener
 	for _, n := range names {
 		v, ok := c.values[n]
 		if !ok {
@@ -264,16 +266,8 @@ func (c *ListenerCache) Query(names []string) []proto.Message {
 		}
 		values = append(values, v)
 	}
-	sort.Stable(listenersByName(values))
-	return values
-}
-
-type listenersByName []proto.Message
-
-func (l listenersByName) Len() int      { return len(l) }
-func (l listenersByName) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
-func (l listenersByName) Less(i, j int) bool {
-	return l[i].(*v2.Listener).Name < l[j].(*v2.Listener).Name
+	sort.Stable(sorter.For(values))
+	return protobuf.AsMessages(values)
 }
 
 func (*ListenerCache) TypeURL() string { return cache.ListenerType }
@@ -291,37 +285,41 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 		listeners: map[string]*v2.Listener{
 			ENVOY_HTTPS_LISTENER: envoy.Listener(
 				ENVOY_HTTPS_LISTENER,
-				lvc.httpsAddress(), lvc.httpsPort(),
+				lvc.httpsAddress(),
+				lvc.httpsPort(),
 				secureProxyProtocol(lvc.UseProxyProto),
 			),
 		},
 	}
+
 	lv.visit(root)
 
-	// add a listener if there are vhosts bound to http.
+	// Add a listener if there are vhosts bound to http.
 	if lv.http {
+		cm := envoy.HTTPConnectionManagerBuilder().
+			RouteConfigName(ENVOY_HTTP_LISTENER).
+			MetricsPrefix(ENVOY_HTTP_LISTENER).
+			AccessLoggers(lvc.newInsecureAccessLog()).
+			RequestTimeout(lvc.requestTimeout()).
+			Get()
+
 		lv.listeners[ENVOY_HTTP_LISTENER] = envoy.Listener(
 			ENVOY_HTTP_LISTENER,
-			lvc.httpAddress(), lvc.httpPort(),
+			lvc.httpAddress(),
+			lvc.httpPort(),
 			proxyProtocol(lvc.UseProxyProto),
-			envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, lvc.newInsecureAccessLog(), lvc.requestTimeout()),
+			cm,
 		)
 
 	}
 
-	// remove the https listener if there are no vhosts bound to it.
+	// Remove the https listener if there are no vhosts bound to it.
 	if len(lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains) == 0 {
 		delete(lv.listeners, ENVOY_HTTPS_LISTENER)
 	} else {
 		// there's some https listeners, we need to sort the filter chains
 		// to ensure that the LDS entries are identical.
-		sort.SliceStable(lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains,
-			func(i, j int) bool {
-				// The ServerNames field will only ever have a single entry
-				// in our FilterChain config, so it's okay to only sort
-				// on the first slice entry.
-				return lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains[i].FilterChainMatch.ServerNames[0] < lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains[j].FilterChainMatch.ServerNames[0]
-			})
+		sort.Stable(sorter.For(lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains))
 	}
 
 	return lv.listeners
@@ -355,15 +353,37 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		// the listener properly.
 		v.http = true
 	case *dag.SecureVirtualHost:
-		filters := envoy.Filters(
-			envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, v.ListenerVisitorConfig.newSecureAccessLog(), v.ListenerVisitorConfig.requestTimeout()),
-		)
-		alpnProtos := []string{"h2", "http/1.1"}
-		if vh.TCPProxy != nil {
+		var alpnProtos []string
+		var filters []*envoy_api_v2_listener.Filter
+
+		if vh.TCPProxy == nil {
+			// Create a uniquely named HTTP connection manager for
+			// this vhost, so that the SNI name the client requests
+			// only grants access to that host. See RFC 6066 for
+			// security advice. Note that we still use the generic
+			// metrics prefix to keep compatibility with previous
+			// Contour versions since the metrics prefix will be
+			// coded into monitoring dashboards.
 			filters = envoy.Filters(
-				envoy.TCPProxy(ENVOY_HTTPS_LISTENER, vh.TCPProxy, v.ListenerVisitorConfig.newSecureAccessLog()),
+				envoy.HTTPConnectionManagerBuilder().
+					RouteConfigName(path.Join("https", vh.VirtualHost.Name)).
+					MetricsPrefix(ENVOY_HTTPS_LISTENER).
+					AccessLoggers(v.ListenerVisitorConfig.newSecureAccessLog()).
+					RequestTimeout(v.ListenerVisitorConfig.requestTimeout()).
+					Get(),
 			)
-			alpnProtos = nil // do not offer ALPN
+
+			alpnProtos = []string{"h2", "http/1.1"}
+		} else {
+			filters = envoy.Filters(
+				envoy.TCPProxy(ENVOY_HTTPS_LISTENER,
+					vh.TCPProxy,
+					v.ListenerVisitorConfig.newSecureAccessLog()),
+			)
+
+			// Do not offer ALPN for TCP proxying, since
+			// the protocols will be provided by the TCP
+			// backend in its ServerHello.
 		}
 
 		var downstreamTLS *envoy_api_v2_auth.DownstreamTlsContext
@@ -380,13 +400,9 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 				alpnProtos...)
 		}
 
-		fc := envoy.FilterChainTLS(
-			vh.VirtualHost.Name,
-			downstreamTLS,
-			filters,
-		)
+		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains,
+			envoy.FilterChainTLS(vh.VirtualHost.Name, downstreamTLS, filters))
 
-		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains, fc)
 	default:
 		// recurse
 		vertex.Visit(v.visit)

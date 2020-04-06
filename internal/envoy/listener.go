@@ -30,6 +30,7 @@ import (
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/sorter"
 )
 
 // TLSInspector returns a new TLS inspector listener filter.
@@ -64,62 +65,128 @@ func Listener(name, address string, port int, lf []*envoy_api_v2_listener.Listen
 	return l
 }
 
-// HTTPConnectionManager creates a new HTTP Connection Manager filter
-// for the supplied route, access log, and client request timeout.
-func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog, requestTimeout time.Duration) *envoy_api_v2_listener.Filter {
+type httpConnectionManagerBuilder struct {
+	routeConfigName string
+	metricsPrefix   string
+	accessLoggers   []*accesslog.AccessLog
+	requestTimeout  time.Duration
+}
+
+// RouteConfigName sets the name of the RDS element that contains
+// the routing table for this manager.
+func (b *httpConnectionManagerBuilder) RouteConfigName(name string) *httpConnectionManagerBuilder {
+	b.routeConfigName = name
+	return b
+}
+
+// MetricsPrefix sets the prefix used for emitting metrics from the
+// connection manager. Note that this prefix is externally visible in
+// monitoring tools, so it is subject to compatibility concerns.
+//
+// See https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/stats#config-http-conn-man-stats
+func (b *httpConnectionManagerBuilder) MetricsPrefix(prefix string) *httpConnectionManagerBuilder {
+	b.metricsPrefix = prefix
+	return b
+}
+
+// AccessLoggers sets the access logging configuration.
+func (b *httpConnectionManagerBuilder) AccessLoggers(loggers []*accesslog.AccessLog) *httpConnectionManagerBuilder {
+	b.accessLoggers = loggers
+	return b
+}
+
+// RequestTimeout sets the active request timeout on the connection
+// manager. If not specified or set to 0, this timeout is disabled.
+func (b *httpConnectionManagerBuilder) RequestTimeout(timeout time.Duration) *httpConnectionManagerBuilder {
+	b.requestTimeout = timeout
+	return b
+}
+
+// Get returns a new http.HttpConnectionManager filter, constructed
+// from the builder settings.
+//
+// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto.html
+func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
+	cm := &http.HttpConnectionManager{
+		RouteSpecifier: &http.HttpConnectionManager_Rds{
+			Rds: &http.Rds{
+				RouteConfigName: b.routeConfigName,
+				ConfigSource: &envoy_api_v2_core.ConfigSource{
+					ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
+						ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
+							ApiType: envoy_api_v2_core.ApiConfigSource_GRPC,
+							GrpcServices: []*envoy_api_v2_core.GrpcService{{
+								TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
+										ClusterName: "contour",
+									},
+								},
+							}},
+						},
+					},
+				},
+			},
+		},
+		HttpFilters: []*http.HttpFilter{{
+			Name: wellknown.Gzip,
+		}, {
+			Name: wellknown.GRPCWeb,
+		}, {
+			Name: wellknown.Router,
+		}},
+		CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
+			// Sets the idle timeout for HTTP connections to 60 seconds.
+			// This is chosen as a rough default to stop idle connections wasting resources,
+			// without stopping slow connections from being terminated too quickly.
+			IdleTimeout: protobuf.Duration(60 * time.Second),
+		},
+		HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
+			// Enable support for HTTP/1.0 requests that carry
+			// a Host: header. See #537.
+			AcceptHttp_10: true,
+		},
+		UseRemoteAddress: protobuf.Bool(true),
+		NormalizePath:    protobuf.Bool(true),
+		RequestTimeout:   protobuf.Duration(b.requestTimeout),
+
+		// issue #1487 pass through X-Request-Id if provided.
+		PreserveExternalRequestId: true,
+		MergeSlashes:              true,
+	}
+
+	if len(b.accessLoggers) > 0 {
+		cm.AccessLog = b.accessLoggers
+	}
+
+	// If there's no explicit metrics prefix, default it to the
+	// route config name.
+	if b.metricsPrefix != "" {
+		cm.StatPrefix = b.metricsPrefix
+	} else {
+		cm.StatPrefix = b.routeConfigName
+	}
 
 	return &envoy_api_v2_listener.Filter{
 		Name: wellknown.HTTPConnectionManager,
 		ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
-			TypedConfig: toAny(&http.HttpConnectionManager{
-				StatPrefix: routename,
-				RouteSpecifier: &http.HttpConnectionManager_Rds{
-					Rds: &http.Rds{
-						RouteConfigName: routename,
-						ConfigSource: &envoy_api_v2_core.ConfigSource{
-							ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
-								ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
-									ApiType: envoy_api_v2_core.ApiConfigSource_GRPC,
-									GrpcServices: []*envoy_api_v2_core.GrpcService{{
-										TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
-											EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
-												ClusterName: "contour",
-											},
-										},
-									}},
-								},
-							},
-						},
-					},
-				},
-				HttpFilters: []*http.HttpFilter{{
-					Name: wellknown.Gzip,
-				}, {
-					Name: wellknown.GRPCWeb,
-				}, {
-					Name: wellknown.Router,
-				}},
-				CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
-					// Sets the idle timeout for HTTP connections to 60 seconds.
-					// This is chosen as a rough default to stop idle connections wasting resources,
-					// without stopping slow connections from being terminated too quickly.
-					IdleTimeout: protobuf.Duration(60 * time.Second),
-				},
-				HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
-					// Enable support for HTTP/1.0 requests that carry
-					// a Host: header. See #537.
-					AcceptHttp_10: true,
-				},
-				AccessLog:        accesslogger,
-				UseRemoteAddress: protobuf.Bool(true),
-				NormalizePath:    protobuf.Bool(true),
-				RequestTimeout:   protobuf.Duration(requestTimeout),
-
-				// issue #1487 pass through X-Request-Id if provided.
-				PreserveExternalRequestId: true,
-			}),
+			TypedConfig: toAny(cm),
 		},
 	}
+}
+
+// HTTPConnectionManager creates a new HTTP Connection Manager filter
+// for the supplied route, access log, and client request timeout.
+func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog, requestTimeout time.Duration) *envoy_api_v2_listener.Filter {
+	return HTTPConnectionManagerBuilder().
+		RouteConfigName(routename).
+		MetricsPrefix(routename).
+		AccessLoggers(accesslogger).
+		RequestTimeout(requestTimeout).
+		Get()
+}
+
+func HTTPConnectionManagerBuilder() *httpConnectionManagerBuilder {
+	return &httpConnectionManagerBuilder{}
 }
 
 // TCPProxy creates a new TCPProxy filter.
@@ -157,7 +224,7 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 				Weight: weight,
 			})
 		}
-		sort.Stable(clustersByNameAndWeight(clusters))
+		sort.Stable(sorter.For(clusters))
 		return &envoy_api_v2_listener.Filter{
 			Name: wellknown.TCPProxy,
 			ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
@@ -174,17 +241,6 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 			},
 		}
 	}
-}
-
-type clustersByNameAndWeight []*tcp.TcpProxy_WeightedCluster_ClusterWeight
-
-func (c clustersByNameAndWeight) Len() int      { return len(c) }
-func (c clustersByNameAndWeight) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
-func (c clustersByNameAndWeight) Less(i, j int) bool {
-	if c[i].Name == c[j].Name {
-		return c[i].Weight < c[j].Weight
-	}
-	return c[i].Name < c[j].Name
 }
 
 // SocketAddress creates a new TCP envoy_api_v2_core.Address.

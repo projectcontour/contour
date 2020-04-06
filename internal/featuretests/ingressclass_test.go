@@ -16,9 +16,10 @@ package featuretests
 import (
 	"testing"
 
+	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
+
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -29,7 +30,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestIngressClassAnnotation(t *testing.T) {
+const (
+	IngressName      = "kuard-ing"
+	IngressRouteName = "kuard-ingressroute"
+	HTTPProxyName    = "kuard-httpproxy"
+	Namespace        = "default"
+)
+
+func TestIngressClassAnnotation_Configured(t *testing.T) {
 	rh, c, done := setup(t, func(reh *contour.EventHandler) {
 		reh.Builder.Source.IngressClass = "linkerd"
 	})
@@ -38,7 +46,7 @@ func TestIngressClassAnnotation(t *testing.T) {
 	svc := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
-			Namespace: "default",
+			Namespace: Namespace,
 		},
 		Spec: v1.ServiceSpec{
 			Ports: []v1.ServicePort{{
@@ -50,682 +58,771 @@ func TestIngressClassAnnotation(t *testing.T) {
 	}
 	rh.OnAdd(svc)
 
-	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard-ing",
-			Namespace: svc.Namespace,
-		},
-		Spec: v1beta1.IngressSpec{
-			Backend: backend(svc),
-		},
-	}
-	rh.OnAdd(i1)
+	// Ingress
+	{
+		// --- ingress class matches explicitly
+		ingressValid := &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressName,
+				Namespace: Namespace,
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.class": "linkerd",
+				},
+			},
+			Spec: v1beta1.IngressSpec{
+				Backend: backend(svc),
+			},
+		}
 
-	// ingress object without a class matches any ingress controller
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("*",
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+		rh.OnAdd(ingressValid)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	i2 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      i1.Name,
-			Namespace: i1.Namespace,
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.class": "contour",
+		// --- wrong ingress class specified
+		ingressWrongClass := &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressName,
+				Namespace: Namespace,
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.class": "invalid",
+				},
 			},
-		},
-		Spec: v1beta1.IngressSpec{
-			Backend: backend(svc),
-		},
-	}
-	rh.OnUpdate(i1, i2)
-
-	// ingress class does not match ingress controller, ignored.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
-
-	i3 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      i2.Name,
-			Namespace: i2.Namespace,
-			Annotations: map[string]string{
-				"contour.heptio.com/ingress.class": "contour",
+			Spec: v1beta1.IngressSpec{
+				Backend: backend(svc),
 			},
-		},
-		Spec: v1beta1.IngressSpec{
-			Backend: backend(svc),
-		},
-	}
-	rh.OnUpdate(i2, i3)
+		}
 
-	// ingress class does not match
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
+		rh.OnUpdate(ingressValid, ingressWrongClass)
 
-	i4 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      i3.Name,
-			Namespace: i3.Namespace,
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.class": "linkerd",
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- no ingress class specified
+		ingressNoClass := &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressName,
+				Namespace: Namespace,
 			},
-		},
-		Spec: v1beta1.IngressSpec{
-			Backend: backend(svc),
-		},
-	}
-	rh.OnUpdate(i3, i4)
+			Spec: v1beta1.IngressSpec{
+				Backend: backend(svc),
+			},
+		}
+		rh.OnUpdate(ingressWrongClass, ingressNoClass)
 
-	// ingress class matches explicitly.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("*",
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- insert valid ingress object
+		rh.OnAdd(ingressValid)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	i5 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      i4.Name,
-			Namespace: i4.Namespace,
-			Annotations: map[string]string{
-				"contour.heptio.com/ingress.class": "linkerd",
-			},
-		},
-		Spec: v1beta1.IngressSpec{
-			Backend: backend(svc),
-		},
+		rh.OnDelete(ingressValid)
+
+		// verify ingress is gone
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
 	}
-	rh.OnUpdate(i4, i5)
 
-	// ingress class matches explicitly.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("*",
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+	// IngressRoute
+	{
+		// --- ingress class matches explicitly
+		ingressrouteValid := &ingressroutev1.IngressRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressRouteName,
+				Namespace: Namespace,
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.class": "linkerd",
+				},
+			},
+			Spec: ingressroutev1.IngressRouteSpec{
+				VirtualHost: &projcontour.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []ingressroutev1.Route{{
+					Match: "/",
+					Services: []ingressroutev1.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
+				}},
+			},
+		}
+
+		rh.OnAdd(ingressrouteValid)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	i6 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      i5.Name,
-			Namespace: i5.Namespace,
-			Annotations: map[string]string{
-				"projectcontour.io/ingress.class": "contour",
+		// --- wrong ingress class specified
+		ingressrouteWrongClass := &ingressroutev1.IngressRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressRouteName,
+				Namespace: Namespace,
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.class": "contour",
+				},
 			},
-		},
-		Spec: v1beta1.IngressSpec{
-			Backend: backend(svc),
-		},
-	}
-	rh.OnUpdate(i5, i6)
-
-	// ingress class does not match ingress controller, ignored.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
-
-	i7 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      i6.Name,
-			Namespace: i6.Namespace,
-			Annotations: map[string]string{
-				"contour.heptio.com/ingress.class": "linkerd",
+			Spec: ingressroutev1.IngressRouteSpec{
+				VirtualHost: &projcontour.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []ingressroutev1.Route{{
+					Services: []ingressroutev1.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
+				}},
 			},
-		},
-		Spec: v1beta1.IngressSpec{
-			Backend: backend(svc),
-		},
-	}
-	rh.OnUpdate(i6, i7)
+		}
 
-	// ingress class matches explicitly.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("*",
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+		rh.OnUpdate(ingressrouteValid, ingressrouteWrongClass)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- no ingress class specified
+		ingressrouteNoClass := &ingressroutev1.IngressRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressRouteName,
+				Namespace: Namespace,
+				Annotations: map[string]string{
+					"contour.heptio.com/ingress.class": "contour",
+				},
+			},
+			Spec: ingressroutev1.IngressRouteSpec{
+				VirtualHost: &projcontour.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []ingressroutev1.Route{{
+					Services: []ingressroutev1.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
+				}},
+			},
+		}
+
+		rh.OnUpdate(ingressrouteWrongClass, ingressrouteNoClass)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- insert valid ingressroute object
+		rh.OnAdd(ingressrouteValid)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	rh.OnDelete(i7)
-	// gone
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
+		rh.OnDelete(ingressrouteValid)
 
-	ir1 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard-ingressroute",
-			Namespace: svc.Namespace,
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "www.example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: svc.Name,
-					Port: int(svc.Spec.Ports[0].Port),
-				}},
-			}},
-		},
+		// verify ingress is gone
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
 	}
-	rh.OnAdd(ir1)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("www.example.com",
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+	// HTTPProxy
+	{
+		// --- ingress class matches explicitly
+		proxyValid := &projcontour.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      HTTPProxyName,
+				Namespace: Namespace,
+				Annotations: map[string]string{
+					"contour.heptio.com/ingress.class": "linkerd",
+				},
+			},
+			Spec: projcontour.HTTPProxySpec{
+				VirtualHost: &projcontour.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []projcontour.Route{{
+					Services: []projcontour.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
+				}},
+			},
+		}
+
+		rh.OnAdd(proxyValid)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	ir2 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      ir1.Name,
-			Namespace: ir1.Namespace,
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.class": "contour",
+		// --- wrong ingress class specified
+		proxyWrongClass := &projcontour.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      HTTPProxyName,
+				Namespace: Namespace,
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.class": "contour",
+				},
 			},
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "www.example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Services: []ingressroutev1.Service{{
-					Name: svc.Name,
-					Port: int(svc.Spec.Ports[0].Port),
+			Spec: projcontour.HTTPProxySpec{
+				VirtualHost: &projcontour.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []projcontour.Route{{
+					Services: []projcontour.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
 				}},
-			}},
-		},
-	}
-	rh.OnUpdate(ir1, ir2)
-
-	// ingress class does not match ingress controller, ignored.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
-
-	ir3 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      ir2.Name,
-			Namespace: ir2.Namespace,
-			Annotations: map[string]string{
-				"contour.heptio.com/ingress.class": "contour",
 			},
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "www.example.com",
+		}
+
+		rh.OnUpdate(proxyValid, proxyWrongClass)
+
+		// ingress class does not match ingress controller, ignored.
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- no ingress class specified
+		proxyNoClass := &projcontour.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      HTTPProxyName,
+				Namespace: Namespace,
 			},
-			Routes: []ingressroutev1.Route{{
-				Services: []ingressroutev1.Service{{
-					Name: svc.Name,
-					Port: int(svc.Spec.Ports[0].Port),
+			Spec: projcontour.HTTPProxySpec{
+				VirtualHost: &projcontour.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []projcontour.Route{{
+					Services: []projcontour.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
 				}},
-			}},
-		},
-	}
-	rh.OnUpdate(ir2, ir3)
-
-	// ingress class does not match ingress controller, ignored.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
-
-	ir4 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      ir3.Name,
-			Namespace: ir3.Namespace,
-			Annotations: map[string]string{
-				"contour.heptio.com/ingress.class": "linkerd",
 			},
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "www.example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: svc.Name,
-					Port: int(svc.Spec.Ports[0].Port),
-				}},
-			}},
-		},
-	}
-	rh.OnUpdate(ir3, ir4)
+		}
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost(ir4.Spec.VirtualHost.Fqdn,
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+		rh.OnUpdate(proxyWrongClass, proxyNoClass)
+
+		// ingress class does not match ingress controller, ignored.
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- insert valid httpproxy object
+		rh.OnAdd(proxyValid)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	ir5 := &ingressroutev1.IngressRoute{
+		rh.OnDelete(proxyValid)
+
+		// verify ingress is gone
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+	}
+}
+
+//no configured ingress.class, none on object - pass
+//no configured ingress.class, "contour" on object - pass
+//no configured ingress.class, anything else on object - fail
+
+func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
+	defer done()
+
+	svc := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ir4.Name,
-			Namespace: ir4.Namespace,
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.class": "linkerd",
-			},
+			Name:      "kuard",
+			Namespace: Namespace,
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "www.example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Services: []ingressroutev1.Service{{
-					Name: svc.Name,
-					Port: int(svc.Spec.Ports[0].Port),
-				}},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
 			}},
 		},
 	}
+	rh.OnAdd(svc)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost(ir5.Spec.VirtualHost.Fqdn,
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+	// Ingress
+	{
+		// --- no ingress class specified
+		ingressNoClass := &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressName,
+				Namespace: Namespace,
+			},
+			Spec: v1beta1.IngressSpec{
+				Backend: backend(svc),
+			},
+		}
+
+		rh.OnAdd(ingressNoClass)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	ir6 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      ir5.Name,
-			Namespace: ir5.Namespace,
-			Annotations: map[string]string{
-				"projectcontour.io/ingress.class": "contour",
+		// --- matching ingress class specified
+		ingressMatchingClass := &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressName,
+				Namespace: Namespace,
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.class": "contour",
+				},
 			},
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "www.example.com",
+			Spec: v1beta1.IngressSpec{
+				Backend: backend(svc),
 			},
-			Routes: []ingressroutev1.Route{{
-				Services: []ingressroutev1.Service{{
-					Name: svc.Name,
-					Port: int(svc.Spec.Ports[0].Port),
-				}},
-			}},
-		},
-	}
-	rh.OnUpdate(ir5, ir6)
+		}
 
-	// ingress class does not match ingress controller, ignored.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
+		rh.OnUpdate(ingressNoClass, ingressMatchingClass)
 
-	ir7 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      ir6.Name,
-			Namespace: ir6.Namespace,
-			Annotations: map[string]string{
-				"contour.heptio.com/ingress.class": "linkerd",
-			},
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "www.example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: svc.Name,
-					Port: int(svc.Spec.Ports[0].Port),
-				}},
-			}},
-		},
-	}
-	rh.OnUpdate(ir6, ir4)
-
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost(ir5.Spec.VirtualHost.Fqdn,
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	rh.OnDelete(ir7)
-
-	proxy1 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard-httpproxy",
-			Namespace: svc.Namespace,
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "www.example.com",
+		// --- non-matching ingress class specified
+		ingressNonMatchingClass := &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressName,
+				Namespace: Namespace,
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.class": "invalid",
+				},
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
-					Name: svc.Name,
-					Port: int(svc.Spec.Ports[0].Port),
-				}},
-			}},
-		},
-	}
-	rh.OnAdd(proxy1)
+			Spec: v1beta1.IngressSpec{
+				Backend: backend(svc),
+			},
+		}
+		rh.OnUpdate(ingressMatchingClass, ingressNonMatchingClass)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("www.example.com",
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- insert valid ingress object
+		rh.OnAdd(ingressNoClass)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	proxy2 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      proxy1.Name,
-			Namespace: proxy1.Namespace,
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.class": "contour",
-			},
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "www.example.com",
-			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
-					Name: svc.Name,
-					Port: int(svc.Spec.Ports[0].Port),
-				}},
-			}},
-		},
+		rh.OnDelete(ingressNoClass)
+
+		// verify ingress is gone
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
 	}
 
-	rh.OnUpdate(proxy1, proxy2)
-
-	// ingress class does not match ingress controller, ignored.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
-
-	proxy3 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      proxy2.Name,
-			Namespace: proxy2.Namespace,
-			Annotations: map[string]string{
-				"contour.heptio.com/ingress.class": "contour",
+	// IngressRoute
+	{
+		// --- no ingress class specified
+		ingressRouteNoClass := &ingressroutev1.IngressRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressRouteName,
+				Namespace: Namespace,
 			},
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "www.example.com",
-			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
-					Name: svc.Name,
-					Port: int(svc.Spec.Ports[0].Port),
+			Spec: ingressroutev1.IngressRouteSpec{
+				VirtualHost: &projcontour.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []ingressroutev1.Route{{
+					Match: "/",
+					Services: []ingressroutev1.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
 				}},
-			}},
-		},
-	}
-	rh.OnUpdate(proxy2, proxy3)
-
-	// ingress class does not match ingress controller, ignored.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
-
-	proxy4 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      proxy3.Name,
-			Namespace: proxy3.Namespace,
-			Annotations: map[string]string{
-				"contour.heptio.com/ingress.class": "linkerd",
 			},
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "www.example.com",
-			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
-					Name: svc.Name,
-					Port: int(svc.Spec.Ports[0].Port),
-				}},
-			}},
-		},
-	}
-	rh.OnUpdate(proxy3, proxy4)
+		}
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost(proxy4.Spec.VirtualHost.Fqdn,
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+		rh.OnAdd(ingressRouteNoClass)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	proxy5 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      proxy4.Name,
-			Namespace: proxy4.Namespace,
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.class": "linkerd",
+		// --- matching ingress class specified
+		ingressrouteMatchingClass := &ingressroutev1.IngressRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressRouteName,
+				Namespace: Namespace,
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.class": "contour",
+				},
 			},
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "www.example.com",
-			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
-					Name: svc.Name,
-					Port: int(svc.Spec.Ports[0].Port),
+			Spec: ingressroutev1.IngressRouteSpec{
+				VirtualHost: &projcontour.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []ingressroutev1.Route{{
+					Match: "/",
+					Services: []ingressroutev1.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
 				}},
-			}},
-		},
-	}
+			},
+		}
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost(proxy5.Spec.VirtualHost.Fqdn,
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+		rh.OnUpdate(ingressRouteNoClass, ingressrouteMatchingClass)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	proxy6 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      proxy5.Name,
-			Namespace: proxy5.Namespace,
-			Annotations: map[string]string{
-				"projectcontour.io/ingress.class": "contour",
+		// --- non-matching ingress class specified
+		ingressrouteNonMatchingClass := &ingressroutev1.IngressRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressRouteName,
+				Namespace: Namespace,
+				Annotations: map[string]string{
+					"contour.heptio.com/ingress.class": "invalid",
+				},
 			},
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "www.example.com",
-			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
-					Name: svc.Name,
-					Port: int(svc.Spec.Ports[0].Port),
+			Spec: ingressroutev1.IngressRouteSpec{
+				VirtualHost: &projcontour.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []ingressroutev1.Route{{
+					Services: []ingressroutev1.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
 				}},
-			}},
-		},
-	}
-	rh.OnUpdate(proxy5, proxy6)
-
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
-
-	proxy7 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      proxy6.Name,
-			Namespace: proxy6.Namespace,
-			Annotations: map[string]string{
-				"projectcontour.io/ingress.class": "linkerd",
 			},
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "www.example.com",
-			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
-					Name: svc.Name,
-					Port: int(svc.Spec.Ports[0].Port),
-				}},
-			}},
-		},
-	}
-	rh.OnUpdate(proxy6, proxy7)
+		}
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost(proxy5.Spec.VirtualHost.Fqdn,
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+		rh.OnUpdate(ingressrouteMatchingClass, ingressrouteNonMatchingClass)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- insert valid ingressroute object
+		rh.OnAdd(ingressRouteNoClass)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	rh.OnDelete(proxy7)
+		rh.OnDelete(ingressRouteNoClass)
+
+		// verify ingress is gone
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+	}
+
+	// HTTPProxy
+	{
+		// --- no ingress class specified
+		proxyNoClass := &projcontour.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      HTTPProxyName,
+				Namespace: Namespace,
+			},
+			Spec: projcontour.HTTPProxySpec{
+				VirtualHost: &projcontour.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []projcontour.Route{{
+					Services: []projcontour.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
+				}},
+			},
+		}
+
+		rh.OnAdd(proxyNoClass)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
+				),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- matching ingress class specified
+		proxyMatchingClass := &projcontour.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      HTTPProxyName,
+				Namespace: Namespace,
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.class": "contour",
+				},
+			},
+			Spec: projcontour.HTTPProxySpec{
+				VirtualHost: &projcontour.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []projcontour.Route{{
+					Services: []projcontour.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
+				}},
+			},
+		}
+
+		rh.OnUpdate(proxyNoClass, proxyMatchingClass)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
+				),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- non-matching ingress class specified
+		proxyNonMatchingClass := &projcontour.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      HTTPProxyName,
+				Namespace: Namespace,
+				Annotations: map[string]string{
+					"kubernetes.io/ingress.class": "invalid",
+				},
+			},
+			Spec: projcontour.HTTPProxySpec{
+				VirtualHost: &projcontour.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []projcontour.Route{{
+					Services: []projcontour.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
+				}},
+			},
+		}
+
+		rh.OnUpdate(proxyMatchingClass, proxyNonMatchingClass)
+
+		// ingress class does not match ingress controller, ignored.
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- insert valid httpproxy object
+		rh.OnAdd(proxyNoClass)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
+				),
+			),
+			TypeUrl: routeType,
+		})
+
+		rh.OnDelete(proxyNoClass)
+
+		// verify ingress is gone
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+	}
 }
 
 // TestIngressClassUpdate verifies that if an object changes its ingress
@@ -780,7 +877,6 @@ func TestIngressClassUpdate(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
@@ -799,7 +895,6 @@ func TestIngressClassUpdate(t *testing.T) {
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	}).NoStatus(vhost)

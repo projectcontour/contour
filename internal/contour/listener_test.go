@@ -14,6 +14,7 @@
 package contour
 
 import (
+	"path"
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -124,6 +125,14 @@ func TestListenerCacheQuery(t *testing.T) {
 }
 
 func TestListenerVisit(t *testing.T) {
+	httpsFilterFor := func(vhost string) *envoy_api_v2_listener.Filter {
+		return envoy.HTTPConnectionManagerBuilder().
+			MetricsPrefix(ENVOY_HTTPS_LISTENER).
+			RouteConfigName(path.Join("https", vhost)).
+			AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+			Get()
+	}
+
 	tests := map[string]struct {
 		ListenerVisitorConfig
 		objs []interface{}
@@ -266,7 +275,7 @@ func TestListenerVisit(t *testing.T) {
 						ServerNames: []string{"whatever.example.com"},
 					},
 					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+					Filters:         envoy.Filters(httpsFilterFor("whatever.example.com")),
 				}},
 			}),
 		},
@@ -353,13 +362,13 @@ func TestListenerVisit(t *testing.T) {
 						ServerNames: []string{"sortedfirst.example.com"},
 					},
 					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+					Filters:         envoy.Filters(httpsFilterFor("sortedfirst.example.com")),
 				}, {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"sortedsecond.example.com"},
 					},
 					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+					Filters:         envoy.Filters(httpsFilterFor("sortedsecond.example.com")),
 				}},
 			}),
 		},
@@ -475,7 +484,7 @@ func TestListenerVisit(t *testing.T) {
 						ServerNames: []string{"www.example.com"},
 					},
 					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+					Filters:         envoy.Filters(httpsFilterFor("www.example.com")),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
@@ -556,7 +565,7 @@ func TestListenerVisit(t *testing.T) {
 						ServerNames: []string{"www.example.com"},
 					},
 					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+					Filters:         envoy.Filters(httpsFilterFor("www.example.com")),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
@@ -630,7 +639,7 @@ func TestListenerVisit(t *testing.T) {
 						ServerNames: []string{"whatever.example.com"},
 					},
 					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+					Filters:         envoy.Filters(httpsFilterFor("whatever.example.com")),
 				}},
 			}),
 		},
@@ -702,7 +711,7 @@ func TestListenerVisit(t *testing.T) {
 						ServerNames: []string{"whatever.example.com"},
 					},
 					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+					Filters:         envoy.Filters(httpsFilterFor("whatever.example.com")),
 				}},
 			}),
 		},
@@ -771,7 +780,11 @@ func TestListenerVisit(t *testing.T) {
 						ServerNames: []string{"whatever.example.com"},
 					},
 					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, envoy.FileAccessLogEnvoy("/tmp/https_access.log"), 0)),
+					Filters: envoy.Filters(envoy.HTTPConnectionManagerBuilder().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(path.Join("https", "whatever.example.com")).
+						AccessLoggers(envoy.FileAccessLogEnvoy("/tmp/https_access.log")).
+						Get()),
 				}},
 			}),
 		},
@@ -836,7 +849,7 @@ func TestListenerVisit(t *testing.T) {
 						ServerNames: []string{"whatever.example.com"},
 					},
 					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"),
-					Filters:         envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+					Filters:         envoy.Filters(httpsFilterFor("whatever.example.com")),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
@@ -907,7 +920,7 @@ func TestListenerVisit(t *testing.T) {
 						ServerNames: []string{"whatever.example.com"},
 					},
 					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"), // note, cannot downgrade from the configured version
-					Filters:         envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+					Filters:         envoy.Filters(httpsFilterFor("whatever.example.com")),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
@@ -978,7 +991,7 @@ func TestListenerVisit(t *testing.T) {
 						ServerNames: []string{"whatever.example.com"},
 					},
 					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"), // note, cannot downgrade from the configured version
-					Filters:         envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+					Filters:         envoy.Filters(httpsFilterFor("whatever.example.com")),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
@@ -1049,7 +1062,7 @@ func TestListenerVisit(t *testing.T) {
 						ServerNames: []string{"www.example.com"},
 					},
 					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"), // note, cannot downgrade from the configured version
-					Filters:         envoy.Filters(envoy.HTTPConnectionManager(ENVOY_HTTPS_LISTENER, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+					Filters:         envoy.Filters(httpsFilterFor("www.example.com")),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),

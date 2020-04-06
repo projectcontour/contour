@@ -19,6 +19,7 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/envoy"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -126,7 +127,13 @@ func TestTLSCertificateDelegation(t *testing.T) {
 		ListenerFilters: envoy.ListenerFilters(
 			envoy.TLSInspector(),
 		),
-		FilterChains: filterchaintls("example.com", sec1, envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0), "h2", "http/1.1"),
+		FilterChains: filterchaintls("example.com", sec1,
+			envoy.HTTPConnectionManagerBuilder().
+				RouteConfigName("https/example.com").
+				MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
+				AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
+				Get(),
+			"h2", "http/1.1"),
 	}
 
 	c.Request(listenerType).Equals(&v2.DiscoveryResponse{

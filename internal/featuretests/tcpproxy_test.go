@@ -104,7 +104,6 @@ func TestTCPProxy(t *testing.T) {
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -159,7 +158,6 @@ func TestTCPProxy(t *testing.T) {
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -250,7 +248,6 @@ func TestTCPProxyDelegation(t *testing.T) {
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -314,7 +311,6 @@ func TestTCPProxyDelegation(t *testing.T) {
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -397,7 +393,6 @@ func TestTCPProxyTLSPassthrough(t *testing.T) {
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -459,7 +454,6 @@ func TestTCPProxyTLSPassthrough(t *testing.T) {
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -559,7 +553,6 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -662,8 +655,6 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 					upgradeHTTPS(routePrefix("/")),
 				),
 			),
-			// no route should not be present as tcpproxy is in use
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -771,8 +762,6 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 					},
 				),
 			),
-			// no route should not be present as tcpproxy is in use
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -873,7 +862,6 @@ func TestTCPProxyTLSPassthroughAndHTTPService(t *testing.T) {
 				),
 			),
 			// ingress_https should be empty.
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -981,7 +969,6 @@ func TestTCPProxyTLSPassthroughAndHTTPServicePermitInsecure(t *testing.T) {
 				),
 			),
 			// ingress_https should be empty.
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -1059,7 +1046,6 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 			// ingress_http and ingress_https should be empty
 			// as hp1 is not valid.
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -1106,7 +1092,6 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 			// ingress_http and ingress_https should be empty
 			// as hp2 is not valid.
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
