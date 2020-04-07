@@ -47,39 +47,39 @@ jobs:
 
   - name: 001-required-field-validation
     install:
-    - ./hack/travis/install-kubernetes-toolchain.sh $HOME/bin
+    - GITHUB_TOKEN=$GITHUB_TOKEN ./hack/travis/install-kubernetes-toolchain.sh $HOME/bin
     - make container IMAGE=docker.io/projectcontour/contour VERSION=ci
     - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:master
     - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:latest
     script:
-    - hack/travis/start-kind-cluster.sh 001-required-field-validation.yaml
+    - GITHUB_TOKEN=$GITHUB_TOKEN hack/travis/start-kind-cluster.sh 001-required-field-validation.yaml
 
   - name: 002-header-condition-match
     install:
-    - ./hack/travis/install-kubernetes-toolchain.sh $HOME/bin
+    - GITHUB_TOKEN=$GITHUB_TOKEN ./hack/travis/install-kubernetes-toolchain.sh $HOME/bin
     - make container IMAGE=docker.io/projectcontour/contour VERSION=ci
     - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:master
     - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:latest
     script:
-    - hack/travis/start-kind-cluster.sh 002-header-condition-match.yaml
+    - GITHUB_TOKEN=$GITHUB_TOKEN hack/travis/start-kind-cluster.sh 002-header-condition-match.yaml
 
   - name: 003-path-condition-match
     install:
-    - ./hack/travis/install-kubernetes-toolchain.sh $HOME/bin
+    - GITHUB_TOKEN=$GITHUB_TOKEN ./hack/travis/install-kubernetes-toolchain.sh $HOME/bin
     - make container IMAGE=docker.io/projectcontour/contour VERSION=ci
     - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:master
     - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:latest
     script:
-    - hack/travis/start-kind-cluster.sh 003-path-condition-match.yaml
+    - GITHUB_TOKEN=$GITHUB_TOKEN hack/travis/start-kind-cluster.sh 003-path-condition-match.yaml
 
   - name: 005-pod-restart
     install:
-    - ./hack/travis/install-kubernetes-toolchain.sh $HOME/bin
+    - GITHUB_TOKEN=$GITHUB_TOKEN ./hack/travis/install-kubernetes-toolchain.sh $HOME/bin
     - make container IMAGE=docker.io/projectcontour/contour VERSION=ci
     - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:master
     - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:latest
     script:
-    - hack/travis/start-kind-cluster.sh 005-pod-restart.yaml
+    - GITHUB_TOKEN=$GITHUB_TOKEN hack/travis/start-kind-cluster.sh 005-pod-restart.yaml
 
   - name: lint
     install:
