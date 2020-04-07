@@ -20,6 +20,7 @@ $KUBECTL wait --timeout=2m -n projectcontour -l app=envoy pods --for=condition=R
 git clone --depth=1 https://jpeach:$GITHUB_TOKEN@github.com/jpeach/contour-testsuite.git
 
 $HOME/bin/modden run \
+    --format=tap \
     --fixtures contour-testsuite/fixtures \
     --policies contour-testsuite/policies \
     --param proxy.address=127.0.0.1 \
