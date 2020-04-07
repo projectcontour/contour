@@ -14,25 +14,34 @@
 package k8s
 
 import (
+	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	clientset "k8s.io/client-go/kubernetes"
 )
 
-// StatusLoadbalancerUpdater observes informer OnAdd events and
+// IngressStatusUpdater observes informer OnAdd events and
 // updates the ingress.status.loadBalancer field on all Ingress
 // objects that match the ingress class (if used).
 type IngressStatusUpdater struct {
-	Client clientset.Interface
-	Logger logrus.FieldLogger
-	Status v1.LoadBalancerStatus
+	Client       clientset.Interface
+	Logger       logrus.FieldLogger
+	Status       v1.LoadBalancerStatus
+	IngressClass string
 }
 
 func (s *IngressStatusUpdater) OnAdd(obj interface{}) {
-	ing := obj.(*v1beta1.Ingress).DeepCopy()
 
-	// TODO(dfc) check ingress class
+	ing := obj.(*v1beta1.Ingress).DeepCopy()
+	if !annotation.MatchesIngressClass(ing, s.IngressClass) {
+		s.Logger.
+			WithField("name", ing.GetName()).
+			WithField("namespace", ing.GetNamespace()).
+			WithField("ingress-class", annotation.IngressClass(ing)).
+			Debug("unmatched ingress class, skip status update")
+		return
+	}
 
 	ing.Status.LoadBalancer = s.Status
 	_, err := s.Client.NetworkingV1beta1().Ingresses(ing.GetNamespace()).UpdateStatus(ing)
@@ -45,14 +54,35 @@ func (s *IngressStatusUpdater) OnAdd(obj interface{}) {
 }
 
 func (s *IngressStatusUpdater) OnUpdate(oldObj, newObj interface{}) {
-	// Ignoring OnUpdate allows us to avoid the message generated
-	// from the status update.
 
-	// TODO(dfc) handle these cases:
-	// - OnUpdate transitions from an ingress class which is out of scope
-	// to one in scope.
-	// - OnUpdate transitions from an ingress class in scope to one out
-	// of scope.
+	oldIng := oldObj.(*v1beta1.Ingress).DeepCopy()
+	newIng := newObj.(*v1beta1.Ingress).DeepCopy()
+
+	// We need to only act when things come *into* our ingressclass scope. When they fall out, we don't care about them any
+	// more, and it's the new controller's job to fix things.
+	// Note that this also handles the case where someone deletes the annotation
+	if !annotation.MatchesIngressClass(oldIng, s.IngressClass) && annotation.MatchesIngressClass(newIng, s.IngressClass) {
+		// Add status because we started matching ingress-class.
+		s.Logger.
+			WithField("name", newIng.GetName()).
+			WithField("namespace", newIng.GetNamespace()).
+			WithField("ingress-class", annotation.IngressClass(newIng)).
+			Debug("Updated Ingress is in scope, updating")
+		newIng.Status.LoadBalancer = s.Status
+		_, err := s.Client.NetworkingV1beta1().Ingresses(newIng.GetNamespace()).UpdateStatus(newIng)
+		if err != nil {
+			s.Logger.
+				WithField("name", newIng.GetName()).
+				WithField("namespace", newIng.GetNamespace()).
+				WithError(err).Error("unable to update status")
+		}
+	}
+
+	// TODO(youngnick): There is a possibility that someone else may have edited the status, and we would then have
+	// no way to fix the object, because we're only operating on ingress-class change. After consideration, we've decided that
+	// editing the status subresource is hard enough that if someone does, they must have a reason. We can revisit if required.
+	// Checking annotation.MatchesIngressClass(newIng, s.IngressClass) && !reflect.DeepEqual(newIng.Status.Loadbalancer, s.Status)
+	// would probably do it, but we have no way to verify for now.
 }
 
 func (s *IngressStatusUpdater) OnDelete(obj interface{}) {

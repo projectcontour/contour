@@ -18,6 +18,7 @@ import (
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -585,7 +586,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": DEFAULT_INGRESS_CLASS,
+						"kubernetes.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
@@ -597,7 +598,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"contour.heptio.com/ingress.class": DEFAULT_INGRESS_CLASS,
+						"contour.heptio.com/ingress.class": annotation.DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
@@ -642,7 +643,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "kuard",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"contour.heptio.com/ingress.class": DEFAULT_INGRESS_CLASS,
+						"contour.heptio.com/ingress.class": annotation.DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
@@ -654,7 +655,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "kuard",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": DEFAULT_INGRESS_CLASS,
+						"kubernetes.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
@@ -699,7 +700,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "kuard",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"contour.heptio.com/ingress.class": DEFAULT_INGRESS_CLASS,
+						"contour.heptio.com/ingress.class": annotation.DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
@@ -711,7 +712,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "kuard",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": DEFAULT_INGRESS_CLASS,
+						"kubernetes.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},

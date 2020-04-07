@@ -20,9 +20,12 @@ import (
 	"time"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	"github.com/projectcontour/contour/internal/k8s"
 	"k8s.io/api/networking/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// DEFAULT_INGRESS_CLASS is the Contour default.
+const DEFAULT_INGRESS_CLASS = "contour"
 
 // IsKnown checks if an annotation is one Contour knows about.
 func IsKnown(key string) bool {
@@ -101,7 +104,7 @@ func ValidForKind(kind string, key string) bool {
 // CompatAnnotation checks the Object for the given annotation, first with the
 // "projectcontour.io/" prefix, and then with the "contour.heptio.com/" prefix
 // if that is not found.
-func CompatAnnotation(o k8s.Object, key string) string {
+func CompatAnnotation(o metav1.ObjectMetaAccessor, key string) string {
 	a := o.GetObjectMeta().GetAnnotations()
 
 	if val, ok := a["projectcontour.io/"+key]; ok {
@@ -184,7 +187,7 @@ func NumRetries(i *v1beta1.Ingress) uint32 {
 
 // PerTryTimeout returns the duration envoy will wait per retry cycle.
 func PerTryTimeout(i *v1beta1.Ingress) time.Duration {
-	return k8s.ParseTimeout(CompatAnnotation(i, "per-try-timeout"))
+	return ParseTimeout(CompatAnnotation(i, "per-try-timeout"))
 }
 
 // IngressClass returns the first matching ingress class for the following
@@ -192,7 +195,7 @@ func PerTryTimeout(i *v1beta1.Ingress) time.Duration {
 // 1. projectcontour.io/ingress.class
 // 2. contour.heptio.com/ingress.class
 // 3. kubernetes.io/ingress.class
-func IngressClass(o k8s.Object) string {
+func IngressClass(o metav1.ObjectMetaAccessor) string {
 	a := o.GetObjectMeta().GetAnnotations()
 	if class, ok := a["projectcontour.io/ingress.class"]; ok {
 		return class
@@ -204,6 +207,25 @@ func IngressClass(o k8s.Object) string {
 		return class
 	}
 	return ""
+}
+
+// MatchesIngressClass checks that the passed object has an ingress class that matches
+// either the passed ingress-class string, or DEFAULT_INGRESS_CLASS if it's empty.
+func MatchesIngressClass(o metav1.ObjectMetaAccessor, ic string) bool {
+
+	switch IngressClass(o) {
+	case ic:
+		// Handles ic == "" and ic == "custom".
+		return true
+	case DEFAULT_INGRESS_CLASS:
+		// ic == "" implicitly matches the default too.
+		if ic == "" {
+			return true
+		}
+	}
+
+	return false
+
 }
 
 // MinProtoVersion returns the TLS protocol version specified by an ingress annotation
@@ -226,7 +248,7 @@ func MinProtoVersion(version string) envoy_api_v2_auth.TlsParameters_TlsProtocol
 // 2. contour.heptio.com/max-connections
 //
 // '0' is returned if the annotation is absent or unparseable.
-func MaxConnections(o k8s.Object) uint32 {
+func MaxConnections(o metav1.ObjectMetaAccessor) uint32 {
 	return parseUInt32(CompatAnnotation(o, "max-connections"))
 }
 
@@ -236,7 +258,7 @@ func MaxConnections(o k8s.Object) uint32 {
 // 2. contour.heptio.com/max-pending-requests
 //
 // '0' is returned if the annotation is absent or unparseable.
-func MaxPendingRequests(o k8s.Object) uint32 {
+func MaxPendingRequests(o metav1.ObjectMetaAccessor) uint32 {
 	return parseUInt32(CompatAnnotation(o, "max-pending-requests"))
 }
 
@@ -246,7 +268,7 @@ func MaxPendingRequests(o k8s.Object) uint32 {
 // 2. contour.heptio.com/max-requests
 //
 // '0' is returned if the annotation is absent or unparseable.
-func MaxRequests(o k8s.Object) uint32 {
+func MaxRequests(o metav1.ObjectMetaAccessor) uint32 {
 	return parseUInt32(CompatAnnotation(o, "max-requests"))
 }
 
@@ -256,6 +278,6 @@ func MaxRequests(o k8s.Object) uint32 {
 // 2. contour.heptio.com/max-retries
 //
 // '0' is returned if the annotation is absent or unparseable.
-func MaxRetries(o k8s.Object) uint32 {
+func MaxRetries(o metav1.ObjectMetaAccessor) uint32 {
 	return parseUInt32(CompatAnnotation(o, "max-retries"))
 }

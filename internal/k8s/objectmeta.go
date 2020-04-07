@@ -18,6 +18,8 @@ import (
 )
 
 // Object is any Kubernetes object that has an ObjectMeta.
+// TODO(youngnick): Review references to this and replace them
+// with straight metav1.ObjectMetaAccessor calls if we can.
 type Object interface {
 	metav1.ObjectMetaAccessor
 }
