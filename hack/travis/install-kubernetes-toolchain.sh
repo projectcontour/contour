@@ -60,7 +60,6 @@ rm "${DESTDIR}/kustomize.tgz"
 # Asset URL comes from https://api.github.com/repos/jpeach/modden/releases/latest.
 # Note that using the Authorization header doesn't work, so we have to use
 # deprecated crap.
-echo Downloading "$target" from "$url"
 ${CURL} \
     --progress-bar \
     --location \
