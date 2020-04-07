@@ -47,6 +47,7 @@ jobs:
 
   - name: 001-required-field-validation
     install:
+    - echo token is $($GITHUB_TOKEN | tr a-z X)
     - GITHUB_TOKEN=$GITHUB_TOKEN ./hack/travis/install-kubernetes-toolchain.sh $HOME/bin
     - make container IMAGE=docker.io/projectcontour/contour VERSION=ci
     - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:master
