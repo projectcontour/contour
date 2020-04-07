@@ -67,4 +67,5 @@ ${CURL} \
     --output "${DESTDIR}/modden.tgz" \
     "https://api.github.com/repos/jpeach/modden/releases/assets/19468487?access_token=$GITHUB_TOKEN"
 
+ls -l "${DESTDIR}/modden.tgz"
 tar -C "${DESTDIR}" -xf "${DESTDIR}/modden.tgz" modden
