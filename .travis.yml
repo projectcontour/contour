@@ -13,6 +13,8 @@ env:
   - GOPROXY=https://proxy.golang.org/
   - NOKOGIRI_USE_SYSTEM_LIBRARIES=true # speeds up installation of html-proofer
 
+  # Export a GITHUB_TOKEN for jpeach
+  - secure: DoeyKBz8zLwWIR4wqfAEN6rLMi7PiOM897mwx8HMPVkvLFUee9XqelQ88N7UUk+dQQjCMHHrPr5vcdlmjtqP+novbeMJBQcS7zyLd1vBom4aEZs7WWnbK6kZp7lbIAi6CwhJiTslpYXeJE97akAhxdhnWbrxJhssXuyNKsK0RsPbyXwQsO394RVfhFUCwNl4R/BbxZ35n5uyB4Rxk9tXZj5Z3mfe4InAc3lz+/+UiocKLYA9vRntWAbMS5ZXDoNjmw9+fWTzduE3up/qNIX/57d3CNU5g/TR/D+uM/lUrDO3Alqnm4uxFHFcSQHF8UgV/VqPExqRn0l5WkITbJOPs9ZBqO6IthsyMrB++7B54YDv75KAl/fdhUN3lskj0QLPBk8DO3cf6OX79oPfmou5OtP5UFSoNWqIPEihkk0u5ACYKP2LvdGgzEZGiffWh5JNlwfvUg6/N72B1LDF2NfouiSSD7M/z6pfMwuQS0UGaOT0pbzmUryh3MUfmxlc5+61CiEOVP5vPKIB5kklys1PAn8cgXA1zCxSEqwGQKuLr8yYPLp07GtPti+K9xO5HOhHkGAEheIiqh2A8sXYiEljPwRsGI/fgQ2owtUpPAjdzEf+LM/KKLxIP7PPAJq/JpCuH9SCZxkzW3358Z7cC4dITdfgC/pz6vOZKpbFam3gEqc=
 jobs:
   include:
   - name: test
@@ -42,6 +44,42 @@ jobs:
     - $HOME/bin/kubectl wait --timeout=2m -n projectcontour -l app=contour deployments --for=condition=Available
     - $HOME/bin/kubectl wait --timeout=2m -n projectcontour -l app=envoy pods --for=condition=Ready
     - $HOME/bin/kind delete cluster
+
+  - name: 001-required-field-validation
+    install:
+    - ./hack/travis/install-kubernetes-toolchain.sh $HOME/bin
+    - make container IMAGE=docker.io/projectcontour/contour VERSION=ci
+    - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:master
+    - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:latest
+    script:
+    - hack/travis/start-kind-cluster.sh 001-required-field-validation.yaml
+
+  - name: 002-header-condition-match
+    install:
+    - ./hack/travis/install-kubernetes-toolchain.sh $HOME/bin
+    - make container IMAGE=docker.io/projectcontour/contour VERSION=ci
+    - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:master
+    - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:latest
+    script:
+    - hack/travis/start-kind-cluster.sh 002-header-condition-match.yaml
+
+  - name: 003-path-condition-match
+    install:
+    - ./hack/travis/install-kubernetes-toolchain.sh $HOME/bin
+    - make container IMAGE=docker.io/projectcontour/contour VERSION=ci
+    - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:master
+    - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:latest
+    script:
+    - hack/travis/start-kind-cluster.sh 003-path-condition-match.yaml
+
+  - name: 005-pod-restart
+    install:
+    - ./hack/travis/install-kubernetes-toolchain.sh $HOME/bin
+    - make container IMAGE=docker.io/projectcontour/contour VERSION=ci
+    - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:master
+    - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:latest
+    script:
+    - hack/travis/start-kind-cluster.sh 005-pod-restart.yaml
 
   - name: lint
     install:

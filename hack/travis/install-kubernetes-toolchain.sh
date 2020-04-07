@@ -56,3 +56,16 @@ download \
 
 tar -C "${DESTDIR}" -xf "${DESTDIR}/kustomize.tgz" kustomize
 rm "${DESTDIR}/kustomize.tgz"
+
+# Asset URL comes from https://api.github.com/repos/jpeach/modden/releases/latest.
+# Note that using the Authorization header doesn't work, so we have to use
+# deprecated crap.
+echo Downloading "$target" from "$url"
+${CURL} \
+    --progress-bar \
+    --location \
+    -H "Accept: application/octet-stream" \
+    --output "${DESTDIR}/modden.tgz" \
+    "https://api.github.com/repos/jpeach/modden/releases/assets/19468487?access_token=$GITHUB_TOKEN"
+
+tar -C "${DESTDIR}" -xf "${DESTDIR}/modden.tgz" modden
