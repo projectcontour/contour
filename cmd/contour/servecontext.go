@@ -62,6 +62,9 @@ type serveContext struct {
 	// ingress class
 	ingressClass string
 
+	// Address to be placed in status.loadbalancer field of Ingress objects.
+	ingressStatusAddress string
+
 	// envoy's stats listener parameters
 	statsAddr string
 	statsPort int
