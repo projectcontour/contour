@@ -15,6 +15,7 @@ package k8s
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/strings"
 )
 
 // Object is any Kubernetes object that has an ObjectMeta.
@@ -27,6 +28,20 @@ type Object interface {
 // FullName holds the name and namespace of a Kubernetes object.
 type FullName struct {
 	Name, Namespace string
+}
+
+// String returns a string representation of the name.
+func (f FullName) String() string {
+	if f.Name == "" {
+		return ""
+	}
+
+	ns := f.Namespace
+	if ns == "" {
+		ns = metav1.NamespaceDefault
+	}
+
+	return strings.JoinQualifiedName(ns, f.Name)
 }
 
 // ToFullName returns the FullName of any given Kubernetes object.

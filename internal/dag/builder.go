@@ -146,19 +146,22 @@ func upstreamProtocol(svc *v1.Service, port *v1.ServicePort) string {
 
 // lookupSecret returns a Secret if present or nil if the underlying kubernetes
 // secret fails validation or is missing.
-func (b *Builder) lookupSecret(m k8s.FullName, validate func(*v1.Secret) bool) *Secret {
+func (b *Builder) lookupSecret(m k8s.FullName, validate func(*v1.Secret) error) (*Secret, error) {
 	sec, ok := b.Source.secrets[m]
 	if !ok {
-		return nil
+		return nil, fmt.Errorf("Secret not found")
 	}
-	if !validate(sec) {
-		return nil
+
+	if err := validate(sec); err != nil {
+		return nil, err
 	}
+
 	s := &Secret{
 		Object: sec,
 	}
+
 	b.secrets[k8s.ToFullName(sec)] = s
-	return s
+	return s, nil
 }
 
 func (b *Builder) lookupVirtualHost(name string) *VirtualHost {
@@ -266,15 +269,33 @@ func (b *Builder) validHTTPProxies() []*projcontour.HTTPProxy {
 func (b *Builder) computeSecureVirtualhosts() {
 	for _, ing := range b.Source.ingresses {
 		for _, tls := range ing.Spec.TLS {
-			m := splitSecret(tls.SecretName, ing.Namespace)
-			sec := b.lookupSecret(m, validSecret)
-			if sec != nil && b.delegationPermitted(m, ing.Namespace) {
-				for _, host := range tls.Hosts {
-					svhost := b.lookupSecureVirtualHost(host)
-					svhost.Secret = sec
-					version := annotation.CompatAnnotation(ing, "tls-minimum-protocol-version")
-					svhost.MinProtoVersion = annotation.MinProtoVersion(version)
-				}
+			secretName := splitSecret(tls.SecretName, ing.GetNamespace())
+
+			sec, err := b.lookupSecret(secretName, validSecret)
+			if err != nil {
+				b.Source.WithField("name", ing.GetName()).
+					WithField("namespace", ing.GetNamespace()).
+					WithField("error", err.Error()).
+					Errorf("invalid TLS secret %q", secretName)
+				continue
+			}
+
+			if !b.delegationPermitted(secretName, ing.GetNamespace()) {
+				b.Source.WithField("name", ing.GetName()).
+					WithField("namespace", ing.GetNamespace()).
+					WithField("error", err).
+					Errorf("certificate delegation not permitted for Secret %q", secretName)
+				continue
+			}
+
+			// We have validated the TLS secrets, so we can go
+			// ahead and create the SecureVirtualHost for this
+			// Ingress.
+			for _, host := range tls.Hosts {
+				svhost := b.lookupSecureVirtualHost(host)
+				svhost.Secret = sec
+				svhost.MinProtoVersion = annotation.MinProtoVersion(
+					annotation.CompatAnnotation(ing, "tls-minimum-protocol-version"))
 			}
 		}
 	}
@@ -410,32 +431,34 @@ func (b *Builder) computeIngressRoute(ir *ingressroutev1.IngressRoute) {
 
 	var enforceTLS, passthrough bool
 	if tls := ir.Spec.VirtualHost.TLS; tls != nil {
-		m := splitSecret(tls.SecretName, ir.Namespace)
-		sec := b.lookupSecret(m, validSecret)
-		if sec != nil {
-			if !b.delegationPermitted(m, ir.Namespace) {
-				sw.SetInvalid("%s: certificate delegation not permitted", tls.SecretName)
-				return
-			}
-			svhost := b.lookupSecureVirtualHost(ir.Spec.VirtualHost.Fqdn)
-			svhost.Secret = sec
-			svhost.MinProtoVersion = annotation.MinProtoVersion(ir.Spec.VirtualHost.TLS.MinimumProtocolVersion)
-			enforceTLS = true
-		}
 		// passthrough is true if tls.secretName is not present, and
 		// tls.passthrough is set to true.
 		passthrough = tls.SecretName == "" && tls.Passthrough
 
-		// If not passthrough and secret is invalid, then set status
-		if sec == nil && !passthrough {
-			sw.SetInvalid("TLS Secret [%s] not found or is malformed", tls.SecretName)
-			return
+		if !passthrough {
+			secretName := splitSecret(tls.SecretName, ir.Namespace)
+			sec, err := b.lookupSecret(secretName, validSecret)
+			if err != nil {
+				sw.SetInvalid("Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
+				return
+			}
+
+			if !b.delegationPermitted(secretName, ir.Namespace) {
+				sw.SetInvalid("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", tls.SecretName)
+				return
+			}
+
+			svhost := b.lookupSecureVirtualHost(ir.Spec.VirtualHost.Fqdn)
+			svhost.Secret = sec
+			svhost.MinProtoVersion = annotation.MinProtoVersion(ir.Spec.VirtualHost.TLS.MinimumProtocolVersion)
+			enforceTLS = true
 		}
 	}
 
 	if ir.Spec.TCPProxy != nil && (passthrough || enforceTLS) {
 		b.processIngressRouteTCPProxy(sw, ir, nil, host)
 	}
+
 	b.processIngressRoutes(sw, ir, "", nil, host, ir.Spec.TCPProxy == nil && enforceTLS)
 }
 
@@ -474,26 +497,26 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 
 	var tlsValid bool
 	if tls := proxy.Spec.VirtualHost.TLS; tls != nil {
-
 		// tls is valid if passthrough == true XOR secretName != ""
 		tlsValid = tls.Passthrough != !isBlank(tls.SecretName)
 
-		// attach secrets to TLS enabled vhosts
-		m := splitSecret(tls.SecretName, proxy.Namespace)
-		sec := b.lookupSecret(m, validSecret)
-		if sec != nil {
-			if !b.delegationPermitted(m, proxy.Namespace) {
-				sw.SetInvalid("%s: certificate delegation not permitted", tls.SecretName)
+		// Attach secrets to TLS enabled vhosts.
+		if !tls.Passthrough {
+			secretName := splitSecret(tls.SecretName, proxy.Namespace)
+			sec, err := b.lookupSecret(secretName, validSecret)
+			if err != nil {
+				sw.SetInvalid("Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
 				return
 			}
+
+			if !b.delegationPermitted(secretName, proxy.Namespace) {
+				sw.SetInvalid("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", tls.SecretName)
+				return
+			}
+
 			svhost := b.lookupSecureVirtualHost(host)
 			svhost.Secret = sec
 			svhost.MinProtoVersion = annotation.MinProtoVersion(proxy.Spec.VirtualHost.TLS.MinimumProtocolVersion)
-		}
-
-		if sec == nil && !tls.Passthrough {
-			sw.SetInvalid("TLS Secret [%s] not found or is malformed", tls.SecretName)
-			return
 		}
 	}
 
@@ -1077,10 +1100,11 @@ func (b *Builder) lookupUpstreamValidation(uv *projcontour.UpstreamValidation, n
 		return nil, nil
 	}
 
-	cacert := b.lookupSecret(k8s.FullName{Name: uv.CACertificate, Namespace: namespace}, validCA)
-	if cacert == nil {
+	secretName := k8s.FullName{Name: uv.CACertificate, Namespace: namespace}
+	cacert, err := b.lookupSecret(secretName, validCA)
+	if err != nil {
 		// UpstreamValidation is requested, but cert is missing or not configured
-		return nil, errors.New("secret not found or misconfigured")
+		return nil, fmt.Errorf("invalid CA Secret %q: %s", secretName, err)
 	}
 
 	if uv.SubjectName == "" {
@@ -1346,12 +1370,28 @@ func defaultBackendRule(be *v1beta1.IngressBackend) v1beta1.IngressRule {
 }
 
 // validSecret returns true if the Secret contains certificate and private key material.
-func validSecret(s *v1.Secret) bool {
-	return s.Type == v1.SecretTypeTLS && len(s.Data[v1.TLSCertKey]) > 0 && len(s.Data[v1.TLSPrivateKeyKey]) > 0
+func validSecret(s *v1.Secret) error {
+	if s.Type != v1.SecretTypeTLS {
+		return fmt.Errorf("Secret type is not %q", v1.SecretTypeTLS)
+	}
+
+	if len(s.Data[v1.TLSCertKey]) == 0 {
+		return fmt.Errorf("empty %q key", v1.TLSCertKey)
+	}
+
+	if len(s.Data[v1.TLSPrivateKeyKey]) == 0 {
+		return fmt.Errorf("empty %q key", v1.TLSPrivateKeyKey)
+	}
+
+	return nil
 }
 
-func validCA(s *v1.Secret) bool {
-	return len(s.Data[CACertificateKey]) > 0
+func validCA(s *v1.Secret) error {
+	if len(s.Data[CACertificateKey]) == 0 {
+		return fmt.Errorf("empty %q key", CACertificateKey)
+	}
+
+	return nil
 }
 
 // routeEnforceTLS determines if the route should redirect the user to a secure TLS listener
