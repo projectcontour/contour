@@ -169,6 +169,10 @@ All authors to the project retain copyright to their work. However, to ensure
 that they are only submitting work that they have rights to, we are requiring
 everyone to acknowledge this by signing their work.
 
+Since this signature indicates your rights to the contribution and
+certifies the statements below, it must contain your real name and
+email address. Various forms of noreply email address must not be used.
+
 Any copyright notices in this repository should specify the authors as "The
 project authors".
 
@@ -180,7 +184,7 @@ Signed-off-by: David Cheney <cheneyd@vmware.com>
 
 This can easily be done with the `--signoff` option to `git commit`.
 
-By doing this you state that you can certify the following (from https://developercertificate.org/):
+By doing this you state that you can certify the following (from [https://developercertificate.org/][5]):
 
 ```
 Developer Certificate of Origin
