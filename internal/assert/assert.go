@@ -55,6 +55,9 @@ func (a Assert) Equal(want, got interface{}) {
 }
 
 func unmarshalAny(a *any.Any) proto.Message {
+	if a == nil {
+		return nil
+	}
 	pb, err := ptypes.Empty(a)
 	if err != nil {
 		panic(err.Error())

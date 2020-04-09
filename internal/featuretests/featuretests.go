@@ -24,7 +24,7 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
-	envoy "github.com/envoyproxy/go-control-plane/pkg/cache"
+	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
@@ -46,11 +46,11 @@ import (
 )
 
 const (
-	endpointType = envoy.EndpointType // nolint:varcheck,deadcode
-	clusterType  = envoy.ClusterType
-	routeType    = envoy.RouteType
-	listenerType = envoy.ListenerType
-	secretType   = envoy.SecretType
+	endpointType = resource.EndpointType // nolint:varcheck,deadcode
+	clusterType  = resource.ClusterType
+	routeType    = resource.RouteType
+	listenerType = resource.ListenerType
+	secretType   = resource.SecretType
 	statsAddress = "0.0.0.0"
 	statsPort    = 8002
 )
