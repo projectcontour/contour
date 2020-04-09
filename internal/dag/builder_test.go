@@ -67,6 +67,15 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	fallbackCertificateSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "fallbacksecret",
+			Namespace: "default",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+	}
+
 	cert1 := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ca",
@@ -3303,9 +3312,11 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		objs                  []interface{}
-		disablePermitInsecure bool
-		want                  []Vertex
+		objs                         []interface{}
+		disablePermitInsecure        bool
+		fallbackCertificateName      string
+		fallbackCertificateNamespace string
+		want                         []Vertex
 	}{
 		"insert ingress w/ default backend w/o matching service": {
 			objs: []interface{}{
@@ -6375,12 +6386,317 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"httpproxy with fallback certificate enabled": {
+			fallbackCertificateName:      "fallbacksecret",
+			fallbackCertificateNamespace: "default",
+			objs: []interface{}{
+				sec1,
+				s9,
+				fallbackCertificateSecret,
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "nginx",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "example.com",
+							TLS: &projcontour.TLS{
+								SecretName:                sec1.Name,
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
+								Name: "nginx",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", routeUpgrade("/", service(s9))),
+					),
+				},
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:   "example.com",
+								routes: routes(routeUpgrade("/", service(s9))),
+							},
+							MinProtoVersion:     envoy_api_v2_auth.TlsParameters_TLSv1_1,
+							Secret:              secret(sec1),
+							FallbackCertificate: secret(fallbackCertificateSecret),
+						},
+					),
+				},
+			),
+		},
+		"httpproxy with fallback certificate enabled - no tls secret": {
+			fallbackCertificateName:      "fallbacksecret",
+			fallbackCertificateNamespace: "default",
+			objs: []interface{}{
+				sec1,
+				s9,
+				fallbackCertificateSecret,
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "nginx",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "example.com",
+							TLS: &projcontour.TLS{
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
+								Name: "nginx",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+			},
+			want: nil,
+		},
+		"httpproxy with fallback certificate enabled along with ClientValidation": {
+			fallbackCertificateName:      "fallbacksecret",
+			fallbackCertificateNamespace: "default",
+			objs: []interface{}{
+				sec1,
+				s9,
+				fallbackCertificateSecret,
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "nginx",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "example.com",
+							TLS: &projcontour.TLS{
+								EnableFallbackCertificate: true,
+								ClientValidation: &projcontour.DownstreamValidation{
+									CACertificate: cert1.Name,
+								},
+							},
+						},
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
+								Name: "nginx",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+			},
+			want: nil,
+		},
+		"httpproxy with fallback certificate enabled - another not enabled": {
+			fallbackCertificateName:      "fallbacksecret",
+			fallbackCertificateNamespace: "default",
+			objs: []interface{}{
+				sec1,
+				s9,
+				fallbackCertificateSecret,
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "nginx",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "example.com",
+							TLS: &projcontour.TLS{
+								SecretName:                sec1.Name,
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
+								Name: "nginx",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "nginx-disabled",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "projectcontour.io",
+							TLS: &projcontour.TLS{
+								SecretName:                sec1.Name,
+								EnableFallbackCertificate: false,
+							},
+						},
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
+								Name: "nginx",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", routeUpgrade("/", service(s9))),
+						virtualhost("projectcontour.io", routeUpgrade("/", service(s9))),
+					),
+				},
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:   "example.com",
+								routes: routes(routeUpgrade("/", service(s9))),
+							},
+							MinProtoVersion:     envoy_api_v2_auth.TlsParameters_TLSv1_1,
+							Secret:              secret(sec1),
+							FallbackCertificate: secret(fallbackCertificateSecret),
+						},
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:   "projectcontour.io",
+								routes: routes(routeUpgrade("/", service(s9))),
+							},
+							MinProtoVersion:     envoy_api_v2_auth.TlsParameters_TLSv1_1,
+							Secret:              secret(sec1),
+							FallbackCertificate: nil,
+						},
+					),
+				},
+			),
+		},
+		"httpproxy with fallback certificate enabled - bad fallback cert": {
+			fallbackCertificateName:      "fallbacksecret",
+			fallbackCertificateNamespace: "badnamespaces",
+			objs: []interface{}{
+				sec1,
+				s9,
+				fallbackCertificateSecret,
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "nginx",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "example.com",
+							TLS: &projcontour.TLS{
+								SecretName: sec1.Name,
+							},
+						},
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
+								Name: "nginx",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", routeUpgrade("/", service(s9))),
+					),
+				},
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:   "example.com",
+								routes: routes(routeUpgrade("/", service(s9))),
+							},
+							MinProtoVersion:     envoy_api_v2_auth.TlsParameters_TLSv1_1,
+							Secret:              secret(sec1),
+							FallbackCertificate: nil,
+						},
+					),
+				},
+			),
+		},
+		"httpproxy with fallback certificate disabled - fallback cert specified": {
+			fallbackCertificateName:      "fallbacksecret",
+			fallbackCertificateNamespace: "default",
+			objs: []interface{}{
+				sec1,
+				s9,
+				fallbackCertificateSecret,
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "nginx",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "example.com",
+							TLS: &projcontour.TLS{
+								SecretName:                sec1.Name,
+								EnableFallbackCertificate: false,
+							},
+						},
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
+								Name: "nginx",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", routeUpgrade("/", service(s9))),
+					),
+				},
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:   "example.com",
+								routes: routes(routeUpgrade("/", service(s9))),
+							},
+							MinProtoVersion:     envoy_api_v2_auth.TlsParameters_TLSv1_1,
+							Secret:              secret(sec1),
+							FallbackCertificate: nil,
+						},
+					),
+				},
+			),
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
 				DisablePermitInsecure: tc.disablePermitInsecure,
+				FallbackCertificate: &k8s.FullName{
+					Name:      tc.fallbackCertificateName,
+					Namespace: tc.fallbackCertificateNamespace,
+				},
 				Source: KubernetesCache{
 					FieldLogger: testLogger(t),
 				},

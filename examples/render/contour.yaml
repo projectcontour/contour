@@ -55,6 +55,12 @@ data:
     tls:
     #   minimum TLS version that Contour will negotiate
     #   minimum-protocol-version: "1.1"
+      fallback-certificate:
+    #   name: fallback-secret-name
+    #   namespace: projectcontour
+    #   minimum TLS version that Contour will negotiate
+    #   minimum-protocol-version: "1.1"
+
     # The following config shows the defaults for the leader election.
     # leaderelection:
     #   configmap-name: leader-elect
@@ -420,6 +426,11 @@ spec:
                       required:
                       - caSecret
                       type: object
+                    enableFallbackCertificate:
+                      description: EnableFallbackCertificate defines if the vhost
+                        should allow a default certificate to be applied which handles
+                        all requests which don't match the SNI defined in this vhost
+                      type: boolean
                     minimumProtocolVersion:
                       description: Minimum TLS version this vhost should negotiate
                       type: string
@@ -1244,6 +1255,11 @@ spec:
                       required:
                       - caSecret
                       type: object
+                    enableFallbackCertificate:
+                      description: EnableFallbackCertificate defines if the vhost
+                        should allow a default certificate to be applied which handles
+                        all requests which don't match the SNI defined in this vhost
+                      type: boolean
                     minimumProtocolVersion:
                       description: Minimum TLS version this vhost should negotiate
                       type: string

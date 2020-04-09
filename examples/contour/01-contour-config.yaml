@@ -23,6 +23,12 @@ data:
     tls:
     #   minimum TLS version that Contour will negotiate
     #   minimum-protocol-version: "1.1"
+      fallback-certificate:
+    #   name: fallback-secret-name
+    #   namespace: projectcontour
+    #   minimum TLS version that Contour will negotiate
+    #   minimum-protocol-version: "1.1"
+
     # The following config shows the defaults for the leader election.
     # leaderelection:
     #   configmap-name: leader-elect

@@ -1618,6 +1618,19 @@ when an external client establishes a TLS connection to Envoy.</p>
 </ol>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>enableFallbackCertificate</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>EnableFallbackCertificate defines if the vhost should allow a default certificate to
+be applied which handles all requests which don&rsquo;t match the SNI defined in this vhost</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.TLSCertificateDelegationSpec">TLSCertificateDelegationSpec

@@ -130,6 +130,10 @@ type TLS struct {
 	// 3. Specifies how the client certificate will be validated.
 	// +optional
 	ClientValidation *DownstreamValidation `json:"clientValidation,omitempty"`
+
+	// EnableFallbackCertificate defines if the vhost should allow a default certificate to
+	// be applied which handles all requests which don't match the SNI defined in this vhost
+	EnableFallbackCertificate bool `json:"enableFallbackCertificate,omitempty"`
 }
 
 // Route contains the set of routes for a virtual host.

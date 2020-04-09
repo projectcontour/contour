@@ -189,6 +189,19 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 
 		v.routes[name].VirtualHosts = append(v.routes[name].VirtualHosts,
 			envoy.VirtualHost(svh.VirtualHost.Name, routes...))
+
+		// A fallback route contains all the routes that match a vhost who has enabled.
+		// When a request is received, the default TLS filterchain will accept the connection,
+		// and this routing table in RDS defines where the request proxies next.
+		if svh.FallbackCertificate != nil {
+			// Add fallback route if not already
+			if _, ok := v.routes[ENVOY_FALLBACK_CERTIFICATE]; !ok {
+				v.routes[ENVOY_FALLBACK_CERTIFICATE] = envoy.RouteConfiguration(ENVOY_FALLBACK_CERTIFICATE)
+			}
+
+			v.routes[ENVOY_FALLBACK_CERTIFICATE].VirtualHosts = append(v.routes[ENVOY_FALLBACK_CERTIFICATE].VirtualHosts,
+				envoy.VirtualHost(svh.Name, routes...))
+		}
 	}
 }
 

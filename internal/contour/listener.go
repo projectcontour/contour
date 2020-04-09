@@ -33,6 +33,7 @@ import (
 
 const (
 	ENVOY_HTTP_LISTENER            = "ingress_http"
+	ENVOY_FALLBACK_CERTIFICATE     = "ingress_fallbackcert"
 	ENVOY_HTTPS_LISTENER           = "ingress_https"
 	DEFAULT_HTTP_ACCESS_LOG        = "/dev/stdout"
 	DEFAULT_HTTP_LISTENER_ADDRESS  = "0.0.0.0"
@@ -294,8 +295,8 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 
 	lv.visit(root)
 
-	// Add a listener if there are vhosts bound to http.
 	if lv.http {
+		// Add a listener if there are vhosts bound to http.
 		cm := envoy.HTTPConnectionManagerBuilder().
 			RouteConfigName(ENVOY_HTTP_LISTENER).
 			MetricsPrefix(ENVOY_HTTP_LISTENER).
@@ -310,7 +311,6 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 			proxyProtocol(lvc.UseProxyProto),
 			cm,
 		)
-
 	}
 
 	// Remove the https listener if there are no vhosts bound to it.
@@ -402,6 +402,33 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 
 		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains,
 			envoy.FilterChainTLS(vh.VirtualHost.Name, downstreamTLS, filters))
+
+		// If this VirtualHost has enabled the fallback certificate then set a default FilterChain which will allow
+		// routes with this vhost to accept non SNI TLS requests
+		if vh.FallbackCertificate != nil && !envoy.ContainsFallbackFilterChain(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains) {
+
+			// Choose the higher of the configured or requested TLS version.
+			vers := max(v.ListenerVisitorConfig.minProtoVersion(), v.ListenerVisitorConfig.MinimumProtocolVersion)
+
+			downstreamTLS = envoy.DownstreamTLSContext(
+				vh.FallbackCertificate,
+				vers,
+				vh.DownstreamValidation,
+				alpnProtos...)
+
+			// Default filter chain
+			filters = envoy.Filters(
+				envoy.HTTPConnectionManagerBuilder().
+					RouteConfigName(ENVOY_FALLBACK_CERTIFICATE).
+					MetricsPrefix(ENVOY_HTTPS_LISTENER).
+					AccessLoggers(v.ListenerVisitorConfig.newSecureAccessLog()).
+					RequestTimeout(v.ListenerVisitorConfig.requestTimeout()).
+					Get(),
+			)
+
+			v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains,
+				envoy.FilterChainTLSFallback(downstreamTLS, filters))
+		}
 
 	default:
 		// recurse
