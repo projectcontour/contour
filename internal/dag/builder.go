@@ -50,6 +50,8 @@ type Builder struct {
 
 	orphaned map[k8s.FullName]bool
 
+	FallbackCertificate *k8s.FullName
+
 	StatusWriter
 }
 
@@ -502,6 +504,7 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 
 		// Attach secrets to TLS enabled vhosts.
 		if !tls.Passthrough {
+
 			secretName := splitSecret(tls.SecretName, proxy.Namespace)
 			sec, err := b.lookupSecret(secretName, validSecret)
 			if err != nil {
@@ -516,7 +519,28 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 
 			svhost := b.lookupSecureVirtualHost(host)
 			svhost.Secret = sec
-			svhost.MinProtoVersion = annotation.MinProtoVersion(proxy.Spec.VirtualHost.TLS.MinimumProtocolVersion)
+			svhost.MinProtoVersion = annotation.MinProtoVersion(tls.MinimumProtocolVersion)
+
+			// Check if FallbackCertificate && ClientValidation are both enabled in the same vhost
+			if tls.EnableFallbackCertificate && tls.ClientValidation != nil {
+				sw.SetInvalid("Spec.Virtualhost.TLS fallback & client validation are incompatible together")
+				return
+			}
+
+			// If FallbackCertificate is enabled, but no cert passed, set error
+			if tls.EnableFallbackCertificate {
+				if b.FallbackCertificate == nil {
+					sw.SetInvalid("Spec.Virtualhost.TLS enabled fallback but the fallback Certificate Secret is not configured in Contour configuration file")
+					return
+				}
+
+				sec, err = b.lookupSecret(k8s.FullName{Name: b.FallbackCertificate.Name, Namespace: b.FallbackCertificate.Namespace}, validSecret)
+				if err != nil {
+					sw.SetInvalid("Spec.Virtualhost.TLS fallback certificate Secret %q is invalid: %s", b.FallbackCertificate, err)
+					return
+				}
+				svhost.FallbackCertificate = sec
+			}
 
 			// Fill in DownstreamValidation when external client validation is enabled.
 			if tls.ClientValidation != nil {

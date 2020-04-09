@@ -1135,6 +1135,11 @@ spec:
                       required:
                       - caSecret
                       type: object
+                    enableFallbackCertificate:
+                      description: EnableFallbackCertificate defines if the vhost
+                        should allow a default certificate to be applied which handles
+                        all requests which don't match the SNI defined in this vhost.
+                      type: boolean
                     minimumProtocolVersion:
                       description: Minimum TLS version this vhost should negotiate
                       type: string

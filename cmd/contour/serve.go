@@ -138,9 +138,23 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// Create a set of SharedInformerFactories for each root-ingressroute namespace (if defined)
 	namespacedInformerFactories := map[string]coreinformers.SharedInformerFactory{}
 
-	for _, namespace := range ctx.ingressRouteRootNamespaces() {
-		if _, ok := namespacedInformerFactories[namespace]; !ok {
-			namespacedInformerFactories[namespace] = clients.NewInformerFactoryForNamespace(namespace)
+	// Validate fallback certificate parameters
+	fallbackCert, err := ctx.fallbackCertificate()
+	if err != nil {
+		log.WithField("context", "fallback-certificate").Fatalf("invalid fallback certificate configuration: %q", err)
+	}
+
+	if rootNamespaces := ctx.ingressRouteRootNamespaces(); len(rootNamespaces) > 0 {
+		// Add the FallbackCertificateNamespace to the root-namespaces if not already
+		if !contains(rootNamespaces, ctx.TLSConfig.FallbackCertificate.Namespace) && fallbackCert != nil {
+			rootNamespaces = append(rootNamespaces, ctx.FallbackCertificate.Namespace)
+			log.WithField("context", "fallback-certificate").Infof("fallback certificate namespace %q not defined in 'root-namespaces', adding namespace to watch", ctx.FallbackCertificate.Namespace)
+		}
+
+		for _, namespace := range rootNamespaces {
+			if _, ok := namespacedInformerFactories[namespace]; !ok {
+				namespacedInformerFactories[namespace] = clients.NewInformerFactoryForNamespace(namespace)
+			}
 		}
 	}
 
@@ -192,6 +206,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			DisablePermitInsecure: ctx.DisablePermitInsecure,
 		},
 		FieldLogger: log.WithField("context", "contourEventHandler"),
+	}
+
+	// Set the fallbackcertificate if configured
+	if fallbackCert != nil {
+		log.WithField("context", "fallback-certificate").Infof("enabled fallback certificate with secret: %q", fallbackCert)
+
+		eventHandler.FallbackCertificate = fallbackCert
 	}
 
 	// wrap eventHandler in a converter for objects from the dynamic client.
@@ -376,6 +397,15 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// GO!
 	return g.Run()
+}
+
+func contains(namespaces []string, ns string) bool {
+	for _, namespace := range namespaces {
+		if ns == namespace {
+			return true
+		}
+	}
+	return false
 }
 
 type informer interface {

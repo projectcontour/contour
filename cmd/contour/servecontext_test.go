@@ -25,6 +25,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/projectcontour/contour/internal/k8s"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/projectcontour/contour/internal/assert"
 	"google.golang.org/grpc"
@@ -195,6 +197,72 @@ leaderelection:
 
 			if diff := cmp.Diff(*want, *got, cmp.AllowUnexported(serveContext{})); diff != "" {
 				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestFallbackCertificateParams(t *testing.T) {
+	tests := map[string]struct {
+		ctx         serveContext
+		want        *k8s.FullName
+		expecterror bool
+	}{
+		"fallback cert params passed correctly": {
+			ctx: serveContext{
+				TLSConfig: TLSConfig{
+					FallbackCertificate: FallbackCertificate{
+						Name:      "fallbacksecret",
+						Namespace: "root-namespace",
+					},
+				},
+			},
+			want: &k8s.FullName{
+				Name:      "fallbacksecret",
+				Namespace: "root-namespace",
+			},
+			expecterror: false,
+		},
+		"missing namespace": {
+			ctx: serveContext{
+				TLSConfig: TLSConfig{
+					FallbackCertificate: FallbackCertificate{
+						Name: "fallbacksecret",
+					},
+				},
+			},
+			want:        nil,
+			expecterror: true,
+		},
+		"missing name": {
+			ctx: serveContext{
+				TLSConfig: TLSConfig{
+					FallbackCertificate: FallbackCertificate{
+						Namespace: "root-namespace",
+					},
+				},
+			},
+			want:        nil,
+			expecterror: true,
+		},
+		"fallback cert not defined": {
+			ctx:         serveContext{},
+			want:        nil,
+			expecterror: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := tc.ctx.fallbackCertificate()
+
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+
+			goterror := err != nil
+			if goterror != tc.expecterror {
+				t.Errorf("Expected Fallback Certificate error: %s", err)
 			}
 		})
 	}
