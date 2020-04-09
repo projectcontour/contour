@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"fmt"
 	"testing"
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
@@ -2084,7 +2085,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{Name: ir25.Name, Namespace: ir25.Namespace}: {
 					Object:      ir25,
 					Status:      k8s.StatusInvalid,
-					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
+					Description: fmt.Sprintf("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", k8s.ToFullName(sec2)),
 					Vhost:       ir25.Spec.VirtualHost.Fqdn,
 				},
 			},
@@ -2099,7 +2100,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{Name: ir26.Name, Namespace: ir26.Namespace}: {
 					Object:      ir26,
 					Status:      k8s.StatusInvalid,
-					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
+					Description: fmt.Sprintf("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", k8s.ToFullName(sec2)),
 					Vhost:       ir26.Spec.VirtualHost.Fqdn,
 				},
 			},
@@ -2114,7 +2115,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{Name: proxy19.Name, Namespace: proxy19.Namespace}: {
 					Object:      proxy19,
 					Status:      k8s.StatusInvalid,
-					Description: sec2.Namespace + "/" + sec2.Name + ": certificate delegation not permitted",
+					Description: fmt.Sprintf("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", k8s.ToFullName(sec2)),
 					Vhost:       proxy19.Spec.VirtualHost.Fqdn,
 				},
 			},
@@ -2144,7 +2145,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				{Name: ir28.Name, Namespace: ir28.Namespace}: {
 					Object:      ir28,
 					Status:      k8s.StatusInvalid,
-					Description: "TLS Secret [heptio-contour/ssl-cert] not found or is malformed",
+					Description: "Spec.VirtualHost.TLS Secret \"heptio-contour/ssl-cert\" is invalid: Secret not found",
 					Vhost:       ir28.Spec.VirtualHost.Fqdn,
 				},
 			},
