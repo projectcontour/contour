@@ -27,6 +27,7 @@ import (
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -135,8 +136,9 @@ func TestRouteCacheQuery(t *testing.T) {
 
 func TestRouteVisit(t *testing.T) {
 	tests := map[string]struct {
-		objs []interface{}
-		want map[string]*v2.RouteConfiguration
+		objs                []interface{}
+		fallbackCertificate *k8s.FullName
+		want                map[string]*v2.RouteConfiguration
 	}{
 		"nothing": {
 			objs: nil,
@@ -2027,11 +2029,727 @@ func TestRouteVisit(t *testing.T) {
 				),
 			),
 		},
+		"httpproxy with fallback certificate": {
+			fallbackCertificate: &k8s.FullName{
+				Name:      "fallbacksecret",
+				Namespace: "default",
+			},
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &projcontour.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}, {
+								Name: "backendtwo",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallbacksecret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backendtwo",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Redirect{
+								Redirect: &envoy_api_v2_route.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_api_v2_route.RedirectAction_HttpsRedirect{
+										HttpsRedirect: true,
+									},
+								},
+							},
+						},
+					),
+				),
+				envoy.RouteConfiguration("https/www.example.com",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Route{
+								Route: &envoy_api_v2_route.RouteAction{
+									ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+											Clusters: weightedClusters(
+												weightedCluster("default/backend/80/da39a3ee5e", 1),
+												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
+											),
+											TotalWeight: protobuf.UInt32(2),
+										},
+									},
+								},
+							},
+						},
+					)),
+				envoy.RouteConfiguration(ENVOY_FALLBACK_CERTIFICATE,
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Route{
+								Route: &envoy_api_v2_route.RouteAction{
+									ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+											Clusters: weightedClusters(
+												weightedCluster("default/backend/80/da39a3ee5e", 1),
+												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
+											),
+											TotalWeight: protobuf.UInt32(2),
+										},
+									},
+								},
+							},
+						},
+					)),
+			),
+		},
+		"httpproxy with fallback certificate - one enabled": {
+			fallbackCertificate: &k8s.FullName{
+				Name:      "fallbacksecret",
+				Namespace: "default",
+			},
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &projcontour.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: false,
+							},
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}, {
+								Name: "backendtwo",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple-enabled",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "projectcontour.io",
+							TLS: &projcontour.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}, {
+								Name: "backendtwo",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallbacksecret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backendtwo",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("projectcontour.io",
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Redirect{
+								Redirect: &envoy_api_v2_route.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_api_v2_route.RedirectAction_HttpsRedirect{
+										HttpsRedirect: true,
+									},
+								},
+							},
+						},
+					),
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Redirect{
+								Redirect: &envoy_api_v2_route.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_api_v2_route.RedirectAction_HttpsRedirect{
+										HttpsRedirect: true,
+									},
+								},
+							},
+						},
+					),
+				),
+				envoy.RouteConfiguration("https/projectcontour.io",
+					envoy.VirtualHost("projectcontour.io",
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Route{
+								Route: &envoy_api_v2_route.RouteAction{
+									ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+											Clusters: weightedClusters(
+												weightedCluster("default/backend/80/da39a3ee5e", 1),
+												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
+											),
+											TotalWeight: protobuf.UInt32(2),
+										},
+									},
+								},
+							},
+						},
+					)),
+				envoy.RouteConfiguration("https/www.example.com",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Route{
+								Route: &envoy_api_v2_route.RouteAction{
+									ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+											Clusters: weightedClusters(
+												weightedCluster("default/backend/80/da39a3ee5e", 1),
+												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
+											),
+											TotalWeight: protobuf.UInt32(2),
+										},
+									},
+								},
+							},
+						},
+					)),
+				envoy.RouteConfiguration(ENVOY_FALLBACK_CERTIFICATE,
+					envoy.VirtualHost("projectcontour.io",
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Route{
+								Route: &envoy_api_v2_route.RouteAction{
+									ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+											Clusters: weightedClusters(
+												weightedCluster("default/backend/80/da39a3ee5e", 1),
+												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
+											),
+											TotalWeight: protobuf.UInt32(2),
+										},
+									},
+								},
+							},
+						},
+					)),
+			),
+		},
+		"httpproxy with fallback certificate - two enabled": {
+			fallbackCertificate: &k8s.FullName{
+				Name:      "fallbacksecret",
+				Namespace: "default",
+			},
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &projcontour.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}, {
+								Name: "backendtwo",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple-enabled",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "projectcontour.io",
+							TLS: &projcontour.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}, {
+								Name: "backendtwo",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallbacksecret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backendtwo",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("projectcontour.io",
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Redirect{
+								Redirect: &envoy_api_v2_route.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_api_v2_route.RedirectAction_HttpsRedirect{
+										HttpsRedirect: true,
+									},
+								},
+							},
+						},
+					),
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Redirect{
+								Redirect: &envoy_api_v2_route.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_api_v2_route.RedirectAction_HttpsRedirect{
+										HttpsRedirect: true,
+									},
+								},
+							},
+						},
+					),
+				),
+				envoy.RouteConfiguration("https/projectcontour.io",
+					envoy.VirtualHost("projectcontour.io",
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Route{
+								Route: &envoy_api_v2_route.RouteAction{
+									ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+											Clusters: weightedClusters(
+												weightedCluster("default/backend/80/da39a3ee5e", 1),
+												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
+											),
+											TotalWeight: protobuf.UInt32(2),
+										},
+									},
+								},
+							},
+						},
+					)),
+				envoy.RouteConfiguration("https/www.example.com",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Route{
+								Route: &envoy_api_v2_route.RouteAction{
+									ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+											Clusters: weightedClusters(
+												weightedCluster("default/backend/80/da39a3ee5e", 1),
+												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
+											),
+											TotalWeight: protobuf.UInt32(2),
+										},
+									},
+								},
+							},
+						},
+					)),
+				envoy.RouteConfiguration(ENVOY_FALLBACK_CERTIFICATE,
+					envoy.VirtualHost("projectcontour.io",
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Route{
+								Route: &envoy_api_v2_route.RouteAction{
+									ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+											Clusters: weightedClusters(
+												weightedCluster("default/backend/80/da39a3ee5e", 1),
+												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
+											),
+											TotalWeight: protobuf.UInt32(2),
+										},
+									},
+								},
+							},
+						},
+					), envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Route{
+								Route: &envoy_api_v2_route.RouteAction{
+									ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+											Clusters: weightedClusters(
+												weightedCluster("default/backend/80/da39a3ee5e", 1),
+												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
+											),
+											TotalWeight: protobuf.UInt32(2),
+										},
+									},
+								},
+							},
+						},
+					)),
+			),
+		},
+		"httpproxy with fallback certificate - bad global cert": {
+			fallbackCertificate: &k8s.FullName{
+				Name:      "fallbacksecret",
+				Namespace: "badnamespace",
+			},
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &projcontour.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}, {
+								Name: "backendtwo",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallbacksecret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backendtwo",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(envoy.RouteConfiguration("ingress_http")),
+		},
+		"httpproxy with fallback certificate - no fqdn enabled": {
+			fallbackCertificate: &k8s.FullName{
+				Name:      "fallbacksecret",
+				Namespace: "default",
+			},
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &projcontour.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: false,
+							},
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}, {
+								Name: "backendtwo",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallbacksecret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backendtwo",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Redirect{
+								Redirect: &envoy_api_v2_route.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_api_v2_route.RedirectAction_HttpsRedirect{
+										HttpsRedirect: true,
+									},
+								},
+							},
+						},
+					),
+				),
+				envoy.RouteConfiguration("https/www.example.com",
+					envoy.VirtualHost("www.example.com",
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Route{
+								Route: &envoy_api_v2_route.RouteAction{
+									ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_api_v2_route.WeightedCluster{
+											Clusters: weightedClusters(
+												weightedCluster("default/backend/80/da39a3ee5e", 1),
+												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
+											),
+											TotalWeight: protobuf.UInt32(2),
+										},
+									},
+								},
+							},
+						},
+					)),
+			),
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			root := buildDAG(t, tc.objs...)
+			root := buildDAGFallback(t, tc.fallbackCertificate, tc.objs...)
 			got := visitRoutes(root)
 			assert.Equal(t, tc.want, got)
 		})

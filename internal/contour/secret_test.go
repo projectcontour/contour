@@ -22,6 +22,7 @@ import (
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -480,6 +481,21 @@ func buildDAG(t *testing.T, objs ...interface{}) *dag.DAG {
 		Source: dag.KubernetesCache{
 			FieldLogger: testLogger(t),
 		},
+	}
+
+	for _, o := range objs {
+		builder.Source.Insert(o)
+	}
+	return builder.Build()
+}
+
+// buildDAGFallback produces a dag.DAG from the supplied objects with a fallback cert configured.
+func buildDAGFallback(t *testing.T, fallbackCertificate *k8s.FullName, objs ...interface{}) *dag.DAG {
+	builder := dag.Builder{
+		Source: dag.KubernetesCache{
+			FieldLogger: testLogger(t),
+		},
+		FallbackCertificate: fallbackCertificate,
 	}
 
 	for _, o := range objs {

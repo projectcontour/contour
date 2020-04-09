@@ -261,6 +261,9 @@ type SecureVirtualHost struct {
 	// The cert and key for this host.
 	Secret *Secret
 
+	// FallbackCertificate
+	FallbackCertificate *Secret
+
 	// Service to TCP proxy all incoming connections.
 	*TCPProxy
 

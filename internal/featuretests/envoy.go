@@ -27,6 +27,7 @@ import (
 	envoy_config_v2_tcpproxy "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/proto"
+	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -229,6 +230,35 @@ func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_liste
 				peerValidationContext,
 				alpn...),
 			envoy.Filters(filter),
+		),
+	}
+}
+
+func filterchaintlsfallback(domain string, domainSecret, fallbackSecret *v1.Secret, filter *envoy_api_v2_listener.Filter, peerValidationContext *dag.PeerValidationContext, alpn ...string) []*envoy_api_v2_listener.FilterChain {
+	return []*envoy_api_v2_listener.FilterChain{
+		envoy.FilterChainTLS(
+			domain,
+			envoy.DownstreamTLSContext(
+				&dag.Secret{Object: domainSecret},
+				envoy_api_v2_auth.TlsParameters_TLSv1_1,
+				peerValidationContext,
+				alpn...),
+			envoy.Filters(filter),
+		),
+		envoy.FilterChainTLSFallback(
+			envoy.DownstreamTLSContext(
+				&dag.Secret{Object: fallbackSecret},
+				envoy_api_v2_auth.TlsParameters_TLSv1_1,
+				peerValidationContext,
+				alpn...),
+			envoy.Filters(
+				envoy.HTTPConnectionManagerBuilder().
+					RouteConfigName(contour.ENVOY_FALLBACK_CERTIFICATE).
+					MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
+					AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
+					RequestTimeout(0).
+					Get(),
+			),
 		),
 	}
 }

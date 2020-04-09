@@ -284,7 +284,7 @@ func FilterChains(filters ...*envoy_api_v2_listener.Filter) []*envoy_api_v2_list
 	}
 }
 
-// FilterChainTLS returns a TLS enabled envoy_api_v2_listener.FilterChain,
+// FilterChainTLS returns a TLS enabled envoy_api_v2_listener.FilterChain.
 func FilterChainTLS(domain string, downstream *envoy_api_v2_auth.DownstreamTlsContext, filters []*envoy_api_v2_listener.Filter) *envoy_api_v2_listener.FilterChain {
 	fc := &envoy_api_v2_listener.FilterChain{
 		Filters: filters,
@@ -300,6 +300,22 @@ func FilterChainTLS(domain string, downstream *envoy_api_v2_auth.DownstreamTlsCo
 	return fc
 }
 
+// FilterChainTLSFallback returns a TLS enabled envoy_api_v2_listener.FilterChain conifgured for FallbackCertificate.
+func FilterChainTLSFallback(downstream *envoy_api_v2_auth.DownstreamTlsContext, filters []*envoy_api_v2_listener.Filter) *envoy_api_v2_listener.FilterChain {
+	fc := &envoy_api_v2_listener.FilterChain{
+		Name:    "fallback-certificate",
+		Filters: filters,
+		FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+			TransportProtocol: "tls",
+		},
+	}
+	// Attach TLS data to this listener if provided.
+	if downstream != nil {
+		fc.TransportSocket = DownstreamTLSTransportSocket(downstream)
+	}
+	return fc
+}
+
 // ListenerFilters returns a []*envoy_api_v2_listener.ListenerFilter for the supplied listener filters.
 func ListenerFilters(filters ...*envoy_api_v2_listener.ListenerFilter) []*envoy_api_v2_listener.ListenerFilter {
 	return filters
@@ -311,4 +327,13 @@ func toAny(pb proto.Message) *any.Any {
 		panic(err.Error())
 	}
 	return a
+}
+
+func ContainsFallbackFilterChain(filterchains []*envoy_api_v2_listener.FilterChain) bool {
+	for _, fc := range filterchains {
+		if fc.Name == "fallback-certificate" {
+			return true
+		}
+	}
+	return false
 }

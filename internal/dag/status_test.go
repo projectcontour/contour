@@ -46,6 +46,15 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		Data: sec1.Data,
 	}
 
+	fallbackSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "fallbacksecret",
+			Namespace: "roots",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+	}
+
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -1885,9 +1894,63 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	fallbackCertificate := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &projcontour.TLS{
+					SecretName:                "ssl-cert",
+					EnableFallbackCertificate: true,
+				},
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	fallbackCertificateWithClientValidation := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &projcontour.TLS{
+					SecretName:                "ssl-cert",
+					EnableFallbackCertificate: true,
+					ClientValidation: &projcontour.DownstreamValidation{
+						CACertificate: "something",
+					},
+				},
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
-		objs []interface{}
-		want map[k8s.FullName]Status
+		objs                []interface{}
+		fallbackCertificate *k8s.FullName
+		want                map[k8s.FullName]Status
 	}{
 		"valid ingressroute": {
 			objs: []interface{}{ir1, s4},
@@ -2583,11 +2646,34 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				},
 			},
 		},
+		"invalid fallback certificate passed to contour": {
+			fallbackCertificate: &k8s.FullName{
+				Name:      "invalid",
+				Namespace: "invalid",
+			},
+			objs: []interface{}{fallbackCertificate, fallbackSecret, sec1, s4},
+			want: map[k8s.FullName]Status{
+				{Name: fallbackCertificate.Name, Namespace: fallbackCertificate.Namespace}: {Object: fallbackCertificate, Status: "invalid", Description: "Spec.Virtualhost.TLS fallback certificate Secret \"invalid/invalid\" is invalid: Secret not found", Vhost: "example.com"},
+			},
+		},
+		"fallback certificate requested but cert not configured in contour": {
+			objs: []interface{}{fallbackCertificate, fallbackSecret, sec1, s4},
+			want: map[k8s.FullName]Status{
+				{Name: fallbackCertificate.Name, Namespace: fallbackCertificate.Namespace}: {Object: fallbackCertificate, Status: "invalid", Description: "Spec.Virtualhost.TLS.FallbackCertificate requested but the fallback Certificate Secret is not configured in Contour configuration file", Vhost: "example.com"},
+			},
+		},
+		"fallback certificate requested and clientValidation also configured": {
+			objs: []interface{}{fallbackCertificateWithClientValidation, fallbackSecret, sec1, s4},
+			want: map[k8s.FullName]Status{
+				{Name: fallbackCertificateWithClientValidation.Name, Namespace: fallbackCertificateWithClientValidation.Namespace}: {Object: fallbackCertificateWithClientValidation, Status: "invalid", Description: "Spec.Virtualhost.TLS.FallbackCertificate & Spec.Virtualhost.TLS.ClientValidation are incompatible together", Vhost: "example.com"},
+			},
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
+				FallbackCertificate: tc.fallbackCertificate,
 				Source: KubernetesCache{
 					RootNamespaces: []string{"roots", "marketing"},
 					FieldLogger:    testLogger(t),

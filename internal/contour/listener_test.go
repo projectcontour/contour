@@ -17,12 +17,15 @@ import (
 	"path"
 	"testing"
 
+	"github.com/projectcontour/contour/internal/k8s"
+
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/golang/protobuf/proto"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -111,6 +114,21 @@ func TestListenerCacheQuery(t *testing.T) {
 			query: []string{"stats-listener"},
 			want:  nil,
 		},
+		"fallback match": {
+			contents: listenermap(&v2.Listener{
+				Name:         ENVOY_FALLBACK_CERTIFICATE,
+				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy.FilterChains(envoy.HTTPConnectionManager(ENVOY_FALLBACK_CERTIFICATE, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+			}),
+			query: []string{ENVOY_FALLBACK_CERTIFICATE},
+			want: []proto.Message{
+				&v2.Listener{
+					Name:         ENVOY_FALLBACK_CERTIFICATE,
+					Address:      envoy.SocketAddress("0.0.0.0", 8080),
+					FilterChains: envoy.FilterChains(envoy.HTTPConnectionManager(ENVOY_FALLBACK_CERTIFICATE, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -132,10 +150,17 @@ func TestListenerVisit(t *testing.T) {
 			Get()
 	}
 
+	fallbackCertFilter := envoy.HTTPConnectionManagerBuilder().
+		MetricsPrefix(ENVOY_HTTPS_LISTENER).
+		RouteConfigName(ENVOY_FALLBACK_CERTIFICATE).
+		AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+		Get()
+
 	tests := map[string]struct {
 		ListenerVisitorConfig
-		objs []interface{}
-		want map[string]*v2.Listener
+		fallbackCertificate *k8s.FullName
+		objs                []interface{}
+		want                map[string]*v2.Listener
 	}{
 		"nothing": {
 			objs: nil,
@@ -273,7 +298,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:         envoy.Filters(httpsFilterFor("whatever.example.com")),
 				}},
 			}),
@@ -360,13 +385,13 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"sortedfirst.example.com"},
 					},
-					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:         envoy.Filters(httpsFilterFor("sortedfirst.example.com")),
 				}, {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"sortedsecond.example.com"},
 					},
-					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:         envoy.Filters(httpsFilterFor("sortedsecond.example.com")),
 				}},
 			}),
@@ -482,7 +507,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:         envoy.Filters(httpsFilterFor("www.example.com")),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
@@ -563,7 +588,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:         envoy.Filters(httpsFilterFor("www.example.com")),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
@@ -637,7 +662,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:         envoy.Filters(httpsFilterFor("whatever.example.com")),
 				}},
 			}),
@@ -709,7 +734,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:         envoy.Filters(httpsFilterFor("whatever.example.com")),
 				}},
 			}),
@@ -778,7 +803,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters: envoy.Filters(envoy.HTTPConnectionManagerBuilder().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "whatever.example.com")).
@@ -847,7 +872,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"),
 					Filters:         envoy.Filters(httpsFilterFor("whatever.example.com")),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
@@ -918,7 +943,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"), // note, cannot downgrade from the configured version
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"), // note, cannot downgrade from the configured version
 					Filters:         envoy.Filters(httpsFilterFor("whatever.example.com")),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
@@ -989,7 +1014,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"), // note, cannot downgrade from the configured version
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"), // note, cannot downgrade from the configured version
 					Filters:         envoy.Filters(httpsFilterFor("whatever.example.com")),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
@@ -1060,7 +1085,342 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TransportSocket: transportSocket(envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"), // note, cannot downgrade from the configured version
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"), // note, cannot downgrade from the configured version
+					Filters:         envoy.Filters(httpsFilterFor("www.example.com")),
+				}},
+				ListenerFilters: envoy.ListenerFilters(
+					envoy.TLSInspector(),
+				),
+			}),
+		},
+		"httpproxy with fallback certificate": {
+			fallbackCertificate: &k8s.FullName{
+				Name:      "fallbacksecret",
+				Namespace: "default",
+			},
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &projcontour.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []projcontour.Route{
+							{
+								Services: []projcontour.Service{
+									{
+										Name: "backend",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallbacksecret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&v2.Listener{
+				Name:         ENVOY_HTTP_LISTENER,
+				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy.FilterChains(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+			}, &v2.Listener{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_api_v2_listener.FilterChain{{
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+						ServerNames: []string{"www.example.com"},
+					},
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					Filters:         envoy.Filters(httpsFilterFor("www.example.com")),
+				}, {
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+						TransportProtocol: "tls",
+					},
+					TransportSocket: transportSocket("fallbacksecret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					Filters:         envoy.Filters(fallbackCertFilter),
+					Name:            "fallback-certificate",
+				}},
+				ListenerFilters: envoy.ListenerFilters(
+					envoy.TLSInspector(),
+				),
+			}),
+		},
+		"multiple httpproxies with fallback certificate": {
+			fallbackCertificate: &k8s.FullName{
+				Name:      "fallbacksecret",
+				Namespace: "default",
+			},
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple2",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.another.com",
+							TLS: &projcontour.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []projcontour.Route{
+							{
+								Services: []projcontour.Service{
+									{
+										Name: "backend",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &projcontour.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []projcontour.Route{
+							{
+								Services: []projcontour.Service{
+									{
+										Name: "backend",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallbacksecret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&v2.Listener{
+				Name:         ENVOY_HTTP_LISTENER,
+				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy.FilterChains(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+			}, &v2.Listener{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_api_v2_listener.FilterChain{
+					{
+						FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+							ServerNames: []string{"www.another.com"},
+						},
+						TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						Filters:         envoy.Filters(httpsFilterFor("www.another.com")),
+					},
+					{
+						FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+							ServerNames: []string{"www.example.com"},
+						},
+						TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						Filters:         envoy.Filters(httpsFilterFor("www.example.com")),
+					},
+					{
+						FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+							TransportProtocol: "tls",
+						},
+						TransportSocket: transportSocket("fallbacksecret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						Filters:         envoy.Filters(fallbackCertFilter),
+						Name:            "fallback-certificate",
+					}},
+				ListenerFilters: envoy.ListenerFilters(
+					envoy.TLSInspector(),
+				),
+			}),
+		},
+		"httpproxy with fallback certificate - no cert passed": {
+			fallbackCertificate: &k8s.FullName{
+				Name:      "",
+				Namespace: "",
+			},
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &projcontour.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []projcontour.Route{
+							{
+								Services: []projcontour.Service{
+									{
+										Name: "backend",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(),
+		},
+		"httpproxy with fallback certificate - cert passed but vhost not enabled": {
+			fallbackCertificate: &k8s.FullName{
+				Name:      "fallbackcert",
+				Namespace: "default",
+			},
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &projcontour.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: false,
+							},
+						},
+						Routes: []projcontour.Route{
+							{
+								Services: []projcontour.Service{
+									{
+										Name: "backend",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&v2.Listener{
+				Name:         ENVOY_HTTP_LISTENER,
+				Address:      envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy.FilterChains(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+			}, &v2.Listener{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_api_v2_listener.FilterChain{{
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+						ServerNames: []string{"www.example.com"},
+					},
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:         envoy.Filters(httpsFilterFor("www.example.com")),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
@@ -1072,18 +1432,18 @@ func TestListenerVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			root := buildDAG(t, tc.objs...)
+			root := buildDAGFallback(t, tc.fallbackCertificate, tc.objs...)
 			got := visitListeners(root, &tc.ListenerVisitorConfig)
 			assert.Equal(t, tc.want, got)
 		})
 	}
 }
 
-func transportSocket(tlsMinProtoVersion envoy_api_v2_auth.TlsParameters_TlsProtocol, alpnprotos ...string) *envoy_api_v2_core.TransportSocket {
+func transportSocket(secretname string, tlsMinProtoVersion envoy_api_v2_auth.TlsParameters_TlsProtocol, alpnprotos ...string) *envoy_api_v2_core.TransportSocket {
 	secret := &dag.Secret{
 		Object: &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "secret",
+				Name:      secretname,
 				Namespace: "default",
 			},
 			Type: v1.SecretTypeTLS,

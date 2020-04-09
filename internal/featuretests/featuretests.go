@@ -62,6 +62,10 @@ func (d *discardWriter) Write(buf []byte) (int, error) {
 }
 
 func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEventHandler, *Contour, func()) {
+	return setupWithFallbackCert(t, "", "", opts...)
+}
+
+func setupWithFallbackCert(t *testing.T, fallbackCertName, fallbackCertNamespace string, opts ...func(*contour.EventHandler)) (cache.ResourceEventHandler, *Contour, func()) {
 	t.Parallel()
 
 	log := logrus.New()
@@ -93,6 +97,10 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
 				FieldLogger: log,
+			},
+			FallbackCertificate: &k8s.FullName{
+				Name:      fallbackCertName,
+				Namespace: fallbackCertNamespace,
 			},
 		},
 	}
