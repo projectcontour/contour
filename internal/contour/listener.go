@@ -23,7 +23,7 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	envoy_api_v2_accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
-	"github.com/envoyproxy/go-control-plane/pkg/cache"
+	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -270,7 +270,7 @@ func (c *ListenerCache) Query(names []string) []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
-func (*ListenerCache) TypeURL() string { return cache.ListenerType }
+func (*ListenerCache) TypeURL() string { return resource.ListenerType }
 
 type listenerVisitor struct {
 	*ListenerVisitorConfig
