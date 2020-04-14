@@ -17,8 +17,9 @@ import (
 	"sort"
 	"sync"
 
+	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
+
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/envoyproxy/go-control-plane/pkg/cache"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -72,7 +73,7 @@ func (c *ClusterCache) Query(names []string) []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
-func (*ClusterCache) TypeURL() string { return cache.ClusterType }
+func (*ClusterCache) TypeURL() string { return resource.ClusterType }
 
 type clusterVisitor struct {
 	clusters map[string]*v2.Cluster

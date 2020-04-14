@@ -20,7 +20,7 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
-	"github.com/envoyproxy/go-control-plane/pkg/cache"
+	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -96,7 +96,7 @@ func (e *EndpointsTranslator) Query(names []string) []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
-func (*EndpointsTranslator) TypeURL() string { return cache.EndpointType }
+func (*EndpointsTranslator) TypeURL() string { return resource.EndpointType }
 
 func (e *EndpointsTranslator) addEndpoints(ep *v1.Endpoints) {
 	e.recomputeClusterLoadAssignment(nil, ep)

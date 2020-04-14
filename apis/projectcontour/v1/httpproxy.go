@@ -120,6 +120,14 @@ type TLS struct {
 	// backing cluster.
 	// +optional
 	Passthrough bool `json:"passthrough,omitempty"`
+	// ClientValidation defines how to verify the client certificate
+	// when an external client establishes a TLS connection to Envoy.
+	// This setting:
+	// 1. Enables TLS client certificate validation.
+	// 2. Requires clients to present a TLS certificate (i.e. not optional validation).
+	// 3. Specifies how the client certificate will be validated.
+	// +optional
+	ClientValidation *DownstreamValidation `json:"clientValidation,omitempty"`
 }
 
 // Route contains the set of routes for a virtual host.
@@ -377,6 +385,15 @@ type UpstreamValidation struct {
 	CACertificate string `json:"caSecret"`
 	// Key which is expected to be present in the 'subjectAltName' of the presented certificate
 	SubjectName string `json:"subjectName"`
+}
+
+// DownstreamValidation defines how to verify the client certificate.
+type DownstreamValidation struct {
+	// Name of a Kubernetes secret that contains a CA certificate bundle.
+	// The client certificate must validate against the certificates in the bundle.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	CACertificate string `json:"caSecret"`
 }
 
 // Status reports the current state of the HTTPProxy.

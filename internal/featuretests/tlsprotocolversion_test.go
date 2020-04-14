@@ -96,6 +96,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 						MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
 						AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
 						Get(),
+					nil,
 					"h2", "http/1.1"),
 			},
 		),

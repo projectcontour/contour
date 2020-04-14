@@ -332,6 +332,38 @@ HeaderCondition
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.DownstreamValidation">DownstreamValidation
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.TLS">TLS</a>)
+</p>
+<p>
+<p>DownstreamValidation defines how to verify the client certificate.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>caSecret</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name of a Kubernetes secret that contains a CA certificate bundle.
+The client certificate must validate against the certificates in the bundle.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.HTTPHealthCheckPolicy">HTTPHealthCheckPolicy
 </h3>
 <p>
@@ -1558,6 +1590,26 @@ bool
 <p>If Passthrough is set to true, the SecretName will be ignored
 and the encrypted handshake will be passed through to the
 backing cluster.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>clientValidation</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.DownstreamValidation">
+DownstreamValidation
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ClientValidation defines how to verify the client certificate
+when an external client establishes a TLS connection to Envoy.
+This setting:
+1. Enables TLS client certificate validation.
+2. Requires clients to present a TLS certificate (i.e. not optional validation).
+3. Specifies how the client certificate will be validated.</p>
 </td>
 </tr>
 </tbody>

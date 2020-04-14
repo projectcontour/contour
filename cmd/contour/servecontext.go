@@ -52,6 +52,10 @@ type serveContext struct {
 	metricsAddr string
 	metricsPort int
 
+	// Contour's health handler parameters.
+	healthAddr string
+	healthPort int
+
 	// ingressroute root namespaces
 	rootNamespaces string
 
@@ -130,6 +134,8 @@ func newServeContext() *serveContext {
 		statsPort:             8002,
 		debugAddr:             "127.0.0.1",
 		debugPort:             6060,
+		healthAddr:            "0.0.0.0",
+		healthPort:            8000,
 		metricsAddr:           "0.0.0.0",
 		metricsPort:           8000,
 		httpAccessLog:         contour.DEFAULT_HTTP_ACCESS_LOG,
