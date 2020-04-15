@@ -10,7 +10,10 @@ twitter:
   card: summary
 vm_logo: vm-logo.png
 gh_repo: https://github.com/projectcontour/contour
+highlighter: rouge
 markdown: kramdown
+kramdown:
+  syntax_highlighter: rouge
 hero:
   background-color: dark-blue
 footer:
@@ -146,8 +149,6 @@ exclude:
 - bundler/gems/
 - bundler/ruby/
 - node_modules
-redcarpet:
-  extensions: ["no_intra_emphasis", "tables", "autolink", "strikethrough", "with_toc_data"]
 # Fail build on errors
 liquid:
   error_mode: strict
