@@ -409,6 +409,13 @@ type Cluster struct {
 
 	// ResponseHeadersPolicy defines how headers are managed during forwarding
 	ResponseHeadersPolicy *HeadersPolicy
+
+	// SNI is used when a route proxies an upstream using tls.
+	// SNI describes how the SNI is set on a Cluster and is configured via RequestHeadersPolicy.Host key.
+	// Policies set on service are used before policies set on a route. Otherwise the value of the externalService
+	// is used if the route is configured to proxy to an externalService type.
+	// If the value is not set, then SNI is not changed.
+	SNI string
 }
 
 func (c Cluster) Visit(f func(Vertex)) {
