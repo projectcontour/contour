@@ -140,7 +140,8 @@ lint-misspell:
 		-locale US \
 		-error \
 		-i mitre \
-		design/* site/*.md site/_{guides,posts,resources} site/docs/**/* *.md
+		-source=text \
+		$$(git ls-files | grep -E '(md|html)$$')
 
 .PHONY: check-golint
 lint-golint:
