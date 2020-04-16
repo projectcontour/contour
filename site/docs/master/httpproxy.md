@@ -1190,7 +1190,7 @@ metadata:
   namespace: app
 spec:
   tcpproxy:
-     services:
+    services:
     - name: tcpservice
       port: 8080
     - name: otherservice
