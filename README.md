@@ -1,4 +1,4 @@
-# Contour [![Build Status](https://travis-ci.org/projectcontour/contour.svg?branch=master)](https://travis-ci.org/projectcontour/contour) [![Go Report Card](https://goreportcard.com/badge/github.com/projectcontour/contour)](https://goreportcard.com/report/github.com/projectcontour/contour) ![GitHub release](https://img.shields.io/github/release/projectcontour/contour.svg) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+# Contour [![Build Status](https://travis-ci.org/projectcontour/contour.svg?branch=master)](https://travis-ci.org/projectcontour/contour) [![Go Report Card](https://goreportcard.com/badge/github.com/projectcontour/contour)](https://goreportcard.com/report/github.com/projectcontour/contour) ![GitHub release](https://img.shields.io/github/release/projectcontour/contour.svg) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![Slack](https://img.shields.io/badge/slack-join%20chat-e01563.svg?logo=slack)](https://kubernetes.slack.com/messages/contour)
 
 ![Contour is fun at parties!](contour.png)
 
@@ -32,7 +32,7 @@ Thanks for taking the time to join our community and start contributing!
 - Please familiarize yourself with the [Code of Conduct](/CODE_OF_CONDUCT.md) before contributing.
 - See [CONTRIBUTING.md](/CONTRIBUTING.md) for information about setting up your environment, the workflow that we expect, and instructions on the developer certificate of origin that we require.
 - Check out the [open issues](https://github.com/projectcontour/contour/issues).
-- Join our Kubernetes Slack channel: [#contour](https://kubernetes.slack.com/messages/C8XRH2R4J/)
+- Join our Kubernetes Slack channel: [#contour](https://kubernetes.slack.com/messages/contour/)
 - Join the **Contour Community Meetings** - [schedule, notes, and recordings can be found here](https://projectcontour.io/community)
 
 ## Changelog
