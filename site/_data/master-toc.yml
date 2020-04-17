@@ -13,7 +13,7 @@ toc:
         url: /httpproxy
       - page: IngressRoute Reference
         url: /ingressroute
-      - page: Contour Configuration
+      - page: Contour Configuration Reference
         url: /configuration
       - page: API Reference
         url: /api
