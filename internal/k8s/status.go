@@ -15,6 +15,7 @@
 package k8s
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -171,7 +172,7 @@ func (irs *StatusWriter) setIngressRouteStatus(existing, updated *ingressroutev1
 		return err
 	}
 
-	_, err = irs.Client.Resource(ingressroutev1.IngressRouteGVR).Namespace(existing.GetNamespace()).Patch(existing.GetName(), types.MergePatchType, patchBytes, metav1.PatchOptions{})
+	_, err = irs.Client.Resource(ingressroutev1.IngressRouteGVR).Namespace(existing.GetNamespace()).Patch(context.TODO(), existing.GetName(), types.MergePatchType, patchBytes, metav1.PatchOptions{})
 	return err
 }
 
@@ -193,6 +194,6 @@ func (irs *StatusWriter) setHTTPProxyStatus(existing, updated *projcontour.HTTPP
 		return err
 	}
 
-	_, err = irs.Client.Resource(projcontour.HTTPProxyGVR).Namespace(existing.GetNamespace()).Patch(existing.GetName(), types.MergePatchType, patchBytes, metav1.PatchOptions{})
+	_, err = irs.Client.Resource(projcontour.HTTPProxyGVR).Namespace(existing.GetNamespace()).Patch(context.TODO(), existing.GetName(), types.MergePatchType, patchBytes, metav1.PatchOptions{})
 	return err
 }

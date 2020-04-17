@@ -16,8 +16,11 @@
 package certgen
 
 import (
+	"context"
 	"fmt"
 	"path"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
@@ -102,7 +105,7 @@ func writeCACertSecret(outputDir, namespace string, cert []byte) error {
 
 func writeCACertKube(client *kubernetes.Clientset, namespace string, cert []byte) error {
 	secret := newCertOnlySecret("cacert", namespace, "cacert.pem", cert)
-	if _, err := client.CoreV1().Secrets(namespace).Create(secret); err != nil {
+	if _, err := client.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{}); err != nil {
 		if k8serrors.IsAlreadyExists(err) {
 			fmt.Print("secret/cacert already exists\n")
 			return nil
@@ -130,7 +133,7 @@ func writeKeyPairSecret(outputDir, service, namespace string, cert, key []byte) 
 func writeKeyPairKube(client *kubernetes.Clientset, service, namespace string, cert, key []byte) error {
 	secretname := service + "cert"
 	secret := newTLSSecret(secretname, namespace, key, cert)
-	if _, err := client.CoreV1().Secrets(namespace).Create(secret); err != nil {
+	if _, err := client.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{}); err != nil {
 		if k8serrors.IsAlreadyExists(err) {
 			fmt.Printf("secret/%s already exists\n", secretname)
 			return nil
