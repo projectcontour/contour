@@ -24,7 +24,8 @@ To enable the feature you have two options:
 ## Customizing logged fields
 
 To customize the logged fields, add a `json-fields` list of strings to your config file.
-These strings must be options from the [list of default fields][2].
+These strings must be options from the [list of valid fields][1].
+If the `json-fields` key is not specified, the [default fields][2] will be configured.
 Field names not in that list will be silently dropped. (This is not ideal, watch [#1507][3] for updates.)
 
 The [example config file][4] contains the full list of fields as well.

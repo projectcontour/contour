@@ -103,7 +103,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("root-namespaces", "Restrict contour to searching these namespaces for root ingress routes.").StringVar(&ctx.rootNamespaces)
 
 	serve.Flag("ingress-class-name", "Contour IngressClass name.").StringVar(&ctx.ingressClass)
-
+	serve.Flag("ingress-status-address", "Address to set in Ingress object status.").StringVar(&ctx.ingressStatusAddress)
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log.").StringVar(&ctx.httpAccessLog)
 	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log.").StringVar(&ctx.httpsAccessLog)
 	serve.Flag("envoy-service-http-address", "Kubernetes Service address for HTTP requests.").StringVar(&ctx.httpAddr)
@@ -303,14 +303,20 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 	g.Add(lbsw.Start)
 
-	// step 12. register an informer to watch envoy's service.
-	ssw := &k8s.ServiceStatusLoadBalancerWatcher{
-		ServiceName: ctx.envoyServiceName,
-		LBStatus:    lbsw.lbStatus,
+	// step 12. register an informer to watch envoy's service if we haven't been given static details.
+	if ctx.ingressStatusAddress == "" {
+		ssw := &k8s.ServiceStatusLoadBalancerWatcher{
+			ServiceName: ctx.envoyServiceName,
+			LBStatus:    lbsw.lbStatus,
+		}
+		factory := clients.NewInformerFactoryForNamespace(ctx.envoyServiceNamespace)
+		factory.Core().V1().Services().Informer().AddEventHandler(ssw)
+		g.Add(startInformer(factory, log.WithField("context", "serviceStatusLoadBalancerWatcher")))
+
+	} else {
+		log.Infof("setting Ingress status to %q, disabling watching %q service", ctx.ingressStatusAddress, ctx.envoyServiceName)
+		lbsw.lbStatus <- parseStatusFlag(ctx.ingressStatusAddress)
 	}
-	factory := clients.NewInformerFactoryForNamespace(ctx.envoyServiceNamespace)
-	factory.Core().V1().Services().Informer().AddEventHandler(ssw)
-	g.Add(startInformer(factory, log.WithField("context", "serviceStatusLoadBalancerWatcher")))
 
 	g.Add(func(stop <-chan struct{}) error {
 		log := log.WithField("context", "grpc")
