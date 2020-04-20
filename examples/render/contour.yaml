@@ -26,6 +26,12 @@ metadata:
   namespace: projectcontour
 ---
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: envoy
+  namespace: projectcontour
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: contour
@@ -1825,7 +1831,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-      automountServiceAccountToken: false
+      serviceAccountName: envoy
       terminationGracePeriodSeconds: 300
       volumes:
         - name: envoy-config
