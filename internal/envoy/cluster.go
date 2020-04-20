@@ -80,7 +80,7 @@ func Cluster(c *dag.Cluster) *v2.Cluster {
 		cluster.TransportSocket = UpstreamTLSTransportSocket(
 			UpstreamTLSContext(
 				c.UpstreamValidation,
-				service.ExternalName,
+				c.SNI,
 			),
 		)
 	case "h2":

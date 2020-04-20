@@ -76,6 +76,7 @@ func TestCluster(t *testing.T) {
 				Port:       443,
 				TargetPort: intstr.FromInt(8080),
 			}},
+			Type: v1.ServiceTypeExternalName,
 		},
 	}
 
@@ -176,6 +177,7 @@ func TestCluster(t *testing.T) {
 			cluster: &dag.Cluster{
 				Upstream: service(svcExternal, "tls"),
 				Protocol: "tls",
+				SNI:      "projectcontour.local",
 			},
 			want: &v2.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",

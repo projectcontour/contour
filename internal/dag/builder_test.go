@@ -1815,6 +1815,21 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	s14 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "nginx",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			ExternalName: "externalservice.io",
+			Ports: []v1.ServicePort{{
+				Protocol: "TCP",
+				Port:     80,
+			}},
+			Type: v1.ServiceTypeExternalName,
+		},
+	}
+
 	// ir18 tcp forwards traffic to by TLS pass-throughing
 	// it. It also exposes non HTTP traffic to the the non secure port of the
 	// application so it can give an informational message
@@ -3261,6 +3276,27 @@ func TestDAGInsert(t *testing.T) {
 					Name:     "kuard",
 					Port:     8080,
 					Protocol: &protocol,
+				}},
+			}},
+		},
+	}
+
+	proxyExternalNameService := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name: s14.GetName(),
+					Port: 80,
 				}},
 			}},
 		},
@@ -6127,6 +6163,31 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"insert proxy with externalName service": {
+			objs: []interface{}{
+				proxyExternalNameService,
+				s14,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathCondition: prefix("/"),
+							Clusters: []*Cluster{{
+								Upstream: &Service{
+									Name:         s14.Name,
+									Namespace:    s14.Namespace,
+									ServicePort:  &s14.Spec.Ports[0],
+									ExternalName: "externalservice.io",
+								},
+								SNI: "externalservice.io",
+							}},
+						}),
+					),
+				},
+			),
+		},
 		"insert proxy with replace header policy - route - host header": {
 			objs: []interface{}{
 				proxyReplaceHostHeaderRoute,
@@ -6138,7 +6199,38 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathCondition: prefix("/"),
-							Clusters:      clustermap(s9),
+							Clusters: []*Cluster{{
+								Upstream: service(s9),
+								SNI:      "bar.com",
+							}},
+							RequestHeadersPolicy: &HeadersPolicy{
+								HostRewrite: "bar.com",
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with replace header policy - route - host header - externalName": {
+			objs: []interface{}{
+				proxyReplaceHostHeaderRoute,
+				s14,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathCondition: prefix("/"),
+							Clusters: []*Cluster{{
+								Upstream: &Service{
+									Name:         s14.Name,
+									Namespace:    s14.Namespace,
+									ServicePort:  &s14.Spec.Ports[0],
+									ExternalName: "externalservice.io",
+								},
+								SNI: "bar.com",
+							}},
 							RequestHeadersPolicy: &HeadersPolicy{
 								HostRewrite: "bar.com",
 							},
@@ -6163,6 +6255,35 @@ func TestDAGInsert(t *testing.T) {
 								RequestHeadersPolicy: &HeadersPolicy{
 									HostRewrite: "bar.com",
 								},
+								SNI: "bar.com",
+							}},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with replace header policy - service - host header - externalName": {
+			objs: []interface{}{
+				proxyReplaceHostHeaderService,
+				s14,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathCondition: prefix("/"),
+							Clusters: []*Cluster{{
+								Upstream: &Service{
+									Name:         s14.Name,
+									Namespace:    s14.Namespace,
+									ServicePort:  &s14.Spec.Ports[0],
+									ExternalName: "externalservice.io",
+								},
+								RequestHeadersPolicy: &HeadersPolicy{
+									HostRewrite: "bar.com",
+								},
+								SNI: "bar.com",
 							}},
 						}),
 					),
@@ -6194,7 +6315,10 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
 							PathCondition: prefix("/"),
-							Clusters:      clustermap(s9),
+							Clusters: []*Cluster{{
+								Upstream: service(s9),
+								SNI:      "bar.com",
+							}},
 							RequestHeadersPolicy: &HeadersPolicy{
 								HostRewrite: "bar.com",
 								Set: map[string]string{
@@ -6732,6 +6856,85 @@ func TestHttpPaths(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := httppaths(tc.rule)
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatalf(diff)
+			}
+		})
+	}
+}
+
+func TestDetermineSNI(t *testing.T) {
+	tests := map[string]struct {
+		routeRequestHeaders   *HeadersPolicy
+		clusterRequestHeaders *HeadersPolicy
+		service               *Service
+		want                  string
+	}{
+		"default SNI": {
+			routeRequestHeaders:   nil,
+			clusterRequestHeaders: nil,
+			service:               &Service{},
+			want:                  "",
+		},
+		"route request headers set": {
+			routeRequestHeaders: &HeadersPolicy{
+				HostRewrite: "containersteve.com",
+			},
+			clusterRequestHeaders: nil,
+			service:               &Service{},
+			want:                  "containersteve.com",
+		},
+		"service request headers set": {
+			routeRequestHeaders: nil,
+			clusterRequestHeaders: &HeadersPolicy{
+				HostRewrite: "containersteve.com",
+			},
+			service: &Service{},
+			want:    "containersteve.com",
+		},
+		"service request headers set overrides route": {
+			routeRequestHeaders: &HeadersPolicy{
+				HostRewrite: "incorrect.com",
+			},
+			clusterRequestHeaders: &HeadersPolicy{
+				HostRewrite: "containersteve.com",
+			},
+			service: &Service{},
+			want:    "containersteve.com",
+		},
+		"route request headers override externalName": {
+			routeRequestHeaders: &HeadersPolicy{
+				HostRewrite: "containersteve.com",
+			},
+			clusterRequestHeaders: nil,
+			service: &Service{
+				ExternalName: "externalname.com",
+			},
+			want: "containersteve.com",
+		},
+		"service request headers override externalName": {
+			routeRequestHeaders: nil,
+			clusterRequestHeaders: &HeadersPolicy{
+				HostRewrite: "containersteve.com",
+			},
+			service: &Service{
+				ExternalName: "externalname.com",
+			},
+			want: "containersteve.com",
+		},
+		"only externalName set": {
+			routeRequestHeaders:   nil,
+			clusterRequestHeaders: nil,
+			service: &Service{
+				ExternalName: "externalname.com",
+			},
+			want: "externalname.com",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := determineSNI(tc.routeRequestHeaders, tc.clusterRequestHeaders, tc.service)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatalf(diff)
 			}

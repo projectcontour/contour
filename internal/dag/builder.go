@@ -858,6 +858,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 				RequestHeadersPolicy:  reqHP,
 				ResponseHeadersPolicy: respHP,
 				Protocol:              protocol,
+				SNI:                   determineSNI(r.RequestHeadersPolicy, reqHP, s),
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				sw.SetInvalid("only one service per route may be nominated as mirror")
@@ -878,6 +879,28 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 
 	sw.SetValid()
 	return routes
+}
+
+// determineSNI decides what the SNI should be on the request. It is configured via RequestHeadersPolicy.Host key.
+// Policies set on service are used before policies set on a route. Otherwise the value of the externalService
+// is used if the route is configured to proxy to an externalService type.
+func determineSNI(routeRequestHeaders *HeadersPolicy, clusterRequestHeaders *HeadersPolicy, service *Service) string {
+
+	// Service RequestHeadersPolicy take precedence
+	if clusterRequestHeaders != nil {
+		if clusterRequestHeaders.HostRewrite != "" {
+			return clusterRequestHeaders.HostRewrite
+		}
+	}
+
+	// Route RequestHeadersPolicy take precedence after service
+	if routeRequestHeaders != nil {
+		if routeRequestHeaders.HostRewrite != "" {
+			return routeRequestHeaders.HostRewrite
+		}
+	}
+
+	return service.ExternalName
 }
 
 func escapeHeaderValue(value string) string {

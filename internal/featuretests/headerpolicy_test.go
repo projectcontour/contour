@@ -179,6 +179,7 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 				Port:     443,
 				Name:     "https",
 			}},
+			Type: v1.ServiceTypeExternalName,
 		},
 	})
 
@@ -245,7 +246,7 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(cluster("default/externalname/443/da39a3ee5e", "default/externalname/https", "default_externalname_443"), nil, "goodbye.planet", ""),
+			tlsCluster(externalNameCluster("default/externalname/443/da39a3ee5e", "default/externalname/https", "default_externalname_443", "goodbye.planet", 443), nil, "goodbye.planet", "goodbye.planet"),
 		),
 		TypeUrl: clusterType,
 	})
