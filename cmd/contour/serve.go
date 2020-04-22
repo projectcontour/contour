@@ -103,15 +103,15 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("root-namespaces", "Restrict contour to searching these namespaces for root ingress routes.").StringVar(&ctx.rootNamespaces)
 
 	serve.Flag("ingress-class-name", "Contour IngressClass name.").StringVar(&ctx.ingressClass)
-	serve.Flag("ingress-status-address", "Address to set in Ingress object status.").StringVar(&ctx.ingressStatusAddress)
+	serve.Flag("ingress-status-address", "Address to set in Ingress object status.").StringVar(&ctx.IngressStatusAddress)
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log.").StringVar(&ctx.httpAccessLog)
 	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log.").StringVar(&ctx.httpsAccessLog)
 	serve.Flag("envoy-service-http-address", "Kubernetes Service address for HTTP requests.").StringVar(&ctx.httpAddr)
 	serve.Flag("envoy-service-https-address", "Kubernetes Service address for HTTPS requests.").StringVar(&ctx.httpsAddr)
 	serve.Flag("envoy-service-http-port", "Kubernetes Service port for HTTP requests.").IntVar(&ctx.httpPort)
 	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests.").IntVar(&ctx.httpsPort)
-	serve.Flag("envoy-service-name", "Envoy Service Name.").StringVar(&ctx.envoyServiceName)
-	serve.Flag("envoy-service-namespace", "Envoy Service Namespace.").StringVar(&ctx.envoyServiceNamespace)
+	serve.Flag("envoy-service-name", "Envoy Service Name.").StringVar(&ctx.EnvoyServiceName)
+	serve.Flag("envoy-service-namespace", "Envoy Service Namespace.").StringVar(&ctx.EnvoyServiceNamespace)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners.").BoolVar(&ctx.useProxyProto)
 
 	serve.Flag("accesslog-format", "Format for Envoy access logs.").StringVar(&ctx.AccessLogFormat)
@@ -304,18 +304,19 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	g.Add(lbsw.Start)
 
 	// step 12. register an informer to watch envoy's service if we haven't been given static details.
-	if ctx.ingressStatusAddress == "" {
+	if ctx.IngressStatusAddress == "" {
 		ssw := &k8s.ServiceStatusLoadBalancerWatcher{
-			ServiceName: ctx.envoyServiceName,
+			ServiceName: ctx.EnvoyServiceName,
 			LBStatus:    lbsw.lbStatus,
 		}
-		factory := clients.NewInformerFactoryForNamespace(ctx.envoyServiceNamespace)
+		factory := clients.NewInformerFactoryForNamespace(ctx.EnvoyServiceNamespace)
 		factory.Core().V1().Services().Informer().AddEventHandler(ssw)
 		g.Add(startInformer(factory, log.WithField("context", "serviceStatusLoadBalancerWatcher")))
+		log.WithField("envoy-service-name", ctx.EnvoyServiceName).WithField("envoy-service-namespace", ctx.EnvoyServiceNamespace).Info("Watching Service for Ingress status")
 
 	} else {
-		log.Infof("setting Ingress status to %q, disabling watching %q service", ctx.ingressStatusAddress, ctx.envoyServiceName)
-		lbsw.lbStatus <- parseStatusFlag(ctx.ingressStatusAddress)
+		log.WithField("loadbalancer-address", ctx.IngressStatusAddress).Info("Using supplied information for Ingress status")
+		lbsw.lbStatus <- parseStatusFlag(ctx.IngressStatusAddress)
 	}
 
 	g.Add(func(stop <-chan struct{}) error {

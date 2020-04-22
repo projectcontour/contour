@@ -74,7 +74,7 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 			}
 			ingressInformers.Wait()
 
-			isw.log.Info("Received a new address for status.loadBalancer")
+			isw.log.WithField("loadbalancer-address", lbAddress(lbs)).Info("received a new address for status.loadBalancer")
 
 			// Create new informer for the new LoadBalancerStatus
 			factory := isw.clients.NewInformerFactory()
@@ -120,4 +120,18 @@ func parseStatusFlag(status string) v1.LoadBalancerStatus {
 			},
 		},
 	}
+}
+
+// lbAddress gets the string representation of the first address, for logging.
+func lbAddress(lb v1.LoadBalancerStatus) string {
+
+	if len(lb.Ingress) == 0 {
+		return ""
+	}
+
+	if lb.Ingress[0].IP != "" {
+		return lb.Ingress[0].IP
+	}
+
+	return lb.Ingress[0].Hostname
 }

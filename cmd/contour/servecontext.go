@@ -32,6 +32,9 @@ import (
 )
 
 type serveContext struct {
+	// Note about parameter behavior: if the parameter is going to be in the config file,
+	// it has to be exported. If not, the YAML decoder will not see the field.
+
 	// Enable debug logging
 	Debug bool
 
@@ -63,7 +66,9 @@ type serveContext struct {
 	ingressClass string
 
 	// Address to be placed in status.loadbalancer field of Ingress objects.
-	ingressStatusAddress string
+	// May be either a literal IP address or a host name.
+	// The value will be placed directly into the relevant field inside the status.loadBalancer struct.
+	IngressStatusAddress string `yaml:"ingress-status-address,omitempty"`
 
 	// envoy's stats listener parameters
 	statsAddr string
@@ -119,11 +124,11 @@ type serveContext struct {
 
 	// envoy service details
 
-	// Namespace of the envoy service
-	envoyServiceNamespace string `yaml:"-"`
+	// Namespace of the envoy service to inspect for Ingress status details.
+	EnvoyServiceNamespace string `yaml:"envoy-service-namespace,omitempty"`
 
-	// Name of the envoy service
-	envoyServiceName string `yaml:"-"`
+	// Name of the envoy service to inspect for Ingress status details.
+	EnvoyServiceName string `yaml:"envoy-service-name,omitempty"`
 }
 
 // newServeContext returns a serveContext initialized to defaults.
@@ -159,8 +164,8 @@ func newServeContext() *serveContext {
 			Name:          "leader-elect",
 		},
 		UseExperimentalServiceAPITypes: false,
-		envoyServiceName:               "envoy",
-		envoyServiceNamespace:          getEnv("CONTOUR_NAMESPACE", "projectcontour"),
+		EnvoyServiceName:               "envoy",
+		EnvoyServiceNamespace:          getEnv("CONTOUR_NAMESPACE", "projectcontour"),
 	}
 }
 
