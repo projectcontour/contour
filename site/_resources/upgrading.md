@@ -355,7 +355,7 @@ spec:
     services:
     - name: www
       port: 80
-      stategy: WeightedLeastRequest
+      strategy: WeightedLeastRequest
 </code></pre></td>
 
 <td><pre><code class="language-yaml" data-lang="yaml">
