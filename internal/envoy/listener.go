@@ -111,20 +111,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 		RouteSpecifier: &http.HttpConnectionManager_Rds{
 			Rds: &http.Rds{
 				RouteConfigName: b.routeConfigName,
-				ConfigSource: &envoy_api_v2_core.ConfigSource{
-					ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
-						ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
-							ApiType: envoy_api_v2_core.ApiConfigSource_GRPC,
-							GrpcServices: []*envoy_api_v2_core.GrpcService{{
-								TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
-									EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
-										ClusterName: "contour",
-									},
-								},
-							}},
-						},
-					},
-				},
+				ConfigSource:    ConfigSource("contour"),
 			},
 		},
 		HttpFilters: []*http.HttpFilter{{
