@@ -848,10 +848,12 @@ spec:
 
 ### Header Policy
 
-HTTPProxy supports rewriting the `Host` header after first handling a request and before proxying to an upstream service.
-A common use-case for this is to use Contour to proxy to a resource outside the cluster referenced by an `externalName` service.
+HTTPProxy supports rewriting HTTP request and response headers.
+The `Set` operation sets a HTTP header value, creating it if it doesn't already exist or overwriting it if it does.
+The `Remove` operation removes a HTTP header.
+The `requestHeadersPolicy` field is used to rewrite headers on a HTTP request, and the `responseHeadersPolicy` is used to rewrite headers on a HTTP response.
+These fields can be specified on a route or on a specific service, depending on the rewrite granularity you need.
 
-The `requestHeadersPolicy` supports a list of `Set` options that currently only supports rewriting `Host` headers defined via a `name` and `value`.
 
 ```yaml
 apiVersion: projectcontour.io/v1
@@ -869,14 +871,19 @@ spec:
       set:
       - name: Host
         value: external.dev
+      remove:
+      - Some-Header
+      - Some-Other-Header
 ```
 
 ### ExternalName
 
-HTTPProxy supports routing traffic to service types `ExternalName`.
+HTTPProxy supports routing traffic to `ExternalName` service types.
 Contour looks at the `spec.externalName` field of the service and configures the route to use that DNS name instead of utilizing EDS.
 
 There's nothing specific in the HTTPProxy object that needs to be configured other than referencing a service of type `ExternalName`.
+HTTPProxy supports the `requestHeadersPolicy` field to rewrite the `Host` header after first handling a request and before proxying to an upstream service.
+This field can be used to ensure that the forwarded HTTP request contains the hostname that the external resource is expecting.
 
 NOTE: The ports are required to be specified.
 

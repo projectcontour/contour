@@ -799,13 +799,15 @@ spec:
                     properties:
                       remove:
                         description: Remove specifies a list of HTTP header names
-                          to remove
+                          to remove.
                         items:
                           type: string
                         type: array
                       set:
                         description: Set specifies a list of HTTP header values that
-                          will be set in the HTTP header
+                          will be set in the HTTP header. If the header does not exist
+                          it will be added, otherwise it will be overwritten with
+                          the new value.
                         items:
                           description: HeaderValue represents a header name/value
                             pair
@@ -830,13 +832,15 @@ spec:
                     properties:
                       remove:
                         description: Remove specifies a list of HTTP header names
-                          to remove
+                          to remove.
                         items:
                           type: string
                         type: array
                       set:
                         description: Set specifies a list of HTTP header values that
-                          will be set in the HTTP header
+                          will be set in the HTTP header. If the header does not exist
+                          it will be added, otherwise it will be overwritten with
+                          the new value.
                         items:
                           description: HeaderValue represents a header name/value
                             pair
@@ -905,13 +909,15 @@ spec:
                           properties:
                             remove:
                               description: Remove specifies a list of HTTP header
-                                names to remove
+                                names to remove.
                               items:
                                 type: string
                               type: array
                             set:
                               description: Set specifies a list of HTTP header values
-                                that will be set in the HTTP header
+                                that will be set in the HTTP header. If the header
+                                does not exist it will be added, otherwise it will
+                                be overwritten with the new value.
                               items:
                                 description: HeaderValue represents a header name/value
                                   pair
@@ -937,13 +943,15 @@ spec:
                           properties:
                             remove:
                               description: Remove specifies a list of HTTP header
-                                names to remove
+                                names to remove.
                               items:
                                 type: string
                               type: array
                             set:
                               description: Set specifies a list of HTTP header values
-                                that will be set in the HTTP header
+                                that will be set in the HTTP header. If the header
+                                does not exist it will be added, otherwise it will
+                                be overwritten with the new value.
                               items:
                                 description: HeaderValue represents a header name/value
                                   pair
@@ -1111,13 +1119,15 @@ spec:
                         properties:
                           remove:
                             description: Remove specifies a list of HTTP header names
-                              to remove
+                              to remove.
                             items:
                               type: string
                             type: array
                           set:
                             description: Set specifies a list of HTTP header values
-                              that will be set in the HTTP header
+                              that will be set in the HTTP header. If the header does
+                              not exist it will be added, otherwise it will be overwritten
+                              with the new value.
                             items:
                               description: HeaderValue represents a header name/value
                                 pair
@@ -1143,13 +1153,15 @@ spec:
                         properties:
                           remove:
                             description: Remove specifies a list of HTTP header names
-                              to remove
+                              to remove.
                             items:
                               type: string
                             type: array
                           set:
                             description: Set specifies a list of HTTP header values
-                              that will be set in the HTTP header
+                              that will be set in the HTTP header. If the header does
+                              not exist it will be added, otherwise it will be overwritten
+                              with the new value.
                             items:
                               description: HeaderValue represents a header name/value
                                 pair

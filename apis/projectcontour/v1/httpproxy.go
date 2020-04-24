@@ -357,12 +357,16 @@ type LoadBalancerPolicy struct {
 	Strategy string `json:"strategy,omitempty"`
 }
 
-// HeadersPolicy defines how headers are managed during forwarding
+// HeadersPolicy defines how headers are managed during forwarding.
+// The `Host` header is treated specially and if set in a HTTP response
+// will be used as the SNI server name when forwarding over TLS. It is an
+// error to attempt to set the `Host` header in a HTTP response.
 type HeadersPolicy struct {
-	// Set specifies a list of HTTP header values that will be set in the HTTP header
+	// Set specifies a list of HTTP header values that will be set in the HTTP header.
+	// If the header does not exist it will be added, otherwise it will be overwritten with the new value.
 	// +optional
 	Set []HeaderValue `json:"set,omitempty"`
-	// Remove specifies a list of HTTP header names to remove
+	// Remove specifies a list of HTTP header names to remove.
 	// +optional
 	Remove []string `json:"remove,omitempty"`
 }
