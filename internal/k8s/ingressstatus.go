@@ -92,6 +92,8 @@ func (s *IngressStatusUpdater) OnDelete(obj interface{}) {
 
 // ServiceStatusLoadBalancerWatcher implements ResourceEventHandler and
 // watches for changes to the status.loadbalancer field
+// Note that we specifically *don't* inspect inside the struct, as sending empty values
+// is desirable to clear the status.
 type ServiceStatusLoadBalancerWatcher struct {
 	ServiceName string
 	LBStatus    chan v1.LoadBalancerStatus

@@ -68,3 +68,48 @@ func Test_parseStatusFlag(t *testing.T) {
 		})
 	}
 }
+
+func Test_lbAddress(t *testing.T) {
+	tests := []struct {
+		name string
+		lb   v1.LoadBalancerStatus
+		want string
+	}{
+		{
+			name: "empty Loadbalancer",
+			lb: v1.LoadBalancerStatus{
+				Ingress: []v1.LoadBalancerIngress{},
+			},
+			want: "",
+		},
+		{
+			name: "IP address loadbalancer",
+			lb: v1.LoadBalancerStatus{
+				Ingress: []v1.LoadBalancerIngress{
+					{
+						IP: "10.0.0.1",
+					},
+				},
+			},
+			want: "10.0.0.1",
+		},
+		{
+			name: "Hostname loadbalancer",
+			lb: v1.LoadBalancerStatus{
+				Ingress: []v1.LoadBalancerIngress{
+					{
+						Hostname: "somedomain.com",
+					},
+				},
+			},
+			want: "somedomain.com",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if diff := cmp.Diff(lbAddress(tt.lb), tt.want); diff != "" {
+				t.Errorf("lbAddress failed: %s", diff)
+			}
+		})
+	}
+}
