@@ -230,6 +230,6 @@ By making a contribution to this project, I certify that:
 [3]: https://golang.org/doc/code.html
 [4]: https://golang.org/pkg/testing/
 [5]: https://developercertificate.org/
-[6]: https://github.com/projectcontour/contour/issues
+[6]: https://github.com/projectcontour/contour/issues/new/choose
 [6]: site/_resources/tagging.md
 [7]: site/docs/master/deploy-options.md
