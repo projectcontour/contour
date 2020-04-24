@@ -1,0 +1,1792 @@
+<p>Packages:</p>
+<ul>
+<li>
+<a href="#projectcontour.io%2fv1">projectcontour.io/v1</a>
+</li>
+</ul>
+<h2 id="projectcontour.io/v1">projectcontour.io/v1</h2>
+<p>
+<p>Package v1 is the v1 version of the API.</p>
+</p>
+Resource Types:
+<ul><li>
+<a href="#projectcontour.io/v1.HTTPProxy">HTTPProxy</a>
+</li><li>
+<a href="#projectcontour.io/v1.TLSCertificateDelegation">TLSCertificateDelegation</a>
+</li></ul>
+<h3 id="projectcontour.io/v1.HTTPProxy">HTTPProxy
+</h3>
+<p>
+<p>HTTPProxy is an Ingress CRD specification</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td>
+<code>apiVersion</code>
+<br>
+string</td>
+<td>
+<code>
+projectcontour.io/v1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code>
+<br>
+string
+</td>
+<td><code>HTTPProxy</code></td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>metadata</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.13/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>spec</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPProxySpec">
+HTTPProxySpec
+</a>
+</em>
+</td>
+<td>
+<br>
+<br>
+<table style="border:none">
+<tr>
+<td style="white-space:nowrap">
+<code>virtualhost</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.VirtualHost">
+VirtualHost
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Virtualhost appears at most once. If it is present, the object is considered
+to be a &ldquo;root&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>routes</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.Route">
+[]Route
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Routes are the ingress routes. If TCPProxy is present, Routes is ignored.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>tcpproxy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.TCPProxy">
+TCPProxy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TCPProxy holds TCP proxy information.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>includes</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.Include">
+[]Include
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Includes allow for specific routing configuration to be appended to another HTTPProxy in another namespace.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>status</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.Status">
+Status
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.TLSCertificateDelegation">TLSCertificateDelegation
+</h3>
+<p>
+<p>TLSCertificateDelegation is an TLS Certificate Delegation CRD specificiation.
+See design/tls-certificate-delegation.md for details.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td>
+<code>apiVersion</code>
+<br>
+string</td>
+<td>
+<code>
+projectcontour.io/v1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code>
+<br>
+string
+</td>
+<td><code>TLSCertificateDelegation</code></td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>metadata</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.13/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>spec</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.TLSCertificateDelegationSpec">
+TLSCertificateDelegationSpec
+</a>
+</em>
+</td>
+<td>
+<br>
+<br>
+<table style="border:none">
+<tr>
+<td style="white-space:nowrap">
+<code>delegations</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.CertificateDelegation">
+[]CertificateDelegation
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.CertificateDelegation">CertificateDelegation
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.TLSCertificateDelegationSpec">TLSCertificateDelegationSpec</a>)
+</p>
+<p>
+<p>CertificateDelegation maps the authority to reference a secret
+in the current namespace to a set of namespaces.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>secretName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>required, the name of a secret in the current namespace.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>targetNamespaces</code>
+<br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>required, the namespaces the authority to reference the
+the secret will be delegated to.
+If TargetNamespaces is nil or empty, the CertificateDelegation&rsquo;
+is ignored. If the TargetNamespace list contains the character, &ldquo;*&rdquo;
+the secret will be delegated to all namespaces.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.Condition">Condition
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Include">Include</a>, 
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+<p>Condition are policies that are applied on top of HTTPProxies.
+One of Prefix or Header must be provided.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>prefix</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Prefix defines a prefix match for a request.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>header</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HeaderCondition">
+HeaderCondition
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Header specifies the header condition to match.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.DownstreamValidation">DownstreamValidation
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.TLS">TLS</a>)
+</p>
+<p>
+<p>DownstreamValidation defines how to verify the client certificate.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>caSecret</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name of a Kubernetes secret that contains a CA certificate bundle.
+The client certificate must validate against the certificates in the bundle.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.HTTPHealthCheckPolicy">HTTPHealthCheckPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+<p>HTTPHealthCheckPolicy defines health checks on the upstream service.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>path</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>HTTP endpoint used to perform health checks on upstream service</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>host</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The value of the host header in the HTTP health check request.
+If left empty (default value), the name &ldquo;contour-envoy-healthcheck&rdquo;
+will be used.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>intervalSeconds</code>
+<br>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The interval (seconds) between health checks</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>timeoutSeconds</code>
+<br>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The time to wait (seconds) for a health check response</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>unhealthyThresholdCount</code>
+<br>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The number of unhealthy health checks required before a host is marked unhealthy</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>healthyThresholdCount</code>
+<br>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The number of healthy health checks required before a host is marked healthy</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.HTTPProxySpec">HTTPProxySpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.HTTPProxy">HTTPProxy</a>)
+</p>
+<p>
+<p>HTTPProxySpec defines the spec of the CRD.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>virtualhost</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.VirtualHost">
+VirtualHost
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Virtualhost appears at most once. If it is present, the object is considered
+to be a &ldquo;root&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>routes</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.Route">
+[]Route
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Routes are the ingress routes. If TCPProxy is present, Routes is ignored.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>tcpproxy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.TCPProxy">
+TCPProxy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TCPProxy holds TCP proxy information.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>includes</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.Include">
+[]Include
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Includes allow for specific routing configuration to be appended to another HTTPProxy in another namespace.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.HeaderCondition">HeaderCondition
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Condition">Condition</a>)
+</p>
+<p>
+<p>HeaderCondition specifies how to conditionally match against HTTP
+headers. The Name field is required, but only one of the remaining
+fields should be be provided.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>name</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name of the header to match against. Name is required.
+Header names are case insensitive.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>present</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Present specifies that condition is true when the named header
+is present, regardless of its value. Note that setting Present
+to false does not make the condition true if the named header
+is absent.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>contains</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Contains specifies a substring that must be present in
+the header value.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>notcontains</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NotContains specifies a substring that must not be present
+in the header value.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>exact</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Exact specifies a string that the header value must be equal to.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>notexact</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NoExact specifies a string that the header value must not be
+equal to. The condition is true if the header has any other value.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.HeaderValue">HeaderValue
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.HeadersPolicy">HeadersPolicy</a>)
+</p>
+<p>
+<p>HeaderValue represents a header name/value pair</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>name</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name represents a key of a header</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>value</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Value represents the value of a header specified by a key</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.HeadersPolicy">HeadersPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>, 
+<a href="#projectcontour.io/v1.Service">Service</a>)
+</p>
+<p>
+<p>HeadersPolicy defines how headers are managed during forwarding</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>set</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HeaderValue">
+[]HeaderValue
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Set specifies a list of HTTP header values that will be set in the HTTP header</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>remove</code>
+<br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Remove specifies a list of HTTP header names to remove</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.Include">Include
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.HTTPProxySpec">HTTPProxySpec</a>)
+</p>
+<p>
+<p>Include describes a set of policies that can be applied to an HTTPProxy in a namespace.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>name</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name of the HTTPProxy</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>namespace</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Namespace of the HTTPProxy to include. Defaults to the current namespace if not supplied.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>conditions</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.Condition">
+[]Condition
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Conditions are a set of routing properties that is applied to an HTTPProxy in a namespace.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.LoadBalancerPolicy">LoadBalancerPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>, 
+<a href="#projectcontour.io/v1.TCPProxy">TCPProxy</a>)
+</p>
+<p>
+<p>LoadBalancerPolicy defines the load balancing policy.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>strategy</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Strategy specifies the policy used to balance requests
+across the pool of backend pods. Valid policy names are
+<code>Random</code>, <code>RoundRobin</code>, <code>WeightedLeastRequest</code>, <code>Random</code>
+and <code>Cookie</code>. If an unknown strategy name is specified
+or no policy is supplied, the default <code>RoundRobin</code> policy
+is used.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.PathRewritePolicy">PathRewritePolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+<p>PathRewritePolicy specifies how a request URL path should be
+rewritten. This rewriting takes place after a request is routed
+and has no subsequent effects on the proxy&rsquo;s routing decision.
+No HTTP headers or body content is rewritten.</p>
+<p>Exactly one field in this struct may be specified.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>replacePrefix</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ReplacePrefix">
+[]ReplacePrefix
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ReplacePrefix describes how the path prefix should be replaced.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.ReplacePrefix">ReplacePrefix
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.PathRewritePolicy">PathRewritePolicy</a>)
+</p>
+<p>
+<p>ReplacePrefix describes a path prefix replacement.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>prefix</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Prefix specifies the URL path prefix to be replaced.</p>
+<p>If Prefix is specified, it must exactly match the Condition
+prefix that is rendered by the chain of including HTTPProxies
+and only that path prefix will be replaced by Replacement.
+This allows HTTPProxies that are included through multiple
+roots to only replace specific path prefixes, leaving others
+unmodified.</p>
+<p>If Prefix is not specified, all routing prefixes rendered
+by the include chain will be replaced.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>replacement</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Replacement is the string that the routing path prefix
+will be replaced with. This must not be empty.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.RetryPolicy">RetryPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+<p>RetryPolicy defines the attributes associated with retrying policy.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>count</code>
+<br>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NumRetries is maximum allowed number of retries.
+If not supplied, the number of retries is one.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>perTryTimeout</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>PerTryTimeout specifies the timeout per retry attempt.
+Ignored if NumRetries is not supplied.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.Route">Route
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.HTTPProxySpec">HTTPProxySpec</a>)
+</p>
+<p>
+<p>Route contains the set of routes for a virtual host.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>conditions</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.Condition">
+[]Condition
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Conditions are a set of routing properties that is applied to an HTTPProxy in a namespace.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>services</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.Service">
+[]Service
+</a>
+</em>
+</td>
+<td>
+<p>Services are the services to proxy traffic.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>enableWebsockets</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Enables websocket support for the route.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>permitInsecure</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Allow this path to respond to insecure requests over HTTP which are normally
+not permitted when a <code>virtualhost.tls</code> block is present.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>timeoutPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.TimeoutPolicy">
+TimeoutPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The timeout policy for this route.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>retryPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.RetryPolicy">
+RetryPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The retry policy for this route.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>healthCheckPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPHealthCheckPolicy">
+HTTPHealthCheckPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The health check policy for this route.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>loadBalancerPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.LoadBalancerPolicy">
+LoadBalancerPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The load balancing policy for this route.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>pathRewritePolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.PathRewritePolicy">
+PathRewritePolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The policy for rewriting the path of the request URL
+after the request has been routed to a Service.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>requestHeadersPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HeadersPolicy">
+HeadersPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The policy for managing request headers during proxying</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>responseHeadersPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HeadersPolicy">
+HeadersPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The policy for managing response headers during proxying</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.Service">Service
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>, 
+<a href="#projectcontour.io/v1.TCPProxy">TCPProxy</a>)
+</p>
+<p>
+<p>Service defines an Kubernetes Service to proxy traffic.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>name</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name of Kubernetes service to proxy traffic.
+Names defined here will be used to look up corresponding endpoints which contain the ips to route.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>port</code>
+<br>
+<em>
+int
+</em>
+</td>
+<td>
+<p>Port (defined as Integer) to proxy traffic to since a service can have multiple defined.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>protocol</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Protocol may be used to specify (or override) the protocol used to reach this Service.
+Values may be tls, h2, h2c. If omitted, protocol-selection falls back on Service annotations.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>weight</code>
+<br>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Weight defines percentage of traffic to balance traffic</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>validation</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.UpstreamValidation">
+UpstreamValidation
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>UpstreamValidation defines how to verify the backend service&rsquo;s certificate</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>mirror</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>If Mirror is true the Service will receive a read only mirror of the traffic for this route.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>requestHeadersPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HeadersPolicy">
+HeadersPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The policy for managing request headers during proxying</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>responseHeadersPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HeadersPolicy">
+HeadersPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The policy for managing response headers during proxying</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.Status">Status
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.HTTPProxy">HTTPProxy</a>)
+</p>
+<p>
+<p>Status reports the current state of the HTTPProxy.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>currentStatus</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>description</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.TCPHealthCheckPolicy">TCPHealthCheckPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.TCPProxy">TCPProxy</a>)
+</p>
+<p>
+<p>TCPHealthCheckPolicy defines health checks on the upstream service.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>intervalSeconds</code>
+<br>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The interval (seconds) between health checks</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>timeoutSeconds</code>
+<br>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The time to wait (seconds) for a health check response</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>unhealthyThresholdCount</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The number of unhealthy health checks required before a host is marked unhealthy</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>healthyThresholdCount</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The number of healthy health checks required before a host is marked healthy</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.TCPProxy">TCPProxy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.HTTPProxySpec">HTTPProxySpec</a>)
+</p>
+<p>
+<p>TCPProxy contains the set of services to proxy TCP connections.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>loadBalancerPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.LoadBalancerPolicy">
+LoadBalancerPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The load balancing policy for the backend services.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>services</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.Service">
+[]Service
+</a>
+</em>
+</td>
+<td>
+<p>Services are the services to proxy traffic</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>include</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.TCPProxyInclude">
+TCPProxyInclude
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Include specifies that this tcpproxy should be delegated to another HTTPProxy.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>includes</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.TCPProxyInclude">
+TCPProxyInclude
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>IncludesDeprecated allow for specific routing configuration to be appended to another HTTPProxy in another namespace.</p>
+<p>Exists due to a mistake when developing HTTPProxy and the field was marked plural
+when it should have been singular. This field should stay to not break backwards compatibility to v1 users.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>healthCheckPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.TCPHealthCheckPolicy">
+TCPHealthCheckPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The health check policy for this tcp proxy</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.TCPProxyInclude">TCPProxyInclude
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.TCPProxy">TCPProxy</a>)
+</p>
+<p>
+<p>TCPProxyInclude describes a target HTTPProxy document which contains the TCPProxy details.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>name</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name of the child HTTPProxy</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>namespace</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Namespace of the HTTPProxy to include. Defaults to the current namespace if not supplied.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.TLS">TLS
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>)
+</p>
+<p>
+<p>TLS describes tls properties. The SNI names that will be matched on
+are described in fqdn, the tls.secretName secret must contain a
+matching certificate unless tls.passthrough is set to true.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>secretName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>required, the name of a secret in the current namespace</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>minimumProtocolVersion</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Minimum TLS version this vhost should negotiate</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>passthrough</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If Passthrough is set to true, the SecretName will be ignored
+and the encrypted handshake will be passed through to the
+backing cluster.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>clientValidation</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.DownstreamValidation">
+DownstreamValidation
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ClientValidation defines how to verify the client certificate
+when an external client establishes a TLS connection to Envoy.
+This setting:
+1. Enables TLS client certificate validation.
+2. Requires clients to present a TLS certificate (i.e. not optional validation).
+3. Specifies how the client certificate will be validated.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.TLSCertificateDelegationSpec">TLSCertificateDelegationSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.TLSCertificateDelegation">TLSCertificateDelegation</a>)
+</p>
+<p>
+<p>TLSCertificateDelegationSpec defines the spec of the CRD</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>delegations</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.CertificateDelegation">
+[]CertificateDelegation
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.TimeoutPolicy">TimeoutPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+<p>TimeoutPolicy defines the attributes associated with timeout.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>response</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Timeout for receiving a response from the server after processing a request from client.
+If not supplied the timeout duration is undefined.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>idle</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Timeout after which if there are no active requests for this route, the connection between
+Envoy and the backend will be closed. If not specified, there is no per-route idle timeout.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.UpstreamValidation">UpstreamValidation
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Service">Service</a>)
+</p>
+<p>
+<p>UpstreamValidation defines how to verify the backend service&rsquo;s certificate</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>caSecret</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name of the Kubernetes secret be used to validate the certificate presented by the backend</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>subjectName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Key which is expected to be present in the &lsquo;subjectAltName&rsquo; of the presented certificate</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.VirtualHost">VirtualHost
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.HTTPProxySpec">HTTPProxySpec</a>)
+</p>
+<p>
+<p>VirtualHost appears at most once. If it is present, the object is considered
+to be a &ldquo;root&rdquo;.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>fqdn</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The fully qualified domain name of the root of the ingress tree
+all leaves of the DAG rooted at this object relate to the fqdn</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>tls</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.TLS">
+TLS
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If present describes tls properties. The SNI names that will be matched on
+are described in fqdn, the tls.secretName secret must contain a
+matching certificate</p>
+</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<p><em>
+Generated with <code>gen-crd-api-reference-docs</code>.
+</em></p>
