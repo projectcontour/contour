@@ -4,8 +4,10 @@ Thanks for taking the time to join our community and start contributing.
 These guidelines will help you get started with the Contour project.
 Please note that we require [DCO sign off](#dco-sign-off).  
 
-Read this document for website specific guildlines: [Site Contribution Guidelines](/SITE_CONTRIBUTION.md).
+Read this document for additional website specific guildlines: [Site Contribution Guidelines](/SITE_CONTRIBUTION.md).
 Guidelines in this document still apply to website contributions.
+
+If you want to get more insight into how the Contour maintainer team approachs R&D, this [page](https://projectcontour.io/resources/how-we-work/) captures how we work on Contour.
 
 ## Building from source
 
@@ -76,8 +78,7 @@ It follows from the previous section, so if you haven't set up your Go workspace
 This project operates according to the _talk, then code_ rule.
 If you plan to submit a pull request for anything more than a typo or obvious bug fix, first you _should_ [raise an issue][6] to discuss your proposal, before submitting any code.
 
-Depending on the size of the feature you may be expected to first write a design proposal.
-A proposal template is [available here](https://github.com/projectcontour/contour/tree/master/design/design-document-tmpl.md)
+Depending on the size of the feature you may be expected to first write a design proposal. Follow the [Proposal Process](https://github.com/projectcontour/community/blob/master/GOVERNANCE.md#proposal-process) documented in Contour's Governance.
 
 ### Commit message and PR guidelines
 
@@ -231,6 +232,6 @@ By making a contribution to this project, I certify that:
 [3]: https://golang.org/doc/code.html
 [4]: https://golang.org/pkg/testing/
 [5]: https://developercertificate.org/
-[6]: https://github.com/projectcontour/contour/issues
+[6]: https://github.com/projectcontour/contour/issues/new/choose
 [6]: site/_resources/tagging.md
 [7]: site/docs/master/deploy-options.md
