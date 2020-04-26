@@ -7,7 +7,7 @@ Please note that we require [DCO sign off](#dco-sign-off).
 Read this document for additional website specific guildlines: [Site Contribution Guidelines](/SITE_CONTRIBUTION.md).
 Guidelines in this document still apply to website contributions.
 
-If you want to get more insight into how the Contour maintainer team approachs R&D, this [page](https://projectcontour.io/resources/how-we-work/) captures how we work on Contour.
+If you want to get more insight into how the Contour maintainer team approaches R&D, this [page](https://projectcontour.io/resources/how-we-work/) captures how we work on Contour.
 
 ## Building from source
 
