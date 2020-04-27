@@ -697,7 +697,10 @@ string
 <a href="#projectcontour.io/v1.Service">Service</a>)
 </p>
 <p>
-<p>HeadersPolicy defines how headers are managed during forwarding</p>
+<p>HeadersPolicy defines how headers are managed during forwarding.
+The <code>Host</code> header is treated specially and if set in a HTTP response
+will be used as the SNI server name when forwarding over TLS. It is an
+error to attempt to set the <code>Host</code> header in a HTTP response.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -719,7 +722,8 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Set specifies a list of HTTP header values that will be set in the HTTP header</p>
+<p>Set specifies a list of HTTP header values that will be set in the HTTP header.
+If the header does not exist it will be added, otherwise it will be overwritten with the new value.</p>
 </td>
 </tr>
 <tr>
@@ -732,7 +736,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Remove specifies a list of HTTP header names to remove</p>
+<p>Remove specifies a list of HTTP header names to remove.</p>
 </td>
 </tr>
 </tbody>
