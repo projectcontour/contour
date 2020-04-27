@@ -48,6 +48,12 @@ For example:
 $ go run ./hack/release/prepare-release.go v9.9.9
 ```
 
+## Update compatibility matrices
+
+If there has been an Envoy version upgrade, check that the [Envoy Support Matrix](https://projectcontour.io/resources/envoy/) has been updated.
+
+If there has been a Kubernetes client-go upgrade, check that the [Kubernetes Support Matrix](https://projectcontour.io/resources/envoy/) has been updated.
+
 ## Branch for release
 
 As contours master branch is under active development, rc and final releases are made from a branch.
@@ -152,4 +158,5 @@ _Note: Filter on the Github label "release note" and Github milestone which shou
 
 - Post a note to the #contour channel on k8s slack, also update the /topic with the current release number
 - Post a note to the #project-contour channel on the vmware slack, also update the /topic with the current release number
+- Send an update to the [projectcontour-announce mailing list](https://groups.google.com/forum/#!forum/projectcontour-announce)
 - Send an email to the project-contour mailing list
