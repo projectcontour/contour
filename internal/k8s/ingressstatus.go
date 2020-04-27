@@ -14,6 +14,10 @@
 package k8s
 
 import (
+	"context"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
@@ -44,7 +48,7 @@ func (s *IngressStatusUpdater) OnAdd(obj interface{}) {
 	}
 
 	ing.Status.LoadBalancer = s.Status
-	_, err := s.Client.NetworkingV1beta1().Ingresses(ing.GetNamespace()).UpdateStatus(ing)
+	_, err := s.Client.NetworkingV1beta1().Ingresses(ing.GetNamespace()).UpdateStatus(context.TODO(), ing, metav1.UpdateOptions{})
 	if err != nil {
 		s.Logger.
 			WithField("name", ing.GetName()).
@@ -69,7 +73,7 @@ func (s *IngressStatusUpdater) OnUpdate(oldObj, newObj interface{}) {
 			WithField("ingress-class", annotation.IngressClass(newIng)).
 			Debug("Updated Ingress is in scope, updating")
 		newIng.Status.LoadBalancer = s.Status
-		_, err := s.Client.NetworkingV1beta1().Ingresses(newIng.GetNamespace()).UpdateStatus(newIng)
+		_, err := s.Client.NetworkingV1beta1().Ingresses(newIng.GetNamespace()).UpdateStatus(context.TODO(), newIng, metav1.UpdateOptions{})
 		if err != nil {
 			s.Logger.
 				WithField("name", newIng.GetName()).
