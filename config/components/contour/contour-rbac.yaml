@@ -1,4 +1,3 @@
----
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
@@ -10,8 +9,9 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: contour
-  namespace: projectcontour
+
 ---
+
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
@@ -58,7 +58,7 @@ rules:
   - get
   - list
   - watch
-  - patch 
+  - patch
   - post
   - update
 - apiGroups: ["contour.heptio.com"]
@@ -88,42 +88,3 @@ rules:
   - put
   - post
   - patch
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: Role
-metadata:
-  name: contour-leaderelection
-  namespace: projectcontour
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  verbs:
-  - create
-  - get
-  - list
-  - watch
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
-  - update
-  - patch
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: RoleBinding
-metadata:
-  name: contour-leaderelection
-  namespace: projectcontour
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: contour-leaderelection
-subjects:
-- kind: ServiceAccount
-  name: contour
-  namespace: projectcontour

@@ -1,13 +1,23 @@
 # Contour Installation
 
-This is an installation guide to configure Contour in a Deployment separate from Envoy which allows for easier scaling of each component.
+This directory contains Contour configuration suitable for use by itself, or with [kustomize](https://kustomize.io).
 
-This configuration has several advantages:
 
-1. Envoy runs as a daemonset which allows for distributed scaling across workers in the cluster
-2. Communication between Contour and Envoy is secured by mutually-checked self-signed certificates.
+## Components
 
-## Moving parts
+The [components](./components) directory contains the collaborating components
+of a Contour installation.
+
+1. [types](./types) contains the CRD types for the Contour API. If you have
+   Kuberenetes 1.6 or later, [types-v1](./types-v1) contains the same API types
+2. [contour](./contour) contains a deployment of the Contour service. This
+   service will be a xDS management server for an Envoy cluster.
+3. [envoy](./envoy) deploys an Envoy cluster as a Daemonset.
+4. [certgen](./certgen) deploys a Contour generation Job to generate TLS
+   certificates that will be used for the xDS session between Contour and
+   Envoy.
+
+Installing these components creates the following moving parts:
 
 - Contour is run as Deployment and Envoy as a Daemonset
 - Envoy runs on host networking
@@ -19,28 +29,32 @@ This configuration has several advantages:
 
 For detailed instructions on how to configure the required certs manually, see the [step-by-step TLS HOWTO](https://projectcontour.io/docs/master/grpc-tls-howto).
 
+## Deployments
+
+The [deployments](./deployments) directory contains pre-configured
+deployments for a number of Kubernetes targets. These are largely
+similar. They all install all the Contour components into the
+`projectcontour` namespace and use `contour certgen` to create the xDS
+session certificates.
+
+The [quickstart YAML](./quickstart.yaml) is the rendered result of the
+[base deployment](./deployments/base).
+
 ## Deploy Contour
 
 Either:
 
-1. Run `kubectl apply -f https://projectcontour.io/quickstart/contour.yaml`
-
-or:
-Clone or fork the repository, then run:
-
 ```bash
-kubectl apply -f examples/contour
+kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
 ```
 
-This will:
+or:
 
-- set up RBAC and Contour's CRDs (CRDs include IngressRoute, TLSCertificateDelegation, HTTPProxy)
-  * IngressRoute is deprecated and will be removed in a furture release.
-  * Users should start transitioning to HTTPProxy to ensure no disruptions in the future.
-- run a Kubernetes Job that will generate one-year validity certs and put them into `projectcontour`
-- Install Contour and Envoy in a Deployment and Daemonset respectively.
+Clone or fork the repository, and run:
 
-**NOTE**: The current configuration exposes the `/stats` path from the Envoy Admin UI so that Prometheus can scrape for metrics.
+```bash
+kustomize build config/deployments/base | kubectl apply -f -
+```
 
 ## Test
 

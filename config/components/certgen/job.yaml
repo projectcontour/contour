@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: contour-certgen
+spec:
+  ttlSecondsAfterFinished: 0
+  template:
+    metadata:
+      labels:
+        app: "contour-certgen"
+    spec:
+      containers:
+      - name: contour
+        image: projectcontour/contour
+        imagePullPolicy: Always
+        command:
+        - contour
+        - certgen
+        - --incluster
+        - --kube
+        - --namespace=$(CONTOUR_NAMESPACE)
+        env:
+        - name: CONTOUR_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+      restartPolicy: Never
+      serviceAccountName: contour-certgen
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+  parallelism: 1
+  completions: 1
+  backoffLimit: 1

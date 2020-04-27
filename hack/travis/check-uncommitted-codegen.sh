@@ -10,8 +10,7 @@ readonly REPO=$(cd ${HERE}/../.. && pwd)
 declare -r -a DIRS=(
 	${REPO}/apis
 	${REPO}/site/_metrics
-	${REPO}/examples/render
-	${REPO}/examples/contour
+	${REPO}/config
 )
 
 if git status -s ${DIRS[@]} 2>&1 | grep -E -q '^\s+[MADRCU]'

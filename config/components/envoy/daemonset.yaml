@@ -1,11 +1,9 @@
----
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
     app: envoy
   name: envoy
-  namespace: projectcontour
 spec:
   updateStrategy:
     type: RollingUpdate
@@ -29,7 +27,7 @@ spec:
         args:
           - envoy
           - shutdown-manager
-        image: docker.io/projectcontour/contour:master
+        image: projectcontour/contour
         imagePullPolicy: Always
         lifecycle:
           preStop:
@@ -52,7 +50,7 @@ spec:
         - --log-level info
         command:
         - envoy
-        image: docker.io/envoyproxy/envoy:v1.14.1
+        image: envoyproxy/envoy
         imagePullPolicy: IfNotPresent
         name: envoy
         env:
@@ -105,7 +103,7 @@ spec:
         - --envoy-key-file=/certs/tls.key
         command:
         - contour
-        image: docker.io/projectcontour/contour:master
+        image: projectcontour/contour
         imagePullPolicy: Always
         name: envoy-initconfig
         volumeMounts:

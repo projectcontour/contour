@@ -1,11 +1,9 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     app: contour
   name: contour
-  namespace: projectcontour
 spec:
   replicas: 2
   strategy:

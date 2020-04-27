@@ -1,0 +1,12 @@
+# Kind doesn't support Service type Loadbalancer, so we use NodePort
+# instead, and assume that the Kind configuration maps the nost ports to
+# the host.
+#
+# See ../../../examples/kind/kind-expose-port.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: envoy
+spec:
+  type: NodePort

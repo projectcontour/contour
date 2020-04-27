@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- job.yaml
+- rbac.yaml
+- serviceaccount.yaml
+
+# This version is set to latest because Job specs are immutable;
+# if we change this on each version, you can no longer upgrade
+# just by applying the deployment YAML.
+#
+# See #2423, #2395, #2150, and #2030 for earlier questions about this.
+images:
+- name: projectcontour/contour
+  newName: docker.io/projectcontour/contour
+  newTag: master

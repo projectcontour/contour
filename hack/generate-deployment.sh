@@ -8,8 +8,7 @@ readonly HERE=$(cd $(dirname $0) && pwd)
 readonly REPO=$(cd ${HERE}/.. && pwd)
 readonly PROGNAME=$(basename $0)
 
-
-readonly TARGET="${REPO}/examples/render/contour.yaml"
+readonly TARGET="${REPO}/config/quickstart.yaml"
 
 exec >$TARGET
 
@@ -20,12 +19,13 @@ cat <<EOF
 # Generated from:
 EOF
 
-(cd ${REPO} && ls examples/contour/*.yaml) | \
+(cd ${REPO} && ls config/components/*/*.yaml) | \
   awk '{printf "#       %s\n", $0}'
 
 echo "#"
 echo
 
-cat ${REPO}/examples/contour/*.yaml | \
-  sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g'
+# TODO(jpeach): Fix the pull policy in the base YAML.
 
+kustomize build ${REPO}/config/deployments/base | \
+  sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g'

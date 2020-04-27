@@ -38,7 +38,7 @@ jobs:
     - $HOME/bin/kind create cluster --wait 2m
     - $HOME/bin/kind load docker-image docker.io/projectcontour/contour:master
     - $HOME/bin/kind load docker-image docker.io/projectcontour/contour:latest
-    - $HOME/bin/kubectl apply -f examples/render/contour.yaml
+    - $HOME/bin/kustomize build config/deployments/kind | $HOME/bin/kubectl apply -f -
     - $HOME/bin/kubectl wait --timeout=2m -n projectcontour -l app=contour deployments --for=condition=Available
     - $HOME/bin/kubectl wait --timeout=2m -n projectcontour -l app=envoy pods --for=condition=Ready
     - $HOME/bin/kind delete cluster

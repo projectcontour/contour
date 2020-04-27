@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- serviceaccount.yaml
+- daemonset.yaml
+- service.yaml
+
+images:
+- name: envoyproxy/envoy
+  newName: docker.io/envoyproxy/envoy
+  newTag: v1.14.1
+- name: projectcontour/contour
+  newName: docker.io/projectcontour/contour
+  newTag: master

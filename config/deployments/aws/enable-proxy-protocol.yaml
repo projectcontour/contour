@@ -1,0 +1,6 @@
+# On AWS, we enable TCP mode for ELS, so we also want to enable PROXY
+# protocol support to propagate the remote IP address.
+
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: --use-proxy-protocol

@@ -1,0 +1,16 @@
+# Add annotations to specify the AWS load balancer mode.
+# 
+# - Specify the backend protocol as "TCP" so that Envoy can do the TLS termination.
+# - Enable PROXY protocol to propagate the remote IP address to Envoy.
+# 
+# See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#aws
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: envoy
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+    service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: '*'
+spec:
+  type: LoadBalancer

@@ -18,22 +18,21 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-readonly IMG="docker.io/projectcontour/contour:$NEWVERS"
-
 if [ -n "$(git tag --list "$NEWVERS")" ]; then
     printf "%s: tag '%s' already exists\n" "$PROGNAME" "$NEWVERS"
     exit 1
 fi
 
-# NOTE(jpeach): this will go away or change once we move to kustomize
-# since at that point the versioned image name will appear exactly once.
-for f in examples/contour/03-envoy.yaml examples/contour/03-contour.yaml ; do
+# NOTE(jpeach): Unfortunately moving to kustomize doesn't end up reducing
+# the number of places where the Contour image version is encoded. We end
+# up needing to update the version in each separable component.
+for f in config/components/*/kustomization.yaml ; do
     case $(uname -s) in
     Darwin)
-        sed -i '' "-es|docker.io/projectcontour/contour:master|$IMG|" "$f"
+        sed -i '' "-es|newTag: master|newTag: $NEWVERS|" "$f"
         ;;
     Linux)
-        sed -i "-es|docker.io/projectcontour/contour:master|$IMG|" "$f"
+        sed -i "-es|newTag: master|newTag: $NEWVERS|" "$f"
         ;;
     *)
         printf "Unsupported system '%s'" "$(uname -s)"
@@ -49,9 +48,9 @@ make generate
 # make sure that there are changes to commit before we do it.
 if git status -s examples/contour 2>&1 | grep -E -q '^\s+[MADRCU]'; then
     git commit -s -m "Update Contour Docker image to $NEWVERS." \
-        examples/contour/03-contour.yaml \
-        examples/contour/03-envoy.yaml \
-        examples/render/contour.yaml
+        config/components/certgen/kustomization.yaml \
+        config/components/envoy/kustomization.yaml \
+        config/components/contour/kustomization.yaml
 fi
 
 git tag -F - "$NEWVERS" <<EOF
