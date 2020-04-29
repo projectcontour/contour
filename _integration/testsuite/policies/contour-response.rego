@@ -44,3 +44,20 @@ testid(resp) = value {
   b := body(resp)
   value := object.get(b, "TestId", "")
 }
+
+# Return true if the response status matches.
+status_is(resp, expected_code) = true {
+  status_code := object.get(resp, "status_code", 0)
+  status_code == expected_code
+} else = false {
+  true
+}
+
+# Return true if the response status is in the 4xx range.
+is_4xx(resp) = true {
+  status_code := object.get(resp, "status_code", 0)
+  status_code >= 400
+  status_code < 500
+} else = false {
+  true
+}

@@ -1,4 +1,4 @@
-// Copyright © 2019 VMware
+// Copyright © 2020 VMware
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -21,7 +21,6 @@ import (
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	v1 "k8s.io/api/core/v1"
@@ -90,14 +89,11 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
-				FilterChains: filterchaintls("kuard.example.com", sec1,
-					envoy.HTTPConnectionManagerBuilder().
-						RouteConfigName("https/kuard.example.com").
-						MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-						AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-						Get(),
-					nil,
-					"h2", "http/1.1"),
+				FilterChains: appendFilterChains(
+					filterchaintls("kuard.example.com", sec1,
+						httpsFilterFor("kuard.example.com"),
+						nil, "h2", "http/1.1"),
+				),
 			},
 		),
 		TypeUrl: listenerType,
@@ -144,13 +140,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 					envoy_api_v2_auth.TlsParameters_TLSv1_3,
 					nil,
 					"h2", "http/1.1"),
-				envoy.Filters(
-					envoy.HTTPConnectionManagerBuilder().
-						RouteConfigName("https/kuard.example.com").
-						MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-						AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-						Get(),
-				),
+				envoy.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
 	}

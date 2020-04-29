@@ -1,4 +1,4 @@
-// Copyright © 2019 VMware
+// Copyright © 2020 VMware
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package envoy
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
+	lua "github.com/envoyproxy/go-control-plane/envoy/config/filter/http/lua/v2"
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
@@ -67,6 +69,7 @@ type httpConnectionManagerBuilder struct {
 	metricsPrefix   string
 	accessLoggers   []*accesslog.AccessLog
 	requestTimeout  time.Duration
+	filters         []*http.HttpFilter
 }
 
 // RouteConfigName sets the name of the RDS element that contains
@@ -99,6 +102,27 @@ func (b *httpConnectionManagerBuilder) RequestTimeout(timeout time.Duration) *ht
 	return b
 }
 
+func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBuilder {
+	b.filters = append(b.filters,
+		&http.HttpFilter{
+			Name: wellknown.Gzip,
+		},
+		&http.HttpFilter{
+			Name: wellknown.GRPCWeb,
+		},
+		&http.HttpFilter{
+			Name: wellknown.Router,
+		},
+	)
+
+	return b
+}
+
+func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnectionManagerBuilder {
+	b.filters = append(b.filters, f)
+	return b
+}
+
 // Get returns a new http.HttpConnectionManager filter, constructed
 // from the builder settings.
 //
@@ -111,13 +135,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 				ConfigSource:    ConfigSource("contour"),
 			},
 		},
-		HttpFilters: []*http.HttpFilter{{
-			Name: wellknown.Gzip,
-		}, {
-			Name: wellknown.GRPCWeb,
-		}, {
-			Name: wellknown.Router,
-		}},
+		HttpFilters: b.filters,
 		CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
 			// Sets the idle timeout for HTTP connections to 60 seconds.
 			// This is chosen as a rough default to stop idle connections wasting resources,
@@ -166,6 +184,7 @@ func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog
 		MetricsPrefix(routename).
 		AccessLoggers(accesslogger).
 		RequestTimeout(requestTimeout).
+		DefaultFilters().
 		Get()
 }
 
@@ -278,6 +297,32 @@ func FilterChains(filters ...*envoy_api_v2_listener.Filter) []*envoy_api_v2_list
 	}
 	return []*envoy_api_v2_listener.FilterChain{
 		FilterChain(filters...),
+	}
+}
+
+func FilterMisdirectedRequests(fqdn string) *http.HttpFilter {
+	code := `
+function envoy_on_request(request_handle)
+    local headers = request_handle:headers()
+    local host = headers:get(":authority")
+
+    if host ~= "%s" then
+	request_handle:respond({
+		[":status"] = "421",
+	    },
+	    ""
+	)
+    end
+end
+`
+
+	return &http.HttpFilter{
+		Name: "envoy.filters.http.lua",
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
+				InlineCode: fmt.Sprintf(code, fqdn),
+			}),
+		},
 	}
 }
 

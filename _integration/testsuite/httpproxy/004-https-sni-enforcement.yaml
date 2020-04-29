@@ -117,7 +117,7 @@ fatal_proxy_is_not_present[msg] {
   msg := sprintf("HTTPProxy for %q is not present", [ fqdn ])
 }
 
---- 
+---
 
 Name := "echo-one"
 
@@ -243,7 +243,7 @@ fatal_proxy_is_not_present[msg] {
   msg := sprintf("HTTPProxy for %q is not present", [ fqdn ])
 }
 
---- 
+---
 
 Name := "echo-two"
 
@@ -309,9 +309,10 @@ error_path_routing_mismatch[msg] {
 ---
 
 import data.contour.http.client
+import data.contour.http.response
 
 # Ensure that sending a request to "echo-one" with the SNI from "echo-two"
-# generates a 404.
+# generates a 4xx response status.
 
 Response := client.Get({
   "url": sprintf("https://%s/https-sni-enforcement/%d", [
@@ -324,23 +325,18 @@ Response := client.Get({
   "tls_server_name": "echo-two.projectcontour.io",
 })
 
-Wanted := 404
-
-error_non_404_response [msg] {
-  Response.status_code != Wanted
-
-  msg :=  sprintf("got status %d, wanted %d", [
-    Response.status_code, Wanted
-  ])
+error_non_400_response [msg] {
+  not response.is_4xx(Response)
+  msg :=  sprintf("got status %d, wanted 4xx", [ Response.status_code ])
 }
-
 
 ---
 
 import data.contour.http.client
+import data.contour.http.response
 
 # Ensure that sending a request to "echo-two" with the SNI from "echo-one"
-# generates a 404.
+# generates a 4xx response status.
 
 Response := client.Get({
   "url": sprintf("https://%s/https-sni-enforcement/%d", [
@@ -353,18 +349,7 @@ Response := client.Get({
   "tls_server_name": "echo-one.projectcontour.io",
 })
 
-Wanted := 404
-
-error_no_response {
-  not Response
-}
-
 error_non_404_response [msg] {
-  Response.status_code != Wanted
-
-  msg :=  sprintf("got status %d, wanted %d", [
-    Response.status_code, Wanted
-  ])
+  not response.is_4xx(Response)
+  msg :=  sprintf("got status %d, wanted 4xx", [ Response.status_code ])
 }
-
-

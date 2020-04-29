@@ -17,9 +17,9 @@ import (
 	"testing"
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/fixture"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/envoy"
 
 	v1 "k8s.io/api/core/v1"
@@ -67,12 +67,8 @@ func TestFallbackCertificate(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// Valid HTTPProxy without FallbackCertificate enabled
-	proxy1 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
-		Spec: projcontour.HTTPProxySpec{
+	proxy1 := fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "fallback.example.com",
 				TLS: &projcontour.TLS{
@@ -86,11 +82,12 @@ func TestFallbackCertificate(t *testing.T) {
 					Port: 80,
 				}},
 			}},
-		},
-	}
+		})
 	rh.OnAdd(proxy1)
 
+	// We should start with a single generic HTTPS service.
 	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+		TypeUrl: listenerType,
 		Resources: resources(t,
 			&v2.Listener{
 				Name:    "ingress_https",
@@ -98,26 +95,18 @@ func TestFallbackCertificate(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
-				FilterChains: filterchaintls("fallback.example.com", sec1,
-					envoy.HTTPConnectionManagerBuilder().
-						RouteConfigName("https/fallback.example.com").
-						MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-						AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-						Get(),
-					nil,
-					"h2", "http/1.1"),
+				FilterChains: appendFilterChains(
+					filterchaintls("fallback.example.com", sec1,
+						httpsFilterFor("fallback.example.com"),
+						nil, "h2", "http/1.1"),
+				),
 			},
 		),
-		TypeUrl: listenerType,
 	})
 
 	// Valid HTTPProxy with FallbackCertificate enabled
-	proxy2 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
-		Spec: projcontour.HTTPProxySpec{
+	proxy2 := fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "fallback.example.com",
 				TLS: &projcontour.TLS{
@@ -131,12 +120,14 @@ func TestFallbackCertificate(t *testing.T) {
 					Port: 80,
 				}},
 			}},
-		},
-	}
+		})
 
 	rh.OnUpdate(proxy1, proxy2)
 
+	// Now we should still have the generic HTTPS service filter,
+	// but also the fallback certificate filter.
 	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+		TypeUrl: listenerType,
 		Resources: resources(t,
 			&v2.Listener{
 				Name:    "ingress_https",
@@ -144,26 +135,19 @@ func TestFallbackCertificate(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
-				FilterChains: filterchaintlsfallback("fallback.example.com", sec1, fallbackSecret,
-					envoy.HTTPConnectionManagerBuilder().
-						RouteConfigName("https/fallback.example.com").
-						MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-						AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-						Get(),
-					nil,
-					"h2", "http/1.1"),
+				FilterChains: appendFilterChains(
+					filterchaintls("fallback.example.com", sec1,
+						httpsFilterFor("fallback.example.com"),
+						nil, "h2", "http/1.1"),
+					filterchaintlsfallback(fallbackSecret, nil, "h2", "http/1.1"),
+				),
 			},
 		),
-		TypeUrl: listenerType,
 	})
 
-	// InValid HTTPProxy with FallbackCertificate enabled along with ClientValidation
-	proxy3 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
-		Spec: projcontour.HTTPProxySpec{
+	// Invalid HTTPProxy with FallbackCertificate enabled along with ClientValidation
+	proxy3 := fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "fallback.example.com",
 				TLS: &projcontour.TLS{
@@ -180,23 +164,18 @@ func TestFallbackCertificate(t *testing.T) {
 					Port: 80,
 				}},
 			}},
-		},
-	}
+		})
 
 	rh.OnUpdate(proxy2, proxy3)
 
 	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
-		Resources: nil,
 		TypeUrl:   listenerType,
+		Resources: nil,
 	})
 
 	// Valid HTTPProxy with FallbackCertificate enabled
-	proxy4 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple-two",
-			Namespace: s1.Namespace,
-		},
-		Spec: projcontour.HTTPProxySpec{
+	proxy4 := fixture.NewProxy("simple-two").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "anotherfallback.example.com",
 				TLS: &projcontour.TLS{
@@ -210,13 +189,13 @@ func TestFallbackCertificate(t *testing.T) {
 					Port: 80,
 				}},
 			}},
-		},
-	}
+		})
 
 	rh.OnUpdate(proxy3, proxy2) // proxy3 is invalid, resolve that to test two valid proxies
 	rh.OnAdd(proxy4)
 
 	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+		TypeUrl: listenerType,
 		Resources: resources(t,
 			&v2.Listener{
 				Name:    "ingress_https",
@@ -224,30 +203,23 @@ func TestFallbackCertificate(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
-				FilterChains: append(filterchaintls("anotherfallback.example.com", sec1,
-					envoy.HTTPConnectionManagerBuilder().
-						RouteConfigName("https/anotherfallback.example.com").
-						MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-						AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-						Get(),
-					nil,
-					"h2", "http/1.1"), filterchaintlsfallback("fallback.example.com", sec1, fallbackSecret,
-					envoy.HTTPConnectionManagerBuilder().
-						RouteConfigName("https/fallback.example.com").
-						MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-						AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-						Get(),
-					nil,
-					"h2", "http/1.1")...),
+				FilterChains: appendFilterChains(
+					filterchaintls("anotherfallback.example.com", sec1,
+						httpsFilterFor("anotherfallback.example.com"),
+						nil, "h2", "http/1.1"),
+					filterchaintls("fallback.example.com", sec1,
+						httpsFilterFor("fallback.example.com"),
+						nil, "h2", "http/1.1"),
+					filterchaintlsfallback(fallbackSecret, nil, "h2", "http/1.1"),
+				),
 			},
 		),
-		TypeUrl: listenerType,
 	})
 
 	rh.OnDelete(fallbackSecret)
 
 	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
-		Resources: nil,
 		TypeUrl:   listenerType,
+		Resources: nil,
 	})
 }

@@ -1,4 +1,4 @@
-// Copyright © 2019 VMware
+// Copyright © 2020 VMware
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -298,6 +298,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 	if lv.http {
 		// Add a listener if there are vhosts bound to http.
 		cm := envoy.HTTPConnectionManagerBuilder().
+			DefaultFilters().
 			RouteConfigName(ENVOY_HTTP_LISTENER).
 			MetricsPrefix(ENVOY_HTTP_LISTENER).
 			AccessLoggers(lvc.newInsecureAccessLog()).
@@ -366,6 +367,8 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			// coded into monitoring dashboards.
 			filters = envoy.Filters(
 				envoy.HTTPConnectionManagerBuilder().
+					AddFilter(envoy.FilterMisdirectedRequests(vh.VirtualHost.Name)).
+					DefaultFilters().
 					RouteConfigName(path.Join("https", vh.VirtualHost.Name)).
 					MetricsPrefix(ENVOY_HTTPS_LISTENER).
 					AccessLoggers(v.ListenerVisitorConfig.newSecureAccessLog()).
@@ -403,10 +406,12 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains,
 			envoy.FilterChainTLS(vh.VirtualHost.Name, downstreamTLS, filters))
 
-		// If this VirtualHost has enabled the fallback certificate then set a default FilterChain which will allow
-		// routes with this vhost to accept non SNI TLS requests
+		// If this VirtualHost has enabled the fallback certificate then set a default
+		// FilterChain which will allow routes with this vhost to accept non-SNI TLS requests.
+		// Note that we don't add the misdirected requests filter on this chain because at this
+		// point we don't actually know the full set of server names that will be bound to the
+		// filter chain through the ENVOY_FALLBACK_ROUTECONFIG route configuration.
 		if vh.FallbackCertificate != nil && !envoy.ContainsFallbackFilterChain(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains) {
-
 			// Construct the downstreamTLSContext passing the configured fallbackCertificate. The TLS minProtocolVersion will use
 			// the value defined in the Contour Configuration file if defined.
 			downstreamTLS = envoy.DownstreamTLSContext(

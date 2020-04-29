@@ -38,4 +38,12 @@ Get(params) = response {
   }
 
   response := http.send(object.union(to_send, params))
+} else = response {
+  # If the Get wasn't evaluated for any reason, return a dummy object to ensure
+  # subsequent field references are valid.
+  response := {
+    "status_code": 0,
+    "body": {},
+    "headers": {},
+  }
 }

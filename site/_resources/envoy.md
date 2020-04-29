@@ -34,7 +34,7 @@ If you are using the image recommended in our [example deployment][3] no action 
 If you are providing your own Envoy it must be compiled with the following extensions:
 
 - `access_loggers`: `envoy.access_loggers.file`,`envoy.access_loggers.http_grpc`,`envoy.access_loggers.tcp_grpc`
-- `filters.http`: `envoy.buffer`,`envoy.cors`,`envoy.csrf`,`envoy.fault`,`envoy.filters.http.adaptive_concurrency`,`envoy.filters.http.dynamic_forward_proxy`,`envoy.filters.http.grpc_http1_reverse_bridge`,`envoy.filters.http.grpc_stats`,`envoy.filters.http.header_to_metadata`,`envoy.filters.http.original_src`,`envoy.grpc_http1_bridge`,`envoy.grpc_json_transcoder`,`envoy.grpc_web`,`envoy.gzip`,`envoy.health_check`,`envoy.ip_tagging`,`envoy.router`
+- `filters.http`: `envoy.buffer`, `envoy.cors`, `envoy.csrf`, `envoy.fault`, `envoy.filters.http.adaptive_concurrency`, `envoy.filters.http.dynamic_forward_proxy`, `envoy.filters.http.grpc_http1_reverse_bridge`, `envoy.filters.http.grpc_stats`, `envoy.filters.http.header_to_metadata`, `envoy.filters.http.lua`, `envoy.filters.http.original_src`, `envoy.grpc_http1_bridge`, `envoy.grpc_json_transcoder`, `envoy.grpc_web`, `envoy.gzip`, `envoy.health_check`, `envoy.ip_tagging`, `envoy.router`
 - `filters.listener`: `envoy.listener.http_inspector`,`envoy.listener.original_dst`,`envoy.listener.original_src`,`envoy.listener.proxy_protocol`,`envoy.listener.tls_inspector`
 - `filters.network`: `envoy.echo`,`envoy.filters.network.sni_cluster`,`envoy.http_connection_manager`,`envoy.tcp_proxy`
 - `stat_sinks`: `envoy.metrics_service`
