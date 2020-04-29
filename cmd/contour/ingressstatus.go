@@ -38,10 +38,11 @@ import (
 //    is been received, operation restarts at step 3.
 // 5. If the worker is stopped, any existing informer is stopped before the worker stops.
 type loadBalancerStatusWriter struct {
-	log      logrus.FieldLogger
-	clients  *k8s.Clients
-	isLeader chan struct{}
-	lbStatus chan v1.LoadBalancerStatus
+	log          logrus.FieldLogger
+	clients      *k8s.Clients
+	isLeader     chan struct{}
+	lbStatus     chan v1.LoadBalancerStatus
+	ingressClass string
 }
 
 func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
@@ -76,14 +77,20 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 
 			isw.log.WithField("loadbalancer-address", lbAddress(lbs)).Info("received a new address for status.loadBalancer")
 
+			// Configure the IngressStatusUpdater logger
+			log := isw.log.WithField("context", "IngressStatusUpdater")
+			if isw.ingressClass != "" {
+				log = log.WithField("target-ingress-class", isw.ingressClass)
+			}
+
 			// Create new informer for the new LoadBalancerStatus
 			factory := isw.clients.NewInformerFactory()
 			inf := factory.Networking().V1beta1().Ingresses().Informer()
-			log := isw.log.WithField("context", "IngressStatusUpdater")
 			inf.AddEventHandler(&k8s.IngressStatusUpdater{
-				Client: isw.clients.ClientSet(),
-				Logger: log,
-				Status: lbs,
+				Client:       isw.clients.ClientSet(),
+				Logger:       log,
+				Status:       lbs,
+				IngressClass: isw.ingressClass,
 			})
 
 			shutdown = make(chan struct{})

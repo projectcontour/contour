@@ -296,10 +296,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 11. set up ingress load balancer status writer
 	lbsw := loadBalancerStatusWriter{
-		log:      log.WithField("context", "loadBalancerStatusWriter"),
-		clients:  clients,
-		isLeader: eventHandler.IsLeader,
-		lbStatus: make(chan v1.LoadBalancerStatus, 1),
+		log:          log.WithField("context", "loadBalancerStatusWriter"),
+		clients:      clients,
+		isLeader:     eventHandler.IsLeader,
+		lbStatus:     make(chan v1.LoadBalancerStatus, 1),
+		ingressClass: ctx.ingressClass,
 	}
 	g.Add(lbsw.Start)
 
