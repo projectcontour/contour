@@ -20,21 +20,9 @@ Your services should see the addresses in the `X-Forwarded-For` or `X-Envoy-Exte
 
 ## Enable PROXY protocol on your service in AWS
 
-To instruct EC2 to place the ELB into `tcp`+`PROXY` mode, add the following annotations to the `contour` Service:
+To instruct EC2 to place the ELB into `tcp`+`PROXY` mode, follow the steps mentioned in this [AWS documentation][2]
 
-```
-apiVersion: v1
-kind: Service
-metadata:
-  annotations:
-      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
-      service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: '*'
-    name: contour
-    namespace: projectcontour
-spec:
-  type: LoadBalancer
-...
-```
+**NOTE**: Currently, there's no automated way to enable/disable PROXY protocol on the ELB. Although, there exists a service annotation `service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: '*'` to toggle the PROXY protocol, it is found to have no effect on the ELB (Due to this open [issue][3])
 
 ## Enable PROXY protocol support for all Envoy listening ports
 
@@ -52,3 +40,5 @@ spec:
 
 [0]: http://www.haproxy.org/download/1.8/doc/proxy-protocol.txt
 [1]: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer
+[2]: https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-target-groups.html#enable-proxy-protocol
+[3]: https://github.com/kubernetes/kubernetes/issues/57250
