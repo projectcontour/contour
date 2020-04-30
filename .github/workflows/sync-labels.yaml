@@ -1,10 +1,10 @@
 # This workflow runs the sync-repo-labels.sh script periodically.
-name: Sync Labels
+name: Sync GitHub Labels
 
 on:
-  # Run every hour.
+  # Run every day at 10:00 (until #2485 is fixed).
   schedule:
-  - cron: '5 */1 * * *'
+  - cron: '0 10 * * *'
   # Run when a PR that touched the labels is closed (closed includes merges).
   pull_request:
     types: [closed]
