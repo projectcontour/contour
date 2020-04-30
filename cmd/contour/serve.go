@@ -38,6 +38,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	coreinformers "k8s.io/client-go/informers"
 )
 
@@ -101,6 +102,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	// TODO(sas) Deprecate `ingressroute-root-namespaces` in v1.0
 	serve.Flag("ingressroute-root-namespaces", "DEPRECATED (Use 'root-namespaces'): Restrict contour to searching these namespaces for root ingress routes.").StringVar(&ctx.rootNamespaces)
 	serve.Flag("root-namespaces", "Restrict contour to searching these namespaces for root ingress routes.").StringVar(&ctx.rootNamespaces)
+	serve.Flag("single-namespace", "Restrict contour to operating in only it's namespace.").BoolVar(&ctx.singleNamespace)
 
 	serve.Flag("ingress-class-name", "Contour IngressClass name.").StringVar(&ctx.ingressClass)
 	serve.Flag("ingress-status-address", "Address to set in Ingress object status.").StringVar(&ctx.IngressStatusAddress)
@@ -132,8 +134,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	// step 2. create informer factories
-	informerFactory := clients.NewInformerFactory()
-	dynamicInformerFactory := clients.NewDynamicInformerFactory()
+	informerNamespace := metav1.NamespaceAll
+	if ctx.singleNamespace {
+		informerNamespace = getEnv("CONTOUR_NAMESPACE", "projectcontour")
+	}
+
+	informerFactory := clients.NewInformerFactoryForNamespace(informerNamespace)
+	dynamicInformerFactory := clients.NewDynamicInformerFactory(informerNamespace)
 
 	// Create a set of SharedInformerFactories for each root-ingressroute namespace (if defined)
 	namespacedInformerFactories := map[string]coreinformers.SharedInformerFactory{}
@@ -296,11 +303,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 11. set up ingress load balancer status writer
 	lbsw := loadBalancerStatusWriter{
-		log:          log.WithField("context", "loadBalancerStatusWriter"),
-		clients:      clients,
-		isLeader:     eventHandler.IsLeader,
-		lbStatus:     make(chan v1.LoadBalancerStatus, 1),
-		ingressClass: ctx.ingressClass,
+		log:               log.WithField("context", "loadBalancerStatusWriter"),
+		clients:           clients,
+		isLeader:          eventHandler.IsLeader,
+		lbStatus:          make(chan v1.LoadBalancerStatus, 1),
+		ingressClass:      ctx.ingressClass,
+		informerNamespace: informerNamespace,
 	}
 	g.Add(lbsw.Start)
 

@@ -62,6 +62,9 @@ type serveContext struct {
 	// ingressroute root namespaces
 	rootNamespaces string
 
+	// Only operate in the Contour namespace
+	singleNamespace bool
+
 	// ingress class
 	ingressClass string
 

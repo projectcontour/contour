@@ -85,8 +85,8 @@ func (c *Clients) NewInformerFactoryForNamespace(namespace string) informers.Sha
 
 // NewDynamicInformerFactory returns a new DynamicSharedInformerFactory for
 // use with any registered Kubernetes API type.
-func (c *Clients) NewDynamicInformerFactory() dynamicinformer.DynamicSharedInformerFactory {
-	return dynamicinformer.NewDynamicSharedInformerFactory(c.dynamic, resyncInterval)
+func (c *Clients) NewDynamicInformerFactory(namespace string) dynamicinformer.DynamicSharedInformerFactory {
+	return dynamicinformer.NewFilteredDynamicSharedInformerFactory(c.dynamic, resyncInterval, namespace, nil)
 }
 
 // ClientSet returns the Kubernetes Core v1 ClientSet.
