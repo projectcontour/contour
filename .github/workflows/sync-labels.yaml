@@ -25,7 +25,7 @@ jobs:
     # We need this token in a file so the syncer can consume it from
     # within the Docker container.
     - name: Export the GitHub token
-      run: 'echo "${{ secrets.GITHUB_TOKEN }}" > github-token'
+      run: 'echo "${{ secrets.PROJECTCONTOUR_BOT_GITHUB_TOKEN }}" > github-token'
     - name: Run the label syncer
       run: 'TOKEN="github-token" ./hack/release/sync-repo-labels.sh'
 
