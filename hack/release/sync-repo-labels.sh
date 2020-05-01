@@ -16,9 +16,6 @@ set -o pipefail
 labelsync() {
     $DOCKER run \
         --rm \
-        --interactive \
-        --tty \
-        --env GITHUB_TOKEN \
         --volume "${REPO}:/$(basename "${REPO}")" \
         gcr.io/k8s-prow/label_sync:latest \
     "$@"
@@ -46,11 +43,14 @@ yaml=$(path::absolute "${LABELS}")
 # within the repository, which will resolve within the container.
 yaml=${yaml##$(dirname "${REPO}")}
 
+# Treat the token the same as the YAML path, which requires it to be a
+# file within the repository.
 token=$(path::absolute "${TOKEN}")
 token=${token##$(dirname "${REPO}")}
 
 labelsync \
     --debug \
+    --confirm \
     --orgs projectcontour \
     --skip projectcontour/toc \
     --config "${yaml}" \
