@@ -131,11 +131,10 @@ func TestSetIngressRouteStatus(t *testing.T) {
 
 func TestSetHTTPProxyStatus(t *testing.T) {
 	type testcase struct {
-		msg           string
-		desc          string
-		existing      *projectcontour.HTTPProxy
-		expectedPatch string
-		expectedVerbs []string
+		msg      string
+		desc     string
+		existing *projectcontour.HTTPProxy
+		expected *projectcontour.HTTPProxy
 	}
 
 	run := func(t *testing.T, name string, tc testcase) {
@@ -143,34 +142,48 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			t.Helper()
-			var gotPatchBytes []byte
+			var gotObj runtime.Object
 			s := runtime.NewScheme()
 			projcontour.AddKnownTypes(s)
+			usc, err := NewUnstructuredConverter()
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			client := fake.NewSimpleDynamicClient(s, tc.existing)
 
-			client.PrependReactor("patch", "httpproxies", func(action k8stesting.Action) (bool, runtime.Object, error) {
-				switch patchAction := action.(type) {
+			client.PrependReactor("*", "httpproxies", func(action k8stesting.Action) (bool, runtime.Object, error) {
+				switch updateAction := action.(type) {
 				default:
 					return true, nil, fmt.Errorf("got unexpected action of type: %T", action)
-				case k8stesting.PatchActionImpl:
-					gotPatchBytes = patchAction.GetPatch()
+				case k8stesting.UpdateActionImpl:
+					gotObj = updateAction.GetObject()
 					return true, tc.existing, nil
 				}
 			})
 
 			proxysw := StatusWriter{
-				Client: client,
+				Client:    client,
+				Converter: usc,
 			}
+
 			if err := proxysw.SetStatus(tc.msg, tc.desc, tc.existing); err != nil {
+				t.Fatal(fmt.Errorf("unable to set proxy status: %s", err))
+			}
+
+			toProxy, err := usc.FromUnstructured(gotObj)
+			if err != nil {
 				t.Fatal(err)
 			}
 
-			if len(client.Actions()) != len(tc.expectedVerbs) {
-				t.Fatalf("Expected verbs mismatch: want: %d, got: %d", len(tc.expectedVerbs), len(client.Actions()))
+			if toProxy == nil && tc.expected == nil {
+				return
 			}
 
-			if tc.expectedPatch != string(gotPatchBytes) {
-				t.Fatalf("expected patch: %s, got: %s", tc.expectedPatch, string(gotPatchBytes))
+			assert.Equal(t, toProxy, tc.expected)
+
+			if toProxy == nil && tc.expected != nil {
+				t.Fatalf("Did not get expected update, %#v", tc.expected)
 			}
 		})
 	}
@@ -188,8 +201,16 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 				Description:   "",
 			},
 		},
-		expectedPatch: `{"status":{"currentStatus":"valid","description":"this is a valid HTTPProxy"}}`,
-		expectedVerbs: []string{"patch"},
+		expected: &projcontour.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+			},
+			Status: projcontour.Status{
+				CurrentStatus: "valid",
+				Description:   "this is a valid HTTPProxy",
+			},
+		},
 	})
 
 	run(t, "no update", testcase{
@@ -205,8 +226,7 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 				Description:   "this is a valid HTTPProxy",
 			},
 		},
-		expectedPatch: ``,
-		expectedVerbs: []string{},
+		expected: nil,
 	})
 
 	run(t, "replace existing status", testcase{
@@ -222,8 +242,16 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 				Description:   "boo hiss",
 			},
 		},
-		expectedPatch: `{"status":{"currentStatus":"valid","description":"this is a valid HTTPProxy"}}`,
-		expectedVerbs: []string{"patch"},
+		expected: &projcontour.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+			},
+			Status: projcontour.Status{
+				CurrentStatus: "valid",
+				Description:   "this is a valid HTTPProxy",
+			},
+		},
 	})
 }
 
