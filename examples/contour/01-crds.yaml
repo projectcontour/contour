@@ -312,12 +312,12 @@ spec:
                     secret must contain a matching certificate
                   properties:
                     clientValidation:
-                      description: 'ClientValidation defines how to verify the client
+                      description: "ClientValidation defines how to verify the client
                         certificate when an external client establishes a TLS connection
-                        to Envoy. This setting: 1. Enables TLS client certificate
+                        to Envoy. \n This setting: \n 1. Enables TLS client certificate
                         validation. 2. Requires clients to present a TLS certificate
                         (i.e. not optional validation). 3. Specifies how the client
-                        certificate will be validated.'
+                        certificate will be validated."
                       properties:
                         caSecret:
                           description: Name of a Kubernetes secret that contains a
@@ -1135,12 +1135,12 @@ spec:
                     secret must contain a matching certificate
                   properties:
                     clientValidation:
-                      description: 'ClientValidation defines how to verify the client
+                      description: "ClientValidation defines how to verify the client
                         certificate when an external client establishes a TLS connection
-                        to Envoy. This setting: 1. Enables TLS client certificate
+                        to Envoy. \n This setting: \n 1. Enables TLS client certificate
                         validation. 2. Requires clients to present a TLS certificate
                         (i.e. not optional validation). 3. Specifies how the client
-                        certificate will be validated.'
+                        certificate will be validated."
                       properties:
                         caSecret:
                           description: Name of a Kubernetes secret that contains a

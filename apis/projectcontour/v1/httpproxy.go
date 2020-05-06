@@ -122,7 +122,9 @@ type TLS struct {
 	Passthrough bool `json:"passthrough,omitempty"`
 	// ClientValidation defines how to verify the client certificate
 	// when an external client establishes a TLS connection to Envoy.
+	//
 	// This setting:
+	//
 	// 1. Enables TLS client certificate validation.
 	// 2. Requires clients to present a TLS certificate (i.e. not optional validation).
 	// 3. Specifies how the client certificate will be validated.
