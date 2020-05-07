@@ -14,6 +14,7 @@
 package k8s
 
 import (
+	"context"
 	"fmt"
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
@@ -43,7 +44,7 @@ type DynamicClientHandler struct {
 }
 
 func (d *DynamicClientHandler) OnAdd(obj interface{}) {
-	obj, err := d.Converter.Convert(obj)
+	obj, err := d.Converter.FromUnstructured(obj)
 	if err != nil {
 		d.Logger.Error(err)
 		return
@@ -52,12 +53,12 @@ func (d *DynamicClientHandler) OnAdd(obj interface{}) {
 }
 
 func (d *DynamicClientHandler) OnUpdate(oldObj, newObj interface{}) {
-	oldObj, err := d.Converter.Convert(oldObj)
+	oldObj, err := d.Converter.FromUnstructured(oldObj)
 	if err != nil {
 		d.Logger.Error(err)
 		return
 	}
-	newObj, err = d.Converter.Convert(newObj)
+	newObj, err = d.Converter.FromUnstructured(newObj)
 	if err != nil {
 		d.Logger.Error(err)
 		return
@@ -66,7 +67,7 @@ func (d *DynamicClientHandler) OnUpdate(oldObj, newObj interface{}) {
 }
 
 func (d *DynamicClientHandler) OnDelete(obj interface{}) {
-	obj, err := d.Converter.Convert(obj)
+	obj, err := d.Converter.FromUnstructured(obj)
 	if err != nil {
 		d.Logger.Error(err)
 		return
@@ -75,7 +76,8 @@ func (d *DynamicClientHandler) OnDelete(obj interface{}) {
 }
 
 type Converter interface {
-	Convert(obj interface{}) (interface{}, error)
+	FromUnstructured(obj interface{}) (interface{}, error)
+	ToUnstructured(obj interface{}) (*unstructured.Unstructured, error)
 }
 
 // UnstructuredConverter handles conversions between unstructured.Unstructured and Contour types
@@ -112,9 +114,9 @@ func NewUnstructuredConverter() (*UnstructuredConverter, error) {
 	return uc, nil
 }
 
-// Convert converts an unstructured.Unstructured to typed struct. If obj
+// FromUnstructured converts an unstructured.Unstructured to typed struct. If obj
 // is not an unstructured.Unstructured it is returned without further processing.
-func (c *UnstructuredConverter) Convert(obj interface{}) (interface{}, error) {
+func (c *UnstructuredConverter) FromUnstructured(obj interface{}) (interface{}, error) {
 	unstructured, ok := obj.(*unstructured.Unstructured)
 	if !ok {
 		return obj, nil
@@ -171,4 +173,17 @@ func (c *UnstructuredConverter) Convert(obj interface{}) (interface{}, error) {
 	default:
 		return nil, fmt.Errorf("unsupported object type: %T", obj)
 	}
+}
+
+// ToUnstructured converts the supplied object to Unstructured, provided it's one of the types
+// registered in the UnstructuredConverter's Scheme.
+func (c *UnstructuredConverter) ToUnstructured(obj interface{}) (*unstructured.Unstructured, error) {
+
+	u := &unstructured.Unstructured{}
+
+	if err := c.scheme.Convert(obj, u, context.TODO()); err != nil {
+		return nil, err
+	}
+
+	return u, nil
 }

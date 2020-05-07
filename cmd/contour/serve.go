@@ -180,7 +180,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		StatusClient: &k8s.StatusWriter{
-			Client: clients.DynamicClient(),
+			Client:    clients.DynamicClient(),
+			Converter: converter,
 		},
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{

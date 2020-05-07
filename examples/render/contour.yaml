@@ -571,7 +571,8 @@ spec:
     - proxies
     singular: httpproxy
   scope: Namespaced
-  subresources: {}
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: HTTPProxy is an Ingress CRD specification
@@ -1521,6 +1522,12 @@ rules:
   - put
   - post
   - patch
+- apiGroups:
+  - "projectcontour.io"
+  resources:
+  - "httpproxies/status"
+  verbs:
+  - update
 - apiGroups: ["networking.x.k8s.io"]
   resources: ["gatewayclasses", "gateways", "httproutes", "tcproutes"]
   verbs:

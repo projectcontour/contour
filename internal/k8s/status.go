@@ -112,7 +112,8 @@ func (c *StatusCacher) SetStatus(status, desc string, obj interface{}) error {
 
 // StatusWriter updates the object's Status field.
 type StatusWriter struct {
-	Client dynamic.Interface
+	Client    dynamic.Interface
+	Converter Converter
 }
 
 // GetStatus is not implemented for StatusWriter.
@@ -141,7 +142,7 @@ func (irs *StatusWriter) SetStatus(status, desc string, existing interface{}) er
 				CurrentStatus: status,
 				Description:   desc,
 			}
-			return irs.setHTTPProxyStatus(exist, updated)
+			return irs.setHTTPProxyStatus(updated)
 		}
 	}
 	return nil
@@ -176,24 +177,14 @@ func (irs *StatusWriter) setIngressRouteStatus(existing, updated *ingressroutev1
 	return err
 }
 
-func (irs *StatusWriter) setHTTPProxyStatus(existing, updated *projcontour.HTTPProxy) error {
-	existingBytes, err := json.Marshal(existing)
+func (irs *StatusWriter) setHTTPProxyStatus(updated *projcontour.HTTPProxy) error {
+
+	usUpdated, err := irs.Converter.ToUnstructured(updated)
 	if err != nil {
-		return err
-	}
-	// Need to set the resource version of the updated endpoints to the resource
-	// version of the current service. Otherwise, the resulting patch does not
-	// have a resource version, and the server complains.
-	updated.ResourceVersion = existing.ResourceVersion
-	updatedBytes, err := json.Marshal(updated)
-	if err != nil {
-		return err
-	}
-	patchBytes, err := jsonpatch.CreateMergePatch(existingBytes, updatedBytes)
-	if err != nil {
-		return err
+		return fmt.Errorf("unable to convert status update to HTTPProxy: %s", err)
 	}
 
-	_, err = irs.Client.Resource(projcontour.HTTPProxyGVR).Namespace(existing.GetNamespace()).Patch(context.TODO(), existing.GetName(), types.MergePatchType, patchBytes, metav1.PatchOptions{})
+	_, err = irs.Client.Resource(projcontour.HTTPProxyGVR).Namespace(updated.GetNamespace()).
+		UpdateStatus(context.TODO(), usUpdated, metav1.UpdateOptions{})
 	return err
 }
