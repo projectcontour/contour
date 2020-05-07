@@ -32,6 +32,13 @@ This same configuration will be available in the Contour configuration file in t
 Secondly, a new field will be added to the `HTTPProxy.Spec.VirtualHost.TLS` named `EnableFallbackCertificate` to allow virtual hosts to opt into this functionality.
 This last point is important as by default, all vhosts will **not** be enabled for this feature.
 
+In addition, the fallback certificate will need to be delegated to the namespace where the root `HTTPProxy` is defined using `CertificateDelegation`.
+The certificate can be delegate to a single, many, or all (e.g. `*`) namespaces.
+This ensures that any proxy that sets the `Spec.TLS.enableFallbackCertificate=true` has sufficient authority to configure this option.
+
+Client auth is also not compatible with the fallback certificate logic.
+If a root `HTTPProxy` defines both, the proxy will be set to an error.
+
 ## Detailed Design
 
 ### Envoy API
@@ -43,6 +50,7 @@ Envoy processes `FilterChainMataches` with `SNI` matches before transport protoc
 Next this catch-all filter chain takes a `route_config_name` reference in the `envoy.http_connection_manager`.
 For all non-http requests, an Envoy RDS config named `ingress_http` is configured with  all the routes.
 For each virtual host that has enabled the `EnableFallbackCertificate` flag a new RDS route table will be created which will contain all the routes for vhosts which have opted into the fallback certificate.
+If supplied, the `minimum-protocol-version` defined in the `TLS` section of the Contour configuration file will be used for the fallback filter chain, otherwise the default will be used. 
 
 #### Example fallback route: 
 
@@ -128,4 +136,23 @@ type TLS struct {
     // +optional
     EnableFallbackCertificate bool `json:"enableFallbackCertificate,omitempty""`
 }
+```
+
+### Certificate Delegation Example
+
+Following is a sample delegation of how a fallbackCertificate can be delegated to a few specific namespaces:
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: TLSCertificateDelegation
+metadata:
+  name: example-com-fallback
+  namespace: www-admin
+spec:
+  delegations:
+    - secretName: example-com-fallback
+      targetNamespaces:
+      - example-com
+      - teama
+      - teamb
 ```
