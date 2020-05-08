@@ -254,31 +254,50 @@ The TLS **Minimum Protocol Version** a vhost should negotiate can be specified b
 
 #### Upstream TLS
 
-A HTTPProxy can proxy to an upstream TLS connection by first annotating the upstream Kubernetes service with: `projectcontour.io/upstream-protocol.tls: "443,https"`.
-This annotation tells Contour which port should be used for the TLS connection.
-In this example, the upstream service is named `https` and uses port `443`.
-Additionally, it is possible for Envoy to verify the backend service's certificate.
-The service of an HTTPProxy can optionally specify a `validation` struct which has a mandatory `caSecret` key as well as an mandatory `subjectName`.
+A HTTPProxy can proxy to an upstream TLS connection by annotating the upstream Kubernetes Service or by specifying the upstream protocol in the HTTPProxy [`services`][10] field.
+Applying the `projectcontour.io/upstream-protocol.tls` annotation to a Service object tells Contour that TLS should be enabled and which port should be used for the TLS connection.
+The same configuration can be specified by setting the protocol name in the `spec.routes.services[].protocol` field on the HTTPProxy object.
+If both the annotation and the protocol field are specified, the protocol field takes precedence.
+By default, the upstream TLS server certificate will not be validated, but validation can be requested by setting the `spec.routes.services[].validation` field.
+This field has mandatory `caSecret` and `subjectName` fields, which specfy the trusted root certificates with which to validate the server certificate and the expected server name.
 
-Note: If `spec.routes.services[].validation` is present, `spec.routes.services[].{name,port}` must point to a Service with a matching `projectcontour.io/upstream-protocol.tls` Service annotation.
+_Note: If `spec.routes.services[].validation` is present, `spec.routes.services[].{name,port}` must point to a Service with a matching `projectcontour.io/upstream-protocol.tls` Service annotation._
 
-##### Sample YAML
+In the example below, the upstream service is named `secure-backend` and uses port `8443`:
 
 ```yaml
+# httpproxy-example.yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
-  name: secure-backend
+  name: example
 spec:
   virtualhost:
     fqdn: www.example.com
   routes:
-    - services:
-        - name: service
-          port: 8443
-          validation:
-            caSecret: my-certificate-authority
-            subjectName: backend.example.com
+  - services:
+    - name: secure-backend
+      port: 8443
+      validation:
+        caSecret: my-certificate-authority
+        subjectName: backend.example.com
+```
+
+```yaml
+# service-secure-backend.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: secure-backend
+  annotations:
+    projectcontour.io/upstream-protocol.tls: "8443"
+spec:
+  ports:
+  - name: https
+    port: 8443
+  selector:
+    app: secure-backend
+
 ```
 
 ##### Error conditions
@@ -1347,3 +1366,4 @@ Some examples of invalid configurations that Contour provides statuses for:
  [7]: https://www.envoyproxy.io/docs/envoy/v1.11.2/intro/arch_overview/upstream/load_balancing/overview
  [8]: #conditions
  [9]: {% link docs/master/annotations.md %}
+ [10]: /docs/{{site.latest}}/api/#projectcontour.io/v1.Service
