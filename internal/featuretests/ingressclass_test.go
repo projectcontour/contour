@@ -172,7 +172,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 				},
 			},
 			Spec: ingressroutev1.IngressRouteSpec{
-				VirtualHost: &projcontour.VirtualHost{
+				VirtualHost: &ingressroutev1.VirtualHost{
 					Fqdn: "www.example.com",
 				},
 				Routes: []ingressroutev1.Route{{
@@ -211,7 +211,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 				},
 			},
 			Spec: ingressroutev1.IngressRouteSpec{
-				VirtualHost: &projcontour.VirtualHost{
+				VirtualHost: &ingressroutev1.VirtualHost{
 					Fqdn: "www.example.com",
 				},
 				Routes: []ingressroutev1.Route{{
@@ -242,7 +242,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 				},
 			},
 			Spec: ingressroutev1.IngressRouteSpec{
-				VirtualHost: &projcontour.VirtualHost{
+				VirtualHost: &ingressroutev1.VirtualHost{
 					Fqdn: "www.example.com",
 				},
 				Routes: []ingressroutev1.Route{{
@@ -562,7 +562,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 				Namespace: Namespace,
 			},
 			Spec: ingressroutev1.IngressRouteSpec{
-				VirtualHost: &projcontour.VirtualHost{
+				VirtualHost: &ingressroutev1.VirtualHost{
 					Fqdn: "www.example.com",
 				},
 				Routes: []ingressroutev1.Route{{
@@ -601,7 +601,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 				},
 			},
 			Spec: ingressroutev1.IngressRouteSpec{
-				VirtualHost: &projcontour.VirtualHost{
+				VirtualHost: &ingressroutev1.VirtualHost{
 					Fqdn: "www.example.com",
 				},
 				Routes: []ingressroutev1.Route{{
@@ -640,7 +640,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 				},
 			},
 			Spec: ingressroutev1.IngressRouteSpec{
-				VirtualHost: &projcontour.VirtualHost{
+				VirtualHost: &ingressroutev1.VirtualHost{
 					Fqdn: "www.example.com",
 				},
 				Routes: []ingressroutev1.Route{{

@@ -60,9 +60,9 @@ func TestTCPProxy(t *testing.T) {
 			Namespace: s1.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "kuard-tcp.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &ingressroutev1.TLS{
 					SecretName: s1.Name,
 				},
 			},
@@ -210,9 +210,9 @@ func TestTCPProxyDelegation(t *testing.T) {
 			Namespace: s1.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "kuard-tcp.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &ingressroutev1.TLS{
 					SecretName: s1.Name,
 				},
 			},
@@ -343,9 +343,9 @@ func TestTCPProxyTLSPassthrough(t *testing.T) {
 			Namespace: svc.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "kuard-tcp.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &ingressroutev1.TLS{
 					Passthrough: true,
 				},
 			},

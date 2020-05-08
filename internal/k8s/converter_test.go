@@ -59,7 +59,7 @@ func TestConvertUnstructured(t *testing.T) {
 			Name:      "example",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{

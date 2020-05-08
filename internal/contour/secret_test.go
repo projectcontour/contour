@@ -20,7 +20,6 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/golang/protobuf/proto"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	v1 "k8s.io/api/core/v1"
@@ -318,9 +317,9 @@ func TestSecretVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &ingressroutev1.TLS{
 								SecretName: "secret",
 							},
 						},
@@ -360,9 +359,9 @@ func TestSecretVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &ingressroutev1.TLS{
 								SecretName: "secret",
 							},
 						},
@@ -380,9 +379,9 @@ func TestSecretVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "www.other.com",
-							TLS: &projcontour.TLS{
+							TLS: &ingressroutev1.TLS{
 								SecretName: "secret",
 							},
 						},
@@ -422,9 +421,9 @@ func TestSecretVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &ingressroutev1.TLS{
 								SecretName: "secret-a",
 							},
 						},
@@ -442,9 +441,9 @@ func TestSecretVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "www.other.com",
-							TLS: &projcontour.TLS{
+							TLS: &ingressroutev1.TLS{
 								SecretName: "secret-b",
 							},
 						},

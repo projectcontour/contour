@@ -166,7 +166,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 			Namespace: svc.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
@@ -199,7 +199,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	ir2 := &ingressroutev1.IngressRoute{
 		ObjectMeta: ir1.ObjectMeta,
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
@@ -232,7 +232,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	ir3 := &ingressroutev1.IngressRoute{
 		ObjectMeta: ir2.ObjectMeta,
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{

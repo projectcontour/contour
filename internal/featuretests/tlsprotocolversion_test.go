@@ -170,9 +170,9 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 			Namespace: s1.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &ingressroutev1.TLS{
 					SecretName:             sec1.Namespace + "/" + sec1.Name,
 					MinimumProtocolVersion: "1.3",
 				},

@@ -64,7 +64,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 			Namespace: svc.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/a",
 				Services: []ingressroutev1.Service{{
@@ -107,7 +107,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 			Namespace: svc.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/a",
 				Services: []ingressroutev1.Service{{

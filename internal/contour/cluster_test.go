@@ -23,7 +23,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/duration"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -309,7 +308,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -365,7 +364,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -420,7 +419,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -480,7 +479,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -520,7 +519,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -561,7 +560,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -602,7 +601,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
 						Routes: []ingressroutev1.Route{{
@@ -660,7 +659,7 @@ func TestClusterVisit(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
 						Routes: []ingressroutev1.Route{{
