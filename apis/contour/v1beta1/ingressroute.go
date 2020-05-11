@@ -23,12 +23,41 @@ type IngressRouteSpec struct {
 	// Virtualhost appears at most once. If it is present, the object is considered
 	// to be a "root".
 	// +optional
-	VirtualHost *projcontour.VirtualHost `json:"virtualhost,omitempty"`
+	VirtualHost *VirtualHost `json:"virtualhost,omitempty"`
 	// Routes are the ingress routes. If TCPProxy is present, Routes is ignored.
 	Routes []Route `json:"routes,omitempty"`
 	// TCPProxy holds TCP proxy information.
 	// +optional
 	TCPProxy *TCPProxy `json:"tcpproxy,omitempty"`
+}
+
+// VirtualHost appears at most once. If it is present, the object is considered
+// to be a "root".
+type VirtualHost struct {
+	// The fully qualified domain name of the root of the ingress tree
+	// all leaves of the DAG rooted at this object relate to the fqdn
+	Fqdn string `json:"fqdn"`
+	// If present describes tls properties. The SNI names that will be matched on
+	// are described in fqdn, the tls.secretName secret must contain a
+	// matching certificate
+	// +optional
+	TLS *TLS `json:"tls,omitempty"`
+}
+
+// TLS describes tls properties. The SNI names that will be matched on
+// are described in fqdn, the tls.secretName secret must contain a
+// matching certificate unless tls.passthrough is set to true.
+type TLS struct {
+	// required, the name of a secret in the current namespace
+	SecretName string `json:"secretName,omitempty"`
+	// Minimum TLS version this vhost should negotiate
+	// +optional
+	MinimumProtocolVersion string `json:"minimumProtocolVersion,omitempty"`
+	// If Passthrough is set to true, the SecretName will be ignored
+	// and the encrypted handshake will be passed through to the
+	// backing cluster.
+	// +optional
+	Passthrough bool `json:"passthrough,omitempty"`
 }
 
 // Route contains the set of routes for a virtual host

@@ -156,7 +156,7 @@ func TestWebsocketIngressRoute(t *testing.T) {
 			Namespace: s1.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "websocket.hello.world"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "websocket.hello.world"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				Services: []ingressroutev1.Service{{
@@ -245,7 +245,7 @@ func TestWebsocketIngressRoute_MultipleUpstreams(t *testing.T) {
 			Namespace: s1.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "websocket.hello.world"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "websocket.hello.world"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				Services: []ingressroutev1.Service{{

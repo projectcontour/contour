@@ -250,8 +250,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
-							TLS: &projcontour.TLS{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							TLS: &ingressroutev1.TLS{
 								SecretName: "secret",
 							},
 						},
@@ -276,8 +276,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Namespace: "extra",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
-							TLS: &projcontour.TLS{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							TLS: &ingressroutev1.TLS{
 								SecretName: "default/secret",
 							},
 						},
@@ -316,8 +316,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Namespace: "extra",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
-							TLS: &projcontour.TLS{
+						VirtualHost: &ingressroutev1.VirtualHost{
+							TLS: &ingressroutev1.TLS{
 								SecretName: "default/secret",
 							},
 						},
@@ -479,7 +479,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
+						VirtualHost: &ingressroutev1.VirtualHost{
 							Fqdn: "example.com",
 						},
 						Routes: []ingressroutev1.Route{{
