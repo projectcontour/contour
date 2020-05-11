@@ -46,8 +46,12 @@ func TestSetIngressRouteStatus(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Helper()
 			var gotPatchBytes []byte
+
 			s := runtime.NewScheme()
-			ingressroutev1.AddKnownTypes(s)
+			if err := ingressroutev1.AddToScheme(s); err != nil {
+				t.Fatalf("adding to scheme: %s", err)
+			}
+
 			client := fake.NewSimpleDynamicClient(s, tc.existing)
 
 			client.PrependReactor("patch", "ingressroutes", func(action k8stesting.Action) (bool, runtime.Object, error) {
@@ -143,8 +147,12 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Helper()
 			var gotObj runtime.Object
+
 			s := runtime.NewScheme()
-			projcontour.AddKnownTypes(s)
+			if err := projcontour.AddToScheme(s); err != nil {
+				t.Fatalf("adding to scheme: %s", err)
+			}
+
 			usc, err := NewUnstructuredConverter()
 			if err != nil {
 				t.Fatal(err)
