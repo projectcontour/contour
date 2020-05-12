@@ -1,4 +1,4 @@
-// Copyright © 2019 VMware
+// Copyright © 2020 VMware
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -23,22 +23,43 @@ const (
 	GroupName = "projectcontour.io"
 )
 
-// SchemeGroupVersion is the GroupVersion for the Contour API
-var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1"}
-var HTTPProxyGVR = SchemeGroupVersion.WithResource("httpproxies")
-var TLSCertificateDelegationGVR = SchemeGroupVersion.WithResource("tlscertificatedelegations")
+// SchemeGroupVersion is a compatibility name for the GroupVersion.
+// New code should use GroupVersion.
+var SchemeGroupVersion = GroupVersion
+
+var HTTPProxyGVR = GroupVersion.WithResource("httpproxies")
+var TLSCertificateDelegationGVR = GroupVersion.WithResource("tlscertificatedelegations")
 
 // Resource gets an Contour GroupResource for a specified resource
 func Resource(resource string) schema.GroupResource {
-	return SchemeGroupVersion.WithResource(resource).GroupResource()
+	return GroupVersion.WithResource(resource).GroupResource()
 }
 
-func AddKnownTypes(scheme *runtime.Scheme) {
-	scheme.AddKnownTypes(SchemeGroupVersion,
+// AddKnownTypes is exported for backwards compatibility with third
+// parties who depend on this symbol, but all new code should use
+// AddToScheme.
+func AddKnownTypes(scheme *runtime.Scheme) error {
+	scheme.AddKnownTypes(
+		GroupVersion,
 		&HTTPProxy{},
 		&HTTPProxyList{},
 		&TLSCertificateDelegation{},
 		&TLSCertificateDelegationList{},
 	)
-	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
+	metav1.AddToGroupVersion(scheme, GroupVersion)
+	return nil
 }
+
+// The following declarations are kubebuilder-compatible and will be expected
+// by third parties who import the Contour API types.
+
+var (
+	// GroupVersion is group version used to register these objects
+	GroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1"}
+
+	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
+	SchemeBuilder = runtime.NewSchemeBuilder(AddKnownTypes)
+
+	// AddToScheme adds the types in this group-version to the given scheme.
+	AddToScheme = SchemeBuilder.AddToScheme
+)

@@ -93,8 +93,13 @@ func NewUnstructuredConverter() (*UnstructuredConverter, error) {
 	}
 
 	// Setup converter to understand custom CRD types
-	projectcontour.AddKnownTypes(uc.scheme)
-	ingressroutev1.AddKnownTypes(uc.scheme)
+	if err := projectcontour.AddToScheme(uc.scheme); err != nil {
+		return nil, err
+	}
+
+	if err := ingressroutev1.AddToScheme(uc.scheme); err != nil {
+		return nil, err
+	}
 
 	// Add the core types we need
 	if err := scheme.AddToScheme(uc.scheme); err != nil {
