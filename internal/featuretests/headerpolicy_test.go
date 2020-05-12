@@ -18,6 +18,7 @@ import (
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 
 	"testing"
@@ -46,12 +47,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 		},
 	})
 
-	rh.OnAdd(&projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
+	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
@@ -65,8 +62,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 					}},
 				},
 			}},
-		},
-	})
+		}),
+	)
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
@@ -83,12 +80,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 	})
 
 	// Non-Host header
-	rh.OnAdd(&projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
+	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
@@ -102,8 +95,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 					}},
 				},
 			}},
-		},
-	})
+		}),
+	)
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
@@ -129,12 +122,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 	})
 
 	// Empty value for replaceHeader in HeadersPolicy
-	rh.OnAdd(&projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
+	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
@@ -147,8 +136,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 					}},
 				},
 			}},
-		},
-	})
+		}),
+	)
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
@@ -193,12 +182,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 	})
 
 	// Proxy with SNI
-	rh.OnAdd(&projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
+	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "hello.world",
 				TLS:  &projcontour.TLS{SecretName: "foo"},
@@ -215,8 +200,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 					}},
 				},
 			}},
-		},
-	})
+		}),
+	)
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: routeResources(t,

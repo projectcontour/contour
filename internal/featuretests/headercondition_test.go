@@ -21,6 +21,7 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -138,12 +139,8 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	proxy2 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
+	proxy2 := fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
@@ -169,8 +166,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					Port: 80,
 				}},
 			}},
-		},
-	}
+		})
 
 	rh.OnUpdate(proxy1, proxy2)
 
@@ -206,12 +202,8 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	proxy3 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
+	proxy3 := fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
@@ -237,8 +229,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					Port: 80,
 				}},
 			}},
-		},
-	}
+		})
 
 	rh.OnUpdate(proxy2, proxy3)
 
@@ -274,12 +265,8 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	proxy4 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
+	proxy4 := fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
@@ -305,8 +292,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					Port: 80,
 				}},
 			}},
-		},
-	}
+		})
 
 	rh.OnUpdate(proxy3, proxy4)
 
@@ -342,12 +328,8 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	proxy5 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
+	proxy5 := fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
@@ -373,8 +355,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					Port: 80,
 				}},
 			}},
-		},
-	}
+		})
 
 	rh.OnUpdate(proxy4, proxy5)
 

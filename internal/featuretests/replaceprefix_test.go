@@ -16,6 +16,7 @@ package featuretests
 import (
 	"testing"
 
+	"github.com/projectcontour/contour/internal/fixture"
 	"k8s.io/client-go/tools/cache"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -42,7 +43,7 @@ func basic(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(&v1.Service{
-		ObjectMeta: meta("default/kuard"),
+		ObjectMeta: fixture.ObjectMeta("default/kuard"),
 		Spec: v1.ServiceSpec{
 			Ports: []v1.ServicePort{{
 				Protocol:   "TCP",
@@ -52,9 +53,8 @@ func basic(t *testing.T) {
 		},
 	})
 
-	vhost := &projcontour.HTTPProxy{
-		ObjectMeta: meta("default/kuard"),
-		Spec: projcontour.HTTPProxySpec{
+	vhost := fixture.NewProxy("kuard").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.projectcontour.io",
 			},
@@ -72,8 +72,7 @@ func basic(t *testing.T) {
 					},
 				},
 			}},
-		},
-	}
+		})
 
 	rh.OnAdd(vhost)
 
@@ -228,7 +227,7 @@ func multiInclude(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(&v1.Service{
-		ObjectMeta: meta("default/kuard"),
+		ObjectMeta: fixture.ObjectMeta("default/kuard"),
 		Spec: v1.ServiceSpec{
 			Ports: []v1.ServicePort{{
 				Protocol:   "TCP",
@@ -238,9 +237,8 @@ func multiInclude(t *testing.T) {
 		},
 	})
 
-	vhost1 := &projcontour.HTTPProxy{
-		ObjectMeta: meta("default/host1"),
-		Spec: projcontour.HTTPProxySpec{
+	vhost1 := fixture.NewProxy("host1").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "host1.projectcontour.io",
 			},
@@ -249,12 +247,10 @@ func multiInclude(t *testing.T) {
 				Namespace:  "default",
 				Conditions: conditions(prefixCondition("/v1")),
 			}},
-		},
-	}
+		})
 
-	vhost2 := &projcontour.HTTPProxy{
-		ObjectMeta: meta("default/host2"),
-		Spec: projcontour.HTTPProxySpec{
+	vhost2 := fixture.NewProxy("host2").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "host2.projectcontour.io",
 			},
@@ -263,12 +259,10 @@ func multiInclude(t *testing.T) {
 				Namespace:  "default",
 				Conditions: conditions(prefixCondition("/v2")),
 			}},
-		},
-	}
+		})
 
-	app := &projcontour.HTTPProxy{
-		ObjectMeta: meta("default/app"),
-		Spec: projcontour.HTTPProxySpec{
+	app := fixture.NewProxy("app").WithSpec(
+		projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
 					Name: "kuard",
@@ -281,8 +275,7 @@ func multiInclude(t *testing.T) {
 					},
 				},
 			}},
-		},
-	}
+		})
 
 	rh.OnAdd(vhost1)
 	rh.OnAdd(vhost2)
@@ -363,7 +356,7 @@ func replaceWithSlash(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(&v1.Service{
-		ObjectMeta: meta("default/kuard"),
+		ObjectMeta: fixture.ObjectMeta("default/kuard"),
 		Spec: v1.ServiceSpec{
 			Ports: []v1.ServicePort{{
 				Protocol:   "TCP",
@@ -373,9 +366,8 @@ func replaceWithSlash(t *testing.T) {
 		},
 	})
 
-	vhost1 := &projcontour.HTTPProxy{
-		ObjectMeta: meta("default/host1"),
-		Spec: projcontour.HTTPProxySpec{
+	vhost1 := fixture.NewProxy("host1").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "host1.projectcontour.io",
 			},
@@ -391,12 +383,10 @@ func replaceWithSlash(t *testing.T) {
 					},
 				},
 			}},
-		},
-	}
+		})
 
-	vhost2 := &projcontour.HTTPProxy{
-		ObjectMeta: meta("default/host2"),
-		Spec: projcontour.HTTPProxySpec{
+	vhost2 := fixture.NewProxy("host2").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "host2.projectcontour.io",
 			},
@@ -412,8 +402,7 @@ func replaceWithSlash(t *testing.T) {
 					},
 				},
 			}},
-		},
-	}
+		})
 
 	rh.OnAdd(vhost1)
 	rh.OnAdd(vhost2)
@@ -506,7 +495,7 @@ func artifactoryDocker(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(&v1.Service{
-		ObjectMeta: meta("artifactory/service"),
+		ObjectMeta: fixture.ObjectMeta("artifactory/service"),
 		Spec: v1.ServiceSpec{
 			Ports: []v1.ServicePort{{
 				Protocol:   "TCP",
@@ -516,9 +505,8 @@ func artifactoryDocker(t *testing.T) {
 		},
 	})
 
-	rh.OnAdd(&projcontour.HTTPProxy{
-		ObjectMeta: meta("artifactory/routes"),
-		Spec: projcontour.HTTPProxySpec{
+	rh.OnAdd(fixture.NewProxy("artifactory/routes").WithSpec(
+		projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
 					Name: "service",
@@ -533,12 +521,11 @@ func artifactoryDocker(t *testing.T) {
 					},
 				},
 			}},
-		},
-	})
+		}),
+	)
 
-	rh.OnAdd(&projcontour.HTTPProxy{
-		ObjectMeta: meta("artifactory/artifactory"),
-		Spec: projcontour.HTTPProxySpec{
+	rh.OnAdd(fixture.NewProxy("artifactory/artifactory").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "artifactory.projectcontour.io",
 			},
@@ -548,8 +535,8 @@ func artifactoryDocker(t *testing.T) {
 				{Name: "routes", Conditions: conditions(prefixCondition("/v2/container-external"))},
 				{Name: "routes", Conditions: conditions(prefixCondition("/v2/container-public"))},
 			},
-		},
-	})
+		}),
+	)
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,

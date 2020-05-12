@@ -21,6 +21,7 @@ import (
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -182,13 +183,9 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 	rh.OnDelete(ir3)
 
 	// simple single service
-	proxy1 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
+	proxy1 := fixture.NewProxy("simple").
+		WithFQDN("www.example.com").
+		WithSpec(projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
 				Conditions: conditions(prefixCondition("/cart")),
 				LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
@@ -199,8 +196,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 					Port: 80,
 				}},
 			}},
-		},
-	}
+		})
 	rh.OnAdd(proxy1)
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
@@ -218,29 +214,26 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 	})
 
 	// two backends
-	proxy2 := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []projcontour.Route{{
-				Conditions: conditions(prefixCondition("/cart")),
-				LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
-					Strategy: "Cookie",
-				},
-				Services: []projcontour.Service{{
-					Name: s1.Name,
-					Port: 80,
-				}, {
-					Name: s1.Name,
-					Port: 8080,
+	rh.OnUpdate(
+		proxy1,
+		fixture.NewProxy("simple").
+			WithFQDN("www.example.com").
+			WithSpec(projcontour.HTTPProxySpec{
+				Routes: []projcontour.Route{{
+					Conditions: conditions(prefixCondition("/cart")),
+					LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
+						Strategy: "Cookie",
+					},
+					Services: []projcontour.Service{{
+						Name: s1.Name,
+						Port: 80,
+					}, {
+						Name: s1.Name,
+						Port: 8080,
+					}},
 				}},
-			}},
-		},
-	}
-	rh.OnUpdate(proxy1, proxy2)
+			}),
+	)
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,

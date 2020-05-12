@@ -21,6 +21,7 @@ import (
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,12 +69,8 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	}
 	rh.OnAdd(service)
 
-	proxy := &projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example.com",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
+	proxy := fixture.NewProxy("example.com").
+		WithSpec(projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 				TLS: &projcontour.TLS{
@@ -89,8 +86,8 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 					Port: 8080,
 				}},
 			}},
-		},
-	}
+		})
+
 	rh.OnAdd(proxy)
 
 	ingress_http := &v2.Listener{
