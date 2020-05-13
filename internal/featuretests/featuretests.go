@@ -26,7 +26,6 @@ import (
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
@@ -237,16 +236,9 @@ func resources(t *testing.T, protos ...proto.Message) []*any.Any {
 	t.Helper()
 	anys := make([]*any.Any, 0, len(protos))
 	for _, pb := range protos {
-		anys = append(anys, toAny(t, pb))
+		anys = append(anys, protobuf.MustMarshalAny(pb))
 	}
 	return anys
-}
-
-func toAny(t *testing.T, pb proto.Message) *any.Any {
-	t.Helper()
-	a, err := ptypes.MarshalAny(pb)
-	check(t, err)
-	return a
 }
 
 type grpcStream interface {

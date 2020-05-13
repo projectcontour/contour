@@ -46,9 +46,6 @@ const sdsTLSCertificateFile = "xds-tls-certicate.json"
 // CA certificates for Envoy to use for the XDS gRPC connection.
 const sdsValidationContextFile = "xds-validation-context.json"
 
-// ConfigFiles is a map from configuration filename to configuration file content.
-type ConfigFiles map[string]proto.Message
-
 // WriteBootstrap writes bootstrap configuration to files.
 func WriteBootstrap(c *BootstrapConfig) error {
 	// Create Envoy bootstrap config and associated resource files.
@@ -58,7 +55,7 @@ func WriteBootstrap(c *BootstrapConfig) error {
 	}
 
 	if c.ResourcesDir != "" {
-		if err := os.MkdirAll(path.Join(c.ResourcesDir, "sds"), 0755); err != nil {
+		if err := os.MkdirAll(path.Join(c.ResourcesDir, "sds"), 0750); err != nil {
 			return err
 		}
 	}
@@ -283,7 +280,7 @@ func tlsCertificateSdsSecretConfig(c *BootstrapConfig) *api.DiscoveryResponse {
 	}
 
 	return &api.DiscoveryResponse{
-		Resources: []*any.Any{toAny(secret)},
+		Resources: []*any.Any{protobuf.MustMarshalAny(secret)},
 	}
 }
 
@@ -308,7 +305,7 @@ func validationContextSdsSecretConfig(c *BootstrapConfig) *api.DiscoveryResponse
 	}
 
 	return &api.DiscoveryResponse{
-		Resources: []*any.Any{toAny(secret)},
+		Resources: []*any.Any{protobuf.MustMarshalAny(secret)},
 	}
 }
 

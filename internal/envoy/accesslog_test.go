@@ -21,6 +21,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	_struct "github.com/golang/protobuf/ptypes/struct"
 	"github.com/projectcontour/contour/internal/assert"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 func TestFileAccessLog(t *testing.T) {
@@ -33,7 +34,7 @@ func TestFileAccessLog(t *testing.T) {
 			want: []*envoy_accesslog.AccessLog{{
 				Name: wellknown.FileAccessLog,
 				ConfigType: &envoy_accesslog.AccessLog_TypedConfig{
-					TypedConfig: toAny(&accesslog_v2.FileAccessLog{
+					TypedConfig: protobuf.MustMarshalAny(&accesslog_v2.FileAccessLog{
 						Path: "/dev/stdout",
 					}),
 				},
@@ -60,7 +61,7 @@ func TestJSONFileAccessLog(t *testing.T) {
 			want: []*envoy_accesslog.AccessLog{{
 				Name: wellknown.FileAccessLog,
 				ConfigType: &envoy_accesslog.AccessLog_TypedConfig{
-					TypedConfig: toAny(&accesslog_v2.FileAccessLog{
+					TypedConfig: protobuf.MustMarshalAny(&accesslog_v2.FileAccessLog{
 						Path: "/dev/stdout",
 						AccessLogFormat: &accesslog_v2.FileAccessLog_JsonFormat{
 							JsonFormat: &_struct.Struct{
@@ -84,7 +85,7 @@ func TestJSONFileAccessLog(t *testing.T) {
 			want: []*envoy_accesslog.AccessLog{{
 				Name: wellknown.FileAccessLog,
 				ConfigType: &envoy_accesslog.AccessLog_TypedConfig{
-					TypedConfig: toAny(&accesslog_v2.FileAccessLog{
+					TypedConfig: protobuf.MustMarshalAny(&accesslog_v2.FileAccessLog{
 						Path: "/dev/stdout",
 						AccessLogFormat: &accesslog_v2.FileAccessLog_JsonFormat{
 							JsonFormat: &_struct.Struct{

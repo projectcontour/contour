@@ -19,6 +19,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/wrappers"
 )
@@ -61,4 +63,15 @@ func AsMessages(messages interface{}) []proto.Message {
 	}
 
 	return protos
+}
+
+// MustMarshalAny marshals a protobug into an any.Any type, panicing
+// if that operation fails.
+func MustMarshalAny(pb proto.Message) *any.Any {
+	a, err := ptypes.MarshalAny(pb)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return a
 }
