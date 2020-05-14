@@ -166,7 +166,6 @@ func (suc *StatusUpdateCacher) GetObject(name, namespace string, gvr schema.Grou
 	if ok {
 		return obj
 	}
-	fmt.Printf("Couldn't find the object in the cache: %s\n", suc.objectPrefix(name, namespace, gvr))
 	return nil
 
 }

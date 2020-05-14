@@ -14,6 +14,7 @@
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -415,6 +416,9 @@ type Status struct {
 	CurrentStatus string `json:"currentStatus,omitempty"`
 	// +optional
 	Description string `json:"description,omitempty"`
+	// +optional
+	// LoadBalancer contains the current status of the load balancer.
+	LoadBalancer corev1.LoadBalancerStatus `json:"loadBalancer,omitempty"`
 }
 
 // +genclient
