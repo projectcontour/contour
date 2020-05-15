@@ -14,7 +14,7 @@
 package envoy
 
 import (
-	"crypto/sha1"
+	"crypto/sha1" // nolint:gosec
 	"crypto/sha256"
 	"fmt"
 	"strconv"
@@ -182,7 +182,9 @@ func Clustername(cluster *dag.Cluster) string {
 		buf += uv.SubjectName
 	}
 
-	hash := sha1.Sum([]byte(buf))
+	// This isn't a crypto hash, we just want a unique name.
+	hash := sha1.Sum([]byte(buf)) // nolint:gosec
+
 	ns := service.Namespace
 	name := service.Name
 	return hashname(60, ns, name, strconv.Itoa(int(service.Port)), fmt.Sprintf("%x", hash[:5]))

@@ -14,7 +14,7 @@
 package envoy
 
 import (
-	"crypto/sha1"
+	"crypto/sha1" // nolint:gosec
 	"fmt"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
@@ -24,7 +24,8 @@ import (
 
 // Secretname returns the name of the SDS secret for this secret.
 func Secretname(s *dag.Secret) string {
-	hash := sha1.Sum(s.Cert())
+	// This isn't a crypto hash, we just want a unique name.
+	hash := sha1.Sum(s.Cert()) // nolint:gosec
 	ns := s.Namespace()
 	name := s.Name()
 	return hashname(60, ns, name, fmt.Sprintf("%x", hash[:5]))
