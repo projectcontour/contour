@@ -25,6 +25,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/projectcontour/contour/internal/k8s"
+
 	"github.com/projectcontour/contour/internal/contour"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -172,6 +174,38 @@ func newServeContext() *serveContext {
 // TLSConfig holds configuration file TLS configuration details.
 type TLSConfig struct {
 	MinimumProtocolVersion string `yaml:"minimum-protocol-version"`
+
+	// FallbackCertificate defines the namespace/name of the Kubernetes secret to
+	// use as fallback when a non-SNI request is received.
+	FallbackCertificate FallbackCertificate `yaml:"fallback-certificate,omitempty"`
+}
+
+// FallbackCertificate defines the namespace/name of the Kubernetes secret to
+// use as fallback when a non-SNI request is received.
+type FallbackCertificate struct {
+	Name      string `yaml:"name"`
+	Namespace string `yaml:"namespace"`
+}
+
+func (ctx *serveContext) fallbackCertificate() (*k8s.FullName, error) {
+	if len(strings.TrimSpace(ctx.TLSConfig.FallbackCertificate.Name)) == 0 && len(strings.TrimSpace(ctx.TLSConfig.FallbackCertificate.Namespace)) == 0 {
+		return nil, nil
+	}
+
+	// Validate namespace is defined
+	if len(strings.TrimSpace(ctx.TLSConfig.FallbackCertificate.Namespace)) == 0 {
+		return nil, errors.New("namespace must be defined")
+	}
+
+	// Validate name is defined
+	if len(strings.TrimSpace(ctx.TLSConfig.FallbackCertificate.Name)) == 0 {
+		return nil, errors.New("name must be defined")
+	}
+
+	return &k8s.FullName{
+		Name:      ctx.TLSConfig.FallbackCertificate.Name,
+		Namespace: ctx.TLSConfig.FallbackCertificate.Namespace,
+	}, nil
 }
 
 // LeaderElectionConfig holds the config bits for leader election inside the
@@ -272,6 +306,7 @@ func (ctx *serveContext) verifyTLSFlags() error {
 	if !(ctx.caFile != "" && ctx.contourCert != "" && ctx.contourKey != "") {
 		return errors.New("you must supply all three TLS parameters - --contour-cafile, --contour-cert-file, --contour-key-file, or none of them")
 	}
+
 	return nil
 }
 

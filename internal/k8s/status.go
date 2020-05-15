@@ -186,5 +186,6 @@ func (irs *StatusWriter) setHTTPProxyStatus(updated *projcontour.HTTPProxy) erro
 
 	_, err = irs.Client.Resource(projcontour.HTTPProxyGVR).Namespace(updated.GetNamespace()).
 		UpdateStatus(context.TODO(), usUpdated, metav1.UpdateOptions{})
+
 	return err
 }
