@@ -18,7 +18,6 @@ import (
 
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
-	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -71,22 +70,17 @@ func newRestConfig(kubeconfig string, inCluster bool) (*rest.Config, error) {
 // note: 0 means resync timers are disabled
 const resyncInterval time.Duration = 0
 
-// NewInformerFactory returns a new SharedInformerFactory for the core
-// Kubernetes API types.
-func (c *Clients) NewInformerFactory() informers.SharedInformerFactory {
-	return informers.NewSharedInformerFactory(c.core, resyncInterval)
-}
+type InformerFactory = dynamicinformer.DynamicSharedInformerFactory
 
-// NewInformerFactoryForNamespace returns a new SharedInformerFactory
-// for the core Kubernetes API types for the namespace supplied.
-func (c *Clients) NewInformerFactoryForNamespace(namespace string) informers.SharedInformerFactory {
-	return informers.NewSharedInformerFactoryWithOptions(c.core, resyncInterval, informers.WithNamespace(namespace))
-}
-
-// NewDynamicInformerFactory returns a new DynamicSharedInformerFactory for
+// NewInformerFactory returns a new InformerFactory for
 // use with any registered Kubernetes API type.
-func (c *Clients) NewDynamicInformerFactory() dynamicinformer.DynamicSharedInformerFactory {
+func (c *Clients) NewInformerFactory() InformerFactory {
 	return dynamicinformer.NewDynamicSharedInformerFactory(c.dynamic, resyncInterval)
+}
+
+// NewInformerFactoryForNamespace returns a new InformerFactory bound to the given namespace.
+func (c *Clients) NewInformerFactoryForNamespace(ns string) InformerFactory {
+	return dynamicinformer.NewFilteredDynamicSharedInformerFactory(c.dynamic, resyncInterval, ns, nil)
 }
 
 // ClientSet returns the Kubernetes Core v1 ClientSet.
@@ -94,12 +88,12 @@ func (c *Clients) ClientSet() *kubernetes.Clientset {
 	return c.core
 }
 
-// CoordinationClient returns the Kubernets Core v1 coordination client.
+// CoordinationClient returns the Kubernetes Core v1 coordination client.
 func (c *Clients) CoordinationClient() *coordinationv1.CoordinationV1Client {
 	return c.coordination
 }
 
-// DynamicClient returns the Dyanmic client.
+// DynamicClient returns the dynamic client.
 func (c *Clients) DynamicClient() dynamic.Interface {
 	return c.dynamic
 }

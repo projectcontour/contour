@@ -37,8 +37,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
-	v1 "k8s.io/api/core/v1"
-	coreinformers "k8s.io/client-go/informers"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // registerServe registers the serve subcommand and flags
@@ -130,11 +129,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	// step 2. create informer factories
-	informerFactory := clients.NewInformerFactory()
-	dynamicInformerFactory := clients.NewDynamicInformerFactory()
 
-	// Create a set of SharedInformerFactories for each root namespace (if defined)
-	namespacedInformerFactories := map[string]coreinformers.SharedInformerFactory{}
+	// Factory for cluster-wide informers.
+	clusterInformerFactory := clients.NewInformerFactory()
+
+	// Factories for per-namespace informers.
+	namespacedInformerFactories := map[string]k8s.InformerFactory{}
 
 	// Validate fallback certificate parameters
 	fallbackCert, err := ctx.fallbackCertificate()
@@ -149,9 +149,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			log.WithField("context", "fallback-certificate").Infof("fallback certificate namespace %q not defined in 'root-namespaces', adding namespace to watch", ctx.FallbackCertificate.Namespace)
 		}
 
-		for _, namespace := range rootNamespaces {
-			if _, ok := namespacedInformerFactories[namespace]; !ok {
-				namespacedInformerFactories[namespace] = clients.NewInformerFactoryForNamespace(namespace)
+		for _, ns := range rootNamespaces {
+			if _, ok := namespacedInformerFactories[ns]; !ok {
+				namespacedInformerFactories[ns] = clients.NewInformerFactoryForNamespace(ns)
 			}
 		}
 	}
@@ -206,7 +206,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}
 
-	// Set the fallbackcertificate if configured
+	// Set the fallback certificate if configured.
 	if fallbackCert != nil {
 		log.WithField("context", "fallback-certificate").Infof("enabled fallback certificate with secret: %q", fallbackCert)
 
@@ -228,23 +228,22 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// using the SyncList to keep track of what to sync later.
 	var informerSyncList k8s.InformerSyncList
 
-	iset := k8s.DefaultInformerSet(dynamicInformerFactory, ctx.UseExperimentalServiceAPITypes)
+	informerSyncList.InformOnResources(clusterInformerFactory, dynamicHandler, k8s.DefaultResources()...)
 
-	// TODO(youngnick): Add in filtering the iset map by enabled apiserver types (#2219) using the discovery library.
-
-	for _, inf := range iset.Informers {
-		informerSyncList.RegisterInformer(inf, dynamicHandler)
+	if ctx.UseExperimentalServiceAPITypes {
+		informerSyncList.InformOnResources(clusterInformerFactory,
+			dynamicHandler, k8s.ServiceAPIResources()...)
 	}
 
 	// TODO(youngnick): Move this logic out to internal/k8s/informers.go somehow.
 	// Add informers for each root namespace
 	for _, factory := range namespacedInformerFactories {
-		informerSyncList.RegisterInformer(factory.Core().V1().Secrets().Informer(), dynamicHandler)
+		informerSyncList.InformOnResources(factory, dynamicHandler, k8s.SecretsResources()...)
 	}
 
 	// If root namespaces are not defined, then add the informer for all namespaces
 	if len(namespacedInformerFactories) == 0 {
-		informerSyncList.RegisterInformer(informerFactory.Core().V1().Secrets().Informer(), dynamicHandler)
+		informerSyncList.InformOnResources(clusterInformerFactory, dynamicHandler, k8s.SecretsResources()...)
 	}
 
 	// step 5. endpoints updates are handled directly by the EndpointsTranslator
@@ -253,12 +252,19 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		FieldLogger: log.WithField("context", "endpointstranslator"),
 	}
 
-	informerSyncList.RegisterInformer(informerFactory.Core().V1().Endpoints().Informer(), et)
+	informerSyncList.InformOnResources(clusterInformerFactory,
+		&k8s.DynamicClientHandler{
+			Next: &contour.EventRecorder{
+				Next:    et,
+				Counter: eventHandler.Metrics.EventHandlerOperations,
+			},
+			Converter: converter,
+			Logger:    log.WithField("context", "endpointstranslator"),
+		}, k8s.EndpointsResources()...)
 
 	// step 6. setup workgroup runner and register informers.
 	var g workgroup.Group
-	g.Add(startInformer(dynamicInformerFactory, log.WithField("context", "contourinformers")))
-	g.Add(startInformer(informerFactory, log.WithField("context", "coreinformers")))
+	g.Add(startInformer(clusterInformerFactory, log.WithField("context", "contourinformers")))
 
 	for ns, factory := range namespacedInformerFactories {
 		g.Add(startInformer(factory, log.WithField("context", "corenamespacedinformers").WithField("namespace", ns)))
@@ -328,7 +334,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		log:           log.WithField("context", "loadBalancerStatusWriter"),
 		clients:       clients,
 		isLeader:      eventHandler.IsLeader,
-		lbStatus:      make(chan v1.LoadBalancerStatus, 1),
+		lbStatus:      make(chan corev1.LoadBalancerStatus, 1),
 		ingressClass:  ctx.ingressClass,
 		statusUpdater: suw,
 		Converter:     converter,
@@ -342,10 +348,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			LBStatus:    lbsw.lbStatus,
 		}
 		factory := clients.NewInformerFactoryForNamespace(ctx.EnvoyServiceNamespace)
-		factory.Core().V1().Services().Informer().AddEventHandler(ssw)
+		informerSyncList.InformOnResources(factory, ssw, k8s.ServicesResources()...)
 		g.Add(startInformer(factory, log.WithField("context", "serviceStatusLoadBalancerWatcher")))
-		log.WithField("envoy-service-name", ctx.EnvoyServiceName).WithField("envoy-service-namespace", ctx.EnvoyServiceNamespace).Info("Watching Service for Ingress status")
-
+		log.WithField("envoy-service-name", ctx.EnvoyServiceName).
+			WithField("envoy-service-namespace", ctx.EnvoyServiceNamespace).
+			Info("Watching Service for Ingress status")
 	} else {
 		log.WithField("loadbalancer-address", ctx.IngressStatusAddress).Info("Using supplied information for Ingress status")
 		lbsw.lbStatus <- parseStatusFlag(ctx.IngressStatusAddress)
@@ -417,11 +424,7 @@ func contains(namespaces []string, ns string) bool {
 	return false
 }
 
-type informer interface {
-	Start(stopCh <-chan struct{})
-}
-
-func startInformer(inf informer, log logrus.FieldLogger) func(stop <-chan struct{}) error {
+func startInformer(inf k8s.InformerFactory, log logrus.FieldLogger) func(stop <-chan struct{}) error {
 	return func(stop <-chan struct{}) error {
 		log.Println("started informer")
 		defer log.Println("stopped informer")
