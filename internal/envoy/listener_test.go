@@ -310,7 +310,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 			want: &envoy_api_v2_listener.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
-					TypedConfig: toAny(&http.HttpConnectionManager{
+					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
 						StatPrefix: "default/kuard",
 						RouteSpecifier: &http.HttpConnectionManager_Rds{
 							Rds: &http.Rds{
@@ -363,7 +363,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 			want: &envoy_api_v2_listener.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
-					TypedConfig: toAny(&http.HttpConnectionManager{
+					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
 						StatPrefix: "default/kuard",
 						RouteSpecifier: &http.HttpConnectionManager_Rds{
 							Rds: &http.Rds{
@@ -459,7 +459,7 @@ func TestTCPProxy(t *testing.T) {
 			want: &envoy_api_v2_listener.Filter{
 				Name: wellknown.TCPProxy,
 				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
-					TypedConfig: toAny(&envoy_config_v2_tcpproxy.TcpProxy{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_config_v2_tcpproxy.TcpProxy{
 						StatPrefix: statPrefix,
 						ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
 							Cluster: Clustername(c1),
@@ -477,7 +477,7 @@ func TestTCPProxy(t *testing.T) {
 			want: &envoy_api_v2_listener.Filter{
 				Name: wellknown.TCPProxy,
 				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
-					TypedConfig: toAny(&envoy_config_v2_tcpproxy.TcpProxy{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_config_v2_tcpproxy.TcpProxy{
 						StatPrefix: statPrefix,
 						ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_WeightedClusters{
 							WeightedClusters: &envoy_config_v2_tcpproxy.TcpProxy_WeightedCluster{

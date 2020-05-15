@@ -16,7 +16,6 @@ package featuretests
 // envoy helpers
 
 import (
-	"testing"
 	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -233,11 +232,11 @@ func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_liste
 	}
 }
 
-func tcpproxy(t *testing.T, statPrefix, cluster string) *envoy_api_v2_listener.Filter {
+func tcpproxy(statPrefix, cluster string) *envoy_api_v2_listener.Filter {
 	return &envoy_api_v2_listener.Filter{
 		Name: wellknown.TCPProxy,
 		ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
-			TypedConfig: toAny(t, &envoy_config_v2_tcpproxy.TcpProxy{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_config_v2_tcpproxy.TcpProxy{
 				StatPrefix: statPrefix,
 				ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
 					Cluster: cluster,

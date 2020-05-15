@@ -25,7 +25,6 @@ import (
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
@@ -33,6 +32,7 @@ import (
 	cgrpc "github.com/projectcontour/contour/internal/grpc"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
+	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -208,16 +208,9 @@ func resources(t *testing.T, protos ...proto.Message) []*any.Any {
 	t.Helper()
 	var anys []*any.Any
 	for _, a := range protos {
-		anys = append(anys, toAny(t, a))
+		anys = append(anys, protobuf.MustMarshalAny(a))
 	}
 	return anys
-}
-
-func toAny(t *testing.T, pb proto.Message) *any.Any {
-	t.Helper()
-	a, err := ptypes.MarshalAny(pb)
-	check(t, err)
-	return a
 }
 
 type grpcStream interface {
