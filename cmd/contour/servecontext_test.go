@@ -332,7 +332,7 @@ func tryConnect(address string, clientCredentialsDir string) (*x509.Certificate,
 	clientConfig := &tls.Config{
 		ServerName:         "localhost",
 		Certificates:       []tls.Certificate{cert},
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: true, // nolint:gosec
 	}
 	conn, err := tls.Dial("tcp", address, clientConfig)
 	if err != nil {
