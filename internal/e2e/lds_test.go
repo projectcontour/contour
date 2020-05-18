@@ -17,12 +17,10 @@ import (
 	"context"
 	"testing"
 
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
@@ -341,9 +339,9 @@ func TestIngressRouteTLSListener(t *testing.T) {
 			Namespace: secret1.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &ingressroutev1.TLS{
 					SecretName:             secret1.Name,
 					MinimumProtocolVersion: "1.1",
 				},
@@ -365,9 +363,9 @@ func TestIngressRouteTLSListener(t *testing.T) {
 			Namespace: secret1.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &ingressroutev1.TLS{
 					SecretName:             secret1.Name,
 					MinimumProtocolVersion: "1.3",
 				},
@@ -1019,9 +1017,9 @@ func TestIngressRouteHTTPS(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &projcontour.TLS{
+				TLS: &ingressroutev1.TLS{
 					SecretName: "secret",
 				},
 			},
@@ -1132,9 +1130,9 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &ingressroutev1.TLS{
 					SecretName:             "secret",
 					MinimumProtocolVersion: "1.1",
 				},
@@ -1200,9 +1198,9 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &ingressroutev1.TLS{
 					SecretName:             "secret",
 					MinimumProtocolVersion: "1.3",
 				},
@@ -1287,7 +1285,7 @@ func TestLDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
 			Namespace: "marketing",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "www.containersteve.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1307,7 +1305,7 @@ func TestLDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "blog.containersteve.com",
 			},
 			Routes: []ingressroutev1.Route{{

@@ -318,7 +318,7 @@ func TestSortFilterChains(t *testing.T) {
 	}
 
 	want := []*envoy_api_v2_listener.FilterChain{
-		&envoy_api_v2_listener.FilterChain{
+		{
 			FilterChainMatch: names("first"),
 		},
 
@@ -326,17 +326,20 @@ func TestSortFilterChains(t *testing.T) {
 		// in "have" because we are doing a stable sort, and
 		// they are equal since we only compare the first
 		// server name.
-		&envoy_api_v2_listener.FilterChain{
+		{
 			FilterChainMatch: names("second", "zzzzz"),
 		},
-
-		&envoy_api_v2_listener.FilterChain{
+		{
 			FilterChainMatch: names("second", "aaaaa"),
+		},
+		{
+			FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{},
 		},
 	}
 
 	have := []*envoy_api_v2_listener.FilterChain{
 		want[1], // zzzzz
+		want[3], // blank
 		want[2], // aaaaa
 		want[0],
 	}

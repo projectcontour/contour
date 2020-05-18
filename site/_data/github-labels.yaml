@@ -57,6 +57,7 @@ default:
       addedBy: label
       previously:
         - name: documentation
+        - name: kind/documentation
     - color: 0052cc
       description: Issues or PRs related to the HTTPProxy API.
       name: area/httpproxy
@@ -179,13 +180,6 @@ default:
       addedBy: anyone
       previously:
         - name: design
-    - color: c7def8
-      description: Categorizes issue or PR as related to documentation.
-      name: kind/documentation
-      target: both
-      addedBy: anyone
-      previously:
-        - name: documentation
     - color: e11d21
       description: Categorizes issue or PR as related to a consistently or frequently failing test.
       name: kind/failing-test

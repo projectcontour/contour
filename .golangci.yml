@@ -3,11 +3,12 @@ run:
 
 linters:
   enable:
-  - goimports
-  - misspell
-  - unparam
-  - unconvert
   - bodyclose
+  - goimports
+  - gosec
+  - misspell
+  - unconvert
+  - unparam
 
 # TODO(jpeach): enable these later:
 #  - gocyclo

@@ -46,7 +46,7 @@ func TestConvertUnstructured(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got, err := converter.Convert(tc.obj)
+			got, err := converter.FromUnstructured(tc.obj)
 
 			assert.Equal(t, tc.wantError, err)
 			assert.Equal(t, tc.want, got)
@@ -59,7 +59,7 @@ func TestConvertUnstructured(t *testing.T) {
 			Name:      "example",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{

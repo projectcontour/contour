@@ -16,6 +16,7 @@ package envoy
 import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 // UpstreamTLSTransportSocket returns a custom transport socket using the UpstreamTlsContext provided.
@@ -23,7 +24,7 @@ func UpstreamTLSTransportSocket(tls *envoy_api_v2_auth.UpstreamTlsContext) *envo
 	return &envoy_api_v2_core.TransportSocket{
 		Name: "envoy.transport_sockets.tls",
 		ConfigType: &envoy_api_v2_core.TransportSocket_TypedConfig{
-			TypedConfig: toAny(tls),
+			TypedConfig: protobuf.MustMarshalAny(tls),
 		},
 	}
 }
@@ -33,7 +34,7 @@ func DownstreamTLSTransportSocket(tls *envoy_api_v2_auth.DownstreamTlsContext) *
 	return &envoy_api_v2_core.TransportSocket{
 		Name: "envoy.transport_sockets.tls",
 		ConfigType: &envoy_api_v2_core.TransportSocket_TypedConfig{
-			TypedConfig: toAny(tls),
+			TypedConfig: protobuf.MustMarshalAny(tls),
 		},
 	}
 }

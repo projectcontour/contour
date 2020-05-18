@@ -57,7 +57,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 			Namespace: s1.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/cart",
 				Services: []ingressroutev1.Service{{
@@ -91,7 +91,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 			Namespace: s1.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/cart",
 				Services: []ingressroutev1.Service{{
@@ -134,7 +134,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 			Namespace: s1.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/cart",
 				Services: []ingressroutev1.Service{{

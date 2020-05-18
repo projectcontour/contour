@@ -25,9 +25,6 @@ import (
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
@@ -156,7 +153,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 	return &envoy_api_v2_listener.Filter{
 		Name: wellknown.HTTPConnectionManager,
 		ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
-			TypedConfig: toAny(cm),
+			TypedConfig: protobuf.MustMarshalAny(cm),
 		},
 	}
 }
@@ -189,7 +186,7 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 		return &envoy_api_v2_listener.Filter{
 			Name: wellknown.TCPProxy,
 			ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
-				TypedConfig: toAny(&tcp.TcpProxy{
+				TypedConfig: protobuf.MustMarshalAny(&tcp.TcpProxy{
 					StatPrefix: statPrefix,
 					ClusterSpecifier: &tcp.TcpProxy_Cluster{
 						Cluster: Clustername(proxy.Clusters[0]),
@@ -215,7 +212,7 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 		return &envoy_api_v2_listener.Filter{
 			Name: wellknown.TCPProxy,
 			ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
-				TypedConfig: toAny(&tcp.TcpProxy{
+				TypedConfig: protobuf.MustMarshalAny(&tcp.TcpProxy{
 					StatPrefix: statPrefix,
 					ClusterSpecifier: &tcp.TcpProxy_WeightedClusters{
 						WeightedClusters: &tcp.TcpProxy_WeightedCluster{
@@ -284,7 +281,7 @@ func FilterChains(filters ...*envoy_api_v2_listener.Filter) []*envoy_api_v2_list
 	}
 }
 
-// FilterChainTLS returns a TLS enabled envoy_api_v2_listener.FilterChain,
+// FilterChainTLS returns a TLS enabled envoy_api_v2_listener.FilterChain.
 func FilterChainTLS(domain string, downstream *envoy_api_v2_auth.DownstreamTlsContext, filters []*envoy_api_v2_listener.Filter) *envoy_api_v2_listener.FilterChain {
 	fc := &envoy_api_v2_listener.FilterChain{
 		Filters: filters,
@@ -300,15 +297,32 @@ func FilterChainTLS(domain string, downstream *envoy_api_v2_auth.DownstreamTlsCo
 	return fc
 }
 
+// FilterChainTLSFallback returns a TLS enabled envoy_api_v2_listener.FilterChain conifgured for FallbackCertificate.
+func FilterChainTLSFallback(downstream *envoy_api_v2_auth.DownstreamTlsContext, filters []*envoy_api_v2_listener.Filter) *envoy_api_v2_listener.FilterChain {
+	fc := &envoy_api_v2_listener.FilterChain{
+		Name:    "fallback-certificate",
+		Filters: filters,
+		FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+			TransportProtocol: "tls",
+		},
+	}
+	// Attach TLS data to this listener if provided.
+	if downstream != nil {
+		fc.TransportSocket = DownstreamTLSTransportSocket(downstream)
+	}
+	return fc
+}
+
 // ListenerFilters returns a []*envoy_api_v2_listener.ListenerFilter for the supplied listener filters.
 func ListenerFilters(filters ...*envoy_api_v2_listener.ListenerFilter) []*envoy_api_v2_listener.ListenerFilter {
 	return filters
 }
 
-func toAny(pb proto.Message) *any.Any {
-	a, err := ptypes.MarshalAny(pb)
-	if err != nil {
-		panic(err.Error())
+func ContainsFallbackFilterChain(filterchains []*envoy_api_v2_listener.FilterChain) bool {
+	for _, fc := range filterchains {
+		if fc.Name == "fallback-certificate" {
+			return true
+		}
 	}
-	return a
+	return false
 }

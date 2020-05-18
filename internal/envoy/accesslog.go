@@ -18,6 +18,7 @@ import (
 	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	_struct "github.com/golang/protobuf/ptypes/struct"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 //JSONFields is the canonical translation table for JSON fields to Envoy log template formats,
@@ -80,7 +81,7 @@ func FileAccessLogEnvoy(path string) []*accesslog.AccessLog {
 	return []*accesslog.AccessLog{{
 		Name: wellknown.FileAccessLog,
 		ConfigType: &accesslog.AccessLog_TypedConfig{
-			TypedConfig: toAny(&accesslogv2.FileAccessLog{
+			TypedConfig: protobuf.MustMarshalAny(&accesslogv2.FileAccessLog{
 				Path: path,
 				// AccessLogFormat left blank to defer to Envoy's default log format.
 			}),
@@ -108,7 +109,7 @@ func FileAccessLogJSON(path string, keys []string) []*accesslog.AccessLog {
 	return []*accesslog.AccessLog{{
 		Name: wellknown.FileAccessLog,
 		ConfigType: &accesslog.AccessLog_TypedConfig{
-			TypedConfig: toAny(&accesslogv2.FileAccessLog{
+			TypedConfig: protobuf.MustMarshalAny(&accesslogv2.FileAccessLog{
 				Path: path,
 				AccessLogFormat: &accesslogv2.FileAccessLog_JsonFormat{
 					JsonFormat: jsonformat,

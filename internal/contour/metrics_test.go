@@ -70,7 +70,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			Name:      "example",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -95,7 +95,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			Name:      "example",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -115,7 +115,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			Name:      "example",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -152,7 +152,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			Name:      "self",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -171,7 +171,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			Name:      "parent",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -205,7 +205,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			Name:      "parent",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -228,7 +228,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			Name:      "parent",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -285,7 +285,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			Name:      "parent",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{},
+			VirtualHost: &ingressroutev1.VirtualHost{},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
 				Services: []ingressroutev1.Service{{
@@ -303,7 +303,7 @@ func TestIngressRouteMetrics(t *testing.T) {
 			Name:      "invalidParent",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{},
+			VirtualHost: &ingressroutev1.VirtualHost{},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
 				Delegate: &ingressroutev1.Delegate{

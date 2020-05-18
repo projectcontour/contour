@@ -16,7 +16,7 @@ package certgen
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha1"
+	"crypto/sha1" // nolint:gosec
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -129,8 +129,16 @@ func newSerial(now time.Time) *big.Int {
 	return big.NewInt(int64(now.Nanosecond()))
 }
 
+// bigIntHash generates a SubjectKeyId by hashing the modulus of the private
+// key. This isn't one of the methods listed in RFC 5280 4.2.1.2, but that also
+// notes that other methods are acceptable.
+//
+// gosec makes a blanket claim that SHA-1 is unacceptable, which is
+// false here. The core Go method of generations the SubjectKeyId (see
+// https://github.com/golang/go/issues/26676) also uses SHA-1, as recommended
+// by RFC 5280.
 func bigIntHash(n *big.Int) []byte {
-	h := sha1.New()
+	h := sha1.New()    // nolint:gosec
 	h.Write(n.Bytes()) // nolint:errcheck
 	return h.Sum(nil)
 }

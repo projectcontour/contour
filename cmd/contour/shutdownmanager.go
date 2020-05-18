@@ -79,7 +79,7 @@ func (s *shutdownmanagerContext) healthzHandler(w http.ResponseWriter, r *http.R
 func (s *shutdownmanagerContext) shutdownHandler(w http.ResponseWriter, r *http.Request) {
 	// Send shutdown signal to Envoy to start draining connections
 	s.Infof("failing envoy healthchecks")
-	err := shutdownEnvoy(healthcheckFailURL)
+	err := shutdownEnvoy()
 	if err != nil {
 		s.Errorf("error sending envoy healthcheck fail: %v", err)
 	}
@@ -88,7 +88,7 @@ func (s *shutdownmanagerContext) shutdownHandler(w http.ResponseWriter, r *http.
 	time.Sleep(s.checkDelay)
 
 	for {
-		openConnections, err := getOpenConnections(prometheusURL)
+		openConnections, err := getOpenConnections()
 		if err != nil {
 			s.Error(err)
 		} else {
@@ -107,29 +107,29 @@ func (s *shutdownmanagerContext) shutdownHandler(w http.ResponseWriter, r *http.
 }
 
 // shutdownEnvoy sends a POST request to /healthcheck/fail to tell Envoy to start draining connections
-func shutdownEnvoy(url string) error {
-	resp, err := http.Post(url, "", nil)
+func shutdownEnvoy() error {
+	resp, err := http.Post(healthcheckFailURL, "", nil)
 	if err != nil {
-		return fmt.Errorf("creating healthcheck fail post request failed: %s", err)
+		return fmt.Errorf("creating healthcheck fail POST request failed: %s", err)
 	}
 
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("post request for url %q returned http status %s", url, resp.Status)
+		return fmt.Errorf("POST for %q returned HTTP status %s", healthcheckFailURL, resp.Status)
 	}
 	return nil
 }
 
 // getOpenConnections parses a http request to a prometheus endpoint returning the sum of values found
-func getOpenConnections(url string) (int, error) {
+func getOpenConnections() (int, error) {
 	// Make request to Envoy Prometheus endpoint
-	resp, err := http.Get(url)
+	resp, err := http.Get(prometheusURL)
 	if err != nil {
-		return -1, fmt.Errorf("get request for metrics failed: %s", err)
+		return -1, fmt.Errorf("creating metrics GET request failed: %s", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return -1, fmt.Errorf("get request for metrics failed with http status %s", resp.Status)
+		return -1, fmt.Errorf("GET for %q returned HTTP status %s", prometheusURL, resp.Status)
 	}
 
 	// Parse Prometheus listener stats for open connections

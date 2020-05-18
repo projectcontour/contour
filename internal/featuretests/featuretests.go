@@ -26,7 +26,6 @@ import (
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
@@ -62,6 +61,10 @@ func (d *discardWriter) Write(buf []byte) (int, error) {
 }
 
 func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEventHandler, *Contour, func()) {
+	return setupWithFallbackCert(t, "", "", opts...)
+}
+
+func setupWithFallbackCert(t *testing.T, fallbackCertName, fallbackCertNamespace string, opts ...func(*contour.EventHandler)) (cache.ResourceEventHandler, *Contour, func()) {
 	t.Parallel()
 
 	log := logrus.New()
@@ -93,6 +96,10 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
 				FieldLogger: log,
+			},
+			FallbackCertificate: &k8s.FullName{
+				Name:      fallbackCertName,
+				Namespace: fallbackCertNamespace,
 			},
 		},
 	}
@@ -237,16 +244,9 @@ func resources(t *testing.T, protos ...proto.Message) []*any.Any {
 	t.Helper()
 	anys := make([]*any.Any, 0, len(protos))
 	for _, pb := range protos {
-		anys = append(anys, toAny(t, pb))
+		anys = append(anys, protobuf.MustMarshalAny(pb))
 	}
 	return anys
-}
-
-func toAny(t *testing.T, pb proto.Message) *any.Any {
-	t.Helper()
-	a, err := ptypes.MarshalAny(pb)
-	check(t, err)
-	return a
 }
 
 type grpcStream interface {

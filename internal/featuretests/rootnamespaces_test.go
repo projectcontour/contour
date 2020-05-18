@@ -84,7 +84,7 @@ func TestRootNamespaces(t *testing.T) {
 			Namespace: svc1.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "ir1.example.com"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "ir1.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				Services: []ingressroutev1.Service{{
@@ -119,7 +119,7 @@ func TestRootNamespaces(t *testing.T) {
 			Namespace: svc2.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "ir2.example.com"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "ir2.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				Services: []ingressroutev1.Service{{

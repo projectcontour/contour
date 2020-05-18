@@ -143,7 +143,7 @@ func TestRetryPolicy(t *testing.T) {
 			Namespace: s1.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/",
 				RetryPolicy: &projcontour.RetryPolicy{

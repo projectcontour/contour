@@ -32,7 +32,7 @@ func StatsListener(address string, port int) *v2.Listener {
 			&envoy_api_v2_listener.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
-					TypedConfig: toAny(&http.HttpConnectionManager{
+					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
 						StatPrefix: "stats",
 						RouteSpecifier: &http.HttpConnectionManager_RouteConfig{
 							RouteConfig: &v2.RouteConfiguration{

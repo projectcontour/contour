@@ -130,6 +130,10 @@ type TLS struct {
 	// 3. Specifies how the client certificate will be validated.
 	// +optional
 	ClientValidation *DownstreamValidation `json:"clientValidation,omitempty"`
+
+	// EnableFallbackCertificate defines if the vhost should allow a default certificate to
+	// be applied which handles all requests which don't match the SNI defined in this vhost.
+	EnableFallbackCertificate bool `json:"enableFallbackCertificate,omitempty"`
 }
 
 // Route contains the set of routes for a virtual host.
@@ -423,6 +427,7 @@ type Status struct {
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.currentStatus",description="The current status of the HTTPProxy"
 // +kubebuilder:printcolumn:name="Status Description",type="string",JSONPath=".status.description",description="Description of the current status"
 // +kubebuilder:resource:scope=Namespaced,path=httpproxies,shortName=proxy;proxies,singular=httpproxy
+// +kubebuilder:subresource:status
 type HTTPProxy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`

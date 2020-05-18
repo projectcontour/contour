@@ -22,7 +22,6 @@ import (
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/featuretests"
@@ -602,7 +601,7 @@ func TestClusterPerServiceParameters(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/a",
 				Services: []ingressroutev1.Service{{
@@ -657,7 +656,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/a",
 				Services: []ingressroutev1.Service{{
@@ -729,7 +728,7 @@ func TestClusterWithHealthChecks(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/a",
 				Services: []ingressroutev1.Service{{
@@ -779,7 +778,7 @@ func TestUnreferencedService(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
+			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []ingressroutev1.Route{{
 				Match: "/a",
 				Services: []ingressroutev1.Service{{

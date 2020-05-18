@@ -27,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestDAGIngressRouteStatus(t *testing.T) {
+func TestDAGStatus(t *testing.T) {
 	sec1 := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ssl-cert",
@@ -44,6 +44,15 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 		Type: v1.SecretTypeTLS,
 		Data: sec1.Data,
+	}
+
+	fallbackSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "fallbacksecret",
+			Namespace: "roots",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
 	s1 := &v1.Service{
@@ -181,7 +190,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      s4.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -206,7 +215,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: s4.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -226,7 +235,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "example",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -263,7 +272,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "self",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -282,7 +291,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "parent",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -316,7 +325,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "parent",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -339,7 +348,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "parent",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -396,7 +405,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "parent",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{},
+			VirtualHost: &ingressroutev1.VirtualHost{},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
 				Services: []ingressroutev1.Service{{
@@ -414,7 +423,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "invalidParent",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{},
+			VirtualHost: &ingressroutev1.VirtualHost{},
 			Routes: []ingressroutev1.Route{{
 				Match: "/foo",
 				Delegate: &ingressroutev1.Delegate{
@@ -431,7 +440,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "example",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.*.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -451,7 +460,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Name:      "invalidir",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -470,7 +479,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: "roots",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -490,7 +499,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: "roots",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -508,9 +517,9 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: "roots",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "blog.containersteve.com",
-				TLS: &projcontour.TLS{
+				TLS: &ingressroutev1.TLS{
 					SecretName: "blog-containersteve-com",
 				},
 			},
@@ -530,9 +539,9 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: "marketing",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "blog.containersteve.com",
-				TLS: &projcontour.TLS{
+				TLS: &ingressroutev1.TLS{
 					SecretName: "blog-containersteve-com",
 				},
 			},
@@ -552,7 +561,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: "roots",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "blog.containersteve.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -571,7 +580,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: "marketing",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "www.containersteve.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -607,9 +616,9 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: s9.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &projcontour.TLS{
+				TLS: &ingressroutev1.TLS{
 					SecretName: sec1.Name,
 				},
 			},
@@ -628,9 +637,9 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: "roots",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "127.0.0.1.nip.io",
-				TLS: &projcontour.TLS{
+				TLS: &ingressroutev1.TLS{
 					SecretName: sec2.Namespace + "/" + sec2.Name,
 				},
 			},
@@ -649,9 +658,9 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: "roots",
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "app-with-tls-delegation.127.0.0.1.nip.io",
-				TLS: &projcontour.TLS{
+				TLS: &ingressroutev1.TLS{
 					SecretName: sec2.Namespace + "/" + sec2.Name,
 				},
 			},
@@ -690,9 +699,9 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: s10.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &ingressroutev1.TLS{
 					Passthrough: true,
 				},
 			},
@@ -718,9 +727,9 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: s10.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "app-with-tls-delegation.127.0.0.1.nip.io",
-				TLS: &projcontour.TLS{
+				TLS: &ingressroutev1.TLS{
 					SecretName: "heptio-contour/ssl-cert", // not delegated
 				},
 			},
@@ -740,7 +749,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: s1.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "site1.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -759,7 +768,7 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 			Namespace: s1.Namespace,
 		},
 		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
+			VirtualHost: &ingressroutev1.VirtualHost{
 				Fqdn: "site2.com",
 			},
 			Routes: []ingressroutev1.Route{{
@@ -1885,9 +1894,63 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 		},
 	}
 
+	fallbackCertificate := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &projcontour.TLS{
+					SecretName:                "ssl-cert",
+					EnableFallbackCertificate: true,
+				},
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	fallbackCertificateWithClientValidation := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &projcontour.TLS{
+					SecretName:                "ssl-cert",
+					EnableFallbackCertificate: true,
+					ClientValidation: &projcontour.DownstreamValidation{
+						CACertificate: "something",
+					},
+				},
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
-		objs []interface{}
-		want map[k8s.FullName]Status
+		objs                []interface{}
+		fallbackCertificate *k8s.FullName
+		want                map[k8s.FullName]Status
 	}{
 		"valid ingressroute": {
 			objs: []interface{}{ir1, s4},
@@ -2583,11 +2646,34 @@ func TestDAGIngressRouteStatus(t *testing.T) {
 				},
 			},
 		},
+		"invalid fallback certificate passed to contour": {
+			fallbackCertificate: &k8s.FullName{
+				Name:      "invalid",
+				Namespace: "invalid",
+			},
+			objs: []interface{}{fallbackCertificate, fallbackSecret, sec1, s4},
+			want: map[k8s.FullName]Status{
+				{Name: fallbackCertificate.Name, Namespace: fallbackCertificate.Namespace}: {Object: fallbackCertificate, Status: "invalid", Description: "Spec.Virtualhost.TLS fallback certificate Secret \"invalid/invalid\" is invalid: Secret not found", Vhost: "example.com"},
+			},
+		},
+		"fallback certificate requested but cert not configured in contour": {
+			objs: []interface{}{fallbackCertificate, fallbackSecret, sec1, s4},
+			want: map[k8s.FullName]Status{
+				{Name: fallbackCertificate.Name, Namespace: fallbackCertificate.Namespace}: {Object: fallbackCertificate, Status: "invalid", Description: "Spec.Virtualhost.TLS enabled fallback but the fallback Certificate Secret is not configured in Contour configuration file", Vhost: "example.com"},
+			},
+		},
+		"fallback certificate requested and clientValidation also configured": {
+			objs: []interface{}{fallbackCertificateWithClientValidation, fallbackSecret, sec1, s4},
+			want: map[k8s.FullName]Status{
+				{Name: fallbackCertificateWithClientValidation.Name, Namespace: fallbackCertificateWithClientValidation.Namespace}: {Object: fallbackCertificateWithClientValidation, Status: "invalid", Description: "Spec.Virtualhost.TLS fallback & client validation are incompatible together", Vhost: "example.com"},
+			},
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
+				FallbackCertificate: tc.fallbackCertificate,
 				Source: KubernetesCache{
 					RootNamespaces: []string{"roots", "marketing"},
 					FieldLogger:    testLogger(t),
