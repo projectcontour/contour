@@ -151,8 +151,8 @@ import data.contour.http.client
 TestID := "echo-one"
 
 Response := client.Get({
-  "url": sprintf("https://%s/https-sni-enforcement/%d", [
-    client.target_addr, time.now_ns()]),
+  "url": sprintf("https://%s:%s/https-sni-enforcement/%d", [
+    client.target_addr, client.target_https_port, time.now_ns()]),
   "headers": {
     "Host": "echo-one.projectcontour.io",
     "User-Agent": client.ua("https-sni-enforcement"),
@@ -277,8 +277,8 @@ import data.contour.http.client
 TestID := "echo-two"
 
 Response := client.Get({
-  "url": sprintf("https://%s/https-sni-enforcement/%d", [
-    client.target_addr, time.now_ns()]),
+  "url": sprintf("https://%s:%s/https-sni-enforcement/%d", [
+    client.target_addr, client.target_https_port, time.now_ns()]),
   "headers": {
     "Host": "echo-two.projectcontour.io",
     "User-Agent": client.ua("https-sni-enforcement"),
@@ -314,8 +314,8 @@ import data.contour.http.client
 # generates a 404.
 
 Response := client.Get({
-  "url": sprintf("https://%s/https-sni-enforcement/%d", [
-    client.target_addr, time.now_ns()]),
+  "url": sprintf("https://%s:%s/https-sni-enforcement/%d", [
+    client.target_addr, client.target_https_port, time.now_ns()]),
   "headers": {
     "Host": "echo-one.projectcontour.io",
     "User-Agent": client.ua("https-sni-enforcement"),
@@ -343,8 +343,8 @@ import data.contour.http.client
 # generates a 404.
 
 Response := client.Get({
-  "url": sprintf("https://%s/https-sni-enforcement/%d", [
-    client.target_addr, time.now_ns()]),
+  "url": sprintf("https://%s:%s/https-sni-enforcement/%d", [
+    client.target_addr, client.target_https_port, time.now_ns()]),
   "headers": {
     "Host": "echo-two.projectcontour.io",
     "User-Agent": client.ua("https-sni-enforcement"),

@@ -90,7 +90,7 @@ import data.contour.http.response
 import data.contour.http.client
 
 Response := client.Get({
-  "url": sprintf("http://%s/pre-delete/%d", [client.target_addr, time.now_ns()]),
+  "url": sprintf("http://%s:%s/pre-delete/%d", [client.target_addr, client.target_http_port, time.now_ns()]),
   "headers": {
     "Host": "echo.projectcontour.io",
     "User-Agent": client.ua("pod-restart"),
@@ -141,7 +141,7 @@ import data.contour.http.response
 import data.contour.http.client
 
 Response := client.Get({
-  "url": sprintf("http://%s/post-delete/%d", [client.target_addr, time.now_ns()]),
+  "url": sprintf("http://%s:%s/post-delete/%d", [client.target_addr, client.target_http_port, time.now_ns()]),
   "headers": {
     "Host": "echo.projectcontour.io",
     "User-Agent": client.ua("pod-restart"),

@@ -66,8 +66,8 @@ import data.contour.http.client
 Path := "this//has//lots////of/slashes"
 
 Response := client.Get({
-  "url": sprintf("http://%s/anything/%s/%d", [
-    client.target_addr, Path, time.now_ns()
+  "url": sprintf("http://%s:%s/anything/%s/%d", [
+    client.target_addr, client.target_http_port, Path, time.now_ns()
   ]),
   "headers": {
     "Host": "httpbin.projectcontour.io",

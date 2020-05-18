@@ -364,8 +364,8 @@ import data.contour.http.response
 ServerSecret := resources.get("secrets", "007-client-cert-auth/echo-no-auth")
 
 Response := client.Get({
-  "url": sprintf("https://%s/echo-no-auth/%d", [
-    client.target_addr, time.now_ns()
+  "url": sprintf("https://%s:%s/echo-no-auth/%d", [
+    client.target_addr, client.target_https_port, time.now_ns()
   ]),
   "headers": {
     "Host": "echo-no-auth.projectcontour.io",
@@ -409,8 +409,8 @@ ServerSecret := resources.get("secrets", "007-client-cert-auth/echo-with-auth")
 ClientSecret := resources.get("secrets", "007-client-cert-auth/echo-client")
 
 Response := client.Get({
-  "url": sprintf("https://%s/echo-client/%d", [
-    client.target_addr, time.now_ns()
+  "url": sprintf("https://%s:%s/echo-client/%d", [
+    client.target_addr, client.target_https_port, time.now_ns()
   ]),
   "headers": {
     "Host": "echo-with-auth.projectcontour.io",
