@@ -496,6 +496,18 @@ func TestMatchIngressClass(t *testing.T) {
 			},
 			want: []bool{false, false},
 		},
+		"ingress nginx projectcontour.io/ingress.class": {
+			fixture: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "incorrect",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": "nginx",
+					},
+				},
+			},
+			want: []bool{false, false},
+		},
 		"ingress contour kubernetes.io/ingress.class": {
 			fixture: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
@@ -515,6 +527,18 @@ func TestMatchIngressClass(t *testing.T) {
 					Namespace: "default",
 					Annotations: map[string]string{
 						"contour.heptio.com/ingress.class": DEFAULT_INGRESS_CLASS,
+					},
+				},
+			},
+			want: []bool{true, true},
+		},
+		"ingress contour projectcontour.io/ingress.class": {
+			fixture: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "incorrect",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
