@@ -59,6 +59,94 @@ func Test_parseStatusFlag(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:   "WhitespacePadded",
+			status: "  anarbitrarystring      ",
+			want: v1.LoadBalancerStatus{
+				Ingress: []v1.LoadBalancerIngress{
+					{
+						Hostname: "anarbitrarystring",
+					},
+				},
+			},
+		},
+		{
+			name:   "Empty",
+			status: "",
+			want: v1.LoadBalancerStatus{
+				Ingress: []v1.LoadBalancerIngress{},
+			},
+		},
+		{
+			name:   "EmptyComma",
+			status: ",",
+			want: v1.LoadBalancerStatus{
+				Ingress: []v1.LoadBalancerIngress{},
+			},
+		},
+		{
+			name:   "EmptySpace",
+			status: "    ",
+			want: v1.LoadBalancerStatus{
+				Ingress: []v1.LoadBalancerIngress{},
+			},
+		},
+		{
+			name:   "SingleComma",
+			status: "10.0.0.1,",
+			want: v1.LoadBalancerStatus{
+				Ingress: []v1.LoadBalancerIngress{
+					{
+						IP: "10.0.0.1",
+					},
+				},
+			},
+		},
+		{
+			name:   "SingleCommaBefore",
+			status: ",10.0.0.1",
+			want: v1.LoadBalancerStatus{
+				Ingress: []v1.LoadBalancerIngress{
+					{
+						IP: "10.0.0.1",
+					},
+				},
+			},
+		},
+		{
+			name:   "Multi",
+			status: "10.0.0.1,2001:4860:4860::8888,anarbitrarystring",
+			want: v1.LoadBalancerStatus{
+				Ingress: []v1.LoadBalancerIngress{
+					{
+						IP: "10.0.0.1",
+					},
+					{
+						IP: "2001:4860:4860::8888",
+					},
+					{
+						Hostname: "anarbitrarystring",
+					},
+				},
+			},
+		},
+		{
+			name:   "MultiSpace",
+			status: "10.0.0.1, 2001:4860:4860::8888, anarbitrarystring",
+			want: v1.LoadBalancerStatus{
+				Ingress: []v1.LoadBalancerIngress{
+					{
+						IP: "10.0.0.1",
+					},
+					{
+						IP: "2001:4860:4860::8888",
+					},
+					{
+						Hostname: "anarbitrarystring",
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
