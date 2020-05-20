@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
+	"github.com/projectcontour/contour/internal/fixture"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
@@ -294,15 +295,9 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 	// HTTPProxy
 	{
 		// --- ingress class matches explicitly
-		proxyValid := &projcontour.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      HTTPProxyName,
-				Namespace: Namespace,
-				Annotations: map[string]string{
-					"contour.heptio.com/ingress.class": "linkerd",
-				},
-			},
-			Spec: projcontour.HTTPProxySpec{
+		proxyValid := fixture.NewProxy(HTTPProxyName).
+			Annotate("contour.heptio.com/ingress.class", "linkerd").
+			WithSpec(projcontour.HTTPProxySpec{
 				VirtualHost: &projcontour.VirtualHost{
 					Fqdn: "www.example.com",
 				},
@@ -312,8 +307,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 						Port: int(svc.Spec.Ports[0].Port),
 					}},
 				}},
-			},
-		}
+			})
 
 		rh.OnAdd(proxyValid)
 
@@ -332,15 +326,9 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		})
 
 		// --- wrong ingress class specified
-		proxyWrongClass := &projcontour.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      HTTPProxyName,
-				Namespace: Namespace,
-				Annotations: map[string]string{
-					"kubernetes.io/ingress.class": "contour",
-				},
-			},
-			Spec: projcontour.HTTPProxySpec{
+		proxyWrongClass := fixture.NewProxy(HTTPProxyName).
+			Annotate("kubernetes.io/ingress.class", "contour").
+			WithSpec(projcontour.HTTPProxySpec{
 				VirtualHost: &projcontour.VirtualHost{
 					Fqdn: "www.example.com",
 				},
@@ -350,8 +338,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 						Port: int(svc.Spec.Ports[0].Port),
 					}},
 				}},
-			},
-		}
+			})
 
 		rh.OnUpdate(proxyValid, proxyWrongClass)
 
@@ -364,12 +351,8 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		})
 
 		// --- no ingress class specified
-		proxyNoClass := &projcontour.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      HTTPProxyName,
-				Namespace: Namespace,
-			},
-			Spec: projcontour.HTTPProxySpec{
+		proxyNoClass := fixture.NewProxy(HTTPProxyName).
+			WithSpec(projcontour.HTTPProxySpec{
 				VirtualHost: &projcontour.VirtualHost{
 					Fqdn: "www.example.com",
 				},
@@ -379,8 +362,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 						Port: int(svc.Spec.Ports[0].Port),
 					}},
 				}},
-			},
-		}
+			})
 
 		rh.OnUpdate(proxyWrongClass, proxyNoClass)
 
@@ -692,12 +674,8 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 	// HTTPProxy
 	{
 		// --- no ingress class specified
-		proxyNoClass := &projcontour.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      HTTPProxyName,
-				Namespace: Namespace,
-			},
-			Spec: projcontour.HTTPProxySpec{
+		proxyNoClass := fixture.NewProxy(HTTPProxyName).
+			WithSpec(projcontour.HTTPProxySpec{
 				VirtualHost: &projcontour.VirtualHost{
 					Fqdn: "www.example.com",
 				},
@@ -707,8 +685,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 						Port: int(svc.Spec.Ports[0].Port),
 					}},
 				}},
-			},
-		}
+			})
 
 		rh.OnAdd(proxyNoClass)
 
@@ -727,15 +704,9 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 		})
 
 		// --- matching ingress class specified
-		proxyMatchingClass := &projcontour.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      HTTPProxyName,
-				Namespace: Namespace,
-				Annotations: map[string]string{
-					"kubernetes.io/ingress.class": "contour",
-				},
-			},
-			Spec: projcontour.HTTPProxySpec{
+		proxyMatchingClass := fixture.NewProxy(HTTPProxyName).
+			Annotate("kubernetes.io/ingress.class", "contour").
+			WithSpec(projcontour.HTTPProxySpec{
 				VirtualHost: &projcontour.VirtualHost{
 					Fqdn: "www.example.com",
 				},
@@ -745,8 +716,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 						Port: int(svc.Spec.Ports[0].Port),
 					}},
 				}},
-			},
-		}
+			})
 
 		rh.OnUpdate(proxyNoClass, proxyMatchingClass)
 
@@ -765,15 +735,9 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 		})
 
 		// --- non-matching ingress class specified
-		proxyNonMatchingClass := &projcontour.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      HTTPProxyName,
-				Namespace: Namespace,
-				Annotations: map[string]string{
-					"kubernetes.io/ingress.class": "invalid",
-				},
-			},
-			Spec: projcontour.HTTPProxySpec{
+		proxyNonMatchingClass := fixture.NewProxy(HTTPProxyName).
+			Annotate("kubernetes.io/ingress.class", "invalid").
+			WithSpec(projcontour.HTTPProxySpec{
 				VirtualHost: &projcontour.VirtualHost{
 					Fqdn: "www.example.com",
 				},
@@ -783,8 +747,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 						Port: int(svc.Spec.Ports[0].Port),
 					}},
 				}},
-			},
-		}
+			})
 
 		rh.OnUpdate(proxyMatchingClass, proxyNonMatchingClass)
 
@@ -834,7 +797,7 @@ func TestIngressClassUpdate(t *testing.T) {
 	defer done()
 
 	svc := &v1.Service{
-		ObjectMeta: meta("default/kuard"),
+		ObjectMeta: fixture.ObjectMeta("default/kuard"),
 		Spec: v1.ServiceSpec{
 			Ports: []v1.ServicePort{{
 				Protocol:   "TCP",
@@ -846,7 +809,7 @@ func TestIngressClassUpdate(t *testing.T) {
 	rh.OnAdd(svc)
 
 	vhost := &projcontour.HTTPProxy{
-		ObjectMeta: meta("default/kuard"),
+		ObjectMeta: fixture.ObjectMeta("default/kuard"),
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.projectcontour.io",
