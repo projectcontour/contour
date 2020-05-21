@@ -30,13 +30,8 @@ rules:
   resources:
   - secrets
   verbs:
-  - list
-  - watch
   - create
-  - get
-  - put
-  - post
-  - patch
+  - update
 ---
 apiVersion: batch/v1
 kind: Job
