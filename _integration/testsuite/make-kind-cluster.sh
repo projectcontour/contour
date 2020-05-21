@@ -27,6 +27,12 @@ readonly WAITTIME=${WAITTIME:-5m}
 readonly HERE=$(cd $(dirname $0) && pwd)
 readonly REPO=$(cd ${HERE}/../.. && pwd)
 
+# List of tags to apply to the image built from the working directory.
+# The "working" tag is applied to unambigiously reference the working
+# image, since "master" and "latest" could also come from the Docker
+# registry.
+readonly TAGS="master latest working"
+
 kind::cluster::exists() {
     ${KIND} get clusters | grep -q "$1"
 }
@@ -51,18 +57,32 @@ fi
 
 # Build the current version of Contour.
 make -C ${REPO} container IMAGE=docker.io/projectcontour/contour VERSION="v$$"
-docker tag docker.io/projectcontour/contour:"v$$" docker.io/projectcontour/contour:master
-docker tag docker.io/projectcontour/contour:"v$$" docker.io/projectcontour/contour:latest
+
+for t in $TAGS ; do
+    docker tag \
+        docker.io/projectcontour/contour:"v$$" \
+        docker.io/projectcontour/contour:$t
+done
 
 # Create a fresh kind cluster.
-kind::cluster::create
+if ! kind::cluster::exists "$CLUSTERNAME" ; then
+  kind::cluster::create
+fi
 
 # Push the Contour build image into the cluster.
-kind::cluster::load docker.io/projectcontour/contour:master
-kind::cluster::load docker.io/projectcontour/contour:latest
+for t in $TAGS ; do
+    kind::cluster::load docker.io/projectcontour/contour:$t
+done
 
 # Install Contour.
-${KUBECTL} apply -f ${REPO}/examples/render/contour.yaml
+#
+# NOTE(jpeach): The certgen job uses the ":latest" tag with the
+# "Latest" pull policy, which forces the kubelet to re-fetch from
+# DockerHub, which is why we have to whack the image pull policy.
+for y in ${REPO}/examples/contour/*.yaml ; do
+  ${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < "$y")
+done
+
 ${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l app=contour deployments --for=condition=Available
 ${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l app=envoy pods --for=condition=Ready
 
