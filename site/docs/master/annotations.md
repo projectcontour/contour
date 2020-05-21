@@ -57,8 +57,15 @@ A [Kubernetes Service][9] maps to an [Envoy Cluster][10]. Envoy clusters have ma
 - `projectcontour.io/max-pending-requests`: [The maximum number of pending requests][13] that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.
 - `projectcontour.io/max-requests`: [The maximum parallel requests][13] a single Envoy instance allows to the Kubernetes Service; defaults to 1024
 - `projectcontour.io/max-retries`: [The maximum number of parallel retries][14] a single Envoy instance allows to the Kubernetes Service; defaults to 1024. This is independent of the per-Kubernetes Ingress number of retries (`projectcontour.io/num-retries`) and retry-on (`projectcontour.io/retry-on`), which control whether retries are attempted and how many times a single request can retry.
-- `projectcontour.io/upstream-protocol.{protocol}` : The protocol used in the upstream. The annotation value contains a list of port names and/or numbers separated by a comma that must match with the ones defined in the `Service` definition. For now, just `h2`, `h2c`, and `tls` are supported: `contour.heptio.com/upstream-protocol.h2: "443,https"`. Defaults to Envoy's default behavior which is `http1` in the upstream.
-  - The `tls` protocol allows for requests which terminate at Envoy to proxy via tls to the upstream. _Note: This does not validate the upstream certificate._
+- `projectcontour.io/upstream-protocol.{protocol}` : The protocol used to proxy requests to the upstream service.
+  The annotation value contains a comma-separated list of port names and/or numbers that must match with the ones defined in the `Service` definition.
+  This value can also be specified in the `spec.routes.services[].protocol` field on the HTTPProxy object, where it takes precedence over the Service annotation.
+  Supported protocol names are: `h2`, `h2c`, and `tls`:
+  - The `tls` protocol allows for requests which terminate at Envoy to proxy via TLS to the upstream.
+    This protocol should be used for HTTP/1.1 services over TLS.
+    _Note that validating the upstream TLS certificate requires additionally setting the [validation][17] field._
+  - The `h2` protocol proxies requests to the upstream using HTTP/2 over TLS.
+  - The `h2c` protocol proxies requests to the the upstream using cleartext HTTP/2.
 
 ## Contour specific HTTPProxy annotations
 - `projectcontour.io/ingress.class`: The Ingress class that should interpret and serve the HTTPProxy. See the [main Ingress class annotation section](#ingress-class) for more details.
@@ -79,3 +86,4 @@ A [Kubernetes Service][9] maps to an [Envoy Cluster][10]. Envoy clusters have ma
 [14]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/cluster/circuit_breaker.proto#envoy-api-field-cluster-circuitbreakers-thresholds-max-retries
 [15]: ingressroute.md
 [16]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-virtualhost-require-tls
+[17]: /docs/{{site.latest}}/api/#projectcontour.io/v1.UpstreamValidation
