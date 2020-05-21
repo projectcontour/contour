@@ -15,6 +15,7 @@ package main
 
 import (
 	"net"
+	"strings"
 	"sync"
 
 	"github.com/projectcontour/contour/internal/k8s"
@@ -108,24 +109,30 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 
 func parseStatusFlag(status string) v1.LoadBalancerStatus {
 
-	// Use the parseability by net.ParseIP as a signal, since we need
-	// to pass a string into the v1.LoadBalancerIngress anyway.
-	if ip := net.ParseIP(status); ip != nil {
-		return v1.LoadBalancerStatus{
-			Ingress: []v1.LoadBalancerIngress{
-				{
-					IP: status,
-				},
-			},
+	// Support ','-separated lists.
+	ingresses := []v1.LoadBalancerIngress{}
+
+	for _, item := range strings.Split(status, ",") {
+		item = strings.TrimSpace(item)
+		if len(item) == 0 {
+			continue
+		}
+
+		// Use the parseability by net.ParseIP as a signal, since we need
+		// to pass a string into the v1.LoadBalancerIngress anyway.
+		if ip := net.ParseIP(item); ip != nil {
+			ingresses = append(ingresses, v1.LoadBalancerIngress{
+				IP: item,
+			})
+		} else {
+			ingresses = append(ingresses, v1.LoadBalancerIngress{
+				Hostname: item,
+			})
 		}
 	}
 
 	return v1.LoadBalancerStatus{
-		Ingress: []v1.LoadBalancerIngress{
-			{
-				Hostname: status,
-			},
-		},
+		Ingress: ingresses,
 	}
 }
 
