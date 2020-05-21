@@ -648,11 +648,12 @@ func TestBootstrap(t *testing.T) {
 		},
 		"--envoy-cafile=CA.cert --envoy-client-cert=client.cert --envoy-client-key=client.key": {
 			config: BootstrapConfig{
-				Path:           "envoy.json",
-				Namespace:      "testing-ns",
-				GrpcCABundle:   "CA.cert",
-				GrpcClientCert: "client.cert",
-				GrpcClientKey:  "client.key",
+				Path:              "envoy.json",
+				Namespace:         "testing-ns",
+				GrpcCABundle:      "CA.cert",
+				GrpcClientCert:    "client.cert",
+				GrpcClientKey:     "client.key",
+				SkipFilePathCheck: true,
 			},
 			wantedBootstrapConfig: `{
   "static_resources": {
@@ -801,12 +802,13 @@ func TestBootstrap(t *testing.T) {
 		},
 		"--resources-dir tmp --envoy-cafile=CA.cert --envoy-client-cert=client.cert --envoy-client-key=client.key": {
 			config: BootstrapConfig{
-				Path:           "envoy.json",
-				Namespace:      "testing-ns",
-				ResourcesDir:   "resources",
-				GrpcCABundle:   "CA.cert",
-				GrpcClientCert: "client.cert",
-				GrpcClientKey:  "client.key",
+				Path:              "envoy.json",
+				Namespace:         "testing-ns",
+				ResourcesDir:      "resources",
+				GrpcCABundle:      "CA.cert",
+				GrpcClientCert:    "client.cert",
+				GrpcClientKey:     "client.key",
+				SkipFilePathCheck: true,
 			},
 			wantedBootstrapConfig: `{
         "static_resources": {
