@@ -5,7 +5,7 @@
 The [Ingress][1] object was added to Kubernetes in version 1.1 to describe properties of a cluster-wide reverse HTTP proxy.
 Since that time, the Ingress object has not progressed beyond the beta stage, and its stagnation inspired an [explosion of annotations][2] to express missing properties of HTTP routing.
 
-The goal of the `HTTPProxy` (previously `IngressRoute`) Custom Resource Definition (CRD) is to expand upon the functionality of the Ingress API to allow for a richer user experience as well addressing the limitations of the latter's use in multi tenent environments.
+The goal of the HTTPProxy (previously `IngressRoute`) Custom Resource Definition (CRD) is to expand upon the functionality of the Ingress API to allow for a richer user experience as well addressing the limitations of the latter's use in multi tenent environments.
 
 ## Key HTTPProxy Benefits
 
@@ -251,6 +251,55 @@ The TLS **Minimum Protocol Version** a vhost should negotiate can be specified b
 - 1.3
 - 1.2
 - 1.1 (Default)
+
+##### Fallback Certificate
+
+Contour provides virtual host based routing, so that any TLS request is routed to the appropriate service based on both the server name requested by the TLS client and the HOST header in the HTTP request. 
+
+As the HOST Header is encrypted during TLS handshake, it can’t be used for virtual host based routing unless the client sends HTTPS requests specifying hostname using the TLS server name, or the request is first decrypted using a default TLS certificate.
+
+Some legacy TLS clients do not send the server name, so Envoy does not know how to select the right certificate. A fallback certificate is needed for these clients.
+
+_Note: The minimum TLS protocol version for any fallback request is defined by the `minimum TLS protocol version` set in the Contour configuration file. Enabling the fallback certificate is not compatible with TLS client authentication._
+
+###### Configuration
+
+First define the `namespace/name` in the [Contour configuration file][11] of a Kubernetes secret which will be used as the fallback certificate.
+Any HTTPProxy which enables fallback certificate delegation must have the fallback certificate delegated to the namespace in which the HTTPProxy object resides.
+
+To do that, configure `TLSCertificateDelegation` to delegate the fallback certificate to specific or all namespaces (e.g. `*`) which should be allowed to enable the fallback certificate.
+Finally, for each root HTTPProxy, set the `Spec.TLS.enableFallbackCertificate` parameter to allow that HTTPProxy to opt-in to the fallback certificate routing.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: fallback-tls-example
+  namespace: defaultub
+spec:
+  virtualhost:
+    fqdn: fallback.bar.com
+    tls:
+      secretName: testsecret
+      enableFallbackCertificate: true
+  routes:
+    - services:
+        - name: s1
+          port: 80
+---
+apiVersion: projectcontour.io/v1
+kind: TLSCertificateDelegation
+metadata:
+  name: fallback-delegation
+  namespace: www-admin
+spec:
+  delegations:
+    - secretName: fallback-secret-name
+      targetNamespaces:
+      - "*"
+```
+
+
 
 #### Upstream TLS
 
@@ -1367,3 +1416,4 @@ Some examples of invalid configurations that Contour provides statuses for:
  [8]: #conditions
  [9]: {% link docs/master/annotations.md %}
  [10]: /docs/{{site.latest}}/api/#projectcontour.io/v1.Service
+ [11]: configuration.md#fallback-certificate
