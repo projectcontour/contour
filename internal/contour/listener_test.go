@@ -1,4 +1,4 @@
-// Copyright © 2019 VMware
+// Copyright © 2020 VMware
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -129,6 +129,8 @@ func TestListenerCacheQuery(t *testing.T) {
 func TestListenerVisit(t *testing.T) {
 	httpsFilterFor := func(vhost string) *envoy_api_v2_listener.Filter {
 		return envoy.HTTPConnectionManagerBuilder().
+			AddFilter(envoy.FilterMisdirectedRequests(vhost)).
+			DefaultFilters().
 			MetricsPrefix(ENVOY_HTTPS_LISTENER).
 			RouteConfigName(path.Join("https", vhost)).
 			AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
@@ -790,6 +792,8 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters: envoy.Filters(envoy.HTTPConnectionManagerBuilder().
+						AddFilter(envoy.FilterMisdirectedRequests("whatever.example.com")).
+						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "whatever.example.com")).
 						AccessLoggers(envoy.FileAccessLogEnvoy("/tmp/https_access.log")).

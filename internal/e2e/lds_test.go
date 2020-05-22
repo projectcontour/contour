@@ -1,4 +1,4 @@
-// Copyright © 2019 VMware
+// Copyright © 2020 VMware
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package e2e
 
 import (
 	"context"
+	"path"
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -31,6 +32,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+func httpsFilterFor(vhost string) *envoy_api_v2_listener.Filter {
+	return envoy.HTTPConnectionManagerBuilder().
+		AddFilter(envoy.FilterMisdirectedRequests(vhost)).
+		DefaultFilters().
+		RouteConfigName(path.Join("https", vhost)).
+		MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
+		AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
+		Get()
+}
 
 func TestNonTLSListener(t *testing.T) {
 	rh, cc, done := setup(t)
@@ -227,11 +238,7 @@ func TestTLSListener(t *testing.T) {
 					envoy.TLSInspector(),
 				),
 				FilterChains: filterchaintls("kuard.example.com", s1,
-					envoy.HTTPConnectionManagerBuilder().
-						RouteConfigName("https/kuard.example.com").
-						MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-						AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-						Get(),
+					httpsFilterFor("kuard.example.com"),
 					"h2", "http/1.1"),
 			},
 			staticListener(),
@@ -279,11 +286,7 @@ func TestTLSListener(t *testing.T) {
 					envoy.TLSInspector(),
 				),
 				FilterChains: filterchaintls("kuard.example.com", s1,
-					envoy.HTTPConnectionManagerBuilder().
-						RouteConfigName("https/kuard.example.com").
-						MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-						AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-						Get(),
+					httpsFilterFor("kuard.example.com"),
 					"h2", "http/1.1"),
 			},
 			staticListener(),
@@ -400,11 +403,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 			envoy.TLSInspector(),
 		),
 		FilterChains: filterchaintls("kuard.example.com", secret1,
-			envoy.HTTPConnectionManagerBuilder().
-				RouteConfigName("https/kuard.example.com").
-				MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-				AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-				Get(),
+			httpsFilterFor("kuard.example.com"),
 			"h2", "http/1.1"),
 	}
 
@@ -460,13 +459,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 					envoy_api_v2_auth.TlsParameters_TLSv1_3,
 					nil,
 					"h2", "http/1.1"),
-				envoy.Filters(
-					envoy.HTTPConnectionManagerBuilder().
-						RouteConfigName("https/kuard.example.com").
-						MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-						AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-						Get(),
-				),
+				envoy.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
 	}
@@ -558,11 +551,7 @@ func TestLDSFilter(t *testing.T) {
 					envoy.TLSInspector(),
 				),
 				FilterChains: filterchaintls("kuard.example.com", s1,
-					envoy.HTTPConnectionManagerBuilder().
-						RouteConfigName("https/kuard.example.com").
-						MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-						AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-						Get(),
+					httpsFilterFor("kuard.example.com"),
 					"h2", "http/1.1"),
 			},
 		),
@@ -747,11 +736,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 			envoy.TLSInspector(),
 		),
 		FilterChains: filterchaintls("kuard.example.com", s1,
-			envoy.HTTPConnectionManagerBuilder().
-				RouteConfigName("https/kuard.example.com").
-				MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-				AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-				Get(),
+			httpsFilterFor("kuard.example.com"),
 			"h2", "http/1.1"),
 	}
 	assert.Equal(t, &v2.DiscoveryResponse{
@@ -861,13 +846,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 			envoy.TLSInspector(),
 		),
 		FilterChains: filterchaintls("kuard.example.com", s1,
-
-			envoy.HTTPConnectionManagerBuilder().
-				RouteConfigName("https/kuard.example.com").
-				MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-				AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-				Get(),
-
+			httpsFilterFor("kuard.example.com"),
 			"h2", "http/1.1"),
 	}
 	assert.Equal(t, &v2.DiscoveryResponse{
@@ -967,11 +946,12 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 		),
 		FilterChains: filterchaintls("kuard.example.com", s1,
 			envoy.HTTPConnectionManagerBuilder().
+				AddFilter(envoy.FilterMisdirectedRequests("kuard.example.com")).
+				DefaultFilters().
 				RouteConfigName("https/kuard.example.com").
 				MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
 				AccessLoggers(envoy.FileAccessLogEnvoy("/tmp/https_access.log")).
 				Get(),
-
 			"h2", "http/1.1"),
 	}
 	assert.Equal(t, &v2.DiscoveryResponse{
@@ -1071,11 +1051,7 @@ func TestIngressRouteHTTPS(t *testing.T) {
 			envoy.TLSInspector(),
 		),
 		FilterChains: filterchaintls("example.com", s1,
-			envoy.HTTPConnectionManagerBuilder().
-				RouteConfigName("https/example.com").
-				MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-				AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-				Get(),
+			httpsFilterFor("example.com"),
 			"h2", "http/1.1"),
 	}
 	assert.Equal(t, &v2.DiscoveryResponse{
@@ -1162,13 +1138,7 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 					envoy_api_v2_auth.TlsParameters_TLSv1_2,
 					nil,
 					"h2", "http/1.1"),
-				envoy.Filters(
-					envoy.HTTPConnectionManagerBuilder().
-						RouteConfigName("https/kuard.example.com").
-						MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-						AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-						Get(),
-				),
+				envoy.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
 	}
@@ -1230,13 +1200,7 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 					envoy_api_v2_auth.TlsParameters_TLSv1_3,
 					nil,
 					"h2", "http/1.1"),
-				envoy.Filters(
-					envoy.HTTPConnectionManagerBuilder().
-						RouteConfigName("https/kuard.example.com").
-						MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-						AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-						Get(),
-				),
+				envoy.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
 	}

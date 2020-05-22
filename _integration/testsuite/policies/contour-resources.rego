@@ -81,3 +81,14 @@ get(resource, name) = obj {
 } else = obj {
   obj := {}
 }
+
+# status returns the status field of the named resource. If the resource
+# is not present, and empty object is returned. Implemented in terms of
+# 'get', so namespace syntax works for the object name.
+#
+# Examples:
+#   resources.status("httpproxies", "foo")
+status(resource, name) = s {
+  r := get(resource, name)
+  s := object.get(r, "status", {})
+}

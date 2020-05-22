@@ -1,4 +1,4 @@
-// Copyright © 2019 VMware
+// Copyright © 2020 VMware
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,6 +16,7 @@ package featuretests
 // envoy helpers
 
 import (
+	"path"
 	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -219,18 +220,51 @@ func weightedClusters(clusters []weightedCluster) *envoy_api_v2_route.WeightedCl
 	return &wc
 }
 
-func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_listener.Filter, peerValidationContext *dag.PeerValidationContext, alpn ...string) []*envoy_api_v2_listener.FilterChain {
-	return []*envoy_api_v2_listener.FilterChain{
-		envoy.FilterChainTLS(
-			domain,
-			envoy.DownstreamTLSContext(
-				&dag.Secret{Object: secret},
-				envoy_api_v2_auth.TlsParameters_TLSv1_1,
-				peerValidationContext,
-				alpn...),
-			envoy.Filters(filter),
+// appendFilterChains is a helper to turn variadic FilterChain arguments into the corresponding  slice.
+func appendFilterChains(chains ...*envoy_api_v2_listener.FilterChain) []*envoy_api_v2_listener.FilterChain {
+	return chains
+}
+
+// filterchaintls returns a FilterChain wrapping the given virtual host.
+func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_listener.Filter, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_api_v2_listener.FilterChain {
+	return envoy.FilterChainTLS(
+		domain,
+		envoy.DownstreamTLSContext(
+			&dag.Secret{Object: secret},
+			envoy_api_v2_auth.TlsParameters_TLSv1_1,
+			peerValidationContext,
+			alpn...),
+		envoy.Filters(filter),
+	)
+}
+
+// filterchaintlsfallback returns a FilterChain for the given TLS fallback certificate.
+func filterchaintlsfallback(fallbackSecret *v1.Secret, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_api_v2_listener.FilterChain {
+	return envoy.FilterChainTLSFallback(
+		envoy.DownstreamTLSContext(
+			&dag.Secret{Object: fallbackSecret},
+			envoy_api_v2_auth.TlsParameters_TLSv1_1,
+			peerValidationContext,
+			alpn...),
+		envoy.Filters(
+			envoy.HTTPConnectionManagerBuilder().
+				RouteConfigName(contour.ENVOY_FALLBACK_ROUTECONFIG).
+				MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
+				AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
+				RequestTimeout(0).
+				Get(),
 		),
-	}
+	)
+}
+
+func httpsFilterFor(vhost string) *envoy_api_v2_listener.Filter {
+	return envoy.HTTPConnectionManagerBuilder().
+		AddFilter(envoy.FilterMisdirectedRequests(vhost)).
+		DefaultFilters().
+		RouteConfigName(path.Join("https", vhost)).
+		MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
+		AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
+		Get()
 }
 
 func tcpproxy(statPrefix, cluster string) *envoy_api_v2_listener.Filter {
@@ -251,33 +285,4 @@ func tcpproxy(statPrefix, cluster string) *envoy_api_v2_listener.Filter {
 
 func staticListener() *v2.Listener {
 	return envoy.StatsListener("0.0.0.0", 8002)
-}
-
-func filterchaintlsfallback(domain string, domainSecret, fallbackSecret *v1.Secret, filter *envoy_api_v2_listener.Filter, peerValidationContext *dag.PeerValidationContext, alpn ...string) []*envoy_api_v2_listener.FilterChain {
-	return []*envoy_api_v2_listener.FilterChain{
-		envoy.FilterChainTLS(
-			domain,
-			envoy.DownstreamTLSContext(
-				&dag.Secret{Object: domainSecret},
-				envoy_api_v2_auth.TlsParameters_TLSv1_1,
-				peerValidationContext,
-				alpn...),
-			envoy.Filters(filter),
-		),
-		envoy.FilterChainTLSFallback(
-			envoy.DownstreamTLSContext(
-				&dag.Secret{Object: fallbackSecret},
-				envoy_api_v2_auth.TlsParameters_TLSv1_1,
-				peerValidationContext,
-				alpn...),
-			envoy.Filters(
-				envoy.HTTPConnectionManagerBuilder().
-					RouteConfigName(contour.ENVOY_FALLBACK_ROUTECONFIG).
-					MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-					AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-					RequestTimeout(0).
-					Get(),
-			),
-		),
-	}
 }

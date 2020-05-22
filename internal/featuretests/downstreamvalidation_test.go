@@ -18,7 +18,6 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -104,18 +103,16 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		ListenerFilters: envoy.ListenerFilters(
 			envoy.TLSInspector(),
 		),
-		FilterChains: filterchaintls("example.com", serverTLSSecret,
-			envoy.HTTPConnectionManagerBuilder().
-				RouteConfigName("https/example.com").
-				MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-				AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-				Get(),
-			&dag.PeerValidationContext{
-				CACertificate: &dag.Secret{
-					Object: clientCASecret,
+		FilterChains: appendFilterChains(
+			filterchaintls("example.com", serverTLSSecret,
+				httpsFilterFor("example.com"),
+				&dag.PeerValidationContext{
+					CACertificate: &dag.Secret{
+						Object: clientCASecret,
+					},
 				},
-			},
-			"h2", "http/1.1",
+				"h2", "http/1.1",
+			),
 		),
 	}
 
