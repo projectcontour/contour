@@ -2653,7 +2653,7 @@ func TestDAGStatus(t *testing.T) {
 			},
 			objs: []interface{}{fallbackCertificate, fallbackSecret, sec1, s4},
 			want: map[k8s.FullName]Status{
-				{Name: fallbackCertificate.Name, Namespace: fallbackCertificate.Namespace}: {Object: fallbackCertificate, Status: "invalid", Description: "Spec.Virtualhost.TLS fallback certificate Secret \"invalid/invalid\" is invalid: Secret not found", Vhost: "example.com"},
+				{Name: fallbackCertificate.Name, Namespace: fallbackCertificate.Namespace}: {Object: fallbackCertificate, Status: "invalid", Description: "Spec.Virtualhost.TLS Secret \"invalid/invalid\" fallback certificate is invalid: Secret not found", Vhost: "example.com"},
 			},
 		},
 		"fallback certificate requested but cert not configured in contour": {

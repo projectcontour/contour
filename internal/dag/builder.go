@@ -534,11 +534,17 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 					return
 				}
 
-				sec, err = b.lookupSecret(k8s.FullName{Name: b.FallbackCertificate.Name, Namespace: b.FallbackCertificate.Namespace}, validSecret)
+				sec, err = b.lookupSecret(*b.FallbackCertificate, validSecret)
 				if err != nil {
-					sw.SetInvalid("Spec.Virtualhost.TLS fallback certificate Secret %q is invalid: %s", b.FallbackCertificate, err)
+					sw.SetInvalid("Spec.Virtualhost.TLS Secret %q fallback certificate is invalid: %s", b.FallbackCertificate, err)
 					return
 				}
+
+				if !b.delegationPermitted(*b.FallbackCertificate, proxy.Namespace) {
+					sw.SetInvalid("Spec.VirtualHost.TLS fallback Secret %q is not configured for certificate delegation", b.FallbackCertificate)
+					return
+				}
+
 				svhost.FallbackCertificate = sec
 			}
 

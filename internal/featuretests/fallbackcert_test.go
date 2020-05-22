@@ -83,6 +83,7 @@ func TestFallbackCertificate(t *testing.T) {
 				}},
 			}},
 		})
+
 	rh.OnAdd(proxy1)
 
 	// We should start with a single generic HTTPS service.
@@ -124,8 +125,70 @@ func TestFallbackCertificate(t *testing.T) {
 
 	rh.OnUpdate(proxy1, proxy2)
 
+	// Invalid since there's no TLSCertificateDelegation configured
+	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+		Resources: nil,
+		TypeUrl:   listenerType,
+	})
+
+	certDelegationAll := &projcontour.TLSCertificateDelegation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "fallbackcertdelegation",
+			Namespace: "admin",
+		},
+		Spec: projcontour.TLSCertificateDelegationSpec{
+			Delegations: []projcontour.CertificateDelegation{{
+				SecretName:       "fallbacksecret",
+				TargetNamespaces: []string{"*"},
+			}},
+		},
+	}
+
+	rh.OnAdd(certDelegationAll)
+
 	// Now we should still have the generic HTTPS service filter,
 	// but also the fallback certificate filter.
+	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			&v2.Listener{
+				Name:    "ingress_https",
+				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy.ListenerFilters(
+					envoy.TLSInspector(),
+				),
+				FilterChains: appendFilterChains(
+					filterchaintls("fallback.example.com", sec1,
+						httpsFilterFor("fallback.example.com"),
+						nil, "h2", "http/1.1"),
+					filterchaintlsfallback(fallbackSecret, nil, "h2", "http/1.1"),
+				),
+			},
+		),
+	})
+
+	rh.OnDelete(certDelegationAll)
+
+	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+		Resources: nil,
+		TypeUrl:   listenerType,
+	})
+
+	certDelegationSingle := &projcontour.TLSCertificateDelegation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "fallbackcertdelegation",
+			Namespace: "admin",
+		},
+		Spec: projcontour.TLSCertificateDelegationSpec{
+			Delegations: []projcontour.CertificateDelegation{{
+				SecretName:       "fallbacksecret",
+				TargetNamespaces: []string{"default"},
+			}},
+		},
+	}
+
+	rh.OnAdd(certDelegationSingle)
+
 	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
