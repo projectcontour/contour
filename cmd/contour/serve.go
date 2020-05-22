@@ -316,13 +316,23 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// step 11. register leadership election.
 	eventHandler.IsLeader = setupLeadershipElection(&g, log, ctx, clients, eventHandler.UpdateNow)
 
+	sh := k8s.StatusUpdateHandler{
+		Log:           log.WithField("context", "StatusUpdateWriter"),
+		Clients:       clients,
+		LeaderElected: eventHandler.IsLeader,
+		Converter:     converter,
+	}
+	suw := sh.Writer()
+	g.Add(sh.Start)
+
 	// step 11. set up ingress load balancer status writer
 	lbsw := loadBalancerStatusWriter{
-		log:          log.WithField("context", "loadBalancerStatusWriter"),
-		clients:      clients,
-		isLeader:     eventHandler.IsLeader,
-		lbStatus:     make(chan v1.LoadBalancerStatus, 1),
-		ingressClass: ctx.ingressClass,
+		log:           log.WithField("context", "loadBalancerStatusWriter"),
+		clients:       clients,
+		isLeader:      eventHandler.IsLeader,
+		lbStatus:      make(chan v1.LoadBalancerStatus, 1),
+		ingressClass:  ctx.ingressClass,
+		statusUpdater: suw,
 	}
 	g.Add(lbsw.Start)
 
