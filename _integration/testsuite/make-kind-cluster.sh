@@ -35,7 +35,7 @@ kind::cluster::create() {
     ${KIND} create cluster \
         --name "${CLUSTERNAME}" \
         --wait "${WAITTIME}" \
-        --config "${REPO}/examples/kind/kind-expose-port.yaml"
+        --config "${REPO}/_integration/testsuite/kind-expose-port.yaml"
 }
 
 kind::cluster::load() {

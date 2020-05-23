@@ -138,8 +138,8 @@ request_for_path[path] = request {
   path := cases[_][0]
   request := {
     "method": "GET",
-    "url": sprintf("http://%s%s", [
-      client.target_addr, path
+    "url": sprintf("http://%s:%s%s", [
+      client.target_addr, client.target_http_port, path
     ]),
     "headers": {
       "Host": "conditions.projectcontour.io",
