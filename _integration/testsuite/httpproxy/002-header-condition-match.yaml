@@ -193,6 +193,7 @@ error[msg] {
 ---
 
 import data.contour.http.client
+import data.contour.http.client.url
 
 random := sprintf("%d", [time.now_ns()])
 
@@ -222,9 +223,7 @@ requests[{ "req": req, "wanted_status": status, "wanted_testid": testid }] {
 
   req := {
     "method": "GET",
-    "url": sprintf("http://%s:%s/header-condition-match/%d", [
-      client.target_addr, client.target_http_port, time.now_ns()
-    ]),
+    "url": url.http(sprintf("/header-condition-match/%d", [time.now_ns()])),
     "headers": {
       "Host": "conditions.projectcontour.io",
       "User-Agent": client.ua("header-condition-match"),

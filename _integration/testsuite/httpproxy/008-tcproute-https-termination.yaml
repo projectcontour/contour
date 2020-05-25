@@ -120,15 +120,14 @@ fatal_proxy_is_not_valid[msg] {
 ---
 
 import data.contour.http.client
+import data.contour.http.client.url
 import data.contour.http.response
 import data.contour.resources
 
 Secret := resources.get("secrets", "echo-tcpproxy")
 
 Response := client.Get({
-  "url": sprintf("https://%s/echo-tcpproxy/%d", [
-    client.target_addr, time.now_ns()
-  ]),
+  "url": url.https(sprintf("/echo-tcpproxy/%d", [time.now_ns()])),
   "headers": {
     "Host": "echo-tcpproxy.projectcontour.io",
     "User-Agent": client.ua("echo-tcpproxy"),

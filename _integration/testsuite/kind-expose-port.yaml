@@ -5,8 +5,8 @@ nodes:
 - role: worker
   extraPortMappings:
   - containerPort: 80
-    hostPort: 9100
+    hostPort: 9080
     listenAddress: "0.0.0.0"
   - containerPort: 443
-    hostPort: 9143
+    hostPort: 9443
     listenAddress: "0.0.0.0"

@@ -357,16 +357,15 @@ fatal_proxy_is_not_valid[msg] {
 # certificate. This tests that client  certificate auth is specific
 # to a particular proxy.
 
-import data.contour.resources
 import data.contour.http.client
+import data.contour.http.client.url
 import data.contour.http.response
+import data.contour.resources
 
 ServerSecret := resources.get("secrets", "007-client-cert-auth/echo-no-auth")
 
 Response := client.Get({
-  "url": sprintf("https://%s:%s/echo-no-auth/%d", [
-    client.target_addr, client.target_https_port, time.now_ns()
-  ]),
+  "url": url.https(sprintf("/echo-no-auth/%d", [time.now_ns()])),
   "headers": {
     "Host": "echo-no-auth.projectcontour.io",
     "User-Agent": client.ua("client-cert-auth"),
@@ -401,17 +400,16 @@ error_wrong_routing[msg] {
 
 # Using the client-cert certificate to echo-with-auth should succeed.
 
-import data.contour.resources
-import data.contour.http.response
 import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.response
+import data.contour.resources
 
 ServerSecret := resources.get("secrets", "007-client-cert-auth/echo-with-auth")
 ClientSecret := resources.get("secrets", "007-client-cert-auth/echo-client")
 
 Response := client.Get({
-  "url": sprintf("https://%s:%s/echo-client/%d", [
-    client.target_addr, client.target_https_port, time.now_ns()
-  ]),
+  "url": url.https(sprintf("/echo-client/%d", [time.now_ns()])),
   "headers": {
     "Host": "echo-with-auth.projectcontour.io",
     "User-Agent": client.ua("client-cert-auth"),
