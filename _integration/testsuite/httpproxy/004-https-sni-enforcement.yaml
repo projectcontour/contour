@@ -147,12 +147,12 @@ fatal_proxy_is_not_valid[msg] {
 ---
 
 import data.contour.http.client
+import data.contour.http.client.url
 
 TestID := "echo-one"
 
 Response := client.Get({
-  "url": sprintf("https://%s:%s/https-sni-enforcement/%d", [
-    client.target_addr, client.target_https_port, time.now_ns()]),
+  "url": url.https(sprintf("/https-sni-enforcement/%d", [time.now_ns()])),
   "headers": {
     "Host": "echo-one.projectcontour.io",
     "User-Agent": client.ua("https-sni-enforcement"),
@@ -273,12 +273,12 @@ fatal_proxy_is_not_valid[msg] {
 ---
 
 import data.contour.http.client
+import data.contour.http.client.url
 
 TestID := "echo-two"
 
 Response := client.Get({
-  "url": sprintf("https://%s:%s/https-sni-enforcement/%d", [
-    client.target_addr, client.target_https_port, time.now_ns()]),
+  "url": url.https(sprintf("/https-sni-enforcement/%d", [time.now_ns()])),
   "headers": {
     "Host": "echo-two.projectcontour.io",
     "User-Agent": client.ua("https-sni-enforcement"),
@@ -309,14 +309,14 @@ error_path_routing_mismatch[msg] {
 ---
 
 import data.contour.http.client
+import data.contour.http.client.url
 import data.contour.http.response
 
 # Ensure that sending a request to "echo-one" with the SNI from "echo-two"
 # generates a 4xx response status.
 
 Response := client.Get({
-  "url": sprintf("https://%s:%s/https-sni-enforcement/%d", [
-    client.target_addr, client.target_https_port, time.now_ns()]),
+  "url": url.https(sprintf("/https-sni-enforcement/%d", [time.now_ns()])),
   "headers": {
     "Host": "echo-one.projectcontour.io",
     "User-Agent": client.ua("https-sni-enforcement"),
@@ -333,14 +333,14 @@ error_non_400_response [msg] {
 ---
 
 import data.contour.http.client
+import data.contour.http.client.url
 import data.contour.http.response
 
 # Ensure that sending a request to "echo-two" with the SNI from "echo-one"
 # generates a 4xx response status.
 
 Response := client.Get({
-  "url": sprintf("https://%s:%s/https-sni-enforcement/%d", [
-    client.target_addr, client.target_https_port, time.now_ns()]),
+  "url": url.https(sprintf("/https-sni-enforcement/%d", [time.now_ns()])),
   "headers": {
     "Host": "echo-two.projectcontour.io",
     "User-Agent": client.ua("https-sni-enforcement"),

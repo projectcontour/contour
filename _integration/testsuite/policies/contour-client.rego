@@ -16,43 +16,32 @@ package contour.http.client
 
 # target_addr returns the IP address for the proxy that tests should
 # send requests through.
-target_addr = "0.0.0.0" {
-  not data.test.params.proxy.address
-}
-
-# target_addr returns the IP address for the proxy that tests should
-# send requests through.
 target_addr = ip {
   ip := data.test.params.proxy.address
+} else = "0.0.0.0" {
+  true
 }
 
-# target_http_port returns the non-TLS port for the proxy that tests should
-# send requests through.
-target_http_port = "9100" {
-  not data.test.params.proxy.http_port
-}
-
-# target_http_port returns the non-TLS port for the proxy that tests should
+ # target_http_port returns the non-TLS port for the proxy that tests should
 # send requests through.
 target_http_port = port {
-  port := data.test.params.proxy.http_port
+  port := to_number(data.test.params.proxy.http_port)
+} else = 80 {
+  true
 }
 
-# target_https_port returns the TLS port for the proxy that tests should
-# send requests through.
-target_https_port = "9143" {
-  not data.test.params.proxy.https_port
-}
-
-# target_https_port returns the TLS port for the proxy that tests should
+ # target_https_port returns the TLS port for the proxy that tests should
 # send requests through.
 target_https_port = port {
-  port := data.test.params.proxy.https_port
+  port := to_number(data.test.params.proxy.https_port)
+} else = 443 {
+  true
 }
 
 # ua returns a user agent string specific to this test run.
 ua(prefix) = useragent {
-  useragent := sprintf("%s/%s", [prefix, data.test.params["run-id"]])
+  runid := object.get(data.test.params, "run-id", "unspecified")
+  useragent := sprintf("%s/%s", [prefix, runid])
 }
 
 # Get take a http.send argument and sends a GET request.

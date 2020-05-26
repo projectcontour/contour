@@ -88,9 +88,10 @@ error_pod_unready [msg] {
 
 import data.contour.http.response
 import data.contour.http.client
+import data.contour.http.client.url
 
 Response := client.Get({
-  "url": sprintf("http://%s:%s/pre-delete/%d", [client.target_addr, client.target_http_port, time.now_ns()]),
+  "url": url.http(sprintf("/pre-delete/%d", [time.now_ns()])),
   "headers": {
     "Host": "echo.projectcontour.io",
     "User-Agent": client.ua("pod-restart"),
@@ -139,9 +140,10 @@ error_pod_exists [msg] {
 
 import data.contour.http.response
 import data.contour.http.client
+import data.contour.http.client.url
 
 Response := client.Get({
-  "url": sprintf("http://%s:%s/post-delete/%d", [client.target_addr, client.target_http_port, time.now_ns()]),
+  "url": url.http(sprintf("/post-delete/%d", [time.now_ns()])),
   "headers": {
     "Host": "echo.projectcontour.io",
     "User-Agent": client.ua("pod-restart"),

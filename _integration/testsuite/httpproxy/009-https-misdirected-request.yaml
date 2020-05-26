@@ -133,13 +133,12 @@ fatal_proxy_is_not_valid[msg] {
 ---
 
 import data.contour.http.client
+import data.contour.http.client.url
 import data.contour.http.request
 import data.contour.http.response
 
 Response := client.Get({
-  "url": sprintf("https://%s/misdirected/%d", [
-     client.target_addr, time.now_ns()
-  ]),
+  "url": url.https(sprintf("/misdirected/%d", [time.now_ns()])),
   "headers": {
     "Host": "echo.projectcontour.io",
     "User-Agent": client.ua("misdirected-request"),
@@ -167,6 +166,7 @@ error_wrong_routing[msg] {
 ---
 
 import data.contour.http.client
+import data.contour.http.client.url
 import data.contour.http.request
 import data.contour.http.response
 
@@ -175,9 +175,7 @@ import data.contour.http.response
 # 421 response, not 404.
 
 Response := client.Get({
-  "url": sprintf("https://%s/misdirected/%d", [
-     client.target_addr, time.now_ns()
-  ]),
+  "url": url.https(sprintf("/misdirected/%d", [time.now_ns()])),
   "headers": {
     "Host": "echo-two.projectcontour.io",
     "User-Agent": client.ua("misdirected-request"),
