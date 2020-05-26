@@ -1,4 +1,4 @@
-// Copyright © 2019 VMware
+// Copyright © 2020 VMware
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -85,10 +85,25 @@ func bootstrap(c *BootstrapConfig) ([]bootstrapf, error) {
 		return steps, nil
 	}
 
-	// If one of the two TLS options is not empty, they all must be not empty.
-	if c.GrpcClientCert == "" || c.GrpcClientKey == "" || c.GrpcCABundle == "" {
-		return nil, fmt.Errorf("you must supply all TLS parameters - %q, %q, %q, or none of them",
-			"--envoy-cafile", "--envoy-cert-file", "--envoy-key-file")
+	for _, f := range []string{c.GrpcClientCert, c.GrpcClientKey, c.GrpcCABundle} {
+		// If any of of the TLS options is not empty, they all must be not empty.
+		if f == "" {
+			return nil, fmt.Errorf(
+				"you must supply all TLS parameters - %q, %q, %q, or none of them",
+				"--envoy-cafile", "--envoy-cert-file", "--envoy-key-file")
+		}
+
+		if !c.SkipFilePathCheck {
+			// If the TLS secrets aren't set up properly,
+			// some files may not be present. In this case,
+			// envoy will reject the bootstrap configuration,
+			// but there is no way to detect and fix that. If
+			// we check and fail here, that is visible in the
+			// Pod lifecycle and therefore fixable.
+			if _, err := os.Stat(f); err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	if c.ResourcesDir == "" {
@@ -350,6 +365,11 @@ type BootstrapConfig struct {
 
 	// ResourcesDir is the directory where out of line Envoy resources can be placed.
 	ResourcesDir string
+
+	// SkipFilePathCheck specifies whether to skip checking whether files
+	// referenced in the configuration actually exist. This option is for
+	// testing only.
+	SkipFilePathCheck bool
 }
 
 func (c *BootstrapConfig) xdsAddress() string   { return stringOrDefault(c.XDSAddress, "127.0.0.1") }

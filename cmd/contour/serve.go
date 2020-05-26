@@ -333,6 +333,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		lbStatus:      make(chan v1.LoadBalancerStatus, 1),
 		ingressClass:  ctx.ingressClass,
 		statusUpdater: suw,
+		Converter:     converter,
 	}
 	g.Add(lbsw.Start)
 

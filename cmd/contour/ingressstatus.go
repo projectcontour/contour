@@ -18,9 +18,11 @@ import (
 	"strings"
 	"sync"
 
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/networking/v1beta1"
 )
 
 // loadBalancerStatusWriter manages the lifetime of IngressStatusUpdaters.
@@ -45,6 +47,7 @@ type loadBalancerStatusWriter struct {
 	lbStatus      chan v1.LoadBalancerStatus
 	statusUpdater k8s.StatusUpdater
 	ingressClass  string
+	Converter     k8s.Converter
 }
 
 func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
@@ -79,21 +82,24 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 
 			isw.log.WithField("loadbalancer-address", lbAddress(lbs)).Info("received a new address for status.loadBalancer")
 
-			// Configure the IngressStatusUpdater logger
-			log := isw.log.WithField("context", "IngressStatusUpdater")
+			// Configure the StatusAddressUpdater logger
+			log := isw.log.WithField("context", "StatusAddressUpdater")
 			if isw.ingressClass != "" {
 				log = log.WithField("target-ingress-class", isw.ingressClass)
 			}
 
-			// Create new informer for the new LoadBalancerStatus
-			factory := isw.clients.NewInformerFactory()
-			inf := factory.Networking().V1beta1().Ingresses().Informer()
-			inf.AddEventHandler(&k8s.StatusAddressUpdater{
+			sau := &k8s.StatusAddressUpdater{
 				Logger:        log,
 				LBStatus:      lbs,
 				IngressClass:  isw.ingressClass,
 				StatusUpdater: isw.statusUpdater,
-			})
+				Converter:     isw.Converter,
+			}
+
+			// Create new informer for the new LoadBalancerStatus
+			factory := isw.clients.NewDynamicInformerFactory()
+			factory.ForResource(v1beta1.SchemeGroupVersion.WithResource("ingresses")).Informer().AddEventHandler(sau)
+			factory.ForResource(projcontour.HTTPProxyGVR).Informer().AddEventHandler(sau)
 
 			shutdown = make(chan struct{})
 			ingressInformers.Add(1)
