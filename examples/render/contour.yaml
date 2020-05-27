@@ -1439,7 +1439,7 @@ rules:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: contour-certgen
+  name: contour-certgen-v1.5.0
   namespace: projectcontour
 spec:
   ttlSecondsAfterFinished: 0
@@ -1459,8 +1459,10 @@ spec:
         command:
         - contour
         - certgen
-        - --incluster
         - --kube
+        - --incluster
+        - --overwrite
+        - --secrets-format=compact
         - --namespace=$(CONTOUR_NAMESPACE)
         env:
         - name: CONTOUR_NAMESPACE
@@ -1696,7 +1698,7 @@ spec:
         - --xds-port=8001
         - --envoy-service-http-port=80
         - --envoy-service-https-port=443
-        - --contour-cafile=/ca/cacert.pem
+        - --contour-cafile=/certs/ca.crt
         - --contour-cert-file=/certs/tls.crt
         - --contour-key-file=/certs/tls.key
         - --config-path=/config/contour.yaml
@@ -1724,9 +1726,6 @@ spec:
           - name: contourcert
             mountPath: /certs
             readOnly: true
-          - name: cacert
-            mountPath: /ca
-            readOnly: true
           - name: contour-config
             mountPath: /config
             readOnly: true
@@ -1751,9 +1750,6 @@ spec:
         - name: contourcert
           secret:
             secretName: contourcert
-        - name: cacert
-          secret:
-            secretName: cacert
         - name: contour-config
           configMap:
             name: contour
@@ -1849,8 +1845,6 @@ spec:
             mountPath: /config
           - name: envoycert
             mountPath: /certs
-          - name: cacert
-            mountPath: /ca
         lifecycle:
           preStop:
             httpGet:
@@ -1863,7 +1857,8 @@ spec:
         - /config/envoy.json
         - --xds-address=contour
         - --xds-port=8001
-        - --envoy-cafile=/ca/cacert.pem
+        - --resources-dir=/config/resources
+        - --envoy-cafile=/certs/ca.crt
         - --envoy-cert-file=/certs/tls.crt
         - --envoy-key-file=/certs/tls.key
         command:
@@ -1876,9 +1871,6 @@ spec:
           mountPath: /config
         - name: envoycert
           mountPath: /certs
-          readOnly: true
-        - name: cacert
-          mountPath: /ca
           readOnly: true
         env:
         - name: CONTOUR_NAMESPACE
@@ -1893,7 +1885,4 @@ spec:
         - name: envoycert
           secret:
             secretName: envoycert
-        - name: cacert
-          secret:
-            secretName: cacert
       restartPolicy: Always
