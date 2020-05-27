@@ -16,3 +16,20 @@
 # Reference documentation
 # Optimization blog post: https://www.netlify.com/blog/2019/08/05/control-your-asset-optimization-settings-from-netlify.toml/
 # How to guide: https://docs.netlify.com/configure-builds/file-based-configuration/#post-processing
+
+# Redirect /quickstart/contour.yaml to the deployment that matches :latest.
+#
+# kubectl apply https://projectcontour.io/quickstart/contour.yaml
+[[redirects]]
+  from = "/quickstart/contour.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour/release-1.4/examples/render/contour.yaml"
+  status = 302
+
+# Redirect versioned quickstarts so that they can easily be referenced by
+# operators or for upgrade testing.
+#
+# kubectl apply https://projectcontour.io/quickstart/v1.4.0/contour.yaml
+[[redirects]]
+  from = "/quickstart/*/contour.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour/:splat/examples/render/contour.yaml"
+  status = 302

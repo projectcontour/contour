@@ -143,7 +143,7 @@ If you've made a production release (that is, a final release or a patch release
 ### Updating site details
 
 The quickstart url, https://projectcontour.io/quickstart/contour.yaml redirects to the current stable release.
-This is controlled by a line in `site/_redirects`. If the definition of `:latest` has changed, update the quickstart redirector to match.
+This is controlled by the `[[redirects]]` section in `netlify.toml`. If the definition of `:latest` has changed, update the quickstart redirector to match.
 
 You also need to set the variable `latest` in `site/_config.yml` to the released version for the site to work correctly.
 
