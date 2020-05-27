@@ -39,7 +39,7 @@ Then the simplest way to upgrade to 1.4.0 is to delete the `projectcontour` name
 
 ```
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
+$ kubectl apply -f {{site.url}}/quickstart/v1.4.0/contour.yaml
 ```
 
 This will remove both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -96,7 +96,7 @@ Then the simplest way to upgrade to 1.3.0 is to delete the `projectcontour` name
 
 ```
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
+$ kubectl apply -f {{site.url}}/quickstart/v1.3.0/contour.yaml
 ```
 
 This will remove both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -135,7 +135,7 @@ From the root directory of the repository:
 
 ```
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
+$ kubectl apply -f {{site.url}}/quickstart/v1.2.1/contour.yaml
 ```
 
 This will remove both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -181,7 +181,7 @@ From the root directory of the repository:
 
 ```
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
+$ kubectl apply -f {{site.url}}/quickstart/v1.2.1/contour.yaml
 ```
 
 This will remove both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -269,7 +269,7 @@ Contour 1.0.1 is the current stable release.
 If you are running Contour 1.0.0, the easy way to upgrade to Contour 1.0.1 is to reapply the [quickstart yaml][16].
 
 ```bash
-$ kubectl apply -f {{ site.url }}/quickstart/contour.yaml
+$ kubectl apply -f {{site.url}}/quickstart/v1.0.1/contour.yaml
 ```
 
 ## The less easy way
@@ -618,6 +618,6 @@ $ kubectl get configmap -n heptio-contour -o yaml contour
 [15]: https://www.envoyproxy.io/docs/envoy/v1.12.2/intro/version_history
 [16]: {% link getting-started.md %}
 [17]: https://www.envoyproxy.io/docs/envoy/v1.13.1/intro/version_history
-[18]: https://projectcontour.io/quickstart/contour.yaml
+[18]: https://projectcontour.io/quickstart/{{site.latest}}/contour.yaml
 [19]: https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!msg/envoy-announce/sVqmxy0un2s/8aq430xiHAAJ
 [20]: https://www.envoyproxy.io/docs/envoy/v1.14.1/intro/version_history
