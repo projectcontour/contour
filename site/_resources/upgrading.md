@@ -9,17 +9,80 @@ toc: h1,h2
 
 This document describes the changes needed to upgrade your Contour installation.
 
-# Upgrading Contour 1.3.0 to 1.4.0
-
-Contour 1.4.0 is the current stable release.
+<br>
 
 <div class="alert-deprecation">
 <b>Deprecation Notice</b><br>
 The <code>IngressRoute</code> CRD has been deprecated and will not receive further updates.
-Contour 1.3.0 continues to support the IngressRoute API, however we anticipate it will be removed in the future.
+Contour 1.5.0 continues to support the IngressRoute API, however we anticipate it will be removed in the future.
 Please see the documentation for <a href="{% link docs/{{site.latest}}/httpproxy.md %}"><code>HTTPProxy</code></a>, which is the successor to <code>IngressRoute</code>.
 You can also read the <a href="{% link _guides/ingressroute-to-httpproxy.md %}">IngressRoute to HTTPProxy upgrade</a> guide.
 </div>
+
+<br>
+
+# Upgrading Contour 1.4.0 to 1.5.0
+
+Contour 1.5.0 is the current stable release.
+
+## Required Envoy version
+
+All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.14.1`.
+
+Please see the [Envoy Release Notes][20] for information about issues fixed in Envoy 1.14.1.
+
+## The easy way to upgrade
+
+If the following are true for you:
+
+ * Your installation is in the `projectcontour` namespace.
+ * You are using our [quickstart example][18] deployments.
+ * Your cluster can take few minutes of downtime.
+
+Then the simplest way to upgrade to 1.5.0 is to delete the `projectcontour` namespace and reapply one of the example configurations:
+
+```bash
+$ kubectl delete namespace projectcontour
+$ kubectl apply -f {{site.url}}/quickstart/v1.5.0/contour.yaml
+```
+
+This will remove both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
+If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][12].
+
+## The less easy way
+
+This section contains information for administrators who wish to apply the Contour 1.4.0 to 1.5.0 changes manually.
+The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.5.0` tag.
+
+The Contour CRD definition must be re-applied to the cluster, since a number of compatible changes and additions have been made to the Contour API:
+
+```bash
+$ kubectl apply -f examples/contour/01-crds.yaml
+```
+
+In this release, the format of the TLS Secrets that are used to secure the gRPC session between Envoy and Contour has changed.
+This means that the Envoy Daemonset and the Contour Deployment have been changed to mount the the TLS secrets volume differently.
+Users of the example deployment should first reapply the certgen Job YAML which will re-generate the relevant Secrets in the new format, which is compatible with [cert-manager](https://cert-manager.io) TLS secrets.
+
+
+```bash
+$ kubectl apply -f examples/contour/02-job-certgen.yaml
+```
+
+To consume the new Secrets, reapply the Envoy Daemonset and the Contour Deployment YAML.
+All the Pods will gracefully restart and reconnect using the new TLS Secrets.
+After this, the gRPC session between Contour and Envoy can be re-keyed by regenerating the Secrets.
+
+```bash
+$ kubectl apply -f examples/contour/03-contour.yaml
+$ kubectl apply -f examples/contour/03-envoy.yaml
+```
+
+Users who secure the gRPC session with their own certificate may need to modify the Envoy Daemonset and the Contour Deployment to ensure that their Secrets are correctly mounted within the corresponding Pod containers.
+When making these changes, be sure to retain the `--resources-dir` flag to the `contour bootstrap` command so that Envoy will be configured with reloadable TLS certificate support.
+
+# Upgrading Contour 1.3.0 to 1.4.0
 
 ## Required Envoy version
 
@@ -37,7 +100,7 @@ If the following are true for you:
 
 Then the simplest way to upgrade to 1.4.0 is to delete the `projectcontour` namespace and reapply one of the example configurations:
 
-```
+```bash
 $ kubectl delete namespace projectcontour
 $ kubectl apply -f {{site.url}}/quickstart/v1.4.0/contour.yaml
 ```
@@ -60,14 +123,16 @@ Change the Contour image version to `docker.io/projectcontour/contour:v1.4.0`
 Because there has been a change to Envoy to add a serviceaccount, you need to reapply the Contour CRDs and RBAC.
 
 From within a clone of the repo, checkout `release-1.4`, then you can:
-```
+
+```bash
 kubectl apply -f examples/contour/00-common.yaml
 kubectl apply -f examples/contour/01-crds.yaml
 kubectl apply -f examples/contour/02-rbac.yaml
 ```
 
 If you are using our Envoy daemonset:
-```
+
+```bash
 kubectl apply -f examples/contour/03-envoy.yaml
 ```
 
@@ -94,7 +159,7 @@ If the following are true for you:
 
 Then the simplest way to upgrade to 1.3.0 is to delete the `projectcontour` namespace and reapply one of the example configurations:
 
-```
+```bash
 $ kubectl delete namespace projectcontour
 $ kubectl apply -f {{site.url}}/quickstart/v1.3.0/contour.yaml
 ```
@@ -133,7 +198,7 @@ If the following are true for you:
 Then the simplest way to upgrade to 1.2.1 is to delete the `projectcontour` namespace and reapply one of the example configurations.
 From the root directory of the repository:
 
-```
+```bash
 $ kubectl delete namespace projectcontour
 $ kubectl apply -f {{site.url}}/quickstart/v1.2.1/contour.yaml
 ```
@@ -179,7 +244,7 @@ If the following are true for you:
 Then the simplest way to upgrade to 1.2.1 is to delete the `projectcontour` namespace and reapply one of the example configurations.
 From the root directory of the repository:
 
-```
+```bash
 $ kubectl delete namespace projectcontour
 $ kubectl apply -f {{site.url}}/quickstart/v1.2.1/contour.yaml
 ```
@@ -228,7 +293,7 @@ If the following are true for you:
 Then the simplest way to upgrade to 1.1.0 is to delete the `projectcontour` namespace and reapply one of the example configurations.
 From the root directory of the repository:
 
-```
+```bash
 $ kubectl delete namespace projectcontour
 $ kubectl apply -f examples/<your-desired-deployment>
 ```
@@ -242,7 +307,7 @@ Then in your editor of choice do a search and replace for `projectcontour` and r
 
 **Note:** If you are deploying to a cluster where you have previously installed alpha versions of the Contour API, applying the Contour CRDs in `examples/contour` may fail with a message similar to `Invalid value: "v1alpha1": must appear in spec.versions`. In this case, you need to delete the old CRDs and apply the new ones.
 
-```
+```bash
 $ kubectl delete namespace projectcontour
 $ kubectl get crd  | awk '/projectcontour.io|contour.heptio.com/{print $1}' | xargs kubectl delete crd
 $ kubectl apply -f examples/<your-desired-deployment>
@@ -304,7 +369,7 @@ If the following are true for you:
 Then the simplest way to upgrade is to delete the `projectcontour` namespace and reapply the `examples/contour` sample manifest.
 From the root directory of the repository:
 
-```
+```bash
 $ kubectl delete namespace projectcontour
 $ kubectl apply -f examples/contour
 ```
@@ -331,7 +396,7 @@ Contour 1.0.0 promotes the HTTPProxy CRD to v1.
 HTTPProxy is now considered stable, and there will only be additive, compatible changes in the future.
 See the [HTTPProxy documentation][3] for more information.
 
-```
+```bash
 $ kubectl apply -f examples/contour/01-crds.yaml
 ```
 
@@ -505,7 +570,7 @@ If the following are true for you:
 Then the simplest way to upgrade to 0.15.3 is to delete the `heptio-contour` namespace and reapply one of the example configurations.
 From the root directory of the repository:
 
-```
+```bash
 $ kubectl delete namespace heptio-contour
 $ kubectl apply -f examples/<your-desired-deployment>
 ```
@@ -560,7 +625,7 @@ In order for leader election to work, you must make the following changes to you
 - The Contour Deployment must have its readiness probe changed too TCP readiness probe configured to check port 8001 (the gRPC port), as non-leaders will not serve gRPC, and Envoys may not be properly configured if they attempt to connect to a non-leader Contour.
   That is, you will need to change:
 
-```
+```yaml
         readinessProbe:
           httpGet:
             path: /healthz
@@ -568,7 +633,7 @@ In order for leader election to work, you must make the following changes to you
 ```
 to
 
-```
+```yaml
         readinessProbe:
           tcpSocket:
             port: 8001
@@ -579,7 +644,7 @@ inside the Pod spec.
 - The update strategy for the Contour deployment must be changed to `Recreate` instead of `RollingUpdate`, as pods will never become Ready (since they won't pass the readiness probe).
   Add
 
-```
+```yaml
   strategy:
     type: Recreate
 ```
@@ -591,13 +656,13 @@ Once these changes are made, add `--enable-leader-election` to your `contour ser
 The leader will perform and log its operations as normal, and the non-leaders will block waiting to become leader.
 You can inspect the state of the leadership using
 
-```
+```bash
 $ kubectl describe configmap -n heptio-contour contour
 ```
 
 and checking the annotations that store exact details using
 
-```
+```bash
 $ kubectl get configmap -n heptio-contour -o yaml contour
 ```
 
