@@ -36,7 +36,7 @@ rules:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: contour-certgen
+  name: contour-certgen-v1.5.0
   namespace: projectcontour
 spec:
   ttlSecondsAfterFinished: 0
@@ -56,8 +56,10 @@ spec:
         command:
         - contour
         - certgen
-        - --incluster
         - --kube
+        - --incluster
+        - --overwrite
+        - --secrets-format=compact
         - --namespace=$(CONTOUR_NAMESPACE)
         env:
         - name: CONTOUR_NAMESPACE
