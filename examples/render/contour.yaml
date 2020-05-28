@@ -1455,7 +1455,7 @@ spec:
         # just by applying the deployment YAML.
         # See #2423, #2395, #2150, and #2030 for earlier questions about this.
         image: docker.io/projectcontour/contour:latest
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         command:
         - contour
         - certgen
