@@ -85,9 +85,9 @@ download: ## Download Go modules
 
 container: ## Build the Contour container image
 	docker build \
-		--build-arg BUILD_VERSION=$(BUILD_VERSION) \
-		--build-arg BUILD_BRANCH=$(BUILD_BRANCH) \
-		--build-arg BUILD_SHA=$(BUILD_SHA) \
+		--build-arg "BUILD_VERSION=$(BUILD_VERSION)" \
+		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
+		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
 		$(DOCKER_BUILD_LABELS) \
 		$(shell pwd) \
 		--tag $(IMAGE):$(VERSION)
