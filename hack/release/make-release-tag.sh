@@ -10,7 +10,7 @@ readonly OLDVERS="$1"
 readonly NEWVERS="$2"
 
 if [ -z "$OLDVERS" ] || [ -z "$NEWVERS" ]; then
-    printf "Usage: %s OLDVERS NEWVERS\n" PROGNAME
+    printf "Usage: %s OLDVERS NEWVERS\n" $PROGNAME
     exit 1
 fi
 
@@ -66,7 +66,7 @@ printf "Created tag '%s'\n" "$NEWVERS"
 # which one to dry run against. Choose a remote name that pushes to the
 # projectcontour org repository (i.e. not the user's Github fork).
 readonly REMOTE=$(git remote -v | awk '$2~/projectcontour\/contour/ && $3=="(push)" {print $1}' | head -n 1)
-if [ -n "$REMOTE" ]; then
+if [ -z "$REMOTE" ]; then
     printf "%s: unable to determine remote for %s\n" "$PROGNAME" "projectcontour/contour"
     exit 1
 fi
