@@ -118,6 +118,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+      automountServiceAccountToken: false
       serviceAccountName: envoy
       terminationGracePeriodSeconds: 300
       volumes:
