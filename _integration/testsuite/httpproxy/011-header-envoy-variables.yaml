@@ -1,0 +1,152 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo
+
+---
+
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+   name: echo
+spec:
+  virtualhost:
+    fqdn: echo.projectcontour.io
+  routes:
+  - services:
+    - name: echo
+      port: 80
+    requestHeadersPolicy:
+      set:
+      - name: Test-User-Agent
+        value: '%REQ(User-Agent)%'
+      remove:
+      - Test-Removed-Header
+    responseHeadersPolicy:
+      set:
+      - name: Test-Response-Protocol
+        value: '%PROTOCOL%'
+      remove:
+      - X-Envoy-Upstream-Service-Time
+
+---
+
+import data.contour.resources
+
+fatal_proxy_is_not_valid[msg] {
+  name := "echo"
+  proxy := resources.get("httpproxies", name)
+  status := object.get(proxy, "status", {})
+
+  object.get(status, "currentStatus", "") != "valid"
+
+  msg := sprintf("HTTPProxy '%s' is not valid\n%s", [
+    name, yaml.marshal(status)
+  ])
+}
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.response
+
+Response := client.Get({
+  "url": url.http(sprintf("/header-envoy-variables/%d", [time.now_ns()])),
+  "headers": {
+    "Host": "echo.projectcontour.io",
+    "User-Agent": client.ua("header-envoy-variables"),
+    "Test-Removed-Header": "remove-me",
+  }
+})
+
+# Return the value (if it is scalar) or the first element (if it is an array).
+head(value) = first {
+  is_array(value)
+  first := value[0]
+} else = first {
+  first := value
+}
+
+# requestval returns the value for the named header in the HTTP request.
+# These values come from the response body.
+requestval(name) = value {
+  body := response.body(Response)
+  headers := object.get(body, "Headers", {})
+  value := object.get(headers, name, "Not-Present")
+}
+
+# responseval returnes the value for the named header in the HTTP response.
+responseval(name) = value {
+  headers := response.headers(Response)
+  value := head(object.get(headers, name, "Not-Present"))
+}
+
+error_non_200_response [msg] {
+  not Response
+  msg := "no response"
+}
+
+error_non_200_response [msg] {
+  status := object.get(Response, "status_code", 000)
+  status != 200
+  msg := sprintf("got status %d, wanted %d", [status, 200])
+}
+
+error_wrong_routing[msg] {
+  response.testid(Response) != "echo"
+  msg := sprintf("got test ID %q, wanted %q", [
+    response.testid(Response), "echo",
+  ])
+}
+
+# Request header removed.
+error_request_header[msg] {
+  requestval("Test-Removed-Header") != "Not-Present"
+  msg := sprintf("removed header %q is still present with value %q", [
+    "Test-Removed-Header",
+    requestval("Test-Removed-Header"),
+  ])
+}
+
+# Request header copied using %REQ%.
+error_request_header[msg] {
+  requestval("User-Agent") != requestval("Test-User-Agent")
+  msg := sprintf("User-Agent header %q doesn't match copy %q", [
+    requestval("User-Agent"),
+    requestval("Test-User-Agent"),
+  ])
+}
+
+# NOTE(jpeach): Not all Envoy headers can be removed from the response
+# (e.g. removing  "Server" doesn't work).
+error_response_header[msg] {
+  responseval("X-Envoy-Upstream-Service-Time") != "Not-Present"
+  msg := sprintf("removed header %q is still present with value %q", [
+    "X-Envoy-Upstream-Service-Time",
+    requestval("X-Envoy-Upstream-Service-Time"),
+  ])
+}
+
+# Header injected into the response.
+error_response_header[msg] {
+  responseval("Test-Response-Protocol") != "HTTP/1.1"
+  msg := sprintf("injected response header %q value %q doesn't match %q", [
+    "Test-Response-Protocol",
+    responseval("Test-Response-Protocol"),
+    "HTTP/1.1",
+  ])
+}

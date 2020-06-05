@@ -16,14 +16,8 @@ package contour.http.response
 
 has_testid(resp) = true {
   resp.body.TestId
-}
-
-has_testid(resp) = false {
-  not resp.body
-}
-
-has_testid(resp) = false {
-  not resp.body.TestId
+} else = false {
+  true
 }
 
 # Return the HTTP response body, or an empty object if there is no body.
@@ -36,6 +30,18 @@ body(resp) = value {
 body(resp) = value {
   not is_null(resp.body)
   value := resp.body
+}
+
+# Return the HTTP response headers, or an empty object if there are no headers.
+headers(resp) = value {
+  is_null(resp.headers)
+  value := {}
+}
+
+# Return the HTTP response body, or an empty object if there are no headers.
+headers(resp) = value {
+  not is_null(resp.headers)
+  value := resp.headers
 }
 
 # Get the TestId element from a ingress-conformance-echo response

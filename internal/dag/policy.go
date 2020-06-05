@@ -60,7 +60,7 @@ func headersPolicy(policy *projcontour.HeadersPolicy, allowHostRewrite bool) (*H
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
 		}
-		set[key] = escapeHeaderValue(entry.Value)
+		set[key] = entry.Value
 	}
 
 	remove := sets.NewString()
