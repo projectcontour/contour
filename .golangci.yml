@@ -29,4 +29,8 @@ issues:
   # TODO(jpeach): exclude unparam warnings about functions that always recieve
   # the same arguments. We should clean those up some time.
   - always receives
+  exclude-rules:
+  - path: zz_generated
+    linters:
+    - goimports
 
