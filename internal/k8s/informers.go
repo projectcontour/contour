@@ -16,7 +16,6 @@ package k8s
 import (
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	"k8s.io/api/networking/v1beta1"
 
 	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
@@ -39,8 +38,6 @@ type InformerSet struct {
 func DefaultInformerSet(inffactory dynamicinformer.DynamicSharedInformerFactory, serviceAPIs bool) InformerSet {
 
 	defaultGVRs := []schema.GroupVersionResource{
-		ingressroutev1.IngressRouteGVR,
-		ingressroutev1.TLSCertificateDelegationGVR,
 		projectcontour.HTTPProxyGVR,
 		projectcontour.TLSCertificateDelegationGVR,
 		corev1.SchemeGroupVersion.WithResource("services"),
