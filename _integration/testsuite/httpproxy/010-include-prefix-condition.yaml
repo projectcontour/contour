@@ -55,25 +55,6 @@ $apply:
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
-   name: echo
-spec:
-  virtualhost:
-    fqdn: echo.projectcontour.io
-  includes:
-  - name: echo-app
-    namespace: app
-    conditions:
-    - prefix: /
-  - name: echo-admin
-    namespace: admin
-    conditions:
-    - prefix: /admin
-
----
-
-apiVersion: projectcontour.io/v1
-kind: HTTPProxy
-metadata:
   name: echo-app
   namespace: app
 spec:
@@ -94,6 +75,25 @@ spec:
   - services:
     - name: echo-admin
       port: 80
+
+---
+
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+   name: echo
+spec:
+  virtualhost:
+    fqdn: echo.projectcontour.io
+  includes:
+  - name: echo-app
+    namespace: app
+    conditions:
+    - prefix: /
+  - name: echo-admin
+    namespace: admin
+    conditions:
+    - prefix: /admin
 
 ---
 
