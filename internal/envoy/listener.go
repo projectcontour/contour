@@ -301,20 +301,34 @@ func FilterChains(filters ...*envoy_api_v2_listener.Filter) []*envoy_api_v2_list
 }
 
 func FilterMisdirectedRequests(fqdn string) *http.HttpFilter {
+	// When Envoy matches on the virtual host domain, we configure
+	// it to match any port specifier (see envoy.VirtualHost),
+	// so the Host header (authority) may contain a port that
+	// should be ignored. This means that if we don't have a match,
+	// we should try again after stripping the port specifier.
+
 	code := `
 function envoy_on_request(request_handle)
-    local headers = request_handle:headers()
-    local host = headers:get(":authority")
+	local headers = request_handle:headers()
+	local host = headers:get(":authority")
+	local target = "%s"
 
-    if host ~= "%s" then
-	request_handle:respond({
-		[":status"] = "421",
-	    },
-	    ""
-	)
-    end
+	if host ~= target then
+		s, e = string.find(host, ":", 1, true)
+		if s ~= nil then
+			host = string.sub(host, 1, s - 1)
+		end
+
+		if host ~= target then
+			request_handle:respond(
+				{[":status"] = "421"},
+				string.format("misdirected request to %%q", headers:get(":authority"))
+			)
+		end
+
+	end
 end
-`
+	`
 
 	return &http.HttpFilter{
 		Name: "envoy.filters.http.lua",
