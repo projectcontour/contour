@@ -98,8 +98,6 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("contour-cert-file", "Contour certificate file name for serving gRPC over TLS.").Envar("CONTOUR_CERT_FILE").StringVar(&ctx.contourCert)
 	serve.Flag("contour-key-file", "Contour key file name for serving gRPC over TLS.").Envar("CONTOUR_KEY_FILE").StringVar(&ctx.contourKey)
 	serve.Flag("insecure", "Allow serving without TLS secured gRPC.").BoolVar(&ctx.PermitInsecureGRPC)
-	// TODO(sas) Deprecate `ingressroute-root-namespaces` in v1.0
-	serve.Flag("ingressroute-root-namespaces", "DEPRECATED (Use 'root-namespaces'): Restrict contour to searching these namespaces for root ingress routes.").StringVar(&ctx.rootNamespaces)
 	serve.Flag("root-namespaces", "Restrict contour to searching these namespaces for root ingress routes.").StringVar(&ctx.rootNamespaces)
 
 	serve.Flag("ingress-class-name", "Contour IngressClass name.").StringVar(&ctx.ingressClass)
@@ -135,7 +133,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	informerFactory := clients.NewInformerFactory()
 	dynamicInformerFactory := clients.NewDynamicInformerFactory()
 
-	// Create a set of SharedInformerFactories for each root-ingressroute namespace (if defined)
+	// Create a set of SharedInformerFactories for each root namespace (if defined)
 	namespacedInformerFactories := map[string]coreinformers.SharedInformerFactory{}
 
 	// Validate fallback certificate parameters
@@ -239,12 +237,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	// TODO(youngnick): Move this logic out to internal/k8s/informers.go somehow.
-	// Add informers for each root-ingressroute namespaces
+	// Add informers for each root namespace
 	for _, factory := range namespacedInformerFactories {
 		informerSyncList.RegisterInformer(factory.Core().V1().Secrets().Informer(), dynamicHandler)
 	}
 
-	// If root-ingressroutes are not defined, then add the informer for all namespaces
+	// If root namespaces are not defined, then add the informer for all namespaces
 	if len(namespacedInformerFactories) == 0 {
 		informerSyncList.RegisterInformer(informerFactory.Core().V1().Secrets().Informer(), dynamicHandler)
 	}

@@ -7,13 +7,26 @@ This document describes the differences between IngressRoute and HTTPProxy.
 It is intended for Contour users who have existing IngressRoute resources they wish to migrate to HTTPProxy.
 It is not intended a comprehensive documentation of HTTPProxy, for that please see the [`HTTPProxy` documentation][1].
 
-_Note: IngressRoute is deprecated and will be removed after Contour 1.0 ships in November._
+_Note: IngressRoute has been removed from Contour in v1.6._
 
-## Group, Version and Kind changes
+## The easy way
 
-As part of the sunsetting of the Heptio brand, `HTTPProxy` has moved to the `projectcontour.io` group.
-For Contour 1.0.0-rc.1 the version is `v1`.
-We expect this to change in forthcoming release candidates.
+The simplest way to migrate from IngressRoute to HTTPProxy is to use the `ir2proxy` tool.
+Installation instructions are available at [its github repo](https://github.com/projectcontour/ir2proxy).
+It's installable either by homebrew or downloading the binary.
+
+This tool can automatically migrate most IngressRoutes to HTTPProxies.
+However, due to the behavior changes around the move from delegation to inclusion, not all IngressRoutes can be translated without manual intervention.
+The tool will tell you when manual intervention is required.
+
+
+## Manual conversion notes
+
+### Group, Version and Kind changes
+
+`HTTPProxy` has moved to the `projectcontour.io` group.
+The version is `v1`, with all the guarantees a GA API implies.
+
 
 Before:
 
@@ -28,7 +41,7 @@ apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 ```
 
-## TLS secrets
+### TLS secrets
 
 No change.
 
@@ -62,7 +75,7 @@ spec:
       secretName: tlssecret
 ```
 
-### TLS Minimum protocol version
+#### TLS Minimum protocol version
 
 No change.
 
@@ -80,7 +93,7 @@ spec:
       minimumProtocolVersion: "1.3"
 ```
 
-### Upstream TLS validation
+#### Upstream TLS validation
 
 No change.
 
@@ -102,10 +115,10 @@ spec:
             subjectName: backend.example.com
 ```
 
-### TLS Certificate Delegation
+#### TLS Certificate Delegation
 
 The group and version of the TLSCertificateDelegation CRD have changed.
-`contour.heptio.com/v1beta1.TLSCertificateDelegation` will be removed after Contour 1.0 ships in November.
+`contour.heptio.com/v1beta1.TLSCertificateDelegation` has been removed.
 
 Before:
 
@@ -136,7 +149,7 @@ spec:
       - example-com
 ```
 
-## Routing
+### Routing
 
 HTTPProxy offers additional ways to match incoming requests to routes.
 This document covers the conversion between the routing offered in IngressRoute and HTTPProxy.
@@ -188,15 +201,15 @@ spec:
           port: 80
 ```
 
-### Multiple services
+#### Multiple services
 
 No change.
 
-### Upstream weighting
+#### Upstream weighting
 
 No change.
 
-### Response timeout
+#### Response timeout
 
 `routes.timeoutPolicy.request` has been renamed to `routes.timeoutPolicy.response` to more accurately reflect is the timeout for the response.
 
@@ -241,12 +254,57 @@ spec:
       port: 80
 ```
 
-### Prefix rewriting
+#### Prefix rewriting
 
-The `route.prefixRewrite` field has been removed from HTTPProxy.
-We plan to introduce a replacement in rc.2.
+Prefix rewriting is supported in HTTPProxy.
 
-See #899
+Before:
+```yaml
+apiVersion: contour.heptio.com/v1beta1
+kind: IngressRoute
+metadata:
+  name: app
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: app.example.com
+  routes:
+    - match: /
+      services:
+        - name: app
+          port: 80
+    - match: /service2
+      prefixRewrite: "/" # Setting this rewrites the request from `/service2` to `/`
+      services:
+        - name: app-service
+          port: 80
+```
+
+After:
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: app
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: app.example.com
+  routes:
+  - conditions:
+    - prefix: "/"
+    services:
+    - name: app
+      port: 80
+  - conditions:
+    - prefix: "/service2"
+    pathRewritePolicy:
+      replacePrefix:
+      - replacement: / # app-service will see client requests to `/service2` coming in to `/`
+    services:
+    - name: app-service
+      port: 80
+```
 
 ### Load balancing strategies
 
@@ -475,8 +533,8 @@ Orphaned status will be reported on _child_ HTTPProxy objects that are not inclu
 ### Restricted root namespaces
 
 The `--ingressroute-root-namespace` flag has been renamed to `--root-namespaces` for obvious reasons.
-The old name is deprecated and will be removed after Contour 1.0 is released.
-See the [upgrading documentation]({% link _resources/upgrading.md %}) for more information on upgrading from Contour 0.15.0 to 1.0.0-beta.1
+The old name has been removed.
+See the [upgrading documentation]({% link _resources/upgrading.md %}) for more information on upgrading Contour.
 
 ### TCP Proxying
 
@@ -494,4 +552,4 @@ No change.
 
 Status reporting on HTTPProxy objects is similar in scope and function to IngressRoute status.
 
-[1]: {% link /docs/v1.0.0/httpproxy.md %}
+[1]: {% link /docs/v1.5.0/httpproxy.md %}
