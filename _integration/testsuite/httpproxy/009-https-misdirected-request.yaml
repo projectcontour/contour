@@ -167,7 +167,6 @@ error_wrong_routing[msg] {
 
 import data.contour.http.client
 import data.contour.http.client.url
-import data.contour.http.request
 import data.contour.http.response
 
 # Send a request with a Host header that doesn't match the SNI name that
@@ -187,4 +186,28 @@ Response := client.Get({
 error_non_421_response [msg] {
   not response.status_is(Response, 421)
   msg := sprintf("got status %d, wanted %d", [Response.status_code, 421])
+}
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.response
+
+# The virtual host name is port-insensitive, so verify that we can
+# stuff any old port number is and still succeed.
+
+Response := client.Get({
+  "url": url.https(sprintf("/misdirected/%d", [time.now_ns()])),
+  "headers": {
+    "Host": "echo.projectcontour.io:9999",
+    "User-Agent": client.ua("misdirected-request"),
+  },
+  "tls_server_name": "echo.projectcontour.io",
+  "tls_insecure_skip_verify": true,
+})
+
+error_non_200_response [msg] {
+  not response.status_is(Response, 200)
+  msg := sprintf("got status %d, wanted %d", [Response.status_code, 200])
 }
