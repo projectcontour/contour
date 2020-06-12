@@ -14,22 +14,22 @@ This document describes the changes needed to upgrade your Contour installation.
 <div class="alert-deprecation">
 <b>Deprecation Notice</b><br>
 The <code>IngressRoute</code> CRD has been deprecated and will not receive further updates.
-Contour 1.5.0 continues to support the IngressRoute API, however we anticipate it will be removed in the future.
+Contour 1.5.1 continues to support the IngressRoute API, however we anticipate it will be removed in the future.
 Please see the documentation for <a href="{% link docs/{{site.latest}}/httpproxy.md %}"><code>HTTPProxy</code></a>, which is the successor to <code>IngressRoute</code>.
 You can also read the <a href="{% link _guides/ingressroute-to-httpproxy.md %}">IngressRoute to HTTPProxy upgrade</a> guide.
 </div>
 
 <br>
 
-# Upgrading Contour 1.4.0 to 1.5.0
+# Upgrading Contour 1.4.0 to 1.5.1
 
-Contour 1.5.0 is the current stable release.
+Contour 1.5.1 is the current stable release.
 
 ## Required Envoy version
 
-All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.14.1`.
+All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.14.2`.
 
-Please see the [Envoy Release Notes][20] for information about issues fixed in Envoy 1.14.1.
+Please see the [Envoy Release Notes][20] for information about issues fixed in Envoy 1.14.2.
 
 ## The easy way to upgrade
 
@@ -39,11 +39,11 @@ If the following are true for you:
  * You are using our [quickstart example][18] deployments.
  * Your cluster can take few minutes of downtime.
 
-Then the simplest way to upgrade to 1.5.0 is to delete the `projectcontour` namespace and reapply one of the example configurations:
+Then the simplest way to upgrade to 1.5.1 is to delete the `projectcontour` namespace and reapply one of the example configurations:
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.5.0/contour.yaml
+$ kubectl apply -f {{site.url}}/quickstart/v1.5.1/contour.yaml
 ```
 
 This will remove both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -53,7 +53,7 @@ You'll need to re-check where your DNS names are pointing as well, using [Get yo
 ## The less easy way
 
 This section contains information for administrators who wish to apply the Contour 1.4.0 to 1.5.0 changes manually.
-The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.5.0` tag.
+The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.5.1` tag.
 
 The Contour CRD definition must be re-applied to the cluster, since a number of compatible changes and additions have been made to the Contour API:
 
@@ -685,4 +685,4 @@ $ kubectl get configmap -n heptio-contour -o yaml contour
 [17]: https://www.envoyproxy.io/docs/envoy/v1.13.1/intro/version_history
 [18]: https://projectcontour.io/quickstart/{{site.latest}}/contour.yaml
 [19]: https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!msg/envoy-announce/sVqmxy0un2s/8aq430xiHAAJ
-[20]: https://www.envoyproxy.io/docs/envoy/v1.14.1/intro/version_history
+[20]: https://www.envoyproxy.io/docs/envoy/v1.14.2/intro/version_history
