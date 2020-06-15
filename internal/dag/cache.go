@@ -14,9 +14,10 @@
 package dag
 
 import (
+	"sync"
+
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
-
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/client-go/tools/cache"
@@ -51,7 +52,24 @@ type KubernetesCache struct {
 	httproutes           map[k8s.FullName]*serviceapis.HTTPRoute
 	tcproutes            map[k8s.FullName]*serviceapis.TcpRoute
 
+	initialize sync.Once
+
 	logrus.FieldLogger
+}
+
+// init creates the internal cache storage. It is called implicitly from the public API.
+func (kc *KubernetesCache) init() {
+	kc.ingresses = make(map[k8s.FullName]*v1beta1.Ingress)
+	kc.ingressroutes = make(map[k8s.FullName]*ingressroutev1.IngressRoute)
+	kc.httpproxies = make(map[k8s.FullName]*projectcontour.HTTPProxy)
+	kc.secrets = make(map[k8s.FullName]*v1.Secret)
+	kc.irdelegations = make(map[k8s.FullName]*ingressroutev1.TLSCertificateDelegation)
+	kc.httpproxydelegations = make(map[k8s.FullName]*projectcontour.TLSCertificateDelegation)
+	kc.services = make(map[k8s.FullName]*v1.Service)
+	kc.gatewayclasses = make(map[k8s.FullName]*serviceapis.GatewayClass)
+	kc.gateways = make(map[k8s.FullName]*serviceapis.Gateway)
+	kc.httproutes = make(map[k8s.FullName]*serviceapis.HTTPRoute)
+	kc.tcproutes = make(map[k8s.FullName]*serviceapis.TcpRoute)
 }
 
 // matchesIngressClass returns true if the given Kubernetes object
@@ -79,6 +97,8 @@ func (kc *KubernetesCache) matchesIngressClass(obj k8s.Object) bool {
 // is not interesting to the cache. If an object with a matching type, name,
 // and namespace exists, it will be overwritten.
 func (kc *KubernetesCache) Insert(obj interface{}) bool {
+	kc.initialize.Do(kc.init)
+
 	if obj, ok := obj.(k8s.Object); ok {
 		kind := k8s.KindOf(obj)
 		for key := range obj.GetObjectMeta().GetAnnotations() {
@@ -116,99 +136,59 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			return false
 		}
 
-		m := k8s.ToFullName(obj)
-		if kc.secrets == nil {
-			kc.secrets = make(map[k8s.FullName]*v1.Secret)
-		}
-		kc.secrets[m] = obj
+		kc.secrets[k8s.ToFullName(obj)] = obj
 		return kc.secretTriggersRebuild(obj)
 	case *v1.Service:
-		m := k8s.ToFullName(obj)
-		if kc.services == nil {
-			kc.services = make(map[k8s.FullName]*v1.Service)
-		}
-		kc.services[m] = obj
+		kc.services[k8s.ToFullName(obj)] = obj
 		return kc.serviceTriggersRebuild(obj)
 	case *v1beta1.Ingress:
 		if kc.matchesIngressClass(obj) {
-			m := k8s.ToFullName(obj)
-			if kc.ingresses == nil {
-				kc.ingresses = make(map[k8s.FullName]*v1beta1.Ingress)
-			}
-			kc.ingresses[m] = obj
+			kc.ingresses[k8s.ToFullName(obj)] = obj
 			return true
 		}
 	case *ingressroutev1.IngressRoute:
 		if kc.matchesIngressClass(obj) {
-			m := k8s.ToFullName(obj)
-			if kc.ingressroutes == nil {
-				kc.ingressroutes = make(map[k8s.FullName]*ingressroutev1.IngressRoute)
-			}
-			kc.ingressroutes[m] = obj
+			kc.ingressroutes[k8s.ToFullName(obj)] = obj
 			return true
 		}
 	case *projectcontour.HTTPProxy:
 		if kc.matchesIngressClass(obj) {
-			m := k8s.ToFullName(obj)
-			if kc.httpproxies == nil {
-				kc.httpproxies = make(map[k8s.FullName]*projectcontour.HTTPProxy)
-			}
-			kc.httpproxies[m] = obj
+			kc.httpproxies[k8s.ToFullName(obj)] = obj
 			return true
 		}
 	case *ingressroutev1.TLSCertificateDelegation:
-		m := k8s.ToFullName(obj)
-		if kc.irdelegations == nil {
-			kc.irdelegations = make(map[k8s.FullName]*ingressroutev1.TLSCertificateDelegation)
-		}
-		kc.irdelegations[m] = obj
+		kc.irdelegations[k8s.ToFullName(obj)] = obj
 		return true
 	case *projectcontour.TLSCertificateDelegation:
-		m := k8s.ToFullName(obj)
-		if kc.httpproxydelegations == nil {
-			kc.httpproxydelegations = make(map[k8s.FullName]*projectcontour.TLSCertificateDelegation)
-		}
-		kc.httpproxydelegations[m] = obj
+		kc.httpproxydelegations[k8s.ToFullName(obj)] = obj
 		return true
 	case *serviceapis.GatewayClass:
 		m := k8s.ToFullName(obj)
-		if kc.gatewayclasses == nil {
-			kc.gatewayclasses = make(map[k8s.FullName]*serviceapis.GatewayClass)
-		}
 		// TODO(youngnick): Remove this once service-apis actually have behavior
 		// other than being added to the cache.
 		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding GatewayClass")
-		kc.gatewayclasses[m] = obj
+		kc.gatewayclasses[k8s.ToFullName(obj)] = obj
 		return true
 	case *serviceapis.Gateway:
 		m := k8s.ToFullName(obj)
-		if kc.gateways == nil {
-			kc.gateways = make(map[k8s.FullName]*serviceapis.Gateway)
-		}
 		// TODO(youngnick): Remove this once service-apis actually have behavior
 		// other than being added to the cache.
 		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding Gateway")
-		kc.gateways[m] = obj
+		kc.gateways[k8s.ToFullName(obj)] = obj
 		return true
 	case *serviceapis.HTTPRoute:
 		m := k8s.ToFullName(obj)
-		if kc.httproutes == nil {
-			kc.httproutes = make(map[k8s.FullName]*serviceapis.HTTPRoute)
-		}
 		// TODO(youngnick): Remove this once service-apis actually have behavior
 		// other than being added to the cache.
 		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding HTTPRoute")
-		kc.httproutes[m] = obj
+		kc.httproutes[k8s.ToFullName(obj)] = obj
 		return true
 	case *serviceapis.TcpRoute:
 		m := k8s.ToFullName(obj)
-		if kc.tcproutes == nil {
-			kc.tcproutes = make(map[k8s.FullName]*serviceapis.TcpRoute)
-		}
 		// TODO(youngnick): Remove this once service-apis actually have behavior
 		// other than being added to the cache.
 		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding TcpRoute")
-		kc.tcproutes[m] = obj
+		kc.tcproutes[k8s.ToFullName(obj)] = obj
 		return true
 
 	default:
@@ -223,6 +203,8 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 // Remove removes obj from the KubernetesCache.
 // Remove returns a boolean indicating if the cache changed after the remove operation.
 func (kc *KubernetesCache) Remove(obj interface{}) bool {
+	kc.initialize.Do(kc.init)
+
 	switch obj := obj.(type) {
 	default:
 		return kc.remove(obj)
