@@ -22,7 +22,7 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/duration"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -302,18 +302,20 @@ func TestClusterVisit(t *testing.T) {
 		},
 		"two service ports": {
 			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{{
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -356,25 +358,27 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
-		"ingressroute with simple path healthcheck": {
+		"httpproxy with simple path healthcheck": {
 			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{{
+						Routes: []projcontour.Route{{
+							HealthCheckPolicy: &projcontour.HTTPHealthCheckPolicy{
+								Path: "/healthy",
+							},
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
 								Name: "backend",
 								Port: 80,
-								HealthCheck: &ingressroutev1.HealthCheck{
-									Path: "/healthy",
-								},
 							}},
 						}},
 					},
@@ -411,30 +415,32 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
-		"ingressroute with custom healthcheck": {
+		"httpproxy with custom healthcheck": {
 			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{{
+						Routes: []projcontour.Route{{
+							HealthCheckPolicy: &projcontour.HTTPHealthCheckPolicy{
+								Host:                    "foo-bar-host",
+								Path:                    "/healthy",
+								TimeoutSeconds:          99,
+								IntervalSeconds:         98,
+								UnhealthyThresholdCount: 97,
+								HealthyThresholdCount:   96,
+							},
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
 								Name: "backend",
 								Port: 80,
-								HealthCheck: &ingressroutev1.HealthCheck{
-									Host:                    "foo-bar-host",
-									Path:                    "/healthy",
-									TimeoutSeconds:          99,
-									IntervalSeconds:         98,
-									UnhealthyThresholdCount: 97,
-									HealthyThresholdCount:   96,
-								},
 							}},
 						}},
 					},
@@ -471,23 +477,27 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
-		"ingressroute with RoundRobin lb algorithm": {
+		"httpproxy with RoundRobin lb algorithm": {
 			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{{
-								Name:     "backend",
-								Port:     80,
+						Routes: []projcontour.Route{{
+							LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
 								Strategy: "RoundRobin",
+							},
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
 							}},
 						}},
 					},
@@ -501,7 +511,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:                 "default/backend/80/f3b72af6a9",
+					Name:                 "default/backend/80/da39a3ee5e",
 					AltStatName:          "default_backend_80",
 					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
@@ -511,23 +521,27 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
-		"ingressroute with WeightedLeastRequest lb algorithm": {
+		"httpproxy with WeightedLeastRequest lb algorithm": {
 			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{{
-								Name:     "backend",
-								Port:     80,
+						Routes: []projcontour.Route{{
+							LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
 								Strategy: "WeightedLeastRequest",
+							},
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
 							}},
 						}},
 					},
@@ -552,23 +566,27 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
-		"ingressroute with Random lb algorithm": {
+		"httpproxy with Random lb algorithm": {
 			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{{
-								Name:     "backend",
-								Port:     80,
+						Routes: []projcontour.Route{{
+							LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
 								Strategy: "Random",
+							},
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
 							}},
 						}},
 					},
@@ -593,81 +611,29 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
-		"ingressroute with differing lb algorithms": {
+		// Removed testcase - "ingressroute with differing lb algorithms"
+		// HTTPProxy has LB algorithm as a route-level construct, so it's not possible.
+		"httpproxy with unknown lb algorithm": {
 			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/a",
-							Services: []ingressroutev1.Service{{
-								Name:     "backend",
-								Port:     80,
-								Strategy: "Random",
-							}},
-						}, {
-							Match: "/b",
-							Services: []ingressroutev1.Service{{
-								Name:     "backend",
-								Port:     80,
-								Strategy: "WeightedLeastRequest",
-							}},
-						}},
-					},
-				},
-				service("default", "backend", v1.ServicePort{
-					Name:       "http",
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(6502),
-				}),
-			},
-			want: clustermap(
-				&v2.Cluster{
-					Name:                 "default/backend/80/58d888c08a",
-					AltStatName:          "default_backend_80",
-					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoy.ConfigSource("contour"),
-						ServiceName: "default/backend/http",
-					},
-					LbPolicy: v2.Cluster_RANDOM,
-				},
-				&v2.Cluster{
-					Name:                 "default/backend/80/8bf87fefba",
-					AltStatName:          "default_backend_80",
-					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoy.ConfigSource("contour"),
-						ServiceName: "default/backend/http",
-					},
-					LbPolicy: v2.Cluster_LEAST_REQUEST,
-				},
-			),
-		},
-		"ingressroute with unknown lb algorithm": {
-			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "simple",
-						Namespace: "default",
-					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
-							Fqdn: "www.example.com",
-						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{{
-								Name:     "backend",
-								Port:     80,
+						Routes: []projcontour.Route{{
+							LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
 								Strategy: "lulz",
+							},
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
 							}},
 						}},
 					},
@@ -681,7 +647,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&v2.Cluster{
-					Name:                 "default/backend/80/86d7a9c129",
+					Name:                 "default/backend/80/da39a3ee5e",
 					AltStatName:          "default_backend_80",
 					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
 					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{

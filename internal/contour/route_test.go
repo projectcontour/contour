@@ -22,7 +22,6 @@ import (
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/wrappers"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
@@ -230,20 +229,19 @@ func TestRouteVisit(t *testing.T) {
 				),
 			),
 		},
-		"one http only ingressroute": {
+		"one http only httpproxy": {
 			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{{
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -392,23 +390,25 @@ func TestRouteVisit(t *testing.T) {
 				),
 			),
 		},
-		"simple ingressroute with secret": {
+		"simple httpproxy with secret": {
 			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &ingressroutev1.TLS{
+							TLS: &projcontour.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{{
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
 								Name: "backend",
 								Port: 8080,
 							}},
@@ -1037,20 +1037,22 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 
-		"ingressroute no weights defined": {
+		"httpproxy no weights defined": {
 			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{{
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -1110,20 +1112,22 @@ func TestRouteVisit(t *testing.T) {
 				),
 			),
 		},
-		"ingressroute one weight defined": {
+		"httpproxy one weight defined": {
 			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{{
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -1184,20 +1188,22 @@ func TestRouteVisit(t *testing.T) {
 				),
 			),
 		},
-		"ingressroute all weights defined": {
+		"httpproxy all weights defined": {
 			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{{
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
 								Name:   "backend",
 								Port:   80,
 								Weight: 22,
@@ -1259,18 +1265,17 @@ func TestRouteVisit(t *testing.T) {
 				),
 			),
 		},
-		"ingressroute w/ missing fqdn": {
+		"httpproxy w/ missing fqdn": {
 			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{{
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{},
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
 								Name: "backend",
 								Port: 80,
 							}},

@@ -24,7 +24,6 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/golang/protobuf/proto"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
@@ -184,24 +183,25 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy.FilterChains(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
 			}),
 		},
-		"one http only ingressroute": {
+		"one http only httpproxy": {
 			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []ingressroutev1.Route{{
-							Services: []ingressroutev1.Service{
-								{
-									Name: "backend",
-									Port: 80,
-								},
-							},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
 						}},
 					},
 				},
@@ -435,30 +435,26 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy.FilterChains(envoy.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
 			}),
 		},
-		"simple ingressroute with secret": {
+		"simple httpproxy with secret": {
 			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &ingressroutev1.TLS{
+							TLS: &projcontour.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []ingressroutev1.Route{
-							{
-								Services: []ingressroutev1.Service{
-									{
-										Name: "backend",
-										Port: 80,
-									},
-								},
-							},
-						},
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
 					},
 				},
 				&v1.Secret{
@@ -1011,34 +1007,30 @@ func TestListenerVisit(t *testing.T) {
 				),
 			}),
 		},
-		"tls-min-protocol-version from config overridden by ingressroute": {
+		"tls-min-protocol-version from config overridden by httpproxy": {
 			ListenerVisitorConfig: ListenerVisitorConfig{
 				MinimumProtocolVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
 			},
 			objs: []interface{}{
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &ingressroutev1.VirtualHost{
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &ingressroutev1.TLS{
+							TLS: &projcontour.TLS{
 								SecretName:             "secret",
 								MinimumProtocolVersion: "1.2",
 							},
 						},
-						Routes: []ingressroutev1.Route{
-							{
-								Services: []ingressroutev1.Service{
-									{
-										Name: "backend",
-										Port: 80,
-									},
-								},
-							},
-						},
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
 					},
 				},
 				&v1.Secret{
