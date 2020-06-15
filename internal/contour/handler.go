@@ -21,7 +21,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -178,7 +177,6 @@ func (e *EventHandler) onUpdate(op interface{}) bool {
 		return e.Builder.Source.Insert(op.obj)
 	case opUpdate:
 		if cmp.Equal(op.oldObj, op.newObj,
-			cmpopts.IgnoreFields(ingressroutev1.IngressRoute{}, "Status"),
 			cmpopts.IgnoreFields(projcontour.HTTPProxy{}, "Status"),
 			cmpopts.IgnoreFields(metav1.ObjectMeta{}, "ResourceVersion")) {
 			e.WithField("op", "update").Debugf("%T skipping update, only status has changed", op.newObj)
@@ -219,9 +217,8 @@ func (e *EventHandler) updateDAG() {
 		statuses := dag.Statuses()
 		e.setStatus(statuses)
 
-		metrics, proxymetrics := calculateRouteMetric(statuses)
-		e.Metrics.SetIngressRouteMetric(metrics)
-		e.Metrics.SetHTTPProxyMetric(proxymetrics)
+		metrics := calculateRouteMetric(statuses)
+		e.Metrics.SetHTTPProxyMetric(metrics)
 	default:
 		e.Debug("skipping metrics and CRD status update, not leader")
 	}
@@ -231,16 +228,6 @@ func (e *EventHandler) updateDAG() {
 func (e *EventHandler) setStatus(statuses map[k8s.FullName]dag.Status) {
 	for _, st := range statuses {
 		switch obj := st.Object.(type) {
-		case *ingressroutev1.IngressRoute:
-			err := e.StatusClient.SetStatus(st.Status, st.Description, obj)
-			if err != nil {
-				e.WithError(err).
-					WithField("status", st.Status).
-					WithField("desc", st.Description).
-					WithField("name", obj.Name).
-					WithField("namespace", obj.Namespace).
-					Error("failed to set status")
-			}
 		case *projcontour.HTTPProxy:
 			err := e.StatusClient.SetStatus(st.Status, st.Description, obj)
 			if err != nil {
