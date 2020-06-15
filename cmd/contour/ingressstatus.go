@@ -97,7 +97,7 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 			}
 
 			// Create new informer for the new LoadBalancerStatus
-			factory := isw.clients.NewDynamicInformerFactory()
+			factory := isw.clients.NewInformerFactory()
 			factory.ForResource(v1beta1.SchemeGroupVersion.WithResource("ingresses")).Informer().AddEventHandler(sau)
 			factory.ForResource(projcontour.HTTPProxyGVR).Informer().AddEventHandler(sau)
 

@@ -18,6 +18,7 @@ import (
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // KindOf returns the kind string for the given Kubernetes object.
@@ -26,11 +27,13 @@ import (
 // objects, so we have to use a type assertion to detect kinds that
 // we care about.
 func KindOf(obj interface{}) string {
-	switch obj.(type) {
+	switch obj := obj.(type) {
 	case *v1.Secret:
 		return "Secret"
 	case *v1.Service:
 		return "Service"
+	case *v1.Endpoints:
+		return "Endpoints"
 	case *v1beta1.Ingress:
 		return "Ingress"
 	case *ingressroutev1.IngressRoute:
@@ -41,6 +44,8 @@ func KindOf(obj interface{}) string {
 		return "TLSCertificateDelegation"
 	case *projectcontour.TLSCertificateDelegation:
 		return "TLSCertificateDelegation"
+	case *unstructured.Unstructured:
+		return obj.GetKind()
 	default:
 		return ""
 	}

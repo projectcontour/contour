@@ -16,6 +16,7 @@ package k8s
 import (
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -24,11 +25,14 @@ type InformerSyncList struct {
 	syncers []cache.InformerSynced
 }
 
-// RegisterInformer adds the sync function from an informer to InformerSyncList and calls the informers
-// AddEventHandler method.
-func (sl *InformerSyncList) RegisterInformer(inf cache.SharedIndexInformer, handler cache.ResourceEventHandler) {
-	sl.syncers = append(sl.syncers, inf.HasSynced)
-	inf.AddEventHandler(handler)
+// InformOnResources creates informers for each of the given resources and registers their sync callbacks.
+func (sl *InformerSyncList) InformOnResources(f InformerFactory, handler cache.ResourceEventHandler, resources ...schema.GroupVersionResource) {
+	for _, r := range resources {
+		informer := f.ForResource(r).Informer()
+		informer.AddEventHandler(handler)
+
+		sl.syncers = append(sl.syncers, informer.HasSynced)
+	}
 }
 
 // WaitForSync ensures that all the informers in the InformerSyncList are synced before returning.

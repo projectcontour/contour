@@ -48,7 +48,17 @@ func TestConvertUnstructured(t *testing.T) {
 			}
 			got, err := converter.FromUnstructured(tc.obj)
 
-			assert.Equal(t, tc.wantError, err)
+			// Note we don't match error string values
+			// because the actual values come from Kubernetes
+			// internals and may not be stable.
+			if tc.wantError == nil && err != nil {
+				t.Errorf("wanted no error, got error %q", err)
+			}
+
+			if tc.wantError != nil && err == nil {
+				t.Errorf("wanted error %q, got no error", tc.wantError)
+			}
+
 			assert.Equal(t, tc.want, got)
 		})
 	}
@@ -357,7 +367,7 @@ func TestConvertUnstructured(t *testing.T) {
 	run(t, "unknownunstructured", testcase{
 		obj:       unknownUnstructured,
 		want:      nil,
-		wantError: errors.New("unsupported object type: *unstructured.Unstructured"),
+		wantError: errors.New(`no kind "Broken" is registered for version "invalid/-1" in scheme "pkg/runtime/scheme.go:101"`),
 	})
 
 	run(t, "invalidunstructured", testcase{
