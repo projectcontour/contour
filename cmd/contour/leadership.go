@@ -128,7 +128,7 @@ func newResourceLock(ctx *serveContext, clients *k8s.Clients) resourcelock.Inter
 		ctx.LeaderElectionConfig.Namespace,
 		ctx.LeaderElectionConfig.Name,
 		clients.ClientSet().CoreV1(),
-		clients.CoordinationClient(),
+		clients.ClientSet().CoordinationV1(),
 		resourcelock.ResourceLockConfig{
 			Identity: resourceLockID,
 		},
