@@ -19,7 +19,6 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/envoy"
 	v1 "k8s.io/api/core/v1"
@@ -136,44 +135,6 @@ func TestRetryPolicy(t *testing.T) {
 	})
 
 	rh.OnDelete(i3)
-
-	ir1 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				RetryPolicy: &projcontour.RetryPolicy{
-					NumRetries:    6,
-					PerTryTimeout: "125ms",
-				},
-				Services: []ingressroutev1.Service{{
-					Name: s1.Name,
-					Port: 80,
-				}},
-			}},
-		},
-	}
-	rh.OnAdd(ir1)
-
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost(ir1.Spec.VirtualHost.Fqdn,
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx", 6, 125*time.Millisecond),
-					},
-				),
-			),
-		),
-		TypeUrl: routeType,
-	})
-
-	rh.OnDelete(ir1)
 
 	hp1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{

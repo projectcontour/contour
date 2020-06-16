@@ -22,7 +22,6 @@ import (
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/client-go/tools/cache"
 
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/sirupsen/logrus"
 	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
@@ -32,7 +31,7 @@ import (
 // DAG values.
 type KubernetesCache struct {
 	// RootNamespaces specifies the namespaces where root
-	// IngressRoutes can be defined. If empty, roots can be defined in any
+	// HTTPProxies can be defined. If empty, roots can be defined in any
 	// namespace.
 	RootNamespaces []string
 
@@ -41,10 +40,8 @@ type KubernetesCache struct {
 	IngressClass string
 
 	ingresses            map[k8s.FullName]*v1beta1.Ingress
-	ingressroutes        map[k8s.FullName]*ingressroutev1.IngressRoute
 	httpproxies          map[k8s.FullName]*projectcontour.HTTPProxy
 	secrets              map[k8s.FullName]*v1.Secret
-	irdelegations        map[k8s.FullName]*ingressroutev1.TLSCertificateDelegation
 	httpproxydelegations map[k8s.FullName]*projectcontour.TLSCertificateDelegation
 	services             map[k8s.FullName]*v1.Service
 	gatewayclasses       map[k8s.FullName]*serviceapis.GatewayClass
@@ -60,10 +57,8 @@ type KubernetesCache struct {
 // init creates the internal cache storage. It is called implicitly from the public API.
 func (kc *KubernetesCache) init() {
 	kc.ingresses = make(map[k8s.FullName]*v1beta1.Ingress)
-	kc.ingressroutes = make(map[k8s.FullName]*ingressroutev1.IngressRoute)
 	kc.httpproxies = make(map[k8s.FullName]*projectcontour.HTTPProxy)
 	kc.secrets = make(map[k8s.FullName]*v1.Secret)
-	kc.irdelegations = make(map[k8s.FullName]*ingressroutev1.TLSCertificateDelegation)
 	kc.httpproxydelegations = make(map[k8s.FullName]*projectcontour.TLSCertificateDelegation)
 	kc.services = make(map[k8s.FullName]*v1.Service)
 	kc.gatewayclasses = make(map[k8s.FullName]*serviceapis.GatewayClass)
@@ -146,19 +141,11 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			kc.ingresses[k8s.ToFullName(obj)] = obj
 			return true
 		}
-	case *ingressroutev1.IngressRoute:
-		if kc.matchesIngressClass(obj) {
-			kc.ingressroutes[k8s.ToFullName(obj)] = obj
-			return true
-		}
 	case *projectcontour.HTTPProxy:
 		if kc.matchesIngressClass(obj) {
 			kc.httpproxies[k8s.ToFullName(obj)] = obj
 			return true
 		}
-	case *ingressroutev1.TLSCertificateDelegation:
-		kc.irdelegations[k8s.ToFullName(obj)] = obj
-		return true
 	case *projectcontour.TLSCertificateDelegation:
 		kc.httpproxydelegations[k8s.ToFullName(obj)] = obj
 		return true
@@ -230,20 +217,10 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		_, ok := kc.ingresses[m]
 		delete(kc.ingresses, m)
 		return ok
-	case *ingressroutev1.IngressRoute:
-		m := k8s.ToFullName(obj)
-		_, ok := kc.ingressroutes[m]
-		delete(kc.ingressroutes, m)
-		return ok
 	case *projectcontour.HTTPProxy:
 		m := k8s.ToFullName(obj)
 		_, ok := kc.httpproxies[m]
 		delete(kc.httpproxies, m)
-		return ok
-	case *ingressroutev1.TLSCertificateDelegation:
-		m := k8s.ToFullName(obj)
-		_, ok := kc.irdelegations[m]
-		delete(kc.irdelegations, m)
 		return ok
 	case *projectcontour.TLSCertificateDelegation:
 		m := k8s.ToFullName(obj)
@@ -291,7 +268,7 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 }
 
 // serviceTriggersRebuild returns true if this service is referenced
-// by an Ingress or IngressRoute in this cache.
+// by an Ingress or HTTPProxy in this cache.
 func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 	for _, ingress := range kc.ingresses {
 		if ingress.Namespace != service.Namespace {
@@ -310,26 +287,6 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 			}
 			for _, path := range http.Paths {
 				if path.Backend.ServiceName == service.Name {
-					return true
-				}
-			}
-		}
-	}
-
-	for _, ir := range kc.ingressroutes {
-		if ir.Namespace != service.Namespace {
-			continue
-		}
-		for _, route := range ir.Spec.Routes {
-			for _, s := range route.Services {
-				if s.Name == service.Name {
-					return true
-				}
-			}
-		}
-		if tcpproxy := ir.Spec.TCPProxy; tcpproxy != nil {
-			for _, s := range tcpproxy.Services {
-				if s.Name == service.Name {
 					return true
 				}
 			}
@@ -360,12 +317,12 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 }
 
 // secretTriggersRebuild returns true if this secret is referenced by an Ingress
-// or IngressRoute object in this cache. If the secret is not in the same namespace
+// or HTTPProxy object in this cache. If the secret is not in the same namespace
 // it must be mentioned by a TLSCertificateDelegation.
 func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 	if _, isCA := secret.Data[CACertificateKey]; isCA {
 		// locating a secret validation usage involves traversing each
-		// ingressroute object, determining if there is a valid delegation,
+		// proxy object, determining if there is a valid delegation,
 		// and if the reference the secret as a certificate. The DAG already
 		// does this so don't reproduce the logic and just assume for the moment
 		// that any change to a CA secret will trigger a rebuild.
@@ -374,14 +331,7 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 
 	delegations := make(map[string]bool) // targetnamespace/secretname to bool
 
-	// merge ingressroute.TLSCertificateDelegation and projectcontour.TLSCertificateDelegation.
-	for _, d := range kc.irdelegations {
-		for _, cd := range d.Spec.Delegations {
-			for _, n := range cd.TargetNamespaces {
-				delegations[n+"/"+cd.SecretName] = true
-			}
-		}
-	}
+	// TODO(youngnick): Check if this is required.
 	for _, d := range kc.httpproxydelegations {
 		for _, cd := range d.Spec.Delegations {
 			for _, n := range cd.TargetNamespaces {
@@ -411,33 +361,6 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 				if tls.SecretName == secret.Namespace+"/"+secret.Name {
 					return true
 				}
-			}
-		}
-	}
-
-	for _, ir := range kc.ingressroutes {
-		vh := ir.Spec.VirtualHost
-		if vh == nil {
-			// not a root ingress
-			continue
-		}
-		tls := vh.TLS
-		if tls == nil {
-			// no tls spec
-			continue
-		}
-
-		if ir.Namespace == secret.Namespace && tls.SecretName == secret.Name {
-			return true
-		}
-		if delegations[ir.Namespace+"/"+secret.Name] {
-			if tls.SecretName == secret.Namespace+"/"+secret.Name {
-				return true
-			}
-		}
-		if delegations["*/"+secret.Name] {
-			if tls.SecretName == secret.Namespace+"/"+secret.Name {
-				return true
 			}
 		}
 	}

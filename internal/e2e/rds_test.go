@@ -24,7 +24,6 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/golang/protobuf/ptypes/any"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
@@ -948,73 +947,6 @@ func TestRDSFilter(t *testing.T) {
 	}, streamRDS(t, cc, "https/example.com"))
 }
 
-func TestPrefixRewriteIngressRoute(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ws",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
-
-	rh.OnAdd(&ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "prefixrewrite.hello.world"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}, {
-				Match:         "/ws-1",
-				PrefixRewrite: "/",
-				Services: []ingressroutev1.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}, {
-				Match:         "/ws-2",
-				PrefixRewrite: "/",
-				Services: []ingressroutev1.Service{{
-					Name: "ws",
-					Port: 80,
-				}},
-			}},
-		},
-	})
-
-	assertRDS(t, cc, "1", virtualhosts(
-		envoy.VirtualHost("prefixrewrite.hello.world",
-			&envoy_api_v2_route.Route{
-				Match:  routePrefix("/ws-2"),
-				Action: prefixrewriteroute("default/ws/80/da39a3ee5e"),
-			},
-			&envoy_api_v2_route.Route{
-				Match:  routePrefix("/ws-1"),
-				Action: prefixrewriteroute("default/ws/80/da39a3ee5e"),
-			},
-			&envoy_api_v2_route.Route{
-				Match:  routePrefix("/"),
-				Action: routecluster("default/ws/80/da39a3ee5e"),
-			},
-		),
-	), nil)
-}
-
 // issue 404
 func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 	rh, cc, done := setup(t)
@@ -1286,16 +1218,18 @@ func TestRDSAssertNoDataRaceDuringInsertAndStream(t *testing.T) {
 
 	go func() {
 		for i := 0; i < 100; i++ {
-			rh.OnAdd(&ingressroutev1.IngressRoute{
+			rh.OnAdd(&projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      fmt.Sprintf("simple-%d", i),
 					Namespace: "default",
 				},
-				Spec: ingressroutev1.IngressRouteSpec{
-					VirtualHost: &ingressroutev1.VirtualHost{Fqdn: fmt.Sprintf("example-%d.com", i)},
-					Routes: []ingressroutev1.Route{{
-						Match: "/",
-						Services: []ingressroutev1.Service{{
+				Spec: projcontour.HTTPProxySpec{
+					VirtualHost: &projcontour.VirtualHost{Fqdn: fmt.Sprintf("example-%d.com", i)},
+					Routes: []projcontour.Route{{
+						Conditions: []projcontour.Condition{{
+							Prefix: "/",
+						}},
+						Services: []projcontour.Service{{
 							Name: "kuard",
 							Port: 80,
 						}},
@@ -1408,16 +1342,18 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 		},
 	})
 
-	ir1 := &ingressroutev1.IngressRoute{
+	p1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/a",
-				Services: []ingressroutev1.Service{{
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/a",
+				}},
+				Services: []projcontour.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90, // ignored
@@ -1426,7 +1362,7 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 		},
 	}
 
-	rh.OnAdd(ir1)
+	rh.OnAdd(p1)
 	assertRDS(t, cc, "1", virtualhosts(
 		envoy.VirtualHost("test2.test.com",
 			&envoy_api_v2_route.Route{
@@ -1436,16 +1372,18 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 		),
 	), nil)
 
-	ir2 := &ingressroutev1.IngressRoute{
+	p2 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/a",
-				Services: []ingressroutev1.Service{{
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/a",
+				}},
+				Services: []projcontour.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90,
@@ -1458,7 +1396,7 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 		},
 	}
 
-	rh.OnUpdate(ir1, ir2)
+	rh.OnUpdate(p1, p2)
 	assertRDS(t, cc, "2", virtualhosts(
 		envoy.VirtualHost("test2.test.com",
 			&envoy_api_v2_route.Route{
@@ -1498,21 +1436,23 @@ func TestRouteWithTLS(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
-	ir1 := &ingressroutev1.IngressRoute{
+	p1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "test2.test.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName: "example-tls",
 				},
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/a",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/a",
+				}},
+				Services: []projcontour.Service{{
 					Name: "kuard",
 					Port: 80,
 				}},
@@ -1520,7 +1460,7 @@ func TestRouteWithTLS(t *testing.T) {
 		},
 	}
 
-	rh.OnAdd(ir1)
+	rh.OnAdd(p1)
 
 	// check that ingress_http has been updated.
 	assert.Equal(t, &v2.DiscoveryResponse{
@@ -1589,27 +1529,31 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
-	ir1 := &ingressroutev1.IngressRoute{
+	p1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "test2.test.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName: "example-tls",
 				},
 			},
-			Routes: []ingressroutev1.Route{{
-				Match:          "/insecure",
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/insecure",
+				}},
 				PermitInsecure: true,
-				Services: []ingressroutev1.Service{{Name: "kuard",
+				Services: []projcontour.Service{{Name: "kuard",
 					Port: 80,
 				}},
 			}, {
-				Match: "/secure",
-				Services: []ingressroutev1.Service{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/secure",
+				}},
+				Services: []projcontour.Service{{
 					Name: "svc2",
 					Port: 80,
 				}},
@@ -1617,7 +1561,7 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 		},
 	}
 
-	rh.OnAdd(ir1)
+	rh.OnAdd(p1)
 
 	// check that ingress_http has been updated.
 	assert.Equal(t, &v2.DiscoveryResponse{
@@ -1697,28 +1641,32 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
-	ir1 := &ingressroutev1.IngressRoute{
+	p1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "test2.test.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName: "example-tls",
 				},
 			},
-			Routes: []ingressroutev1.Route{{
-				Match:          "/insecure",
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/insecure",
+				}},
 				PermitInsecure: true,
-				Services: []ingressroutev1.Service{{
+				Services: []projcontour.Service{{
 					Name: "kuard",
 					Port: 80,
 				}},
 			}, {
-				Match: "/secure",
-				Services: []ingressroutev1.Service{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/secure",
+				}},
+				Services: []projcontour.Service{{
 					Name: "svc2",
 					Port: 80,
 				}},
@@ -1726,7 +1674,7 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 		},
 	}
 
-	rh.OnAdd(ir1)
+	rh.OnAdd(p1)
 
 	// check that ingress_http has been updated.
 	assert.Equal(t, &v2.DiscoveryResponse{
@@ -1760,76 +1708,6 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 		TypeUrl: routeType,
 		Nonce:   "1",
 	}, streamRDS(t, cc))
-}
-
-// issue 681 Increase the e2e coverage of lb strategies
-func TestLoadBalancingStrategies(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	st := v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "template",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
-
-	services := []struct {
-		name       string
-		lbHash     string
-		lbStrategy string
-		lbDesc     string
-	}{
-		{"s1", "f3b72af6a9", "RoundRobin", "RoundRobin lb algorithm"},
-		{"s2", "8bf87fefba", "WeightedLeastRequest", "WeightedLeastRequest lb algorithm"},
-		{"s5", "58d888c08a", "Random", "Random lb algorithm"},
-		{"s6", "da39a3ee5e", "", "Default lb algorithm"},
-	}
-	ss := make([]ingressroutev1.Service, len(services))
-	wc := make([]weightedcluster, len(services))
-	for i, x := range services {
-		s := st
-		s.ObjectMeta.Name = x.name
-		rh.OnAdd(&s)
-		ss[i] = ingressroutev1.Service{
-			Name:     x.name,
-			Port:     80,
-			Strategy: x.lbStrategy,
-		}
-		wc[i] = weightedcluster{fmt.Sprintf("default/%s/80/%s", x.name, x.lbHash), 1}
-	}
-
-	ir := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []ingressroutev1.Route{{
-				Match:    "/a",
-				Services: ss,
-			}},
-		},
-	}
-
-	rh.OnAdd(ir)
-	want := virtualhosts(
-		envoy.VirtualHost("test2.test.com",
-			&envoy_api_v2_route.Route{
-				Match:  routePrefix("/a"),
-				Action: routeweightedcluster(wc...),
-			},
-		),
-	)
-	assertRDS(t, cc, "1", want, nil)
 }
 
 // issue 1234, assert that RoutePrefix and RouteRegex work as expected
@@ -1900,85 +1778,6 @@ func TestRoutePrefixRouteRegex(t *testing.T) {
 		TypeUrl: routeType,
 		Nonce:   "1",
 	}, streamRDS(t, cc))
-}
-
-func TestRDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
-	rh, cc, done := setup(t)
-	defer done()
-
-	svc1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "green",
-			Namespace: "marketing",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	}
-	rh.OnAdd(svc1)
-
-	child := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "blog",
-			Namespace: "marketing",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "www.containersteve.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: svc1.Name,
-					Port: 80,
-				}},
-			}},
-		},
-	}
-	rh.OnAdd(child)
-
-	root := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "root-blog",
-			Namespace: "default",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "blog.containersteve.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Delegate: &ingressroutev1.Delegate{
-					Name:      child.Name,
-					Namespace: child.Namespace,
-				},
-			}},
-		},
-	}
-	rh.OnAdd(root)
-
-	// verify that child's route is present because while it is not possible to
-	// delegate to it, it can host www.containersteve.com.
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
-		Resources: routeResources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("www.containersteve.com",
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: routecluster("marketing/green/80/da39a3ee5e"),
-					},
-				),
-			),
-		),
-		TypeUrl: routeType,
-		Nonce:   "2",
-	}, streamRDS(t, cc))
-
 }
 
 func assertRDS(t *testing.T, cc *grpc.ClientConn, versioninfo string, ingress_http, ingress_https []*envoy_api_v2_route.VirtualHost) {
@@ -2067,12 +1866,6 @@ func weightedclusters(clusters []weightedcluster) *envoy_api_v2_route.WeightedCl
 	}
 	wc.TotalWeight = protobuf.UInt32(total)
 	return &wc
-}
-
-func prefixrewriteroute(c string) *envoy_api_v2_route.Route_Route {
-	cl := routecluster(c)
-	cl.Route.PrefixRewrite = "/"
-	return cl
 }
 
 func service(ns, name string, ports ...v1.ServicePort) *v1.Service {

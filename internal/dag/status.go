@@ -16,12 +16,11 @@ package dag
 import (
 	"fmt"
 
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 )
 
-// Status contains the status for an IngressRoute (valid / invalid / orphan, etc)
+// Status contains the status for an HTTPProxy (valid / invalid / orphan, etc)
 type Status struct {
 	Object      k8s.Object
 	Status      string
@@ -90,8 +89,6 @@ func (osw *ObjectStatusWriter) SetValid() {
 	switch osw.obj.(type) {
 	case *projcontour.HTTPProxy:
 		osw.WithValue("description", "valid HTTPProxy").WithValue("status", k8s.StatusValid)
-	case *ingressroutev1.IngressRoute:
-		osw.WithValue("description", "valid IngressRoute").WithValue("status", k8s.StatusValid)
 	default:
 		// not a supported type
 	}

@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"time"
 
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"k8s.io/api/networking/v1beta1"
@@ -100,10 +99,10 @@ func ingressRetryPolicy(ingress *v1beta1.Ingress) *RetryPolicy {
 	return &RetryPolicy{
 		RetryOn: retryOn,
 		// TODO(dfc) k8s.NumRetries may parse as 0, which is inconsistent with
-		// retryPolicyIngressRoute()'s default value of 1.
+		// retryPolicy()'s default value of 1.
 		NumRetries: annotation.NumRetries(ingress),
 		// TODO(dfc) k8s.PerTryTimeout will parse to -1, infinite, in the case of
-		// invalid data, this is inconsistent with retryPolicyIngressRoute()'s default value
+		// invalid data, this is inconsistent with retryPolicy()'s default value
 		// of 0 duration.
 		PerTryTimeout: annotation.PerTryTimeout(ingress),
 	}
@@ -121,22 +120,10 @@ func ingressTimeoutPolicy(ingress *v1beta1.Ingress) *TimeoutPolicy {
 		}
 	}
 	// if the request timeout annotation is present on this ingress
-	// construct and use the ingressroute timeout policy logic.
+	// construct and use the HTTPProxy timeout policy logic.
 	return timeoutPolicy(&projcontour.TimeoutPolicy{
 		Response: response,
 	})
-}
-
-func ingressrouteTimeoutPolicy(tp *ingressroutev1.TimeoutPolicy) *TimeoutPolicy {
-	if tp == nil {
-		return nil
-	}
-	return &TimeoutPolicy{
-		// due to a misunderstanding the name of the field ingressroute is
-		// Request, however the timeout applies to the response resulting from
-		// a request.
-		ResponseTimeout: annotation.ParseTimeout(tp.Request),
-	}
 }
 
 func timeoutPolicy(tp *projcontour.TimeoutPolicy) *TimeoutPolicy {
@@ -146,19 +133,6 @@ func timeoutPolicy(tp *projcontour.TimeoutPolicy) *TimeoutPolicy {
 	return &TimeoutPolicy{
 		ResponseTimeout: annotation.ParseTimeout(tp.Response),
 		IdleTimeout:     annotation.ParseTimeout(tp.Idle),
-	}
-}
-func ingressrouteHealthCheckPolicy(hc *ingressroutev1.HealthCheck) *HTTPHealthCheckPolicy {
-	if hc == nil {
-		return nil
-	}
-	return &HTTPHealthCheckPolicy{
-		Path:               hc.Path,
-		Host:               hc.Host,
-		Interval:           time.Duration(hc.IntervalSeconds) * time.Second,
-		Timeout:            time.Duration(hc.TimeoutSeconds) * time.Second,
-		UnhealthyThreshold: uint32(hc.UnhealthyThresholdCount),
-		HealthyThreshold:   uint32(hc.HealthyThresholdCount),
 	}
 }
 
