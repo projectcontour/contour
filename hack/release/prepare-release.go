@@ -138,13 +138,19 @@ values:
 }
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Printf("Usage: %s NEWVERS\n",
-			path.Base(os.Args[0]))
+	oldVers := "master"
+	newVers := ""
+
+	switch len(os.Args) {
+	case 2:
+		newVers = os.Args[1]
+	case 3:
+		oldVers = os.Args[1]
+		newVers = os.Args[2]
+	default:
+		fmt.Printf("Usage: %s NEWVERS | OLDVERS NEWVERS\n", path.Base(os.Args[0]))
 		os.Exit(1)
 	}
-
-	newVers := os.Args[1]
 
 	log.Printf("Verifying repository state ...")
 
@@ -160,13 +166,14 @@ func main() {
 
 	// Jekyll hates it when the TOC file name contains a dot.
 	tocName := strings.ReplaceAll(fmt.Sprintf("%s-toc", newVers), ".", "-")
+	oldTocName := strings.ReplaceAll(fmt.Sprintf("%s-toc", oldVers), ".", "-")
 
-	// Make a versioned copy of the amster docs.
-	run([]string{"cp", "-r", "site/docs/master", fmt.Sprintf("site/docs/%s", newVers)})
+	// Make a versioned copy of the oldVers docs.
+	run([]string{"cp", "-r", fmt.Sprintf("site/docs/%s", oldVers), fmt.Sprintf("site/docs/%s", newVers)})
 	run([]string{"git", "add", fmt.Sprintf("site/docs/%s", newVers)})
 
 	// Make a versioned TOC for the docs.
-	run([]string{"cp", "-r", "site/_data/master-toc.yml", fmt.Sprintf("site/_data/%s.yml", tocName)})
+	run([]string{"cp", "-r", fmt.Sprintf("site/_data/%s.yml", oldTocName), fmt.Sprintf("site/_data/%s.yml", tocName)})
 	run([]string{"git", "add", fmt.Sprintf("site/_data/%s.yml", tocName)})
 
 	// Insert the versioned TOC.
