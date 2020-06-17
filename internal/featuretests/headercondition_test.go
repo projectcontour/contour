@@ -388,4 +388,122 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	})
+
+	// proxy with two routes that have the same prefix and a Contains header
+	// condition on the same header, differing only in the value of the condition.
+	proxy6 := fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
+			Routes: []projcontour.Route{
+				{
+					Conditions: conditions(
+						prefixCondition("/"),
+						headerContainsCondition("x-header", "abc"),
+					),
+					Services: []projcontour.Service{{
+						Name: "svc1",
+						Port: 80,
+					}},
+				},
+				{
+					Conditions: conditions(
+						prefixCondition("/"),
+						headerContainsCondition("x-header", "def"),
+					),
+					Services: []projcontour.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				}},
+		},
+	)
+
+	rh.OnUpdate(proxy5, proxy6)
+
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("hello.world",
+					&envoy_api_v2_route.Route{
+						Match: routePrefix("/", dag.HeaderCondition{
+							Name:      "x-header",
+							Value:     "abc",
+							MatchType: "contains",
+							Invert:    false,
+						}),
+						Action: routeCluster("default/svc1/80/da39a3ee5e"),
+					},
+					&envoy_api_v2_route.Route{
+						Match: routePrefix("/", dag.HeaderCondition{
+							Name:      "x-header",
+							Value:     "def",
+							MatchType: "contains",
+							Invert:    false,
+						}),
+						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	// proxy with two routes that both have a condition on the same
+	// header, one using Contains and one using NotContains.
+	proxy7 := fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
+			Routes: []projcontour.Route{
+				{
+					Conditions: conditions(
+						prefixCondition("/"),
+						headerContainsCondition("x-header", "abc"),
+					),
+					Services: []projcontour.Service{{
+						Name: "svc1",
+						Port: 80,
+					}},
+				},
+				{
+					Conditions: conditions(
+						prefixCondition("/"),
+						headerNotContainsCondition("x-header", "abc"),
+					),
+					Services: []projcontour.Service{{
+						Name: "svc2",
+						Port: 80,
+					}},
+				}},
+		},
+	)
+
+	rh.OnUpdate(proxy6, proxy7)
+
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("hello.world",
+					&envoy_api_v2_route.Route{
+						Match: routePrefix("/", dag.HeaderCondition{
+							Name:      "x-header",
+							Value:     "abc",
+							MatchType: "contains",
+							Invert:    false,
+						}),
+						Action: routeCluster("default/svc1/80/da39a3ee5e"),
+					},
+					&envoy_api_v2_route.Route{
+						Match: routePrefix("/", dag.HeaderCondition{
+							Name:      "x-header",
+							Value:     "abc",
+							MatchType: "contains",
+							Invert:    true,
+						}),
+						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
 }
