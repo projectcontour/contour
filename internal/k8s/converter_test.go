@@ -20,7 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/tools/cache"
 
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -63,30 +62,6 @@ func TestConvertUnstructured(t *testing.T) {
 		})
 	}
 
-	ir1 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "example",
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "example.com",
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/foo",
-				Services: []ingressroutev1.Service{{
-					Name: "home",
-					Port: 8080,
-				}},
-			}, {
-				Match: "/prefix",
-				Delegate: &ingressroutev1.Delegate{
-					Name: "delegated",
-				}},
-			},
-		},
-	}
-
 	proxy1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
@@ -104,21 +79,6 @@ func TestConvertUnstructured(t *testing.T) {
 					Name: "home",
 					Port: 8080,
 				}},
-			}},
-		},
-	}
-
-	irTLSCert1 := &ingressroutev1.TLSCertificateDelegation{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "delegation",
-			Namespace: "example",
-		},
-		Spec: ingressroutev1.TLSCertificateDelegationSpec{
-			Delegations: []ingressroutev1.CertificateDelegation{{
-				SecretName: "sec1",
-				TargetNamespaces: []string{
-					"targetns",
-				},
 			}},
 		},
 	}
@@ -158,53 +118,6 @@ func TestConvertUnstructured(t *testing.T) {
 					"conditions": []map[string]interface{}{{
 						"prefix": "/foo",
 					}},
-				}},
-			},
-		},
-	}
-
-	irUnstructured := &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"apiVersion": "contour.heptio.com/v1beta1",
-			"kind":       "IngressRoute",
-			"metadata": map[string]interface{}{
-				"name":      "example",
-				"namespace": "roots",
-			},
-			"spec": map[string]interface{}{
-				"virtualhost": map[string]interface{}{
-					"fqdn": "example.com",
-				},
-				"routes": []map[string]interface{}{{
-					"match": "/foo",
-					"services": []map[string]interface{}{{
-						"name": "home",
-						"port": 8080,
-					}},
-				}, {
-					"match": "/prefix",
-					"delegate": map[string]interface{}{
-						"name": "delegated",
-					},
-				}},
-			},
-		},
-	}
-
-	irTLSCertUnstructured := &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"apiVersion": "contour.heptio.com/v1beta1",
-			"kind":       "TLSCertificateDelegation",
-			"metadata": map[string]interface{}{
-				"name":      "delegation",
-				"namespace": "example",
-			},
-			"spec": map[string]interface{}{
-				"delegations": []map[string]interface{}{{
-					"secretName": "sec1",
-					"targetNamespaces": []string{
-						"targetns",
-					},
 				}},
 			},
 		},
@@ -343,18 +256,6 @@ func TestConvertUnstructured(t *testing.T) {
 	run(t, "proxyunstructured", testcase{
 		obj:       proxyUnstructured,
 		want:      proxy1,
-		wantError: nil,
-	})
-
-	run(t, "irunstructured", testcase{
-		obj:       irUnstructured,
-		want:      ir1,
-		wantError: nil,
-	})
-
-	run(t, "irtlscertunstructured", testcase{
-		obj:       irTLSCertUnstructured,
-		want:      irTLSCert1,
 		wantError: nil,
 	})
 

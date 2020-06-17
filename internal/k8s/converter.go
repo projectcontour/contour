@@ -16,7 +16,6 @@ package k8s
 import (
 	"context"
 
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/networking/v1beta1"
@@ -87,7 +86,6 @@ type UnstructuredConverter struct {
 // NewUnstructuredConverter returns a new UnstructuredConverter initialized
 func NewUnstructuredConverter() (*UnstructuredConverter, error) {
 	schemeBuilder := runtime.SchemeBuilder{
-		ingressroutev1.AddToScheme,
 		projectcontour.AddToScheme,
 		scheme.AddToScheme,
 		serviceapis.AddToScheme,

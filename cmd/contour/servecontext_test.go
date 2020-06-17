@@ -72,7 +72,7 @@ func TestServeContextIngressRouteRootNamespaces(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := tc.ctx.ingressRouteRootNamespaces()
+			got := tc.ctx.proxyRootNamespaces()
 			if !reflect.DeepEqual(got, tc.want) {
 				t.Fatalf("expected: %q, got: %q", tc.want, got)
 			}

@@ -14,7 +14,6 @@
 package k8s
 
 import (
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -36,12 +35,8 @@ func KindOf(obj interface{}) string {
 		return "Endpoints"
 	case *v1beta1.Ingress:
 		return "Ingress"
-	case *ingressroutev1.IngressRoute:
-		return "IngressRoute"
 	case *projectcontour.HTTPProxy:
 		return "HTTPProxy"
-	case *ingressroutev1.TLSCertificateDelegation:
-		return "TLSCertificateDelegation"
 	case *projectcontour.TLSCertificateDelegation:
 		return "TLSCertificateDelegation"
 	case *unstructured.Unstructured:

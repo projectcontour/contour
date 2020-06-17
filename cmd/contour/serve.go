@@ -142,7 +142,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		log.WithField("context", "fallback-certificate").Fatalf("invalid fallback certificate configuration: %q", err)
 	}
 
-	if rootNamespaces := ctx.ingressRouteRootNamespaces(); len(rootNamespaces) > 0 {
+	if rootNamespaces := ctx.proxyRootNamespaces(); len(rootNamespaces) > 0 {
 		// Add the FallbackCertificateNamespace to the root-namespaces if not already
 		if !contains(rootNamespaces, ctx.TLSConfig.FallbackCertificate.Namespace) && fallbackCert != nil {
 			rootNamespaces = append(rootNamespaces, ctx.FallbackCertificate.Namespace)
@@ -197,7 +197,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		},
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
-				RootNamespaces: ctx.ingressRouteRootNamespaces(),
+				RootNamespaces: ctx.proxyRootNamespaces(),
 				IngressClass:   ctx.ingressClass,
 				FieldLogger:    log.WithField("context", "KubernetesCache"),
 			},

@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"testing"
 
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	v1 "k8s.io/api/core/v1"
@@ -437,7 +436,6 @@ func TestAnnotationKindValidation(t *testing.T) {
 	for _, kind := range []string{
 		kindOf(&v1.Service{}),
 		kindOf(&v1beta1.Ingress{}),
-		kindOf(&ingressroutev1.IngressRoute{}),
 		kindOf(&projectcontour.HTTPProxy{}),
 	} {
 		for key := range annotationsByKind[kind] {
@@ -590,12 +588,8 @@ func kindOf(obj interface{}) string {
 		return "Service"
 	case *v1beta1.Ingress:
 		return "Ingress"
-	case *ingressroutev1.IngressRoute:
-		return "IngressRoute"
 	case *projectcontour.HTTPProxy:
 		return "HTTPProxy"
-	case *ingressroutev1.TLSCertificateDelegation:
-		return "TLSCertificateDelegation"
 	case *projectcontour.TLSCertificateDelegation:
 		return "TLSCertificateDelegation"
 	default:
