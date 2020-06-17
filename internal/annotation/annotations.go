@@ -76,10 +76,6 @@ var annotationsByKind = map[string]map[string]struct{}{
 		"kubernetes.io/ingress.class":     {},
 		"projectcontour.io/ingress.class": {},
 	},
-	"IngressRoute": {
-		"kubernetes.io/ingress.class":     {},
-		"projectcontour.io/ingress.class": {},
-	},
 }
 
 // ValidForKind checks if a particular annotation is valid for a given Kind.

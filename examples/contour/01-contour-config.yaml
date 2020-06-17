@@ -18,7 +18,7 @@ data:
     # Note that this is the timeout for the whole request,
     # not an idle timeout.
     # request-timeout: 0s
-    # disable ingressroute permitInsecure field
+    # disable HTTPProxy permitInsecure field
     disablePermitInsecure: false
     tls:
     # minimum TLS version that Contour will negotiate

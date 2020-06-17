@@ -61,7 +61,7 @@ type serveContext struct {
 	healthAddr string
 	healthPort int
 
-	// ingressroute root namespaces
+	// httpproxy root namespaces
 	rootNamespaces string
 
 	// ingress class
@@ -105,7 +105,7 @@ type serveContext struct {
 	TLSConfig `yaml:"tls,omitempty"`
 
 	// DisablePermitInsecure disables the use of the
-	// permitInsecure field in IngressRoute.
+	// permitInsecure field in HTTPProxy.
 	DisablePermitInsecure bool `yaml:"disablePermitInsecure,omitempty"`
 
 	// DisableLeaderElection can only be set by command line flag.
@@ -310,9 +310,9 @@ func (ctx *serveContext) verifyTLSFlags() error {
 	return nil
 }
 
-// ingressRouteRootNamespaces returns a slice of namespaces restricting where
-// contour should look for ingressroute roots.
-func (ctx *serveContext) ingressRouteRootNamespaces() []string {
+// proxyRootNamespaces returns a slice of namespaces restricting where
+// contour should look for httpproxy roots.
+func (ctx *serveContext) proxyRootNamespaces() []string {
 	if strings.TrimSpace(ctx.rootNamespaces) == "" {
 		return nil
 	}

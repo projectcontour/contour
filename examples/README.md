@@ -18,7 +18,7 @@ Single file renderings of other examples suitable for `kubectl apply`ing via a U
 
 ## `example-workload`
 
-IngressRoute examples under the `example-workload/ingressroute` directory. See the [README](./example-workload/ingressroute/README.md) for more details on each example.
+HTTPProxy examples under the `example-workload/httpproxy` directory. See the [README](./example-workload/httpproxy/README.md) for more details on each example.
 
 ## `grafana`, `prometheus`
 
@@ -28,4 +28,4 @@ If you have your own Grafana and Prometheus deployment already, the supplied [Co
 
 ## `kind`, `root-rbac`
 
-Both of these examples are fragments used in other documentation ([deploy-options](https://projectcontour.io/docs/master/deploy-options) and [ingressroute](https://projectcontour.io/docs/master/ingressroute) respectively.)
+Both of these examples are fragments used in other documentation ([deploy-options](https://projectcontour.io/docs/master/deploy-options))

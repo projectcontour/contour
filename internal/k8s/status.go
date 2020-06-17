@@ -11,22 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package k8s contains helpers for setting the IngressRoute status
 package k8s
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	jsonpatch "github.com/evanphx/json-patch"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
@@ -49,11 +44,6 @@ type StatusCacher struct {
 
 func objectKey(obj interface{}) string {
 	switch obj := obj.(type) {
-	case *ingressroutev1.IngressRoute:
-		return fmt.Sprintf("%s/%s/%s",
-			KindOf(obj),
-			obj.GetObjectMeta().GetNamespace(),
-			obj.GetObjectMeta().GetName())
 	case *projcontour.HTTPProxy:
 		return fmt.Sprintf("%s/%s/%s",
 			KindOf(obj),
@@ -68,7 +58,7 @@ func objectKey(obj interface{}) string {
 // the status cache.
 func (c *StatusCacher) IsCacheable(obj interface{}) bool {
 	switch obj.(type) {
-	case *ingressroutev1.IngressRoute, *projcontour.HTTPProxy:
+	case *projcontour.HTTPProxy:
 		return true
 	default:
 		return false
@@ -96,7 +86,7 @@ func (c *StatusCacher) GetStatus(obj interface{}) (*projcontour.Status, error) {
 	return &s, nil
 }
 
-// SetStatus sets the IngressRoute status field to an Valid or Invalid status
+// SetStatus sets the HTTPProxy status field to an Valid or Invalid status
 func (c *StatusCacher) SetStatus(status, desc string, obj interface{}) error {
 	if c.objectStatus == nil {
 		c.objectStatus = make(map[string]projcontour.Status)
@@ -121,19 +111,9 @@ func (irs *StatusWriter) GetStatus(obj interface{}) (*projcontour.Status, error)
 	return nil, errors.New("not implemented")
 }
 
-// SetStatus sets the IngressRoute status field to an Valid or Invalid status
+// SetStatus sets the HTTPProxy status field to an Valid or Invalid status
 func (irs *StatusWriter) SetStatus(status, desc string, existing interface{}) error {
 	switch exist := existing.(type) {
-	case *ingressroutev1.IngressRoute:
-		// Check if update needed by comparing status & desc
-		if irs.updateNeeded(status, desc, exist.Status) {
-			updated := exist.DeepCopy()
-			updated.Status = projcontour.Status{
-				CurrentStatus: status,
-				Description:   desc,
-			}
-			return irs.setIngressRouteStatus(exist, updated)
-		}
 	case *projcontour.HTTPProxy:
 		// Check if update needed by comparing status & desc
 		if irs.updateNeeded(status, desc, exist.Status) {
@@ -153,28 +133,6 @@ func (irs *StatusWriter) updateNeeded(status, desc string, existing projcontour.
 		return true
 	}
 	return false
-}
-
-func (irs *StatusWriter) setIngressRouteStatus(existing, updated *ingressroutev1.IngressRoute) error {
-	existingBytes, err := json.Marshal(existing)
-	if err != nil {
-		return err
-	}
-	// Need to set the resource version of the updated endpoints to the resource
-	// version of the current service. Otherwise, the resulting patch does not
-	// have a resource version, and the server complains.
-	updated.ResourceVersion = existing.ResourceVersion
-	updatedBytes, err := json.Marshal(updated)
-	if err != nil {
-		return err
-	}
-	patchBytes, err := jsonpatch.CreateMergePatch(existingBytes, updatedBytes)
-	if err != nil {
-		return err
-	}
-
-	_, err = irs.Client.Resource(ingressroutev1.IngressRouteGVR).Namespace(existing.GetNamespace()).Patch(context.TODO(), existing.GetName(), types.MergePatchType, patchBytes, metav1.PatchOptions{})
-	return err
 }
 
 func (irs *StatusWriter) setHTTPProxyStatus(updated *projcontour.HTTPProxy) error {
