@@ -17,7 +17,6 @@ import (
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/envoy"
 	v1 "k8s.io/api/core/v1"
@@ -63,29 +62,31 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	}
 	rh.OnAdd(s1)
 
-	// add an ingressroute in a different namespace mentioning secret/wildcard.
-	ir1 := &ingressroutev1.IngressRoute{
+	// add an httpproxy in a different namespace mentioning secret/wildcard.
+	p1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName: sec1.Namespace + "/" + sec1.Name,
 				},
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
 			}},
 		},
 	}
-	rh.OnAdd(ir1)
+	rh.OnAdd(p1)
 
 	// assert there are no listeners
 	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
@@ -96,16 +97,16 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	})
 
 	// t1 is a TLSCertificateDelegation that permits default to access secret/wildcard
-	t1 := &ingressroutev1.TLSCertificateDelegation{
+	t1 := &projcontour.TLSCertificateDelegation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "delegation",
 			Namespace: sec1.Namespace,
 		},
-		Spec: ingressroutev1.TLSCertificateDelegationSpec{
-			Delegations: []ingressroutev1.CertificateDelegation{{
+		Spec: projcontour.TLSCertificateDelegationSpec{
+			Delegations: []projcontour.CertificateDelegation{{
 				SecretName: sec1.Name,
 				TargetNamespaces: []string{
-					ir1.Namespace,
+					s1.Namespace,
 				},
 			}},
 		},
@@ -143,13 +144,13 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	})
 
 	// t2 is a TLSCertificateDelegation that permits access to secret/wildcard from all namespaces.
-	t2 := &ingressroutev1.TLSCertificateDelegation{
+	t2 := &projcontour.TLSCertificateDelegation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "delegation",
 			Namespace: sec1.Namespace,
 		},
-		Spec: ingressroutev1.TLSCertificateDelegationSpec{
-			Delegations: []ingressroutev1.CertificateDelegation{{
+		Spec: projcontour.TLSCertificateDelegationSpec{
+			Delegations: []projcontour.CertificateDelegation{{
 				SecretName: sec1.Name,
 				TargetNamespaces: []string{
 					"*",
@@ -169,13 +170,13 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	})
 
 	// t3 is a TLSCertificateDelegation that permits access to secret/different all namespaces.
-	t3 := &ingressroutev1.TLSCertificateDelegation{
+	t3 := &projcontour.TLSCertificateDelegation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "delegation",
 			Namespace: sec1.Namespace,
 		},
-		Spec: ingressroutev1.TLSCertificateDelegationSpec{
-			Delegations: []ingressroutev1.CertificateDelegation{{
+		Spec: projcontour.TLSCertificateDelegationSpec{
+			Delegations: []projcontour.CertificateDelegation{{
 				SecretName: "different",
 				TargetNamespaces: []string{
 					"*",
@@ -193,13 +194,13 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	})
 
 	// t4 is a TLSCertificateDelegation that permits access to secret/wildcard from the kube-secret namespace.
-	t4 := &ingressroutev1.TLSCertificateDelegation{
+	t4 := &projcontour.TLSCertificateDelegation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "delegation",
 			Namespace: sec1.Namespace,
 		},
-		Spec: ingressroutev1.TLSCertificateDelegationSpec{
-			Delegations: []ingressroutev1.CertificateDelegation{{
+		Spec: projcontour.TLSCertificateDelegationSpec{
+			Delegations: []projcontour.CertificateDelegation{{
 				SecretName: sec1.Name,
 				TargetNamespaces: []string{
 					"kube-secret",
@@ -216,7 +217,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	rh.OnDelete(ir1)
+	rh.OnDelete(p1)
 	rh.OnDelete(t4)
 
 	// add a httpproxy in a different namespace mentioning secret/wildcard.
@@ -260,7 +261,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 			Delegations: []projcontour.CertificateDelegation{{
 				SecretName: sec1.Name,
 				TargetNamespaces: []string{
-					ir1.Namespace,
+					s1.Namespace,
 				},
 			}},
 		},

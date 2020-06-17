@@ -19,7 +19,6 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -153,39 +152,6 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 	})
 
 	rh.OnDelete(i2)
-
-	ir1 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
-				Fqdn: "kuard.example.com",
-				TLS: &ingressroutev1.TLS{
-					SecretName:             sec1.Namespace + "/" + sec1.Name,
-					MinimumProtocolVersion: "1.3",
-				},
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: s1.Name,
-					Port: 80,
-				}},
-			}},
-		},
-	}
-	rh.OnAdd(ir1)
-
-	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			l1,
-		),
-		TypeUrl: listenerType,
-	})
-
-	rh.OnDelete(ir1)
 
 	hp1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{

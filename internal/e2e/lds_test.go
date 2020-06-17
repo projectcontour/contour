@@ -21,7 +21,7 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
@@ -307,7 +307,7 @@ func TestTLSListener(t *testing.T) {
 	}, streamLDS(t, cc))
 }
 
-func TestIngressRouteTLSListener(t *testing.T) {
+func TestHTTPProxyTLSListener(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
 
@@ -335,23 +335,25 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		},
 	}
 
-	// i1 is a tls ingressroute
-	i1 := &ingressroutev1.IngressRoute{
+	// p1 is a tls httpproxy
+	p1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: secret1.Namespace,
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName:             secret1.Name,
 					MinimumProtocolVersion: "1.1",
 				},
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
 					Name: svc1.Name,
 					Port: int(svc1.Spec.Ports[0].Port),
 				}},
@@ -359,23 +361,25 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		},
 	}
 
-	// i2 is a tls ingressroute
-	i2 := &ingressroutev1.IngressRoute{
+	// p2 is a tls httpproxy
+	p2 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: secret1.Namespace,
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName:             secret1.Name,
 					MinimumProtocolVersion: "1.3",
 				},
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
 					Name: svc1.Name,
 					Port: int(svc1.Spec.Ports[0].Port),
 				}},
@@ -411,7 +415,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 	rh.OnAdd(svc1)
 
 	// add ingress and assert the existence of ingress_http and ingres_https
-	rh.OnAdd(i1)
+	rh.OnAdd(p1)
 
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
@@ -431,7 +435,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 	}, streamLDS(t, cc))
 
 	// delete secret and assert both listeners are removed because the
-	// ingressroute is no longer valid.
+	// httpproxy is no longer valid.
 	rh.OnDelete(secret1)
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
@@ -442,7 +446,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		Nonce:   "2",
 	}, streamLDS(t, cc))
 
-	rh.OnDelete(i1)
+	rh.OnDelete(p1)
 	// add secret
 	rh.OnAdd(secret1)
 	l2 := &v2.Listener{
@@ -465,7 +469,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 	}
 
 	// add ingress and assert the existence of ingress_http and ingres_https
-	rh.OnAdd(i2)
+	rh.OnAdd(p2)
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "4",
 		Resources: resources(t,
@@ -966,7 +970,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 	}, streamLDS(t, cc))
 }
 
-func TestIngressRouteHTTPS(t *testing.T) {
+func TestHTTPProxyHTTPS(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
 
@@ -990,22 +994,24 @@ func TestIngressRouteHTTPS(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
-	// ir1 is an ingressroute that has TLS
-	ir1 := &ingressroutev1.IngressRoute{
+	// p1 is a httpproxy that has TLS
+	p1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName: "secret",
 				},
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -1033,8 +1039,8 @@ func TestIngressRouteHTTPS(t *testing.T) {
 	// add service
 	rh.OnAdd(svc1)
 
-	// add ingressroute
-	rh.OnAdd(ir1)
+	// add httpproxy
+	rh.OnAdd(p1)
 
 	ingressHTTP := &v2.Listener{
 		Name:    "ingress_http",
@@ -1066,7 +1072,7 @@ func TestIngressRouteHTTPS(t *testing.T) {
 	}, streamLDS(t, cc))
 }
 
-func TestIngressRouteMinimumTLSVersion(t *testing.T) {
+func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
 		reh.CacheHandler.MinimumProtocolVersion = envoy_api_v2_auth.TlsParameters_TLSv1_2
 	})
@@ -1099,30 +1105,32 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 	}
 	rh.OnAdd(svc1)
 
-	// i1 is a tls ingressroute
-	i1 := &ingressroutev1.IngressRoute{
+	// p1 is a tls httpproxy
+	p1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName:             "secret",
 					MinimumProtocolVersion: "1.1",
 				},
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
 					Name: "backend",
 					Port: 80,
 				}},
 			}},
 		},
 	}
-	rh.OnAdd(i1)
+	rh.OnAdd(p1)
 
 	l1 := &v2.Listener{
 		Name:    "ingress_https",
@@ -1143,7 +1151,7 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 		},
 	}
 
-	// verify that i1's TLS 1.1 minimum has been upgraded to 1.2
+	// verify that p1's TLS 1.1 minimum has been upgraded to 1.2
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
@@ -1161,30 +1169,33 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 		Nonce:   "1",
 	}, streamLDS(t, cc))
 
-	// i2 is a tls ingressroute
-	i2 := &ingressroutev1.IngressRoute{
+	// p2 is a tls httpproxy
+	p2 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &ingressroutev1.TLS{
+				TLS: &projcontour.TLS{
 					SecretName:             "secret",
 					MinimumProtocolVersion: "1.3",
 				},
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+
+				Services: []projcontour.Service{{
 					Name: "backend",
 					Port: 80,
 				}},
 			}},
 		},
 	}
-	rh.OnUpdate(i1, i2)
+	rh.OnUpdate(p1, p2)
 
 	l2 := &v2.Listener{
 		Name:    "ingress_https",
@@ -1205,7 +1216,7 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 		},
 	}
 
-	// verify that i2's TLS 1.3 minimum has NOT been downgraded to 1.2
+	// verify that p2's TLS 1.3 minimum has NOT been downgraded to 1.2
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
@@ -1224,7 +1235,7 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 	}, streamLDS(t, cc))
 }
 
-func TestLDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
+func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
 
@@ -1243,18 +1254,20 @@ func TestLDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
 	}
 	rh.OnAdd(svc1)
 
-	child := &ingressroutev1.IngressRoute{
+	child := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog",
 			Namespace: "marketing",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "www.containersteve.com",
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
 					Name: svc1.Name,
 					Port: 80,
 				}},
@@ -1263,21 +1276,21 @@ func TestLDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
 	}
 	rh.OnAdd(child)
 
-	root := &ingressroutev1.IngressRoute{
+	root := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "root-blog",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "blog.containersteve.com",
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Delegate: &ingressroutev1.Delegate{
-					Name:      child.Name,
-					Namespace: child.Namespace,
-				},
+			Includes: []projcontour.Include{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Name:      child.Name,
+				Namespace: child.Namespace,
 			}},
 		},
 	}

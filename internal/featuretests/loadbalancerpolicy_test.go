@@ -18,7 +18,6 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -27,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// session affinity is only available in ingressroute and httpproxy
+// session affinity is only available in httpproxy
 func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
@@ -50,137 +49,6 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 		},
 	}
 	rh.OnAdd(s1)
-
-	// simple single service
-	ir1 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/cart",
-				Services: []ingressroutev1.Service{{
-					Name:     s1.Name,
-					Port:     80,
-					Strategy: "Cookie",
-				}},
-			}},
-		},
-	}
-	rh.OnAdd(ir1)
-
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("www.example.com",
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/cart"),
-						Action: withSessionAffinity(routeCluster("default/app/80/e4f81994fe")),
-					},
-				),
-			),
-		),
-		TypeUrl: routeType,
-	})
-
-	// two backends
-	ir2 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/cart",
-				Services: []ingressroutev1.Service{{
-					Name:     s1.Name,
-					Port:     80,
-					Strategy: "Cookie",
-				}, {
-					Name:     s1.Name,
-					Port:     8080,
-					Strategy: "Cookie",
-				}},
-			}},
-		},
-	}
-	rh.OnUpdate(ir1, ir2)
-
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("www.example.com",
-					&envoy_api_v2_route.Route{
-						Match: routePrefix("/cart"),
-						Action: withSessionAffinity(
-							routeWeightedCluster(
-								weightedCluster{"default/app/80/e4f81994fe", 1},
-								weightedCluster{"default/app/8080/e4f81994fe", 1},
-							),
-						),
-					},
-				),
-			),
-		),
-		TypeUrl: routeType,
-	})
-
-	// two mixed backends
-	ir3 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &ingressroutev1.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/cart",
-				Services: []ingressroutev1.Service{{
-					Name:     s1.Name,
-					Port:     80,
-					Strategy: "Cookie",
-				}, {
-					Name: s1.Name,
-					Port: 8080,
-				}},
-			}, {
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: s1.Name,
-					Port: 80,
-				}},
-			}},
-		},
-	}
-	rh.OnUpdate(ir2, ir3)
-
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("www.example.com",
-					&envoy_api_v2_route.Route{
-						Match: routePrefix("/cart"),
-						Action: withSessionAffinity(
-							routeWeightedCluster(
-								weightedCluster{"default/app/80/e4f81994fe", 1},
-								weightedCluster{"default/app/8080/da39a3ee5e", 1},
-							),
-						),
-					},
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/app/80/da39a3ee5e"),
-					},
-				),
-			),
-		),
-		TypeUrl: routeType,
-	})
-
-	rh.OnDelete(ir3)
 
 	// simple single service
 	proxy1 := fixture.NewProxy("simple").
