@@ -21,15 +21,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-
-	coordinationv1 "k8s.io/client-go/kubernetes/typed/coordination/v1"
 )
 
 // Clients holds the various API clients required by Contour.
 type Clients struct {
-	core         *kubernetes.Clientset
-	coordination *coordinationv1.CoordinationV1Client
-	dynamic      dynamic.Interface
+	core    *kubernetes.Clientset
+	dynamic dynamic.Interface
 }
 
 // NewClients returns a new set of the various API clients required
@@ -43,11 +40,6 @@ func NewClients(kubeconfig string, inCluster bool) (*Clients, error) {
 
 	var clients Clients
 	clients.core, err = kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	clients.coordination, err = coordinationv1.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
@@ -86,11 +78,6 @@ func (c *Clients) NewInformerFactoryForNamespace(ns string) InformerFactory {
 // ClientSet returns the Kubernetes Core v1 ClientSet.
 func (c *Clients) ClientSet() *kubernetes.Clientset {
 	return c.core
-}
-
-// CoordinationClient returns the Kubernetes Core v1 coordination client.
-func (c *Clients) CoordinationClient() *coordinationv1.CoordinationV1Client {
-	return c.coordination
 }
 
 // DynamicClient returns the dynamic client.
