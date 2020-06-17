@@ -223,6 +223,12 @@ type Service struct {
 	// Names defined here will be used to look up corresponding endpoints which contain the ips to route.
 	Name string `json:"name"`
 	// Port (defined as Integer) to proxy traffic to since a service can have multiple defined.
+	//
+	// +required
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65536
+	// +kubebuilder:validation:ExclusiveMinimum=false
+	// +kubebuilder:validation:ExclusiveMaximum=true
 	Port int `json:"port"`
 	// Protocol may be used to specify (or override) the protocol used to reach this Service.
 	// Values may be tls, h2, h2c. If omitted, protocol-selection falls back on Service annotations.

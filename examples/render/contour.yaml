@@ -905,6 +905,9 @@ spec:
                         port:
                           description: Port (defined as Integer) to proxy traffic
                             to since a service can have multiple defined.
+                          exclusiveMaximum: true
+                          maximum: 65536
+                          minimum: 1
                           type: integer
                         protocol:
                           description: Protocol may be used to specify (or override)
@@ -1115,6 +1118,9 @@ spec:
                       port:
                         description: Port (defined as Integer) to proxy traffic to
                           since a service can have multiple defined.
+                        exclusiveMaximum: true
+                        maximum: 65536
+                        minimum: 1
                         type: integer
                       protocol:
                         description: Protocol may be used to specify (or override)

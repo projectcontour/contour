@@ -100,3 +100,27 @@ $check: |
     msg := "No error cause matched FieldValueRequired/spec.includes.name"
   }
 
+---
+
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: service-port-range
+spec:
+  virtualhost:
+    fqdn: ports.projectcontour.io
+  routes:
+  - services:
+    - name: any-service-name
+      port: 80000
+$check: |
+  matched_cause {
+    cause := input.error.details.causes[_]
+    cause.reason == "FieldValueInvalid"
+    cause.field == "spec.routes.services.port"
+  }
+
+  error[msg] {
+    not matched_cause
+    msg := "No error cause matched FieldValueInvalid/spec.routes.services.port"
+  }
