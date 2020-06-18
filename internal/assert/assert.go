@@ -17,12 +17,7 @@ package assert
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 type Assert struct {
@@ -41,8 +36,6 @@ func Equal(t *testing.T, want, got interface{}, opts ...cmp.Option) {
 func (a Assert) Equal(want, got interface{}, opts ...cmp.Option) {
 	a.t.Helper()
 	opts = append(opts,
-		cmpopts.IgnoreFields(v2.DiscoveryResponse{}, "VersionInfo", "Nonce"),
-		cmpopts.AcyclicTransformer("UnmarshalAny", unmarshalAny),
 		// errors to be equal only if both are nil or both are non-nil.
 		cmp.Comparer(func(x, y error) bool {
 			return (x == nil) == (y == nil)
@@ -52,19 +45,4 @@ func (a Assert) Equal(want, got interface{}, opts ...cmp.Option) {
 	if diff != "" {
 		a.t.Fatal(diff)
 	}
-}
-
-func unmarshalAny(a *any.Any) proto.Message {
-	if a == nil {
-		return nil
-	}
-	pb, err := ptypes.Empty(a)
-	if err != nil {
-		panic(err.Error())
-	}
-	err = ptypes.UnmarshalAny(a, pb)
-	if err != nil {
-		panic(err.Error())
-	}
-	return pb
 }

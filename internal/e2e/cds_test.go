@@ -18,11 +18,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/any"
+
+	tassert "github.com/stretchr/testify/assert"
+
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -64,18 +67,13 @@ func TestClusterLongServiceName(t *testing.T) {
 	))
 
 	// check that it's been translated correctly.
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
-		Resources: resources(t,
-			cluster("default/kbujbkuh-c83ceb/8080/da39a3ee5e", "default/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r", "default_kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r_8080"),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "2",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		cluster("default/kbujbkuh-c83ceb/8080/da39a3ee5e", "default/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r", "default_kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r_8080"),
+	), streamCDS(t, cc))
 }
 
 // Test adding, updating, and removing a service
-// doesn't leave turds in the CDS cache.
+// doesn't leave objects in the CDS cache.
 func TestClusterAddUpdateDelete(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
@@ -126,14 +124,9 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	})
 	rh.OnAdd(s1)
 
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
-		Resources: resources(t,
-			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "3",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
+	), streamCDS(t, cc))
 
 	// s2 is the same as s2, but the service port has a name
 	s2 := service("default", "kuard", v1.ServicePort{
@@ -147,14 +140,9 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	rh.OnUpdate(s1, s2)
 
 	// check that we get two CDS records because the port is now named.
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "4",
-		Resources: resources(t,
-			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "4",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
+	), streamCDS(t, cc))
 
 	// s3 is like s2, but has a second named port. The k8s spec
 	// requires all ports to be named if there is more than one of them.
@@ -178,15 +166,10 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 
 	// check that we get four CDS records. Order is important
 	// because the CDS cache is sorted.
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "5",
-		Resources: resources(t,
-			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
-			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "5",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
+		cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
+	), streamCDS(t, cc))
 
 	// s4 is s3 with the http port removed.
 	s4 := service("default", "kuard",
@@ -203,14 +186,9 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 
 	// check that we get two CDS records only, and that the 80 and http
 	// records have been removed even though the service object remains.
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "6",
-		Resources: resources(t,
-			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "6",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
+	), streamCDS(t, cc))
 }
 
 // pathological hard case, one service is removed, the other is moved to a different port, and its name removed.
@@ -263,15 +241,10 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	)
 
 	rh.OnAdd(s1)
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
-		Resources: resources(t,
-			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
-			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "2",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
+		cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80")),
+		streamCDS(t, cc))
 
 	// s2 removes the name on port 80, moves it to port 443 and deletes the https port
 	s2 := service("default", "kuard",
@@ -283,35 +256,20 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	)
 
 	rh.OnUpdate(s1, s2)
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
-		Resources: resources(t,
-			cluster("default/kuard/443/da39a3ee5e", "default/kuard", "default_kuard_443"),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "3",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		cluster("default/kuard/443/da39a3ee5e", "default/kuard", "default_kuard_443"),
+	), streamCDS(t, cc))
 
 	// now replace s2 with s1 to check it works in the other direction.
 	rh.OnUpdate(s2, s1)
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "4",
-		Resources: resources(t,
-			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
-			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "4",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
+		cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
+	), streamCDS(t, cc))
 
 	// cleanup and check
 	rh.OnDelete(s1)
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "5",
-		Resources:   resources(t),
-		TypeUrl:     clusterType,
-		Nonce:       "5",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t), streamCDS(t, cc))
 }
 
 // issue#243. A single unnamed service with a different numeric target port
@@ -342,14 +300,9 @@ func TestIssue243(t *testing.T) {
 			},
 		)
 		rh.OnAdd(s1)
-		assert.Equal(t, &v2.DiscoveryResponse{
-			VersionInfo: "2",
-			Resources: resources(t,
-				cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
-			),
-			TypeUrl: clusterType,
-			Nonce:   "2",
-		}, streamCDS(t, cc))
+		tassert.ElementsMatch(t, resources(t,
+			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
+		), streamCDS(t, cc))
 	})
 }
 
@@ -385,14 +338,9 @@ func TestIssue247(t *testing.T) {
 		},
 	)
 	rh.OnAdd(s1)
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
-		Resources: resources(t,
-			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "2",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
+	), streamCDS(t, cc))
 }
 func TestCDSResourceFiltering(t *testing.T) {
 	rh, cc, done := setup(t)
@@ -444,33 +392,19 @@ func TestCDSResourceFiltering(t *testing.T) {
 		},
 	)
 	rh.OnAdd(s2)
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
-		Resources: resources(t,
-			// note, resources are sorted by Cluster.Name
-			cluster("default/httpbin/8080/da39a3ee5e", "default/httpbin", "default_httpbin_8080"),
-			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "3",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		// note, resources are sorted by Cluster.Name
+		cluster("default/httpbin/8080/da39a3ee5e", "default/httpbin", "default_httpbin_8080"),
+		cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
+	), streamCDS(t, cc))
 
 	// assert we can filter on one resource
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
-		Resources: resources(t,
-			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "3",
-	}, streamCDS(t, cc, "default/kuard/80/da39a3ee5e"))
+	tassert.ElementsMatch(t, resources(t,
+		cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
+	), streamCDS(t, cc, "default/kuard/80/da39a3ee5e"))
 
 	// assert a non matching filter returns a response with no entries.
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
-		TypeUrl:     clusterType,
-		Nonce:       "3",
-	}, streamCDS(t, cc, "default/httpbin/9000"))
+	tassert.ElementsMatch(t, []*v2.Cluster{}, streamCDS(t, cc, "default/httpbin/9000"))
 }
 
 func TestClusterCircuitbreakerAnnotations(t *testing.T) {
@@ -509,30 +443,25 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// check that it's been translated correctly.
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
-		Resources: resources(t,
-			featuretests.DefaultCluster(&v2.Cluster{
-				Name:                 "default/kuard/8080/da39a3ee5e",
-				AltStatName:          "default_kuard_8080",
-				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy.ConfigSource("contour"),
-					ServiceName: "default/kuard",
-				},
-				CircuitBreakers: &envoy_cluster.CircuitBreakers{
-					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
-						MaxConnections:     protobuf.UInt32(9000),
-						MaxPendingRequests: protobuf.UInt32(4096),
-						MaxRequests:        protobuf.UInt32(404),
-						MaxRetries:         protobuf.UInt32(7),
-					}},
-				},
-			}),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "2",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		featuretests.DefaultCluster(&v2.Cluster{
+			Name:                 "default/kuard/8080/da39a3ee5e",
+			AltStatName:          "default_kuard_8080",
+			ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+			EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+				EdsConfig:   envoy.ConfigSource("contour"),
+				ServiceName: "default/kuard",
+			},
+			CircuitBreakers: &envoy_cluster.CircuitBreakers{
+				Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
+					MaxConnections:     protobuf.UInt32(9000),
+					MaxPendingRequests: protobuf.UInt32(4096),
+					MaxRequests:        protobuf.UInt32(404),
+					MaxRetries:         protobuf.UInt32(7),
+				}},
+			},
+		}),
+	), streamCDS(t, cc))
 
 	// update s1 with slightly weird values
 	s2 := serviceWithAnnotations(
@@ -552,27 +481,22 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 	rh.OnUpdate(s1, s2)
 
 	// check that it's been translated correctly.
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
-		Resources: resources(t,
-			featuretests.DefaultCluster(&v2.Cluster{
-				Name:                 "default/kuard/8080/da39a3ee5e",
-				AltStatName:          "default_kuard_8080",
-				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy.ConfigSource("contour"),
-					ServiceName: "default/kuard",
-				},
-				CircuitBreakers: &envoy_cluster.CircuitBreakers{
-					Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
-						MaxPendingRequests: protobuf.UInt32(9999),
-					}},
-				},
-			}),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "3",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		featuretests.DefaultCluster(&v2.Cluster{
+			Name:                 "default/kuard/8080/da39a3ee5e",
+			AltStatName:          "default_kuard_8080",
+			ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+			EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+				EdsConfig:   envoy.ConfigSource("contour"),
+				ServiceName: "default/kuard",
+			},
+			CircuitBreakers: &envoy_cluster.CircuitBreakers{
+				Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
+					MaxPendingRequests: protobuf.UInt32(9999),
+				}},
+			},
+		}),
+	), streamCDS(t, cc))
 }
 
 // issue 581, different service parameters should generate
@@ -624,14 +548,9 @@ func TestClusterPerServiceParameters(t *testing.T) {
 		},
 	})
 
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
-		Resources: resources(t,
-			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "1",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
+	), streamCDS(t, cc))
 }
 
 // issue 581, different load balancer parameters should
@@ -687,33 +606,28 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 		},
 	})
 
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
-		Resources: resources(t,
-			featuretests.DefaultCluster(&v2.Cluster{
-				Name:                 "default/kuard/80/58d888c08a",
-				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy.ConfigSource("contour"),
-					ServiceName: "default/kuard",
-				},
-				LbPolicy: v2.Cluster_RANDOM,
-			}),
-			featuretests.DefaultCluster(&v2.Cluster{
-				Name:                 "default/kuard/80/8bf87fefba",
-				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy.ConfigSource("contour"),
-					ServiceName: "default/kuard",
-				},
-				LbPolicy: v2.Cluster_LEAST_REQUEST,
-			}),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "1",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		featuretests.DefaultCluster(&v2.Cluster{
+			Name:                 "default/kuard/80/58d888c08a",
+			AltStatName:          "default_kuard_80",
+			ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+			EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+				EdsConfig:   envoy.ConfigSource("contour"),
+				ServiceName: "default/kuard",
+			},
+			LbPolicy: v2.Cluster_RANDOM,
+		}),
+		featuretests.DefaultCluster(&v2.Cluster{
+			Name:                 "default/kuard/80/8bf87fefba",
+			AltStatName:          "default_kuard_80",
+			ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
+			EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+				EdsConfig:   envoy.ConfigSource("contour"),
+				ServiceName: "default/kuard",
+			},
+			LbPolicy: v2.Cluster_LEAST_REQUEST,
+		}),
+	), streamCDS(t, cc))
 }
 
 func TestClusterWithHealthChecks(t *testing.T) {
@@ -757,14 +671,9 @@ func TestClusterWithHealthChecks(t *testing.T) {
 		},
 	})
 
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
-		Resources: resources(t,
-			clusterWithHealthCheck("default/kuard/80/bc862a33ca", "default/kuard", "default_kuard_80", "/healthz", true),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "1",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		clusterWithHealthCheck("default/kuard/80/bc862a33ca", "default/kuard", "default_kuard_80", "/healthz", true),
+	), streamCDS(t, cc))
 }
 
 // Test processing a service that exists but is not referenced
@@ -815,14 +724,9 @@ func TestUnreferencedService(t *testing.T) {
 		},
 	})
 
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
-		Resources: resources(t,
-			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "1",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
+	), streamCDS(t, cc))
 
 	// This service which is added should not cause a DAG rebuild
 	rh.OnAdd(&v1.Service{
@@ -839,14 +743,9 @@ func TestUnreferencedService(t *testing.T) {
 		},
 	})
 
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
-		Resources: resources(t,
-			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
-		),
-		TypeUrl: clusterType,
-		Nonce:   "1",
-	}, streamCDS(t, cc))
+	tassert.ElementsMatch(t, resources(t,
+		cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
+	), streamCDS(t, cc))
 }
 
 func serviceWithAnnotations(ns, name string, annotations map[string]string, ports ...v1.ServicePort) *v1.Service {
@@ -862,7 +761,7 @@ func serviceWithAnnotations(ns, name string, annotations map[string]string, port
 	}
 }
 
-func streamCDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
+func streamCDS(t *testing.T, cc *grpc.ClientConn, rn ...string) []*any.Any {
 	t.Helper()
 	rds := v2.NewClusterDiscoveryServiceClient(cc)
 	st, err := rds.StreamClusters(context.TODO())
@@ -870,7 +769,7 @@ func streamCDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryRes
 	return stream(t, st, &v2.DiscoveryRequest{
 		TypeUrl:       clusterType,
 		ResourceNames: rn,
-	})
+	}).Resources
 }
 
 func cluster(name, servicename, statName string) *v2.Cluster {

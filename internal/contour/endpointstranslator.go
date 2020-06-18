@@ -19,8 +19,7 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
-	"github.com/golang/protobuf/proto"
+	xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -33,11 +32,15 @@ import (
 // A EndpointsTranslator translates Kubernetes Endpoints objects into Envoy
 // ClusterLoadAssignment objects.
 type EndpointsTranslator struct {
-	Cond
 	logrus.FieldLogger
 
 	mu      sync.Mutex
 	entries map[string]*v2.ClusterLoadAssignment
+
+	// SnapshotHandler is used to generate new snapshots
+	// when the clusterLoadAssignmentCache changes Envoy
+	// can be updated with the new configuration.
+	SnapshotHandler *SnapshotHandler
 }
 
 func (e *EndpointsTranslator) OnAdd(obj interface{}) {
@@ -84,7 +87,7 @@ func (e *EndpointsTranslator) OnDelete(obj interface{}) {
 }
 
 // Contents returns a copy of the contents of the cache.
-func (e *EndpointsTranslator) Contents() []proto.Message {
+func (e *EndpointsTranslator) Contents() []xds.Resource {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -97,27 +100,6 @@ func (e *EndpointsTranslator) Contents() []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
-func (e *EndpointsTranslator) Query(names []string) []proto.Message {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	values := make([]*v2.ClusterLoadAssignment, 0, len(names))
-	for _, n := range names {
-		v, ok := e.entries[n]
-		if !ok {
-			v = &v2.ClusterLoadAssignment{
-				ClusterName: n,
-			}
-		}
-		values = append(values, v)
-	}
-
-	sort.Stable(sorter.For(values))
-	return protobuf.AsMessages(values)
-}
-
-func (*EndpointsTranslator) TypeURL() string { return resource.EndpointType }
-
 // Add adds an entry to the cache. If a ClusterLoadAssignment with the same
 // name exists, it is replaced.
 func (e *EndpointsTranslator) Add(a *v2.ClusterLoadAssignment) {
@@ -128,7 +110,6 @@ func (e *EndpointsTranslator) Add(a *v2.ClusterLoadAssignment) {
 		e.entries = make(map[string]*v2.ClusterLoadAssignment)
 	}
 	e.entries[a.ClusterName] = a
-	e.Notify(a.ClusterName)
 }
 
 // Remove removes the named entry from the cache. If the entry
@@ -138,7 +119,6 @@ func (e *EndpointsTranslator) Remove(name string) {
 	defer e.mu.Unlock()
 
 	delete(e.entries, name)
-	e.Notify(name)
 }
 
 // recomputeClusterLoadAssignment recomputes the EDS cache taking into account old and new endpoints.
@@ -208,4 +188,7 @@ func recomputeClusterLoadAssignment(e *EndpointsTranslator, oldep, newep *v1.End
 		}
 	}
 
+	e.SnapshotHandler.UpdateSnapshot(map[xds.ResponseType][]xds.Resource{
+		xds.Endpoint: e.Contents(),
+	})
 }

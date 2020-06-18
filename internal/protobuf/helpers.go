@@ -18,6 +18,7 @@ import (
 	"reflect"
 	"time"
 
+	xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
@@ -50,16 +51,16 @@ func Bool(val bool) *wrappers.BoolValue {
 // AsMessages casts the given slice of values (that implement the proto.Message
 // interface) to a slice of proto.Message. If the length of the slice is 0, it
 // returns nil.
-func AsMessages(messages interface{}) []proto.Message {
+func AsMessages(messages interface{}) []xds.Resource {
 	v := reflect.ValueOf(messages)
 	if v.Len() == 0 {
 		return nil
 	}
 
-	protos := make([]proto.Message, v.Len())
+	protos := make([]xds.Resource, v.Len())
 
 	for i := range protos {
-		protos[i] = v.Index(i).Interface().(proto.Message)
+		protos[i] = v.Index(i).Interface().(xds.Resource)
 	}
 
 	return protos

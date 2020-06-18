@@ -16,82 +16,31 @@ package contour
 import (
 	"path"
 	"sort"
-	"sync"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
-	"github.com/golang/protobuf/proto"
+	xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 )
 
-// RouteCache manages the contents of the gRPC RDS cache.
-type RouteCache struct {
-	mu     sync.Mutex
-	values map[string]*v2.RouteConfiguration
-	Cond
-}
-
-// Update replaces the contents of the cache with the supplied map.
-func (c *RouteCache) Update(v map[string]*v2.RouteConfiguration) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.values = v
-	c.Cond.Notify()
-}
-
-// Contents returns a copy of the cache's contents.
-func (c *RouteCache) Contents() []proto.Message {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	var values []*v2.RouteConfiguration
-	for _, v := range c.values {
-		values = append(values, v)
-	}
-
-	sort.Stable(sorter.For(values))
-	return protobuf.AsMessages(values)
-}
-
-// Query searches the RouteCache for the named RouteConfiguration entries.
-func (c *RouteCache) Query(names []string) []proto.Message {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	var values []*v2.RouteConfiguration
-	for _, n := range names {
-		v, ok := c.values[n]
-		if !ok {
-			// if there is no route registered with the cache
-			// we return a blank route configuration. This is
-			// not the same as returning nil, we're choosing to
-			// say "the configuration you asked for _does exists_,
-			// but it contains no useful information.
-			v = &v2.RouteConfiguration{
-				Name: n,
-			}
-		}
-		values = append(values, v)
-	}
-
-	//sort.RouteConfigurations(values)
-	sort.Stable(sorter.For(values))
-	return protobuf.AsMessages(values)
-}
-
-// TypeURL returns the string type of RouteCache Resource.
-func (*RouteCache) TypeURL() string { return resource.RouteType }
-
 type routeVisitor struct {
 	routes map[string]*v2.RouteConfiguration
 }
 
-func visitRoutes(root dag.Vertex) map[string]*v2.RouteConfiguration {
+func translateRoutes(routes map[string]*v2.RouteConfiguration) []xds.Resource {
+	var values []*v2.RouteConfiguration
+	for _, v := range routes {
+		values = append(values, v)
+	}
+
+	sort.Stable(sorter.For(values))
+	return protobuf.AsMessages(values)
+}
+
+func visitRoutes(root dag.Vertex) []xds.Resource {
 	// Collect the route configurations for all the routes we can
 	// find. For HTTP hosts, the routes will all be collected on the
 	// well-known ENVOY_HTTP_LISTENER, but for HTTPS hosts, we will
@@ -109,7 +58,8 @@ func visitRoutes(root dag.Vertex) map[string]*v2.RouteConfiguration {
 		sort.Stable(sorter.For(v.VirtualHosts))
 	}
 
-	return rv.routes
+	// Now translate the visited routes into xds.Resources
+	return translateRoutes(rv.routes)
 }
 
 func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {

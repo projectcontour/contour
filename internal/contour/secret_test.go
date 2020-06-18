@@ -18,7 +18,7 @@ import (
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	"github.com/golang/protobuf/proto"
+	xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
@@ -29,94 +29,21 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestSecretCacheContents(t *testing.T) {
-	tests := map[string]struct {
-		contents map[string]*envoy_api_v2_auth.Secret
-		want     []proto.Message
-	}{
-		"empty": {
-			contents: nil,
-			want:     nil,
-		},
-		"simple": {
-			contents: secretmap(
-				secret("default/secret/68621186db", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
-			),
-			want: []proto.Message{
-				secret("default/secret/68621186db", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
-			},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			var sc SecretCache
-			sc.Update(tc.contents)
-			got := sc.Contents()
-			assert.Equal(t, tc.want, got)
-		})
-	}
-}
-
-func TestSecretCacheQuery(t *testing.T) {
-	tests := map[string]struct {
-		contents map[string]*envoy_api_v2_auth.Secret
-		query    []string
-		want     []proto.Message
-	}{
-		"exact match": {
-			contents: secretmap(
-				secret("default/secret/68621186db", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
-			),
-			query: []string{"default/secret/68621186db"},
-			want: []proto.Message{
-				secret("default/secret/68621186db", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
-			},
-		},
-		"partial match": {
-			contents: secretmap(
-				secret("default/secret-a/68621186db", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
-				secret("default/secret-b/5397c67313", secretdata(CERTIFICATE_2, RSA_PRIVATE_KEY_2)),
-			),
-			query: []string{"default/secret/68621186db", "default/secret-b/5397c67313"},
-			want: []proto.Message{
-				secret("default/secret-b/5397c67313", secretdata(CERTIFICATE_2, RSA_PRIVATE_KEY_2)),
-			},
-		},
-		"no match": {
-			contents: secretmap(
-				secret("default/secret/68621186db", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
-			),
-			query: []string{"default/secret-b/5397c67313"},
-			want:  nil,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			var sc SecretCache
-			sc.Update(tc.contents)
-			got := sc.Query(tc.query)
-			assert.Equal(t, tc.want, got)
-		})
-	}
-}
-
 func TestSecretVisit(t *testing.T) {
 	tests := map[string]struct {
 		objs []interface{}
-		want map[string]*envoy_api_v2_auth.Secret
+		want []xds.Resource
 	}{
 		"nothing": {
 			objs: nil,
-			want: map[string]*envoy_api_v2_auth.Secret{},
+			want: nil,
 		},
 		"unassociated secrets": {
 			objs: []interface{}{
 				tlssecret("default", "secret-a", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
 				tlssecret("default", "secret-b", secretdata(CERTIFICATE_2, RSA_PRIVATE_KEY_2)),
 			},
-			want: map[string]*envoy_api_v2_auth.Secret{},
+			want: nil,
 		},
 		"simple ingress with secret": {
 			objs: []interface{}{
@@ -504,12 +431,12 @@ func buildDAGFallback(t *testing.T, fallbackCertificate *types.NamespacedName, o
 	return builder.Build()
 }
 
-func secretmap(secrets ...*envoy_api_v2_auth.Secret) map[string]*envoy_api_v2_auth.Secret {
+func secretmap(secrets ...*envoy_api_v2_auth.Secret) []xds.Resource {
 	m := make(map[string]*envoy_api_v2_auth.Secret)
 	for _, s := range secrets {
 		m[s.Name] = s
 	}
-	return m
+	return translateSecrets(m)
 }
 
 func secret(name string, data map[string][]byte) *envoy_api_v2_auth.Secret {

@@ -17,9 +17,11 @@ import (
 	"testing"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -31,7 +33,7 @@ import (
 func TestVisitClusters(t *testing.T) {
 	tests := map[string]struct {
 		root dag.Visitable
-		want map[string]*envoy_api_v2.Cluster
+		want []xds.Resource
 	}{
 		"TCPService forward": {
 			root: &dag.Listener{
@@ -95,9 +97,16 @@ func TestVisitListeners(t *testing.T) {
 		}},
 	}
 
+	statsListener := envoy.StatsListener(statsAddress, statsPort)
+	defaultListenerVisitorConfig := &ListenerConfig{
+		StaticListeners: map[string]*v2.Listener{
+			statsListener.Name: statsListener,
+		},
+	}
+
 	tests := map[string]struct {
 		root dag.Visitable
-		want map[string]*envoy_api_v2.Listener
+		want []xds.Resource
 	}{
 		"TCPService forward": {
 			root: &dag.Listener{
@@ -121,7 +130,7 @@ func TestVisitListeners(t *testing.T) {
 					},
 				),
 			},
-			want: listenermap(
+			want: listenermap(defaultListenerVisitorConfig,
 				&envoy_api_v2.Listener{
 					Name:    ENVOY_HTTPS_LISTENER,
 					Address: envoy.SocketAddress("0.0.0.0", 8443),
@@ -143,7 +152,7 @@ func TestVisitListeners(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := visitListeners(tc.root, new(ListenerVisitorConfig))
+			got := visitListeners(tc.root, defaultListenerVisitorConfig)
 			assert.Equal(t, tc.want, got)
 		})
 	}
@@ -152,7 +161,7 @@ func TestVisitListeners(t *testing.T) {
 func TestVisitSecrets(t *testing.T) {
 	tests := map[string]struct {
 		root dag.Visitable
-		want map[string]*envoy_api_v2_auth.Secret
+		want []xds.Resource
 	}{
 		"TCPService forward": {
 			root: &dag.Listener{

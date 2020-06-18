@@ -24,6 +24,12 @@ import (
 	"syscall"
 	"time"
 
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/projectcontour/contour/internal/envoy"
+
+	xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
+
+	"github.com/envoyproxy/go-control-plane/pkg/cache/v2"
 	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/contour"
@@ -175,7 +181,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return err
 	}
 
-	listenerConfig := contour.ListenerVisitorConfig{
+	statsListener := envoy.StatsListener(ctx.statsAddr, ctx.statsPort)
+
+	listenerConfig := contour.ListenerConfig{
 		UseProxyProto:                 ctx.useProxyProto,
 		HTTPAddress:                   ctx.httpAddr,
 		HTTPPort:                      ctx.httpPort,
@@ -191,6 +199,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		StreamIdleTimeout:             timeout.Parse(ctx.StreamIdleTimeout),
 		MaxConnectionDuration:         timeout.Parse(ctx.MaxConnectionDuration),
 		ConnectionShutdownGracePeriod: timeout.Parse(ctx.ConnectionShutdownGracePeriod),
+		StaticListeners: map[string]*v2.Listener{
+			statsListener.Name: statsListener,
+		},
 	}
 
 	defaultHTTPVersions, err := parseDefaultHTTPVersions(ctx.DefaultHTTPVersions)
@@ -202,12 +213,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 3. build our mammoth Kubernetes event handler.
 	eventHandler := &contour.EventHandler{
-		CacheHandler: &contour.CacheHandler{
-			ListenerVisitorConfig: listenerConfig,
-			ListenerCache:         contour.NewListenerCache(ctx.statsAddr, ctx.statsPort),
-			FieldLogger:           log.WithField("context", "CacheHandler"),
-			Metrics:               metrics.NewMetrics(registry),
-		},
+		ListenerConfig:  listenerConfig,
+		Metrics:         metrics.NewMetrics(registry),
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		Builder: dag.Builder{
@@ -270,11 +277,27 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		informerSyncList.InformOnResources(clusterInformerFactory, dynamicHandler, k8s.SecretsResources()...)
 	}
 
+	// snapshotCache is used to store the state of what all xDS services should
+	// contain at any given point in time.
+	snapshotCache := cache.NewSnapshotCache(false, contour.DefaultHash,
+		log.WithField("context", "xDS"))
+
+	// snapshotHandler is used to produce new snapshots when the internal state changes for any xDS resource.
+	snapshotHandler := contour.NewSnapshotHandler(snapshotCache, log.WithField("context", "snapshotHandler"))
+
 	// step 5. endpoints updates are handled directly by the EndpointsTranslator
 	// due to their high update rate and their orthogonal nature.
 	et := &contour.EndpointsTranslator{
-		FieldLogger: log.WithField("context", "endpointstranslator"),
+		SnapshotHandler: snapshotHandler,
+		FieldLogger:     log.WithField("context", "endpointstranslator"),
 	}
+
+	eventHandler.SnapshotHandler = snapshotHandler
+
+	// Trigger an initial snapshot for static resources
+	snapshotHandler.UpdateSnapshot(map[xds.ResponseType][]xds.Resource{
+		xds.Listener: eventHandler.ListenerConfig.StaticListenersProto(),
+	})
 
 	informerSyncList.InformOnResources(clusterInformerFactory,
 		&k8s.DynamicClientHandler{
@@ -402,15 +425,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 		log.Printf("informer caches synced")
 
-		resources := map[string]cgrpc.Resource{
-			eventHandler.CacheHandler.ClusterCache.TypeURL():  &eventHandler.CacheHandler.ClusterCache,
-			eventHandler.CacheHandler.RouteCache.TypeURL():    &eventHandler.CacheHandler.RouteCache,
-			eventHandler.CacheHandler.ListenerCache.TypeURL(): &eventHandler.CacheHandler.ListenerCache,
-			eventHandler.CacheHandler.SecretCache.TypeURL():   &eventHandler.CacheHandler.SecretCache,
-			et.TypeURL(): et,
-		}
 		opts := ctx.grpcOptions()
-		s := cgrpc.NewAPI(log, resources, registry, opts...)
+		grpcServer := cgrpc.NewAPI(registry, snapshotCache, opts...)
+
 		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
 		l, err := net.Listen("tcp", addr)
 		if err != nil {
@@ -427,10 +444,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 		go func() {
 			<-stop
-			s.Stop()
+			grpcServer.Stop()
 		}()
 
-		return s.Serve(l)
+		return grpcServer.Serve(l)
 	})
 
 	// step 14. Setup SIGTERM handler

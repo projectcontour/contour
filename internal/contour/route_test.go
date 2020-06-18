@@ -17,10 +17,11 @@ import (
 	"testing"
 	"time"
 
+	xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
+
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
@@ -34,110 +35,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestRouteCacheContents(t *testing.T) {
-	tests := map[string]struct {
-		contents map[string]*v2.RouteConfiguration
-		want     []proto.Message
-	}{
-		"empty": {
-			contents: nil,
-			want:     nil,
-		},
-		"simple": {
-			contents: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-				},
-				"ingress_https": {
-					Name: "ingress_https",
-				},
-			},
-			want: []proto.Message{
-				&v2.RouteConfiguration{
-					Name: "ingress_http",
-				},
-				&v2.RouteConfiguration{
-					Name: "ingress_https",
-				},
-			},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			var rc RouteCache
-			rc.Update(tc.contents)
-			got := rc.Contents()
-			assert.Equal(t, tc.want, got)
-		})
-	}
-}
-
-func TestRouteCacheQuery(t *testing.T) {
-	tests := map[string]struct {
-		contents map[string]*v2.RouteConfiguration
-		query    []string
-		want     []proto.Message
-	}{
-		"exact match": {
-			contents: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-				},
-			},
-			query: []string{"ingress_http"},
-			want: []proto.Message{
-				&v2.RouteConfiguration{
-					Name: "ingress_http",
-				},
-			},
-		},
-		"partial match": {
-			contents: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-				},
-			},
-			query: []string{"stats-handler", "ingress_http"},
-			want: []proto.Message{
-				&v2.RouteConfiguration{
-					Name: "ingress_http",
-				},
-				&v2.RouteConfiguration{
-					Name: "stats-handler",
-				},
-			},
-		},
-		"no match": {
-			contents: map[string]*v2.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-				},
-			},
-			query: []string{"stats-handler"},
-			want: []proto.Message{
-				&v2.RouteConfiguration{
-					Name: "stats-handler",
-				},
-			},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			var rc RouteCache
-			rc.Update(tc.contents)
-			got := rc.Query(tc.query)
-			assert.Equal(t, tc.want, got)
-		})
-	}
-}
-
 func TestRouteVisit(t *testing.T) {
 	tests := map[string]struct {
 		objs                []interface{}
 		fallbackCertificate *types.NamespacedName
-		want                map[string]*v2.RouteConfiguration
+		want                []xds.Resource
 	}{
 		"nothing": {
 			objs: nil,
@@ -3001,12 +2903,12 @@ func weightedCluster(name string, weight uint32) *envoy_api_v2_route.WeightedClu
 	}
 }
 
-func routeConfigurations(rcs ...*v2.RouteConfiguration) map[string]*v2.RouteConfiguration {
+func routeConfigurations(rcs ...*v2.RouteConfiguration) []xds.Resource {
 	m := make(map[string]*v2.RouteConfiguration)
 	for _, rc := range rcs {
 		m[rc.Name] = rc
 	}
-	return m
+	return translateRoutes(m)
 }
 
 func withMirrorPolicy(route *envoy_api_v2_route.Route_Route, mirror string) *envoy_api_v2_route.Route_Route {

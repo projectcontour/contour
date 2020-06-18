@@ -20,6 +20,7 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/duration"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -32,138 +33,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestClusterCacheContents(t *testing.T) {
-	tests := map[string]struct {
-		contents map[string]*v2.Cluster
-		want     []proto.Message
-	}{
-		"empty": {
-			contents: nil,
-			want:     nil,
-		},
-		"simple": {
-			contents: clustermap(
-				&v2.Cluster{
-					Name:                 "default/kuard/443/da39a3ee5e",
-					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoy.ConfigSource("contour"),
-						ServiceName: "default/kuard",
-					},
-				}),
-			want: []proto.Message{
-				cluster(&v2.Cluster{
-					Name:                 "default/kuard/443/da39a3ee5e",
-					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoy.ConfigSource("contour"),
-						ServiceName: "default/kuard",
-					},
-				}),
-			},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			var cc ClusterCache
-			cc.Update(tc.contents)
-			got := cc.Contents()
-			assert.Equal(t, tc.want, got)
-		})
-	}
-}
-
-func TestClusterCacheQuery(t *testing.T) {
-	tests := map[string]struct {
-		contents map[string]*v2.Cluster
-		query    []string
-		want     []proto.Message
-	}{
-		"exact match": {
-			contents: clustermap(
-				&v2.Cluster{
-					Name:                 "default/kuard/443/da39a3ee5e",
-					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoy.ConfigSource("contour"),
-						ServiceName: "default/kuard",
-					},
-				}),
-			query: []string{"default/kuard/443/da39a3ee5e"},
-			want: []proto.Message{
-				cluster(&v2.Cluster{
-					Name:                 "default/kuard/443/da39a3ee5e",
-					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoy.ConfigSource("contour"),
-						ServiceName: "default/kuard",
-					},
-				}),
-			},
-		},
-		"partial match": {
-			contents: clustermap(
-				&v2.Cluster{
-					Name:                 "default/kuard/443/da39a3ee5e",
-					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoy.ConfigSource("contour"),
-						ServiceName: "default/kuard",
-					},
-				}),
-			query: []string{"default/kuard/443/da39a3ee5e", "foo/bar/baz"},
-			want: []proto.Message{
-				cluster(&v2.Cluster{
-					Name:                 "default/kuard/443/da39a3ee5e",
-					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoy.ConfigSource("contour"),
-						ServiceName: "default/kuard",
-					},
-				}),
-			},
-		},
-		"no match": {
-			contents: clustermap(
-				&v2.Cluster{
-					Name:                 "default/kuard/443/da39a3ee5e",
-					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-					EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoy.ConfigSource("contour"),
-						ServiceName: "default/kuard",
-					},
-				}),
-			query: []string{"foo/bar/baz"},
-			want:  nil,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			var cc ClusterCache
-			cc.Update(tc.contents)
-			got := cc.Query(tc.query)
-			assert.Equal(t, tc.want, got)
-		})
-	}
-}
-
 func TestClusterVisit(t *testing.T) {
 	tests := map[string]struct {
 		objs []interface{}
-		want map[string]*v2.Cluster
+		want []xds.Resource
 	}{
 		"nothing": {
 			objs: nil,
-			want: map[string]*v2.Cluster{},
+			want: nil,
 		},
 		"single unnamed service": {
 			objs: []interface{}{
@@ -824,10 +701,10 @@ func cluster(c *v2.Cluster) *v2.Cluster {
 	return defaults
 }
 
-func clustermap(clusters ...*v2.Cluster) map[string]*v2.Cluster {
+func clustermap(clusters ...*v2.Cluster) []xds.Resource {
 	m := make(map[string]*v2.Cluster)
 	for _, c := range clusters {
 		m[c.Name] = cluster(c)
 	}
-	return m
+	return translateClusters(m)
 }

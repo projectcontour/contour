@@ -22,10 +22,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/projectcontour/contour/internal/envoy"
+
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
+	xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	v2cache "github.com/envoyproxy/go-control-plane/pkg/cache/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
@@ -39,6 +43,7 @@ import (
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+	tassert "github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -76,19 +81,23 @@ func setupWithFallbackCert(t *testing.T, fallbackCertName, fallbackCertNamespace
 	}
 
 	r := prometheus.NewRegistry()
-	ch := &contour.CacheHandler{
-		Metrics:       metrics.NewMetrics(r),
-		ListenerCache: contour.NewListenerCache(statsAddress, statsPort),
-		FieldLogger:   log,
-	}
+	stats := envoy.StatsListener(statsAddress, statsPort)
 
 	rand.Seed(time.Now().Unix())
 
 	statusCache := &k8s.StatusCacher{}
+	// Setup snapshot cache
+	snapshotCache := v2cache.NewSnapshotCache(false, contour.DefaultHash, log)
+	snapshotHandler := contour.NewSnapshotHandler(snapshotCache, log)
 
 	eh := &contour.EventHandler{
-		IsLeader:        make(chan struct{}),
-		CacheHandler:    ch,
+		IsLeader: make(chan struct{}),
+		Metrics:  metrics.NewMetrics(r),
+		ListenerConfig: contour.ListenerConfig{
+			StaticListeners: map[string]*v2.Listener{
+				stats.Name: stats,
+			},
+		},
 		StatusClient:    statusCache,
 		FieldLogger:     log,
 		Sequence:        make(chan int, 1),
@@ -103,7 +112,13 @@ func setupWithFallbackCert(t *testing.T, fallbackCertName, fallbackCertNamespace
 				Namespace: fallbackCertNamespace,
 			},
 		},
+		SnapshotHandler: snapshotHandler,
 	}
+
+	// Trigger an initial snapshot for static resources
+	snapshotHandler.UpdateSnapshot(map[xds.ResponseType][]xds.Resource{
+		xds.Listener: eh.ListenerConfig.StaticListenersProto(),
+	})
 
 	for _, opt := range opts {
 		opt(eh)
@@ -116,14 +131,8 @@ func setupWithFallbackCert(t *testing.T, fallbackCertName, fallbackCertNamespace
 	check(t, err)
 	discard := logrus.New()
 	discard.Out = new(discardWriter)
-	// Resource types in xDS v2.
-	srv := cgrpc.NewAPI(discard, map[string]cgrpc.Resource{
-		ch.ClusterCache.TypeURL():  &ch.ClusterCache,
-		ch.RouteCache.TypeURL():    &ch.RouteCache,
-		ch.ListenerCache.TypeURL(): &ch.ListenerCache,
-		ch.SecretCache.TypeURL():   &ch.SecretCache,
-		et.TypeURL():               et,
-	}, r)
+
+	srv := cgrpc.NewAPI(prometheus.NewRegistry(), snapshotCache)
 
 	var g workgroup.Group
 
@@ -237,7 +246,7 @@ func routeResources(t *testing.T, routes ...*v2.RouteConfiguration) []*any.Any {
 	return resources(t, protobuf.AsMessages(routes)...)
 }
 
-func resources(t *testing.T, protos ...proto.Message) []*any.Any {
+func resources(t *testing.T, protos ...xds.Resource) []*any.Any {
 	t.Helper()
 	anys := make([]*any.Any, 0, len(protos))
 	for _, pb := range protos {
@@ -358,10 +367,13 @@ func (c *Contour) Request(typeurl string, names ...string) *Response {
 	default:
 		c.Fatal("unknown typeURL:", typeurl)
 	}
+
 	resp := c.sendRequest(st, &v2.DiscoveryRequest{
 		TypeUrl:       typeurl,
 		ResourceNames: names,
+		Node:          &envoy_api_v2_core.Node{Id: "contour"},
 	})
+
 	return &Response{
 		Contour:           c,
 		DiscoveryResponse: resp,
@@ -389,7 +401,6 @@ type Response struct {
 
 func (r *Response) Equals(want *v2.DiscoveryResponse) *Contour {
 	r.Helper()
-	assert.Equal(r.T, want, r.DiscoveryResponse)
-
+	tassert.ElementsMatch(r.T, want.Resources, r.DiscoveryResponse.Resources)
 	return r.Contour
 }

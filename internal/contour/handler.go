@@ -19,6 +19,10 @@ package contour
 import (
 	"time"
 
+	xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	"github.com/projectcontour/contour/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -34,8 +38,6 @@ import (
 // is available.
 type EventHandler struct {
 	dag.Builder
-
-	*CacheHandler
 
 	HoldoffDelay, HoldoffMaxDelay time.Duration
 
@@ -59,6 +61,15 @@ type EventHandler struct {
 	// seq is the sequence counter of the number of times
 	// an event has been received.
 	seq int
+
+	ListenerConfig
+
+	// SnapshotHandler is used to generate new snapshots
+	// when any caches change so that Envoy can be updated
+	// with the new configuration.
+	SnapshotHandler *SnapshotHandler
+
+	*metrics.Metrics
 }
 
 type opAdd struct {
@@ -210,7 +221,7 @@ func (e *EventHandler) incSequence() {
 // the updates the status on objects and updates the metrics.
 func (e *EventHandler) updateDAG() {
 	dag := e.Builder.Build()
-	e.CacheHandler.OnChange(dag)
+	e.processNewDAG(dag)
 
 	select {
 	case <-e.IsLeader:
@@ -223,6 +234,20 @@ func (e *EventHandler) updateDAG() {
 	default:
 		e.Debug("skipping metrics and CRD status update, not leader")
 	}
+}
+
+func (e *EventHandler) processNewDAG(dag *dag.DAG) {
+	timer := prometheus.NewTimer(e.CacheHandlerOnUpdateSummary)
+	defer timer.ObserveDuration()
+
+	e.SnapshotHandler.UpdateSnapshot(map[xds.ResponseType][]xds.Resource{
+		xds.Cluster:  visitClusters(dag),
+		xds.Route:    visitRoutes(dag),
+		xds.Listener: visitListeners(dag, &e.ListenerConfig),
+		xds.Secret:   visitSecrets(dag),
+	})
+
+	e.SetDAGLastRebuilt(time.Now())
 }
 
 // setStatus updates the status of objects.

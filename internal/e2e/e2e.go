@@ -22,13 +22,15 @@ import (
 	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
+	xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	v2cache "github.com/envoyproxy/go-control-plane/pkg/cache/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
 	cgrpc "github.com/projectcontour/contour/internal/grpc"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
@@ -36,6 +38,7 @@ import (
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+	tassert "github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
@@ -78,13 +81,14 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 	}
 
 	r := prometheus.NewRegistry()
-	ch := &contour.CacheHandler{
-		Metrics:       metrics.NewMetrics(r),
-		ListenerCache: contour.NewListenerCache(statsAddress, statsPort),
-		FieldLogger:   log,
-	}
+
+	// Setup snapshot cache
+	snapshotCache := v2cache.NewSnapshotCache(false, contour.DefaultHash, nil)
+	snapshotHandler := contour.NewSnapshotHandler(snapshotCache, log)
 
 	rand.Seed(time.Now().Unix())
+
+	statsListener := envoy.StatsListener(statsAddress, statsPort)
 
 	eh := &contour.EventHandler{
 		Builder: dag.Builder{
@@ -92,13 +96,24 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 				FieldLogger: log,
 			},
 		},
-		CacheHandler:    ch,
+		Metrics: metrics.NewMetrics(r),
+		ListenerConfig: contour.ListenerConfig{
+			StaticListeners: map[string]*v2.Listener{
+				statsListener.Name: statsListener,
+			},
+		},
 		StatusClient:    &k8s.StatusCacher{},
 		FieldLogger:     log,
 		Sequence:        make(chan int, 1),
 		HoldoffDelay:    time.Duration(rand.Intn(100)) * time.Millisecond,
 		HoldoffMaxDelay: time.Duration(rand.Intn(500)) * time.Millisecond,
+		SnapshotHandler: snapshotHandler,
 	}
+
+	// Trigger an initial snapshot for static resources
+	snapshotHandler.UpdateSnapshot(map[xds.ResponseType][]xds.Resource{
+		xds.Listener: eh.ListenerConfig.StaticListenersProto(),
+	})
 
 	for _, opt := range opts {
 		opt(eh)
@@ -108,14 +123,8 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 	check(t, err)
 	discard := logrus.New()
 	discard.Out = new(discardWriter)
-	// Resource types in xDS v2.
-	srv := cgrpc.NewAPI(discard, map[string]cgrpc.Resource{
-		ch.ClusterCache.TypeURL():  &ch.ClusterCache,
-		ch.RouteCache.TypeURL():    &ch.RouteCache,
-		ch.ListenerCache.TypeURL(): &ch.ListenerCache,
-		ch.SecretCache.TypeURL():   &ch.SecretCache,
-		et.TypeURL():               et,
-	}, r)
+
+	srv := cgrpc.NewAPI(r, snapshotCache)
 
 	var g workgroup.Group
 
@@ -137,6 +146,8 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 		EventHandler:        eh,
 		EndpointsTranslator: et,
 	}
+
+	et.SnapshotHandler = snapshotHandler
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -200,7 +211,7 @@ func check(t *testing.T, err error) {
 	}
 }
 
-func resources(t *testing.T, protos ...proto.Message) []*any.Any {
+func resources(t *testing.T, protos ...xds.Resource) []*any.Any {
 	t.Helper()
 	var anys []*any.Any
 	for _, a := range protos {
@@ -244,6 +255,7 @@ func (c *Contour) Request(typeurl string, names ...string) *Response {
 	resp := c.sendRequest(st, &v2.DiscoveryRequest{
 		TypeUrl:       typeurl,
 		ResourceNames: names,
+		Node:          &envoy_api_v2_core.Node{Id: "contour"},
 	})
 	return &Response{
 		Contour:           c,
@@ -272,5 +284,5 @@ type Response struct {
 
 func (r *Response) Equals(want *v2.DiscoveryResponse) {
 	r.Helper()
-	assert.Equal(r.T, want, r.DiscoveryResponse)
+	tassert.ElementsMatch(r.T, want.Resources, r.DiscoveryResponse.Resources)
 }

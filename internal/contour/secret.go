@@ -15,74 +15,36 @@ package contour
 
 import (
 	"sort"
-	"sync"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
-	"github.com/golang/protobuf/proto"
+	xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 )
 
-// SecretCache manages the contents of the gRPC SDS cache.
-type SecretCache struct {
-	mu     sync.Mutex
-	values map[string]*envoy_api_v2_auth.Secret
-	Cond
-}
-
-// Update replaces the contents of the cache with the supplied map.
-func (c *SecretCache) Update(v map[string]*envoy_api_v2_auth.Secret) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.values = v
-	c.Cond.Notify()
-}
-
-// Contents returns a copy of the cache's contents.
-func (c *SecretCache) Contents() []proto.Message {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+// Contents returns an array of SDS resources.
+func translateSecrets(secrets map[string]*envoy_api_v2_auth.Secret) []xds.Resource {
 	var values []*envoy_api_v2_auth.Secret
-	for _, v := range c.values {
+	for _, v := range secrets {
 		values = append(values, v)
 	}
 	sort.Stable(sorter.For(values))
 	return protobuf.AsMessages(values)
 }
 
-func (c *SecretCache) Query(names []string) []proto.Message {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	var values []*envoy_api_v2_auth.Secret
-	for _, n := range names {
-		// we can only return secrets where their value is
-		// known. if the secret is not registered in the cache
-		// we return nothing.
-		if v, ok := c.values[n]; ok {
-			values = append(values, v)
-		}
-	}
-	sort.Stable(sorter.For(values))
-	return protobuf.AsMessages(values)
-}
-
-func (*SecretCache) TypeURL() string { return resource.SecretType }
-
 type secretVisitor struct {
 	secrets map[string]*envoy_api_v2_auth.Secret
 }
 
-// visitSecrets produces a map of *envoy_api_v2_auth.Secret
-func visitSecrets(root dag.Vertex) map[string]*envoy_api_v2_auth.Secret {
+// visitSecrets produces an array of xds.Resources
+func visitSecrets(root dag.Vertex) []xds.Resource {
 	sv := secretVisitor{
 		secrets: make(map[string]*envoy_api_v2_auth.Secret),
 	}
 	sv.visit(root)
-	return sv.secrets
+	return translateSecrets(sv.secrets)
 }
 
 func (v *secretVisitor) addSecret(s *dag.Secret) {
