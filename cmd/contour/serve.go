@@ -343,12 +343,16 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// step 12. register an informer to watch envoy's service if we haven't been given static details.
 	if ctx.IngressStatusAddress == "" {
-		ssw := &k8s.ServiceStatusLoadBalancerWatcher{
-			ServiceName: ctx.EnvoyServiceName,
-			LBStatus:    lbsw.lbStatus,
+		dynamicServiceHandler := &k8s.DynamicClientHandler{
+			Next: &k8s.ServiceStatusLoadBalancerWatcher{
+				ServiceName: ctx.EnvoyServiceName,
+				LBStatus:    lbsw.lbStatus,
+			},
+			Converter: converter,
+			Logger:    log.WithField("context", "serviceStatusLoadBalancerWatcher"),
 		}
 		factory := clients.NewInformerFactoryForNamespace(ctx.EnvoyServiceNamespace)
-		informerSyncList.InformOnResources(factory, ssw, k8s.ServicesResources()...)
+		informerSyncList.InformOnResources(factory, dynamicServiceHandler, k8s.ServicesResources()...)
 		g.Add(startInformer(factory, log.WithField("context", "serviceStatusLoadBalancerWatcher")))
 		log.WithField("envoy-service-name", ctx.EnvoyServiceName).
 			WithField("envoy-service-namespace", ctx.EnvoyServiceNamespace).

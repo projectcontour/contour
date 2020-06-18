@@ -26,7 +26,8 @@ type InformerSyncList struct {
 }
 
 // InformOnResources creates informers for each of the given resources and registers their sync callbacks.
-func (sl *InformerSyncList) InformOnResources(f InformerFactory, handler cache.ResourceEventHandler, resources ...schema.GroupVersionResource) {
+func (sl *InformerSyncList) InformOnResources(f InformerFactory, handler *DynamicClientHandler, resources ...schema.GroupVersionResource) {
+
 	for _, r := range resources {
 		informer := f.ForResource(r).Informer()
 		informer.AddEventHandler(handler)
