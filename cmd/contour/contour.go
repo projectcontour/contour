@@ -36,6 +36,7 @@ func init() {
 func main() {
 	log := logrus.StandardLogger()
 	app := kingpin.New("contour", "Contour Kubernetes ingress controller.")
+	app.HelpFlag.Short('h')
 
 	envoyCmd := app.Command("envoy", "Sub-command for envoy actions.")
 	shutdownManager, shutdownManagerCtx := registerShutdownManager(envoyCmd, log)
