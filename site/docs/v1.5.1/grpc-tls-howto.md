@@ -145,7 +145,7 @@ $ kubectl create secret -n projectcontour generic envoycert \
 
 There are few preconditions that need to be met before Envoy can automatically reload certificate and key files:
 
-- Envoy must be version v1.14.1 or later
+- Envoy must be version v1.14.2 or later
 - The bootstrap configuration must be generated with `contour bootstrap` using the `--resources-dir` argument, see [examples/contour/03-envoy.yaml][4]
 
 ### Rotate using the contour-certgen job
