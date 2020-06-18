@@ -100,8 +100,12 @@ func bootstrap(c *BootstrapConfig) ([]bootstrapf, error) {
 			// but there is no way to detect and fix that. If
 			// we check and fail here, that is visible in the
 			// Pod lifecycle and therefore fixable.
-			if _, err := os.Stat(f); err != nil {
+			fi, err := os.Stat(f)
+			if err != nil {
 				return nil, err
+			}
+			if fi.Size() == 0 {
+				return nil, fmt.Errorf("%q is empty", f)
 			}
 		}
 	}
