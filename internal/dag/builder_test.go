@@ -1762,6 +1762,106 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// proxy2d is a proxy with two routes that have the same prefix and a Contains header
+	// condition on the same header, differing only in the value of the condition.
+	proxy2d := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{
+				{
+					Conditions: []projcontour.Condition{
+						{
+							Header: &projcontour.HeaderCondition{
+								Name:     "e-tag",
+								Contains: "abc",
+							},
+						},
+						{
+							Prefix: "/",
+						},
+					},
+					Services: []projcontour.Service{{
+						Name: "kuard",
+						Port: 8080,
+					}},
+				},
+				{
+					Conditions: []projcontour.Condition{
+						{
+							Header: &projcontour.HeaderCondition{
+								Name:     "e-tag",
+								Contains: "def",
+							},
+						},
+						{
+							Prefix: "/",
+						},
+					},
+					Services: []projcontour.Service{{
+						Name: "kuard",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	// proxy2e is a proxy with two routes that both have a condition on the same
+	// header, one using Contains and one using NotContains.
+	proxy2e := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{
+				{
+					Conditions: []projcontour.Condition{
+						{
+							Header: &projcontour.HeaderCondition{
+								Name:     "e-tag",
+								Contains: "abc",
+							},
+						},
+						{
+							Prefix: "/",
+						},
+					},
+					Services: []projcontour.Service{{
+						Name: "kuard",
+						Port: 8080,
+					}},
+				},
+				{
+					Conditions: []projcontour.Condition{
+						{
+							Header: &projcontour.HeaderCondition{
+								Name:        "e-tag",
+								NotContains: "abc",
+							},
+						},
+						{
+							Prefix: "/",
+						},
+					},
+					Services: []projcontour.Service{{
+						Name: "kuard",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
 	// proxy6 has TLS and does not specify min tls version
 	proxy6 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -4224,6 +4324,56 @@ func TestDAGInsert(t *testing.T) {
 								{Name: "x-timeout", Value: "infinity", MatchType: "contains", Invert: true},
 								{Name: "digest-auth", Value: "scott", MatchType: "exact"},
 								{Name: "digest-password", Value: "tiger", MatchType: "exact", Invert: true},
+							},
+							Clusters: clusters(service(s1)),
+						}),
+					),
+				},
+			),
+		},
+		"insert httproxy w/ multiple routes with a Contains condition on the same header": {
+			objs: []interface{}{
+				proxy2d, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathCondition: &PrefixCondition{Prefix: "/"},
+							HeaderConditions: []HeaderCondition{
+								{Name: "e-tag", Value: "abc", MatchType: "contains"},
+							},
+							Clusters: clusters(service(s1)),
+						}, &Route{
+							PathCondition: &PrefixCondition{Prefix: "/"},
+							HeaderConditions: []HeaderCondition{
+								{Name: "e-tag", Value: "def", MatchType: "contains"},
+							},
+							Clusters: clusters(service(s1)),
+						}),
+					),
+				},
+			),
+		},
+		"insert httproxy w/ multiple routes with condition on the same header, one Contains and one NotContains": {
+			objs: []interface{}{
+				proxy2e, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathCondition: &PrefixCondition{Prefix: "/"},
+							HeaderConditions: []HeaderCondition{
+								{Name: "e-tag", Value: "abc", MatchType: "contains"},
+							},
+							Clusters: clusters(service(s1)),
+						}, &Route{
+							PathCondition: &PrefixCondition{Prefix: "/"},
+							HeaderConditions: []HeaderCondition{
+								{Name: "e-tag", Value: "abc", MatchType: "contains", Invert: true},
 							},
 							Clusters: clusters(service(s1)),
 						}),

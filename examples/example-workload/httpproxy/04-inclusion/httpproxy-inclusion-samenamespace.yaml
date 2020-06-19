@@ -27,9 +27,7 @@ metadata:
   namespace: default
 spec:
   routes:
-    - conditions:
-      - prefix: /  # matches /service2
-      services:
+    - services:  # matches /service2
         - name: s2
           port: 80
     - conditions:

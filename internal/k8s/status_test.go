@@ -20,13 +20,9 @@ import (
 
 	"github.com/projectcontour/contour/internal/assert"
 
-	"k8s.io/client-go/dynamic/fake"
-
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	k8stesting "k8s.io/client-go/testing"
 )
 
 func TestSetHTTPProxyStatus(t *testing.T) {
@@ -42,43 +38,19 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			t.Helper()
-			var gotObj runtime.Object
 
-			s := runtime.NewScheme()
-			if err := projcontour.AddToScheme(s); err != nil {
-				t.Fatalf("adding to scheme: %s", err)
-			}
-
-			usc, err := NewUnstructuredConverter()
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			client := fake.NewSimpleDynamicClient(s, tc.existing)
-
-			client.PrependReactor("*", "httpproxies", func(action k8stesting.Action) (bool, runtime.Object, error) {
-				switch updateAction := action.(type) {
-				default:
-					return true, nil, fmt.Errorf("got unexpected action of type: %T", action)
-				case k8stesting.UpdateActionImpl:
-					gotObj = updateAction.GetObject()
-					return true, tc.existing, nil
-				}
-			})
-
+			suc := &StatusUpdateCacher{}
 			proxysw := StatusWriter{
-				Client:    client,
-				Converter: usc,
+				Updater: suc,
 			}
+
+			suc.AddObject(tc.existing.Name, tc.existing.Namespace, projcontour.HTTPProxyGVR, tc.existing)
 
 			if err := proxysw.SetStatus(tc.msg, tc.desc, tc.existing); err != nil {
 				t.Fatal(fmt.Errorf("unable to set proxy status: %s", err))
 			}
 
-			toProxy, err := usc.FromUnstructured(gotObj)
-			if err != nil {
-				t.Fatal(err)
-			}
+			toProxy := suc.GetObject(tc.existing.Name, tc.existing.Namespace, projcontour.HTTPProxyGVR)
 
 			if toProxy == nil && tc.expected == nil {
 				return
@@ -130,7 +102,16 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 				Description:   "this is a valid HTTPProxy",
 			},
 		},
-		expected: nil,
+		expected: &projcontour.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "default",
+			},
+			Status: projcontour.Status{
+				CurrentStatus: "valid",
+				Description:   "this is a valid HTTPProxy",
+			},
+		},
 	})
 
 	run(t, "replace existing status", testcase{
@@ -172,9 +153,7 @@ func TestGetStatus(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Helper()
 
-			proxysw := StatusWriter{
-				Client: fake.NewSimpleDynamicClient(runtime.NewScheme()),
-			}
+			proxysw := StatusWriter{}
 
 			status, err := proxysw.GetStatus(tc.input)
 
