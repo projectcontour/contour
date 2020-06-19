@@ -214,6 +214,7 @@ spec:
   - client auth
   emailSANs:
   - client@projectcontour.io
+  commonName: client
   secretName: echo-client
   issuerRef:
     name: ca-projectcontour-io
@@ -249,6 +250,7 @@ spec:
   - client auth
   emailSANs:
   - selfsigned-client@projectcontour.io
+  commonName: selfsigned-client
   secretName: echo-client-selfsigned
   issuerRef:
     name: selfsigned
