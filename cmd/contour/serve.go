@@ -191,10 +191,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		},
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
-		StatusClient: &k8s.StatusWriter{
-			Client:    clients.DynamicClient(),
-			Converter: converter,
-		},
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
 				RootNamespaces: ctx.proxyRootNamespaces(),
@@ -326,8 +322,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		LeaderElected: eventHandler.IsLeader,
 		Converter:     converter,
 	}
-	suw := sh.Writer()
 	g.Add(sh.Start)
+
+	// Now we have the statusUpdateWriter, we can create the StatusWriter, which will take the
+	// status updates from the DAG, and send them to the status update handler.
+	eventHandler.StatusClient = &k8s.StatusWriter{
+		Updater: sh.Writer(),
+	}
 
 	// step 11. set up ingress load balancer status writer
 	lbsw := loadBalancerStatusWriter{
@@ -336,7 +337,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		isLeader:      eventHandler.IsLeader,
 		lbStatus:      make(chan corev1.LoadBalancerStatus, 1),
 		ingressClass:  ctx.ingressClass,
-		statusUpdater: suw,
+		statusUpdater: sh.Writer(),
 		Converter:     converter,
 	}
 	g.Add(lbsw.Start)
@@ -347,6 +348,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			Next: &k8s.ServiceStatusLoadBalancerWatcher{
 				ServiceName: ctx.EnvoyServiceName,
 				LBStatus:    lbsw.lbStatus,
+				Log:         log.WithField("context", "serviceStatusLoadBalancerWatcher"),
 			},
 			Converter: converter,
 			Logger:    log.WithField("context", "serviceStatusLoadBalancerWatcher"),

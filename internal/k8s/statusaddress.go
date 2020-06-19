@@ -73,7 +73,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 			WithField("ingress-class", annotation.IngressClass(typed)).
 			WithField("defined-ingress-class", s.IngressClass).
 			WithField("kind", kind).
-			Debug("unmatched ingress class, skip status update")
+			Debug("unmatched ingress class, skipping status address update")
 		return
 	}
 
@@ -83,7 +83,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		WithField("ingress-class", annotation.IngressClass(typed)).
 		WithField("kind", kind).
 		WithField("defined-ingress-class", s.IngressClass).
-		Debug("Received an object, sending status update")
+		Debug("received an object, sending status address update")
 
 	s.StatusUpdater.Update(
 		typed.GetObjectMeta().GetName(),
@@ -128,6 +128,7 @@ func (s *StatusAddressUpdater) OnDelete(obj interface{}) {
 type ServiceStatusLoadBalancerWatcher struct {
 	ServiceName string
 	LBStatus    chan v1.LoadBalancerStatus
+	Log         logrus.FieldLogger
 }
 
 func (s *ServiceStatusLoadBalancerWatcher) OnAdd(obj interface{}) {
@@ -139,6 +140,10 @@ func (s *ServiceStatusLoadBalancerWatcher) OnAdd(obj interface{}) {
 	if svc.Name != s.ServiceName {
 		return
 	}
+	s.Log.WithField("name", svc.Name).
+		WithField("namespace", svc.Namespace).
+		Debug("received new service address")
+
 	s.notify(svc.Status.LoadBalancer)
 }
 
@@ -151,6 +156,10 @@ func (s *ServiceStatusLoadBalancerWatcher) OnUpdate(oldObj, newObj interface{}) 
 	if svc.Name != s.ServiceName {
 		return
 	}
+	s.Log.WithField("name", svc.Name).
+		WithField("namespace", svc.Namespace).
+		Debug("received new service address")
+
 	s.notify(svc.Status.LoadBalancer)
 }
 
