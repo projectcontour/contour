@@ -191,10 +191,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		},
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
-		StatusClient: &k8s.StatusWriter{
-			Client:    clients.DynamicClient(),
-			Converter: converter,
-		},
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
 				RootNamespaces: ctx.proxyRootNamespaces(),
@@ -326,8 +322,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		LeaderElected: eventHandler.IsLeader,
 		Converter:     converter,
 	}
-	suw := sh.Writer()
 	g.Add(sh.Start)
+
+	// Now we have the statusUpdateWriter, we can create the StatusWriter, which will take the
+	// status updates from the DAG, and send them to the status update handler.
+	eventHandler.StatusClient = &k8s.StatusWriter{
+		Updater: sh.Writer(),
+	}
 
 	// step 11. set up ingress load balancer status writer
 	lbsw := loadBalancerStatusWriter{
@@ -336,19 +337,24 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		isLeader:      eventHandler.IsLeader,
 		lbStatus:      make(chan corev1.LoadBalancerStatus, 1),
 		ingressClass:  ctx.ingressClass,
-		statusUpdater: suw,
+		statusUpdater: sh.Writer(),
 		Converter:     converter,
 	}
 	g.Add(lbsw.Start)
 
 	// step 12. register an informer to watch envoy's service if we haven't been given static details.
 	if ctx.IngressStatusAddress == "" {
-		ssw := &k8s.ServiceStatusLoadBalancerWatcher{
-			ServiceName: ctx.EnvoyServiceName,
-			LBStatus:    lbsw.lbStatus,
+		dynamicServiceHandler := &k8s.DynamicClientHandler{
+			Next: &k8s.ServiceStatusLoadBalancerWatcher{
+				ServiceName: ctx.EnvoyServiceName,
+				LBStatus:    lbsw.lbStatus,
+				Log:         log.WithField("context", "serviceStatusLoadBalancerWatcher"),
+			},
+			Converter: converter,
+			Logger:    log.WithField("context", "serviceStatusLoadBalancerWatcher"),
 		}
 		factory := clients.NewInformerFactoryForNamespace(ctx.EnvoyServiceNamespace)
-		informerSyncList.InformOnResources(factory, ssw, k8s.ServicesResources()...)
+		informerSyncList.InformOnResources(factory, dynamicServiceHandler, k8s.ServicesResources()...)
 		g.Add(startInformer(factory, log.WithField("context", "serviceStatusLoadBalancerWatcher")))
 		log.WithField("envoy-service-name", ctx.EnvoyServiceName).
 			WithField("envoy-service-namespace", ctx.EnvoyServiceNamespace).

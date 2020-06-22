@@ -10,7 +10,7 @@ readonly OLDVERS="$1"
 readonly NEWVERS="$2"
 
 if [ -z "$OLDVERS" ] || [ -z "$NEWVERS" ]; then
-    printf "Usage: %s OLDVERS NEWVERS\n" $PROGNAME
+    printf "Usage: %s OLDVERS NEWVERS\n" "$PROGNAME"
     exit 1
 fi
 
@@ -20,26 +20,33 @@ set -o pipefail
 
 readonly IMG="docker.io/projectcontour/contour:$NEWVERS"
 
+# If you are running this script, there's a good chance you switched
+# branches, do ensure the vendor cache is current.
+go mod vendor
+
 if [ -n "$(git tag --list "$NEWVERS")" ]; then
     printf "%s: tag '%s' already exists\n" "$PROGNAME" "$NEWVERS"
     exit 1
 fi
 
+# Wrap sed to deal with GNU and BSD sed flags.
+run::sed() {
+    local -r vers="$(sed --version < /dev/null 2>&1 | grep -q GNU && echo gnu || echo bsd)"
+    case "$vers" in
+        gnu) sed -i "$@" ;;
+        *) sed -i '' "$@" ;;
+    esac
+}
+
 # NOTE(jpeach): this will go away or change once we move to kustomize
 # since at that point the versioned image name will appear exactly once.
-for f in examples/contour/03-envoy.yaml examples/contour/03-contour.yaml ; do
-    case $(uname -s) in
-    Darwin)
-        sed -i '' "-es|docker.io/projectcontour/contour:master|$IMG|" "$f"
-        ;;
-    Linux)
-        sed -i "-es|docker.io/projectcontour/contour:master|$IMG|" "$f"
-        ;;
-    *)
-        printf "Unsupported system '%s'" "$(uname -s)"
-        exit 2
-        ;;
-    esac
+for example in examples/contour/03-envoy.yaml examples/contour/03-contour.yaml ; do
+    # The version might be master or OLDVERS depending on whether we are
+    # tagging from the release branch or from master.
+    run::sed \
+        "-es|docker.io/projectcontour/contour:master|$IMG|" \
+        "-es|docker.io/projectcontour/contour:$OLDVERS|$IMG|" \
+        "$example"
 done
 
 make generate

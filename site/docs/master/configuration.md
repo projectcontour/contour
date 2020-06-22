@@ -1,5 +1,8 @@
 # Contour Configuration Reference
 
+- [Configuration File](#configuration-file)
+- [Environment Variables](#environment-variables)
+
 ## Configuration File
 
 A configuration file can be passed to the `--config-path` argument of the `contour serve` command to specify additional configuration to Contour.
@@ -15,7 +18,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | debug | boolean | `false` | Enables debug logging. |
 | disablePermitInsecure | boolean | `false` | If this field is true, Contour will ignore `PermitInsecure` field in HTTPProxy documents. |
 | envoy-service-name | string | `envoy` | This sets the service name that will be inspected for address details to be applied to Ingress objects. |
-| envoy-service-namespace | string | `projectcontour` | This sets the namespace of the service that will be inspected for address details to be applied to Ingress objects. |
+| envoy-service-namespace | string | `projectcontour` | This sets the namespace of the service that will be inspected for address details to be applied to Ingress objects. If the `CONTOUR_NAMESPACE` environment variable is present, Contour will populate this field with its value. |
 | ingress-status-address | string | None | If present, this specifies the address that will be copied into the Ingress status for each Ingress that Contour manages. It is exclusive with `envoy-service-name` and `envoy-service-namespace`.|
 | incluster | boolean | `false` | This field specifies that Contour is running in a Kubernetes cluster and should use the in-cluster client access configuration.  |
 | json-fields | string array | [fields][5]| This is the list the field names to include in the JSON [access log format][2]. |
@@ -97,8 +100,24 @@ data:
 
 _Note:_ The default example `contour` includes this [file][1] for easy deployment of Contour.
 
+## Environment Variables
+
+### CONTOUR_NAMESPACE
+
+If present, the value of the `CONTOUR_NAMESPACE` environment variable is used as:
+
+1. The value for the `contour bootstrap --namespace` flag unless otherwise specified.
+1. The value for the `contour certgen --namespace` flag unless otherwise specified.
+1. The value for the `contour serve --envoy-service-namespace` flag unless otherwise specified.
+1. The value for the `leaderelection.configmap-namespace` config file setting for `contour serve` unless otherwise specified.
+
+The `CONTOUR_NAMESPACE` environment variable is set via the [Downward API][6] in the Contour [example manifests][7].
+
+
 [1]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/01-contour-config.yaml
 [2]: /guides/structured-logs
 [3]: https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/
 [4]: https://golang.org/pkg/time/#ParseDuration
 [5]: https://godoc.org/github.com/projectcontour/contour/internal/envoy#DefaultFields
+[6]: https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/
+[7]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour

@@ -14,13 +14,8 @@
 package k8s
 
 import (
-	"context"
 	"errors"
 	"fmt"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"k8s.io/client-go/dynamic"
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
@@ -102,8 +97,7 @@ func (c *StatusCacher) SetStatus(status, desc string, obj interface{}) error {
 
 // StatusWriter updates the object's Status field.
 type StatusWriter struct {
-	Client    dynamic.Interface
-	Converter Converter
+	Updater StatusUpdater
 }
 
 // GetStatus is not implemented for StatusWriter.
@@ -115,35 +109,24 @@ func (irs *StatusWriter) GetStatus(obj interface{}) (*projcontour.Status, error)
 func (irs *StatusWriter) SetStatus(status, desc string, existing interface{}) error {
 	switch exist := existing.(type) {
 	case *projcontour.HTTPProxy:
-		// Check if update needed by comparing status & desc
-		if irs.updateNeeded(status, desc, exist.Status) {
-			updated := exist.DeepCopy()
-			updated.Status = projcontour.Status{
-				CurrentStatus: status,
-				Description:   desc,
-			}
-			return irs.setHTTPProxyStatus(updated)
-		}
+		// StatusUpdateWriters only apply an update if required, so
+		// we don't need to check here.
+		irs.Updater.Update(exist.Name,
+			exist.Namespace,
+			projcontour.HTTPProxyGVR,
+			StatusMutatorFunc(func(obj interface{}) interface{} {
+				switch o := obj.(type) {
+				case *projcontour.HTTPProxy:
+					dco := o.DeepCopy()
+					dco.Status.CurrentStatus = status
+					dco.Status.Description = desc
+					return dco
+				default:
+					panic(fmt.Sprintf("Unsupported object %s/%s in status Address mutator",
+						exist.Namespace, exist.Name,
+					))
+				}
+			}))
 	}
 	return nil
-}
-
-func (irs *StatusWriter) updateNeeded(status, desc string, existing projcontour.Status) bool {
-	if existing.CurrentStatus != status || existing.Description != desc {
-		return true
-	}
-	return false
-}
-
-func (irs *StatusWriter) setHTTPProxyStatus(updated *projcontour.HTTPProxy) error {
-
-	usUpdated, err := irs.Converter.ToUnstructured(updated)
-	if err != nil {
-		return fmt.Errorf("unable to convert status update to HTTPProxy: %s", err)
-	}
-
-	_, err = irs.Client.Resource(projcontour.HTTPProxyGVR).Namespace(updated.GetNamespace()).
-		UpdateStatus(context.TODO(), usUpdated, metav1.UpdateOptions{})
-
-	return err
 }

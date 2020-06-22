@@ -78,7 +78,9 @@ func (suh *StatusUpdateHandler) Start(stop <-chan struct{}) error {
 				continue
 			}
 
-			suh.Log.WithField("fullname", upd.FullName).Debug("received a status update")
+			suh.Log.WithField("name", upd.FullName.Name).
+				WithField("namespace", upd.FullName.Namespace).
+				Debug("received a status update")
 			uObj, err := suh.Clients.DynamicClient().
 				Resource(upd.Resource).
 				Namespace(upd.FullName.Namespace).Get(context.TODO(), upd.FullName.Name, metav1.GetOptions{})
