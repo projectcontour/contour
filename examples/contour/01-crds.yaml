@@ -473,12 +473,14 @@ spec:
                         description: Timeout after which, if there are no active requests
                           for this route, the connection between Envoy and the backend
                           or Envoy and the external client will be closed. If not
-                          specified, there is no per-route idle timeout.
+                          specified, there is no per-route idle timeout, though a
+                          connection manager-wide stream_idle_timeout default of 5m
+                          still applies.
                         type: string
                       response:
                         description: Timeout for receiving a response from the server
                           after processing a request from client. If not supplied,
-                          the timeout duration is undefined.
+                          Envoy's default value of 15s applies.
                         type: string
                     type: object
                 required:
