@@ -224,9 +224,9 @@ func MatchesIngressClass(o metav1.ObjectMetaAccessor, ic string) bool {
 
 }
 
-// MinProtoVersion returns the TLS protocol version specified by an ingress annotation
+// MinTLSVersion returns the TLS protocol version specified by an ingress annotation
 // or default if non present.
-func MinProtoVersion(version string) envoy_api_v2_auth.TlsParameters_TlsProtocol {
+func MinTLSVersion(version string) envoy_api_v2_auth.TlsParameters_TlsProtocol {
 	switch version {
 	case "1.3":
 		return envoy_api_v2_auth.TlsParameters_TLSv1_3

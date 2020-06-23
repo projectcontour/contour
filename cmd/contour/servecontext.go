@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/k8s"
 
 	"github.com/projectcontour/contour/internal/contour"
@@ -131,6 +132,14 @@ type serveContext struct {
 
 	// Name of the envoy service to inspect for Ingress status details.
 	EnvoyServiceName string `yaml:"envoy-service-name,omitempty"`
+
+	// DefaultHTTPVersions defines the default set of HTTPS
+	// versions the proxy should accept. HTTP versions are
+	// strings of the form "HTTP/xx". Supported versions are
+	// "HTTP/1.1" and "HTTP/2".
+	//
+	// If this field not specified, all supported versions are accepted.
+	DefaultHTTPVersions []string `yaml:"default-http-versions"`
 }
 
 // newServeContext returns a serveContext initialized to defaults.
@@ -321,6 +330,31 @@ func (ctx *serveContext) proxyRootNamespaces() []string {
 		ns = append(ns, strings.TrimSpace(s))
 	}
 	return ns
+}
+
+// parseDefaultHTTPVersions parses a list of supported HTTP versions
+//  (of the form "HTTP/xx") into a slice of unique version constants.
+func parseDefaultHTTPVersions(versions []string) ([]envoy.HTTPVersionType, error) {
+	wanted := map[envoy.HTTPVersionType]struct{}{}
+
+	for _, v := range versions {
+		switch strings.ToLower(v) {
+		case "http/1.1":
+			wanted[envoy.HTTPVersion1] = struct{}{}
+		case "http/2":
+			wanted[envoy.HTTPVersion2] = struct{}{}
+		default:
+			return nil, fmt.Errorf("invalid HTTP protocol version %q", v)
+		}
+	}
+
+	var parsed []envoy.HTTPVersionType
+	for k := range wanted {
+		parsed = append(parsed, k)
+
+	}
+
+	return parsed, nil
 }
 
 // Simple helper function to read an environment or return a default value

@@ -117,7 +117,7 @@ func TestVisitListeners(t *testing.T) {
 								Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 							},
 						},
-						MinProtoVersion: envoy_api_v2_auth.TlsParameters_TLSv1_1,
+						MinTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_1,
 					},
 				),
 			},

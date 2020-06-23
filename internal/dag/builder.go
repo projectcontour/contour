@@ -256,7 +256,7 @@ func (b *Builder) computeSecureVirtualhosts() {
 			for _, host := range tls.Hosts {
 				svhost := b.lookupSecureVirtualHost(host)
 				svhost.Secret = sec
-				svhost.MinProtoVersion = annotation.MinProtoVersion(
+				svhost.MinTLSVersion = annotation.MinTLSVersion(
 					annotation.CompatAnnotation(ing, "tls-minimum-protocol-version"))
 			}
 		}
@@ -399,7 +399,7 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 
 			svhost := b.lookupSecureVirtualHost(host)
 			svhost.Secret = sec
-			svhost.MinProtoVersion = annotation.MinProtoVersion(tls.MinimumProtocolVersion)
+			svhost.MinTLSVersion = annotation.MinTLSVersion(tls.MinimumProtocolVersion)
 
 			// Check if FallbackCertificate && ClientValidation are both enabled in the same vhost
 			if tls.EnableFallbackCertificate && tls.ClientValidation != nil {

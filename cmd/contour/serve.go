@@ -169,25 +169,34 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return err
 	}
 
+	listenerConfig := contour.ListenerVisitorConfig{
+		UseProxyProto:     ctx.useProxyProto,
+		HTTPAddress:       ctx.httpAddr,
+		HTTPPort:          ctx.httpPort,
+		HTTPAccessLog:     ctx.httpAccessLog,
+		HTTPSAddress:      ctx.httpsAddr,
+		HTTPSPort:         ctx.httpsPort,
+		HTTPSAccessLog:    ctx.httpsAccessLog,
+		AccessLogType:     ctx.AccessLogFormat,
+		AccessLogFields:   ctx.AccessLogFields,
+		MinimumTLSVersion: annotation.MinTLSVersion(ctx.TLSConfig.MinimumProtocolVersion),
+		RequestTimeout:    ctx.RequestTimeout,
+	}
+
+	defaultHTTPVersions, err := parseDefaultHTTPVersions(ctx.DefaultHTTPVersions)
+	if err != nil {
+		return fmt.Errorf("failed to configure default HTTP versions: %w", err)
+	}
+
+	listenerConfig.DefaultHTTPVersions = defaultHTTPVersions
+
 	// step 3. build our mammoth Kubernetes event handler.
 	eventHandler := &contour.EventHandler{
 		CacheHandler: &contour.CacheHandler{
-			ListenerVisitorConfig: contour.ListenerVisitorConfig{
-				UseProxyProto:          ctx.useProxyProto,
-				HTTPAddress:            ctx.httpAddr,
-				HTTPPort:               ctx.httpPort,
-				HTTPAccessLog:          ctx.httpAccessLog,
-				HTTPSAddress:           ctx.httpsAddr,
-				HTTPSPort:              ctx.httpsPort,
-				HTTPSAccessLog:         ctx.httpsAccessLog,
-				AccessLogType:          ctx.AccessLogFormat,
-				AccessLogFields:        ctx.AccessLogFields,
-				MinimumProtocolVersion: annotation.MinProtoVersion(ctx.TLSConfig.MinimumProtocolVersion),
-				RequestTimeout:         ctx.RequestTimeout,
-			},
-			ListenerCache: contour.NewListenerCache(ctx.statsAddr, ctx.statsPort),
-			FieldLogger:   log.WithField("context", "CacheHandler"),
-			Metrics:       metrics.NewMetrics(registry),
+			ListenerVisitorConfig: listenerConfig,
+			ListenerCache:         contour.NewListenerCache(ctx.statsAddr, ctx.statsPort),
+			FieldLogger:           log.WithField("context", "CacheHandler"),
+			Metrics:               metrics.NewMetrics(registry),
 		},
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
@@ -205,7 +214,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// Set the fallback certificate if configured.
 	if fallbackCert != nil {
 		log.WithField("context", "fallback-certificate").Infof("enabled fallback certificate with secret: %q", fallbackCert)
-
 		eventHandler.FallbackCertificate = fallbackCert
 	}
 

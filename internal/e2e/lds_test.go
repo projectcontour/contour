@@ -1074,7 +1074,7 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 
 func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
-		reh.CacheHandler.MinimumProtocolVersion = envoy_api_v2_auth.TlsParameters_TLSv1_2
+		reh.CacheHandler.MinimumTLSVersion = envoy_api_v2_auth.TlsParameters_TLSv1_2
 	})
 
 	defer done()
