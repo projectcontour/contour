@@ -645,9 +645,9 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 
 		conds := append(conditions, route.Conditions...)
 
-		// Look for duplicate exact match headers on this route
-		if !headerConditionsAreValid(conds) {
-			sw.SetInvalid("cannot specify duplicate header 'exact match' conditions in the same route")
+		// Look for invalid header conditions on this route
+		if err := headerConditionsValid(conds); err != nil {
+			sw.SetInvalid(err.Error())
 			return nil
 		}
 

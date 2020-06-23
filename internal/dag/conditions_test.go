@@ -317,11 +317,19 @@ func TestPrefixConditionsValid(t *testing.T) {
 func TestValidateHeaderConditions(t *testing.T) {
 	tests := map[string]struct {
 		conditions []projcontour.Condition
-		want       bool
+		wantErr    bool
 	}{
 		"empty condition list": {
 			conditions: nil,
-			want:       true,
+			wantErr:    false,
+		},
+		"prefix only": {
+			conditions: []projcontour.Condition{
+				{
+					Prefix: "/blog",
+				},
+			},
+			wantErr: false,
 		},
 		"valid conditions": {
 			conditions: []projcontour.Condition{
@@ -332,31 +340,7 @@ func TestValidateHeaderConditions(t *testing.T) {
 					},
 				},
 			},
-			want: true,
-		},
-		"invalid conditions": {
-			conditions: []projcontour.Condition{
-				{
-					Header: &projcontour.HeaderCondition{
-						Name:  "x-header",
-						Exact: "abc",
-					},
-				}, {
-					Header: &projcontour.HeaderCondition{
-						Name:  "x-header",
-						Exact: "123",
-					},
-				},
-			},
-			want: false,
-		},
-		"prefix only": {
-			conditions: []projcontour.Condition{
-				{
-					Prefix: "/blog",
-				},
-			},
-			want: true,
+			wantErr: false,
 		},
 		"prefix conditions + valid headers": {
 			conditions: []projcontour.Condition{
@@ -374,14 +358,148 @@ func TestValidateHeaderConditions(t *testing.T) {
 					},
 				},
 			},
-			want: true,
+			wantErr: false,
+		},
+		"multiple 'exact' conditions for the same header are invalid": {
+			conditions: []projcontour.Condition{
+				{
+					Header: &projcontour.HeaderCondition{
+						Name:  "x-header",
+						Exact: "abc",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:  "x-header",
+						Exact: "123",
+					},
+				},
+			},
+			wantErr: true,
+		},
+		"multiple 'exact' conditions for different headers are valid": {
+			conditions: []projcontour.Condition{
+				{
+					Header: &projcontour.HeaderCondition{
+						Name:  "x-header",
+						Exact: "abc",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:  "x-different-header",
+						Exact: "123",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		"'exact' and 'notexact' conditions for the same header with the same value are invalid": {
+			conditions: []projcontour.Condition{
+				{
+					Header: &projcontour.HeaderCondition{
+						Name:  "x-header",
+						Exact: "abc",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-header",
+						NotExact: "abc",
+					},
+				},
+			},
+			wantErr: true,
+		},
+		"'exact' and 'notexact' conditions for the same header with different values are valid": {
+			conditions: []projcontour.Condition{
+				{
+					Header: &projcontour.HeaderCondition{
+						Name:  "x-header",
+						Exact: "abc",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-header",
+						NotExact: "def",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		"'exact' and 'notexact' conditions for different headers with the same value are valid": {
+			conditions: []projcontour.Condition{
+				{
+					Header: &projcontour.HeaderCondition{
+						Name:  "x-header",
+						Exact: "abc",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-another-header",
+						NotExact: "abc",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		"'contains' and 'notcontains' conditions for the same header with the same value are invalid": {
+			conditions: []projcontour.Condition{
+				{
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-header",
+						Contains: "abc",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:        "x-header",
+						NotContains: "abc",
+					},
+				},
+			},
+			wantErr: true,
+		},
+		"'contains' and 'notcontains' conditions for the same header with different values are valid": {
+			conditions: []projcontour.Condition{
+				{
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-header",
+						Contains: "abc",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:        "x-header",
+						NotContains: "def",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		"'contains' and 'notcontains' conditions for different headers with the same value are valid": {
+			conditions: []projcontour.Condition{
+				{
+					Header: &projcontour.HeaderCondition{
+						Name:     "x-header",
+						Contains: "abc",
+					},
+				}, {
+					Header: &projcontour.HeaderCondition{
+						Name:        "x-another-header",
+						NotContains: "abc",
+					},
+				},
+			},
+			wantErr: false,
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := headerConditionsAreValid(tc.conditions)
-			assert.Equal(t, tc.want, got)
+			gotErr := headerConditionsValid(tc.conditions)
+
+			if !tc.wantErr && gotErr != nil {
+				t.Fatalf("Expected no error, got (%v)", gotErr)
+			}
+			if tc.wantErr && gotErr == nil {
+				t.Fatalf("Expected error, got none")
+			}
 		})
 	}
 }

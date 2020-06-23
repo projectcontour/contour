@@ -1403,6 +1403,7 @@ Some examples of invalid configurations that Contour provides statuses for:
 - Root HTTPProxy does not specify fqdn.
 - Multiple prefixes cannot be specified on the same set of route conditions.
 - Multiple header conditions of type "exact match" with the same header key.
+- Contradictory header conditions on a route, e.g. a "contains" and "notcontains" condition for the same header and value.
 
  [1]: https://kubernetes.io/docs/concepts/services-networking/ingress/
  [2]: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
