@@ -673,20 +673,20 @@ In this example, requests to `timeout.bar.com/` will have a response timeout pol
 This refers to the time that spans between the point at which complete client request has been processed by the proxy, and when the response from the server has been completely processed.
 
 - `timeoutPolicy.response` This field can be any positive time period or "infinity".
-The time period of **0s** will also be treated as infinity.
 This timeout covers the time from the *end of the client request* to the *end of the upstream response*.
 By default, Envoy has a 15 second value for this timeout.
 More information can be found in [Envoy's documentation][4].
+Note that a value of **0s** will be treated as if the field were not set, i.e. by using Envoy's default behavior.
 - `timeoutPolicy.idle` This field can be any positive time period or "infinity".
-The time period of **0s** will also be treated as infinity.
 By default, there is no per-route idle timeout.
 Note that the default connection manager idle timeout of 5 minutes will apply if this is not set.
+More information can be found in [Envoy's documentation][6].
+Note that a value of **0s** will be treated as if the field were not set, i.e. by using Envoy's default behavior.
 
 TimeoutPolicy durations are expressed as per the format specified in the [ParseDuration documentation][5].
 Example input values: "300ms", "5s", "1m". Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
 The string 'infinity' is also a valid input and specifies no timeout.
 
-More information can be found in [Envoy's documentation][6]
 - `retryPolicy`: A retry will be attempted if the server returns an error code in the 5xx range, or if the server takes more than `retryPolicy.perTryTimeout` to process a request.
   - `retryPolicy.count` specifies the maximum number of retries allowed. This parameter is optional and defaults to 1.
   - `retryPolicy.perTryTimeout` specifies the timeout per retry. If this field is greater than the request timeout, it is ignored. This parameter is optional.
@@ -1408,11 +1408,12 @@ Some examples of invalid configurations that Contour provides statuses for:
  [1]: https://kubernetes.io/docs/concepts/services-networking/ingress/
  [2]: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
  [3]: {{site.github.repository_url}}/tree/{{page.version}}/examples/example-workload/httpproxy
- [4]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout
+ [4]: https://www.envoyproxy.io/docs/envoy/v1.14.2/api-v2/api/v2/route/route_components.proto#envoy-api-field-route-routeaction-timeout
  [5]: https://godoc.org/time#ParseDuration
- [6]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-idle-timeout
- [7]: https://www.envoyproxy.io/docs/envoy/v1.11.2/intro/arch_overview/upstream/load_balancing/overview
+ [6]: https://www.envoyproxy.io/docs/envoy/v1.14.2/api-v2/api/v2/route/route_components.proto#envoy-api-field-route-routeaction-idle-timeout
+ [7]: https://www.envoyproxy.io/docs/envoy/v1.14.2/intro/arch_overview/upstream/load_balancing/overview
  [8]: #conditions
  [9]: {% link docs/master/annotations.md %}
  [10]: /docs/{{site.latest}}/api/#projectcontour.io/v1.Service
  [11]: configuration.md#fallback-certificate
+
