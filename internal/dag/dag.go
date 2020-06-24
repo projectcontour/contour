@@ -222,6 +222,11 @@ func (r *Route) Visit(f func(Vertex)) {
 	for _, c := range r.Clusters {
 		f(c)
 	}
+	// Allow any mirror clusters to also be visited so that
+	// they are also added to CDS.
+	if r.MirrorPolicy != nil && r.MirrorPolicy.Cluster != nil {
+		f(r.MirrorPolicy.Cluster)
+	}
 }
 
 // A VirtualHost represents a named L4/L7 service.
