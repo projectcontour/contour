@@ -1690,7 +1690,8 @@ be applied which handles all requests which don&rsquo;t match the SNI defined in
 <p>TimeoutPolicy configures timeouts that are used for handling network requests.</p>
 <p>TimeoutPolicy durations are expressed in the Go <a href="https://godoc.org/time#ParseDuration">Duration format</a>.
 Valid time units are &ldquo;ns&rdquo;, &ldquo;us&rdquo; (or &ldquo;µs&rdquo;), &ldquo;ms&rdquo;, &ldquo;s&rdquo;, &ldquo;m&rdquo;, &ldquo;h&rdquo;.
-The string &ldquo;infinity&rdquo; is also a valid input and specifies no timeout.</p>
+The string &ldquo;infinity&rdquo; is also a valid input and specifies no timeout.
+A value of &ldquo;0s&rdquo; will be treated as if the field were not set, i.e. by using Envoy&rsquo;s default behavior.</p>
 <p>Example input values: &ldquo;300ms&rdquo;, &ldquo;5s&rdquo;, &ldquo;1m&rdquo;.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
@@ -1712,7 +1713,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>Timeout for receiving a response from the server after processing a request from client.
-If not supplied, the timeout duration is undefined.</p>
+If not supplied, Envoy&rsquo;s default value of 15s applies.</p>
 </td>
 </tr>
 <tr>
@@ -1727,7 +1728,8 @@ string
 <em>(Optional)</em>
 <p>Timeout after which, if there are no active requests for this route, the connection between
 Envoy and the backend or Envoy and the external client will be closed.
-If not specified, there is no per-route idle timeout.</p>
+If not specified, there is no per-route idle timeout, though a connection manager-wide
+stream_idle_timeout default of 5m still applies.</p>
 </td>
 </tr>
 </tbody>

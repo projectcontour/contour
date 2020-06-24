@@ -297,17 +297,19 @@ type TCPHealthCheckPolicy struct {
 // TimeoutPolicy durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
 // Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
 // The string "infinity" is also a valid input and specifies no timeout.
+// A value of "0s" will be treated as if the field were not set, i.e. by using Envoy's default behavior.
 //
 // Example input values: "300ms", "5s", "1m".
 type TimeoutPolicy struct {
 	// Timeout for receiving a response from the server after processing a request from client.
-	// If not supplied, the timeout duration is undefined.
+	// If not supplied, Envoy's default value of 15s applies.
 	// +optional
 	Response string `json:"response,omitempty"`
 
 	// Timeout after which, if there are no active requests for this route, the connection between
 	// Envoy and the backend or Envoy and the external client will be closed.
-	// If not specified, there is no per-route idle timeout.
+	// If not specified, there is no per-route idle timeout, though a connection manager-wide
+	// stream_idle_timeout default of 5m still applies.
 	// +optional
 	Idle string `json:"idle,omitempty"`
 }
