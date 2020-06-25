@@ -15,4 +15,6 @@ htmlproofer ./_site \
     --empty-alt-ignore \
     --assume-extension \
     --allow-missing-href \
-    --allow-hash-href
+    --allow-hash-href \
+    --http-status-ignore 429 \
+    --url-ignore /www.haproxy.org/ # gives false positive timeouts
