@@ -557,7 +557,8 @@ func TestMatchIngressClass(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			cases := []string{"", DEFAULT_INGRESS_CLASS}
 			for i := 0; i < len(cases); i++ {
-				got := MatchesIngressClass(tc.fixture, cases[i])
+				_, ic := IngressClass(tc.fixture.GetObjectMeta().GetAnnotations())
+				got := MatchesIngressClass(ic, cases[i])
 				if tc.want[i] != got {
 					t.Errorf("matching %v against ingress class %q: expected %v, got %v", tc.fixture, cases[i], tc.want[i], got)
 				}

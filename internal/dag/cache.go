@@ -41,6 +41,7 @@ type KubernetesCache struct {
 	IngressClass string
 
 	ingresses            map[types.NamespacedName]*v1beta1.Ingress
+	ingressclasses       map[string]*v1beta1.IngressClass
 	httpproxies          map[types.NamespacedName]*projectcontour.HTTPProxy
 	secrets              map[types.NamespacedName]*v1.Secret
 	httpproxydelegations map[types.NamespacedName]*projectcontour.TLSCertificateDelegation
@@ -59,6 +60,7 @@ type KubernetesCache struct {
 // init creates the internal cache storage. It is called implicitly from the public API.
 func (kc *KubernetesCache) init() {
 	kc.ingresses = make(map[types.NamespacedName]*v1beta1.Ingress)
+	kc.ingressclasses = make(map[string]*v1beta1.IngressClass)
 	kc.httpproxies = make(map[types.NamespacedName]*projectcontour.HTTPProxy)
 	kc.secrets = make(map[types.NamespacedName]*v1.Secret)
 	kc.httpproxydelegations = make(map[types.NamespacedName]*projectcontour.TLSCertificateDelegation)
@@ -70,24 +72,40 @@ func (kc *KubernetesCache) init() {
 	kc.extensions = make(map[types.NamespacedName]*projectcontourv1alpha1.ExtensionService)
 }
 
+// Ingresses returns a set of valid Ingress objects that match proper
+// ingress class logic via annotations or IngressClasses.
+func (kc *KubernetesCache) Ingresses() []*v1beta1.Ingress {
+	ings := make([]*v1beta1.Ingress, 0, len(kc.ingresses))
+	for _, ing := range kc.ingresses {
+		if kc.matchesIngressClass(ing.Annotations, ing.Spec.IngressClassName) {
+			ings = append(ings, ing)
+		}
+	}
+	return ings
+}
+
 // matchesIngressClass returns true if the given Kubernetes object
 // belongs to the Ingress class that this cache is using.
-func (kc *KubernetesCache) matchesIngressClass(obj k8s.Object) bool {
+func (kc *KubernetesCache) matchesIngressClass(annotations map[string]string, ingressClassName *string) bool {
 
-	if !annotation.MatchesIngressClass(obj, kc.IngressClass) {
-		kind := k8s.KindOf(obj)
-		om := obj.GetObjectMeta()
+	// Check if the object has an annotation and that the annotation was found.
+	if found, classAnnotation := annotation.IngressClass(annotations); found {
+		return annotation.MatchesIngressClass(classAnnotation, kc.IngressClass)
+	}
 
-		kc.WithField("name", om.GetName()).
-			WithField("namespace", om.GetNamespace()).
-			WithField("kind", kind).
-			WithField("ingress.class", annotation.IngressClass(obj)).
-			Debug("ignoring object with unmatched ingress class")
+	if ingressClassName != nil {
+		// Check if this class matches a existing IngressClass.
+		_, ok := kc.ingressclasses[*ingressClassName]
+		return ok
+	}
+
+	// If no annotations are supplied or ingressClassNames, then verify if ingressClass is configured.
+	if kc.IngressClass != annotation.DEFAULT_INGRESS_CLASS && kc.IngressClass != "" {
 		return false
 	}
 
+	// No annotations found, ingress classes, or configured ingressclass so object is then valid.
 	return true
-
 }
 
 // Insert inserts obj into the KubernetesCache.
@@ -139,13 +157,39 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	case *v1.Service:
 		kc.services[k8s.NamespacedNameOf(obj)] = obj
 		return kc.serviceTriggersRebuild(obj)
-	case *v1beta1.Ingress:
-		if kc.matchesIngressClass(obj) {
-			kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
+	case *v1beta1.IngressClass:
+		// Match only ingress classes that Contour should be able to own.
+		if obj.Spec.Controller == "projectcontour.io/ingress-controller" {
+			kc.ingressclasses[obj.Name] = obj
 			return true
 		}
+	case *v1beta1.Ingress:
+		matches := kc.matchesIngressClass(obj.Annotations, obj.Spec.IngressClassName)
+		kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
+
+		if matches {
+			return true
+		}
+
+		kind := k8s.KindOf(obj)
+		om := obj.GetObjectMeta()
+
+		ic := func() string {
+			if found, a := annotation.IngressClass(obj.Annotations); found {
+				return a
+			}
+			if obj.Spec.IngressClassName != nil {
+				return *obj.Spec.IngressClassName
+			}
+			return ""
+		}
+		kc.WithField("name", om.GetName()).
+			WithField("namespace", om.GetNamespace()).
+			WithField("kind", kind).
+			WithField("ingress-class", ic).
+			Debug("ignoring object with unmatched ingress class")
 	case *projectcontour.HTTPProxy:
-		if kc.matchesIngressClass(obj) {
+		if kc.matchesIngressClass(obj.Annotations, nil) {
 			kc.httpproxies[k8s.NamespacedNameOf(obj)] = obj
 			return true
 		}
@@ -217,6 +261,10 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.services[m]
 		delete(kc.services, m)
+		return ok
+	case *v1beta1.IngressClass:
+		_, ok := kc.ingressclasses[obj.Name]
+		delete(kc.ingressclasses, obj.Name)
 		return ok
 	case *v1beta1.Ingress:
 		m := k8s.NamespacedNameOf(obj)

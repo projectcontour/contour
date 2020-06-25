@@ -258,6 +258,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 	}
 
+	// Check if the resource exists in the API server before setting up the informer.
+	if !clients.ResourceExists(k8s.IngressClassResources()...) {
+		log.WithField("InformOnResources", "Ingressclass Resources").Warnf("resources %v not found in api server", k8s.IngressClassResources())
+	} else {
+		informerSyncList.InformOnResources(clusterInformerFactory, dynamicHandler, k8s.IngressClassResources()...)
+	}
+
 	// TODO(youngnick): Move this logic out to internal/k8s/informers.go somehow.
 	// Add informers for each root namespace
 	for _, factory := range namespacedInformerFactories {

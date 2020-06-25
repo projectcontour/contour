@@ -231,7 +231,7 @@ func (b *Builder) validHTTPProxies() []*projcontour.HTTPProxy {
 // computeSecureVirtualhosts populates tls parameters of
 // secure virtual hosts.
 func (b *Builder) computeSecureVirtualhosts() {
-	for _, ing := range b.Source.ingresses {
+	for _, ing := range b.Source.Ingresses() {
 		for _, tls := range ing.Spec.TLS {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(ing.GetNamespace()))
 			sec, err := b.lookupSecret(secretName, validSecret)
@@ -299,7 +299,7 @@ func (b *Builder) delegationPermitted(secret types.NamespacedName, to string) bo
 
 func (b *Builder) computeIngresses() {
 	// deconstruct each ingress into routes and virtualhost entries
-	for _, ing := range b.Source.ingresses {
+	for _, ing := range b.Source.Ingresses() {
 
 		// rewrite the default ingress to a stock ingress rule.
 		rules := rulesFromSpec(ing.Spec)

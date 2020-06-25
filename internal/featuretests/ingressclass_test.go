@@ -14,7 +14,10 @@
 package featuretests
 
 import (
+	"fmt"
 	"testing"
+
+	utils "k8s.io/utils/pointer"
 
 	"github.com/projectcontour/contour/internal/fixture"
 
@@ -134,6 +137,84 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		// --- insert valid ingress object
 		rh.OnAdd(ingressValid)
 
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
+				),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- ingress class name specified, no ingressclass
+		ingressClassName := &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressName,
+				Namespace: Namespace,
+			},
+			Spec: v1beta1.IngressSpec{
+				IngressClassName: utils.StringPtr("simple"),
+				Backend:          backend(svc),
+			},
+		}
+
+		rh.OnUpdate(ingressValid, ingressClassName)
+
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+
+		// insert ingress class
+		ingressClass := &v1beta1.IngressClass{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "simple",
+			},
+			Spec: v1beta1.IngressClassSpec{
+				Controller: "projectcontour.io/ingress-controller",
+			},
+		}
+
+		rh.OnAdd(ingressClass)
+
+		// assert now that since ingressclass object exists, the previously invalid
+		// ingress object is now valid
+		c.Request(routeType).Equals(&v2.DiscoveryResponse{
+			Resources: resources(t,
+				envoy.RouteConfiguration("ingress_http",
+					envoy.VirtualHost("*",
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
+				),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- ingress class name specified, no ingressclass
+		ingressClassNameNew := &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%s-new", IngressName),
+				Namespace: Namespace,
+			},
+			Spec: v1beta1.IngressSpec{
+				IngressClassName: utils.StringPtr("bogus"),
+				Backend:          backend(svc),
+			},
+		}
+
+		rh.OnAdd(ingressClassNameNew)
+
+		// assert now that new ingress is not processed since it's invalid
 		c.Request(routeType).Equals(&v2.DiscoveryResponse{
 			Resources: resources(t,
 				envoy.RouteConfiguration("ingress_http",

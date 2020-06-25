@@ -66,11 +66,13 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		return
 	}
 
-	if !annotation.MatchesIngressClass(typed, s.IngressClass) {
+	// check if the object has an annotation, which take precedence over spec.ingressclass
+	_, classAnnotation := annotation.IngressClass(typed.GetObjectMeta().GetAnnotations())
+	if !annotation.MatchesIngressClass(classAnnotation, s.IngressClass) {
 		s.Logger.
 			WithField("name", typed.GetObjectMeta().GetName()).
 			WithField("namespace", typed.GetObjectMeta().GetNamespace()).
-			WithField("ingress-class", annotation.IngressClass(typed)).
+			WithField("ingress-class", classAnnotation).
 			WithField("defined-ingress-class", s.IngressClass).
 			WithField("kind", kind).
 			Debug("unmatched ingress class, skipping status address update")
@@ -80,7 +82,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 	s.Logger.
 		WithField("name", typed.GetObjectMeta().GetName()).
 		WithField("namespace", typed.GetObjectMeta().GetNamespace()).
-		WithField("ingress-class", annotation.IngressClass(typed)).
+		WithField("ingress-class", classAnnotation).
 		WithField("kind", kind).
 		WithField("defined-ingress-class", s.IngressClass).
 		Debug("received an object, sending status address update")

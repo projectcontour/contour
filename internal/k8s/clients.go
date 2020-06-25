@@ -17,9 +17,7 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
-
 	"k8s.io/client-go/discovery"
-
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes"
@@ -42,7 +40,6 @@ type Clients struct {
 func NewClients(kubeconfig string, inCluster bool) (*Clients, error) {
 	config, err := newRestConfig(kubeconfig, inCluster)
 	if err != nil {
-
 		return nil, err
 	}
 

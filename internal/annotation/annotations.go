@@ -187,29 +187,28 @@ func PerTryTimeout(i *v1beta1.Ingress) timeout.Setting {
 }
 
 // IngressClass returns the first matching ingress class for the following
-// annotations:
+// annotations as well as returning a boolean value if an annotation was found
+// and not just hitting the default case:
 // 1. projectcontour.io/ingress.class
 // 2. contour.heptio.com/ingress.class
 // 3. kubernetes.io/ingress.class
-func IngressClass(o metav1.ObjectMetaAccessor) string {
-	a := o.GetObjectMeta().GetAnnotations()
-	if class, ok := a["projectcontour.io/ingress.class"]; ok {
-		return class
+func IngressClass(annotations map[string]string) (bool, string) {
+	if class, ok := annotations["projectcontour.io/ingress.class"]; ok {
+		return true, class
 	}
-	if class, ok := a["contour.heptio.com/ingress.class"]; ok {
-		return class
+	if class, ok := annotations["contour.heptio.com/ingress.class"]; ok {
+		return true, class
 	}
-	if class, ok := a["kubernetes.io/ingress.class"]; ok {
-		return class
+	if class, ok := annotations["kubernetes.io/ingress.class"]; ok {
+		return true, class
 	}
-	return ""
+	return false, ""
 }
 
 // MatchesIngressClass checks that the passed object has an ingress class that matches
 // either the passed ingress-class string, or DEFAULT_INGRESS_CLASS if it's empty.
-func MatchesIngressClass(o metav1.ObjectMetaAccessor, ic string) bool {
-
-	switch IngressClass(o) {
+func MatchesIngressClass(objectClass, ic string) bool {
+	switch objectClass {
 	case ic:
 		// Handles ic == "" and ic == "custom".
 		return true

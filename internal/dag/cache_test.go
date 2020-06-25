@@ -24,14 +24,16 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utils "k8s.io/utils/pointer"
 	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
 )
 
 func TestKubernetesCacheInsert(t *testing.T) {
 	tests := map[string]struct {
-		pre  []interface{}
-		obj  interface{}
-		want bool
+		pre          []interface{}
+		obj          interface{}
+		ingressClass string
+		want         bool
 	}{
 		"insert secret": {
 			obj: &v1.Secret{
@@ -405,6 +407,28 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
+		"insert ingress class not controlled by contour": {
+			obj: &v1beta1.IngressClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "notcontour",
+				},
+				Spec: v1beta1.IngressClassSpec{
+					Controller: "anothercontroller/ingress-controller",
+				},
+			},
+			want: false,
+		},
+		"insert valid ingress class": {
+			obj: &v1beta1.IngressClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "contour",
+				},
+				Spec: v1beta1.IngressClassSpec{
+					Controller: "projectcontour.io/ingress-controller",
+				},
+			},
+			want: true,
+		},
 		"insert ingress empty ingress class": {
 			obj: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
@@ -413,6 +437,99 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				},
 			},
 			want: true,
+		},
+		"insert valid ingress class name": {
+			pre: []interface{}{
+				&v1beta1.IngressClass{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "simple",
+					},
+					Spec: v1beta1.IngressClassSpec{
+						Controller: "projectcontour.io/ingress-controller",
+					},
+				},
+			},
+			obj: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "incorrect",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					IngressClassName: utils.StringPtr("simple"),
+				},
+			},
+			want: true,
+		},
+		"insert valid ingress class name matching annotation": {
+			pre: []interface{}{
+				&v1beta1.IngressClass{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "simple",
+					},
+					Spec: v1beta1.IngressClassSpec{
+						Controller: "projectcontour.io/ingress-controller",
+					},
+				},
+			},
+			obj: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "incorrect",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": "custom",
+					},
+				},
+				Spec: v1beta1.IngressSpec{
+					IngressClassName: utils.StringPtr("simple"),
+				},
+			},
+			ingressClass: "custom",
+			want:         true,
+		},
+		"insert non-matching ingress class name": {
+			pre: []interface{}{
+				&v1beta1.IngressClass{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "simple",
+					},
+					Spec: v1beta1.IngressClassSpec{
+						Controller: "projectcontour.io/ingress-controller",
+					},
+				},
+			},
+			obj: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "incorrect",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					IngressClassName: utils.StringPtr("custom"),
+				},
+			},
+			want: false,
+		},
+		"insert matching ingress class name, but with different ingressClass flag specified": {
+			pre: []interface{}{
+				&v1beta1.IngressClass{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "simple",
+					},
+					Spec: v1beta1.IngressClassSpec{
+						Controller: "projectcontour.io/ingress-controller",
+					},
+				},
+			},
+			obj: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "incorrect",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					IngressClassName: utils.StringPtr("simple"),
+				},
+			},
+			ingressClass: "custom",
+			want:         true,
 		},
 		"insert ingress incorrect kubernetes.io/ingress.class": {
 			obj: &v1beta1.Ingress{
@@ -737,7 +854,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			cache := KubernetesCache{
-				FieldLogger: testLogger(t),
+				IngressClass: tc.ingressClass,
+				FieldLogger:  testLogger(t),
 			}
 			for _, p := range tc.pre {
 				cache.Insert(p)
@@ -817,26 +935,24 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			},
 			want: true,
 		},
-		"remove ingress incorrect ingressclass": {
-			cache: cache(&v1beta1.Ingress{
+		"remove ingressclass": {
+			cache: cache(&v1beta1.IngressClass{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "ingress",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": "nginx",
-					},
+					Name: "ingressclass",
+				},
+				Spec: v1beta1.IngressClassSpec{
+					Controller: "projectcontour.io/ingress-controller",
 				},
 			}),
-			obj: &v1beta1.Ingress{
+			obj: &v1beta1.IngressClass{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "ingress",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": "nginx",
-					},
+					Name: "ingressclass",
+				},
+				Spec: v1beta1.IngressClassSpec{
+					Controller: "projectcontour.io/ingress-controller",
 				},
 			},
-			want: false,
+			want: true,
 		},
 		"remove httpproxy": {
 			cache: cache(&projcontour.HTTPProxy{

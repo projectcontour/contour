@@ -76,3 +76,12 @@ func ServicesResources() []schema.GroupVersionResource {
 		corev1.SchemeGroupVersion.WithResource("services"),
 	}
 }
+
+// +kubebuilder:rbac:groups="networking.k8s.io",resources=ingressclasses,verbs=get;list;watch
+
+// IngressClassResources returns the GroupVersionResource for v1beta1.IngressClasses
+func IngressClassResources() []schema.GroupVersionResource {
+	return []schema.GroupVersionResource{
+		v1beta1.SchemeGroupVersion.WithResource("ingressclasses"),
+	}
+}
