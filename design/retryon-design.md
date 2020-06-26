@@ -24,8 +24,6 @@ Thus, this proposal suggests a way to expose the conditions for retrying a reque
 It is designed to be applicable to the specific problem above while also meeting the needs of others who may wish to control the conditions of their retries.
 It also tries to avoid exposing too broad a set of configuration options for retries.
 
-Because each `HTTPProxy` creates unique routes in Envoy, the retry policies specified therein will exist and operate independently of each other without conflict, allowing thousands of these policies to coexist without conflict.
-
 ## Goals
 
 - Offer a general but limited solution to configurable conditions for retries
@@ -177,7 +175,17 @@ Unfortunately this may result in multiple `HTTPProxy` manifests sharing the same
 
 ## Security Considerations
 
-This proposal should introduce no security issues.
+### Multiple retry policies at scale
+
+With tens of hundreds of `HTTPProxy` manifests, each with their own retry policy, it's important to consider the impact that many defined retry policies will have at scale.
+
+One concern is the possibility that retry policies might conflict with one another.
+This is a non-issue, as each `HTTPProxy` creates unique routes in Envoy, and the retry policies specified therein will exist and operate independently of each other without conflict, allowing thousands of these policies to coexist without conflict.
+
+Another concern is the impact that many retry policies can have on the performance of Envoy -- can many retries negatively impact Envoy's performance?
+Fortunately, Envoy uses circuit breakers which limit the potential for negative performance from an increase in requests.
+In Envoy access logs, requests that breach a circuit breaker include the response flag `UO`.
+You'll see this response flag show up for requests that were the result of a retry policy, thus Envoy also applies circuit breakers to retry policies.
 
 ## Compatibility
 
