@@ -27,4 +27,21 @@ The HTTPProxy custom resource is an attempt to solve these issues with an API th
 More importantly, the HTTPProxy CRD is designed with inclusion in mind, a feature that enables administrators to configure top-level ingress settings (for example, which virtual hosts are available to each team), while delegating the lower-level configuration (for example, the mapping between paths and backend services) to each development team.
 More information about the HTTPProxy API can be found [in the HTTPProxy documentation][1].
 
+# Q: When I load my site in Safari, it shows me an empty page. Developer tools show that the HTTP response was 421. Why does this happen?
+
+The HTTP/2 specification allows user agents (browsers) to re-use TLS sessions to different hostnames as long as they share an IP address and a TLS server certificate (see [RFC 7540](https://tools.ietf.org/html/rfc7540#section-9.1.1)).
+Sharing a TLS certificate typically uses a wildcard certificate, or a certificate containing multiple alternate names.
+If this kind of session reuse is not supported by the server, it sends a "421 Misdirected Request", and the user agent may retry the request with a new TLS session.
+Although Chrome and Firefox correctly retry 421 responses, Safari does not, and simply displays the 421 response body.
+
+Contour programs Envoy with a tight binding between TLS server names and HTTP virtual host routing tables.
+This is done for security reasons, so that TLS protocol configuration guarantees can be made for virtual hosts, TLS client authentication can be correctly enforced, and security auditing can be applied consistently across protocol layers.
+
+The best workaround for this Safari issue is to avoid the use of wildcard certificates.
+[cert-manager](https://cert-manager.io) can automatically issue TLS certificates for Ingress and HTTPProxy resources (see the [configuration guide][2]).
+If wildcard certificates cannot be avoided, the other workaround is to disable HTTP/2 support which will prevent inappropriate TLS session re-use.
+HTTP/2 support can be disabled by setting the `default-http-versions` field in the Contour [configuration file][3].
+
 [1]: /docs/{{site.latest}}/httpproxy
+[2]: {% link _guides/cert-manager.md %}
+[3]: /docs/{{site.latest}}/configuration
