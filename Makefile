@@ -151,7 +151,7 @@ lint-golint:
 .PHONY: check-yamllint
 lint-yamllint:
 	@echo Running YAML linter ...
-	@docker run --rm -ti -v $(CURDIR):/workdir giantswarm/yamllint examples/ site/examples/
+	@./hack/yamllint examples/ site/examples/
 
 # Check that CLI flags are formatted consistently. We are checking
 # for calls to Kingping Flags() and Command() APIs where the 2nd
