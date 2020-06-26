@@ -147,6 +147,7 @@ Arguments for this approach:
 Arguments against this approach:
 
 - Contour becomes responsible for keeping track of and maintaining every possible value for Envoy's `retry_on` field
+- Seems too verbose compared to a list of strings, but this may be a subjective opinion
 
 ## Security Considerations
 
