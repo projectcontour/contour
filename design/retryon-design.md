@@ -32,6 +32,7 @@ It also tries to avoid exposing too broad a set of configuration options for ret
 ## Non Goals
 
 - Support all configurable conditions of an Envoy retry policy
+- Support global retry policy that apply to all proxies, with the potential to override per `HTTPProxy` manifest
 
 ## High-Level Design
 
@@ -156,6 +157,21 @@ Arguments against this approach:
 
 - Contour becomes responsible for keeping track of and maintaining every possible value for Envoy's `retry_on` field
 - Seems too verbose compared to a list of strings, but this may be a subjective opinion
+
+### Global retry configuration for all proxies
+
+Instead of configuring retry policies per `HTTPProxy`, we could allow configuration of a global retry policy that applies to all proxies.
+This would solve the author's issue of mitigating upstream connect errors during rollouts without having to configure all `HTTPProxy` manifests with the same retry policy.
+
+Taking this approach would require consideration around how retry policies defined in `HTTPProxy` would consolidate with a global retry policy:
+
+- Would the proxy-specific retry policy override or somehow merge with the global retry policy?
+  (For example, the `RetryOn` field could be a good candidate for merging elements.)
+- Would certain fields of the retry policy override, while others merge?
+
+The desired behavior here does not seem clear cut enough to apply to all use cases for retry policies, therefore it seems more reasonable to forego global retry policies for the time being until the point if/when a standard or common use case becomes clear.
+
+Unfortunately this may result in multiple `HTTPProxy` manifests sharing the same retry policy. However, existing tools such as Helm are well equipped to manage and this type of repetition.
 
 ## Security Considerations
 
