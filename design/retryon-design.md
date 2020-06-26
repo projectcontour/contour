@@ -3,29 +3,40 @@
 Status: Draft
 
 ## Abstract
-When specifying a `retryPolicy` in an `HTTPProxy`, Envoy is configured to retry all 5xx status codes. This proposal seeks to add fields to the `RetryPolicy` that give the user the ability to specify the conditions under which a retry should occur (e.g. certain status codes).
+
+When specifying a `retryPolicy` in an `HTTPProxy`, Envoy is configured to retry all 5xx status codes.
+This proposal seeks to add fields to the `RetryPolicy` that give the user the ability to specify the conditions under which a retry should occur (e.g. certain status codes).
 
 ## Background
-When Kubernetes registers and deregisters Pods to receive network traffic, it takes Contour a non-zero amount of time (less than a second) to update the upstreams in Envoy. For services with a high number of requests per second (RPS), this can result in a handful of 503s during this period.
 
-At present, users can specify a `retryPolicy` in their `HTTPProxy` that will retry all 5xx status codes. When configured properly (i.e. with an appropriate number of retries and time between retries) this mitigates the delay of Contour updating Envoy upstreams. However, retrying all 5xx is heavy handed when one only wants to retry upstream connection errors.
+When Kubernetes registers and deregisters Pods to receive network traffic, it takes Contour a non-zero amount of time (less than a second) to update the upstreams in Envoy.
+For services with a high number of requests per second (RPS), this can result in a handful of 503s during this period.
+
+At present, users can specify a `retryPolicy` in their `HTTPProxy` that will retry all 5xx status codes.
+When configured properly (i.e. with an appropriate number of retries and time between retries) this mitigates the delay of Contour updating Envoy upstreams.
+However, retrying all 5xx is heavy handed when one only wants to retry upstream connection errors.
 
 One could simply add an option to the `retryPolicy` that tells Envoy to retry upstream connection errors, but this seems too specific to the problem described above.
 
 One could also expose all the conditional options of retries in Envoy, but this seems too broad a solution, may complicate the `HTTPProxy` spec too much, and may enable users to do more than is reasonable.
 
-Thus, this proposal suggests a way to expose the conditions for retrying a request in a general but limited fashion. It is designed to be applicable to the specific problem above while also meeting the needs of others who may wish to control the conditions of their retries. It also tries to avoid exposing too broad a set of configuration options for retries.
+Thus, this proposal suggests a way to expose the conditions for retrying a request in a general but limited fashion.
+It is designed to be applicable to the specific problem above while also meeting the needs of others who may wish to control the conditions of their retries.
+It also tries to avoid exposing too broad a set of configuration options for retries.
 
 ## Goals
+
 - Offer a general but limited solution to configurable conditions for retries
 - In doing so, solve the particular problem of 503s when Kubernetes endpoints and Envoy upstreams are out of sync (e.g. during the rollout of a Deployment)
 
 ## Non Goals
+
 - Support all configurable conditions of an Envoy retry policy
 
-
 ## High-Level Design
-This proposal would add two new fields to the `retryPolicy` -- `retryOn` and `retriableStatusCodes`. These fields would map to the `retry_on` and `retriable_status_codes` fields of the [Envoy v2 `route.RetryPolicy`](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-retrypolicy), respectively.
+
+This proposal would add two new fields to the `retryPolicy` -- `retryOn` and `retriableStatusCodes`.
+These fields would map to the `retry_on` and `retriable_status_codes` fields of the [Envoy v2 `route.RetryPolicy`](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-retrypolicy), respectively.
 
 Below is an example YAML of what this would look like, as an extension of the existing example of a `retryPolicy` from the [`HTTPProxy` reference](https://projectcontour.io/docs/master/httpproxy/#response-timeout):
 
@@ -39,20 +50,20 @@ spec:
   virtualhost:
     fqdn: timeout.bar.com
   routes:
-  - timeoutPolicy:
-      response: 1s
-      idle: 10s
-    retryPolicy:
-      count: 3
-      perTryTimeout: 150ms
-      retryOn:
-      - connect-failure
-      retriableStatusCodes:
-      - 503
-      - 504
-    services:
-    - name: s1
-      port: 80
+    - timeoutPolicy:
+        response: 1s
+        idle: 10s
+      retryPolicy:
+        count: 3
+        perTryTimeout: 150ms
+        retryOn:
+          - connect-failure
+        retriableStatusCodes:
+          - 503
+          - 504
+      services:
+        - name: s1
+          port: 80
 ```
 
 In the above example, a request would be retried on the following conditions:
@@ -93,13 +104,14 @@ No further changes should be necessary to propagate these new configurable field
 
 ### Exposing a single option for retrying only connection upstream errors
 
-As discussed earlier, we could expose a single option for only retrying connection upstream errors. Example:
+As discussed earlier, we could expose a single option for only retrying connection upstream errors.
+Example:
 
 ```yaml
-    retryPolicy:
-      count: 3
-      perTryTimeout: 150ms
-      retryOnConnectFailure: true
+retryPolicy:
+  count: 3
+  perTryTimeout: 150ms
+  retryOnConnectFailure: true
 ```
 
 Arguments for this approach:
@@ -113,7 +125,8 @@ Arguments against this approach:
 
 ### Explicit booleans for every valid `retry_on` value for Envoy
 
-Instead of a list of strings for `retryOn`, we could make every possible value a unique boolean field. Example:
+Instead of a list of strings for `retryOn`, we could make every possible value a unique boolean field.
+Example:
 
 ```yaml
     retryPolicy:
@@ -136,12 +149,15 @@ Arguments against this approach:
 - Contour becomes responsible for keeping track of and maintaining every possible value for Envoy's `retry_on` field
 
 ## Security Considerations
+
 This proposal should introduce no security issues.
 
 ## Compatibility
+
 The new fields of the `retryPolicy` -- `retryOn` and `retriableStatusCodes` -- are both optional, so existing `HTTPProxy` manifests will be syntactically compatible.
 
 Furthermore, a nil or empty value for `retryOn` will result in a default value that is backwards compatible with Contour's existing logic: retrying all 5xx status codes.
 
 ## Open Issues
+
 - https://github.com/projectcontour/contour/issues/2369
