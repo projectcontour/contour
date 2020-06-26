@@ -129,6 +129,7 @@ type httpConnectionManagerBuilder struct {
 	metricsPrefix   string
 	accessLoggers   []*accesslog.AccessLog
 	requestTimeout  time.Duration
+	idleTimeout     time.Duration
 	filters         []*http.HttpFilter
 	codec           HTTPVersionType // Note the zero value is AUTO, which is the default we want.
 }
@@ -169,6 +170,13 @@ func (b *httpConnectionManagerBuilder) RequestTimeout(timeout time.Duration) *ht
 	return b
 }
 
+// IdleTimeout sets the idle timeout on the connection
+// manager. If not specified or set to 0, this timeout is disabled.
+func (b *httpConnectionManagerBuilder) IdleTimeout(timeout time.Duration) *httpConnectionManagerBuilder {
+	b.idleTimeout = timeout
+	return b
+}
+
 func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBuilder {
 	b.filters = append(b.filters,
 		&http.HttpFilter{
@@ -205,10 +213,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 		},
 		HttpFilters: b.filters,
 		CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
-			// Sets the idle timeout for HTTP connections to 60 seconds.
-			// This is chosen as a rough default to stop idle connections wasting resources,
-			// without stopping slow connections from being terminated too quickly.
-			IdleTimeout: protobuf.Duration(60 * time.Second),
+			IdleTimeout: protobuf.Duration(b.idleTimeout),
 		},
 		HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
 			// Enable support for HTTP/1.0 requests that carry

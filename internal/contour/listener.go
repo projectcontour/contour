@@ -97,6 +97,10 @@ type ListenerVisitorConfig struct {
 
 	// RequestTimeout configures the request_timeout for all Connection Managers.
 	RequestTimeout time.Duration
+
+	// IdleTimeout configures the common_http_protocol_options.idle_timeout for all
+	// Connection Managers.
+	IdleTimeout time.Duration
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
@@ -195,11 +199,22 @@ func (lvc *ListenerVisitorConfig) newSecureAccessLog() []*envoy_api_v2_accesslog
 // >0 duration - the timeout.
 // The value may be unset, but we always set it to 0.
 func (lvc *ListenerVisitorConfig) requestTimeout() time.Duration {
-
 	if lvc.RequestTimeout < 0 {
 		return 0
 	}
 	return lvc.RequestTimeout
+}
+
+// idleTimeout sets any durations in lvc.IdleTimeout <0 to 0 so that Envoy ends up with a positive duration.
+// for the idle_timeout value we are passing, there are only two valid values:
+// 0 - disabled
+// >0 duration - the timeout.
+// The value may be unset, but we always set it to 0.
+func (lvc *ListenerVisitorConfig) idleTimeout() time.Duration {
+	if lvc.IdleTimeout < 0 {
+		return 0
+	}
+	return lvc.IdleTimeout
 }
 
 // minTLSVersion returns the requested minimum TLS protocol
@@ -311,6 +326,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 			MetricsPrefix(ENVOY_HTTP_LISTENER).
 			AccessLoggers(lvc.newInsecureAccessLog()).
 			RequestTimeout(lvc.requestTimeout()).
+			IdleTimeout(lvc.idleTimeout()).
 			Get()
 
 		lv.listeners[ENVOY_HTTP_LISTENER] = envoy.Listener(
@@ -382,6 +398,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					MetricsPrefix(ENVOY_HTTPS_LISTENER).
 					AccessLoggers(v.ListenerVisitorConfig.newSecureAccessLog()).
 					RequestTimeout(v.ListenerVisitorConfig.requestTimeout()).
+					IdleTimeout(v.ListenerVisitorConfig.idleTimeout()).
 					Get(),
 			)
 
@@ -436,6 +453,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					MetricsPrefix(ENVOY_HTTPS_LISTENER).
 					AccessLoggers(v.ListenerVisitorConfig.newSecureAccessLog()).
 					RequestTimeout(v.ListenerVisitorConfig.requestTimeout()).
+					IdleTimeout(v.ListenerVisitorConfig.idleTimeout()).
 					Get(),
 			)
 
