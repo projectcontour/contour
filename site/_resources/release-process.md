@@ -13,6 +13,8 @@ The release types are as follows. All are tagged from the same release branch.
 - Final releases.
 - Patch releases.
 
+For minor releases, generally we will not do an Alpha/Beta/RC/Final flow, we will jump straight to cutting the final from master.
+
 ## Alpha and beta releases
 
 The steps for an alpha or beta release are
@@ -29,7 +31,18 @@ Then, you are done until we are ready to branch for an rc or final release.
 
 ## Update Docs Site
 
-The documentation site (projectcontour.io) has versioned documentation. The following steps can be followed to update the site to create the new release:
+The documentation site (projectcontour.io) has versioned documentation.
+
+The required changes can be automatically performed by the `hack/release/prepare-release.go` tool.
+For example:
+
+```sh
+$ go run ./hack/release/prepare-release.go v9.9.9
+```
+
+This can be pushed straight back to master.
+
+The tool performs the following steps, which can also be followed to update the site to create the new release:
 
 - In: `site/_data`
   - Make new yml file for version (e.g. v1-1-0-toc.yaml)
@@ -41,18 +54,11 @@ The documentation site (projectcontour.io) has versioned documentation. The foll
   - Update `versions` to add new version
   - Update `latest` to change previous version to new version
 
-These changes can be automatically performed by the `hack/release/prepare-release.go` tool.
-For example:
-
-```sh
-$ go run ./hack/release/prepare-release.go v9.9.9
-```
-
 ## Update compatibility matrices
 
 If there has been an Envoy version upgrade, check that the [Envoy Support Matrix](https://projectcontour.io/resources/envoy/) has been updated.
 
-If there has been a Kubernetes client-go upgrade, check that the [Kubernetes Support Matrix](https://projectcontour.io/resources/envoy/) has been updated.
+If there has been a Kubernetes client-go upgrade, check that the [Kubernetes Support Matrix](https://projectcontour.io/resources/kubernetes/) has been updated.
 
 ## Branch for release
 
@@ -70,6 +76,13 @@ Each one of these release types is just a different tag on the release branch.
 
 ## Final release
 
+These two steps can be automatically performed by the `hack/release/make-release-tag.sh` tool.
+For example:
+
+```sh
+$ ./hack/release/make-release-tag.sh v1.2.1 v1.3.1
+```
+
 ### Updating the example YAMLs
 
 Your final job before doing the last release is to ensure that all the YAMLs in `examples/contour/` are updated.
@@ -82,13 +95,6 @@ Tag the head of your release branch with the release tag, and push
 ```sh
 $ git tag -a v1.2.0 -m 'contour 1.2.0'
 $ git push --tags
-```
-
-These two steps can be automatically performed by the `hack/release/make-release-tag.sh` tool.
-For example:
-
-```sh
-$ ./hack/release/make-release-tag.sh v1.2.1 v1.3.1
 ```
 
 ## Patch release
@@ -123,7 +129,7 @@ Authenticating with existing credentials...
 Login Succeeded
 # The make target will do what you need
 # If you don't set the version, it will be a noop
-$ make tag-latest REGISTRY=docker.io/projectcontour LATEST_VERSION=v1.0.0
+$ make tag-latest REGISTRY=docker.io/projectcontour LATEST_VERSION=v1.6.0
 docker pull docker.io/projectcontour/contour:v1.0.0
 v1.0.0: Pulling from docker.io/projectcontour/contour
 Digest: sha256:7af8d77b3fcdbebec31abd1059aedacc119b3561b933976402c87f31a309ec53
@@ -144,8 +150,6 @@ If you've made a production release (that is, a final release or a patch release
 
 The quickstart url, https://projectcontour.io/quickstart/contour.yaml redirects to the current stable release.
 This is controlled by the `[[redirects]]` section in `netlify.toml`. If the definition of `:latest` has changed, update the quickstart redirector to match.
-
-You also need to set the variable `latest` in `site/_config.yml` to the released version for the site to work correctly.
 
 ### Do the Github release and write release notes
 
