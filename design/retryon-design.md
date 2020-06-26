@@ -24,6 +24,8 @@ Thus, this proposal suggests a way to expose the conditions for retrying a reque
 It is designed to be applicable to the specific problem above while also meeting the needs of others who may wish to control the conditions of their retries.
 It also tries to avoid exposing too broad a set of configuration options for retries.
 
+Because each `HTTPProxy` creates unique routes in Envoy, the retry policies specified therein will exist and operate independently of each other without conflict, allowing thousands of these policies to coexist without conflict.
+
 ## Goals
 
 - Offer a general but limited solution to configurable conditions for retries
