@@ -102,6 +102,10 @@ data:
     # default-http-versions:
     # - "HTTP/2"
     # - "HTTP/1.1"
+    #
+    # The following shows the default proxy timeout settings.
+    # timeouts:
+    #   idle-timeout: 60s
 
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
