@@ -1,0 +1,355 @@
+# Copyright 2020 VMware, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.  You may obtain
+# a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+import data.contour.resources
+
+# Ensure that cert-manager is installed.
+# Version check the certificates resource.
+
+Group := "cert-manager.io"
+Version := "v1alpha2"
+
+have_certmanager_version {
+  v := resources.versions["certificates"]
+  v[_].Group == Group
+  v[_].Version == Version
+}
+
+skip[msg] {
+  not resources.is_supported("certificates")
+  msg := "cert-manager is not installed"
+}
+
+skip[msg] {
+  not have_certmanager_version
+
+  avail := resources.versions["certificates"]
+
+  msg := concat("\n", [
+    sprintf("cert-manager version %s/%s is not installed", [Group, Version]),
+    "available versions:",
+    yaml.marshal(avail)
+  ])
+}
+
+---
+
+# Create a self-signed issuer to give us secrets.
+
+apiVersion: cert-manager.io/v1alpha2
+kind: Issuer
+metadata:
+  name: selfsigned
+spec:
+  selfSigned: {}
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-one
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-one
+
+---
+
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: echo-one-cert
+spec:
+  dnsNames:
+  - echo-one.projectcontour.io
+  secretName: echo-one
+  issuerRef:
+    name: selfsigned
+
+---
+
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo-one
+spec:
+  virtualhost:
+    fqdn: echo-one.projectcontour.io
+    tls:
+      secretName: echo-one
+  routes:
+  - services:
+    - name: echo-one
+      port: 80
+
+---
+
+fqdn := "echo-one.projectcontour.io"
+
+default proxy_is_present = false
+proxy_is_present {
+  data.resources.httpproxies["echo-one"]
+}
+
+fatal_proxy_is_not_present[msg] {
+  not proxy_is_present
+  msg := sprintf("HTTPProxy for %q is not present", [ fqdn ])
+}
+
+---
+
+Name := "echo-one"
+
+default proxy_is_valid = false
+proxy_is_valid {
+  proxy := data.resources.httpproxies[Name]
+  proxy.status.currentStatus == "valid"
+}
+
+fatal_proxy_is_not_valid[msg] {
+  not proxy_is_valid
+  msg := "Invalid proxy"
+}
+
+fatal_proxy_is_not_valid[msg] {
+  proxy := data.resources.httpproxies[Name]
+  fqdn := proxy.spec.virtualhost.fqdn
+  status := proxy.status
+
+  status.currentStatus != "valid"
+
+  msg := sprintf("HTTP proxy for '%s' is not valid\n%s", [
+    fqdn, yaml.marshal(status)
+  ])
+}
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+
+TestID := "echo-one"
+
+Response := client.Get({
+  "url": url.https(sprintf("/https-sni-enforcement/%d", [time.now_ns()])),
+  "headers": {
+    "Host": "echo-one.projectcontour.io",
+    "User-Agent": client.ua("https-sni-enforcement"),
+  },
+  "tls_insecure_skip_verify": true,
+})
+
+error_no_response {
+  not Response
+}
+
+error_non_200_response [msg] {
+  Response.status_code != 200
+
+  msg :=  sprintf("got status %d, wanted %d", [
+    Response.status_code, 200
+  ])
+}
+
+error_path_routing_mismatch[msg] {
+  Response.body.TestId != TestID
+
+  msg :=  sprintf("got wrong service %q, wanted %q", [
+    Response.body.TestId, TestID,
+  ])
+}
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-two
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-two
+
+---
+
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: echo-two-cert
+spec:
+  dnsNames:
+  - echo-two.jpeach.org
+  secretName: echo-two
+  issuerRef:
+    name: selfsigned
+
+---
+
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo-two
+spec:
+  virtualhost:
+    fqdn: echo-two.projectcontour.io
+    tls:
+      secretName: echo-two
+  routes:
+  - services:
+    - name: echo-two
+      port: 80
+
+---
+
+fqdn := "echo-two.projectcontour.io"
+
+default proxy_is_present = false
+proxy_is_present {
+  data.resources.httpproxies["echo-two"]
+}
+
+fatal_proxy_is_not_present[msg] {
+  not proxy_is_present
+  msg := sprintf("HTTPProxy for %q is not present", [ fqdn ])
+}
+
+---
+
+Name := "echo-two"
+
+default proxy_is_valid = false
+proxy_is_valid {
+  proxy := data.resources.httpproxies[Name]
+  proxy.status.currentStatus == "valid"
+}
+
+fatal_proxy_is_not_valid[msg] {
+  not proxy_is_valid
+  msg := "Invalid proxy"
+}
+
+fatal_proxy_is_not_valid[msg] {
+  proxy := data.resources.httpproxies[Name]
+  fqdn := proxy.spec.virtualhost.fqdn
+  status := proxy.status
+
+  not proxy_is_valid
+
+  msg := sprintf("HTTP proxy for '%s' is not valid\n%s", [
+    fqdn, yaml.marshal(status)
+  ])
+}
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+
+TestID := "echo-two"
+
+Response := client.Get({
+  "url": url.https(sprintf("/https-sni-enforcement/%d", [time.now_ns()])),
+  "headers": {
+    "Host": "echo-two.projectcontour.io",
+    "User-Agent": client.ua("https-sni-enforcement"),
+  },
+  "tls_insecure_skip_verify": true,
+})
+
+error_no_response {
+  not Response
+}
+
+error_non_200_response [msg] {
+  Response.status_code != 200
+
+  msg :=  sprintf("got status %d, wanted %d", [
+    Response.status_code, 200
+  ])
+}
+
+error_path_routing_mismatch[msg] {
+  Response.body.TestId != TestID
+
+  msg :=  sprintf("got wrong service %q, wanted %q", [
+    Response.body.TestId, TestID,
+  ])
+}
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.response
+
+# Ensure that sending a request to "echo-one" with the SNI from "echo-two"
+# generates a 4xx response status.
+
+Response := client.Get({
+  "url": url.https(sprintf("/https-sni-enforcement/%d", [time.now_ns()])),
+  "headers": {
+    "Host": "echo-one.projectcontour.io",
+    "User-Agent": client.ua("https-sni-enforcement"),
+  },
+  "tls_insecure_skip_verify": true,
+  "tls_server_name": "echo-two.projectcontour.io",
+})
+
+error_non_400_response [msg] {
+  not response.is_4xx(Response)
+  msg :=  sprintf("got status %d, wanted 4xx", [ Response.status_code ])
+}
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.response
+
+# Ensure that sending a request to "echo-two" with the SNI from "echo-one"
+# generates a 4xx response status.
+
+Response := client.Get({
+  "url": url.https(sprintf("/https-sni-enforcement/%d", [time.now_ns()])),
+  "headers": {
+    "Host": "echo-two.projectcontour.io",
+    "User-Agent": client.ua("https-sni-enforcement"),
+  },
+  "tls_insecure_skip_verify": true,
+  "tls_server_name": "echo-one.projectcontour.io",
+})
+
+error_non_404_response [msg] {
+  not response.is_4xx(Response)
+  msg :=  sprintf("got status %d, wanted 4xx", [ Response.status_code ])
+}

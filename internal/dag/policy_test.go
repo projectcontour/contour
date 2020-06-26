@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/assert"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -171,7 +171,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 	}
 }
 
-func TestRetryPolicyIngressRoute(t *testing.T) {
+func TestRetryPolicy(t *testing.T) {
 	tests := map[string]struct {
 		rp   *projcontour.RetryPolicy
 		want *RetryPolicy
@@ -221,59 +221,6 @@ func TestRetryPolicyIngressRoute(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := retryPolicy(tc.rp)
-			assert.Equal(t, tc.want, got)
-		})
-	}
-}
-
-func TestTimeoutPolicyIngressRoute(t *testing.T) {
-	tests := map[string]struct {
-		tp   *ingressroutev1.TimeoutPolicy
-		want *TimeoutPolicy
-	}{
-		"nil timeout policy": {
-			tp:   nil,
-			want: nil,
-		},
-		"empty timeout policy": {
-			tp: &ingressroutev1.TimeoutPolicy{},
-			want: &TimeoutPolicy{
-				ResponseTimeout: 0 * time.Second,
-			},
-		},
-		"valid request timeout": {
-			tp: &ingressroutev1.TimeoutPolicy{
-				Request: "1m30s",
-			},
-			want: &TimeoutPolicy{
-				ResponseTimeout: 90 * time.Second,
-			},
-		},
-		"invalid request timeout": {
-			tp: &ingressroutev1.TimeoutPolicy{
-				Request: "90", // 90 what?
-			},
-			want: &TimeoutPolicy{
-				// the documentation for an invalid timeout says the duration will
-				// be undefined. In practice we take the spec from the
-				// contour.heptio.com/request-timeout annotation, which is defined
-				// to choose infinite when its valid cannot be parsed.
-				ResponseTimeout: -1,
-			},
-		},
-		"infinite request timeout": {
-			tp: &ingressroutev1.TimeoutPolicy{
-				Request: "infinite",
-			},
-			want: &TimeoutPolicy{
-				ResponseTimeout: -1,
-			},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := ingressrouteTimeoutPolicy(tc.tp)
 			assert.Equal(t, tc.want, got)
 		})
 	}
@@ -412,7 +359,7 @@ func TestParseTimeout(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := parseTimeout(tc.duration)
+			got := annotation.ParseTimeout(tc.duration)
 			assert.Equal(t, tc.want, got)
 		})
 	}

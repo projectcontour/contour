@@ -18,14 +18,14 @@ import (
 	"context"
 	"math/rand"
 	"net"
+	"sort"
 	"testing"
 	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
-	envoy "github.com/envoyproxy/go-control-plane/pkg/cache"
+	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
@@ -34,6 +34,8 @@ import (
 	cgrpc "github.com/projectcontour/contour/internal/grpc"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
+	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -43,11 +45,11 @@ import (
 )
 
 const (
-	endpointType = envoy.EndpointType // nolint:varcheck,deadcode
-	clusterType  = envoy.ClusterType
-	routeType    = envoy.RouteType
-	listenerType = envoy.ListenerType
-	secretType   = envoy.SecretType
+	endpointType = resource.EndpointType // nolint:varcheck,deadcode
+	clusterType  = resource.ClusterType
+	routeType    = resource.RouteType
+	listenerType = resource.ListenerType
+	secretType   = resource.SecretType
 	statsAddress = "0.0.0.0"
 	statsPort    = 8002
 )
@@ -59,6 +61,10 @@ func (d *discardWriter) Write(buf []byte) (int, error) {
 }
 
 func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEventHandler, *Contour, func()) {
+	return setupWithFallbackCert(t, "", "", opts...)
+}
+
+func setupWithFallbackCert(t *testing.T, fallbackCertName, fallbackCertNamespace string, opts ...func(*contour.EventHandler)) (cache.ResourceEventHandler, *Contour, func()) {
 	t.Parallel()
 
 	log := logrus.New()
@@ -90,6 +96,10 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
 				FieldLogger: log,
+			},
+			FallbackCertificate: &k8s.FullName{
+				Name:      fallbackCertName,
+				Namespace: fallbackCertNamespace,
 			},
 		},
 	}
@@ -223,20 +233,20 @@ func check(t *testing.T, err error) {
 	}
 }
 
+// routeResources returns the given routes as a slice of any.Any
+// resources, appropriately sorted.
+func routeResources(t *testing.T, routes ...*v2.RouteConfiguration) []*any.Any {
+	sort.Stable(sorter.For(routes))
+	return resources(t, protobuf.AsMessages(routes)...)
+}
+
 func resources(t *testing.T, protos ...proto.Message) []*any.Any {
 	t.Helper()
 	anys := make([]*any.Any, 0, len(protos))
 	for _, pb := range protos {
-		anys = append(anys, toAny(t, pb))
+		anys = append(anys, protobuf.MustMarshalAny(pb))
 	}
 	return anys
-}
-
-func toAny(t *testing.T, pb proto.Message) *any.Any {
-	t.Helper()
-	a, err := ptypes.MarshalAny(pb)
-	check(t, err)
-	return a
 }
 
 type grpcStream interface {

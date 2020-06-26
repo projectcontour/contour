@@ -1,0 +1,168 @@
+# Copyright 2020 VMware, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.  You may obtain
+# a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: &name ingress-conformance-echo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: *name
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: *name
+    spec:
+      containers:
+      - name: conformance-echo
+        image: agervais/ingress-conformance-echo:latest
+        env:
+        - name: TEST_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        ports:
+        - name: http-api
+          containerPort: 3000
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply: fixture
+
+---
+
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo
+spec:
+  virtualhost:
+    fqdn: echo.projectcontour.io
+  routes:
+    - conditions:
+      - prefix: /
+      services:
+        - name: ingress-conformance-echo
+          port: 80
+
+---
+
+RunId := data.test.params["run-id"]
+
+error_pod_unready [msg] {
+  pod := data.resources.pods[_]
+
+  pod.metadata.labels["app.kubernetes.io/name"] == "ingress-conformance-echo"
+  pod.metadata.annotations["modden/run-id"] == RunId
+
+  # Find combinations of _ and i where the condition is Ready/True.
+  cond := pod.status.conditions[i]
+  cond.type == "Ready"
+  cond.status != "True"
+
+  msg := sprintf("pod %s is not ready: %s", [pod.metadata.name, cond.message])
+}
+
+---
+
+import data.contour.http.response
+import data.contour.http.client
+import data.contour.http.client.url
+
+Response := client.Get({
+  "url": url.http(sprintf("/pre-delete/%d", [time.now_ns()])),
+  "headers": {
+    "Host": "echo.projectcontour.io",
+    "User-Agent": client.ua("pod-restart"),
+  },
+})
+
+error_non_200_response [msg] {
+  Response.status_code != 200
+  msg := sprintf("got status %d, wanted %d", [Response.status_code, 200])
+}
+
+error_missing_testid [msg] {
+  not response.has_testid(Response)
+  msg := "response has missing body or test ID"
+}
+
+error[msg] {
+  testid := response.testid(Response)
+  not data.resources.pods[testid]
+
+  msg := sprintf("no pod for test ID %q", [testid])
+}
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/name: ingress-conformance-echo
+$apply: delete
+
+---
+
+# Wait for the deleted pod to actually delete.
+error_pod_exists [msg] {
+  last := data.resources.applied.last
+  pod := data.resources.pods[_]
+
+  pod.metadata.name == last.metadata.name
+
+  msg := sprintf("pod %s still exists", [pod.metadata.name])
+}
+
+---
+
+import data.contour.http.response
+import data.contour.http.client
+import data.contour.http.client.url
+
+Response := client.Get({
+  "url": url.http(sprintf("/post-delete/%d", [time.now_ns()])),
+  "headers": {
+    "Host": "echo.projectcontour.io",
+    "User-Agent": client.ua("pod-restart"),
+  },
+})
+
+error_non_200_response [msg] {
+  Response.status_code != 200
+  msg :=  sprintf("got status %d, wanted %d", [Response.status_code, 200])
+}
+
+error_missing_testid [msg] {
+  not response.has_testid(Response)
+  msg := "response has missing body or test ID"
+}
+
+error[msg] {
+  testid := response.testid(Response)
+  not data.resources.pods[testid]
+
+  msg := sprintf("no pod for test ID %q", [testid])
+}

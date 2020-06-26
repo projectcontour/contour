@@ -16,42 +16,36 @@ package dag
 import (
 	"fmt"
 
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Status contains the status for an IngressRoute (valid / invalid / orphan, etc)
+// Status contains the status for an HTTPProxy (valid / invalid / orphan, etc)
 type Status struct {
-	Object      Object
+	Object      k8s.Object
 	Status      string
 	Description string
 	Vhost       string
 }
 
 type StatusWriter struct {
-	statuses map[Meta]Status
-}
-
-type Object interface {
-	metav1.ObjectMetaAccessor
+	statuses map[k8s.FullName]Status
 }
 
 type ObjectStatusWriter struct {
 	sw     *StatusWriter
-	obj    Object
+	obj    k8s.Object
 	values map[string]string
 }
 
 // WithObject returns an ObjectStatusWriter that can be used to set the state of
-// the Object. The state can be set as many times as necessary. The state of the
+// the object. The state can be set as many times as necessary. The state of the
 // object can be made permanent by calling the commit function returned from WithObject.
 // The caller should pass the ObjectStatusWriter to functions interested in writing status,
 // but keep the commit function for itself. The commit function should be either called
 // via a defer, or directly if statuses are being set in a loop (as defers will not fire
 // until the end of the function).
-func (sw *StatusWriter) WithObject(obj Object) (_ *ObjectStatusWriter, commit func()) {
+func (sw *StatusWriter) WithObject(obj k8s.Object) (_ *ObjectStatusWriter, commit func()) {
 	osw := &ObjectStatusWriter{
 		sw:     sw,
 		obj:    obj,
@@ -68,9 +62,9 @@ func (sw *StatusWriter) commit(osw *ObjectStatusWriter) {
 		return
 	}
 
-	m := Meta{
-		name:      osw.obj.GetObjectMeta().GetName(),
-		namespace: osw.obj.GetObjectMeta().GetNamespace(),
+	m := k8s.FullName{
+		Name:      osw.obj.GetObjectMeta().GetName(),
+		Namespace: osw.obj.GetObjectMeta().GetNamespace(),
 	}
 	if _, ok := sw.statuses[m]; !ok {
 		// only record the first status event
@@ -95,8 +89,6 @@ func (osw *ObjectStatusWriter) SetValid() {
 	switch osw.obj.(type) {
 	case *projcontour.HTTPProxy:
 		osw.WithValue("description", "valid HTTPProxy").WithValue("status", k8s.StatusValid)
-	case *ingressroutev1.IngressRoute:
-		osw.WithValue("description", "valid IngressRoute").WithValue("status", k8s.StatusValid)
 	default:
 		// not a supported type
 	}
@@ -106,7 +98,7 @@ func (osw *ObjectStatusWriter) SetValid() {
 // ObjectStatusWriter's values, including its status if set. This is convenient if
 // the object shares a relationship with its parent. The caller should arrange for
 // the commit function to be called to write the final status of the object.
-func (osw *ObjectStatusWriter) WithObject(obj Object) (_ *ObjectStatusWriter, commit func()) {
+func (osw *ObjectStatusWriter) WithObject(obj k8s.Object) (_ *ObjectStatusWriter, commit func()) {
 	m := make(map[string]string)
 	for k, v := range osw.values {
 		m[k] = v

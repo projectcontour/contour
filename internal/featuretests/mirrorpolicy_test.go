@@ -27,9 +27,7 @@ import (
 )
 
 func TestMirrorPolicy(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.Source.IngressClass = "linkerd"
-	})
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
 	defer done()
 
 	svc1 := &v1.Service{
@@ -47,7 +45,7 @@ func TestMirrorPolicy(t *testing.T) {
 	}
 	svc2 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuarder",
+			Name:      "mirror",
 			Namespace: svc1.Namespace,
 		},
 		Spec: svc1.Spec,
@@ -83,12 +81,21 @@ func TestMirrorPolicy(t *testing.T) {
 				envoy.VirtualHost(p1.Spec.VirtualHost.Fqdn,
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
-						Action: withMirrorPolicy(routeCluster("default/kuard/8080/da39a3ee5e"), "default/kuarder/8080/da39a3ee5e"),
+						Action: withMirrorPolicy(routeCluster("default/kuard/8080/da39a3ee5e"), "default/mirror/8080/da39a3ee5e"),
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
+	})
+
+	// assert that are two clusters in CDS, one for the route service
+	// and one for the mirror service.
+	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			cluster("default/kuard/8080/da39a3ee5e", "default/kuard", "default_kuard_8080"),
+			cluster("default/mirror/8080/da39a3ee5e", "default/mirror", "default_mirror_8080"),
+		),
+		TypeUrl: clusterType,
 	})
 }

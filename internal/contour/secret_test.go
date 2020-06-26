@@ -19,10 +19,10 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/golang/protobuf/proto"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -296,7 +296,7 @@ func TestSecretVisit(t *testing.T) {
 				secret("default/secret-b/5397c67313", secretdata(CERTIFICATE_2, RSA_PRIVATE_KEY)),
 			),
 		},
-		"simple ingressroute with secret": {
+		"simple httpproxy with secret": {
 			objs: []interface{}{
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -312,20 +312,20 @@ func TestSecretVisit(t *testing.T) {
 						}},
 					},
 				},
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
+					Spec: projcontour.HTTPProxySpec{
 						VirtualHost: &projcontour.VirtualHost{
 							Fqdn: "www.example.com",
 							TLS: &projcontour.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []ingressroutev1.Route{{
-							Services: []ingressroutev1.Service{{
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -338,7 +338,7 @@ func TestSecretVisit(t *testing.T) {
 				secret("default/secret/68621186db", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
 			),
 		},
-		"multiple ingressroutes with shared secret": {
+		"multiple httpproxies with shared secret": {
 			objs: []interface{}{
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -354,40 +354,40 @@ func TestSecretVisit(t *testing.T) {
 						}},
 					},
 				},
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple-a",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
+					Spec: projcontour.HTTPProxySpec{
 						VirtualHost: &projcontour.VirtualHost{
-							Fqdn: "www.example.com",
+							Fqdn: "www1.example.com",
 							TLS: &projcontour.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []ingressroutev1.Route{{
-							Services: []ingressroutev1.Service{{
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple-b",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
+					Spec: projcontour.HTTPProxySpec{
 						VirtualHost: &projcontour.VirtualHost{
-							Fqdn: "www.other.com",
+							Fqdn: "www2.example.com",
 							TLS: &projcontour.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []ingressroutev1.Route{{
-							Services: []ingressroutev1.Service{{
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -400,7 +400,7 @@ func TestSecretVisit(t *testing.T) {
 				secret("default/secret/68621186db", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
 			),
 		},
-		"multiple ingressroutes with different secret": {
+		"multiple httpproxies with different secret": {
 			objs: []interface{}{
 				&v1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -416,40 +416,40 @@ func TestSecretVisit(t *testing.T) {
 						}},
 					},
 				},
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple-a",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
+					Spec: projcontour.HTTPProxySpec{
 						VirtualHost: &projcontour.VirtualHost{
-							Fqdn: "www.example.com",
+							Fqdn: "www1.example.com",
 							TLS: &projcontour.TLS{
 								SecretName: "secret-a",
 							},
 						},
-						Routes: []ingressroutev1.Route{{
-							Services: []ingressroutev1.Service{{
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&ingressroutev1.IngressRoute{
+				&projcontour.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple-b",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.IngressRouteSpec{
+					Spec: projcontour.HTTPProxySpec{
 						VirtualHost: &projcontour.VirtualHost{
-							Fqdn: "www.other.com",
+							Fqdn: "www2.example.com",
 							TLS: &projcontour.TLS{
 								SecretName: "secret-b",
 							},
 						},
-						Routes: []ingressroutev1.Route{{
-							Services: []ingressroutev1.Service{{
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -481,6 +481,21 @@ func buildDAG(t *testing.T, objs ...interface{}) *dag.DAG {
 		Source: dag.KubernetesCache{
 			FieldLogger: testLogger(t),
 		},
+	}
+
+	for _, o := range objs {
+		builder.Source.Insert(o)
+	}
+	return builder.Build()
+}
+
+// buildDAGFallback produces a dag.DAG from the supplied objects with a fallback cert configured.
+func buildDAGFallback(t *testing.T, fallbackCertificate *k8s.FullName, objs ...interface{}) *dag.DAG {
+	builder := dag.Builder{
+		Source: dag.KubernetesCache{
+			FieldLogger: testLogger(t),
+		},
+		FallbackCertificate: fallbackCertificate,
 	}
 
 	for _, o := range objs {

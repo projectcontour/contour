@@ -1,0 +1,155 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: app
+
+---
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: admin
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: app/echo-app
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: app/echo-app
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: admin/echo-admin
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: admin/echo-admin
+
+---
+
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo-app
+  namespace: app
+spec:
+  routes:
+  - services:
+    - name: echo-app
+      port: 80
+
+---
+
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo-admin
+  namespace: admin
+spec:
+  routes:
+  - services:
+    - name: echo-admin
+      port: 80
+
+---
+
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+   name: echo
+spec:
+  virtualhost:
+    fqdn: echo.projectcontour.io
+  includes:
+  - name: echo-app
+    namespace: app
+    conditions:
+    - prefix: /
+  - name: echo-admin
+    namespace: admin
+    conditions:
+    - prefix: /admin
+
+---
+
+import data.contour.resources
+
+fatal_proxy_is_not_valid[msg] {
+  name := "echo"
+  proxy := resources.get("httpproxies", name)
+  status := object.get(proxy, "status", {})
+
+  object.get(status, "currentStatus", "") != "valid"
+
+  msg := sprintf("HTTPProxy '%s' is not valid\n%s", [
+    name, yaml.marshal(status)
+  ])
+}
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.response
+
+cases := {
+  { "path": "/", "testid": "echo-app" },
+  { "path": "/app", "testid": "echo-app" },
+  { "path": "/admin", "testid": "echo-admin" },
+  { "path": "/admin/", "testid": "echo-admin" },
+  { "path": "/admin/app", "testid": "echo-admin" },
+}
+
+responses[{"testid": testid, "response": response}] {
+  case := cases[_]
+
+  path:= case.path
+  testid := case.testid
+  response := client.Get({
+    "url": url.http(case.path),
+    "headers": {
+      "Host": "echo.projectcontour.io",
+      "User-Agent": client.ua("include-prefix-condition"),
+    }
+  })
+}
+
+error_missing_response {
+  count(responses) != count(cases)
+}
+
+error_misrouted_request[msg] {
+  r := responses[_]
+
+  response.testid(r.response) != r.testid
+
+  msg := sprintf("got testid %s, wanted %s", [
+    response.testid(r.response),
+    r.testid
+  ])
+}

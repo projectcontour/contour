@@ -1,4 +1,4 @@
-// Copyright © 2019 VMware
+// Copyright © 2020 VMware
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,17 +16,62 @@
 package certgen
 
 import (
+	"context"
 	"fmt"
 	"path"
 
+	"github.com/projectcontour/contour/internal/dag"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
+const (
+	// CACertificateKey is the dictionary key for the CA certificate bundle.
+	CACertificateKey = "cacert.pem"
+	// ContourCertificateKey is the dictionary key for the Contour certificate.
+	ContourCertificateKey = "contourcert.pem"
+	// ContourPrivateKeyKey is the dictionary key for the Contour private key.
+	ContourPrivateKeyKey = "contourkey.pem"
+	// EnvoyCertificateKey is the dictionary key for the Envoy certificate.
+	EnvoyCertificateKey = "envoycert.pem"
+	// EnvoyPrivateKeyKey is the dictionary key for the Envoy private key.
+	EnvoyPrivateKeyKey = "envoykey.pem"
+)
+
+// OverwritePolicy specifies whether an output should be overwritten.
+type OverwritePolicy int
+
+const (
+	// NoOverwrite specifies outputs must not be overwritten.
+	NoOverwrite OverwritePolicy = 0
+	// Overwrite specifies outputs may be overwritten.
+	Overwrite OverwritePolicy = 1
+)
+
+func newSecret(secretType corev1.SecretType, name string, namespace string, data map[string][]byte) *corev1.Secret {
+	return &corev1.Secret{
+		Type: secretType,
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app": "contour",
+			},
+		},
+		Data: data,
+	}
+}
+
 // WritePEM writes a certificate out to its filename in outputDir.
-func writePEM(outputDir, filename string, data []byte) error {
+func writePEM(outputDir, filename string, data []byte, force OverwritePolicy) error {
 	filepath := path.Join(outputDir, filename)
-	f, err := createFile(filepath, false)
+	f, err := createFile(filepath, force == Overwrite)
 	if err != nil {
 		return err
 	}
@@ -36,107 +81,112 @@ func writePEM(outputDir, filename string, data []byte) error {
 
 // WriteCertsPEM writes out all the certs in certdata to
 // individual PEM files in outputDir
-func WriteCertsPEM(outputDir string, certdata map[string][]byte) error {
+func WriteCertsPEM(outputDir string, certdata map[string][]byte, force OverwritePolicy) error {
+	err := writePEM(outputDir, "cacert.pem", certdata[CACertificateKey], force)
+	if err != nil {
+		return err
+	}
 
-	err := writePEM(outputDir, "cacert.pem", certdata["cacert.pem"])
+	err = writePEM(outputDir, "contourcert.pem", certdata[ContourCertificateKey], force)
 	if err != nil {
 		return err
 	}
-	err = writePEM(outputDir, "contourcert.pem", certdata["contourcert.pem"])
-	if err != nil {
-		return err
-	}
-	err = writePEM(outputDir, "contourkey.pem", certdata["contourkey.pem"])
-	if err != nil {
-		return err
-	}
-	err = writePEM(outputDir, "envoycert.pem", certdata["envoycert.pem"])
-	if err != nil {
-		return err
-	}
-	return writePEM(outputDir, "envoykey.pem", certdata["envoykey.pem"])
 
+	err = writePEM(outputDir, "contourkey.pem", certdata[ContourPrivateKeyKey], force)
+	if err != nil {
+		return err
+	}
+
+	err = writePEM(outputDir, "envoycert.pem", certdata[EnvoyCertificateKey], force)
+	if err != nil {
+		return err
+	}
+
+	return writePEM(outputDir, "envoykey.pem", certdata[EnvoyPrivateKeyKey], force)
 }
 
-// WriteSecretsYAML writes all the keypairs out to Kube Secrets in YAML form
-// in outputDir. The CA Secret only contains the cert.
-func WriteSecretsYAML(outputDir, namespace string, certdata map[string][]byte) error {
-	err := writeCACertSecret(outputDir, "cacert.pem", certdata["cacert.pem"])
-	if err != nil {
-		return err
-	}
-	err = writeKeyPairSecret(outputDir, "contour", namespace, certdata["contourcert.pem"], certdata["contourkey.pem"])
-	if err != nil {
-		return err
-	}
-
-	return writeKeyPairSecret(outputDir, "envoy", namespace, certdata["envoycert.pem"], certdata["envoykey.pem"])
-
-}
-
-// WriteSecretsKube writes all the keypairs out to Kube Secrets in the
-// passed Kube context.
-func WriteSecretsKube(client *kubernetes.Clientset, namespace string, certdata map[string][]byte) error {
-	err := writeCACertKube(client, namespace, certdata["cacert.pem"])
-	if err != nil {
-		return err
-	}
-	err = writeKeyPairKube(client, "contour", namespace, certdata["contourcert.pem"], certdata["contourkey.pem"])
-	if err != nil {
-		return err
-	}
-
-	return writeKeyPairKube(client, "envoy", namespace, certdata["envoycert.pem"], certdata["envoykey.pem"])
-
-}
-
-func writeCACertSecret(outputDir, namespace string, cert []byte) error {
-	filename := path.Join(outputDir, "cacert.yaml")
-	secret := newCertOnlySecret("cacert", namespace, "cacert.pem", cert)
-	f, err := createFile(filename, false)
-	if err != nil {
-		return err
-	}
-	return checkFile(filename, writeSecret(f, secret))
-}
-
-func writeCACertKube(client *kubernetes.Clientset, namespace string, cert []byte) error {
-	secret := newCertOnlySecret("cacert", namespace, "cacert.pem", cert)
-	if _, err := client.CoreV1().Secrets(namespace).Create(secret); err != nil {
-		if k8serrors.IsAlreadyExists(err) {
-			fmt.Print("secret/cacert already exists\n")
-			return nil
+// WriteSecretsYAML writes all the keypairs out to Kubernetes Secrets in YAML form
+// in outputDir.
+func WriteSecretsYAML(outputDir string, secrets []*corev1.Secret, force OverwritePolicy) error {
+	for _, s := range secrets {
+		filename := path.Join(outputDir, s.Name+".yaml")
+		f, err := createFile(filename, force == Overwrite)
+		if err != nil {
+			return err
 		}
-		return err
+		if err := checkFile(filename, writeSecret(f, s)); err != nil {
+			return err
+		}
 	}
-	fmt.Print("secret/cacert created\n")
+
 	return nil
 }
 
-func writeKeyPairSecret(outputDir, service, namespace string, cert, key []byte) error {
-	filename := service + "cert.yaml"
-	secretname := service + "cert"
+// WriteSecretsKube writes all the keypairs out to Kubernetes Secrets in the
+// compact format which is compatible with Secrets generated by cert-manager.
+func WriteSecretsKube(client *kubernetes.Clientset, secrets []*corev1.Secret, force OverwritePolicy) error {
+	for _, s := range secrets {
+		if _, err := client.CoreV1().Secrets(s.Namespace).Create(context.TODO(), s, metav1.CreateOptions{}); err != nil {
+			if k8serrors.IsAlreadyExists(err) && force == NoOverwrite {
+				fmt.Printf("secret/%s already exists\n", s.Name)
+				return nil
+			}
 
-	secret := newTLSSecret(secretname, namespace, key, cert)
-	filepath := path.Join(outputDir, filename)
-	f, err := createFile(filepath, false)
-	if err != nil {
-		return err
+			if _, err := client.CoreV1().Secrets(s.Namespace).Update(context.TODO(), s, metav1.UpdateOptions{}); err != nil {
+				return err
+			}
+		}
+
+		fmt.Printf("secret/%s updated\n", s.Name)
 	}
-	err = writeSecret(f, secret)
-	return checkFile(filepath, err)
+
+	return nil
 }
 
-func writeKeyPairKube(client *kubernetes.Clientset, service, namespace string, cert, key []byte) error {
-	secretname := service + "cert"
-	secret := newTLSSecret(secretname, namespace, key, cert)
-	if _, err := client.CoreV1().Secrets(namespace).Create(secret); err != nil {
-		if k8serrors.IsAlreadyExists(err) {
-			fmt.Printf("secret/%s already exists\n", secretname)
-			return nil
-		}
-		return err
+// AsSecrets transforms the given certdata map into a slice of
+// Secrets in in compact Secret format, which is compatible with
+// both cert-manager and Contour.
+func AsSecrets(namespace string, certdata map[string][]byte) []*corev1.Secret {
+	return []*corev1.Secret{
+		newSecret(corev1.SecretTypeTLS,
+			"contourcert", namespace,
+			map[string][]byte{
+				dag.CACertificateKey:    certdata[CACertificateKey],
+				corev1.TLSCertKey:       certdata[ContourCertificateKey],
+				corev1.TLSPrivateKeyKey: certdata[ContourPrivateKeyKey],
+			}),
+		newSecret(corev1.SecretTypeTLS,
+			"envoycert", namespace,
+			map[string][]byte{
+				dag.CACertificateKey:    certdata[CACertificateKey],
+				corev1.TLSCertKey:       certdata[EnvoyCertificateKey],
+				corev1.TLSPrivateKeyKey: certdata[EnvoyPrivateKeyKey],
+			}),
 	}
-	fmt.Printf("secret/%s created\n", secretname)
-	return nil
+}
+
+// AsLegacySecrets transforms the given certdata into a slice of
+// Secrets that is compatible with certgen from contour 1.4 and earlier.
+// The difference is that the CA cert is in a separate secret, rather
+// than duplicated inline in each TLS secrets.
+func AsLegacySecrets(namespace string, certdata map[string][]byte) []*corev1.Secret {
+	return []*corev1.Secret{
+		newSecret(corev1.SecretTypeTLS,
+			"contourcert", namespace,
+			map[string][]byte{
+				corev1.TLSCertKey:       certdata[ContourCertificateKey],
+				corev1.TLSPrivateKeyKey: certdata[ContourPrivateKeyKey],
+			}),
+		newSecret(corev1.SecretTypeTLS,
+			"envoycert", namespace,
+			map[string][]byte{
+				corev1.TLSCertKey:       certdata[EnvoyCertificateKey],
+				corev1.TLSPrivateKeyKey: certdata[EnvoyPrivateKeyKey],
+			}),
+		newSecret(corev1.SecretTypeOpaque,
+			"cacert", namespace,
+			map[string][]byte{
+				"cacert.pem": certdata[CACertificateKey],
+			}),
+	}
 }

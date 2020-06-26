@@ -18,10 +18,12 @@ import (
 	"sync"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	"github.com/envoyproxy/go-control-plane/pkg/cache"
+	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/sorter"
 )
 
 // SecretCache manages the contents of the gRPC SDS cache.
@@ -44,18 +46,18 @@ func (c *SecretCache) Update(v map[string]*envoy_api_v2_auth.Secret) {
 func (c *SecretCache) Contents() []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []proto.Message
+	var values []*envoy_api_v2_auth.Secret
 	for _, v := range c.values {
 		values = append(values, v)
 	}
-	sort.Stable(secretsByName(values))
-	return values
+	sort.Stable(sorter.For(values))
+	return protobuf.AsMessages(values)
 }
 
 func (c *SecretCache) Query(names []string) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []proto.Message
+	var values []*envoy_api_v2_auth.Secret
 	for _, n := range names {
 		// we can only return secrets where their value is
 		// known. if the secret is not registered in the cache
@@ -64,19 +66,11 @@ func (c *SecretCache) Query(names []string) []proto.Message {
 			values = append(values, v)
 		}
 	}
-	sort.Stable(secretsByName(values))
-	return values
+	sort.Stable(sorter.For(values))
+	return protobuf.AsMessages(values)
 }
 
-type secretsByName []proto.Message
-
-func (s secretsByName) Len() int      { return len(s) }
-func (s secretsByName) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-func (s secretsByName) Less(i, j int) bool {
-	return s[i].(*envoy_api_v2_auth.Secret).Name < s[j].(*envoy_api_v2_auth.Secret).Name
-}
-
-func (*SecretCache) TypeURL() string { return cache.SecretType }
+func (*SecretCache) TypeURL() string { return resource.SecretType }
 
 type secretVisitor struct {
 	secrets map[string]*envoy_api_v2_auth.Secret

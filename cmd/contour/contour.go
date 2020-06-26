@@ -17,7 +17,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/envoyproxy/go-control-plane/pkg/cache"
+	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
+	"github.com/projectcontour/contour/internal/build"
+	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	"k8s.io/klog"
@@ -34,9 +36,10 @@ func init() {
 func main() {
 	log := logrus.StandardLogger()
 	app := kingpin.New("contour", "Contour Kubernetes ingress controller.")
+	app.HelpFlag.Short('h')
 
-	envoy := app.Command("envoy", "Sub-command for envoy actions.")
-	shutdownManager, shutdownManagerCtx := registerShutdownManager(envoy, log)
+	envoyCmd := app.Command("envoy", "Sub-command for envoy actions.")
+	shutdownManager, shutdownManagerCtx := registerShutdownManager(envoyCmd, log)
 
 	bootstrap, bootstrapCtx := registerBootstrap(app)
 	certgenApp, certgenConfig := registerCertGen(app)
@@ -61,30 +64,31 @@ func main() {
 	sds.Arg("resources", "SDS resource filter").StringsVar(&resources)
 
 	serve, serveCtx := registerServe(app)
+	version := app.Command("version", "Build information for Contour.")
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
 	case shutdownManager.FullCommand():
 		doShutdownManager(shutdownManagerCtx)
 	case bootstrap.FullCommand():
-		doBootstrap(bootstrapCtx)
+		check(envoy.WriteBootstrap(bootstrapCtx))
 	case certgenApp.FullCommand():
 		doCertgen(certgenConfig)
 	case cds.FullCommand():
 		stream := client.ClusterStream()
-		watchstream(stream, cache.ClusterType, resources)
+		watchstream(stream, resource.ClusterType, resources)
 	case eds.FullCommand():
 		stream := client.EndpointStream()
-		watchstream(stream, cache.EndpointType, resources)
+		watchstream(stream, resource.EndpointType, resources)
 	case lds.FullCommand():
 		stream := client.ListenerStream()
-		watchstream(stream, cache.ListenerType, resources)
+		watchstream(stream, resource.ListenerType, resources)
 	case rds.FullCommand():
 		stream := client.RouteStream()
-		watchstream(stream, cache.RouteType, resources)
+		watchstream(stream, resource.RouteType, resources)
 	case sds.FullCommand():
 		stream := client.RouteStream()
-		watchstream(stream, cache.SecretType, resources)
+		watchstream(stream, resource.SecretType, resources)
 	case serve.FullCommand():
 		// parse args a second time so cli flags are applied
 		// on top of any values sourced from -c's config file.
@@ -95,10 +99,13 @@ func main() {
 		}
 		log.Infof("args: %v", args)
 		check(doServe(log, serveCtx))
+	case version.FullCommand():
+		println(build.PrintBuildInfo())
 	default:
 		app.Usage(args)
 		os.Exit(2)
 	}
+
 }
 
 func check(err error) {

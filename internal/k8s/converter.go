@@ -14,12 +14,10 @@
 package k8s
 
 import (
-	"fmt"
+	"context"
 
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -43,7 +41,7 @@ type DynamicClientHandler struct {
 }
 
 func (d *DynamicClientHandler) OnAdd(obj interface{}) {
-	obj, err := d.Converter.Convert(obj)
+	obj, err := d.Converter.FromUnstructured(obj)
 	if err != nil {
 		d.Logger.Error(err)
 		return
@@ -52,12 +50,12 @@ func (d *DynamicClientHandler) OnAdd(obj interface{}) {
 }
 
 func (d *DynamicClientHandler) OnUpdate(oldObj, newObj interface{}) {
-	oldObj, err := d.Converter.Convert(oldObj)
+	oldObj, err := d.Converter.FromUnstructured(oldObj)
 	if err != nil {
 		d.Logger.Error(err)
 		return
 	}
-	newObj, err = d.Converter.Convert(newObj)
+	newObj, err = d.Converter.FromUnstructured(newObj)
 	if err != nil {
 		d.Logger.Error(err)
 		return
@@ -66,7 +64,7 @@ func (d *DynamicClientHandler) OnUpdate(oldObj, newObj interface{}) {
 }
 
 func (d *DynamicClientHandler) OnDelete(obj interface{}) {
-	obj, err := d.Converter.Convert(obj)
+	obj, err := d.Converter.FromUnstructured(obj)
 	if err != nil {
 		d.Logger.Error(err)
 		return
@@ -75,7 +73,8 @@ func (d *DynamicClientHandler) OnDelete(obj interface{}) {
 }
 
 type Converter interface {
-	Convert(obj interface{}) (interface{}, error)
+	FromUnstructured(obj interface{}) (interface{}, error)
+	ToUnstructured(obj interface{}) (*unstructured.Unstructured, error)
 }
 
 // UnstructuredConverter handles conversions between unstructured.Unstructured and Contour types
@@ -86,89 +85,48 @@ type UnstructuredConverter struct {
 
 // NewUnstructuredConverter returns a new UnstructuredConverter initialized
 func NewUnstructuredConverter() (*UnstructuredConverter, error) {
+	schemeBuilder := runtime.SchemeBuilder{
+		projectcontour.AddToScheme,
+		scheme.AddToScheme,
+		serviceapis.AddToScheme,
+		v1beta1.AddToScheme,
+	}
+
 	uc := &UnstructuredConverter{
 		scheme: runtime.NewScheme(),
 	}
 
-	// Setup converter to understand custom CRD types
-	projectcontour.AddKnownTypes(uc.scheme)
-	ingressroutev1.AddKnownTypes(uc.scheme)
-
-	// Add the core types we need
-	if err := scheme.AddToScheme(uc.scheme); err != nil {
-		return nil, err
-	}
-
-	// Setup converter to understand Ingress types
-	if err := v1beta1.AddToScheme(uc.scheme); err != nil {
-		return nil, err
-	}
-
-	// The kubebuilder tools' contract here is different, yay.
-	if err := serviceapis.AddToScheme(uc.scheme); err != nil {
+	if err := schemeBuilder.AddToScheme(uc.scheme); err != nil {
 		return nil, err
 	}
 
 	return uc, nil
 }
 
-// Convert converts an unstructured.Unstructured to typed struct. If obj
+// FromUnstructured converts an unstructured.Unstructured to typed struct. If obj
 // is not an unstructured.Unstructured it is returned without further processing.
-func (c *UnstructuredConverter) Convert(obj interface{}) (interface{}, error) {
-	unstructured, ok := obj.(*unstructured.Unstructured)
+func (c *UnstructuredConverter) FromUnstructured(obj interface{}) (interface{}, error) {
+	u, ok := obj.(*unstructured.Unstructured)
 	if !ok {
 		return obj, nil
 	}
-	switch unstructured.GetKind() {
-	case "Ingress":
-		// TODO(youngnick): Have this check for v1 or v1beta1
-		// Currently we have no support for v1.
-		// unstructured.GetObjectKind().GroupVersionKind() will probably be useful.
-		i := &v1beta1.Ingress{}
-		err := c.scheme.Convert(obj, i, nil)
-		return i, err
-	case "Service":
-		s := &v1.Service{}
-		err := c.scheme.Convert(obj, s, nil)
-		return s, err
-	case "HTTPProxy":
-		proxy := &projectcontour.HTTPProxy{}
-		err := c.scheme.Convert(obj, proxy, nil)
-		return proxy, err
-	case "IngressRoute":
-		ir := &ingressroutev1.IngressRoute{}
-		err := c.scheme.Convert(obj, ir, nil)
-		return ir, err
-	case "TLSCertificateDelegation":
-		switch unstructured.GroupVersionKind().Group {
-		case ingressroutev1.GroupName:
-			cert := &ingressroutev1.TLSCertificateDelegation{}
-			err := c.scheme.Convert(obj, cert, nil)
-			return cert, err
-		case projectcontour.GroupName:
-			cert := &projectcontour.TLSCertificateDelegation{}
-			err := c.scheme.Convert(obj, cert, nil)
-			return cert, err
-		default:
-			return nil, fmt.Errorf("unsupported object type: %T", obj)
-		}
-	case "GatewayClass":
-		gc := &serviceapis.GatewayClass{}
-		err := c.scheme.Convert(obj, gc, nil)
-		return gc, err
-	case "Gateway":
-		g := &serviceapis.Gateway{}
-		err := c.scheme.Convert(obj, g, nil)
-		return g, err
-	case "HTTPRoute":
-		hr := &serviceapis.HTTPRoute{}
-		err := c.scheme.Convert(obj, hr, nil)
-		return hr, err
-	case "TcpRoute":
-		tr := &serviceapis.TcpRoute{}
-		err := c.scheme.Convert(obj, tr, nil)
-		return tr, err
-	default:
-		return nil, fmt.Errorf("unsupported object type: %T", obj)
+
+	newObj, err := c.scheme.New(u.GetObjectKind().GroupVersionKind())
+	if err != nil {
+		return nil, err
 	}
+
+	return newObj, c.scheme.Convert(obj, newObj, nil)
+}
+
+// ToUnstructured converts the supplied object to Unstructured, provided it's one of the types
+// registered in the UnstructuredConverter's Scheme.
+func (c *UnstructuredConverter) ToUnstructured(obj interface{}) (*unstructured.Unstructured, error) {
+	u := &unstructured.Unstructured{}
+
+	if err := c.scheme.Convert(obj, u, context.TODO()); err != nil {
+		return nil, err
+	}
+
+	return u, nil
 }

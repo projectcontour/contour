@@ -48,7 +48,7 @@ func TestSDSVisibility(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// assert that the secret is _not_ visible as it is
-	// not referenced by any ingress/ingressroute
+	// not referenced by any ingress/httpproxy
 	c.Request(secretType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources:   resources(t),

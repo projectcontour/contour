@@ -18,6 +18,7 @@ import (
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 
 	"testing"
@@ -46,12 +47,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 		},
 	})
 
-	rh.OnAdd(&projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
+	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
@@ -65,8 +62,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 					}},
 				},
 			}},
-		},
-	})
+		}),
+	)
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
@@ -78,18 +75,13 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
 
 	// Non-Host header
-	rh.OnAdd(&projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
+	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
@@ -103,8 +95,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 					}},
 				},
 			}},
-		},
-	})
+		}),
+	)
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
@@ -125,18 +117,13 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
 
 	// Empty value for replaceHeader in HeadersPolicy
-	rh.OnAdd(&projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
+	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
@@ -149,8 +136,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 					}},
 				},
 			}},
-		},
-	})
+		}),
+	)
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
@@ -162,7 +149,6 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -182,6 +168,7 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 				Port:     443,
 				Name:     "https",
 			}},
+			Type: v1.ServiceTypeExternalName,
 		},
 	})
 
@@ -195,12 +182,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 	})
 
 	// Proxy with SNI
-	rh.OnAdd(&projcontour.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: projcontour.HTTPProxySpec{
+	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
+		projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "hello.world",
 				TLS:  &projcontour.TLS{SecretName: "foo"},
@@ -217,11 +200,11 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 					}},
 				},
 			}},
-		},
-	})
+		}),
+	)
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
+		Resources: routeResources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
@@ -235,7 +218,7 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 						},
 					}),
 			),
-			envoy.RouteConfiguration("ingress_https",
+			envoy.RouteConfiguration("https/hello.world",
 				envoy.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
@@ -248,7 +231,7 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(cluster("default/externalname/443/da39a3ee5e", "default/externalname/https", "default_externalname_443"), nil, "goodbye.planet", ""),
+			tlsCluster(externalNameCluster("default/externalname/443/da39a3ee5e", "default/externalname/https", "default_externalname_443", "goodbye.planet", 443), nil, "goodbye.planet", "goodbye.planet"),
 		),
 		TypeUrl: clusterType,
 	})

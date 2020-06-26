@@ -17,10 +17,12 @@ package dag
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -32,7 +34,7 @@ type DAG struct {
 	roots []Vertex
 
 	// status computed while building this dag.
-	statuses map[Meta]Status
+	statuses map[k8s.FullName]Status
 }
 
 // Visit calls fn on each root of this DAG.
@@ -44,7 +46,7 @@ func (d *DAG) Visit(fn func(Vertex)) {
 
 // Statuses returns a slice of Status objects associated with
 // the computation of this DAG.
-func (d *DAG) Statuses() map[Meta]Status {
+func (d *DAG) Statuses() map[k8s.FullName]Status {
 	return d.statuses
 }
 
@@ -78,7 +80,14 @@ type HeaderCondition struct {
 }
 
 func (hc *HeaderCondition) String() string {
-	return "header: " + hc.Name
+	details := strings.Join([]string{
+		"name=" + hc.Name,
+		"value=" + hc.Value,
+		"matchtype=", hc.MatchType,
+		"invert=", strconv.FormatBool(hc.Invert),
+	}, "&")
+
+	return "header: " + details
 }
 
 // Route defines the properties of a route to a Cluster.
@@ -213,6 +222,11 @@ func (r *Route) Visit(f func(Vertex)) {
 	for _, c := range r.Clusters {
 		f(c)
 	}
+	// Allow any mirror clusters to also be visited so that
+	// they are also added to CDS.
+	if r.MirrorPolicy != nil && r.MirrorPolicy.Cluster != nil {
+		f(r.MirrorPolicy.Cluster)
+	}
 }
 
 // A VirtualHost represents a named L4/L7 service.
@@ -255,10 +269,13 @@ type SecureVirtualHost struct {
 	VirtualHost
 
 	// TLS minimum protocol version. Defaults to envoy_api_v2_auth.TlsParameters_TLS_AUTO
-	MinProtoVersion envoy_api_v2_auth.TlsParameters_TlsProtocol
+	MinTLSVersion envoy_api_v2_auth.TlsParameters_TlsProtocol
 
 	// The cert and key for this host.
 	Secret *Secret
+
+	// FallbackCertificate
+	FallbackCertificate *Secret
 
 	// Service to TCP proxy all incoming connections.
 	*TCPProxy
@@ -364,7 +381,7 @@ type servicemeta struct {
 	port      int32
 }
 
-func (s *Service) toMeta() servicemeta {
+func (s *Service) ToFullName() servicemeta {
 	return servicemeta{
 		name:      s.Name,
 		namespace: s.Namespace,
@@ -408,6 +425,13 @@ type Cluster struct {
 
 	// ResponseHeadersPolicy defines how headers are managed during forwarding
 	ResponseHeadersPolicy *HeadersPolicy
+
+	// SNI is used when a route proxies an upstream using tls.
+	// SNI describes how the SNI is set on a Cluster and is configured via RequestHeadersPolicy.Host key.
+	// Policies set on service are used before policies set on a route. Otherwise the value of the externalService
+	// is used if the route is configured to proxy to an externalService type.
+	// If the value is not set, then SNI is not changed.
+	SNI string
 }
 
 func (c Cluster) Visit(f func(Vertex)) {

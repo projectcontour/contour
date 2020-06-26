@@ -20,9 +20,11 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
-	"github.com/envoyproxy/go-control-plane/pkg/cache"
+	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,14 +74,14 @@ func (e *EndpointsTranslator) OnDelete(obj interface{}) {
 
 func (e *EndpointsTranslator) Contents() []proto.Message {
 	values := e.clusterLoadAssignmentCache.Contents()
-	sort.Stable(clusterLoadAssignmentsByName(values))
-	return values
+	sort.Stable(sorter.For(values))
+	return protobuf.AsMessages(values)
 }
 
 func (e *EndpointsTranslator) Query(names []string) []proto.Message {
 	e.clusterLoadAssignmentCache.mu.Lock()
 	defer e.clusterLoadAssignmentCache.mu.Unlock()
-	values := make([]proto.Message, 0, len(names))
+	values := make([]*v2.ClusterLoadAssignment, 0, len(names))
 	for _, n := range names {
 		v, ok := e.entries[n]
 		if !ok {
@@ -89,19 +91,12 @@ func (e *EndpointsTranslator) Query(names []string) []proto.Message {
 		}
 		values = append(values, v)
 	}
-	sort.Stable(clusterLoadAssignmentsByName(values))
-	return values
+
+	sort.Stable(sorter.For(values))
+	return protobuf.AsMessages(values)
 }
 
-type clusterLoadAssignmentsByName []proto.Message
-
-func (c clusterLoadAssignmentsByName) Len() int      { return len(c) }
-func (c clusterLoadAssignmentsByName) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
-func (c clusterLoadAssignmentsByName) Less(i, j int) bool {
-	return c[i].(*v2.ClusterLoadAssignment).ClusterName < c[j].(*v2.ClusterLoadAssignment).ClusterName
-}
-
-func (*EndpointsTranslator) TypeURL() string { return cache.EndpointType }
+func (*EndpointsTranslator) TypeURL() string { return resource.EndpointType }
 
 func (e *EndpointsTranslator) addEndpoints(ep *v1.Endpoints) {
 	e.recomputeClusterLoadAssignment(nil, ep)
@@ -217,10 +212,10 @@ func (c *clusterLoadAssignmentCache) Remove(name string) {
 }
 
 // Contents returns a copy of the contents of the cache.
-func (c *clusterLoadAssignmentCache) Contents() []proto.Message {
+func (c *clusterLoadAssignmentCache) Contents() []*v2.ClusterLoadAssignment {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	values := make([]proto.Message, 0, len(c.entries))
+	values := make([]*v2.ClusterLoadAssignment, 0, len(c.entries))
 	for _, v := range c.entries {
 		values = append(values, v)
 	}

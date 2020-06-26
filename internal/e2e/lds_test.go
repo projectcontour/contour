@@ -1,4 +1,4 @@
-// Copyright © 2019 VMware
+// Copyright © 2020 VMware
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -15,14 +15,13 @@ package e2e
 
 import (
 	"context"
+	"path"
 	"testing"
-
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
@@ -33,6 +32,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+func httpsFilterFor(vhost string) *envoy_api_v2_listener.Filter {
+	return envoy.HTTPConnectionManagerBuilder().
+		AddFilter(envoy.FilterMisdirectedRequests(vhost)).
+		DefaultFilters().
+		RouteConfigName(path.Join("https", vhost)).
+		MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
+		AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
+		Get()
+}
 
 func TestNonTLSListener(t *testing.T) {
 	rh, cc, done := setup(t)
@@ -228,7 +237,9 @@ func TestTLSListener(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
-				FilterChains: filterchaintls("kuard.example.com", s1, envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0), "h2", "http/1.1"),
+				FilterChains: filterchaintls("kuard.example.com", s1,
+					httpsFilterFor("kuard.example.com"),
+					"h2", "http/1.1"),
 			},
 			staticListener(),
 		),
@@ -274,7 +285,9 @@ func TestTLSListener(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
-				FilterChains: filterchaintls("kuard.example.com", s1, envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0), "h2", "http/1.1"),
+				FilterChains: filterchaintls("kuard.example.com", s1,
+					httpsFilterFor("kuard.example.com"),
+					"h2", "http/1.1"),
 			},
 			staticListener(),
 		),
@@ -294,7 +307,7 @@ func TestTLSListener(t *testing.T) {
 	}, streamLDS(t, cc))
 }
 
-func TestIngressRouteTLSListener(t *testing.T) {
+func TestHTTPProxyTLSListener(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
 
@@ -322,13 +335,13 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		},
 	}
 
-	// i1 is a tls ingressroute
-	i1 := &ingressroutev1.IngressRoute{
+	// p1 is a tls httpproxy
+	p1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: secret1.Namespace,
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
 				TLS: &projcontour.TLS{
@@ -336,9 +349,11 @@ func TestIngressRouteTLSListener(t *testing.T) {
 					MinimumProtocolVersion: "1.1",
 				},
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
 					Name: svc1.Name,
 					Port: int(svc1.Spec.Ports[0].Port),
 				}},
@@ -346,13 +361,13 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		},
 	}
 
-	// i2 is a tls ingressroute
-	i2 := &ingressroutev1.IngressRoute{
+	// p2 is a tls httpproxy
+	p2 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: secret1.Namespace,
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
 				TLS: &projcontour.TLS{
@@ -360,9 +375,11 @@ func TestIngressRouteTLSListener(t *testing.T) {
 					MinimumProtocolVersion: "1.3",
 				},
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
 					Name: svc1.Name,
 					Port: int(svc1.Spec.Ports[0].Port),
 				}},
@@ -389,14 +406,16 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		ListenerFilters: envoy.ListenerFilters(
 			envoy.TLSInspector(),
 		),
-		FilterChains: filterchaintls("kuard.example.com", secret1, envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0), "h2", "http/1.1"),
+		FilterChains: filterchaintls("kuard.example.com", secret1,
+			httpsFilterFor("kuard.example.com"),
+			"h2", "http/1.1"),
 	}
 
 	// add service
 	rh.OnAdd(svc1)
 
 	// add ingress and assert the existence of ingress_http and ingres_https
-	rh.OnAdd(i1)
+	rh.OnAdd(p1)
 
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
@@ -416,7 +435,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 	}, streamLDS(t, cc))
 
 	// delete secret and assert both listeners are removed because the
-	// ingressroute is no longer valid.
+	// httpproxy is no longer valid.
 	rh.OnDelete(secret1)
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
@@ -427,7 +446,7 @@ func TestIngressRouteTLSListener(t *testing.T) {
 		Nonce:   "2",
 	}, streamLDS(t, cc))
 
-	rh.OnDelete(i1)
+	rh.OnDelete(p1)
 	// add secret
 	rh.OnAdd(secret1)
 	l2 := &v2.Listener{
@@ -444,15 +463,13 @@ func TestIngressRouteTLSListener(t *testing.T) {
 					envoy_api_v2_auth.TlsParameters_TLSv1_3,
 					nil,
 					"h2", "http/1.1"),
-				envoy.Filters(
-					envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
-				),
+				envoy.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
 	}
 
 	// add ingress and assert the existence of ingress_http and ingres_https
-	rh.OnAdd(i2)
+	rh.OnAdd(p2)
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "4",
 		Resources: resources(t,
@@ -537,7 +554,9 @@ func TestLDSFilter(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
-				FilterChains: filterchaintls("kuard.example.com", s1, envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0), "h2", "http/1.1"),
+				FilterChains: filterchaintls("kuard.example.com", s1,
+					httpsFilterFor("kuard.example.com"),
+					"h2", "http/1.1"),
 			},
 		),
 		TypeUrl: listenerType,
@@ -720,7 +739,9 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 			envoy.ProxyProtocol(),
 			envoy.TLSInspector(),
 		),
-		FilterChains: filterchaintls("kuard.example.com", s1, envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0), "h2", "http/1.1"),
+		FilterChains: filterchaintls("kuard.example.com", s1,
+			httpsFilterFor("kuard.example.com"),
+			"h2", "http/1.1"),
 	}
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
@@ -828,7 +849,9 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 		ListenerFilters: envoy.ListenerFilters(
 			envoy.TLSInspector(),
 		),
-		FilterChains: filterchaintls("kuard.example.com", s1, envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0), "h2", "http/1.1"),
+		FilterChains: filterchaintls("kuard.example.com", s1,
+			httpsFilterFor("kuard.example.com"),
+			"h2", "http/1.1"),
 	}
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
@@ -925,7 +948,15 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 		ListenerFilters: envoy.ListenerFilters(
 			envoy.TLSInspector(),
 		),
-		FilterChains: filterchaintls("kuard.example.com", s1, envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/tmp/https_access.log"), 0), "h2", "http/1.1"),
+		FilterChains: filterchaintls("kuard.example.com", s1,
+			envoy.HTTPConnectionManagerBuilder().
+				AddFilter(envoy.FilterMisdirectedRequests("kuard.example.com")).
+				DefaultFilters().
+				RouteConfigName("https/kuard.example.com").
+				MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
+				AccessLoggers(envoy.FileAccessLogEnvoy("/tmp/https_access.log")).
+				Get(),
+			"h2", "http/1.1"),
 	}
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
@@ -939,7 +970,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 	}, streamLDS(t, cc))
 }
 
-func TestIngressRouteHTTPS(t *testing.T) {
+func TestHTTPProxyHTTPS(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
 
@@ -963,22 +994,24 @@ func TestIngressRouteHTTPS(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
-	// ir1 is an ingressroute that has TLS
-	ir1 := &ingressroutev1.IngressRoute{
+	// p1 is a httpproxy that has TLS
+	p1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "example.com",
 				TLS: &projcontour.TLS{
 					SecretName: "secret",
 				},
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -1006,8 +1039,8 @@ func TestIngressRouteHTTPS(t *testing.T) {
 	// add service
 	rh.OnAdd(svc1)
 
-	// add ingressroute
-	rh.OnAdd(ir1)
+	// add httpproxy
+	rh.OnAdd(p1)
 
 	ingressHTTP := &v2.Listener{
 		Name:    "ingress_http",
@@ -1023,7 +1056,9 @@ func TestIngressRouteHTTPS(t *testing.T) {
 		ListenerFilters: envoy.ListenerFilters(
 			envoy.TLSInspector(),
 		),
-		FilterChains: filterchaintls("example.com", s1, envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0), "h2", "http/1.1"),
+		FilterChains: filterchaintls("example.com", s1,
+			httpsFilterFor("example.com"),
+			"h2", "http/1.1"),
 	}
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
@@ -1037,9 +1072,9 @@ func TestIngressRouteHTTPS(t *testing.T) {
 	}, streamLDS(t, cc))
 }
 
-func TestIngressRouteMinimumTLSVersion(t *testing.T) {
+func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
-		reh.CacheHandler.MinimumProtocolVersion = envoy_api_v2_auth.TlsParameters_TLSv1_2
+		reh.CacheHandler.MinimumTLSVersion = envoy_api_v2_auth.TlsParameters_TLSv1_2
 	})
 
 	defer done()
@@ -1070,13 +1105,13 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 	}
 	rh.OnAdd(svc1)
 
-	// i1 is a tls ingressroute
-	i1 := &ingressroutev1.IngressRoute{
+	// p1 is a tls httpproxy
+	p1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
 				TLS: &projcontour.TLS{
@@ -1084,16 +1119,18 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 					MinimumProtocolVersion: "1.1",
 				},
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
 					Name: "backend",
 					Port: 80,
 				}},
 			}},
 		},
 	}
-	rh.OnAdd(i1)
+	rh.OnAdd(p1)
 
 	l1 := &v2.Listener{
 		Name:    "ingress_https",
@@ -1109,14 +1146,12 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 					envoy_api_v2_auth.TlsParameters_TLSv1_2,
 					nil,
 					"h2", "http/1.1"),
-				envoy.Filters(
-					envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
-				),
+				envoy.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
 	}
 
-	// verify that i1's TLS 1.1 minimum has been upgraded to 1.2
+	// verify that p1's TLS 1.1 minimum has been upgraded to 1.2
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
@@ -1134,13 +1169,13 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 		Nonce:   "1",
 	}, streamLDS(t, cc))
 
-	// i2 is a tls ingressroute
-	i2 := &ingressroutev1.IngressRoute{
+	// p2 is a tls httpproxy
+	p2 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "kuard.example.com",
 				TLS: &projcontour.TLS{
@@ -1148,16 +1183,19 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 					MinimumProtocolVersion: "1.3",
 				},
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+
+				Services: []projcontour.Service{{
 					Name: "backend",
 					Port: 80,
 				}},
 			}},
 		},
 	}
-	rh.OnUpdate(i1, i2)
+	rh.OnUpdate(p1, p2)
 
 	l2 := &v2.Listener{
 		Name:    "ingress_https",
@@ -1173,14 +1211,12 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 					envoy_api_v2_auth.TlsParameters_TLSv1_3,
 					nil,
 					"h2", "http/1.1"),
-				envoy.Filters(
-					envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
-				),
+				envoy.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
 	}
 
-	// verify that i2's TLS 1.3 minimum has NOT been downgraded to 1.2
+	// verify that p2's TLS 1.3 minimum has NOT been downgraded to 1.2
 	assert.Equal(t, &v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: resources(t,
@@ -1199,7 +1235,7 @@ func TestIngressRouteMinimumTLSVersion(t *testing.T) {
 	}, streamLDS(t, cc))
 }
 
-func TestLDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
+func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
 
@@ -1218,18 +1254,20 @@ func TestLDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
 	}
 	rh.OnAdd(svc1)
 
-	child := &ingressroutev1.IngressRoute{
+	child := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog",
 			Namespace: "marketing",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "www.containersteve.com",
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
 					Name: svc1.Name,
 					Port: 80,
 				}},
@@ -1238,21 +1276,21 @@ func TestLDSIngressRouteRootCannotDelegateToAnotherRoot(t *testing.T) {
 	}
 	rh.OnAdd(child)
 
-	root := &ingressroutev1.IngressRoute{
+	root := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "root-blog",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
 				Fqdn: "blog.containersteve.com",
 			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Delegate: &ingressroutev1.Delegate{
-					Name:      child.Name,
-					Namespace: child.Namespace,
-				},
+			Includes: []projcontour.Include{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/",
+				}},
+				Name:      child.Name,
+				Namespace: child.Namespace,
 			}},
 		},
 	}

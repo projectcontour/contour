@@ -17,7 +17,6 @@ import (
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -58,16 +57,18 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		},
 	}
 
-	ir1 := &ingressroutev1.IngressRoute{
+	p1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/a",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/a",
+				}},
+				Services: []projcontour.Service{{
 					Name: svc.Name,
 					Port: 443,
 				}},
@@ -76,7 +77,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	}
 	rh.OnAdd(secret)
 	rh.OnAdd(svc)
-	rh.OnAdd(ir1)
+	rh.OnAdd(p1)
 
 	// assert that the insecure listener and the stats listener are present in LDS.
 	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
@@ -101,16 +102,18 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		TypeUrl: clusterType,
 	})
 
-	ir2 := &ingressroutev1.IngressRoute{
+	p2 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/a",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/a",
+				}},
+				Services: []projcontour.Service{{
 					Name: svc.Name,
 					Port: 443,
 					UpstreamValidation: &projcontour.UpstreamValidation{
@@ -121,7 +124,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 			}},
 		},
 	}
-	rh.OnUpdate(ir1, ir2)
+	rh.OnUpdate(p1, p2)
 
 	// assert that the insecure listener and the stats listener are present in LDS.
 	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
@@ -155,7 +158,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		TypeUrl:   secretType,
 	})
 
-	rh.OnDelete(ir2)
+	rh.OnDelete(p2)
 
 	hp1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{

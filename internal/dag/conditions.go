@@ -111,22 +111,71 @@ func mergeHeaderConditions(conds []projcontour.Condition) []HeaderCondition {
 	return hc
 }
 
-func headerConditionsAreValid(conditions []projcontour.Condition) bool {
-	// Look for duplicate "exact match" headers on conditions
-	// if found, set error condition on HTTPProxy
-	encountered := map[string]bool{}
+// headerConditionsValid validates that the header conditions within a
+// slice of Conditions are valid. Specifically, it returns an error for
+// any of the following scenarios:
+//	- more than 1 'exact' condition for the same header
+//	- an 'exact' and a 'notexact' condition for the same header, with the same values
+//	- a 'contains' and a 'notcontains' condition for the same header, with the same values
+//
+// Note that there are additional, more complex scenarios that we could check for here. For
+// example, "exact: foo" and "notcontains: <any substring of foo>" are contradictory.
+func headerConditionsValid(conditions []projcontour.Condition) error {
+	seenConditions := map[projcontour.HeaderCondition]bool{}
+	headersWithExactMatch := map[string]bool{}
+
 	for _, v := range conditions {
 		if v.Header == nil {
 			continue
 		}
+
+		headerName := strings.ToLower(v.Header.Name)
 		switch {
 		case v.Header.Exact != "":
-			headerName := strings.ToLower(v.Header.Name)
-			if encountered[headerName] {
-				return false
+			// Look for duplicate "exact match" headers on conditions
+			if headersWithExactMatch[headerName] {
+				return errors.New("cannot specify duplicate header 'exact match' conditions in the same route")
 			}
-			encountered[headerName] = true
+			headersWithExactMatch[headerName] = true
+
+			// look for a NotExact condition on the same header with the same value
+			if seenConditions[projcontour.HeaderCondition{
+				Name:     headerName,
+				NotExact: v.Header.Exact,
+			}] {
+				return errors.New("cannot specify contradictory 'exact' and 'notexact' conditions for the same route and header")
+			}
+		case v.Header.NotExact != "":
+			// look for an Exact condition on the same header with the same value
+			if seenConditions[projcontour.HeaderCondition{
+				Name:  headerName,
+				Exact: v.Header.NotExact,
+			}] {
+				return errors.New("cannot specify contradictory 'exact' and 'notexact' conditions for the same route and header")
+			}
+		case v.Header.Contains != "":
+			// look for a NotContains condition on the same header with the same value
+			if seenConditions[projcontour.HeaderCondition{
+				Name:        headerName,
+				NotContains: v.Header.Contains,
+			}] {
+				return errors.New("cannot specify contradictory 'contains' and 'notcontains' conditions for the same route and header")
+			}
+		case v.Header.NotContains != "":
+			// look for a Contains condition on the same header with the same value
+			if seenConditions[projcontour.HeaderCondition{
+				Name:     headerName,
+				Contains: v.Header.NotContains,
+			}] {
+				return errors.New("cannot specify contradictory 'contains' and 'notcontains' conditions for the same route and header")
+			}
 		}
+
+		key := *v.Header
+		// use the lower-cased header name so comparisons are case-insensitive
+		key.Name = headerName
+		seenConditions[key] = true
 	}
-	return true
+
+	return nil
 }

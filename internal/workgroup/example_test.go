@@ -83,7 +83,7 @@ func ExampleGroup_Run_multipleListeners() {
 
 	// listen on port 80
 	g.Add(func(stop <-chan struct{}) error {
-		l, err := net.Listen("tcp", ":80")
+		l, err := net.Listen("tcp", ":80") // nolint:gosec
 		if err != nil {
 			return err
 		}
@@ -97,7 +97,7 @@ func ExampleGroup_Run_multipleListeners() {
 
 	// listen on port 443
 	g.Add(func(stop <-chan struct{}) error {
-		l, err := net.Listen("tcp", ":443")
+		l, err := net.Listen("tcp", ":443") // nolint:gosec
 		if err != nil {
 			return err
 		}

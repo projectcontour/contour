@@ -25,6 +25,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/k8s"
+
 	"github.com/projectcontour/contour/internal/contour"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -32,6 +35,9 @@ import (
 )
 
 type serveContext struct {
+	// Note about parameter behavior: if the parameter is going to be in the config file,
+	// it has to be exported. If not, the YAML decoder will not see the field.
+
 	// Enable debug logging
 	Debug bool
 
@@ -52,11 +58,20 @@ type serveContext struct {
 	metricsAddr string
 	metricsPort int
 
-	// ingressroute root namespaces
+	// Contour's health handler parameters.
+	healthAddr string
+	healthPort int
+
+	// httpproxy root namespaces
 	rootNamespaces string
 
 	// ingress class
 	ingressClass string
+
+	// Address to be placed in status.loadbalancer field of Ingress objects.
+	// May be either a literal IP address or a host name.
+	// The value will be placed directly into the relevant field inside the status.loadBalancer struct.
+	IngressStatusAddress string `yaml:"ingress-status-address,omitempty"`
 
 	// envoy's stats listener parameters
 	statsAddr string
@@ -91,7 +106,7 @@ type serveContext struct {
 	TLSConfig `yaml:"tls,omitempty"`
 
 	// DisablePermitInsecure disables the use of the
-	// permitInsecure field in IngressRoute.
+	// permitInsecure field in HTTPProxy.
 	DisablePermitInsecure bool `yaml:"disablePermitInsecure,omitempty"`
 
 	// DisableLeaderElection can only be set by command line flag.
@@ -109,6 +124,22 @@ type serveContext struct {
 	// If the value is true, Contour will register for all the service-apis types
 	// (GatewayClass, Gateway, HTTPRoute, TCPRoute, and any more as they are added)
 	UseExperimentalServiceAPITypes bool `yaml:"-"`
+
+	// envoy service details
+
+	// Namespace of the envoy service to inspect for Ingress status details.
+	EnvoyServiceNamespace string `yaml:"envoy-service-namespace,omitempty"`
+
+	// Name of the envoy service to inspect for Ingress status details.
+	EnvoyServiceName string `yaml:"envoy-service-name,omitempty"`
+
+	// DefaultHTTPVersions defines the default set of HTTPS
+	// versions the proxy should accept. HTTP versions are
+	// strings of the form "HTTP/xx". Supported versions are
+	// "HTTP/1.1" and "HTTP/2".
+	//
+	// If this field not specified, all supported versions are accepted.
+	DefaultHTTPVersions []string `yaml:"default-http-versions"`
 }
 
 // newServeContext returns a serveContext initialized to defaults.
@@ -122,6 +153,8 @@ func newServeContext() *serveContext {
 		statsPort:             8002,
 		debugAddr:             "127.0.0.1",
 		debugPort:             6060,
+		healthAddr:            "0.0.0.0",
+		healthPort:            8000,
 		metricsAddr:           "0.0.0.0",
 		metricsPort:           8000,
 		httpAccessLog:         contour.DEFAULT_HTTP_ACCESS_LOG,
@@ -134,43 +167,54 @@ func newServeContext() *serveContext {
 		DisablePermitInsecure: false,
 		DisableLeaderElection: false,
 		AccessLogFormat:       "envoy",
-		AccessLogFields: []string{
-			"@timestamp",
-			"authority",
-			"bytes_received",
-			"bytes_sent",
-			"downstream_local_address",
-			"downstream_remote_address",
-			"duration",
-			"method",
-			"path",
-			"protocol",
-			"request_id",
-			"requested_server_name",
-			"response_code",
-			"response_flags",
-			"uber_trace_id",
-			"upstream_cluster",
-			"upstream_host",
-			"upstream_local_address",
-			"upstream_service_time",
-			"user_agent",
-			"x_forwarded_for",
-		},
 		LeaderElectionConfig: LeaderElectionConfig{
 			LeaseDuration: time.Second * 15,
 			RenewDeadline: time.Second * 10,
 			RetryPeriod:   time.Second * 2,
-			Namespace:     "projectcontour",
+			Namespace:     getEnv("CONTOUR_NAMESPACE", "projectcontour"),
 			Name:          "leader-elect",
 		},
 		UseExperimentalServiceAPITypes: false,
+		EnvoyServiceName:               "envoy",
+		EnvoyServiceNamespace:          getEnv("CONTOUR_NAMESPACE", "projectcontour"),
 	}
 }
 
 // TLSConfig holds configuration file TLS configuration details.
 type TLSConfig struct {
 	MinimumProtocolVersion string `yaml:"minimum-protocol-version"`
+
+	// FallbackCertificate defines the namespace/name of the Kubernetes secret to
+	// use as fallback when a non-SNI request is received.
+	FallbackCertificate FallbackCertificate `yaml:"fallback-certificate,omitempty"`
+}
+
+// FallbackCertificate defines the namespace/name of the Kubernetes secret to
+// use as fallback when a non-SNI request is received.
+type FallbackCertificate struct {
+	Name      string `yaml:"name"`
+	Namespace string `yaml:"namespace"`
+}
+
+func (ctx *serveContext) fallbackCertificate() (*k8s.FullName, error) {
+	if len(strings.TrimSpace(ctx.TLSConfig.FallbackCertificate.Name)) == 0 && len(strings.TrimSpace(ctx.TLSConfig.FallbackCertificate.Namespace)) == 0 {
+		return nil, nil
+	}
+
+	// Validate namespace is defined
+	if len(strings.TrimSpace(ctx.TLSConfig.FallbackCertificate.Namespace)) == 0 {
+		return nil, errors.New("namespace must be defined")
+	}
+
+	// Validate name is defined
+	if len(strings.TrimSpace(ctx.TLSConfig.FallbackCertificate.Name)) == 0 {
+		return nil, errors.New("name must be defined")
+	}
+
+	return &k8s.FullName{
+		Name:      ctx.TLSConfig.FallbackCertificate.Name,
+		Namespace: ctx.TLSConfig.FallbackCertificate.Namespace,
+	}, nil
 }
 
 // LeaderElectionConfig holds the config bits for leader election inside the
@@ -271,12 +315,13 @@ func (ctx *serveContext) verifyTLSFlags() error {
 	if !(ctx.caFile != "" && ctx.contourCert != "" && ctx.contourKey != "") {
 		return errors.New("you must supply all three TLS parameters - --contour-cafile, --contour-cert-file, --contour-key-file, or none of them")
 	}
+
 	return nil
 }
 
-// ingressRouteRootNamespaces returns a slice of namespaces restricting where
-// contour should look for ingressroute roots.
-func (ctx *serveContext) ingressRouteRootNamespaces() []string {
+// proxyRootNamespaces returns a slice of namespaces restricting where
+// contour should look for httpproxy roots.
+func (ctx *serveContext) proxyRootNamespaces() []string {
 	if strings.TrimSpace(ctx.rootNamespaces) == "" {
 		return nil
 	}
@@ -285,4 +330,37 @@ func (ctx *serveContext) ingressRouteRootNamespaces() []string {
 		ns = append(ns, strings.TrimSpace(s))
 	}
 	return ns
+}
+
+// parseDefaultHTTPVersions parses a list of supported HTTP versions
+//  (of the form "HTTP/xx") into a slice of unique version constants.
+func parseDefaultHTTPVersions(versions []string) ([]envoy.HTTPVersionType, error) {
+	wanted := map[envoy.HTTPVersionType]struct{}{}
+
+	for _, v := range versions {
+		switch strings.ToLower(v) {
+		case "http/1.1":
+			wanted[envoy.HTTPVersion1] = struct{}{}
+		case "http/2":
+			wanted[envoy.HTTPVersion2] = struct{}{}
+		default:
+			return nil, fmt.Errorf("invalid HTTP protocol version %q", v)
+		}
+	}
+
+	var parsed []envoy.HTTPVersionType
+	for k := range wanted {
+		parsed = append(parsed, k)
+
+	}
+
+	return parsed, nil
+}
+
+// Simple helper function to read an environment or return a default value
+func getEnv(key string, defaultVal string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return defaultVal
 }

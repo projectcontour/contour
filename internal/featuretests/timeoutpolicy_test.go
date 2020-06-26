@@ -19,7 +19,6 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -30,9 +29,7 @@ import (
 )
 
 func TestTimeoutPolicyRequestTimeout(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.Source.IngressClass = "linkerd"
-	})
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
 	defer done()
 
 	svc := &v1.Service{
@@ -64,7 +61,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
-	// check annotation with explicit timeout is propogated
+	// check annotation with explicit timeout is propagated
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
@@ -75,7 +72,6 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -103,7 +99,6 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -131,7 +126,6 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -160,117 +154,10 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
 	rh.OnDelete(i4)
-
-	ir1 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: svc.Namespace,
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
-					Request: "600", // not 600s
-				},
-				Services: []ingressroutev1.Service{{
-					Name: svc.Name,
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-	rh.OnAdd(ir1)
-
-	// check timeout policy with malformed response timeout is propogated as infinity
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("test2.test.com",
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 0), // zero means infinity
-					},
-				),
-			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
-
-	ir2 := &ingressroutev1.IngressRoute{
-		ObjectMeta: ir1.ObjectMeta,
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
-					Request: "3m",
-				},
-				Services: []ingressroutev1.Service{{
-					Name: svc.Name,
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-	rh.OnUpdate(ir1, ir2)
-
-	// check timeout policy with response timeout is propogated correctly
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("test2.test.com",
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 180*time.Second),
-					},
-				),
-			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
-
-	ir3 := &ingressroutev1.IngressRoute{
-		ObjectMeta: ir2.ObjectMeta,
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				TimeoutPolicy: &ingressroutev1.TimeoutPolicy{
-					Request: "infinty",
-				},
-				Services: []ingressroutev1.Service{{
-					Name: svc.Name,
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-	rh.OnUpdate(ir2, ir3)
-
-	// check timeout policy with explicit infine response timeout is propogated as infinity
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("test2.test.com",
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 0), // zero means infinity
-					},
-				),
-			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
-	rh.OnDelete(ir3)
 
 	p1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -304,7 +191,6 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -338,7 +224,6 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -372,16 +257,13 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
 }
 
 func TestTimeoutPolicyIdleTimeout(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.Source.IngressClass = "linkerd"
-	})
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
 	defer done()
 
 	svc := &v1.Service{
@@ -431,7 +313,6 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -465,7 +346,6 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -499,7 +379,6 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})

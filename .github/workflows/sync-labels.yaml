@@ -1,0 +1,31 @@
+# This workflow runs the sync-repo-labels.sh script periodically.
+name: Sync GitHub Labels
+
+on:
+  # Run every day at 10:00 (until #2485 is fixed).
+  schedule:
+  - cron: '0 10 * * *'
+  # Run when a PR that touched the labels is closed (closed includes merges).
+  pull_request:
+    types: [closed]
+    paths:
+    - "site/_data/github-labels.yaml"
+
+jobs:
+  sync:
+    name: Sync Labels
+    runs-on: ubuntu-latest
+    steps:
+    # Note, we check out master. We don't want un-merged PRs to whack
+    # labels globally.
+    - name: Check out master
+      uses: actions/checkout@v2
+      with:
+        ref: master
+    # We need this token in a file so the syncer can consume it from
+    # within the Docker container.
+    - name: Export the GitHub token
+      run: 'echo "${{ secrets.PROJECTCONTOUR_BOT_GITHUB_TOKEN }}" > github-token'
+    - name: Run the label syncer
+      run: 'TOKEN="github-token" ./hack/release/sync-repo-labels.sh'
+

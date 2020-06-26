@@ -29,6 +29,9 @@ type Assert struct {
 	t *testing.T
 }
 
+// Equal will test that want == got, and call t.Fatal if it does not.
+// Notably, for errors, they are equal if they are both nil, or are both non-nil.
+// No value information is checked for errors.
 func Equal(t *testing.T, want, got interface{}) {
 	t.Helper()
 	Assert{t}.Equal(want, got)
@@ -52,6 +55,9 @@ func (a Assert) Equal(want, got interface{}) {
 }
 
 func unmarshalAny(a *any.Any) proto.Message {
+	if a == nil {
+		return nil
+	}
 	pb, err := ptypes.Empty(a)
 	if err != nil {
 		panic(err.Error())

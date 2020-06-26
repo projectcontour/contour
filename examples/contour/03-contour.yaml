@@ -42,7 +42,7 @@ spec:
         - --xds-port=8001
         - --envoy-service-http-port=80
         - --envoy-service-https-port=443
-        - --contour-cafile=/ca/cacert.pem
+        - --contour-cafile=/certs/ca.crt
         - --contour-cert-file=/certs/tls.crt
         - --contour-key-file=/certs/tls.key
         - --config-path=/config/contour.yaml
@@ -70,13 +70,15 @@ spec:
           - name: contourcert
             mountPath: /certs
             readOnly: true
-          - name: cacert
-            mountPath: /ca
-            readOnly: true
           - name: contour-config
             mountPath: /config
             readOnly: true
         env:
+        - name: CONTOUR_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
         - name: POD_NAME
           valueFrom:
             fieldRef:
@@ -92,9 +94,6 @@ spec:
         - name: contourcert
           secret:
             secretName: contourcert
-        - name: cacert
-          secret:
-            secretName: cacert
         - name: contour-config
           configMap:
             name: contour

@@ -10,6 +10,7 @@
 
 // Layouts
 @import "./site/layouts/container";
+@import "./site/layouts/docsearch";
 
 // Objects
 @import "./site/objects/header";
@@ -27,3 +28,6 @@
 // Utilities
 @import "./site/utilities/image";
 @import "./site/utilities/type";
+
+// Code highlighting theme, from https://github.com/jwarby/jekyll-pygments-themes
+@import "./site/utilities/highlighter";

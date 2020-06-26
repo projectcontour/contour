@@ -21,7 +21,6 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -596,23 +595,27 @@ func TestClusterPerServiceParameters(t *testing.T) {
 		},
 	})
 
-	rh.OnAdd(&ingressroutev1.IngressRoute{
+	rh.OnAdd(&projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/a",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/a",
+				}},
+				Services: []projcontour.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90,
 				}},
 			}, {
-				Match: "/b",
-				Services: []ingressroutev1.Service{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/a",
+				}},
+				Services: []projcontour.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 60,
@@ -651,26 +654,34 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 		},
 	})
 
-	rh.OnAdd(&ingressroutev1.IngressRoute{
+	rh.OnAdd(&projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/a",
-				Services: []ingressroutev1.Service{{
-					Name:     "kuard",
-					Port:     80,
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/a",
+				}},
+				LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
 					Strategy: "Random",
+				},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 80,
 				}},
 			}, {
-				Match: "/b",
-				Services: []ingressroutev1.Service{{
-					Name:     "kuard",
-					Port:     80,
+				Conditions: []projcontour.Condition{{
+					Prefix: "/b",
+				}},
+				LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
 					Strategy: "WeightedLeastRequest",
+				},
+				Services: []projcontour.Service{{
+					Name: "kuard",
+					Port: 80,
 				}},
 			}},
 		},
@@ -723,22 +734,24 @@ func TestClusterWithHealthChecks(t *testing.T) {
 		},
 	})
 
-	rh.OnAdd(&ingressroutev1.IngressRoute{
+	rh.OnAdd(&projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/a",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/a",
+				}},
+				HealthCheckPolicy: &projcontour.HTTPHealthCheckPolicy{
+					Path: "/healthz",
+				},
+				Services: []projcontour.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90,
-					HealthCheck: &ingressroutev1.HealthCheck{
-						Path: "/healthz",
-					},
 				}},
 			}},
 		},
@@ -773,23 +786,27 @@ func TestUnreferencedService(t *testing.T) {
 		},
 	})
 
-	rh.OnAdd(&ingressroutev1.IngressRoute{
+	rh.OnAdd(&projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: ingressroutev1.IngressRouteSpec{
+		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/a",
-				Services: []ingressroutev1.Service{{
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/a",
+				}},
+				Services: []projcontour.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90,
 				}},
 			}, {
-				Match: "/b",
-				Services: []ingressroutev1.Service{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/b",
+				}},
+				Services: []projcontour.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 60,

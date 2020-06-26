@@ -16,51 +16,44 @@ package k8s
 import (
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
-	"k8s.io/api/networking/v1beta1"
-
-	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
-
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic/dynamicinformer"
-	"k8s.io/client-go/tools/cache"
+	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
 )
 
-type gvrmap map[schema.GroupVersionResource]cache.SharedIndexInformer
-
-// InformerSet stores a table of Kubernetes GVR objects to their associated informers.
-type InformerSet struct {
-	Informers gvrmap
-}
-
-// DefaultInformerSet creates a new InformerSet lookup table and populates with the default
-// GVRs that Contour will try to watch.
-func DefaultInformerSet(inffactory dynamicinformer.DynamicSharedInformerFactory, serviceAPIs bool) InformerSet {
-
-	defaultGVRs := []schema.GroupVersionResource{
-		ingressroutev1.IngressRouteGVR,
-		ingressroutev1.TLSCertificateDelegationGVR,
+func DefaultResources() []schema.GroupVersionResource {
+	return []schema.GroupVersionResource{
 		projectcontour.HTTPProxyGVR,
 		projectcontour.TLSCertificateDelegationGVR,
 		corev1.SchemeGroupVersion.WithResource("services"),
 		v1beta1.SchemeGroupVersion.WithResource("ingresses"),
 	}
+}
 
-	// TODO(youngnick): Remove this boolean once we have autodetection of available types (Further work on #2219).
-	if serviceAPIs {
-		defaultGVRs = append(defaultGVRs, serviceapis.GroupVersion.WithResource("gatewayclasses"))
-		defaultGVRs = append(defaultGVRs, serviceapis.GroupVersion.WithResource("gateways"))
-		defaultGVRs = append(defaultGVRs, serviceapis.GroupVersion.WithResource("httproutes"))
-		defaultGVRs = append(defaultGVRs, serviceapis.GroupVersion.WithResource("tcproutes"))
+func ServiceAPIResources() []schema.GroupVersionResource {
+	return []schema.GroupVersionResource{
+		serviceapis.GroupVersion.WithResource("gatewayclasses"),
+		serviceapis.GroupVersion.WithResource("gateways"),
+		serviceapis.GroupVersion.WithResource("httproutes"),
+		serviceapis.GroupVersion.WithResource("tcproutes"),
 	}
+}
 
-	gvri := InformerSet{
-		Informers: make(gvrmap),
+func SecretsResources() []schema.GroupVersionResource {
+	return []schema.GroupVersionResource{
+		corev1.SchemeGroupVersion.WithResource("secrets"),
 	}
+}
 
-	for _, gvr := range defaultGVRs {
-		gvri.Informers[gvr] = inffactory.ForResource(gvr).Informer()
+func EndpointsResources() []schema.GroupVersionResource {
+	return []schema.GroupVersionResource{
+		corev1.SchemeGroupVersion.WithResource("endpoints"),
 	}
-	return gvri
+}
+
+func ServicesResources() []schema.GroupVersionResource {
+	return []schema.GroupVersionResource{
+		corev1.SchemeGroupVersion.WithResource("services"),
+	}
 }

@@ -19,4 +19,4 @@ We support only the latest Contour [release](https://github.com/projectcontour/c
 The upgrade path for Contour, including upgrade instructions, is documented [here](https://projectcontour.io/resources/upgrading/). Each Contour version also requires a specific release of Envoy, documented in the upgrading portion of our website.
 
 ### Next Release and Prioritized Backlog
-The activity for the next release is tracked in the [up-to-date project board](https://github.com/projectcontour/contour#workspaces/contour-5bc5116124028a7e4bf2ef81/board?repos=108462822). If your issue is not present the backlog, please reach out to the maintainers to add the issue to the project board. You may need to install the ZenHub browser plugin for this link to be visible.
+The activity for the next release is tracked in the [up-to-date project board](https://github.com/orgs/projectcontour/projects/2). If your issue is not present the backlog, please reach out to the maintainers to add the issue to the project board. You may need to install the ZenHub browser plugin for this link to be visible.

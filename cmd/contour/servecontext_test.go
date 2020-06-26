@@ -17,13 +17,18 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"testing"
 	"time"
+
+	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/k8s"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/projectcontour/contour/internal/assert"
@@ -70,7 +75,7 @@ func TestServeContextIngressRouteRootNamespaces(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := tc.ctx.ingressRouteRootNamespaces()
+			got := tc.ctx.proxyRootNamespaces()
 			if !reflect.DeepEqual(got, tc.want) {
 				t.Fatalf("expected: %q, got: %q", tc.want, got)
 			}
@@ -185,16 +190,96 @@ leaderelection:
 				return ctx
 			},
 		},
+		"default http versions": {
+			yamlIn: `
+default-http-versions:
+- http/1.1
+- http/2
+- http/99
+`,
+			want: func() *serveContext {
+				ctx := newServeContext()
+				// Note that version validity isn't checked at this point.
+				ctx.DefaultHTTPVersions = []string{"http/1.1", "http/2", "http/99"}
+				return ctx
+			},
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := newServeContext()
-			err := yaml.Unmarshal([]byte(tc.yamlIn), got)
+			err := yaml.UnmarshalStrict([]byte(tc.yamlIn), got)
 			checkFatalErr(t, err)
 			want := tc.want()
 
 			if diff := cmp.Diff(*want, *got, cmp.AllowUnexported(serveContext{})); diff != "" {
 				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestFallbackCertificateParams(t *testing.T) {
+	tests := map[string]struct {
+		ctx         serveContext
+		want        *k8s.FullName
+		expecterror bool
+	}{
+		"fallback cert params passed correctly": {
+			ctx: serveContext{
+				TLSConfig: TLSConfig{
+					FallbackCertificate: FallbackCertificate{
+						Name:      "fallbacksecret",
+						Namespace: "root-namespace",
+					},
+				},
+			},
+			want: &k8s.FullName{
+				Name:      "fallbacksecret",
+				Namespace: "root-namespace",
+			},
+			expecterror: false,
+		},
+		"missing namespace": {
+			ctx: serveContext{
+				TLSConfig: TLSConfig{
+					FallbackCertificate: FallbackCertificate{
+						Name: "fallbacksecret",
+					},
+				},
+			},
+			want:        nil,
+			expecterror: true,
+		},
+		"missing name": {
+			ctx: serveContext{
+				TLSConfig: TLSConfig{
+					FallbackCertificate: FallbackCertificate{
+						Namespace: "root-namespace",
+					},
+				},
+			},
+			want:        nil,
+			expecterror: true,
+		},
+		"fallback cert not defined": {
+			ctx:         serveContext{},
+			want:        nil,
+			expecterror: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := tc.ctx.fallbackCertificate()
+
+			if diff := cmp.Diff(tc.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+
+			goterror := err != nil
+			if goterror != tc.expecterror {
+				t.Errorf("Expected Fallback Certificate error: %s", err)
 			}
 		})
 	}
@@ -332,7 +417,7 @@ func tryConnect(address string, clientCredentialsDir string) (*x509.Certificate,
 	clientConfig := &tls.Config{
 		ServerName:         "localhost",
 		Certificates:       []tls.Certificate{cert},
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: true, // nolint:gosec
 	}
 	conn, err := tls.Dial("tcp", address, clientConfig)
 	if err != nil {
@@ -370,4 +455,54 @@ func peekError(conn net.Conn) error {
 		}
 	}
 	return nil
+}
+
+func TestParseHTTPVersions(t *testing.T) {
+	cases := map[string]struct {
+		versions      []string
+		parseError    error
+		parseVersions []envoy.HTTPVersionType
+	}{
+		"empty": {
+			versions:      []string{},
+			parseError:    nil,
+			parseVersions: nil,
+		},
+		"invalid proto": {
+			versions:      []string{"foo"},
+			parseError:    errors.New("invalid"),
+			parseVersions: nil,
+		},
+		"http/1.1": {
+			versions:      []string{"http/1.1", "HTTP/1.1"},
+			parseError:    nil,
+			parseVersions: []envoy.HTTPVersionType{envoy.HTTPVersion1},
+		},
+		"http/1.1+http/2": {
+			versions:      []string{"http/1.1", "http/2"},
+			parseError:    nil,
+			parseVersions: []envoy.HTTPVersionType{envoy.HTTPVersion1, envoy.HTTPVersion2},
+		},
+		"http/1.1+http/2 duplicated": {
+			versions:      []string{"http/1.1", "http/2", "http/1.1", "http/2"},
+			parseError:    nil,
+			parseVersions: []envoy.HTTPVersionType{envoy.HTTPVersion1, envoy.HTTPVersion2},
+		},
+	}
+
+	for name, testcase := range cases {
+		testcase := testcase
+		t.Run(name, func(t *testing.T) {
+			vers, err := parseDefaultHTTPVersions(testcase.versions)
+
+			// parseDefaultHTTPVersions doesn't guarantee a stable result, but the order doesn't matter.
+			sort.Slice(vers,
+				func(i, j int) bool { return vers[i] < vers[j] })
+			sort.Slice(testcase.parseVersions,
+				func(i, j int) bool { return testcase.parseVersions[i] < testcase.parseVersions[j] })
+
+			assert.Equal(t, err, testcase.parseError)
+			assert.Equal(t, vers, testcase.parseVersions)
+		})
+	}
 }

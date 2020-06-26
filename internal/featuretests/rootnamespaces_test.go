@@ -18,7 +18,6 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -77,95 +76,6 @@ func TestRootNamespaces(t *testing.T) {
 		TypeUrl:   routeType,
 	})
 
-	// ir1 is an ingressroute that is not in the root namespaces
-	ir1 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: svc1.Namespace,
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "ir1.example.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: svc1.Name,
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-	rh.OnAdd(ir1)
-
-	// assert that ir1 has no effect on the listener set.
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			staticListener(),
-		),
-		TypeUrl: listenerType,
-	})
-
-	// assert that the route tables are present but empty.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
-
-	// ir2 is an ingressroute that is part of the root namespaces set.
-	ir2 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: svc2.Namespace,
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "ir2.example.com"},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: "kuard",
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-	rh.OnAdd(ir2)
-
-	// assert that ir2 creates port 80 listener.
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			&v2.Listener{
-				Name:    "ingress_http",
-				Address: envoy.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy.FilterChains(
-					envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
-				),
-			},
-			staticListener(),
-		),
-		TypeUrl: listenerType,
-	})
-
-	// assert that ir2.example.com's routes are visible.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("ir2.example.com",
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("roots/kuard/8080/da39a3ee5e"),
-					},
-				),
-			),
-			envoy.RouteConfiguration("ingress_https"),
-		),
-		TypeUrl: routeType,
-	})
-
-	rh.OnDelete(ir1)
-	rh.OnDelete(ir2)
-
 	// hp1 is not in the root namespace set.
 	hp1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -199,7 +109,6 @@ func TestRootNamespaces(t *testing.T) {
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http"),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -251,7 +160,6 @@ func TestRootNamespaces(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})

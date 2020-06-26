@@ -16,8 +16,8 @@ package dag
 import (
 	"testing"
 
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -177,13 +177,13 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						}},
 					},
 				},
-				&ingressroutev1.TLSCertificateDelegation{
+				&projcontour.TLSCertificateDelegation{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "delegation",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.TLSCertificateDelegationSpec{
-						Delegations: []ingressroutev1.CertificateDelegation{{
+					Spec: projcontour.TLSCertificateDelegationSpec{
+						Delegations: []projcontour.CertificateDelegation{{
 							SecretName: "secret",
 							TargetNamespaces: []string{
 								"extra",
@@ -216,119 +216,13 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 
-				&ingressroutev1.TLSCertificateDelegation{
+				&projcontour.TLSCertificateDelegation{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "delegation",
 						Namespace: "default",
 					},
-					Spec: ingressroutev1.TLSCertificateDelegationSpec{
-						Delegations: []ingressroutev1.CertificateDelegation{{
-							SecretName: "secret",
-							TargetNamespaces: []string{
-								"*",
-							},
-						}},
-					},
-				},
-			},
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Type: v1.SecretTypeTLS,
-				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-			},
-			want: true,
-		},
-		"insert secret referenced by ingressroute": {
-			pre: []interface{}{
-				&ingressroutev1.IngressRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "simple",
-						Namespace: "default",
-					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
-							TLS: &projcontour.TLS{
-								SecretName: "secret",
-							},
-						},
-					},
-				},
-			},
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Type: v1.SecretTypeTLS,
-				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-			},
-			want: true,
-		},
-		"insert secret referenced by ingressroute via tls delegation": {
-			pre: []interface{}{
-				&ingressroutev1.IngressRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "simple",
-						Namespace: "extra",
-					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
-							TLS: &projcontour.TLS{
-								SecretName: "default/secret",
-							},
-						},
-					},
-				},
-				&ingressroutev1.TLSCertificateDelegation{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "delegation",
-						Namespace: "default",
-					},
-					Spec: ingressroutev1.TLSCertificateDelegationSpec{
-						Delegations: []ingressroutev1.CertificateDelegation{{
-							SecretName: "secret",
-							TargetNamespaces: []string{
-								"extra",
-							},
-						}},
-					},
-				},
-			},
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Type: v1.SecretTypeTLS,
-				Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-			},
-			want: true,
-		},
-		"insert secret referenced by ingressroute via wildcard tls delegation": {
-			pre: []interface{}{
-				&ingressroutev1.IngressRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "simple",
-						Namespace: "extra",
-					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
-							TLS: &projcontour.TLS{
-								SecretName: "default/secret",
-							},
-						},
-					},
-				},
-				&ingressroutev1.TLSCertificateDelegation{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "delegation",
-						Namespace: "default",
-					},
-					Spec: ingressroutev1.TLSCertificateDelegationSpec{
-						Delegations: []ingressroutev1.CertificateDelegation{{
+					Spec: projcontour.TLSCertificateDelegationSpec{
+						Delegations: []projcontour.CertificateDelegation{{
 							SecretName: "secret",
 							TargetNamespaces: []string{
 								"*",
@@ -470,43 +364,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			// any CA secret causes a rebuild.
 			want: true,
 		},
-		"insert certificate secret referenced by ingressroute": {
-			pre: []interface{}{
-				&ingressroutev1.IngressRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "example-com",
-						Namespace: "default",
-					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						VirtualHost: &projcontour.VirtualHost{
-							Fqdn: "example.com",
-						},
-						Routes: []ingressroutev1.Route{{
-							Match: "/",
-							Services: []ingressroutev1.Service{{
-								Name: "kuard",
-								Port: 8080,
-								UpstreamValidation: &projcontour.UpstreamValidation{
-									CACertificate: "ca",
-									SubjectName:   "example.com",
-								},
-							}},
-						}},
-					},
-				},
-			},
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "ca",
-					Namespace: "default",
-				},
-				Type: v1.SecretTypeOpaque,
-				Data: map[string][]byte{
-					CACertificateKey: []byte(CERTIFICATE),
-				},
-			},
-			want: true,
-		},
 		"insert certificate secret referenced by httpproxy": {
 			pre: []interface{}{
 				&projcontour.HTTPProxy{
@@ -579,13 +436,25 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: false,
 		},
+		"insert ingress incorrect projectcontour.io/ingress.class": {
+			obj: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "incorrect",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": "nginx",
+					},
+				},
+			},
+			want: false,
+		},
 		"insert ingress explicit kubernetes.io/ingress.class": {
 			obj: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": DEFAULT_INGRESS_CLASS,
+						"kubernetes.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
@@ -597,64 +466,19 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"contour.heptio.com/ingress.class": DEFAULT_INGRESS_CLASS,
+						"contour.heptio.com/ingress.class": annotation.DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
 			want: true,
 		},
-		"insert ingressroute empty ingress annotation": {
-			obj: &ingressroutev1.IngressRoute{
+		"insert ingress explicit projectcontour.io/ingress.class": {
+			obj: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "kuard",
-					Namespace: "default",
-				},
-			},
-			want: true,
-		},
-		"insert ingressroute incorrect contour.heptio.com/ingress.class": {
-			obj: &ingressroutev1.IngressRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "simple",
+					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"contour.heptio.com/ingress.class": "nginx",
-					},
-				},
-			},
-			want: false,
-		},
-		"insert ingressroute incorrect kubernetes.io/ingress.class": {
-			obj: &ingressroutev1.IngressRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "simple",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": "nginx",
-					},
-				},
-			},
-			want: false,
-		},
-		"insert ingressroute: explicit contour.heptio.com/ingress.class": {
-			obj: &ingressroutev1.IngressRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "kuard",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"contour.heptio.com/ingress.class": DEFAULT_INGRESS_CLASS,
-					},
-				},
-			},
-			want: true,
-		},
-		"insert ingressroute explicit kubernetes.io/ingress.class": {
-			obj: &ingressroutev1.IngressRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "kuard",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": DEFAULT_INGRESS_CLASS,
+						"projectcontour.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
@@ -693,13 +517,25 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: false,
 		},
+		"insert httpproxy incorrect projectcontour.io/ingress.class": {
+			obj: &projcontour.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": "nginx",
+					},
+				},
+			},
+			want: false,
+		},
 		"insert httpproxy: explicit contour.heptio.com/ingress.class": {
 			obj: &projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kuard",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"contour.heptio.com/ingress.class": DEFAULT_INGRESS_CLASS,
+						"contour.heptio.com/ingress.class": annotation.DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
@@ -711,17 +547,20 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "kuard",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": DEFAULT_INGRESS_CLASS,
+						"kubernetes.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
 			want: true,
 		},
-		"insert tls contour/v1beta1.certificate delegation": {
-			obj: &ingressroutev1.TLSCertificateDelegation{
+		"insert httpproxy explicit projectcontour.io/ingress.class": {
+			obj: &projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "delegate",
+					Name:      "kuard",
 					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontours.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS,
+					},
 				},
 			},
 			want: true,
@@ -800,54 +639,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				},
 			},
 			want: false,
-		},
-		"insert service referenced by ingressroute": {
-			pre: []interface{}{
-				&ingressroutev1.IngressRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						Routes: []ingressroutev1.Route{{
-							Services: []ingressroutev1.Service{{
-								Name: "service",
-							}},
-						}},
-					},
-				},
-			},
-			obj: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "service",
-					Namespace: "default",
-				},
-			},
-			want: true,
-		},
-		"insert service referenced by ingressroute tcpproxy": {
-			pre: []interface{}{
-				&ingressroutev1.IngressRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: ingressroutev1.IngressRouteSpec{
-						TCPProxy: &ingressroutev1.TCPProxy{
-							Services: []ingressroutev1.Service{{
-								Name: "service",
-							}},
-						},
-					},
-				},
-			},
-			obj: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "service",
-					Namespace: "default",
-				},
-			},
-			want: true,
 		},
 		"insert service referenced by httpproxy": {
 			pre: []interface{}{
@@ -1039,52 +830,16 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			},
 			want: false,
 		},
-		"remove ingressroute": {
-			cache: cache(&ingressroutev1.IngressRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "ingressroute",
-					Namespace: "default",
-				},
-			}),
-			obj: &ingressroutev1.IngressRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "ingressroute",
-					Namespace: "default",
-				},
-			},
-			want: true,
-		},
-		"remove ingressroute incorrect ingressclass": {
-			cache: cache(&ingressroutev1.IngressRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "ingressroute",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": "nginx",
-					},
-				},
-			}),
-			obj: &ingressroutev1.IngressRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "ingressroute",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": "nginx",
-					},
-				},
-			},
-			want: false,
-		},
 		"remove httpproxy": {
 			cache: cache(&projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "ingressroute",
+					Name:      "httpproxy",
 					Namespace: "default",
 				},
 			}),
 			obj: &projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "ingressroute",
+					Name:      "httpproxy",
 					Namespace: "default",
 				},
 			},
@@ -1093,7 +848,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		"remove httpproxy incorrect ingressclass": {
 			cache: cache(&projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "ingressroute",
+					Name:      "httpproxy",
 					Namespace: "default",
 					Annotations: map[string]string{
 						"kubernetes.io/ingress.class": "nginx",
@@ -1102,7 +857,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			}),
 			obj: &projcontour.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "ingressroute",
+					Name:      "httpproxy",
 					Namespace: "default",
 					Annotations: map[string]string{
 						"kubernetes.io/ingress.class": "nginx",
@@ -1189,6 +944,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 }
 
 func testLogger(t *testing.T) logrus.FieldLogger {
+	t.Helper()
 	log := logrus.New()
 	log.Out = &testWriter{t}
 	return log
@@ -1199,6 +955,7 @@ type testWriter struct {
 }
 
 func (t *testWriter) Write(buf []byte) (int, error) {
+	t.Helper()
 	t.Logf("%s", buf)
 	return len(buf), nil
 }

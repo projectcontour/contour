@@ -20,6 +20,7 @@ import (
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,7 +28,7 @@ import (
 )
 
 // Assert that services of type v1.ServiceTypeExternalName can be
-// referenced by an Ingress, IngressRoute, or HTTPProxy document.
+// referenced by an Ingress, or HTTPProxy document.
 func TestExternalNameService(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
@@ -73,7 +74,6 @@ func TestExternalNameService(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -87,21 +87,17 @@ func TestExternalNameService(t *testing.T) {
 
 	rh.OnDelete(i1)
 
-	hp1 := &projcontour.HTTPProxy{
-		ObjectMeta: i1.ObjectMeta,
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "kuard.projectcontour.io",
-			},
+	rh.OnAdd(fixture.NewProxy("kuard").
+		WithFQDN("kuard.projectcontour.io").
+		WithSpec(projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
 			}},
-		},
-	}
-	rh.OnAdd(hp1)
+		}),
+	)
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
@@ -113,7 +109,6 @@ func TestExternalNameService(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})
@@ -125,12 +120,9 @@ func TestExternalNameService(t *testing.T) {
 		TypeUrl: clusterType,
 	})
 
-	hp2 := &projcontour.HTTPProxy{
-		ObjectMeta: i1.ObjectMeta,
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "kuard.projectcontour.io",
-			},
+	rh.OnAdd(fixture.NewProxy("kuard").
+		WithFQDN("kuard.projectcontour.io").
+		WithSpec(projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{{
 					Name: s1.Name,
@@ -143,9 +135,8 @@ func TestExternalNameService(t *testing.T) {
 					}},
 				},
 			}},
-		},
-	}
-	rh.OnAdd(hp2)
+		}),
+	)
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
@@ -157,7 +148,6 @@ func TestExternalNameService(t *testing.T) {
 					},
 				),
 			),
-			envoy.RouteConfiguration("ingress_https"),
 		),
 		TypeUrl: routeType,
 	})

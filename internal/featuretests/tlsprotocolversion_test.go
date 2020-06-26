@@ -1,4 +1,4 @@
-// Copyright © 2019 VMware
+// Copyright © 2020 VMware
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,7 +19,6 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-	ingressroutev1 "github.com/projectcontour/contour/apis/contour/v1beta1"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -89,7 +88,11 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
-				FilterChains: filterchaintls("kuard.example.com", sec1, envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0), "h2", "http/1.1"),
+				FilterChains: appendFilterChains(
+					filterchaintls("kuard.example.com", sec1,
+						httpsFilterFor("kuard.example.com"),
+						nil, "h2", "http/1.1"),
+				),
 			},
 		),
 		TypeUrl: listenerType,
@@ -136,9 +139,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 					envoy_api_v2_auth.TlsParameters_TLSv1_3,
 					nil,
 					"h2", "http/1.1"),
-				envoy.Filters(
-					envoy.HTTPConnectionManager("ingress_https", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
-				),
+				envoy.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
 	}
@@ -151,39 +152,6 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 	})
 
 	rh.OnDelete(i2)
-
-	ir1 := &ingressroutev1.IngressRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: s1.Namespace,
-		},
-		Spec: ingressroutev1.IngressRouteSpec{
-			VirtualHost: &projcontour.VirtualHost{
-				Fqdn: "kuard.example.com",
-				TLS: &projcontour.TLS{
-					SecretName:             sec1.Namespace + "/" + sec1.Name,
-					MinimumProtocolVersion: "1.3",
-				},
-			},
-			Routes: []ingressroutev1.Route{{
-				Match: "/",
-				Services: []ingressroutev1.Service{{
-					Name: s1.Name,
-					Port: 80,
-				}},
-			}},
-		},
-	}
-	rh.OnAdd(ir1)
-
-	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
-		Resources: resources(t,
-			l1,
-		),
-		TypeUrl: listenerType,
-	})
-
-	rh.OnDelete(ir1)
 
 	hp1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
