@@ -75,12 +75,20 @@ In the above example, a request would be retried on the following conditions:
 
 Two new fields will be added to the `v1.RetryPolicy` of the `HTTPProxy` spec:
 
-- `RetryOn []string`
+- `RetryOn []RetryOn`
   Optional
   Slice of [`x-envoy-retry-on`](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-on) conditions
 - `RetriableStatusCodes []uint32`
   Optional
   Slice of HTTP status codes
+
+The `RetryOn` field uses a string type alias with kubebuilder validation.
+This ensures that the `HTTPProxy` only contains valid values for the `v1.RetryPolicy.RetryOn` field:
+
+```go
+// +kubebuilder:validation:Enum=5xx;gateway-error;reset;connect-failure;retriable-4xx;refused-stream;retriable-status-codes;retriable-headers
+type RetryOn string
+```
 
 One new field will be added to the `dag.RetryPolicy`:
 
