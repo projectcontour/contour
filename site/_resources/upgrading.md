@@ -12,18 +12,79 @@ This document describes the changes needed to upgrade your Contour installation.
 <br>
 
 <div class="alert-deprecation">
-<b>Deprecation Notice</b><br>
-The <code>IngressRoute</code> CRD has been deprecated and will be removed in Contour 1.6.
-Contour 1.5.1 continues to support the IngressRoute API, however we anticipate it will be removed in the future.
+<b>Removal Notice</b><br>
+The <code>IngressRoute</code> CRD has been removed in Contour 1.6.
 Please see the documentation for <a href="{% link docs/{{site.latest}}/httpproxy.md %}"><code>HTTPProxy</code></a>, which is the successor to <code>IngressRoute</code>.
 You can also read the <a href="{% link _guides/ingressroute-to-httpproxy.md %}">IngressRoute to HTTPProxy upgrade</a> guide.
 </div>
 
 <br>
 
-# Upgrading Contour 1.4.0 to 1.5.1
+# Upgrading Contour 1.5.1 to 1.6.0
 
-Contour 1.5.1 is the current stable release.
+Contour 1.6.0 is the current stable release.
+
+## Required Envoy version
+
+All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.14.2`.
+
+Please see the [Envoy Release Notes][21] for information about issues fixed in Envoy 1.14.2.
+
+## The easy way to upgrade
+
+If the following are true for you:
+
+ * Your installation is in the `projectcontour` namespace.
+ * You are using our [quickstart example][18] deployments.
+ * Your cluster can take few minutes of downtime.
+
+Then the simplest way to upgrade to 1.6.0 is to delete the `projectcontour` namespace and reapply one of the example configurations:
+
+```bash
+$ kubectl delete crd ingressroutes.contour.heptio.com
+$ kubectl delete crd tlscertificatedelegations.contour.heptio.com
+$ kubectl delete namespace projectcontour
+$ kubectl apply -f {{site.url}}/quickstart/v1.6.0/contour.yaml
+```
+
+This will remove the IngressRoute CRD, and both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
+If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][12].
+
+## The less easy way
+
+This section contains information for administrators who wish to apply the Contour 1.5.1 to 1.6.0 changes manually.
+The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.6.0` tag.
+
+The Contour CRD definition must be re-applied to the cluster, since a number of compatible changes and additions have been made to the Contour API:
+
+```bash
+$ kubectl apply -f examples/contour/01-crds.yaml
+```
+
+Administrators should also remove the IngressRoute CRDs:
+```bash
+$ kubectl delete crd ingressroutes.contour.heptio.com
+$ kubectl delete crd tlscertificatedelegations.contour.heptio.com
+```
+
+Users of the example deployment should first reapply the certgen Job YAML which will re-generate the relevant Secrets in the new format, which is compatible with [cert-manager](https://cert-manager.io) TLS secrets. This will rotate the TLS certs used for gRPC security.
+
+
+```bash
+$ kubectl apply -f examples/contour/02-job-certgen.yaml
+```
+
+To consume the new Secrets, reapply the Envoy Daemonset and the Contour Deployment YAML.
+All the Pods will gracefully restart and reconnect using the new TLS Secrets.
+After this, the gRPC session between Contour and Envoy can be re-keyed by regenerating the Secrets.
+
+```bash
+$ kubectl apply -f examples/contour/03-contour.yaml
+$ kubectl apply -f examples/contour/03-envoy.yaml
+```
+
+# Upgrading Contour 1.4.0 to 1.5.1
 
 ## Required Envoy version
 
