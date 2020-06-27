@@ -112,6 +112,7 @@ func Listener(name, address string, port int, lf []*envoy_api_v2_listener.Listen
 		Name:            name,
 		Address:         SocketAddress(address, port),
 		ListenerFilters: lf,
+		SocketOptions:   TCPKeepaliveSocketOptions(),
 	}
 	if len(filters) > 0 {
 		l.FilterChains = append(

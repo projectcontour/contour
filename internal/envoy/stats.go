@@ -78,5 +78,6 @@ func StatsListener(address string, port int) *v2.Listener {
 				},
 			},
 		),
+		SocketOptions: TCPKeepaliveSocketOptions(),
 	}
 }

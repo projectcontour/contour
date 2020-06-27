@@ -882,7 +882,7 @@ spec:
               type: object
           type: object
         status:
-          description: Status reports the current state of the HTTPProxy.
+          description: HTTPProxyStatus reports the current state of the HTTPProxy.
           properties:
             currentStatus:
               type: string

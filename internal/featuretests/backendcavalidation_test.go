@@ -88,6 +88,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 				FilterChains: envoy.FilterChains(
 					envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -135,6 +136,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 				FilterChains: envoy.FilterChains(
 					envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -191,6 +193,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 				FilterChains: envoy.FilterChains(
 					envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),

@@ -55,6 +55,7 @@ func TestListener(t *testing.T) {
 				FilterChains: FilterChains(
 					HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null"), 0),
 				),
+				SocketOptions: TCPKeepaliveSocketOptions(),
 			},
 		},
 		"insecure listener w/ proxy": {
@@ -76,6 +77,7 @@ func TestListener(t *testing.T) {
 				FilterChains: FilterChains(
 					HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null"), 0),
 				),
+				SocketOptions: TCPKeepaliveSocketOptions(),
 			},
 		},
 		"secure listener": {
@@ -91,6 +93,7 @@ func TestListener(t *testing.T) {
 				ListenerFilters: ListenerFilters(
 					TLSInspector(),
 				),
+				SocketOptions: TCPKeepaliveSocketOptions(),
 			},
 		},
 		"secure listener w/ proxy": {
@@ -108,6 +111,7 @@ func TestListener(t *testing.T) {
 					ProxyProtocol(),
 					TLSInspector(),
 				),
+				SocketOptions: TCPKeepaliveSocketOptions(),
 			},
 		},
 	}

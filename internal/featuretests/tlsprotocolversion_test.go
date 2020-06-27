@@ -93,6 +93,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 						httpsFilterFor("kuard.example.com"),
 						nil, "h2", "http/1.1"),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 		),
 		TypeUrl: listenerType,
@@ -142,6 +143,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 				envoy.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
+		SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 	}
 
 	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{

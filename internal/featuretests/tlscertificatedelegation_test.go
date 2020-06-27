@@ -119,6 +119,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 		FilterChains: envoy.FilterChains(
 			envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
 		),
+		SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 	}
 
 	ingress_https := &v2.Listener{
@@ -132,6 +133,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 				httpsFilterFor("example.com"),
 				nil, "h2", "http/1.1"),
 		),
+		SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 	}
 
 	c.Request(listenerType).Equals(&v2.DiscoveryResponse{

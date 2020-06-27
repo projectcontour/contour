@@ -258,12 +258,12 @@ type statusResult struct {
 	*Contour
 
 	Err  error
-	Have *projcontour.Status
+	Have *projcontour.HTTPProxyStatus
 }
 
 // Equals asserts that the status result is not an error and matches
 // the wanted status exactly.
-func (s *statusResult) Equals(want projcontour.Status) *Contour {
+func (s *statusResult) Equals(want projcontour.HTTPProxyStatus) *Contour {
 	s.T.Helper()
 
 	// We should never get an error fetching the status for an
@@ -278,7 +278,7 @@ func (s *statusResult) Equals(want projcontour.Status) *Contour {
 
 // Like asserts that the status result is not an error and matches
 // non-empty fields in the wanted status.
-func (s *statusResult) Like(want projcontour.Status) *Contour {
+func (s *statusResult) Like(want projcontour.HTTPProxyStatus) *Contour {
 	s.T.Helper()
 
 	// We should never get an error fetching the status for an
@@ -289,15 +289,15 @@ func (s *statusResult) Like(want projcontour.Status) *Contour {
 
 	if len(want.CurrentStatus) > 0 {
 		assert.Equal(s.T,
-			projcontour.Status{CurrentStatus: want.CurrentStatus},
-			projcontour.Status{CurrentStatus: s.Have.CurrentStatus},
+			projcontour.HTTPProxyStatus{CurrentStatus: want.CurrentStatus},
+			projcontour.HTTPProxyStatus{CurrentStatus: s.Have.CurrentStatus},
 		)
 	}
 
 	if len(want.Description) > 0 {
 		assert.Equal(s.T,
-			projcontour.Status{Description: want.Description},
-			projcontour.Status{Description: s.Have.Description},
+			projcontour.HTTPProxyStatus{Description: want.Description},
+			projcontour.HTTPProxyStatus{Description: s.Have.Description},
 		)
 	}
 

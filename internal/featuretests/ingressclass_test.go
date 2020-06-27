@@ -574,7 +574,7 @@ func TestIngressClassUpdate(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
-		projcontour.Status{CurrentStatus: k8s.StatusValid},
+		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 
 	// Updating to the non-configured ingress class should remove the

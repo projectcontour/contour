@@ -101,6 +101,7 @@ func TestFallbackCertificate(t *testing.T) {
 						httpsFilterFor("fallback.example.com"),
 						nil, "h2", "http/1.1"),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 		),
 	})
@@ -163,6 +164,7 @@ func TestFallbackCertificate(t *testing.T) {
 						nil, "h2", "http/1.1"),
 					filterchaintlsfallback(fallbackSecret, nil, "h2", "http/1.1"),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 		),
 	})
@@ -204,6 +206,7 @@ func TestFallbackCertificate(t *testing.T) {
 						nil, "h2", "http/1.1"),
 					filterchaintlsfallback(fallbackSecret, nil, "h2", "http/1.1"),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 		),
 	})
@@ -275,6 +278,7 @@ func TestFallbackCertificate(t *testing.T) {
 						nil, "h2", "http/1.1"),
 					filterchaintlsfallback(fallbackSecret, nil, "h2", "http/1.1"),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 		),
 	})
