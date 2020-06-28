@@ -22,6 +22,13 @@ import (
 	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
 )
 
+// +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch
+// +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses/status,verbs=create;get;update
+
+// +kubebuilder:rbac:groups="projectcontour.io",resources=httpproxies;tlscertificatedelegations,verbs=get;list;watch
+// +kubebuilder:rbac:groups="projectcontour.io",resources=httpproxies/status,verbs=create;get;update
+
+// DefaultResources ...
 func DefaultResources() []schema.GroupVersionResource {
 	return []schema.GroupVersionResource{
 		projectcontour.HTTPProxyGVR,
@@ -31,6 +38,9 @@ func DefaultResources() []schema.GroupVersionResource {
 	}
 }
 
+// +kubebuilder:rbac:groups="networking.k8s.io",resources=gatewayclasses;gateways;httproutes;tcproutes,verbs=get;list;watch
+
+// ServiceAPIResources ...
 func ServiceAPIResources() []schema.GroupVersionResource {
 	return []schema.GroupVersionResource{
 		serviceapis.GroupVersion.WithResource("gatewayclasses"),
@@ -40,18 +50,27 @@ func ServiceAPIResources() []schema.GroupVersionResource {
 	}
 }
 
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+
+// SecretsResources ...
 func SecretsResources() []schema.GroupVersionResource {
 	return []schema.GroupVersionResource{
 		corev1.SchemeGroupVersion.WithResource("secrets"),
 	}
 }
 
+// +kubebuilder:rbac:groups="",resources=endpoints,verbs=get;list;watch
+
+// EndpointsResources ...
 func EndpointsResources() []schema.GroupVersionResource {
 	return []schema.GroupVersionResource{
 		corev1.SchemeGroupVersion.WithResource("endpoints"),
 	}
 }
 
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
+
+// ServicesResources ...
 func ServicesResources() []schema.GroupVersionResource {
 	return []schema.GroupVersionResource{
 		corev1.SchemeGroupVersion.WithResource("services"),
