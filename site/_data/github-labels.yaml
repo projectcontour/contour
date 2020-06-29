@@ -117,6 +117,11 @@ default:
       name: area/tooling
       target: both
       addedBy: label
+    - color: 0052cc
+      description: Issues or PRs related to TLS support.
+      name: area/tls
+      target: both
+      addedBy: label
 
 # Blocked.
     - color: "FF7B7B"
