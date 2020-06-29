@@ -158,10 +158,12 @@ Arguments against this approach:
 - Contour becomes responsible for keeping track of and maintaining every possible value for Envoy's `retry_on` field
 - Seems too verbose compared to a list of strings, but this may be a subjective opinion
 
-### Global retry configuration for all proxies
+### Global retry policy for all proxies
 
 Instead of configuring retry policies per `HTTPProxy`, we could allow configuration of a global retry policy that applies to all proxies.
 This would solve the author's issue of mitigating upstream connect errors during rollouts without having to configure all `HTTPProxy` manifests with the same retry policy.
+
+If implemented, this global retry policy would live in Contour's [global configuration file](https://projectcontour.io/docs/master/configuration/) and likely resemble the same structure at the `retryPolicy` section of the `HTTPProxy` manifest.
 
 Taking this approach would require consideration around how retry policies defined in `HTTPProxy` would consolidate with a global retry policy:
 
