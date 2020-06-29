@@ -171,7 +171,12 @@ lint-flags:
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
-generate: generate-crd-deepcopy generate-deployment generate-crd-yaml generate-api-docs generate-metrics-docs
+generate: generate-rbac generate-crd-deepcopy generate-deployment generate-crd-yaml generate-api-docs generate-metrics-docs
+
+.PHONY: generate-rbac
+generate-rbac:
+	@echo Updating generated RBAC policy...
+	@./hack/generate-rbac.sh
 
 .PHONY: generate-crd-deepcopy
 generate-crd-deepcopy:
