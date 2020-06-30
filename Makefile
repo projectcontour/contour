@@ -151,7 +151,7 @@ lint-golint:
 .PHONY: check-yamllint
 lint-yamllint:
 	@echo Running YAML linter ...
-	@docker run --rm -ti -v $(CURDIR):/workdir giantswarm/yamllint examples/ site/examples/
+	@./hack/yamllint examples/ site/examples/
 
 # Check that CLI flags are formatted consistently. We are checking
 # for calls to Kingping Flags() and Command() APIs where the 2nd
@@ -171,7 +171,12 @@ lint-flags:
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
-generate: generate-crd-deepcopy generate-deployment generate-crd-yaml generate-api-docs generate-metrics-docs
+generate: generate-rbac generate-crd-deepcopy generate-deployment generate-crd-yaml generate-api-docs generate-metrics-docs
+
+.PHONY: generate-rbac
+generate-rbac:
+	@echo Updating generated RBAC policy...
+	@./hack/generate-rbac.sh
 
 .PHONY: generate-crd-deepcopy
 generate-crd-deepcopy:

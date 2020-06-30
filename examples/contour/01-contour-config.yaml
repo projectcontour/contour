@@ -64,3 +64,7 @@ data:
     #   - "upstream_service_time"
     #   - "user_agent"
     #   - "x_forwarded_for"
+    #
+    # default-http-versions:
+    # - "HTTP/2"
+    # - "HTTP/1.1"

@@ -29,7 +29,8 @@ Resource Types:
 <tbody class="border-top">
 <tr>
 <td>
-<code>apiVersion</code><br>
+<code>apiVersion</code>
+<br>
 string</td>
 <td>
 <code>
@@ -39,14 +40,16 @@ projectcontour.io/v1
 </tr>
 <tr>
 <td>
-<code>kind</code><br>
+<code>kind</code>
+<br>
 string
 </td>
 <td><code>HTTPProxy</code></td>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>metadata</code><br>
+<code>metadata</code>
+<br>
 <em>
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
@@ -60,7 +63,8 @@ Refer to the Kubernetes API documentation for the fields of the
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>spec</code><br>
+<code>spec</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.HTTPProxySpec">
 HTTPProxySpec
@@ -68,12 +72,13 @@ HTTPProxySpec
 </em>
 </td>
 <td>
-<br/>
-<br/>
+<br>
+<br>
 <table style="border:none">
 <tr>
 <td style="white-space:nowrap">
-<code>virtualhost</code><br>
+<code>virtualhost</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.VirtualHost">
 VirtualHost
@@ -88,7 +93,8 @@ to be a &ldquo;root&rdquo;.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>routes</code><br>
+<code>routes</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.Route">
 []Route
@@ -102,7 +108,8 @@ to be a &ldquo;root&rdquo;.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>tcpproxy</code><br>
+<code>tcpproxy</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.TCPProxy">
 TCPProxy
@@ -116,7 +123,8 @@ TCPProxy
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>includes</code><br>
+<code>includes</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.Include">
 []Include
@@ -133,7 +141,8 @@ TCPProxy
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>status</code><br>
+<code>status</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.Status">
 Status
@@ -162,7 +171,8 @@ See design/tls-certificate-delegation.md for details.</p>
 <tbody class="border-top">
 <tr>
 <td>
-<code>apiVersion</code><br>
+<code>apiVersion</code>
+<br>
 string</td>
 <td>
 <code>
@@ -172,14 +182,16 @@ projectcontour.io/v1
 </tr>
 <tr>
 <td>
-<code>kind</code><br>
+<code>kind</code>
+<br>
 string
 </td>
 <td><code>TLSCertificateDelegation</code></td>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>metadata</code><br>
+<code>metadata</code>
+<br>
 <em>
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
@@ -193,7 +205,8 @@ Refer to the Kubernetes API documentation for the fields of the
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>spec</code><br>
+<code>spec</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.TLSCertificateDelegationSpec">
 TLSCertificateDelegationSpec
@@ -201,12 +214,13 @@ TLSCertificateDelegationSpec
 </em>
 </td>
 <td>
-<br/>
-<br/>
+<br>
+<br>
 <table style="border:none">
 <tr>
 <td style="white-space:nowrap">
-<code>delegations</code><br>
+<code>delegations</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.CertificateDelegation">
 []CertificateDelegation
@@ -241,7 +255,8 @@ in the current namespace to a set of namespaces.</p>
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>secretName</code><br>
+<code>secretName</code>
+<br>
 <em>
 string
 </em>
@@ -252,7 +267,8 @@ string
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>targetNamespaces</code><br>
+<code>targetNamespaces</code>
+<br>
 <em>
 []string
 </em>
@@ -288,7 +304,8 @@ One of Prefix or Header must be provided.</p>
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>prefix</code><br>
+<code>prefix</code>
+<br>
 <em>
 string
 </em>
@@ -300,7 +317,8 @@ string
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>header</code><br>
+<code>header</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.HeaderCondition">
 HeaderCondition
@@ -310,6 +328,38 @@ HeaderCondition
 <td>
 <em>(Optional)</em>
 <p>Header specifies the header condition to match.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.DownstreamValidation">DownstreamValidation
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.TLS">TLS</a>)
+</p>
+<p>
+<p>DownstreamValidation defines how to verify the client certificate.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>caSecret</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name of a Kubernetes secret that contains a CA certificate bundle.
+The client certificate must validate against the certificates in the bundle.</p>
 </td>
 </tr>
 </tbody>
@@ -333,7 +383,8 @@ HeaderCondition
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>path</code><br>
+<code>path</code>
+<br>
 <em>
 string
 </em>
@@ -344,7 +395,8 @@ string
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>host</code><br>
+<code>host</code>
+<br>
 <em>
 string
 </em>
@@ -357,7 +409,8 @@ will be used.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>intervalSeconds</code><br>
+<code>intervalSeconds</code>
+<br>
 <em>
 int64
 </em>
@@ -369,7 +422,8 @@ int64
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>timeoutSeconds</code><br>
+<code>timeoutSeconds</code>
+<br>
 <em>
 int64
 </em>
@@ -381,7 +435,8 @@ int64
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>unhealthyThresholdCount</code><br>
+<code>unhealthyThresholdCount</code>
+<br>
 <em>
 int64
 </em>
@@ -393,7 +448,8 @@ int64
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>healthyThresholdCount</code><br>
+<code>healthyThresholdCount</code>
+<br>
 <em>
 int64
 </em>
@@ -424,7 +480,8 @@ int64
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>virtualhost</code><br>
+<code>virtualhost</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.VirtualHost">
 VirtualHost
@@ -439,7 +496,8 @@ to be a &ldquo;root&rdquo;.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>routes</code><br>
+<code>routes</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.Route">
 []Route
@@ -453,7 +511,8 @@ to be a &ldquo;root&rdquo;.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>tcpproxy</code><br>
+<code>tcpproxy</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.TCPProxy">
 TCPProxy
@@ -467,7 +526,8 @@ TCPProxy
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>includes</code><br>
+<code>includes</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.Include">
 []Include
@@ -488,9 +548,9 @@ TCPProxy
 <a href="#projectcontour.io/v1.Condition">Condition</a>)
 </p>
 <p>
-<p>HeaderCondition specifies the header condition to match.
-Name is required. Only one of Present or Contains must
-be provided.</p>
+<p>HeaderCondition specifies how to conditionally match against HTTP
+headers. The Name field is required, but only one of the remaining
+fields should be be provided.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -502,78 +562,86 @@ be provided.</p>
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>name</code><br>
+<code>name</code>
+<br>
 <em>
 string
 </em>
 </td>
 <td>
-<p>Name is the name of the header to match on. Name is required.
+<p>Name is the name of the header to match against. Name is required.
 Header names are case insensitive.</p>
 </td>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>present</code><br>
+<code>present</code>
+<br>
 <em>
 bool
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Present is true if the Header is present in the request.</p>
+<p>Present specifies that condition is true when the named header
+is present, regardless of its value. Note that setting Present
+to false does not make the condition true if the named header
+is absent.</p>
 </td>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>contains</code><br>
+<code>contains</code>
+<br>
 <em>
 string
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Contains is true if the Header containing this string is present
-in the request.</p>
+<p>Contains specifies a substring that must be present in
+the header value.</p>
 </td>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>notcontains</code><br>
+<code>notcontains</code>
+<br>
 <em>
 string
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>NotContains is true if the Header containing this string is not present
-in the request.</p>
+<p>NotContains specifies a substring that must not be present
+in the header value.</p>
 </td>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>exact</code><br>
+<code>exact</code>
+<br>
 <em>
 string
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Exact is true if the Header containing this string matches exactly
-in the request.</p>
+<p>Exact specifies a string that the header value must be equal to.</p>
 </td>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>notexact</code><br>
+<code>notexact</code>
+<br>
 <em>
 string
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>NotExact is true if the Header containing this string doesn&rsquo;t match exactly
-in the request.</p>
+<p>NoExact specifies a string that the header value must not be
+equal to. The condition is true if the header has any other value.</p>
 </td>
 </tr>
 </tbody>
@@ -597,7 +665,8 @@ in the request.</p>
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>name</code><br>
+<code>name</code>
+<br>
 <em>
 string
 </em>
@@ -608,7 +677,8 @@ string
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>value</code><br>
+<code>value</code>
+<br>
 <em>
 string
 </em>
@@ -627,7 +697,10 @@ string
 <a href="#projectcontour.io/v1.Service">Service</a>)
 </p>
 <p>
-<p>HeadersPolicy defines how headers are managed during forwarding</p>
+<p>HeadersPolicy defines how headers are managed during forwarding.
+The <code>Host</code> header is treated specially and if set in a HTTP response
+will be used as the SNI server name when forwarding over TLS. It is an
+error to attempt to set the <code>Host</code> header in a HTTP response.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -639,7 +712,8 @@ string
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>set</code><br>
+<code>set</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.HeaderValue">
 []HeaderValue
@@ -648,19 +722,21 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Set specifies a list of HTTP header values that will be set in the HTTP header</p>
+<p>Set specifies a list of HTTP header values that will be set in the HTTP header.
+If the header does not exist it will be added, otherwise it will be overwritten with the new value.</p>
 </td>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>remove</code><br>
+<code>remove</code>
+<br>
 <em>
 []string
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Remove specifies a list of HTTP header names to remove</p>
+<p>Remove specifies a list of HTTP header names to remove.</p>
 </td>
 </tr>
 </tbody>
@@ -684,7 +760,8 @@ string
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>name</code><br>
+<code>name</code>
+<br>
 <em>
 string
 </em>
@@ -695,7 +772,8 @@ string
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>namespace</code><br>
+<code>namespace</code>
+<br>
 <em>
 string
 </em>
@@ -707,7 +785,8 @@ string
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>conditions</code><br>
+<code>conditions</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.Condition">
 []Condition
@@ -741,12 +820,19 @@ string
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>strategy</code><br>
+<code>strategy</code>
+<br>
 <em>
 string
 </em>
 </td>
 <td>
+<p>Strategy specifies the policy used to balance requests
+across the pool of backend pods. Valid policy names are
+<code>Random</code>, <code>RoundRobin</code>, <code>WeightedLeastRequest</code>, <code>Random</code>
+and <code>Cookie</code>. If an unknown strategy name is specified
+or no policy is supplied, the default <code>RoundRobin</code> policy
+is used.</p>
 </td>
 </tr>
 </tbody>
@@ -774,7 +860,8 @@ No HTTP headers or body content is rewritten.</p>
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>replacePrefix</code><br>
+<code>replacePrefix</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.ReplacePrefix">
 []ReplacePrefix
@@ -807,7 +894,8 @@ No HTTP headers or body content is rewritten.</p>
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>prefix</code><br>
+<code>prefix</code>
+<br>
 <em>
 string
 </em>
@@ -827,7 +915,8 @@ by the include chain will be replaced.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>replacement</code><br>
+<code>replacement</code>
+<br>
 <em>
 string
 </em>
@@ -858,7 +947,8 @@ will be replaced with. This must not be empty.</p>
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>count</code><br>
+<code>count</code>
+<br>
 <em>
 int64
 </em>
@@ -871,7 +961,8 @@ If not supplied, the number of retries is one.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>perTryTimeout</code><br>
+<code>perTryTimeout</code>
+<br>
 <em>
 string
 </em>
@@ -902,7 +993,8 @@ Ignored if NumRetries is not supplied.</p>
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>conditions</code><br>
+<code>conditions</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.Condition">
 []Condition
@@ -916,7 +1008,8 @@ Ignored if NumRetries is not supplied.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>services</code><br>
+<code>services</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.Service">
 []Service
@@ -929,7 +1022,8 @@ Ignored if NumRetries is not supplied.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>enableWebsockets</code><br>
+<code>enableWebsockets</code>
+<br>
 <em>
 bool
 </em>
@@ -941,7 +1035,8 @@ bool
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>permitInsecure</code><br>
+<code>permitInsecure</code>
+<br>
 <em>
 bool
 </em>
@@ -954,7 +1049,8 @@ not permitted when a <code>virtualhost.tls</code> block is present.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>timeoutPolicy</code><br>
+<code>timeoutPolicy</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.TimeoutPolicy">
 TimeoutPolicy
@@ -968,7 +1064,8 @@ TimeoutPolicy
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>retryPolicy</code><br>
+<code>retryPolicy</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.RetryPolicy">
 RetryPolicy
@@ -982,7 +1079,8 @@ RetryPolicy
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>healthCheckPolicy</code><br>
+<code>healthCheckPolicy</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.HTTPHealthCheckPolicy">
 HTTPHealthCheckPolicy
@@ -996,7 +1094,8 @@ HTTPHealthCheckPolicy
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>loadBalancerPolicy</code><br>
+<code>loadBalancerPolicy</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.LoadBalancerPolicy">
 LoadBalancerPolicy
@@ -1010,7 +1109,8 @@ LoadBalancerPolicy
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>pathRewritePolicy</code><br>
+<code>pathRewritePolicy</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.PathRewritePolicy">
 PathRewritePolicy
@@ -1025,7 +1125,8 @@ after the request has been routed to a Service.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>requestHeadersPolicy</code><br>
+<code>requestHeadersPolicy</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.HeadersPolicy">
 HeadersPolicy
@@ -1039,7 +1140,8 @@ HeadersPolicy
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>responseHeadersPolicy</code><br>
+<code>responseHeadersPolicy</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.HeadersPolicy">
 HeadersPolicy
@@ -1073,7 +1175,8 @@ HeadersPolicy
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>name</code><br>
+<code>name</code>
+<br>
 <em>
 string
 </em>
@@ -1085,7 +1188,8 @@ Names defined here will be used to look up corresponding endpoints which contain
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>port</code><br>
+<code>port</code>
+<br>
 <em>
 int
 </em>
@@ -1096,7 +1200,8 @@ int
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>protocol</code><br>
+<code>protocol</code>
+<br>
 <em>
 string
 </em>
@@ -1109,7 +1214,8 @@ Values may be tls, h2, h2c. If omitted, protocol-selection falls back on Service
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>weight</code><br>
+<code>weight</code>
+<br>
 <em>
 int64
 </em>
@@ -1121,7 +1227,8 @@ int64
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>validation</code><br>
+<code>validation</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.UpstreamValidation">
 UpstreamValidation
@@ -1135,7 +1242,8 @@ UpstreamValidation
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>mirror</code><br>
+<code>mirror</code>
+<br>
 <em>
 bool
 </em>
@@ -1146,7 +1254,8 @@ bool
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>requestHeadersPolicy</code><br>
+<code>requestHeadersPolicy</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.HeadersPolicy">
 HeadersPolicy
@@ -1160,7 +1269,8 @@ HeadersPolicy
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>responseHeadersPolicy</code><br>
+<code>responseHeadersPolicy</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.HeadersPolicy">
 HeadersPolicy
@@ -1193,7 +1303,8 @@ HeadersPolicy
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>currentStatus</code><br>
+<code>currentStatus</code>
+<br>
 <em>
 string
 </em>
@@ -1204,13 +1315,29 @@ string
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>description</code><br>
+<code>description</code>
+<br>
 <em>
 string
 </em>
 </td>
 <td>
 <em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>loadBalancer</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#loadbalancerstatus-v1-core">
+Kubernetes core/v1.LoadBalancerStatus
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>LoadBalancer contains the current status of the load balancer.</p>
 </td>
 </tr>
 </tbody>
@@ -1234,7 +1361,8 @@ string
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>intervalSeconds</code><br>
+<code>intervalSeconds</code>
+<br>
 <em>
 int64
 </em>
@@ -1246,7 +1374,8 @@ int64
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>timeoutSeconds</code><br>
+<code>timeoutSeconds</code>
+<br>
 <em>
 int64
 </em>
@@ -1258,7 +1387,8 @@ int64
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>unhealthyThresholdCount</code><br>
+<code>unhealthyThresholdCount</code>
+<br>
 <em>
 uint32
 </em>
@@ -1270,7 +1400,8 @@ uint32
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>healthyThresholdCount</code><br>
+<code>healthyThresholdCount</code>
+<br>
 <em>
 uint32
 </em>
@@ -1301,7 +1432,8 @@ uint32
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>loadBalancerPolicy</code><br>
+<code>loadBalancerPolicy</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.LoadBalancerPolicy">
 LoadBalancerPolicy
@@ -1315,7 +1447,8 @@ LoadBalancerPolicy
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>services</code><br>
+<code>services</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.Service">
 []Service
@@ -1328,7 +1461,8 @@ LoadBalancerPolicy
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>include</code><br>
+<code>include</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.TCPProxyInclude">
 TCPProxyInclude
@@ -1342,7 +1476,8 @@ TCPProxyInclude
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>includes</code><br>
+<code>includes</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.TCPProxyInclude">
 TCPProxyInclude
@@ -1358,7 +1493,8 @@ when it should have been singular. This field should stay to not break backwards
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>healthCheckPolicy</code><br>
+<code>healthCheckPolicy</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.TCPHealthCheckPolicy">
 TCPHealthCheckPolicy
@@ -1391,7 +1527,8 @@ TCPHealthCheckPolicy
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>name</code><br>
+<code>name</code>
+<br>
 <em>
 string
 </em>
@@ -1402,7 +1539,8 @@ string
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>namespace</code><br>
+<code>namespace</code>
+<br>
 <em>
 string
 </em>
@@ -1435,7 +1573,8 @@ matching certificate unless tls.passthrough is set to true.</p>
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>secretName</code><br>
+<code>secretName</code>
+<br>
 <em>
 string
 </em>
@@ -1446,7 +1585,8 @@ string
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>minimumProtocolVersion</code><br>
+<code>minimumProtocolVersion</code>
+<br>
 <em>
 string
 </em>
@@ -1458,7 +1598,8 @@ string
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>passthrough</code><br>
+<code>passthrough</code>
+<br>
 <em>
 bool
 </em>
@@ -1468,6 +1609,41 @@ bool
 <p>If Passthrough is set to true, the SecretName will be ignored
 and the encrypted handshake will be passed through to the
 backing cluster.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>clientValidation</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.DownstreamValidation">
+DownstreamValidation
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ClientValidation defines how to verify the client certificate
+when an external client establishes a TLS connection to Envoy.</p>
+<p>This setting:</p>
+<ol>
+<li>Enables TLS client certificate validation.</li>
+<li>Requires clients to present a TLS certificate (i.e. not optional validation).</li>
+<li>Specifies how the client certificate will be validated.</li>
+</ol>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>enableFallbackCertificate</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>EnableFallbackCertificate defines if the vhost should allow a default certificate to
+be applied which handles all requests which don&rsquo;t match the SNI defined in this vhost.</p>
 </td>
 </tr>
 </tbody>
@@ -1491,7 +1667,8 @@ backing cluster.</p>
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>delegations</code><br>
+<code>delegations</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.CertificateDelegation">
 []CertificateDelegation
@@ -1510,7 +1687,12 @@ backing cluster.</p>
 <a href="#projectcontour.io/v1.Route">Route</a>)
 </p>
 <p>
-<p>TimeoutPolicy defines the attributes associated with timeout.</p>
+<p>TimeoutPolicy configures timeouts that are used for handling network requests.</p>
+<p>TimeoutPolicy durations are expressed in the Go <a href="https://godoc.org/time#ParseDuration">Duration format</a>.
+Valid time units are &ldquo;ns&rdquo;, &ldquo;us&rdquo; (or &ldquo;µs&rdquo;), &ldquo;ms&rdquo;, &ldquo;s&rdquo;, &ldquo;m&rdquo;, &ldquo;h&rdquo;.
+The string &ldquo;infinity&rdquo; is also a valid input and specifies no timeout.
+A value of &ldquo;0s&rdquo; will be treated as if the field were not set, i.e. by using Envoy&rsquo;s default behavior.</p>
+<p>Example input values: &ldquo;300ms&rdquo;, &ldquo;5s&rdquo;, &ldquo;1m&rdquo;.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -1522,7 +1704,8 @@ backing cluster.</p>
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>response</code><br>
+<code>response</code>
+<br>
 <em>
 string
 </em>
@@ -1530,20 +1713,23 @@ string
 <td>
 <em>(Optional)</em>
 <p>Timeout for receiving a response from the server after processing a request from client.
-If not supplied the timeout duration is undefined.</p>
+If not supplied, Envoy&rsquo;s default value of 15s applies.</p>
 </td>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>idle</code><br>
+<code>idle</code>
+<br>
 <em>
 string
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Timeout after which if there are no active requests for this route, the connection between
-Envoy and the backend will be closed. If not specified, there is no per-route idle timeout.</p>
+<p>Timeout after which, if there are no active requests for this route, the connection between
+Envoy and the backend or Envoy and the external client will be closed.
+If not specified, there is no per-route idle timeout, though a connection manager-wide
+stream_idle_timeout default of 5m still applies.</p>
 </td>
 </tr>
 </tbody>
@@ -1567,7 +1753,8 @@ Envoy and the backend will be closed. If not specified, there is no per-route id
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>caSecret</code><br>
+<code>caSecret</code>
+<br>
 <em>
 string
 </em>
@@ -1578,7 +1765,8 @@ string
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>subjectName</code><br>
+<code>subjectName</code>
+<br>
 <em>
 string
 </em>
@@ -1609,7 +1797,8 @@ to be a &ldquo;root&rdquo;.</p>
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>fqdn</code><br>
+<code>fqdn</code>
+<br>
 <em>
 string
 </em>
@@ -1621,7 +1810,8 @@ all leaves of the DAG rooted at this object relate to the fqdn</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>tls</code><br>
+<code>tls</code>
+<br>
 <em>
 <a href="#projectcontour.io/v1.TLS">
 TLS
