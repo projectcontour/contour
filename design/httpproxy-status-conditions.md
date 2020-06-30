@@ -92,6 +92,8 @@ type ValidCondition struct {
 
 The `Valid` condition is a positive-polarity summary condition like `Ready` is on other objects, while `warnings` and `errors` are slices of abnormal-true polarity conditions that further describe problems with the configuration.
 
+The `Valid` condition must always be present when a HTTPProxy status is updated, although it may be set to either `status` `true` or `false`, meaning valid or invalid respectively.
+
 So, for a `Valid` condition with `status: true`, `errors:` must be empty, and `warnings` may have entries.
 
 If `errors` and `warnings` are empty, and `status` is true, then everything is good.
