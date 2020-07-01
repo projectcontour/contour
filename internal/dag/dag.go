@@ -160,6 +160,9 @@ type RetryPolicy struct {
 	// If empty, retries will not be performed.
 	RetryOn string
 
+	// RetriableStatusCodes specifies the HTTP status codes under which retry takes place.
+	RetriableStatusCodes []uint32
+
 	// NumRetries specifies the allowed number of retries.
 	// Ignored if RetryOn is blank, or defaults to 1 if RetryOn is set.
 	NumRetries uint32

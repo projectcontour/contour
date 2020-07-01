@@ -16,6 +16,7 @@ package dag
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -25,15 +26,28 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
+func retryOn(ro []projcontour.RetryOn) string {
+	if len(ro) == 0 {
+		return "5xx"
+	}
+
+	ss := make([]string, len(ro))
+	for i, value := range ro {
+		ss[i] = string(value)
+	}
+	return strings.Join(ss, ",")
+}
+
 func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
 	if rp == nil {
 		return nil
 	}
 	perTryTimeout, _ := time.ParseDuration(rp.PerTryTimeout)
 	return &RetryPolicy{
-		RetryOn:       "5xx",
-		NumRetries:    max(1, uint32(rp.NumRetries)),
-		PerTryTimeout: perTryTimeout,
+		RetryOn:              retryOn(rp.RetryOn),
+		RetriableStatusCodes: rp.RetriableStatusCodes,
+		NumRetries:           max(1, uint32(rp.NumRetries)),
+		PerTryTimeout:        perTryTimeout,
 	}
 }
 

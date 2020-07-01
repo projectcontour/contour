@@ -314,6 +314,10 @@ type TimeoutPolicy struct {
 	Idle string `json:"idle,omitempty"`
 }
 
+// RetryOn is a string type alias with validation to ensure that the value is valid.
+// +kubebuilder:validation:Enum=5xx;gateway-error;reset;connect-failure;retriable-4xx;refused-stream;retriable-status-codes;retriable-headers
+type RetryOn string
+
 // RetryPolicy defines the attributes associated with retrying policy.
 type RetryPolicy struct {
 	// NumRetries is maximum allowed number of retries.
@@ -324,6 +328,12 @@ type RetryPolicy struct {
 	// PerTryTimeout specifies the timeout per retry attempt.
 	// Ignored if NumRetries is not supplied.
 	PerTryTimeout string `json:"perTryTimeout,omitempty"`
+	// RetryOn specifies the conditions on which to retry a request.
+	// +optional
+	RetryOn []RetryOn `json:"retryOn"`
+	// RetriableStatusCodes specifies the HTTP status codes that should be retried.
+	// +optional
+	RetriableStatusCodes []uint32
 }
 
 // ReplacePrefix describes a path prefix replacement.
