@@ -330,10 +330,10 @@ type RetryPolicy struct {
 	PerTryTimeout string `json:"perTryTimeout,omitempty"`
 	// RetryOn specifies the conditions on which to retry a request.
 	// +optional
-	RetryOn []RetryOn `json:"retryOn"`
+	RetryOn []RetryOn `json:"retryOn,omitempty"`
 	// RetriableStatusCodes specifies the HTTP status codes that should be retried.
 	// +optional
-	RetriableStatusCodes []uint32
+	RetriableStatusCodes []uint32 `json:"retriableStatusCodes,omitempty"`
 }
 
 // ReplacePrefix describes a path prefix replacement.
