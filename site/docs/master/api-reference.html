@@ -928,6 +928,15 @@ will be replaced with. This must not be empty.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.RetryOn">RetryOn
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.RetryPolicy">RetryPolicy</a>)
+</p>
+<p>
+<p>RetryOn is a string type alias with validation to ensure that the value is valid.</p>
+</p>
 <h3 id="projectcontour.io/v1.RetryPolicy">RetryPolicy
 </h3>
 <p>
@@ -970,6 +979,34 @@ string
 <td>
 <p>PerTryTimeout specifies the timeout per retry attempt.
 Ignored if NumRetries is not supplied.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>retryOn</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.RetryOn">
+[]RetryOn
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RetryOn specifies the conditions on which to retry a request.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>retriableStatusCodes</code>
+<br>
+<em>
+[]uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RetriableStatusCodes specifies the HTTP status codes that should be retried.</p>
 </td>
 </tr>
 </tbody>

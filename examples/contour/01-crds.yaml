@@ -337,6 +337,30 @@ spec:
                         description: PerTryTimeout specifies the timeout per retry
                           attempt. Ignored if NumRetries is not supplied.
                         type: string
+                      retriableStatusCodes:
+                        description: RetriableStatusCodes specifies the HTTP status
+                          codes that should be retried.
+                        items:
+                          format: int32
+                          type: integer
+                        type: array
+                      retryOn:
+                        description: RetryOn specifies the conditions on which to
+                          retry a request.
+                        items:
+                          description: RetryOn is a string type alias with validation
+                            to ensure that the value is valid.
+                          enum:
+                          - 5xx
+                          - gateway-error
+                          - reset
+                          - connect-failure
+                          - retriable-4xx
+                          - refused-stream
+                          - retriable-status-codes
+                          - retriable-headers
+                          type: string
+                        type: array
                     type: object
                   services:
                     description: Services are the services to proxy traffic.
