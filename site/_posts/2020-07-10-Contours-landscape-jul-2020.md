@@ -1,6 +1,6 @@
 ---
-title: Contour’s landscape, June 2020
-excerpt: Contour is now part of the CNCF, and we're changing our project philosophy somewhat.
+title: Contour’s landscape, July 2020
+excerpt: Contour is now part of the CNCF, and we're taking the opportunity to reevaluate our product philosophy.
 author_name: Nick Young
 author_avatar: /img/contributors/nick-young.png
 categories: [kubernetes]
@@ -20,13 +20,15 @@ I’m currently aiming for this to be a quarterly retrospective and mission upda
 ## Big News
 Contour has been accepted into the CNCF at the “incubating” level!
 
-![Woohoo](https://frinkiac.com/gif/S06E11/443792/444827.gif?b64lines=)
+![Woohoo](https://frinkiac.com/gif/S04E17/1281462/1283464.gif?b64lines=)
 
 This is a huge testament to the work of the Contour community, and it comes with a few benefits to our community:
-- Being part of the CNCF means Contour is more closely associated (and aligned) with the two dependent projects, Envoy and Kubernetes. 
-- CNCF offers our project vendor neutral governance to encourage more companies and contributors to join our community, contribute, and help us deliver on the vision of Contour. 
-- We believe CNCF and the CNCF networking community can play a big role in shaping the opinion for ingress controllers and Envoy control planes.
-- CNCF offers access to resources (like devstats and CII badging) that help optimize our growth.
+- Being part of the CNCF means Contour is more closely associated (and aligned) with our two dependent projects, Envoy and Kubernetes. 
+- The CNCF offers our project vendor neutral governance to encourage more companies and contributors to join our community, contribute, and help us deliver on the vision of Contour. 
+- We believe the CNCF its networking community can play a big role in shaping the opinion for ingress controllers and Envoy control planes.
+- The CNCF offers access to resources (like devstats and CII badging) that help optimize our growth.
+
+This is also a good time for a look back at what we, the Contour project, have done, and where we are going.
 
 
 ## The Past and Present
