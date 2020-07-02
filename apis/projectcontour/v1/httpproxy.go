@@ -315,7 +315,7 @@ type TimeoutPolicy struct {
 }
 
 // RetryOn is a string type alias with validation to ensure that the value is valid.
-// +kubebuilder:validation:Enum=5xx;gateway-error;reset;connect-failure;retriable-4xx;refused-stream;retriable-status-codes;retriable-headers
+// +kubebuilder:validation:Enum="5xx";gateway-error;reset;connect-failure;retriable-4xx;refused-stream;retriable-status-codes;retriable-headers
 type RetryOn string
 
 // RetryPolicy defines the attributes associated with retrying policy.
