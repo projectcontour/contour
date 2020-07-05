@@ -16,6 +16,16 @@ env:
 jobs:
   include:
   - name: test
+    os: osx
+    install:
+    - go mod vendor
+    script:
+    - make install
+    - make check-coverage
+
+  - name: test
+    os: linux
+    dist: bionic
     install:
     - go mod vendor
     script:
