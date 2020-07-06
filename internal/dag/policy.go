@@ -26,6 +26,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
+// retryOn transforms a slice of retry on values to a comma-separated string.
+// CRD validation ensures that all retry on values are valid.
 func retryOn(ro []projcontour.RetryOn) string {
 	if len(ro) == 0 {
 		return "5xx"

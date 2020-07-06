@@ -315,7 +315,7 @@ type TimeoutPolicy struct {
 }
 
 // RetryOn is a string type alias with validation to ensure that the value is valid.
-// +kubebuilder:validation:Enum="5xx";gateway-error;reset;connect-failure;retriable-4xx;refused-stream;retriable-status-codes;retriable-headers
+// +kubebuilder:validation:Enum="5xx";gateway-error;reset;connect-failure;retriable-4xx;refused-stream;retriable-status-codes;retriable-headers;cancelled;deadline-exceeded;internal;resource-exhausted;unavailable
 type RetryOn string
 
 // RetryPolicy defines the attributes associated with retrying policy.
@@ -329,9 +329,35 @@ type RetryPolicy struct {
 	// Ignored if NumRetries is not supplied.
 	PerTryTimeout string `json:"perTryTimeout,omitempty"`
 	// RetryOn specifies the conditions on which to retry a request.
+	//
+	// Supported conditions:
+	//
+	// - `5xx`
+	// - `gateway-error`
+	// - `reset`
+	// - `connect-failure`
+	// - `retriable-4xx`
+	// - `refused-stream`
+	// - `retriable-status-codes`
+	// - `retriable-headers`
+	//
+	// Supported gRPC conditions:
+	//
+	// - `cancelled`
+	// - `deadline-exceeded`
+	// - `internal`
+	// - `resource-exhausted`
+	// - `unavailable`
+	//
+	// Envoy documentation that explains the behavior of each condition:
+	//
+	// - https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-on
+	// - https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-grpc-on
 	// +optional
 	RetryOn []RetryOn `json:"retryOn,omitempty"`
 	// RetriableStatusCodes specifies the HTTP status codes that should be retried.
+	//
+	// This field is only respected when you include `retriable-status-codes` in the `RetryOn` field.
 	// +optional
 	RetriableStatusCodes []uint32 `json:"retriableStatusCodes,omitempty"`
 }
