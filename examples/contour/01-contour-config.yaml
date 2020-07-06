@@ -72,3 +72,4 @@ data:
     # The following shows the default proxy timeout settings.
     # timeouts:
     #   connection-idle-timeout: 60s
+    #   stream-idle-timeout: 5m

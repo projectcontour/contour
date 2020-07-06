@@ -101,6 +101,9 @@ type ListenerVisitorConfig struct {
 	// ConnectionIdleTimeout configures the common_http_protocol_options.idle_timeout for all
 	// Connection Managers.
 	ConnectionIdleTimeout time.Duration
+
+	// StreamIdleTimeout configures the stream_idle_timeout for all Connection Managers.
+	StreamIdleTimeout time.Duration
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
@@ -217,6 +220,18 @@ func (lvc *ListenerVisitorConfig) connectionIdleTimeout() time.Duration {
 	return lvc.ConnectionIdleTimeout
 }
 
+// streamIdleTimeout sets any durations in lvc.StreamIdleTimeout <0 to 0 so that Envoy ends up with a positive duration.
+// for the stream_idle_timeout value we are passing, there are only two valid values:
+// 0 - disabled
+// >0 duration - the timeout.
+// The value may be unset, but we always set it to 0.
+func (lvc *ListenerVisitorConfig) streamIdleTimeout() time.Duration {
+	if lvc.StreamIdleTimeout < 0 {
+		return 0
+	}
+	return lvc.StreamIdleTimeout
+}
+
 // minTLSVersion returns the requested minimum TLS protocol
 // version or envoy_api_v2_auth.TlsParameters_TLSv1_1 if not configured.
 func (lvc *ListenerVisitorConfig) minTLSVersion() envoy_api_v2_auth.TlsParameters_TlsProtocol {
@@ -327,6 +342,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 			AccessLoggers(lvc.newInsecureAccessLog()).
 			RequestTimeout(lvc.requestTimeout()).
 			ConnectionIdleTimeout(lvc.connectionIdleTimeout()).
+			StreamIdleTimeout(lvc.streamIdleTimeout()).
 			Get()
 
 		lv.listeners[ENVOY_HTTP_LISTENER] = envoy.Listener(
@@ -399,6 +415,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					AccessLoggers(v.ListenerVisitorConfig.newSecureAccessLog()).
 					RequestTimeout(v.ListenerVisitorConfig.requestTimeout()).
 					ConnectionIdleTimeout(v.ListenerVisitorConfig.connectionIdleTimeout()).
+					StreamIdleTimeout(v.ListenerVisitorConfig.streamIdleTimeout()).
 					Get(),
 			)
 
@@ -454,6 +471,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					AccessLoggers(v.ListenerVisitorConfig.newSecureAccessLog()).
 					RequestTimeout(v.ListenerVisitorConfig.requestTimeout()).
 					ConnectionIdleTimeout(v.ListenerVisitorConfig.connectionIdleTimeout()).
+					StreamIdleTimeout(v.ListenerVisitorConfig.streamIdleTimeout()).
 					Get(),
 			)
 

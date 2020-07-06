@@ -185,6 +185,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		MinimumTLSVersion:     annotation.MinTLSVersion(ctx.TLSConfig.MinimumProtocolVersion),
 		RequestTimeout:        ctx.RequestTimeout,
 		ConnectionIdleTimeout: ctx.ConnectionIdleTimeout,
+		StreamIdleTimeout:     ctx.StreamIdleTimeout,
 	}
 
 	defaultHTTPVersions, err := parseDefaultHTTPVersions(ctx.DefaultHTTPVersions)
