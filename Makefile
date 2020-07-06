@@ -139,15 +139,15 @@ lint-misspell:
 	@go run github.com/client9/misspell/cmd/misspell \
 		-locale US \
 		-error \
-		-i mitre \
-		-i cancelled \
+		-i mitre,Mitre,cancelled \
 		-source=text \
 		$$(git ls-files | grep -E '(md|html)$$')
 
 .PHONY: check-golint
 lint-golint:
 	@echo Running Go linter ...
-	@./hack/golangci-lint run
+	@./hack/golangci-lint run \
+		-e cancelled
 
 .PHONY: check-yamllint
 lint-yamllint:
