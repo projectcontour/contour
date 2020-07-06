@@ -11,8 +11,6 @@ toc:
         url: /annotations
       - page: HTTPProxy Reference
         url: /httpproxy
-      - page: IngressRoute Reference
-        url: /ingressroute
       - page: Contour Configuration Reference
         url: /configuration
       - page: API Reference

@@ -5,7 +5,7 @@
 The [Ingress][1] object was added to Kubernetes in version 1.1 to describe properties of a cluster-wide reverse HTTP proxy.
 Since that time, the Ingress object has not progressed beyond the beta stage, and its stagnation inspired an [explosion of annotations][2] to express missing properties of HTTP routing.
 
-The goal of the HTTPProxy (previously `IngressRoute`) Custom Resource Definition (CRD) is to expand upon the functionality of the Ingress API to allow for a richer user experience as well addressing the limitations of the latter's use in multi tenent environments.
+The goal of the HTTPProxy (which replaces the now-removed IngressRoute) Custom Resource Definition (CRD) is to expand upon the functionality of the Ingress API to allow for a richer user experience as well addressing the limitations of the latter's use in multi tenant environments.
 
 ## Key HTTPProxy Benefits
 
@@ -986,7 +986,7 @@ HTTPProxy permits the splitting of a system's configuration into separate HTTPPr
 
 Inclusion, as the name implies, allows for one HTTPProxy object to be included in another, optionally with some conditions inherited from the parent.
 Contour reads the inclusion tree and merges the included routes into one big object internally before rendering Envoy config.
-Importantly, the included HTTPProxy objects do not have to be in the same namespace, so this is functionally the same as the delegation feature of the now-deprecated IngressRoute.
+Importantly, the included HTTPProxy objects do not have to be in the same namespace.
 
 Each tree of HTTPProxy starts with a root, the top level object of the configuration for a particular virtual host.
 Each root HTTPProxy defines a `virtualhost` key, which describes properties such as the fully qualified name of the virtual host, TLS configuration, etc.
@@ -1128,7 +1128,7 @@ spec:
   virtualhost:
     fqdn: ns-root.bar.com
   includes:
-  # delegate the subpath, `/blog` to the IngressRoute object in the marketing namespace with the name `blog`
+  # delegate the subpath, `/blog` to the HTTPProxy object in the marketing namespace with the name `blog`
   - name: blog
     namespace: marketing
     conditions:
