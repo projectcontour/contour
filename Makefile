@@ -146,8 +146,7 @@ lint-misspell:
 .PHONY: check-golint
 lint-golint:
 	@echo Running Go linter ...
-	@./hack/golangci-lint run \
-		-e cancelled
+	@./hack/golangci-lint run
 
 .PHONY: check-yamllint
 lint-yamllint:

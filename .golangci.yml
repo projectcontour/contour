@@ -18,6 +18,7 @@ linters-settings:
   misspell:
     ignore-words:
     - clas
+    - cancelled
     locale: US
   gofmt:
     simplify: true
