@@ -338,15 +338,24 @@ spec:
                           attempt. Ignored if NumRetries is not supplied.
                         type: string
                       retriableStatusCodes:
-                        description: RetriableStatusCodes specifies the HTTP status
-                          codes that should be retried.
+                        description: "RetriableStatusCodes specifies the HTTP status
+                          codes that should be retried. \n This field is only respected
+                          when you include `retriable-status-codes` in the `RetryOn`
+                          field."
                         items:
                           format: int32
                           type: integer
                         type: array
                       retryOn:
-                        description: RetryOn specifies the conditions on which to
-                          retry a request.
+                        description: "RetryOn specifies the conditions on which to
+                          retry a request. \n Supported conditions: \n - `5xx` - `gateway-error`
+                          - `reset` - `connect-failure` - `retriable-4xx` - `refused-stream`
+                          - `retriable-status-codes` - `retriable-headers` \n Supported
+                          gRPC conditions: \n - `cancelled` - `deadline-exceeded`
+                          - `internal` - `resource-exhausted` - `unavailable` \n Envoy
+                          documentation that explains the behavior of each condition:
+                          \n - https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-on
+                          - https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-grpc-on"
                         items:
                           description: RetryOn is a string type alias with validation
                             to ensure that the value is valid.
@@ -359,6 +368,11 @@ spec:
                           - refused-stream
                           - retriable-status-codes
                           - retriable-headers
+                          - cancelled
+                          - deadline-exceeded
+                          - internal
+                          - resource-exhausted
+                          - unavailable
                           type: string
                         type: array
                     type: object

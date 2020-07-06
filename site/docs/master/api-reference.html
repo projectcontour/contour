@@ -994,6 +994,30 @@ Ignored if NumRetries is not supplied.</p>
 <td>
 <em>(Optional)</em>
 <p>RetryOn specifies the conditions on which to retry a request.</p>
+<p>Supported conditions:</p>
+<ul>
+<li><code>5xx</code></li>
+<li><code>gateway-error</code></li>
+<li><code>reset</code></li>
+<li><code>connect-failure</code></li>
+<li><code>retriable-4xx</code></li>
+<li><code>refused-stream</code></li>
+<li><code>retriable-status-codes</code></li>
+<li><code>retriable-headers</code></li>
+</ul>
+<p>Supported gRPC conditions:</p>
+<ul>
+<li><code>cancelled</code></li>
+<li><code>deadline-exceeded</code></li>
+<li><code>internal</code></li>
+<li><code>resource-exhausted</code></li>
+<li><code>unavailable</code></li>
+</ul>
+<p>Envoy documentation that explains the behavior of each condition:</p>
+<ul>
+<li><a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-on">https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-on</a></li>
+<li><a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-grpc-on">https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-grpc-on</a></li>
+</ul>
 </td>
 </tr>
 <tr>
@@ -1007,6 +1031,7 @@ Ignored if NumRetries is not supplied.</p>
 <td>
 <em>(Optional)</em>
 <p>RetriableStatusCodes specifies the HTTP status codes that should be retried.</p>
+<p>This field is only respected when you include <code>retriable-status-codes</code> in the <code>RetryOn</code> field.</p>
 </td>
 </tr>
 </tbody>
