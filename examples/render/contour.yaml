@@ -453,12 +453,13 @@ spec:
                         type: array
                       retryOn:
                         description: "RetryOn specifies the conditions on which to
-                          retry a request. \n Supported conditions: - `5xx` - `gateway-error`
+                          retry a request. \n Supported conditions: \n - `5xx` - `gateway-error`
                           - `reset` - `connect-failure` - `retriable-4xx` - `refused-stream`
                           - `retriable-status-codes` - `retriable-headers` \n Supported
-                          gRPC conditions: - `cancelled` - `deadline-exceeded` - `internal`
-                          - `resource-exhausted` - `unavailable` \n Envoy documentation
-                          that explains the behavior of each condition: - https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-on
+                          gRPC conditions: \n - `cancelled` - `deadline-exceeded`
+                          - `internal` - `resource-exhausted` - `unavailable` \n Envoy
+                          documentation that explains the behavior of each condition:
+                          \n - https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-on
                           - https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-grpc-on"
                         items:
                           description: RetryOn is a string type alias with validation
