@@ -140,6 +140,7 @@ lint-misspell:
 		-locale US \
 		-error \
 		-i mitre \
+		-i cancelled \
 		-source=text \
 		$$(git ls-files | grep -E '(md|html)$$')
 
