@@ -9,6 +9,7 @@ twitter:
   username: projectcontour
   card: summary
 vm_logo: vm-logo.png
+cncf_logo: cncf-color.png
 gh_repo: https://github.com/projectcontour/contour
 highlighter: rouge
 markdown: kramdown
