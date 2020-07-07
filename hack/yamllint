@@ -12,8 +12,6 @@ if command -v docker >/dev/null; then
 		giantswarm/yamllint "$@"
 fi
 
-# @docker run --rm -ti -v $(CURDIR):/workdir giantswarm/yamllint examples/ site/examples/
-
 cat <<EOF
 Unable to run yamllint. Please check installation instructions:
 	https://github.com/adrienverge/yamllint#installation
