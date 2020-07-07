@@ -28,6 +28,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | leaderelection | leaderelection | | The [leader election configuration](#leader-election-configuration). |
 | request-timeout | [duration][4] | `0s` | This field specifies the default request timeout as a Go duration string. Zero means there is no timeout. |
 | tls | TLS | | The default [TLS configuration](#tls-configuration). |
+| timeouts | TimeoutConfig | | The [timeout configuration](#timeout-configuration). |
 {: class="table thead-dark table-bordered"}
 <br>
 
@@ -68,6 +69,16 @@ In the vast majority of deployments, only the `configmap-name` and `configmap-na
 {: class="table thead-dark table-bordered"}
 <br>
 
+### Timeout Configuration
+
+The timeout configuration block can be used to configure various timeouts for the proxies.
+
+| Field Name | Type| Default  | Description |
+|------------|-----|----------|-------------|
+| connection-idle-timeout| [duration][4] | `60s` | This field defines how long the proxy should wait while there are no active requests before terminating an HTTP connection. Set to 0 to disable the timeout. |
+{: class="table thead-dark table-bordered"}
+<br>
+
 ### Configuration Example
 
 The following is an example ConfigMap with configuration file included:
@@ -102,6 +113,9 @@ data:
     # default-http-versions:
     # - "HTTP/1.1"
     # - "HTTP/2"
+    # The following shows the default proxy timeout settings.
+    # timeouts:
+    #  connection-idle-timeout: 60s
 ```
 
 _Note:_ The default example `contour` includes this [file][1] for easy deployment of Contour.
