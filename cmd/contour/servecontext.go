@@ -184,7 +184,7 @@ func newServeContext() *serveContext {
 		TimeoutConfig: TimeoutConfig{
 			// This is chosen as a rough default to stop idle connections wasting resources,
 			// without stopping slow connections from being terminated too quickly.
-			IdleTimeout: 60 * time.Second,
+			ConnectionIdleTimeout: 60 * time.Second,
 		},
 	}
 }
@@ -238,10 +238,10 @@ type LeaderElectionConfig struct {
 
 // TimeoutConfig holds various configurable proxy timeout values.
 type TimeoutConfig struct {
-	// IdleTimeout defines how long the proxy should wait while there
+	// ConnectionIdleTimeout defines how long the proxy should wait while there
 	// are no active requests before terminating an HTTP connection. Set
 	// to 0 to disable the timeout.
-	IdleTimeout time.Duration `yaml:"idle-timeout,omitempty"`
+	ConnectionIdleTimeout time.Duration `yaml:"connection-idle-timeout,omitempty"`
 }
 
 // grpcOptions returns a slice of grpc.ServerOptions.

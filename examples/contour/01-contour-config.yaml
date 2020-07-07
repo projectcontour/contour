@@ -71,4 +71,4 @@ data:
     #
     # The following shows the default proxy timeout settings.
     # timeouts:
-    #   idle-timeout: 60s
+    #   connection-idle-timeout: 60s

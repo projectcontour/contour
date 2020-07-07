@@ -1410,9 +1410,9 @@ func TestListenerVisit(t *testing.T) {
 				),
 			}),
 		},
-		"httpproxy with idle timeout set in visitor config": {
+		"httpproxy with connection idle timeout set in visitor config": {
 			ListenerVisitorConfig: ListenerVisitorConfig{
-				IdleTimeout: 90 * time.Second,
+				ConnectionIdleTimeout: 90 * time.Second,
 			},
 			objs: []interface{}{
 				&projcontour.HTTPProxy{
@@ -1458,14 +1458,14 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						DefaultFilters().
-						IdleTimeout(90 * time.Second).
+						ConnectionIdleTimeout(90 * time.Second).
 						Get(),
 				),
 			}),
 		},
-		"httpsproxy with secret with idle timeout set in visitor config": {
+		"httpsproxy with secret with connection idle timeout set in visitor config": {
 			ListenerVisitorConfig: ListenerVisitorConfig{
-				IdleTimeout: 90 * time.Second,
+				ConnectionIdleTimeout: 90 * time.Second,
 			},
 			objs: []interface{}{
 				&projcontour.HTTPProxy{
@@ -1518,7 +1518,7 @@ func TestListenerVisit(t *testing.T) {
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
 					AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 					DefaultFilters().
-					IdleTimeout(90 * time.Second).
+					ConnectionIdleTimeout(90 * time.Second).
 					Get(),
 				),
 			}, &v2.Listener{
@@ -1535,7 +1535,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
 						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
-						IdleTimeout(90 * time.Second).
+						ConnectionIdleTimeout(90 * time.Second).
 						Get()),
 				}},
 				ListenerFilters: envoy.ListenerFilters(

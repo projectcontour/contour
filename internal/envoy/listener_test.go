@@ -298,11 +298,11 @@ func TestDownstreamTLSContext(t *testing.T) {
 
 func TestHTTPConnectionManager(t *testing.T) {
 	tests := map[string]struct {
-		routename      string
-		accesslogger   []*envoy_api_v2_accesslog.AccessLog
-		requestTimeout time.Duration
-		idleTimeout    time.Duration
-		want           *envoy_api_v2_listener.Filter
+		routename             string
+		accesslogger          []*envoy_api_v2_accesslog.AccessLog
+		requestTimeout        time.Duration
+		connectionIdleTimeout time.Duration
+		want                  *envoy_api_v2_listener.Filter
 	}{
 		"default": {
 			routename:      "default/kuard",
@@ -410,11 +410,11 @@ func TestHTTPConnectionManager(t *testing.T) {
 				},
 			},
 		},
-		"idle timeout of 90s": {
-			routename:      "default/kuard",
-			accesslogger:   FileAccessLogEnvoy("/dev/stdout"),
-			requestTimeout: 0,
-			idleTimeout:    90 * time.Second,
+		"connection idle timeout of 90s": {
+			routename:             "default/kuard",
+			accesslogger:          FileAccessLogEnvoy("/dev/stdout"),
+			requestTimeout:        0,
+			connectionIdleTimeout: 90 * time.Second,
 			want: &envoy_api_v2_listener.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
@@ -472,7 +472,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 				MetricsPrefix(tc.routename).
 				AccessLoggers(tc.accesslogger).
 				RequestTimeout(tc.requestTimeout).
-				IdleTimeout(tc.idleTimeout).
+				ConnectionIdleTimeout(tc.connectionIdleTimeout).
 				DefaultFilters().
 				Get()
 

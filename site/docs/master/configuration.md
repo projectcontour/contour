@@ -75,7 +75,7 @@ The timeout configuration block can be used to configure various timeouts for th
 
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
-| idle-timeout| [duration][4] | `60s` | This field defines how long the proxy should wait while there are no active requests before terminating an HTTP connection. Set to 0 to disable the timeout. |
+| connection-idle-timeout| [duration][4] | `60s` | This field defines how long the proxy should wait while there are no active requests before terminating an HTTP connection. Set to 0 to disable the timeout. |
 {: class="table thead-dark table-bordered"}
 <br>
 
@@ -115,7 +115,7 @@ data:
     # - "HTTP/2"
     # The following shows the default proxy timeout settings.
     # timeouts:
-    #  idle-timeout: 60s
+    #  connection-idle-timeout: 60s
 ```
 
 _Note:_ The default example `contour` includes this [file][1] for easy deployment of Contour.

@@ -125,13 +125,13 @@ func Listener(name, address string, port int, lf []*envoy_api_v2_listener.Listen
 }
 
 type httpConnectionManagerBuilder struct {
-	routeConfigName string
-	metricsPrefix   string
-	accessLoggers   []*accesslog.AccessLog
-	requestTimeout  time.Duration
-	idleTimeout     time.Duration
-	filters         []*http.HttpFilter
-	codec           HTTPVersionType // Note the zero value is AUTO, which is the default we want.
+	routeConfigName       string
+	metricsPrefix         string
+	accessLoggers         []*accesslog.AccessLog
+	requestTimeout        time.Duration
+	connectionIdleTimeout time.Duration
+	filters               []*http.HttpFilter
+	codec                 HTTPVersionType // Note the zero value is AUTO, which is the default we want.
 }
 
 // RouteConfigName sets the name of the RDS element that contains
@@ -170,10 +170,10 @@ func (b *httpConnectionManagerBuilder) RequestTimeout(timeout time.Duration) *ht
 	return b
 }
 
-// IdleTimeout sets the idle timeout on the connection
+// ConnectionIdleTimeout sets the idle timeout on the connection
 // manager. If not specified or set to 0, this timeout is disabled.
-func (b *httpConnectionManagerBuilder) IdleTimeout(timeout time.Duration) *httpConnectionManagerBuilder {
-	b.idleTimeout = timeout
+func (b *httpConnectionManagerBuilder) ConnectionIdleTimeout(timeout time.Duration) *httpConnectionManagerBuilder {
+	b.connectionIdleTimeout = timeout
 	return b
 }
 
@@ -213,7 +213,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 		},
 		HttpFilters: b.filters,
 		CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
-			IdleTimeout: protobuf.Duration(b.idleTimeout),
+			IdleTimeout: protobuf.Duration(b.connectionIdleTimeout),
 		},
 		HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
 			// Enable support for HTTP/1.0 requests that carry

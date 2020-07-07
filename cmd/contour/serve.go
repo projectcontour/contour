@@ -173,18 +173,18 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	listenerConfig := contour.ListenerVisitorConfig{
-		UseProxyProto:     ctx.useProxyProto,
-		HTTPAddress:       ctx.httpAddr,
-		HTTPPort:          ctx.httpPort,
-		HTTPAccessLog:     ctx.httpAccessLog,
-		HTTPSAddress:      ctx.httpsAddr,
-		HTTPSPort:         ctx.httpsPort,
-		HTTPSAccessLog:    ctx.httpsAccessLog,
-		AccessLogType:     ctx.AccessLogFormat,
-		AccessLogFields:   ctx.AccessLogFields,
-		MinimumTLSVersion: annotation.MinTLSVersion(ctx.TLSConfig.MinimumProtocolVersion),
-		RequestTimeout:    ctx.RequestTimeout,
-		IdleTimeout:       ctx.IdleTimeout,
+		UseProxyProto:         ctx.useProxyProto,
+		HTTPAddress:           ctx.httpAddr,
+		HTTPPort:              ctx.httpPort,
+		HTTPAccessLog:         ctx.httpAccessLog,
+		HTTPSAddress:          ctx.httpsAddr,
+		HTTPSPort:             ctx.httpsPort,
+		HTTPSAccessLog:        ctx.httpsAccessLog,
+		AccessLogType:         ctx.AccessLogFormat,
+		AccessLogFields:       ctx.AccessLogFields,
+		MinimumTLSVersion:     annotation.MinTLSVersion(ctx.TLSConfig.MinimumProtocolVersion),
+		RequestTimeout:        ctx.RequestTimeout,
+		ConnectionIdleTimeout: ctx.ConnectionIdleTimeout,
 	}
 
 	defaultHTTPVersions, err := parseDefaultHTTPVersions(ctx.DefaultHTTPVersions)
