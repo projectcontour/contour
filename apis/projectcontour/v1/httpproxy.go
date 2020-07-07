@@ -330,7 +330,7 @@ type RetryPolicy struct {
 	PerTryTimeout string `json:"perTryTimeout,omitempty"`
 	// RetryOn specifies the conditions on which to retry a request.
 	//
-	// Supported conditions:
+	// Supported [HTTP conditions](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-on):
 	//
 	// - `5xx`
 	// - `gateway-error`
@@ -341,18 +341,13 @@ type RetryPolicy struct {
 	// - `retriable-status-codes`
 	// - `retriable-headers`
 	//
-	// Supported gRPC conditions:
+	// Supported [gRPC conditions](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-grpc-on):
 	//
 	// - `cancelled`
 	// - `deadline-exceeded`
 	// - `internal`
 	// - `resource-exhausted`
 	// - `unavailable`
-	//
-	// Envoy documentation that explains the behavior of each condition:
-	//
-	// - https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-on
-	// - https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-grpc-on
 	// +optional
 	RetryOn []RetryOn `json:"retryOn,omitempty"`
 	// RetriableStatusCodes specifies the HTTP status codes that should be retried.
