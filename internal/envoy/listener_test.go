@@ -303,6 +303,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 		requestTimeout        time.Duration
 		connectionIdleTimeout time.Duration
 		streamIdleTimeout     time.Duration
+		maxConnectionDuration time.Duration
 		want                  *envoy_api_v2_listener.Filter
 	}{
 		"default": {
@@ -523,6 +524,117 @@ func TestHTTPConnectionManager(t *testing.T) {
 				},
 			},
 		},
+		"max connection duration of 90s": {
+			routename:             "default/kuard",
+			accesslogger:          FileAccessLogEnvoy("/dev/stdout"),
+			requestTimeout:        0,
+			maxConnectionDuration: 90 * time.Second,
+			want: &envoy_api_v2_listener.Filter{
+				Name: wellknown.HTTPConnectionManager,
+				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
+						StatPrefix: "default/kuard",
+						RouteSpecifier: &http.HttpConnectionManager_Rds{
+							Rds: &http.Rds{
+								RouteConfigName: "default/kuard",
+								ConfigSource: &envoy_api_v2_core.ConfigSource{
+									ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
+										ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
+											ApiType: envoy_api_v2_core.ApiConfigSource_GRPC,
+											GrpcServices: []*envoy_api_v2_core.GrpcService{{
+												TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
+													EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
+														ClusterName: "contour",
+													},
+												},
+											}},
+										},
+									},
+								},
+							},
+						},
+						HttpFilters: []*http.HttpFilter{{
+							Name: wellknown.Gzip,
+						}, {
+							Name: wellknown.GRPCWeb,
+						}, {
+							Name: wellknown.Router,
+						}},
+						HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
+							// Enable support for HTTP/1.0 requests that carry
+							// a Host: header. See #537.
+							AcceptHttp_10: true,
+						},
+						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
+							IdleTimeout:           protobuf.Duration(0),
+							MaxConnectionDuration: protobuf.Duration(90 * time.Second),
+						},
+						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
+						UseRemoteAddress:          protobuf.Bool(true),
+						NormalizePath:             protobuf.Bool(true),
+						RequestTimeout:            protobuf.Duration(0),
+						PreserveExternalRequestId: true,
+						MergeSlashes:              true,
+						StreamIdleTimeout:         protobuf.Duration(0),
+					}),
+				},
+			},
+		},
+		"max connection duration of 0s is omitted": {
+			routename:             "default/kuard",
+			accesslogger:          FileAccessLogEnvoy("/dev/stdout"),
+			requestTimeout:        0,
+			maxConnectionDuration: 0,
+			want: &envoy_api_v2_listener.Filter{
+				Name: wellknown.HTTPConnectionManager,
+				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
+						StatPrefix: "default/kuard",
+						RouteSpecifier: &http.HttpConnectionManager_Rds{
+							Rds: &http.Rds{
+								RouteConfigName: "default/kuard",
+								ConfigSource: &envoy_api_v2_core.ConfigSource{
+									ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
+										ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
+											ApiType: envoy_api_v2_core.ApiConfigSource_GRPC,
+											GrpcServices: []*envoy_api_v2_core.GrpcService{{
+												TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
+													EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
+														ClusterName: "contour",
+													},
+												},
+											}},
+										},
+									},
+								},
+							},
+						},
+						HttpFilters: []*http.HttpFilter{{
+							Name: wellknown.Gzip,
+						}, {
+							Name: wellknown.GRPCWeb,
+						}, {
+							Name: wellknown.Router,
+						}},
+						HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
+							// Enable support for HTTP/1.0 requests that carry
+							// a Host: header. See #537.
+							AcceptHttp_10: true,
+						},
+						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
+							IdleTimeout: protobuf.Duration(0),
+						},
+						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
+						UseRemoteAddress:          protobuf.Bool(true),
+						NormalizePath:             protobuf.Bool(true),
+						RequestTimeout:            protobuf.Duration(0),
+						PreserveExternalRequestId: true,
+						MergeSlashes:              true,
+						StreamIdleTimeout:         protobuf.Duration(0),
+					}),
+				},
+			},
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -533,6 +645,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 				RequestTimeout(tc.requestTimeout).
 				ConnectionIdleTimeout(tc.connectionIdleTimeout).
 				StreamIdleTimeout(tc.streamIdleTimeout).
+				MaxConnectionDuration(tc.maxConnectionDuration).
 				DefaultFilters().
 				Get()
 
