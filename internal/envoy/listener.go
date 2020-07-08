@@ -130,6 +130,7 @@ type httpConnectionManagerBuilder struct {
 	accessLoggers         []*accesslog.AccessLog
 	requestTimeout        time.Duration
 	connectionIdleTimeout time.Duration
+	streamIdleTimeout     time.Duration
 	filters               []*http.HttpFilter
 	codec                 HTTPVersionType // Note the zero value is AUTO, which is the default we want.
 }
@@ -174,6 +175,13 @@ func (b *httpConnectionManagerBuilder) RequestTimeout(timeout time.Duration) *ht
 // manager. If not specified or set to 0, this timeout is disabled.
 func (b *httpConnectionManagerBuilder) ConnectionIdleTimeout(timeout time.Duration) *httpConnectionManagerBuilder {
 	b.connectionIdleTimeout = timeout
+	return b
+}
+
+// StreamIdleTimeout sets the stream idle timeout on the connection
+// manager. If not specified or set to 0, this timeout is disabled.
+func (b *httpConnectionManagerBuilder) StreamIdleTimeout(timeout time.Duration) *httpConnectionManagerBuilder {
+	b.streamIdleTimeout = timeout
 	return b
 }
 
@@ -227,6 +235,8 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 		// issue #1487 pass through X-Request-Id if provided.
 		PreserveExternalRequestId: true,
 		MergeSlashes:              true,
+
+		StreamIdleTimeout: protobuf.Duration(b.streamIdleTimeout),
 	}
 
 	if len(b.accessLoggers) > 0 {

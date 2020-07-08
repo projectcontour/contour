@@ -185,6 +185,9 @@ func newServeContext() *serveContext {
 			// This is chosen as a rough default to stop idle connections wasting resources,
 			// without stopping slow connections from being terminated too quickly.
 			ConnectionIdleTimeout: 60 * time.Second,
+
+			// This is the Envoy default.
+			StreamIdleTimeout: 5 * time.Minute,
 		},
 	}
 }
@@ -242,6 +245,11 @@ type TimeoutConfig struct {
 	// are no active requests before terminating an HTTP connection. Set
 	// to 0 to disable the timeout.
 	ConnectionIdleTimeout time.Duration `yaml:"connection-idle-timeout,omitempty"`
+
+	// StreamIdleTimeout defines how long the proxy should wait while there
+	// is no stream activity before terminating a stream. Set to 0 to
+	// disable the timeout.
+	StreamIdleTimeout time.Duration `yaml:"stream-idle-timeout,omitempty"`
 }
 
 // grpcOptions returns a slice of grpc.ServerOptions.
