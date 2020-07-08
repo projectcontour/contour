@@ -74,3 +74,4 @@ data:
     #   connection-idle-timeout: 60s
     #   stream-idle-timeout: 5m
     #   max-connection-duration: 0s
+    #   drain-timeout: 5s

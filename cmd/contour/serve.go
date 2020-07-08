@@ -187,6 +187,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		ConnectionIdleTimeout: ctx.ConnectionIdleTimeout,
 		StreamIdleTimeout:     ctx.StreamIdleTimeout,
 		MaxConnectionDuration: ctx.MaxConnectionDuration,
+		DrainTimeout:          ctx.DrainTimeout,
 	}
 
 	defaultHTTPVersions, err := parseDefaultHTTPVersions(ctx.DefaultHTTPVersions)
