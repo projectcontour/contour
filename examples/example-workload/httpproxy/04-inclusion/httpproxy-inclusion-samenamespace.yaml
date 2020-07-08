@@ -9,7 +9,7 @@ spec:
     fqdn: root.bar.com
   includes:
   # Includes the /service2 path from service2 in the same namespace
-  - name: www
+  - name: service2
     namespace: default
     conditions:
     - prefix: /service2
