@@ -1,4 +1,4 @@
-// Copyright © 2020 VMware
+// Copyright Project Contour Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,6 +16,7 @@ package contour
 import (
 	"path"
 	"testing"
+	"time"
 
 	"github.com/projectcontour/contour/internal/k8s"
 
@@ -1403,6 +1404,405 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
 					Filters:         envoy.Filters(httpsFilterFor("www.example.com")),
+				}},
+				ListenerFilters: envoy.ListenerFilters(
+					envoy.TLSInspector(),
+				),
+			}),
+		},
+		"httpproxy with connection idle timeout set in visitor config": {
+			ListenerVisitorConfig: ListenerVisitorConfig{
+				ConnectionIdleTimeout: 90 * time.Second,
+			},
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&v2.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy.FilterChains(
+					envoy.HTTPConnectionManagerBuilder().
+						RouteConfigName(ENVOY_HTTP_LISTENER).
+						MetricsPrefix(ENVOY_HTTP_LISTENER).
+						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						DefaultFilters().
+						ConnectionIdleTimeout(90 * time.Second).
+						Get(),
+				),
+			}),
+		},
+		"httpproxy with stream idle timeout set in visitor config": {
+			ListenerVisitorConfig: ListenerVisitorConfig{
+				StreamIdleTimeout: 90 * time.Second,
+			},
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&v2.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy.FilterChains(
+					envoy.HTTPConnectionManagerBuilder().
+						RouteConfigName(ENVOY_HTTP_LISTENER).
+						MetricsPrefix(ENVOY_HTTP_LISTENER).
+						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						DefaultFilters().
+						StreamIdleTimeout(90 * time.Second).
+						Get(),
+				),
+			}),
+		},
+		"httpproxy with max connection duration set in visitor config": {
+			ListenerVisitorConfig: ListenerVisitorConfig{
+				MaxConnectionDuration: 90 * time.Second,
+			},
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []projcontour.Route{{
+							Conditions: []projcontour.Condition{{
+								Prefix: "/",
+							}},
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&v2.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy.FilterChains(
+					envoy.HTTPConnectionManagerBuilder().
+						RouteConfigName(ENVOY_HTTP_LISTENER).
+						MetricsPrefix(ENVOY_HTTP_LISTENER).
+						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						DefaultFilters().
+						MaxConnectionDuration(90 * time.Second).
+						Get(),
+				),
+			}),
+		},
+		"httpsproxy with secret with connection idle timeout set in visitor config": {
+			ListenerVisitorConfig: ListenerVisitorConfig{
+				ConnectionIdleTimeout: 90 * time.Second,
+			},
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &projcontour.TLS{
+								SecretName: "secret",
+							},
+						},
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&v2.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy.FilterChains(envoy.HTTPConnectionManagerBuilder().
+					RouteConfigName(ENVOY_HTTP_LISTENER).
+					MetricsPrefix(ENVOY_HTTP_LISTENER).
+					AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+					DefaultFilters().
+					ConnectionIdleTimeout(90 * time.Second).
+					Get(),
+				),
+			}, &v2.Listener{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_api_v2_listener.FilterChain{{
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+						ServerNames: []string{"www.example.com"},
+					},
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					Filters: envoy.Filters(envoy.HTTPConnectionManagerBuilder().
+						AddFilter(envoy.FilterMisdirectedRequests("www.example.com")).
+						DefaultFilters().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(path.Join("https", "www.example.com")).
+						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						ConnectionIdleTimeout(90 * time.Second).
+						Get()),
+				}},
+				ListenerFilters: envoy.ListenerFilters(
+					envoy.TLSInspector(),
+				),
+			}),
+		},
+		"httpsproxy with secret with stream idle timeout set in visitor config": {
+			ListenerVisitorConfig: ListenerVisitorConfig{
+				StreamIdleTimeout: 90 * time.Second,
+			},
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &projcontour.TLS{
+								SecretName: "secret",
+							},
+						},
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&v2.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy.FilterChains(envoy.HTTPConnectionManagerBuilder().
+					RouteConfigName(ENVOY_HTTP_LISTENER).
+					MetricsPrefix(ENVOY_HTTP_LISTENER).
+					AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+					DefaultFilters().
+					StreamIdleTimeout(90 * time.Second).
+					Get(),
+				),
+			}, &v2.Listener{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_api_v2_listener.FilterChain{{
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+						ServerNames: []string{"www.example.com"},
+					},
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					Filters: envoy.Filters(envoy.HTTPConnectionManagerBuilder().
+						AddFilter(envoy.FilterMisdirectedRequests("www.example.com")).
+						DefaultFilters().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(path.Join("https", "www.example.com")).
+						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						StreamIdleTimeout(90 * time.Second).
+						Get()),
+				}},
+				ListenerFilters: envoy.ListenerFilters(
+					envoy.TLSInspector(),
+				),
+			}),
+		},
+		"httpsproxy with secret with max connection duration set in visitor config": {
+			ListenerVisitorConfig: ListenerVisitorConfig{
+				MaxConnectionDuration: 90 * time.Second,
+			},
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &projcontour.TLS{
+								SecretName: "secret",
+							},
+						},
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&v2.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy.FilterChains(envoy.HTTPConnectionManagerBuilder().
+					RouteConfigName(ENVOY_HTTP_LISTENER).
+					MetricsPrefix(ENVOY_HTTP_LISTENER).
+					AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+					DefaultFilters().
+					MaxConnectionDuration(90 * time.Second).
+					Get(),
+				),
+			}, &v2.Listener{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_api_v2_listener.FilterChain{{
+					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+						ServerNames: []string{"www.example.com"},
+					},
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					Filters: envoy.Filters(envoy.HTTPConnectionManagerBuilder().
+						AddFilter(envoy.FilterMisdirectedRequests("www.example.com")).
+						DefaultFilters().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(path.Join("https", "www.example.com")).
+						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						MaxConnectionDuration(90 * time.Second).
+						Get()),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),

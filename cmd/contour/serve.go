@@ -1,4 +1,4 @@
-// Copyright © 2019 VMware
+// Copyright Project Contour Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -173,17 +173,20 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	listenerConfig := contour.ListenerVisitorConfig{
-		UseProxyProto:     ctx.useProxyProto,
-		HTTPAddress:       ctx.httpAddr,
-		HTTPPort:          ctx.httpPort,
-		HTTPAccessLog:     ctx.httpAccessLog,
-		HTTPSAddress:      ctx.httpsAddr,
-		HTTPSPort:         ctx.httpsPort,
-		HTTPSAccessLog:    ctx.httpsAccessLog,
-		AccessLogType:     ctx.AccessLogFormat,
-		AccessLogFields:   ctx.AccessLogFields,
-		MinimumTLSVersion: annotation.MinTLSVersion(ctx.TLSConfig.MinimumProtocolVersion),
-		RequestTimeout:    ctx.RequestTimeout,
+		UseProxyProto:         ctx.useProxyProto,
+		HTTPAddress:           ctx.httpAddr,
+		HTTPPort:              ctx.httpPort,
+		HTTPAccessLog:         ctx.httpAccessLog,
+		HTTPSAddress:          ctx.httpsAddr,
+		HTTPSPort:             ctx.httpsPort,
+		HTTPSAccessLog:        ctx.httpsAccessLog,
+		AccessLogType:         ctx.AccessLogFormat,
+		AccessLogFields:       ctx.AccessLogFields,
+		MinimumTLSVersion:     annotation.MinTLSVersion(ctx.TLSConfig.MinimumProtocolVersion),
+		RequestTimeout:        ctx.RequestTimeout,
+		ConnectionIdleTimeout: ctx.ConnectionIdleTimeout,
+		StreamIdleTimeout:     ctx.StreamIdleTimeout,
+		MaxConnectionDuration: ctx.MaxConnectionDuration,
 	}
 
 	defaultHTTPVersions, err := parseDefaultHTTPVersions(ctx.DefaultHTTPVersions)

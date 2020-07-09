@@ -1,4 +1,4 @@
-// Copyright © 2020 VMware
+// Copyright Project Contour Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -97,6 +97,17 @@ type ListenerVisitorConfig struct {
 
 	// RequestTimeout configures the request_timeout for all Connection Managers.
 	RequestTimeout time.Duration
+
+	// ConnectionIdleTimeout configures the common_http_protocol_options.idle_timeout for all
+	// Connection Managers.
+	ConnectionIdleTimeout time.Duration
+
+	// StreamIdleTimeout configures the stream_idle_timeout for all Connection Managers.
+	StreamIdleTimeout time.Duration
+
+	// MaxConnectionDuration configures the common_http_protocol_options.max_connection_duration for all
+	// Connection Managers.
+	MaxConnectionDuration time.Duration
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
@@ -195,11 +206,46 @@ func (lvc *ListenerVisitorConfig) newSecureAccessLog() []*envoy_api_v2_accesslog
 // >0 duration - the timeout.
 // The value may be unset, but we always set it to 0.
 func (lvc *ListenerVisitorConfig) requestTimeout() time.Duration {
-
 	if lvc.RequestTimeout < 0 {
 		return 0
 	}
 	return lvc.RequestTimeout
+}
+
+// connectionIdleTimeout sets any durations in lvc.ConnectionIdleTimeout <0 to 0 so that Envoy ends up with a positive duration.
+// for the idle_timeout value we are passing, there are only two valid values:
+// 0 - disabled
+// >0 duration - the timeout.
+// The value may be unset, but we always set it to 0.
+func (lvc *ListenerVisitorConfig) connectionIdleTimeout() time.Duration {
+	if lvc.ConnectionIdleTimeout < 0 {
+		return 0
+	}
+	return lvc.ConnectionIdleTimeout
+}
+
+// streamIdleTimeout sets any durations in lvc.StreamIdleTimeout <0 to 0 so that Envoy ends up with a positive duration.
+// for the stream_idle_timeout value we are passing, there are only two valid values:
+// 0 - disabled
+// >0 duration - the timeout.
+// The value may be unset, but we always set it to 0.
+func (lvc *ListenerVisitorConfig) streamIdleTimeout() time.Duration {
+	if lvc.StreamIdleTimeout < 0 {
+		return 0
+	}
+	return lvc.StreamIdleTimeout
+}
+
+// maxConnectionDuration sets any durations in lvc.MaxConnectionDuration <0 to 0 so that Envoy ends up with a positive duration.
+// for the max_connection_duration value we are passing, there are only two valid values:
+// 0 - disabled
+// >0 duration - the timeout.
+// The value may be unset, but we always set it to 0
+func (lvc *ListenerVisitorConfig) maxConnectionDuration() time.Duration {
+	if lvc.MaxConnectionDuration < 0 {
+		return 0
+	}
+	return lvc.MaxConnectionDuration
 }
 
 // minTLSVersion returns the requested minimum TLS protocol
@@ -311,6 +357,9 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 			MetricsPrefix(ENVOY_HTTP_LISTENER).
 			AccessLoggers(lvc.newInsecureAccessLog()).
 			RequestTimeout(lvc.requestTimeout()).
+			ConnectionIdleTimeout(lvc.connectionIdleTimeout()).
+			StreamIdleTimeout(lvc.streamIdleTimeout()).
+			MaxConnectionDuration(lvc.maxConnectionDuration()).
 			Get()
 
 		lv.listeners[ENVOY_HTTP_LISTENER] = envoy.Listener(
@@ -382,6 +431,9 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					MetricsPrefix(ENVOY_HTTPS_LISTENER).
 					AccessLoggers(v.ListenerVisitorConfig.newSecureAccessLog()).
 					RequestTimeout(v.ListenerVisitorConfig.requestTimeout()).
+					ConnectionIdleTimeout(v.ListenerVisitorConfig.connectionIdleTimeout()).
+					StreamIdleTimeout(v.ListenerVisitorConfig.streamIdleTimeout()).
+					MaxConnectionDuration(v.ListenerVisitorConfig.maxConnectionDuration()).
 					Get(),
 			)
 
@@ -436,6 +488,9 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					MetricsPrefix(ENVOY_HTTPS_LISTENER).
 					AccessLoggers(v.ListenerVisitorConfig.newSecureAccessLog()).
 					RequestTimeout(v.ListenerVisitorConfig.requestTimeout()).
+					ConnectionIdleTimeout(v.ListenerVisitorConfig.connectionIdleTimeout()).
+					StreamIdleTimeout(v.ListenerVisitorConfig.streamIdleTimeout()).
+					MaxConnectionDuration(v.ListenerVisitorConfig.maxConnectionDuration()).
 					Get(),
 			)
 

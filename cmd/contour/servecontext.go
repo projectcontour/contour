@@ -1,4 +1,4 @@
-// Copyright © 2019 VMware
+// Copyright Project Contour Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -115,6 +115,10 @@ type serveContext struct {
 	// LeaderElectionConfig can be set in the config file.
 	LeaderElectionConfig `yaml:"leaderelection,omitempty"`
 
+	// TimeoutConfig holds various configurable timeouts that can
+	// be set in the config file.
+	TimeoutConfig `yaml:"timeouts,omitempty"`
+
 	// RequestTimeout sets the client request timeout globally for Contour.
 	RequestTimeout time.Duration `yaml:"request-timeout,omitempty"`
 
@@ -177,6 +181,14 @@ func newServeContext() *serveContext {
 		UseExperimentalServiceAPITypes: false,
 		EnvoyServiceName:               "envoy",
 		EnvoyServiceNamespace:          getEnv("CONTOUR_NAMESPACE", "projectcontour"),
+		TimeoutConfig: TimeoutConfig{
+			// This is chosen as a rough default to stop idle connections wasting resources,
+			// without stopping slow connections from being terminated too quickly.
+			ConnectionIdleTimeout: 60 * time.Second,
+
+			// This is the Envoy default.
+			StreamIdleTimeout: 5 * time.Minute,
+		},
 	}
 }
 
@@ -225,6 +237,24 @@ type LeaderElectionConfig struct {
 	RetryPeriod   time.Duration `yaml:"retry-period,omitempty"`
 	Namespace     string        `yaml:"configmap-namespace,omitempty"`
 	Name          string        `yaml:"configmap-name,omitempty"`
+}
+
+// TimeoutConfig holds various configurable proxy timeout values.
+type TimeoutConfig struct {
+	// ConnectionIdleTimeout defines how long the proxy should wait while there
+	// are no active requests before terminating an HTTP connection. Set
+	// to 0 to disable the timeout.
+	ConnectionIdleTimeout time.Duration `yaml:"connection-idle-timeout,omitempty"`
+
+	// StreamIdleTimeout defines how long the proxy should wait while there
+	// is no stream activity before terminating a stream. Set to 0 to
+	// disable the timeout.
+	StreamIdleTimeout time.Duration `yaml:"stream-idle-timeout,omitempty"`
+
+	// MaxConnectionDuration defines the maximum period of time after an HTTP connection
+	// has been established from the client to the proxy before it is closed by the proxy,
+	// regardless of whether there has been activity or not. Set to 0 for no max duration.
+	MaxConnectionDuration time.Duration `yaml:"max-connection-duration,omitempty"`
 }
 
 // grpcOptions returns a slice of grpc.ServerOptions.

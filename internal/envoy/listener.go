@@ -1,4 +1,4 @@
-// Copyright © 2020 VMware
+// Copyright Project Contour Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -125,12 +125,15 @@ func Listener(name, address string, port int, lf []*envoy_api_v2_listener.Listen
 }
 
 type httpConnectionManagerBuilder struct {
-	routeConfigName string
-	metricsPrefix   string
-	accessLoggers   []*accesslog.AccessLog
-	requestTimeout  time.Duration
-	filters         []*http.HttpFilter
-	codec           HTTPVersionType // Note the zero value is AUTO, which is the default we want.
+	routeConfigName       string
+	metricsPrefix         string
+	accessLoggers         []*accesslog.AccessLog
+	requestTimeout        time.Duration
+	connectionIdleTimeout time.Duration
+	streamIdleTimeout     time.Duration
+	maxConnectionDuration time.Duration
+	filters               []*http.HttpFilter
+	codec                 HTTPVersionType // Note the zero value is AUTO, which is the default we want.
 }
 
 // RouteConfigName sets the name of the RDS element that contains
@@ -166,6 +169,27 @@ func (b *httpConnectionManagerBuilder) AccessLoggers(loggers []*accesslog.Access
 // manager. If not specified or set to 0, this timeout is disabled.
 func (b *httpConnectionManagerBuilder) RequestTimeout(timeout time.Duration) *httpConnectionManagerBuilder {
 	b.requestTimeout = timeout
+	return b
+}
+
+// ConnectionIdleTimeout sets the idle timeout on the connection
+// manager. If not specified or set to 0, this timeout is disabled.
+func (b *httpConnectionManagerBuilder) ConnectionIdleTimeout(timeout time.Duration) *httpConnectionManagerBuilder {
+	b.connectionIdleTimeout = timeout
+	return b
+}
+
+// StreamIdleTimeout sets the stream idle timeout on the connection
+// manager. If not specified or set to 0, this timeout is disabled.
+func (b *httpConnectionManagerBuilder) StreamIdleTimeout(timeout time.Duration) *httpConnectionManagerBuilder {
+	b.streamIdleTimeout = timeout
+	return b
+}
+
+// MaxConnectionDuration sets the max connection duration on the connection
+// manager. If not specified or set to 0, this timeout is disabled.
+func (b *httpConnectionManagerBuilder) MaxConnectionDuration(timeout time.Duration) *httpConnectionManagerBuilder {
+	b.maxConnectionDuration = timeout
 	return b
 }
 
@@ -205,10 +229,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 		},
 		HttpFilters: b.filters,
 		CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
-			// Sets the idle timeout for HTTP connections to 60 seconds.
-			// This is chosen as a rough default to stop idle connections wasting resources,
-			// without stopping slow connections from being terminated too quickly.
-			IdleTimeout: protobuf.Duration(60 * time.Second),
+			IdleTimeout: protobuf.Duration(b.connectionIdleTimeout),
 		},
 		HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
 			// Enable support for HTTP/1.0 requests that carry
@@ -222,6 +243,15 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 		// issue #1487 pass through X-Request-Id if provided.
 		PreserveExternalRequestId: true,
 		MergeSlashes:              true,
+
+		StreamIdleTimeout: protobuf.Duration(b.streamIdleTimeout),
+	}
+
+	// This timeout is disabled in Envoy by NOT providing a value, rather than explicitly passing a 0.
+	// From the contour perspective, a 0 value still disables the timeout, in order to be consistent
+	// with other timeouts.
+	if b.maxConnectionDuration > 0 {
+		cm.CommonHttpProtocolOptions.MaxConnectionDuration = protobuf.Duration(b.maxConnectionDuration)
 	}
 
 	if len(b.accessLoggers) > 0 {
