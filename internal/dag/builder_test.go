@@ -6079,8 +6079,9 @@ func TestBuilderLookupService(t *testing.T) {
 
 	tests := map[string]struct {
 		k8s.FullName
-		port intstr.IntOrString
-		want *Service
+		port    intstr.IntOrString
+		want    *Service
+		wantErr error
 	}{
 		"lookup service by port number": {
 			FullName: k8s.FullName{Name: "service1", Namespace: "default"},
@@ -6102,6 +6103,16 @@ func TestBuilderLookupService(t *testing.T) {
 			port:     intstr.FromString("8080"),
 			want:     service(s1),
 		},
+		"when service does not exist an error is returned": {
+			FullName: k8s.FullName{Name: "nonexistent-service", Namespace: "default"},
+			port:     intstr.FromString("8080"),
+			wantErr:  errors.New(`service "default/nonexistent-service" not found`),
+		},
+		"when port does not exist an error is returned": {
+			FullName: k8s.FullName{Name: "service1", Namespace: "default"},
+			port:     intstr.FromString("9999"),
+			wantErr:  errors.New(`port "9999" on service "default/service1" not matched`),
+		},
 	}
 
 	for name, tc := range tests {
@@ -6113,9 +6124,15 @@ func TestBuilderLookupService(t *testing.T) {
 				},
 			}
 			b.reset()
-			got := b.lookupService(tc.FullName, tc.port)
+
+			got, gotErr := b.lookupService(tc.FullName, tc.port)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
+			}
+			if (tc.wantErr != nil) != (gotErr != nil) {
+				t.Errorf("got err = %v, wanted %v", gotErr, tc.wantErr)
+			} else if tc.wantErr != nil && gotErr != nil && tc.wantErr.Error() != gotErr.Error() {
+				t.Errorf("got err = %v, wanted %v", gotErr, tc.wantErr)
 			}
 		})
 	}
