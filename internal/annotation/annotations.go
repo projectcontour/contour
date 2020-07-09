@@ -14,6 +14,7 @@
 package annotation
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -276,4 +277,12 @@ func MaxRequests(o metav1.ObjectMetaAccessor) uint32 {
 // '0' is returned if the annotation is absent or unparseable.
 func MaxRetries(o metav1.ObjectMetaAccessor) uint32 {
 	return parseUInt32(CompatAnnotation(o, "max-retries"))
+}
+
+func Tombstone(o metav1.ObjectMetaAccessor) error {
+	if s := CompatAnnotation(o, "tombstone"); s != "" {
+		return errors.New(s)
+	}
+
+	return nil
 }

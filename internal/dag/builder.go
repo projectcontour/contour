@@ -1144,31 +1144,6 @@ func defaultBackendRule(be *v1beta1.IngressBackend) v1beta1.IngressRule {
 	}
 }
 
-// validSecret returns true if the Secret contains certificate and private key material.
-func validSecret(s *v1.Secret) error {
-	if s.Type != v1.SecretTypeTLS {
-		return fmt.Errorf("Secret type is not %q", v1.SecretTypeTLS)
-	}
-
-	if len(s.Data[v1.TLSCertKey]) == 0 {
-		return fmt.Errorf("empty %q key", v1.TLSCertKey)
-	}
-
-	if len(s.Data[v1.TLSPrivateKeyKey]) == 0 {
-		return fmt.Errorf("empty %q key", v1.TLSPrivateKeyKey)
-	}
-
-	return nil
-}
-
-func validCA(s *v1.Secret) error {
-	if len(s.Data[CACertificateKey]) == 0 {
-		return fmt.Errorf("empty %q key", CACertificateKey)
-	}
-
-	return nil
-}
-
 // routeEnforceTLS determines if the route should redirect the user to a secure TLS listener
 func routeEnforceTLS(enforceTLS, permitInsecure bool) bool {
 	return enforceTLS && !permitInsecure

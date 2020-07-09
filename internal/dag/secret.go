@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/projectcontour/contour/internal/annotation"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -31,44 +32,44 @@ const CACertificateKey = "ca.crt"
 // formed. TLS certificate/key pairs must be secrets of type
 // "kubernetes.io/tls". Certificate bundles may be "kubernetes.io/tls"
 // or generic (type "Opaque" or "") secrets.
-func isValidSecret(secret *v1.Secret) (bool, error) {
+func isValidSecret(secret *v1.Secret) error {
 	switch secret.Type {
 	// We will accept TLS secrets that also have the 'ca.crt' payload.
 	case v1.SecretTypeTLS:
 		data, ok := secret.Data[v1.TLSCertKey]
 		if !ok {
-			return false, errors.New("missing TLS certificate")
+			return errors.New("missing TLS certificate")
 		}
 
 		if err := validateCertificate(data); err != nil {
-			return false, fmt.Errorf("invalid TLS certificate: %v", err)
+			return fmt.Errorf("invalid TLS certificate: %v", err)
 		}
 
 		data, ok = secret.Data[v1.TLSPrivateKeyKey]
 		if !ok {
-			return false, errors.New("missing TLS private key")
+			return errors.New("missing TLS private key")
 		}
 
 		if err := validatePrivateKey(data); err != nil {
-			return false, fmt.Errorf("invalid TLS private key: %v", err)
+			return fmt.Errorf("invalid TLS private key: %v", err)
 		}
 
 	// Generic secrets may have a 'ca.crt' only.
 	case v1.SecretTypeOpaque, "":
 		if _, ok := secret.Data[v1.TLSCertKey]; ok {
-			return false, nil
+			return nil
 		}
 
 		if _, ok := secret.Data[v1.TLSPrivateKeyKey]; ok {
-			return false, nil
+			return nil
 		}
 
 		if data := secret.Data[CACertificateKey]; len(data) == 0 {
-			return false, nil
+			return nil
 		}
 
 	default:
-		return false, nil
+		return fmt.Errorf("unsupported secret type %q", secret.Type)
 
 	}
 
@@ -78,11 +79,11 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 	// (see https://github.com/projectcontour/contour/issues/1644).
 	if data := secret.Data[CACertificateKey]; len(data) > 0 {
 		if err := validateCertificate(data); err != nil {
-			return false, fmt.Errorf("invalid CA certificate bundle: %v", err)
+			return fmt.Errorf("invalid CA certificate bundle: %v", err)
 		}
 	}
 
-	return true, nil
+	return nil
 }
 
 // containsPEMHeader returns true if the given slice contains a string
@@ -132,14 +133,14 @@ func validateCertificate(data []byte) error {
 		}
 
 		if !hasCommonName(cert) && !hasSubjectAltNames(cert) {
-			return errors.New("certificate has no common name or subject alt name")
+			return errors.New("certificate has no common name or subject alternative name")
 		}
 
 		exists = true
 	}
 
 	if !exists {
-		return errors.New("failed to locate certificate")
+		return errors.New("no certificate PEM blocks")
 	}
 
 	return nil
@@ -187,10 +188,44 @@ func validatePrivateKey(data []byte) error {
 
 	switch keys {
 	case 0:
-		return errors.New("failed to locate private key")
+		return errors.New("no private key PEM blocks")
 	case 1:
 		return nil
 	default:
-		return errors.New("multiple private keys")
+		return fmt.Errorf("too many private keys (%d)", keys)
 	}
+}
+
+// validSecret returns true if the Secret contains certificate and private key material.
+func validSecret(s *v1.Secret) error {
+	if err := annotation.Tombstone(s); err != nil {
+		return err
+	}
+
+	if s.Type != v1.SecretTypeTLS {
+		return fmt.Errorf("Secret type is not %q", v1.SecretTypeTLS)
+	}
+
+	if len(s.Data[v1.TLSCertKey]) == 0 {
+		return fmt.Errorf("empty %q key", v1.TLSCertKey)
+	}
+
+	if len(s.Data[v1.TLSPrivateKeyKey]) == 0 {
+		return fmt.Errorf("empty %q key", v1.TLSPrivateKeyKey)
+	}
+
+	return nil
+}
+
+// validCA returns true if the Secret contains a CA certificate bundle.
+func validCA(s *v1.Secret) error {
+	if err := annotation.Tombstone(s); err != nil {
+		return err
+	}
+
+	if len(s.Data[CACertificateKey]) == 0 {
+		return fmt.Errorf("empty %q key", CACertificateKey)
+	}
+
+	return nil
 }

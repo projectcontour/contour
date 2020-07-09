@@ -29,42 +29,30 @@ func TestIsValidSecret(t *testing.T) {
 		err       error
 	}{
 		"normal": {
-			cert:  CERTIFICATE,
-			key:   RSA_PRIVATE_KEY,
-			valid: true,
-			err:   nil,
+			cert: CERTIFICATE,
+			key:  RSA_PRIVATE_KEY,
+			err:  nil,
 		},
 		"missing CN": {
-			cert:  MISSING_CN_CERT,
-			key:   MISSING_CN_KEY,
-			valid: false,
-			err:   errors.New("certificate has no common name or subject alt name"),
+			cert: MISSING_CN_CERT,
+			key:  MISSING_CN_KEY,
+			err:  errors.New("certificate has no common name or subject alt name"),
 		},
 		"EC cert with SubjectAltName only": {
-			cert:  EC_CERTIFICATE,
-			key:   EC_PRIVATE_KEY,
-			valid: true,
-			err:   nil,
+			cert: EC_CERTIFICATE,
+			key:  EC_PRIVATE_KEY,
+			err:  nil,
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			type Result struct {
-				Valid bool
-				Err   error
-			}
-
-			want := Result{Valid: tc.valid, Err: tc.err}
-
-			valid, err := isValidSecret(&v1.Secret{
+			err := isValidSecret(&v1.Secret{
 				// objectmeta omitted
 				Type: v1.SecretTypeTLS,
 				Data: secretdata(tc.cert, tc.key),
 			})
-			got := Result{Valid: valid, Err: err}
-
-			assert.Equal(t, want, got)
+			assert.Equal(t, tc.err, err)
 		})
 	}
 }

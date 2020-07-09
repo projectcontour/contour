@@ -20,6 +20,7 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -118,21 +119,30 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 
 	switch obj := obj.(type) {
 	case *v1.Secret:
-		valid, err := isValidSecret(obj)
-		if !valid {
-			if err != nil {
-				om := obj.GetObjectMeta()
-				kc.WithField("name", om.GetName()).
-					WithField("namespace", om.GetNamespace()).
-					WithField("kind", "Secret").
-					WithField("version", "v1").
-					Error(err)
+		// If the secret isn't valid for some purpose, we want to track
+		// it in the cache so that if it's referenced we can emit a useful
+		// error. We don't want to keep the value itself in memory, and we
+		// do want to remember the error message so we don't have to keep
+		// revalidating. So we add a tombstone which contains just the
+		// secret name and the reason it failed validation.
+		if err := isValidSecret(obj); err != nil {
+			kc.secrets[k8s.ToFullName(obj)] = &v1.Secret{
+				TypeMeta: obj.TypeMeta,
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      obj.Name,
+					Namespace: obj.Namespace,
+					Annotations: map[string]string{
+						"projectcontour.io/tombstone": err.Error(),
+					},
+				},
 			}
+
 			return false
 		}
 
 		kc.secrets[k8s.ToFullName(obj)] = obj
 		return kc.secretTriggersRebuild(obj)
+
 	case *v1.Service:
 		kc.services[k8s.ToFullName(obj)] = obj
 		return kc.serviceTriggersRebuild(obj)
