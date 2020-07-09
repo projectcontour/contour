@@ -77,6 +77,7 @@ The timeout configuration block can be used to configure various timeouts for th
 |------------|-----|----------|-------------|
 | connection-idle-timeout| [duration][4] | `60s` | This field defines how long the proxy should wait while there are no active requests before terminating an HTTP connection. Set to 0 to disable the timeout. |
 | stream-idle-timeout| [duration][4] | `5m` | This field defines how long the proxy should wait while there is no stream activity before terminating a stream. Set to 0 to disable the timeout. |
+| max-connection-duration | [duration][4] | none | This field defines the maximum period of time after an HTTP connection has been established from the client to the proxy before it is closed by the proxy, regardless of whether there has been activity or not. Omit or set to 0 for no max duration. |
 {: class="table thead-dark table-bordered"}
 <br>
 
@@ -118,6 +119,7 @@ data:
     # timeouts:
     #  connection-idle-timeout: 60s
     #  stream-idle-timeout: 5m
+    #  max-connection-duration: 0s
 ```
 
 _Note:_ The default example `contour` includes this [file][1] for easy deployment of Contour.

@@ -250,6 +250,11 @@ type TimeoutConfig struct {
 	// is no stream activity before terminating a stream. Set to 0 to
 	// disable the timeout.
 	StreamIdleTimeout time.Duration `yaml:"stream-idle-timeout,omitempty"`
+
+	// MaxConnectionDuration defines the maximum period of time after an HTTP connection
+	// has been established from the client to the proxy before it is closed by the proxy,
+	// regardless of whether there has been activity or not. Set to 0 for no max duration.
+	MaxConnectionDuration time.Duration `yaml:"max-connection-duration,omitempty"`
 }
 
 // grpcOptions returns a slice of grpc.ServerOptions.
