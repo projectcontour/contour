@@ -216,6 +216,25 @@ func TestRetryPolicy(t *testing.T) {
 				PerTryTimeout: 0 * time.Second,
 			},
 		},
+		"retry on": {
+			rp: &projcontour.RetryPolicy{
+				RetryOn: []projcontour.RetryOn{"gateway-error", "connect-failure"},
+			},
+			want: &RetryPolicy{
+				RetryOn:    "gateway-error,connect-failure",
+				NumRetries: 1,
+			},
+		},
+		"retriable status codes": {
+			rp: &projcontour.RetryPolicy{
+				RetriableStatusCodes: []uint32{502, 503, 504},
+			},
+			want: &RetryPolicy{
+				RetryOn:              "5xx",
+				RetriableStatusCodes: []uint32{502, 503, 504},
+				NumRetries:           1,
+			},
+		},
 	}
 
 	for name, tc := range tests {

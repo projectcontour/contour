@@ -272,6 +272,30 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"retriable status codes: 502, 503, 504": {
+			route: &dag.Route{
+				RetryPolicy: &dag.RetryPolicy{
+					RetryOn:              "retriable-status-codes",
+					RetriableStatusCodes: []uint32{503, 503, 504},
+					NumRetries:           6,
+					PerTryTimeout:        100 * time.Millisecond,
+				},
+				Clusters: []*dag.Cluster{c1},
+			},
+			want: &envoy_api_v2_route.Route_Route{
+				Route: &envoy_api_v2_route.RouteAction{
+					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					RetryPolicy: &envoy_api_v2_route.RetryPolicy{
+						RetryOn:              "retriable-status-codes",
+						RetriableStatusCodes: []uint32{503, 503, 504},
+						NumRetries:           protobuf.UInt32(6),
+						PerTryTimeout:        protobuf.Duration(100 * time.Millisecond),
+					},
+				},
+			},
+		},
 		"timeout 90s": {
 			route: &dag.Route{
 				TimeoutPolicy: &dag.TimeoutPolicy{

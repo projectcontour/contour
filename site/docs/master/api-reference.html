@@ -928,6 +928,15 @@ will be replaced with. This must not be empty.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.RetryOn">RetryOn
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.RetryPolicy">RetryPolicy</a>)
+</p>
+<p>
+<p>RetryOn is a string type alias with validation to ensure that the value is valid.</p>
+</p>
 <h3 id="projectcontour.io/v1.RetryPolicy">RetryPolicy
 </h3>
 <p>
@@ -970,6 +979,54 @@ string
 <td>
 <p>PerTryTimeout specifies the timeout per retry attempt.
 Ignored if NumRetries is not supplied.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>retryOn</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.RetryOn">
+[]RetryOn
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RetryOn specifies the conditions on which to retry a request.</p>
+<p>Supported <a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-on">HTTP conditions</a>:</p>
+<ul>
+<li><code>5xx</code></li>
+<li><code>gateway-error</code></li>
+<li><code>reset</code></li>
+<li><code>connect-failure</code></li>
+<li><code>retriable-4xx</code></li>
+<li><code>refused-stream</code></li>
+<li><code>retriable-status-codes</code></li>
+<li><code>retriable-headers</code></li>
+</ul>
+<p>Supported <a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-grpc-on">gRPC conditions</a>:</p>
+<ul>
+<li><code>cancelled</code></li>
+<li><code>deadline-exceeded</code></li>
+<li><code>internal</code></li>
+<li><code>resource-exhausted</code></li>
+<li><code>unavailable</code></li>
+</ul>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>retriableStatusCodes</code>
+<br>
+<em>
+[]uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RetriableStatusCodes specifies the HTTP status codes that should be retried.</p>
+<p>This field is only respected when you include <code>retriable-status-codes</code> in the <code>RetryOn</code> field.</p>
 </td>
 </tr>
 </tbody>

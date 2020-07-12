@@ -189,7 +189,7 @@ func (in *Route) DeepCopyInto(out *Route) {
 	if in.RetryPolicy != nil {
 		in, out := &in.RetryPolicy, &out.RetryPolicy
 		*out = new(v1.RetryPolicy)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 }
 
