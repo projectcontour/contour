@@ -139,7 +139,7 @@ lint-misspell:
 	@go run github.com/client9/misspell/cmd/misspell \
 		-locale US \
 		-error \
-		-i mitre \
+		-i mitre,Mitre,cancelled \
 		-source=text \
 		$$(git ls-files | grep -E '(md|html)$$')
 
