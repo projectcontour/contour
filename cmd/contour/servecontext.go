@@ -188,6 +188,9 @@ func newServeContext() *serveContext {
 
 			// This is the Envoy default.
 			StreamIdleTimeout: 5 * time.Minute,
+
+			// This is the Envoy default.
+			DrainTimeout: 5 * time.Second,
 		},
 	}
 }
@@ -255,6 +258,13 @@ type TimeoutConfig struct {
 	// has been established from the client to the proxy before it is closed by the proxy,
 	// regardless of whether there has been activity or not. Set to 0 for no max duration.
 	MaxConnectionDuration time.Duration `yaml:"max-connection-duration,omitempty"`
+
+	// DrainTimeout defines how long the proxy will wait between sending an initial GOAWAY
+	// frame and a second, final GOAWAY frame when terminating an HTTP/2 connection. During
+	// this grace period, the proxy will continue to respond to new streams. After the final
+	// GOAWAY frame has been sent, the proxy will refuse new streams. Set to 0 for no grace
+	// period.
+	DrainTimeout time.Duration `yaml:"drain-timeout,omitempty"`
 }
 
 // grpcOptions returns a slice of grpc.ServerOptions.
