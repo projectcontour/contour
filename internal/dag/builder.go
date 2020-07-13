@@ -82,8 +82,9 @@ func (b *Builder) reset() {
 	b.statuses = make(map[k8s.FullName]Status, len(b.statuses))
 }
 
-// lookupService returns a Service that matches the Meta and Port of the Kubernetes' Service.
-func (b *Builder) lookupService(m k8s.FullName, port intstr.IntOrString) *Service {
+// lookupService returns a Service that matches the Meta and Port of the Kubernetes' Service,
+// or an error if the service or port can't be located.
+func (b *Builder) lookupService(m k8s.FullName, port intstr.IntOrString) (*Service, error) {
 	lookup := func() *Service {
 		if port.Type != intstr.Int {
 			// can't handle, give up
@@ -99,22 +100,22 @@ func (b *Builder) lookupService(m k8s.FullName, port intstr.IntOrString) *Servic
 
 	s := lookup()
 	if s != nil {
-		return s
+		return s, nil
 	}
 	svc, ok := b.Source.services[m]
 	if !ok {
-		return nil
+		return nil, fmt.Errorf("service %q not found", m)
 	}
 	for i := range svc.Spec.Ports {
 		p := &svc.Spec.Ports[i]
 		switch {
 		case int(p.Port) == port.IntValue():
-			return b.addService(svc, p)
+			return b.addService(svc, p), nil
 		case port.String() == p.Name:
-			return b.addService(svc, p)
+			return b.addService(svc, p), nil
 		}
 	}
-	return nil
+	return nil, fmt.Errorf("port %q on service %q not matched", port.String(), m)
 }
 
 func (b *Builder) addService(svc *v1.Service, port *v1.ServicePort) *Service {
@@ -322,8 +323,8 @@ func (b *Builder) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1.IngressR
 		path := stringOrDefault(httppath.Path, "/")
 		be := httppath.Backend
 		m := k8s.FullName{Name: be.ServiceName, Namespace: ing.Namespace}
-		s := b.lookupService(m, be.ServicePort)
-		if s == nil {
+		s, err := b.lookupService(m, be.ServicePort)
+		if err != nil {
 			continue
 		}
 
@@ -722,10 +723,9 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 				return nil
 			}
 			m := k8s.FullName{Name: service.Name, Namespace: proxy.Namespace}
-			s := b.lookupService(m, intstr.FromInt(service.Port))
-
-			if s == nil {
-				sw.SetInvalid("Service [%s:%d] is invalid or missing", service.Name, service.Port)
+			s, err := b.lookupService(m, intstr.FromInt(service.Port))
+			if err != nil {
+				sw.SetInvalid("Spec.Routes unresolved service reference: %s", err)
 				return nil
 			}
 
@@ -989,9 +989,9 @@ func (b *Builder) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *pr
 		var proxy TCPProxy
 		for _, service := range httpproxy.Spec.TCPProxy.Services {
 			m := k8s.FullName{Name: service.Name, Namespace: httpproxy.Namespace}
-			s := b.lookupService(m, intstr.FromInt(service.Port))
-			if s == nil {
-				sw.SetInvalid("tcpproxy: service %s/%s/%d: not found", httpproxy.Namespace, service.Name, service.Port)
+			s, err := b.lookupService(m, intstr.FromInt(service.Port))
+			if err != nil {
+				sw.SetInvalid("Spec.TCPProxy unresolved service reference: %s", err)
 				return false
 			}
 			proxy.Clusters = append(proxy.Clusters, &Cluster{

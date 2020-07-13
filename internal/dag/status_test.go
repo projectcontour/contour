@@ -641,6 +641,28 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
+	// proxy16a is invalid because it references an invalid port on a service
+	proxy16a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "invalidir",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.Condition{{
+					Prefix: "/foo",
+				}},
+				Services: []projcontour.Service{{
+					Name: "home",
+					Port: 9999,
+				}},
+			}},
+		},
+	}
+
 	proxy17 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -1393,6 +1415,27 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
+	proxy45a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tcp-proxy-service-missing-port",
+			Namespace: serviceKuard.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "tcpproxy.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name: serviceKuard.Name,
+					Port: 9999,
+				}},
+			},
+		},
+	}
+
 	proxy46 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "missing-tls",
@@ -1426,6 +1469,32 @@ func TestDAGStatus(t *testing.T) {
 			Routes: []projcontour.Route{{
 				Services: []projcontour.Service{
 					{Name: "missing", Port: 9000},
+				},
+			}},
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name: serviceKuard.Name,
+					Port: 8080,
+				}},
+			},
+		},
+	}
+
+	proxy47a := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "missing-route-service-port",
+			Namespace: serviceKuard.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "tcpproxy.example.com",
+				TLS: &projcontour.TLS{
+					SecretName: secretRootsNS.Name,
+				},
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{
+					{Name: serviceKuard.Name, Port: 9999},
 				},
 			}},
 			TCPProxy: &projcontour.TCPProxy{
@@ -1761,8 +1830,19 @@ func TestDAGStatus(t *testing.T) {
 				{Name: proxy16.Name, Namespace: proxy16.Namespace}: {
 					Object:      proxy16,
 					Status:      "invalid",
-					Description: `Service [invalid:8080] is invalid or missing`,
+					Description: `Spec.Routes unresolved service reference: service "roots/invalid" not found`,
 					Vhost:       proxy16.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		"proxy with service missing port shows invalid status": {
+			objs: []interface{}{proxy16a, serviceHome},
+			want: map[k8s.FullName]Status{
+				{Name: proxy16a.Name, Namespace: proxy16a.Namespace}: {
+					Object:      proxy16a,
+					Status:      "invalid",
+					Description: `Spec.Routes unresolved service reference: port "9999" on service "roots/home" not matched`,
+					Vhost:       proxy16a.Spec.VirtualHost.Fqdn,
 				},
 			},
 		},
@@ -2034,7 +2114,18 @@ func TestDAGStatus(t *testing.T) {
 				{Name: proxy45.Name, Namespace: proxy45.Namespace}: {
 					Object:      proxy45,
 					Status:      "invalid",
-					Description: "tcpproxy: service roots/not-found/8080: not found",
+					Description: `Spec.TCPProxy unresolved service reference: service "roots/not-found" not found`,
+					Vhost:       "tcpproxy.example.com",
+				},
+			},
+		},
+		"httpproxy w/ tcpproxy w/ service missing port": {
+			objs: []interface{}{proxy45a, serviceKuard},
+			want: map[k8s.FullName]Status{
+				{Name: proxy45a.Name, Namespace: proxy45a.Namespace}: {
+					Object:      proxy45a,
+					Status:      "invalid",
+					Description: `Spec.TCPProxy unresolved service reference: port "9999" on service "roots/kuard" not matched`,
 					Vhost:       "tcpproxy.example.com",
 				},
 			},
@@ -2056,7 +2147,18 @@ func TestDAGStatus(t *testing.T) {
 				{Name: proxy47.Name, Namespace: proxy47.Namespace}: {
 					Object:      proxy47,
 					Status:      "invalid",
-					Description: "Service [missing:9000] is invalid or missing",
+					Description: `Spec.Routes unresolved service reference: service "roots/missing" not found`,
+					Vhost:       "tcpproxy.example.com",
+				},
+			},
+		},
+		"httpproxy w/ tcpproxy missing service port": {
+			objs: []interface{}{secretRootsNS, serviceKuard, proxy47a},
+			want: map[k8s.FullName]Status{
+				{Name: proxy47a.Name, Namespace: proxy47a.Namespace}: {
+					Object:      proxy47a,
+					Status:      "invalid",
+					Description: `Spec.Routes unresolved service reference: port "9999" on service "roots/kuard" not matched`,
 					Vhost:       "tcpproxy.example.com",
 				},
 			},
