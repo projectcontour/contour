@@ -8,13 +8,16 @@ Do you want to help build Contour?
 
 If you’re a newcomer, check out the “[Good first issue][1]” and “[Help wanted][2]” labels in the Contour repository.
 
+* Join the [Contour Office Hours](https://github.com/projectcontour/community/wiki/Office-Hours), a place where you can ask questions like "how do I do this in Contour"
+and "why does Contour do this thing this way?"
+
 * Get updates on Twitter at [@projectcontour][3]
 
 * Join our Kubernetes Slack channel and chat with over 500 other community members: [#contour​][4]
 
 * Join the [Project Contour Announce][7] mailing list for release notifications and to get the invites for the community meetings.
 
-* Join the Contour Community Meetings on Zoom: 
+* Join the Contour Community Meetings on Zoom:
   * For Australia time zones:
     * Every first and third Tuesday at 6:30 PM Eastern Time / 3:30 PM Pacific Time / Wednesday at 9:30 AM Australian Eastern Time.
   * For Americas time zones:
