@@ -30,7 +30,7 @@ If you do this, the behavior is as follows:
 * If the annotation is set to any value other than the one passed to the `--ingress-class-name` flag, Contour will ignore the Ingress.
 * If the annotation matches the value that you passed to `--ingress-class-name` flag, Contour will serve the Ingress.
 
-This same logic applies for these annotations on HTTPProxy and IngressRoute (deprecated) objects.
+This same logic applies for these annotations on HTTPProxy objects.
 
 ### Other annotations 
 

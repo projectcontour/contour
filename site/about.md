@@ -3,7 +3,7 @@ title: About Contour and Envoy
 layout: page
 ---
 
-At the highest level Contour is a proxy that fulfills the Envoy Cluster Discovery Service (CDS) API by translating Kubernetes Ingress objects and IngressRoute objects into Envoy configuration objects.
+At the highest level Contour is a proxy that fulfills the Envoy Cluster Discovery Service (CDS) API by translating Kubernetes Ingress objects and HTTPProxy objects into Envoy configuration objects.
 
 ## Introduction to Envoy
 
@@ -14,9 +14,9 @@ Unlike other ingress controllers, Envoy supports continual reconfiguration witho
 
 ## How Contour works
 
-Contour supports both Ingress objects and IngressRoute objects which are ways to define traffic routes into a cluster. 
+Contour supports both Ingress objects and HTTPProxy objects which are ways to define traffic routes into a cluster. 
 They are different in how the objects are structured as well as how they are implemented, however, are identical at their core intent, to configure the routing of ingress traffic. 
-To make this document more clear, when we describe "Ingress", it will apply to both Ingress and IngressRoute objects.
+To make this document more clear, when we describe "Ingress", it will apply to both Ingress and HTTPProxy objects.
 
 Generally, when Envoy is configured with the CDS endpoint, it polls the endpoint regularly, then merges the returned JSON fragment into its running configuration. If the cluster configuration returned to Envoy represents the current set of Ingress objects then Contour can be thought of as a translator from Ingress objects to Envoy cluster configurations. As Ingress objects come and go, Envoy adds and removes the relevant configuration without the need to constantly reload.
 
@@ -24,7 +24,7 @@ In practice, translating Ingress objects into Envoy configurations is a little m
 
 The objects collected are then processed into a directed acyclic graph (DAG) of the configuration for virtual hosts and their constituent routes.
 This representation allows Contour to build up a top-level view of the routes and connect together corresponding services and TLS secrets within the cluster.
-Once this new data structure is built, we can easily implement validation, authorization, as well as delegation for IngressRoute objects.
+Once this new data structure is built, we can easily implement validation, authorization, as well as delegation for HTTPProxy objects.
 
 The mapping between Envoy API calls and Kubernetes API resources is as follows:
 

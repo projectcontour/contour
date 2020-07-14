@@ -1168,7 +1168,7 @@ HTTPProxy with a defined `virtualhost` field that are not in one of the allowed 
 
 Additionally, when defined, Contour will only watch for Kubernetes secrets in these namespaces ignoring changes in all other namespaces.
 Proper RBAC rules should also be created to restrict what namespaces Contour has access matching the namespaces passed to the command line flag.
-An example of this is included in the [examples directory][1] and shows how you might create a namespace called `root-httproxies`.
+An example of this is included in the [examples directory][12] and shows how you might create a namespace called `root-httproxy`.
 
 > **NOTE: The restricted root namespace feature is only supported for HTTPProxy CRDs.
 > `--root-namespaces` does not affect the operation of `v1beta1.Ingress` objects**
@@ -1416,4 +1416,5 @@ Some examples of invalid configurations that Contour provides statuses for:
  [9]: {% link docs/master/annotations.md %}
  [10]: /docs/{{site.latest}}/api/#projectcontour.io/v1.Service
  [11]: configuration.md#fallback-certificate
+ [12]: {{site.github.repository_url}}/tree/{{page.version}}/examples/root-rbac
 

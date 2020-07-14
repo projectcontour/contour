@@ -36,7 +36,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func TestServeContextIngressRouteRootNamespaces(t *testing.T) {
+func TestServeContextProxyRootNamespaces(t *testing.T) {
 	tests := map[string]struct {
 		ctx  serveContext
 		want []string
