@@ -715,10 +715,7 @@ spec:
                     - name
                     - port
                     type: object
-                  minItems: 1
                   type: array
-              required:
-              - services
               type: object
             virtualhost:
               description: Virtualhost appears at most once. If it is present, the

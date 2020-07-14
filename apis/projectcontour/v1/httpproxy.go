@@ -191,8 +191,7 @@ type TCPProxy struct {
 	// +optional
 	LoadBalancerPolicy *LoadBalancerPolicy `json:"loadBalancerPolicy,omitempty"`
 	// Services are the services to proxy traffic
-	// +kubebuilder:validation:MinItems=1
-	// +kubebuilder:validation:Required
+	// +optional
 	Services []Service `json:"services"`
 	// Include specifies that this tcpproxy should be delegated to another HTTPProxy.
 	// +optional
