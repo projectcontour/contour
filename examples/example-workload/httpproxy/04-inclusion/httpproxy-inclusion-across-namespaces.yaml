@@ -9,7 +9,7 @@ spec:
   virtualhost:
     fqdn: ns-root.bar.com
   includes:
-  # delegate the subpath, `/blog` to the IngressRoute object in the marketing namespace with the name `blog`
+  # delegate the subpath, `/blog` to the HTTPProxy object in the marketing namespace with the name `blog`
   - name: blog
     namespace: marketing
     conditions:

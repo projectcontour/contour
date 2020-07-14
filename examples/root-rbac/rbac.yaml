@@ -14,7 +14,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
-  namespace: root-ingressroute
+  namespace: root-httpproxy
   name: contour-secrets-root
 rules:
   - apiGroups:
@@ -43,7 +43,7 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: contour-secrets-root
-  namespace: root-ingressroute
+  namespace: root-httpproxy
 subjects:
   - kind: ServiceAccount
     name: contour
@@ -104,8 +104,8 @@ rules:
       - get
       - list
       - watch
-  - apiGroups: ["contour.heptio.com"]
-    resources: ["ingressroutes", "tlscertificatedelegations"]
+  - apiGroups: ["projectcontour.io"]
+    resources: ["httpproxies", "tlscertificatedelegations"]
     verbs:
       - get
       - list
