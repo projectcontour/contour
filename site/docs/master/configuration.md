@@ -100,7 +100,7 @@ data:
     # path to kubeconfig (if not running inside a k8s cluster)
     # kubeconfig: /path/to/.kube/config
     #
-    # disable ingressroute permitInsecure field
+    # disable httpproxy permitInsecure field
     # disablePermitInsecure: false
     tls:
       # minimum TLS version that Contour will negotiate

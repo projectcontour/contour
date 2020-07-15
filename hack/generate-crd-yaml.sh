@@ -15,9 +15,7 @@ cd $REPO
 # Controller-gen seems to use an unstable sort for the order of output of the CRDs
 # so, output them to separate files, then concatenate those files.
 # That should give a stable sort.
-# TODO(youngnick): We only do ./apis/projectcontour/... so that we can keep the IngressRoute definitions
-# around for a while. This removes them from the example CRDs for installers etc though.
 go run sigs.k8s.io/controller-tools/cmd/controller-gen \
-  crd paths=./apis/projectcontour/... output:dir=$TEMPDIR
+  crd paths=./apis/... output:dir=$TEMPDIR
 
 ls $TEMPDIR/*.yaml | xargs cat | sed '/^$/d' > ${REPO}/examples/contour/01-crds.yaml

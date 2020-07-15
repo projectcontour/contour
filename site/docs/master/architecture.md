@@ -15,7 +15,7 @@ After initialisation is complete, the Envoy container starts, retrieves the boot
 Envoy will gracefully retry if the management server is unavailable, which removes any container startup ordering issues.
 
 Contour is a client of the Kubernetes API.
-Contour watches Ingress, HTTPProxy, IngressRoute, Secret, Service, and Endpoint objects, and acts as the management server for its Envoy sibling by translating its cache of objects into the relevant JSON stanzas: Service objects for CDS, Ingress for RDS, Endpoint objects for SDS, and so on).
+Contour watches Ingress, HTTPProxy, Secret, Service, and Endpoint objects, and acts as the management server for its Envoy sibling by translating its cache of objects into the relevant JSON stanzas: Service objects for CDS, Ingress for RDS, Endpoint objects for SDS, and so on).
 
 The transfer of information from Kubernetes to Contour is by watching the API with the SharedInformer framework.
 

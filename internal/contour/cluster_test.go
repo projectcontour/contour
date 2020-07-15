@@ -611,7 +611,7 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
-		// Removed testcase - "ingressroute with differing lb algorithms"
+		// Removed testcase - "httpproxy with differing lb algorithms"
 		// HTTPProxy has LB algorithm as a route-level construct, so it's not possible.
 		"httpproxy with unknown lb algorithm": {
 			objs: []interface{}{

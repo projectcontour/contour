@@ -111,42 +111,6 @@ ing/kuard   *         10.0.0.47   80        4m
 
 In your browser, navigate your browser to the IP or DNS address of the Contour Service to interact with the demo application.
 
-### Test with IngressRoute
-
-To test your Contour deployment with [IngressRoutes][6], run the following command:
-
-```sh
-$ kubectl apply -f https://projectcontour.io/examples/kuard-ingressroute.yaml
-```
-
-Then monitor the progress of the deployment with:
-
-```sh
-$ kubectl get po,svc,ingressroute -l app=kuard
-```
-
-You should see something like:
-
-```sh
-NAME                        READY     STATUS    RESTARTS   AGE
-pod/kuard-bcc7bf7df-9hj8d   1/1       Running   0          1h
-pod/kuard-bcc7bf7df-bkbr5   1/1       Running   0          1h
-pod/kuard-bcc7bf7df-vkbtl   1/1       Running   0          1h
-
-NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
-service/kuard   ClusterIP   10.102.239.168   <none>        80/TCP    1h
-
-NAME                                    CREATED AT
-ingressroute.contour.heptio.com/kuard   1h
-```
-
-... showing that there are three Pods, one Service, and one IngressRoute.
-
-In your terminal, use curl with the IP or DNS address of the Contour Service to send a request to the demo application:
-
-```sh
-$ curl -H 'Host: kuard.local' ${CONTOUR_IP}
-```
 ### Test with HTTPProxy
 
 To test your Contour deployment with [HTTPProxy][9], run the following command:
@@ -236,7 +200,6 @@ $ kubectl delete ns projectcontour
 [3]: #host-networking
 [4]: {% link _guides/proxy-proto.md %}
 [5]: https://github.com/kubernetes-up-and-running/kuard
-[6]: /docs/{{page.version}}/ingressroute
 [7]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/02-service-envoy.yaml
 [8]: {% link getting-started.md %}
 [9]: httpproxy.md
