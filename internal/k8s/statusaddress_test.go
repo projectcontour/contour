@@ -492,7 +492,7 @@ func simpleProxyGenerator(name, ingressClass string, lbstatus v1.LoadBalancerSta
 			},
 		},
 
-		Status: projcontour.Status{
+		Status: projcontour.HTTPProxyStatus{
 			LoadBalancer: lbstatus,
 		},
 	}

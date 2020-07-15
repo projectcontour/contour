@@ -72,7 +72,7 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 				Name:      "test",
 				Namespace: "default",
 			},
-			Status: projcontour.Status{
+			Status: projcontour.HTTPProxyStatus{
 				CurrentStatus: "",
 				Description:   "",
 			},
@@ -82,7 +82,7 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 				Name:      "test",
 				Namespace: "default",
 			},
-			Status: projcontour.Status{
+			Status: projcontour.HTTPProxyStatus{
 				CurrentStatus: "valid",
 				Description:   "this is a valid HTTPProxy",
 			},
@@ -97,7 +97,7 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 				Name:      "test",
 				Namespace: "default",
 			},
-			Status: projcontour.Status{
+			Status: projcontour.HTTPProxyStatus{
 				CurrentStatus: "valid",
 				Description:   "this is a valid HTTPProxy",
 			},
@@ -107,7 +107,7 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 				Name:      "test",
 				Namespace: "default",
 			},
-			Status: projcontour.Status{
+			Status: projcontour.HTTPProxyStatus{
 				CurrentStatus: "valid",
 				Description:   "this is a valid HTTPProxy",
 			},
@@ -122,7 +122,7 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 				Name:      "test",
 				Namespace: "default",
 			},
-			Status: projcontour.Status{
+			Status: projcontour.HTTPProxyStatus{
 				CurrentStatus: "invalid",
 				Description:   "boo hiss",
 			},
@@ -132,7 +132,7 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 				Name:      "test",
 				Namespace: "default",
 			},
-			Status: projcontour.Status{
+			Status: projcontour.HTTPProxyStatus{
 				CurrentStatus: "valid",
 				Description:   "this is a valid HTTPProxy",
 			},
@@ -143,7 +143,7 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 func TestGetStatus(t *testing.T) {
 	type testcase struct {
 		input          interface{}
-		expectedStatus *projcontour.Status
+		expectedStatus *projcontour.HTTPProxyStatus
 		expectedError  error
 	}
 
