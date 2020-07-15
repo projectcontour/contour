@@ -39,10 +39,10 @@ Yes, the overloading of the term `conditions` between `status` and `spec` is unf
 
 ## Detailed design
 
-We will add the following generic type as a stand-in until the `metav1.Condition` type is available upstream.
+We will create the following generic type as a stand-in until the `metav1.Condition` type is available upstream.
 
 ```go
-type UpstreamCondition struct {
+type Condition struct {
 	// Type of condition in CamelCase or in foo.example.com/CamelCase.
 	// Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
 	// useful (see .node.status.conditions), the ability to deconflict is important.
@@ -75,12 +75,12 @@ This will also have some convenience methods like `AddorUpdateCondition`, `GetCo
 
 We'll also add an interface to cover this new struct, and then we'll add a slice of those interfaces of to `status` as `conditions`.
 
-This will allow us to extend the `UpstreamCondition` into a `ValidCondition` as follows:
+This will allow us to extend the `UpstreamCondition` into a `DetailedCondition` as follows:
 
 ```go
 
-type ValidCondition struct {
-  UpstreamCondition
+type DetailedCondition struct {
+  Condition
   // Errors contains a slice of relevant warning conditions for
   // this object.
   // Conditions are expected to appear when relevant (when there is a warning), and disappear when not relevant.
@@ -89,6 +89,8 @@ type ValidCondition struct {
   Warnings []ConditionInterface `json:warnings`
 }
 ```
+
+The HTTPProxy `Status` struct will contain a `[]DetailedCondition` under the `conditions:` stanza.
 
 The `Valid` condition is a positive-polarity summary condition like `Ready` is on other objects, while `warnings` and `errors` are slices of abnormal-true polarity conditions that further describe problems with the configuration.
 
