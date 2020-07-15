@@ -84,9 +84,9 @@ type DetailedCondition struct {
   // Errors contains a slice of relevant warning conditions for
   // this object.
   // Conditions are expected to appear when relevant (when there is a warning), and disappear when not relevant.
-  Errors []ConditionInterface `json:errors`
+  Errors []Condition `json:errors`
   // Warnings behaves the same as Errors.
-  Warnings []ConditionInterface `json:warnings`
+  Warnings []Condition `json:warnings`
 }
 ```
 
