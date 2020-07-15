@@ -75,19 +75,41 @@ This will also have some convenience methods like `AddorUpdateCondition`, `GetCo
 
 We'll also add an interface to cover this new struct, and then we'll add a slice of those interfaces of to `status` as `conditions`.
 
-This will allow us to extend the `UpstreamCondition` into a `DetailedCondition` as follows:
+This will allow us to extend the `Condition` into a `DetailedCondition` as follows, while also adding a `SubCondition` to hold only the semantically-relevant fields:
 
 ```go
+// SubCondition holds a subset of the fields of a Condition, since not all of them are semantically relevant
+// for sub-conditions.
+type SubCondition struct {
+	// Type of condition in CamelCase or in foo.example.com/CamelCase.
+	// Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
+	// useful (see .node.status.conditions), the ability to deconflict is important.
+	// +required
+	Type string `json:"type" protobuf:"bytes,1,opt,name=type"`
+	// Status of the condition, one of True, False, Unknown.
+	// +required
+	Status ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status"`
+	// The reason for the condition's last transition in CamelCase.
+	// The specific API may choose whether or not this field is considered a guaranteed API.
+	// This field may not be empty.
+	// +required
+	Reason string `json:"reason" protobuf:"bytes,5,opt,name=reason"`
+	// A human readable message indicating details about the transition.
+	// This field may be empty.
+	// +required
+	Message string `json:"message" protobuf:"bytes,6,opt,name=message"`
+}
 
 type DetailedCondition struct {
   Condition
   // Errors contains a slice of relevant warning conditions for
   // this object.
   // Conditions are expected to appear when relevant (when there is a warning), and disappear when not relevant.
-  Errors []Condition `json:errors`
+  Errors []SubCondition `json:errors`
   // Warnings behaves the same as Errors.
-  Warnings []Condition `json:warnings`
+  Warnings []SubCondition `json:warnings`
 }
+
 ```
 
 The HTTPProxy `Status` struct will contain a `[]DetailedCondition` under the `conditions:` stanza.
