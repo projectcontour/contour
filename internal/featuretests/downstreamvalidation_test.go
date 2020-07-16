@@ -124,7 +124,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		),
 		TypeUrl: listenerType,
 	}).Status(proxy).Like(
-		projcontour.Status{CurrentStatus: k8s.StatusValid},
+		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 
 }

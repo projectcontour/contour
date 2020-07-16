@@ -26,15 +26,15 @@ const (
 	StatusOrphaned = "orphaned"
 )
 
-// StatusClient updates the Status on a Kubernetes object.
+// StatusClient updates the HTTPProxyStatus on a Kubernetes object.
 type StatusClient interface {
 	SetStatus(status string, desc string, obj interface{}) error
-	GetStatus(obj interface{}) (*projcontour.Status, error)
+	GetStatus(obj interface{}) (*projcontour.HTTPProxyStatus, error)
 }
 
 // StatusCacher keeps a cache of the latest status updates for Kubernetes objects.
 type StatusCacher struct {
-	objectStatus map[string]projcontour.Status
+	objectStatus map[string]projcontour.HTTPProxyStatus
 }
 
 func objectKey(obj interface{}) string {
@@ -68,9 +68,9 @@ func (c *StatusCacher) Delete(obj interface{}) {
 }
 
 // GetStatus returns the status (if any) for this given object.
-func (c *StatusCacher) GetStatus(obj interface{}) (*projcontour.Status, error) {
+func (c *StatusCacher) GetStatus(obj interface{}) (*projcontour.HTTPProxyStatus, error) {
 	if c.objectStatus == nil {
-		c.objectStatus = make(map[string]projcontour.Status)
+		c.objectStatus = make(map[string]projcontour.HTTPProxyStatus)
 	}
 
 	s, ok := c.objectStatus[objectKey(obj)]
@@ -84,10 +84,10 @@ func (c *StatusCacher) GetStatus(obj interface{}) (*projcontour.Status, error) {
 // SetStatus sets the HTTPProxy status field to an Valid or Invalid status
 func (c *StatusCacher) SetStatus(status, desc string, obj interface{}) error {
 	if c.objectStatus == nil {
-		c.objectStatus = make(map[string]projcontour.Status)
+		c.objectStatus = make(map[string]projcontour.HTTPProxyStatus)
 	}
 
-	c.objectStatus[objectKey(obj)] = projcontour.Status{
+	c.objectStatus[objectKey(obj)] = projcontour.HTTPProxyStatus{
 		CurrentStatus: status,
 		Description:   desc,
 	}
@@ -95,13 +95,13 @@ func (c *StatusCacher) SetStatus(status, desc string, obj interface{}) error {
 	return nil
 }
 
-// StatusWriter updates the object's Status field.
+// StatusWriter updates the object's HTTPProxyStatus field.
 type StatusWriter struct {
 	Updater StatusUpdater
 }
 
 // GetStatus is not implemented for StatusWriter.
-func (irs *StatusWriter) GetStatus(obj interface{}) (*projcontour.Status, error) {
+func (irs *StatusWriter) GetStatus(obj interface{}) (*projcontour.HTTPProxyStatus, error) {
 	return nil, errors.New("not implemented")
 }
 

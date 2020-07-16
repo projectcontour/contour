@@ -448,8 +448,8 @@ type DownstreamValidation struct {
 	CACertificate string `json:"caSecret"`
 }
 
-// Status reports the current state of the HTTPProxy.
-type Status struct {
+// HTTPProxyStatus reports the current state of the HTTPProxy.
+type HTTPProxyStatus struct {
 	// +optional
 	CurrentStatus string `json:"currentStatus,omitempty"`
 	// +optional
@@ -476,7 +476,7 @@ type HTTPProxy struct {
 
 	Spec HTTPProxySpec `json:"spec"`
 	// +optional
-	Status Status `json:"status,omitempty"`
+	Status HTTPProxyStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
