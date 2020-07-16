@@ -100,13 +100,27 @@ type SubCondition struct {
 	Message string `json:"message" protobuf:"bytes,6,opt,name=message"`
 }
 
+
+// DetailedCondition is an extension of the normal Kubernetes conditions, with two extra
+// fields to hold sub-conditions, which provide more detailed reasons for the state (True or False)
+// of the condition.
+// `errors` holds information about sub-conditions which are fatal to that condition and render its state False.
+// `warnings` holds information about sub-conditions which are not fatal to that condition and do not force the state to be False.
+// Remember that Conditions have a type, a status, and a reason.
+// The type is the type of the condition, the most important one in this CRD set is `Valid`.
+// In the case of `Valid`, `status: true` means that the object is has been ingested into Contour with no errors.
+// `warnings` may still be present, and will be indicated in the Reason field.
+// `Valid`, `status: false` means that the object has had one or more fatal errors during processing into Contour.
+//  The details of the errors will be present under the `errors` field.
 type DetailedCondition struct {
   Condition
-  // Errors contains a slice of relevant warning conditions for
-  // this object.
-  // Conditions are expected to appear when relevant (when there is a warning), and disappear when not relevant.
+  // Errors contains a slice of relevant error subconditions for this object.
+  // Subconditions are expected to appear when relevant (when there is an error), and disappear when not relevant.
+  // An empty slice here indicates no errors.
   Errors []SubCondition `json:errors`
-  // Warnings behaves the same as Errors.
+  // Warnings contains a slice of relevant error subconditions for this object.
+  // Subconditions are expected to appear when relevant (when there is a warning), and disappear when not relevant.
+  // An empty slice here indicates no warnings.
   Warnings []SubCondition `json:warnings`
 }
 
