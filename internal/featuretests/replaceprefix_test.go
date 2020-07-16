@@ -93,7 +93,7 @@ func basic(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
-		projcontour.Status{CurrentStatus: k8s.StatusValid},
+		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 
 	// Update the vhost to make the replacement ambiguous. This should remove the generated config.
@@ -111,7 +111,7 @@ func basic(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
-	}).Status(vhost).Equals(projcontour.Status{
+	}).Status(vhost).Equals(projcontour.HTTPProxyStatus{
 		CurrentStatus: k8s.StatusInvalid,
 		Description:   "ambiguous prefix replacement",
 	})
@@ -143,7 +143,7 @@ func basic(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
-		projcontour.Status{CurrentStatus: k8s.StatusValid},
+		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 
 	// But having duplicate prefixes in the replacements makes
@@ -162,7 +162,7 @@ func basic(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
-	}).Status(vhost).Equals(projcontour.Status{
+	}).Status(vhost).Equals(projcontour.HTTPProxyStatus{
 		CurrentStatus: k8s.StatusInvalid,
 		Description:   "duplicate replacement prefix '/foo'",
 	})
@@ -194,7 +194,7 @@ func basic(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
-		projcontour.Status{CurrentStatus: k8s.StatusValid},
+		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 
 	// If we remove the prefix match condition, the implicit '/' prefix
@@ -218,7 +218,7 @@ func basic(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
-		projcontour.Status{CurrentStatus: k8s.StatusValid},
+		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 }
 
@@ -308,9 +308,9 @@ func multiInclude(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost1).Like(
-		projcontour.Status{CurrentStatus: k8s.StatusValid},
+		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	).Status(vhost2).Like(
-		projcontour.Status{CurrentStatus: k8s.StatusValid},
+		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 
 	// Remove one of the replacements, and one cluster loses the rewrite.
@@ -345,9 +345,9 @@ func multiInclude(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost1).Like(
-		projcontour.Status{CurrentStatus: k8s.StatusValid},
+		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	).Status(vhost2).Like(
-		projcontour.Status{CurrentStatus: k8s.StatusValid},
+		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 }
 
@@ -437,9 +437,9 @@ func replaceWithSlash(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost1).Like(
-		projcontour.Status{CurrentStatus: k8s.StatusValid},
+		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	).Status(vhost2).Like(
-		projcontour.Status{CurrentStatus: k8s.StatusValid},
+		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 
 	// Not swap the routing and replacement prefixes. Because the routing
@@ -478,9 +478,9 @@ func replaceWithSlash(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost1).Like(
-		projcontour.Status{CurrentStatus: k8s.StatusValid},
+		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	).Status(vhost2).Like(
-		projcontour.Status{CurrentStatus: k8s.StatusValid},
+		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 }
 
