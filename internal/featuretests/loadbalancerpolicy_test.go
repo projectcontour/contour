@@ -55,7 +55,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 		WithFQDN("www.example.com").
 		WithSpec(projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
-				Conditions: conditions(prefixCondition("/cart")),
+				Conditions: matchconditions(prefixMatchCondition("/cart")),
 				LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
 					Strategy: "Cookie",
 				},
@@ -88,7 +88,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 			WithFQDN("www.example.com").
 			WithSpec(projcontour.HTTPProxySpec{
 				Routes: []projcontour.Route{{
-					Conditions: conditions(prefixCondition("/cart")),
+					Conditions: matchconditions(prefixMatchCondition("/cart")),
 					LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
 						Strategy: "Cookie",
 					},

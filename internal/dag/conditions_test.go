@@ -20,114 +20,114 @@ import (
 	"github.com/projectcontour/contour/internal/assert"
 )
 
-func TestPathCondition(t *testing.T) {
+func TestPathMatchCondition(t *testing.T) {
 	tests := map[string]struct {
-		conditions []projcontour.Condition
-		want       Condition
+		matchconditions []projcontour.MatchCondition
+		want            MatchCondition
 	}{
 		"empty condition list": {
-			conditions: nil,
-			want:       &PrefixCondition{Prefix: "/"},
+			matchconditions: nil,
+			want:            &PrefixMatchCondition{Prefix: "/"},
 		},
 		"single slash": {
-			conditions: []projcontour.Condition{{
+			matchconditions: []projcontour.MatchCondition{{
 				Prefix: "/",
 			}},
-			want: &PrefixCondition{Prefix: "/"},
+			want: &PrefixMatchCondition{Prefix: "/"},
 		},
 		"two slashes": {
-			conditions: []projcontour.Condition{{
+			matchconditions: []projcontour.MatchCondition{{
 				Prefix: "/",
 			}, {
 				Prefix: "/",
 			}},
-			want: &PrefixCondition{Prefix: "/"},
+			want: &PrefixMatchCondition{Prefix: "/"},
 		},
-		"mixed conditions": {
-			conditions: []projcontour.Condition{{
+		"mixed matchconditions": {
+			matchconditions: []projcontour.MatchCondition{{
 				Prefix: "/a/",
 			}, {
 				Prefix: "/b",
 			}},
-			want: &PrefixCondition{Prefix: "/a/b"},
+			want: &PrefixMatchCondition{Prefix: "/a/b"},
 		},
 		"trailing slash": {
-			conditions: []projcontour.Condition{{
+			matchconditions: []projcontour.MatchCondition{{
 				Prefix: "/a/",
 			}},
-			want: &PrefixCondition{Prefix: "/a/"},
+			want: &PrefixMatchCondition{Prefix: "/a/"},
 		},
 		"trailing slash on second prefix condition": {
-			conditions: []projcontour.Condition{{
+			matchconditions: []projcontour.MatchCondition{{
 				Prefix: "/a",
 			},
 				{
 					Prefix: "/b/",
 				}},
-			want: &PrefixCondition{Prefix: "/a/b/"},
+			want: &PrefixMatchCondition{Prefix: "/a/b/"},
 		},
 		"nothing but slashes": {
-			conditions: []projcontour.Condition{
+			matchconditions: []projcontour.MatchCondition{
 				{
 					Prefix: "///",
 				},
 				{
 					Prefix: "/",
 				}},
-			want: &PrefixCondition{Prefix: "/"},
+			want: &PrefixMatchCondition{Prefix: "/"},
 		},
 		"header condition": {
-			conditions: []projcontour.Condition{{
-				Header: new(projcontour.HeaderCondition),
+			matchconditions: []projcontour.MatchCondition{{
+				Header: new(projcontour.HeaderMatchCondition),
 			}},
-			want: &PrefixCondition{Prefix: "/"},
+			want: &PrefixMatchCondition{Prefix: "/"},
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := mergePathConditions(tc.conditions)
+			got := mergePathMatchConditions(tc.matchconditions)
 			assert.Equal(t, tc.want, got)
 		})
 	}
 }
 
-func TestHeaderConditions(t *testing.T) {
+func TestHeaderMatchConditions(t *testing.T) {
 	tests := map[string]struct {
-		conditions []projcontour.Condition
-		want       []HeaderCondition
+		matchconditions []projcontour.MatchCondition
+		want            []HeaderMatchCondition
 	}{
 		"empty condition list": {
-			conditions: nil,
-			want:       nil,
+			matchconditions: nil,
+			want:            nil,
 		},
 		"prefix": {
-			conditions: []projcontour.Condition{{
+			matchconditions: []projcontour.MatchCondition{{
 				Prefix: "/",
 			}},
 			want: nil,
 		},
 		"header condition empty": {
-			conditions: []projcontour.Condition{{
-				Header: new(projcontour.HeaderCondition),
+			matchconditions: []projcontour.MatchCondition{{
+				Header: new(projcontour.HeaderMatchCondition),
 			}},
 			want: nil,
 		},
 		"header present": {
-			conditions: []projcontour.Condition{{
-				Header: &projcontour.HeaderCondition{
+			matchconditions: []projcontour.MatchCondition{{
+				Header: &projcontour.HeaderMatchCondition{
 					Name:    "x-request-id",
 					Present: true,
 				},
 			}},
-			want: []HeaderCondition{{
+			want: []HeaderMatchCondition{{
 				Name:      "x-request-id",
 				MatchType: "present",
 			}},
 		},
 		"header name but missing condition": {
-			conditions: []projcontour.Condition{{
-				Header: &projcontour.HeaderCondition{
+			matchconditions: []projcontour.MatchCondition{{
+				Header: &projcontour.HeaderMatchCondition{
 					Name: "x-request-id",
 				},
 			}},
@@ -136,26 +136,26 @@ func TestHeaderConditions(t *testing.T) {
 			want: nil,
 		},
 		"header contains": {
-			conditions: []projcontour.Condition{{
-				Header: &projcontour.HeaderCondition{
+			matchconditions: []projcontour.MatchCondition{{
+				Header: &projcontour.HeaderMatchCondition{
 					Name:     "x-request-id",
 					Contains: "abcdef",
 				},
 			}},
-			want: []HeaderCondition{{
+			want: []HeaderMatchCondition{{
 				Name:      "x-request-id",
 				MatchType: "contains",
 				Value:     "abcdef",
 			}},
 		},
 		"header not contains": {
-			conditions: []projcontour.Condition{{
-				Header: &projcontour.HeaderCondition{
+			matchconditions: []projcontour.MatchCondition{{
+				Header: &projcontour.HeaderMatchCondition{
 					Name:        "x-request-id",
 					NotContains: "abcdef",
 				},
 			}},
-			want: []HeaderCondition{{
+			want: []HeaderMatchCondition{{
 				Name:      "x-request-id",
 				MatchType: "contains",
 				Value:     "abcdef",
@@ -163,26 +163,26 @@ func TestHeaderConditions(t *testing.T) {
 			}},
 		},
 		"header exact": {
-			conditions: []projcontour.Condition{{
-				Header: &projcontour.HeaderCondition{
+			matchconditions: []projcontour.MatchCondition{{
+				Header: &projcontour.HeaderMatchCondition{
 					Name:  "x-request-id",
 					Exact: "abcdef",
 				},
 			}},
-			want: []HeaderCondition{{
+			want: []HeaderMatchCondition{{
 				Name:      "x-request-id",
 				MatchType: "exact",
 				Value:     "abcdef",
 			}},
 		},
 		"header not exact": {
-			conditions: []projcontour.Condition{{
-				Header: &projcontour.HeaderCondition{
+			matchconditions: []projcontour.MatchCondition{{
+				Header: &projcontour.HeaderMatchCondition{
 					Name:     "x-request-id",
 					NotExact: "abcdef",
 				},
 			}},
-			want: []HeaderCondition{{
+			want: []HeaderMatchCondition{{
 				Name:      "x-request-id",
 				MatchType: "exact",
 				Value:     "abcdef",
@@ -190,18 +190,18 @@ func TestHeaderConditions(t *testing.T) {
 			}},
 		},
 		"two header contains": {
-			conditions: []projcontour.Condition{{
-				Header: &projcontour.HeaderCondition{
+			matchconditions: []projcontour.MatchCondition{{
+				Header: &projcontour.HeaderMatchCondition{
 					Name:     "x-request-id",
 					Contains: "abcdef",
 				},
 			}, {
-				Header: &projcontour.HeaderCondition{
+				Header: &projcontour.HeaderMatchCondition{
 					Name:     "x-request-id",
 					Contains: "cedfg",
 				},
 			}},
-			want: []HeaderCondition{{
+			want: []HeaderMatchCondition{{
 				Name:      "x-request-id",
 				MatchType: "contains",
 				Value:     "abcdef",
@@ -212,18 +212,18 @@ func TestHeaderConditions(t *testing.T) {
 			}},
 		},
 		"two header contains different case": {
-			conditions: []projcontour.Condition{{
-				Header: &projcontour.HeaderCondition{
+			matchconditions: []projcontour.MatchCondition{{
+				Header: &projcontour.HeaderMatchCondition{
 					Name:     "x-request-id",
 					Contains: "abcdef",
 				},
 			}, {
-				Header: &projcontour.HeaderCondition{
+				Header: &projcontour.HeaderMatchCondition{
 					Name:     "X-Request-Id",
 					Contains: "abcdef",
 				},
 			}},
-			want: []HeaderCondition{{
+			want: []HeaderMatchCondition{{
 				Name:      "x-request-id",
 				MatchType: "contains",
 				Value:     "abcdef",
@@ -237,49 +237,49 @@ func TestHeaderConditions(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := mergeHeaderConditions(tc.conditions)
+			got := mergeHeaderMatchConditions(tc.matchconditions)
 			assert.Equal(t, tc.want, got)
 		})
 	}
 }
 
-func TestPrefixConditionsValid(t *testing.T) {
+func TestPrefixMatchConditionsValid(t *testing.T) {
 	tests := map[string]struct {
-		conditions []projcontour.Condition
-		want       bool
+		matchconditions []projcontour.MatchCondition
+		want            bool
 	}{
 		"empty condition list": {
-			conditions: nil,
-			want:       true,
+			matchconditions: nil,
+			want:            true,
 		},
 		"valid path condition only": {
-			conditions: []projcontour.Condition{{
+			matchconditions: []projcontour.MatchCondition{{
 				Prefix: "/api",
 			}},
 			want: true,
 		},
 		"valid path condition with headers": {
-			conditions: []projcontour.Condition{{
+			matchconditions: []projcontour.MatchCondition{{
 				Prefix: "/api",
-				Header: &projcontour.HeaderCondition{
+				Header: &projcontour.HeaderMatchCondition{
 					Name:     "x-header",
 					Contains: "abc",
 				},
 			}},
 			want: true,
 		},
-		"two prefix conditions": {
-			conditions: []projcontour.Condition{{
+		"two prefix matchconditions": {
+			matchconditions: []projcontour.MatchCondition{{
 				Prefix: "/api",
 			}, {
 				Prefix: "/v1",
 			}},
 			want: false,
 		},
-		"two prefix conditions with headers": {
-			conditions: []projcontour.Condition{{
+		"two prefix matchconditions with headers": {
+			matchconditions: []projcontour.MatchCondition{{
 				Prefix: "/api",
-				Header: &projcontour.HeaderCondition{
+				Header: &projcontour.HeaderMatchCondition{
 					Name:     "x-header",
 					Contains: "abc",
 				},
@@ -289,15 +289,15 @@ func TestPrefixConditionsValid(t *testing.T) {
 			want: false,
 		},
 		"invalid prefix condition": {
-			conditions: []projcontour.Condition{{
+			matchconditions: []projcontour.MatchCondition{{
 				Prefix: "api",
 			}},
 			want: false,
 		},
 		"invalid prefix condition with headers": {
-			conditions: []projcontour.Condition{{
+			matchconditions: []projcontour.MatchCondition{{
 				Prefix: "api",
-				Header: &projcontour.HeaderCondition{
+				Header: &projcontour.HeaderMatchCondition{
 					Name:     "x-header",
 					Contains: "abc",
 				},
@@ -308,33 +308,33 @@ func TestPrefixConditionsValid(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := pathConditionsValid(tc.conditions)
+			err := pathMatchConditionsValid(tc.matchconditions)
 			assert.Equal(t, tc.want, err == nil)
 		})
 	}
 }
 
-func TestValidateHeaderConditions(t *testing.T) {
+func TestValidateHeaderMatchConditions(t *testing.T) {
 	tests := map[string]struct {
-		conditions []projcontour.Condition
-		wantErr    bool
+		matchconditions []projcontour.MatchCondition
+		wantErr         bool
 	}{
 		"empty condition list": {
-			conditions: nil,
-			wantErr:    false,
+			matchconditions: nil,
+			wantErr:         false,
 		},
 		"prefix only": {
-			conditions: []projcontour.Condition{
+			matchconditions: []projcontour.MatchCondition{
 				{
 					Prefix: "/blog",
 				},
 			},
 			wantErr: false,
 		},
-		"valid conditions": {
-			conditions: []projcontour.Condition{
+		"valid matchconditions": {
+			matchconditions: []projcontour.MatchCondition{
 				{
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
@@ -342,17 +342,17 @@ func TestValidateHeaderConditions(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		"prefix conditions + valid headers": {
-			conditions: []projcontour.Condition{
+		"prefix matchconditions + valid headers": {
+			matchconditions: []projcontour.MatchCondition{
 				{
 					Prefix: "/blog",
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:        "x-header",
 						NotContains: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:        "another-header",
 						NotContains: "123",
 					},
@@ -360,15 +360,15 @@ func TestValidateHeaderConditions(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		"multiple 'exact' conditions for the same header are invalid": {
-			conditions: []projcontour.Condition{
+		"multiple 'exact' matchconditions for the same header are invalid": {
+			matchconditions: []projcontour.MatchCondition{
 				{
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "123",
 					},
@@ -376,15 +376,15 @@ func TestValidateHeaderConditions(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		"multiple 'exact' conditions for different headers are valid": {
-			conditions: []projcontour.Condition{
+		"multiple 'exact' matchconditions for different headers are valid": {
+			matchconditions: []projcontour.MatchCondition{
 				{
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "x-different-header",
 						Exact: "123",
 					},
@@ -392,15 +392,15 @@ func TestValidateHeaderConditions(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		"'exact' and 'notexact' conditions for the same header with the same value are invalid": {
-			conditions: []projcontour.Condition{
+		"'exact' and 'notexact' matchconditions for the same header with the same value are invalid": {
+			matchconditions: []projcontour.MatchCondition{
 				{
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						NotExact: "abc",
 					},
@@ -408,15 +408,15 @@ func TestValidateHeaderConditions(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		"'exact' and 'notexact' conditions for the same header with different values are valid": {
-			conditions: []projcontour.Condition{
+		"'exact' and 'notexact' matchconditions for the same header with different values are valid": {
+			matchconditions: []projcontour.MatchCondition{
 				{
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						NotExact: "def",
 					},
@@ -424,15 +424,15 @@ func TestValidateHeaderConditions(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		"'exact' and 'notexact' conditions for different headers with the same value are valid": {
-			conditions: []projcontour.Condition{
+		"'exact' and 'notexact' matchconditions for different headers with the same value are valid": {
+			matchconditions: []projcontour.MatchCondition{
 				{
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-another-header",
 						NotExact: "abc",
 					},
@@ -440,15 +440,15 @@ func TestValidateHeaderConditions(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		"'contains' and 'notcontains' conditions for the same header with the same value are invalid": {
-			conditions: []projcontour.Condition{
+		"'contains' and 'notcontains' matchconditions for the same header with the same value are invalid": {
+			matchconditions: []projcontour.MatchCondition{
 				{
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:        "x-header",
 						NotContains: "abc",
 					},
@@ -456,15 +456,15 @@ func TestValidateHeaderConditions(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		"'contains' and 'notcontains' conditions for the same header with different values are valid": {
-			conditions: []projcontour.Condition{
+		"'contains' and 'notcontains' matchconditions for the same header with different values are valid": {
+			matchconditions: []projcontour.MatchCondition{
 				{
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:        "x-header",
 						NotContains: "def",
 					},
@@ -472,15 +472,15 @@ func TestValidateHeaderConditions(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		"'contains' and 'notcontains' conditions for different headers with the same value are valid": {
-			conditions: []projcontour.Condition{
+		"'contains' and 'notcontains' matchconditions for different headers with the same value are valid": {
+			matchconditions: []projcontour.MatchCondition{
 				{
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:        "x-another-header",
 						NotContains: "abc",
 					},
@@ -492,7 +492,7 @@ func TestValidateHeaderConditions(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			gotErr := headerConditionsValid(tc.conditions)
+			gotErr := headerMatchConditionsValid(tc.matchconditions)
 
 			if !tc.wantErr && gotErr != nil {
 				t.Fatalf("Expected no error, got (%v)", gotErr)

@@ -85,18 +85,18 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					Port: 80,
 				}},
 			}, {
-				Conditions: conditions(
-					prefixCondition("/"),
-					headerContainsCondition("x-header", "abc"),
+				Conditions: matchconditions(
+					prefixMatchCondition("/"),
+					headerContainsMatchCondition("x-header", "abc"),
 				),
 				Services: []projcontour.Service{{
 					Name: "svc2",
 					Port: 80,
 				}},
 			}, {
-				Conditions: conditions(
-					prefixCondition("/blog"),
-					headerContainsCondition("x-header", "abc"),
+				Conditions: matchconditions(
+					prefixMatchCondition("/blog"),
+					headerContainsMatchCondition("x-header", "abc"),
 				),
 				Services: []projcontour.Service{{
 					Name: "svc3",
@@ -112,7 +112,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
-						Match: routePrefix("/blog", dag.HeaderCondition{
+						Match: routePrefix("/blog", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							Value:     "abc",
 							MatchType: "contains",
@@ -121,7 +121,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 						Action: routeCluster("default/svc3/80/da39a3ee5e"),
 					},
 					&envoy_api_v2_route.Route{
-						Match: routePrefix("/", dag.HeaderCondition{
+						Match: routePrefix("/", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							Value:     "abc",
 							MatchType: "contains",
@@ -148,18 +148,18 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					Port: 80,
 				}},
 			}, {
-				Conditions: conditions(
-					prefixCondition("/"),
-					headerNotContainsCondition("x-header", "123"),
+				Conditions: matchconditions(
+					prefixMatchCondition("/"),
+					headerNotContainsMatchCondition("x-header", "123"),
 				),
 				Services: []projcontour.Service{{
 					Name: "svc2",
 					Port: 80,
 				}},
 			}, {
-				Conditions: conditions(
-					prefixCondition("/blog"),
-					headerNotContainsCondition("x-header", "abc"),
+				Conditions: matchconditions(
+					prefixMatchCondition("/blog"),
+					headerNotContainsMatchCondition("x-header", "abc"),
 				),
 				Services: []projcontour.Service{{
 					Name: "svc3",
@@ -175,7 +175,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
-						Match: routePrefix("/blog", dag.HeaderCondition{
+						Match: routePrefix("/blog", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							Value:     "abc",
 							MatchType: "contains",
@@ -184,7 +184,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 						Action: routeCluster("default/svc3/80/da39a3ee5e"),
 					},
 					&envoy_api_v2_route.Route{
-						Match: routePrefix("/", dag.HeaderCondition{
+						Match: routePrefix("/", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							Value:     "123",
 							MatchType: "contains",
@@ -211,18 +211,18 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					Port: 80,
 				}},
 			}, {
-				Conditions: conditions(
-					prefixCondition("/"),
-					headerExactCondition("x-header", "abc"),
+				Conditions: matchconditions(
+					prefixMatchCondition("/"),
+					headerExactMatchCondition("x-header", "abc"),
 				),
 				Services: []projcontour.Service{{
 					Name: "svc2",
 					Port: 80,
 				}},
 			}, {
-				Conditions: conditions(
-					prefixCondition("/blog"),
-					headerExactCondition("x-header", "123"),
+				Conditions: matchconditions(
+					prefixMatchCondition("/blog"),
+					headerExactMatchCondition("x-header", "123"),
 				),
 				Services: []projcontour.Service{{
 					Name: "svc3",
@@ -238,7 +238,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
-						Match: routePrefix("/blog", dag.HeaderCondition{
+						Match: routePrefix("/blog", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							Value:     "123",
 							MatchType: "exact",
@@ -247,7 +247,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 						Action: routeCluster("default/svc3/80/da39a3ee5e"),
 					},
 					&envoy_api_v2_route.Route{
-						Match: routePrefix("/", dag.HeaderCondition{
+						Match: routePrefix("/", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							Value:     "abc",
 							MatchType: "exact",
@@ -274,18 +274,18 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					Port: 80,
 				}},
 			}, {
-				Conditions: conditions(
-					prefixCondition("/"),
-					headerNotExactCondition("x-header", "abc"),
+				Conditions: matchconditions(
+					prefixMatchCondition("/"),
+					headerNotExactMatchCondition("x-header", "abc"),
 				),
 				Services: []projcontour.Service{{
 					Name: "svc2",
 					Port: 80,
 				}},
 			}, {
-				Conditions: conditions(
-					prefixCondition("/blog"),
-					headerNotExactCondition("x-header", "123"),
+				Conditions: matchconditions(
+					prefixMatchCondition("/blog"),
+					headerNotExactMatchCondition("x-header", "123"),
 				),
 				Services: []projcontour.Service{{
 					Name: "svc3",
@@ -301,7 +301,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
-						Match: routePrefix("/blog", dag.HeaderCondition{
+						Match: routePrefix("/blog", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							Value:     "123",
 							MatchType: "exact",
@@ -310,7 +310,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 						Action: routeCluster("default/svc3/80/da39a3ee5e"),
 					},
 					&envoy_api_v2_route.Route{
-						Match: routePrefix("/", dag.HeaderCondition{
+						Match: routePrefix("/", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							Value:     "abc",
 							MatchType: "exact",
@@ -337,18 +337,18 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					Port: 80,
 				}},
 			}, {
-				Conditions: conditions(
-					prefixCondition("/"),
-					headerPresentCondition("x-header"),
+				Conditions: matchconditions(
+					prefixMatchCondition("/"),
+					headerPresentMatchCondition("x-header"),
 				),
 				Services: []projcontour.Service{{
 					Name: "svc2",
 					Port: 80,
 				}},
 			}, {
-				Conditions: conditions(
-					prefixCondition("/blog"),
-					headerPresentCondition("x-header"),
+				Conditions: matchconditions(
+					prefixMatchCondition("/blog"),
+					headerPresentMatchCondition("x-header"),
 				),
 				Services: []projcontour.Service{{
 					Name: "svc3",
@@ -364,7 +364,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
-						Match: routePrefix("/blog", dag.HeaderCondition{
+						Match: routePrefix("/blog", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							MatchType: "present",
 							Invert:    false,
@@ -372,7 +372,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 						Action: routeCluster("default/svc3/80/da39a3ee5e"),
 					},
 					&envoy_api_v2_route.Route{
-						Match: routePrefix("/", dag.HeaderCondition{
+						Match: routePrefix("/", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							MatchType: "present",
 							Invert:    false,
@@ -396,9 +396,9 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
 			Routes: []projcontour.Route{
 				{
-					Conditions: conditions(
-						prefixCondition("/"),
-						headerContainsCondition("x-header", "abc"),
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						headerContainsMatchCondition("x-header", "abc"),
 					),
 					Services: []projcontour.Service{{
 						Name: "svc1",
@@ -406,9 +406,9 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					}},
 				},
 				{
-					Conditions: conditions(
-						prefixCondition("/"),
-						headerContainsCondition("x-header", "def"),
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						headerContainsMatchCondition("x-header", "def"),
 					),
 					Services: []projcontour.Service{{
 						Name: "svc2",
@@ -425,7 +425,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
-						Match: routePrefix("/", dag.HeaderCondition{
+						Match: routePrefix("/", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							Value:     "abc",
 							MatchType: "contains",
@@ -434,7 +434,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 						Action: routeCluster("default/svc1/80/da39a3ee5e"),
 					},
 					&envoy_api_v2_route.Route{
-						Match: routePrefix("/", dag.HeaderCondition{
+						Match: routePrefix("/", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							Value:     "def",
 							MatchType: "contains",
@@ -455,9 +455,9 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
 			Routes: []projcontour.Route{
 				{
-					Conditions: conditions(
-						prefixCondition("/"),
-						headerContainsCondition("x-header", "abc"),
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						headerContainsMatchCondition("x-header", "abc"),
 					),
 					Services: []projcontour.Service{{
 						Name: "svc1",
@@ -465,9 +465,9 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 					}},
 				},
 				{
-					Conditions: conditions(
-						prefixCondition("/"),
-						headerNotContainsCondition("x-header", "abc"),
+					Conditions: matchconditions(
+						prefixMatchCondition("/"),
+						headerNotContainsMatchCondition("x-header", "abc"),
 					),
 					Services: []projcontour.Service{{
 						Name: "svc2",
@@ -484,7 +484,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
-						Match: routePrefix("/", dag.HeaderCondition{
+						Match: routePrefix("/", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							Value:     "abc",
 							MatchType: "contains",
@@ -493,7 +493,7 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 						Action: routeCluster("default/svc1/80/da39a3ee5e"),
 					},
 					&envoy_api_v2_route.Route{
-						Match: routePrefix("/", dag.HeaderCondition{
+						Match: routePrefix("/", dag.HeaderMatchCondition{
 							Name:      "x-header",
 							Value:     "abc",
 							MatchType: "contains",

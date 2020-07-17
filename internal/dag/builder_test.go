@@ -958,7 +958,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -986,7 +986,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1011,7 +1011,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1036,7 +1036,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1057,7 +1057,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/a",
 				}},
 				Services: []projcontour.Service{{
@@ -1066,7 +1066,7 @@ func TestDAGInsert(t *testing.T) {
 					Weight: 90,
 				}},
 			}, {
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/b",
 				}},
 				Services: []projcontour.Service{{
@@ -1088,7 +1088,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/a",
 				}},
 				Services: []projcontour.Service{{
@@ -1114,7 +1114,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "bar.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				RetryPolicy: &projcontour.RetryPolicy{
@@ -1139,7 +1139,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "bar.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				RetryPolicy: &projcontour.RetryPolicy{
@@ -1164,7 +1164,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "bar.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				RetryPolicy: &projcontour.RetryPolicy{
@@ -1189,7 +1189,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "bar.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				TimeoutPolicy: &projcontour.TimeoutPolicy{
@@ -1213,7 +1213,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "bar.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				TimeoutPolicy: &projcontour.TimeoutPolicy{
@@ -1237,7 +1237,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "bar.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				TimeoutPolicy: &projcontour.TimeoutPolicy{
@@ -1476,7 +1476,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1497,7 +1497,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1560,30 +1560,30 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
-					Header: &projcontour.HeaderCondition{
+				Conditions: []projcontour.MatchCondition{{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:    "x-request-id",
 						Present: true,
 					},
 				}, {
 					Prefix: "/kuard",
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "e-tag",
 						Contains: "abcdef",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:        "x-timeout",
 						NotContains: "infinity",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "digest-auth",
 						Exact: "scott",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "digest-password",
 						NotExact: "tiger",
 					},
@@ -1667,7 +1667,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1688,18 +1688,18 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Includes: []projcontour.Include{{
-				Conditions: []projcontour.Condition{{
-					Header: &projcontour.HeaderCondition{
+				Conditions: []projcontour.MatchCondition{{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:    "x-request-id",
 						Present: true,
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:        "x-timeout",
 						NotContains: "infinity",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "digest-auth",
 						Exact: "scott",
 					},
@@ -1717,15 +1717,15 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/kuard",
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "e-tag",
 						Contains: "abcdef",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "digest-password",
 						NotExact: "tiger",
 					},
@@ -1748,7 +1748,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				HealthCheckPolicy: &projcontour.HTTPHealthCheckPolicy{
@@ -1775,9 +1775,9 @@ func TestDAGInsert(t *testing.T) {
 			},
 			Routes: []projcontour.Route{
 				{
-					Conditions: []projcontour.Condition{
+					Conditions: []projcontour.MatchCondition{
 						{
-							Header: &projcontour.HeaderCondition{
+							Header: &projcontour.HeaderMatchCondition{
 								Name:     "e-tag",
 								Contains: "abc",
 							},
@@ -1792,9 +1792,9 @@ func TestDAGInsert(t *testing.T) {
 					}},
 				},
 				{
-					Conditions: []projcontour.Condition{
+					Conditions: []projcontour.MatchCondition{
 						{
-							Header: &projcontour.HeaderCondition{
+							Header: &projcontour.HeaderMatchCondition{
 								Name:     "e-tag",
 								Contains: "def",
 							},
@@ -1825,9 +1825,9 @@ func TestDAGInsert(t *testing.T) {
 			},
 			Routes: []projcontour.Route{
 				{
-					Conditions: []projcontour.Condition{
+					Conditions: []projcontour.MatchCondition{
 						{
-							Header: &projcontour.HeaderCondition{
+							Header: &projcontour.HeaderMatchCondition{
 								Name:     "e-tag",
 								Contains: "abc",
 							},
@@ -1842,9 +1842,9 @@ func TestDAGInsert(t *testing.T) {
 					}},
 				},
 				{
-					Conditions: []projcontour.Condition{
+					Conditions: []projcontour.MatchCondition{
 						{
-							Header: &projcontour.HeaderCondition{
+							Header: &projcontour.HeaderMatchCondition{
 								Name:        "e-tag",
 								NotContains: "abc",
 							},
@@ -1876,7 +1876,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1897,7 +1897,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1929,7 +1929,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1976,7 +1976,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1984,7 +1984,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 				}},
 			}, {
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/websocket",
 				}},
 				EnableWebsockets: true,
@@ -2007,7 +2007,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2015,7 +2015,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 				}},
 			}, {
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/websocket",
 				}},
 				EnableWebsockets: true,
@@ -2038,7 +2038,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2064,7 +2064,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2259,7 +2259,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "missing-service.example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: nil, // missing
@@ -2279,12 +2279,12 @@ func TestDAGInsert(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "marketingwww",
 				Namespace: "marketing",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
 				}},
 			}},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2317,7 +2317,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/infotech",
 				}},
 				Services: []projcontour.Service{{
@@ -2337,12 +2337,12 @@ func TestDAGInsert(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "marketingit",
 				Namespace: "it",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/it",
 				}},
 			}},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/infotech",
 				}},
 				Services: []projcontour.Service{{
@@ -2365,7 +2365,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -2388,12 +2388,12 @@ func TestDAGInsert(t *testing.T) {
 			},
 			Includes: []projcontour.Include{{
 				Name: "kuarder",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/kuarder",
 				}},
 			}},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2430,7 +2430,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/v1",
 				}, {
 					Prefix: "/api",
@@ -2456,7 +2456,7 @@ func TestDAGInsert(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "www",
 				Namespace: "teama",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/v1",
 				}, {
 					Prefix: "/api",
@@ -2478,7 +2478,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/v1",
 				}, {
 					Prefix: "/api",
@@ -2502,12 +2502,12 @@ func TestDAGInsert(t *testing.T) {
 			},
 			Includes: []projcontour.Include{{
 				Name: "kuarder",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/kuarder",
 				}},
 			}},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2544,12 +2544,12 @@ func TestDAGInsert(t *testing.T) {
 			},
 			Includes: []projcontour.Include{{
 				Name: "kuarder",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/kuarder",
 				}},
 			}},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2567,7 +2567,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2589,12 +2589,12 @@ func TestDAGInsert(t *testing.T) {
 			},
 			Includes: []projcontour.Include{{
 				Name: "kuarder",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/kuarder/",
 				}},
 			}},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2612,7 +2612,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2634,12 +2634,12 @@ func TestDAGInsert(t *testing.T) {
 			},
 			Includes: []projcontour.Include{{
 				Name: "kuarder",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/kuarder",
 				}},
 			}},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2657,7 +2657,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/withavengeance",
 				}},
 				Services: []projcontour.Service{{
@@ -2681,9 +2681,9 @@ func TestDAGInsert(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "blogteama",
 				Namespace: "teama",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
@@ -2691,16 +2691,16 @@ func TestDAGInsert(t *testing.T) {
 			}, {
 				Name:      "blogteama",
 				Namespace: "teamb",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
 				}},
 			}},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2751,7 +2751,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2778,7 +2778,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2805,7 +2805,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2838,7 +2838,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2865,7 +2865,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2892,7 +2892,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2931,7 +2931,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2958,7 +2958,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2985,7 +2985,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -3007,7 +3007,7 @@ func TestDAGInsert(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -3685,8 +3685,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s1),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								ResponseTimeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
 							},
@@ -3705,8 +3705,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s1),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								ResponseTimeout: -1, // invalid timeout equals infinity ¯\_(ツ)_/¯.
 							},
@@ -3726,8 +3726,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s1),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								ResponseTimeout: -1, // invalid timeout equals the default, 90s.
 							},
@@ -3746,8 +3746,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s1),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								ResponseTimeout: 90 * time.Second,
 							},
@@ -3766,8 +3766,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s1),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								ResponseTimeout: 90 * time.Second,
 							},
@@ -3787,8 +3787,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s1),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								ResponseTimeout: 90 * time.Second,
 							},
@@ -3807,8 +3807,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s1),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								ResponseTimeout: -1,
 							},
@@ -3827,8 +3827,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s1),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								ResponseTimeout: -1,
 							},
@@ -3848,8 +3848,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s1),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
 								ResponseTimeout: -1,
 							},
@@ -3874,8 +3874,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s1),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "5xx",
 								NumRetries:    6,
@@ -3896,8 +3896,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s1),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "5xx",
 								NumRetries:    6,
@@ -3918,8 +3918,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s1),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "5xx",
 								NumRetries:    1,
@@ -3940,8 +3940,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s1),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "gateway-error",
 								NumRetries:    6,
@@ -3962,8 +3962,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s1),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "gateway-error",
 								NumRetries:    6,
@@ -3984,8 +3984,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s1),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "gateway-error",
 								NumRetries:    6,
@@ -4007,8 +4007,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathCondition: regex("/[^/]+/invoices(/.*|/?)"),
-							Clusters:      clustermap(s1),
+							PathMatchCondition: regex("/[^/]+/invoices(/.*|/?)"),
+							Clusters:           clustermap(s1),
 						}),
 					),
 				},
@@ -4297,7 +4297,7 @@ func TestDAGInsert(t *testing.T) {
 							Fqdn: "example.com",
 						},
 						Includes: []projcontour.Include{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/finance",
 							}},
 							Name:      "non-existent",
@@ -4317,8 +4317,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathCondition: &PrefixCondition{Prefix: "/kuard"},
-							HeaderConditions: []HeaderCondition{
+							PathMatchCondition: &PrefixMatchCondition{Prefix: "/kuard"},
+							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "x-request-id", MatchType: "present"},
 								{Name: "e-tag", Value: "abcdef", MatchType: "contains"},
 								{Name: "x-timeout", Value: "infinity", MatchType: "contains", Invert: true},
@@ -4340,14 +4340,14 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathCondition: &PrefixCondition{Prefix: "/"},
-							HeaderConditions: []HeaderCondition{
+							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "e-tag", Value: "abc", MatchType: "contains"},
 							},
 							Clusters: clusters(service(s1)),
 						}, &Route{
-							PathCondition: &PrefixCondition{Prefix: "/"},
-							HeaderConditions: []HeaderCondition{
+							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "e-tag", Value: "def", MatchType: "contains"},
 							},
 							Clusters: clusters(service(s1)),
@@ -4365,14 +4365,14 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathCondition: &PrefixCondition{Prefix: "/"},
-							HeaderConditions: []HeaderCondition{
+							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "e-tag", Value: "abc", MatchType: "contains"},
 							},
 							Clusters: clusters(service(s1)),
 						}, &Route{
-							PathCondition: &PrefixCondition{Prefix: "/"},
-							HeaderConditions: []HeaderCondition{
+							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "e-tag", Value: "abc", MatchType: "contains", Invert: true},
 							},
 							Clusters: clusters(service(s1)),
@@ -4390,8 +4390,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathCondition: &PrefixCondition{Prefix: "/kuard"},
-							HeaderConditions: []HeaderCondition{
+							PathMatchCondition: &PrefixMatchCondition{Prefix: "/kuard"},
+							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "x-request-id", MatchType: "present"},
 								{Name: "x-timeout", Value: "infinity", MatchType: "contains", Invert: true},
 								{Name: "digest-auth", Value: "scott", MatchType: "exact"},
@@ -4771,7 +4771,7 @@ func TestDAGInsert(t *testing.T) {
 								},
 							),
 							&Route{
-								PathCondition: prefix("/blog/infotech"),
+								PathMatchCondition: prefix("/blog/infotech"),
 								Clusters: []*Cluster{{
 									Upstream: &Service{
 										Name:        s4.Name,
@@ -4804,7 +4804,7 @@ func TestDAGInsert(t *testing.T) {
 								},
 							),
 							&Route{
-								PathCondition: prefix("/blog/infotech"),
+								PathMatchCondition: prefix("/blog/infotech"),
 								Clusters: []*Cluster{{
 									Upstream: &Service{
 										Name:        s4.Name,
@@ -4823,7 +4823,7 @@ func TestDAGInsert(t *testing.T) {
 								},
 							),
 							&Route{
-								PathCondition: prefix("/blog/it/foo"),
+								PathMatchCondition: prefix("/blog/it/foo"),
 								Clusters: []*Cluster{{
 									Upstream: &Service{
 										Name:        s11.Name,
@@ -5333,7 +5333,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathCondition: prefix("/"),
+							PathMatchCondition: prefix("/"),
 							Clusters: []*Cluster{{
 								Upstream: &Service{
 									Name:         s14.Name,
@@ -5358,7 +5358,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathCondition: prefix("/"),
+							PathMatchCondition: prefix("/"),
 							Clusters: []*Cluster{{
 								Upstream: service(s9),
 								SNI:      "bar.com",
@@ -5381,7 +5381,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathCondition: prefix("/"),
+							PathMatchCondition: prefix("/"),
 							Clusters: []*Cluster{{
 								Upstream: &Service{
 									Name:         s14.Name,
@@ -5409,7 +5409,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathCondition: prefix("/"),
+							PathMatchCondition: prefix("/"),
 							Clusters: []*Cluster{{
 								Upstream: service(s9),
 								RequestHeadersPolicy: &HeadersPolicy{
@@ -5432,7 +5432,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathCondition: prefix("/"),
+							PathMatchCondition: prefix("/"),
 							Clusters: []*Cluster{{
 								Upstream: &Service{
 									Name:         s14.Name,
@@ -5474,7 +5474,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathCondition: prefix("/"),
+							PathMatchCondition: prefix("/"),
 							Clusters: []*Cluster{{
 								Upstream: service(s9),
 								SNI:      "bar.com",
@@ -5501,8 +5501,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s9),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s9),
 							RequestHeadersPolicy: &HeadersPolicy{
 								Set: map[string]string{
 									"X-Header": "bar.com",
@@ -5523,8 +5523,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathCondition: prefix("/"),
-							Clusters:      clustermap(s9),
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s9),
 							RequestHeadersPolicy: &HeadersPolicy{
 								Set: map[string]string{
 									"X-Header": "",
@@ -6717,8 +6717,8 @@ func routes(routes ...*Route) map[string]*Route {
 func prefixroute(prefix string, first *Service, rest ...*Service) *Route {
 	services := append([]*Service{first}, rest...)
 	return &Route{
-		PathCondition: &PrefixCondition{Prefix: prefix},
-		Clusters:      clusters(services...),
+		PathMatchCondition: &PrefixMatchCondition{Prefix: prefix},
+		Clusters:           clusters(services...),
 	}
 }
 
@@ -6730,15 +6730,15 @@ func routeProtocol(prefix string, protocol string, first *Service, rest ...*Serv
 		c.Protocol = protocol
 	}
 	return &Route{
-		PathCondition: &PrefixCondition{Prefix: prefix},
-		Clusters:      cs,
+		PathMatchCondition: &PrefixMatchCondition{Prefix: prefix},
+		Clusters:           cs,
 	}
 }
 
 func routeCluster(prefix string, first *Cluster, rest ...*Cluster) *Route {
 	return &Route{
-		PathCondition: &PrefixCondition{Prefix: prefix},
-		Clusters:      append([]*Cluster{first}, rest...),
+		PathMatchCondition: &PrefixMatchCondition{Prefix: prefix},
+		Clusters:           append([]*Cluster{first}, rest...),
 	}
 }
 
@@ -6831,8 +6831,8 @@ func listeners(ls ...*Listener) []Vertex {
 	return v
 }
 
-func prefix(prefix string) Condition { return &PrefixCondition{Prefix: prefix} }
-func regex(regex string) Condition   { return &RegexCondition{Regex: regex} }
+func prefix(prefix string) MatchCondition { return &PrefixMatchCondition{Prefix: prefix} }
+func regex(regex string) MatchCondition   { return &RegexMatchCondition{Regex: regex} }
 
 func withMirror(r *Route, mirror *Service) *Route {
 	r.MirrorPolicy = &MirrorPolicy{

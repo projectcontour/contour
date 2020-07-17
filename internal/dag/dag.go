@@ -50,36 +50,37 @@ func (d *DAG) Statuses() map[k8s.FullName]Status {
 	return d.statuses
 }
 
-type Condition interface {
+type MatchCondition interface {
 	fmt.Stringer
 }
 
-// PrefixCondition matches the start of a URL.
-type PrefixCondition struct {
+// PrefixMatchCondition matches the start of a URL.
+type PrefixMatchCondition struct {
 	Prefix string
 }
 
-func (pc *PrefixCondition) String() string {
+func (pc *PrefixMatchCondition) String() string {
 	return "prefix: " + pc.Prefix
 }
 
-// RegexCondition matches the URL by regular expression.
-type RegexCondition struct {
+// RegexMatchCondition matches the URL by regular expression.
+type RegexMatchCondition struct {
 	Regex string
 }
 
-func (rc *RegexCondition) String() string {
+func (rc *RegexMatchCondition) String() string {
 	return "regex: " + rc.Regex
 }
 
-type HeaderCondition struct {
+// HeaderMatchCondition matches request headers by MatchType
+type HeaderMatchCondition struct {
 	Name      string
 	Value     string
 	MatchType string
 	Invert    bool
 }
 
-func (hc *HeaderCondition) String() string {
+func (hc *HeaderMatchCondition) String() string {
 	details := strings.Join([]string{
 		"name=" + hc.Name,
 		"value=" + hc.Value,
@@ -93,13 +94,13 @@ func (hc *HeaderCondition) String() string {
 // Route defines the properties of a route to a Cluster.
 type Route struct {
 
-	// PathCondition specifies a Condition to match on the request path.
+	// PathMatchCondition specifies a MatchCondition to match on the request path.
 	// Must not be nil.
-	PathCondition Condition
+	PathMatchCondition MatchCondition
 
-	// HeaderConditions specifies a set of additional Conditions to
+	// HeaderMatchConditions specifies a set of additional Conditions to
 	// match on the request headers.
-	HeaderConditions []HeaderCondition
+	HeaderMatchConditions []HeaderMatchCondition
 
 	Clusters []*Cluster
 
@@ -132,13 +133,13 @@ type Route struct {
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.
 func (r *Route) HasPathPrefix() bool {
-	_, ok := r.PathCondition.(*PrefixCondition)
+	_, ok := r.PathMatchCondition.(*PrefixMatchCondition)
 	return ok
 }
 
 // HasPathRegex returns whether this route has a RegexPathCondition.
 func (r *Route) HasPathRegex() bool {
-	_, ok := r.PathCondition.(*RegexCondition)
+	_, ok := r.PathMatchCondition.(*RegexMatchCondition)
 	return ok
 }
 
@@ -249,8 +250,8 @@ func (v *VirtualHost) addRoute(route *Route) {
 }
 
 func conditionsToString(r *Route) string {
-	s := []string{r.PathCondition.String()}
-	for _, cond := range r.HeaderConditions {
+	s := []string{r.PathMatchCondition.String()}
+	for _, cond := range r.HeaderMatchConditions {
 		s = append(s, cond.String())
 	}
 	return strings.Join(s, ",")

@@ -42,27 +42,33 @@ type Include struct {
 	// Namespace of the HTTPProxy to include. Defaults to the current namespace if not supplied.
 	// +optional
 	Namespace string `json:"namespace,omitempty"`
-	// Conditions are a set of routing properties that is applied to an HTTPProxy in a namespace.
+	// Conditions are a set of rules that are applied to included HTTPProxies.
+	// In effect, they are added onto the Conditions of included HTTPProxy Route
+	// structs.
+	// When applied, they are merged using AND, with one exception:
+	// There can be only one Prefix MatchCondition per Conditions slice.
+	// More than one Prefix, or contradictory Conditions, will make the
+	// include invalid.
 	// +optional
-	Conditions []Condition `json:"conditions,omitempty"`
+	Conditions []MatchCondition `json:"conditions,omitempty"`
 }
 
-// Condition are policies that are applied on top of HTTPProxies.
+// MatchCondition are a general holder for matching rules for HTTPProxies.
 // One of Prefix or Header must be provided.
-type Condition struct {
+type MatchCondition struct {
 	// Prefix defines a prefix match for a request.
 	// +optional
 	Prefix string `json:"prefix,omitempty"`
 
 	// Header specifies the header condition to match.
 	// +optional
-	Header *HeaderCondition `json:"header,omitempty"`
+	Header *HeaderMatchCondition `json:"header,omitempty"`
 }
 
-// HeaderCondition specifies how to conditionally match against HTTP
+// HeaderMatchCondition specifies how to conditionally match against HTTP
 // headers. The Name field is required, but only one of the remaining
 // fields should be be provided.
-type HeaderCondition struct {
+type HeaderMatchCondition struct {
 	// Name is the name of the header to match against. Name is required.
 	// Header names are case insensitive.
 	Name string `json:"name"`
@@ -139,9 +145,13 @@ type TLS struct {
 
 // Route contains the set of routes for a virtual host.
 type Route struct {
-	// Conditions are a set of routing properties that is applied to an HTTPProxy in a namespace.
+	// Conditions are a set of rules that are applied to a Route.
+	// When applied, they are merged using AND, with one exception:
+	// There can be only one Prefix MatchCondition per Conditions slice.
+	// More than one Prefix, or contradictory Conditions, will make the
+	// route invalid.
 	// +optional
-	Conditions []Condition `json:"conditions,omitempty"`
+	Conditions []MatchCondition `json:"conditions,omitempty"`
 	// Services are the services to proxy traffic.
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:Required
@@ -360,7 +370,7 @@ type RetryPolicy struct {
 type ReplacePrefix struct {
 	// Prefix specifies the URL path prefix to be replaced.
 	//
-	// If Prefix is specified, it must exactly match the Condition
+	// If Prefix is specified, it must exactly match the MatchCondition
 	// prefix that is rendered by the chain of including HTTPProxies
 	// and only that path prefix will be replaced by Replacement.
 	// This allows HTTPProxies that are included through multiple

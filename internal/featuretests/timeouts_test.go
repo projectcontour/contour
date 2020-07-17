@@ -55,7 +55,7 @@ func TestTimeoutsNotSpecified(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: conditions(prefixCondition("/")),
+				Conditions: matchconditions(prefixMatchCondition("/")),
 				Services: []projcontour.Service{{
 					Name: s1.Name,
 					Port: 80,
@@ -119,7 +119,7 @@ func TestNonZeroTimeoutsSpecified(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: conditions(prefixCondition("/")),
+				Conditions: matchconditions(prefixMatchCondition("/")),
 				Services: []projcontour.Service{{
 					Name: s1.Name,
 					Port: 80,

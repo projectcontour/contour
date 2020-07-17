@@ -19,55 +19,55 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
-func conditions(first projcontour.Condition, rest ...projcontour.Condition) []projcontour.Condition {
-	return append([]projcontour.Condition{first}, rest...)
+func matchconditions(first projcontour.MatchCondition, rest ...projcontour.MatchCondition) []projcontour.MatchCondition {
+	return append([]projcontour.MatchCondition{first}, rest...)
 }
 
-func prefixCondition(prefix string) projcontour.Condition {
-	return projcontour.Condition{
+func prefixMatchCondition(prefix string) projcontour.MatchCondition {
+	return projcontour.MatchCondition{
 		Prefix: prefix,
 	}
 }
 
-func headerContainsCondition(name, value string) projcontour.Condition {
-	return projcontour.Condition{
-		Header: &projcontour.HeaderCondition{
+func headerContainsMatchCondition(name, value string) projcontour.MatchCondition {
+	return projcontour.MatchCondition{
+		Header: &projcontour.HeaderMatchCondition{
 			Name:     name,
 			Contains: value,
 		},
 	}
 }
 
-func headerNotContainsCondition(name, value string) projcontour.Condition {
-	return projcontour.Condition{
-		Header: &projcontour.HeaderCondition{
+func headerNotContainsMatchCondition(name, value string) projcontour.MatchCondition {
+	return projcontour.MatchCondition{
+		Header: &projcontour.HeaderMatchCondition{
 			Name:        name,
 			NotContains: value,
 		},
 	}
 }
 
-func headerExactCondition(name, value string) projcontour.Condition {
-	return projcontour.Condition{
-		Header: &projcontour.HeaderCondition{
+func headerExactMatchCondition(name, value string) projcontour.MatchCondition {
+	return projcontour.MatchCondition{
+		Header: &projcontour.HeaderMatchCondition{
 			Name:  name,
 			Exact: value,
 		},
 	}
 }
 
-func headerNotExactCondition(name, value string) projcontour.Condition {
-	return projcontour.Condition{
-		Header: &projcontour.HeaderCondition{
+func headerNotExactMatchCondition(name, value string) projcontour.MatchCondition {
+	return projcontour.MatchCondition{
+		Header: &projcontour.HeaderMatchCondition{
 			Name:     name,
 			NotExact: value,
 		},
 	}
 }
 
-func headerPresentCondition(name string) projcontour.Condition {
-	return projcontour.Condition{
-		Header: &projcontour.HeaderCondition{
+func headerPresentMatchCondition(name string) projcontour.MatchCondition {
+	return projcontour.MatchCondition{
+		Header: &projcontour.HeaderMatchCondition{
 			Name:    name,
 			Present: true,
 		},

@@ -87,7 +87,7 @@ func TestRootNamespaces(t *testing.T) {
 				Fqdn: "hp1.example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: conditions(prefixCondition("/")),
+				Conditions: matchconditions(prefixMatchCondition("/")),
 				Services: []projcontour.Service{{
 					Name: svc1.Name,
 					Port: 8080,
@@ -124,7 +124,7 @@ func TestRootNamespaces(t *testing.T) {
 				Fqdn: "hp2.example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: conditions(prefixCondition("/")),
+				Conditions: matchconditions(prefixMatchCondition("/")),
 				Services: []projcontour.Service{{
 					Name: svc2.Name,
 					Port: 8080,

@@ -76,7 +76,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -236,7 +236,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: conditions(prefixCondition("/")),
+				Conditions: matchconditions(prefixMatchCondition("/")),
 				Services: []projcontour.Service{{
 					Name: s1.Name,
 					Port: 8080,

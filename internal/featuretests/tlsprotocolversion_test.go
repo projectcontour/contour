@@ -169,7 +169,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: conditions(prefixCondition("/")),
+				Conditions: matchconditions(prefixMatchCondition("/")),
 				Services: []projcontour.Service{{
 					Name: s1.Name,
 					Port: 80,
