@@ -96,6 +96,7 @@ func TestTCPProxy(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -189,6 +190,7 @@ func TestTCPProxyDelegation(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -272,6 +274,7 @@ func TestTCPProxyTLSPassthrough(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -358,6 +361,7 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -453,6 +457,7 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 				FilterChains: envoy.FilterChains(
 					envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			&v2.Listener{
 				// ingress_https is present for
@@ -465,6 +470,7 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -558,6 +564,7 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 				FilterChains: envoy.FilterChains(
 					envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			&v2.Listener{
 				// ingress_https is present for
@@ -570,6 +577,7 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -656,6 +664,7 @@ func TestTCPProxyTLSPassthroughAndHTTPService(t *testing.T) {
 				FilterChains: envoy.FilterChains(
 					envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			&v2.Listener{
 				// ingress_https is present for
@@ -673,6 +682,7 @@ func TestTCPProxyTLSPassthroughAndHTTPService(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -759,6 +769,7 @@ func TestTCPProxyTLSPassthroughAndHTTPServicePermitInsecure(t *testing.T) {
 				FilterChains: envoy.FilterChains(
 					envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			&v2.Listener{
 				// ingress_https is present for
@@ -777,6 +788,7 @@ func TestTCPProxyTLSPassthroughAndHTTPServicePermitInsecure(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),

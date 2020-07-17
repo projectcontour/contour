@@ -135,6 +135,7 @@ func TestVisitListeners(t *testing.T) {
 					ListenerFilters: envoy.ListenerFilters(
 						envoy.TLSInspector(),
 					),
+					SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 				},
 			),
 		},

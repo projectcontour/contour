@@ -87,6 +87,7 @@ func TestStatsListener(t *testing.T) {
 						},
 					},
 				),
+				SocketOptions: TCPKeepaliveSocketOptions(),
 			},
 		},
 	}
