@@ -56,8 +56,9 @@ func TestTimeoutsNotSpecified(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&v2.Listener{
-				Name:    contour.ENVOY_HTTP_LISTENER,
-				Address: envoy.SocketAddress("0.0.0.0", 8080),
+				Name:          contour.ENVOY_HTTP_LISTENER,
+				Address:       envoy.SocketAddress("0.0.0.0", 8080),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 				FilterChains: envoy.FilterChains(envoy.HTTPConnectionManagerBuilder().
 					RouteConfigName(contour.ENVOY_HTTP_LISTENER).
 					MetricsPrefix(contour.ENVOY_HTTP_LISTENER).
@@ -119,8 +120,9 @@ func TestNonZeroTimeoutsSpecified(t *testing.T) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&v2.Listener{
-				Name:    contour.ENVOY_HTTP_LISTENER,
-				Address: envoy.SocketAddress("0.0.0.0", 8080),
+				Name:          contour.ENVOY_HTTP_LISTENER,
+				Address:       envoy.SocketAddress("0.0.0.0", 8080),
+				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 				FilterChains: envoy.FilterChains(envoy.HTTPConnectionManagerBuilder().
 					RouteConfigName(contour.ENVOY_HTTP_LISTENER).
 					MetricsPrefix(contour.ENVOY_HTTP_LISTENER).
