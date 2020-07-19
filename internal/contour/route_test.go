@@ -26,11 +26,11 @@ import (
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
-	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -136,7 +136,7 @@ func TestRouteCacheQuery(t *testing.T) {
 func TestRouteVisit(t *testing.T) {
 	tests := map[string]struct {
 		objs                []interface{}
-		fallbackCertificate *k8s.FullName
+		fallbackCertificate *types.NamespacedName
 		want                map[string]*v2.RouteConfiguration
 	}{
 		"nothing": {
@@ -2035,7 +2035,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with fallback certificate": {
-			fallbackCertificate: &k8s.FullName{
+			fallbackCertificate: &types.NamespacedName{
 				Name:      "fallbacksecret",
 				Namespace: "default",
 			},
@@ -2166,7 +2166,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with fallback certificate - one enabled": {
-			fallbackCertificate: &k8s.FullName{
+			fallbackCertificate: &types.NamespacedName{
 				Name:      "fallbacksecret",
 				Namespace: "default",
 			},
@@ -2355,7 +2355,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with fallback certificate - two enabled": {
-			fallbackCertificate: &k8s.FullName{
+			fallbackCertificate: &types.NamespacedName{
 				Name:      "fallbacksecret",
 				Namespace: "default",
 			},
@@ -2561,7 +2561,7 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 		"httpproxy with fallback certificate - bad global cert": {
-			fallbackCertificate: &k8s.FullName{
+			fallbackCertificate: &types.NamespacedName{
 				Name:      "fallbacksecret",
 				Namespace: "badnamespace",
 			},
@@ -2639,7 +2639,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(envoy.RouteConfiguration("ingress_http")),
 		},
 		"httpproxy with fallback certificate - no fqdn enabled": {
-			fallbackCertificate: &k8s.FullName{
+			fallbackCertificate: &types.NamespacedName{
 				Name:      "fallbacksecret",
 				Namespace: "default",
 			},

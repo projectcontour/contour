@@ -28,7 +28,7 @@ import (
 	"time"
 
 	"github.com/projectcontour/contour/internal/envoy"
-	"github.com/projectcontour/contour/internal/k8s"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/projectcontour/contour/internal/assert"
@@ -222,7 +222,7 @@ default-http-versions:
 func TestFallbackCertificateParams(t *testing.T) {
 	tests := map[string]struct {
 		ctx         serveContext
-		want        *k8s.FullName
+		want        *types.NamespacedName
 		expecterror bool
 	}{
 		"fallback cert params passed correctly": {
@@ -234,7 +234,7 @@ func TestFallbackCertificateParams(t *testing.T) {
 					},
 				},
 			},
-			want: &k8s.FullName{
+			want: &types.NamespacedName{
 				Name:      "fallbacksecret",
 				Namespace: "root-namespace",
 			},

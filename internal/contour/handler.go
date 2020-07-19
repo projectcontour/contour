@@ -26,6 +26,7 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // EventHandler implements cache.ResourceEventHandler, filters k8s events towards
@@ -225,7 +226,7 @@ func (e *EventHandler) updateDAG() {
 }
 
 // setStatus updates the status of objects.
-func (e *EventHandler) setStatus(statuses map[k8s.FullName]dag.Status) {
+func (e *EventHandler) setStatus(statuses map[types.NamespacedName]dag.Status) {
 	for _, st := range statuses {
 		switch obj := st.Object.(type) {
 		case *projcontour.HTTPProxy:

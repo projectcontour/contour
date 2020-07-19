@@ -21,10 +21,10 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/google/go-cmp/cmp"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -6001,7 +6001,7 @@ func TestDAGInsert(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
 				DisablePermitInsecure: tc.disablePermitInsecure,
-				FallbackCertificate: &k8s.FullName{
+				FallbackCertificate: &types.NamespacedName{
 					Name:      tc.fallbackCertificateName,
 					Namespace: tc.fallbackCertificateNamespace,
 				},
@@ -6073,45 +6073,45 @@ func TestBuilderLookupService(t *testing.T) {
 			}},
 		},
 	}
-	services := map[k8s.FullName]*v1.Service{
+	services := map[types.NamespacedName]*v1.Service{
 		{Name: "service1", Namespace: "default"}: s1,
 	}
 
 	tests := map[string]struct {
-		k8s.FullName
+		types.NamespacedName
 		port    intstr.IntOrString
 		want    *Service
 		wantErr error
 	}{
 		"lookup service by port number": {
-			FullName: k8s.FullName{Name: "service1", Namespace: "default"},
-			port:     intstr.FromInt(8080),
-			want:     service(s1),
+			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
+			port:           intstr.FromInt(8080),
+			want:           service(s1),
 		},
 		"lookup service by port name": {
-			FullName: k8s.FullName{Name: "service1", Namespace: "default"},
-			port:     intstr.FromString("http"),
-			want:     service(s1),
+			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
+			port:           intstr.FromString("http"),
+			want:           service(s1),
 		},
 		"lookup service by port number (as string)": {
-			FullName: k8s.FullName{Name: "service1", Namespace: "default"},
-			port:     intstr.Parse("8080"),
-			want:     service(s1),
+			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
+			port:           intstr.Parse("8080"),
+			want:           service(s1),
 		},
 		"lookup service by port number (from string)": {
-			FullName: k8s.FullName{Name: "service1", Namespace: "default"},
-			port:     intstr.FromString("8080"),
-			want:     service(s1),
+			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
+			port:           intstr.FromString("8080"),
+			want:           service(s1),
 		},
 		"when service does not exist an error is returned": {
-			FullName: k8s.FullName{Name: "nonexistent-service", Namespace: "default"},
-			port:     intstr.FromString("8080"),
-			wantErr:  errors.New(`service "default/nonexistent-service" not found`),
+			NamespacedName: types.NamespacedName{Name: "nonexistent-service", Namespace: "default"},
+			port:           intstr.FromString("8080"),
+			wantErr:        errors.New(`service "default/nonexistent-service" not found`),
 		},
 		"when port does not exist an error is returned": {
-			FullName: k8s.FullName{Name: "service1", Namespace: "default"},
-			port:     intstr.FromString("9999"),
-			wantErr:  errors.New(`port "9999" on service "default/service1" not matched`),
+			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
+			port:           intstr.FromString("9999"),
+			wantErr:        errors.New(`port "9999" on service "default/service1" not matched`),
 		},
 	}
 
@@ -6125,7 +6125,7 @@ func TestBuilderLookupService(t *testing.T) {
 			}
 			b.reset()
 
-			got, gotErr := b.lookupService(tc.FullName, tc.port)
+			got, gotErr := b.lookupService(tc.NamespacedName, tc.port)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatal(diff)
 			}
@@ -6539,58 +6539,6 @@ func TestEnforceRoute(t *testing.T) {
 			got := routeEnforceTLS(tc.tlsEnabled, tc.permitInsecure)
 			if diff := cmp.Diff(tc.want, got); diff != "" {
 				t.Fatalf(diff)
-			}
-		})
-	}
-}
-
-func TestSplitSecret(t *testing.T) {
-	tests := map[string]struct {
-		secret, defns string
-		want          k8s.FullName
-	}{
-		"no namespace": {
-			secret: "secret",
-			defns:  "default",
-			want: k8s.FullName{
-				Name:      "secret",
-				Namespace: "default",
-			},
-		},
-		"with namespace": {
-			secret: "ns1/secret",
-			defns:  "default",
-			want: k8s.FullName{
-				Name:      "secret",
-				Namespace: "ns1",
-			},
-		},
-		"missing namespace": {
-			secret: "/secret",
-			defns:  "default",
-			want: k8s.FullName{
-				Name:      "secret",
-				Namespace: "default",
-			},
-		},
-		"missing secret name": {
-			secret: "secret/",
-			defns:  "default",
-			want: k8s.FullName{
-				Name:      "",
-				Namespace: "secret",
-			},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := splitSecret(tc.secret, tc.defns)
-			opts := []cmp.Option{
-				cmp.AllowUnexported(k8s.FullName{}),
-			}
-			if diff := cmp.Diff(tc.want, got, opts...); diff != "" {
-				t.Fatal(diff)
 			}
 		})
 	}

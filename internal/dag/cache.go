@@ -20,6 +20,7 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -39,15 +40,15 @@ type KubernetesCache struct {
 	// If not set, defaults to DEFAULT_INGRESS_CLASS.
 	IngressClass string
 
-	ingresses            map[k8s.FullName]*v1beta1.Ingress
-	httpproxies          map[k8s.FullName]*projectcontour.HTTPProxy
-	secrets              map[k8s.FullName]*v1.Secret
-	httpproxydelegations map[k8s.FullName]*projectcontour.TLSCertificateDelegation
-	services             map[k8s.FullName]*v1.Service
-	gatewayclasses       map[k8s.FullName]*serviceapis.GatewayClass
-	gateways             map[k8s.FullName]*serviceapis.Gateway
-	httproutes           map[k8s.FullName]*serviceapis.HTTPRoute
-	tcproutes            map[k8s.FullName]*serviceapis.TcpRoute
+	ingresses            map[types.NamespacedName]*v1beta1.Ingress
+	httpproxies          map[types.NamespacedName]*projectcontour.HTTPProxy
+	secrets              map[types.NamespacedName]*v1.Secret
+	httpproxydelegations map[types.NamespacedName]*projectcontour.TLSCertificateDelegation
+	services             map[types.NamespacedName]*v1.Service
+	gatewayclasses       map[types.NamespacedName]*serviceapis.GatewayClass
+	gateways             map[types.NamespacedName]*serviceapis.Gateway
+	httproutes           map[types.NamespacedName]*serviceapis.HTTPRoute
+	tcproutes            map[types.NamespacedName]*serviceapis.TcpRoute
 
 	initialize sync.Once
 
@@ -56,15 +57,15 @@ type KubernetesCache struct {
 
 // init creates the internal cache storage. It is called implicitly from the public API.
 func (kc *KubernetesCache) init() {
-	kc.ingresses = make(map[k8s.FullName]*v1beta1.Ingress)
-	kc.httpproxies = make(map[k8s.FullName]*projectcontour.HTTPProxy)
-	kc.secrets = make(map[k8s.FullName]*v1.Secret)
-	kc.httpproxydelegations = make(map[k8s.FullName]*projectcontour.TLSCertificateDelegation)
-	kc.services = make(map[k8s.FullName]*v1.Service)
-	kc.gatewayclasses = make(map[k8s.FullName]*serviceapis.GatewayClass)
-	kc.gateways = make(map[k8s.FullName]*serviceapis.Gateway)
-	kc.httproutes = make(map[k8s.FullName]*serviceapis.HTTPRoute)
-	kc.tcproutes = make(map[k8s.FullName]*serviceapis.TcpRoute)
+	kc.ingresses = make(map[types.NamespacedName]*v1beta1.Ingress)
+	kc.httpproxies = make(map[types.NamespacedName]*projectcontour.HTTPProxy)
+	kc.secrets = make(map[types.NamespacedName]*v1.Secret)
+	kc.httpproxydelegations = make(map[types.NamespacedName]*projectcontour.TLSCertificateDelegation)
+	kc.services = make(map[types.NamespacedName]*v1.Service)
+	kc.gatewayclasses = make(map[types.NamespacedName]*serviceapis.GatewayClass)
+	kc.gateways = make(map[types.NamespacedName]*serviceapis.Gateway)
+	kc.httproutes = make(map[types.NamespacedName]*serviceapis.HTTPRoute)
+	kc.tcproutes = make(map[types.NamespacedName]*serviceapis.TcpRoute)
 }
 
 // matchesIngressClass returns true if the given Kubernetes object
@@ -131,51 +132,51 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			return false
 		}
 
-		kc.secrets[k8s.ToFullName(obj)] = obj
+		kc.secrets[k8s.NamespacedNameOf(obj)] = obj
 		return kc.secretTriggersRebuild(obj)
 	case *v1.Service:
-		kc.services[k8s.ToFullName(obj)] = obj
+		kc.services[k8s.NamespacedNameOf(obj)] = obj
 		return kc.serviceTriggersRebuild(obj)
 	case *v1beta1.Ingress:
 		if kc.matchesIngressClass(obj) {
-			kc.ingresses[k8s.ToFullName(obj)] = obj
+			kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
 			return true
 		}
 	case *projectcontour.HTTPProxy:
 		if kc.matchesIngressClass(obj) {
-			kc.httpproxies[k8s.ToFullName(obj)] = obj
+			kc.httpproxies[k8s.NamespacedNameOf(obj)] = obj
 			return true
 		}
 	case *projectcontour.TLSCertificateDelegation:
-		kc.httpproxydelegations[k8s.ToFullName(obj)] = obj
+		kc.httpproxydelegations[k8s.NamespacedNameOf(obj)] = obj
 		return true
 	case *serviceapis.GatewayClass:
-		m := k8s.ToFullName(obj)
+		m := k8s.NamespacedNameOf(obj)
 		// TODO(youngnick): Remove this once service-apis actually have behavior
 		// other than being added to the cache.
 		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding GatewayClass")
-		kc.gatewayclasses[k8s.ToFullName(obj)] = obj
+		kc.gatewayclasses[k8s.NamespacedNameOf(obj)] = obj
 		return true
 	case *serviceapis.Gateway:
-		m := k8s.ToFullName(obj)
+		m := k8s.NamespacedNameOf(obj)
 		// TODO(youngnick): Remove this once service-apis actually have behavior
 		// other than being added to the cache.
 		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding Gateway")
-		kc.gateways[k8s.ToFullName(obj)] = obj
+		kc.gateways[k8s.NamespacedNameOf(obj)] = obj
 		return true
 	case *serviceapis.HTTPRoute:
-		m := k8s.ToFullName(obj)
+		m := k8s.NamespacedNameOf(obj)
 		// TODO(youngnick): Remove this once service-apis actually have behavior
 		// other than being added to the cache.
 		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding HTTPRoute")
-		kc.httproutes[k8s.ToFullName(obj)] = obj
+		kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
 	case *serviceapis.TcpRoute:
-		m := k8s.ToFullName(obj)
+		m := k8s.NamespacedNameOf(obj)
 		// TODO(youngnick): Remove this once service-apis actually have behavior
 		// other than being added to the cache.
 		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding TcpRoute")
-		kc.tcproutes[k8s.ToFullName(obj)] = obj
+		kc.tcproutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
 
 	default:
@@ -203,32 +204,32 @@ func (kc *KubernetesCache) Remove(obj interface{}) bool {
 func (kc *KubernetesCache) remove(obj interface{}) bool {
 	switch obj := obj.(type) {
 	case *v1.Secret:
-		m := k8s.ToFullName(obj)
+		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.secrets[m]
 		delete(kc.secrets, m)
 		return ok
 	case *v1.Service:
-		m := k8s.ToFullName(obj)
+		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.services[m]
 		delete(kc.services, m)
 		return ok
 	case *v1beta1.Ingress:
-		m := k8s.ToFullName(obj)
+		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.ingresses[m]
 		delete(kc.ingresses, m)
 		return ok
 	case *projectcontour.HTTPProxy:
-		m := k8s.ToFullName(obj)
+		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.httpproxies[m]
 		delete(kc.httpproxies, m)
 		return ok
 	case *projectcontour.TLSCertificateDelegation:
-		m := k8s.ToFullName(obj)
+		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.httpproxydelegations[m]
 		delete(kc.httpproxydelegations, m)
 		return ok
 	case *serviceapis.GatewayClass:
-		m := k8s.ToFullName(obj)
+		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.gatewayclasses[m]
 		// TODO(youngnick): Remove this once service-apis actually have behavior
 		// other than being removed from the cache.
@@ -236,7 +237,7 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		delete(kc.gatewayclasses, m)
 		return ok
 	case *serviceapis.Gateway:
-		m := k8s.ToFullName(obj)
+		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.gateways[m]
 		// TODO(youngnick): Remove this once service-apis actually have behavior
 		// other than being removed from the cache.
@@ -244,7 +245,7 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		delete(kc.gateways, m)
 		return ok
 	case *serviceapis.HTTPRoute:
-		m := k8s.ToFullName(obj)
+		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.httproutes[m]
 		// TODO(youngnick): Remove this once service-apis actually have behavior
 		// other than being removed from the cache.
@@ -252,7 +253,7 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		delete(kc.httproutes, m)
 		return ok
 	case *serviceapis.TcpRoute:
-		m := k8s.ToFullName(obj)
+		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.tcproutes[m]
 		// TODO(youngnick): Remove this once service-apis actually have behavior
 		// other than being removed from the cache.

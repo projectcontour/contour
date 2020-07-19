@@ -25,13 +25,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/projectcontour/contour/internal/envoy"
-	"github.com/projectcontour/contour/internal/k8s"
-
 	"github.com/projectcontour/contour/internal/contour"
+	"github.com/projectcontour/contour/internal/envoy"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 type serveContext struct {
@@ -211,7 +210,7 @@ type FallbackCertificate struct {
 	Namespace string `yaml:"namespace"`
 }
 
-func (ctx *serveContext) fallbackCertificate() (*k8s.FullName, error) {
+func (ctx *serveContext) fallbackCertificate() (*types.NamespacedName, error) {
 	if len(strings.TrimSpace(ctx.TLSConfig.FallbackCertificate.Name)) == 0 && len(strings.TrimSpace(ctx.TLSConfig.FallbackCertificate.Namespace)) == 0 {
 		return nil, nil
 	}
@@ -226,7 +225,7 @@ func (ctx *serveContext) fallbackCertificate() (*k8s.FullName, error) {
 		return nil, errors.New("name must be defined")
 	}
 
-	return &k8s.FullName{
+	return &types.NamespacedName{
 		Name:      ctx.TLSConfig.FallbackCertificate.Name,
 		Namespace: ctx.TLSConfig.FallbackCertificate.Namespace,
 	}, nil
