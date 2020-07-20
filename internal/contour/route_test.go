@@ -405,7 +405,7 @@ func TestRouteVisit(t *testing.T) {
 							},
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -1049,7 +1049,7 @@ func TestRouteVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -1124,7 +1124,7 @@ func TestRouteVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -1200,7 +1200,7 @@ func TestRouteVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -1312,7 +1312,7 @@ func TestRouteVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -1387,7 +1387,7 @@ func TestRouteVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -1454,7 +1454,7 @@ func TestRouteVisit(t *testing.T) {
 							},
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -1552,12 +1552,12 @@ func TestRouteVisit(t *testing.T) {
 						Includes: []projcontour.Include{{
 							Name:      "child",
 							Namespace: "teama",
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/blog",
 							}},
 						}},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -1577,7 +1577,7 @@ func TestRouteVisit(t *testing.T) {
 					},
 					Spec: projcontour.HTTPProxySpec{
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/info",
 							}},
 							Services: []projcontour.Service{{
@@ -1666,10 +1666,10 @@ func TestRouteVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}, {
-								Header: &projcontour.HeaderCondition{
+								Header: &projcontour.HeaderMatchCondition{
 									Name:     "x-header",
 									Contains: "abc",
 								},
@@ -1699,7 +1699,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
 						&envoy_api_v2_route.Route{
-							Match: routePrefix("/", dag.HeaderCondition{
+							Match: routePrefix("/", dag.HeaderMatchCondition{
 								Name:      "x-header",
 								Value:     "abc",
 								MatchType: "contains",
@@ -1721,12 +1721,12 @@ func TestRouteVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{
+							Conditions: []projcontour.MatchCondition{
 								{
 									Prefix: "/",
 								},
 								{
-									Header: &projcontour.HeaderCondition{
+									Header: &projcontour.HeaderMatchCondition{
 										Name:        "x-header",
 										NotContains: "abc",
 									},
@@ -1757,7 +1757,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
 						&envoy_api_v2_route.Route{
-							Match: routePrefix("/", dag.HeaderCondition{
+							Match: routePrefix("/", dag.HeaderMatchCondition{
 								Name:      "x-header",
 								Value:     "abc",
 								MatchType: "contains",
@@ -1780,12 +1780,12 @@ func TestRouteVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{
+							Conditions: []projcontour.MatchCondition{
 								{
 									Prefix: "/",
 								},
 								{
-									Header: &projcontour.HeaderCondition{
+									Header: &projcontour.HeaderMatchCondition{
 										Name:  "x-header",
 										Exact: "abc",
 									},
@@ -1816,7 +1816,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
 						&envoy_api_v2_route.Route{
-							Match: routePrefix("/", dag.HeaderCondition{
+							Match: routePrefix("/", dag.HeaderMatchCondition{
 								Name:      "x-header",
 								Value:     "abc",
 								MatchType: "exact",
@@ -1839,12 +1839,12 @@ func TestRouteVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{
+							Conditions: []projcontour.MatchCondition{
 								{
 									Prefix: "/",
 								},
 								{
-									Header: &projcontour.HeaderCondition{
+									Header: &projcontour.HeaderMatchCondition{
 										Name:     "x-header",
 										NotExact: "abc",
 									},
@@ -1875,7 +1875,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
 						&envoy_api_v2_route.Route{
-							Match: routePrefix("/", dag.HeaderCondition{
+							Match: routePrefix("/", dag.HeaderMatchCondition{
 								Name:      "x-header",
 								Value:     "abc",
 								MatchType: "exact",
@@ -1898,12 +1898,12 @@ func TestRouteVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{
+							Conditions: []projcontour.MatchCondition{
 								{
 									Prefix: "/",
 								},
 								{
-									Header: &projcontour.HeaderCondition{
+									Header: &projcontour.HeaderMatchCondition{
 										Name:    "x-header",
 										Present: true,
 									},
@@ -1934,7 +1934,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy.RouteConfiguration("ingress_http",
 					envoy.VirtualHost("www.example.com",
 						&envoy_api_v2_route.Route{
-							Match: routePrefix("/", dag.HeaderCondition{
+							Match: routePrefix("/", dag.HeaderMatchCondition{
 								Name:      "x-header",
 								MatchType: "present",
 							}),
@@ -1955,7 +1955,7 @@ func TestRouteVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -2054,7 +2054,7 @@ func TestRouteVisit(t *testing.T) {
 							},
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -2185,7 +2185,7 @@ func TestRouteVisit(t *testing.T) {
 							},
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -2212,7 +2212,7 @@ func TestRouteVisit(t *testing.T) {
 							},
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -2374,7 +2374,7 @@ func TestRouteVisit(t *testing.T) {
 							},
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -2401,7 +2401,7 @@ func TestRouteVisit(t *testing.T) {
 							},
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -2580,7 +2580,7 @@ func TestRouteVisit(t *testing.T) {
 							},
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -2658,7 +2658,7 @@ func TestRouteVisit(t *testing.T) {
 							},
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -2810,13 +2810,13 @@ func TestSortLongestRouteFirst(t *testing.T) {
 			routes: []*envoy_api_v2_route.Route{{
 				Match: routePrefix("/"),
 			}, {
-				Match: routePrefix("/", dag.HeaderCondition{
+				Match: routePrefix("/", dag.HeaderMatchCondition{
 					Name:      "x-request-id",
 					MatchType: "present",
 				}),
 			}},
 			want: []*envoy_api_v2_route.Route{{
-				Match: routePrefix("/", dag.HeaderCondition{
+				Match: routePrefix("/", dag.HeaderMatchCondition{
 					Name:      "x-request-id",
 					MatchType: "present",
 				}),
@@ -2834,7 +2834,7 @@ func TestSortLongestRouteFirst(t *testing.T) {
 		// unless necessary.
 		"longest path before longest headers": {
 			routes: []*envoy_api_v2_route.Route{{
-				Match: routePrefix("/", dag.HeaderCondition{
+				Match: routePrefix("/", dag.HeaderMatchCondition{
 					Name:      "x-request-id",
 					MatchType: "present",
 				}),
@@ -2844,7 +2844,7 @@ func TestSortLongestRouteFirst(t *testing.T) {
 			want: []*envoy_api_v2_route.Route{{
 				Match: routePrefix("/longest/path/match"),
 			}, {
-				Match: routePrefix("/", dag.HeaderCondition{
+				Match: routePrefix("/", dag.HeaderMatchCondition{
 					Name:      "x-request-id",
 					MatchType: "present",
 				}),
@@ -2856,24 +2856,24 @@ func TestSortLongestRouteFirst(t *testing.T) {
 		"headers sort stably by name": {
 			routes: []*envoy_api_v2_route.Route{{
 				Match: routePrefix("/",
-					dag.HeaderCondition{Name: "zzz-2", MatchType: "present"},
-					dag.HeaderCondition{Name: "zzz-1", MatchType: "present"},
+					dag.HeaderMatchCondition{Name: "zzz-2", MatchType: "present"},
+					dag.HeaderMatchCondition{Name: "zzz-1", MatchType: "present"},
 				),
 			}, {
 				Match: routePrefix("/",
-					dag.HeaderCondition{Name: "aaa-2", MatchType: "present"},
-					dag.HeaderCondition{Name: "aaa-1", MatchType: "present"},
+					dag.HeaderMatchCondition{Name: "aaa-2", MatchType: "present"},
+					dag.HeaderMatchCondition{Name: "aaa-1", MatchType: "present"},
 				),
 			}},
 			want: []*envoy_api_v2_route.Route{{
 				Match: routePrefix("/",
-					dag.HeaderCondition{Name: "aaa-1", MatchType: "present"},
-					dag.HeaderCondition{Name: "aaa-2", MatchType: "present"},
+					dag.HeaderMatchCondition{Name: "aaa-1", MatchType: "present"},
+					dag.HeaderMatchCondition{Name: "aaa-2", MatchType: "present"},
 				),
 			}, {
 				Match: routePrefix("/",
-					dag.HeaderCondition{Name: "zzz-1", MatchType: "present"},
-					dag.HeaderCondition{Name: "zzz-2", MatchType: "present"},
+					dag.HeaderMatchCondition{Name: "zzz-1", MatchType: "present"},
+					dag.HeaderMatchCondition{Name: "zzz-2", MatchType: "present"},
 				),
 			}},
 		},
@@ -2885,16 +2885,16 @@ func TestSortLongestRouteFirst(t *testing.T) {
 				Match: routePrefix("/"),
 			}, {
 				Match: routePrefix("/",
-					dag.HeaderCondition{Name: "x-request-1", MatchType: "present"},
-					dag.HeaderCondition{Name: "x-request-2", MatchType: "present", Invert: true},
-					dag.HeaderCondition{Name: "x-request-1", MatchType: "exact", Value: "foo"},
+					dag.HeaderMatchCondition{Name: "x-request-1", MatchType: "present"},
+					dag.HeaderMatchCondition{Name: "x-request-2", MatchType: "present", Invert: true},
+					dag.HeaderMatchCondition{Name: "x-request-1", MatchType: "exact", Value: "foo"},
 				),
 			}},
 			want: []*envoy_api_v2_route.Route{{
 				Match: routePrefix("/",
-					dag.HeaderCondition{Name: "x-request-1", MatchType: "exact", Value: "foo"},
-					dag.HeaderCondition{Name: "x-request-1", MatchType: "present"},
-					dag.HeaderCondition{Name: "x-request-2", MatchType: "present", Invert: true},
+					dag.HeaderMatchCondition{Name: "x-request-1", MatchType: "exact", Value: "foo"},
+					dag.HeaderMatchCondition{Name: "x-request-1", MatchType: "present"},
+					dag.HeaderMatchCondition{Name: "x-request-2", MatchType: "present", Invert: true},
 				),
 			}, {
 				Match: routePrefix("/"),
@@ -2907,16 +2907,16 @@ func TestSortLongestRouteFirst(t *testing.T) {
 		"headers order in single route": {
 			routes: []*envoy_api_v2_route.Route{{
 				Match: routePrefix("/",
-					dag.HeaderCondition{Name: "x-request-1", MatchType: "present"},
-					dag.HeaderCondition{Name: "x-request-2", MatchType: "present", Invert: true},
-					dag.HeaderCondition{Name: "x-request-1", MatchType: "exact", Value: "foo"},
+					dag.HeaderMatchCondition{Name: "x-request-1", MatchType: "present"},
+					dag.HeaderMatchCondition{Name: "x-request-2", MatchType: "present", Invert: true},
+					dag.HeaderMatchCondition{Name: "x-request-1", MatchType: "exact", Value: "foo"},
 				),
 			}},
 			want: []*envoy_api_v2_route.Route{{
 				Match: routePrefix("/",
-					dag.HeaderCondition{Name: "x-request-1", MatchType: "exact", Value: "foo"},
-					dag.HeaderCondition{Name: "x-request-1", MatchType: "present"},
-					dag.HeaderCondition{Name: "x-request-2", MatchType: "present", Invert: true},
+					dag.HeaderMatchCondition{Name: "x-request-1", MatchType: "exact", Value: "foo"},
+					dag.HeaderMatchCondition{Name: "x-request-1", MatchType: "present"},
+					dag.HeaderMatchCondition{Name: "x-request-2", MatchType: "present", Invert: true},
 				),
 			}},
 		},
@@ -2972,21 +2972,21 @@ func routeretry(cluster string, retryOn string, numRetries uint32, perTryTimeout
 	return r
 }
 
-func routeRegex(regex string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
+func routeRegex(regex string, headers ...dag.HeaderMatchCondition) *envoy_api_v2_route.RouteMatch {
 	return envoy.RouteMatch(&dag.Route{
-		PathCondition: &dag.RegexCondition{
+		PathMatchCondition: &dag.RegexMatchCondition{
 			Regex: regex,
 		},
-		HeaderConditions: headers,
+		HeaderMatchConditions: headers,
 	})
 }
 
-func routePrefix(prefix string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
+func routePrefix(prefix string, headers ...dag.HeaderMatchCondition) *envoy_api_v2_route.RouteMatch {
 	return envoy.RouteMatch(&dag.Route{
-		PathCondition: &dag.PrefixCondition{
+		PathMatchCondition: &dag.PrefixMatchCondition{
 			Prefix: prefix,
 		},
-		HeaderConditions: headers,
+		HeaderMatchConditions: headers,
 	})
 }
 

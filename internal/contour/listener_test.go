@@ -204,7 +204,7 @@ func TestListenerVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -1462,7 +1462,7 @@ func TestListenerVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -1516,7 +1516,7 @@ func TestListenerVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -1570,7 +1570,7 @@ func TestListenerVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -1624,7 +1624,7 @@ func TestListenerVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{

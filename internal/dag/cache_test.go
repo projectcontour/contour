@@ -376,7 +376,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 							Fqdn: "example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{

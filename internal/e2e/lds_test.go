@@ -355,7 +355,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -381,7 +381,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1026,7 +1026,7 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1140,7 +1140,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1206,7 +1206,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 
@@ -1288,7 +1288,7 @@ func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 				Fqdn: "www.containersteve.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1310,7 +1310,7 @@ func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 				Fqdn: "blog.containersteve.com",
 			},
 			Includes: []projcontour.Include{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Name:      child.Name,

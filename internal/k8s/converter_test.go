@@ -72,7 +72,7 @@ func TestConvertUnstructured(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{

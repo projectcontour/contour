@@ -31,24 +31,24 @@ import (
 
 // RouteMatch creates a *envoy_api_v2_route.RouteMatch for the supplied *dag.Route.
 func RouteMatch(route *dag.Route) *envoy_api_v2_route.RouteMatch {
-	switch c := route.PathCondition.(type) {
-	case *dag.RegexCondition:
+	switch c := route.PathMatchCondition.(type) {
+	case *dag.RegexMatchCondition:
 		return &envoy_api_v2_route.RouteMatch{
 			PathSpecifier: &envoy_api_v2_route.RouteMatch_SafeRegex{
 				SafeRegex: SafeRegexMatch(c.Regex),
 			},
-			Headers: headerMatcher(route.HeaderConditions),
+			Headers: headerMatcher(route.HeaderMatchConditions),
 		}
-	case *dag.PrefixCondition:
+	case *dag.PrefixMatchCondition:
 		return &envoy_api_v2_route.RouteMatch{
 			PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
 				Prefix: c.Prefix,
 			},
-			Headers: headerMatcher(route.HeaderConditions),
+			Headers: headerMatcher(route.HeaderMatchConditions),
 		}
 	default:
 		return &envoy_api_v2_route.RouteMatch{
-			Headers: headerMatcher(route.HeaderConditions),
+			Headers: headerMatcher(route.HeaderMatchConditions),
 		}
 	}
 }
@@ -323,7 +323,7 @@ func AppendHeader(key, value string) *envoy_api_v2_core.HeaderValueOption {
 	}
 }
 
-func headerMatcher(headers []dag.HeaderCondition) []*envoy_api_v2_route.HeaderMatcher {
+func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_api_v2_route.HeaderMatcher {
 	var envoyHeaders []*envoy_api_v2_route.HeaderMatcher
 
 	for _, h := range headers {

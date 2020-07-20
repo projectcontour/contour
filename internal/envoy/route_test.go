@@ -715,7 +715,7 @@ func TestRouteMatch(t *testing.T) {
 	}{
 		"contains match with dashes": {
 			route: &dag.Route{
-				HeaderConditions: []dag.HeaderCondition{{
+				HeaderMatchConditions: []dag.HeaderMatchCondition{{
 					Name:      "x-header",
 					Value:     "11-22-33-44",
 					MatchType: "contains",
@@ -734,7 +734,7 @@ func TestRouteMatch(t *testing.T) {
 		},
 		"contains match with dots": {
 			route: &dag.Route{
-				HeaderConditions: []dag.HeaderCondition{{
+				HeaderMatchConditions: []dag.HeaderMatchCondition{{
 					Name:      "x-header",
 					Value:     "11.22.33.44",
 					MatchType: "contains",
@@ -753,7 +753,7 @@ func TestRouteMatch(t *testing.T) {
 		},
 		"contains match with regex group": {
 			route: &dag.Route{
-				HeaderConditions: []dag.HeaderCondition{{
+				HeaderMatchConditions: []dag.HeaderMatchCondition{{
 					Name:      "x-header",
 					Value:     "11.[22].*33.44",
 					MatchType: "contains",
@@ -772,7 +772,7 @@ func TestRouteMatch(t *testing.T) {
 		},
 		"path prefix": {
 			route: &dag.Route{
-				PathCondition: &dag.PrefixCondition{
+				PathMatchCondition: &dag.PrefixMatchCondition{
 					Prefix: "/foo",
 				},
 			},
@@ -784,7 +784,7 @@ func TestRouteMatch(t *testing.T) {
 		},
 		"path regex": {
 			route: &dag.Route{
-				PathCondition: &dag.RegexCondition{
+				PathMatchCondition: &dag.RegexMatchCondition{
 					Regex: "/v.1/*",
 				},
 			},

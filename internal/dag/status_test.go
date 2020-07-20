@@ -179,12 +179,12 @@ func TestDAGStatus(t *testing.T) {
 			},
 			Includes: []projcontour.Include{{
 				Name: "validChild",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}, {
 				Name: "invalidChild",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/bar",
 				}},
 			}},
@@ -202,7 +202,7 @@ func TestDAGStatus(t *testing.T) {
 			},
 			Includes: []projcontour.Include{{
 				Name: "validChild",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -352,7 +352,7 @@ func TestDAGStatus(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -427,7 +427,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -449,7 +449,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -471,7 +471,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foobar",
 				}},
 				Services: []projcontour.Service{{
@@ -495,7 +495,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "self",
 				Namespace: "roots",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -521,7 +521,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "child",
 				Namespace: "roots",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -537,7 +537,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "child",
 				Namespace: "roots",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -568,7 +568,7 @@ func TestDAGStatus(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -590,7 +590,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "validChild",
 				Namespace: "roots",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -608,7 +608,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.*.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -630,7 +630,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -652,7 +652,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -673,7 +673,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -739,7 +739,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "blog",
 				Namespace: "marketing",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 			}},
@@ -779,7 +779,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "blog",
 				Namespace: "marketing",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 			}},
@@ -831,7 +831,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      proxyBlogMarketing.Name,
 				Namespace: proxyBlogMarketing.Namespace,
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
 				}},
 			}},
@@ -898,15 +898,15 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "1234",
 					},
@@ -932,15 +932,15 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "delegated",
 				Namespace: "roots",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "1234",
 					},
@@ -979,15 +979,15 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						NotExact: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						NotExact: "1234",
 					},
@@ -1009,7 +1009,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{
+				Conditions: []projcontour.MatchCondition{
 					{
 						Prefix: "/api",
 					}, {
@@ -1036,7 +1036,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "child",
 				Namespace: "teama",
-				Conditions: []projcontour.Condition{
+				Conditions: []projcontour.MatchCondition{
 					{
 						Prefix: "/api",
 					}, {
@@ -1077,7 +1077,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{
+				Conditions: []projcontour.MatchCondition{
 					{
 						Prefix: "api",
 					},
@@ -1102,7 +1102,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "child",
 				Namespace: "teama",
-				Conditions: []projcontour.Condition{
+				Conditions: []projcontour.MatchCondition{
 					{
 						Prefix: "api",
 					},
@@ -1234,18 +1234,18 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "blogteama",
 				Namespace: "teama",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
 				}},
 			}, {
 				Name:      "blogteamb",
 				Namespace: "teamb",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
 				}},
 			}},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1269,8 +1269,8 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "blogteama",
 				Namespace: "teama",
-				Conditions: []projcontour.Condition{{
-					Header: &projcontour.HeaderCondition{
+				Conditions: []projcontour.MatchCondition{{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
@@ -1278,15 +1278,15 @@ func TestDAGStatus(t *testing.T) {
 			}, {
 				Name:      "blogteamb",
 				Namespace: "teamb",
-				Conditions: []projcontour.Condition{{
-					Header: &projcontour.HeaderCondition{
+				Conditions: []projcontour.MatchCondition{{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
 				}},
 			}},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1310,9 +1310,9 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "blogteama",
 				Namespace: "teama",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
@@ -1320,16 +1320,16 @@ func TestDAGStatus(t *testing.T) {
 			}, {
 				Name:      "blogteamb",
 				Namespace: "teamb",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
 				}},
 			}},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1348,7 +1348,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
 				}},
 				Services: []projcontour.Service{{
@@ -1367,7 +1367,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
 				}},
 				Services: []projcontour.Service{{
@@ -1574,7 +1574,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "missing-service.example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: nil, // missing
@@ -1596,7 +1596,7 @@ func TestDAGStatus(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -1624,7 +1624,7 @@ func TestDAGStatus(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
