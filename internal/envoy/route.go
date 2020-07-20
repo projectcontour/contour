@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
-	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -27,6 +26,7 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
+	"github.com/projectcontour/contour/internal/timeout"
 )
 
 // RouteMatch creates a *envoy_api_v2_route.RouteMatch for the supplied *dag.Route.
@@ -135,33 +135,33 @@ func responseTimeout(r *dag.Route) *duration.Duration {
 	if r.TimeoutPolicy == nil {
 		return nil
 	}
-	return timeout(r.TimeoutPolicy.ResponseTimeout)
+	return envoyTimeout(r.TimeoutPolicy.ResponseTimeout)
 }
 
 func idleTimeout(r *dag.Route) *duration.Duration {
 	if r.TimeoutPolicy == nil {
 		return nil
 	}
-	return timeout(r.TimeoutPolicy.IdleTimeout)
+	return envoyTimeout(r.TimeoutPolicy.IdleTimeout)
 }
 
-// timeout interprets a time.Duration with respect to
-// Envoy's timeout logic. Zero durations are interpreted
-// as nil, therefore remaining unset. Negative durations
-// are interpreted as infinity, which is represented as
-// an explicit value of 0. Positive durations behave as
-// expected.
-func timeout(d time.Duration) *duration.Duration {
+// envoyTimeout converts a timeout.Setting to a protobuf.Duration
+// that's appropriate for Envoy. In general (though there are
+// exceptions), Envoy uses the following semantics:
+//	- not passing a value means "use Envoy default"
+//	- explicitly passing a 0 means "disable this timeout"
+//	- passing a positive value uses that value
+func envoyTimeout(d timeout.Setting) *duration.Duration {
 	switch {
-	case d == 0:
-		// no timeout specified
+	case d.UseDefault():
+		// don't pass a value to Envoy
 		return nil
-	case d < 0:
-		// infinite timeout, set timeout value to a pointer to zero which tells
-		// envoy "infinite timeout"
+	case d.IsDisabled():
+		// explicitly pass a 0
 		return protobuf.Duration(0)
 	default:
-		return protobuf.Duration(d)
+		// pass the value
+		return protobuf.Duration(d.Val())
 	}
 }
 
@@ -180,8 +180,8 @@ func retryPolicy(r *dag.Route) *envoy_api_v2_route.RetryPolicy {
 	if r.RetryPolicy.NumRetries > 0 {
 		rp.NumRetries = protobuf.UInt32(r.RetryPolicy.NumRetries)
 	}
-	if r.RetryPolicy.PerTryTimeout > 0 {
-		rp.PerTryTimeout = protobuf.Duration(r.RetryPolicy.PerTryTimeout)
+	if val := r.RetryPolicy.PerTryTimeout.Val(); val > 0 {
+		rp.PerTryTimeout = protobuf.Duration(val)
 	}
 	return rp
 }
