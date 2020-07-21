@@ -24,27 +24,27 @@ func TestParse(t *testing.T) {
 	}{
 		"empty": {
 			duration: "",
-			want:     UseDefault,
+			want:     DefaultSetting(),
 		},
 		"0": {
 			duration: "0",
-			want:     UseDefault,
+			want:     DefaultSetting(),
 		},
 		"0s": {
 			duration: "0s",
-			want:     UseDefault,
+			want:     DefaultSetting(),
 		},
 		"infinity": {
 			duration: "infinity",
-			want:     Disabled,
+			want:     DisabledSetting(),
 		},
 		"10 seconds": {
 			duration: "10s",
-			want:     WithDuration(10 * time.Second),
+			want:     DurationSetting(10 * time.Second),
 		},
 		"invalid": {
 			duration: "10", // 10 what?
-			want:     Disabled,
+			want:     DisabledSetting(),
 		},
 	}
 
@@ -59,7 +59,7 @@ func TestParse(t *testing.T) {
 }
 
 func TestWithDuration(t *testing.T) {
-	s := WithDuration(10 * time.Second)
+	s := DurationSetting(10 * time.Second)
 	want := 10 * time.Second
 	got := s.Duration()
 	if want != got {

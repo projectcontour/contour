@@ -39,11 +39,20 @@ func (s Setting) Duration() time.Duration {
 	return s.val
 }
 
-// Disabled is a Setting representing "disable the timeout".
-var Disabled = Setting{disabled: true}
+// DefaultSetting returns a Setting representing "use the default".
+func DefaultSetting() Setting {
+	return Setting{}
+}
 
-// UseDefault is a Setting representing "use the default".
-var UseDefault = Setting{}
+// DisabledSetting returns a Setting representing "disable the timeout".
+func DisabledSetting() Setting {
+	return Setting{disabled: true}
+}
+
+// DurationSetting returns a timeout setting with the given duration.
+func DurationSetting(duration time.Duration) Setting {
+	return Setting{val: duration}
+}
 
 // Parse parses string representations of timeout settings that we pass
 // in various places in a standard way:
@@ -55,13 +64,13 @@ func Parse(timeout string) Setting {
 	// An empty string is interpreted as no explicit timeout specified, so
 	// use the Envoy default.
 	if timeout == "" {
-		return Setting{}
+		return DefaultSetting()
 	}
 
 	// Interpret "infinity" as a disabled/infinite timeout, which envoy config
 	// usually expects as an explicit value of 0.
 	if timeout == "infinity" {
-		return Setting{disabled: true}
+		return DisabledSetting()
 	}
 
 	d, err := time.ParseDuration(timeout)
@@ -69,13 +78,8 @@ func Parse(timeout string) Setting {
 		// TODO(cmalonty) plumb a logger in here so we can log this error.
 		// Assuming infinite duration is going to surprise people less for
 		// a not-parseable duration than a implicit 15 second one.
-		return Setting{disabled: true}
+		return DisabledSetting()
 	}
 
-	return WithDuration(d)
-}
-
-// WithDuration returns a timeout setting with the given duration.
-func WithDuration(duration time.Duration) Setting {
-	return Setting{val: duration}
+	return DurationSetting(d)
 }

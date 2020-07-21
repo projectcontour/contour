@@ -51,9 +51,9 @@ func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
 	// TODO(sk) it might make sense to change the behavior here to be consistent
 	// with other timeout parsing, meaning use timeout.Parse which would result
 	// in a disabled per-try timeout if the input was not a valid duration.
-	perTryTimeout := timeout.UseDefault
+	perTryTimeout := timeout.DefaultSetting()
 	if perTryDuration, err := time.ParseDuration(rp.PerTryTimeout); err == nil {
-		perTryTimeout = timeout.WithDuration(perTryDuration)
+		perTryTimeout = timeout.DurationSetting(perTryDuration)
 	}
 
 	return &RetryPolicy{

@@ -238,8 +238,8 @@ func TestRouteRoute(t *testing.T) {
 		"single service without retry-on": {
 			route: &dag.Route{
 				RetryPolicy: &dag.RetryPolicy{
-					NumRetries:    7,                                      // ignored
-					PerTryTimeout: timeout.WithDuration(10 * time.Second), // ignored
+					NumRetries:    7,                                         // ignored
+					PerTryTimeout: timeout.DurationSetting(10 * time.Second), // ignored
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
@@ -256,7 +256,7 @@ func TestRouteRoute(t *testing.T) {
 				RetryPolicy: &dag.RetryPolicy{
 					RetryOn:       "503",
 					NumRetries:    6,
-					PerTryTimeout: timeout.WithDuration(100 * time.Millisecond),
+					PerTryTimeout: timeout.DurationSetting(100 * time.Millisecond),
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
@@ -279,7 +279,7 @@ func TestRouteRoute(t *testing.T) {
 					RetryOn:              "retriable-status-codes",
 					RetriableStatusCodes: []uint32{503, 503, 504},
 					NumRetries:           6,
-					PerTryTimeout:        timeout.WithDuration(100 * time.Millisecond),
+					PerTryTimeout:        timeout.DurationSetting(100 * time.Millisecond),
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
@@ -300,7 +300,7 @@ func TestRouteRoute(t *testing.T) {
 		"timeout 90s": {
 			route: &dag.Route{
 				TimeoutPolicy: &dag.TimeoutPolicy{
-					ResponseTimeout: timeout.WithDuration(90 * time.Second),
+					ResponseTimeout: timeout.DurationSetting(90 * time.Second),
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
@@ -316,7 +316,7 @@ func TestRouteRoute(t *testing.T) {
 		"timeout infinity": {
 			route: &dag.Route{
 				TimeoutPolicy: &dag.TimeoutPolicy{
-					ResponseTimeout: timeout.Disabled,
+					ResponseTimeout: timeout.DisabledSetting(),
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
@@ -332,7 +332,7 @@ func TestRouteRoute(t *testing.T) {
 		"idle timeout 10m": {
 			route: &dag.Route{
 				TimeoutPolicy: &dag.TimeoutPolicy{
-					IdleTimeout: timeout.WithDuration(10 * time.Minute),
+					IdleTimeout: timeout.DurationSetting(10 * time.Minute),
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
@@ -348,7 +348,7 @@ func TestRouteRoute(t *testing.T) {
 		"idle timeout infinity": {
 			route: &dag.Route{
 				TimeoutPolicy: &dag.TimeoutPolicy{
-					IdleTimeout: timeout.Disabled,
+					IdleTimeout: timeout.DisabledSetting(),
 				},
 				Clusters: []*dag.Cluster{c1},
 			},

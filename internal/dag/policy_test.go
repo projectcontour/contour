@@ -113,7 +113,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			want: &RetryPolicy{
 				RetryOn:       "5xx",
 				NumRetries:    0,
-				PerTryTimeout: timeout.WithDuration(10 * time.Second),
+				PerTryTimeout: timeout.DurationSetting(10 * time.Second),
 			},
 		},
 		"no retry count, legacy per try timeout": {
@@ -128,7 +128,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			want: &RetryPolicy{
 				RetryOn:       "5xx",
 				NumRetries:    0,
-				PerTryTimeout: timeout.WithDuration(10 * time.Second),
+				PerTryTimeout: timeout.DurationSetting(10 * time.Second),
 			},
 		},
 		"explicit 0s timeout": {
@@ -143,7 +143,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			want: &RetryPolicy{
 				RetryOn:       "5xx",
 				NumRetries:    0,
-				PerTryTimeout: timeout.UseDefault,
+				PerTryTimeout: timeout.DefaultSetting(),
 			},
 		},
 		"legacy explicit 0s timeout": {
@@ -158,7 +158,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			want: &RetryPolicy{
 				RetryOn:       "5xx",
 				NumRetries:    0,
-				PerTryTimeout: timeout.UseDefault,
+				PerTryTimeout: timeout.DefaultSetting(),
 			},
 		},
 	}
@@ -203,7 +203,7 @@ func TestRetryPolicy(t *testing.T) {
 			want: &RetryPolicy{
 				RetryOn:       "5xx",
 				NumRetries:    1,
-				PerTryTimeout: timeout.WithDuration(10 * time.Second),
+				PerTryTimeout: timeout.DurationSetting(10 * time.Second),
 			},
 		},
 		"explicit 0s timeout": {
@@ -213,7 +213,7 @@ func TestRetryPolicy(t *testing.T) {
 			want: &RetryPolicy{
 				RetryOn:       "5xx",
 				NumRetries:    1,
-				PerTryTimeout: timeout.UseDefault,
+				PerTryTimeout: timeout.DefaultSetting(),
 			},
 		},
 		"retry on": {
@@ -257,7 +257,7 @@ func TestTimeoutPolicy(t *testing.T) {
 		"empty timeout policy": {
 			tp: &projcontour.TimeoutPolicy{},
 			want: &TimeoutPolicy{
-				ResponseTimeout: timeout.UseDefault,
+				ResponseTimeout: timeout.DefaultSetting(),
 			},
 		},
 		"valid response timeout": {
@@ -265,7 +265,7 @@ func TestTimeoutPolicy(t *testing.T) {
 				Response: "1m30s",
 			},
 			want: &TimeoutPolicy{
-				ResponseTimeout: timeout.WithDuration(90 * time.Second),
+				ResponseTimeout: timeout.DurationSetting(90 * time.Second),
 			},
 		},
 		"invalid response timeout": {
@@ -277,7 +277,7 @@ func TestTimeoutPolicy(t *testing.T) {
 				// be undefined. In practice we take the spec from the
 				// contour.heptio.com/request-timeout annotation, which is defined
 				// to choose infinite when its valid cannot be parsed.
-				ResponseTimeout: timeout.Disabled,
+				ResponseTimeout: timeout.DisabledSetting(),
 			},
 		},
 		"infinite response timeout": {
@@ -285,7 +285,7 @@ func TestTimeoutPolicy(t *testing.T) {
 				Response: "infinite",
 			},
 			want: &TimeoutPolicy{
-				ResponseTimeout: timeout.Disabled,
+				ResponseTimeout: timeout.DisabledSetting(),
 			},
 		},
 		"idle timeout": {
@@ -293,7 +293,7 @@ func TestTimeoutPolicy(t *testing.T) {
 				Idle: "900s",
 			},
 			want: &TimeoutPolicy{
-				IdleTimeout: timeout.WithDuration(900 * time.Second),
+				IdleTimeout: timeout.DurationSetting(900 * time.Second),
 			},
 		},
 	}

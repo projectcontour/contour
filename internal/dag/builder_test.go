@@ -3689,7 +3689,7 @@ func TestDAGInsert(t *testing.T) {
 							PathMatchCondition: prefix("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
-								ResponseTimeout: timeout.Disabled, // invalid timeout equals infinity ¯\_(ツ)_/¯.
+								ResponseTimeout: timeout.DisabledSetting(), // invalid timeout equals infinity ¯\_(ツ)_/¯.
 							},
 						}),
 					),
@@ -3709,7 +3709,7 @@ func TestDAGInsert(t *testing.T) {
 							PathMatchCondition: prefix("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
-								ResponseTimeout: timeout.Disabled, // invalid timeout equals infinity ¯\_(ツ)_/¯.
+								ResponseTimeout: timeout.DisabledSetting(), // invalid timeout equals infinity ¯\_(ツ)_/¯.
 							},
 						}),
 					),
@@ -3730,7 +3730,7 @@ func TestDAGInsert(t *testing.T) {
 							PathMatchCondition: prefix("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
-								ResponseTimeout: timeout.Disabled, // invalid timeout equals infinity ¯\_(ツ)_/¯.
+								ResponseTimeout: timeout.DisabledSetting(), // invalid timeout equals infinity ¯\_(ツ)_/¯.
 							},
 						}),
 					),
@@ -3750,7 +3750,7 @@ func TestDAGInsert(t *testing.T) {
 							PathMatchCondition: prefix("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
-								ResponseTimeout: timeout.WithDuration(90 * time.Second),
+								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
 							},
 						}),
 					),
@@ -3770,7 +3770,7 @@ func TestDAGInsert(t *testing.T) {
 							PathMatchCondition: prefix("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
-								ResponseTimeout: timeout.WithDuration(90 * time.Second),
+								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
 							},
 						}),
 					),
@@ -3791,7 +3791,7 @@ func TestDAGInsert(t *testing.T) {
 							PathMatchCondition: prefix("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
-								ResponseTimeout: timeout.WithDuration(90 * time.Second),
+								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
 							},
 						}),
 					),
@@ -3811,7 +3811,7 @@ func TestDAGInsert(t *testing.T) {
 							PathMatchCondition: prefix("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
-								ResponseTimeout: timeout.Disabled,
+								ResponseTimeout: timeout.DisabledSetting(),
 							},
 						}),
 					),
@@ -3831,7 +3831,7 @@ func TestDAGInsert(t *testing.T) {
 							PathMatchCondition: prefix("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
-								ResponseTimeout: timeout.Disabled,
+								ResponseTimeout: timeout.DisabledSetting(),
 							},
 						}),
 					),
@@ -3852,7 +3852,7 @@ func TestDAGInsert(t *testing.T) {
 							PathMatchCondition: prefix("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: &TimeoutPolicy{
-								ResponseTimeout: timeout.Disabled,
+								ResponseTimeout: timeout.DisabledSetting(),
 							},
 						}),
 					),
@@ -3880,7 +3880,7 @@ func TestDAGInsert(t *testing.T) {
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "5xx",
 								NumRetries:    6,
-								PerTryTimeout: timeout.WithDuration(10 * time.Second),
+								PerTryTimeout: timeout.DurationSetting(10 * time.Second),
 							},
 						}),
 					),
@@ -3902,7 +3902,7 @@ func TestDAGInsert(t *testing.T) {
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "5xx",
 								NumRetries:    6,
-								PerTryTimeout: timeout.UseDefault,
+								PerTryTimeout: timeout.DefaultSetting(),
 							},
 						}),
 					),
@@ -3924,7 +3924,7 @@ func TestDAGInsert(t *testing.T) {
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "5xx",
 								NumRetries:    1,
-								PerTryTimeout: timeout.WithDuration(10 * time.Second),
+								PerTryTimeout: timeout.DurationSetting(10 * time.Second),
 							},
 						}),
 					),
@@ -3946,7 +3946,7 @@ func TestDAGInsert(t *testing.T) {
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "gateway-error",
 								NumRetries:    6,
-								PerTryTimeout: timeout.WithDuration(10 * time.Second),
+								PerTryTimeout: timeout.DurationSetting(10 * time.Second),
 							},
 						}),
 					),
@@ -3968,7 +3968,7 @@ func TestDAGInsert(t *testing.T) {
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "gateway-error",
 								NumRetries:    6,
-								PerTryTimeout: timeout.WithDuration(10 * time.Second),
+								PerTryTimeout: timeout.DurationSetting(10 * time.Second),
 							},
 						}),
 					),
@@ -3990,7 +3990,7 @@ func TestDAGInsert(t *testing.T) {
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "gateway-error",
 								NumRetries:    6,
-								PerTryTimeout: timeout.WithDuration(10 * time.Second),
+								PerTryTimeout: timeout.DurationSetting(10 * time.Second),
 							},
 						}),
 					),
