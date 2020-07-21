@@ -34,8 +34,8 @@ func (s Setting) UseDefault() bool {
 	return !s.disabled && s.val == 0
 }
 
-// Val returns the explicit timeout value if one exists.
-func (s Setting) Val() time.Duration {
+// Duration returns the explicit timeout value if one exists.
+func (s Setting) Duration() time.Duration {
 	return s.val
 }
 

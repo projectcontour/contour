@@ -61,7 +61,7 @@ func TestParse(t *testing.T) {
 func TestWithDuration(t *testing.T) {
 	s := WithDuration(10 * time.Second)
 	want := 10 * time.Second
-	got := s.Val()
+	got := s.Duration()
 	if want != got {
 		t.Errorf("Wanted %v, got %v", want, got)
 	}
