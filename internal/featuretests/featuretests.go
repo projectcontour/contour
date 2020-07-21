@@ -41,6 +41,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -97,7 +98,7 @@ func setupWithFallbackCert(t *testing.T, fallbackCertName, fallbackCertNamespace
 			Source: dag.KubernetesCache{
 				FieldLogger: log,
 			},
-			FallbackCertificate: &k8s.FullName{
+			FallbackCertificate: &types.NamespacedName{
 				Name:      fallbackCertName,
 				Namespace: fallbackCertNamespace,
 			},

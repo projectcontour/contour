@@ -18,8 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/projectcontour/contour/internal/k8s"
-
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -32,6 +30,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestListenerCacheContents(t *testing.T) {
@@ -152,7 +151,7 @@ func TestListenerVisit(t *testing.T) {
 
 	tests := map[string]struct {
 		ListenerVisitorConfig
-		fallbackCertificate *k8s.FullName
+		fallbackCertificate *types.NamespacedName
 		objs                []interface{}
 		want                map[string]*v2.Listener
 	}{
@@ -1107,7 +1106,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"httpproxy with fallback certificate": {
-			fallbackCertificate: &k8s.FullName{
+			fallbackCertificate: &types.NamespacedName{
 				Name:      "fallbacksecret",
 				Namespace: "default",
 			},
@@ -1196,7 +1195,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"multiple httpproxies with fallback certificate": {
-			fallbackCertificate: &k8s.FullName{
+			fallbackCertificate: &types.NamespacedName{
 				Name:      "fallbacksecret",
 				Namespace: "default",
 			},
@@ -1319,7 +1318,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"httpproxy with fallback certificate - no cert passed": {
-			fallbackCertificate: &k8s.FullName{
+			fallbackCertificate: &types.NamespacedName{
 				Name:      "",
 				Namespace: "",
 			},
@@ -1374,7 +1373,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(),
 		},
 		"httpproxy with fallback certificate - cert passed but vhost not enabled": {
-			fallbackCertificate: &k8s.FullName{
+			fallbackCertificate: &types.NamespacedName{
 				Name:      "fallbackcert",
 				Namespace: "default",
 			},

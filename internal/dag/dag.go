@@ -22,8 +22,8 @@ import (
 	"time"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // A DAG represents a directed acylic graph of objects representing the relationship
@@ -34,7 +34,7 @@ type DAG struct {
 	roots []Vertex
 
 	// status computed while building this dag.
-	statuses map[k8s.FullName]Status
+	statuses map[types.NamespacedName]Status
 }
 
 // Visit calls fn on each root of this DAG.
@@ -46,7 +46,7 @@ func (d *DAG) Visit(fn func(Vertex)) {
 
 // Statuses returns a slice of Status objects associated with
 // the computation of this DAG.
-func (d *DAG) Statuses() map[k8s.FullName]Status {
+func (d *DAG) Statuses() map[types.NamespacedName]Status {
 	return d.statuses
 }
 

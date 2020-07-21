@@ -14,26 +14,17 @@
 package fixture
 
 import (
-	"strings"
-
+	"github.com/projectcontour/contour/internal/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ObjectMeta cracks a Kubernetes object name string of the form
 // "namespace/name" into a metav1.ObjectMeta struct. If the namespace
 // portion is omitted, then the default namespace is filled in.
-func ObjectMeta(name string) metav1.ObjectMeta {
-	v := strings.SplitN(name, "/", 2)
-	switch len(v) {
-	case 2:
-		return metav1.ObjectMeta{
-			Name:      v[1],
-			Namespace: v[0],
-		}
-	default:
-		return metav1.ObjectMeta{
-			Name:      v[0],
-			Namespace: metav1.NamespaceDefault,
-		}
+func ObjectMeta(nameStr string) metav1.ObjectMeta {
+	name := k8s.NamespacedNameFrom(nameStr)
+	return metav1.ObjectMeta{
+		Name:      name.Name,
+		Namespace: name.Namespace,
 	}
 }
