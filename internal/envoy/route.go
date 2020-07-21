@@ -166,9 +166,8 @@ func retryPolicy(r *dag.Route) *envoy_api_v2_route.RetryPolicy {
 	if r.RetryPolicy.NumRetries > 0 {
 		rp.NumRetries = protobuf.UInt32(r.RetryPolicy.NumRetries)
 	}
-	if val := r.RetryPolicy.PerTryTimeout.Duration(); val > 0 {
-		rp.PerTryTimeout = protobuf.Duration(val)
-	}
+	rp.PerTryTimeout = envoyTimeout(r.RetryPolicy.PerTryTimeout)
+
 	return rp
 }
 
