@@ -140,13 +140,13 @@ func hostReplaceHeader(hp *dag.HeadersPolicy) string {
 func envoyTimeout(d timeout.Setting) *duration.Duration {
 	switch {
 	case d.UseDefault():
-		// don't pass a value to Envoy
+		// Don't pass a value to Envoy.
 		return nil
 	case d.IsDisabled():
-		// explicitly pass a 0
+		// Explicitly pass a 0.
 		return protobuf.Duration(0)
 	default:
-		// pass the value
+		// Pass the duration value.
 		return protobuf.Duration(d.Duration())
 	}
 }
