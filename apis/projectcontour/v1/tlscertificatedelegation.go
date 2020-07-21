@@ -37,6 +37,26 @@ type CertificateDelegation struct {
 	TargetNamespaces []string `json:"targetNamespaces"`
 }
 
+// TLSCertificateDelegationStatus allows for the status of the delegation
+// to be presented to the user.
+type TLSCertificateDelegationStatus struct {
+	// +optional
+	// Conditions contains information about the current status of the TLSCertificateDelegation,
+	// in an upstream-friendly container.
+	// Contour will update a single condition, `Valid`, that is in normal-true polarity.
+	// That is, when the certificate delegation has been parsed correctly, the `Valid`
+	// condition will be `status: true`, and vice versa.
+	// Contour will leave untouched any other Conditions set in this block,
+	// in case some other controller wants to add a Condition.
+	// If you are another controller owner and wish to add a condition, you *should*
+	// namespace your condition with a label, like `controller.domain.com\ConditionName`.
+	// +patchMergeKey=type
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=type
+	Conditions []DetailedCondition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
+}
+
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -44,11 +64,14 @@ type CertificateDelegation struct {
 // See design/tls-certificate-delegation.md for details.
 // +k8s:openapi-gen=true
 // +kubebuilder:resource:scope=Namespaced,path=tlscertificatedelegations,shortName=tlscerts,singular=tlscertificatedelegation
+// +kubebuilder:subresource:status
 type TLSCertificateDelegation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
 
 	Spec TLSCertificateDelegationSpec `json:"spec"`
+	// +optional
+	Status TLSCertificateDelegationStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
