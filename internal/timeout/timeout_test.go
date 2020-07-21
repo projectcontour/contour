@@ -15,6 +15,9 @@ package timeout
 import (
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/projectcontour/contour/internal/assert"
 )
 
 func TestParse(t *testing.T) {
@@ -50,19 +53,11 @@ func TestParse(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := Parse(tc.duration)
-			if tc.want != got {
-				t.Errorf("Wanted %v, got %v", tc.want, got)
-			}
+			assert.Equal(t, tc.want, Parse(tc.duration), cmp.AllowUnexported(Setting{}))
 		})
 	}
 }
 
-func TestWithDuration(t *testing.T) {
-	s := DurationSetting(10 * time.Second)
-	want := 10 * time.Second
-	got := s.Duration()
-	if want != got {
-		t.Errorf("Wanted %v, got %v", want, got)
-	}
+func TestDurationSetting(t *testing.T) {
+	assert.Equal(t, 10*time.Second, DurationSetting(10*time.Second).Duration())
 }

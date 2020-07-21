@@ -17,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/timeout"
@@ -166,7 +167,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := ingressRetryPolicy(tc.i)
-			assert.Equal(t, tc.want, got)
+			assert.Equal(t, tc.want, got, cmp.AllowUnexported(timeout.Setting{}))
 		})
 	}
 }
@@ -240,7 +241,7 @@ func TestRetryPolicy(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := retryPolicy(tc.rp)
-			assert.Equal(t, tc.want, got)
+			assert.Equal(t, tc.want, got, cmp.AllowUnexported(timeout.Setting{}))
 		})
 	}
 }
@@ -301,7 +302,7 @@ func TestTimeoutPolicy(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := timeoutPolicy(tc.tp)
-			assert.Equal(t, tc.want, got)
+			assert.Equal(t, tc.want, got, cmp.AllowUnexported(timeout.Setting{}))
 		})
 	}
 }
