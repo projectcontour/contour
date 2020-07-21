@@ -312,7 +312,7 @@ func TestClusterVisit(t *testing.T) {
 							Fqdn: "www.example.com",
 						},
 						Routes: []projcontour.Route{{
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -373,7 +373,7 @@ func TestClusterVisit(t *testing.T) {
 							HealthCheckPolicy: &projcontour.HTTPHealthCheckPolicy{
 								Path: "/healthy",
 							},
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -435,7 +435,7 @@ func TestClusterVisit(t *testing.T) {
 								UnhealthyThresholdCount: 97,
 								HealthyThresholdCount:   96,
 							},
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -492,7 +492,7 @@ func TestClusterVisit(t *testing.T) {
 							LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
 								Strategy: "RoundRobin",
 							},
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -536,7 +536,7 @@ func TestClusterVisit(t *testing.T) {
 							LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
 								Strategy: "WeightedLeastRequest",
 							},
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -581,7 +581,7 @@ func TestClusterVisit(t *testing.T) {
 							LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
 								Strategy: "Random",
 							},
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{
@@ -628,7 +628,7 @@ func TestClusterVisit(t *testing.T) {
 							LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
 								Strategy: "lulz",
 							},
-							Conditions: []projcontour.Condition{{
+							Conditions: []projcontour.MatchCondition{{
 								Prefix: "/",
 							}},
 							Services: []projcontour.Service{{

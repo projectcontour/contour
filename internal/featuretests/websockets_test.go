@@ -172,20 +172,20 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "websocket.hello.world"},
 			Routes: []projcontour.Route{{
-				Conditions: conditions(prefixCondition("/")),
+				Conditions: matchconditions(prefixMatchCondition("/")),
 				Services: []projcontour.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
 			}, {
-				Conditions:       conditions(prefixCondition("/ws-1")),
+				Conditions:       matchconditions(prefixMatchCondition("/ws-1")),
 				EnableWebsockets: true,
 				Services: []projcontour.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
 			}, {
-				Conditions:       conditions(prefixCondition("/ws-2")),
+				Conditions:       matchconditions(prefixMatchCondition("/ws-2")),
 				EnableWebsockets: true,
 				Services: []projcontour.Service{{
 					Name: s1.Name,
@@ -226,13 +226,13 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "websocket.hello.world"},
 			Routes: []projcontour.Route{{
-				Conditions: conditions(prefixCondition("/")),
+				Conditions: matchconditions(prefixMatchCondition("/")),
 				Services: []projcontour.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
 			}, {
-				Conditions:       conditions(prefixCondition("/ws-1")),
+				Conditions:       matchconditions(prefixMatchCondition("/ws-1")),
 				EnableWebsockets: true,
 				Services: []projcontour.Service{{
 					Name: s1.Name,
@@ -242,7 +242,7 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 					Port: 80,
 				}},
 			}, {
-				Conditions:       conditions(prefixCondition("/ws-2")),
+				Conditions:       matchconditions(prefixMatchCondition("/ws-2")),
 				EnableWebsockets: true,
 				Services: []projcontour.Service{{
 					Name: s1.Name,

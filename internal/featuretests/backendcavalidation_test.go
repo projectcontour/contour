@@ -65,7 +65,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/a",
 				}},
 				Services: []projcontour.Service{{
@@ -111,7 +111,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/a",
 				}},
 				Services: []projcontour.Service{{
@@ -170,7 +170,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []projcontour.Route{{
-				Conditions: conditions(prefixCondition("/a")),
+				Conditions: matchconditions(prefixMatchCondition("/a")),
 				Services: []projcontour.Service{{
 					Name: svc.Name,
 					Port: 443,

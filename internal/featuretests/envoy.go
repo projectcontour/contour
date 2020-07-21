@@ -72,12 +72,12 @@ func routeCluster(cluster string) *envoy_api_v2_route.Route_Route {
 	}
 }
 
-func routePrefix(prefix string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
+func routePrefix(prefix string, headers ...dag.HeaderMatchCondition) *envoy_api_v2_route.RouteMatch {
 	return envoy.RouteMatch(&dag.Route{
-		PathCondition: &dag.PrefixCondition{
+		PathMatchCondition: &dag.PrefixMatchCondition{
 			Prefix: prefix,
 		},
-		HeaderConditions: headers,
+		HeaderMatchConditions: headers,
 	})
 }
 

@@ -22,10 +22,10 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -490,7 +490,7 @@ func buildDAG(t *testing.T, objs ...interface{}) *dag.DAG {
 }
 
 // buildDAGFallback produces a dag.DAG from the supplied objects with a fallback cert configured.
-func buildDAGFallback(t *testing.T, fallbackCertificate *k8s.FullName, objs ...interface{}) *dag.DAG {
+func buildDAGFallback(t *testing.T, fallbackCertificate *types.NamespacedName, objs ...interface{}) *dag.DAG {
 	builder := dag.Builder{
 		Source: dag.KubernetesCache{
 			FieldLogger: testLogger(t),

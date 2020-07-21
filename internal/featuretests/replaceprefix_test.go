@@ -59,7 +59,7 @@ func basic(t *testing.T) {
 				Fqdn: "kuard.projectcontour.io",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: conditions(prefixCondition("/api")),
+				Conditions: matchconditions(prefixMatchCondition("/api")),
 				Services: []projcontour.Service{{
 					Name: "kuard",
 					Port: 8080,
@@ -245,7 +245,7 @@ func multiInclude(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:       "app",
 				Namespace:  "default",
-				Conditions: conditions(prefixCondition("/v1")),
+				Conditions: matchconditions(prefixMatchCondition("/v1")),
 			}},
 		})
 
@@ -257,7 +257,7 @@ func multiInclude(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:       "app",
 				Namespace:  "default",
-				Conditions: conditions(prefixCondition("/v2")),
+				Conditions: matchconditions(prefixMatchCondition("/v2")),
 			}},
 		})
 
@@ -376,7 +376,7 @@ func replaceWithSlash(t *testing.T) {
 					Name: "kuard",
 					Port: 8080,
 				}},
-				Conditions: conditions(prefixCondition("/foo")),
+				Conditions: matchconditions(prefixMatchCondition("/foo")),
 				PathRewritePolicy: &projcontour.PathRewritePolicy{
 					ReplacePrefix: []projcontour.ReplacePrefix{
 						{Replacement: "/"},
@@ -395,7 +395,7 @@ func replaceWithSlash(t *testing.T) {
 					Name: "kuard",
 					Port: 8080,
 				}},
-				Conditions: conditions(prefixCondition("/bar/")),
+				Conditions: matchconditions(prefixMatchCondition("/bar/")),
 				PathRewritePolicy: &projcontour.PathRewritePolicy{
 					ReplacePrefix: []projcontour.ReplacePrefix{
 						{Replacement: "/"},
@@ -447,7 +447,7 @@ func replaceWithSlash(t *testing.T) {
 	// to whatever the client URL is. No special handling of trailing '/'.
 	update(rh, vhost2,
 		func(vhost *projcontour.HTTPProxy) {
-			vhost.Spec.Routes[0].Conditions = conditions(prefixCondition("/"))
+			vhost.Spec.Routes[0].Conditions = matchconditions(prefixMatchCondition("/"))
 			vhost.Spec.Routes[0].PathRewritePolicy = &projcontour.PathRewritePolicy{
 				ReplacePrefix: []projcontour.ReplacePrefix{
 					{Replacement: "/bar"},
@@ -530,10 +530,10 @@ func artifactoryDocker(t *testing.T) {
 				Fqdn: "artifactory.projectcontour.io",
 			},
 			Includes: []projcontour.Include{
-				{Name: "routes", Conditions: conditions(prefixCondition("/v2/container-sandbox"))},
-				{Name: "routes", Conditions: conditions(prefixCondition("/v2/container-release"))},
-				{Name: "routes", Conditions: conditions(prefixCondition("/v2/container-external"))},
-				{Name: "routes", Conditions: conditions(prefixCondition("/v2/container-public"))},
+				{Name: "routes", Conditions: matchconditions(prefixMatchCondition("/v2/container-sandbox"))},
+				{Name: "routes", Conditions: matchconditions(prefixMatchCondition("/v2/container-release"))},
+				{Name: "routes", Conditions: matchconditions(prefixMatchCondition("/v2/container-external"))},
+				{Name: "routes", Conditions: matchconditions(prefixMatchCondition("/v2/container-public"))},
 			},
 		}),
 	)

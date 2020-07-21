@@ -23,6 +23,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -179,12 +180,12 @@ func TestDAGStatus(t *testing.T) {
 			},
 			Includes: []projcontour.Include{{
 				Name: "validChild",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}, {
 				Name: "invalidChild",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/bar",
 				}},
 			}},
@@ -202,7 +203,7 @@ func TestDAGStatus(t *testing.T) {
 			},
 			Includes: []projcontour.Include{{
 				Name: "validChild",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -352,7 +353,7 @@ func TestDAGStatus(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -427,7 +428,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -449,7 +450,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -471,7 +472,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foobar",
 				}},
 				Services: []projcontour.Service{{
@@ -495,7 +496,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "self",
 				Namespace: "roots",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -521,7 +522,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "child",
 				Namespace: "roots",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -537,7 +538,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "child",
 				Namespace: "roots",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -568,7 +569,7 @@ func TestDAGStatus(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -590,7 +591,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "validChild",
 				Namespace: "roots",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -608,7 +609,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.*.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -630,7 +631,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -652,7 +653,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -673,7 +674,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -739,7 +740,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "blog",
 				Namespace: "marketing",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 			}},
@@ -779,7 +780,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "blog",
 				Namespace: "marketing",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 			}},
@@ -831,7 +832,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      proxyBlogMarketing.Name,
 				Namespace: proxyBlogMarketing.Namespace,
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
 				}},
 			}},
@@ -898,15 +899,15 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "1234",
 					},
@@ -932,15 +933,15 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "delegated",
 				Namespace: "roots",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "1234",
 					},
@@ -979,15 +980,15 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						NotExact: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						NotExact: "1234",
 					},
@@ -1009,7 +1010,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{
+				Conditions: []projcontour.MatchCondition{
 					{
 						Prefix: "/api",
 					}, {
@@ -1036,7 +1037,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "child",
 				Namespace: "teama",
-				Conditions: []projcontour.Condition{
+				Conditions: []projcontour.MatchCondition{
 					{
 						Prefix: "/api",
 					}, {
@@ -1077,7 +1078,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{
+				Conditions: []projcontour.MatchCondition{
 					{
 						Prefix: "api",
 					},
@@ -1102,7 +1103,7 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "child",
 				Namespace: "teama",
-				Conditions: []projcontour.Condition{
+				Conditions: []projcontour.MatchCondition{
 					{
 						Prefix: "api",
 					},
@@ -1234,18 +1235,18 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "blogteama",
 				Namespace: "teama",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
 				}},
 			}, {
 				Name:      "blogteamb",
 				Namespace: "teamb",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
 				}},
 			}},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1269,8 +1270,8 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "blogteama",
 				Namespace: "teama",
-				Conditions: []projcontour.Condition{{
-					Header: &projcontour.HeaderCondition{
+				Conditions: []projcontour.MatchCondition{{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
@@ -1278,15 +1279,15 @@ func TestDAGStatus(t *testing.T) {
 			}, {
 				Name:      "blogteamb",
 				Namespace: "teamb",
-				Conditions: []projcontour.Condition{{
-					Header: &projcontour.HeaderCondition{
+				Conditions: []projcontour.MatchCondition{{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
 				}},
 			}},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1310,9 +1311,9 @@ func TestDAGStatus(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "blogteama",
 				Namespace: "teama",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
@@ -1320,16 +1321,16 @@ func TestDAGStatus(t *testing.T) {
 			}, {
 				Name:      "blogteamb",
 				Namespace: "teamb",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
 				}},
 			}},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -1348,7 +1349,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
 				}},
 				Services: []projcontour.Service{{
@@ -1367,7 +1368,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
 				}},
 				Services: []projcontour.Service{{
@@ -1574,7 +1575,7 @@ func TestDAGStatus(t *testing.T) {
 				Fqdn: "missing-service.example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: nil, // missing
@@ -1596,7 +1597,7 @@ func TestDAGStatus(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -1624,7 +1625,7 @@ func TestDAGStatus(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -1637,12 +1638,12 @@ func TestDAGStatus(t *testing.T) {
 
 	tests := map[string]struct {
 		objs                []interface{}
-		fallbackCertificate *k8s.FullName
-		want                map[k8s.FullName]Status
+		fallbackCertificate *types.NamespacedName
+		want                map[types.NamespacedName]Status
 	}{
 		"proxy has multiple includes, one is invalid": {
 			objs: []interface{}{proxyMultiIncludeOneInvalid, proxyChildValidFoo2, proxyChildInvalidBadPort, serviceFoo2, serviceFoo3InvalidPort},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxyChildValidFoo2.Name, Namespace: proxyChildValidFoo2.Namespace}:                 {Object: proxyChildValidFoo2, Status: "valid", Description: "valid HTTPProxy"},
 				{Name: proxyChildInvalidBadPort.Name, Namespace: proxyChildInvalidBadPort.Namespace}:       {Object: proxyChildInvalidBadPort, Status: "invalid", Description: `service "foo3": port must be in the range 1-65535`},
 				{Name: proxyMultiIncludeOneInvalid.Name, Namespace: proxyMultiIncludeOneInvalid.Namespace}: {Object: proxyMultiIncludeOneInvalid, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
@@ -1650,7 +1651,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"multi-parent children is not orphaned when one of the parents is invalid": {
 			objs: []interface{}{proxyNoFQDN, proxyChildValidFoo2, proxyIncludeValidChild, serviceKuard, serviceFoo2},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxyNoFQDN.Name, Namespace: proxyNoFQDN.Namespace}:                       {Object: proxyNoFQDN, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
 				{Name: proxyChildValidFoo2.Name, Namespace: proxyChildValidFoo2.Namespace}:       {Object: proxyChildValidFoo2, Status: "valid", Description: "valid HTTPProxy"},
 				{Name: proxyIncludeValidChild.Name, Namespace: proxyIncludeValidChild.Namespace}: {Object: proxyIncludeValidChild, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
@@ -1661,7 +1662,7 @@ func TestDAGStatus(t *testing.T) {
 			objs: []interface{}{
 				secretRootsNS, serviceNginx, ingressSharedService, proxyTCPSharedService,
 			},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxyTCPSharedService.Name, Namespace: proxyTCPSharedService.Namespace}: {
 					Object:      proxyTCPSharedService,
 					Status:      k8s.StatusValid,
@@ -1676,11 +1677,11 @@ func TestDAGStatus(t *testing.T) {
 				secretContourNS,
 				proxyDelegatedTCPTLS,
 			},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxyDelegatedTCPTLS.Name, Namespace: proxyDelegatedTCPTLS.Namespace}: {
 					Object:      proxyDelegatedTCPTLS,
 					Status:      k8s.StatusInvalid,
-					Description: fmt.Sprintf("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", k8s.ToFullName(secretContourNS)),
+					Description: fmt.Sprintf("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", k8s.NamespacedNameOf(secretContourNS)),
 					Vhost:       proxyDelegatedTCPTLS.Spec.VirtualHost.Fqdn,
 				},
 			},
@@ -1691,11 +1692,11 @@ func TestDAGStatus(t *testing.T) {
 				secretContourNS,
 				proxyDelegatedTLS,
 			},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxyDelegatedTLS.Name, Namespace: proxyDelegatedTLS.Namespace}: {
 					Object:      proxyDelegatedTLS,
 					Status:      k8s.StatusInvalid,
-					Description: fmt.Sprintf("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", k8s.ToFullName(secretContourNS)),
+					Description: fmt.Sprintf("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", k8s.NamespacedNameOf(secretContourNS)),
 					Vhost:       proxyDelegatedTLS.Spec.VirtualHost.Fqdn,
 				},
 			},
@@ -1706,11 +1707,11 @@ func TestDAGStatus(t *testing.T) {
 				secretContourNS,
 				proxy19,
 			},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy19.Name, Namespace: proxy19.Namespace}: {
 					Object:      proxy19,
 					Status:      k8s.StatusInvalid,
-					Description: fmt.Sprintf("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", k8s.ToFullName(secretContourNS)),
+					Description: fmt.Sprintf("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", k8s.NamespacedNameOf(secretContourNS)),
 					Vhost:       proxy19.Spec.VirtualHost.Fqdn,
 				},
 			},
@@ -1721,7 +1722,7 @@ func TestDAGStatus(t *testing.T) {
 				s10,
 				proxyPassthroughProxyNonSecure,
 			},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxyPassthroughProxyNonSecure.Name, Namespace: proxyPassthroughProxyNonSecure.Namespace}: {
 					Object:      proxyPassthroughProxyNonSecure,
 					Status:      k8s.StatusValid,
@@ -1734,7 +1735,7 @@ func TestDAGStatus(t *testing.T) {
 			objs: []interface{}{
 				serviceKuard, proxyMultipleIncludersSite1, proxyMultipleIncludersSite2, proxyMultiIncludeChild,
 			},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxyMultipleIncludersSite1.Name, Namespace: proxyMultipleIncludersSite1.Namespace}: {
 					Object:      proxyMultipleIncludersSite1,
 					Status:      "valid",
@@ -1756,31 +1757,31 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"valid proxy": {
 			objs: []interface{}{proxy1, serviceHome},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy1.Name, Namespace: proxy1.Namespace}: {Object: proxy1, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
 			},
 		},
 		"proxy invalid port in service": {
 			objs: []interface{}{proxy2},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy2.Name, Namespace: proxy2.Namespace}: {Object: proxy2, Status: "invalid", Description: `service "home": port must be in the range 1-65535`, Vhost: "example.com"},
 			},
 		},
 		"root proxy outside of roots namespace": {
 			objs: []interface{}{proxy3},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy3.Name, Namespace: proxy3.Namespace}: {Object: proxy3, Status: "invalid", Description: "root HTTPProxy cannot be defined in this namespace"},
 			},
 		},
 		"root proxy does not specify FQDN": {
 			objs: []interface{}{proxyNoFQDN},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxyNoFQDN.Name, Namespace: proxyNoFQDN.Namespace}: {Object: proxyNoFQDN, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
 			},
 		},
 		"proxy self-edge produces a cycle": {
 			objs: []interface{}{proxy6, serviceKuard},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy6.Name, Namespace: proxy6.Namespace}: {
 					Object:      proxy6,
 					Status:      "invalid",
@@ -1791,7 +1792,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"proxy child delegates to parent, producing a cycle": {
 			objs: []interface{}{proxy7, proxy8},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy7.Name, Namespace: proxy7.Namespace}: {
 					Object:      proxy7,
 					Status:      "valid",
@@ -1807,26 +1808,26 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"proxy orphaned route": {
 			objs: []interface{}{proxy8},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy8.Name, Namespace: proxy8.Namespace}: {Object: proxy8, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy"},
 			},
 		},
 		"proxy invalid parent orphans children": {
 			objs: []interface{}{proxy14, proxy11},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy14.Name, Namespace: proxy14.Namespace}: {Object: proxy14, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
 				{Name: proxy11.Name, Namespace: proxy11.Namespace}: {Object: proxy11, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy"},
 			},
 		},
 		"proxy invalid FQDN contains wildcard": {
 			objs: []interface{}{proxy15},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy15.Name, Namespace: proxy15.Namespace}: {Object: proxy15, Status: "invalid", Description: `Spec.VirtualHost.Fqdn "example.*.com" cannot use wildcards`, Vhost: "example.*.com"},
 			},
 		},
 		"proxy missing service shows invalid status": {
 			objs: []interface{}{proxy16},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy16.Name, Namespace: proxy16.Namespace}: {
 					Object:      proxy16,
 					Status:      "invalid",
@@ -1837,7 +1838,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"proxy with service missing port shows invalid status": {
 			objs: []interface{}{proxy16a, serviceHome},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy16a.Name, Namespace: proxy16a.Namespace}: {
 					Object:      proxy16a,
 					Status:      "invalid",
@@ -1848,7 +1849,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"insert conflicting proxies due to fqdn reuse": {
 			objs: []interface{}{proxy17, proxy18},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy17.Name, Namespace: proxy17.Namespace}: {
 					Object:      proxy17,
 					Status:      k8s.StatusInvalid,
@@ -1865,7 +1866,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"root proxy including another root": {
 			objs: []interface{}{proxy20, proxy21},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy20.Name, Namespace: proxy20.Namespace}: {
 					Object:      proxy20,
 					Status:      k8s.StatusInvalid,
@@ -1882,7 +1883,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"root proxy including another root w/ different hostname": {
 			objs: []interface{}{proxy22, proxy23, serviceGreenMarketing},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy22.Name, Namespace: proxy22.Namespace}: {
 					Object:      proxy22,
 					Status:      k8s.StatusInvalid,
@@ -1899,7 +1900,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"proxy includes another": {
 			objs: []interface{}{proxyBlogMarketing, proxy25, serviceKuard, serviceGreenMarketing},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxyBlogMarketing.Name, Namespace: proxyBlogMarketing.Namespace}: {
 					Object:      proxyBlogMarketing,
 					Status:      "valid",
@@ -1915,7 +1916,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"proxy with mirror": {
 			objs: []interface{}{proxy26, serviceKuard},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy26.Name, Namespace: proxy26.Namespace}: {
 					Object:      proxy26,
 					Status:      "valid",
@@ -1926,7 +1927,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"proxy with two mirrors": {
 			objs: []interface{}{proxy27, serviceKuard},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy27.Name, Namespace: proxy27.Namespace}: {
 					Object:      proxy27,
 					Status:      "invalid",
@@ -1937,7 +1938,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"proxy with two prefix conditions on route": {
 			objs: []interface{}{proxy32, serviceKuard},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy32.Name, Namespace: proxy32.Namespace}: {
 					Object:      proxy32,
 					Status:      "invalid",
@@ -1948,7 +1949,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"proxy with two prefix conditions as an include": {
 			objs: []interface{}{proxy33, proxy34, serviceKuard},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy33.Name, Namespace: proxy33.Namespace}: {
 					Object:      proxy33,
 					Status:      "invalid",
@@ -1963,7 +1964,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"proxy with prefix conditions on route that does not start with slash": {
 			objs: []interface{}{proxy35, serviceKuard},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy35.Name, Namespace: proxy35.Namespace}: {
 					Object:      proxy35,
 					Status:      "invalid",
@@ -1974,7 +1975,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"proxy with include prefix that does not start with slash": {
 			objs: []interface{}{proxy36, proxy34, serviceKuard},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy36.Name, Namespace: proxy36.Namespace}: {
 					Object:      proxy36,
 					Status:      "invalid",
@@ -1989,26 +1990,26 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"duplicate route condition headers": {
 			objs: []interface{}{proxy28, serviceHome},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy28.Name, Namespace: proxy28.Namespace}: {Object: proxy28, Status: "invalid", Description: "cannot specify duplicate header 'exact match' conditions in the same route", Vhost: "example.com"},
 			},
 		},
 		"duplicate valid route condition headers": {
 			objs: []interface{}{proxy31, serviceHome},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy31.Name, Namespace: proxy31.Namespace}: {Object: proxy31, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
 			},
 		},
 		"duplicate include condition headers": {
 			objs: []interface{}{proxy29, proxy30, serviceHome},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy29.Name, Namespace: proxy29.Namespace}: {Object: proxy29, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
 				{Name: proxy30.Name, Namespace: proxy30.Namespace}: {Object: proxy30, Status: "invalid", Description: "cannot specify duplicate header 'exact match' conditions in the same route", Vhost: ""},
 			},
 		},
 		"duplicate path conditions on an include": {
 			objs: []interface{}{proxy41, proxy41a, proxy41b, serviceHome, sericeKuardTeamA, serviceKuardTeamB},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy41.Name, Namespace: proxy41.Namespace}:   {Object: proxy41, Status: "invalid", Description: "duplicate conditions defined on an include", Vhost: "example.com"},
 				{Name: proxy41a.Name, Namespace: proxy41a.Namespace}: {Object: proxy41a, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy", Vhost: ""},
 				{Name: proxy41b.Name, Namespace: proxy41b.Namespace}: {Object: proxy41b, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy", Vhost: ""},
@@ -2016,7 +2017,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"duplicate header conditions on an include": {
 			objs: []interface{}{proxy42, proxy41a, proxy41b, serviceHome, sericeKuardTeamA, serviceKuardTeamB},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy42.Name, Namespace: proxy42.Namespace}:   {Object: proxy42, Status: "invalid", Description: "duplicate conditions defined on an include", Vhost: "example.com"},
 				{Name: proxy41a.Name, Namespace: proxy41a.Namespace}: {Object: proxy41a, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy", Vhost: ""},
 				{Name: proxy41b.Name, Namespace: proxy41b.Namespace}: {Object: proxy41b, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy", Vhost: ""},
@@ -2024,7 +2025,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"duplicate header+path conditions on an include": {
 			objs: []interface{}{proxy43, proxy41a, proxy41b, serviceHome, sericeKuardTeamA, serviceKuardTeamB},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy43.Name, Namespace: proxy43.Namespace}:   {Object: proxy43, Status: "invalid", Description: "duplicate conditions defined on an include", Vhost: "example.com"},
 				{Name: proxy41a.Name, Namespace: proxy41a.Namespace}: {Object: proxy41a, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy", Vhost: ""},
 				{Name: proxy41b.Name, Namespace: proxy41b.Namespace}: {Object: proxy41b, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy", Vhost: ""},
@@ -2032,7 +2033,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"httpproxy with invalid tcpproxy": {
 			objs: []interface{}{proxy37, serviceKuard},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy37.Name, Namespace: proxy37.Namespace}: {
 					Object:      proxy37,
 					Status:      "invalid",
@@ -2043,7 +2044,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"httpproxy with empty tcpproxy": {
 			objs: []interface{}{proxy37a, serviceKuard},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy37a.Name, Namespace: proxy37a.Namespace}: {
 					Object:      proxy37a,
 					Status:      "invalid",
@@ -2054,7 +2055,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"httpproxy w/ tcpproxy w/ missing include": {
 			objs: []interface{}{proxy38, serviceKuard},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy38.Name, Namespace: proxy38.Namespace}: {
 					Object:      proxy38,
 					Status:      "invalid",
@@ -2065,7 +2066,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"httpproxy w/ tcpproxy w/ includes another root": {
 			objs: []interface{}{proxy38, proxy39, serviceKuard},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy38.Name, Namespace: proxy38.Namespace}: {
 					Object:      proxy38,
 					Status:      "invalid",
@@ -2082,7 +2083,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"httpproxy w/ tcpproxy w/ includes valid child": {
 			objs: []interface{}{proxy38, proxy40, serviceKuard},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy38.Name, Namespace: proxy38.Namespace}: {
 					Object:      proxy38,
 					Status:      "valid",
@@ -2099,7 +2100,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"httpproxy w/ missing include": {
 			objs: []interface{}{proxy44, serviceKuard},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy44.Name, Namespace: proxy44.Namespace}: {
 					Object:      proxy44,
 					Status:      "invalid",
@@ -2110,7 +2111,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"httpproxy w/ tcpproxy w/ missing service": {
 			objs: []interface{}{proxy45},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy45.Name, Namespace: proxy45.Namespace}: {
 					Object:      proxy45,
 					Status:      "invalid",
@@ -2121,7 +2122,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"httpproxy w/ tcpproxy w/ service missing port": {
 			objs: []interface{}{proxy45a, serviceKuard},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy45a.Name, Namespace: proxy45a.Namespace}: {
 					Object:      proxy45a,
 					Status:      "invalid",
@@ -2132,7 +2133,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"httpproxy w/ tcpproxy missing tls": {
 			objs: []interface{}{proxy46},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy46.Name, Namespace: proxy46.Namespace}: {
 					Object:      proxy46,
 					Status:      "invalid",
@@ -2143,7 +2144,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"httpproxy w/ tcpproxy missing service": {
 			objs: []interface{}{secretRootsNS, serviceKuard, proxy47},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy47.Name, Namespace: proxy47.Namespace}: {
 					Object:      proxy47,
 					Status:      "invalid",
@@ -2154,7 +2155,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"httpproxy w/ tcpproxy missing service port": {
 			objs: []interface{}{secretRootsNS, serviceKuard, proxy47a},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy47a.Name, Namespace: proxy47a.Namespace}: {
 					Object:      proxy47a,
 					Status:      "invalid",
@@ -2165,14 +2166,14 @@ func TestDAGStatus(t *testing.T) {
 		},
 		"valid HTTPProxy.TCPProxy": {
 			objs: []interface{}{proxy48root, proxy48child, serviceKuard, secretRootsNS},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy48root.Name, Namespace: proxy48root.Namespace}:   {Object: proxy48root, Status: "valid", Description: "valid HTTPProxy", Vhost: "tcpproxy.example.com"},
 				{Name: proxy48child.Name, Namespace: proxy48child.Namespace}: {Object: proxy48child, Status: "valid", Description: "valid HTTPProxy", Vhost: "tcpproxy.example.com"},
 			},
 		},
 		"valid HTTPProxy.TCPProxy - plural": {
 			objs: []interface{}{proxy48rootplural, proxy48child, serviceKuard, secretRootsNS},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy48rootplural.Name, Namespace: proxy48rootplural.Namespace}: {Object: proxy48rootplural, Status: "valid", Description: "valid HTTPProxy", Vhost: "tcpproxy.example.com"},
 				{Name: proxy48child.Name, Namespace: proxy48child.Namespace}:           {Object: proxy48child, Status: "valid", Description: "valid HTTPProxy", Vhost: "tcpproxy.example.com"},
 			},
@@ -2180,7 +2181,7 @@ func TestDAGStatus(t *testing.T) {
 		// issue 2309, each route must have at least one service
 		"invalid HTTPProxy due to empty route.service": {
 			objs: []interface{}{proxy49, serviceKuard},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: proxy49.Name, Namespace: proxy49.Namespace}: {
 					Object:      proxy49,
 					Status:      "invalid",
@@ -2190,24 +2191,24 @@ func TestDAGStatus(t *testing.T) {
 			},
 		},
 		"invalid fallback certificate passed to contour": {
-			fallbackCertificate: &k8s.FullName{
+			fallbackCertificate: &types.NamespacedName{
 				Name:      "invalid",
 				Namespace: "invalid",
 			},
 			objs: []interface{}{fallbackCertificate, fallbackSecret, secretRootsNS, serviceHome},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: fallbackCertificate.Name, Namespace: fallbackCertificate.Namespace}: {Object: fallbackCertificate, Status: "invalid", Description: "Spec.Virtualhost.TLS Secret \"invalid/invalid\" fallback certificate is invalid: Secret not found", Vhost: "example.com"},
 			},
 		},
 		"fallback certificate requested but cert not configured in contour": {
 			objs: []interface{}{fallbackCertificate, fallbackSecret, secretRootsNS, serviceHome},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: fallbackCertificate.Name, Namespace: fallbackCertificate.Namespace}: {Object: fallbackCertificate, Status: "invalid", Description: "Spec.Virtualhost.TLS enabled fallback but the fallback Certificate Secret is not configured in Contour configuration file", Vhost: "example.com"},
 			},
 		},
 		"fallback certificate requested and clientValidation also configured": {
 			objs: []interface{}{fallbackCertificateWithClientValidation, fallbackSecret, secretRootsNS, serviceHome},
-			want: map[k8s.FullName]Status{
+			want: map[types.NamespacedName]Status{
 				{Name: fallbackCertificateWithClientValidation.Name, Namespace: fallbackCertificateWithClientValidation.Namespace}: {Object: fallbackCertificateWithClientValidation, Status: "invalid", Description: "Spec.Virtualhost.TLS fallback & client validation are incompatible together", Vhost: "example.com"},
 			},
 		},

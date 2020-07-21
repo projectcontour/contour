@@ -22,6 +22,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/google/go-cmp/cmp"
@@ -42,14 +43,14 @@ type Builder struct {
 	DisablePermitInsecure bool
 
 	services map[servicemeta]*Service
-	secrets  map[k8s.FullName]*Secret
+	secrets  map[types.NamespacedName]*Secret
 
 	virtualhosts       map[string]*VirtualHost
 	securevirtualhosts map[string]*SecureVirtualHost
 
-	orphaned map[k8s.FullName]bool
+	orphaned map[types.NamespacedName]bool
 
-	FallbackCertificate *k8s.FullName
+	FallbackCertificate *types.NamespacedName
 
 	StatusWriter
 }
@@ -73,18 +74,18 @@ func (b *Builder) Build() *DAG {
 // reset (re)inialises the internal state of the builder.
 func (b *Builder) reset() {
 	b.services = make(map[servicemeta]*Service, len(b.services))
-	b.secrets = make(map[k8s.FullName]*Secret, len(b.secrets))
-	b.orphaned = make(map[k8s.FullName]bool, len(b.orphaned))
+	b.secrets = make(map[types.NamespacedName]*Secret, len(b.secrets))
+	b.orphaned = make(map[types.NamespacedName]bool, len(b.orphaned))
 
 	b.virtualhosts = make(map[string]*VirtualHost)
 	b.securevirtualhosts = make(map[string]*SecureVirtualHost)
 
-	b.statuses = make(map[k8s.FullName]Status, len(b.statuses))
+	b.statuses = make(map[types.NamespacedName]Status, len(b.statuses))
 }
 
 // lookupService returns a Service that matches the Meta and Port of the Kubernetes' Service,
 // or an error if the service or port can't be located.
-func (b *Builder) lookupService(m k8s.FullName, port intstr.IntOrString) (*Service, error) {
+func (b *Builder) lookupService(m types.NamespacedName, port intstr.IntOrString) (*Service, error) {
 	lookup := func() *Service {
 		if port.Type != intstr.Int {
 			// can't handle, give up
@@ -146,7 +147,7 @@ func upstreamProtocol(svc *v1.Service, port *v1.ServicePort) string {
 
 // lookupSecret returns a Secret if present or nil if the underlying kubernetes
 // secret fails validation or is missing.
-func (b *Builder) lookupSecret(m k8s.FullName, validate func(*v1.Secret) error) (*Secret, error) {
+func (b *Builder) lookupSecret(m types.NamespacedName, validate func(*v1.Secret) error) (*Secret, error) {
 	sec, ok := b.Source.secrets[m]
 	if !ok {
 		return nil, fmt.Errorf("Secret not found")
@@ -160,7 +161,7 @@ func (b *Builder) lookupSecret(m k8s.FullName, validate func(*v1.Secret) error) 
 		Object: sec,
 	}
 
-	b.secrets[k8s.ToFullName(sec)] = s
+	b.secrets[k8s.NamespacedNameOf(sec)] = s
 	return s, nil
 }
 
@@ -232,8 +233,7 @@ func (b *Builder) validHTTPProxies() []*projcontour.HTTPProxy {
 func (b *Builder) computeSecureVirtualhosts() {
 	for _, ing := range b.Source.ingresses {
 		for _, tls := range ing.Spec.TLS {
-			secretName := splitSecret(tls.SecretName, ing.GetNamespace())
-
+			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(ing.GetNamespace()))
 			sec, err := b.lookupSecret(secretName, validSecret)
 			if err != nil {
 				b.Source.WithField("name", ing.GetName()).
@@ -264,7 +264,7 @@ func (b *Builder) computeSecureVirtualhosts() {
 	}
 }
 
-func (b *Builder) delegationPermitted(secret k8s.FullName, to string) bool {
+func (b *Builder) delegationPermitted(secret types.NamespacedName, to string) bool {
 	contains := func(haystack []string, needle string) bool {
 		if len(haystack) == 1 && haystack[0] == "*" {
 			return true
@@ -322,7 +322,7 @@ func (b *Builder) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1.IngressR
 	for _, httppath := range httppaths(rule) {
 		path := stringOrDefault(httppath.Path, "/")
 		be := httppath.Backend
-		m := k8s.FullName{Name: be.ServiceName, Namespace: ing.Namespace}
+		m := types.NamespacedName{Name: be.ServiceName, Namespace: ing.Namespace}
 		s, err := b.lookupService(m, be.ServicePort)
 		if err != nil {
 			continue
@@ -385,8 +385,7 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 
 		// Attach secrets to TLS enabled vhosts.
 		if !tls.Passthrough {
-
-			secretName := splitSecret(tls.SecretName, proxy.Namespace)
+			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(proxy.Namespace))
 			sec, err := b.lookupSecret(secretName, validSecret)
 			if err != nil {
 				sw.SetInvalid("Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
@@ -504,7 +503,7 @@ func expandPrefixMatches(routes []*Route) []*Route {
 			expandedRoutes = append(expandedRoutes, r)
 		}
 
-		routingPrefix := r.PathCondition.(*PrefixCondition).Prefix
+		routingPrefix := r.PathMatchCondition.(*PrefixMatchCondition).Prefix
 
 		if routingPrefix != "/" {
 			routingPrefix = strings.TrimRight(routingPrefix, "/")
@@ -526,7 +525,7 @@ func expandPrefixMatches(routes []*Route) []*Route {
 				continue
 			}
 
-			routingPrefix := routes[0].PathCondition.(*PrefixCondition).Prefix
+			routingPrefix := routes[0].PathMatchCondition.(*PrefixMatchCondition).Prefix
 
 			// There's no alternate forms for '/' :)
 			if routingPrefix == "/" {
@@ -538,10 +537,10 @@ func expandPrefixMatches(routes []*Route) []*Route {
 
 			// Now, make the original route handle '/foo' and the new route handle '/foo'.
 			routes[0].PrefixRewrite = strings.TrimRight(routes[0].PrefixRewrite, "/")
-			routes[0].PathCondition = &PrefixCondition{Prefix: prefix}
+			routes[0].PathMatchCondition = &PrefixMatchCondition{Prefix: prefix}
 
 			newRoute.PrefixRewrite = routes[0].PrefixRewrite + "/"
-			newRoute.PathCondition = &PrefixCondition{Prefix: prefix + "/"}
+			newRoute.PathMatchCondition = &PrefixMatchCondition{Prefix: prefix + "/"}
 
 			// Since we trimmed trailing '/', it's possible that
 			// we made the replacement empty. There's no such
@@ -585,7 +584,7 @@ func getProtocol(service projcontour.Service, s *Service) (string, error) {
 	return protocol, nil
 }
 
-func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, conditions []projcontour.Condition, visited []*projcontour.HTTPProxy, enforceTLS bool) []*Route {
+func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, conditions []projcontour.MatchCondition, visited []*projcontour.HTTPProxy, enforceTLS bool) []*Route {
 	for _, v := range visited {
 		// ensure we are not following an edge that produces a cycle
 		var path []string
@@ -603,7 +602,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 	var routes []*Route
 
 	// Check for duplicate conditions on the includes
-	if includeConditionsIdentical(proxy.Spec.Includes) {
+	if includeMatchConditionsIdentical(proxy.Spec.Includes) {
 		sw.SetInvalid("duplicate conditions defined on an include")
 		return nil
 	}
@@ -615,7 +614,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			namespace = proxy.Namespace
 		}
 
-		delegate, ok := b.Source.httpproxies[k8s.FullName{Name: include.Name, Namespace: namespace}]
+		delegate, ok := b.Source.httpproxies[types.NamespacedName{Name: include.Name, Namespace: namespace}]
 		if !ok {
 			sw.SetInvalid("include %s/%s not found", namespace, include.Name)
 			return nil
@@ -625,7 +624,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			return nil
 		}
 
-		if err := pathConditionsValid(include.Conditions); err != nil {
+		if err := pathMatchConditionsValid(include.Conditions); err != nil {
 			sw.SetInvalid("include: %s", err)
 			return nil
 		}
@@ -635,11 +634,11 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 		commit()
 
 		// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
-		delete(b.orphaned, k8s.FullName{Name: delegate.Name, Namespace: delegate.Namespace})
+		delete(b.orphaned, types.NamespacedName{Name: delegate.Name, Namespace: delegate.Namespace})
 	}
 
 	for _, route := range proxy.Spec.Routes {
-		if err := pathConditionsValid(route.Conditions); err != nil {
+		if err := pathMatchConditionsValid(route.Conditions); err != nil {
 			sw.SetInvalid("route: %s", err)
 			return nil
 		}
@@ -647,7 +646,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 		conds := append(conditions, route.Conditions...)
 
 		// Look for invalid header conditions on this route
-		if err := headerConditionsValid(conds); err != nil {
+		if err := headerMatchConditionsValid(conds); err != nil {
 			sw.SetInvalid(err.Error())
 			return nil
 		}
@@ -670,8 +669,8 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 		}
 
 		r := &Route{
-			PathCondition:         mergePathConditions(conds),
-			HeaderConditions:      mergeHeaderConditions(conds),
+			PathMatchCondition:    mergePathMatchConditions(conds),
+			HeaderMatchConditions: mergeHeaderMatchConditions(conds),
 			Websocket:             route.EnableWebsockets,
 			HTTPSUpgrade:          routeEnforceTLS(enforceTLS, route.PermitInsecure && !b.DisablePermitInsecure),
 			TimeoutPolicy:         timeoutPolicy(route.TimeoutPolicy),
@@ -695,7 +694,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			// condition. Even if the CRD user didn't specify a
 			// prefix condition, mergePathConditions() guarantees
 			// a prefix of '/'.
-			routingPrefix := r.PathCondition.(*PrefixCondition).Prefix
+			routingPrefix := r.PathMatchCondition.(*PrefixMatchCondition).Prefix
 
 			// First, try to apply an exact prefix match.
 			for _, prefix := range route.GetPrefixReplacements() {
@@ -722,7 +721,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 				sw.SetInvalid("service %q: port must be in the range 1-65535", service.Name)
 				return nil
 			}
-			m := k8s.FullName{Name: service.Name, Namespace: proxy.Namespace}
+			m := types.NamespacedName{Name: service.Name, Namespace: proxy.Namespace}
 			s, err := b.lookupService(m, intstr.FromInt(service.Port))
 			if err != nil {
 				sw.SetInvalid("Spec.Routes unresolved service reference: %s", err)
@@ -819,7 +818,7 @@ func escapeHeaderValue(value string) string {
 	return strings.Replace(value, "%", "%%", -1)
 }
 
-func includeConditionsIdentical(includes []projcontour.Include) bool {
+func includeMatchConditionsIdentical(includes []projcontour.Include) bool {
 	j := 0
 	for i := 1; i < len(includes); i++ {
 		// Now compare each include's set of conditions
@@ -903,7 +902,7 @@ func (b *Builder) buildHTTPSListener() *Listener {
 
 // setOrphaned records an HTTPProxy resource as orphaned.
 func (b *Builder) setOrphaned(obj k8s.Object) {
-	m := k8s.FullName{
+	m := types.NamespacedName{
 		Name:      obj.GetObjectMeta().GetName(),
 		Namespace: obj.GetObjectMeta().GetNamespace(),
 	}
@@ -929,7 +928,7 @@ func (b *Builder) lookupUpstreamValidation(uv *projcontour.UpstreamValidation, n
 		return nil, nil
 	}
 
-	secretName := k8s.FullName{Name: uv.CACertificate, Namespace: namespace}
+	secretName := types.NamespacedName{Name: uv.CACertificate, Namespace: namespace}
 	cacert, err := b.lookupSecret(secretName, validCA)
 	if err != nil {
 		// UpstreamValidation is requested, but cert is missing or not configured
@@ -948,7 +947,7 @@ func (b *Builder) lookupUpstreamValidation(uv *projcontour.UpstreamValidation, n
 }
 
 func (b *Builder) lookupDownstreamValidation(vc *projcontour.DownstreamValidation, namespace string) (*PeerValidationContext, error) {
-	secretName := k8s.FullName{Name: vc.CACertificate, Namespace: namespace}
+	secretName := types.NamespacedName{Name: vc.CACertificate, Namespace: namespace}
 	cacert, err := b.lookupSecret(secretName, validCA)
 	if err != nil {
 		// PeerValidationContext is requested, but cert is missing or not configured.
@@ -988,7 +987,7 @@ func (b *Builder) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *pr
 	if len(tcpproxy.Services) > 0 {
 		var proxy TCPProxy
 		for _, service := range httpproxy.Spec.TCPProxy.Services {
-			m := k8s.FullName{Name: service.Name, Namespace: httpproxy.Namespace}
+			m := types.NamespacedName{Name: service.Name, Namespace: httpproxy.Namespace}
 			s, err := b.lookupService(m, intstr.FromInt(service.Port))
 			if err != nil {
 				sw.SetInvalid("Spec.TCPProxy unresolved service reference: %s", err)
@@ -1017,7 +1016,7 @@ func (b *Builder) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *pr
 		namespace = httpproxy.Namespace
 	}
 
-	m := k8s.FullName{Name: tcpProxyInclude.Name, Namespace: namespace}
+	m := types.NamespacedName{Name: tcpProxyInclude.Name, Namespace: namespace}
 	dest, ok := b.Source.httpproxies[m]
 	if !ok {
 		sw.SetInvalid("tcpproxy: include %s/%s not found", m.Namespace, m.Name)
@@ -1030,7 +1029,7 @@ func (b *Builder) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *pr
 	}
 
 	// dest is no longer an orphan
-	delete(b.orphaned, k8s.ToFullName(dest))
+	delete(b.orphaned, k8s.NamespacedNameOf(dest))
 
 	// ensure we are not following an edge that produces a cycle
 	var path []string
@@ -1078,36 +1077,17 @@ func route(ingress *v1beta1.Ingress, path string, service *Service) *Route {
 
 	if strings.ContainsAny(path, "^+*[]%") {
 		// path smells like a regex
-		r.PathCondition = &RegexCondition{Regex: path}
+		r.PathMatchCondition = &RegexMatchCondition{Regex: path}
 		return r
 	}
 
-	r.PathCondition = &PrefixCondition{Prefix: path}
+	r.PathMatchCondition = &PrefixMatchCondition{Prefix: path}
 	return r
 }
 
 // isBlank indicates if a string contains nothing but blank characters.
 func isBlank(s string) bool {
 	return len(strings.TrimSpace(s)) == 0
-}
-
-// splitSecret splits a secretName into its namespace and name components.
-// If there is no namespace prefix, the default namespace is returned.
-func splitSecret(secret, defns string) k8s.FullName {
-	v := strings.SplitN(secret, "/", 2)
-	switch len(v) {
-	case 1:
-		// no prefix
-		return k8s.FullName{
-			Name:      v[0],
-			Namespace: defns,
-		}
-	default:
-		return k8s.FullName{
-			Name:      v[1],
-			Namespace: stringOrDefault(v[0], defns),
-		}
-	}
 }
 
 func stringOrDefault(s, def string) string {

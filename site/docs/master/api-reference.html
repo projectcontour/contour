@@ -283,55 +283,6 @@ the secret will be delegated to all namespaces.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1.Condition">Condition
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1.Include">Include</a>, 
-<a href="#projectcontour.io/v1.Route">Route</a>)
-</p>
-<p>
-<p>Condition are policies that are applied on top of HTTPProxies.
-One of Prefix or Header must be provided.</p>
-</p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody class="border-top">
-<tr>
-<td style="white-space:nowrap">
-<code>prefix</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Prefix defines a prefix match for a request.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>header</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.HeaderCondition">
-HeaderCondition
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Header specifies the header condition to match.</p>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="projectcontour.io/v1.DownstreamValidation">DownstreamValidation
 </h3>
 <p>
@@ -599,14 +550,14 @@ Kubernetes core/v1.LoadBalancerStatus
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1.HeaderCondition">HeaderCondition
+<h3 id="projectcontour.io/v1.HeaderMatchCondition">HeaderMatchCondition
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.Condition">Condition</a>)
+<a href="#projectcontour.io/v1.MatchCondition">MatchCondition</a>)
 </p>
 <p>
-<p>HeaderCondition specifies how to conditionally match against HTTP
+<p>HeaderMatchCondition specifies how to conditionally match against HTTP
 headers. The Name field is required, but only one of the remaining
 fields should be be provided.</p>
 </p>
@@ -846,14 +797,20 @@ string
 <code>conditions</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1.Condition">
-[]Condition
+<a href="#projectcontour.io/v1.MatchCondition">
+[]MatchCondition
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Conditions are a set of routing properties that is applied to an HTTPProxy in a namespace.</p>
+<p>Conditions are a set of rules that are applied to included HTTPProxies.
+In effect, they are added onto the Conditions of included HTTPProxy Route
+structs.
+When applied, they are merged using AND, with one exception:
+There can be only one Prefix MatchCondition per Conditions slice.
+More than one Prefix, or contradictory Conditions, will make the
+include invalid.</p>
 </td>
 </tr>
 </tbody>
@@ -891,6 +848,55 @@ across the pool of backend pods. Valid policy names are
 and <code>Cookie</code>. If an unknown strategy name is specified
 or no policy is supplied, the default <code>RoundRobin</code> policy
 is used.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.MatchCondition">MatchCondition
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Include">Include</a>, 
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+<p>MatchCondition are a general holder for matching rules for HTTPProxies.
+One of Prefix or Header must be provided.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>prefix</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Prefix defines a prefix match for a request.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>header</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HeaderMatchCondition">
+HeaderMatchCondition
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Header specifies the header condition to match.</p>
 </td>
 </tr>
 </tbody>
@@ -961,7 +967,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>Prefix specifies the URL path prefix to be replaced.</p>
-<p>If Prefix is specified, it must exactly match the Condition
+<p>If Prefix is specified, it must exactly match the MatchCondition
 prefix that is rendered by the chain of including HTTPProxies
 and only that path prefix will be replaced by Replacement.
 This allows HTTPProxies that are included through multiple
@@ -1111,14 +1117,18 @@ Ignored if NumRetries is not supplied.</p>
 <code>conditions</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1.Condition">
-[]Condition
+<a href="#projectcontour.io/v1.MatchCondition">
+[]MatchCondition
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Conditions are a set of routing properties that is applied to an HTTPProxy in a namespace.</p>
+<p>Conditions are a set of rules that are applied to a Route.
+When applied, they are merged using AND, with one exception:
+There can be only one Prefix MatchCondition per Conditions slice.
+More than one Prefix, or contradictory Conditions, will make the
+route invalid.</p>
 </td>
 </tr>
 <tr>

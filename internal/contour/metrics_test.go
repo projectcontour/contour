@@ -70,7 +70,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -92,7 +92,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -114,7 +114,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 				Fqdn: "example.com",
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foobar",
 				}},
 				Services: []projcontour.Service{{
@@ -133,7 +133,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	//	},
 	//	Spec: projcontour.HTTPProxySpec{
 	//		Routes: []projcontour.Route{{
-	//			Conditions: []projcontour.Condition{{
+	//			Conditions: []projcontour.MatchCondition{{
 	//				Prefix: "/doesnotmatch",
 	//			}},
 	//			Services: []projcontour.Service{{
@@ -156,7 +156,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 			},
 			Includes: []projcontour.Include{{
 				Name: "self",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -175,7 +175,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 			},
 			Includes: []projcontour.Include{{
 				Name: "child",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -190,7 +190,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			Includes: []projcontour.Include{{
 				Name: "parent",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -209,7 +209,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	//		},
 	//		Includes: []projcontour.Include{{
 	//			Name: "child",
-	//			Conditions: []projcontour.Condition{{
+	//			Conditions: []projcontour.MatchCondition{{
 	//				Prefix: "/foo",
 	//			}},
 	//		}},
@@ -234,12 +234,12 @@ func TestHTTPProxyMetrics(t *testing.T) {
 			},
 			Includes: []projcontour.Include{{
 				Name: "validChild",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}, {
 				Name: "invalidChild",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/bar",
 				}},
 			}},
@@ -253,7 +253,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 		},
 		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -272,7 +272,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 		},
 		Spec: projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/bar",
 				}},
 				Services: []projcontour.Service{{
@@ -292,7 +292,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 				Services: []projcontour.Service{{
@@ -312,7 +312,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 			VirtualHost: &projcontour.VirtualHost{},
 			Includes: []projcontour.Include{{
 				Name: "validChild",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},

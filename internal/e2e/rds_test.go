@@ -1226,7 +1226,7 @@ func TestRDSAssertNoDataRaceDuringInsertAndStream(t *testing.T) {
 				Spec: projcontour.HTTPProxySpec{
 					VirtualHost: &projcontour.VirtualHost{Fqdn: fmt.Sprintf("example-%d.com", i)},
 					Routes: []projcontour.Route{{
-						Conditions: []projcontour.Condition{{
+						Conditions: []projcontour.MatchCondition{{
 							Prefix: "/",
 						}},
 						Services: []projcontour.Service{{
@@ -1350,7 +1350,7 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/a",
 				}},
 				Services: []projcontour.Service{{
@@ -1380,7 +1380,7 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/a",
 				}},
 				Services: []projcontour.Service{{
@@ -1449,7 +1449,7 @@ func TestRouteWithTLS(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/a",
 				}},
 				Services: []projcontour.Service{{
@@ -1542,7 +1542,7 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/insecure",
 				}},
 				PermitInsecure: true,
@@ -1550,7 +1550,7 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 					Port: 80,
 				}},
 			}, {
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/secure",
 				}},
 				Services: []projcontour.Service{{
@@ -1654,7 +1654,7 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 				},
 			},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/insecure",
 				}},
 				PermitInsecure: true,
@@ -1663,7 +1663,7 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 					Port: 80,
 				}},
 			}, {
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/secure",
 				}},
 				Services: []projcontour.Service{{
@@ -1816,21 +1816,21 @@ type weightedcluster struct {
 	weight uint32
 }
 
-func routeRegex(regex string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
+func routeRegex(regex string, headers ...dag.HeaderMatchCondition) *envoy_api_v2_route.RouteMatch {
 	return envoy.RouteMatch(&dag.Route{
-		PathCondition: &dag.RegexCondition{
+		PathMatchCondition: &dag.RegexMatchCondition{
 			Regex: regex,
 		},
-		HeaderConditions: headers,
+		HeaderMatchConditions: headers,
 	})
 }
 
-func routePrefix(prefix string, headers ...dag.HeaderCondition) *envoy_api_v2_route.RouteMatch {
+func routePrefix(prefix string, headers ...dag.HeaderMatchCondition) *envoy_api_v2_route.RouteMatch {
 	return envoy.RouteMatch(&dag.Route{
-		PathCondition: &dag.PrefixCondition{
+		PathMatchCondition: &dag.PrefixMatchCondition{
 			Prefix: prefix,
 		},
-		HeaderConditions: headers,
+		HeaderMatchConditions: headers,
 	})
 }
 
@@ -2390,9 +2390,9 @@ func TestRDSHTTPProxyDuplicateIncludeConditions(t *testing.T) {
 			Includes: []projcontour.Include{{
 				Name:      "blogteama",
 				Namespace: "teama",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
@@ -2400,16 +2400,16 @@ func TestRDSHTTPProxyDuplicateIncludeConditions(t *testing.T) {
 			}, {
 				Name:      "blogteama",
 				Namespace: "teamb",
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/blog",
-					Header: &projcontour.HeaderCondition{
+					Header: &projcontour.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
 				}},
 			}},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
@@ -2465,10 +2465,10 @@ func TestRDSHTTPProxyDuplicateIncludeConditions(t *testing.T) {
 
 func virtualhosts(v ...*envoy_api_v2_route.VirtualHost) []*envoy_api_v2_route.VirtualHost { return v }
 
-func conditions(c ...projcontour.Condition) []projcontour.Condition { return c }
+func conditions(c ...projcontour.MatchCondition) []projcontour.MatchCondition { return c }
 
-func prefixCondition(prefix string) projcontour.Condition {
-	return projcontour.Condition{
+func prefixCondition(prefix string) projcontour.MatchCondition {
+	return projcontour.MatchCondition{
 		Prefix: prefix,
 	}
 }

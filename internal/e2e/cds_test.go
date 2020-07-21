@@ -603,7 +603,7 @@ func TestClusterPerServiceParameters(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/a",
 				}},
 				Services: []projcontour.Service{{
@@ -612,7 +612,7 @@ func TestClusterPerServiceParameters(t *testing.T) {
 					Weight: 90,
 				}},
 			}, {
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/a",
 				}},
 				Services: []projcontour.Service{{
@@ -662,7 +662,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/a",
 				}},
 				LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
@@ -673,7 +673,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 					Port: 80,
 				}},
 			}, {
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/b",
 				}},
 				LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
@@ -742,7 +742,7 @@ func TestClusterWithHealthChecks(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/a",
 				}},
 				HealthCheckPolicy: &projcontour.HTTPHealthCheckPolicy{
@@ -794,7 +794,7 @@ func TestUnreferencedService(t *testing.T) {
 		Spec: projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
 			Routes: []projcontour.Route{{
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/a",
 				}},
 				Services: []projcontour.Service{{
@@ -803,7 +803,7 @@ func TestUnreferencedService(t *testing.T) {
 					Weight: 90,
 				}},
 			}, {
-				Conditions: []projcontour.Condition{{
+				Conditions: []projcontour.MatchCondition{{
 					Prefix: "/b",
 				}},
 				Services: []projcontour.Service{{
