@@ -243,19 +243,28 @@ type LeaderElectionConfig struct {
 
 // TimeoutConfig holds various configurable proxy timeout values.
 type TimeoutConfig struct {
-	// ConnectionIdleTimeout defines how long the proxy should wait while there
-	// are no active requests before terminating an HTTP connection. Set
-	// to 0 to disable the timeout.
+	// ConnectionIdleTimeout defines how long the proxy should wait while there are
+	// no active requests (for HTTP/1.1) or streams (for HTTP/2) before terminating
+	// an HTTP connection. Set to 0 to disable the timeout.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/core/protocol.proto#envoy-api-field-core-httpprotocoloptions-idle-timeout
+	// for more information.
 	ConnectionIdleTimeout time.Duration `yaml:"connection-idle-timeout,omitempty"`
 
-	// StreamIdleTimeout defines how long the proxy should wait while there
-	// is no stream activity before terminating a stream. Set to 0 to
-	// disable the timeout.
+	// StreamIdleTimeout defines how long the proxy should wait while there is no
+	// request activity (for HTTP/1.1) or stream activity (for HTTP/2) before
+	// terminating the HTTP request or stream. Set to 0 to disable the timeout.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto#envoy-api-field-config-filter-network-http-connection-manager-v2-httpconnectionmanager-stream-idle-timeout
+	// for more information.
 	StreamIdleTimeout time.Duration `yaml:"stream-idle-timeout,omitempty"`
 
 	// MaxConnectionDuration defines the maximum period of time after an HTTP connection
 	// has been established from the client to the proxy before it is closed by the proxy,
 	// regardless of whether there has been activity or not. Set to 0 for no max duration.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/core/protocol.proto#envoy-api-field-core-httpprotocoloptions-max-connection-duration
+	// for more information.
 	MaxConnectionDuration time.Duration `yaml:"max-connection-duration,omitempty"`
 
 	// DrainTimeout defines how long the proxy will wait between sending an initial GOAWAY
@@ -263,6 +272,8 @@ type TimeoutConfig struct {
 	// this grace period, the proxy will continue to respond to new streams. After the final
 	// GOAWAY frame has been sent, the proxy will refuse new streams. Set to 0 for no grace
 	// period.
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto#envoy-api-field-config-filter-network-http-connection-manager-v2-httpconnectionmanager-drain-timeout
+	// for more information.
 	DrainTimeout time.Duration `yaml:"drain-timeout,omitempty"`
 }
 
