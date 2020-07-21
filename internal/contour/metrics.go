@@ -22,6 +22,7 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -55,7 +56,7 @@ func (e *EventRecorder) recordOperation(op string, obj interface{}) {
 	e.Counter.WithLabelValues(op, kind).Inc()
 }
 
-func calculateRouteMetric(statuses map[k8s.FullName]dag.Status) metrics.RouteMetric {
+func calculateRouteMetric(statuses map[types.NamespacedName]dag.Status) metrics.RouteMetric {
 	proxyMetricTotal := make(map[metrics.Meta]int)
 	proxyMetricValid := make(map[metrics.Meta]int)
 	proxyMetricInvalid := make(map[metrics.Meta]int)

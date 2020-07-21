@@ -14,8 +14,10 @@
 package k8s
 
 import (
+	"strings"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/strings"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // Object is any Kubernetes object that has an ObjectMeta.
@@ -25,30 +27,58 @@ type Object interface {
 	metav1.ObjectMetaAccessor
 }
 
-// FullName holds the name and namespace of a Kubernetes object.
-type FullName struct {
-	Name, Namespace string
-}
-
-// String returns a string representation of the name.
-func (f FullName) String() string {
-	if f.Name == "" {
-		return ""
-	}
-
-	ns := f.Namespace
-	if ns == "" {
-		ns = metav1.NamespaceDefault
-	}
-
-	return strings.JoinQualifiedName(ns, f.Name)
-}
-
-// ToFullName returns the FullName of any given Kubernetes object.
-func ToFullName(obj Object) FullName {
+// NamespacedNameOf returns the NamespacedName of any given Kubernetes object.
+func NamespacedNameOf(obj Object) types.NamespacedName {
 	m := obj.GetObjectMeta()
-	return FullName{
+	name := types.NamespacedName{
 		Name:      m.GetName(),
 		Namespace: m.GetNamespace(),
 	}
+
+	if name.Namespace == "" {
+		name.Namespace = metav1.NamespaceDefault
+	}
+
+	return name
+}
+
+// DefaultNamespace can be used with NamespacedNameFrom to set the
+// default namespace for a resource name that may not be qualified by
+// a namespace.
+func DefaultNamespace(ns string) func(name *types.NamespacedName) {
+	return func(name *types.NamespacedName) {
+		if name.Namespace == "" {
+			name.Namespace = ns
+		}
+	}
+}
+
+// NamespacedNameFrom parses a resource name string into a fully qualified NamespacedName.
+func NamespacedNameFrom(nameStr string, opts ...func(*types.NamespacedName)) types.NamespacedName {
+	var name types.NamespacedName
+
+	v := strings.SplitN(nameStr, "/", 2)
+	switch len(v) {
+	case 1:
+		// No '/' separator.
+		name = types.NamespacedName{
+			Name:      v[0],
+			Namespace: "",
+		}
+	default:
+		name = types.NamespacedName{
+			Name:      v[1],
+			Namespace: v[0],
+		}
+	}
+
+	for _, o := range opts {
+		o(&name)
+	}
+
+	if name.Namespace == "" {
+		name.Namespace = metav1.NamespaceDefault
+	}
+
+	return name
 }

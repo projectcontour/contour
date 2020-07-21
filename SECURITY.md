@@ -45,7 +45,7 @@ The Security Team publishes a public [advisory](https://github.com/ProjectContou
 The Security Team will also publish any mitigating steps users can take until the fix can be applied to their Contour instances. Contour distributors will handle creating and publishing their own security advisories.
  
 ## Mailing lists
-- Use security@vmware.com to report security concerns to the Contour Security Team, who uses the list to privately discuss security issues and fixes prior to disclosure.
+- Use cncf-contour-maintainers@lists.cncf.io to report security concerns to the Contour Security Team, who uses the list to privately discuss security issues and fixes prior to disclosure.
 - Join the [Contour Distributors mailing list](https://github.com/projectcontour/contour/security/policy#requesting-to-join) for early private information and vulnerability disclosure. Early disclosure may include mitigating steps and additional information on security patch releases. See below for information on how Contour distributors or vendors can apply to join this list.
 
 ## Early Disclosure to Contour Distributors List

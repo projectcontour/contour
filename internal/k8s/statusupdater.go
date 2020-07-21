@@ -20,14 +20,15 @@ import (
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // StatusUpdate contains an all the information needed to change an object's status to perform a specific update.
 // Send down a channel to the goroutine that actually writes the changes back.
 type StatusUpdate struct {
-	FullName FullName
-	Resource schema.GroupVersionResource
-	Mutator  StatusMutator
+	NamespacedName types.NamespacedName
+	Resource       schema.GroupVersionResource
+	Mutator        StatusMutator
 }
 
 // StatusMutator is an interface to hold mutator functions for status updates.
@@ -72,22 +73,22 @@ func (suh *StatusUpdateHandler) Start(stop <-chan struct{}) error {
 			suh.LeaderElected = nil
 		case upd := <-suh.UpdateChannel:
 			if !suh.IsLeader {
-				suh.Log.WithField("name", upd.FullName.Name).
-					WithField("namespace", upd.FullName.Namespace).
+				suh.Log.WithField("name", upd.NamespacedName.Name).
+					WithField("namespace", upd.NamespacedName.Namespace).
 					Debug("not leader, not applying update")
 				continue
 			}
 
-			suh.Log.WithField("name", upd.FullName.Name).
-				WithField("namespace", upd.FullName.Namespace).
+			suh.Log.WithField("name", upd.NamespacedName.Name).
+				WithField("namespace", upd.NamespacedName.Namespace).
 				Debug("received a status update")
 			uObj, err := suh.Clients.DynamicClient().
 				Resource(upd.Resource).
-				Namespace(upd.FullName.Namespace).Get(context.TODO(), upd.FullName.Name, metav1.GetOptions{})
+				Namespace(upd.NamespacedName.Namespace).Get(context.TODO(), upd.NamespacedName.Name, metav1.GetOptions{})
 			if err != nil {
 				suh.Log.WithError(err).
-					WithField("name", upd.FullName.Name).
-					WithField("namespace", upd.FullName.Namespace).
+					WithField("name", upd.NamespacedName.Name).
+					WithField("namespace", upd.NamespacedName.Namespace).
 					WithField("resource", upd.Resource).
 					Error("unable to retrieve object for updating")
 				continue
@@ -96,8 +97,8 @@ func (suh *StatusUpdateHandler) Start(stop <-chan struct{}) error {
 			obj, err := suh.Converter.FromUnstructured(uObj)
 			if err != nil {
 				suh.Log.WithError(err).
-					WithField("name", upd.FullName.Name).
-					WithField("namespace", upd.FullName.Namespace).
+					WithField("name", upd.NamespacedName.Name).
+					WithField("namespace", upd.NamespacedName.Namespace).
 					Error("unable to convert from unstructured")
 				continue
 			}
@@ -105,8 +106,8 @@ func (suh *StatusUpdateHandler) Start(stop <-chan struct{}) error {
 			newObj := upd.Mutator.Mutate(obj)
 
 			if IsStatusEqual(obj, newObj) {
-				suh.Log.WithField("name", upd.FullName.Name).
-					WithField("namespace", upd.FullName.Namespace).
+				suh.Log.WithField("name", upd.NamespacedName.Name).
+					WithField("namespace", upd.NamespacedName.Namespace).
 					Debug("Update was a no-op")
 				continue
 			}
@@ -114,17 +115,17 @@ func (suh *StatusUpdateHandler) Start(stop <-chan struct{}) error {
 			usNewObj, err := suh.Converter.ToUnstructured(newObj)
 			if err != nil {
 				suh.Log.WithError(err).
-					WithField("name", upd.FullName.Name).
-					WithField("namespace", upd.FullName.Namespace).
+					WithField("name", upd.NamespacedName.Name).
+					WithField("namespace", upd.NamespacedName.Namespace).
 					Error("unable to convert update to unstructured")
 				continue
 			}
 
-			_, err = suh.Clients.DynamicClient().Resource(upd.Resource).Namespace(upd.FullName.Namespace).UpdateStatus(context.TODO(), usNewObj, metav1.UpdateOptions{})
+			_, err = suh.Clients.DynamicClient().Resource(upd.Resource).Namespace(upd.NamespacedName.Namespace).UpdateStatus(context.TODO(), usNewObj, metav1.UpdateOptions{})
 			if err != nil {
 				suh.Log.WithError(err).
-					WithField("name", upd.FullName.Name).
-					WithField("namespace", upd.FullName.Namespace).
+					WithField("name", upd.NamespacedName.Name).
+					WithField("namespace", upd.NamespacedName.Namespace).
 					Error("unable to update status")
 				continue
 			}
@@ -218,7 +219,7 @@ type StatusUpdateWriter struct {
 func (suw *StatusUpdateWriter) Update(name, namespace string, gvr schema.GroupVersionResource, mutator StatusMutator) {
 
 	update := StatusUpdate{
-		FullName: FullName{
+		NamespacedName: types.NamespacedName{
 			Name:      name,
 			Namespace: namespace,
 		},
