@@ -135,7 +135,7 @@ func ingressRetryPolicy(ingress *v1beta1.Ingress) *RetryPolicy {
 	}
 }
 
-func ingressTimeoutPolicy(ingress *v1beta1.Ingress) *TimeoutPolicy {
+func ingressTimeoutPolicy(ingress *v1beta1.Ingress) TimeoutPolicy {
 	response := annotation.CompatAnnotation(ingress, "response-timeout")
 	if len(response) == 0 {
 		// Note: due to a misunderstanding the name of the annotation is
@@ -143,7 +143,10 @@ func ingressTimeoutPolicy(ingress *v1beta1.Ingress) *TimeoutPolicy {
 		// the response body.
 		response = annotation.CompatAnnotation(ingress, "request-timeout")
 		if len(response) == 0 {
-			return nil
+			return TimeoutPolicy{
+				ResponseTimeout: timeout.DefaultSetting(),
+				IdleTimeout:     timeout.DefaultSetting(),
+			}
 		}
 	}
 	// if the request timeout annotation is present on this ingress
@@ -153,11 +156,14 @@ func ingressTimeoutPolicy(ingress *v1beta1.Ingress) *TimeoutPolicy {
 	})
 }
 
-func timeoutPolicy(tp *projcontour.TimeoutPolicy) *TimeoutPolicy {
+func timeoutPolicy(tp *projcontour.TimeoutPolicy) TimeoutPolicy {
 	if tp == nil {
-		return nil
+		return TimeoutPolicy{
+			ResponseTimeout: timeout.DefaultSetting(),
+			IdleTimeout:     timeout.DefaultSetting(),
+		}
 	}
-	return &TimeoutPolicy{
+	return TimeoutPolicy{
 		ResponseTimeout: timeout.Parse(tp.Response),
 		IdleTimeout:     timeout.Parse(tp.Idle),
 	}

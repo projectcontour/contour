@@ -114,7 +114,7 @@ type Route struct {
 	Websocket bool
 
 	// TimeoutPolicy defines the timeout request/idle
-	TimeoutPolicy *TimeoutPolicy
+	TimeoutPolicy TimeoutPolicy
 
 	// RetryPolicy defines the retry / number / timeout options for a route
 	RetryPolicy *RetryPolicy

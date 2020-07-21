@@ -249,23 +249,21 @@ func TestRetryPolicy(t *testing.T) {
 func TestTimeoutPolicy(t *testing.T) {
 	tests := map[string]struct {
 		tp   *projcontour.TimeoutPolicy
-		want *TimeoutPolicy
+		want TimeoutPolicy
 	}{
 		"nil timeout policy": {
 			tp:   nil,
-			want: nil,
+			want: TimeoutPolicy{},
 		},
 		"empty timeout policy": {
-			tp: &projcontour.TimeoutPolicy{},
-			want: &TimeoutPolicy{
-				ResponseTimeout: timeout.DefaultSetting(),
-			},
+			tp:   &projcontour.TimeoutPolicy{},
+			want: TimeoutPolicy{},
 		},
 		"valid response timeout": {
 			tp: &projcontour.TimeoutPolicy{
 				Response: "1m30s",
 			},
-			want: &TimeoutPolicy{
+			want: TimeoutPolicy{
 				ResponseTimeout: timeout.DurationSetting(90 * time.Second),
 			},
 		},
@@ -273,7 +271,7 @@ func TestTimeoutPolicy(t *testing.T) {
 			tp: &projcontour.TimeoutPolicy{
 				Response: "90", // 90 what?
 			},
-			want: &TimeoutPolicy{
+			want: TimeoutPolicy{
 				// the documentation for an invalid timeout says the duration will
 				// be undefined. In practice we take the spec from the
 				// contour.heptio.com/request-timeout annotation, which is defined
@@ -285,7 +283,7 @@ func TestTimeoutPolicy(t *testing.T) {
 			tp: &projcontour.TimeoutPolicy{
 				Response: "infinite",
 			},
-			want: &TimeoutPolicy{
+			want: TimeoutPolicy{
 				ResponseTimeout: timeout.DisabledSetting(),
 			},
 		},
@@ -293,7 +291,7 @@ func TestTimeoutPolicy(t *testing.T) {
 			tp: &projcontour.TimeoutPolicy{
 				Idle: "900s",
 			},
-			want: &TimeoutPolicy{
+			want: TimeoutPolicy{
 				IdleTimeout: timeout.DurationSetting(900 * time.Second),
 			},
 		},

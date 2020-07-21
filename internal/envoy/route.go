@@ -59,8 +59,8 @@ func RouteMatch(route *dag.Route) *envoy_api_v2_route.RouteMatch {
 func RouteRoute(r *dag.Route) *envoy_api_v2_route.Route_Route {
 	ra := envoy_api_v2_route.RouteAction{
 		RetryPolicy:           retryPolicy(r),
-		Timeout:               responseTimeout(r),
-		IdleTimeout:           idleTimeout(r),
+		Timeout:               envoyTimeout(r.TimeoutPolicy.ResponseTimeout),
+		IdleTimeout:           envoyTimeout(r.TimeoutPolicy.IdleTimeout),
 		PrefixRewrite:         r.PrefixRewrite,
 		HashPolicy:            hashPolicy(r),
 		RequestMirrorPolicies: mirrorPolicy(r),
@@ -129,20 +129,6 @@ func hostReplaceHeader(hp *dag.HeadersPolicy) string {
 		return ""
 	}
 	return hp.HostRewrite
-}
-
-func responseTimeout(r *dag.Route) *duration.Duration {
-	if r.TimeoutPolicy == nil {
-		return nil
-	}
-	return envoyTimeout(r.TimeoutPolicy.ResponseTimeout)
-}
-
-func idleTimeout(r *dag.Route) *duration.Duration {
-	if r.TimeoutPolicy == nil {
-		return nil
-	}
-	return envoyTimeout(r.TimeoutPolicy.IdleTimeout)
 }
 
 // envoyTimeout converts a timeout.Setting to a protobuf.Duration
