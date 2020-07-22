@@ -21,6 +21,7 @@ import (
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/timeout"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -44,7 +45,17 @@ func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
 	if rp == nil {
 		return nil
 	}
-	perTryTimeout, _ := time.ParseDuration(rp.PerTryTimeout)
+
+	// If PerTryTimeout is not a valid duration string, use the Envoy default
+	// value, otherwise use the provided value.
+	// TODO(sk) it might make sense to change the behavior here to be consistent
+	// with other timeout parsing, meaning use timeout.Parse which would result
+	// in a disabled per-try timeout if the input was not a valid duration.
+	perTryTimeout := timeout.DefaultSetting()
+	if perTryDuration, err := time.ParseDuration(rp.PerTryTimeout); err == nil {
+		perTryTimeout = timeout.DurationSetting(perTryDuration)
+	}
+
 	return &RetryPolicy{
 		RetryOn:              retryOn(rp.RetryOn),
 		RetriableStatusCodes: rp.RetriableStatusCodes,
@@ -124,7 +135,7 @@ func ingressRetryPolicy(ingress *v1beta1.Ingress) *RetryPolicy {
 	}
 }
 
-func ingressTimeoutPolicy(ingress *v1beta1.Ingress) *TimeoutPolicy {
+func ingressTimeoutPolicy(ingress *v1beta1.Ingress) TimeoutPolicy {
 	response := annotation.CompatAnnotation(ingress, "response-timeout")
 	if len(response) == 0 {
 		// Note: due to a misunderstanding the name of the annotation is
@@ -132,7 +143,10 @@ func ingressTimeoutPolicy(ingress *v1beta1.Ingress) *TimeoutPolicy {
 		// the response body.
 		response = annotation.CompatAnnotation(ingress, "request-timeout")
 		if len(response) == 0 {
-			return nil
+			return TimeoutPolicy{
+				ResponseTimeout: timeout.DefaultSetting(),
+				IdleTimeout:     timeout.DefaultSetting(),
+			}
 		}
 	}
 	// if the request timeout annotation is present on this ingress
@@ -142,13 +156,16 @@ func ingressTimeoutPolicy(ingress *v1beta1.Ingress) *TimeoutPolicy {
 	})
 }
 
-func timeoutPolicy(tp *projcontour.TimeoutPolicy) *TimeoutPolicy {
+func timeoutPolicy(tp *projcontour.TimeoutPolicy) TimeoutPolicy {
 	if tp == nil {
-		return nil
+		return TimeoutPolicy{
+			ResponseTimeout: timeout.DefaultSetting(),
+			IdleTimeout:     timeout.DefaultSetting(),
+		}
 	}
-	return &TimeoutPolicy{
-		ResponseTimeout: annotation.ParseTimeout(tp.Response),
-		IdleTimeout:     annotation.ParseTimeout(tp.Idle),
+	return TimeoutPolicy{
+		ResponseTimeout: timeout.Parse(tp.Response),
+		IdleTimeout:     timeout.Parse(tp.Idle),
 	}
 }
 
