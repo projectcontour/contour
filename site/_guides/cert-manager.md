@@ -603,8 +603,9 @@ $ curl https://httpbinproxy.davecheney.com/get
 
 This method is a workaround until we can deliver the changes in [#950][10] and [#951][11].
 
-The dummy Ingress record exists only to hold the annotations `ingress-shim` requires.
-Because it does not include the `ingress-class: contour` annotation, Contour will not see it and so the configuration of the Ingress does not matter, except that it is valid enough for ingress-shim to use.
+The dummy Ingress record exists only to hold the annotations that cert-manager requires in order to kick off the certification creation process.
+Because it does not include the `ingress-class: contour` annotation, Contour will not see it and so the configuration of the Ingress does not matter, except that it is valid enough for cert-manager to use.
+See the [cert-manager docs][12] for more information.
 
 ## Wrapping up
 
@@ -657,3 +658,4 @@ $ curl -v http://httpbin.davecheney.com/get
 [9]: {% link /img/cert-manager/httpbin.png %}
 [10]: {{site.github.repository_url}}/issues/950
 [11]: {{site.github.repository_url}}/issues/951
+[12]: https://cert-manager.io/docs/usage/ingress/
