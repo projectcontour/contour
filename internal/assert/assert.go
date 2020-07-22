@@ -32,22 +32,22 @@ type Assert struct {
 // Equal will test that want == got, and call t.Fatal if it does not.
 // Notably, for errors, they are equal if they are both nil, or are both non-nil.
 // No value information is checked for errors.
-func Equal(t *testing.T, want, got interface{}) {
+func Equal(t *testing.T, want, got interface{}, opts ...cmp.Option) {
 	t.Helper()
-	Assert{t}.Equal(want, got)
+	Assert{t}.Equal(want, got, opts...)
 }
 
 // Equal will call t.Fatal if want and got are not equal.
-func (a Assert) Equal(want, got interface{}) {
+func (a Assert) Equal(want, got interface{}, opts ...cmp.Option) {
 	a.t.Helper()
-	opts := []cmp.Option{
+	opts = append(opts,
 		cmpopts.IgnoreFields(v2.DiscoveryResponse{}, "VersionInfo", "Nonce"),
 		cmpopts.AcyclicTransformer("UnmarshalAny", unmarshalAny),
 		// errors to be equal only if both are nil or both are non-nil.
 		cmp.Comparer(func(x, y error) bool {
 			return (x == nil) == (y == nil)
 		}),
-	}
+	)
 	diff := cmp.Diff(want, got, opts...)
 	if diff != "" {
 		a.t.Fatal(diff)

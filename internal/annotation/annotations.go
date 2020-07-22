@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	"github.com/projectcontour/contour/internal/timeout"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -182,8 +182,8 @@ func NumRetries(i *v1beta1.Ingress) uint32 {
 }
 
 // PerTryTimeout returns the duration envoy will wait per retry cycle.
-func PerTryTimeout(i *v1beta1.Ingress) time.Duration {
-	return ParseTimeout(CompatAnnotation(i, "per-try-timeout"))
+func PerTryTimeout(i *v1beta1.Ingress) timeout.Setting {
+	return timeout.Parse(CompatAnnotation(i, "per-try-timeout"))
 }
 
 // IngressClass returns the first matching ingress class for the following

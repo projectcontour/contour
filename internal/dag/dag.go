@@ -22,6 +22,7 @@ import (
 	"time"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	"github.com/projectcontour/contour/internal/timeout"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -113,7 +114,7 @@ type Route struct {
 	Websocket bool
 
 	// TimeoutPolicy defines the timeout request/idle
-	TimeoutPolicy *TimeoutPolicy
+	TimeoutPolicy TimeoutPolicy
 
 	// RetryPolicy defines the retry / number / timeout options for a route
 	RetryPolicy *RetryPolicy
@@ -147,12 +148,10 @@ func (r *Route) HasPathRegex() bool {
 type TimeoutPolicy struct {
 	// ResponseTimeout is the timeout applied to the response
 	// from the backend server.
-	// A timeout of zero implies "use envoy's default"
-	// A timeout of -1 represents "infinity"
-	ResponseTimeout time.Duration
+	ResponseTimeout timeout.Setting
 
 	// IdleTimeout is the timeout applied to idle connections.
-	IdleTimeout time.Duration
+	IdleTimeout timeout.Setting
 }
 
 // RetryPolicy defines the retry / number / timeout options
@@ -170,7 +169,7 @@ type RetryPolicy struct {
 
 	// PerTryTimeout specifies the timeout per retry attempt.
 	// Ignored if RetryOn is blank.
-	PerTryTimeout time.Duration
+	PerTryTimeout timeout.Setting
 }
 
 // MirrorPolicy defines the mirroring policy for a route.
