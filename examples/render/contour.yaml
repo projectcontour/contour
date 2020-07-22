@@ -107,7 +107,7 @@ data:
     # timeouts:
     #   connection-idle-timeout: 60s
     #   stream-idle-timeout: 5m
-    #   max-connection-duration: 0s
+    #   max-connection-duration: infinity
     #   drain-timeout: 5s
 
 ---

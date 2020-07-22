@@ -31,6 +31,7 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
+	"github.com/projectcontour/contour/internal/timeout"
 )
 
 type HTTPVersionType = http.HttpConnectionManager_CodecType
@@ -130,10 +131,10 @@ type httpConnectionManagerBuilder struct {
 	metricsPrefix         string
 	accessLoggers         []*accesslog.AccessLog
 	requestTimeout        time.Duration
-	connectionIdleTimeout time.Duration
-	streamIdleTimeout     time.Duration
-	maxConnectionDuration time.Duration
-	drainTimeout          time.Duration
+	connectionIdleTimeout timeout.Setting
+	streamIdleTimeout     timeout.Setting
+	maxConnectionDuration timeout.Setting
+	drainTimeout          timeout.Setting
 	filters               []*http.HttpFilter
 	codec                 HTTPVersionType // Note the zero value is AUTO, which is the default we want.
 }
@@ -174,30 +175,26 @@ func (b *httpConnectionManagerBuilder) RequestTimeout(timeout time.Duration) *ht
 	return b
 }
 
-// ConnectionIdleTimeout sets the idle timeout on the connection
-// manager. If not specified or set to 0, this timeout is disabled.
-func (b *httpConnectionManagerBuilder) ConnectionIdleTimeout(timeout time.Duration) *httpConnectionManagerBuilder {
+// ConnectionIdleTimeout sets the idle timeout on the connection manager.
+func (b *httpConnectionManagerBuilder) ConnectionIdleTimeout(timeout timeout.Setting) *httpConnectionManagerBuilder {
 	b.connectionIdleTimeout = timeout
 	return b
 }
 
-// StreamIdleTimeout sets the stream idle timeout on the connection
-// manager. If not specified or set to 0, this timeout is disabled.
-func (b *httpConnectionManagerBuilder) StreamIdleTimeout(timeout time.Duration) *httpConnectionManagerBuilder {
+// StreamIdleTimeout sets the stream idle timeout on the connection manager.
+func (b *httpConnectionManagerBuilder) StreamIdleTimeout(timeout timeout.Setting) *httpConnectionManagerBuilder {
 	b.streamIdleTimeout = timeout
 	return b
 }
 
-// MaxConnectionDuration sets the max connection duration on the connection
-// manager. If not specified or set to 0, this timeout is disabled.
-func (b *httpConnectionManagerBuilder) MaxConnectionDuration(timeout time.Duration) *httpConnectionManagerBuilder {
+// MaxConnectionDuration sets the max connection duration on the connection manager.
+func (b *httpConnectionManagerBuilder) MaxConnectionDuration(timeout timeout.Setting) *httpConnectionManagerBuilder {
 	b.maxConnectionDuration = timeout
 	return b
 }
 
-// DrainTimeout sets the drain timeout on the connection
-// manager. If not specified or set to 0, this timeout is disabled.
-func (b *httpConnectionManagerBuilder) DrainTimeout(timeout time.Duration) *httpConnectionManagerBuilder {
+// DrainTimeout sets the drain timeout on the connection manager.
+func (b *httpConnectionManagerBuilder) DrainTimeout(timeout timeout.Setting) *httpConnectionManagerBuilder {
 	b.drainTimeout = timeout
 	return b
 }
@@ -238,7 +235,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 		},
 		HttpFilters: b.filters,
 		CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
-			IdleTimeout: protobuf.Duration(b.connectionIdleTimeout),
+			IdleTimeout: envoyTimeout(b.connectionIdleTimeout),
 		},
 		HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
 			// Enable support for HTTP/1.0 requests that carry
@@ -253,15 +250,16 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 		PreserveExternalRequestId: true,
 		MergeSlashes:              true,
 
-		StreamIdleTimeout: protobuf.Duration(b.streamIdleTimeout),
-		DrainTimeout:      protobuf.Duration(b.drainTimeout),
+		StreamIdleTimeout: envoyTimeout(b.streamIdleTimeout),
+		DrainTimeout:      envoyTimeout(b.drainTimeout),
 	}
 
-	// This timeout is disabled in Envoy by NOT providing a value, rather than explicitly passing a 0.
-	// From the contour perspective, a 0 value still disables the timeout, in order to be consistent
-	// with other timeouts.
-	if b.maxConnectionDuration > 0 {
-		cm.CommonHttpProtocolOptions.MaxConnectionDuration = protobuf.Duration(b.maxConnectionDuration)
+	// Max connection duration is infinite/disabled by default in Envoy, so if the timeout setting
+	// indicates to either disable or use default, don't pass a value at all. Note that unlike other
+	// Envoy timeouts, explicitly passing a 0 here *would not* disable the timeout; it needs to be
+	// omitted entirely.
+	if !b.maxConnectionDuration.IsDisabled() && !b.maxConnectionDuration.UseDefault() {
+		cm.CommonHttpProtocolOptions.MaxConnectionDuration = protobuf.Duration(b.maxConnectionDuration.Duration())
 	}
 
 	if len(b.accessLoggers) > 0 {

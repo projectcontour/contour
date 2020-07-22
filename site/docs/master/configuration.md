@@ -71,16 +71,18 @@ In the vast majority of deployments, only the `configmap-name` and `configmap-na
 
 ### Timeout Configuration
 
-The timeout configuration block can be used to configure various timeouts for the proxies.
+The timeout configuration block can be used to configure various timeouts for the proxies. All fields are optional; Contour/Envoy defaults apply if a field is not specified.
 
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
-| connection-idle-timeout| [duration][4] | `60s` | This field defines how long the proxy should wait while there are no active requests (for HTTP/1.1) or streams (for HTTP/2) before terminating an HTTP connection. Set to 0 to disable the timeout. See [the Envoy documentation][8] for more information. |
-| stream-idle-timeout| [duration][4] | `5m` | This field defines how long the proxy should wait while there is no request activity (for HTTP/1.1) or stream activity (for HTTP/2) before terminating the HTTP request or stream. Set to 0 to disable the timeout. See [the Envoy documentation][9] for more information. |
-| max-connection-duration | [duration][4] | none | This field defines the maximum period of time after an HTTP connection has been established from the client to the proxy before it is closed by the proxy, regardless of whether there has been activity or not. Omit or set to 0 for no max duration. See [the Envoy documentation][10] for more information. |
-| drain-timeout | [duration][4] | `5s` | This field defines how long the proxy will wait between sending an initial GOAWAY frame and a second, final GOAWAY frame when terminating an HTTP/2 connection. During this grace period, the proxy will continue to respond to new streams. After the final GOAWAY frame has been sent, the proxy will refuse new streams. Set to 0 for no grace period. See [the Envoy documentation][11] for more information. |
+| connection-idle-timeout| string | `60s` | This field defines how long the proxy should wait while there are no active requests (for HTTP/1.1) or streams (for HTTP/2) before terminating an HTTP connection. Must be a [valid Go duration string][4], or `infinity` to disable the timeout entirely. See [the Envoy documentation][8] for more information. |
+| stream-idle-timeout| string | `5m`* |This field defines how long the proxy should wait while there is no request activity (for HTTP/1.1) or stream activity (for HTTP/2) before terminating the HTTP request or stream. Must be a [valid Go duration string][4], or `infinity` to disable the timeout entirely. See [the Envoy documentation][9] for more information. |
+| max-connection-duration | string | none* | This field defines the maximum period of time after an HTTP connection has been established from the client to the proxy before it is closed by the proxy, regardless of whether there has been activity or not. Must be a [valid Go duration string][4], or omitted or set to `infinity` for no max duration. See [the Envoy documentation][10] for more information. |
+| drain-timeout | string | `5s`* | This field defines how long the proxy will wait between sending an initial GOAWAY frame and a second, final GOAWAY frame when terminating an HTTP/2 connection. During this grace period, the proxy will continue to respond to new streams. After the final GOAWAY frame has been sent, the proxy will refuse new streams. Must be a [valid Go duration string][4]. See [the Envoy documentation][11] for more information. |
 {: class="table thead-dark table-bordered"}
 <br>
+
+_* This is Envoy's default setting value and is not explicitly configured by Contour._
 
 ### Configuration Example
 
@@ -120,7 +122,7 @@ data:
     # timeouts:
     #  connection-idle-timeout: 60s
     #  stream-idle-timeout: 5m
-    #  max-connection-duration: 0s
+    #  max-connection-duration: infinity
     #  drain-timeout: 5s
 ```
 

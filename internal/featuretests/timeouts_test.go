@@ -21,6 +21,7 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/timeout"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -85,10 +86,10 @@ func TestTimeoutsNotSpecified(t *testing.T) {
 
 func TestNonZeroTimeoutsSpecified(t *testing.T) {
 	withTimeouts := func(eh *contour.EventHandler) {
-		eh.ListenerVisitorConfig.ConnectionIdleTimeout = 7 * time.Second
-		eh.ListenerVisitorConfig.StreamIdleTimeout = 70 * time.Second
-		eh.ListenerVisitorConfig.MaxConnectionDuration = 700 * time.Second
-		eh.ListenerVisitorConfig.DrainTimeout = 7000 * time.Second
+		eh.ListenerVisitorConfig.ConnectionIdleTimeout = timeout.DurationSetting(7 * time.Second)
+		eh.ListenerVisitorConfig.StreamIdleTimeout = timeout.DurationSetting(70 * time.Second)
+		eh.ListenerVisitorConfig.MaxConnectionDuration = timeout.DurationSetting(700 * time.Second)
+		eh.ListenerVisitorConfig.DrainTimeout = timeout.DurationSetting(7000 * time.Second)
 	}
 
 	rh, c, done := setup(t, withTimeouts)
@@ -141,10 +142,10 @@ func TestNonZeroTimeoutsSpecified(t *testing.T) {
 					MetricsPrefix(contour.ENVOY_HTTP_LISTENER).
 					AccessLoggers(envoy.FileAccessLogEnvoy(contour.DEFAULT_HTTP_ACCESS_LOG)).
 					DefaultFilters().
-					ConnectionIdleTimeout(7 * time.Second).
-					StreamIdleTimeout(70 * time.Second).
-					MaxConnectionDuration(700 * time.Second).
-					DrainTimeout(7000 * time.Second).
+					ConnectionIdleTimeout(timeout.DurationSetting(7 * time.Second)).
+					StreamIdleTimeout(timeout.DurationSetting(70 * time.Second)).
+					MaxConnectionDuration(timeout.DurationSetting(700 * time.Second)).
+					DrainTimeout(timeout.DurationSetting(7000 * time.Second)).
 					Get(),
 				),
 			}),

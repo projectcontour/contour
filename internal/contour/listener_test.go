@@ -27,6 +27,7 @@ import (
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/timeout"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1448,7 +1449,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with connection idle timeout set in visitor config": {
 			ListenerVisitorConfig: ListenerVisitorConfig{
-				ConnectionIdleTimeout: 90 * time.Second,
+				ConnectionIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
 				&projcontour.HTTPProxy{
@@ -1494,7 +1495,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						DefaultFilters().
-						ConnectionIdleTimeout(90 * time.Second).
+						ConnectionIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 				),
 				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
@@ -1502,7 +1503,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with stream idle timeout set in visitor config": {
 			ListenerVisitorConfig: ListenerVisitorConfig{
-				StreamIdleTimeout: 90 * time.Second,
+				StreamIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
 				&projcontour.HTTPProxy{
@@ -1548,7 +1549,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						DefaultFilters().
-						StreamIdleTimeout(90 * time.Second).
+						StreamIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 				),
 				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
@@ -1556,7 +1557,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with max connection duration set in visitor config": {
 			ListenerVisitorConfig: ListenerVisitorConfig{
-				MaxConnectionDuration: 90 * time.Second,
+				MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
 				&projcontour.HTTPProxy{
@@ -1602,7 +1603,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						DefaultFilters().
-						MaxConnectionDuration(90 * time.Second).
+						MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 				),
 				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
@@ -1610,7 +1611,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with drain timeout set in visitor config": {
 			ListenerVisitorConfig: ListenerVisitorConfig{
-				DrainTimeout: 90 * time.Second,
+				DrainTimeout: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
 				&projcontour.HTTPProxy{
@@ -1656,7 +1657,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						DefaultFilters().
-						DrainTimeout(90 * time.Second).
+						DrainTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 				),
 				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
@@ -1664,7 +1665,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpsproxy with secret with connection idle timeout set in visitor config": {
 			ListenerVisitorConfig: ListenerVisitorConfig{
-				ConnectionIdleTimeout: 90 * time.Second,
+				ConnectionIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
 				&projcontour.HTTPProxy{
@@ -1717,7 +1718,7 @@ func TestListenerVisit(t *testing.T) {
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
 					AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 					DefaultFilters().
-					ConnectionIdleTimeout(90 * time.Second).
+					ConnectionIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 					Get(),
 				),
 				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
@@ -1735,7 +1736,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
 						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
-						ConnectionIdleTimeout(90 * time.Second).
+						ConnectionIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get()),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
@@ -1746,7 +1747,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpsproxy with secret with stream idle timeout set in visitor config": {
 			ListenerVisitorConfig: ListenerVisitorConfig{
-				StreamIdleTimeout: 90 * time.Second,
+				StreamIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
 				&projcontour.HTTPProxy{
@@ -1799,7 +1800,7 @@ func TestListenerVisit(t *testing.T) {
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
 					AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 					DefaultFilters().
-					StreamIdleTimeout(90 * time.Second).
+					StreamIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 					Get(),
 				),
 				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
@@ -1817,7 +1818,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
 						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
-						StreamIdleTimeout(90 * time.Second).
+						StreamIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get()),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
@@ -1828,7 +1829,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpsproxy with secret with max connection duration set in visitor config": {
 			ListenerVisitorConfig: ListenerVisitorConfig{
-				MaxConnectionDuration: 90 * time.Second,
+				MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
 				&projcontour.HTTPProxy{
@@ -1881,7 +1882,7 @@ func TestListenerVisit(t *testing.T) {
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
 					AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 					DefaultFilters().
-					MaxConnectionDuration(90 * time.Second).
+					MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
 					Get(),
 				),
 				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
@@ -1899,7 +1900,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
 						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
-						MaxConnectionDuration(90 * time.Second).
+						MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
 						Get()),
 				}},
 				ListenerFilters: envoy.ListenerFilters(
@@ -1910,7 +1911,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpsproxy with secret with drain timeout set in visitor config": {
 			ListenerVisitorConfig: ListenerVisitorConfig{
-				DrainTimeout: 90 * time.Second,
+				DrainTimeout: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
 				&projcontour.HTTPProxy{
@@ -1963,7 +1964,7 @@ func TestListenerVisit(t *testing.T) {
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
 					AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 					DefaultFilters().
-					DrainTimeout(90 * time.Second).
+					DrainTimeout(timeout.DurationSetting(90 * time.Second)).
 					Get(),
 				),
 				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
@@ -1981,7 +1982,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
 						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
-						DrainTimeout(90 * time.Second).
+						DrainTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get()),
 				}},
 				ListenerFilters: envoy.ListenerFilters(

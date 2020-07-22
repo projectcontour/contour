@@ -29,6 +29,7 @@ import (
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/timeout"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -305,10 +306,10 @@ func TestHTTPConnectionManager(t *testing.T) {
 		routename             string
 		accesslogger          []*envoy_api_v2_accesslog.AccessLog
 		requestTimeout        time.Duration
-		connectionIdleTimeout time.Duration
-		streamIdleTimeout     time.Duration
-		maxConnectionDuration time.Duration
-		drainTimeout          time.Duration
+		connectionIdleTimeout timeout.Setting
+		streamIdleTimeout     timeout.Setting
+		maxConnectionDuration timeout.Setting
+		drainTimeout          timeout.Setting
 		want                  *envoy_api_v2_listener.Filter
 	}{
 		"default": {
@@ -351,17 +352,13 @@ func TestHTTPConnectionManager(t *testing.T) {
 							// a Host: header. See #537.
 							AcceptHttp_10: true,
 						},
-						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
-							IdleTimeout: protobuf.Duration(0),
-						},
+						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
 						RequestTimeout:            protobuf.Duration(0),
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
-						StreamIdleTimeout:         protobuf.Duration(0),
-						DrainTimeout:              protobuf.Duration(0),
 					}),
 				},
 			},
@@ -406,17 +403,13 @@ func TestHTTPConnectionManager(t *testing.T) {
 							// a Host: header. See #537.
 							AcceptHttp_10: true,
 						},
-						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
-							IdleTimeout: protobuf.Duration(0),
-						},
+						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
 						RequestTimeout:            protobuf.Duration(10 * time.Second),
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
-						StreamIdleTimeout:         protobuf.Duration(0),
-						DrainTimeout:              protobuf.Duration(0),
 					}),
 				},
 			},
@@ -425,7 +418,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 			routename:             "default/kuard",
 			accesslogger:          FileAccessLogEnvoy("/dev/stdout"),
 			requestTimeout:        0,
-			connectionIdleTimeout: 90 * time.Second,
+			connectionIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			want: &envoy_api_v2_listener.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
@@ -471,8 +464,6 @@ func TestHTTPConnectionManager(t *testing.T) {
 						RequestTimeout:            protobuf.Duration(0),
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
-						StreamIdleTimeout:         protobuf.Duration(0),
-						DrainTimeout:              protobuf.Duration(0),
 					}),
 				},
 			},
@@ -481,7 +472,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 			routename:         "default/kuard",
 			accesslogger:      FileAccessLogEnvoy("/dev/stdout"),
 			requestTimeout:    0,
-			streamIdleTimeout: 90 * time.Second,
+			streamIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			want: &envoy_api_v2_listener.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
@@ -518,9 +509,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							// a Host: header. See #537.
 							AcceptHttp_10: true,
 						},
-						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
-							IdleTimeout: protobuf.Duration(0),
-						},
+						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
@@ -528,7 +517,6 @@ func TestHTTPConnectionManager(t *testing.T) {
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
 						StreamIdleTimeout:         protobuf.Duration(90 * time.Second),
-						DrainTimeout:              protobuf.Duration(0),
 					}),
 				},
 			},
@@ -537,7 +525,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 			routename:             "default/kuard",
 			accesslogger:          FileAccessLogEnvoy("/dev/stdout"),
 			requestTimeout:        0,
-			maxConnectionDuration: 90 * time.Second,
+			maxConnectionDuration: timeout.DurationSetting(90 * time.Second),
 			want: &envoy_api_v2_listener.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
@@ -575,7 +563,6 @@ func TestHTTPConnectionManager(t *testing.T) {
 							AcceptHttp_10: true,
 						},
 						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
-							IdleTimeout:           protobuf.Duration(0),
 							MaxConnectionDuration: protobuf.Duration(90 * time.Second),
 						},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
@@ -584,17 +571,15 @@ func TestHTTPConnectionManager(t *testing.T) {
 						RequestTimeout:            protobuf.Duration(0),
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
-						StreamIdleTimeout:         protobuf.Duration(0),
-						DrainTimeout:              protobuf.Duration(0),
 					}),
 				},
 			},
 		},
-		"max connection duration of 0s is omitted": {
+		"when max connection duration is disabled, it's omitted": {
 			routename:             "default/kuard",
 			accesslogger:          FileAccessLogEnvoy("/dev/stdout"),
 			requestTimeout:        0,
-			maxConnectionDuration: 0,
+			maxConnectionDuration: timeout.DisabledSetting(),
 			want: &envoy_api_v2_listener.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
@@ -631,17 +616,13 @@ func TestHTTPConnectionManager(t *testing.T) {
 							// a Host: header. See #537.
 							AcceptHttp_10: true,
 						},
-						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
-							IdleTimeout: protobuf.Duration(0),
-						},
+						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
 						RequestTimeout:            protobuf.Duration(0),
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
-						StreamIdleTimeout:         protobuf.Duration(0),
-						DrainTimeout:              protobuf.Duration(0),
 					}),
 				},
 			},
@@ -650,7 +631,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 			routename:      "default/kuard",
 			accesslogger:   FileAccessLogEnvoy("/dev/stdout"),
 			requestTimeout: 0,
-			drainTimeout:   90 * time.Second,
+			drainTimeout:   timeout.DurationSetting(90 * time.Second),
 			want: &envoy_api_v2_listener.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
@@ -687,16 +668,13 @@ func TestHTTPConnectionManager(t *testing.T) {
 							// a Host: header. See #537.
 							AcceptHttp_10: true,
 						},
-						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
-							IdleTimeout: protobuf.Duration(0),
-						},
+						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
 						RequestTimeout:            protobuf.Duration(0),
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
-						StreamIdleTimeout:         protobuf.Duration(0),
 						DrainTimeout:              protobuf.Duration(90 * time.Second),
 					}),
 				},

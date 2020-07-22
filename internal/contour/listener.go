@@ -29,6 +29,7 @@ import (
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
+	"github.com/projectcontour/contour/internal/timeout"
 )
 
 const (
@@ -100,17 +101,17 @@ type ListenerVisitorConfig struct {
 
 	// ConnectionIdleTimeout configures the common_http_protocol_options.idle_timeout for all
 	// Connection Managers.
-	ConnectionIdleTimeout time.Duration
+	ConnectionIdleTimeout timeout.Setting
 
 	// StreamIdleTimeout configures the stream_idle_timeout for all Connection Managers.
-	StreamIdleTimeout time.Duration
+	StreamIdleTimeout timeout.Setting
 
 	// MaxConnectionDuration configures the common_http_protocol_options.max_connection_duration for all
 	// Connection Managers.
-	MaxConnectionDuration time.Duration
+	MaxConnectionDuration timeout.Setting
 
 	// DrainTimeout configures the drain_timeout for all Connection Managers.
-	DrainTimeout time.Duration
+	DrainTimeout timeout.Setting
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
@@ -213,54 +214,6 @@ func (lvc *ListenerVisitorConfig) requestTimeout() time.Duration {
 		return 0
 	}
 	return lvc.RequestTimeout
-}
-
-// connectionIdleTimeout sets any durations in lvc.ConnectionIdleTimeout <0 to 0 so that Envoy ends up with a positive duration.
-// for the idle_timeout value we are passing, there are only two valid values:
-// 0 - disabled
-// >0 duration - the timeout.
-// The value may be unset, but we always set it to 0.
-func (lvc *ListenerVisitorConfig) connectionIdleTimeout() time.Duration {
-	if lvc.ConnectionIdleTimeout < 0 {
-		return 0
-	}
-	return lvc.ConnectionIdleTimeout
-}
-
-// streamIdleTimeout sets any durations in lvc.StreamIdleTimeout <0 to 0 so that Envoy ends up with a positive duration.
-// for the stream_idle_timeout value we are passing, there are only two valid values:
-// 0 - disabled
-// >0 duration - the timeout.
-// The value may be unset, but we always set it to 0.
-func (lvc *ListenerVisitorConfig) streamIdleTimeout() time.Duration {
-	if lvc.StreamIdleTimeout < 0 {
-		return 0
-	}
-	return lvc.StreamIdleTimeout
-}
-
-// maxConnectionDuration sets any durations in lvc.MaxConnectionDuration <0 to 0 so that Envoy ends up with a positive duration.
-// for the max_connection_duration value we are passing, there are only two valid values:
-// 0 - disabled
-// >0 duration - the timeout.
-// The value may be unset, but we always set it to 0
-func (lvc *ListenerVisitorConfig) maxConnectionDuration() time.Duration {
-	if lvc.MaxConnectionDuration < 0 {
-		return 0
-	}
-	return lvc.MaxConnectionDuration
-}
-
-// drainTimeout sets any durations in lvc.DrainTimeout <0 to 0 so that Envoy ends up with a positive duration.
-// for the drain_timeout value we are passing, there are only two valid values:
-// 0 - disabled
-// >0 duration - the timeout.
-// The value may be unset, but we always set it to 0
-func (lvc *ListenerVisitorConfig) drainTimeout() time.Duration {
-	if lvc.DrainTimeout < 0 {
-		return 0
-	}
-	return lvc.DrainTimeout
 }
 
 // minTLSVersion returns the requested minimum TLS protocol
@@ -372,10 +325,10 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 			MetricsPrefix(ENVOY_HTTP_LISTENER).
 			AccessLoggers(lvc.newInsecureAccessLog()).
 			RequestTimeout(lvc.requestTimeout()).
-			ConnectionIdleTimeout(lvc.connectionIdleTimeout()).
-			StreamIdleTimeout(lvc.streamIdleTimeout()).
-			MaxConnectionDuration(lvc.maxConnectionDuration()).
-			DrainTimeout(lvc.drainTimeout()).
+			ConnectionIdleTimeout(lvc.ConnectionIdleTimeout).
+			StreamIdleTimeout(lvc.StreamIdleTimeout).
+			MaxConnectionDuration(lvc.MaxConnectionDuration).
+			DrainTimeout(lvc.DrainTimeout).
 			Get()
 
 		lv.listeners[ENVOY_HTTP_LISTENER] = envoy.Listener(
@@ -447,10 +400,10 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					MetricsPrefix(ENVOY_HTTPS_LISTENER).
 					AccessLoggers(v.ListenerVisitorConfig.newSecureAccessLog()).
 					RequestTimeout(v.ListenerVisitorConfig.requestTimeout()).
-					ConnectionIdleTimeout(v.ListenerVisitorConfig.connectionIdleTimeout()).
-					StreamIdleTimeout(v.ListenerVisitorConfig.streamIdleTimeout()).
-					MaxConnectionDuration(v.ListenerVisitorConfig.maxConnectionDuration()).
-					DrainTimeout(v.ListenerVisitorConfig.drainTimeout()).
+					ConnectionIdleTimeout(v.ListenerVisitorConfig.ConnectionIdleTimeout).
+					StreamIdleTimeout(v.ListenerVisitorConfig.StreamIdleTimeout).
+					MaxConnectionDuration(v.ListenerVisitorConfig.MaxConnectionDuration).
+					DrainTimeout(v.ListenerVisitorConfig.DrainTimeout).
 					Get(),
 			)
 
@@ -505,10 +458,10 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					MetricsPrefix(ENVOY_HTTPS_LISTENER).
 					AccessLoggers(v.ListenerVisitorConfig.newSecureAccessLog()).
 					RequestTimeout(v.ListenerVisitorConfig.requestTimeout()).
-					ConnectionIdleTimeout(v.ListenerVisitorConfig.connectionIdleTimeout()).
-					StreamIdleTimeout(v.ListenerVisitorConfig.streamIdleTimeout()).
-					MaxConnectionDuration(v.ListenerVisitorConfig.maxConnectionDuration()).
-					DrainTimeout(v.ListenerVisitorConfig.drainTimeout()).
+					ConnectionIdleTimeout(v.ListenerVisitorConfig.ConnectionIdleTimeout).
+					StreamIdleTimeout(v.ListenerVisitorConfig.StreamIdleTimeout).
+					MaxConnectionDuration(v.ListenerVisitorConfig.MaxConnectionDuration).
+					DrainTimeout(v.ListenerVisitorConfig.DrainTimeout).
 					Get(),
 			)
 

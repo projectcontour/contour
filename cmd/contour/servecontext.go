@@ -183,13 +183,7 @@ func newServeContext() *serveContext {
 		TimeoutConfig: TimeoutConfig{
 			// This is chosen as a rough default to stop idle connections wasting resources,
 			// without stopping slow connections from being terminated too quickly.
-			ConnectionIdleTimeout: 60 * time.Second,
-
-			// This is the Envoy default.
-			StreamIdleTimeout: 5 * time.Minute,
-
-			// This is the Envoy default.
-			DrainTimeout: 5 * time.Second,
+			ConnectionIdleTimeout: "60s",
 		},
 	}
 }
@@ -245,36 +239,37 @@ type LeaderElectionConfig struct {
 type TimeoutConfig struct {
 	// ConnectionIdleTimeout defines how long the proxy should wait while there are
 	// no active requests (for HTTP/1.1) or streams (for HTTP/2) before terminating
-	// an HTTP connection. Set to 0 to disable the timeout.
+	// an HTTP connection. Set to "infinity" to disable the timeout entirely.
 	//
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/core/protocol.proto#envoy-api-field-core-httpprotocoloptions-idle-timeout
 	// for more information.
-	ConnectionIdleTimeout time.Duration `yaml:"connection-idle-timeout,omitempty"`
+	ConnectionIdleTimeout string `yaml:"connection-idle-timeout,omitempty"`
 
 	// StreamIdleTimeout defines how long the proxy should wait while there is no
 	// request activity (for HTTP/1.1) or stream activity (for HTTP/2) before
-	// terminating the HTTP request or stream. Set to 0 to disable the timeout.
+	// terminating the HTTP request or stream. Set to "infinity" to disable the
+	// timeout entirely.
 	//
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto#envoy-api-field-config-filter-network-http-connection-manager-v2-httpconnectionmanager-stream-idle-timeout
 	// for more information.
-	StreamIdleTimeout time.Duration `yaml:"stream-idle-timeout,omitempty"`
+	StreamIdleTimeout string `yaml:"stream-idle-timeout,omitempty"`
 
 	// MaxConnectionDuration defines the maximum period of time after an HTTP connection
 	// has been established from the client to the proxy before it is closed by the proxy,
-	// regardless of whether there has been activity or not. Set to 0 for no max duration.
+	// regardless of whether there has been activity or not. Omit or set to "infinity" for
+	// no max duration.
 	//
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/core/protocol.proto#envoy-api-field-core-httpprotocoloptions-max-connection-duration
 	// for more information.
-	MaxConnectionDuration time.Duration `yaml:"max-connection-duration,omitempty"`
+	MaxConnectionDuration string `yaml:"max-connection-duration,omitempty"`
 
 	// DrainTimeout defines how long the proxy will wait between sending an initial GOAWAY
 	// frame and a second, final GOAWAY frame when terminating an HTTP/2 connection. During
 	// this grace period, the proxy will continue to respond to new streams. After the final
-	// GOAWAY frame has been sent, the proxy will refuse new streams. Set to 0 for no grace
-	// period.
+	// GOAWAY frame has been sent, the proxy will refuse new streams.
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto#envoy-api-field-config-filter-network-http-connection-manager-v2-httpconnectionmanager-drain-timeout
 	// for more information.
-	DrainTimeout time.Duration `yaml:"drain-timeout,omitempty"`
+	DrainTimeout string `yaml:"drain-timeout,omitempty"`
 }
 
 // grpcOptions returns a slice of grpc.ServerOptions.
