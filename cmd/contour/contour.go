@@ -39,7 +39,10 @@ func main() {
 	app.HelpFlag.Short('h')
 
 	envoyCmd := app.Command("envoy", "Sub-command for envoy actions.")
-	shutdownManager, shutdownManagerCtx := registerShutdownManager(envoyCmd, log)
+	sdm, shutdownManagerCtx := registerShutdownManager(envoyCmd, log)
+
+	// Add a "shutdown" command which initiates an Envoy shutdown sequence.
+	sdmShutdown := envoyCmd.Command("shutdown", "Initiate an shutdown sequence which configures Envoy to begin draining connections.")
 
 	bootstrap, bootstrapCtx := registerBootstrap(app)
 	certgenApp, certgenConfig := registerCertGen(app)
@@ -68,8 +71,10 @@ func main() {
 
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
-	case shutdownManager.FullCommand():
+	case sdm.FullCommand():
 		doShutdownManager(shutdownManagerCtx)
+	case sdmShutdown.FullCommand():
+		shutdownManagerCtx.shutdownHandler()
 	case bootstrap.FullCommand():
 		check(envoy.WriteBootstrap(bootstrapCtx))
 	case certgenApp.FullCommand():
