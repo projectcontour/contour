@@ -21,7 +21,7 @@ import (
 // HTTPProxySpec defines the spec of the CRD.
 type HTTPProxySpec struct {
 	// Virtualhost appears at most once. If it is present, the object is considered
-	// to be a "root".
+	// to be a "root" HTTPProxy.
 	// +optional
 	VirtualHost *VirtualHost `json:"virtualhost,omitempty"`
 	// Routes are the ingress routes. If TCPProxy is present, Routes is ignored.
@@ -30,7 +30,8 @@ type HTTPProxySpec struct {
 	// TCPProxy holds TCP proxy information.
 	// +optional
 	TCPProxy *TCPProxy `json:"tcpproxy,omitempty"`
-	// Includes allow for specific routing configuration to be appended to another HTTPProxy in another namespace.
+	// Includes allow for specific routing configuration to be included from another HTTPProxy,
+	// possibly in another namespace.
 	// +optional
 	Includes []Include `json:"includes,omitempty"`
 }
@@ -104,11 +105,11 @@ type HeaderMatchCondition struct {
 // to be a "root".
 type VirtualHost struct {
 	// The fully qualified domain name of the root of the ingress tree
-	// all leaves of the DAG rooted at this object relate to the fqdn
+	// all leaves of the DAG rooted at this object relate to the fqdn.
 	Fqdn string `json:"fqdn"`
 	// If present describes tls properties. The SNI names that will be matched on
 	// are described in fqdn, the tls.secretName secret must contain a
-	// matching certificate
+	// certificate that itself contains a name that matches the FQDN.
 	// +optional
 	TLS *TLS `json:"tls,omitempty"`
 }
@@ -467,12 +468,30 @@ type HTTPProxyStatus struct {
 	// +optional
 	// LoadBalancer contains the current status of the load balancer.
 	LoadBalancer corev1.LoadBalancerStatus `json:"loadBalancer,omitempty"`
+	// +optional
+	// Conditions contains information about the current status of the HTTPProxy,
+	// in an upstream-friendly container.
+	//
+	// Contour will update a single condition, `Valid`, that is in normal-true polarity.
+	// That is, when `currentStatus` is `valid`, the `Valid` condition will be `status: true`,
+	// and vice versa.
+	//
+	// Contour will leave untouched any other Conditions set in this block,
+	// in case some other controller wants to add a Condition.
+	//
+	// If you are another controller owner and wish to add a condition, you *should*
+	// namespace your condition with a label, like `controller.domain.com/ConditionName`.
+	// +patchMergeKey=type
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=type
+	Conditions []DetailedCondition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// HTTPProxy is an Ingress CRD specification
+// HTTPProxy is an Ingress CRD specification.
 // +k8s:openapi-gen=true
 // +kubebuilder:printcolumn:name="FQDN",type="string",JSONPath=".spec.virtualhost.fqdn",description="Fully qualified domain name"
 // +kubebuilder:printcolumn:name="TLS Secret",type="string",JSONPath=".spec.virtualhost.tls.secretName",description="Secret with TLS credentials"
@@ -485,6 +504,7 @@ type HTTPProxy struct {
 	metav1.ObjectMeta `json:"metadata"`
 
 	Spec HTTPProxySpec `json:"spec"`
+	// Status is a container for computed information about the HTTPProxy.
 	// +optional
 	Status HTTPProxyStatus `json:"status,omitempty"`
 }
