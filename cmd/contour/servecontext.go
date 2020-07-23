@@ -118,8 +118,11 @@ type serveContext struct {
 	// be set in the config file.
 	TimeoutConfig `yaml:"timeouts,omitempty"`
 
-	// RequestTimeout sets the client request timeout globally for Contour.
-	RequestTimeout time.Duration `yaml:"request-timeout,omitempty"`
+	// RequestTimeoutDeprecated sets the client request timeout globally for Contour.
+	//
+	// Deprecated: this field has been replaced with TimeoutConfig.RequestTimeout,
+	// and will be removed in a future release.
+	RequestTimeoutDeprecated time.Duration `yaml:"request-timeout,omitempty"`
 
 	// Should Contour register to watch the new service-apis types?
 	// By default this value is false, meaning Contour will not do anything with any of the new
@@ -237,6 +240,14 @@ type LeaderElectionConfig struct {
 
 // TimeoutConfig holds various configurable proxy timeout values.
 type TimeoutConfig struct {
+	// RequestTimeout sets the client request timeout globally for Contour. Note that
+	// this is a timeout for the entire request, not an idle timeout. Omit or set to
+	// "infinity" to disable the timeout entirely.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto#envoy-api-field-config-filter-network-http-connection-manager-v2-httpconnectionmanager-request-timeout
+	// for more information.
+	RequestTimeout string `yaml:"request-timeout,omitempty"`
+
 	// ConnectionIdleTimeout defines how long the proxy should wait while there are
 	// no active requests (for HTTP/1.1) or streams (for HTTP/2) before terminating
 	// an HTTP connection. Set to "infinity" to disable the timeout entirely.

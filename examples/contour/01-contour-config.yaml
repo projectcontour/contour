@@ -12,12 +12,6 @@ data:
     # path to kubeconfig (if not running inside a k8s cluster)
     # kubeconfig: /path/to/.kube/config
     #
-    # Client request timeout to be passed to Envoy
-    # as the connection manager request_timeout.
-    # Defaults to 0, which Envoy interprets as disabled.
-    # Note that this is the timeout for the whole request,
-    # not an idle timeout.
-    # request-timeout: 0s
     # disable HTTPProxy permitInsecure field
     disablePermitInsecure: false
     tls:
@@ -71,6 +65,7 @@ data:
     #
     # The following shows the default proxy timeout settings.
     # timeouts:
+    #   request-timeout: infinity
     #   connection-idle-timeout: 60s
     #   stream-idle-timeout: 5m
     #   max-connection-duration: infinity
