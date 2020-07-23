@@ -171,7 +171,7 @@ lint-flags:
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
-generate: generate-rbac generate-crd-deepcopy generate-deployment generate-crd-yaml generate-api-docs generate-metrics-docs
+generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-deployment generate-api-docs generate-metrics-docs
 
 .PHONY: generate-rbac
 generate-rbac:
@@ -190,13 +190,23 @@ generate-deployment:
 
 .PHONY: generate-crd-yaml
 generate-crd-yaml:
-	@echo Generating CRD YAML documents ...
+ifeq ($(ENABLE_EXTENSIONS_CRD),Y) # Remove in #2711.
+	@echo "Generating CRD YAML documents (including extensions) ..."
 	@./hack/generate-crd-yaml.sh
+else
+	@echo Generating CRD YAML documents ...
+	@./hack/generate-crd-yaml.sh ./apis/projectcontour/v1
+endif
 
 .PHONY: generate-api-docs
 generate-api-docs:
+ifeq ($(ENABLE_EXTENSIONS_CRD),Y) # Remove in #2711.
+	@echo "Generating API documentation (including extensions) ..."
+	@./hack/generate-api-docs.sh github.com/projectcontour/contour/apis/projectcontour
+else
 	@echo Generating API documentation ...
 	@./hack/generate-api-docs.sh
+endif
 
 .PHONY: generate-metrics-docs
 generate-metrics-docs:

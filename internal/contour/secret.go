@@ -85,15 +85,22 @@ func visitSecrets(root dag.Vertex) map[string]*envoy_api_v2_auth.Secret {
 	return sv.secrets
 }
 
+func (v *secretVisitor) addSecret(s *dag.Secret) {
+	name := envoy.Secretname(s)
+	if _, ok := v.secrets[name]; !ok {
+		envoySecret := envoy.Secret(s)
+		v.secrets[envoySecret.Name] = envoySecret
+	}
+}
+
 func (v *secretVisitor) visit(vertex dag.Vertex) {
 	switch svh := vertex.(type) {
 	case *dag.SecureVirtualHost:
 		if svh.Secret != nil {
-			name := envoy.Secretname(svh.Secret)
-			if _, ok := v.secrets[name]; !ok {
-				s := envoy.Secret(svh.Secret)
-				v.secrets[s.Name] = s
-			}
+			v.addSecret(svh.Secret)
+		}
+		if svh.FallbackCertificate != nil {
+			v.addSecret(svh.FallbackCertificate)
 		}
 	default:
 		vertex.Visit(v.visit)

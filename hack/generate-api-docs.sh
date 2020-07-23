@@ -11,8 +11,11 @@ GOPATH=${GOPATH:-$(go env GOPATH)}
 GOBIN=${GOBIN:-$(go env GOBIN)}
 GOBIN=${GOBIN:-${GOPATH}/bin}
 
-readonly HERE=$(cd $(dirname $0) && pwd)
-readonly REPO=$(cd ${HERE}/.. && pwd)
+readonly HERE=$(cd "$(dirname "$0")" && pwd)
+readonly REPO=$(cd "${HERE}/.." && pwd)
+
+# Optional first arg is the package root to scan for documentation.
+readonly PKGROOT="${1:-github.com/projectcontour/contour/apis/projectcontour/v1}"
 
 gendoc::build() {
     go install github.com/ahmetb/gen-crd-api-reference-docs
@@ -21,11 +24,11 @@ gendoc::build() {
 # Exec the doc generator. Note that we use custom templates to inject
 # the CSS styles that make the output look better on the Contour site.
 gendoc::exec() {
-    local readonly confdir="${REPO}/site/_data/refdocs"
+    local -r confdir="${REPO}/site/_data/refdocs"
 
-    ${GOBIN}/gen-crd-api-reference-docs \
-        -template-dir ${confdir} \
-        -config ${confdir}/config.json \
+    "${GOBIN}"/gen-crd-api-reference-docs \
+        -template-dir "${confdir}" \
+        -config "${confdir}/config.json" \
         "$@"
 }
 
@@ -34,9 +37,9 @@ gendoc::build
 # Fake up a GOPATH so that the current working directory can be
 # imported by the documentation generator.
 GOPATH=$(mktemp -d)
-mkdir -p ${GOPATH}/src/github.com/projectcontour
-ln -s $REPO ${GOPATH}/src/github.com/projectcontour/contour
+mkdir -p "${GOPATH}/src/github.com/projectcontour"
+ln -s "${REPO}" "${GOPATH}/src/github.com/projectcontour/contour"
 
 gendoc::exec \
-    -api-dir github.com/projectcontour/contour/apis/projectcontour \
-    -out-file $REPO/site/docs/master/api-reference.html
+    -api-dir "${PKGROOT}" \
+    -out-file "${REPO}/site/docs/master/api-reference.html"
