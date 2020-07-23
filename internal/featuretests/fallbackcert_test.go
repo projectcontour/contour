@@ -16,12 +16,12 @@ package featuretests
 import (
 	"testing"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/fixture"
-
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/envoy"
-
+	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -283,10 +283,60 @@ func TestFallbackCertificate(t *testing.T) {
 		),
 	})
 
+	// We should have emitted TLS certificate secrets for both
+	// the proxy certificate and for the fallback certificate.
+	c.Request(secretType).Equals(&v2.DiscoveryResponse{
+		TypeUrl: secretType,
+		Resources: resources(t,
+			&envoy_api_v2_auth.Secret{
+				Name: "admin/fallbacksecret/68621186db",
+				Type: &envoy_api_v2_auth.Secret_TlsCertificate{
+					TlsCertificate: &envoy_api_v2_auth.TlsCertificate{
+						CertificateChain: &envoy_api_v2_core.DataSource{
+							Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+								InlineBytes: fallbackSecret.Data[v1.TLSCertKey],
+							},
+						},
+						PrivateKey: &envoy_api_v2_core.DataSource{
+							Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+								InlineBytes: fallbackSecret.Data[v1.TLSPrivateKeyKey],
+							},
+						},
+					},
+				},
+			},
+			&envoy_api_v2_auth.Secret{
+				Name: "default/secret/68621186db",
+				Type: &envoy_api_v2_auth.Secret_TlsCertificate{
+					TlsCertificate: &envoy_api_v2_auth.TlsCertificate{
+						CertificateChain: &envoy_api_v2_core.DataSource{
+							Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+								InlineBytes: sec1.Data[v1.TLSCertKey],
+							},
+						},
+						PrivateKey: &envoy_api_v2_core.DataSource{
+							Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+								InlineBytes: sec1.Data[v1.TLSPrivateKeyKey],
+							},
+						},
+					},
+				},
+			},
+		),
+	})
+
 	rh.OnDelete(fallbackSecret)
 
 	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
+		Resources: nil,
+	})
+
+	rh.OnDelete(proxy4)
+	rh.OnDelete(proxy2)
+
+	c.Request(secretType).Equals(&v2.DiscoveryResponse{
+		TypeUrl:   secretType,
 		Resources: nil,
 	})
 }
