@@ -110,8 +110,8 @@ type ListenerVisitorConfig struct {
 	// Connection Managers.
 	MaxConnectionDuration timeout.Setting
 
-	// DrainTimeout configures the drain_timeout for all Connection Managers.
-	DrainTimeout timeout.Setting
+	// ConnectionShutdownGracePeriod configures the drain_timeout for all Connection Managers.
+	ConnectionShutdownGracePeriod timeout.Setting
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
@@ -328,7 +328,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 			ConnectionIdleTimeout(lvc.ConnectionIdleTimeout).
 			StreamIdleTimeout(lvc.StreamIdleTimeout).
 			MaxConnectionDuration(lvc.MaxConnectionDuration).
-			DrainTimeout(lvc.DrainTimeout).
+			ConnectionShutdownGracePeriod(lvc.ConnectionShutdownGracePeriod).
 			Get()
 
 		lv.listeners[ENVOY_HTTP_LISTENER] = envoy.Listener(
@@ -403,7 +403,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					ConnectionIdleTimeout(v.ListenerVisitorConfig.ConnectionIdleTimeout).
 					StreamIdleTimeout(v.ListenerVisitorConfig.StreamIdleTimeout).
 					MaxConnectionDuration(v.ListenerVisitorConfig.MaxConnectionDuration).
-					DrainTimeout(v.ListenerVisitorConfig.DrainTimeout).
+					ConnectionShutdownGracePeriod(v.ListenerVisitorConfig.ConnectionShutdownGracePeriod).
 					Get(),
 			)
 
@@ -461,7 +461,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					ConnectionIdleTimeout(v.ListenerVisitorConfig.ConnectionIdleTimeout).
 					StreamIdleTimeout(v.ListenerVisitorConfig.StreamIdleTimeout).
 					MaxConnectionDuration(v.ListenerVisitorConfig.MaxConnectionDuration).
-					DrainTimeout(v.ListenerVisitorConfig.DrainTimeout).
+					ConnectionShutdownGracePeriod(v.ListenerVisitorConfig.ConnectionShutdownGracePeriod).
 					Get(),
 			)
 

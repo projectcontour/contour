@@ -174,21 +174,21 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	listenerConfig := contour.ListenerVisitorConfig{
-		UseProxyProto:         ctx.useProxyProto,
-		HTTPAddress:           ctx.httpAddr,
-		HTTPPort:              ctx.httpPort,
-		HTTPAccessLog:         ctx.httpAccessLog,
-		HTTPSAddress:          ctx.httpsAddr,
-		HTTPSPort:             ctx.httpsPort,
-		HTTPSAccessLog:        ctx.httpsAccessLog,
-		AccessLogType:         ctx.AccessLogFormat,
-		AccessLogFields:       ctx.AccessLogFields,
-		MinimumTLSVersion:     annotation.MinTLSVersion(ctx.TLSConfig.MinimumProtocolVersion),
-		RequestTimeout:        ctx.RequestTimeout,
-		ConnectionIdleTimeout: timeout.Parse(ctx.ConnectionIdleTimeout),
-		StreamIdleTimeout:     timeout.Parse(ctx.StreamIdleTimeout),
-		MaxConnectionDuration: timeout.Parse(ctx.MaxConnectionDuration),
-		DrainTimeout:          timeout.Parse(ctx.DrainTimeout),
+		UseProxyProto:                 ctx.useProxyProto,
+		HTTPAddress:                   ctx.httpAddr,
+		HTTPPort:                      ctx.httpPort,
+		HTTPAccessLog:                 ctx.httpAccessLog,
+		HTTPSAddress:                  ctx.httpsAddr,
+		HTTPSPort:                     ctx.httpsPort,
+		HTTPSAccessLog:                ctx.httpsAccessLog,
+		AccessLogType:                 ctx.AccessLogFormat,
+		AccessLogFields:               ctx.AccessLogFields,
+		MinimumTLSVersion:             annotation.MinTLSVersion(ctx.TLSConfig.MinimumProtocolVersion),
+		RequestTimeout:                ctx.RequestTimeout,
+		ConnectionIdleTimeout:         timeout.Parse(ctx.ConnectionIdleTimeout),
+		StreamIdleTimeout:             timeout.Parse(ctx.StreamIdleTimeout),
+		MaxConnectionDuration:         timeout.Parse(ctx.MaxConnectionDuration),
+		ConnectionShutdownGracePeriod: timeout.Parse(ctx.ConnectionShutdownGracePeriod),
 	}
 
 	defaultHTTPVersions, err := parseDefaultHTTPVersions(ctx.DefaultHTTPVersions)

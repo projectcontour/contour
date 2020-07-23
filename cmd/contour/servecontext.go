@@ -263,13 +263,14 @@ type TimeoutConfig struct {
 	// for more information.
 	MaxConnectionDuration string `yaml:"max-connection-duration,omitempty"`
 
-	// DrainTimeout defines how long the proxy will wait between sending an initial GOAWAY
-	// frame and a second, final GOAWAY frame when terminating an HTTP/2 connection. During
-	// this grace period, the proxy will continue to respond to new streams. After the final
+	// ConnectionShutdownGracePeriod defines how long the proxy will wait between sending an
+	// initial GOAWAY frame and a second, final GOAWAY frame when terminating an HTTP/2 connection.
+	// During this grace period, the proxy will continue to respond to new streams. After the final
 	// GOAWAY frame has been sent, the proxy will refuse new streams.
+	//
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto#envoy-api-field-config-filter-network-http-connection-manager-v2-httpconnectionmanager-drain-timeout
 	// for more information.
-	DrainTimeout string `yaml:"drain-timeout,omitempty"`
+	ConnectionShutdownGracePeriod string `yaml:"connection-shutdown-grace-period,omitempty"`
 }
 
 // grpcOptions returns a slice of grpc.ServerOptions.

@@ -303,14 +303,14 @@ func TestDownstreamTLSContext(t *testing.T) {
 
 func TestHTTPConnectionManager(t *testing.T) {
 	tests := map[string]struct {
-		routename             string
-		accesslogger          []*envoy_api_v2_accesslog.AccessLog
-		requestTimeout        time.Duration
-		connectionIdleTimeout timeout.Setting
-		streamIdleTimeout     timeout.Setting
-		maxConnectionDuration timeout.Setting
-		drainTimeout          timeout.Setting
-		want                  *envoy_api_v2_listener.Filter
+		routename                     string
+		accesslogger                  []*envoy_api_v2_accesslog.AccessLog
+		requestTimeout                time.Duration
+		connectionIdleTimeout         timeout.Setting
+		streamIdleTimeout             timeout.Setting
+		maxConnectionDuration         timeout.Setting
+		connectionShutdownGracePeriod timeout.Setting
+		want                          *envoy_api_v2_listener.Filter
 	}{
 		"default": {
 			routename:      "default/kuard",
@@ -627,11 +627,11 @@ func TestHTTPConnectionManager(t *testing.T) {
 				},
 			},
 		},
-		"drain timeout of 90s": {
-			routename:      "default/kuard",
-			accesslogger:   FileAccessLogEnvoy("/dev/stdout"),
-			requestTimeout: 0,
-			drainTimeout:   timeout.DurationSetting(90 * time.Second),
+		"connection shutdown grace period of 90s": {
+			routename:                     "default/kuard",
+			accesslogger:                  FileAccessLogEnvoy("/dev/stdout"),
+			requestTimeout:                0,
+			connectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
 			want: &envoy_api_v2_listener.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
@@ -691,7 +691,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 				ConnectionIdleTimeout(tc.connectionIdleTimeout).
 				StreamIdleTimeout(tc.streamIdleTimeout).
 				MaxConnectionDuration(tc.maxConnectionDuration).
-				DrainTimeout(tc.drainTimeout).
+				ConnectionShutdownGracePeriod(tc.connectionShutdownGracePeriod).
 				DefaultFilters().
 				Get()
 

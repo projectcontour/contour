@@ -1609,9 +1609,9 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"httpproxy with drain timeout set in visitor config": {
+		"httpproxy with connection shutdown grace period set in visitor config": {
 			ListenerVisitorConfig: ListenerVisitorConfig{
-				DrainTimeout: timeout.DurationSetting(90 * time.Second),
+				ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
 				&projcontour.HTTPProxy{
@@ -1657,7 +1657,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						DefaultFilters().
-						DrainTimeout(timeout.DurationSetting(90 * time.Second)).
+						ConnectionShutdownGracePeriod(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 				),
 				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
@@ -1909,9 +1909,9 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"httpsproxy with secret with drain timeout set in visitor config": {
+		"httpsproxy with secret with connection shutdown grace period set in visitor config": {
 			ListenerVisitorConfig: ListenerVisitorConfig{
-				DrainTimeout: timeout.DurationSetting(90 * time.Second),
+				ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
 				&projcontour.HTTPProxy{
@@ -1964,7 +1964,7 @@ func TestListenerVisit(t *testing.T) {
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
 					AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 					DefaultFilters().
-					DrainTimeout(timeout.DurationSetting(90 * time.Second)).
+					ConnectionShutdownGracePeriod(timeout.DurationSetting(90 * time.Second)).
 					Get(),
 				),
 				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
@@ -1982,7 +1982,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
 						AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
-						DrainTimeout(timeout.DurationSetting(90 * time.Second)).
+						ConnectionShutdownGracePeriod(timeout.DurationSetting(90 * time.Second)).
 						Get()),
 				}},
 				ListenerFilters: envoy.ListenerFilters(

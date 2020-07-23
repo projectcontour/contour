@@ -127,16 +127,16 @@ func Listener(name, address string, port int, lf []*envoy_api_v2_listener.Listen
 }
 
 type httpConnectionManagerBuilder struct {
-	routeConfigName       string
-	metricsPrefix         string
-	accessLoggers         []*accesslog.AccessLog
-	requestTimeout        time.Duration
-	connectionIdleTimeout timeout.Setting
-	streamIdleTimeout     timeout.Setting
-	maxConnectionDuration timeout.Setting
-	drainTimeout          timeout.Setting
-	filters               []*http.HttpFilter
-	codec                 HTTPVersionType // Note the zero value is AUTO, which is the default we want.
+	routeConfigName               string
+	metricsPrefix                 string
+	accessLoggers                 []*accesslog.AccessLog
+	requestTimeout                time.Duration
+	connectionIdleTimeout         timeout.Setting
+	streamIdleTimeout             timeout.Setting
+	maxConnectionDuration         timeout.Setting
+	connectionShutdownGracePeriod timeout.Setting
+	filters                       []*http.HttpFilter
+	codec                         HTTPVersionType // Note the zero value is AUTO, which is the default we want.
 }
 
 // RouteConfigName sets the name of the RDS element that contains
@@ -193,9 +193,9 @@ func (b *httpConnectionManagerBuilder) MaxConnectionDuration(timeout timeout.Set
 	return b
 }
 
-// DrainTimeout sets the drain timeout on the connection manager.
-func (b *httpConnectionManagerBuilder) DrainTimeout(timeout timeout.Setting) *httpConnectionManagerBuilder {
-	b.drainTimeout = timeout
+// ConnectionShutdownGracePeriod sets the drain timeout on the connection manager.
+func (b *httpConnectionManagerBuilder) ConnectionShutdownGracePeriod(timeout timeout.Setting) *httpConnectionManagerBuilder {
+	b.connectionShutdownGracePeriod = timeout
 	return b
 }
 
@@ -251,7 +251,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 		MergeSlashes:              true,
 
 		StreamIdleTimeout: envoyTimeout(b.streamIdleTimeout),
-		DrainTimeout:      envoyTimeout(b.drainTimeout),
+		DrainTimeout:      envoyTimeout(b.connectionShutdownGracePeriod),
 	}
 
 	// Max connection duration is infinite/disabled by default in Envoy, so if the timeout setting
