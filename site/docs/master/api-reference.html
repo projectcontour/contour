@@ -6,7 +6,14 @@
 </ul>
 <h2 id="projectcontour.io/v1">projectcontour.io/v1</h2>
 <p>
-<p>Package v1 is the v1 version of the API.</p>
+<p>This package holds the specification for the projectcontour.io Custom Resource Definitions (CRDs).</p>
+<p>In building this CRD, we&rsquo;ve inadvertently overloaded the word &ldquo;Condition&rdquo;, so we&rsquo;ve tried to make
+this spec clear as to which types of condition are which.</p>
+<p><code>MatchConditions</code> are used by <code>Routes</code> and <code>Includes</code> to specify rules to match requests against for either
+routing or inclusion.</p>
+<p><code>DetailedConditions</code> are used in the <code>Status</code> of these objects to hold information about the relevant
+state of the object and the world around it.</p>
+<p><code>SubConditions</code> are used underneath <code>DetailedConditions</code> to give more detail to errors or warnings.</p>
 </p>
 Resource Types:
 <ul><li>
@@ -17,7 +24,7 @@ Resource Types:
 <h3 id="projectcontour.io/v1.HTTPProxy">HTTPProxy
 </h3>
 <p>
-<p>HTTPProxy is an Ingress CRD specification</p>
+<p>HTTPProxy is an Ingress CRD specification.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -88,7 +95,7 @@ VirtualHost
 <td>
 <em>(Optional)</em>
 <p>Virtualhost appears at most once. If it is present, the object is considered
-to be a &ldquo;root&rdquo;.</p>
+to be a &ldquo;root&rdquo; HTTPProxy.</p>
 </td>
 </tr>
 <tr>
@@ -133,7 +140,8 @@ TCPProxy
 </td>
 <td>
 <em>(Optional)</em>
-<p>Includes allow for specific routing configuration to be appended to another HTTPProxy in another namespace.</p>
+<p>Includes allow for specific routing configuration to be included from another HTTPProxy,
+possibly in another namespace.</p>
 </td>
 </tr>
 </table>
@@ -151,6 +159,7 @@ HTTPProxyStatus
 </td>
 <td>
 <em>(Optional)</em>
+<p>Status is a container for computed information about the HTTPProxy.</p>
 </td>
 </tr>
 </tbody>
@@ -304,19 +313,19 @@ the secret will be delegated to all namespaces.</p>
 <a href="#projectcontour.io/v1.DetailedCondition">DetailedCondition</a>)
 </p>
 <p>
-<h2>Condition contains details for one aspect of the current state of this API Resource.</h2>
-<p>This struct is intended for direct use as an array at the field path .status.conditions.  For example,
-type FooStatus struct{
-// Represents the observations of a foo&rsquo;s current state.
-// Known .status.conditions.type are: &ldquo;Available&rdquo;, &ldquo;Progressing&rdquo;, and &ldquo;Degraded&rdquo;
+<p>Condition contains details for one aspect of the current state of this API Resource.</p>
+<p>This struct is intended for direct use as an array at the field path .status.conditions.  For example,</p>
+<pre><code class="language-go">type FooStatus struct{
+// Represents the observations of a foo's current state.
+// Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;, and &quot;Degraded&quot;
 // +patchMergeKey=type
 // +patchStrategy=merge
 // +listType=map
 // +listMapKey=type
-Conditions []metav1.Condition <code>json:&quot;conditions,omitempty&quot; patchStrategy:&quot;merge&quot; patchMergeKey:&quot;type&quot; protobuf:&quot;bytes,1,rep,name=conditions&quot;</code></p>
-<pre><code>// other fields
+Conditions []metav1.Condition `json:&quot;conditions,omitempty&quot; patchStrategy:&quot;merge&quot; patchMergeKey:&quot;type&quot; protobuf:&quot;bytes,1,rep,name=conditions&quot;`
+// other fields
+}
 </code></pre>
-<p>}</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -335,10 +344,10 @@ string
 </em>
 </td>
 <td>
-<h2>type of condition in CamelCase or in foo.example.com/CamelCase.</h2>
+<p>Type of condition in CamelCase or in foo.example.com/CamelCase.</p>
 <p>Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-useful (see .node.status.conditions), the ability to deconflict is important.
-The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)</p>
+useful (see .node.status.conditions), the ability to deconflict is important.</p>
+<p>The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)</p>
 </td>
 </tr>
 <tr>
@@ -365,8 +374,8 @@ int64
 </td>
 <td>
 <em>(Optional)</em>
-<p>observedGeneration represents the .metadata.generation that the condition was set based upon.
-For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+<p>observedGeneration represents the .metadata.generation that the condition was set based upon.</p>
+<p>For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
 with respect to the current state of the instance.</p>
 </td>
 </tr>
@@ -381,8 +390,8 @@ Kubernetes meta/v1.Time
 </em>
 </td>
 <td>
-<p>lastTransitionTime is the last time the condition transitioned from one status to another.
-This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.</p>
+<p>lastTransitionTime is the last time the condition transitioned from one status to another.</p>
+<p>This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.</p>
 </td>
 </tr>
 <tr>
@@ -394,11 +403,11 @@ string
 </em>
 </td>
 <td>
-<p>reason contains a programmatic identifier indicating the reason for the condition&rsquo;s last transition.
-Producers of specific condition types may define expected values and meanings for this field,
-and whether the values are considered a guaranteed API.
-The value should be a CamelCase string.
-This field may not be empty.</p>
+<p>Reason contains a programmatic identifier indicating the reason for the condition&rsquo;s last transition.</p>
+<p>Producers of specific condition types may define expected values and meanings for this field,
+and whether the values are considered a guaranteed API.</p>
+<p>The value should be a CamelCase string.</p>
+<p>This field may not be empty.</p>
 </td>
 </tr>
 <tr>
@@ -410,8 +419,8 @@ string
 </em>
 </td>
 <td>
-<p>message is a human readable message indicating details about the transition.
-This may be an empty string.</p>
+<p>message is a human readable message indicating details about the transition.</p>
+<p>This may be an empty string.</p>
 </td>
 </tr>
 </tbody>
@@ -435,16 +444,16 @@ This may be an empty string.</p>
 <p>
 <p>DetailedCondition is an extension of the normal Kubernetes conditions, with two extra
 fields to hold sub-conditions, which provide more detailed reasons for the state (True or False)
-of the condition.
-<code>errors</code> holds information about sub-conditions which are fatal to that condition and render its state False.
-<code>warnings</code> holds information about sub-conditions which are not fatal to that condition and do not force the state to be False.
-Remember that Conditions have a type, a status, and a reason.
-The type is the type of the condition, the most important one in this CRD set is <code>Valid</code>.
-In the case of <code>Valid</code>, <code>status: true</code> means that the object is has been ingested into Contour with no errors.
-<code>warnings</code> may still be present, and will be indicated in the Reason field.
-<code>Valid</code>, <code>status: false</code> means that the object has had one or more fatal errors during processing into Contour.
-The details of the errors will be present under the <code>errors</code> field.
-There should never be subconditions under <code>errors</code> when <code>status</code> is <code>true</code>.</p>
+of the condition.</p>
+<p><code>errors</code> holds information about sub-conditions which are fatal to that condition and render its state False.</p>
+<p><code>warnings</code> holds information about sub-conditions which are not fatal to that condition and do not force the state to be False.</p>
+<p>Remember that Conditions have a type, a status, and a reason.</p>
+<p>The type is the type of the condition, the most important one in this CRD set is <code>Valid</code>.</p>
+<p>In the case of <code>Valid</code>, <code>status: true</code> means that the object is has been ingested into Contour with no errors.
+<code>warnings</code> may still be present, and will be indicated in the Reason field.</p>
+<p><code>Valid</code>, <code>status: false</code> means that the object has had one or more fatal errors during processing into Contour.
+The details of the errors will be present under the <code>errors</code> field.</p>
+<p>There should never be subconditions under <code>errors</code> when <code>status</code> is <code>true</code>.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -481,8 +490,9 @@ Condition
 </em>
 </td>
 <td>
-<p>Errors contains a slice of relevant error subconditions for this object.
-Subconditions are expected to appear when relevant (when there is a error), and disappear when not relevant.
+<em>(Optional)</em>
+<p>Errors contains a slice of relevant error subconditions for this object.</p>
+<p>Subconditions are expected to appear when relevant (when there is a error), and disappear when not relevant.
 An empty slice here indicates no errors.</p>
 </td>
 </tr>
@@ -497,8 +507,9 @@ An empty slice here indicates no errors.</p>
 </em>
 </td>
 <td>
-<p>Warnings contains a slice of relevant warning subconditions for this object.
-Subconditions are expected to appear when relevant (when there is a warning), and disappear when not relevant.
+<em>(Optional)</em>
+<p>Warnings contains a slice of relevant warning subconditions for this object.</p>
+<p>Subconditions are expected to appear when relevant (when there is a warning), and disappear when not relevant.
 An empty slice here indicates no warnings.</p>
 </td>
 </tr>
@@ -663,7 +674,7 @@ VirtualHost
 <td>
 <em>(Optional)</em>
 <p>Virtualhost appears at most once. If it is present, the object is considered
-to be a &ldquo;root&rdquo;.</p>
+to be a &ldquo;root&rdquo; HTTPProxy.</p>
 </td>
 </tr>
 <tr>
@@ -708,7 +719,8 @@ TCPProxy
 </td>
 <td>
 <em>(Optional)</em>
-<p>Includes allow for specific routing configuration to be appended to another HTTPProxy in another namespace.</p>
+<p>Includes allow for specific routing configuration to be included from another HTTPProxy,
+possibly in another namespace.</p>
 </td>
 </tr>
 </tbody>
@@ -782,14 +794,14 @@ Kubernetes core/v1.LoadBalancerStatus
 <td>
 <em>(Optional)</em>
 <p>Conditions contains information about the current status of the HTTPProxy,
-in an upstream-friendly container.
-Contour will update a single condition, <code>Valid</code>, that is in normal-true polarity.
+in an upstream-friendly container.</p>
+<p>Contour will update a single condition, <code>Valid</code>, that is in normal-true polarity.
 That is, when <code>currentStatus</code> is <code>valid</code>, the <code>Valid</code> condition will be <code>status: true</code>,
-and vice versa.
-Contour will leave untouched any other Conditions set in this block,
-in case some other controller wants to add a Condition.
-If you are another controller owner and wish to add a condition, you <em>should</em>
-namespace your condition with a label, like <code>controller.domain.com\ConditionName</code>.</p>
+and vice versa.</p>
+<p>Contour will leave untouched any other Conditions set in this block,
+in case some other controller wants to add a Condition.</p>
+<p>If you are another controller owner and wish to add a condition, you <em>should</em>
+namespace your condition with a label, like <code>controller.domain.com/ConditionName</code>.</p>
 </td>
 </tr>
 </tbody>
@@ -1660,11 +1672,11 @@ HeadersPolicy
 <a href="#projectcontour.io/v1.DetailedCondition">DetailedCondition</a>)
 </p>
 <p>
-<p>SubCondition is a Condition-like type intended for use as a subcondition inside a DetailedCondition.
-It contains a subset of the Condition fields.
-It is intended for warnings and errors, so <code>type</code> names should use abnormal-true polarity,
-that is, they should be of the form &ldquo;ErrorPresent: true&rdquo;.
-The expected lifecycle for these errors is that they should only be present when the error or warning is,
+<p>SubCondition is a Condition-like type intended for use as a subcondition inside a DetailedCondition.</p>
+<p>It contains a subset of the Condition fields.</p>
+<p>It is intended for warnings and errors, so <code>type</code> names should use abnormal-true polarity,
+that is, they should be of the form &ldquo;ErrorPresent: true&rdquo;.</p>
+<p>The expected lifecycle for these errors is that they should only be present when the error or warning is,
 and should be removed when they are not relevant.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
@@ -1684,10 +1696,9 @@ string
 </em>
 </td>
 <td>
-<h2>type of condition in CamelCase or in foo.example.com/CamelCase.</h2>
-<p>Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-useful (see .node.status.conditions), the ability to deconflict is important.
-The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)</p>
+<p>Type of condition in <code>CamelCase</code> or in <code>foo.example.com/CamelCase</code>.</p>
+<p>This must be in abnormal-true polarity, that is, <code>ErrorFound</code> or <code>controller.io/ErrorFound</code>.</p>
+<p>The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)</p>
 </td>
 </tr>
 <tr>
@@ -1701,7 +1712,7 @@ ConditionStatus
 </em>
 </td>
 <td>
-<p>status of the condition, one of True, False, Unknown.</p>
+<p>Status of the condition, one of True, False, Unknown.</p>
 </td>
 </tr>
 <tr>
@@ -1713,11 +1724,11 @@ string
 </em>
 </td>
 <td>
-<p>reason contains a programmatic identifier indicating the reason for the condition&rsquo;s last transition.
+<p>Reason contains a programmatic identifier indicating the reason for the condition&rsquo;s last transition.
 Producers of specific condition types may define expected values and meanings for this field,
-and whether the values are considered a guaranteed API.
-The value should be a CamelCase string.
-This field may not be empty.</p>
+and whether the values are considered a guaranteed API.</p>
+<p>The value should be a CamelCase string.</p>
+<p>This field may not be empty.</p>
 </td>
 </tr>
 <tr>
@@ -1729,8 +1740,8 @@ string
 </em>
 </td>
 <td>
-<p>message is a human readable message indicating details about the transition.
-This may be an empty string.</p>
+<p>Message is a human readable message indicating details about the transition.</p>
+<p>This may be an empty string.</p>
 </td>
 </tr>
 </tbody>
@@ -2104,14 +2115,14 @@ to be presented to the user.</p>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Conditions contains information about the current status of the TLSCertificateDelegation,
-in an upstream-friendly container.
-Contour will update a single condition, <code>Valid</code>, that is in normal-true polarity.
-That is, when the certificate delegation has been parsed correctly, the <code>Valid</code>
-condition will be <code>status: true</code>, and vice versa.
-Contour will leave untouched any other Conditions set in this block,
-in case some other controller wants to add a Condition.
-If you are another controller owner and wish to add a condition, you <em>should</em>
+<p>Conditions contains information about the current status of the HTTPProxy,
+in an upstream-friendly container.</p>
+<p>Contour will update a single condition, <code>Valid</code>, that is in normal-true polarity.
+That is, when <code>currentStatus</code> is <code>valid</code>, the <code>Valid</code> condition will be <code>status: true</code>,
+and vice versa.</p>
+<p>Contour will leave untouched any other Conditions set in this block,
+in case some other controller wants to add a Condition.</p>
+<p>If you are another controller owner and wish to add a condition, you <em>should</em>
 namespace your condition with a label, like <code>controller.domain.com\ConditionName</code>.</p>
 </td>
 </tr>
@@ -2242,7 +2253,7 @@ string
 </td>
 <td>
 <p>The fully qualified domain name of the root of the ingress tree
-all leaves of the DAG rooted at this object relate to the fqdn</p>
+all leaves of the DAG rooted at this object relate to the fqdn.</p>
 </td>
 </tr>
 <tr>
@@ -2259,7 +2270,7 @@ TLS
 <em>(Optional)</em>
 <p>If present describes tls properties. The SNI names that will be matched on
 are described in fqdn, the tls.secretName secret must contain a
-matching certificate</p>
+certificate that itself contains a name that matches the FQDN.</p>
 </td>
 </tr>
 </tbody>

@@ -41,13 +41,16 @@ type CertificateDelegation struct {
 // to be presented to the user.
 type TLSCertificateDelegationStatus struct {
 	// +optional
-	// Conditions contains information about the current status of the TLSCertificateDelegation,
+	// Conditions contains information about the current status of the HTTPProxy,
 	// in an upstream-friendly container.
+	//
 	// Contour will update a single condition, `Valid`, that is in normal-true polarity.
-	// That is, when the certificate delegation has been parsed correctly, the `Valid`
-	// condition will be `status: true`, and vice versa.
+	// That is, when `currentStatus` is `valid`, the `Valid` condition will be `status: true`,
+	// and vice versa.
+	//
 	// Contour will leave untouched any other Conditions set in this block,
 	// in case some other controller wants to add a Condition.
+	//
 	// If you are another controller owner and wish to add a condition, you *should*
 	// namespace your condition with a label, like `controller.domain.com\ConditionName`.
 	// +patchMergeKey=type

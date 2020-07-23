@@ -13,6 +13,18 @@
 
 // +k8s:deepcopy-gen=package
 
-// Package v1 is the v1 version of the API.
+// This package holds the specification for the projectcontour.io Custom Resource Definitions (CRDs).
+//
+// In building this CRD, we've inadvertently overloaded the word "Condition", so we've tried to make
+// this spec clear as to which types of condition are which.
+//
+// `MatchConditions` are used by `Routes` and `Includes` to specify rules to match requests against for either
+// routing or inclusion.
+//
+// `DetailedConditions` are used in the `Status` of these objects to hold information about the relevant
+// state of the object and the world around it.
+//
+// `SubConditions` are used underneath `DetailedConditions` to give more detail to errors or warnings.
+//
 // +groupName=projectcontour.io
 package v1
