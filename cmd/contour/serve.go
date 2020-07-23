@@ -32,6 +32,7 @@ import (
 	"github.com/projectcontour/contour/internal/httpsvc"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
+	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -184,10 +185,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		AccessLogFields:       ctx.AccessLogFields,
 		MinimumTLSVersion:     annotation.MinTLSVersion(ctx.TLSConfig.MinimumProtocolVersion),
 		RequestTimeout:        ctx.RequestTimeout,
-		ConnectionIdleTimeout: ctx.ConnectionIdleTimeout,
-		StreamIdleTimeout:     ctx.StreamIdleTimeout,
-		MaxConnectionDuration: ctx.MaxConnectionDuration,
-		DrainTimeout:          ctx.DrainTimeout,
+		ConnectionIdleTimeout: timeout.Parse(ctx.ConnectionIdleTimeout),
+		StreamIdleTimeout:     timeout.Parse(ctx.StreamIdleTimeout),
+		MaxConnectionDuration: timeout.Parse(ctx.MaxConnectionDuration),
+		DrainTimeout:          timeout.Parse(ctx.DrainTimeout),
 	}
 
 	defaultHTTPVersions, err := parseDefaultHTTPVersions(ctx.DefaultHTTPVersions)
