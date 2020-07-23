@@ -16,15 +16,15 @@ package dag
 import (
 	"sync"
 
+	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
-
-	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/sirupsen/logrus"
 	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
 )
 
@@ -49,6 +49,7 @@ type KubernetesCache struct {
 	gateways             map[types.NamespacedName]*serviceapis.Gateway
 	httproutes           map[types.NamespacedName]*serviceapis.HTTPRoute
 	tcproutes            map[types.NamespacedName]*serviceapis.TcpRoute
+	extensions           map[types.NamespacedName]*projectcontourv1alpha1.ExtensionService
 
 	initialize sync.Once
 
@@ -66,6 +67,7 @@ func (kc *KubernetesCache) init() {
 	kc.gateways = make(map[types.NamespacedName]*serviceapis.Gateway)
 	kc.httproutes = make(map[types.NamespacedName]*serviceapis.HTTPRoute)
 	kc.tcproutes = make(map[types.NamespacedName]*serviceapis.TcpRoute)
+	kc.extensions = make(map[types.NamespacedName]*projectcontourv1alpha1.ExtensionService)
 }
 
 // matchesIngressClass returns true if the given Kubernetes object
@@ -178,6 +180,9 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding TcpRoute")
 		kc.tcproutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
+	case *projectcontourv1alpha1.ExtensionService:
+		kc.extensions[k8s.NamespacedNameOf(obj)] = obj
+		return true
 
 	default:
 		// not an interesting object
@@ -259,6 +264,11 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		// other than being removed from the cache.
 		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Removing TcpRoute")
 		delete(kc.tcproutes, m)
+		return ok
+	case *projectcontourv1alpha1.ExtensionService:
+		m := k8s.NamespacedNameOf(obj)
+		_, ok := kc.extensions[m]
+		delete(kc.extensions, m)
 		return ok
 
 	default:

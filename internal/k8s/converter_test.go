@@ -17,15 +17,13 @@ import (
 	"errors"
 	"testing"
 
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/tools/cache"
-
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
-
-	"github.com/projectcontour/contour/internal/assert"
 )
 
 func TestConvertUnstructured(t *testing.T) {
@@ -273,7 +271,7 @@ func TestConvertUnstructured(t *testing.T) {
 
 	run(t, "invalidunstructured", testcase{
 		obj:       proxyInvalidUnstructured,
-		want:      &projectcontour.HTTPProxy{},
+		want:      &projcontour.HTTPProxy{},
 		wantError: errors.New("unable to convert unstructured object to projectcontour.io/v1, Kind=HTTPProxy: cannot convert int to string"),
 	})
 
@@ -304,6 +302,26 @@ func TestConvertUnstructured(t *testing.T) {
 	run(t, "tcproute", testcase{
 		obj:       tcpRouteUnstructured,
 		want:      tr1,
+		wantError: nil,
+	})
+
+	run(t, "extensionservice", testcase{
+		obj: &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "projectcontour.io/v1alpha1",
+				"kind":       "ExtensionService",
+				"metadata": map[string]interface{}{
+					"name":      "extension",
+					"namespace": "default",
+				},
+			},
+		},
+		want: &projectcontourv1alpha1.ExtensionService{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "extension",
+				Namespace: "default",
+			},
+		},
 		wantError: nil,
 	})
 
