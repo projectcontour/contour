@@ -49,8 +49,7 @@ The Security Team will also publish any mitigating steps users can take until th
 - Join the [Contour Distributors mailing list](https://github.com/projectcontour/contour/security/policy#requesting-to-join) for early private information and vulnerability disclosure. Early disclosure may include mitigating steps and additional information on security patch releases. See below for information on how Contour distributors or vendors can apply to join this list.
 
 ## Early Disclosure to Contour Distributors List
-This private list is intended to be used primarily to provide actionable information to multiple distributor projects at once. This list is not intended to inform individuals about security issues.
-`We have not created this mailing list yet, but it is in the works. Monitor this Security Policy for an update in the near future`
+The private list cncf-contour-distributors-announce@lists.cncf.io is intended to be used primarily to provide actionable information to multiple distributor projects at once. This list is not intended to inform individuals about security issues.
 
 ### Membership Criteria
 To be eligible to join the Contour Distributors mailing list, you should:
@@ -71,8 +70,7 @@ Before you share any information from the list with members of your team who are
 In the unfortunate event that you share information beyond what is permitted by this policy, you must urgently inform the [Contour Security Team](https://github.com/projectcontour/contour/security/policy#mailing-lists) of exactly what information was leaked and to whom. If you continue to leak information and break the policy outlined here, you will be permanently removed from the list.
  
 ### Requesting to Join
-`'We have not opened up the requests for membership. Monitor this Security Policy for an update in the near future.`
-In the body of your request please specify how you qualify for membership and fulfill each criterion listed in the Membership Criteria section above.
+Send new membership requests to cncf-contour-maintainers@lists.cncf.io. In the body of your request please specify how you qualify for membership and fulfill each criterion listed in the Membership Criteria section above.
 
 ## Confidentiality, integrity and availability
 We consider vulnerabilities leading to the compromise of data confidentiality, elevation of privilege, or integrity to be our highest priority concerns. Availability, in particular in areas relating to DoS and resource exhaustion, is also a serious security concern. The Contour Security Team takes all vulnerabilities, potential vulnerabilities, and suspected vulnerabilities seriously and will investigate them in an urgent and expeditious manner.
