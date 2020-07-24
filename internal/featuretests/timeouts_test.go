@@ -89,7 +89,7 @@ func TestNonZeroTimeoutsSpecified(t *testing.T) {
 		eh.ListenerVisitorConfig.ConnectionIdleTimeout = timeout.DurationSetting(7 * time.Second)
 		eh.ListenerVisitorConfig.StreamIdleTimeout = timeout.DurationSetting(70 * time.Second)
 		eh.ListenerVisitorConfig.MaxConnectionDuration = timeout.DurationSetting(700 * time.Second)
-		eh.ListenerVisitorConfig.DrainTimeout = timeout.DurationSetting(7000 * time.Second)
+		eh.ListenerVisitorConfig.ConnectionShutdownGracePeriod = timeout.DurationSetting(7000 * time.Second)
 	}
 
 	rh, c, done := setup(t, withTimeouts)
@@ -145,7 +145,7 @@ func TestNonZeroTimeoutsSpecified(t *testing.T) {
 					ConnectionIdleTimeout(timeout.DurationSetting(7 * time.Second)).
 					StreamIdleTimeout(timeout.DurationSetting(70 * time.Second)).
 					MaxConnectionDuration(timeout.DurationSetting(700 * time.Second)).
-					DrainTimeout(timeout.DurationSetting(7000 * time.Second)).
+					ConnectionShutdownGracePeriod(timeout.DurationSetting(7000 * time.Second)).
 					Get(),
 				),
 			}),
