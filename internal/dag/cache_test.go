@@ -17,7 +17,9 @@ import (
 	"testing"
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -724,6 +726,12 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
+		"insert extension service": {
+			obj: &projectcontourv1alpha1.ExtensionService{
+				ObjectMeta: fixture.ObjectMeta("default/extension"),
+			},
+			want: true,
+		},
 	}
 
 	for name, tc := range tests {
@@ -923,6 +931,15 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					Name:      "tcproute",
 					Namespace: "default",
 				},
+			},
+			want: true,
+		},
+		"remove extension service": {
+			cache: cache(&projectcontourv1alpha1.ExtensionService{
+				ObjectMeta: fixture.ObjectMeta("default/extension"),
+			}),
+			obj: &projectcontourv1alpha1.ExtensionService{
+				ObjectMeta: fixture.ObjectMeta("default/extension"),
 			},
 			want: true,
 		},
