@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -25,6 +26,7 @@ import (
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 )
 
 // Assert that services of type v1.ServiceTypeExternalName can be
@@ -120,6 +122,9 @@ func TestExternalNameService(t *testing.T) {
 		TypeUrl: clusterType,
 	})
 
+	// After we set the Host header, the cluster should remain
+	// the same, but the Route should do update the Host header.
+	rh.OnDelete(fixture.NewProxy("kuard").WithSpec(projcontour.HTTPProxySpec{}))
 	rh.OnAdd(fixture.NewProxy("kuard").
 		WithFQDN("kuard.projectcontour.io").
 		WithSpec(projcontour.HTTPProxySpec{
@@ -139,6 +144,7 @@ func TestExternalNameService(t *testing.T) {
 	)
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		TypeUrl: routeType,
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("kuard.projectcontour.io",
@@ -149,13 +155,119 @@ func TestExternalNameService(t *testing.T) {
 				),
 			),
 		),
-		TypeUrl: routeType,
 	})
 
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+		TypeUrl: clusterType,
 		Resources: resources(t,
 			externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard/", "default_kuard_80", "foo.io", 80),
 		),
+	})
+
+	// Now try the same configuration, but enable HTTP/2. We
+	// should still find that the same configuration applies, but
+	// TLS is enabled and the SNI server name is overwritten from
+	// the Host header.
+	rh.OnDelete(fixture.NewProxy("kuard").WithSpec(projcontour.HTTPProxySpec{}))
+	rh.OnAdd(fixture.NewProxy("kuard").
+		WithFQDN("kuard.projectcontour.io").
+		WithSpec(projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Protocol: pointer.StringPtr("h2"),
+					Name:     s1.Name,
+					Port:     80,
+				}},
+				RequestHeadersPolicy: &projcontour.HeadersPolicy{
+					Set: []projcontour.HeaderValue{{
+						Name:  "Host",
+						Value: "external.address",
+					}},
+				},
+			}},
+		}),
+	)
+
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		TypeUrl: routeType,
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("kuard.projectcontour.io",
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeHostRewrite("default/kuard/80/da39a3ee5e", "external.address"),
+					},
+				),
+			),
+		),
+	})
+
+	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
 		TypeUrl: clusterType,
+		Resources: resources(t,
+			DefaultCluster(
+				externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard/", "default_kuard_80", "foo.io", 80),
+				&v2.Cluster{
+					Http2ProtocolOptions: &envoy_api_v2_core.Http2ProtocolOptions{},
+				},
+				&v2.Cluster{
+					TransportSocket: envoy.UpstreamTLSTransportSocket(
+						envoy.UpstreamTLSContext(nil, "external.address", "h2"),
+					),
+				},
+			),
+		),
+	})
+
+	// Now try the same configuration, but enable TLS (which
+	// means HTTP/1.1 over TLS) rather than HTTP/2. We should get
+	// TLS enabled with the overridden SNI name. but no HTTP/2
+	// protocol config.
+	rh.OnDelete(fixture.NewProxy("kuard").WithSpec(projcontour.HTTPProxySpec{}))
+	rh.OnAdd(fixture.NewProxy("kuard").
+		WithFQDN("kuard.projectcontour.io").
+		WithSpec(projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{
+					Protocol: pointer.StringPtr("tls"),
+					Name:     s1.Name,
+					Port:     80,
+				}},
+				RequestHeadersPolicy: &projcontour.HeadersPolicy{
+					Set: []projcontour.HeaderValue{{
+						Name:  "Host",
+						Value: "external.address",
+					}},
+				},
+			}},
+		}),
+	)
+
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		TypeUrl: routeType,
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("kuard.projectcontour.io",
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeHostRewrite("default/kuard/80/da39a3ee5e", "external.address"),
+					},
+				),
+			),
+		),
+	})
+
+	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+		TypeUrl: clusterType,
+		Resources: resources(t,
+			DefaultCluster(
+				externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard/", "default_kuard_80", "foo.io", 80),
+				&v2.Cluster{
+					TransportSocket: envoy.UpstreamTLSTransportSocket(
+						envoy.UpstreamTLSContext(nil, "external.address"),
+					),
+				},
+			),
+		),
 	})
 }
