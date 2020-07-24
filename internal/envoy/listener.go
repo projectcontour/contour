@@ -130,7 +130,7 @@ type httpConnectionManagerBuilder struct {
 	routeConfigName               string
 	metricsPrefix                 string
 	accessLoggers                 []*accesslog.AccessLog
-	requestTimeout                time.Duration
+	requestTimeout                timeout.Setting
 	connectionIdleTimeout         timeout.Setting
 	streamIdleTimeout             timeout.Setting
 	maxConnectionDuration         timeout.Setting
@@ -168,9 +168,8 @@ func (b *httpConnectionManagerBuilder) AccessLoggers(loggers []*accesslog.Access
 	return b
 }
 
-// RequestTimeout sets the active request timeout on the connection
-// manager. If not specified or set to 0, this timeout is disabled.
-func (b *httpConnectionManagerBuilder) RequestTimeout(timeout time.Duration) *httpConnectionManagerBuilder {
+// RequestTimeout sets the active request timeout on the connection manager.
+func (b *httpConnectionManagerBuilder) RequestTimeout(timeout timeout.Setting) *httpConnectionManagerBuilder {
 	b.requestTimeout = timeout
 	return b
 }
@@ -244,12 +243,12 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 		},
 		UseRemoteAddress: protobuf.Bool(true),
 		NormalizePath:    protobuf.Bool(true),
-		RequestTimeout:   protobuf.Duration(b.requestTimeout),
 
 		// issue #1487 pass through X-Request-Id if provided.
 		PreserveExternalRequestId: true,
 		MergeSlashes:              true,
 
+		RequestTimeout:    envoyTimeout(b.requestTimeout),
 		StreamIdleTimeout: envoyTimeout(b.streamIdleTimeout),
 		DrainTimeout:      envoyTimeout(b.connectionShutdownGracePeriod),
 	}
@@ -289,7 +288,7 @@ func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog
 		RouteConfigName(routename).
 		MetricsPrefix(routename).
 		AccessLoggers(accesslogger).
-		RequestTimeout(requestTimeout).
+		RequestTimeout(timeout.DurationSetting(requestTimeout)).
 		DefaultFilters().
 		Get()
 }

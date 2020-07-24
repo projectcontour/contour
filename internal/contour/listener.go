@@ -17,7 +17,6 @@ import (
 	"path"
 	"sort"
 	"sync"
-	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
@@ -97,7 +96,7 @@ type ListenerVisitorConfig struct {
 	AccessLogFields []string
 
 	// RequestTimeout configures the request_timeout for all Connection Managers.
-	RequestTimeout time.Duration
+	RequestTimeout timeout.Setting
 
 	// ConnectionIdleTimeout configures the common_http_protocol_options.idle_timeout for all
 	// Connection Managers.
@@ -202,18 +201,6 @@ func (lvc *ListenerVisitorConfig) newSecureAccessLog() []*envoy_api_v2_accesslog
 	default:
 		return envoy.FileAccessLogEnvoy(lvc.httpsAccessLog())
 	}
-}
-
-// requestTimeout sets any durations in lvc.RequestTimeout <0 to 0 so that Envoy ends up with a positive duration.
-// for the request_timeout value we are passing, there are only two valid values:
-// 0 - disabled
-// >0 duration - the timeout.
-// The value may be unset, but we always set it to 0.
-func (lvc *ListenerVisitorConfig) requestTimeout() time.Duration {
-	if lvc.RequestTimeout < 0 {
-		return 0
-	}
-	return lvc.RequestTimeout
 }
 
 // minTLSVersion returns the requested minimum TLS protocol
@@ -324,7 +311,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerVisitorConfig) map[string]*v2.
 			RouteConfigName(ENVOY_HTTP_LISTENER).
 			MetricsPrefix(ENVOY_HTTP_LISTENER).
 			AccessLoggers(lvc.newInsecureAccessLog()).
-			RequestTimeout(lvc.requestTimeout()).
+			RequestTimeout(lvc.RequestTimeout).
 			ConnectionIdleTimeout(lvc.ConnectionIdleTimeout).
 			StreamIdleTimeout(lvc.StreamIdleTimeout).
 			MaxConnectionDuration(lvc.MaxConnectionDuration).
@@ -399,7 +386,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					RouteConfigName(path.Join("https", vh.VirtualHost.Name)).
 					MetricsPrefix(ENVOY_HTTPS_LISTENER).
 					AccessLoggers(v.ListenerVisitorConfig.newSecureAccessLog()).
-					RequestTimeout(v.ListenerVisitorConfig.requestTimeout()).
+					RequestTimeout(v.ListenerVisitorConfig.RequestTimeout).
 					ConnectionIdleTimeout(v.ListenerVisitorConfig.ConnectionIdleTimeout).
 					StreamIdleTimeout(v.ListenerVisitorConfig.StreamIdleTimeout).
 					MaxConnectionDuration(v.ListenerVisitorConfig.MaxConnectionDuration).
@@ -457,7 +444,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
 					MetricsPrefix(ENVOY_HTTPS_LISTENER).
 					AccessLoggers(v.ListenerVisitorConfig.newSecureAccessLog()).
-					RequestTimeout(v.ListenerVisitorConfig.requestTimeout()).
+					RequestTimeout(v.ListenerVisitorConfig.RequestTimeout).
 					ConnectionIdleTimeout(v.ListenerVisitorConfig.ConnectionIdleTimeout).
 					StreamIdleTimeout(v.ListenerVisitorConfig.StreamIdleTimeout).
 					MaxConnectionDuration(v.ListenerVisitorConfig.MaxConnectionDuration).
