@@ -7,6 +7,7 @@ set -o pipefail
 readonly KUSTOMIZE_VERS="v3.5.4"
 readonly KUBECTL_VERS="v1.18.2"
 readonly KIND_VERS="v0.8.1"
+readonly INTEGRATION_TESTER_VERS="2.0.0"
 
 readonly PROGNAME=$(basename $0)
 readonly CURL=${CURL:-curl}
@@ -56,3 +57,10 @@ download \
 
 tar -C "${DESTDIR}" -xf "${DESTDIR}/kustomize.tgz" kustomize
 rm "${DESTDIR}/kustomize.tgz"
+
+download \
+    "https://github.com/projectcontour/integration-tester/releases/download/v${INTEGRATION_TESTER_VERS}/integration-tester_${INTEGRATION_TESTER_VERS}_${OS}_x86_64.tar.gz" \
+    "${DESTDIR}/integration-tester.tgz"
+
+tar -C "${DESTDIR}" -xf "${DESTDIR}/integration-tester.tgz"
+rm "${DESTDIR}/integration-tester.tgz"
