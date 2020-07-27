@@ -248,6 +248,7 @@ func filterchaintlsfallback(fallbackSecret *v1.Secret, peerValidationContext *da
 			alpn...),
 		envoy.Filters(
 			envoy.HTTPConnectionManagerBuilder().
+				DefaultFilters().
 				RouteConfigName(contour.ENVOY_FALLBACK_ROUTECONFIG).
 				MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
 				AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
