@@ -145,6 +145,7 @@ func TestListenerVisit(t *testing.T) {
 	}
 
 	fallbackCertFilter := envoy.HTTPConnectionManagerBuilder().
+		DefaultFilters().
 		MetricsPrefix(ENVOY_HTTPS_LISTENER).
 		RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
 		AccessLoggers(envoy.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).

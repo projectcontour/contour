@@ -220,11 +220,34 @@ func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnec
 	return b
 }
 
+// Validate runs builtin validation rules against the current builder state.
+func (b *httpConnectionManagerBuilder) Validate() error {
+	filterNames := map[string]struct{}{}
+
+	for _, f := range b.filters {
+		filterNames[f.Name] = struct{}{}
+	}
+
+	// If there's no router filter, requests won't be forwarded.
+	if _, ok := filterNames[wellknown.Router]; !ok {
+		return fmt.Errorf("missing required filter %q", wellknown.Router)
+	}
+
+	return nil
+}
+
 // Get returns a new http.HttpConnectionManager filter, constructed
 // from the builder settings.
 //
 // See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto.html
 func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
+	// For now, failing validation is a programmer error that
+	// the caller can't reasonably recover from. A caller that can
+	// handle this should validate manually.
+	if err := b.Validate(); err != nil {
+		panic(err.Error())
+	}
+
 	cm := &http.HttpConnectionManager{
 		CodecType: b.codec,
 		RouteSpecifier: &http.HttpConnectionManager_Rds{
