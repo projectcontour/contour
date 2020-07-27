@@ -199,6 +199,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	listenerConfig.DefaultHTTPVersions = defaultHTTPVersions
 
+	responseTimeoutRange, err := timeout.ParseRange(ctx.ResponseTimeoutMin, ctx.ResponseTimeoutMax)
+	if err != nil {
+		return fmt.Errorf("failed to parse request timeout min/max: %w", err)
+	}
+
 	// step 3. build our mammoth Kubernetes event handler.
 	eventHandler := &contour.EventHandler{
 		CacheHandler: &contour.CacheHandler{
@@ -216,6 +221,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				FieldLogger:    log.WithField("context", "KubernetesCache"),
 			},
 			DisablePermitInsecure: ctx.DisablePermitInsecure,
+			ResponseTimeoutRange:  responseTimeoutRange,
 		},
 		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}

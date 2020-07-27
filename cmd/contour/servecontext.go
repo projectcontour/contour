@@ -248,6 +248,17 @@ type TimeoutConfig struct {
 	// for more information.
 	RequestTimeout string `yaml:"request-timeout,omitempty"`
 
+	// ResponseTimeoutMin is the minimum allowable value for a per-route response timeout
+	// in an HTTPProxy or Ingress resource. An HTTPProxy containing a route with a response
+	// timeout below this value will be marked invalid. Omit for no minimum allowed value.
+	ResponseTimeoutMin string `yaml:"response-timeout-min,omitempty"`
+
+	// ResponseTimeoutMax is the maximum allowable value for a per-route request timeout
+	// in an HTTPProxy or Ingress resource. An HTTPProxy containing a route with a response
+	// timeout above this value will be marked invalid. Omit or set to "infinity" for no
+	// maximum allowed value.
+	ResponseTimeoutMax string `yaml:"response-timeout-max,omitempty"`
+
 	// ConnectionIdleTimeout defines how long the proxy should wait while there are
 	// no active requests (for HTTP/1.1) or streams (for HTTP/2) before terminating
 	// an HTTP connection. Set to "infinity" to disable the timeout entirely.

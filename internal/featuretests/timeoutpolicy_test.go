@@ -22,6 +22,7 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/timeout"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -259,6 +260,146 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 			),
 		),
 		TypeUrl: routeType,
+	})
+}
+
+func TestTimeoutPolicyRequestTimeoutWithAllowedRange(t *testing.T) {
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {
+		reh.Builder.ResponseTimeoutRange = timeout.NewAllowedRange(0, time.Hour)
+	})
+	defer done()
+
+	svc := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+	rh.OnAdd(svc)
+
+	i1 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-ing",
+			Namespace: svc.Namespace,
+			Annotations: map[string]string{
+				"projectcontour.io/response-timeout": "1m20s",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: backend(svc),
+		},
+	}
+	rh.OnAdd(i1)
+
+	// response timeout was within the allowed range, route should be configured
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("*",
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 80*time.Second),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	i2 := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard-ing",
+			Namespace: svc.Namespace,
+			Annotations: map[string]string{
+				"projectcontour.io/response-timeout": "infinity",
+			},
+		},
+		Spec: i1.Spec,
+	}
+	rh.OnUpdate(i1, i2)
+
+	// response timeout was outside the allowed range, should be changed
+	// to the default setting by not explicitly configuring a timeout
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("*",
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+	rh.OnDelete(i2)
+
+	p1 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: svc.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []projcontour.Route{{
+				Conditions: matchconditions(prefixMatchCondition("/")),
+				TimeoutPolicy: &projcontour.TimeoutPolicy{
+					Response: "30s",
+				},
+				Services: []projcontour.Service{{
+					Name: svc.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+	rh.OnAdd(p1)
+
+	// response timeout was within the allowed range, route should be configured
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t,
+			envoy.RouteConfiguration("ingress_http",
+				envoy.VirtualHost("test2.test.com",
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 30*time.Second),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	p2 := &projcontour.HTTPProxy{
+		ObjectMeta: p1.ObjectMeta,
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []projcontour.Route{{
+				Conditions: matchconditions(prefixMatchCondition("/")),
+				TimeoutPolicy: &projcontour.TimeoutPolicy{
+					Response: "3h",
+				},
+				Services: []projcontour.Service{{
+					Name: svc.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(p1, p2)
+
+	// response timeout was outside the allowed range, route should not be configured
+	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+		Resources: resources(t, envoy.RouteConfiguration("ingress_http")),
+		TypeUrl:   routeType,
 	})
 }
 

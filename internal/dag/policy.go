@@ -135,7 +135,7 @@ func ingressRetryPolicy(ingress *v1beta1.Ingress) *RetryPolicy {
 	}
 }
 
-func ingressTimeoutPolicy(ingress *v1beta1.Ingress) TimeoutPolicy {
+func ingressTimeoutPolicy(ingress *v1beta1.Ingress, responseTimeoutRange timeout.AllowedRange) TimeoutPolicy {
 	response := annotation.CompatAnnotation(ingress, "response-timeout")
 	if len(response) == 0 {
 		// Note: due to a misunderstanding the name of the annotation is
@@ -151,22 +151,33 @@ func ingressTimeoutPolicy(ingress *v1beta1.Ingress) TimeoutPolicy {
 	}
 	// if the request timeout annotation is present on this ingress
 	// construct and use the HTTPProxy timeout policy logic.
-	return timeoutPolicy(&projcontour.TimeoutPolicy{
-		Response: response,
-	})
+	tp, err := timeoutPolicy(&projcontour.TimeoutPolicy{Response: response}, responseTimeoutRange)
+	if err != nil {
+		// TODO probably want to bubble this up to the user somehow, but there's no obvious
+		// place to write errors for Ingress.
+		return TimeoutPolicy{}
+	}
+
+	return tp
 }
 
-func timeoutPolicy(tp *projcontour.TimeoutPolicy) TimeoutPolicy {
+func timeoutPolicy(tp *projcontour.TimeoutPolicy, responseTimeoutRange timeout.AllowedRange) (TimeoutPolicy, error) {
 	if tp == nil {
 		return TimeoutPolicy{
 			ResponseTimeout: timeout.DefaultSetting(),
 			IdleTimeout:     timeout.DefaultSetting(),
-		}
+		}, nil
 	}
+
+	responseTimeout := timeout.Parse(tp.Response)
+	if !responseTimeout.IsWithin(responseTimeoutRange) {
+		return TimeoutPolicy{}, fmt.Errorf("response timeout %s is outside of the allowed range [%s-%s]", tp.Response, responseTimeoutRange.Min(), responseTimeoutRange.Max())
+	}
+
 	return TimeoutPolicy{
-		ResponseTimeout: timeout.Parse(tp.Response),
+		ResponseTimeout: responseTimeout,
 		IdleTimeout:     timeout.Parse(tp.Idle),
-	}
+	}, nil
 }
 
 func httpHealthCheckPolicy(hc *projcontour.HTTPHealthCheckPolicy) *HTTPHealthCheckPolicy {

@@ -3024,6 +3024,7 @@ func TestDAGInsert(t *testing.T) {
 		disablePermitInsecure        bool
 		fallbackCertificateName      string
 		fallbackCertificateNamespace string
+		responseTimeoutRange         timeout.AllowedRange
 		want                         []Vertex
 	}{
 		"insert ingress w/ default backend w/o matching service": {
@@ -3777,7 +3778,27 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-
+		"insert ingress w/ response timeout outside allowed range": {
+			objs: []interface{}{
+				i12e,
+				s1,
+			},
+			responseTimeoutRange: timeout.NewAllowedRange(0, time.Second),
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", &Route{
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
+							TimeoutPolicy: TimeoutPolicy{
+								ResponseTimeout: timeout.DefaultSetting(),
+							},
+						}),
+					),
+				},
+			),
+		},
 		"insert httpproxy w/ valid timeoutpolicy": {
 			objs: []interface{}{
 				proxyTimeoutPolicyValidResponse,
@@ -3797,6 +3818,14 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 			),
+		},
+		"insert httpproxy w/ response timeout outside allowed range": {
+			objs: []interface{}{
+				proxyTimeoutPolicyValidResponse,
+				s1,
+			},
+			responseTimeoutRange: timeout.NewAllowedRange(0, time.Second),
+			want:                 listeners(),
 		},
 		"insert ingress w/ legacy infinite timeout annotation": {
 			objs: []interface{}{
@@ -6009,6 +6038,7 @@ func TestDAGInsert(t *testing.T) {
 				Source: KubernetesCache{
 					FieldLogger: testLogger(t),
 				},
+				ResponseTimeoutRange: tc.responseTimeoutRange,
 			}
 			for _, o := range tc.objs {
 				builder.Source.Insert(o)

@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -248,8 +249,10 @@ func TestRetryPolicy(t *testing.T) {
 
 func TestTimeoutPolicy(t *testing.T) {
 	tests := map[string]struct {
-		tp   *projcontour.TimeoutPolicy
-		want TimeoutPolicy
+		tp           *projcontour.TimeoutPolicy
+		allowedRange timeout.AllowedRange
+		want         TimeoutPolicy
+		wantErr      error
 	}{
 		"nil timeout policy": {
 			tp:   nil,
@@ -295,12 +298,21 @@ func TestTimeoutPolicy(t *testing.T) {
 				IdleTimeout: timeout.DurationSetting(900 * time.Second),
 			},
 		},
+		"response timeout outside the allowed range": {
+			tp: &projcontour.TimeoutPolicy{
+				Response: "1h",
+			},
+			allowedRange: timeout.NewAllowedRange(time.Second, time.Minute),
+			want:         TimeoutPolicy{},
+			wantErr:      errors.New("response timeout 1h is outside of the allowed range [1s-1m0s]"),
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := timeoutPolicy(tc.tp)
+			got, err := timeoutPolicy(tc.tp, tc.allowedRange)
 			assert.Equal(t, tc.want, got, cmp.AllowUnexported(timeout.Setting{}))
+			assert.Equal(t, tc.wantErr, err)
 		})
 	}
 }

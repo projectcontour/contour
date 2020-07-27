@@ -13,7 +13,12 @@
 
 package timeout
 
-import "time"
+import (
+	"errors"
+	"fmt"
+	"math"
+	"time"
+)
 
 // Setting describes a timeout setting that can be exactly one of:
 // disable the timeout entirely, use the default, or use a specific
@@ -37,6 +42,12 @@ func (s Setting) UseDefault() bool {
 // Duration returns the explicit timeout value if one exists.
 func (s Setting) Duration() time.Duration {
 	return s.val
+}
+
+// IsWithin returns true if the setting is within the allowed range,
+// or false otherwise.
+func (s Setting) IsWithin(allowedRange AllowedRange) bool {
+	return allowedRange.Allows(s)
 }
 
 // DefaultSetting returns a Setting representing "use the default".
@@ -82,4 +93,91 @@ func Parse(timeout string) Setting {
 	}
 
 	return DurationSetting(d)
+}
+
+// AllowedRange defines a range of allowed values for a timeout. The zero
+// value of this struct is an AllowedRange that allows any value.
+type AllowedRange struct {
+	min time.Duration
+	max time.Duration
+
+	// This allows us to have a useful zero
+	// value for the struct that allows all
+	// values.
+	maxSet bool
+}
+
+// NewAllowedRange creates an AllowedRange with the given min and
+// max allowed durations.
+func NewAllowedRange(min, max time.Duration) AllowedRange {
+	return AllowedRange{
+		min:    min,
+		max:    max,
+		maxSet: true,
+	}
+}
+
+// ParseRange creates an AllowedRange by parsing the given min and
+// max duration strings. An empty string for min or max is interpreted
+// as no min/max limit. The string "infinity" is also a valid value.
+func ParseRange(min, max string) (AllowedRange, error) {
+	parse := func(val string, valIfEmpty time.Duration) (time.Duration, error) {
+		if val == "" {
+			return valIfEmpty, nil
+		}
+
+		if val == "infinity" {
+			return math.MaxInt64, nil
+		}
+
+		return time.ParseDuration(val)
+	}
+
+	minDuration, err := parse(min, 0)
+	if err != nil {
+		return AllowedRange{}, fmt.Errorf("error parsing min: %v", err)
+	}
+	maxDuration, err := parse(max, math.MaxInt64)
+	if err != nil {
+		return AllowedRange{}, fmt.Errorf("error parsing max: %v", err)
+	}
+
+	if minDuration > maxDuration {
+		return AllowedRange{}, errors.New("min must be less than or equal to max")
+	}
+
+	return NewAllowedRange(minDuration, maxDuration), nil
+}
+
+// Allows returns true if the provided setting is within the allowed
+// range, or false otherwise. A timeout setting of "use default" is
+// always considered to be within the range. A timeout setting of
+// "disabled" is considered to be within the range if the range's max
+// is set to "infinity".
+func (ar AllowedRange) Allows(setting Setting) bool {
+	// "Use default" is always allowed.
+	if setting.UseDefault() {
+		return true
+	}
+
+	// "Disabled" is only allowed if the range max is
+	// unset or set to infinity/the max duration value.
+	if setting.IsDisabled() {
+		return ar.Max() == math.MaxInt64
+	}
+
+	return setting.Duration() >= ar.Min() && setting.Duration() <= ar.Max()
+}
+
+// Min returns the allowed range's minimimum duration.
+func (ar AllowedRange) Min() time.Duration {
+	return ar.min
+}
+
+// Max returns the allowed range's maximum duration.
+func (ar AllowedRange) Max() time.Duration {
+	if !ar.maxSet {
+		return math.MaxInt64
+	}
+	return ar.max
 }

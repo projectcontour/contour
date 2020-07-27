@@ -29,6 +29,7 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/timeout"
 )
 
 // Builder builds a DAG.
@@ -53,6 +54,10 @@ type Builder struct {
 	FallbackCertificate *types.NamespacedName
 
 	StatusWriter
+
+	// ResponseTimeoutRange is the allowed range for per-route
+	// response timeouts.
+	ResponseTimeoutRange timeout.AllowedRange
 }
 
 // Build builds a new DAG.
@@ -328,7 +333,7 @@ func (b *Builder) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1.IngressR
 			continue
 		}
 
-		r := route(ing, path, s)
+		r := route(ing, path, s, b.ResponseTimeoutRange)
 
 		// should we create port 80 routes for this ingress
 		if annotation.TLSRequired(ing) || annotation.HTTPAllowed(ing) {
@@ -668,12 +673,18 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			return nil
 		}
 
+		timeoutPolicy, err := timeoutPolicy(route.TimeoutPolicy, b.ResponseTimeoutRange)
+		if err != nil {
+			sw.SetInvalid(err.Error())
+			return nil
+		}
+
 		r := &Route{
 			PathMatchCondition:    mergePathMatchConditions(conds),
 			HeaderMatchConditions: mergeHeaderMatchConditions(conds),
 			Websocket:             route.EnableWebsockets,
 			HTTPSUpgrade:          routeEnforceTLS(enforceTLS, route.PermitInsecure && !b.DisablePermitInsecure),
-			TimeoutPolicy:         timeoutPolicy(route.TimeoutPolicy),
+			TimeoutPolicy:         timeoutPolicy,
 			RetryPolicy:           retryPolicy(route.RetryPolicy),
 			RequestHeadersPolicy:  reqHP,
 			ResponseHeadersPolicy: respHP,
@@ -1062,12 +1073,12 @@ func externalName(svc *v1.Service) string {
 }
 
 // route builds a dag.Route for the supplied Ingress.
-func route(ingress *v1beta1.Ingress, path string, service *Service) *Route {
+func route(ingress *v1beta1.Ingress, path string, service *Service, responseTimeoutRange timeout.AllowedRange) *Route {
 	wr := annotation.WebsocketRoutes(ingress)
 	r := &Route{
 		HTTPSUpgrade:  annotation.TLSRequired(ingress),
 		Websocket:     wr[path],
-		TimeoutPolicy: ingressTimeoutPolicy(ingress),
+		TimeoutPolicy: ingressTimeoutPolicy(ingress, responseTimeoutRange),
 		RetryPolicy:   ingressRetryPolicy(ingress),
 		Clusters: []*Cluster{{
 			Upstream: service,

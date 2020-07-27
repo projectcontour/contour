@@ -70,3 +70,5 @@ data:
     #   stream-idle-timeout: 5m
     #   max-connection-duration: infinity
     #   connection-shutdown-grace-period: 5s
+    #   response-timeout-min: 0s
+    #   response-timeout-max: infinity
