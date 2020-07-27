@@ -24,6 +24,15 @@ const (
 	TCP_KEEPIDLE  = 0x4 // Linux syscall.TCP_KEEPIDLE
 	TCP_KEEPINTVL = 0x5 // Linux syscall.TCP_KEEPINTVL
 	TCP_KEEPCNT   = 0x6 // Linux syscall.TCP_KEEPCNT
+
+	// The following are Linux syscall constants for all
+	// architectures except MIPS.
+	SOL_SOCKET   = 0x1
+	SO_KEEPALIVE = 0x9
+
+	// IPPROTO_TCP has the same value across Go platforms, but
+	// is defined here for consistency.
+	IPPROTO_TCP = syscall.IPPROTO_TCP
 )
 
 func TCPKeepaliveSocketOptions() []*envoy_api_v2_core.SocketOption {
@@ -35,8 +44,8 @@ func TCPKeepaliveSocketOptions() []*envoy_api_v2_core.SocketOption {
 		// Enable TCP keep-alive.
 		{
 			Description: "Enable TCP keep-alive",
-			Level:       syscall.SOL_SOCKET,
-			Name:        syscall.SO_KEEPALIVE,
+			Level:       SOL_SOCKET,
+			Name:        SO_KEEPALIVE,
 			Value:       &envoy_api_v2_core.SocketOption_IntValue{IntValue: 1},
 			State:       envoy_api_v2_core.SocketOption_STATE_LISTENING,
 		},
@@ -44,7 +53,7 @@ func TCPKeepaliveSocketOptions() []*envoy_api_v2_core.SocketOption {
 		// before TCP starts sending keepalive probes.
 		{
 			Description: "TCP keep-alive initial idle time",
-			Level:       syscall.IPPROTO_TCP,
+			Level:       IPPROTO_TCP,
 			Name:        TCP_KEEPIDLE,
 			Value:       &envoy_api_v2_core.SocketOption_IntValue{IntValue: 45},
 			State:       envoy_api_v2_core.SocketOption_STATE_LISTENING,
@@ -52,7 +61,7 @@ func TCPKeepaliveSocketOptions() []*envoy_api_v2_core.SocketOption {
 		// The time (in seconds) between individual keepalive probes.
 		{
 			Description: "TCP keep-alive time between probes",
-			Level:       syscall.IPPROTO_TCP,
+			Level:       IPPROTO_TCP,
 			Name:        TCP_KEEPINTVL,
 			Value:       &envoy_api_v2_core.SocketOption_IntValue{IntValue: 5},
 			State:       envoy_api_v2_core.SocketOption_STATE_LISTENING,
@@ -62,7 +71,7 @@ func TCPKeepaliveSocketOptions() []*envoy_api_v2_core.SocketOption {
 		// obtained from the other end.
 		{
 			Description: "TCP keep-alive probe count",
-			Level:       syscall.IPPROTO_TCP,
+			Level:       IPPROTO_TCP,
 			Name:        TCP_KEEPCNT,
 			Value:       &envoy_api_v2_core.SocketOption_IntValue{IntValue: 9},
 			State:       envoy_api_v2_core.SocketOption_STATE_LISTENING,
