@@ -32,4 +32,4 @@ and "why does Contour do this thing this way?"
 [4]: {{site.footer_social_links.Slack.url}}
 [5]: https://hackmd.io/84Xbl4WBTpm7OBhaOAsSiw
 [6]: https://www.youtube.com/playlist?list=PL7bmigfV0EqTBsPrnCkzhu0R4SAWnBjLj
-[7]: cncf-contour-users@lists.cncf.io
+[7]: https://lists.cncf.io/g/cncf-contour-users/
