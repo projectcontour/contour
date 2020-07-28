@@ -84,14 +84,14 @@ func Cluster(c *dag.Cluster) *v2.Cluster {
 			),
 		)
 	case "h2":
+		cluster.Http2ProtocolOptions = &envoy_api_v2_core.Http2ProtocolOptions{}
 		cluster.TransportSocket = UpstreamTLSTransportSocket(
 			UpstreamTLSContext(
 				c.UpstreamValidation,
-				service.ExternalName,
+				c.SNI,
 				"h2",
 			),
 		)
-		fallthrough
 	case "h2c":
 		cluster.Http2ProtocolOptions = &envoy_api_v2_core.Http2ProtocolOptions{}
 	}

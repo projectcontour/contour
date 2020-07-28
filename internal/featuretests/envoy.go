@@ -35,8 +35,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DefaultCluster returns a copy of c, updated with default values.
-func DefaultCluster(c *v2.Cluster) *v2.Cluster {
+// DefaultCluster returns a copy of the default Cluster, with each
+// Cluster given in the parameter slice merged on top. This makes it
+// relatively fluent to compose Clusters by tweaking a few fields.
+func DefaultCluster(clusters ...*v2.Cluster) *v2.Cluster {
 	// NOTE: Keep this in sync with envoy.defaultCluster().
 	defaults := &v2.Cluster{
 		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
@@ -44,7 +46,10 @@ func DefaultCluster(c *v2.Cluster) *v2.Cluster {
 		CommonLbConfig: envoy.ClusterCommonLBConfig(),
 	}
 
-	proto.Merge(defaults, c)
+	for _, c := range clusters {
+		proto.Merge(defaults, c)
+	}
+
 	return defaults
 }
 
