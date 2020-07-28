@@ -791,3 +791,19 @@ func TestProtoNamesForVersions(t *testing.T) {
 	assert.Equal(t, ProtoNamesForVersions(HTTPVersion3), []string(nil))
 	assert.Equal(t, ProtoNamesForVersions(HTTPVersion1, HTTPVersion2), []string{"h2", "http/1.1"})
 }
+
+// TestBuilderValidation tests that validation checks that
+// DefaultFilters adds the required HTTP connection manager filters.
+func TestBuilderValidation(t *testing.T) {
+	if err := HTTPConnectionManagerBuilder().Validate(); err == nil {
+		t.Errorf("ConnectionManager with no filters passed validation")
+	}
+
+	if err := HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{Name: "foo"}).Validate(); err == nil {
+		t.Errorf("ConnectionManager with no filters passed validation")
+	}
+
+	if err := HTTPConnectionManagerBuilder().DefaultFilters().Validate(); err != nil {
+		t.Errorf("ConnectionManager with default filters failed validation: %s", err)
+	}
+}

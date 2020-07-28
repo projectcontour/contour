@@ -441,6 +441,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			// Default filter chain
 			filters = envoy.Filters(
 				envoy.HTTPConnectionManagerBuilder().
+					DefaultFilters().
 					RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
 					MetricsPrefix(ENVOY_HTTPS_LISTENER).
 					AccessLoggers(v.ListenerVisitorConfig.newSecureAccessLog()).
