@@ -36,22 +36,12 @@ jobs:
 
   # Build the Contour container image with the local Docker. Create a kind
   # cluster, push the image we built into it, and verify that both Contour
-  # and Envoy come up. This is an initial placeholder as we experiment with
-  # different approaches to integration testing.
+  # and Envoy come up. Then execute the integration tests against the cluster.
   - name: integration
     install:
     - ./hack/travis/install-kubernetes-toolchain.sh $HOME/bin
-    - make container IMAGE=docker.io/projectcontour/contour VERSION=ci
-    - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:master
-    - docker tag docker.io/projectcontour/contour:ci docker.io/projectcontour/contour:latest
     script:
-    - $HOME/bin/kind create cluster --wait 2m
-    - $HOME/bin/kind load docker-image docker.io/projectcontour/contour:master
-    - $HOME/bin/kind load docker-image docker.io/projectcontour/contour:latest
-    - '$HOME/bin/kubectl apply -f <(sed "s/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g" < examples/render/contour.yaml)'
-    - $HOME/bin/kubectl wait --timeout=2m -n projectcontour -l app=contour deployments --for=condition=Available
-    - $HOME/bin/kubectl wait --timeout=2m -n projectcontour -l app=envoy pods --for=condition=Ready
-    - $HOME/bin/kind delete cluster
+    - make integration
 
   - name: lint
     install:

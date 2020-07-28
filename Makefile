@@ -311,6 +311,11 @@ site-check: ## Test the site's links
 	docker run --rm -v $$(pwd)/site:/site -it $(JEKYLL_IMAGE) \
 		bash -c "cd /site && bundle install --path bundler/cache && bundle exec jekyll build && htmlproofer --assume-extension /site/_site"
 
+integration: ## Run integration tests against a real k8s cluster
+	./_integration/testsuite/make-kind-cluster.sh
+	./_integration/testsuite/run-test-case.sh ./_integration/testsuite/httpproxy/*.yaml
+	./_integration/testsuite/cleanup.sh
+
 help: ## Display this help
 	@echo Contour high performance Ingress controller for Kubernetes
 	@echo

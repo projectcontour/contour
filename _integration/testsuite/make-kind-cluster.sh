@@ -74,6 +74,10 @@ for t in $TAGS ; do
     kind::cluster::load docker.io/projectcontour/contour:$t
 done
 
+# Pull the util image & push image into the cluster.
+docker pull docker.io/kennethreitz/httpbin
+kind::cluster::load docker.io/kennethreitz/httpbin
+
 # Install Contour.
 #
 # NOTE(jpeach): The certgen job uses the ":latest" tag with the
