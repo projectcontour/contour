@@ -349,7 +349,7 @@ func TestServeContextCertificateHandling(t *testing.T) {
 	checkFatalErr(t, err)
 
 	go func() {
-		err = g.Serve(l)
+		err := g.Serve(l)
 		checkFatalErr(t, err)
 	}()
 	defer g.Stop()
