@@ -28,6 +28,7 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -397,6 +398,12 @@ func TestCluster(t *testing.T) {
 			assert.Equal(t, want, got)
 		})
 	}
+}
+
+func TestClusterLoadAssignmentName(t *testing.T) {
+	assert.Equal(t, ClusterLoadAssignmentName(types.NamespacedName{Namespace: "ns", Name: "svc"}, "port"), "ns/svc/port")
+	assert.Equal(t, ClusterLoadAssignmentName(types.NamespacedName{Namespace: "ns", Name: "svc"}, ""), "ns/svc")
+	assert.Equal(t, ClusterLoadAssignmentName(types.NamespacedName{}, ""), "/")
 }
 
 func TestClustername(t *testing.T) {

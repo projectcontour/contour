@@ -28,6 +28,7 @@ require (
 	k8s.io/client-go v0.18.2
 	k8s.io/gengo v0.0.0-20191120174120-e74f70b9b27e // indirect
 	k8s.io/klog v1.0.0
+	k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
 	sigs.k8s.io/controller-tools v0.2.9
 	sigs.k8s.io/kustomize/kyaml v0.1.1
 	sigs.k8s.io/service-apis v0.0.0-20200213014236-51691dd89266
