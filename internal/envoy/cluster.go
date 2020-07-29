@@ -28,6 +28,7 @@ import (
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func clusterDefaults() *v2.Cluster {
@@ -99,33 +100,45 @@ func Cluster(c *dag.Cluster) *v2.Cluster {
 	return cluster
 }
 
-// StaticClusterLoadAssignment creates a *v2.ClusterLoadAssignment pointing to the external DNS address of the service
-func StaticClusterLoadAssignment(service *dag.Service) *v2.ClusterLoadAssignment {
+// ClusterLoadAssignmentName generates the name used for an EDS
+// ClusterLoadAssignment, given a fully qualified Service name and
+// port. This name is a contract between the producer of a cluster
+// (i.e. the EDS service) and the consumer of a cluster (most likely
+// a HTTP Route Action).
+func ClusterLoadAssignmentName(service types.NamespacedName, port string) string {
 	name := []string{
 		service.Namespace,
 		service.Name,
-		service.ServicePort.Name,
+		port,
 	}
 
+	// If the port is empty, omit it.
+	if port == "" {
+		return strings.Join(name[:2], "/")
+	}
+
+	return strings.Join(name, "/")
+}
+
+// StaticClusterLoadAssignment creates a *v2.ClusterLoadAssignment pointing to the external DNS address of the service
+func StaticClusterLoadAssignment(service *dag.Service) *v2.ClusterLoadAssignment {
 	addr := SocketAddress(service.ExternalName, int(service.ServicePort.Port))
 	return &v2.ClusterLoadAssignment{
-		ClusterName: strings.Join(name, "/"),
-		Endpoints:   Endpoints(addr),
+		Endpoints: Endpoints(addr),
+		ClusterName: ClusterLoadAssignmentName(
+			types.NamespacedName{Name: service.Name, Namespace: service.Namespace},
+			service.ServicePort.Name,
+		),
 	}
 }
 
 func edsconfig(cluster string, service *dag.Service) *v2.Cluster_EdsClusterConfig {
-	name := []string{
-		service.Namespace,
-		service.Name,
-		service.ServicePort.Name,
-	}
-	if name[2] == "" {
-		name = name[:2]
-	}
 	return &v2.Cluster_EdsClusterConfig{
-		EdsConfig:   ConfigSource(cluster),
-		ServiceName: strings.Join(name, "/"),
+		EdsConfig: ConfigSource(cluster),
+		ServiceName: ClusterLoadAssignmentName(
+			types.NamespacedName{Name: service.Name, Namespace: service.Namespace},
+			service.ServicePort.Name,
+		),
 	}
 }
 
