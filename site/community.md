@@ -13,7 +13,7 @@ and "why does Contour do this thing this way?"
 
 * Get updates on Twitter at [@projectcontour][3]
 
-* Join our Kubernetes Slack channel and chat with over 500 other community members: [#contour​][4]
+* Join our Kubernetes Slack channel and chat with over 500 other community members: [#contour][4]
 
 * Join the [Project Contour Users][7] mailing list for Contour news, release notifications, invitations to the community meetings, to discuss issues, or to provide suggestions and feedback
 
