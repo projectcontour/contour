@@ -7,7 +7,7 @@ if command -v ${PROGNAME} >/dev/null; then
 fi
 
 if command -v docker >/dev/null; then
-	exec docker run --rm -ti \
+	exec docker run --rm -i \
 		-v $(pwd):/workdir \
 		giantswarm/yamllint "$@"
 fi
