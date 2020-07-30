@@ -82,7 +82,7 @@ func TestExternalNameService(t *testing.T) {
 
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard/", "default_kuard_80", "foo.io", 80),
+			externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80", "foo.io", 80),
 		),
 		TypeUrl: clusterType,
 	})
@@ -117,7 +117,7 @@ func TestExternalNameService(t *testing.T) {
 
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard/", "default_kuard_80", "foo.io", 80),
+			externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80", "foo.io", 80),
 		),
 		TypeUrl: clusterType,
 	})
@@ -160,7 +160,7 @@ func TestExternalNameService(t *testing.T) {
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
 		TypeUrl: clusterType,
 		Resources: resources(t,
-			externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard/", "default_kuard_80", "foo.io", 80),
+			externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80", "foo.io", 80),
 		),
 	})
 
@@ -206,7 +206,7 @@ func TestExternalNameService(t *testing.T) {
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			DefaultCluster(
-				externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard/", "default_kuard_80", "foo.io", 80),
+				externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80", "foo.io", 80),
 				&v2.Cluster{
 					Http2ProtocolOptions: &envoy_api_v2_core.Http2ProtocolOptions{},
 				},
@@ -261,7 +261,7 @@ func TestExternalNameService(t *testing.T) {
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			DefaultCluster(
-				externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard/", "default_kuard_80", "foo.io", 80),
+				externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80", "foo.io", 80),
 				&v2.Cluster{
 					TransportSocket: envoy.UpstreamTLSTransportSocket(
 						envoy.UpstreamTLSContext(nil, "external.address"),
