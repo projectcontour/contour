@@ -8,7 +8,7 @@ cd ./site
 
 gem install bundler
 gem install html-proofer
-gem install jekyll -v 3.8.5
+gem install jekyll -v 4
 bundle install
 bundle exec jekyll build
 htmlproofer ./_site \

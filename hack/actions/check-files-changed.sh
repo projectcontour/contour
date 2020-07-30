@@ -1,16 +1,16 @@
 #! /usr/bin/env bash
 
 # Checks if the files changed in the last commit are contained within
-# specifed directories.  This is used to determine if a job should
+# specified directories.  This is used to determine if a job should
 # run based on changes within a commit PATHS_TO_SEARCH can be a single
 # path "site" or multiple paths "site hack", response if for any path
 # specified.
 
-# Add to a job within .travis.yml
+# Add to a job within .github/workflows/*.yaml
 #      env:
 #        - SEARCH_DIRECTORIES="site"
 #      install:
-#        - ./hack/travis/travis-check-files-changed.sh $SEARCH_DIRECTORIES ; RETURN_CODE=$? ; if [ $RETURN_CODE -eq 137 ]; then travis_terminate 0; elif [ $RETURN_CODE -ne 0 ]; then travis_terminate $RETURN_CODE; fi
+#        - ./hack/actions/check-files-changed.sh $SEARCH_DIRECTORIES
 
 set -o errexit
 set -o nounset
@@ -31,9 +31,10 @@ readonly LATEST_COMMIT_IN_PATH=$(git log -1 --format=format:%H --full-diff "$@")
 if [ $LATEST_COMMIT != $LATEST_COMMIT_IN_PATH ]; then
     echo "Exiting this job because code in the following paths have not changed:"
     echo $@
-    exit 137
+    exit 1
+else
+    echo "Changes detected in the following paths:"
+    echo $@
+    exit 0
 fi
 
-echo "Changes detected in the following paths:"
-echo $@
-exit 0
