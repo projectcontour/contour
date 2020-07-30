@@ -74,22 +74,25 @@ func newShutdownManagerContext() *shutdownmanagerContext {
 func (s *shutdownmanagerContext) healthzHandler(w http.ResponseWriter, r *http.Request) {
 	http.StatusText(http.StatusOK)
 	if _, err := w.Write([]byte("OK")); err != nil {
-		s.Error(err)
+		s.WithField("context", "healthzHandler").Error(err)
 	}
 }
 
 // shutdownReadyHandler handles the /shutdown endpoint which is used by Envoy to determine if it can terminate.
 // Once enough connections have drained based upon configuration, a file will be written to "/ok" in
 // the shutdown manager's file system. Any HTTP request to /shutdown will use the existence of this
-// file to understand if it is safe to terminate.
+// file to understand if it is safe to terminate. The file-based approach is used since the process in which
+// the kubelet calls the shutdown command is different than the HTTP request from Envoy to /shutdown
 func (s *shutdownmanagerContext) shutdownReadyHandler(w http.ResponseWriter, r *http.Request) {
 	for {
 		if _, err := os.Stat(shutdownReadyFile); err == nil {
 			http.StatusText(http.StatusOK)
 			if _, err := w.Write([]byte("OK")); err != nil {
-				s.Error(err)
+				s.WithField("context", "shutdownReadyHandler").Error(err)
 			}
 			return
+		} else {
+			s.WithField("context", "shutdownReadyHandler").Errorf("error checking for file: %v", err)
 		}
 		time.Sleep(1 * time.Second)
 	}
@@ -102,10 +105,10 @@ func (s *shutdownmanagerContext) shutdownHandler() {
 	// Send shutdown signal to Envoy to start draining connections
 	s.Infof("failing envoy healthchecks")
 	if err := shutdownEnvoy(); err != nil {
-		s.Errorf("error sending envoy healthcheck fail: %v", err)
+		s.WithField("context", "shutdownHandler").Errorf("error sending envoy healthcheck fail: %v", err)
 	}
 
-	s.Infof("waiting %s before polling for draining connections", s.checkDelay)
+	s.WithField("context", "shutdownHandler").Infof("waiting %s before polling for draining connections", s.checkDelay)
 	time.Sleep(s.checkDelay)
 
 	for {
@@ -114,7 +117,8 @@ func (s *shutdownmanagerContext) shutdownHandler() {
 			s.Error(err)
 		} else {
 			if openConnections <= s.minOpenConnections {
-				s.WithField("open_connections", openConnections).
+				s.WithField("context", "shutdownHandler").
+					WithField("open_connections", openConnections).
 					WithField("min_connections", s.minOpenConnections).
 					Info("min number of open connections found, shutting down")
 				file, err := os.Create(shutdownReadyFile)
@@ -124,7 +128,8 @@ func (s *shutdownmanagerContext) shutdownHandler() {
 				defer file.Close()
 				return
 			}
-			s.WithField("open_connections", openConnections).
+			s.WithField("context", "shutdownHandler").
+				WithField("open_connections", openConnections).
 				WithField("min_connections", s.minOpenConnections).
 				Info("polled open connections")
 		}
