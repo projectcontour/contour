@@ -216,7 +216,7 @@ generate-metrics-docs:
 
 .PHONY: check-generate
 check-generate: generate
-	@./hack/travis/check-uncommitted-codegen.sh
+	@./hack/actions/check-uncommitted-codegen.sh
 
 # TODO(youngnick): Move these local bootstrap config files out of the repo root dir.
 $(LOCAL_BOOTSTRAP_CONFIG): install
