@@ -98,6 +98,16 @@ func TestPeerValidationContext(t *testing.T) {
 	assert.Equal(t, pvc3.GetCACertificate(), []byte(nil))
 }
 
+func TestObserverFunc(t *testing.T) {
+	// Ensure nil doesn't panic.
+	ObserverFunc(nil).OnChange(nil)
+
+	// Ensure the given function gets called.
+	result := false
+	ObserverFunc(func(*DAG) { result = true }).OnChange(nil)
+	assert.Equal(t, true, result)
+}
+
 type Assert struct {
 	*testing.T
 }

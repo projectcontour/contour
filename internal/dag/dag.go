@@ -27,7 +27,38 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// A DAG represents a directed acylic graph of objects representing the relationship
+// Vertex is a node in the DAG that can be visited.
+type Vertex interface {
+	Visit(func(Vertex))
+}
+
+// Observer is an interface for receiving notification of DAG updates.
+type Observer interface {
+	OnChange(*DAG)
+}
+
+// ObserverFunc is a function that implements the Observer interface
+// by calling itself. It can be nil.
+type ObserverFunc func(*DAG)
+
+func (f ObserverFunc) OnChange(d *DAG) {
+	if f != nil {
+		f(d)
+	}
+}
+
+var _ Observer = ObserverFunc(nil)
+
+// ComposeObservers returns a new Observer that calls each of its arguments in turn.
+func ComposeObservers(observers ...Observer) Observer {
+	return ObserverFunc(func(d *DAG) {
+		for _, o := range observers {
+			o.OnChange(d)
+		}
+	})
+}
+
+// A DAG represents a directed acyclic graph of objects representing the relationship
 // between Kubernetes Ingress objects, the backend Services, and Secret objects.
 // The DAG models these relationships as Roots and Vertices.
 type DAG struct {
@@ -302,14 +333,6 @@ func (s *SecureVirtualHost) Valid() bool {
 	// 1. it has a secret and at least one route.
 	// 2. it has a tcpproxy, because the tcpproxy backend may negotiate TLS itself.
 	return (s.Secret != nil && len(s.routes) > 0) || s.TCPProxy != nil
-}
-
-type Visitable interface {
-	Visit(func(Vertex))
-}
-
-type Vertex interface {
-	Visitable
 }
 
 // A Listener represents a TCP socket that accepts

@@ -27,7 +27,7 @@ import (
 )
 
 func TestTimeoutsNotSpecified(t *testing.T) {
-	// the contour.EventHandler.ListenerVisitorConfig has no timeout values specified
+	// the contour.EventHandler.ListenerConfig has no timeout values specified
 	rh, c, done := setup(t)
 	defer done()
 
@@ -85,11 +85,11 @@ func TestTimeoutsNotSpecified(t *testing.T) {
 }
 
 func TestNonZeroTimeoutsSpecified(t *testing.T) {
-	withTimeouts := func(eh *contour.EventHandler) {
-		eh.ListenerVisitorConfig.ConnectionIdleTimeout = timeout.DurationSetting(7 * time.Second)
-		eh.ListenerVisitorConfig.StreamIdleTimeout = timeout.DurationSetting(70 * time.Second)
-		eh.ListenerVisitorConfig.MaxConnectionDuration = timeout.DurationSetting(700 * time.Second)
-		eh.ListenerVisitorConfig.ConnectionShutdownGracePeriod = timeout.DurationSetting(7000 * time.Second)
+	withTimeouts := func(conf *contour.ListenerConfig) {
+		conf.ConnectionIdleTimeout = timeout.DurationSetting(7 * time.Second)
+		conf.StreamIdleTimeout = timeout.DurationSetting(70 * time.Second)
+		conf.MaxConnectionDuration = timeout.DurationSetting(700 * time.Second)
+		conf.ConnectionShutdownGracePeriod = timeout.DurationSetting(7000 * time.Second)
 	}
 
 	rh, c, done := setup(t, withTimeouts)

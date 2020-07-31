@@ -30,12 +30,11 @@ import (
 )
 
 // EventHandler implements cache.ResourceEventHandler, filters k8s events towards
-// a dag.Builder and calls through to the CacheHandler to notify it that a new DAG
+// a dag.Builder and calls through to the Observer to notify it that a new DAG
 // is available.
 type EventHandler struct {
-	dag.Builder
-
-	*CacheHandler
+	Builder  dag.Builder
+	Observer dag.Observer
 
 	HoldoffDelay, HoldoffMaxDelay time.Duration
 
@@ -53,7 +52,8 @@ type EventHandler struct {
 	// Sequence is a channel that receives a incrementing sequence number
 	// for each update processed. The updates may be processed immediately, or
 	// delayed by a holdoff timer. In each case a non blocking send to Sequence
-	// will be made once CacheHandler.OnUpdate has been called.
+	// will be made once the resource update is received (note
+	// that the DAG is not guaranteed to be called each time).
 	Sequence chan int
 
 	// seq is the sequence counter of the number of times
@@ -104,7 +104,7 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 
 	var (
 		// outstanding counts the number of events received but not
-		// yet send to the CacheHandler.
+		// yet included in a DAG rebuild.
 		outstanding int
 
 		// timer holds the timer which will expire after e.HoldoffDelay
@@ -113,11 +113,11 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 		// pending is a reference to the current timer's channel.
 		pending <-chan time.Time
 
-		// lastDAGUpdate holds the last time updateDAG was called.
-		// lastDAGUpdate is seeded to the current time on entry to
+		// lastDAGRebuild holds the last time rebuildDAG was called.
+		// lastDAGRebuild is seeded to the current time on entry to
 		// run to allow the holdoff timer to batch the updates from
 		// the API informers.
-		lastDAGUpdate = time.Now()
+		lastDAGRebuild = time.Now()
 	)
 
 	reset := func() (v int) {
@@ -131,7 +131,7 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 		//    pending may be nil if there are no pending events.
 		// 2. We're processing an event.
 		// 3. The holdoff timer from a previous event has fired and we're
-		//    building a new DAG and sending to the CacheHandler.
+		//    building a new DAG and sending to the Observer.
 		// 4. We're stopping.
 		//
 		// Only one of these things can happen at a time.
@@ -145,7 +145,7 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 				}
 
 				delay := e.HoldoffDelay
-				if time.Since(lastDAGUpdate) > e.HoldoffMaxDelay {
+				if time.Since(lastDAGRebuild) > e.HoldoffMaxDelay {
 					// the maximum holdoff delay has been exceeded so schedule the update
 					// immediately by delaying for 0ns.
 					delay = 0
@@ -158,10 +158,10 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 				e.incSequence()
 			}
 		case <-pending:
-			e.WithField("last_update", time.Since(lastDAGUpdate)).WithField("outstanding", reset()).Info("performing delayed update")
-			e.updateDAG()
+			e.WithField("last_update", time.Since(lastDAGRebuild)).WithField("outstanding", reset()).Info("performing delayed update")
+			e.rebuildDAG()
 			e.incSequence()
-			lastDAGUpdate = time.Now()
+			lastDAGRebuild = time.Now()
 		case <-stop:
 			// shutdown
 			return nil
@@ -171,7 +171,7 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 
 // onUpdate processes the event received. onUpdate returns
 // true if the event changed the cache in a way that requires
-// notifying the CacheHandler.
+// notifying the Observer.
 func (e *EventHandler) onUpdate(op interface{}) bool {
 	switch op := op.(type) {
 	case opAdd:
@@ -206,20 +206,16 @@ func (e *EventHandler) incSequence() {
 	}
 }
 
-// updateDAG builds a new DAG and sends it to the CacheHandler
-// the updates the status on objects and updates the metrics.
-func (e *EventHandler) updateDAG() {
-	dag := e.Builder.Build()
-	e.CacheHandler.OnChange(dag)
+// rebuildDAG builds a new DAG and sends it to the Observer,
+// the updates the status on objects, and updates the metrics.
+func (e *EventHandler) rebuildDAG() {
+	latestDAG := e.Builder.Build()
+	e.Observer.OnChange(latestDAG)
 
 	select {
 	case <-e.IsLeader:
-		// we're the leader, update status and metrics
-		statuses := dag.Statuses()
-		e.setStatus(statuses)
-
-		metrics := calculateRouteMetric(statuses)
-		e.Metrics.SetHTTPProxyMetric(metrics)
+		// We're the leader, update resource status.
+		e.setStatus(latestDAG.Statuses())
 	default:
 		e.Debug("skipping metrics and CRD status update, not leader")
 	}

@@ -31,7 +31,6 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	cgrpc "github.com/projectcontour/contour/internal/grpc"
 	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
@@ -64,7 +63,7 @@ func (d *discardWriter) Write(buf []byte) (int, error) {
 	return len(buf), nil
 }
 
-func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEventHandler, *grpc.ClientConn, func()) {
+func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *grpc.ClientConn, func()) {
 	t.Parallel()
 
 	log := logrus.New()
@@ -74,22 +73,31 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 		FieldLogger: log,
 	}
 
-	r := prometheus.NewRegistry()
-	ch := &contour.CacheHandler{
-		Metrics:       metrics.NewMetrics(r),
-		ListenerCache: contour.NewListenerCache(statsAddress, statsPort),
-		FieldLogger:   log,
+	conf := contour.ListenerConfig{}
+	for _, opt := range opts {
+		if opt, ok := opt.(func(*contour.ListenerConfig)); ok {
+			opt(&conf)
+		}
 	}
+
+	resources := []contour.ResourceCache{
+		contour.NewListenerCache(conf, statsAddress, statsPort),
+		&contour.SecretCache{},
+		&contour.RouteCache{},
+		&contour.ClusterCache{},
+	}
+
+	r := prometheus.NewRegistry()
 
 	rand.Seed(time.Now().Unix())
 
 	eh := &contour.EventHandler{
+		Observer: dag.ComposeObservers(contour.ObserversOf(resources)...),
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
 				FieldLogger: log,
 			},
 		},
-		CacheHandler:    ch,
 		StatusClient:    &k8s.StatusCacher{},
 		FieldLogger:     log,
 		Sequence:        make(chan int, 1),
@@ -98,7 +106,9 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 	}
 
 	for _, opt := range opts {
-		opt(eh)
+		if opt, ok := opt.(func(*contour.EventHandler)); ok {
+			opt(eh)
+		}
 	}
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
@@ -106,13 +116,7 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 	discard := logrus.New()
 	discard.Out = new(discardWriter)
 	// Resource types in xDS v2.
-	srv := cgrpc.NewAPI(discard, map[string]cgrpc.Resource{
-		ch.ClusterCache.TypeURL():  &ch.ClusterCache,
-		ch.RouteCache.TypeURL():    &ch.RouteCache,
-		ch.ListenerCache.TypeURL(): &ch.ListenerCache,
-		ch.SecretCache.TypeURL():   &ch.SecretCache,
-		et.TypeURL():               et,
-	}, r)
+	srv := cgrpc.NewAPI(discard, append(contour.ResourcesOf(resources), et), r)
 
 	var g workgroup.Group
 

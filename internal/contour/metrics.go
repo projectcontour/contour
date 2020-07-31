@@ -17,6 +17,8 @@
 package contour
 
 import (
+	"time"
+
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -54,6 +56,35 @@ func (e *EventRecorder) recordOperation(op string, obj interface{}) {
 		kind = "unknown"
 	}
 	e.Counter.WithLabelValues(op, kind).Inc()
+}
+
+// RebuildMetricsObserver is a dag.Observer that emits metrics for DAG rebuilds.
+type RebuildMetricsObserver struct {
+	// Metrics to emit.
+	Metrics *metrics.Metrics
+
+	// IsLeader will become ready to read when this EventHandler becomes
+	// the leader. If IsLeader is not readable, or nil, status events will
+	// be suppressed.
+	IsLeader chan struct{}
+
+	// NextObserver contains the stack of dag.Observers that act on DAG rebuilds.
+	NextObserver dag.Observer
+}
+
+func (m *RebuildMetricsObserver) OnChange(d *dag.DAG) {
+	m.Metrics.SetDAGLastRebuilt(time.Now())
+
+	timer := prometheus.NewTimer(m.Metrics.CacheHandlerOnUpdateSummary)
+	m.NextObserver.OnChange(d)
+	timer.ObserveDuration()
+
+	select {
+	// If we are leader, the IsLeader channel is closed.
+	case <-m.IsLeader:
+		m.Metrics.SetHTTPProxyMetric(calculateRouteMetric(d.Statuses()))
+	default:
+	}
 }
 
 func calculateRouteMetric(statuses map[types.NamespacedName]dag.Status) metrics.RouteMetric {
