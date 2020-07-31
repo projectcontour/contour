@@ -8,7 +8,6 @@ require (
 	github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4 // indirect
 	github.com/client9/misspell v0.3.4
 	github.com/envoyproxy/go-control-plane v0.9.5
-	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/golang/protobuf v1.4.2
 	github.com/google/go-cmp v0.5.0
 	github.com/google/uuid v1.1.1

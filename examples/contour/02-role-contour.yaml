@@ -71,6 +71,22 @@ rules:
 - apiGroups:
   - projectcontour.io
   resources:
+  - extensionservices
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - projectcontour.io
+  resources:
+  - extensionservices/status
+  verbs:
+  - create
+  - get
+  - update
+- apiGroups:
+  - projectcontour.io
+  resources:
   - httpproxies
   - tlscertificatedelegations
   verbs:

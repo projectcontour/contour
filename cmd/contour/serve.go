@@ -243,6 +243,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				&dag.IngressProcessor{
 					FieldLogger: log.WithField("context", "IngressProcessor"),
 				},
+				&dag.ExtensionServiceProcessor{
+					FieldLogger: log.WithField("context", "ExtensionServiceProcessor"),
+				},
 				&dag.HTTPProxyProcessor{
 					DisablePermitInsecure: ctx.DisablePermitInsecure,
 					FallbackCertificate:   fallbackCert,
@@ -275,7 +278,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	informerSyncList.InformOnResources(clusterInformerFactory, dynamicHandler, k8s.DefaultResources()...)
 
-	// Inform on ExtensionService resources if they are installed
+	// Inform on ExtensionCluster resources if they are installed
 	// in the cluster. TODO(jpeach) remove the resource check as part of #2711.
 	if gvr := projectcontourv1alpha1.GroupVersion.WithResource("extensionservices"); clients.ResourcesExist(gvr) {
 		informerSyncList.InformOnResources(clusterInformerFactory, dynamicHandler, gvr)

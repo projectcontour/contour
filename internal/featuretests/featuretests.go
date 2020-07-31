@@ -105,7 +105,10 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 
 	eh.Builder.Processors = []dag.Processor{
 		&dag.IngressProcessor{
-			FieldLogger: fixture.NewTestLogger(t),
+			FieldLogger: log.WithField("context", "IngressProcessor"),
+		},
+		&dag.ExtensionServiceProcessor{
+			FieldLogger: log.WithField("context", "ExtensionServiceProcessor"),
 		},
 		&dag.HTTPProxyProcessor{},
 		&dag.ListenerProcessor{},

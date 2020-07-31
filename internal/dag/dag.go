@@ -609,3 +609,35 @@ type TCPHealthCheckPolicy struct {
 	UnhealthyThreshold uint32
 	HealthyThreshold   uint32
 }
+
+// ExtensionCluster generates an Envoy cluster (aka ClusterLoadAssignment)
+// for an ExtensionService resource.
+type ExtensionCluster struct {
+	// Name is the (globally unique) name of the corresponding Envoy cluster resource.
+	Name string
+
+	// Upstream is the cluster that receives network traffic.
+	Upstream ServiceCluster
+
+	// The protocol to use to speak to this cluster.
+	Protocol string
+
+	// UpstreamValidation defines how to verify the backend service's certificate
+	UpstreamValidation *PeerValidationContext
+
+	// The load balancer type to use when picking a host in the cluster.
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cds.proto#envoy-api-enum-cluster-lbpolicy
+	LoadBalancerPolicy string
+
+	// TimeoutPolicy specifies how to handle timeouts to this extension.
+	TimeoutPolicy TimeoutPolicy
+
+	// SNI is used when a route proxies an upstream using TLS.
+	SNI string
+}
+
+// Visit processes extension clusters.
+func (e *ExtensionCluster) Visit(f func(Vertex)) {
+	// Emit the upstream ServiceCluster to the visitor.
+	f(&e.Upstream)
+}
