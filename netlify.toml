@@ -22,7 +22,7 @@
 # kubectl apply https://projectcontour.io/quickstart/contour.yaml
 [[redirects]]
   from = "/quickstart/contour.yaml"
-  to = "https://raw.githubusercontent.com/projectcontour/contour/release-1.6/examples/render/contour.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour/release-1.7/examples/render/contour.yaml"
   status = 302
 
 # Redirect versioned quickstarts so that they can easily be referenced by
