@@ -60,13 +60,23 @@ If there has been an Envoy version upgrade, check that the [Envoy Support Matrix
 
 If there has been a Kubernetes client-go upgrade, check that the [Kubernetes Support Matrix](https://projectcontour.io/resources/kubernetes/) has been updated.
 
+## Upgrade instructions
+
+Add upgrade instructions to the [Upgrading](https://projectcontour.io/resources/upgrading/) page.
+
 ## Branch for release
 
 As contours master branch is under active development, rc and final releases are made from a branch.
 Create a release branch locally, like so
 
 ```sh
-$ git checkout -b release-0.15
+$ git checkout -b release-1.7
+```
+
+Push the release branch to the upstream repository:
+
+```sh
+$ git push --set-upstream <YOUR UPSTREAM REMOTE NAME> release-1.7
 ```
 
 If you are doing a patch release on an existing branch, skip this step and just checkout the branch instead.
@@ -162,5 +172,4 @@ _Note: Filter on the Github label "release note" and Github milestone which shou
 
 - Post a note to the #contour channel on k8s slack, also update the /topic with the current release number
 - Post a note to the #project-contour channel on the vmware slack, also update the /topic with the current release number
-- Send an update to the [projectcontour-announce mailing list](https://groups.google.com/forum/#!forum/projectcontour-announce)
-- Send an email to the project-contour mailing list
+- Send an update to the [cncf-contour-users mailing list](https://lists.cncf.io/g/cncf-contour-users/)

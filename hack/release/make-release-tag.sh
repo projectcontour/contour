@@ -86,7 +86,12 @@ if [ -z "$REMOTE" ]; then
     exit 1
 fi
 
+readonly BRANCH=$(git branch --show-current)
+
+printf "Testing whether commit can be pushed\n"
+git push --dry-run "$REMOTE" "$BRANCH"
+
 printf "Testing whether tag '%s' can be pushed\n" "$NEWVERS"
 git push --dry-run "$REMOTE" "$NEWVERS"
 
-printf "Run 'git push %s %s' to push the tag if you are happy\n" "$REMOTE" "$NEWVERS"
+printf "Run 'git push %s %s' to push the commit and then 'git push %s %s' to push the tag if you are happy\n" "$REMOTE" "$BRANCH" "$REMOTE" "$NEWVERS"
