@@ -1773,10 +1773,11 @@ spec:
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
-            httpGet:
-              path: /shutdown
-              port: 8090
-              scheme: HTTP
+            exec:
+              command:
+                - /bin/contour
+                - envoy
+                - shutdown
         livenessProbe:
           httpGet:
             path: /healthz
