@@ -29,10 +29,11 @@ It exposes two HTTP endpoints which are used for `livenessProbe` as well as to h
    imagePullPolicy: Always
    lifecycle:
      preStop:
-       httpGet:
-         path: /shutdown
-         port: 8090
-         scheme: HTTP
+       exec:
+         command:
+           - /bin/contour
+           - envoy
+           - shutdown
    livenessProbe:
      httpGet:
        path: /healthz
@@ -42,7 +43,7 @@ It exposes two HTTP endpoints which are used for `livenessProbe` as well as to h
 ```
 
 The Envoy container also has some configuration to implement the shutdown manager.
-First the `preStop` hook is configured to use the `/shutdown` endpoint which blocks the container from exiting.
+First the `preStop` hook is configured to use the `/shutdown` endpoint which blocks the Envoy container from exiting.
 Finally, the pod's `terminationGracePeriodSeconds` is customized to extend the time in which Kubernetes will allow the pod to be in the `Terminating` state.
 The termination grace period defines an upper bound for long-lived sessions.
 If during shutdown, the connections aren't drained to the configured amount, the `terminationGracePeriodSeconds` will send a `SIGTERM` to the pod killing it.
