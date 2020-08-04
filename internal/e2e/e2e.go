@@ -138,15 +138,11 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 		EndpointsTranslator: et,
 	}
 
-	stop := make(chan struct{})
-	g.Add(func(_ <-chan struct{}) error {
-		<-stop
-		return nil
-	})
+	ctx, cancel := context.WithCancel(context.Background())
 
 	done := make(chan error)
 	go func() {
-		done <- g.Run()
+		done <- g.Run(ctx)
 	}()
 
 	return rh, cc, func() {
@@ -154,7 +150,7 @@ func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEve
 		cc.Close()
 
 		// stop server
-		close(stop)
+		cancel()
 
 		<-done
 	}
