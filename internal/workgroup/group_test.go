@@ -22,7 +22,7 @@ import (
 
 func TestGroupRunWithNoRegisteredFunctions(t *testing.T) {
 	var g Group
-	got := g.Run()
+	got := g.Run(context.TODO())
 	assert(t, nil, got)
 }
 
@@ -41,7 +41,7 @@ func TestGroupFirstReturnValueIsReturnedToRunsCaller(t *testing.T) {
 
 	result := make(chan error)
 	go func() {
-		result <- g.Run()
+		result <- g.Run(context.TODO())
 	}()
 	close(wait)
 	assert(t, io.EOF, <-result)
@@ -61,7 +61,7 @@ func TestGroupAddContext(t *testing.T) {
 
 	result := make(chan error)
 	go func() {
-		result <- g.Run()
+		result <- g.Run(context.TODO())
 	}()
 	close(wait)
 	assert(t, io.EOF, <-result)

@@ -14,6 +14,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -446,7 +447,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	})
 
 	// GO!
-	return g.Run()
+	return g.Run(context.Background())
 }
 
 func contains(namespaces []string, ns string) bool {

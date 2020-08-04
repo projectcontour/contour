@@ -33,14 +33,17 @@ import (
 // A EndpointsTranslator translates Kubernetes Endpoints objects into Envoy
 // ClusterLoadAssignment objects.
 type EndpointsTranslator struct {
+	Cond
 	logrus.FieldLogger
-	clusterLoadAssignmentCache
+
+	mu      sync.Mutex
+	entries map[string]*v2.ClusterLoadAssignment
 }
 
 func (e *EndpointsTranslator) OnAdd(obj interface{}) {
 	switch obj := obj.(type) {
 	case *v1.Endpoints:
-		e.addEndpoints(obj)
+		recomputeClusterLoadAssignment(e, nil, obj)
 	default:
 		e.Errorf("OnAdd unexpected type %T: %#v", obj, obj)
 	}
@@ -54,7 +57,16 @@ func (e *EndpointsTranslator) OnUpdate(oldObj, newObj interface{}) {
 			e.Errorf("OnUpdate endpoints %#v received invalid oldObj %T; %#v", newObj, oldObj, oldObj)
 			return
 		}
-		e.updateEndpoints(oldObj, newObj)
+
+		// If there are no endpoints in this object, and the old
+		// object also had zero endpoints, ignore this update
+		// to avoid sending a noop notification to watchers.
+		if len(oldObj.Subsets) == 0 && len(newObj.Subsets) == 0 {
+			return
+		}
+
+		recomputeClusterLoadAssignment(e, oldObj, newObj)
+
 	default:
 		e.Errorf("OnUpdate unexpected type %T: %#v", newObj, newObj)
 	}
@@ -63,7 +75,7 @@ func (e *EndpointsTranslator) OnUpdate(oldObj, newObj interface{}) {
 func (e *EndpointsTranslator) OnDelete(obj interface{}) {
 	switch obj := obj.(type) {
 	case *v1.Endpoints:
-		e.removeEndpoints(obj)
+		recomputeClusterLoadAssignment(e, obj, nil)
 	case k8scache.DeletedFinalStateUnknown:
 		e.OnDelete(obj.Obj) // recurse into ourselves with the tombstoned value
 	default:
@@ -71,15 +83,24 @@ func (e *EndpointsTranslator) OnDelete(obj interface{}) {
 	}
 }
 
+// Contents returns a copy of the contents of the cache.
 func (e *EndpointsTranslator) Contents() []proto.Message {
-	values := e.clusterLoadAssignmentCache.Contents()
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	values := make([]*v2.ClusterLoadAssignment, 0, len(e.entries))
+	for _, v := range e.entries {
+		values = append(values, v)
+	}
+
 	sort.Stable(sorter.For(values))
 	return protobuf.AsMessages(values)
 }
 
 func (e *EndpointsTranslator) Query(names []string) []proto.Message {
-	e.clusterLoadAssignmentCache.mu.Lock()
-	defer e.clusterLoadAssignmentCache.mu.Unlock()
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
 	values := make([]*v2.ClusterLoadAssignment, 0, len(names))
 	for _, n := range names {
 		v, ok := e.entries[n]
@@ -97,27 +118,33 @@ func (e *EndpointsTranslator) Query(names []string) []proto.Message {
 
 func (*EndpointsTranslator) TypeURL() string { return resource.EndpointType }
 
-func (e *EndpointsTranslator) addEndpoints(ep *v1.Endpoints) {
-	e.recomputeClusterLoadAssignment(nil, ep)
-}
+// Add adds an entry to the cache. If a ClusterLoadAssignment with the same
+// name exists, it is replaced.
+func (e *EndpointsTranslator) Add(a *v2.ClusterLoadAssignment) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
 
-func (e *EndpointsTranslator) updateEndpoints(oldep, newep *v1.Endpoints) {
-	if len(newep.Subsets) == 0 && len(oldep.Subsets) == 0 {
-		// if there are no endpoints in this object, and the old
-		// object also had zero endpoints, ignore this update
-		// to avoid sending a noop notification to watchers.
-		return
+	if e.entries == nil {
+		e.entries = make(map[string]*v2.ClusterLoadAssignment)
 	}
-	e.recomputeClusterLoadAssignment(oldep, newep)
+	e.entries[a.ClusterName] = a
+	e.Notify(a.ClusterName)
 }
 
-func (e *EndpointsTranslator) removeEndpoints(ep *v1.Endpoints) {
-	e.recomputeClusterLoadAssignment(ep, nil)
+// Remove removes the named entry from the cache. If the entry
+// is not present in the cache, the operation is a no-op.
+func (e *EndpointsTranslator) Remove(name string) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	delete(e.entries, name)
+	e.Notify(name)
 }
 
 // recomputeClusterLoadAssignment recomputes the EDS cache taking into account old and new endpoints.
-func (e *EndpointsTranslator) recomputeClusterLoadAssignment(oldep, newep *v1.Endpoints) {
-	// skip computation if either old and new services or endpoints are equal (thus also handling nil)
+func recomputeClusterLoadAssignment(e *EndpointsTranslator, oldep, newep *v1.Endpoints) {
+	// Skip computation if either old and new services or
+	// endpoints are equal (thus also handling nil).
 	if oldep == newep {
 		return
 	}
@@ -181,42 +208,4 @@ func (e *EndpointsTranslator) recomputeClusterLoadAssignment(oldep, newep *v1.En
 		}
 	}
 
-}
-
-type clusterLoadAssignmentCache struct {
-	mu      sync.Mutex
-	entries map[string]*v2.ClusterLoadAssignment
-	Cond
-}
-
-// Add adds an entry to the cache. If a ClusterLoadAssignment with the same
-// name exists, it is replaced.
-func (c *clusterLoadAssignmentCache) Add(a *v2.ClusterLoadAssignment) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.entries == nil {
-		c.entries = make(map[string]*v2.ClusterLoadAssignment)
-	}
-	c.entries[a.ClusterName] = a
-	c.Notify(a.ClusterName)
-}
-
-// Remove removes the named entry from the cache. If the entry
-// is not present in the cache, the operation is a no-op.
-func (c *clusterLoadAssignmentCache) Remove(name string) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	delete(c.entries, name)
-	c.Notify(name)
-}
-
-// Contents returns a copy of the contents of the cache.
-func (c *clusterLoadAssignmentCache) Contents() []*v2.ClusterLoadAssignment {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	values := make([]*v2.ClusterLoadAssignment, 0, len(c.entries))
-	for _, v := range c.entries {
-		values = append(values, v)
-	}
-	return values
 }
