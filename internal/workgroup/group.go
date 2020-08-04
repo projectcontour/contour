@@ -63,7 +63,8 @@ func (g *Group) AddContext(fn func(context.Context)) {
 // passed to each function, who should in turn, return.
 // The return value from the first function to exit will be returned to
 // the caller of Run.
-func (g *Group) Run() error {
+// If ctx is canceled, Run will return with the corresponding error.
+func (g *Group) Run(ctx context.Context) error {
 
 	// if there are no registered functions, return immediately.
 	if len(g.fn) < 1 {
@@ -74,7 +75,19 @@ func (g *Group) Run() error {
 	wg.Add(len(g.fn))
 
 	stop := make(chan struct{})
-	result := make(chan error, len(g.fn))
+	result := make(chan error, len(g.fn)+1)
+
+	// Wait until either the context is canceled or the stop
+	// channel closes (i.e. some other function completed).
+	go func() {
+		select {
+		case <-ctx.Done():
+			result <- ctx.Err()
+		case <-stop:
+			result <- nil
+		}
+	}()
+
 	for _, fn := range g.fn {
 		go func(fn func(<-chan struct{}) error) {
 			defer wg.Done()
@@ -84,5 +97,7 @@ func (g *Group) Run() error {
 
 	defer wg.Wait()
 	defer close(stop)
+
+	// Wait for the first result.
 	return <-result
 }

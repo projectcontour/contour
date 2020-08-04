@@ -14,6 +14,7 @@
 package workgroup_test
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -39,7 +40,7 @@ func ExampleGroup_Run() {
 	}
 	g.Add(b)
 
-	err := g.Run()
+	err := g.Run(context.Background())
 	fmt.Println(err)
 
 	// Output:
@@ -66,7 +67,7 @@ func ExampleGroup_Run_withShutdown() {
 		shutdown <- <-time.After(100 * time.Millisecond)
 	}()
 
-	err := g.Run()
+	err := g.Run(context.Background())
 	fmt.Println(err)
 
 	// Output:
@@ -109,5 +110,5 @@ func ExampleGroup_Run_multipleListeners() {
 		return http.Serve(l, mux)
 	})
 
-	g.Run() // nolint:errcheck
+	g.Run(context.Background()) // nolint:errcheck
 }
