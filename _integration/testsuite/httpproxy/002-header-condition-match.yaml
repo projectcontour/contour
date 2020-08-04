@@ -162,7 +162,7 @@ spec:
 
 default http_proxy_count = 0
 http_proxy_count = n {
-  n := count(data.resources.httpproxies[_])
+  n := count(data.resources.httpproxies)
 }
 
 error[msg] {
