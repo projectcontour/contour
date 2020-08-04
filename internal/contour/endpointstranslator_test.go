@@ -399,7 +399,7 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			var et EndpointsTranslator
-			et.recomputeClusterLoadAssignment(tc.oldep, tc.newep)
+			recomputeClusterLoadAssignment(&et, tc.oldep, tc.newep)
 			got := et.Contents()
 			assert.Equal(t, tc.want, got)
 		})
