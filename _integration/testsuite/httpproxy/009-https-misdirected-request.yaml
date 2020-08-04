@@ -211,3 +211,28 @@ error_non_200_response [msg] {
   not response.status_is(Response, 200)
   msg := sprintf("got status %d, wanted %d", [Response.status_code, 200])
 }
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.response
+
+# Verify that the hostname match is case-insensitive.
+# The SNI server name match is still case sensitive,
+# see https://github.com/envoyproxy/envoy/issues/6199.
+
+Response := client.Get({
+  "url": url.https(sprintf("/misdirected/%d", [time.now_ns()])),
+  "headers": {
+    "Host": "EchO.prOJectcontour.io",
+    "User-Agent": client.ua("misdirected-request"),
+  },
+  "tls_server_name": "echo.projectcontour.io",
+  "tls_insecure_skip_verify": true,
+})
+
+error_non_200_response [msg] {
+  not response.status_is(Response, 200)
+  msg := sprintf("got status %d, wanted %d", [Response.status_code, 200])
+}

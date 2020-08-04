@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"log"
 	"sort"
+	"strings"
 	"time"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -438,7 +439,7 @@ func FilterMisdirectedRequests(fqdn string) *http.HttpFilter {
 	code := `
 function envoy_on_request(request_handle)
 	local headers = request_handle:headers()
-	local host = headers:get(":authority")
+	local host = string.lower(headers:get(":authority"))
 	local target = "%s"
 
 	if host ~= target then
@@ -453,7 +454,6 @@ function envoy_on_request(request_handle)
 				string.format("misdirected request to %%q", headers:get(":authority"))
 			)
 		end
-
 	end
 end
 	`
@@ -462,7 +462,7 @@ end
 		Name: "envoy.filters.http.lua",
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-				InlineCode: fmt.Sprintf(code, fqdn),
+				InlineCode: fmt.Sprintf(code, strings.ToLower(fqdn)),
 			}),
 		},
 	}
