@@ -1636,6 +1636,44 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
+	// a proxy with TLS configured with *both* passthrough and
+	// a secret name is invalid.
+	tlsPassthroughAndSecretName := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "invalid",
+			Namespace: serviceKuard.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "tcpproxy.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+					SecretName:  secretRootsNS.Name,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{},
+		},
+	}
+
+	// a proxy with TLS configured with *neither* passthrough nor
+	// a secret name is invalid.
+	tlsNoPassthroughOrSecretName := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "invalid",
+			Namespace: serviceKuard.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "tcpproxy.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: false,
+					SecretName:  "",
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{},
+		},
+	}
+
 	tests := map[string]struct {
 		objs                []interface{}
 		fallbackCertificate *types.NamespacedName
@@ -2137,7 +2175,7 @@ func TestDAGStatus(t *testing.T) {
 				{Name: proxy46.Name, Namespace: proxy46.Namespace}: {
 					Object:      proxy46,
 					Status:      "invalid",
-					Description: "tcpproxy: missing tls.passthrough or tls.secretName",
+					Description: "Spec.TCPProxy requires that either Spec.TLS.Passthrough or Spec.TLS.SecretName be set",
 					Vhost:       "tcpproxy.example.com",
 				},
 			},
@@ -2160,6 +2198,34 @@ func TestDAGStatus(t *testing.T) {
 					Object:      proxy47a,
 					Status:      "invalid",
 					Description: `Spec.Routes unresolved service reference: port "9999" on service "roots/kuard" not matched`,
+					Vhost:       "tcpproxy.example.com",
+				},
+			},
+		},
+		"httpproxy w/ tcpproxy with TLS passthrough and secret name both specified": {
+			objs: []interface{}{
+				secretRootsNS,
+				tlsPassthroughAndSecretName,
+			},
+			want: map[types.NamespacedName]Status{
+				{Name: "invalid", Namespace: serviceKuard.Namespace}: {
+					Object:      tlsPassthroughAndSecretName,
+					Status:      "invalid",
+					Description: "Spec.VirtualHost.TLS: both Passthrough and SecretName were specified",
+					Vhost:       "tcpproxy.example.com",
+				},
+			},
+		},
+		"httpproxy w/ tcpproxy with neither TLS passthrough nor secret name specified": {
+			objs: []interface{}{
+				secretRootsNS,
+				tlsNoPassthroughOrSecretName,
+			},
+			want: map[types.NamespacedName]Status{
+				{Name: "invalid", Namespace: serviceKuard.Namespace}: {
+					Object:      tlsNoPassthroughOrSecretName,
+					Status:      "invalid",
+					Description: "Spec.VirtualHost.TLS: neither Passthrough nor SecretName were specified",
 					Vhost:       "tcpproxy.example.com",
 				},
 			},
