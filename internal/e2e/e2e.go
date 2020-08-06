@@ -42,7 +42,6 @@ import (
 )
 
 const (
-	endpointType = resource.EndpointType
 	routeType    = resource.RouteType
 	secretType   = resource.SecretType
 	statsAddress = "0.0.0.0"
