@@ -53,6 +53,24 @@ func DefaultCluster(clusters ...*v2.Cluster) *v2.Cluster {
 	return defaults
 }
 
+func clusterWithHealthCheck(name, servicename, statName, healthCheckPath string, drainConnOnHostRemoval bool) *v2.Cluster {
+	c := cluster(name, servicename, statName)
+	c.HealthChecks = []*envoy_api_v2_core.HealthCheck{{
+		Timeout:            protobuf.Duration(2 * time.Second),
+		Interval:           protobuf.Duration(10 * time.Second),
+		UnhealthyThreshold: protobuf.UInt32(3),
+		HealthyThreshold:   protobuf.UInt32(2),
+		HealthChecker: &envoy_api_v2_core.HealthCheck_HttpHealthCheck_{
+			HttpHealthCheck: &envoy_api_v2_core.HealthCheck_HttpHealthCheck{
+				Host: "contour-envoy-healthcheck",
+				Path: healthCheckPath,
+			},
+		},
+	}}
+	c.DrainConnectionsOnHostRemoval = drainConnOnHostRemoval
+	return c
+}
+
 func externalNameCluster(name, servicename, statName, externalName string, port int) *v2.Cluster {
 	return DefaultCluster(&v2.Cluster{
 		Name:                 name,

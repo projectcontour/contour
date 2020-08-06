@@ -1868,18 +1868,6 @@ func weightedclusters(clusters []weightedcluster) *envoy_api_v2_route.WeightedCl
 	return &wc
 }
 
-func service(ns, name string, ports ...v1.ServicePort) *v1.Service {
-	return &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: ns,
-		},
-		Spec: v1.ServiceSpec{
-			Ports: ports,
-		},
-	}
-}
-
 func TestHTTPProxyRouteWithAServiceWeight(t *testing.T) {
 	rh, cc, done := setup(t)
 	defer done()
