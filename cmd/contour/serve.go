@@ -78,7 +78,10 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 		dec := yaml.NewDecoder(f)
 		dec.SetStrict(true)
 		parsed = true
-		return dec.Decode(&ctx)
+		if err := dec.Decode(&ctx); err != nil {
+			return fmt.Errorf("failed to parse contour configuration: %w", err)
+		}
+		return nil
 	}
 
 	serve.Flag("config-path", "Path to base configuration.").Short('c').Action(parseConfig).ExistingFileVar(&configFile)
