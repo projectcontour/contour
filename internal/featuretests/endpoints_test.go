@@ -11,24 +11,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package e2e
+package featuretests
 
 import (
-	"context"
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/envoy"
-	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// test that adding and removing endpoints don't leave turds
+// test that adding and removing endpoints don't leave objects
 // in the eds cache.
 func TestAddRemoveEndpoints(t *testing.T) {
-	rh, cc, done := setup(t)
+	rh, c, done := setup(t)
 	defer done()
 
 	// e1 is a simple endpoint for two hosts, and two ports
@@ -52,8 +48,7 @@ func TestAddRemoveEndpoints(t *testing.T) {
 	rh.OnAdd(e1)
 
 	// check that it's been translated correctly.
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+	c.Request(endpointType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.ClusterLoadAssignment(
 				"super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http",
@@ -67,22 +62,19 @@ func TestAddRemoveEndpoints(t *testing.T) {
 			),
 		),
 		TypeUrl: endpointType,
-		Nonce:   "2",
-	}, streamEDS(t, cc))
+	})
 
 	// remove e1 and check that the EDS cache is now empty.
 	rh.OnDelete(e1)
 
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "4",
-		Resources:   resources(t),
-		TypeUrl:     endpointType,
-		Nonce:       "4",
-	}, streamEDS(t, cc))
+	c.Request(endpointType).Equals(&v2.DiscoveryResponse{
+		Resources: nil,
+		TypeUrl:   endpointType,
+	})
 }
 
 func TestAddEndpointComplicated(t *testing.T) {
-	rh, cc, done := setup(t)
+	rh, c, done := setup(t)
 	defer done()
 
 	e1 := endpoints(
@@ -112,8 +104,7 @@ func TestAddEndpointComplicated(t *testing.T) {
 
 	rh.OnAdd(e1)
 
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+	c.Request(endpointType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.ClusterLoadAssignment(
 				"default/kuard/admin",
@@ -126,12 +117,11 @@ func TestAddEndpointComplicated(t *testing.T) {
 			),
 		),
 		TypeUrl: endpointType,
-		Nonce:   "2",
-	}, streamEDS(t, cc))
+	})
 }
 
 func TestEndpointFilter(t *testing.T) {
-	rh, cc, done := setup(t)
+	rh, c, done := setup(t)
 	defer done()
 
 	// a single endpoint that represents several
@@ -163,8 +153,7 @@ func TestEndpointFilter(t *testing.T) {
 
 	rh.OnAdd(e1)
 
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+	c.Request(endpointType, "default/kuard/foo").Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.ClusterLoadAssignment(
 				"default/kuard/foo",
@@ -172,24 +161,20 @@ func TestEndpointFilter(t *testing.T) {
 			),
 		),
 		TypeUrl: endpointType,
-		Nonce:   "2",
-	}, streamEDS(t, cc, "default/kuard/foo"))
+	})
 
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
-		TypeUrl:     endpointType,
+	c.Request(endpointType, "default/kuard/bar").Equals(&v2.DiscoveryResponse{
+		TypeUrl: endpointType,
 		Resources: resources(t,
 			envoy.ClusterLoadAssignment("default/kuard/bar"),
 		),
-		Nonce: "2",
-	}, streamEDS(t, cc, "default/kuard/bar"))
-
+	})
 }
 
 // issue 602, test that an update from N endpoints
 // to zero endpoints is handled correctly.
 func TestIssue602(t *testing.T) {
-	rh, cc, done := setup(t)
+	rh, c, done := setup(t)
 	defer done()
 
 	e1 := endpoints("default", "simple", v1.EndpointSubset{
@@ -201,64 +186,19 @@ func TestIssue602(t *testing.T) {
 	rh.OnAdd(e1)
 
 	// Assert endpoint was added
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
+	c.Request(endpointType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.ClusterLoadAssignment("default/simple", envoy.SocketAddress("192.168.183.24", 8080)),
 		),
 		TypeUrl: endpointType,
-		Nonce:   "1",
-	}, streamEDS(t, cc))
+	})
 
 	// e2 is the same as e1, but without endpoint subsets
 	e2 := endpoints("default", "simple")
 	rh.OnUpdate(e1, e2)
 
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
-		Resources:   resources(t),
-		TypeUrl:     endpointType,
-		Nonce:       "2",
-	}, streamEDS(t, cc))
-}
-
-func streamEDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
-	t.Helper()
-	rds := v2.NewEndpointDiscoveryServiceClient(cc)
-	st, err := rds.StreamEndpoints(context.TODO())
-	check(t, err)
-	return stream(t, st, &v2.DiscoveryRequest{
-		TypeUrl:       endpointType,
-		ResourceNames: rn,
+	c.Request(endpointType).Equals(&v2.DiscoveryResponse{
+		Resources: nil,
+		TypeUrl:   endpointType,
 	})
-}
-
-func endpoints(ns, name string, subsets ...v1.EndpointSubset) *v1.Endpoints {
-	return &v1.Endpoints{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: ns,
-		},
-		Subsets: subsets,
-	}
-}
-
-func ports(eps ...v1.EndpointPort) []v1.EndpointPort {
-	return eps
-}
-
-func port(name string, port int32) v1.EndpointPort {
-	return v1.EndpointPort{
-		Name:     name,
-		Port:     port,
-		Protocol: "TCP",
-	}
-}
-
-func addresses(ips ...string) []v1.EndpointAddress {
-	var addrs []v1.EndpointAddress
-	for _, ip := range ips {
-		addrs = append(addrs, v1.EndpointAddress{IP: ip})
-	}
-	return addrs
 }

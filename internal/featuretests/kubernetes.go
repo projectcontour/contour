@@ -18,6 +18,7 @@ package featuretests
 import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -84,4 +85,34 @@ func secretdata(cert, key string) map[string][]byte {
 		v1.TLSCertKey:       []byte(cert),
 		v1.TLSPrivateKeyKey: []byte(key),
 	}
+}
+
+func endpoints(ns, name string, subsets ...v1.EndpointSubset) *v1.Endpoints {
+	return &v1.Endpoints{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Subsets: subsets,
+	}
+}
+
+func ports(eps ...v1.EndpointPort) []v1.EndpointPort {
+	return eps
+}
+
+func port(name string, port int32) v1.EndpointPort {
+	return v1.EndpointPort{
+		Name:     name,
+		Port:     port,
+		Protocol: "TCP",
+	}
+}
+
+func addresses(ips ...string) []v1.EndpointAddress {
+	var addrs []v1.EndpointAddress
+	for _, ip := range ips {
+		addrs = append(addrs, v1.EndpointAddress{IP: ip})
+	}
+	return addrs
 }
