@@ -355,6 +355,11 @@ func (c *Contour) Request(typeurl string, names ...string) *Response {
 		stl, err := lds.StreamListeners(ctx)
 		c.check(err)
 		st = stl
+	case endpointType:
+		eds := v2.NewEndpointDiscoveryServiceClient(c.ClientConn)
+		ste, err := eds.StreamEndpoints(ctx)
+		c.check(err)
+		st = ste
 	default:
 		c.Fatal("unknown typeURL:", typeurl)
 	}
