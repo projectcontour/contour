@@ -76,6 +76,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 		}
 		defer f.Close()
 		dec := yaml.NewDecoder(f)
+		dec.SetStrict(true)
 		parsed = true
 		return dec.Decode(&ctx)
 	}
