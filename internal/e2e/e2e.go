@@ -44,7 +44,6 @@ import (
 const (
 	endpointType = resource.EndpointType
 	routeType    = resource.RouteType
-	listenerType = resource.ListenerType
 	secretType   = resource.SecretType
 	statsAddress = "0.0.0.0"
 	statsPort    = 8002
