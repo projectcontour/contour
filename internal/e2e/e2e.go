@@ -43,7 +43,6 @@ import (
 
 const (
 	endpointType = resource.EndpointType
-	clusterType  = resource.ClusterType
 	routeType    = resource.RouteType
 	listenerType = resource.ListenerType
 	secretType   = resource.SecretType
