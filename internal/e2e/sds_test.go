@@ -72,7 +72,10 @@ func TestSDSVisibility(t *testing.T) {
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: *backend("backend", intstr.FromInt(80)),
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "backend",
+								ServicePort: intstr.FromInt(80),
+							},
 						}},
 					},
 				},
@@ -127,7 +130,10 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: *backend("backend", intstr.FromInt(80)),
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "backend",
+								ServicePort: intstr.FromInt(80),
+							},
 						}},
 					},
 				},
@@ -227,7 +233,10 @@ func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: *backend("backend", intstr.FromInt(80)),
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "backend",
+								ServicePort: intstr.FromInt(80),
+							},
 						}},
 					},
 				},

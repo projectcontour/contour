@@ -11,52 +11,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package e2e
+package featuretests
 
 import (
-	"context"
-	"path"
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/projectcontour/contour/internal/contour"
+
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/assert"
-	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
-	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func httpsFilterFor(vhost string) *envoy_api_v2_listener.Filter {
-	return envoy.HTTPConnectionManagerBuilder().
-		AddFilter(envoy.FilterMisdirectedRequests(vhost)).
-		DefaultFilters().
-		RouteConfigName(path.Join("https", vhost)).
-		MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-		AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
-		Get()
-}
-
 func TestNonTLSListener(t *testing.T) {
-	rh, cc, done := setup(t)
+	rh, c, done := setup(t)
 	defer done()
 
 	// assert that without any ingress objects registered
 	// there are no active listeners
-	assert.Equal(t, &v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: resources(t,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
 		Nonce:   "0",
-	}, streamLDS(t, cc))
+	})
 
 	// i1 is a simple ingress, no hostname, no tls.
 	i1 := &v1beta1.Ingress{
@@ -65,7 +53,10 @@ func TestNonTLSListener(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "backend",
+				ServicePort: intstr.FromInt(80),
+			},
 		},
 	}
 
@@ -85,8 +76,7 @@ func TestNonTLSListener(t *testing.T) {
 
 	// add it and assert that we now have a ingress_http listener
 	rh.OnAdd(i1)
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			&v2.Listener{
 				Name:          "ingress_http",
@@ -97,8 +87,7 @@ func TestNonTLSListener(t *testing.T) {
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "1",
-	}, streamLDS(t, cc))
+	})
 
 	// i2 is the same as i1 but has the kubernetes.io/ingress.allow-http: "false" annotation
 	i2 := &v1beta1.Ingress{
@@ -110,20 +99,21 @@ func TestNonTLSListener(t *testing.T) {
 			},
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "backend",
+				ServicePort: intstr.FromInt(80),
+			},
 		},
 	}
 
 	// update i1 to i2 and verify that ingress_http has gone.
 	rh.OnUpdate(i1, i2)
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "2",
-	}, streamLDS(t, cc))
+	})
 
 	// i3 is similar to i2, but uses the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
 	// to force 80 -> 443 upgrade
@@ -136,14 +126,16 @@ func TestNonTLSListener(t *testing.T) {
 			},
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "backend",
+				ServicePort: intstr.FromInt(80),
+			},
 		},
 	}
 
 	// update i2 to i3 and check that ingress_http has returned
 	rh.OnUpdate(i2, i3)
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			&v2.Listener{
 				Name:          "ingress_http",
@@ -154,12 +146,11 @@ func TestNonTLSListener(t *testing.T) {
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "3",
-	}, streamLDS(t, cc))
+	})
 }
 
 func TestTLSListener(t *testing.T) {
-	rh, cc, done := setup(t)
+	rh, c, done := setup(t)
 	defer done()
 
 	// s1 is a tls secret
@@ -188,7 +179,10 @@ func TestTLSListener(t *testing.T) {
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: *backend("backend", intstr.FromInt(80)),
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "backend",
+								ServicePort: intstr.FromInt(80),
+							},
 						}},
 					},
 				},
@@ -214,19 +208,16 @@ func TestTLSListener(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// assert that there is only a static listener
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "0",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "0",
-	}, streamLDS(t, cc))
+	})
 
 	// add ingress and assert the existence of ingress_http and ingres_https
 	rh.OnAdd(i1)
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			&v2.Listener{
 				Name:          "ingress_http",
@@ -240,16 +231,17 @@ func TestTLSListener(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
-				FilterChains: filterchaintls("kuard.example.com", s1,
-					httpsFilterFor("kuard.example.com"),
-					"h2", "http/1.1"),
+				FilterChains: []*envoy_api_v2_listener.FilterChain{
+					filterchaintls("kuard.example.com", s1,
+						httpsFilterFor("kuard.example.com"),
+						nil, "h2", "http/1.1"),
+				},
 				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "1",
-	}, streamLDS(t, cc))
+	})
 
 	// i2 is the same as i1 but has the kubernetes.io/ingress.allow-http: "false" annotation
 	i2 := &v1beta1.Ingress{
@@ -270,7 +262,10 @@ func TestTLSListener(t *testing.T) {
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: *backend("backend", intstr.FromInt(80)),
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "backend",
+								ServicePort: intstr.FromInt(80),
+							},
 						}},
 					},
 				},
@@ -280,8 +275,7 @@ func TestTLSListener(t *testing.T) {
 
 	// update i1 to i2 and verify that ingress_http has gone.
 	rh.OnUpdate(i1, i2)
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			&v2.Listener{
 				Name:    "ingress_https",
@@ -289,31 +283,30 @@ func TestTLSListener(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
-				FilterChains: filterchaintls("kuard.example.com", s1,
-					httpsFilterFor("kuard.example.com"),
-					"h2", "http/1.1"),
+				FilterChains: []*envoy_api_v2_listener.FilterChain{
+					filterchaintls("kuard.example.com", s1,
+						httpsFilterFor("kuard.example.com"),
+						nil, "h2", "http/1.1"),
+				},
 				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "2",
-	}, streamLDS(t, cc))
+	})
 
 	// delete secret and assert that ingress_https is removed
 	rh.OnDelete(s1)
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "3",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "3",
-	}, streamLDS(t, cc))
+	})
 }
 
 func TestHTTPProxyTLSListener(t *testing.T) {
-	rh, cc, done := setup(t)
+	rh, c, done := setup(t)
 	defer done()
 
 	// secret1 is a tls secret
@@ -396,14 +389,12 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	rh.OnAdd(secret1)
 
 	// assert that there is only a static listener
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "0",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "0",
-	}, streamLDS(t, cc))
+	})
 
 	l1 := &v2.Listener{
 		Name:    "ingress_https",
@@ -411,9 +402,11 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 		ListenerFilters: envoy.ListenerFilters(
 			envoy.TLSInspector(),
 		),
-		FilterChains: filterchaintls("kuard.example.com", secret1,
-			httpsFilterFor("kuard.example.com"),
-			"h2", "http/1.1"),
+		FilterChains: []*envoy_api_v2_listener.FilterChain{
+			filterchaintls("kuard.example.com", secret1,
+				httpsFilterFor("kuard.example.com"),
+				nil, "h2", "http/1.1"),
+		},
 		SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 	}
 
@@ -423,8 +416,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	// add ingress and assert the existence of ingress_http and ingres_https
 	rh.OnAdd(p1)
 
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			&v2.Listener{
 				Name:    "ingress_http",
@@ -438,20 +430,17 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "1",
-	}, streamLDS(t, cc))
+	})
 
 	// delete secret and assert both listeners are removed because the
 	// httpproxy is no longer valid.
 	rh.OnDelete(secret1)
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "2",
-	}, streamLDS(t, cc))
+	})
 
 	rh.OnDelete(p1)
 	// add secret
@@ -478,8 +467,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 
 	// add ingress and assert the existence of ingress_http and ingres_https
 	rh.OnAdd(p2)
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "4",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			&v2.Listener{
 				Name:    "ingress_http",
@@ -493,12 +481,11 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "4",
-	}, streamLDS(t, cc))
+	})
 }
 
 func TestLDSFilter(t *testing.T) {
-	rh, cc, done := setup(t)
+	rh, c, done := setup(t)
 	defer done()
 
 	// s1 is a tls secret
@@ -527,7 +514,10 @@ func TestLDSFilter(t *testing.T) {
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: *backend("backend", intstr.FromInt(80)),
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "backend",
+								ServicePort: intstr.FromInt(80),
+							},
 						}},
 					},
 				},
@@ -554,8 +544,7 @@ func TestLDSFilter(t *testing.T) {
 
 	// add ingress and fetch ingress_https
 	rh.OnAdd(i1)
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
+	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			&v2.Listener{
 				Name:    "ingress_https",
@@ -563,19 +552,19 @@ func TestLDSFilter(t *testing.T) {
 				ListenerFilters: envoy.ListenerFilters(
 					envoy.TLSInspector(),
 				),
-				FilterChains: filterchaintls("kuard.example.com", s1,
-					httpsFilterFor("kuard.example.com"),
-					"h2", "http/1.1"),
+				FilterChains: []*envoy_api_v2_listener.FilterChain{
+					filterchaintls("kuard.example.com", s1,
+						httpsFilterFor("kuard.example.com"),
+						nil, "h2", "http/1.1"),
+				},
 				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 			},
 		),
 		TypeUrl: listenerType,
-		Nonce:   "1",
-	}, streamLDS(t, cc, "ingress_https"))
+	})
 
 	// fetch ingress_http
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
+	c.Request(listenerType, "ingress_http").Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			&v2.Listener{
 				Name:    "ingress_http",
@@ -587,45 +576,42 @@ func TestLDSFilter(t *testing.T) {
 			},
 		),
 		TypeUrl: listenerType,
-		Nonce:   "1",
-	}, streamLDS(t, cc, "ingress_http"))
+	})
 
 	// fetch something non existent.
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
-		TypeUrl:     listenerType,
-		Nonce:       "1",
-	}, streamLDS(t, cc, "HTTP"))
+	c.Request(listenerType, "HTTP").Equals(&v2.DiscoveryResponse{
+		TypeUrl: listenerType,
+	})
 }
 
 func TestLDSStreamEmpty(t *testing.T) {
-	_, cc, done := setup(t)
+	_, c, done := setup(t)
 	defer done()
 
 	// assert that streaming LDS with no ingresses does not stall.
-	assert.Equal(t, &v2.DiscoveryResponse{
+	c.Request(listenerType, "HTTP").Equals(&v2.DiscoveryResponse{
 		VersionInfo: "0",
 		TypeUrl:     listenerType,
 		Nonce:       "0",
-	}, streamLDS(t, cc, "HTTP"))
+	})
 }
 
 func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {
 		reh.CacheHandler.UseProxyProto = true
 	})
 	defer done()
 
 	// assert that without any ingress objects registered
 	// there is only a static listener
-	assert.Equal(t, &v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: resources(t,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
 		Nonce:   "0",
-	}, streamLDS(t, cc))
+	})
 
 	// i1 is a simple ingress, no hostname, no tls.
 	i1 := &v1beta1.Ingress{
@@ -634,7 +620,10 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend("backend", intstr.FromInt(80)),
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "backend",
+				ServicePort: intstr.FromInt(80),
+			},
 		},
 	}
 	rh.OnAdd(&v1.Service{
@@ -654,7 +643,7 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 	// add it and assert that we now have a ingress_http listener using
 	// the proxy protocol (the true param to filterchain)
 	rh.OnAdd(i1)
-	assert.Equal(t, &v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			&v2.Listener{
@@ -670,11 +659,11 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 		),
 		TypeUrl: listenerType,
 		Nonce:   "1",
-	}, streamLDS(t, cc))
+	})
 }
 
 func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {
 		reh.CacheHandler.UseProxyProto = true
 	})
 	defer done()
@@ -705,7 +694,10 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: *backend("backend", intstr.FromInt(80)),
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "backend",
+								ServicePort: intstr.FromInt(80),
+							},
 						}},
 					},
 				},
@@ -717,14 +709,12 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// assert that there is only a static listener
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "0",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "0",
-	}, streamLDS(t, cc))
+	})
 
 	rh.OnAdd(&v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -751,13 +741,14 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 			envoy.ProxyProtocol(),
 			envoy.TLSInspector(),
 		),
-		FilterChains: filterchaintls("kuard.example.com", s1,
-			httpsFilterFor("kuard.example.com"),
-			"h2", "http/1.1"),
+		FilterChains: []*envoy_api_v2_listener.FilterChain{
+			filterchaintls("kuard.example.com", s1,
+				httpsFilterFor("kuard.example.com"),
+				nil, "h2", "http/1.1"),
+		},
 		SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 	}
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			&v2.Listener{
 				Name:    "ingress_http",
@@ -772,12 +763,11 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "1",
-	}, streamLDS(t, cc))
+	})
 }
 
 func TestLDSCustomAddressAndPort(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {
 		reh.CacheHandler.HTTPAddress = "127.0.0.100"
 		reh.CacheHandler.HTTPPort = 9100
 		reh.CacheHandler.HTTPSAddress = "127.0.0.200"
@@ -811,7 +801,10 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: *backend("backend", intstr.FromInt(80)),
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "backend",
+								ServicePort: intstr.FromInt(80),
+							},
 						}},
 					},
 				},
@@ -823,14 +816,14 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// assert that there is only a static listener
-	assert.Equal(t, &v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: resources(t,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
 		Nonce:   "0",
-	}, streamLDS(t, cc))
+	})
 
 	rh.OnAdd(&v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -864,25 +857,25 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 		ListenerFilters: envoy.ListenerFilters(
 			envoy.TLSInspector(),
 		),
-		FilterChains: filterchaintls("kuard.example.com", s1,
-			httpsFilterFor("kuard.example.com"),
-			"h2", "http/1.1"),
+		FilterChains: []*envoy_api_v2_listener.FilterChain{
+			filterchaintls("kuard.example.com", s1,
+				httpsFilterFor("kuard.example.com"),
+				nil, "h2", "http/1.1"),
+		},
 		SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 	}
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			ingress_http,
 			ingress_https,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "1",
-	}, streamLDS(t, cc))
+	})
 }
 
 func TestLDSCustomAccessLogPaths(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {
 		reh.CacheHandler.HTTPAccessLog = "/tmp/http_access.log"
 		reh.CacheHandler.HTTPSAccessLog = "/tmp/https_access.log"
 	})
@@ -914,7 +907,10 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: *backend("backend", intstr.FromInt(80)),
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "backend",
+								ServicePort: intstr.FromInt(80),
+							},
 						}},
 					},
 				},
@@ -940,14 +936,14 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// assert that there is only a static listener
-	assert.Equal(t, &v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: resources(t,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
 		Nonce:   "0",
-	}, streamLDS(t, cc))
+	})
 
 	rh.OnAdd(i1)
 
@@ -965,18 +961,20 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 		ListenerFilters: envoy.ListenerFilters(
 			envoy.TLSInspector(),
 		),
-		FilterChains: filterchaintls("kuard.example.com", s1,
-			envoy.HTTPConnectionManagerBuilder().
-				AddFilter(envoy.FilterMisdirectedRequests("kuard.example.com")).
-				DefaultFilters().
-				RouteConfigName("https/kuard.example.com").
-				MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
-				AccessLoggers(envoy.FileAccessLogEnvoy("/tmp/https_access.log")).
-				Get(),
-			"h2", "http/1.1"),
+		FilterChains: []*envoy_api_v2_listener.FilterChain{
+			filterchaintls("kuard.example.com", s1,
+				envoy.HTTPConnectionManagerBuilder().
+					AddFilter(envoy.FilterMisdirectedRequests("kuard.example.com")).
+					DefaultFilters().
+					RouteConfigName("https/kuard.example.com").
+					MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
+					AccessLoggers(envoy.FileAccessLogEnvoy("/tmp/https_access.log")).
+					Get(),
+				nil, "h2", "http/1.1"),
+		},
 		SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 	}
-	assert.Equal(t, &v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			ingress_http,
@@ -985,22 +983,22 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 		),
 		TypeUrl: listenerType,
 		Nonce:   "1",
-	}, streamLDS(t, cc))
+	})
 }
 
 func TestHTTPProxyHTTPS(t *testing.T) {
-	rh, cc, done := setup(t)
+	rh, c, done := setup(t)
 	defer done()
 
 	// assert that there is only a static listener
-	assert.Equal(t, &v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: resources(t,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
 		Nonce:   "0",
-	}, streamLDS(t, cc))
+	})
 
 	// s1 is a tls secret
 	s1 := &v1.Secret{
@@ -1075,12 +1073,14 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 		ListenerFilters: envoy.ListenerFilters(
 			envoy.TLSInspector(),
 		),
-		FilterChains: filterchaintls("example.com", s1,
-			httpsFilterFor("example.com"),
-			"h2", "http/1.1"),
+		FilterChains: []*envoy_api_v2_listener.FilterChain{
+			filterchaintls("example.com", s1,
+				httpsFilterFor("example.com"),
+				nil, "h2", "http/1.1"),
+		},
 		SocketOptions: envoy.TCPKeepaliveSocketOptions(),
 	}
-	assert.Equal(t, &v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			ingressHTTP,
@@ -1089,11 +1089,11 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 		),
 		TypeUrl: listenerType,
 		Nonce:   "1",
-	}, streamLDS(t, cc))
+	})
 }
 
 func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
-	rh, cc, done := setup(t, func(reh *contour.EventHandler) {
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {
 		reh.CacheHandler.MinimumTLSVersion = envoy_api_v2_auth.TlsParameters_TLSv1_2
 	})
 
@@ -1173,8 +1173,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 	}
 
 	// verify that p1's TLS 1.1 minimum has been upgraded to 1.2
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "1",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			&v2.Listener{
 				Name:    "ingress_http",
@@ -1188,8 +1187,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "1",
-	}, streamLDS(t, cc))
+	})
 
 	// p2 is a tls httpproxy
 	p2 := &projcontour.HTTPProxy{
@@ -1240,8 +1238,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 	}
 
 	// verify that p2's TLS 1.3 minimum has NOT been downgraded to 1.2
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			&v2.Listener{
 				Name:    "ingress_http",
@@ -1255,12 +1252,11 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "2",
-	}, streamLDS(t, cc))
+	})
 }
 
 func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
-	rh, cc, done := setup(t)
+	rh, c, done := setup(t)
 	defer done()
 
 	svc1 := &v1.Service{
@@ -1322,8 +1318,7 @@ func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 
 	// verify that port 80 is present because while it is not possible to
 	// delegate to it, child can host a vhost which opens port 80.
-	assert.Equal(t, &v2.DiscoveryResponse{
-		VersionInfo: "2",
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			&v2.Listener{
 				Name:    "ingress_http",
@@ -1336,42 +1331,5 @@ func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-		Nonce:   "2",
-	}, streamLDS(t, cc))
-}
-
-func streamLDS(t *testing.T, cc *grpc.ClientConn, rn ...string) *v2.DiscoveryResponse {
-	t.Helper()
-	rds := v2.NewListenerDiscoveryServiceClient(cc)
-	st, err := rds.StreamListeners(context.TODO())
-	check(t, err)
-	return stream(t, st, &v2.DiscoveryRequest{
-		TypeUrl:       listenerType,
-		ResourceNames: rn,
 	})
-}
-
-func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
-	return &v1beta1.IngressBackend{
-		ServiceName: name,
-		ServicePort: port,
-	}
-}
-
-func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_listener.Filter, alpn ...string) []*envoy_api_v2_listener.FilterChain {
-	return []*envoy_api_v2_listener.FilterChain{
-		envoy.FilterChainTLS(
-			domain,
-			envoy.DownstreamTLSContext(
-				&dag.Secret{Object: secret},
-				envoy_api_v2_auth.TlsParameters_TLSv1_1,
-				nil,
-				alpn...),
-			envoy.Filters(filter),
-		),
-	}
-}
-
-func staticListener() *v2.Listener {
-	return envoy.StatsListener(statsAddress, statsPort)
 }
