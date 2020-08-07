@@ -69,11 +69,7 @@ jobs:
       - uses: actions/setup-ruby@v1
         with:
           ruby-version: '2.6'
-      - name: check site for changes
-        run: |
-          ./hack/actions/check-files-changed.sh ./site
       - name: run site proof
-        if: ${{ success() }}
         run: |
           sudo apt-get -yqq install libcurl4-openssl-dev
           ./hack/site-proofing/cibuild

@@ -1,6 +1,21 @@
 #! /usr/bin/env bash
 
-set -e # halt script on error
+set -o errexit
+set -o nounset
+set -o pipefail
+
+# Check for changes to site/ in the latest commit; exit
+# early if there were none.
+readonly LATEST_COMMIT=$(git rev-parse HEAD)
+readonly LATEST_COMMIT_IN_SITE=$(git log -1 --format=format:%H --full-diff ./site)
+
+if [ $LATEST_COMMIT != $LATEST_COMMIT_IN_SITE ]; then
+    echo "Not running site proof because site/ directory has not changed"
+    exit 0
+else
+    echo "Changes detected in site/, running site proof"
+fi
+
 
 # Builds and checks the website for broken links.
 
