@@ -18,7 +18,7 @@ package contour
 
 import (
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/grpc"
+	"github.com/projectcontour/contour/internal/xds"
 )
 
 // ResourceCache is a store of an xDS resource type. It is able to
@@ -26,12 +26,12 @@ import (
 // serve those resources over xDS.
 type ResourceCache interface {
 	dag.Observer
-	grpc.Resource
+	xds.Resource
 }
 
-// ResourcesOf transliterates a slice of ResourceCache into a slice of grpc.Resource.
-func ResourcesOf(in []ResourceCache) []grpc.Resource {
-	out := make([]grpc.Resource, len(in))
+// ResourcesOf transliterates a slice of ResourceCache into a slice of xds.Resource.
+func ResourcesOf(in []ResourceCache) []xds.Resource {
+	out := make([]xds.Resource, len(in))
 	for i := range in {
 		out[i] = in[i]
 	}

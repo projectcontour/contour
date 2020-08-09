@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package grpc
+package xds
 
 import (
 	"context"
@@ -19,7 +19,8 @@ import (
 	"strconv"
 	"sync/atomic"
 
-	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
@@ -42,23 +43,56 @@ type Resource interface {
 	TypeURL() string
 }
 
-// xdsHandler implements the Envoy xDS gRPC protocol.
-type xdsHandler struct {
-	logrus.FieldLogger
-	connections counter
-	resources   map[string]Resource // registered resource types
-}
-
 type grpcStream interface {
 	Context() context.Context
-	Send(*envoy_api_v2.DiscoveryResponse) error
-	Recv() (*envoy_api_v2.DiscoveryRequest, error)
+	Send(*v2.DiscoveryResponse) error
+	Recv() (*v2.DiscoveryRequest, error)
+}
+
+// counter holds an atomically incrementing counter.
+type counter uint64
+
+func (c *counter) next() uint64 {
+	return atomic.AddUint64((*uint64)(c), 1)
+}
+
+var connections counter
+
+// NewContourServer creates an internally implemented Server that streams the
+// provided set of Resource objects. The returned Server implements the xDS
+// State of the World (SotW) variant.
+func NewContourServer(log logrus.FieldLogger, resources ...Resource) Server {
+	c := contourServer{
+		FieldLogger: log,
+		resources:   map[string]Resource{},
+	}
+
+	for i, r := range resources {
+		c.resources[r.TypeURL()] = resources[i]
+	}
+
+	return &c
+}
+
+type contourServer struct {
+	// Since we only implement the streaming state of the world
+	// protocol, embed the default null implementations to handle
+	// the unimplemented gRPC endpoints.
+	discovery.UnimplementedAggregatedDiscoveryServiceServer
+	discovery.UnimplementedSecretDiscoveryServiceServer
+	v2.UnimplementedRouteDiscoveryServiceServer
+	v2.UnimplementedEndpointDiscoveryServiceServer
+	v2.UnimplementedClusterDiscoveryServiceServer
+	v2.UnimplementedListenerDiscoveryServiceServer
+
+	logrus.FieldLogger
+	resources map[string]Resource
 }
 
 // stream processes a stream of DiscoveryRequests.
-func (xh *xdsHandler) stream(st grpcStream) error {
-	// bump connection counter and set it as a field on the logger
-	log := xh.WithField("connection", xh.connections.next())
+func (s *contourServer) stream(st grpcStream) error {
+	// Bump connection counter and set it as a field on the logger.
+	log := s.WithField("connection", connections.next())
 
 	// Notify whether the stream terminated on error.
 	done := func(log *logrus.Entry, err error) error {
@@ -102,7 +136,7 @@ func (xh *xdsHandler) stream(st grpcStream) error {
 
 		// from the request we derive the resource to stream which have
 		// been registered according to the typeURL.
-		r, ok := xh.resources[req.TypeUrl]
+		r, ok := s.resources[req.TypeUrl]
 		if !ok {
 			return done(log, fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl))
 		}
@@ -140,7 +174,7 @@ func (xh *xdsHandler) stream(st grpcStream) error {
 				any = append(any, a)
 			}
 
-			resp := &envoy_api_v2.DiscoveryResponse{
+			resp := &v2.DiscoveryResponse{
 				VersionInfo: strconv.Itoa(last),
 				Resources:   any,
 				TypeUrl:     r.TypeURL(),
@@ -157,9 +191,22 @@ func (xh *xdsHandler) stream(st grpcStream) error {
 	}
 }
 
-// counter holds an atomically incrementing counter.
-type counter uint64
+func (s *contourServer) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) error {
+	return s.stream(srv)
+}
 
-func (c *counter) next() uint64 {
-	return atomic.AddUint64((*uint64)(c), 1)
+func (s *contourServer) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsServer) error {
+	return s.stream(srv)
+}
+
+func (s *contourServer) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) error {
+	return s.stream(srv)
+}
+
+func (s *contourServer) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) error {
+	return s.stream(srv)
+}
+
+func (s *contourServer) StreamSecrets(srv discovery.SecretDiscoveryService_StreamSecretsServer) error {
+	return s.stream(srv)
 }
