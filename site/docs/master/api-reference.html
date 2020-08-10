@@ -1965,8 +1965,7 @@ string
 </p>
 <p>
 <p>TLS describes tls properties. The SNI names that will be matched on
-are described in fqdn, the tls.secretName secret must contain a
-matching certificate unless tls.passthrough is set to true.</p>
+are described in the HTTPProxy&rsquo;s Spec.VirtualHost.Fqdn field.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -1985,7 +1984,10 @@ string
 </em>
 </td>
 <td>
-<p>required, the name of a secret in the current namespace</p>
+<p>SecretName is the name of a TLS secret in the current namespace.
+Either SecretName or Passthrough must be specified, but not both.
+If specified, the named secret must contain a matching certificate
+for the virtual host&rsquo;s FQDN.</p>
 </td>
 </tr>
 <tr>
@@ -2011,9 +2013,9 @@ bool
 </td>
 <td>
 <em>(Optional)</em>
-<p>If Passthrough is set to true, the SecretName will be ignored
-and the encrypted handshake will be passed through to the
-backing cluster.</p>
+<p>Passthrough defines whether the encrypted TLS handshake will be
+passed through to the backing cluster. Either Passthrough or
+SecretName must be specified, but not both.</p>
 </td>
 </tr>
 <tr>

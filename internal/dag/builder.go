@@ -378,10 +378,17 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		return
 	}
 
-	var tlsValid bool
+	var tlsEnabled bool
 	if tls := proxy.Spec.VirtualHost.TLS; tls != nil {
-		// tls is valid if passthrough == true XOR secretName != ""
-		tlsValid = tls.Passthrough != !isBlank(tls.SecretName)
+		if !isBlank(tls.SecretName) && tls.Passthrough {
+			sw.SetInvalid("Spec.VirtualHost.TLS: both Passthrough and SecretName were specified")
+			return
+		}
+		if isBlank(tls.SecretName) && !tls.Passthrough {
+			sw.SetInvalid("Spec.VirtualHost.TLS: neither Passthrough nor SecretName were specified")
+			return
+		}
+		tlsEnabled = true
 
 		// Attach secrets to TLS enabled vhosts.
 		if !tls.Passthrough {
@@ -444,8 +451,8 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 	}
 
 	if proxy.Spec.TCPProxy != nil {
-		if !tlsValid {
-			sw.SetInvalid("tcpproxy: missing tls.passthrough or tls.secretName")
+		if !tlsEnabled {
+			sw.SetInvalid("Spec.TCPProxy requires that either Spec.TLS.Passthrough or Spec.TLS.SecretName be set")
 			return
 		}
 		if !b.processHTTPProxyTCPProxy(sw, proxy, nil, host) {
@@ -453,13 +460,13 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		}
 	}
 
-	routes := b.computeRoutes(sw, proxy, nil, nil, tlsValid)
+	routes := b.computeRoutes(sw, proxy, nil, nil, tlsEnabled)
 	insecure := b.lookupVirtualHost(host)
 	addRoutes(insecure, routes)
 
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
 	// then add routes to the secure virtualhost definition.
-	if tlsValid && proxy.Spec.TCPProxy == nil {
+	if tlsEnabled && proxy.Spec.TCPProxy == nil {
 		secure := b.lookupSecureVirtualHost(host)
 		addRoutes(secure, routes)
 	}

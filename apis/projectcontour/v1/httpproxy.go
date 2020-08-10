@@ -115,17 +115,19 @@ type VirtualHost struct {
 }
 
 // TLS describes tls properties. The SNI names that will be matched on
-// are described in fqdn, the tls.secretName secret must contain a
-// matching certificate unless tls.passthrough is set to true.
+// are described in the HTTPProxy's Spec.VirtualHost.Fqdn field.
 type TLS struct {
-	// required, the name of a secret in the current namespace
+	// SecretName is the name of a TLS secret in the current namespace.
+	// Either SecretName or Passthrough must be specified, but not both.
+	// If specified, the named secret must contain a matching certificate
+	// for the virtual host's FQDN.
 	SecretName string `json:"secretName,omitempty"`
 	// Minimum TLS version this vhost should negotiate
 	// +optional
 	MinimumProtocolVersion string `json:"minimumProtocolVersion,omitempty"`
-	// If Passthrough is set to true, the SecretName will be ignored
-	// and the encrypted handshake will be passed through to the
-	// backing cluster.
+	// Passthrough defines whether the encrypted TLS handshake will be
+	// passed through to the backing cluster. Either Passthrough or
+	// SecretName must be specified, but not both.
 	// +optional
 	Passthrough bool `json:"passthrough,omitempty"`
 	// ClientValidation defines how to verify the client certificate

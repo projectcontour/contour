@@ -872,12 +872,15 @@ spec:
                       description: Minimum TLS version this vhost should negotiate
                       type: string
                     passthrough:
-                      description: If Passthrough is set to true, the SecretName will
-                        be ignored and the encrypted handshake will be passed through
-                        to the backing cluster.
+                      description: Passthrough defines whether the encrypted TLS handshake
+                        will be passed through to the backing cluster. Either Passthrough
+                        or SecretName must be specified, but not both.
                       type: boolean
                     secretName:
-                      description: required, the name of a secret in the current namespace
+                      description: SecretName is the name of a TLS secret in the current
+                        namespace. Either SecretName or Passthrough must be specified,
+                        but not both. If specified, the named secret must contain
+                        a matching certificate for the virtual host's FQDN.
                       type: string
                   type: object
               required:
