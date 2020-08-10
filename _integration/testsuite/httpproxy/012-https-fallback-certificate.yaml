@@ -1,0 +1,135 @@
+# This check depends on the `--watch=configmaps` argument being given
+# to integration-tester.
+
+import data.contour.resources
+import data.contour.resources.configmap
+
+Namespace := "projectcontour"
+Config := sprintf("%s/contour",[Namespace])
+
+# Skip if the configmap isn't present.
+skip[msg] {
+  not resources.is_present("configmaps", Config)
+  msg := sprintf("Contour is not installed in the %q namespace", [Namespace])
+}
+
+skip[msg] {
+  conf := configmap.get_data(Config)
+  contour := yaml.unmarshal(object.get(conf, "contour.yaml", "{}"))
+  tls := object.get(contour, "tls", {})
+  fallback := object.get(tls, "fallback-certificate", {})
+
+  name := object.get(fallback, "name", "")
+
+  # Skip if there's no fallback certificate name.
+  name == ""
+  msg := "Contour fallback certificate is not configured"
+}
+
+---
+
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: echo-cert
+spec:
+  dnsNames:
+  - echo.projectcontour.io
+  secretName: echo
+  issuerRef:
+    name: selfsigned
+    kind: ClusterIssuer
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo
+
+---
+
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo
+spec:
+  virtualhost:
+    fqdn: echo.projectcontour.io
+    tls:
+      secretName: echo
+      enableFallbackCertificate: true
+  routes:
+  - services:
+    - name: echo
+      port: 80
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.request
+import data.contour.http.response
+
+Response := client.Get({
+  "url": url.https(sprintf("/fallback/%d", [time.now_ns()])),
+  "headers": {
+    "Host": "echo.projectcontour.io",
+    "User-Agent": client.ua("fallback-certificate"),
+  },
+  "tls_insecure_skip_verify": true,
+})
+
+error_non_200_response [msg] {
+  not response.status_is(Response, 200)
+  msg := sprintf("SNI request got status %d, wanted %d", [Response.status_code, 200])
+}
+
+error_wrong_routing [msg] {
+  wanted := "echo"
+  testid := response.testid(Response)
+  testid != wanted
+  msg := sprintf("SNI request got test ID %q, wanted %q", [testid, wanted])
+}
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.request
+import data.contour.http.response
+
+Response := client.Get({
+  "url": url.https(sprintf("/fallback/%d", [time.now_ns()])),
+  "headers": {
+    "Host": "echo.projectcontour.io",
+    "User-Agent": client.ua("fallback-certificate"),
+  },
+  "tls_insecure_skip_verify": true,
+  "tls_server_name": client.target_addr,
+})
+
+error_non_200_response [msg] {
+  not response.status_is(Response, 200)
+  msg := sprintf("fallback request got status %d, wanted %d", [Response.status_code, 200])
+}
+
+error_wrong_routing [msg] {
+  wanted := "echo"
+  testid := response.testid(Response)
+  testid != wanted
+  msg := sprintf("fallback request got test ID %q, wanted %q", [testid, wanted])
+}
