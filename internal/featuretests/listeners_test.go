@@ -597,8 +597,8 @@ func TestLDSStreamEmpty(t *testing.T) {
 }
 
 func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.CacheHandler.UseProxyProto = true
+	rh, c, done := setup(t, func(conf *contour.ListenerConfig) {
+		conf.UseProxyProto = true
 	})
 	defer done()
 
@@ -663,8 +663,8 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 }
 
 func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.CacheHandler.UseProxyProto = true
+	rh, c, done := setup(t, func(conf *contour.ListenerConfig) {
+		conf.UseProxyProto = true
 	})
 	defer done()
 
@@ -767,11 +767,11 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 }
 
 func TestLDSCustomAddressAndPort(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.CacheHandler.HTTPAddress = "127.0.0.100"
-		reh.CacheHandler.HTTPPort = 9100
-		reh.CacheHandler.HTTPSAddress = "127.0.0.200"
-		reh.CacheHandler.HTTPSPort = 9200
+	rh, c, done := setup(t, func(conf *contour.ListenerConfig) {
+		conf.HTTPAddress = "127.0.0.100"
+		conf.HTTPPort = 9100
+		conf.HTTPSAddress = "127.0.0.200"
+		conf.HTTPSPort = 9200
 	})
 	defer done()
 
@@ -875,9 +875,9 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 }
 
 func TestLDSCustomAccessLogPaths(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.CacheHandler.HTTPAccessLog = "/tmp/http_access.log"
-		reh.CacheHandler.HTTPSAccessLog = "/tmp/https_access.log"
+	rh, c, done := setup(t, func(conf *contour.ListenerConfig) {
+		conf.HTTPAccessLog = "/tmp/http_access.log"
+		conf.HTTPSAccessLog = "/tmp/https_access.log"
 	})
 	defer done()
 
@@ -1093,8 +1093,8 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 }
 
 func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.CacheHandler.MinimumTLSVersion = envoy_api_v2_auth.TlsParameters_TLSv1_2
+	rh, c, done := setup(t, func(conf *contour.ListenerConfig) {
+		conf.MinimumTLSVersion = envoy_api_v2_auth.TlsParameters_TLSv1_2
 	})
 
 	defer done()

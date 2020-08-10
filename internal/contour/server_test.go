@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package grpc
+package contour
 
 import (
 	"context"
@@ -23,8 +23,8 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
-	"github.com/projectcontour/contour/internal/contour"
-	"github.com/projectcontour/contour/internal/metrics"
+	"github.com/projectcontour/contour/internal/dag"
+	cgrpc "github.com/projectcontour/contour/internal/grpc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -38,8 +38,8 @@ import (
 
 func TestGRPC(t *testing.T) {
 	// tr and et is recreated before the start of each test.
-	var et *contour.EndpointsTranslator
-	var eh *contour.EventHandler
+	var et *EndpointsTranslator
+	var eh *EventHandler
 
 	tests := map[string]func(*testing.T, *grpc.ClientConn){
 		"StreamClusters": func(t *testing.T, cc *grpc.ClientConn) {
@@ -188,25 +188,24 @@ func TestGRPC(t *testing.T) {
 	log.SetOutput(ioutil.Discard)
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
-			et = &contour.EndpointsTranslator{
+			et = &EndpointsTranslator{
 				FieldLogger: log,
 			}
-			ch := contour.CacheHandler{
-				Metrics: metrics.NewMetrics(prometheus.NewRegistry()),
+
+			resources := []ResourceCache{
+				NewListenerCache(ListenerConfig{}, "", 0),
+				&SecretCache{},
+				&RouteCache{},
+				&ClusterCache{},
 			}
 
-			eh = &contour.EventHandler{
-				CacheHandler: &ch,
-				FieldLogger:  log,
+			eh = &EventHandler{
+				Observer:    dag.ComposeObservers(ObserversOf(resources)...),
+				FieldLogger: log,
 			}
+
 			r := prometheus.NewRegistry()
-			srv := NewAPI(log, map[string]Resource{
-				ch.ClusterCache.TypeURL():  &ch.ClusterCache,
-				ch.RouteCache.TypeURL():    &ch.RouteCache,
-				ch.ListenerCache.TypeURL(): &ch.ListenerCache,
-				ch.SecretCache.TypeURL():   &ch.SecretCache,
-				et.TypeURL():               et,
-			}, r)
+			srv := cgrpc.NewAPI(log, append(ResourcesOf(resources), et), r)
 			l, err := net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)
 			done := make(chan error, 1)

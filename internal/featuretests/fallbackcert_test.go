@@ -20,14 +20,21 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestFallbackCertificate(t *testing.T) {
-	rh, c, done := setupWithFallbackCert(t, "fallbacksecret", "admin")
+	rh, c, done := setup(t, func(eh *contour.EventHandler) {
+		eh.Builder.FallbackCertificate = &types.NamespacedName{
+			Name:      "fallbacksecret",
+			Namespace: "admin",
+		}
+	})
 	defer done()
 
 	sec1 := &v1.Secret{

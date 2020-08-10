@@ -21,6 +21,7 @@ import (
 	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
+	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -38,6 +39,11 @@ type EndpointsTranslator struct {
 
 	mu      sync.Mutex
 	entries map[string]*v2.ClusterLoadAssignment
+}
+
+func (e *EndpointsTranslator) OnChange(d *dag.DAG) {
+	// TODO(jpeach) Update the internal model to map which
+	// services are targets of which cluster load assignments.
 }
 
 func (e *EndpointsTranslator) OnAdd(obj interface{}) {

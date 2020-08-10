@@ -152,7 +152,7 @@ func TestListenerVisit(t *testing.T) {
 		Get()
 
 	tests := map[string]struct {
-		ListenerVisitorConfig
+		ListenerConfig
 		fallbackCertificate *types.NamespacedName
 		objs                []interface{}
 		want                map[string]*v2.Listener
@@ -599,7 +599,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"http listener on non default port": { // issue 72
-			ListenerVisitorConfig: ListenerVisitorConfig{
+			ListenerConfig: ListenerConfig{
 				HTTPAddress:  "127.0.0.100",
 				HTTPPort:     9100,
 				HTTPSAddress: "127.0.0.200",
@@ -672,7 +672,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"use proxy proto": {
-			ListenerVisitorConfig: ListenerVisitorConfig{
+			ListenerConfig: ListenerConfig{
 				UseProxyProto: true,
 			},
 			objs: []interface{}{
@@ -746,7 +746,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"--envoy-http-access-log": {
-			ListenerVisitorConfig: ListenerVisitorConfig{
+			ListenerConfig: ListenerConfig{
 				HTTPAccessLog:  "/tmp/http_access.log",
 				HTTPSAccessLog: "/tmp/https_access.log",
 			},
@@ -823,7 +823,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"tls-min-protocol-version from config": {
-			ListenerVisitorConfig: ListenerVisitorConfig{
+			ListenerConfig: ListenerConfig{
 				MinimumTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
 			},
 			objs: []interface{}{
@@ -893,7 +893,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"tls-min-protocol-version from config overridden by annotation": {
-			ListenerVisitorConfig: ListenerVisitorConfig{
+			ListenerConfig: ListenerConfig{
 				MinimumTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
 			},
 			objs: []interface{}{
@@ -966,7 +966,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"tls-min-protocol-version from config overridden by legacy annotation": {
-			ListenerVisitorConfig: ListenerVisitorConfig{
+			ListenerConfig: ListenerConfig{
 				MinimumTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
 			},
 			objs: []interface{}{
@@ -1039,7 +1039,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"tls-min-protocol-version from config overridden by httpproxy": {
-			ListenerVisitorConfig: ListenerVisitorConfig{
+			ListenerConfig: ListenerConfig{
 				MinimumTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
 			},
 			objs: []interface{}{
@@ -1449,7 +1449,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"httpproxy with connection idle timeout set in visitor config": {
-			ListenerVisitorConfig: ListenerVisitorConfig{
+			ListenerConfig: ListenerConfig{
 				ConnectionIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
@@ -1503,7 +1503,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"httpproxy with stream idle timeout set in visitor config": {
-			ListenerVisitorConfig: ListenerVisitorConfig{
+			ListenerConfig: ListenerConfig{
 				StreamIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
@@ -1557,7 +1557,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"httpproxy with max connection duration set in visitor config": {
-			ListenerVisitorConfig: ListenerVisitorConfig{
+			ListenerConfig: ListenerConfig{
 				MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
@@ -1611,7 +1611,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"httpproxy with connection shutdown grace period set in visitor config": {
-			ListenerVisitorConfig: ListenerVisitorConfig{
+			ListenerConfig: ListenerConfig{
 				ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
@@ -1665,7 +1665,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"httpsproxy with secret with connection idle timeout set in visitor config": {
-			ListenerVisitorConfig: ListenerVisitorConfig{
+			ListenerConfig: ListenerConfig{
 				ConnectionIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
@@ -1747,7 +1747,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"httpsproxy with secret with stream idle timeout set in visitor config": {
-			ListenerVisitorConfig: ListenerVisitorConfig{
+			ListenerConfig: ListenerConfig{
 				StreamIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
@@ -1829,7 +1829,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"httpsproxy with secret with max connection duration set in visitor config": {
-			ListenerVisitorConfig: ListenerVisitorConfig{
+			ListenerConfig: ListenerConfig{
 				MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
@@ -1911,7 +1911,7 @@ func TestListenerVisit(t *testing.T) {
 			}),
 		},
 		"httpsproxy with secret with connection shutdown grace period set in visitor config": {
-			ListenerVisitorConfig: ListenerVisitorConfig{
+			ListenerConfig: ListenerConfig{
 				ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
@@ -1997,7 +1997,7 @@ func TestListenerVisit(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			root := buildDAGFallback(t, tc.fallbackCertificate, tc.objs...)
-			got := visitListeners(root, &tc.ListenerVisitorConfig)
+			got := visitListeners(root, &tc.ListenerConfig)
 			assert.Equal(t, tc.want, got)
 		})
 	}

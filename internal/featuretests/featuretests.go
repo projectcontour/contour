@@ -41,7 +41,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -61,11 +60,7 @@ func (d *discardWriter) Write(buf []byte) (int, error) {
 	return len(buf), nil
 }
 
-func setup(t *testing.T, opts ...func(*contour.EventHandler)) (cache.ResourceEventHandler, *Contour, func()) {
-	return setupWithFallbackCert(t, "", "", opts...)
-}
-
-func setupWithFallbackCert(t *testing.T, fallbackCertName, fallbackCertNamespace string, opts ...func(*contour.EventHandler)) (cache.ResourceEventHandler, *Contour, func()) {
+func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Contour, func()) {
 	t.Parallel()
 
 	log := logrus.New()
@@ -75,12 +70,21 @@ func setupWithFallbackCert(t *testing.T, fallbackCertName, fallbackCertNamespace
 		FieldLogger: log,
 	}
 
-	r := prometheus.NewRegistry()
-	ch := &contour.CacheHandler{
-		Metrics:       metrics.NewMetrics(r),
-		ListenerCache: contour.NewListenerCache(statsAddress, statsPort),
-		FieldLogger:   log,
+	conf := contour.ListenerConfig{}
+	for _, opt := range opts {
+		if opt, ok := opt.(func(*contour.ListenerConfig)); ok {
+			opt(&conf)
+		}
 	}
+
+	resources := []contour.ResourceCache{
+		contour.NewListenerCache(conf, statsAddress, statsPort),
+		&contour.SecretCache{},
+		&contour.RouteCache{},
+		&contour.ClusterCache{},
+	}
+
+	r := prometheus.NewRegistry()
 
 	rand.Seed(time.Now().Unix())
 
@@ -88,25 +92,25 @@ func setupWithFallbackCert(t *testing.T, fallbackCertName, fallbackCertNamespace
 
 	eh := &contour.EventHandler{
 		IsLeader:        make(chan struct{}),
-		CacheHandler:    ch,
 		StatusClient:    statusCache,
 		FieldLogger:     log,
 		Sequence:        make(chan int, 1),
 		HoldoffDelay:    time.Duration(rand.Intn(100)) * time.Millisecond,
 		HoldoffMaxDelay: time.Duration(rand.Intn(500)) * time.Millisecond,
+		Observer: &contour.RebuildMetricsObserver{
+			Metrics:      metrics.NewMetrics(r),
+			NextObserver: dag.ComposeObservers(contour.ObserversOf(resources)...),
+		},
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
 				FieldLogger: log,
 			},
-			FallbackCertificate: &types.NamespacedName{
-				Name:      fallbackCertName,
-				Namespace: fallbackCertNamespace,
-			},
 		},
 	}
-
 	for _, opt := range opts {
-		opt(eh)
+		if opt, ok := opt.(func(*contour.EventHandler)); ok {
+			opt(eh)
+		}
 	}
 
 	// Make this event handler win the leader election.
@@ -117,13 +121,7 @@ func setupWithFallbackCert(t *testing.T, fallbackCertName, fallbackCertNamespace
 	discard := logrus.New()
 	discard.Out = new(discardWriter)
 	// Resource types in xDS v2.
-	srv := cgrpc.NewAPI(discard, map[string]cgrpc.Resource{
-		ch.ClusterCache.TypeURL():  &ch.ClusterCache,
-		ch.RouteCache.TypeURL():    &ch.RouteCache,
-		ch.ListenerCache.TypeURL(): &ch.ListenerCache,
-		ch.SecretCache.TypeURL():   &ch.SecretCache,
-		et.TypeURL():               et,
-	}, r)
+	srv := cgrpc.NewAPI(discard, append(contour.ResourcesOf(resources), et), r)
 
 	var g workgroup.Group
 

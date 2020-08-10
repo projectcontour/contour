@@ -75,6 +75,11 @@ func (c *ClusterCache) Query(names []string) []proto.Message {
 
 func (*ClusterCache) TypeURL() string { return resource.ClusterType }
 
+func (c *ClusterCache) OnChange(root *dag.DAG) {
+	clusters := visitClusters(root)
+	c.Update(clusters)
+}
+
 type clusterVisitor struct {
 	clusters map[string]*v2.Cluster
 }

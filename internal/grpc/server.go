@@ -31,11 +31,17 @@ import (
 )
 
 // NewAPI returns a *grpc.Server which responds to the Envoy v2 xDS gRPC API.
-func NewAPI(log logrus.FieldLogger, resources map[string]Resource, registry *prometheus.Registry, opts ...grpc.ServerOption) *grpc.Server {
+func NewAPI(log logrus.FieldLogger, resources []Resource, registry *prometheus.Registry, opts ...grpc.ServerOption) *grpc.Server {
+	resourceMap := map[string]Resource{}
+
+	for i, r := range resources {
+		resourceMap[r.TypeURL()] = resources[i]
+	}
+
 	s := &grpcServer{
 		xdsHandler{
 			FieldLogger: log,
-			resources:   resources,
+			resources:   resourceMap,
 		},
 		grpc_prometheus.NewServerMetrics(),
 	}

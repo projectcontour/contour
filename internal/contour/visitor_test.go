@@ -30,7 +30,7 @@ import (
 
 func TestVisitClusters(t *testing.T) {
 	tests := map[string]struct {
-		root dag.Visitable
+		root dag.Vertex
 		want map[string]*envoy_api_v2.Cluster
 	}{
 		"TCPService forward": {
@@ -96,7 +96,7 @@ func TestVisitListeners(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		root dag.Visitable
+		root dag.Vertex
 		want map[string]*envoy_api_v2.Listener
 	}{
 		"TCPService forward": {
@@ -143,7 +143,7 @@ func TestVisitListeners(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := visitListeners(tc.root, new(ListenerVisitorConfig))
+			got := visitListeners(tc.root, new(ListenerConfig))
 			assert.Equal(t, tc.want, got)
 		})
 	}
@@ -151,7 +151,7 @@ func TestVisitListeners(t *testing.T) {
 
 func TestVisitSecrets(t *testing.T) {
 	tests := map[string]struct {
-		root dag.Visitable
+		root dag.Vertex
 		want map[string]*envoy_api_v2_auth.Secret
 	}{
 		"TCPService forward": {

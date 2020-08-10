@@ -72,6 +72,11 @@ func (c *SecretCache) Query(names []string) []proto.Message {
 
 func (*SecretCache) TypeURL() string { return resource.SecretType }
 
+func (s *SecretCache) OnChange(root *dag.DAG) {
+	secrets := visitSecrets(root)
+	s.Update(secrets)
+}
+
 type secretVisitor struct {
 	secrets map[string]*envoy_api_v2_auth.Secret
 }
