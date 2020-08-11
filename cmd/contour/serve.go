@@ -434,7 +434,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 		go func() {
 			<-stop
-			s.Stop()
+			s.GracefulStop()
 		}()
 
 		return s.Serve(l)
