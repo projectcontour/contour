@@ -17,7 +17,9 @@ import (
 	"context"
 	"errors"
 	"io"
+	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func TestGroupRunWithNoRegisteredFunctions(t *testing.T) {
@@ -65,6 +67,35 @@ func TestGroupAddContext(t *testing.T) {
 	}()
 	close(wait)
 	assert(t, io.EOF, <-result)
+}
+
+func TestGroupCancellation(t *testing.T) {
+	var g Group
+	ctx, cancel := context.WithCancel(context.Background())
+
+	const tasks = 100
+	var count int32
+
+	for i := 0; i < tasks; i++ {
+		g.Add(func(stop <-chan struct{}) error {
+			defer atomic.AddInt32(&count, 1)
+			defer time.Sleep(time.Millisecond * time.Duration(i))
+			<-stop
+			return nil
+		})
+	}
+
+	done := make(chan error)
+	go func() {
+		done <- g.Run(ctx)
+	}()
+
+	cancel()
+	<-done
+
+	if got := atomic.LoadInt32(&count); got != tasks {
+		t.Errorf("expected: %d, got: %d", tasks, got)
+	}
 }
 
 func assert(t *testing.T, want, got error) {

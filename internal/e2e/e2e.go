@@ -29,12 +29,12 @@ import (
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/fixture"
 	cgrpc "github.com/projectcontour/contour/internal/grpc"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
@@ -47,27 +47,10 @@ const (
 	statsPort    = 8002
 )
 
-type testWriter struct {
-	*testing.T
-}
-
-func (t *testWriter) Write(buf []byte) (int, error) {
-	t.Logf("%s", buf)
-	return len(buf), nil
-}
-
-type discardWriter struct {
-}
-
-func (d *discardWriter) Write(buf []byte) (int, error) {
-	return len(buf), nil
-}
-
 func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *grpc.ClientConn, func()) {
 	t.Parallel()
 
-	log := logrus.New()
-	log.Out = &testWriter{t}
+	log := fixture.NewTestLogger(t)
 
 	et := &contour.EndpointsTranslator{
 		FieldLogger: log,
@@ -113,21 +96,18 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *grpc
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	check(t, err)
-	discard := logrus.New()
-	discard.Out = new(discardWriter)
 	// Resource types in xDS v2.
-	srv := cgrpc.NewAPI(discard, append(contour.ResourcesOf(resources), et), r)
+	srv := cgrpc.NewAPI(log, append(contour.ResourcesOf(resources), et), r)
 
 	var g workgroup.Group
 
 	g.Add(func(stop <-chan struct{}) error {
-		done := make(chan error)
 		go func() {
-			done <- srv.Serve(l) // srv now owns l and will close l before returning
+			<-stop
+			srv.GracefulStop()
 		}()
-		<-stop
-		srv.Stop()
-		return <-done
+
+		return srv.Serve(l) // srv now owns l and will close l before returning
 	})
 	g.Add(eh.Start())
 

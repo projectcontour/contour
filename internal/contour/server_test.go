@@ -216,7 +216,7 @@ func TestGRPC(t *testing.T) {
 				done <- srv.Serve(l)
 			}()
 			defer func() {
-				srv.Stop()
+				srv.GracefulStop()
 				close(stop)
 				<-done
 			}()

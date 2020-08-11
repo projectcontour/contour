@@ -352,7 +352,7 @@ func TestServeContextCertificateHandling(t *testing.T) {
 		err := g.Serve(l)
 		checkFatalErr(t, err)
 	}()
-	defer g.Stop()
+	defer g.GracefulStop()
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
