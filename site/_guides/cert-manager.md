@@ -451,7 +451,6 @@ metadata:
   name: letsencrypt-prod
   namespace: cert-manager
 spec:
-spec:
   acme:
     email: user@example.com
     privateKeySecretRef:
