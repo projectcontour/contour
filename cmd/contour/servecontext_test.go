@@ -470,7 +470,7 @@ func TestParseHTTPVersions(t *testing.T) {
 		},
 		"invalid proto": {
 			versions:      []string{"foo"},
-			parseError:    errors.New("invalid"),
+			parseError:    errors.New("invalid HTTP protocol version \"foo\""),
 			parseVersions: nil,
 		},
 		"http/1.1": {
@@ -501,8 +501,8 @@ func TestParseHTTPVersions(t *testing.T) {
 			sort.Slice(testcase.parseVersions,
 				func(i, j int) bool { return testcase.parseVersions[i] < testcase.parseVersions[j] })
 
-			assert.Equal(t, err, testcase.parseError)
-			assert.Equal(t, vers, testcase.parseVersions)
+			assert.Equal(t, testcase.parseError, err)
+			assert.Equal(t, testcase.parseVersions, vers)
 		})
 	}
 }

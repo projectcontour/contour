@@ -17,12 +17,13 @@ package assert
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
+
+	tassert "github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/testing/protocmp"
 )
 
 type Assert struct {
@@ -39,14 +40,22 @@ func Equal(t *testing.T, want, got interface{}, opts ...cmp.Option) {
 
 // Equal will call t.Fatal if want and got are not equal.
 func (a Assert) Equal(want, got interface{}, opts ...cmp.Option) {
+	tassert.Equal(a.t, want, got, "Two values should be equal.")
+}
+
+// EqualProto will test that want == got, and call t.Fatal if it does not.
+// Notably, for errors, they are equal if they are both nil, or are both non-nil.
+// No value information is checked for errors.
+func EqualProto(t *testing.T, want, got interface{}, opts ...cmp.Option) {
+	t.Helper()
+	Assert{t}.EqualProto(want, got, opts...)
+}
+
+// EqualProto will call t.Fatal if want and got are not equal.
+func (a Assert) EqualProto(want, got interface{}, opts ...cmp.Option) {
 	a.t.Helper()
 	opts = append(opts,
-		cmpopts.IgnoreFields(v2.DiscoveryResponse{}, "VersionInfo", "Nonce"),
-		cmpopts.AcyclicTransformer("UnmarshalAny", unmarshalAny),
-		// errors to be equal only if both are nil or both are non-nil.
-		cmp.Comparer(func(x, y error) bool {
-			return (x == nil) == (y == nil)
-		}),
+		protocmp.Transform(),
 	)
 	diff := cmp.Diff(want, got, opts...)
 	if diff != "" {

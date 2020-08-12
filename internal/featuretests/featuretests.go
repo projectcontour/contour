@@ -384,7 +384,7 @@ type Response struct {
 
 func (r *Response) Equals(want *v2.DiscoveryResponse) *Contour {
 	r.Helper()
-	assert.Equal(r.T, want, r.DiscoveryResponse)
+	assert.EqualProto(r.T, want.Resources, r.DiscoveryResponse.Resources)
 
 	return r.Contour
 }

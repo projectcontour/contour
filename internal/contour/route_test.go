@@ -68,7 +68,7 @@ func TestRouteCacheContents(t *testing.T) {
 			var rc RouteCache
 			rc.Update(tc.contents)
 			got := rc.Contents()
-			assert.Equal(t, tc.want, got)
+			assert.EqualProto(t, tc.want, got)
 		})
 	}
 }
@@ -128,7 +128,7 @@ func TestRouteCacheQuery(t *testing.T) {
 			var rc RouteCache
 			rc.Update(tc.contents)
 			got := rc.Query(tc.query)
-			assert.Equal(t, tc.want, got)
+			assert.EqualProto(t, tc.want, got)
 		})
 	}
 }
