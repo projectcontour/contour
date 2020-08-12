@@ -28,20 +28,15 @@ var (
 	ElementsMatch = tassert.ElementsMatch
 )
 
-// EqualProto will test that want == got, and call t.Fatal if it does not.
-// Notably, for errors, they are equal if they are both nil, or are both non-nil.
-// No value information is checked for errors.
-//
-// This is a different behavior to the aliased Testify functions - historically,
-// the featuretests expected this behavior, and this is mainly used there.
-// So we've kept it for now.
-// TODO(youngnick): talk to me if you want to fix this.
+// EqualProto will test that want == got for protobufs, call t.Error if it does not,
+// and return a bool to indicate the result. This mimics the behavior of the testify `assert`
+// functions.
 func EqualProto(t *testing.T, want, got interface{}, msgAndArgs ...interface{}) bool {
 	t.Helper()
 
 	diff := cmp.Diff(want, got, protocmp.Transform())
 	if diff != "" {
-		t.Fatal(diff)
+		t.Error(diff)
 		return false
 	}
 
