@@ -1,0 +1,17 @@
+---
+# This config tells Gatekeeper to keep all HTTPProxy
+# resources in its internal cache so pre-existing
+# resources can be referenced in Constraints. See
+# https://github.com/open-policy-agent/gatekeeper#replicating-data
+# for more info.
+apiVersion: config.gatekeeper.sh/v1alpha1
+kind: Config
+metadata:
+  name: config
+  namespace: "gatekeeper-system"
+spec:
+  sync:
+    syncOnly:
+      - group: "projectcontour.io"
+        version: "v1"
+        kind: "HTTPProxy"

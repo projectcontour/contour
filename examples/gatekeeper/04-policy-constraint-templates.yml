@@ -1,0 +1,48 @@
+# This file contains "policy" ConstraintTemplates. These are rules
+# that a Contour user may want to enforce for their clusters, but
+# that are not required for Contour to function. You should take a
+# pick-and-choose approach (or modify or develop your own) to the
+# contents of this file and 05-policy-constraints.yml.
+
+---
+# httpproxyretrycountrange is a ConstraintTemplate that enforces
+# min/max allowed values for the retryPolicy.count values set on
+# any routes on an HTTPProxy. Both min and max are optional.
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: httpproxyretrycountrange
+spec:
+  crd:
+    spec:
+      names:
+        kind: HTTPProxyRetryCountRange
+        listKind: HTTPProxyRetryCountRangeList
+        plural: HTTPProxyRetryCountRanges
+        singular: HTTPProxyRetryCountRange
+      scope: Namespaced
+      validation:
+        openAPIV3Schema:
+          properties:
+            min:
+              type: integer
+            max: 
+              type: integer
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package httpproxy.retrycountrange
+
+        violation[{"msg": msg}] {
+          got := input.review.object.spec.routes[_].retryPolicy.count
+
+          got > input.parameters.max
+          msg := sprintf("retry policy count must be less than/equal to %v", [input.parameters.max])
+        }
+
+        violation[{"msg": msg}] {
+          got := input.review.object.spec.routes[_].retryPolicy.count
+
+          got < input.parameters.min
+          msg := sprintf("retry policy count must be greater than/equal to %v", [input.parameters.min])
+        }

@@ -1,0 +1,20 @@
+# This file contains "policy" Constraints. These are sample instances
+# of rules that a Contour user may want to enforce for their clusters, 
+# but that are not required for Contour to function. You should take a
+# pick-and-choose approach (or modify or develop your own) to the
+# contents of this file and 04-policy-constraint-templates.yml.
+
+---
+# # httpproxy-retry-count-range instantiates an HTTPProxyRetryCountRange
+# ConstraintTemplate with a max value of 5.
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: HTTPProxyRetryCountRange
+metadata:
+  name: httpproxy-retry-count-range
+spec:
+  match:
+    kinds:
+      - apiGroups: ["projectcontour.io"]
+        kinds: ["HTTPProxy"]
+  parameters:
+    max: 5

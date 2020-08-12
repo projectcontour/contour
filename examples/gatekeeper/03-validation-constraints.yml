@@ -1,0 +1,17 @@
+# This file contains "validation" Constraints. These are instances of rules
+# that Contour universally requires to be true. If you're using Contour
+# and Gatekeeper, we strongly recommend that you use the contents of this
+# file and 02-validation-constraint-templates.yml as-is.
+
+---
+# httpproxy-unique-fqdn instantiates an HTTPProxyUniqueFQDN
+# ConstraintTemplate.
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: HTTPProxyUniqueFQDN
+metadata:
+  name: httpproxy-unique-fqdn
+spec:
+  match:
+    kinds:
+      - apiGroups: ["projectcontour.io"]
+        kinds: ["HTTPProxy"]
