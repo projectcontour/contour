@@ -1,0 +1,66 @@
+# httpproxytimeoutrange is a ConstraintTemplate that enforces
+# min/max allowed timeout values for a specified field within
+# a route's timeoutPolicy on an HTTPProxy. Both min and max are
+# optional. 
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: httpproxytimeoutrange
+  labels:
+    app: contour
+spec:
+  crd:
+    spec:
+      names:
+        kind: HTTPProxyTimeoutRange
+        listKind: HTTPProxyTimeoutRangeList
+        plural: HTTPProxyTimeoutRanges
+        singular: HTTPProxyTimeoutRange
+      scope: Namespaced
+      validation:
+        openAPIV3Schema:
+          properties:
+            field:
+              type: string
+            min:
+              type: string
+            max: 
+              type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package httpproxy.timeoutrange
+
+        # build a set of all the timeout values for the given timeout policy field
+        timeouts[val] {
+          val := input.review.object.spec.routes[_].timeoutPolicy[input.parameters.field]
+        }
+
+        above_max {
+          # special case: a timeout value of "infinity" is above any specified max value
+          timeouts[_] == "infinity"
+          input.parameters.max
+        } else {
+          # otherwise, compare durations
+          time.parse_duration_ns(timeouts[_]) > time.parse_duration_ns(input.parameters.max)
+        }
+        
+        below_min {
+          val := timeouts[_]
+          
+          # special case: a timeout value of "infinity" is assumed to never be below
+          # the min value
+          not val == "infinity"
+
+          time.parse_duration_ns(val) < time.parse_duration_ns(input.parameters.min)
+        }
+
+        violation[{"msg": msg}] {
+          above_max
+          msg := sprintf("%q timeout must have value less than or equal to %q", [input.parameters.field, input.parameters.max])
+        }
+
+        violation[{"msg": msg}] {
+          below_min
+          msg := sprintf("%q timeout must have value greater than or equal to %q", [input.parameters.field, input.parameters.min])
+        }
