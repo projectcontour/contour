@@ -24,8 +24,7 @@ import (
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/projectcontour/contour/internal/dag"
-	cgrpc "github.com/projectcontour/contour/internal/grpc"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -197,6 +196,7 @@ func TestGRPC(t *testing.T) {
 				&SecretCache{},
 				&RouteCache{},
 				&ClusterCache{},
+				et,
 			}
 
 			eh = &EventHandler{
@@ -204,8 +204,7 @@ func TestGRPC(t *testing.T) {
 				FieldLogger: log,
 			}
 
-			r := prometheus.NewRegistry()
-			srv := cgrpc.NewAPI(log, append(ResourcesOf(resources), et), r)
+			srv := xds.RegisterServer(xds.NewContourServer(log, ResourcesOf(resources)...), nil)
 			l, err := net.Listen("tcp", "127.0.0.1:0")
 			check(t, err)
 			done := make(chan error, 1)

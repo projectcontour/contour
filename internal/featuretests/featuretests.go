@@ -32,12 +32,12 @@ import (
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
-	cgrpc "github.com/projectcontour/contour/internal/grpc"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/workgroup"
+	"github.com/projectcontour/contour/internal/xds"
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
@@ -75,6 +75,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 		&contour.SecretCache{},
 		&contour.RouteCache{},
 		&contour.ClusterCache{},
+		et,
 	}
 
 	r := prometheus.NewRegistry()
@@ -111,8 +112,10 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	check(t, err)
-	// Resource types in xDS v2.
-	srv := cgrpc.NewAPI(log, append(contour.ResourcesOf(resources), et), r)
+
+	srv := xds.RegisterServer(
+		xds.NewContourServer(log, contour.ResourcesOf(resources)...),
+		r /* Prometheus registry */)
 
 	var g workgroup.Group
 

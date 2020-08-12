@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package grpc
+package xds
 
 import (
 	"context"
@@ -29,12 +29,12 @@ func TestXDSHandlerStream(t *testing.T) {
 	log := logrus.New()
 	log.SetOutput(ioutil.Discard)
 	tests := map[string]struct {
-		xh     xdsHandler
+		xh     contourServer
 		stream grpcStream
 		want   error
 	}{
 		"recv returns error immediately": {
-			xh: xdsHandler{FieldLogger: log},
+			xh: contourServer{FieldLogger: log},
 			stream: &mockStream{
 				context: context.Background,
 				recv: func() (*v2.DiscoveryRequest, error) {
@@ -44,7 +44,7 @@ func TestXDSHandlerStream(t *testing.T) {
 			want: io.EOF,
 		},
 		"no registered typeURL": {
-			xh: xdsHandler{FieldLogger: log},
+			xh: contourServer{FieldLogger: log},
 			stream: &mockStream{
 				context: context.Background,
 				recv: func() (*v2.DiscoveryRequest, error) {
@@ -56,7 +56,7 @@ func TestXDSHandlerStream(t *testing.T) {
 			want: fmt.Errorf("no resource registered for typeURL %q", "com.heptio.potato"),
 		},
 		"failed to convert values to any": {
-			xh: xdsHandler{
+			xh: contourServer{
 				FieldLogger: log,
 				resources: map[string]Resource{
 					"com.heptio.potato": &mockResource{
@@ -81,7 +81,7 @@ func TestXDSHandlerStream(t *testing.T) {
 			want: fmt.Errorf("proto: Marshal called with nil"),
 		},
 		"failed to send": {
-			xh: xdsHandler{
+			xh: contourServer{
 				FieldLogger: log,
 				resources: map[string]Resource{
 					"com.heptio.potato": &mockResource{
@@ -109,7 +109,7 @@ func TestXDSHandlerStream(t *testing.T) {
 			want: io.EOF,
 		},
 		"context canceled": {
-			xh: xdsHandler{
+			xh: contourServer{
 				FieldLogger: log,
 				resources: map[string]Resource{
 					"com.heptio.potato": &mockResource{

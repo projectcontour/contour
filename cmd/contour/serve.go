@@ -29,13 +29,13 @@ import (
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/debug"
-	cgrpc "github.com/projectcontour/contour/internal/grpc"
 	"github.com/projectcontour/contour/internal/health"
 	"github.com/projectcontour/contour/internal/httpsvc"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/workgroup"
+	"github.com/projectcontour/contour/internal/xds"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -408,7 +408,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	g.Add(func(stop <-chan struct{}) error {
-		log := log.WithField("context", "grpc")
+		log := log.WithField("context", "xds")
 
 		log.Printf("waiting for informer caches to sync")
 		if err := informerSyncList.WaitForSync(stop); err != nil {
@@ -416,8 +416,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 		log.Printf("informer caches synced")
 
-		opts := ctx.grpcOptions()
-		s := cgrpc.NewAPI(log, contour.ResourcesOf(resources), registry, opts...)
+		rpcServer := xds.RegisterServer(
+			xds.NewContourServer(log, contour.ResourcesOf(resources)...),
+			registry,
+			ctx.grpcOptions()...)
+
 		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
 		l, err := net.Listen("tcp", addr)
 		if err != nil {
@@ -434,10 +437,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 		go func() {
 			<-stop
-			s.GracefulStop()
+			rpcServer.GracefulStop()
 		}()
 
-		return s.Serve(l)
+		return rpcServer.Serve(l)
 	})
 
 	// Set up SIGTERM handler for graceful shutdown.
