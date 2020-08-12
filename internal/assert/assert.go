@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-
 	tassert "github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/testing/protocmp"
 )
@@ -42,7 +41,7 @@ func EqualProto(t *testing.T, want, got interface{}, msgAndArgs ...interface{}) 
 
 	diff := cmp.Diff(want, got, protocmp.Transform())
 	if diff != "" {
-		t.Error(diff)
+		t.Fatal(diff)
 		return false
 	}
 
