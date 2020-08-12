@@ -108,7 +108,7 @@ func (b *Builder) lookupService(m types.NamespacedName, port intstr.IntOrString)
 		return nil, fmt.Errorf("service %q not found", m)
 	}
 	for i := range svc.Spec.Ports {
-		p := &svc.Spec.Ports[i]
+		p := svc.Spec.Ports[i]
 		switch {
 		case int(p.Port) == port.IntValue():
 			return b.addService(svc, p), nil
@@ -119,7 +119,7 @@ func (b *Builder) lookupService(m types.NamespacedName, port intstr.IntOrString)
 	return nil, fmt.Errorf("port %q on service %q not matched", port.String(), m)
 }
 
-func (b *Builder) addService(svc *v1.Service, port *v1.ServicePort) *Service {
+func (b *Builder) addService(svc *v1.Service, port v1.ServicePort) *Service {
 	s := &Service{
 		Name:        svc.Name,
 		Namespace:   svc.Namespace,
@@ -136,7 +136,7 @@ func (b *Builder) addService(svc *v1.Service, port *v1.ServicePort) *Service {
 	return s
 }
 
-func upstreamProtocol(svc *v1.Service, port *v1.ServicePort) string {
+func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {
 	up := annotation.ParseUpstreamProtocols(svc.Annotations)
 	protocol := up[port.Name]
 	if protocol == "" {

@@ -46,7 +46,7 @@ func TestVisitClusters(t *testing.T) {
 								Upstream: &dag.Service{
 									Name:      "example",
 									Namespace: "default",
-									ServicePort: &v1.ServicePort{
+									ServicePort: v1.ServicePort{
 										Protocol:   "TCP",
 										Port:       443,
 										TargetPort: intstr.FromInt(8443),
@@ -86,7 +86,7 @@ func TestVisitListeners(t *testing.T) {
 			Upstream: &dag.Service{
 				Name:      "example",
 				Namespace: "default",
-				ServicePort: &v1.ServicePort{
+				ServicePort: v1.ServicePort{
 					Protocol:   "TCP",
 					Port:       443,
 					TargetPort: intstr.FromInt(8443),
@@ -167,7 +167,7 @@ func TestVisitSecrets(t *testing.T) {
 								Upstream: &dag.Service{
 									Name:      "example",
 									Namespace: "default",
-									ServicePort: &v1.ServicePort{
+									ServicePort: v1.ServicePort{
 										Protocol:   "TCP",
 										Port:       443,
 										TargetPort: intstr.FromInt(8443),

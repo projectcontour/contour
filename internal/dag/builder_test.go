@@ -4066,7 +4066,7 @@ func TestDAGInsert(t *testing.T) {
 							prefixroute("/", &Service{
 								Name:        s3d.Name,
 								Namespace:   s3d.Namespace,
-								ServicePort: &s3d.Spec.Ports[0],
+								ServicePort: s3d.Spec.Ports[0],
 								Protocol:    "h2c",
 							}),
 						),
@@ -4086,7 +4086,7 @@ func TestDAGInsert(t *testing.T) {
 							prefixroute("/", &Service{
 								Name:        s3e.Name,
 								Namespace:   s3e.Namespace,
-								ServicePort: &s3e.Spec.Ports[0],
+								ServicePort: s3e.Spec.Ports[0],
 								Protocol:    "h2",
 							}),
 						),
@@ -4106,7 +4106,7 @@ func TestDAGInsert(t *testing.T) {
 							prefixroute("/", &Service{
 								Name:        s3f.Name,
 								Namespace:   s3f.Namespace,
-								ServicePort: &s3f.Spec.Ports[0],
+								ServicePort: s3f.Spec.Ports[0],
 								Protocol:    "tls",
 							}),
 						),
@@ -4127,7 +4127,7 @@ func TestDAGInsert(t *testing.T) {
 							prefixroute("/", &Service{
 								Name:        s3a.Name,
 								Namespace:   s3a.Namespace,
-								ServicePort: &s3a.Spec.Ports[0],
+								ServicePort: s3a.Spec.Ports[0],
 								Protocol:    "h2c",
 							}),
 						),
@@ -4147,7 +4147,7 @@ func TestDAGInsert(t *testing.T) {
 							prefixroute("/", &Service{
 								Name:        s3b.Name,
 								Namespace:   s3b.Namespace,
-								ServicePort: &s3b.Spec.Ports[0],
+								ServicePort: s3b.Spec.Ports[0],
 								Protocol:    "h2",
 							}),
 						),
@@ -4167,7 +4167,7 @@ func TestDAGInsert(t *testing.T) {
 							prefixroute("/", &Service{
 								Name:        s3c.Name,
 								Namespace:   s3c.Namespace,
-								ServicePort: &s3c.Spec.Ports[0],
+								ServicePort: s3c.Spec.Ports[0],
 								Protocol:    "tls",
 							}),
 						),
@@ -4188,7 +4188,7 @@ func TestDAGInsert(t *testing.T) {
 							prefixroute("/", &Service{
 								Name:               s1b.Name,
 								Namespace:          s1b.Namespace,
-								ServicePort:        &s1b.Spec.Ports[0],
+								ServicePort:        s1b.Spec.Ports[0],
 								MaxConnections:     9000,
 								MaxPendingRequests: 4096,
 								MaxRequests:        404,
@@ -4212,7 +4212,7 @@ func TestDAGInsert(t *testing.T) {
 								Upstream: &Service{
 									Name:        s1.Name,
 									Namespace:   s1.Namespace,
-									ServicePort: &s1.Spec.Ports[0],
+									ServicePort: s1.Spec.Ports[0],
 								},
 								Weight: 90,
 							}),
@@ -4220,7 +4220,7 @@ func TestDAGInsert(t *testing.T) {
 								Upstream: &Service{
 									Name:        s1.Name,
 									Namespace:   s1.Namespace,
-									ServicePort: &s1.Spec.Ports[0],
+									ServicePort: s1.Spec.Ports[0],
 								},
 								Weight: 60,
 							}),
@@ -4243,14 +4243,14 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s1.Name,
 										Namespace:   s1.Namespace,
-										ServicePort: &s1.Spec.Ports[0],
+										ServicePort: s1.Spec.Ports[0],
 									},
 									Weight: 90,
 								}, &Cluster{
 									Upstream: &Service{
 										Name:        s1.Name,
 										Namespace:   s1.Namespace,
-										ServicePort: &s1.Spec.Ports[0],
+										ServicePort: s1.Spec.Ports[0],
 									},
 									Weight: 60,
 								},
@@ -4526,7 +4526,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s1a.Name,
 										Namespace:   s1a.Namespace,
-										ServicePort: &s1a.Spec.Ports[0],
+										ServicePort: s1a.Spec.Ports[0],
 										Protocol:    "tls",
 									},
 									Protocol: "tls",
@@ -4735,7 +4735,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s1.Name,
 										Namespace:   s1.Namespace,
-										ServicePort: &s1.Spec.Ports[0],
+										ServicePort: s1.Spec.Ports[0],
 									},
 								},
 							),
@@ -4744,7 +4744,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s4.Name,
 										Namespace:   s4.Namespace,
-										ServicePort: &s4.Spec.Ports[0],
+										ServicePort: s4.Spec.Ports[0],
 									},
 								},
 							),
@@ -4767,7 +4767,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s1.Name,
 										Namespace:   s1.Namespace,
-										ServicePort: &s1.Spec.Ports[0],
+										ServicePort: s1.Spec.Ports[0],
 									},
 								},
 							),
@@ -4777,7 +4777,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s4.Name,
 										Namespace:   s4.Namespace,
-										ServicePort: &s4.Spec.Ports[0],
+										ServicePort: s4.Spec.Ports[0],
 									},
 								}},
 							},
@@ -4800,7 +4800,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s1.Name,
 										Namespace:   s1.Namespace,
-										ServicePort: &s1.Spec.Ports[0],
+										ServicePort: s1.Spec.Ports[0],
 									},
 								},
 							),
@@ -4810,7 +4810,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s4.Name,
 										Namespace:   s4.Namespace,
-										ServicePort: &s4.Spec.Ports[0],
+										ServicePort: s4.Spec.Ports[0],
 									},
 								}},
 							},
@@ -4819,7 +4819,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s4.Name,
 										Namespace:   s4.Namespace,
-										ServicePort: &s4.Spec.Ports[0],
+										ServicePort: s4.Spec.Ports[0],
 									},
 								},
 							),
@@ -4829,7 +4829,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s11.Name,
 										Namespace:   s11.Namespace,
-										ServicePort: &s11.Spec.Ports[0],
+										ServicePort: s11.Spec.Ports[0],
 									},
 								}},
 							},
@@ -4852,7 +4852,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s1.Name,
 										Namespace:   s1.Namespace,
-										ServicePort: &s1.Spec.Ports[0],
+										ServicePort: s1.Spec.Ports[0],
 									},
 								},
 							),
@@ -4861,7 +4861,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s2.Name,
 										Namespace:   s2.Namespace,
-										ServicePort: &s2.Spec.Ports[0],
+										ServicePort: s2.Spec.Ports[0],
 									},
 								},
 							),
@@ -4884,7 +4884,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s1.Name,
 										Namespace:   s1.Namespace,
-										ServicePort: &s1.Spec.Ports[0],
+										ServicePort: s1.Spec.Ports[0],
 									},
 								},
 							),
@@ -4893,7 +4893,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s2.Name,
 										Namespace:   s2.Namespace,
-										ServicePort: &s2.Spec.Ports[0],
+										ServicePort: s2.Spec.Ports[0],
 									},
 								},
 							),
@@ -4916,7 +4916,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s1.Name,
 										Namespace:   s1.Namespace,
-										ServicePort: &s1.Spec.Ports[0],
+										ServicePort: s1.Spec.Ports[0],
 									},
 								},
 							),
@@ -4925,7 +4925,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s2.Name,
 										Namespace:   s2.Namespace,
-										ServicePort: &s2.Spec.Ports[0],
+										ServicePort: s2.Spec.Ports[0],
 									},
 								},
 							),
@@ -4948,7 +4948,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s1.Name,
 										Namespace:   s1.Namespace,
-										ServicePort: &s1.Spec.Ports[0],
+										ServicePort: s1.Spec.Ports[0],
 									},
 								},
 							),
@@ -4957,7 +4957,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s2.Name,
 										Namespace:   s2.Namespace,
-										ServicePort: &s2.Spec.Ports[0],
+										ServicePort: s2.Spec.Ports[0],
 									},
 								},
 							),
@@ -4980,7 +4980,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s1.Name,
 										Namespace:   s1.Namespace,
-										ServicePort: &s1.Spec.Ports[0],
+										ServicePort: s1.Spec.Ports[0],
 									},
 								},
 							),
@@ -4989,7 +4989,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s2.Name,
 										Namespace:   s2.Namespace,
-										ServicePort: &s2.Spec.Ports[0],
+										ServicePort: s2.Spec.Ports[0],
 									},
 								},
 							),
@@ -5083,7 +5083,7 @@ func TestDAGInsert(t *testing.T) {
 									Upstream: &Service{
 										Name:        s10.Name,
 										Namespace:   s10.Namespace,
-										ServicePort: &s10.Spec.Ports[1],
+										ServicePort: s10.Spec.Ports[1],
 									},
 								},
 							),
@@ -5339,7 +5339,7 @@ func TestDAGInsert(t *testing.T) {
 								Upstream: &Service{
 									Name:         s14.Name,
 									Namespace:    s14.Namespace,
-									ServicePort:  &s14.Spec.Ports[0],
+									ServicePort:  s14.Spec.Ports[0],
 									ExternalName: "externalservice.io",
 								},
 								SNI: "externalservice.io",
@@ -5387,7 +5387,7 @@ func TestDAGInsert(t *testing.T) {
 								Upstream: &Service{
 									Name:         s14.Name,
 									Namespace:    s14.Namespace,
-									ServicePort:  &s14.Spec.Ports[0],
+									ServicePort:  s14.Spec.Ports[0],
 									ExternalName: "externalservice.io",
 								},
 								SNI: "bar.com",
@@ -5438,7 +5438,7 @@ func TestDAGInsert(t *testing.T) {
 								Upstream: &Service{
 									Name:         s14.Name,
 									Namespace:    s14.Namespace,
-									ServicePort:  &s14.Spec.Ports[0],
+									ServicePort:  s14.Spec.Ports[0],
 									ExternalName: "externalservice.io",
 								},
 								RequestHeadersPolicy: &HeadersPolicy{
@@ -6731,7 +6731,7 @@ func service(s *v1.Service) *Service {
 	return &Service{
 		Name:        s.Name,
 		Namespace:   s.Namespace,
-		ServicePort: &s.Spec.Ports[0],
+		ServicePort: s.Spec.Ports[0],
 	}
 }
 

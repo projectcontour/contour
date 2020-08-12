@@ -371,9 +371,10 @@ func (t *TCPProxy) Visit(f func(Vertex)) {
 
 // Service represents a single Kubernetes' Service's Port.
 type Service struct {
-	Name, Namespace string
+	Name      string
+	Namespace string
 
-	*v1.ServicePort
+	ServicePort v1.ServicePort
 
 	// Protocol is the layer 7 protocol of this service
 	// One of "", "h2", "h2c", or "tls".
@@ -411,7 +412,7 @@ func (s *Service) ToFullName() servicemeta {
 	return servicemeta{
 		name:      s.Name,
 		namespace: s.Namespace,
-		port:      s.Port,
+		port:      s.ServicePort.Port,
 	}
 }
 
@@ -419,10 +420,9 @@ func (s *Service) Visit(func(Vertex)) {
 	// Services are leaves in the DAG.
 }
 
-// Cluster holds the connetion specific parameters that apply to
+// Cluster holds the connection specific parameters that apply to
 // traffic routed to an upstream service.
 type Cluster struct {
-
 	// Upstream is the backend Kubernetes service traffic arriving
 	// at this Cluster will be forwarded too.
 	Upstream *Service
