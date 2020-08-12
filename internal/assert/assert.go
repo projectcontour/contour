@@ -31,7 +31,7 @@ var (
 // EqualProto will test that want == got for protobufs, call t.Error if it does not,
 // and return a bool to indicate the result. This mimics the behavior of the testify `assert`
 // functions.
-func EqualProto(t *testing.T, want, got interface{}, msgAndArgs ...interface{}) bool {
+func EqualProto(t *testing.T, want, got interface{}) bool {
 	t.Helper()
 
 	diff := cmp.Diff(want, got, protocmp.Transform())
