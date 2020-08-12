@@ -221,7 +221,7 @@ func TestCluster(t *testing.T) {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
 					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort:    &s1.Spec.Ports[0],
+					ServicePort:    s1.Spec.Ports[0],
 					MaxConnections: 9000,
 				},
 			},
@@ -244,7 +244,7 @@ func TestCluster(t *testing.T) {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
 					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort:        &s1.Spec.Ports[0],
+					ServicePort:        s1.Spec.Ports[0],
 					MaxPendingRequests: 4096,
 				},
 			},
@@ -267,7 +267,7 @@ func TestCluster(t *testing.T) {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
 					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort: &s1.Spec.Ports[0],
+					ServicePort: s1.Spec.Ports[0],
 					MaxRequests: 404,
 				},
 			},
@@ -290,7 +290,7 @@ func TestCluster(t *testing.T) {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
 					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort: &s1.Spec.Ports[0],
+					ServicePort: s1.Spec.Ports[0],
 					MaxRetries:  7,
 				},
 			},
@@ -416,7 +416,7 @@ func TestClustername(t *testing.T) {
 				Upstream: &dag.Service{
 					Name:      "backend",
 					Namespace: "default",
-					ServicePort: &v1.ServicePort{
+					ServicePort: v1.ServicePort{
 						Name:       "http",
 						Protocol:   "TCP",
 						Port:       80,
@@ -431,7 +431,7 @@ func TestClustername(t *testing.T) {
 				Upstream: &dag.Service{
 					Name:      "must-be-in-want-of-a-wife",
 					Namespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
-					ServicePort: &v1.ServicePort{
+					ServicePort: v1.ServicePort{
 						Name:       "http",
 						Protocol:   "TCP",
 						Port:       9999,
@@ -446,7 +446,7 @@ func TestClustername(t *testing.T) {
 				Upstream: &dag.Service{
 					Name:      "backend",
 					Namespace: "default",
-					ServicePort: &v1.ServicePort{
+					ServicePort: v1.ServicePort{
 						Name:       "http",
 						Protocol:   "TCP",
 						Port:       80,
@@ -469,7 +469,7 @@ func TestClustername(t *testing.T) {
 				Upstream: &dag.Service{
 					Name:      "backend",
 					Namespace: "default",
-					ServicePort: &v1.ServicePort{
+					ServicePort: v1.ServicePort{
 						Name:       "http",
 						Protocol:   "TCP",
 						Port:       80,
@@ -612,7 +612,7 @@ func service(s *v1.Service, protocols ...string) *dag.Service {
 	return &dag.Service{
 		Name:         s.Name,
 		Namespace:    s.Namespace,
-		ServicePort:  &s.Spec.Ports[0],
+		ServicePort:  s.Spec.Ports[0],
 		ExternalName: s.Spec.ExternalName,
 		Protocol:     protocol,
 	}

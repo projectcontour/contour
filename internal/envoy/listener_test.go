@@ -698,7 +698,7 @@ func TestTCPProxy(t *testing.T) {
 		Upstream: &dag.Service{
 			Name:      "example",
 			Namespace: "default",
-			ServicePort: &v1.ServicePort{
+			ServicePort: v1.ServicePort{
 				Protocol:   "TCP",
 				Port:       443,
 				TargetPort: intstr.FromInt(8443),
@@ -709,7 +709,7 @@ func TestTCPProxy(t *testing.T) {
 		Upstream: &dag.Service{
 			Name:      "example2",
 			Namespace: "default",
-			ServicePort: &v1.ServicePort{
+			ServicePort: v1.ServicePort{
 				Protocol:   "TCP",
 				Port:       443,
 				TargetPort: intstr.FromInt(8443),

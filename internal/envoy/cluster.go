@@ -200,13 +200,13 @@ func Clustername(cluster *dag.Cluster) string {
 
 	ns := service.Namespace
 	name := service.Name
-	return hashname(60, ns, name, strconv.Itoa(int(service.Port)), fmt.Sprintf("%x", hash[:5]))
+	return hashname(60, ns, name, strconv.Itoa(int(service.ServicePort.Port)), fmt.Sprintf("%x", hash[:5]))
 }
 
 // altStatName generates an alternative stat name for the service
 // using format ns_name_port
 func altStatName(service *dag.Service) string {
-	return strings.Join([]string{service.Namespace, service.Name, strconv.Itoa(int(service.Port))}, "_")
+	return strings.Join([]string{service.Namespace, service.Name, strconv.Itoa(int(service.ServicePort.Port))}, "_")
 }
 
 // hashname takes a lenth l and a varargs of strings s and returns a string whose length
