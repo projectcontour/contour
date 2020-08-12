@@ -17,63 +17,34 @@ package assert
 import (
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/google/go-cmp/cmp"
 
 	tassert "github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/testing/protocmp"
 )
 
-type Assert struct {
-	t *testing.T
-}
-
-// Equal will test that want == got, and call t.Fatal if it does not.
-// Notably, for errors, they are equal if they are both nil, or are both non-nil.
-// No value information is checked for errors.
-func Equal(t *testing.T, want, got interface{}, opts ...cmp.Option) {
-	t.Helper()
-	Assert{t}.Equal(want, got, opts...)
-}
-
-// Equal will call t.Fatal if want and got are not equal.
-func (a Assert) Equal(want, got interface{}, opts ...cmp.Option) {
-	tassert.Equal(a.t, want, got, "Two values should be equal.")
-}
+var (
+	Equal         = tassert.Equal
+	Equalf        = tassert.Equalf
+	ElementsMatch = tassert.ElementsMatch
+)
 
 // EqualProto will test that want == got, and call t.Fatal if it does not.
 // Notably, for errors, they are equal if they are both nil, or are both non-nil.
 // No value information is checked for errors.
-func EqualProto(t *testing.T, want, got interface{}, opts ...cmp.Option) {
+//
+// This is a different behavior to the aliased Testify functions - historically,
+// the featuretests expected this behavior, and this is mainly used there.
+// So we've kept it for now.
+// TODO(youngnick): talk to me if you want to fix this.
+func EqualProto(t *testing.T, want, got interface{}, msgAndArgs ...interface{}) bool {
 	t.Helper()
-	Assert{t}.EqualProto(want, got, opts...)
-}
 
-// EqualProto will call t.Fatal if want and got are not equal.
-func (a Assert) EqualProto(want, got interface{}, opts ...cmp.Option) {
-	a.t.Helper()
-	opts = append(opts,
-		protocmp.Transform(),
-	)
-	diff := cmp.Diff(want, got, opts...)
+	diff := cmp.Diff(want, got, protocmp.Transform())
 	if diff != "" {
-		a.t.Fatal(diff)
+		t.Error(diff)
+		return false
 	}
-}
 
-func unmarshalAny(a *any.Any) proto.Message {
-	if a == nil {
-		return nil
-	}
-	pb, err := ptypes.Empty(a)
-	if err != nil {
-		panic(err.Error())
-	}
-	err = ptypes.UnmarshalAny(a, pb)
-	if err != nil {
-		panic(err.Error())
-	}
-	return pb
+	return true
 }
