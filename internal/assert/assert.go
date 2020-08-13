@@ -17,54 +17,28 @@ package assert
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
+	tassert "github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/testing/protocmp"
 )
 
-type Assert struct {
-	t *testing.T
-}
+var (
+	Equal         = tassert.Equal
+	Equalf        = tassert.Equalf
+	ElementsMatch = tassert.ElementsMatch
+)
 
-// Equal will test that want == got, and call t.Fatal if it does not.
-// Notably, for errors, they are equal if they are both nil, or are both non-nil.
-// No value information is checked for errors.
-func Equal(t *testing.T, want, got interface{}, opts ...cmp.Option) {
+// EqualProto will test that want == got for protobufs, call t.Error if it does not,
+// and return a bool to indicate the result. This mimics the behavior of the testify `assert`
+// functions.
+func EqualProto(t *testing.T, want, got interface{}) bool {
 	t.Helper()
-	Assert{t}.Equal(want, got, opts...)
-}
 
-// Equal will call t.Fatal if want and got are not equal.
-func (a Assert) Equal(want, got interface{}, opts ...cmp.Option) {
-	a.t.Helper()
-	opts = append(opts,
-		cmpopts.IgnoreFields(v2.DiscoveryResponse{}, "VersionInfo", "Nonce"),
-		cmpopts.AcyclicTransformer("UnmarshalAny", unmarshalAny),
-		// errors to be equal only if both are nil or both are non-nil.
-		cmp.Comparer(func(x, y error) bool {
-			return (x == nil) == (y == nil)
-		}),
-	)
-	diff := cmp.Diff(want, got, opts...)
+	diff := cmp.Diff(want, got, protocmp.Transform())
 	if diff != "" {
-		a.t.Fatal(diff)
+		t.Error(diff)
+		return false
 	}
-}
 
-func unmarshalAny(a *any.Any) proto.Message {
-	if a == nil {
-		return nil
-	}
-	pb, err := ptypes.Empty(a)
-	if err != nil {
-		panic(err.Error())
-	}
-	err = ptypes.UnmarshalAny(a, pb)
-	if err != nil {
-		panic(err.Error())
-	}
-	return pb
+	return true
 }

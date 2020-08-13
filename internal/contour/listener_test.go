@@ -66,7 +66,7 @@ func TestListenerCacheContents(t *testing.T) {
 			var lc ListenerCache
 			lc.Update(tc.contents)
 			got := lc.Contents()
-			assert.Equal(t, tc.want, got)
+			assert.EqualProto(t, tc.want, got)
 		})
 	}
 }
@@ -128,7 +128,7 @@ func TestListenerCacheQuery(t *testing.T) {
 			var lc ListenerCache
 			lc.Update(tc.contents)
 			got := lc.Query(tc.query)
-			assert.Equal(t, tc.want, got)
+			assert.EqualProto(t, tc.want, got)
 		})
 	}
 }

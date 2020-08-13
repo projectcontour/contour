@@ -16,7 +16,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/projectcontour/contour/internal/assert"
 )
 
@@ -53,7 +52,7 @@ func TestParse(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.want, Parse(tc.duration), cmp.AllowUnexported(Setting{}))
+			assert.Equal(t, tc.want, Parse(tc.duration))
 		})
 	}
 }

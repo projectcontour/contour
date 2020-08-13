@@ -88,13 +88,13 @@ func TestParseOpenConnections(t *testing.T) {
 	run(t, "missing values", testcase{
 		stats:           strings.NewReader(MISSING_STATS),
 		wantConnections: -1,
-		wantError:       fmt.Errorf("prometheus stat [envoy_http_downstream_cx_active] not found in request result"),
+		wantError:       fmt.Errorf("error finding Prometheus stat \"envoy_http_downstream_cx_active\" in the request result"),
 	})
 
 	run(t, "invalid stats", testcase{
 		stats:           strings.NewReader("!!##$$##!!"),
 		wantConnections: -1,
-		wantError:       fmt.Errorf("parsing prometheus text format failed: text format parsing error in line 1: invalid metric name"),
+		wantError:       fmt.Errorf("parsing Prometheus text format failed: text format parsing error in line 1: invalid metric name"),
 	})
 }
 

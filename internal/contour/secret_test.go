@@ -53,7 +53,7 @@ func TestSecretCacheContents(t *testing.T) {
 			var sc SecretCache
 			sc.Update(tc.contents)
 			got := sc.Contents()
-			assert.Equal(t, tc.want, got)
+			assert.EqualProto(t, tc.want, got)
 		})
 	}
 }
@@ -97,7 +97,7 @@ func TestSecretCacheQuery(t *testing.T) {
 			var sc SecretCache
 			sc.Update(tc.contents)
 			got := sc.Query(tc.query)
-			assert.Equal(t, tc.want, got)
+			assert.EqualProto(t, tc.want, got)
 		})
 	}
 }

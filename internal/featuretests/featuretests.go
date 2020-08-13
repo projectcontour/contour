@@ -382,9 +382,14 @@ type Response struct {
 	*v2.DiscoveryResponse
 }
 
+// Equals tests that the response retrieved from Contour is equal to the supplied value.
+// TODO(youngnick) This function really should be copied to an `EqualResources` function.
 func (r *Response) Equals(want *v2.DiscoveryResponse) *Contour {
 	r.Helper()
-	assert.Equal(r.T, want, r.DiscoveryResponse)
+
+	if !assert.EqualProto(r.T, want.Resources, r.DiscoveryResponse.Resources) {
+		r.Fatal("feature test failure")
+	}
 
 	return r.Contour
 }

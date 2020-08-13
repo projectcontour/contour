@@ -71,7 +71,7 @@ func TestClusterCacheContents(t *testing.T) {
 			var cc ClusterCache
 			cc.Update(tc.contents)
 			got := cc.Contents()
-			assert.Equal(t, tc.want, got)
+			assert.EqualProto(t, tc.want, got)
 		})
 	}
 }
@@ -151,7 +151,7 @@ func TestClusterCacheQuery(t *testing.T) {
 			var cc ClusterCache
 			cc.Update(tc.contents)
 			got := cc.Query(tc.query)
-			assert.Equal(t, tc.want, got)
+			assert.EqualProto(t, tc.want, got)
 		})
 	}
 }

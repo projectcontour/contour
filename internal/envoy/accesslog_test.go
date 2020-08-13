@@ -104,7 +104,7 @@ func TestJSONFileAccessLog(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := FileAccessLogJSON(tc.path, tc.headers)
-			assert.Equal(t, tc.want, got)
+			assert.EqualProto(t, tc.want, got)
 		})
 	}
 }

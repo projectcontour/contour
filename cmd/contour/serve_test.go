@@ -18,7 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/sirupsen/logrus"
@@ -64,8 +63,7 @@ func TestGetRequestTimeout(t *testing.T) {
 	for _, tc := range tests {
 		log := logrus.New()
 		log.Out = ioutil.Discard
-		opt := cmp.AllowUnexported(timeout.Setting{})
 
-		assert.Equal(t, tc.want, getRequestTimeout(log, tc.ctx), opt)
+		assert.Equal(t, tc.want, getRequestTimeout(log, tc.ctx))
 	}
 }

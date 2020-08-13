@@ -38,7 +38,7 @@ func TestIsValidSecret(t *testing.T) {
 			cert:  MISSING_CN_CERT,
 			key:   MISSING_CN_KEY,
 			valid: false,
-			err:   errors.New("certificate has no common name or subject alt name"),
+			err:   errors.New("invalid TLS certificate: certificate has no common name or subject alt name"),
 		},
 		"EC cert with SubjectAltName only": {
 			cert:  EC_CERTIFICATE,

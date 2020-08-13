@@ -1007,21 +1007,21 @@ func TestBootstrap(t *testing.T) {
 			if tc.wantedBootstrapConfig != "" {
 				want := new(envoy_api_bootstrap.Bootstrap)
 				unmarshal(t, tc.wantedBootstrapConfig, want)
-				assert.Equal(t, want, gotConfigs[tc.config.Path])
+				assert.EqualProto(t, want, gotConfigs[tc.config.Path])
 				delete(gotConfigs, tc.config.Path)
 			}
 
 			if tc.wantedTLSCertificateConfig != "" {
 				want := new(api.DiscoveryResponse)
 				unmarshal(t, tc.wantedTLSCertificateConfig, want)
-				assert.Equal(t, want, gotConfigs[sdsTLSCertificatePath])
+				assert.EqualProto(t, want, gotConfigs[sdsTLSCertificatePath])
 				delete(gotConfigs, sdsTLSCertificatePath)
 			}
 
 			if tc.wantedValidationContextConfig != "" {
 				want := new(api.DiscoveryResponse)
 				unmarshal(t, tc.wantedValidationContextConfig, want)
-				assert.Equal(t, want, gotConfigs[sdsValidationContextPath])
+				assert.EqualProto(t, want, gotConfigs[sdsValidationContextPath])
 				delete(gotConfigs, sdsValidationContextPath)
 			}
 
