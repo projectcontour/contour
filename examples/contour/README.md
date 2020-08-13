@@ -14,7 +14,7 @@ This configuration has several advantages:
 - Envoy runs on ports 80 & 443
 
 The TLS secrets used to secure the gRPC session between Contour and Envoy are generated using a Job that runs `contour certgen`.
-For detailed instructions on how to configure the required secrets manually, see the [step-by-step TLS HOWTO](https://projectcontour.io/docs/master/grpc-tls-howto).
+For detailed instructions on how to configure the required secrets manually, see the [step-by-step TLS HOWTO](https://projectcontour.io/docs/main/grpc-tls-howto).
 
 ## Deploy Contour
 
@@ -39,7 +39,7 @@ This will:
 
 ## Test
 
-1. Install a workload (see the kuard example in the [main deployment guide](https://projectcontour.io/docs/master/deploy-options/#test-with-httpproxy)).
+1. Install a workload (see the kuard example in the [main deployment guide](https://projectcontour.io/docs/main/deploy-options/#test-with-httpproxy)).
 
 ## Deploying with Host Networking enabled for Envoy
 

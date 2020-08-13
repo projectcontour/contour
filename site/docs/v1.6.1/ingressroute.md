@@ -15,4 +15,4 @@ You can also read the <a href="{% link _guides/ingressroute-to-httpproxy.md %}">
 </p>
 
 [1]: https://kubernetes.io/docs/concepts/services-networking/ingress/
-[2]: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
+[2]: https://github.com/kubernetes/ingress-nginx/blob/main/docs/user-guide/nginx-configuration/annotations.md

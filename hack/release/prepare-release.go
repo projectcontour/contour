@@ -126,10 +126,10 @@ values:
 	}
 
 	// Insert the new scope to the "defaults" array. We insert
-	// after the "master" element so that it stays in order.
+	// after the "main" element so that it stays in order.
 	if _, err := rn.Pipe(
 		yaml.Lookup("versions"),
-		InsertAfter{After: "master", Node: &versNode},
+		InsertAfter{After: "main", Node: &versNode},
 	); err != nil {
 		log.Fatalf("%s", err)
 	}
@@ -138,7 +138,7 @@ values:
 }
 
 func main() {
-	oldVers := "master"
+	oldVers := "main"
 	newVers := ""
 
 	switch len(os.Args) {

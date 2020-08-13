@@ -1,9 +1,9 @@
-name: Build and push :master image
+name: Build and push :main image
 
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   build:
@@ -15,7 +15,7 @@ jobs:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         REGISTRY: projectcontour
-        VERSION: master
+        VERSION: main
         TAG_LATEST: "false"
       run: |
         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin

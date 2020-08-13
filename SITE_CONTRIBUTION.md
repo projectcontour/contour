@@ -23,7 +23,7 @@ site
 │       └── Metropolis
 ├── _data # Custom data files
 ├── docs # Versioned product documentation
-│   ├── master
+│   ├── main
 │   └── v1.0.0
 ├── _guides # Unversioned product usage guides
 ├── img

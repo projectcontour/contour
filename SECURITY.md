@@ -2,7 +2,7 @@
 Contour is a growing community devoted in creating the most secure, performant, scalable, and available ingress controller for Kubernetes. The community has adopted this security disclosure and response policy to ensure we responsibly handle critical issues.
 
 ## Supported Versions
-The Contour project maintains the following [document on the release process and support matrix](https://github.com/ProjectContour/Contour/blob/master/RELEASES.md). Please refer to it for release related details.
+The Contour project maintains the following [document on the release process and support matrix](https://github.com/ProjectContour/Contour/blob/main/RELEASES.md). Please refer to it for release related details.
 
 ## Reporting a Vulnerability - Private Disclosure Process
 Security is of the highest importance and all security vulnerabilities or suspected security vulnerabilities should be reported to Contour privately, to minimize attacks against current users of Contour before they are fixed. Vulnerabilities will be investigated and patched on the next patch (or minor) release as soon as possible. This information could be kept entirely internal to the project.  

@@ -50,7 +50,7 @@ Contour rejects this position.
 
 In general, making something configurable implies taking no position on sensible values within its range.
 For example, many projects allow network buffer sizes to be configured arbitrarily, not just within the sensible range from a page to a few dozen pages, but often as low as 1 byte and as high as gigabytes.
-In providing the tools, but little or no guidance on how they should be used, infinitely tweakable knobs forces the burden of mastering the high dimensional configuration space onto the end users of the product.
+In providing the tools, but little or no guidance on how they should be used, infinitely tweakable knobs forces the burden of maining the high dimensional configuration space onto the end users of the product.
 The secondary impact on support teams and the upstream development team should not be discounted, both in terms of difficulty in diagnosing problems, and the possibility of configuration drift between environments.
 
 Contour takes the position that when there is a sensible default value for an Envoy configuration parameters, Contour will apply it unconditionally.

@@ -1105,7 +1105,7 @@ Some examples of invalid configurations that Contour provides statuses for:
 
 
  [1]: https://kubernetes.io/docs/concepts/services-networking/ingress/
- [2]: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
+ [2]: https://github.com/kubernetes/ingress-nginx/blob/main/docs/user-guide/nginx-configuration/annotations.md
  [3]: {{site.github.repository_url}}/tree/{{page.version}}/examples/example-workload/httpproxy
  [4]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout
  [5]: https://godoc.org/time#ParseDuration
