@@ -5,7 +5,7 @@
 # contents of this file and 04-policy-constraint-templates.yml.
 
 ---
-# # httpproxy-retry-count-range instantiates an HTTPProxyRetryCountRange
+# httpproxy-retry-count-range instantiates an HTTPProxyRetryCountRange
 # ConstraintTemplate with a max value of 5.
 apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: HTTPProxyRetryCountRange
@@ -18,3 +18,35 @@ spec:
         kinds: ["HTTPProxy"]
   parameters:
     max: 5
+---
+# httpproxy-response-timeout-range instantiates an HTTPProxyTimeoutRange
+# ConstraintTemplate for the timeoutPolicy field 'response' with a max
+# value of 2m.
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: HTTPProxyTimeoutRange
+metadata:
+  name: httpproxy-response-timeout-range
+spec:
+  match:
+    kinds:
+      - apiGroups: ["projectcontour.io"]
+        kinds: ["HTTPProxy"]
+  parameters:
+    field: response
+    max: 2m
+---
+# httpproxy-idle-timeout-range instantiates an HTTPProxyTimeoutRange
+# ConstraintTemplate for the timeoutPolicy field 'idle' with a max
+# value of 5m.
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: HTTPProxyTimeoutRange
+metadata:
+  name: httpproxy-idle-timeout-range
+spec:
+  match:
+    kinds:
+      - apiGroups: ["projectcontour.io"]
+        kinds: ["HTTPProxy"]
+  parameters:
+    field: idle
+    max: 5m

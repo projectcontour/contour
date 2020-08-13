@@ -46,3 +46,48 @@ spec:
           got < input.parameters.min
           msg := sprintf("retry policy count must be greater than/equal to %v", [input.parameters.min])
         }
+---
+# httpproxytimeoutrange is a ConstraintTemplate that enforces
+# min/max allowed timeout values for a specified field within
+# a route's timeoutPolicy on an HTTPProxy. Both min and max are
+# optional. 
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: httpproxytimeoutrange
+spec:
+  crd:
+    spec:
+      names:
+        kind: HTTPProxyTimeoutRange
+        listKind: HTTPProxyTimeoutRangeList
+        plural: HTTPProxyTimeoutRanges
+        singular: HTTPProxyTimeoutRange
+      scope: Namespaced
+      validation:
+        openAPIV3Schema:
+          properties:
+            field:
+              type: string
+            min:
+              type: string
+            max: 
+              type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package httpproxy.timeoutrange
+
+        violation[{"msg": msg}] {
+          got := input.review.object.spec.routes[_].timeoutPolicy[input.parameters.field]
+
+          time.parse_duration_ns(got) > time.parse_duration_ns(input.parameters.max)
+          msg := sprintf("timeout policy field '%s' must be less than/equal to %v", [input.parameters.field, input.parameters.max])
+        }
+
+        violation[{"msg": msg}] {
+          got := input.review.object.spec.routes[_].timeoutPolicy[input.parameters.field]
+
+          time.parse_duration_ns(got) < time.parse_duration_ns(input.parameters.min)
+          msg := sprintf("timeout policy field '%s' must be greater than/equal to %v", [input.parameters.field, input.parameters.min])
+        }
