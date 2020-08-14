@@ -132,9 +132,10 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	check(t, err)
 
 	rh := &resourceEventHandler{
-		EventHandler:        eh,
-		EndpointsTranslator: et,
-		statusCache:         statusCache,
+		EventHandler:     eh,
+		EndpointsHandler: et,
+		Sequence:         eh.Sequence,
+		statusCache:      statusCache,
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -162,8 +163,10 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 // resourceEventHandler composes a contour.EventHandler and a contour.EndpointsTranslator
 // into a single ResourceEventHandler type.
 type resourceEventHandler struct {
-	*contour.EventHandler
-	*contour.EndpointsTranslator
+	EventHandler     cache.ResourceEventHandler
+	EndpointsHandler cache.ResourceEventHandler
+
+	Sequence chan int
 
 	statusCache *k8s.StatusCacher
 }
@@ -175,10 +178,10 @@ func (r *resourceEventHandler) OnAdd(obj interface{}) {
 
 	switch obj.(type) {
 	case *v1.Endpoints:
-		r.EndpointsTranslator.OnAdd(obj)
+		r.EndpointsHandler.OnAdd(obj)
 	default:
 		r.EventHandler.OnAdd(obj)
-		<-r.EventHandler.Sequence
+		<-r.Sequence
 	}
 }
 
@@ -190,10 +193,10 @@ func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 
 	switch newObj.(type) {
 	case *v1.Endpoints:
-		r.EndpointsTranslator.OnUpdate(oldObj, newObj)
+		r.EndpointsHandler.OnUpdate(oldObj, newObj)
 	default:
 		r.EventHandler.OnUpdate(oldObj, newObj)
-		<-r.EventHandler.Sequence
+		<-r.Sequence
 	}
 }
 
@@ -206,10 +209,10 @@ func (r *resourceEventHandler) OnDelete(obj interface{}) {
 
 	switch obj.(type) {
 	case *v1.Endpoints:
-		r.EndpointsTranslator.OnDelete(obj)
+		r.EndpointsHandler.OnDelete(obj)
 	default:
 		r.EventHandler.OnDelete(obj)
-		<-r.EventHandler.Sequence
+		<-r.Sequence
 	}
 }
 
