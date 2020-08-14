@@ -32,6 +32,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type RouteServiceName struct {
+	Name      string
+	Namespace string
+	Port      int32
+}
+
 // Builder builds a DAG.
 type Builder struct {
 
@@ -43,7 +49,7 @@ type Builder struct {
 	// permitInsecure field in HTTPProxy.
 	DisablePermitInsecure bool
 
-	services map[servicemeta]*Service
+	services map[RouteServiceName]*Service
 	secrets  map[types.NamespacedName]*Secret
 
 	virtualhosts       map[string]*VirtualHost
@@ -75,7 +81,7 @@ func (b *Builder) Build() *DAG {
 
 // reset (re)inialises the internal state of the builder.
 func (b *Builder) reset() {
-	b.services = make(map[servicemeta]*Service, len(b.services))
+	b.services = make(map[RouteServiceName]*Service, len(b.services))
 	b.secrets = make(map[types.NamespacedName]*Secret, len(b.secrets))
 	b.orphaned = make(map[types.NamespacedName]bool, len(b.orphaned))
 
@@ -93,12 +99,11 @@ func (b *Builder) lookupService(m types.NamespacedName, port intstr.IntOrString)
 			// can't handle, give up
 			return nil
 		}
-		sm := servicemeta{
-			name:      m.Name,
-			namespace: m.Namespace,
-			port:      int32(port.IntValue()),
-		}
-		return b.services[sm]
+		return b.services[RouteServiceName{
+			Name:      m.Name,
+			Namespace: m.Namespace,
+			Port:      int32(port.IntValue()),
+		}]
 	}
 
 	s := lookup()
@@ -109,24 +114,32 @@ func (b *Builder) lookupService(m types.NamespacedName, port intstr.IntOrString)
 	if !ok {
 		return nil, fmt.Errorf("service %q not found", m)
 	}
+
 	for i := range svc.Spec.Ports {
 		p := svc.Spec.Ports[i]
-		switch {
-		case int(p.Port) == port.IntValue():
-			return b.addService(svc, p), nil
-		case port.String() == p.Name:
+		if int(p.Port) == port.IntValue() || port.String() == p.Name {
+			switch p.Protocol {
+			case "", v1.ProtocolTCP:
+			default:
+				return nil, fmt.Errorf("unsupported service protocol %q", p.Protocol)
+			}
+
 			return b.addService(svc, p), nil
 		}
 	}
+
 	return nil, fmt.Errorf("port %q on service %q not matched", port.String(), m)
 }
 
 func (b *Builder) addService(svc *v1.Service, port v1.ServicePort) *Service {
+	name := k8s.NamespacedNameOf(svc)
 	s := &Service{
-		Name:        svc.Name,
-		Namespace:   svc.Namespace,
-		ServicePort: port,
-
+		Weighted: WeightedService{
+			ServiceName:      name.Name,
+			ServiceNamespace: name.Namespace,
+			ServicePort:      port,
+			Weight:           1,
+		},
 		Protocol:           upstreamProtocol(svc, port),
 		MaxConnections:     annotation.MaxConnections(svc),
 		MaxPendingRequests: annotation.MaxPendingRequests(svc),
@@ -134,7 +147,13 @@ func (b *Builder) addService(svc *v1.Service, port v1.ServicePort) *Service {
 		MaxRetries:         annotation.MaxRetries(svc),
 		ExternalName:       externalName(svc),
 	}
-	b.services[s.ToFullName()] = s
+
+	b.services[RouteServiceName{
+		Name:      name.Name,
+		Namespace: name.Namespace,
+		Port:      port.Port,
+	}] = s
+
 	return s
 }
 

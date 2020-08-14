@@ -48,7 +48,8 @@ func (c *ctx) writeVertex(v dag.Vertex) {
 	case *dag.Secret:
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{secret|%s/%s}"]`+"\n", v, v.Namespace(), v.Name())
 	case *dag.Service:
-		fmt.Fprintf(c.w, `"%p" [shape=record, label="{service|%s/%s:%d}"]`+"\n", v, v.Namespace, v.Name, v.ServicePort.Port)
+		fmt.Fprintf(c.w, `"%p" [shape=record, label="{service|%s/%s:%d}"]`+"\n",
+			v, v.Weighted.ServiceNamespace, v.Weighted.ServiceName, v.Weighted.ServicePort.Port)
 	case *dag.VirtualHost:
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{http://%s}"]`+"\n", v, v.Name)
 	case *dag.SecureVirtualHost:
