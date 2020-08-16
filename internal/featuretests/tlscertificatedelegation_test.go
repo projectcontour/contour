@@ -19,6 +19,7 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -47,19 +48,8 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	// add a secret object secret/wildcard.
 	rh.OnAdd(sec1)
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
-		},
-	}
+	s1 := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 8080})
 	rh.OnAdd(s1)
 
 	// add an httpproxy in a different namespace mentioning secret/wildcard.

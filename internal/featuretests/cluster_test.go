@@ -20,6 +20,7 @@ import (
 
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -49,18 +50,9 @@ func TestClusterLongServiceName(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol: "TCP",
-				Port:     8080,
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("default/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r").
+		WithPorts(v1.ServicePort{Port: 8080}),
+	)
 
 	// check that it's been translated correctly.
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
@@ -116,19 +108,8 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	rh.OnAdd(i2)
 
 	// s1 is a simple tcp 80 -> 8080 service.
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	s1 := fixture.NewService("default/kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	rh.OnAdd(s1)
 
@@ -140,20 +121,8 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	})
 
 	// s2 is the same as s2, but the service port has a name
-	s2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	s2 := fixture.NewService("default/kuard").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	// replace s1 with s2
 	rh.OnUpdate(s1, s2)
@@ -168,25 +137,11 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 
 	// s3 is like s2, but has a second named port. The k8s spec
 	// requires all ports to be named if there is more than one of them.
-	s3 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}, {
-				Name:       "https",
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(8443),
-			}},
-		},
-	}
+	s3 := fixture.NewService("default/kuard").
+		WithPorts(
+			v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)},
+			v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(8443)},
+		)
 
 	// replace s2 with s3
 	rh.OnUpdate(s2, s3)
@@ -202,20 +157,10 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	})
 
 	// s4 is s3 with the http port removed.
-	s4 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "https",
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(8443),
-			}},
-		},
-	}
+	s4 := fixture.NewService("default/kuard").
+		WithPorts(
+			v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(8443)},
+		)
 
 	// replace s3 with s4
 	rh.OnUpdate(s3, s4)
@@ -264,25 +209,11 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}, {
-				Name:       "https",
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(8443),
-			}},
-		},
-	}
+	s1 := fixture.NewService("default/kuard").
+		WithPorts(
+			v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)},
+			v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(8443)},
+		)
 
 	rh.OnAdd(s1)
 
@@ -295,19 +226,8 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	})
 
 	// s2 removes the name on port 80, moves it to port 443 and deletes the https port
-	s2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	s2 := fixture.NewService("default/kuard").
+		WithPorts(v1.ServicePort{Port: 443, TargetPort: intstr.FromInt(8080)})
 
 	rh.OnUpdate(s1, s2)
 
@@ -357,20 +277,10 @@ func TestIssue243(t *testing.T) {
 				},
 			},
 		}
+
 		rh.OnAdd(i1)
-		s1 := &v1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "kuard",
-				Namespace: "default",
-			},
-			Spec: v1.ServiceSpec{
-				Ports: []v1.ServicePort{{
-					Protocol:   "TCP",
-					Port:       80,
-					TargetPort: intstr.FromInt(8080),
-				}},
-			},
-		}
+		s1 := fixture.NewService("default/kuard").
+			WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 		rh.OnAdd(s1)
 		c.Request(clusterType).Equals(&v2.DiscoveryResponse{
@@ -406,19 +316,8 @@ func TestIssue247(t *testing.T) {
 	//   - port: 80
 	//     protocol: TCP
 	//     targetPort: kuard
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromString("kuard"),
-			}},
-		},
-	}
+	s1 := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("kuard")})
 
 	rh.OnAdd(s1)
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
@@ -463,34 +362,13 @@ func TestCDSResourceFiltering(t *testing.T) {
 	rh.OnAdd(i1)
 
 	// add two services, check that they are there
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromString("kuard"),
-			}},
-		},
-	}
+	s1 := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("kuard")})
+
 	rh.OnAdd(s1)
 
-	s2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "httpbin",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromString("httpbin"),
-			}},
-		},
-	}
+	s2 := fixture.NewService("httpbin").
+		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromString("httpbin")})
 
 	rh.OnAdd(s2)
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
@@ -533,25 +411,12 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"projectcontour.io/max-connections":      "9000",
-				"projectcontour.io/max-pending-requests": "4096",
-				"projectcontour.io/max-requests":         "404",
-				"projectcontour.io/max-retries":          "7",
-			},
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromString("8080"),
-			}},
-		},
-	}
+	s1 := fixture.NewService("kuard").
+		Annotate("projectcontour.io/max-connections", "9000").
+		Annotate("projectcontour.io/max-pending-requests", "4096").
+		Annotate("projectcontour.io/max-requests", "404").
+		Annotate("projectcontour.io/max-retries", "7").
+		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromString("8080")})
 
 	rh.OnAdd(s1)
 
@@ -580,24 +445,12 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 	})
 
 	// update s1 with slightly weird values
-	s2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"projectcontour.io/max-pending-requests": "9999",
-				"projectcontour.io/max-requests":         "1e6",
-				"projectcontour.io/max-retries":          "0",
-			},
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromString("8080"),
-			}},
-		},
-	}
+	s2 := fixture.NewService("kuard").
+		Annotate("projectcontour.io/max-pending-requests", "9999").
+		Annotate("projectcontour.io/max-requests", "1e6").
+		Annotate("projectcontour.io/max-retries", "0").
+		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromString("8080")})
+
 	rh.OnUpdate(s1, s2)
 
 	// check that it's been translated correctly.
@@ -628,19 +481,9 @@ func TestClusterPerServiceParameters(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
+	)
 
 	rh.OnAdd(&projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -686,19 +529,9 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
+	)
 
 	rh.OnAdd(&projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -764,19 +597,9 @@ func TestClusterWithHealthChecks(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
+	)
 
 	rh.OnAdd(&projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -814,19 +637,9 @@ func TestUnreferencedService(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
+	)
 
 	rh.OnAdd(&projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -865,19 +678,9 @@ func TestUnreferencedService(t *testing.T) {
 	})
 
 	// This service which is added should not cause a DAG rebuild
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard-notreferenced",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard-notreferenced").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+	)
 
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,

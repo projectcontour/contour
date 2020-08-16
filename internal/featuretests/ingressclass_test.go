@@ -16,13 +16,12 @@ package featuretests
 import (
 	"testing"
 
-	"github.com/projectcontour/contour/internal/fixture"
-
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -42,19 +41,8 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 	})
 	defer done()
 
-	svc := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: Namespace,
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	svc := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc)
 
 	// Ingress
@@ -278,19 +266,8 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
 	defer done()
 
-	svc := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: Namespace,
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	svc := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc)
 
 	// Ingress
@@ -527,16 +504,8 @@ func TestIngressClassUpdate(t *testing.T) {
 	})
 	defer done()
 
-	svc := &v1.Service{
-		ObjectMeta: fixture.ObjectMeta("default/kuard"),
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	svc := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc)
 
 	vhost := &projcontour.HTTPProxy{

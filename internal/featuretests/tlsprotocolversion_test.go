@@ -22,6 +22,7 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,19 +42,8 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 	}
 	rh.OnAdd(sec1)
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: sec1.Namespace,
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	}
+	s1 := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(s1)
 
 	i1 := &v1beta1.Ingress{

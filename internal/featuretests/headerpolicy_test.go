@@ -33,19 +33,9 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "svc1",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("svc1").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+	)
 
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
 		projcontour.HTTPProxySpec{
@@ -153,24 +143,17 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "externalname",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"projectcontour.io/upstream-protocol.tls": "https,443",
-			},
-		},
-		Spec: v1.ServiceSpec{
+	rh.OnAdd(fixture.NewService("externalname").
+		Annotate("projectcontour.io/upstream-protocol.tls", "https,443").
+		WithSpec(v1.ServiceSpec{
 			ExternalName: "goodbye.planet",
+			Type:         v1.ServiceTypeExternalName,
 			Ports: []v1.ServicePort{{
-				Protocol: "TCP",
-				Port:     443,
-				Name:     "https",
+				Port: 443,
+				Name: "https",
 			}},
-			Type: v1.ServiceTypeExternalName,
-		},
-	})
+		}),
+	)
 
 	rh.OnAdd(&v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

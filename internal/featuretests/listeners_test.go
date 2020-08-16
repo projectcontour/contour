@@ -16,15 +16,14 @@ package featuretests
 import (
 	"testing"
 
-	"github.com/projectcontour/contour/internal/contour"
-
+	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,19 +59,8 @@ func TestNonTLSListener(t *testing.T) {
 		},
 	}
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
 
 	// add it and assert that we now have a ingress_http listener
 	rh.OnAdd(i1)
@@ -190,19 +178,8 @@ func TestTLSListener(t *testing.T) {
 		},
 	}
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
 
 	// add secret
 	rh.OnAdd(s1)
@@ -319,19 +296,8 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
-	svc1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: secret1.Namespace,
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	}
+	svc1 := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80})
 
 	// p1 is a tls httpproxy
 	p1 := &projcontour.HTTPProxy{
@@ -525,19 +491,8 @@ func TestLDSFilter(t *testing.T) {
 		},
 	}
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
 
 	// add secret
 	rh.OnAdd(s1)
@@ -626,19 +581,9 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 			},
 		},
 	}
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	})
+
+	rh.OnAdd(fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
 
 	// add it and assert that we now have a ingress_http listener using
 	// the proxy protocol (the true param to filterchain)
@@ -716,19 +661,8 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
 
 	// add ingress and assert the existence of ingress_http and ingres_https and both
 	// are using proxy protocol
@@ -825,19 +759,8 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 		Nonce:   "0",
 	})
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
 
 	// add ingress and assert the existence of ingress_http and ingres_https and both
 	// are using proxy protocol
@@ -918,19 +841,8 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 		},
 	}
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
 
 	// add secret
 	rh.OnAdd(s1)
@@ -1035,19 +947,8 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 		},
 	}
 
-	svc1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     8080,
-			}},
-		},
-	}
+	svc1 := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Name: "http", Port: 8080})
 
 	// add secret
 	rh.OnAdd(s1)
@@ -1110,20 +1011,8 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 	}
 	rh.OnAdd(secret1)
 
-	svc1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	}
-	rh.OnAdd(svc1)
+	rh.OnAdd(fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
 
 	// p1 is a tls httpproxy
 	p1 := &projcontour.HTTPProxy{
@@ -1259,20 +1148,8 @@ func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	svc1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "green",
-			Namespace: "marketing",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	}
-	rh.OnAdd(svc1)
+	rh.OnAdd(fixture.NewService("marketing/green").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
 
 	child := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1288,7 +1165,7 @@ func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 					Prefix: "/",
 				}},
 				Services: []projcontour.Service{{
-					Name: svc1.Name,
+					Name: "green",
 					Port: 80,
 				}},
 			}},

@@ -16,16 +16,15 @@ package featuretests
 import (
 	"testing"
 
-	"github.com/projectcontour/contour/internal/fixture"
-	"k8s.io/client-go/tools/cache"
-
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/tools/cache"
 )
 
 // Update helper to modify a proxy and call rh.OnUpdate. Returns the modified object.
@@ -42,16 +41,8 @@ func basic(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: fixture.ObjectMeta("default/kuard"),
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
 
 	vhost := fixture.NewProxy("kuard").WithSpec(
 		projcontour.HTTPProxySpec{
@@ -226,16 +217,8 @@ func multiInclude(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: fixture.ObjectMeta("default/kuard"),
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
 
 	vhost1 := fixture.NewProxy("host1").WithSpec(
 		projcontour.HTTPProxySpec{
@@ -355,16 +338,8 @@ func replaceWithSlash(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: fixture.ObjectMeta("default/kuard"),
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
 
 	vhost1 := fixture.NewProxy("host1").WithSpec(
 		projcontour.HTTPProxySpec{
@@ -494,16 +469,8 @@ func artifactoryDocker(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: fixture.ObjectMeta("artifactory/service"),
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("artifactory/service").
+		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
 
 	rh.OnAdd(fixture.NewProxy("artifactory/routes").WithSpec(
 		projcontour.HTTPProxySpec{

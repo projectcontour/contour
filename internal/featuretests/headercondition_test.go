@@ -30,47 +30,18 @@ import (
 func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "svc1",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "svc2",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("svc1").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+	)
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "svc3",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("svc2").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+	)
+
+	rh.OnAdd(fixture.NewService("svc3").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+	)
 
 	proxy1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{

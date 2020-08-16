@@ -35,21 +35,15 @@ func TestExternalNameService(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
+	s1 := fixture.NewService("kuard").
+		WithSpec(v1.ServiceSpec{
 			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
 				Port:       80,
 				TargetPort: intstr.FromInt(8080),
 			}},
 			ExternalName: "foo.io",
 			Type:         v1.ServiceTypeExternalName,
-		},
-	}
+		})
 
 	i1 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
