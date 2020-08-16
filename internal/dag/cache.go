@@ -112,7 +112,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 				kc.WithField("name", om.GetName()).
 					WithField("namespace", om.GetNamespace()).
 					WithField("kind", kind).
-					WithField("version", "v1").
+					WithField("version", k8s.VersionOf(obj)).
 					WithField("annotation", key).
 					Error("ignoring invalid or unsupported annotation")
 			}
@@ -128,7 +128,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 				kc.WithField("name", om.GetName()).
 					WithField("namespace", om.GetNamespace()).
 					WithField("kind", "Secret").
-					WithField("version", "v1").
+					WithField("version", k8s.VersionOf(obj)).
 					Error(err)
 			}
 			return false
