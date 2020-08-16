@@ -17,7 +17,7 @@ func TestKindOf(t *testing.T) {
 		{"Secret", &v1.Secret{}},
 		{"Service", &v1.Service{}},
 		{"Endpoints", &v1.Endpoints{}},
-		{"", &v1.Pod{}},
+		{"Pod", &v1.Pod{}},
 		{"Ingress", &v1beta1.Ingress{}},
 		{"HTTPProxy", &projectcontour.HTTPProxy{}},
 		{"TLSCertificateDelegation", &projectcontour.TLSCertificateDelegation{}},
@@ -34,6 +34,34 @@ func TestKindOf(t *testing.T) {
 		if kindOf != c.Kind {
 			t.Errorf("got %q for KindOf(%T), wanted %q",
 				kindOf, c.Obj, c.Kind)
+		}
+	}
+}
+
+func TestVersionOf(t *testing.T) {
+	cases := []struct {
+		Version string
+		Obj     interface{}
+	}{
+		{"v1", &v1.Secret{}},
+		{"v1", &v1.Service{}},
+		{"v1", &v1.Endpoints{}},
+		{"networking.k8s.io/v1beta1", &v1beta1.Ingress{}},
+		{"projectcontour.io/v1", &projectcontour.HTTPProxy{}},
+		{"projectcontour.io/v1", &projectcontour.TLSCertificateDelegation{}},
+		{"test.projectcontour.io/v1", &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "test.projectcontour.io/v1",
+				"kind":       "Foo",
+			}},
+		},
+	}
+
+	for _, c := range cases {
+		kindOf := VersionOf(c.Obj)
+		if kindOf != c.Version {
+			t.Errorf("got %q for VersionOf(%T), wanted %q",
+				kindOf, c.Obj, c.Version)
 		}
 	}
 }
