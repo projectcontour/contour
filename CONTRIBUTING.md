@@ -78,7 +78,7 @@ It follows from the previous section, so if you haven't set up your Go workspace
 This project operates according to the _talk, then code_ rule.
 If you plan to submit a pull request for anything more than a typo or obvious bug fix, first you _should_ [raise an issue][6] to discuss your proposal, before submitting any code.
 
-Depending on the size of the feature you may be expected to first write a design proposal. Follow the [Proposal Process](https://github.com/projectcontour/community/blob/main/GOVERNANCE.md#proposal-process) documented in Contour's Governance.
+Depending on the size of the feature you may be expected to first write a design proposal. Follow the [Proposal Process](https://github.com/projectcontour/community/blob/master/GOVERNANCE.md#proposal-process) documented in Contour's Governance.
 
 ### Commit message and PR guidelines
 
