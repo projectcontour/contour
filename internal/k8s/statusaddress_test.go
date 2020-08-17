@@ -19,6 +19,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
+	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -26,27 +27,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func testLogger(t *testing.T) logrus.FieldLogger {
-	log := logrus.New()
-	log.Out = &testWriter{t}
-	return log
-}
-
-type testWriter struct {
-	*testing.T
-}
-
-func (t *testWriter) Write(buf []byte) (int, error) {
-	t.Logf("%s", buf)
-	return len(buf), nil
-}
-
 func TestServiceStatusLoadBalancerWatcherOnAdd(t *testing.T) {
 	lbstatus := make(chan v1.LoadBalancerStatus, 1)
 	sw := ServiceStatusLoadBalancerWatcher{
 		ServiceName: "envoy",
 		LBStatus:    lbstatus,
-		Log:         testLogger(t),
+		Log:         fixture.NewTestLogger(t),
 	}
 
 	recv := func() (v1.LoadBalancerStatus, bool) {
@@ -94,7 +80,7 @@ func TestServiceStatusLoadBalancerWatcherOnUpdate(t *testing.T) {
 	sw := ServiceStatusLoadBalancerWatcher{
 		ServiceName: "envoy",
 		LBStatus:    lbstatus,
-		Log:         testLogger(t),
+		Log:         fixture.NewTestLogger(t),
 	}
 
 	recv := func() (v1.LoadBalancerStatus, bool) {
@@ -144,7 +130,7 @@ func TestServiceStatusLoadBalancerWatcherOnDelete(t *testing.T) {
 	sw := ServiceStatusLoadBalancerWatcher{
 		ServiceName: "envoy",
 		LBStatus:    lbstatus,
-		Log:         testLogger(t),
+		Log:         fixture.NewTestLogger(t),
 	}
 
 	recv := func() (v1.LoadBalancerStatus, bool) {
