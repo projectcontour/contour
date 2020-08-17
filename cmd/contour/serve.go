@@ -437,7 +437,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 		go func() {
 			<-stop
-			rpcServer.GracefulStop()
+
+			// We don't use GracefulStop here because envoy
+			// has long-lived hanging xDS requests. There's no
+			// mechanism to make those pending requests fail,
+			// so we forcibly terminate the TCP sessions.
+			rpcServer.Stop()
 		}()
 
 		return rpcServer.Serve(l)
