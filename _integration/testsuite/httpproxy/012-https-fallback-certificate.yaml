@@ -7,6 +7,13 @@ import data.contour.resources.configmap
 Namespace := "projectcontour"
 Config := sprintf("%s/contour",[Namespace])
 
+get_fallback() = fallback {
+  conf := configmap.get_data(Config)
+  contour := yaml.unmarshal(object.get(conf, "contour.yaml", "{}"))
+  tls := object.get(contour, "tls", {})
+  fallback := object.get(tls, "fallback-certificate", {})
+}
+
 # Skip if the configmap isn't present.
 skip[msg] {
   not resources.is_present("configmaps", Config)
@@ -14,15 +21,18 @@ skip[msg] {
 }
 
 skip[msg] {
-  conf := configmap.get_data(Config)
-  contour := yaml.unmarshal(object.get(conf, "contour.yaml", "{}"))
-  tls := object.get(contour, "tls", {})
-  fallback := object.get(tls, "fallback-certificate", {})
+  fallback := get_fallback()
+  is_null(fallback) # fallback-certificate is an empty (nil) YAML map
+  msg := "Contour fallback certificate is not configured"
+}
 
-  name := object.get(fallback, "name", "")
+skip[msg] {
+  fallback := get_fallback()
+  not is_null(fallback)
 
   # Skip if there's no fallback certificate name.
-  name == ""
+  object.get(fallback, "name", "") == ""
+
   msg := "Contour fallback certificate is not configured"
 }
 
