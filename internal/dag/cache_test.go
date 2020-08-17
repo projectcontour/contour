@@ -20,7 +20,6 @@ import (
 	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -737,7 +736,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			cache := KubernetesCache{
-				FieldLogger: testLogger(t),
+				FieldLogger: fixture.NewTestLogger(t),
 			}
 			for _, p := range tc.pre {
 				cache.Insert(p)
@@ -753,7 +752,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 func TestKubernetesCacheRemove(t *testing.T) {
 	cache := func(objs ...interface{}) *KubernetesCache {
 		cache := KubernetesCache{
-			FieldLogger: testLogger(t),
+			FieldLogger: fixture.NewTestLogger(t),
 		}
 		for _, o := range objs {
 			cache.Insert(o)
@@ -958,21 +957,4 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			}
 		})
 	}
-}
-
-func testLogger(t *testing.T) logrus.FieldLogger {
-	t.Helper()
-	log := logrus.New()
-	log.Out = &testWriter{t}
-	return log
-}
-
-type testWriter struct {
-	*testing.T
-}
-
-func (t *testWriter) Write(buf []byte) (int, error) {
-	t.Helper()
-	t.Logf("%s", buf)
-	return len(buf), nil
 }

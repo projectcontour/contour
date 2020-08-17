@@ -19,6 +19,7 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/metrics"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,7 +42,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 			builder := dag.Builder{
 				Source: dag.KubernetesCache{
 					RootNamespaces: tc.rootNamespaces,
-					FieldLogger:    testLogger(t),
+					FieldLogger:    fixture.NewTestLogger(t),
 				},
 			}
 

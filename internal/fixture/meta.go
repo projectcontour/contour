@@ -14,7 +14,8 @@
 package fixture
 
 import (
-	"github.com/projectcontour/contour/internal/k8s"
+	"strings"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -22,10 +23,22 @@ import (
 // "namespace/name" into a metav1.ObjectMeta struct. If the namespace
 // portion is omitted, then the default namespace is filled in.
 func ObjectMeta(nameStr string) metav1.ObjectMeta {
-	name := k8s.NamespacedNameFrom(nameStr)
-	return metav1.ObjectMeta{
-		Name:        name.Name,
-		Namespace:   name.Namespace,
-		Annotations: map[string]string{},
+	// NOTE: We don't use k8s.NamespacedNameFrom here, because that
+	// would generate an import cycle.
+	v := strings.SplitN(nameStr, "/", 2)
+	switch len(v) {
+	case 1:
+		// No '/' separator.
+		return metav1.ObjectMeta{
+			Name:        v[0],
+			Namespace:   metav1.NamespaceDefault,
+			Annotations: map[string]string{},
+		}
+	default:
+		return metav1.ObjectMeta{
+			Name:        v[1],
+			Namespace:   v[0],
+			Annotations: map[string]string{},
+		}
 	}
 }

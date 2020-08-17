@@ -20,6 +20,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -222,11 +223,10 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 		},
 	}
 
-	log := testLogger(t)
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			et := &EndpointsTranslator{
-				FieldLogger: log,
+				FieldLogger: fixture.NewTestLogger(t),
 			}
 			et.OnAdd(tc.ep)
 			got := et.Contents()
@@ -323,11 +323,10 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 		},
 	}
 
-	log := testLogger(t)
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			et := &EndpointsTranslator{
-				FieldLogger: log,
+				FieldLogger: fixture.NewTestLogger(t),
 			}
 			tc.setup(et)
 			et.OnDelete(tc.ep)

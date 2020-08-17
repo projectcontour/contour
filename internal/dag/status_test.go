@@ -19,6 +19,7 @@ import (
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
+	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -2286,7 +2287,7 @@ func TestDAGStatus(t *testing.T) {
 				FallbackCertificate: tc.fallbackCertificate,
 				Source: KubernetesCache{
 					RootNamespaces: []string{"roots", "marketing"},
-					FieldLogger:    testLogger(t),
+					FieldLogger:    fixture.NewTestLogger(t),
 				},
 			}
 			for _, o := range tc.objs {
