@@ -1406,7 +1406,7 @@ Some examples of invalid configurations that Contour provides statuses for:
 - Contradictory header conditions on a route, e.g. a "contains" and "notcontains" condition for the same header and value.
 
  [1]: https://kubernetes.io/docs/concepts/services-networking/ingress/
- [2]: https://github.com/kubernetes/ingress-nginx/blob/main/docs/user-guide/nginx-configuration/annotations.md
+ [2]: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
  [3]: {{site.github.repository_url}}/tree/{{page.version}}/examples/example-workload/httpproxy
  [4]: https://www.envoyproxy.io/docs/envoy/v1.14.2/api-v2/api/v2/route/route_components.proto#envoy-api-field-route-routeaction-timeout
  [5]: https://godoc.org/time#ParseDuration
