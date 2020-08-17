@@ -20,8 +20,8 @@ The `latest` tag follows the most recent stable version of Contour.
 
 ## Development
 
-`docker.io/projectcontour/contour:master`
+`docker.io/projectcontour/contour:main`
 
-The `master` tag follows the latest commit to land on the `master` branch.
+The `main` tag follows the latest commit to land on the `main` branch.
 
 [1]: http://semver.org/

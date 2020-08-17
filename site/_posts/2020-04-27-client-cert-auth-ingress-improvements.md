@@ -94,7 +94,7 @@ Please consider coming to our community meeting, or contact us: either via an is
 If you are interested in contributing, a great place to start is to comment on one of the issues labeled with [Help Wanted]({{site.github.repository_url}}/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+label%3A%22Help+wanted%22+) and work with the team on how to resolve them. 
 
 ## Are you a Contour user? We would love to know!
-If you're using Contour and want to add your organization to our adopters list, please visit this [page](https://github.com/projectcontour/contour/blob/master/ADOPTERS.md).
+If you're using Contour and want to add your organization to our adopters list, please visit this [page](https://github.com/projectcontour/contour/blob/main/ADOPTERS.md).
 If you prefer to keep your organization name anonymous but still give us feedback into your usage and scenarios for Contour, please post on this [GitHub thread](https://github.com/projectcontour/contour/issues/1269)          
 
 ## Thanks to our contributors

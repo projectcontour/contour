@@ -29,9 +29,9 @@ readonly REPO=$(cd ${HERE}/../.. && pwd)
 
 # List of tags to apply to the image built from the working directory.
 # The "working" tag is applied to unambigiously reference the working
-# image, since "master" and "latest" could also come from the Docker
+# image, since "main" and "latest" could also come from the Docker
 # registry.
-readonly TAGS="master latest working"
+readonly TAGS="main latest working"
 
 kind::cluster::exists() {
     ${KIND} get clusters | grep -q "$1"

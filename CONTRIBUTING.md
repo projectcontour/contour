@@ -89,8 +89,8 @@ Depending on the size of the feature you may be expected to first write a design
 with a colon as delimiter. For example 'docs:', 'internal/(packagename):', 'design:' or something similar.
 - Do not merge commits that don't relate to the affected issue (e.g. "Updating from PR comments", etc). Should
 the need to cherrypick a commit or rollback arise, it should be clear what a specific commit's purpose is.
-- If master has moved on, you'll need to rebase before we can merge,
-so merging upstream master or rebasing from upstream before opening your
+- If main has moved on, you'll need to rebase before we can merge,
+so merging upstream main or rebasing from upstream before opening your
 PR will probably save you some time.
 
 Pull requests *must* include a `Fixes #NNNN` or `Updates #NNNN` comment.
@@ -141,7 +141,7 @@ The maintainer should review commit messages for each commit and make sure that 
 Before a change is submitted it should pass all the pre commit CI jobs.
 If there are unrelated test failures the change can be merged so long as a reference to an issue that tracks the test failures is provided.
 
-Once a change lands in master it will be built and available at this tag, `docker.io/projectcontour/contour:master`.
+Once a change lands in main it will be built and available at this tag, `docker.io/projectcontour/contour:main`.
 You can read more about the available contour images in the [tagging][7] document.
 
 ### Build an image
@@ -234,4 +234,4 @@ By making a contribution to this project, I certify that:
 [5]: https://developercertificate.org/
 [6]: https://github.com/projectcontour/contour/issues/new/choose
 [6]: site/_resources/tagging.md
-[7]: site/docs/master/deploy-options.md
+[7]: site/docs/main/deploy-options.md

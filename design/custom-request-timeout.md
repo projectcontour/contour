@@ -15,7 +15,7 @@ This document describes the design of a new resource in IngressRoute for custom 
 
 # Background
 
-Contour supports custom request timeout and custom retry attempts via [Ingress Annotations](https://github.com/projectcontour/contour/blob/master/docs/annotations.md).
+Contour supports custom request timeout and custom retry attempts via [Ingress Annotations](https://github.com/projectcontour/contour/blob/main/docs/annotations.md).
 We wish to expose the same same functionality has been requested via IngressRoute as well.
 
 Additionally, request and retry behavior apply to any interaction that 

@@ -40,10 +40,10 @@ run::sed() {
 
 # Update the image tags in the Contour & Envoy manifests to the new version.
 for example in examples/contour/03-envoy.yaml examples/contour/03-contour.yaml examples/contour/02-job-certgen.yaml ; do
-    # The version might be master or OLDVERS depending on whether we are
-    # tagging from the release branch or from master.
+    # The version might be main or OLDVERS depending on whether we are
+    # tagging from the release branch or from main.
     run::sed \
-        "-es|docker.io/projectcontour/contour:master|$IMG|" \
+        "-es|docker.io/projectcontour/contour:main|$IMG|" \
         "-es|docker.io/projectcontour/contour:$OLDVERS|$IMG|" \
         "$example"
 done
@@ -51,7 +51,7 @@ done
 # Update the certgen job name to the new version.
 for example in examples/contour/02-job-certgen.yaml ; do
     run::sed \
-        "-es|contour-certgen-master|contour-certgen-$NEWVERS|" \
+        "-es|contour-certgen-main|contour-certgen-$NEWVERS|" \
         "-es|contour-certgen-$OLDVERS|contour-certgen-$NEWVERS|" \
         "$example"
 done

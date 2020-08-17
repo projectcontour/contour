@@ -49,7 +49,7 @@ This is because a regex rewrite can be used to re-order arbitratry portions of t
 
 ## High Level Design
 
-Add a `PathRewrite` field to the HTTPProxy [Route](https://github.com/projectcontour/contour/blob/master/apis/projectcontour/v1/httpproxy.go#L125) object.
+Add a `PathRewrite` field to the HTTPProxy [Route](https://github.com/projectcontour/contour/blob/main/apis/projectcontour/v1/httpproxy.go#L125) object.
 This allows us to specify different kinds of rewrite for URL paths without also needing to specify a specific kind of request rewriting (i.e. we can add host rewrite later).
 
 Locating the `PathRewritePolicy` on the `Route` means that rewriting is controlled by the team that controls the leaf HTTPProxy document.

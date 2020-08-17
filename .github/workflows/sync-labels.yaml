@@ -16,12 +16,12 @@ jobs:
     name: Sync Labels
     runs-on: ubuntu-latest
     steps:
-    # Note, we check out master. We don't want un-merged PRs to whack
+    # Note, we check out main. We don't want un-merged PRs to whack
     # labels globally.
-    - name: Check out master
+    - name: Check out main
       uses: actions/checkout@v2
       with:
-        ref: master
+        ref: main
     # We need this token in a file so the syncer can consume it from
     # within the Docker container.
     - name: Export the GitHub token

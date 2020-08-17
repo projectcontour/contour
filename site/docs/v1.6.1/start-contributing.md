@@ -10,7 +10,7 @@ Thanks for taking the time to join our community and start contributing!
   - Meeting notes can be found [here](https://hackmd.io/84Xbl4WBTpm7OBhaOAsSiw).
   - Meetings are recorded and can be found [here](https://www.youtube.com/playlist?list=PL7bmigfV0EqTBsPrnCkzhu0R4SAWnBjLj).
 
-[1]: {{site.github.repository_url}}/blob/master/CODE_OF_CONDUCT.md
-[2]: {{site.github.repository_url}}/blob/master/CONTRIBUTING.md
+[1]: {{site.github.repository_url}}/blob/main/CODE_OF_CONDUCT.md
+[2]: {{site.github.repository_url}}/blob/main/CONTRIBUTING.md
 [3]: {{site.github.repository_url}}/issues
 [4]: {{site.footer_social_links.Slack.url}}

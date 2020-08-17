@@ -118,4 +118,4 @@ As an Ingress controller, we on the Contour team have been watching the upstream
 
 
 ## We want your feedback
-Thanks for reading! We’d love to hear from you about these changes to Contour’s direction. Please come to our [community meeting](https://projectcontour.io/community/), join our [Slack channel](https://kubernetes.slack.com/messages/contour), and check out [our roadmap](https://github.com/projectcontour/community/blob/master/ROADMAP.md).
+Thanks for reading! We’d love to hear from you about these changes to Contour’s direction. Please come to our [community meeting](https://projectcontour.io/community/), join our [Slack channel](https://kubernetes.slack.com/messages/contour), and check out [our roadmap](https://github.com/projectcontour/community/blob/main/ROADMAP.md).
