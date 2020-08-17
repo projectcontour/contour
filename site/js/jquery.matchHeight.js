@@ -1,5 +1,5 @@
 /**
-* jquery-match-height main by @liabru
+* jquery-match-height master by @liabru
 * http://brm.io/jquery-match-height/
 * License: MIT
 */
@@ -143,7 +143,7 @@
   *  plugin global options
   */
 
-  matchHeight.version = 'main';
+  matchHeight.version = 'master';
   matchHeight._groups = [];
   matchHeight._throttle = 80;
   matchHeight._maintainScroll = false;
