@@ -54,7 +54,7 @@ GO_LDFLAGS := -s -w $(patsubst %,-X %, $(GO_BUILD_VARS))
 # this with make because it's not worth pulling the tricks needed to handle
 # the embedded whitespace.
 #
-# See https://github.com/opencontainers/image-spec/blob/main/annotations.md
+# See https://github.com/opencontainers/image-spec/blob/master/annotations.md
 DOCKER_BUILD_LABELS = \
 	--label "org.opencontainers.image.created=${ISO_8601_DATE}" \
 	--label "org.opencontainers.image.url=https://projectcontour.io/" \
