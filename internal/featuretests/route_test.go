@@ -25,6 +25,7 @@ import (
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -65,20 +66,8 @@ func TestEditIngress(t *testing.T) {
 
 	meta := metav1.ObjectMeta{Name: "kuard", Namespace: "default"}
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	s1 := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s1)
 
 	// add default/kuard to translator.
@@ -183,20 +172,8 @@ func TestIngressPathRouteWithoutHost(t *testing.T) {
 		},
 	})
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hello",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	s1 := fixture.NewService("hello").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s1)
 
 	// check that it's been translated correctly.
@@ -242,36 +219,12 @@ func TestEditIngressInPlace(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "wowie",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	s1 := fixture.NewService("wowie").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s1)
 
-	s2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kerpow",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       9000,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	s2 := fixture.NewService("kerpow").
+		WithPorts(v1.ServicePort{Name: "http", Port: 9000, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s2)
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
@@ -515,20 +468,8 @@ func TestSSLRedirectOverlay(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "app-service",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("app-service").
+		WithPorts(v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)}))
 
 	// i2 is an overlay to add the let's encrypt handler.
 	i2 := &v1beta1.Ingress{
@@ -552,20 +493,8 @@ func TestSSLRedirectOverlay(t *testing.T) {
 	}
 	rh.OnAdd(i2)
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "challenge-service",
-			Namespace: "nginx-ingress",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8009,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("nginx-ingress/challenge-service").
+		WithPorts(v1.ServicePort{Name: "http", Port: 8009, TargetPort: intstr.FromInt(8080)}))
 
 	assertRDS(t, c, "5", virtualhosts(
 		envoy.VirtualHost("example.com",
@@ -608,19 +537,8 @@ func TestInvalidCertInIngress(t *testing.T) {
 	rh.OnAdd(secret)
 
 	// Create a service
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
 	// Create an ingress that uses the invalid secret
 	rh.OnAdd(&v1beta1.Ingress{
@@ -716,20 +634,8 @@ func TestIssue257(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	s1 := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s1)
 
 	assertRDS(t, c, "2", virtualhosts(
@@ -840,20 +746,8 @@ func TestRDSFilter(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "app-service",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	s1 := fixture.NewService("app-service").
+		WithPorts(v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s1)
 
 	// i2 is an overlay to add the let's encrypt handler.
@@ -878,20 +772,8 @@ func TestRDSFilter(t *testing.T) {
 	}
 	rh.OnAdd(i2)
 
-	s2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "challenge-service",
-			Namespace: "nginx-ingress",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8009,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	s2 := fixture.NewService("nginx-ingress/challenge-service").
+		WithPorts(v1.ServicePort{Name: "http", Port: 8009, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s2)
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
@@ -933,40 +815,14 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}, {
-				Name:       "alt",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)},
+			v1.ServicePort{Name: "alt", Port: 8080, TargetPort: intstr.FromInt(8080)}),
+	)
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-gui",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("test-gui").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)}),
+	)
 
 	rh.OnAdd(&v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1044,19 +900,8 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	})
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
 
 	i1 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1181,20 +1026,8 @@ func TestRDSAssertNoDataRaceDuringInsertAndStream(t *testing.T) {
 
 	stop := make(chan struct{})
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	s1 := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s1)
 
 	go func() {
@@ -1279,21 +1112,8 @@ func TestRDSIngressSpecMissingHTTPKey(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "network-test",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       9001,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
-	rh.OnAdd(s1)
+	rh.OnAdd(fixture.NewService("network-test").
+		WithPorts(v1.ServicePort{Name: "http", Port: 9001, TargetPort: intstr.FromInt(8080)}))
 
 	assertRDS(t, c, "2", virtualhosts(
 		envoy.VirtualHost("test2.test.com",
@@ -1309,19 +1129,8 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
 	p1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1394,19 +1203,8 @@ func TestRouteWithTLS(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
 	rh.OnAdd(&v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1473,33 +1271,11 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "svc2",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("svc2").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
 	rh.OnAdd(&v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1585,33 +1361,11 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "svc2",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("svc2").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
 	rh.OnAdd(&v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1698,20 +1452,8 @@ func TestRoutePrefixRouteRegex(t *testing.T) {
 
 	meta := metav1.ObjectMeta{Name: "kuard", Namespace: "default"}
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	s1 := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s1)
 
 	// add default/kuard to translator.
@@ -1833,19 +1575,8 @@ func TestHTTPProxyRouteWithAServiceWeight(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
 	proxy1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1914,19 +1645,8 @@ func TestHTTPProxyRouteWithTLS(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
 	rh.OnAdd(&v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1991,33 +1711,11 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "svc2",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("svc2").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
 	rh.OnAdd(&v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2099,33 +1797,11 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testin
 
 	defer done()
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
-	rh.OnAdd(&v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "svc2",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	})
+	rh.OnAdd(fixture.NewService("svc2").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
 	rh.OnAdd(&v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2205,19 +1881,8 @@ func TestRDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	svc1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "green",
-			Namespace: "marketing",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	}
+	svc1 := fixture.NewService("marketing/green").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(svc1)
 
 	child := &projcontour.HTTPProxy{
@@ -2279,52 +1944,16 @@ func TestRDSHTTPProxyDuplicateIncludeConditions(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	svc1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	svc1 := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc1)
 
-	svc2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "teama",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	svc2 := fixture.NewService("teama/kuard").
+		WithPorts(v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc2)
 
-	svc3 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "teamb",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	svc3 := fixture.NewService("teamb/kuard").
+		WithPorts(v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc3)
 
 	proxyRoot := &projcontour.HTTPProxy{

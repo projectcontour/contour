@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,23 +30,9 @@ func TestUpstreamProtocolTLS(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"contour.heptio.com/upstream-protocol.tls": "securebackend",
-			},
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "securebackend",
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(8888),
-			}},
-		},
-	}
+	s1 := fixture.NewService("kuard").
+		Annotate("contour.heptio.com/upstream-protocol.tls", "securebackend").
+		WithPorts(v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8888)})
 	rh.OnAdd(s1)
 
 	i1 := &v1beta1.Ingress{
@@ -69,16 +56,9 @@ func TestUpstreamProtocolTLS(t *testing.T) {
 		TypeUrl: clusterType,
 	})
 
-	s2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"projectcontour.io/upstream-protocol.tls": "securebackend",
-			},
-		},
-		Spec: s1.Spec,
-	}
+	s2 := fixture.NewService("kuard").
+		Annotate("projectcontour.io/upstream-protocol.tls", "securebackend").
+		WithPorts(v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8888)})
 	rh.OnUpdate(s1, s2)
 
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
@@ -95,23 +75,9 @@ func TestUpstreamProtocolH2C(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"contour.heptio.com/upstream-protocol.h2c": "securebackend",
-			},
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "securebackend",
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(8888),
-			}},
-		},
-	}
+	s1 := fixture.NewService("kuard").
+		Annotate("contour.heptio.com/upstream-protocol.h2c", "securebackend").
+		WithPorts(v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8888)})
 	rh.OnAdd(s1)
 
 	i1 := &v1beta1.Ingress{
@@ -135,16 +101,9 @@ func TestUpstreamProtocolH2C(t *testing.T) {
 		TypeUrl: clusterType,
 	})
 
-	s2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"projectcontour.io/upstream-protocol.h2c": "securebackend",
-			},
-		},
-		Spec: s1.Spec,
-	}
+	s2 := fixture.NewService("kuard").
+		Annotate("projectcontour.io/upstream-protocol.h2c", "securebackend").
+		WithPorts(v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8888)})
 	rh.OnUpdate(s1, s2)
 
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
@@ -161,23 +120,9 @@ func TestUpstreamProtocolH2(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"contour.heptio.com/upstream-protocol.h2": "securebackend",
-			},
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "securebackend",
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(8888),
-			}},
-		},
-	}
+	s1 := fixture.NewService("kuard").
+		Annotate("contour.heptio.com/upstream-protocol.h2", "securebackend").
+		WithPorts(v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8888)})
 	rh.OnAdd(s1)
 
 	i1 := &v1beta1.Ingress{
@@ -201,16 +146,9 @@ func TestUpstreamProtocolH2(t *testing.T) {
 		TypeUrl: clusterType,
 	})
 
-	s2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"projectcontour.io/upstream-protocol.h2": "securebackend",
-			},
-		},
-		Spec: s1.Spec,
-	}
+	s2 := fixture.NewService("kuard").
+		Annotate("projectcontour.io/upstream-protocol.h2", "securebackend").
+		WithPorts(v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8888)})
 	rh.OnUpdate(s1, s2)
 
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{

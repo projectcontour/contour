@@ -20,6 +20,7 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -39,23 +40,9 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		},
 	}
 
-	svc := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: secret.Namespace,
-			Annotations: map[string]string{
-				"contour.heptio.com/upstream-protocol.tls": "securebackend,443",
-			},
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "securebackend",
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	svc := fixture.NewService("default/kuard").
+		Annotate("contour.heptio.com/upstream-protocol.tls", "securebackend,443").
+		WithPorts(v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8080)})
 
 	p1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{

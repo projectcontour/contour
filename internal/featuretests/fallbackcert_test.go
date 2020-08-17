@@ -58,19 +58,8 @@ func TestFallbackCertificate(t *testing.T) {
 
 	rh.OnAdd(fallbackSecret)
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: sec1.Namespace,
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:     "http",
-				Protocol: "TCP",
-				Port:     80,
-			}},
-		},
-	}
+	s1 := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(s1)
 
 	// Valid HTTPProxy without FallbackCertificate enabled

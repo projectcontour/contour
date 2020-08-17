@@ -21,6 +21,7 @@ import (
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -39,19 +40,8 @@ func TestTCPProxy(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
-	svc := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "correct-backend",
-			Namespace: s1.Namespace,
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	svc := fixture.NewService("correct-backend").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	rh.OnAdd(s1)
 	rh.OnAdd(svc)
@@ -125,19 +115,9 @@ func TestTCPProxyDelegation(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
-	svc := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "app",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	svc := fixture.NewService("app/backend").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+
 	rh.OnAdd(s1)
 	rh.OnAdd(svc)
 
@@ -213,19 +193,8 @@ func TestTCPProxyTLSPassthrough(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	svc := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "correct-backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	svc := fixture.NewService("correct-backend").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	rh.OnAdd(svc)
 
@@ -306,23 +275,9 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
-	svc := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kubernetes",
-			Namespace: s1.Namespace,
-			Annotations: map[string]string{
-				"projectcontour.io/upstream-protocol.tls": "https,443",
-			},
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "https",
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(6443),
-			}},
-		},
-	}
+	svc := fixture.NewService("kubernetes").
+		Annotate("projectcontour.io/upstream-protocol.tls", "https,443").
+		WithPorts(v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(6443)})
 
 	hp1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -402,19 +357,8 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
-	svc := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: s1.Namespace,
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	svc := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	hp1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -508,19 +452,8 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
-	svc := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: s1.Namespace,
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	svc := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	hp1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -610,19 +543,8 @@ func TestTCPProxyTLSPassthroughAndHTTPService(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	svc := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	svc := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	hp1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -713,19 +635,8 @@ func TestTCPProxyTLSPassthroughAndHTTPServicePermitInsecure(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	svc := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	svc := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	hp1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -830,19 +741,8 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	}
 
-	svc := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backend",
-			Namespace: s1.Name,
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Protocol:   "TCP",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	svc := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	hp1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{

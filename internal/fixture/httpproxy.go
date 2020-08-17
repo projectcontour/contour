@@ -32,7 +32,7 @@ func NewProxy(name string) *ProxyBuilder {
 	return b
 }
 
-// Label adds the given values as metadata annotations.
+// Annotate adds the given values as metadata annotations.
 func (b *ProxyBuilder) Annotate(k string, v string) *ProxyBuilder {
 	b.ObjectMeta.Annotations[k] = v
 	return b

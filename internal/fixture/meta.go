@@ -24,7 +24,8 @@ import (
 func ObjectMeta(nameStr string) metav1.ObjectMeta {
 	name := k8s.NamespacedNameFrom(nameStr)
 	return metav1.ObjectMeta{
-		Name:      name.Name,
-		Namespace: name.Namespace,
+		Name:        name.Name,
+		Namespace:   name.Namespace,
+		Annotations: map[string]string{},
 	}
 }

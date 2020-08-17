@@ -52,20 +52,8 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	}
 	rh.OnAdd(clientCASecret)
 
-	service := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
+	service := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(service)
 
 	proxy := fixture.NewProxy("example.com").
