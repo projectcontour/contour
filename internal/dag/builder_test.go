@@ -6281,7 +6281,7 @@ func TestBuilderLookupService(t *testing.T) {
 					FieldLogger: fixture.NewTestLogger(t),
 				},
 			}
-			b.reset()
+			b.data.reset()
 
 			got, gotErr := b.lookupService(tc.NamespacedName, tc.port)
 			assert.Equal(t, tc.want, got)

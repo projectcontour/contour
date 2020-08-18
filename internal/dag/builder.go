@@ -20,16 +20,15 @@ import (
 	"strconv"
 	"strings"
 
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
-
 	"github.com/google/go-cmp/cmp"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/networking/v1beta1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 type RouteServiceName struct {
@@ -45,27 +44,23 @@ type Builder struct {
 	// from which to build a DAG.
 	Source KubernetesCache
 
+	// data holds the DAG information after a builder
+	// processes through the Kubernetes cache which is
+	// used to build a new DAG.
+	data BuildContext
+
 	// DisablePermitInsecure disables the use of the
 	// permitInsecure field in HTTPProxy.
 	DisablePermitInsecure bool
 
-	services map[RouteServiceName]*Service
-	secrets  map[types.NamespacedName]*Secret
-
-	virtualhosts       map[string]*VirtualHost
-	securevirtualhosts map[string]*SecureVirtualHost
-
-	orphaned map[types.NamespacedName]bool
-
 	FallbackCertificate *types.NamespacedName
 
-	StatusWriter
 	logrus.FieldLogger
 }
 
 // Build builds a new DAG.
 func (b *Builder) Build() *DAG {
-	b.reset()
+	b.data.reset()
 
 	// setup secure vhosts if there is a matching secret
 	// we do this first so that the set of active secure vhosts is stable
@@ -79,18 +74,6 @@ func (b *Builder) Build() *DAG {
 	return b.buildDAG()
 }
 
-// reset (re)inialises the internal state of the builder.
-func (b *Builder) reset() {
-	b.services = make(map[RouteServiceName]*Service, len(b.services))
-	b.secrets = make(map[types.NamespacedName]*Secret, len(b.secrets))
-	b.orphaned = make(map[types.NamespacedName]bool, len(b.orphaned))
-
-	b.virtualhosts = make(map[string]*VirtualHost)
-	b.securevirtualhosts = make(map[string]*SecureVirtualHost)
-
-	b.statuses = make(map[types.NamespacedName]Status, len(b.statuses))
-}
-
 // lookupService returns a Service that matches the Meta and Port of the Kubernetes' Service,
 // or an error if the service or port can't be located.
 func (b *Builder) lookupService(m types.NamespacedName, port intstr.IntOrString) (*Service, error) {
@@ -99,7 +82,7 @@ func (b *Builder) lookupService(m types.NamespacedName, port intstr.IntOrString)
 			// can't handle, give up
 			return nil
 		}
-		return b.services[RouteServiceName{
+		return b.data.services[RouteServiceName{
 			Name:      m.Name,
 			Namespace: m.Namespace,
 			Port:      int32(port.IntValue()),
@@ -124,37 +107,11 @@ func (b *Builder) lookupService(m types.NamespacedName, port intstr.IntOrString)
 				return nil, fmt.Errorf("unsupported service protocol %q", p.Protocol)
 			}
 
-			return b.addService(svc, p), nil
+			return b.data.addService(svc, p), nil
 		}
 	}
 
 	return nil, fmt.Errorf("port %q on service %q not matched", port.String(), m)
-}
-
-func (b *Builder) addService(svc *v1.Service, port v1.ServicePort) *Service {
-	name := k8s.NamespacedNameOf(svc)
-	s := &Service{
-		Weighted: WeightedService{
-			ServiceName:      name.Name,
-			ServiceNamespace: name.Namespace,
-			ServicePort:      port,
-			Weight:           1,
-		},
-		Protocol:           upstreamProtocol(svc, port),
-		MaxConnections:     annotation.MaxConnections(svc),
-		MaxPendingRequests: annotation.MaxPendingRequests(svc),
-		MaxRequests:        annotation.MaxRequests(svc),
-		MaxRetries:         annotation.MaxRetries(svc),
-		ExternalName:       externalName(svc),
-	}
-
-	b.services[RouteServiceName{
-		Name:      name.Name,
-		Namespace: name.Namespace,
-		Port:      port.Port,
-	}] = s
-
-	return s
 }
 
 func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {
@@ -164,32 +121,6 @@ func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {
 		protocol = up[strconv.Itoa(int(port.Port))]
 	}
 	return protocol
-}
-
-func (b *Builder) lookupVirtualHost(name string) *VirtualHost {
-	vh, ok := b.virtualhosts[name]
-	if !ok {
-		vh := &VirtualHost{
-			Name: name,
-		}
-		b.virtualhosts[vh.Name] = vh
-		return vh
-	}
-	return vh
-}
-
-func (b *Builder) lookupSecureVirtualHost(name string) *SecureVirtualHost {
-	svh, ok := b.securevirtualhosts[name]
-	if !ok {
-		svh := &SecureVirtualHost{
-			VirtualHost: VirtualHost{
-				Name: name,
-			},
-		}
-		b.securevirtualhosts[svh.VirtualHost.Name] = svh
-		return svh
-	}
-	return svh
 }
 
 // validHTTPProxies returns a slice of *projcontour.HTTPProxy objects.
@@ -220,7 +151,7 @@ func (b *Builder) validHTTPProxies() []*projcontour.HTTPProxy {
 			sort.Strings(conflicting) // sort for test stability
 			msg := fmt.Sprintf("fqdn %q is used in multiple HTTPProxies: %s", fqdn, strings.Join(conflicting, ", "))
 			for _, proxy := range proxies {
-				sw, commit := b.WithObject(proxy)
+				sw, commit := b.data.WithObject(proxy)
 				sw.WithValue("vhost", fqdn).SetInvalid(msg)
 				commit()
 			}
@@ -244,7 +175,7 @@ func (b *Builder) computeSecureVirtualhosts() {
 					Error("unresolved secret reference")
 				continue
 			}
-			b.secrets[k8s.NamespacedNameOf(sec.Object)] = sec
+			b.data.secrets[k8s.NamespacedNameOf(sec.Object)] = sec
 
 			if !b.Source.DelegationPermitted(secretName, ing.GetNamespace()) {
 				b.WithError(err).
@@ -259,7 +190,7 @@ func (b *Builder) computeSecureVirtualhosts() {
 			// ahead and create the SecureVirtualHost for this
 			// Ingress.
 			for _, host := range tls.Hosts {
-				svhost := b.lookupSecureVirtualHost(host)
+				svhost := b.data.lookupSecureVirtualHost(host)
 				svhost.Secret = sec
 				svhost.MinTLSVersion = annotation.MinTLSVersion(
 					annotation.CompatAnnotation(ing, "tls-minimum-protocol-version"))
@@ -303,13 +234,13 @@ func (b *Builder) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1.IngressR
 
 		// should we create port 80 routes for this ingress
 		if annotation.TLSRequired(ing) || annotation.HTTPAllowed(ing) {
-			b.lookupVirtualHost(host).addRoute(r)
+			b.data.lookupVirtualHost(host).addRoute(r)
 		}
 
 		// computeSecureVirtualhosts will have populated b.securevirtualhosts
 		// with the names of tls enabled ingress objects. If host exists then
 		// it is correctly configured for TLS.
-		svh, ok := b.securevirtualhosts[host]
+		svh, ok := b.data.securevirtualhosts[host]
 		if ok && host != "*" {
 			svh.addRoute(r)
 		}
@@ -323,12 +254,12 @@ func (b *Builder) computeHTTPProxies() {
 }
 
 func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
-	sw, commit := b.WithObject(proxy)
+	sw, commit := b.data.WithObject(proxy)
 	defer commit()
 
 	if proxy.Spec.VirtualHost == nil {
 		// mark HTTPProxy as orphaned.
-		b.setOrphaned(proxy)
+		b.data.setOrphaned(proxy)
 		return
 	}
 
@@ -369,14 +300,14 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 				sw.SetInvalid("Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
 				return
 			}
-			b.secrets[k8s.NamespacedNameOf(sec.Object)] = sec
+			b.data.secrets[k8s.NamespacedNameOf(sec.Object)] = sec
 
 			if !b.Source.DelegationPermitted(secretName, proxy.Namespace) {
 				sw.SetInvalid("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", tls.SecretName)
 				return
 			}
 
-			svhost := b.lookupSecureVirtualHost(host)
+			svhost := b.data.lookupSecureVirtualHost(host)
 			svhost.Secret = sec
 			svhost.MinTLSVersion = annotation.MinTLSVersion(tls.MinimumProtocolVersion)
 
@@ -398,7 +329,7 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 					sw.SetInvalid("Spec.Virtualhost.TLS Secret %q fallback certificate is invalid: %s", b.FallbackCertificate, err)
 					return
 				}
-				b.secrets[k8s.NamespacedNameOf(sec.Object)] = sec
+				b.data.secrets[k8s.NamespacedNameOf(sec.Object)] = sec
 
 				if !b.Source.DelegationPermitted(*b.FallbackCertificate, proxy.Namespace) {
 					sw.SetInvalid("Spec.VirtualHost.TLS fallback Secret %q is not configured for certificate delegation", b.FallbackCertificate)
@@ -434,25 +365,14 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 	}
 
 	routes := b.computeRoutes(sw, proxy, nil, nil, tlsEnabled)
-	insecure := b.lookupVirtualHost(host)
+	insecure := b.data.lookupVirtualHost(host)
 	addRoutes(insecure, routes)
 
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
 	// then add routes to the secure virtualhost definition.
 	if tlsEnabled && proxy.Spec.TCPProxy == nil {
-		secure := b.lookupSecureVirtualHost(host)
+		secure := b.data.lookupSecureVirtualHost(host)
 		addRoutes(secure, routes)
-	}
-}
-
-type vhost interface {
-	addRoute(*Route)
-}
-
-// addRoutes adds all routes to the vhost supplied.
-func addRoutes(vhost vhost, routes []*Route) {
-	for _, route := range routes {
-		vhost.addRoute(route)
 	}
 }
 
@@ -609,12 +529,12 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			return nil
 		}
 
-		sw, commit := b.WithObject(delegate)
+		sw, commit := b.data.WithObject(delegate)
 		routes = append(routes, b.computeRoutes(sw, delegate, append(conditions, include.Conditions...), visited, enforceTLS)...)
 		commit()
 
 		// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
-		delete(b.orphaned, types.NamespacedName{Name: delegate.Name, Namespace: delegate.Namespace})
+		delete(b.data.orphaned, types.NamespacedName{Name: delegate.Name, Namespace: delegate.Namespace})
 	}
 
 	for _, route := range proxy.Spec.Routes {
@@ -818,75 +738,27 @@ func includeMatchConditionsIdentical(includes []projcontour.Include) bool {
 func (b *Builder) buildDAG() *DAG {
 	var dag DAG
 
-	http := b.buildHTTPListener()
+	http := b.data.buildHTTPListener()
 	if len(http.VirtualHosts) > 0 {
 		dag.roots = append(dag.roots, http)
 	}
 
-	https := b.buildHTTPSListener()
+	https := b.data.buildHTTPSListener()
 	if len(https.VirtualHosts) > 0 {
 		dag.roots = append(dag.roots, https)
 	}
 
-	for meta := range b.orphaned {
+	for meta := range b.data.orphaned {
 		proxy, ok := b.Source.httpproxies[meta]
 		if ok {
-			sw, commit := b.WithObject(proxy)
+			sw, commit := b.data.WithObject(proxy)
 			sw.WithValue("status", k8s.StatusOrphaned).
 				WithValue("description", "this HTTPProxy is not part of a delegation chain from a root HTTPProxy")
 			commit()
 		}
 	}
-	dag.statuses = b.statuses
+	dag.statuses = b.data.statuses
 	return &dag
-}
-
-// buildHTTPListener builds a *dag.Listener for the vhosts bound to port 80.
-// The list of virtual hosts will attached to the listener will be sorted
-// by hostname.
-func (b *Builder) buildHTTPListener() *Listener {
-	var virtualhosts = make([]Vertex, 0, len(b.virtualhosts))
-
-	for _, vh := range b.virtualhosts {
-		if vh.Valid() {
-			virtualhosts = append(virtualhosts, vh)
-		}
-	}
-	sort.SliceStable(virtualhosts, func(i, j int) bool {
-		return virtualhosts[i].(*VirtualHost).Name < virtualhosts[j].(*VirtualHost).Name
-	})
-	return &Listener{
-		Port:         80,
-		VirtualHosts: virtualhosts,
-	}
-}
-
-// buildHTTPSListener builds a *dag.Listener for the vhosts bound to port 443.
-// The list of virtual hosts will attached to the listener will be sorted
-// by hostname.
-func (b *Builder) buildHTTPSListener() *Listener {
-	var virtualhosts = make([]Vertex, 0, len(b.securevirtualhosts))
-	for _, svh := range b.securevirtualhosts {
-		if svh.Valid() {
-			virtualhosts = append(virtualhosts, svh)
-		}
-	}
-	sort.SliceStable(virtualhosts, func(i, j int) bool {
-		return virtualhosts[i].(*SecureVirtualHost).Name < virtualhosts[j].(*SecureVirtualHost).Name
-	})
-	return &Listener{
-		Port:         443,
-		VirtualHosts: virtualhosts,
-	}
-}
-
-// setOrphaned records an HTTPProxy resource as orphaned.
-func (b *Builder) setOrphaned(obj k8s.Object) {
-	m := types.NamespacedName{
-		Name:      obj.GetObjectMeta().GetName(),
-		Namespace: obj.GetObjectMeta().GetNamespace(),
-	}
-	b.orphaned[m] = true
 }
 
 // rootAllowed returns true if the HTTPProxy lives in a permitted root namespace.
@@ -914,7 +786,7 @@ func (b *Builder) lookupUpstreamValidation(uv *projcontour.UpstreamValidation, n
 		// UpstreamValidation is requested, but cert is missing or not configured
 		return nil, fmt.Errorf("invalid CA Secret %q: %s", secretName, err)
 	}
-	b.secrets[k8s.NamespacedNameOf(cacert.Object)] = cacert
+	b.data.secrets[k8s.NamespacedNameOf(cacert.Object)] = cacert
 
 	if uv.SubjectName == "" {
 		// UpstreamValidation is requested, but SAN is not provided
@@ -934,7 +806,7 @@ func (b *Builder) lookupDownstreamValidation(vc *projcontour.DownstreamValidatio
 		// PeerValidationContext is requested, but cert is missing or not configured.
 		return nil, fmt.Errorf("invalid CA Secret %q: %s", secretName, err)
 	}
-	b.secrets[k8s.NamespacedNameOf(cacert.Object)] = cacert
+	b.data.secrets[k8s.NamespacedNameOf(cacert.Object)] = cacert
 
 	return &PeerValidationContext{
 		CACertificate: cacert,
@@ -982,7 +854,7 @@ func (b *Builder) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *pr
 				TCPHealthCheckPolicy: tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy),
 			})
 		}
-		b.lookupSecureVirtualHost(host).TCPProxy = &proxy
+		b.data.lookupSecureVirtualHost(host).TCPProxy = &proxy
 		return true
 	}
 
@@ -1011,7 +883,7 @@ func (b *Builder) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *pr
 	}
 
 	// dest is no longer an orphan
-	delete(b.orphaned, k8s.NamespacedNameOf(dest))
+	delete(b.data.orphaned, k8s.NamespacedNameOf(dest))
 
 	// ensure we are not following an edge that produces a cycle
 	var path []string
