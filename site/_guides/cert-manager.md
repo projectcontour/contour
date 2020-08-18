@@ -542,7 +542,7 @@ spec:
   virtualhost:
     fqdn: httpbinproxy.davecheney.com
     tls:
-      secretName: httpbin
+      secretName: httpbinproxy
   routes:
   - services:
     - name: httpbin
@@ -561,7 +561,6 @@ metadata:
     ingress.kubernetes.io/force-ssl-redirect: "true"
     kubernetes.io/tls-acme: "true"
   name: httpbinproxy
-  namespace: default
 spec:
   rules:
   - host: httpbinproxy.davecheney.com
@@ -573,7 +572,7 @@ spec:
   tls:
   - hosts:
     - httpbinproxy.davecheney.com
-    secretName: httpbin
+    secretName: httpbinproxy
 ```
 
 Once cert-manager has done its thing, you will have a `httpbinproxy` secret, that will contain the keypair.
