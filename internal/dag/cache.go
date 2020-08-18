@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"fmt"
 	"sync"
 
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -404,4 +405,23 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 	}
 
 	return false
+}
+
+// LookupSecret returns a Secret if present or nil if the underlying kubernetes
+// secret fails validation or is missing.
+func (kc *KubernetesCache) LookupSecret(name types.NamespacedName, validate func(*v1.Secret) error) (*Secret, error) {
+	sec, ok := kc.secrets[name]
+	if !ok {
+		return nil, fmt.Errorf("Secret not found")
+	}
+
+	if err := validate(sec); err != nil {
+		return nil, err
+	}
+
+	s := &Secret{
+		Object: sec,
+	}
+
+	return s, nil
 }

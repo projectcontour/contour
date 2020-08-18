@@ -34,7 +34,7 @@ import (
 // Builder builds a DAG.
 type Builder struct {
 
-	// Source is the source of Kuberenetes objects
+	// Source is the source of Kubernetes objects
 	// from which to build a DAG.
 	Source KubernetesCache
 
@@ -145,26 +145,6 @@ func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {
 	return protocol
 }
 
-// lookupSecret returns a Secret if present or nil if the underlying kubernetes
-// secret fails validation or is missing.
-func (b *Builder) lookupSecret(m types.NamespacedName, validate func(*v1.Secret) error) (*Secret, error) {
-	sec, ok := b.Source.secrets[m]
-	if !ok {
-		return nil, fmt.Errorf("Secret not found")
-	}
-
-	if err := validate(sec); err != nil {
-		return nil, err
-	}
-
-	s := &Secret{
-		Object: sec,
-	}
-
-	b.secrets[k8s.NamespacedNameOf(sec)] = s
-	return s, nil
-}
-
 func (b *Builder) lookupVirtualHost(name string) *VirtualHost {
 	vh, ok := b.virtualhosts[name]
 	if !ok {
@@ -234,7 +214,7 @@ func (b *Builder) computeSecureVirtualhosts() {
 	for _, ing := range b.Source.ingresses {
 		for _, tls := range ing.Spec.TLS {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(ing.GetNamespace()))
-			sec, err := b.lookupSecret(secretName, validSecret)
+			sec, err := b.Source.LookupSecret(secretName, validSecret)
 			if err != nil {
 				b.Source.WithField("name", ing.GetName()).
 					WithField("namespace", ing.GetNamespace()).
@@ -242,6 +222,7 @@ func (b *Builder) computeSecureVirtualhosts() {
 					Errorf("invalid TLS secret %q", secretName)
 				continue
 			}
+			b.secrets[k8s.NamespacedNameOf(sec.Object)] = sec
 
 			if !b.delegationPermitted(secretName, ing.GetNamespace()) {
 				b.Source.WithField("name", ing.GetName()).
@@ -393,11 +374,12 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		// Attach secrets to TLS enabled vhosts.
 		if !tls.Passthrough {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(proxy.Namespace))
-			sec, err := b.lookupSecret(secretName, validSecret)
+			sec, err := b.Source.LookupSecret(secretName, validSecret)
 			if err != nil {
 				sw.SetInvalid("Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
 				return
 			}
+			b.secrets[k8s.NamespacedNameOf(sec.Object)] = sec
 
 			if !b.delegationPermitted(secretName, proxy.Namespace) {
 				sw.SetInvalid("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", tls.SecretName)
@@ -421,11 +403,12 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 					return
 				}
 
-				sec, err = b.lookupSecret(*b.FallbackCertificate, validSecret)
+				sec, err = b.Source.LookupSecret(*b.FallbackCertificate, validSecret)
 				if err != nil {
 					sw.SetInvalid("Spec.Virtualhost.TLS Secret %q fallback certificate is invalid: %s", b.FallbackCertificate, err)
 					return
 				}
+				b.secrets[k8s.NamespacedNameOf(sec.Object)] = sec
 
 				if !b.delegationPermitted(*b.FallbackCertificate, proxy.Namespace) {
 					sw.SetInvalid("Spec.VirtualHost.TLS fallback Secret %q is not configured for certificate delegation", b.FallbackCertificate)
@@ -936,11 +919,12 @@ func (b *Builder) lookupUpstreamValidation(uv *projcontour.UpstreamValidation, n
 	}
 
 	secretName := types.NamespacedName{Name: uv.CACertificate, Namespace: namespace}
-	cacert, err := b.lookupSecret(secretName, validCA)
+	cacert, err := b.Source.LookupSecret(secretName, validCA)
 	if err != nil {
 		// UpstreamValidation is requested, but cert is missing or not configured
 		return nil, fmt.Errorf("invalid CA Secret %q: %s", secretName, err)
 	}
+	b.secrets[k8s.NamespacedNameOf(cacert.Object)] = cacert
 
 	if uv.SubjectName == "" {
 		// UpstreamValidation is requested, but SAN is not provided
@@ -955,11 +939,12 @@ func (b *Builder) lookupUpstreamValidation(uv *projcontour.UpstreamValidation, n
 
 func (b *Builder) lookupDownstreamValidation(vc *projcontour.DownstreamValidation, namespace string) (*PeerValidationContext, error) {
 	secretName := types.NamespacedName{Name: vc.CACertificate, Namespace: namespace}
-	cacert, err := b.lookupSecret(secretName, validCA)
+	cacert, err := b.Source.LookupSecret(secretName, validCA)
 	if err != nil {
 		// PeerValidationContext is requested, but cert is missing or not configured.
 		return nil, fmt.Errorf("invalid CA Secret %q: %s", secretName, err)
 	}
+	b.secrets[k8s.NamespacedNameOf(cacert.Object)] = cacert
 
 	return &PeerValidationContext{
 		CACertificate: cacert,
