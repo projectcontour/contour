@@ -25,7 +25,7 @@ It exposes two HTTP endpoints which are used for `livenessProbe` as well as to h
    args:
      - envoy
      - shutdown-manager
-   image: docker.io/projectcontour/contour:master
+   image: docker.io/projectcontour/contour:main
    imagePullPolicy: Always
    lifecycle:
      preStop:

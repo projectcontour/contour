@@ -39,7 +39,7 @@ It also tries to avoid exposing too broad a set of configuration options for ret
 This proposal would add two new fields to the `retryPolicy` -- `retryOn` and `retriableStatusCodes`.
 These fields would map to the `retry_on` and `retriable_status_codes` fields of the [Envoy v2 `route.RetryPolicy`](https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/route/route_components.proto#route-retrypolicy), respectively.
 
-Below is an example YAML of what this would look like, as an extension of the existing example of a `retryPolicy` from the [`HTTPProxy` reference](https://projectcontour.io/docs/master/httpproxy/#response-timeout):
+Below is an example YAML of what this would look like, as an extension of the existing example of a `retryPolicy` from the [`HTTPProxy` reference](https://projectcontour.io/docs/main/httpproxy/#response-timeout):
 
 ```yaml
 apiVersion: projectcontour.io/v1
@@ -163,7 +163,7 @@ Arguments against this approach:
 Instead of configuring retry policies per `HTTPProxy`, we could allow configuration of a global retry policy that applies to all proxies.
 This would solve the author's issue of mitigating upstream connect errors during rollouts without having to configure all `HTTPProxy` manifests with the same retry policy.
 
-If implemented, this global retry policy would live in Contour's [global configuration file](https://projectcontour.io/docs/master/configuration/) and likely resemble the same structure at the `retryPolicy` section of the `HTTPProxy` manifest.
+If implemented, this global retry policy would live in Contour's [global configuration file](https://projectcontour.io/docs/main/configuration/) and likely resemble the same structure at the `retryPolicy` section of the `HTTPProxy` manifest.
 
 Taking this approach would require consideration around how retry policies defined in `HTTPProxy` would consolidate with a global retry policy:
 

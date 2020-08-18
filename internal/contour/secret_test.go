@@ -22,6 +22,7 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -470,7 +471,7 @@ func TestSecretVisit(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			root := buildDAG(t, tc.objs...)
 			got := visitSecrets(root)
-			assert.Equal(t, tc.want, got)
+			assert.EqualProto(t, tc.want, got)
 		})
 	}
 }
@@ -479,7 +480,7 @@ func TestSecretVisit(t *testing.T) {
 func buildDAG(t *testing.T, objs ...interface{}) *dag.DAG {
 	builder := dag.Builder{
 		Source: dag.KubernetesCache{
-			FieldLogger: testLogger(t),
+			FieldLogger: fixture.NewTestLogger(t),
 		},
 	}
 
@@ -493,7 +494,7 @@ func buildDAG(t *testing.T, objs ...interface{}) *dag.DAG {
 func buildDAGFallback(t *testing.T, fallbackCertificate *types.NamespacedName, objs ...interface{}) *dag.DAG {
 	builder := dag.Builder{
 		Source: dag.KubernetesCache{
-			FieldLogger: testLogger(t),
+			FieldLogger: fixture.NewTestLogger(t),
 		},
 		FallbackCertificate: fallbackCertificate,
 	}

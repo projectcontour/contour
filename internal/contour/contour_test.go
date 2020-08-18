@@ -14,27 +14,9 @@
 package contour
 
 import (
-	"testing"
-
-	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-func testLogger(t *testing.T) logrus.FieldLogger {
-	log := logrus.New()
-	log.Out = &testWriter{t}
-	return log
-}
-
-type testWriter struct {
-	*testing.T
-}
-
-func (t *testWriter) Write(buf []byte) (int, error) {
-	t.Logf("%s", buf)
-	return len(buf), nil
-}
 
 func endpoints(ns, name string, subsets ...v1.EndpointSubset) *v1.Endpoints {
 	return &v1.Endpoints{

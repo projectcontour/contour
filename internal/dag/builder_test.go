@@ -21,6 +21,7 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/google/go-cmp/cmp"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/timeout"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -6007,7 +6008,7 @@ func TestDAGInsert(t *testing.T) {
 					Namespace: tc.fallbackCertificateNamespace,
 				},
 				Source: KubernetesCache{
-					FieldLogger: testLogger(t),
+					FieldLogger: fixture.NewTestLogger(t),
 				},
 			}
 			for _, o := range tc.objs {
@@ -6122,7 +6123,7 @@ func TestBuilderLookupService(t *testing.T) {
 			b := Builder{
 				Source: KubernetesCache{
 					services:    services,
-					FieldLogger: testLogger(t),
+					FieldLogger: fixture.NewTestLogger(t),
 				},
 			}
 			b.reset()
@@ -6256,7 +6257,7 @@ func TestDAGRootNamespaces(t *testing.T) {
 			builder := Builder{
 				Source: KubernetesCache{
 					RootNamespaces: tc.rootNamespaces,
-					FieldLogger:    testLogger(t),
+					FieldLogger:    fixture.NewTestLogger(t),
 				},
 			}
 

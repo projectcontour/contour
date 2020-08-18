@@ -1308,4 +1308,4 @@ Some examples of invalid configurations that Contour provides statuses for:
  [6]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-idle-timeout
  [7]: https://www.envoyproxy.io/docs/envoy/v1.11.2/intro/arch_overview/upstream/load_balancing/overview
  [8]: #conditions
- [9]: {% link docs/master/annotations.md %}
+ [9]: {% link docs/main/annotations.md %}

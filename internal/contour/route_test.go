@@ -2756,7 +2756,7 @@ func TestRouteVisit(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			root := buildDAGFallback(t, tc.fallbackCertificate, tc.objs...)
 			got := visitRoutes(root)
-			assert.Equal(t, tc.want, got)
+			assert.EqualProto(t, tc.want, got)
 		})
 	}
 }
@@ -2926,7 +2926,7 @@ func TestSortLongestRouteFirst(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := append([]*envoy_api_v2_route.Route{}, tc.routes...) // shallow copy
 			sortRoutes(got)
-			assert.Equal(t, tc.want, got)
+			assert.EqualProto(t, tc.want, got)
 		})
 	}
 }

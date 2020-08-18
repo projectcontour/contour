@@ -13,20 +13,20 @@ The release types are as follows. All are tagged from the same release branch.
 - Final releases.
 - Patch releases.
 
-For minor releases, generally we will not do an Alpha/Beta/RC/Final flow, we will jump straight to cutting the final from master.
+For minor releases, generally we will not do an Alpha/Beta/RC/Final flow, we will jump straight to cutting the final from main.
 
 ## Alpha and beta releases
 
 The steps for an alpha or beta release are
 
-- Tag the head of master with the relevant release tag (in this case `alpha.1`), and push
+- Tag the head of main with the relevant release tag (in this case `alpha.1`), and push
 
 ```sh
 $ git tag -a v0.15.0-alpha.1 -m 'contour 1.2.0 alpha 1'
 $ git push --tags
 ```
 
-Once the tag is present on master, Github Actions will build the tag and push it to Docker Hub for you.
+Once the tag is present on main, Github Actions will build the tag and push it to Docker Hub for you.
 Then, you are done until we are ready to branch for an rc or final release.
 
 ## Update Docs Site
@@ -40,14 +40,14 @@ For example:
 $ go run ./hack/release/prepare-release.go v9.9.9
 ```
 
-This can be pushed straight back to master.
+This can be pushed straight back to main.
 
 The tool performs the following steps, which can also be followed to update the site to create the new release:
 
 - In: `site/_data`
   - Make new yml file for version (e.g. v1-1-0-toc.yaml)
   - Add yml file to site/_data/toc-mapping.yml
-- Copy `master` directory to the new version (e.g. v1.1.0)
+- Copy `main` directory to the new version (e.g. v1.1.0)
 - In: `site/_config.yml`
   - Update `defaults` and add new version
   - Update `collections` to add new version
@@ -66,7 +66,7 @@ Add upgrade instructions to the [Upgrading](https://projectcontour.io/resources/
 
 ## Branch for release
 
-As contours master branch is under active development, rc and final releases are made from a branch.
+As contours main branch is under active development, rc and final releases are made from a branch.
 Create a release branch locally, like so
 
 ```sh
