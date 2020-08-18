@@ -471,7 +471,7 @@ func TestSecretVisit(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			root := buildDAG(t, tc.objs...)
 			got := visitSecrets(root)
-			assert.Equal(t, tc.want, got)
+			assert.EqualProto(t, tc.want, got)
 		})
 	}
 }

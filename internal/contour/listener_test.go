@@ -1998,7 +1998,7 @@ func TestListenerVisit(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			root := buildDAGFallback(t, tc.fallbackCertificate, tc.objs...)
 			got := visitListeners(root, &tc.ListenerConfig)
-			assert.Equal(t, tc.want, got)
+			assert.EqualProto(t, tc.want, got)
 		})
 	}
 }
