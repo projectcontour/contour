@@ -224,7 +224,7 @@ func (b *Builder) computeSecureVirtualhosts() {
 			}
 			b.secrets[k8s.NamespacedNameOf(sec.Object)] = sec
 
-			if !b.delegationPermitted(secretName, ing.GetNamespace()) {
+			if !b.Source.DelegationPermitted(secretName, ing.GetNamespace()) {
 				b.Source.WithField("name", ing.GetName()).
 					WithField("namespace", ing.GetNamespace()).
 					WithField("error", err).
@@ -243,39 +243,6 @@ func (b *Builder) computeSecureVirtualhosts() {
 			}
 		}
 	}
-}
-
-func (b *Builder) delegationPermitted(secret types.NamespacedName, to string) bool {
-	contains := func(haystack []string, needle string) bool {
-		if len(haystack) == 1 && haystack[0] == "*" {
-			return true
-		}
-		for _, h := range haystack {
-			if h == needle {
-				return true
-			}
-		}
-		return false
-	}
-
-	if secret.Namespace == to {
-		// secret is in the same namespace as target
-		return true
-	}
-
-	for _, d := range b.Source.httpproxydelegations {
-		if d.Namespace != secret.Namespace {
-			continue
-		}
-		for _, d := range d.Spec.Delegations {
-			if contains(d.TargetNamespaces, to) {
-				if secret.Name == d.SecretName {
-					return true
-				}
-			}
-		}
-	}
-	return false
 }
 
 func (b *Builder) computeIngresses() {
@@ -381,7 +348,7 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 			}
 			b.secrets[k8s.NamespacedNameOf(sec.Object)] = sec
 
-			if !b.delegationPermitted(secretName, proxy.Namespace) {
+			if !b.Source.DelegationPermitted(secretName, proxy.Namespace) {
 				sw.SetInvalid("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", tls.SecretName)
 				return
 			}
@@ -410,7 +377,7 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 				}
 				b.secrets[k8s.NamespacedNameOf(sec.Object)] = sec
 
-				if !b.delegationPermitted(*b.FallbackCertificate, proxy.Namespace) {
+				if !b.Source.DelegationPermitted(*b.FallbackCertificate, proxy.Namespace) {
 					sw.SetInvalid("Spec.VirtualHost.TLS fallback Secret %q is not configured for certificate delegation", b.FallbackCertificate)
 					return
 				}
