@@ -122,6 +122,11 @@ default:
       name: area/tls
       target: both
       addedBy: label
+    - color: 0052cc
+      description: Issues or PRs about making Contour easier to operate as a production service.
+      name: area/operational
+      target: both
+      addedBy: label
 
 # Blocked.
     - color: "FF7B7B"
