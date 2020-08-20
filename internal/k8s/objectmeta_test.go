@@ -3,7 +3,7 @@ package k8s
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/projectcontour/contour/internal/assert"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -12,12 +12,7 @@ func TestNamespacedNameFrom(t *testing.T) {
 		t.Helper()
 		t.Run(testName, func(t *testing.T) {
 			t.Helper()
-			opts := []cmp.Option{
-				cmp.AllowUnexported(types.NamespacedName{}),
-			}
-			if diff := cmp.Diff(want, got, opts...); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, want, got)
 		})
 	}
 

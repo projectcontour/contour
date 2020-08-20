@@ -22,6 +22,7 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/golang/protobuf/proto"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/sirupsen/logrus"
 )
 
@@ -49,24 +50,24 @@ func TestXDSHandlerStream(t *testing.T) {
 				context: context.Background,
 				recv: func() (*v2.DiscoveryRequest, error) {
 					return &v2.DiscoveryRequest{
-						TypeUrl: "com.heptio.potato",
+						TypeUrl: "io.projectcontour.potato",
 					}, nil
 				},
 			},
-			want: fmt.Errorf("no resource registered for typeURL %q", "com.heptio.potato"),
+			want: fmt.Errorf("no resource registered for typeURL %q", "io.projectcontour.potato"),
 		},
 		"failed to convert values to any": {
 			xh: contourServer{
 				FieldLogger: log,
 				resources: map[string]Resource{
-					"com.heptio.potato": &mockResource{
+					"io.projectcontour.potato": &mockResource{
 						register: func(ch chan int, i int) {
 							ch <- i + 1
 						},
 						contents: func() []proto.Message {
 							return []proto.Message{nil}
 						},
-						typeurl: func() string { return "com.heptio.potato" },
+						typeurl: func() string { return "io.projectcontour.potato" },
 					},
 				},
 			},
@@ -74,7 +75,7 @@ func TestXDSHandlerStream(t *testing.T) {
 				context: context.Background,
 				recv: func() (*v2.DiscoveryRequest, error) {
 					return &v2.DiscoveryRequest{
-						TypeUrl: "com.heptio.potato",
+						TypeUrl: "io.projectcontour.potato",
 					}, nil
 				},
 			},
@@ -84,14 +85,14 @@ func TestXDSHandlerStream(t *testing.T) {
 			xh: contourServer{
 				FieldLogger: log,
 				resources: map[string]Resource{
-					"com.heptio.potato": &mockResource{
+					"io.projectcontour.potato": &mockResource{
 						register: func(ch chan int, i int) {
 							ch <- i + 1
 						},
 						contents: func() []proto.Message {
 							return []proto.Message{new(v2.ClusterLoadAssignment)}
 						},
-						typeurl: func() string { return "com.heptio.potato" },
+						typeurl: func() string { return "io.projectcontour.potato" },
 					},
 				},
 			},
@@ -99,7 +100,7 @@ func TestXDSHandlerStream(t *testing.T) {
 				context: context.Background,
 				recv: func() (*v2.DiscoveryRequest, error) {
 					return &v2.DiscoveryRequest{
-						TypeUrl: "com.heptio.potato",
+						TypeUrl: "io.projectcontour.potato",
 					}, nil
 				},
 				send: func(resp *v2.DiscoveryResponse) error {
@@ -112,11 +113,11 @@ func TestXDSHandlerStream(t *testing.T) {
 			xh: contourServer{
 				FieldLogger: log,
 				resources: map[string]Resource{
-					"com.heptio.potato": &mockResource{
+					"io.projectcontour.potato": &mockResource{
 						register: func(ch chan int, i int) {
 							// do nothing
 						},
-						typeurl: func() string { return "com.heptio.potato" },
+						typeurl: func() string { return "io.projectcontour.potato" },
 					},
 				},
 			},
@@ -129,7 +130,7 @@ func TestXDSHandlerStream(t *testing.T) {
 				},
 				recv: func() (*v2.DiscoveryRequest, error) {
 					return &v2.DiscoveryRequest{
-						TypeUrl: "com.heptio.potato",
+						TypeUrl: "io.projectcontour.potato",
 					}, nil
 				},
 				send: func(resp *v2.DiscoveryResponse) error {
@@ -143,9 +144,7 @@ func TestXDSHandlerStream(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := tc.xh.stream(tc.stream)
-			if !equalError(tc.want, got) {
-				t.Fatalf("expected: %v, got: %v", tc.want, got)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -192,9 +191,7 @@ func TestCounterNext(t *testing.T) {
 
 	for _, tc := range tests {
 		got := tc.fn()
-		if tc.want != got {
-			t.Fatalf("expected %d, got %d", tc.want, got)
-		}
+		assert.Equal(t, tc.want, got)
 	}
 }
 

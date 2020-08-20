@@ -14,13 +14,12 @@
 package metrics
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
-	io_prometheus_client "github.com/prometheus/client_model/go"
-
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/prometheus/client_golang/prometheus"
+	io_prometheus_client "github.com/prometheus/client_model/go"
 )
 
 type testMetric struct {
@@ -71,9 +70,7 @@ func TestSetDAGLastRebuilt(t *testing.T) {
 				}
 			}
 
-			if !reflect.DeepEqual(gotTimestamp, tc.timestampMetric.want) {
-				t.Fatalf("write metric timestamp metric failed, want: %v got: %v", tc.timestampMetric.want, gotTimestamp)
-			}
+			assert.Equal(t, tc.timestampMetric.want, gotTimestamp)
 		})
 	}
 }
@@ -230,21 +227,12 @@ func TestWriteProxyMetric(t *testing.T) {
 				}
 			}
 
-			if !reflect.DeepEqual(gotTotal, tc.total.want) {
-				t.Fatalf("write metric total metric failed, want: %v got: %v", tc.total.want, gotTotal)
-			}
-			if !reflect.DeepEqual(gotValid, tc.valid.want) {
-				t.Fatalf("write metric valid metric failed, want: %v got: %v", tc.valid.want, gotValid)
-			}
-			if !reflect.DeepEqual(gotInvalid, tc.invalid.want) {
-				t.Fatalf("write metric invalid metric failed, want: %v got: %v", tc.invalid.want, gotInvalid)
-			}
-			if !reflect.DeepEqual(gotOrphaned, tc.orphaned.want) {
-				t.Fatalf("write metric orphaned metric failed, want: %v got: %v", tc.orphaned.want, gotOrphaned)
-			}
-			if !reflect.DeepEqual(gotRoot, tc.root.want) {
-				t.Fatalf("write metric orphaned metric failed, want: %v got: %v", tc.root.want, gotRoot)
-			}
+			assert.Equal(t, tc.total.want, gotTotal)
+			assert.Equal(t, tc.valid.want, gotValid)
+			assert.Equal(t, tc.invalid.want, gotInvalid)
+			assert.Equal(t, tc.orphaned.want, gotOrphaned)
+			assert.Equal(t, tc.root.want, gotRoot)
+
 		})
 	}
 }
@@ -655,21 +643,11 @@ func TestRemoveProxyMetric(t *testing.T) {
 				}
 			}
 
-			if !reflect.DeepEqual(gotTotal, total.want) {
-				t.Fatalf("write metric total metric failed, want: %v got: %v", total.want, gotTotal)
-			}
-			if !reflect.DeepEqual(gotValid, valid.want) {
-				t.Fatalf("write metric valid metric failed, want: %v got: %v", valid.want, gotValid)
-			}
-			if !reflect.DeepEqual(gotInvalid, invalid.want) {
-				t.Fatalf("write metric invalid metric failed, want: %v got: %v", invalid.want, gotInvalid)
-			}
-			if !reflect.DeepEqual(gotOrphaned, orphaned.want) {
-				t.Fatalf("write metric orphaned metric failed, want: %v got: %v", orphaned.want, gotOrphaned)
-			}
-			if !reflect.DeepEqual(gotRoot, root.want) {
-				t.Fatalf("write metric orphaned metric failed, want: %v got: %v", root.want, gotRoot)
-			}
+			assert.Equal(t, total.want, gotTotal)
+			assert.Equal(t, valid.want, gotValid)
+			assert.Equal(t, invalid.want, gotInvalid)
+			assert.Equal(t, orphaned.want, gotOrphaned)
+			assert.Equal(t, root.want, gotRoot)
 
 			m.SetHTTPProxyMetric(tc.irMetricsUpdated)
 
@@ -704,21 +682,11 @@ func TestRemoveProxyMetric(t *testing.T) {
 				}
 			}
 
-			if !reflect.DeepEqual(gotTotal, tc.totalWant) {
-				t.Fatalf("write metric total metric failed, want: %v got: %v", tc.totalWant, gotTotal)
-			}
-			if !reflect.DeepEqual(gotValid, tc.validWant) {
-				t.Fatalf("write metric valid metric failed, want: %v got: %v", tc.validWant, gotValid)
-			}
-			if !reflect.DeepEqual(gotInvalid, tc.invalidWant) {
-				t.Fatalf("write metric invalid metric failed, want: %v got: %v", tc.invalidWant, gotInvalid)
-			}
-			if !reflect.DeepEqual(gotOrphaned, tc.orphanedWant) {
-				t.Fatalf("write metric orphaned metric failed, want: %v got: %v", tc.orphanedWant, gotOrphaned)
-			}
-			if !reflect.DeepEqual(gotRoot, tc.rootWant) {
-				t.Fatalf("write metric orphaned metric failed, want: %v got: %v", tc.rootWant, gotRoot)
-			}
+			assert.Equal(t, tc.totalWant, gotTotal)
+			assert.Equal(t, tc.validWant, gotValid)
+			assert.Equal(t, tc.invalidWant, gotInvalid)
+			assert.Equal(t, tc.orphanedWant, gotOrphaned)
+			assert.Equal(t, tc.rootWant, gotRoot)
 		})
 	}
 }

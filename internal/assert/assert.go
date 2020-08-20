@@ -26,6 +26,14 @@ var (
 	Equal         = tassert.Equal
 	Equalf        = tassert.Equalf
 	ElementsMatch = tassert.ElementsMatch
+	Error         = tassert.Error
+	Errorf        = tassert.Errorf
+	NoError       = tassert.NoError
+	NoErrorf      = tassert.NoErrorf
+	True          = tassert.True
+	Truef         = tassert.Truef
+	False         = tassert.False
+	Falsef        = tassert.Falsef
 )
 
 // EqualProto will test that want == got for protobufs, call t.Error if it does not,

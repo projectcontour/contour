@@ -23,6 +23,7 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
@@ -63,7 +64,7 @@ func TestGRPC(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			stream, err := sds.StreamClusters(ctx)
-			check(t, err)
+			assert.NoError(t, err)
 			sendreq(t, stream, resource.ClusterType) // send initial notification
 			checkrecv(t, stream)                     // check we receive one notification
 			checktimeout(t, stream)                  // check that the second receive times out
@@ -90,7 +91,7 @@ func TestGRPC(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			stream, err := eds.StreamEndpoints(ctx)
-			check(t, err)
+			assert.NoError(t, err)
 			sendreq(t, stream, resource.EndpointType) // send initial notification
 			checkrecv(t, stream)                      // check we receive one notification
 			checktimeout(t, stream)                   // check that the second receive times out
@@ -123,7 +124,7 @@ func TestGRPC(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			stream, err := lds.StreamListeners(ctx)
-			check(t, err)
+			assert.NoError(t, err)
 			sendreq(t, stream, resource.ListenerType) // send initial notification
 			checkrecv(t, stream)                      // check we receive one notification
 			checktimeout(t, stream)                   // check that the second receive times out
@@ -155,7 +156,7 @@ func TestGRPC(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			stream, err := rds.StreamRoutes(ctx)
-			check(t, err)
+			assert.NoError(t, err)
 			sendreq(t, stream, resource.RouteType) // send initial notification
 			checkrecv(t, stream)                   // check we receive one notification
 			checktimeout(t, stream)                // check that the second receive times out
@@ -176,7 +177,7 @@ func TestGRPC(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			stream, err := sds.StreamSecrets(ctx)
-			check(t, err)
+			assert.NoError(t, err)
 			sendreq(t, stream, resource.SecretType) // send initial notification
 			checkrecv(t, stream)                    // check we receive one notification
 			checktimeout(t, stream)                 // check that the second receive times out
@@ -206,7 +207,7 @@ func TestGRPC(t *testing.T) {
 
 			srv := xds.RegisterServer(xds.NewContourServer(log, ResourcesOf(resources)...), nil)
 			l, err := net.Listen("tcp", "127.0.0.1:0")
-			check(t, err)
+			assert.NoError(t, err)
 			done := make(chan error, 1)
 			stop := make(chan struct{})
 			run := eh.Start()
@@ -220,17 +221,10 @@ func TestGRPC(t *testing.T) {
 				<-done
 			}()
 			cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
-			check(t, err)
+			assert.NoError(t, err)
 			defer cc.Close()
 			fn(t, cc)
 		})
-	}
-}
-
-func check(t *testing.T, err error) {
-	t.Helper()
-	if err != nil {
-		t.Fatal(err)
 	}
 }
 
@@ -241,7 +235,7 @@ func sendreq(t *testing.T, stream interface {
 	err := stream.Send(&v2.DiscoveryRequest{
 		TypeUrl: typeurl,
 	})
-	check(t, err)
+	assert.NoError(t, err)
 }
 
 func checkrecv(t *testing.T, stream interface {
@@ -249,7 +243,7 @@ func checkrecv(t *testing.T, stream interface {
 }) {
 	t.Helper()
 	_, err := stream.Recv()
-	check(t, err)
+	assert.NoError(t, err)
 }
 
 func checktimeout(t *testing.T, stream interface {
@@ -257,13 +251,9 @@ func checktimeout(t *testing.T, stream interface {
 }) {
 	t.Helper()
 	_, err := stream.Recv()
-	if err == nil {
-		t.Fatal("expected timeout")
-	}
+	assert.Errorf(t, err, "expected timeout")
 	s, ok := status.FromError(err)
-	if !ok {
-		t.Fatalf("%T %v", err, err)
-	}
+	assert.True(t, ok, "Error wasn't what was expected: %T %v", err, err)
 
 	// Work around grpc/grpc-go#1645 which sometimes seems to
 	// set the status code to Unknown, even when the message is derived from context.DeadlineExceeded.
