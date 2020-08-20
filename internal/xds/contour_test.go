@@ -194,13 +194,3 @@ func TestCounterNext(t *testing.T) {
 		assert.Equal(t, tc.want, got)
 	}
 }
-
-func equalError(a, b error) bool {
-	if a == nil {
-		return b == nil
-	}
-	if b == nil {
-		return a == nil
-	}
-	return a.Error() == b.Error()
-}
