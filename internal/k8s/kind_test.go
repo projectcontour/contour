@@ -56,10 +56,7 @@ func TestVersionOf(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		kindOf := VersionOf(c.Obj)
-		if kindOf != c.Version {
-			t.Errorf("got %q for VersionOf(%T), wanted %q",
-				kindOf, c.Obj, c.Version)
-		}
+		versionOf := VersionOf(c.Obj)
+		assert.Equal(t, c.Version, versionOf)
 	}
 }
