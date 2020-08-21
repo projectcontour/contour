@@ -2284,6 +2284,7 @@ func TestDAGStatus(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
+				FieldLogger:         fixture.NewTestLogger(t),
 				FallbackCertificate: tc.fallbackCertificate,
 				Source: KubernetesCache{
 					RootNamespaces: []string{"roots", "marketing"},
