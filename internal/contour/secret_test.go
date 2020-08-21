@@ -479,6 +479,7 @@ func TestSecretVisit(t *testing.T) {
 // buildDAG produces a dag.DAG from the supplied objects.
 func buildDAG(t *testing.T, objs ...interface{}) *dag.DAG {
 	builder := dag.Builder{
+		FieldLogger: fixture.NewTestLogger(t),
 		Source: dag.KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
 		},
@@ -493,6 +494,7 @@ func buildDAG(t *testing.T, objs ...interface{}) *dag.DAG {
 // buildDAGFallback produces a dag.DAG from the supplied objects with a fallback cert configured.
 func buildDAGFallback(t *testing.T, fallbackCertificate *types.NamespacedName, objs ...interface{}) *dag.DAG {
 	builder := dag.Builder{
+		FieldLogger: fixture.NewTestLogger(t),
 		Source: dag.KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
 		},

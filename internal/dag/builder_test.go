@@ -6002,6 +6002,7 @@ func TestDAGInsert(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
+				FieldLogger:           fixture.NewTestLogger(t),
 				DisablePermitInsecure: tc.disablePermitInsecure,
 				FallbackCertificate: &types.NamespacedName{
 					Name:      tc.fallbackCertificateName,
@@ -6255,6 +6256,7 @@ func TestDAGRootNamespaces(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
+				FieldLogger: fixture.NewTestLogger(t),
 				Source: KubernetesCache{
 					RootNamespaces: tc.rootNamespaces,
 					FieldLogger:    fixture.NewTestLogger(t),

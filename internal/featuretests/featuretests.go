@@ -96,6 +96,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 			NextObserver: dag.ComposeObservers(contour.ObserversOf(resources)...),
 		},
 		Builder: dag.Builder{
+			FieldLogger: fixture.NewTestLogger(t),
 			Source: dag.KubernetesCache{
 				FieldLogger: log,
 			},

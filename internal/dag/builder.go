@@ -29,6 +29,7 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/sirupsen/logrus"
 )
 
 // Builder builds a DAG.
@@ -53,6 +54,7 @@ type Builder struct {
 	FallbackCertificate *types.NamespacedName
 
 	StatusWriter
+	logrus.FieldLogger
 }
 
 // Build builds a new DAG.
@@ -216,19 +218,21 @@ func (b *Builder) computeSecureVirtualhosts() {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(ing.GetNamespace()))
 			sec, err := b.Source.LookupSecret(secretName, validSecret)
 			if err != nil {
-				b.Source.WithField("name", ing.GetName()).
+				b.WithError(err).
+					WithField("name", ing.GetName()).
 					WithField("namespace", ing.GetNamespace()).
-					WithField("error", err.Error()).
-					Errorf("invalid TLS secret %q", secretName)
+					WithField("secret", secretName).
+					Error("unresolved secret reference")
 				continue
 			}
 			b.secrets[k8s.NamespacedNameOf(sec.Object)] = sec
 
 			if !b.Source.DelegationPermitted(secretName, ing.GetNamespace()) {
-				b.Source.WithField("name", ing.GetName()).
+				b.WithError(err).
+					WithField("name", ing.GetName()).
 					WithField("namespace", ing.GetNamespace()).
-					WithField("error", err).
-					Errorf("certificate delegation not permitted for Secret %q", secretName)
+					WithField("secret", secretName).
+					Error("certificate delegation not permitted")
 				continue
 			}
 
