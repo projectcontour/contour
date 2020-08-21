@@ -44,6 +44,13 @@ func prometheusLabels() []string {
 }
 
 type shutdownmanagerContext struct {
+	// httpServePort defines what port the shutdown-manager listens on
+	httpServePort int
+
+	logrus.FieldLogger
+}
+
+type shutdownContext struct {
 	// checkInterval defines time delay between polling Envoy for open connections
 	checkInterval time.Duration
 
@@ -54,19 +61,22 @@ type shutdownmanagerContext struct {
 	// that can be open when polling for active connections in Envoy
 	minOpenConnections int
 
-	// httpServePort defines what port the shutdown-manager listens on
-	httpServePort int
-
 	logrus.FieldLogger
 }
 
 func newShutdownManagerContext() *shutdownmanagerContext {
 	// Set defaults for parameters which are then overridden via flags, ENV, or ConfigFile
 	return &shutdownmanagerContext{
+		httpServePort: 8090,
+	}
+}
+
+func newShutdownContext() *shutdownContext {
+	// Set defaults for parameters which are then overridden via flags, ENV, or ConfigFile
+	return &shutdownContext{
 		checkInterval:      5 * time.Second,
 		checkDelay:         60 * time.Second,
 		minOpenConnections: 0,
-		httpServePort:      8090,
 	}
 }
 
@@ -100,7 +110,7 @@ func (s *shutdownmanagerContext) shutdownReadyHandler(w http.ResponseWriter, r *
 
 // shutdownHandler is called from a pod preStop hook, where it will block pod shutdown
 // until envoy is able to drain connections to below the min-open threshold.
-func (s *shutdownmanagerContext) shutdownHandler() {
+func (s *shutdownContext) shutdownHandler() {
 
 	// Send shutdown signal to Envoy to start draining connections
 	s.Infof("failing envoy healthchecks")
@@ -210,16 +220,26 @@ func doShutdownManager(config *shutdownmanagerContext) {
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", config.httpServePort), nil))
 }
 
-// registerShutdownManager registers the envoy shutdown sub-command and flags
+// registerShutdownManager registers the envoy shutdown-manager sub-command and flags
 func registerShutdownManager(cmd *kingpin.CmdClause, log logrus.FieldLogger) (*kingpin.CmdClause, *shutdownmanagerContext) {
 	ctx := newShutdownManagerContext()
 	ctx.FieldLogger = log.WithField("context", "shutdown-manager")
 
 	shutdownmgr := cmd.Command("shutdown-manager", "Start envoy shutdown-manager.")
-	shutdownmgr.Flag("check-interval", "Time to poll Envoy for open connections.").DurationVar(&ctx.checkInterval)
-	shutdownmgr.Flag("check-delay", "Time wait before polling Envoy for open connections.").Default("60s").DurationVar(&ctx.checkDelay)
-	shutdownmgr.Flag("min-open-connections", "Min number of open connections when polling Envoy.").IntVar(&ctx.minOpenConnections)
 	shutdownmgr.Flag("serve-port", "Port to serve the http server on.").IntVar(&ctx.httpServePort)
 
 	return shutdownmgr, ctx
+}
+
+// registerShutdown registers the envoy shutdown sub-command and flags
+func registerShutdown(cmd *kingpin.CmdClause, log logrus.FieldLogger) (*kingpin.CmdClause, *shutdownContext) {
+	ctx := newShutdownContext()
+	ctx.FieldLogger = log.WithField("context", "shutdown")
+
+	shutdown := cmd.Command("shutdown", "Initiate an shutdown sequence which configures Envoy to begin draining connections.")
+	shutdown.Flag("check-interval", "Time to poll Envoy for open connections.").DurationVar(&ctx.checkInterval)
+	shutdown.Flag("check-delay", "Time wait before polling Envoy for open connections.").Default("60s").DurationVar(&ctx.checkDelay)
+	shutdown.Flag("min-open-connections", "Min number of open connections when polling Envoy.").IntVar(&ctx.minOpenConnections)
+
+	return shutdown, ctx
 }
