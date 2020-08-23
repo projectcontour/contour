@@ -17,15 +17,14 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"io/ioutil"
-	"log"
 	"os"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 // Client holds the details for the cli client to connect to.
@@ -45,21 +44,20 @@ func (c *Client) dial() *grpc.ClientConn {
 	case c.CAFile != "" || c.ClientCert != "" || c.ClientKey != "":
 		// If one of the three TLS commands is not empty, they all must be not empty
 		if !(c.CAFile != "" && c.ClientCert != "" && c.ClientKey != "") {
-			log.Fatal("You must supply all three TLS parameters - --cafile, --cert-file, --key-file, or none of them.")
+			kingpin.Fatalf("You must supply all three TLS parameters - --cafile, --cert-file, --key-file, or none of them.")
 		}
 		// Load the client certificates from disk
 		certificate, err := tls.LoadX509KeyPair(c.ClientCert, c.ClientKey)
-		check(err)
-
+		kingpin.FatalIfError(err, "")
 		// Create a certificate pool from the certificate authority
 		certPool := x509.NewCertPool()
 		ca, err := ioutil.ReadFile(c.CAFile)
-		check(err)
+		kingpin.FatalIfError(err, "")
 
 		// Append the certificates from the CA
 		if ok := certPool.AppendCertsFromPEM(ca); !ok {
 			// TODO(nyoung) OMG yuck, thanks for this, crypto/tls. Suggestions on alternates welcomed.
-			check(errors.New("failed to append ca certs"))
+			kingpin.Fatalf("failed to append ca certs")
 		}
 
 		creds := credentials.NewTLS(&tls.Config{
@@ -77,7 +75,7 @@ func (c *Client) dial() *grpc.ClientConn {
 	}
 
 	conn, err := grpc.Dial(c.ContourAddr, options...)
-	check(err)
+	kingpin.FatalIfError(err, "")
 
 	return conn
 }
@@ -85,28 +83,28 @@ func (c *Client) dial() *grpc.ClientConn {
 // ClusterStream returns a stream of Clusters using the config in the Client.
 func (c *Client) ClusterStream() v2.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := v2.NewClusterDiscoveryServiceClient(c.dial()).StreamClusters(context.Background())
-	check(err)
+	kingpin.FatalIfError(err, "")
 	return stream
 }
 
 // EndpointStream returns a stream of Endpoints using the config in the Client.
 func (c *Client) EndpointStream() v2.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := v2.NewEndpointDiscoveryServiceClient(c.dial()).StreamEndpoints(context.Background())
-	check(err)
+	kingpin.FatalIfError(err, "")
 	return stream
 }
 
 // ListenerStream returns a stream of Listeners using the config in the Client.
 func (c *Client) ListenerStream() v2.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := v2.NewListenerDiscoveryServiceClient(c.dial()).StreamListeners(context.Background())
-	check(err)
+	kingpin.FatalIfError(err, "")
 	return stream
 }
 
 // RouteStream returns a stream of Routes using the config in the Client.
 func (c *Client) RouteStream() v2.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := v2.NewRouteDiscoveryServiceClient(c.dial()).StreamRoutes(context.Background())
-	check(err)
+	kingpin.FatalIfError(err, "")
 	return stream
 }
 
@@ -126,10 +124,10 @@ func watchstream(st stream, typeURL string, resources []string) {
 			ResourceNames: resources,
 		}
 		err := st.Send(req)
-		check(err)
+		kingpin.FatalIfError(err, "")
 		resp, err := st.Recv()
-		check(err)
+		kingpin.FatalIfError(err, "")
 		err = m.Marshal(os.Stdout, resp)
-		check(err)
+		kingpin.FatalIfError(err, "")
 	}
 }
