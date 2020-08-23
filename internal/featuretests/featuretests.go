@@ -39,6 +39,7 @@ import (
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
@@ -112,7 +113,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	close(eh.IsLeader)
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
-	check(t, err)
+	require.NoError(t, err)
 
 	srv := xds.RegisterServer(
 		xds.NewContourServer(log, contour.ResourcesOf(resources)...),
@@ -130,7 +131,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	g.Add(eh.Start())
 
 	cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
-	check(t, err)
+	require.NoError(t, err)
 
 	rh := &resourceEventHandler{
 		EventHandler:     eh,
@@ -214,13 +215,6 @@ func (r *resourceEventHandler) OnDelete(obj interface{}) {
 	default:
 		r.EventHandler.OnDelete(obj)
 		<-r.Sequence
-	}
-}
-
-func check(t *testing.T, err error) {
-	t.Helper()
-	if err != nil {
-		t.Fatal(err)
 	}
 }
 
@@ -332,27 +326,27 @@ func (c *Contour) Request(typeurl string, names ...string) *Response {
 	case secretType:
 		sds := discovery.NewSecretDiscoveryServiceClient(c.ClientConn)
 		sts, err := sds.StreamSecrets(ctx)
-		c.check(err)
+		require.NoError(c, err)
 		st = sts
 	case routeType:
 		rds := v2.NewRouteDiscoveryServiceClient(c.ClientConn)
 		str, err := rds.StreamRoutes(ctx)
-		c.check(err)
+		require.NoError(c, err)
 		st = str
 	case clusterType:
 		cds := v2.NewClusterDiscoveryServiceClient(c.ClientConn)
 		stc, err := cds.StreamClusters(ctx)
-		c.check(err)
+		require.NoError(c, err)
 		st = stc
 	case listenerType:
 		lds := v2.NewListenerDiscoveryServiceClient(c.ClientConn)
 		stl, err := lds.StreamListeners(ctx)
-		c.check(err)
+		require.NoError(c, err)
 		st = stl
 	case endpointType:
 		eds := v2.NewEndpointDiscoveryServiceClient(c.ClientConn)
 		ste, err := eds.StreamEndpoints(ctx)
-		c.check(err)
+		require.NoError(c, err)
 		st = ste
 	default:
 		c.Fatal("unknown typeURL:", typeurl)
@@ -369,16 +363,10 @@ func (c *Contour) Request(typeurl string, names ...string) *Response {
 
 func (c *Contour) sendRequest(stream grpcStream, req *v2.DiscoveryRequest) *v2.DiscoveryResponse {
 	err := stream.Send(req)
-	c.check(err)
+	require.NoError(c, err)
 	resp, err := stream.Recv()
-	c.check(err)
+	require.NoError(c, err)
 	return resp
-}
-
-func (c *Contour) check(err error) {
-	if err != nil {
-		c.Fatal(err)
-	}
 }
 
 type Response struct {
