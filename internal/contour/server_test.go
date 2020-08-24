@@ -253,7 +253,7 @@ func checktimeout(t *testing.T, stream interface {
 	_, err := stream.Recv()
 	require.Errorf(t, err, "expected timeout")
 	s, ok := status.FromError(err)
-	require.True(t, ok, "Error wasn't what was expected: %T %v", err, err)
+	require.Truef(t, ok, "Error wasn't what was expected: %T %v", err, err)
 
 	// Work around grpc/grpc-go#1645 which sometimes seems to
 	// set the status code to Unknown, even when the message is derived from context.DeadlineExceeded.

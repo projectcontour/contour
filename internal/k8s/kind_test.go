@@ -31,8 +31,7 @@ func TestKindOf(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		kindOf := KindOf(c.Obj)
-		assert.Equal(t, c.Kind, kindOf)
+		assert.Equal(t, c.Kind, KindOf(c.Obj))
 	}
 }
 
@@ -56,7 +55,6 @@ func TestVersionOf(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		versionOf := VersionOf(c.Obj)
-		assert.Equal(t, c.Version, versionOf)
+		assert.Equal(t, c.Version, VersionOf(c.Obj))
 	}
 }
