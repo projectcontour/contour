@@ -77,14 +77,14 @@ func setupLeadershipElection(g *workgroup.Group, log logrus.FieldLogger, ctx *se
 // newLeaderElector creates a new leaderelection.LeaderElector and associated
 // channels by which to observe elections and depositions.
 func newLeaderElector(log logrus.FieldLogger, ctx *serveContext, clients *k8s.Clients) (*leaderelection.LeaderElector, chan struct{}, chan struct{}) {
-
+	log = log.WithField("context", "leaderelection")
 	// leaderOK will block gRPC startup until it's closed.
 	leaderOK := make(chan struct{})
 	// deposed is closed by the leader election callback when
 	// we are deposed as leader so that we can clean up.
 	deposed := make(chan struct{})
 
-	rl := newResourceLock(ctx, clients)
+	rl := newResourceLock(ctx, clients, log)
 
 	// Make the leader elector, ready to be used in the Workgroup.
 	le, err := leaderelection.NewLeaderElector(leaderelection.LeaderElectionConfig{
@@ -107,13 +107,15 @@ func newLeaderElector(log logrus.FieldLogger, ctx *serveContext, clients *k8s.Cl
 			},
 		},
 	})
-	check(err)
+	if err != nil {
+		log.WithError(err).Fatal("failed to create leader elector")
+	}
 	return le, leaderOK, deposed
 }
 
 // newResourceLock creates a new resourcelock.Interface based on the Pod's name,
 // or a uuid if the name cannot be determined.
-func newResourceLock(ctx *serveContext, clients *k8s.Clients) resourcelock.Interface {
+func newResourceLock(ctx *serveContext, clients *k8s.Clients, log logrus.FieldLogger) resourcelock.Interface {
 	resourceLockID, found := os.LookupEnv("POD_NAME")
 	if !found {
 		resourceLockID = uuid.New().String()
@@ -133,6 +135,12 @@ func newResourceLock(ctx *serveContext, clients *k8s.Clients) resourcelock.Inter
 			Identity: resourceLockID,
 		},
 	)
-	check(err)
+	if err != nil {
+		log.WithError(err).
+			WithField("name", ctx.LeaderElectionConfig.Name).
+			WithField("namespace", ctx.LeaderElectionConfig.Namespace).
+			WithField("identity", resourceLockID).
+			Fatal("failed to create new resource lock")
+	}
 	return rl
 }

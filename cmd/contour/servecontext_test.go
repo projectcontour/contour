@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/fixture"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/google/go-cmp/cmp"
@@ -338,7 +339,8 @@ func TestServeContextCertificateHandling(t *testing.T) {
 	checkFatalErr(t, err)
 
 	// Start a dummy server.
-	opts := ctx.grpcOptions()
+	log := fixture.NewTestLogger(t)
+	opts := ctx.grpcOptions(log)
 	g := grpc.NewServer(opts...)
 	if g == nil {
 		t.Error("failed to create server")

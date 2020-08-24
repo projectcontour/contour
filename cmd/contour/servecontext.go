@@ -27,6 +27,7 @@ import (
 
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
@@ -291,7 +292,7 @@ type TimeoutConfig struct {
 // grpcOptions returns a slice of grpc.ServerOptions.
 // if ctx.PermitInsecureGRPC is false, the option set will
 // include TLS configuration.
-func (ctx *serveContext) grpcOptions() []grpc.ServerOption {
+func (ctx *serveContext) grpcOptions(log logrus.FieldLogger) []grpc.ServerOption {
 	opts := []grpc.ServerOption{
 		// By default the Go grpc library defaults to a value of ~100 streams per
 		// connection. This number is likely derived from the HTTP/2 spec:
@@ -313,7 +314,7 @@ func (ctx *serveContext) grpcOptions() []grpc.ServerOption {
 		}),
 	}
 	if !ctx.PermitInsecureGRPC {
-		tlsconfig := ctx.tlsconfig()
+		tlsconfig := ctx.tlsconfig(log)
 		creds := credentials.NewTLS(tlsconfig)
 		opts = append(opts, grpc.Creds(creds))
 	}
@@ -322,9 +323,11 @@ func (ctx *serveContext) grpcOptions() []grpc.ServerOption {
 
 // tlsconfig returns a new *tls.Config. If the context is not properly configured
 // for tls communication, tlsconfig returns nil.
-func (ctx *serveContext) tlsconfig() *tls.Config {
+func (ctx *serveContext) tlsconfig(log logrus.FieldLogger) *tls.Config {
 	err := ctx.verifyTLSFlags()
-	check(err)
+	if err != nil {
+		log.WithError(err).Fatal("failed to verify TLS Flags")
+	}
 
 	// Define a closure that lazily loads certificates and key at TLS handshake
 	// to ensure that latest certificates are used in case they have been rotated.
@@ -353,16 +356,15 @@ func (ctx *serveContext) tlsconfig() *tls.Config {
 	}
 
 	// Attempt to load certificates and key to catch configuration errors early.
-	_, err = loadConfig()
-	check(err)
+	if _, lerr := loadConfig(); lerr != nil {
+		log.WithError(err).Fatal("failed to lead certificate and key")
+	}
 
 	return &tls.Config{
 		ClientAuth: tls.RequireAndVerifyClientCert,
 		Rand:       rand.Reader,
 		GetConfigForClient: func(*tls.ClientHelloInfo) (*tls.Config, error) {
-			config, err := loadConfig()
-			check(err)
-			return config, err
+			return loadConfig()
 		},
 	}
 }
