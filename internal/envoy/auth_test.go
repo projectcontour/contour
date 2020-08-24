@@ -19,7 +19,7 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
-	"github.com/google/go-cmp/cmp"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -108,9 +108,7 @@ func TestUpstreamTLSContext(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := UpstreamTLSContext(tc.validation, tc.externalName, tc.alpnProtocols...)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.EqualProto(t, tc.want, got)
 		})
 	}
 }

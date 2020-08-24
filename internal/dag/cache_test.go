@@ -19,6 +19,7 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -742,9 +743,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				cache.Insert(p)
 			}
 			got := cache.Insert(tc.obj)
-			if tc.want != got {
-				t.Fatalf("Insert(%v): expected %v, got %v", tc.obj, tc.want, got)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -952,9 +951,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := tc.cache.Remove(tc.obj)
-			if tc.want != got {
-				t.Fatalf("Remove(%v): expected %v, got %v", tc.obj, tc.want, got)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -30,11 +31,7 @@ func TestKindOf(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		kindOf := KindOf(c.Obj)
-		if kindOf != c.Kind {
-			t.Errorf("got %q for KindOf(%T), wanted %q",
-				kindOf, c.Obj, c.Kind)
-		}
+		assert.Equal(t, c.Kind, KindOf(c.Obj))
 	}
 }
 
@@ -58,10 +55,6 @@ func TestVersionOf(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		kindOf := VersionOf(c.Obj)
-		if kindOf != c.Version {
-			t.Errorf("got %q for VersionOf(%T), wanted %q",
-				kindOf, c.Obj, c.Version)
-		}
+		assert.Equal(t, c.Version, VersionOf(c.Obj))
 	}
 }

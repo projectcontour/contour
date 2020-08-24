@@ -19,6 +19,9 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/projectcontour/contour/internal/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGeneratedCertsValid(t *testing.T) {
@@ -27,24 +30,17 @@ func TestGeneratedCertsValid(t *testing.T) {
 	expiry := now.Add(24 * 365 * time.Hour)
 
 	cacert, cakey, err := NewCA("contour", expiry)
-	if err != nil {
-		t.Fatalf("Failed to generate CA cert: %s", err)
-	}
+	require.NoErrorf(t, err, "Failed to generate CA cert")
 
 	contourcert, _, err := NewCert(cacert, cakey, expiry, "contour", "projectcontour")
-	if err != nil {
-		t.Fatalf("Failed to generate Contour cert: %s", err)
-	}
+	require.NoErrorf(t, err, "Failed to generate Contour cert")
 
 	roots := x509.NewCertPool()
 	ok := roots.AppendCertsFromPEM(cacert)
-	if !ok {
-		t.Fatal("Failed to set up CA cert for testing, maybe it's an invalid PEM")
-	}
+	require.Truef(t, ok, "Failed to set up CA cert for testing, maybe it's an invalid PEM")
+
 	envoycert, _, err := NewCert(cacert, cakey, expiry, "envoy", "projectcontour")
-	if err != nil {
-		t.Fatalf("Failed to generate Envoy cert: %s", err)
-	}
+	require.NoErrorf(t, err, "Failed to generate Envoy cert")
 
 	tests := map[string]struct {
 		cert    []byte
@@ -63,9 +59,7 @@ func TestGeneratedCertsValid(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			err := verifyCert(tc.cert, roots, tc.dnsname)
-			if err != nil {
-				t.Fatalf("Validating %s failed: %s", name, err)
-			}
+			assert.NoErrorf(t, err, "Validating %s failed", name)
 		})
 	}
 

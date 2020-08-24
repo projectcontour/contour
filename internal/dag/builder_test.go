@@ -19,8 +19,8 @@ import (
 	"time"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	"github.com/google/go-cmp/cmp"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/timeout"
 	v1 "k8s.io/api/core/v1"
@@ -6026,13 +6026,7 @@ func TestDAGInsert(t *testing.T) {
 					want[l.Port] = l
 				}
 			}
-			opts := []cmp.Option{
-				cmp.AllowUnexported(VirtualHost{}),
-				cmp.AllowUnexported(timeout.Setting{}),
-			}
-			if diff := cmp.Diff(want, got, opts...); diff != "" {
-				t.Fatal(diff)
-			}
+			assert.Equal(t, want, got)
 		})
 	}
 }
@@ -6130,14 +6124,8 @@ func TestBuilderLookupService(t *testing.T) {
 			b.reset()
 
 			got, gotErr := b.lookupService(tc.NamespacedName, tc.port)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
-			if (tc.wantErr != nil) != (gotErr != nil) {
-				t.Errorf("got err = %v, wanted %v", gotErr, tc.wantErr)
-			} else if tc.wantErr != nil && gotErr != nil && tc.wantErr.Error() != gotErr.Error() {
-				t.Errorf("got err = %v, wanted %v", gotErr, tc.wantErr)
-			}
+			assert.Equal(t, tc.want, got)
+			assert.Equal(t, tc.wantErr, gotErr)
 		})
 	}
 }
@@ -6425,9 +6413,7 @@ func TestHttpPaths(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := httppaths(tc.rule)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatalf(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -6504,9 +6490,7 @@ func TestDetermineSNI(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := determineSNI(tc.routeRequestHeaders, tc.clusterRequestHeaders, tc.service)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatalf(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -6542,9 +6526,7 @@ func TestEnforceRoute(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := routeEnforceTLS(tc.tlsEnabled, tc.permitInsecure)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatalf(diff)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -6644,14 +6626,8 @@ func TestValidateHeaderAlteration(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got, gotErr := headersPolicy(test.in, false)
-			if !cmp.Equal(test.want, got) {
-				t.Errorf("set (-want, +got) = %s", cmp.Diff(test.want, got))
-			}
-			if (test.wantErr != nil) != (gotErr != nil) {
-				t.Errorf("err = %v, wanted %v", gotErr, test.wantErr)
-			} else if test.wantErr != nil && gotErr != nil && test.wantErr.Error() != gotErr.Error() {
-				t.Errorf("err = %v, wanted %v", gotErr, test.wantErr)
-			}
+			assert.Equal(t, test.want, got)
+			assert.Equal(t, test.wantErr, gotErr)
 		})
 	}
 }
