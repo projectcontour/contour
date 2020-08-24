@@ -73,5 +73,6 @@ jobs:
       - name: run site proof
         if: ${{ success() }}
         run: |
+          sudo apt-get update
           sudo apt-get -yqq install libcurl4-openssl-dev
           ./hack/site-proofing/cibuild
