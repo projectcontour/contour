@@ -20,9 +20,9 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/certgen"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 )
 

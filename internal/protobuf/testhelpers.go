@@ -11,35 +11,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package assert provides assertion helpers
-package assert
+// Package protobuf provides helpers for working with golang/protobuf types.
+
+package protobuf
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	tassert "github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/testing/protocmp"
 )
 
-var (
-	Equal         = tassert.Equal
-	Equalf        = tassert.Equalf
-	ElementsMatch = tassert.ElementsMatch
-	Error         = tassert.Error
-	Errorf        = tassert.Errorf
-	NoError       = tassert.NoError
-	NoErrorf      = tassert.NoErrorf
-	True          = tassert.True
-	Truef         = tassert.Truef
-	False         = tassert.False
-	Falsef        = tassert.Falsef
-)
-
-// EqualProto will test that want == got for protobufs, call t.Error if it does not,
+// ExpectEqual will test that want == got for protobufs, call t.Error if it does not,
 // and return a bool to indicate the result. This mimics the behavior of the testify `assert`
 // functions.
-func EqualProto(t *testing.T, want, got interface{}) bool {
+func ExpectEqual(t *testing.T, want, got interface{}) bool {
 	t.Helper()
 
 	diff := cmp.Diff(want, got, protocmp.Transform())
@@ -49,4 +35,16 @@ func EqualProto(t *testing.T, want, got interface{}) bool {
 	}
 
 	return true
+}
+
+// RequireEqual will test that want == got for protobufs, call t.fatal if it does not,
+// This mimics the behavior of the testify `require` functions.
+func RequireEqual(t *testing.T, want, got interface{}) {
+	t.Helper()
+
+	diff := cmp.Diff(want, got, protocmp.Transform())
+	if diff != "" {
+		t.Fatal(diff)
+	}
+
 }

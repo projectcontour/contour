@@ -18,7 +18,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/projectcontour/contour/internal/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestResourceKindExists(t *testing.T) {

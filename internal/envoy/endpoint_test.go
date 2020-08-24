@@ -18,7 +18,7 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
-	"github.com/projectcontour/contour/internal/assert"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 func TestLBEndpoint(t *testing.T) {
@@ -30,7 +30,7 @@ func TestLBEndpoint(t *testing.T) {
 			},
 		},
 	}
-	assert.EqualProto(t, want, got)
+	protobuf.ExpectEqual(t, want, got)
 }
 
 func TestEndpoints(t *testing.T) {
@@ -53,7 +53,7 @@ func TestEndpoints(t *testing.T) {
 			},
 		}},
 	}}
-	assert.EqualProto(t, want, got)
+	protobuf.ExpectEqual(t, want, got)
 }
 
 func TestClusterLoadAssignment(t *testing.T) {
@@ -62,7 +62,7 @@ func TestClusterLoadAssignment(t *testing.T) {
 		ClusterName: "empty",
 	}
 
-	assert.EqualProto(t, want, got)
+	protobuf.RequireEqual(t, want, got)
 
 	got = ClusterLoadAssignment("one addr", SocketAddress("microsoft.com", 81))
 	want = &v2.ClusterLoadAssignment{
@@ -70,7 +70,7 @@ func TestClusterLoadAssignment(t *testing.T) {
 		Endpoints:   Endpoints(SocketAddress("microsoft.com", 81)),
 	}
 
-	assert.EqualProto(t, want, got)
+	protobuf.RequireEqual(t, want, got)
 
 	got = ClusterLoadAssignment("two addrs",
 		SocketAddress("microsoft.com", 81),
@@ -84,5 +84,5 @@ func TestClusterLoadAssignment(t *testing.T) {
 		),
 	}
 
-	assert.EqualProto(t, want, got)
+	protobuf.RequireEqual(t, want, got)
 }

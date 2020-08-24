@@ -21,7 +21,6 @@ import (
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/protobuf"
 )
 
@@ -94,7 +93,7 @@ func TestStatsListener(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := StatsListener(tc.address, tc.port)
-			assert.Equal(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }
