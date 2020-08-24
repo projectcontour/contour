@@ -15,7 +15,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: httpbin
+  name: ingress-conformance-echo
 $apply: fixture
 
 ---
@@ -23,7 +23,7 @@ $apply: fixture
 apiVersion: v1
 kind: Service
 metadata:
-  name: httpbin
+  name: ingress-conformance-echo
 $apply: fixture
 
 ---
@@ -31,15 +31,15 @@ $apply: fixture
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
-  name: httpbin
+  name: echo
 spec:
   virtualhost:
-    fqdn: httpbin.projectcontour.io
+    fqdn: echo.projectcontour.io
   routes:
     - conditions:
       - prefix: /
       services:
-        - name: httpbin
+        - name: ingress-conformance-echo
           port: 80
 
 ---
@@ -47,7 +47,7 @@ spec:
 import data.contour.resources
 
 fatal_proxy_is_not_valid[msg] {
-  name := "httpbin"
+  name := "echo"
   proxy := resources.get("httpproxies", name)
   status := object.get(proxy, "status", {})
 
@@ -69,7 +69,7 @@ Path := "this//has//lots////of/slashes"
 Response := client.Get({
   "url": url.http(sprintf("/anything/%s/%d", [Path, time.now_ns()])),
   "headers": {
-    "Host": "httpbin.projectcontour.io",
+    "Host": "echo.projectcontour.io",
     "User-Agent": client.ua("merge-slash"),
   },
 })
@@ -77,14 +77,6 @@ Response := client.Get({
 error_non_200_response [msg] {
   Response.status_code != 200
   msg := sprintf("got status %d, wanted %d", [Response.status_code, 200])
-}
-
-error_unexpected_body [msg] {
-  body := response.body(Response)
-  not body.url
-  msg := sprintf("response body has no %q field: %s", [
-    "url", body
-  ])
 }
 
 error_unexpected_path [msg] {
@@ -95,9 +87,12 @@ error_unexpected_path [msg] {
   # Collect non-empty elements and join them with "/".
   merged := concat("/", [ p | parts[i] != ""; p := parts[i] ])
 
-  not contains(body.url, merged)
+  # Get the Path field, or empty string if it's not present.
+  path := object.get(body, "Path", "")
 
-  msg := sprintf("response body URL %q doesn't contain the merged path %q", [
-    body.url, merged
+  not contains(path, merged)
+
+  msg := sprintf("response body path %q doesn't contain the merged path %q", [
+    path, merged
   ])
 }
