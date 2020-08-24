@@ -442,12 +442,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			grpcServer = xds.RegisterServer(
 				xds.NewContourServer(log, contour.ResourcesOf(resources)...),
 				registry,
-				ctx.grpcOptions()...)
+				ctx.grpcOptions(log)...)
 		case "envoy":
 			grpcServer = xds.RegisterServer(
 				server.NewServer(context.Background(), snapshotCache, nil),
 				registry,
-				ctx.grpcOptions()...)
+				ctx.grpcOptions(log)...)
 		default:
 			log.Fatalf("invalid xdsServerType %q configured", ctx.XDSServerType)
 		}

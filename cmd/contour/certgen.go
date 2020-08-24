@@ -21,6 +21,7 @@ import (
 
 	"github.com/projectcontour/contour/internal/certgen"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -123,7 +124,7 @@ func GenerateCerts(certConfig *certgenConfig) (map[string][]byte, error) {
 }
 
 // OutputCerts outputs the certs in certs as directed by config.
-func OutputCerts(config *certgenConfig, kubeclient *kubernetes.Clientset, certs map[string][]byte) {
+func OutputCerts(config *certgenConfig, kubeclient *kubernetes.Clientset, certs map[string][]byte) error {
 	secrets := []*corev1.Secret{}
 	force := certgen.NoOverwrite
 	if config.Overwrite {
@@ -137,34 +138,46 @@ func OutputCerts(config *certgenConfig, kubeclient *kubernetes.Clientset, certs 
 		case "compact":
 			secrets = certgen.AsSecrets(config.Namespace, certs)
 		default:
-			check(fmt.Errorf("unsupported Secrets format %q", config.Format))
+			return fmt.Errorf("unsupported Secrets format %q", config.Format)
 		}
 	}
 
 	if config.OutputPEM {
 		fmt.Printf("Writing certificates to PEM files in %s/\n", config.OutputDir)
-		check(certgen.WriteCertsPEM(config.OutputDir, certs, force))
+		if err := certgen.WriteCertsPEM(config.OutputDir, certs, force); err != nil {
+			return fmt.Errorf("failed to write certificates to %q: %w", config.OutputDir, err)
+		}
 	}
 
 	if config.OutputYAML {
 		fmt.Printf("Writing %q format Secrets to YAML files in %s/\n", config.Format, config.OutputDir)
-		check(certgen.WriteSecretsYAML(config.OutputDir, secrets, force))
+		if err := certgen.WriteSecretsYAML(config.OutputDir, secrets, force); err != nil {
+			return fmt.Errorf("failed to write Secrets to %q: %w", config.OutputDir, err)
+		}
 	}
 
 	if config.OutputKube {
 		fmt.Printf("Writing %q format Secrets to namespace %q\n", config.Format, config.Namespace)
-		check(certgen.WriteSecretsKube(kubeclient, secrets, force))
+		if err := certgen.WriteSecretsKube(kubeclient, secrets, force); err != nil {
+			return fmt.Errorf("failed to write certificates to %q: %w", config.Namespace, err)
+		}
 	}
+	return nil
 }
 
-func doCertgen(config *certgenConfig) {
+func doCertgen(config *certgenConfig, log logrus.FieldLogger) {
 	generatedCerts, err := GenerateCerts(config)
-	check(err)
+	if err != nil {
+		log.WithError(err).Fatal("failed to generate certificates")
+	}
 
 	clients, err := k8s.NewClients(config.KubeConfig, config.InCluster)
 	if err != nil {
-		check(fmt.Errorf("failed to create Kubernetes client: %w", err))
+		log.WithError(err).Fatalf("failed to create Kubernetes client")
 	}
 
-	OutputCerts(config, clients.ClientSet(), generatedCerts)
+	if oerr := OutputCerts(config, clients.ClientSet(), generatedCerts); oerr != nil {
+		log.WithError(oerr).Fatalf("failed output certificates")
+	}
+
 }

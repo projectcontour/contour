@@ -14,7 +14,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
@@ -70,9 +69,11 @@ func main() {
 	case sdmShutdown.FullCommand():
 		sdmShutdownCtx.shutdownHandler()
 	case bootstrap.FullCommand():
-		check(envoy.WriteBootstrap(bootstrapCtx))
+		if err := envoy.WriteBootstrap(bootstrapCtx); err != nil {
+			log.WithError(err).Fatal("failed to write bootstrap configuration")
+		}
 	case certgenApp.FullCommand():
-		doCertgen(certgenConfig)
+		doCertgen(certgenConfig, log)
 	case cds.FullCommand():
 		stream := client.ClusterStream()
 		watchstream(stream, resource.ClusterType, resources)
@@ -89,10 +90,9 @@ func main() {
 		stream := client.RouteStream()
 		watchstream(stream, resource.SecretType, resources)
 	case serve.FullCommand():
-		// parse args a second time so cli flags are applied
+		// Parse args a second time so cli flags are applied
 		// on top of any values sourced from -c's config file.
-		_, err := app.Parse(args)
-		check(err)
+		kingpin.MustParse(app.Parse(args))
 
 		// Reinitialize with the target debug level.
 		k8s.InitLogging(
@@ -105,7 +105,9 @@ func main() {
 		}
 
 		log.Infof("args: %v", args)
-		check(doServe(log, serveCtx))
+		if err := doServe(log, serveCtx); err != nil {
+			log.WithError(err).Fatal("Contour server failed")
+		}
 	case version.FullCommand():
 		println(build.PrintBuildInfo())
 	default:
@@ -113,11 +115,4 @@ func main() {
 		os.Exit(2)
 	}
 
-}
-
-func check(err error) {
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
 }
