@@ -28,7 +28,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -39,6 +38,7 @@ import (
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	v1 "k8s.io/api/core/v1"
@@ -379,9 +379,7 @@ type Response struct {
 func (r *Response) Equals(want *v2.DiscoveryResponse) *Contour {
 	r.Helper()
 
-	if !assert.EqualProto(r.T, want.Resources, r.DiscoveryResponse.Resources) {
-		r.Fatal("feature test failure")
-	}
+	protobuf.RequireEqual(r.T, want.Resources, r.DiscoveryResponse.Resources)
 
 	return r.Contour
 }

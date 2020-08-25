@@ -18,9 +18,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetRequestTimeout(t *testing.T) {

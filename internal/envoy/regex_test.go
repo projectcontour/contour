@@ -17,7 +17,6 @@ import (
 	"testing"
 
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/protobuf"
 )
 
@@ -63,7 +62,7 @@ func TestSafeRegexMatch(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := SafeRegexMatch(tc.regex)
-			assert.Equal(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }

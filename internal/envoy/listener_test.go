@@ -25,11 +25,11 @@ import (
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	envoy_config_v2_tcpproxy "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/google/go-cmp/cmp"
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -120,7 +120,7 @@ func TestListener(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := Listener(tc.name, tc.address, tc.port, tc.lf, tc.f...)
-			assert.Equal(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }
@@ -143,9 +143,7 @@ func TestSocketAddress(t *testing.T) {
 			},
 		},
 	}
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatal(diff)
-	}
+	require.Equal(t, want, got)
 
 	got = SocketAddress("::", port)
 	want = &envoy_api_v2_core.Address{
@@ -296,7 +294,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.want, tc.got)
+			protobuf.ExpectEqual(t, tc.want, tc.got)
 		})
 	}
 }
@@ -683,7 +681,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 				DefaultFilters().
 				Get()
 
-			assert.Equal(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }
@@ -771,7 +769,7 @@ func TestTCPProxy(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := TCPProxy(statPrefix, tc.proxy, FileAccessLogEnvoy(accessLogPath))
-			assert.Equal(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }

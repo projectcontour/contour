@@ -17,7 +17,7 @@ import (
 	"testing"
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPathMatchCondition(t *testing.T) {
@@ -494,11 +494,12 @@ func TestValidateHeaderMatchConditions(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			gotErr := headerMatchConditionsValid(tc.matchconditions)
 
-			if !tc.wantErr && gotErr != nil {
-				t.Fatalf("Expected no error, got (%v)", gotErr)
+			if !tc.wantErr {
+				assert.NoError(t, gotErr)
 			}
-			if tc.wantErr && gotErr == nil {
-				t.Fatalf("Expected error, got none")
+
+			if tc.wantErr {
+				assert.Error(t, gotErr)
 			}
 		})
 	}

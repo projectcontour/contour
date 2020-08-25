@@ -24,9 +24,9 @@ import (
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/golang/protobuf/proto"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -66,7 +66,7 @@ func TestListenerCacheContents(t *testing.T) {
 			var lc ListenerCache
 			lc.Update(tc.contents)
 			got := lc.Contents()
-			assert.EqualProto(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }
@@ -128,7 +128,7 @@ func TestListenerCacheQuery(t *testing.T) {
 			var lc ListenerCache
 			lc.Update(tc.contents)
 			got := lc.Query(tc.query)
-			assert.EqualProto(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }
@@ -1998,7 +1998,7 @@ func TestListenerVisit(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			root := buildDAGFallback(t, tc.fallbackCertificate, tc.objs...)
 			got := visitListeners(root, &tc.ListenerConfig)
-			assert.EqualProto(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }

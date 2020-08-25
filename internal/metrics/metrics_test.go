@@ -17,9 +17,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/prometheus/client_golang/prometheus"
 	io_prometheus_client "github.com/prometheus/client_model/go"
+	"github.com/stretchr/testify/assert"
 )
 
 type testMetric struct {

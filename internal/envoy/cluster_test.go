@@ -23,9 +23,9 @@ import (
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/wrappers"
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -395,7 +395,7 @@ func TestCluster(t *testing.T) {
 
 			proto.Merge(want, tc.want)
 
-			assert.Equal(t, want, got)
+			protobuf.ExpectEqual(t, want, got)
 		})
 	}
 }
@@ -546,9 +546,7 @@ func TestHashname(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			got := hashname(tc.l, append([]string{}, tc.s...)...)
-			if got != tc.want {
-				t.Fatalf("hashname(%d, %q): got %q, want %q", tc.l, tc.s, got, tc.want)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -574,9 +572,7 @@ func TestTruncate(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			got := truncate(tc.l, tc.s, tc.suffix)
-			if got != tc.want {
-				t.Fatalf("hashname(%d, %q, %q): got %q, want %q", tc.l, tc.s, tc.suffix, got, tc.want)
-			}
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
