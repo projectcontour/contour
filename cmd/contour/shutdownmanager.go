@@ -57,6 +57,9 @@ type shutdownContext struct {
 	// checkDelay defines time to wait before polling Envoy for open connections
 	checkDelay time.Duration
 
+	// drainDelay defines time to wait before draining Envoy connections
+	drainDelay time.Duration
+
 	// minOpenConnections defines the minimum amount of connections
 	// that can be open when polling for active connections in Envoy
 	minOpenConnections int
@@ -76,6 +79,7 @@ func newShutdownContext() *shutdownContext {
 	return &shutdownContext{
 		checkInterval:      5 * time.Second,
 		checkDelay:         60 * time.Second,
+		drainDelay:         0,
 		minOpenConnections: 0,
 	}
 }
@@ -111,6 +115,8 @@ func (s *shutdownmanagerContext) shutdownReadyHandler(w http.ResponseWriter, r *
 // shutdownHandler is called from a pod preStop hook, where it will block pod shutdown
 // until envoy is able to drain connections to below the min-open threshold.
 func (s *shutdownContext) shutdownHandler() {
+	s.WithField("context", "shutdownHandler").Infof("waiting %s before draining connections", s.drainDelay)
+	time.Sleep(s.drainDelay)
 
 	// Send shutdown signal to Envoy to start draining connections
 	s.Infof("failing envoy healthchecks")
@@ -238,7 +244,8 @@ func registerShutdown(cmd *kingpin.CmdClause, log logrus.FieldLogger) (*kingpin.
 
 	shutdown := cmd.Command("shutdown", "Initiate an shutdown sequence which configures Envoy to begin draining connections.")
 	shutdown.Flag("check-interval", "Time to poll Envoy for open connections.").DurationVar(&ctx.checkInterval)
-	shutdown.Flag("check-delay", "Time wait before polling Envoy for open connections.").Default("60s").DurationVar(&ctx.checkDelay)
+	shutdown.Flag("check-delay", "Time to wait before polling Envoy for open connections.").Default("60s").DurationVar(&ctx.checkDelay)
+	shutdown.Flag("drain-delay", "Time to wait before draining Envoy connections.").Default("0s").DurationVar(&ctx.drainDelay)
 	shutdown.Flag("min-open-connections", "Min number of open connections when polling Envoy.").IntVar(&ctx.minOpenConnections)
 
 	return shutdown, ctx
