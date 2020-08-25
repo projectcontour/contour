@@ -258,13 +258,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Inform on ExtensionService resources if they are installed
 	// in the cluster. TODO(jpeach) remove the resource check as part of #2711.
-	if gvr := projectcontourv1alpha1.GroupVersion.WithResource("extensionservices"); clients.ResourceExists(gvr) {
+	if gvr := projectcontourv1alpha1.GroupVersion.WithResource("extensionservices"); clients.ResourcesExist(gvr) {
 		informerSyncList.InformOnResources(clusterInformerFactory, dynamicHandler, gvr)
 	}
 
 	if ctx.UseExperimentalServiceAPITypes {
 		// Check if the resource exists in the API server before setting up the informer.
-		if !clients.ResourceExists(k8s.ServiceAPIResources()...) {
+		if !clients.ResourcesExist(k8s.ServiceAPIResources()...) {
 			log.WithField("InformOnResources", "ExperimentalServiceAPITypes").Warnf("resources %v not found in api server", k8s.ServiceAPIResources())
 		} else {
 			informerSyncList.InformOnResources(clusterInformerFactory, dynamicHandler, k8s.ServiceAPIResources()...)

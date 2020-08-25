@@ -16,24 +16,22 @@ package k8s
 import (
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-
-	"k8s.io/client-go/discovery"
-
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 // Clients holds the various API clients required by Contour.
 type Clients struct {
-	core      *kubernetes.Clientset
-	dynamic   dynamic.Interface
-	discovery *discovery.DiscoveryClient
+	meta.RESTMapper
 
-	apiResources *APIResources
+	core    *kubernetes.Clientset
+	dynamic dynamic.Interface
 }
 
 // NewClients returns a new set of the various API clients required
@@ -42,7 +40,6 @@ type Clients struct {
 func NewClients(kubeconfig string, inCluster bool) (*Clients, error) {
 	config, err := newRestConfig(kubeconfig, inCluster)
 	if err != nil {
-
 		return nil, err
 	}
 
@@ -57,13 +54,7 @@ func NewClients(kubeconfig string, inCluster bool) (*Clients, error) {
 		return nil, err
 	}
 
-	clients.discovery, err = discovery.NewDiscoveryClientForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	// populate the apiResources cache
-	clients.apiResources, err = clients.serverResources()
+	clients.RESTMapper, err = apiutil.NewDiscoveryRESTMapper(config)
 	if err != nil {
 		return nil, err
 	}
@@ -104,33 +95,15 @@ func (c *Clients) DynamicClient() dynamic.Interface {
 	return c.dynamic
 }
 
-// APIResources holds a map of API, GroupVersionResources, that exist in the Kubernetes cluster
-type APIResources struct {
-	serverResources map[schema.GroupVersionResource]struct{}
-}
-
-// serverResources returns the list of all the resources supported
-// by the API server. Note that this method guarantees to populate the
-// Group and Version fields in the result.
-func (c *Clients) serverResources() (*APIResources, error) {
-	_, apiList, err := c.discovery.ServerGroupsAndResources()
-	if err != nil {
-		return nil, err
-	}
-
-	gvrs, err := discovery.GroupVersionResources(apiList)
-	return &APIResources{
-		serverResources: gvrs,
-	}, err
-}
-
-// ResourceExists returns true if all of the GroupVersionResources
+// ResourcesExist returns true if all of the GroupVersionResources
 // passed exists in the cluster.
-func (c *Clients) ResourceExists(gvr ...schema.GroupVersionResource) bool {
+func (c *Clients) ResourcesExist(gvr ...schema.GroupVersionResource) bool {
 	for _, r := range gvr {
-		if _, ok := c.apiResources.serverResources[r]; !ok {
+		_, err := c.KindFor(r)
+		if meta.IsNoMatchError(err) {
 			return false
 		}
 	}
+
 	return true
 }
