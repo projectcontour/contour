@@ -46,5 +46,4 @@ func RequireEqual(t *testing.T, want, got interface{}) {
 	if diff != "" {
 		t.Fatal(diff)
 	}
-
 }

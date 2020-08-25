@@ -21,29 +21,27 @@ import (
 )
 
 func TestVirtualHostValid(t *testing.T) {
-	assert := Assert{t}
 
 	vh := VirtualHost{}
-	assert.False(vh.Valid())
+	assert.False(t, vh.Valid())
 
 	vh = VirtualHost{
 		routes: map[string]*Route{
 			"/": {},
 		},
 	}
-	assert.True(vh.Valid())
+	assert.True(t, vh.Valid())
 }
 
 func TestSecureVirtualHostValid(t *testing.T) {
-	assert := Assert{t}
 
 	vh := SecureVirtualHost{}
-	assert.False(vh.Valid())
+	assert.False(t, vh.Valid())
 
 	vh = SecureVirtualHost{
 		Secret: new(Secret),
 	}
-	assert.False(vh.Valid())
+	assert.False(t, vh.Valid())
 
 	vh = SecureVirtualHost{
 		VirtualHost: VirtualHost{
@@ -52,7 +50,7 @@ func TestSecureVirtualHostValid(t *testing.T) {
 			},
 		},
 	}
-	assert.False(vh.Valid())
+	assert.False(t, vh.Valid())
 
 	vh = SecureVirtualHost{
 		Secret: new(Secret),
@@ -62,18 +60,18 @@ func TestSecureVirtualHostValid(t *testing.T) {
 			},
 		},
 	}
-	assert.True(vh.Valid())
+	assert.True(t, vh.Valid())
 
 	vh = SecureVirtualHost{
 		TCPProxy: new(TCPProxy),
 	}
-	assert.True(vh.Valid())
+	assert.True(t, vh.Valid())
 
 	vh = SecureVirtualHost{
 		Secret:   new(Secret),
 		TCPProxy: new(TCPProxy),
 	}
-	assert.True(vh.Valid())
+	assert.True(t, vh.Valid())
 }
 
 func TestPeerValidationContext(t *testing.T) {
@@ -106,22 +104,4 @@ func TestObserverFunc(t *testing.T) {
 	result := false
 	ObserverFunc(func(*DAG) { result = true }).OnChange(nil)
 	assert.Equal(t, true, result)
-}
-
-type Assert struct {
-	*testing.T
-}
-
-func (a Assert) True(t bool) {
-	a.Helper()
-	if !t {
-		a.Error("expected true, got false")
-	}
-}
-
-func (a Assert) False(t bool) {
-	a.Helper()
-	if t {
-		a.Error("expected false, got true")
-	}
 }
