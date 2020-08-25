@@ -23,7 +23,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -68,7 +67,7 @@ func TestRouteCacheContents(t *testing.T) {
 			var rc RouteCache
 			rc.Update(tc.contents)
 			got := rc.Contents()
-			assert.EqualProto(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }
@@ -128,7 +127,7 @@ func TestRouteCacheQuery(t *testing.T) {
 			var rc RouteCache
 			rc.Update(tc.contents)
 			got := rc.Query(tc.query)
-			assert.EqualProto(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }
@@ -2756,7 +2755,7 @@ func TestRouteVisit(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			root := buildDAGFallback(t, tc.fallbackCertificate, tc.objs...)
 			got := visitRoutes(root)
-			assert.EqualProto(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }
@@ -2926,7 +2925,7 @@ func TestSortLongestRouteFirst(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := append([]*envoy_api_v2_route.Route{}, tc.routes...) // shallow copy
 			sortRoutes(got)
-			assert.EqualProto(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }

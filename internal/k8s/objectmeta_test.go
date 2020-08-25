@@ -3,7 +3,7 @@ package k8s
 import (
 	"testing"
 
-	"github.com/projectcontour/contour/internal/assert"
+	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/types"
 )
 

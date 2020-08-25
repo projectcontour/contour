@@ -20,7 +20,6 @@ import (
 	envoy_accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	_struct "github.com/golang/protobuf/ptypes/struct"
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/protobuf"
 )
 
@@ -44,7 +43,7 @@ func TestFileAccessLog(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := FileAccessLogEnvoy(tc.path)
-			assert.Equal(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }
@@ -104,7 +103,7 @@ func TestJSONFileAccessLog(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := FileAccessLogJSON(tc.path, tc.headers)
-			assert.EqualProto(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }

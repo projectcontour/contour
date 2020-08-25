@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/projectcontour/contour/internal/assert"
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v2"
 )

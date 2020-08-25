@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/projectcontour/contour/internal/assert"
+	"github.com/stretchr/testify/assert"
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
