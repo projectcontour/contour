@@ -102,6 +102,11 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		return
 	}
 
+	if len(proxy.Spec.Routes) == 0 && len(proxy.Spec.Includes) == 0 && proxy.Spec.TCPProxy == nil {
+		sw.SetInvalid("HTTPProxy.Spec must have at least one Route, Include, or a TCPProxy")
+		return
+	}
+
 	var tlsEnabled bool
 	if tls := proxy.Spec.VirtualHost.TLS; tls != nil {
 		if !isBlank(tls.SecretName) && tls.Passthrough {
