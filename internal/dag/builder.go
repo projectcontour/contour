@@ -697,7 +697,7 @@ func (b *Builder) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPP
 			}
 
 			var uv *PeerValidationContext
-			if protocol == "tls" {
+			if protocol == "tls" || protocol == "h2" {
 				// we can only validate TLS connections to services that talk TLS
 				uv, err = b.lookupUpstreamValidation(service.UpstreamValidation, proxy.Namespace)
 				if err != nil {

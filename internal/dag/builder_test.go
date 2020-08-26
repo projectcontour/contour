@@ -1913,6 +1913,32 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+	protocolh2 := "h2"
+	proxy17h2 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name:     "kuard",
+					Port:     8080,
+					Protocol: &protocolh2,
+					UpstreamValidation: &projcontour.UpstreamValidation{
+						CACertificate: cert1.Name,
+						SubjectName:   "example.com",
+					},
+				}},
+			}},
+		},
+	}
 
 	// proxy18 is downstream validation, HTTP route
 	proxy18 := &projcontour.HTTPProxy{
@@ -4531,6 +4557,34 @@ func TestDAGInsert(t *testing.T) {
 										Protocol:    "tls",
 									},
 									Protocol: "tls",
+									UpstreamValidation: &PeerValidationContext{
+										CACertificate: secret(cert1),
+										SubjectName:   "example.com",
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with h2 expecting upstream verification": {
+			objs: []interface{}{
+				cert1, proxy17h2, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Name:        s1a.Name,
+										Namespace:   s1a.Namespace,
+										ServicePort: s1a.Spec.Ports[0],
+									},
+									Protocol: "h2",
 									UpstreamValidation: &PeerValidationContext{
 										CACertificate: secret(cert1),
 										SubjectName:   "example.com",
