@@ -1,0 +1,46 @@
+# httpproxyretrycountrange is a ConstraintTemplate that enforces
+# min/max allowed values for the retryPolicy.count values set on
+# any routes on an HTTPProxy. Both min and max are optional.
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: httpproxyretrycountrange
+  labels:
+    app: contour
+spec:
+  crd:
+    spec:
+      names:
+        kind: HTTPProxyRetryCountRange
+        listKind: HTTPProxyRetryCountRangeList
+        plural: HTTPProxyRetryCountRanges
+        singular: HTTPProxyRetryCountRange
+      scope: Namespaced
+      validation:
+        openAPIV3Schema:
+          properties:
+            min:
+              type: integer
+            max: 
+              type: integer
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package httpproxy.retrycountrange
+
+        # build a set of all the retry count values
+        retry_counts[val] {
+          val := input.review.object.spec.routes[_].retryPolicy.count
+        }
+
+        # is there a retry count value that's greater than the allowed max?
+        violation[{"msg": msg}] {
+          retry_counts[_] > input.parameters.max
+          msg := sprintf("retry count must be less than or equal to %v", [input.parameters.max])
+        }
+
+        # is there a retry count value that's less than the allowed min?
+        violation[{"msg": msg}] {
+          retry_counts[_] < input.parameters.min
+          msg := sprintf("retry count must be greater than or equal to %v", [input.parameters.min])
+        }

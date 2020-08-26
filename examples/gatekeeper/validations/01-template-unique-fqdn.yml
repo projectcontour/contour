@@ -1,0 +1,38 @@
+# httpproxyuniquefqdn is a ConstraintTemplate that requires
+# an HTTPProxy's spec.virtualhost.fqdn to not already be in 
+# use by another HTTPProxy. This ConstraintTemplate requires 
+# HTTPProxy to be in the Gatekeeper cache.
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: httpproxyuniquefqdn
+  labels:
+    app: contour
+spec:
+  crd:
+    spec:
+      names:
+        kind: HTTPProxyUniqueFQDN
+        listKind: HTTPProxyUniqueFQDNList
+        plural: HTTPProxyUniqueFQDNs
+        singular: HTTPProxyUniqueFQDN
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package httpproxy.uniquefqdn
+
+        violation[{"msg": msg, "other": other_name}] {
+          got := input.review.object.spec.virtualhost.fqdn
+          other := data.inventory.namespace[_]["projectcontour.io/v1"]["HTTPProxy"][_]
+          other.spec.virtualhost.fqdn = got
+
+          not same(other, input.review.object)
+
+          msg := "HTTPProxy must have a unique spec.virtualhost.fqdn"
+          other_name := sprintf("%v/%v", [other.metadata.namespace, other.metadata.name])
+        }
+
+        same(a, b) {
+          a.metadata.namespace == b.metadata.namespace
+          a.metadata.name == b.metadata.name
+        }

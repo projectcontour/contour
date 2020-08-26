@@ -1,0 +1,13 @@
+# httpproxy-unique-fqdn instantiates an HTTPProxyUniqueFQDN
+# ConstraintTemplate.
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: HTTPProxyUniqueFQDN
+metadata:
+  name: httpproxy-unique-fqdn
+  labels:
+    app: contour
+spec:
+  match:
+    kinds:
+      - apiGroups: ["projectcontour.io"]
+        kinds: ["HTTPProxy"]
