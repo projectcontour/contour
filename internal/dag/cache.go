@@ -15,6 +15,7 @@ package dag
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -101,6 +102,16 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	if obj, ok := obj.(k8s.Object); ok {
 		kind := k8s.KindOf(obj)
 		for key := range obj.GetObjectMeta().GetAnnotations() {
+			// TODO(youngnick#2749): Remove this once the deprecation period ends.
+			if strings.Contains(key, "contour.heptio.com/") {
+				om := obj.GetObjectMeta()
+				kc.WithField("name", om.GetName()).
+					WithField("namespace", om.GetNamespace()).
+					WithField("kind", kind).
+					WithField("version", k8s.VersionOf(obj)).
+					WithField("annotation", key).
+					Warn("contour.heptio.com annotations are deprecated and will be removed in a future release. Please move to the projectcontour.io version instead.")
+			}
 			// Emit a warning if this is a known annotation that has
 			// been applied to an invalid object kind. Note that we
 			// only warn for known annotations because we want to
