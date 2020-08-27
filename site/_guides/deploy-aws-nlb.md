@@ -20,7 +20,7 @@ This configuration has several advantages:
 ## Deploying Contour
 
 1. [Clone the Contour repository][4] and cd into the repo 
-2. Edit the Envoy service (`03-service-envoy.yaml`) in the `examples/contour` directory:
+2. Edit the Envoy service (`02-service-envoy.yaml`) in the `examples/contour` directory:
     - Remove the existing annotation: `service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp`
     - Add the following annotation: `service.beta.kubernetes.io/aws-load-balancer-type: nlb`
 3. Run `kubectl apply -f examples/contour`
