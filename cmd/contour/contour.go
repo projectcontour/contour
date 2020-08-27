@@ -20,21 +20,15 @@ import (
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/projectcontour/contour/internal/build"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
-	"k8s.io/klog"
 )
-
-func init() {
-	// even though we don't use it directly, some of our dependencies use klog
-	// so we must initialize it here to ensure that klog is set to log to stderr
-	// and not to a file.
-	// yes, this is gross, the klog authors are monsters.
-	klog.InitFlags(nil)
-}
 
 func main() {
 	log := logrus.StandardLogger()
+	k8s.InitLogging(k8s.LogWriterOption(log.WithField("context", "kubernetes")))
+
 	app := kingpin.New("contour", "Contour Kubernetes ingress controller.")
 	app.HelpFlag.Short('h')
 
@@ -99,9 +93,17 @@ func main() {
 		// on top of any values sourced from -c's config file.
 		_, err := app.Parse(args)
 		check(err)
+
+		// Reinitialize with the target debug level.
+		k8s.InitLogging(
+			k8s.LogWriterOption(log.WithField("context", "kubernetes")),
+			k8s.LogLevelOption(int(serveCtx.KubernetesDebug)),
+		)
+
 		if serveCtx.Debug {
 			log.SetLevel(logrus.DebugLevel)
 		}
+
 		log.Infof("args: %v", args)
 		check(doServe(log, serveCtx))
 	case version.FullCommand():
