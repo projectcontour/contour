@@ -1356,7 +1356,13 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 
 func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.DisablePermitInsecure = true
+		reh.Builder.Processors = []dag.Processor{
+			&dag.IngressProcessor{},
+			&dag.HTTPProxyProcessor{
+				DisablePermitInsecure: true,
+			},
+			&dag.ListenerProcessor{},
+		}
 	})
 
 	defer done()
@@ -1792,7 +1798,13 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
 
 func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.DisablePermitInsecure = true
+		reh.Builder.Processors = []dag.Processor{
+			&dag.IngressProcessor{},
+			&dag.HTTPProxyProcessor{
+				DisablePermitInsecure: true,
+			},
+			&dag.ListenerProcessor{},
+		}
 	})
 
 	defer done()

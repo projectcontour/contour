@@ -45,8 +45,12 @@ func TestHTTPProxyMetrics(t *testing.T) {
 					RootNamespaces: tc.rootNamespaces,
 					FieldLogger:    fixture.NewTestLogger(t),
 				},
+				Processors: []dag.Processor{
+					&dag.IngressProcessor{},
+					&dag.HTTPProxyProcessor{},
+					&dag.ListenerProcessor{},
+				},
 			}
-
 			for _, o := range tc.objs {
 				builder.Source.Insert(o)
 			}

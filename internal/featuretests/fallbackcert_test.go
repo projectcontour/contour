@@ -21,6 +21,7 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
+	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
@@ -30,9 +31,15 @@ import (
 
 func TestFallbackCertificate(t *testing.T) {
 	rh, c, done := setup(t, func(eh *contour.EventHandler) {
-		eh.Builder.FallbackCertificate = &types.NamespacedName{
-			Name:      "fallbacksecret",
-			Namespace: "admin",
+		eh.Builder.Processors = []dag.Processor{
+			&dag.IngressProcessor{},
+			&dag.HTTPProxyProcessor{
+				FallbackCertificate: &types.NamespacedName{
+					Name:      "fallbacksecret",
+					Namespace: "admin",
+				},
+			},
+			&dag.ListenerProcessor{},
 		}
 	})
 	defer done()

@@ -2284,11 +2284,17 @@ func TestDAGStatus(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
-				FieldLogger:         fixture.NewTestLogger(t),
-				FallbackCertificate: tc.fallbackCertificate,
+				FieldLogger: fixture.NewTestLogger(t),
 				Source: KubernetesCache{
 					RootNamespaces: []string{"roots", "marketing"},
 					FieldLogger:    fixture.NewTestLogger(t),
+				},
+				Processors: []Processor{
+					&IngressProcessor{},
+					&HTTPProxyProcessor{
+						FallbackCertificate: tc.fallbackCertificate,
+					},
+					&ListenerProcessor{},
 				},
 			}
 			for _, o := range tc.objs {
